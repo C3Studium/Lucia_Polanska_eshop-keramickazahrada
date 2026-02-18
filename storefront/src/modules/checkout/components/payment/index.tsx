@@ -2,7 +2,7 @@
 
 import { RadioGroup } from "@headlessui/react"
 import { isStripe as isStripeFunc, paymentInfoMap, isComgate } from "@lib/constants"
-import { initiatePaymentSession, initComgateMetadata } from "@lib/data/cart"
+import { initiatePaymentSession } from "@lib/data/cart"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Text, clx } from "@medusajs/ui"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -33,8 +33,8 @@ const Payment = ({
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(() => {
-    if (activeSession?.provider_id === "pp_comgate_comgate") {
-       const method = (activeSession.data as any)?.method
+    if (isComgate(activeSession?.provider_id)) {
+       const method = (activeSession?.data as any)?.method
        if (method === "BANK_ALL") return "pp_comgate_bank"
        if (method === "APPLEPAY") return "pp_comgate_applepay"
        if (method === "GOOGLEPAY") return "pp_comgate_googlepay"
@@ -44,8 +44,11 @@ const Payment = ({
   })
 
   const displayPaymentMethods = useMemo(() => {
+    console.log("[Payment] availablePaymentMethods:", availablePaymentMethods?.map(pm => pm.id))
     return availablePaymentMethods.flatMap(pm => {
-      if (pm.id === "pp_comgate_comgate") {
+      // Match any comgate provider (pp_comgate_comgate, comgate, etc.)
+      if (isComgate(pm.id)) {
+        console.log("[Payment] Expanding comgate provider:", pm.id)
         return [
            { id: "pp_comgate_card" },
            { id: "pp_comgate_applepay" },
@@ -64,12 +67,14 @@ const Payment = ({
   const isOpen = searchParams.get("step") === "payment"
 
   const isStripe = isStripeFunc(selectedPaymentMethod)
-  const [comgateUrl, setComgateUrl] = useState<string>("")
+
 
   console.log("availablePaymentMethods:", availablePaymentMethods)
   console.log("CartID:", cart?.region?.id)
   console.log("CartObject:", cart)
 
+  // Select payment method - for Comgate, just set state (like Manual Payment).
+  // The actual Comgate session is created only when the "Zaplatit" button is clicked.
   const setPaymentMethod = async (method: string) => {
     setError(null)
     setSelectedPaymentMethod(method)
@@ -79,124 +84,11 @@ const Payment = ({
       })
       console.log("response:", response)
     }
-    else if (isComgate(method)) {
-      // Initialize Comgate payment session
-      const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
-      const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
-      const email = cart?.email || null
-      
-      let comgateMethod = "ALL"
-      if (method === "pp_comgate_card") comgateMethod = "CARD_ALL"
-      if (method === "pp_comgate_bank") comgateMethod = "BANK_ALL"
-      if (method === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
-      if (method === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
-
-      const resp = await initiatePaymentSession(cart, {
-        provider_id: "pp_comgate_comgate",
-        // pass extra data so provider can use it directly
-        data: {
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          cart_id: cart.id,
-          method: comgateMethod,
-        } as any,
-      })
-      if ((resp as any)?.message) {
-        setError((resp as any).message)
-        return
-      }
-
-      // Send metadata to backend (cart metadata) so Comgate service can use them
-      const init = await initComgateMetadata({
-        cartId: cart.id,
-        email,
-        firstName,
-        lastName,
-      })
-      if (!init.success) {
-        console.warn("Failed to init Comgate metadata:", init.message)
-      }
-      console.log("Comgate initialized")
-    }
+    // For Comgate and Manual: do NOTHING on select, just like Manual Payment works.
   }
 
 
-  // const handleComgatePay = async () => {
-  //   setIsLoading(true)
-  //   setError(null)
-  //   try {
-  //     const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
-  //     const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
-  //     const email = cart?.email || null
 
-  //     const resp = await initiatePaymentSession(cart, {
-  //       provider_id: selectedPaymentMethod,
-  //       data: {
-  //         email,
-  //         first_name: firstName,
-  //         last_name: lastName,
-  //         cart_id: cart.id,
-  //       } as any,
-  //     })
-
-  // const anyResp: any = resp
-  // const url = anyResp?.url || anyResp?.payment_url || anyResp?.redirect_url || anyResp?.data?.url
-  //     if (url) {
-  //       setComgateUrl(url)
-  //     } else if ((resp as any)?.message) {
-  //       setError((resp as any).message)
-  //     } else {
-  //       setError("Nelze zahájit platbu Comgate. Zkuste to znovu.")
-  //     }
-  //   } catch (err: any) {
-  //     console.error('Comgate init error', err)
-  //     setError(err?.message || 'Chyba při inicializaci platby Comgate')
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
-  const handleComgatePay = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
-      const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
-      const email = cart?.email || null
-
-      let comgateMethod = "ALL"
-      if (selectedPaymentMethod === "pp_comgate_card") comgateMethod = "CARD_ALL"
-      if (selectedPaymentMethod === "pp_comgate_bank") comgateMethod = "BANK_ALL"
-      if (selectedPaymentMethod === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
-      if (selectedPaymentMethod === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
-
-      const resp = await initiatePaymentSession(cart, {
-        provider_id: "pp_comgate_comgate",
-        data: {
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          cart_id: cart.id,
-          method: comgateMethod
-        } as any,
-      })
-
-  const anyResp: any = resp
-  const url = anyResp?.url || anyResp?.payment_url || anyResp?.redirect_url || anyResp?.data?.url
-      if (url) {
-        setComgateUrl(url)
-      } else if ((resp as any)?.message) {
-        setError((resp as any).message)
-      } else {
-        setError("Nelze zahájit platbu Comgate. Zkuste to znovu.")
-      }
-    } catch (err: any) {
-      console.error('Comgate init error', err)
-      setError(err?.message || 'Chyba při inicializaci platby Comgate')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
@@ -226,32 +118,41 @@ const Payment = ({
       const shouldInputCard =
         isStripeFunc(selectedPaymentMethod) && !activeSession
 
-      const checkActiveSession =
-        activeSession?.provider_id === selectedPaymentMethod
-
+      // For comgate virtual IDs, check if active session is already a comgate session
+      const checkActiveSession = isComgate(selectedPaymentMethod)
+        ? isComgate(activeSession?.provider_id)
+        : activeSession?.provider_id === selectedPaymentMethod
 
       if (!checkActiveSession) {
-        // When creating session here, also include extra data for Comgate
-        const isComgateSelected = isComgate(selectedPaymentMethod)
-        const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
-        const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
-        const email = cart?.email || null
+        if (isComgate(selectedPaymentMethod)) {
+          // Comgate: create session with method data, just like Manual creates session
+          let comgateMethod = "ALL"
+          if (selectedPaymentMethod === "pp_comgate_card") comgateMethod = "CARD_ALL"
+          if (selectedPaymentMethod === "pp_comgate_bank") comgateMethod = "BANK_ALL"
+          if (selectedPaymentMethod === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
+          if (selectedPaymentMethod === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
+
+          const email = cart?.email || null
+          const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
+          const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
+
+          console.log("[Comgate] Creating session with method:", comgateMethod)
           await initiatePaymentSession(cart, {
-          provider_id: "pp_comgate_comgate",
-          ...(isComgateSelected
-            ? {
-                data: {
-                  email,
-                  first_name: firstName,
-                  last_name: lastName,
-                  method: selectedPaymentMethod === "pp_comgate_bank" ? "BANK_ALL" : 
-                          selectedPaymentMethod === "pp_comgate_applepay" ? "APPLEPAY" :
-                          selectedPaymentMethod === "pp_comgate_googlepay" ? "GOOGLEPAY" :
-                          "CARD_ALL"
-                } as any,
-              }
-            : {}),
-        })
+            provider_id: "pp_comgate_comgate",
+            data: {
+              email,
+              first_name: firstName,
+              last_name: lastName,
+              cart_id: cart.id,
+              method: comgateMethod,
+            } as any,
+          })
+        } else {
+          // Manual, Stripe, etc.
+          await initiatePaymentSession(cart, {
+            provider_id: selectedPaymentMethod,
+          })
+        }
       }
 
       if (!shouldInputCard) {
@@ -273,36 +174,7 @@ const Payment = ({
     setError(null)
   }, [isOpen])
 
-  useEffect(() => {
-    const listener = (event: MessageEvent) => {
-      if (!event?.data) return;
 
-      const { scope, action, value } = event.data;
-
-      if (
-        scope === "comgate-to-eshop" &&
-        action === "status" &&
-        value?.status
-      ) {
-        const { status, id, refId } = value;
-
-        if (["PAID", "AUTHORIZED"].includes(status)) {
-          // Např. rovnou zavoláš placeOrder()
-          handleSubmit()
-            .then(() => {
-              console.log("Order placed after Comgate payment")
-              // třeba redirect na thank you page
-            })
-            .catch(console.error);
-        } else if (status === "CANCELLED") {
-          // zobrazíš chybovou hlášku nebo zavřeš iframe
-        }
-      }
-    }
-
-    window.addEventListener("message", listener)
-    return () => window.removeEventListener("message", listener)
-  }, [])
 
 
 
@@ -375,25 +247,15 @@ const Payment = ({
             data-testid="payment-method-error-message"
           />
 
-          {/* Use ClickButton to keep consistent animated button UI */}
+          {/* Same button for ALL methods - select method, then continue to review */}
           <div className={styles.buttonRow}>
-            {isComgate(selectedPaymentMethod) ? (
-              <ClickButton
-                text={comgateUrl ? 'Otevřít platbu' : 'Zaplatit přes Comgate'}
-                onClickAction={handleComgatePay}
-                className={styles.submitBtn}
-                data-testid="submit-payment-button"
-                disabled={!selectedPaymentMethod || isLoading}
-              />
-            ) : (
-              <ClickButton
-                text={!activeSession && isStripeFunc(selectedPaymentMethod) ? ' Zadat údaje o kartě' : 'Pokračovat k přehledu'}
-                onClickAction={handleSubmit}
-                className={styles.submitBtn}
-                data-testid="submit-payment-button"
-                disabled={(isStripe && !cardComplete) || (!selectedPaymentMethod && !paidByGiftcard) || isLoading}
-              />
-          )}
+            <ClickButton
+              text={!activeSession && isStripeFunc(selectedPaymentMethod) ? 'Zadat údaje o kartě' : 'Pokračovat k přehledu'}
+              onClickAction={handleSubmit}
+              className={styles.submitBtn}
+              data-testid="submit-payment-button"
+              disabled={(isStripe && !cardComplete) || (!selectedPaymentMethod && !paidByGiftcard) || isLoading}
+            />
           </div>
         </div>
 
@@ -441,16 +303,7 @@ const Payment = ({
       </div>
       <Divider className={styles.divider} />
 
-    {comgateUrl && (
-      <div id="comgate-container">
-    <iframe
-      id="comgate-iframe"
-      src={comgateUrl}
-      allow="payment"
-      frameBorder="0"
-    />
-  </div>
-    )}
+
     </div>
   )
 }

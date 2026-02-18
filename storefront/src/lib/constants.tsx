@@ -69,7 +69,7 @@ export const isManual = (providerId?: string) => {
 }
 
 export const isComgate = (providerId?: string) => {
-  return providerId?.startsWith("pp_comgate")
+  return providerId?.startsWith("pp_comgate") || providerId === "comgate"
 }
 
 // Add currencies that don't need to be divided by 100
