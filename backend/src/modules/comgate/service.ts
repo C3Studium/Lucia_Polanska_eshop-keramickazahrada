@@ -23,6 +23,7 @@ type InjectedDependencies = {
 class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptions> {
   static identifier = "comgate"
   protected logger_: Logger
+  protected options: ComgateOptions
 
   constructor(
     container: InjectedDependencies,
@@ -31,6 +32,7 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     super(container, options)
 
     this.logger_ = container.logger
+    this.options = options
   }
 
   async authorizePayment(data: any): Promise<any> {
@@ -63,8 +65,8 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
 
 
     console.log("Comgate initiatePayment input:", input)
-    const merchant = COMGATE_MERCHANT
-    const secret = COMGATE_SECRET
+    const merchant = this.options?.merchant || COMGATE_MERCHANT
+    const secret = this.options?.secret || COMGATE_SECRET
     const auth = Buffer.from(`${merchant}:${secret}`).toString("base64")
 
     const payload = {

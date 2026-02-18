@@ -208,7 +208,8 @@ const medusaConfig = {
       options: {
         providers: [
           // Custom Comgate provider
-          ...(COMGATE_MERCHANT && COMGATE_SECRET ? [{
+          // Custom Comgate provider
+          {
             resolve: './src/modules/comgate',
             id: 'comgate',
             options: {
@@ -219,7 +220,7 @@ const medusaConfig = {
               curr: COMGATE_CURRENCY,
               method: COMGATE_METHOD
             },
-          }] : []),
+          },
           // Stripe provider (conditionally enabled if env present)
           ...(STRIPE_API_KEY && STRIPE_WEBHOOK_SECRET ? [{
             resolve: '@medusajs/payment-stripe',
