@@ -64,10 +64,15 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     const cartId = input.data?.cart_id || null
 
 
-    console.log("Comgate initiatePayment input:", input)
+    console.log("Comgate initiatePayment input:", JSON.stringify(input, null, 2))
+    console.log("Comgate initiatePayment input.data:", input.data)
+    console.log("Comgate initiatePayment method from data:", input.data?.method)
     const merchant = this.options?.merchant || COMGATE_MERCHANT
     const secret = this.options?.secret || COMGATE_SECRET
     const auth = Buffer.from(`${merchant}:${secret}`).toString("base64")
+
+    const selectedMethod = input.data?.method || "ALL"
+    console.log("[Comgate] Using payment method:", selectedMethod)
 
     const payload = {
       test: 1,
@@ -75,7 +80,7 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
       curr: currency_code.toUpperCase(),
       label: "Keramická zahrada",
       refId: input.data?.session_id,
-      method: input.data?.method || "ALL",
+      method: selectedMethod,
       email: email,
       fullName: fullName,
       delivery: "HOME_DELIVERY",
@@ -108,11 +113,13 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     const data = JSON.parse(text)
     console.log("Comgate response payment provider:", data)
     // Ulož potřebné informace do payment session (např. redirect URL)
-    return { // nebo jiný klíč podle odpovědi Comgate
-      status: "pending", // nebo jiný stav podle potřeby
-      id: data.transId, // Předpokládáme, že Comgate vrací ID platby
+    return {
+      status: "pending",
+      id: data.transId,
       data: {
-        redirectUrl: data.redirect, // Předpokládáme, že Comgate vrací URL pro přesměrování
+        redirectUrl: data.redirect,
+        method: selectedMethod,
+        transId: data.transId,
       },
     }
   }

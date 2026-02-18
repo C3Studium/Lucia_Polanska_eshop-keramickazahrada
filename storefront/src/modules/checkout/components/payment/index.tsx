@@ -36,8 +36,8 @@ const Payment = ({
     if (isComgate(activeSession?.provider_id)) {
        const method = (activeSession?.data as any)?.method
        if (method === "BANK_ALL") return "pp_comgate_bank"
-       if (method === "APPLEPAY") return "pp_comgate_applepay"
-       if (method === "GOOGLEPAY") return "pp_comgate_googlepay"
+       if (method === "APPLEPAY_REDIRECT" || method === "APPLEPAY") return "pp_comgate_applepay"
+       if (method === "GOOGLEPAY_REDIRECT" || method === "GOOGLEPAY") return "pp_comgate_googlepay"
        return "pp_comgate_card" 
     }
     return activeSession?.provider_id ?? ""
@@ -123,14 +123,15 @@ const Payment = ({
         ? isComgate(activeSession?.provider_id)
         : activeSession?.provider_id === selectedPaymentMethod
 
-      if (!checkActiveSession) {
+      if (!checkActiveSession || isComgate(selectedPaymentMethod)) {
+        // Always recreate Comgate sessions so the correct method is sent to Comgate gateway
         if (isComgate(selectedPaymentMethod)) {
           // Comgate: create session with method data, just like Manual creates session
           let comgateMethod = "ALL"
           if (selectedPaymentMethod === "pp_comgate_card") comgateMethod = "CARD_ALL"
           if (selectedPaymentMethod === "pp_comgate_bank") comgateMethod = "BANK_ALL"
-          if (selectedPaymentMethod === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
-          if (selectedPaymentMethod === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
+          if (selectedPaymentMethod === "pp_comgate_applepay") comgateMethod = "APPLEPAY_REDIRECT"
+          if (selectedPaymentMethod === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY_REDIRECT"
 
           const email = cart?.email || null
           const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
