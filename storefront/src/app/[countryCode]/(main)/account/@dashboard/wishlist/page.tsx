@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { cookies } from "next/headers"
-import { retrieveCustomer } from "@lib/data/customer"
+import { retrieveCustomer, refreshAuthToken } from "@lib/data/customer"
 import BgImage from "@modules/account/components/BgImage"
 import { retrieveProduct } from "@lib/data/products"
 import WishlistTemplate from "@modules/account/templates/wishlist-template"
@@ -17,34 +17,59 @@ export const metadata: Metadata = {
 
 async function getCustomerWishlists(_customerId: string) {
   const cookieStore = await cookies()
-  const token = cookieStore.get("_medusa_jwt")?.value
+  let token = cookieStore.get("_medusa_jwt")?.value
   const pk = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
   
-  console.log("[Wishlist Page] Token exists:", !!token)
-  console.log("[Wishlist Page] Using SDK.client.fetch")
+  console.log("[Wishlist Page] Getting wishlist items...")
   
   if (!token) {
-    console.log("[Wishlist Page] No token, returning empty")
+    console.log("[Wishlist Page] No token found")
     return []
   }
 
-  try {
-    const data = await sdk.client.fetch<{ wishlist: { items: any[] } }>(
+  const fetchWishlist = async (currentToken: string) => {
+    return await sdk.client.fetch<{ wishlist: { items: any[] } }>(
       `/store/customers/me/wishlists`,
       {
         method: "GET",
         headers: {
-          authorization: `Bearer ${token}`,
+          authorization: `Bearer ${currentToken}`,
           ...(pk ? { "x-publishable-api-key": pk } : {}),
         },
         cache: "no-store",
       }
     )
-    
-    console.log("[Wishlist Page] SDK Success, items count:", data.wishlist?.items?.length || 0)
+  }
+
+  try {
+    const data = await fetchWishlist(token)
+    console.log("[Wishlist Page] Success, items count:", data.wishlist?.items?.length || 0)
     return data.wishlist?.items ?? []
   } catch (e: any) {
-    console.error("[Wishlist Page] SDK Error:", e?.message || e)
+    console.error("[Wishlist Page] Error:", e?.message || e)
+    
+    // Check for 401 and retry logic
+    const is401 = e?.status === 401 || e?.message?.includes("401") || e?.message?.includes("Unauthorized")
+    
+    if (is401) {
+      console.log("[Wishlist Page] 401 received, attempting token refresh...")
+      const newToken = await refreshAuthToken()
+      
+      if (newToken) {
+        console.log("[Wishlist Page] Token refreshed, retrying request...")
+        try {
+          const data = await fetchWishlist(newToken)
+          console.log("[Wishlist Page] Retry success!")
+          return data.wishlist?.items ?? []
+        } catch (retryError) {
+          console.error("[Wishlist Page] Retry failed:", retryError)
+          return []
+        }
+      } else {
+        console.warn("[Wishlist Page] Token refresh failed")
+      }
+    }
+    
     return []
   }
 }

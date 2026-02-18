@@ -21,7 +21,7 @@ import { v4 as uuidv4 } from "uuid"
  * Returns the new token if successful, null otherwise.
  * Note: Does NOT remove the token on failure - the original token might still be valid.
  */
-const refreshAuthToken = async (): Promise<string | null> => {
+export const refreshAuthToken = async (): Promise<string | null> => {
   try {
     const newToken = await sdk.auth.refresh()
     if (newToken && typeof newToken === "string") {

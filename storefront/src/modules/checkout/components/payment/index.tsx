@@ -11,7 +11,7 @@ import PaymentContainer, {
 } from "@modules/checkout/components/payment-container"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useMemo } from "react"
 import styles from "./style.module.scss"
 import { useFormStatus } from "react-dom"
 
@@ -32,9 +32,30 @@ const Payment = ({
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
-    activeSession?.provider_id ?? ""
-  )
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(() => {
+    if (activeSession?.provider_id === "pp_comgate_comgate") {
+       const method = (activeSession.data as any)?.method
+       if (method === "BANK_ALL") return "pp_comgate_bank"
+       if (method === "APPLEPAY") return "pp_comgate_applepay"
+       if (method === "GOOGLEPAY") return "pp_comgate_googlepay"
+       return "pp_comgate_card" 
+    }
+    return activeSession?.provider_id ?? ""
+  })
+
+  const displayPaymentMethods = useMemo(() => {
+    return availablePaymentMethods.flatMap(pm => {
+      if (pm.id === "pp_comgate_comgate") {
+        return [
+           { id: "pp_comgate_card" },
+           { id: "pp_comgate_applepay" },
+           { id: "pp_comgate_googlepay" },
+           { id: "pp_comgate_bank" }
+        ]
+      }
+      return pm
+    })
+  }, [availablePaymentMethods])
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -63,14 +84,22 @@ const Payment = ({
       const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
       const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
       const email = cart?.email || null
+      
+      let comgateMethod = "ALL"
+      if (method === "pp_comgate_card") comgateMethod = "CARD_ALL"
+      if (method === "pp_comgate_bank") comgateMethod = "BANK_ALL"
+      if (method === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
+      if (method === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
+
       const resp = await initiatePaymentSession(cart, {
-        provider_id: method,
+        provider_id: "pp_comgate_comgate",
         // pass extra data so provider can use it directly
         data: {
           email,
           first_name: firstName,
           last_name: lastName,
           cart_id: cart.id,
+          method: comgateMethod,
         } as any,
       })
       if ((resp as any)?.message) {
@@ -135,13 +164,20 @@ const Payment = ({
       const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
       const email = cart?.email || null
 
+      let comgateMethod = "ALL"
+      if (selectedPaymentMethod === "pp_comgate_card") comgateMethod = "CARD_ALL"
+      if (selectedPaymentMethod === "pp_comgate_bank") comgateMethod = "BANK_ALL"
+      if (selectedPaymentMethod === "pp_comgate_applepay") comgateMethod = "APPLEPAY"
+      if (selectedPaymentMethod === "pp_comgate_googlepay") comgateMethod = "GOOGLEPAY"
+
       const resp = await initiatePaymentSession(cart, {
-        provider_id: selectedPaymentMethod,
+        provider_id: "pp_comgate_comgate",
         data: {
           email,
           first_name: firstName,
           last_name: lastName,
           cart_id: cart.id,
+          method: comgateMethod
         } as any,
       })
 
@@ -200,14 +236,18 @@ const Payment = ({
         const firstName = cart?.billing_address?.first_name || cart?.shipping_address?.first_name || null
         const lastName = cart?.billing_address?.last_name || cart?.shipping_address?.last_name || null
         const email = cart?.email || null
-        await initiatePaymentSession(cart, {
-          provider_id: selectedPaymentMethod,
+          await initiatePaymentSession(cart, {
+          provider_id: "pp_comgate_comgate",
           ...(isComgateSelected
             ? {
                 data: {
                   email,
                   first_name: firstName,
                   last_name: lastName,
+                  method: selectedPaymentMethod === "pp_comgate_bank" ? "BANK_ALL" : 
+                          selectedPaymentMethod === "pp_comgate_applepay" ? "APPLEPAY" :
+                          selectedPaymentMethod === "pp_comgate_googlepay" ? "GOOGLEPAY" :
+                          "CARD_ALL"
                 } as any,
               }
             : {}),
@@ -295,7 +335,7 @@ const Payment = ({
                 value={selectedPaymentMethod}
                 onChange={(value: string) => setPaymentMethod(value)}
               >
-                {availablePaymentMethods.map((paymentMethod) => (
+                {displayPaymentMethods.map((paymentMethod) => (
                   <div key={paymentMethod.id}>
                     {isStripeFunc(paymentMethod.id) ? (
                       <StripeCardContainer

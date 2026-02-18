@@ -29,37 +29,37 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     options: ComgateOptions
   ) {
     super(container, options)
-    
+
     this.logger_ = container.logger
   }
 
-    async authorizePayment(data: any): Promise<any> {
-        // Implementujte logiku pro autorizaci platby
-        return { success: true, data, status: "authorized" }
-    }
+  async authorizePayment(data: any): Promise<any> {
+    // Implementujte logiku pro autorizaci platby
+    return { success: true, data, status: "authorized" }
+  }
 
-    async capturePayment(data: any): Promise<any> {
-        // Implementujte logiku pro zachycení platby
-        return { success: true, data }
-    }
+  async capturePayment(data: any): Promise<any> {
+    // Implementujte logiku pro zachycení platby
+    return { success: true, data }
+  }
 
-    async refundPayment(data: any): Promise<any> {
-        // Implementujte logiku pro refundaci platby
-        return { success: true, data }
-    }
+  async refundPayment(data: any): Promise<any> {
+    // Implementujte logiku pro refundaci platby
+    return { success: true, data }
+  }
 
-    async initiatePayment(
-  input: InitiatePaymentInput
-): Promise<InitiatePaymentOutput> {
-  const { currency_code, context } = input
+  async initiatePayment(
+    input: InitiatePaymentInput
+  ): Promise<InitiatePaymentOutput> {
+    const { currency_code, context } = input
 
-  // Získání údajů o zákazníkovi, pokud jsou k dispozici; fallback na input.data
-  const dataAny = (input?.data as any) || {}
-  const email = context?.customer?.email || dataAny.email || null
-  const firstName = context?.customer?.first_name || dataAny.first_name || ""
-  const lastName = context?.customer?.last_name || dataAny.last_name || ""
-  const fullName = `${firstName} ${lastName}`.trim()
-  const cartId = input.data?.cart_id || null
+    // Získání údajů o zákazníkovi, pokud jsou k dispozici; fallback na input.data
+    const dataAny = (input?.data as any) || {}
+    const email = context?.customer?.email || dataAny.email || null
+    const firstName = context?.customer?.first_name || dataAny.first_name || ""
+    const lastName = context?.customer?.last_name || dataAny.last_name || ""
+    const fullName = `${firstName} ${lastName}`.trim()
+    const cartId = input.data?.cart_id || null
 
 
     console.log("Comgate initiatePayment input:", input)
@@ -68,23 +68,23 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     const auth = Buffer.from(`${merchant}:${secret}`).toString("base64")
 
     const payload = {
-        test: 1,
-        price: Number(input?.amount) * 100, // Předpokládáme, že Comgate očekává částku v haléřích
-        curr: currency_code.toUpperCase(),
-        label: "Keramická zahrada",
-        refId: input.data?.session_id,
-        method: "ALL",
-        email: email,
-        fullName: fullName,
-        delivery: "HOME_DELIVERY",
-        category: "PHYSICAL_GOODS_ONLY",
-        enableApplePayGooglePay: true,
-        url_paid: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/confirmed`,
-        url_cancelled: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/canceled`,
-        url_success: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/confirmed`,
-      }
+      test: 1,
+      price: Number(input?.amount) * 100, // Předpokládáme, že Comgate očekává částku v haléřích
+      curr: currency_code.toUpperCase(),
+      label: "Keramická zahrada",
+      refId: input.data?.session_id,
+      method: input.data?.method || "ALL",
+      email: email,
+      fullName: fullName,
+      delivery: "HOME_DELIVERY",
+      category: "PHYSICAL_GOODS_ONLY",
+      enableApplePayGooglePay: true,
+      url_paid: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/confirmed`,
+      url_cancelled: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/canceled`,
+      url_success: `${process.env.STOREFRONT_PUBLIC_URL}/cart/${cartId}/confirmed`,
+    }
 
-      //redirect to summary url: http://localhost:8000/cz/order/order_01K2D66AE6147SZF9479HZBQR2/confirmed
+    //redirect to summary url: http://localhost:8000/cz/order/order_01K2D66AE6147SZF9479HZBQR2/confirmed
 
     const headers = {
       "Authorization": `Basic ${auth}`,
@@ -107,56 +107,56 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     console.log("Comgate response payment provider:", data)
     // Ulož potřebné informace do payment session (např. redirect URL)
     return { // nebo jiný klíč podle odpovědi Comgate
-        status: "pending", // nebo jiný stav podle potřeby
-        id: data.transId, // Předpokládáme, že Comgate vrací ID platby
-        data: {
-          redirectUrl: data.redirect, // Předpokládáme, že Comgate vrací URL pro přesměrování
-        },
+      status: "pending", // nebo jiný stav podle potřeby
+      id: data.transId, // Předpokládáme, že Comgate vrací ID platby
+      data: {
+        redirectUrl: data.redirect, // Předpokládáme, že Comgate vrací URL pro přesměrování
+      },
     }
   }
 
 
-    async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
-        // Implementujte logiku pro smazání platby
-        return {}
-    }
+  async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
+    // Implementujte logiku pro smazání platby
+    return {}
+  }
 
-    async getPaymentStatus(input: GetPaymentStatusInput): Promise<GetPaymentStatusOutput> {
-        // Implementujte logiku pro získání stavu platby
-        return { status: "authorized"}
-    }
+  async getPaymentStatus(input: GetPaymentStatusInput): Promise<GetPaymentStatusOutput> {
+    // Implementujte logiku pro získání stavu platby
+    return { status: "authorized" }
+  }
 
-    async getPaymentDetails(paymentId: string): Promise<any> {
-        // Implementujte logiku pro získání detailů platby
-        return { success: true, paymentId }
-    }
+  async getPaymentDetails(paymentId: string): Promise<any> {
+    // Implementujte logiku pro získání detailů platby
+    return { success: true, paymentId }
+  }
 
-    async updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
-        // Implementujte logiku pro aktualizaci platby
-        return { data: input.data}
-    }
+  async updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
+    // Implementujte logiku pro aktualizaci platby
+    return { data: input.data }
+  }
 
-    async getWebhookActionAndData(data: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
-        // Implementujte logiku pro zpracování webhooku
-        return { action: "authorized"}
-    }
+  async getWebhookActionAndData(data: ProviderWebhookPayload["payload"]): Promise<WebhookActionResult> {
+    // Implementujte logiku pro zpracování webhooku
+    return { action: "authorized" }
+  }
 
-    async createPayment(data: any): Promise<any> {
-        // Implementujte logiku pro vytvoření platby
-        return { success: true, data }
-    }
+  async createPayment(data: any): Promise<any> {
+    // Implementujte logiku pro vytvoření platby
+    return { success: true, data }
+  }
 
-    async retrievePayment(input: RetrievePaymentInput): Promise<RetrievePaymentOutput> {
-        // Implementujte logiku pro získání platby
-        return { }
-    }
+  async retrievePayment(input: RetrievePaymentInput): Promise<RetrievePaymentOutput> {
+    // Implementujte logiku pro získání platby
+    return {}
+  }
 
 
-    async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {
-        return {
-            
-            }    
+  async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {
+    return {
+
     }
+  }
 
   // Zde implementujte potřebné metody pro autorizaci, zachycení, refund atd.
 }

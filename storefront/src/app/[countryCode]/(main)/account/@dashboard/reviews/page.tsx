@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import s from "../styles/profile.module.scss"
 import { notFound } from "next/navigation"
-import { retrieveCustomer } from "@lib/data/customer"
+import { retrieveCustomer, refreshAuthToken } from "@lib/data/customer"
 import { cookies } from "next/headers"
 import { sdk } from "@lib/config"
 import Link from "next/link"
@@ -18,23 +18,27 @@ export const metadata: Metadata = {
 
 async function getCustomerReviews() {
   const cookieStore = await cookies()
-  const token = cookieStore.get("_medusa_jwt")?.value
+  let token = cookieStore.get("_medusa_jwt")?.value
   const pk = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 
   if (!token) return []
 
-  try {
-    const data = await sdk.client.fetch<{ reviews: any[]; count?: number; limit?: number; offset?: number }>(
+  const fetchReviews = async (currentToken: string) => {
+    return await sdk.client.fetch<{ reviews: any[]; count?: number; limit?: number; offset?: number }>(
       `/store/customers/me/reviews`,
       {
         method: "GET",
         headers: {
-          authorization: `Bearer ${token}`,
+          authorization: `Bearer ${currentToken}`,
           ...(pk ? { "x-publishable-api-key": pk, "x-publishable-key": pk } : {}),
         },
         cache: "no-store",
       }
     )
+  }
+
+  try {
+    const data = await fetchReviews(token)
     console.log("[Account] fetched reviews:", {
       count: (data as any)?.count,
       limit: (data as any)?.limit,
@@ -42,8 +46,31 @@ async function getCustomerReviews() {
       length: Array.isArray((data as any)?.reviews) ? (data as any)?.reviews.length : "n/a",
     })
     return Array.isArray(data.reviews) ? data.reviews.filter((r) => !!r) : []
-  } catch (e) {
+  } catch (e: any) {
     console.error("[Account] failed to fetch customer reviews", e)
+    
+    // Check for 401 and retry logic
+    const is401 = e?.status === 401 || e?.message?.includes("401") || e?.message?.includes("Unauthorized")
+    
+    if (is401) {
+      console.log("[Reviews Page] 401 received, attempting token refresh...")
+      const newToken = await refreshAuthToken()
+      
+      if (newToken) {
+        console.log("[Reviews Page] Token refreshed, retrying request...")
+        try {
+          const data = await fetchReviews(newToken)
+          console.log("[Reviews Page] Retry success!")
+          return Array.isArray(data.reviews) ? data.reviews.filter((r) => !!r) : []
+        } catch (retryError) {
+          console.error("[Reviews Page] Retry failed:", retryError)
+          return []
+        }
+      } else {
+        console.warn("[Reviews Page] Token refresh failed")
+      }
+    }
+    
     return []
   }
 }
