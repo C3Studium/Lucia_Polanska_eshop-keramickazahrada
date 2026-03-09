@@ -1,5 +1,4 @@
-
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Login styles converted from Tailwind to Sass module (exact mapping) */
 
@@ -21,15 +20,11 @@
   font-family: "Sansation-Regular";
   margin-bottom: 1.5rem; /* mb-6 */
 
-  @include respond-to-h(sm) {
-		font-size: 1.8rem;
-	}
-   @include respond-to-h(xs) {
-		font-size: 1.8rem;
-	}
-  @include respond-to-h(xxs) {
-		font-size: 1.8rem;
-	}
+  @include hb((
+    sm: (font-size: 1.8rem),
+    xs: (font-size: 1.8rem),
+    xxs: (font-size: 1.8rem),
+  ));
 }
 
 .desc {
@@ -42,15 +37,11 @@
   font-family: "Sansation-Light";
   margin-bottom: 2rem; /* mb-8 */
 
-  @include respond-to-h(sm) {
-		font-size: 1rem;
-	}
-   @include respond-to-h(xs) {
-		font-size: 1rem;
-	}
-   @include respond-to-h(xxs) {
-		font-size: 1rem;
-	}
+  @include hb((
+    sm: (font-size: 1rem),
+    xs: (font-size: 1rem),
+    xxs: (font-size: 1rem),
+  ));
 }
 
 .form {
@@ -127,10 +118,9 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 150px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 150px, height: 35px),
+        ));
 
         .slider{
             position: relative;
@@ -144,19 +134,15 @@
                   margin: 0px;
                   font-size: 1.2rem;
                   color: var(--Wtext);
-                  @include respond-to-h(sm) {
-                    font-size: 1.1rem;
-                  }
-                  @include respond-to-h(xs) {
-                    font-size: 1.1rem;
-                  }
-                  @include respond-to-h(xxs) {
-                    font-size: 1.1rem;
-                  }
+                  @include hb((
+                    sm: (font-size: 1.1rem),
+                    xs: (font-size: 1.1rem),
+                    xxs: (font-size: 1.1rem),
+                  ));
 
-                  @include respond-to-v(s) {
-                    font-size: 1.1rem;
-                  }
+                  @include vb((
+                    s: (font-size: 1.1rem),
+                  ));
                 }
                 &:nth-of-type(2){
                   p{

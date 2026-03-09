@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Payment component styles using nested Sass structure */
 
@@ -12,27 +12,17 @@
     justify-content: space-between;
     margin-bottom: 1.5rem; /* 24px */
 
-    @include respond-to-h(sm){
-      gap: 0.5rem;
-    }
-    @include respond-to-h(xs){
-      gap: 1rem;
-    }
-    @include respond-to-h(xxs){
-      gap: 1rem;
-    }
-    @include respond-to-v(md){
-      gap: 1rem;
-    }
-    @include respond-to-v(s){
-      gap: 1rem;
-    }
-    @include respond-to-v(sm){
-      gap: 1rem;
-    }
-    @include respond-to-v(xs){
-      gap: 1rem;
-    }
+    @include hb((
+      sm: (gap: 0.5rem),
+      xs: (gap: 1rem),
+      xxs: (gap: 1rem),
+    ));
+    @include vb((
+      md: (gap: 1rem),
+      s: (gap: 1rem),
+      sm: (gap: 1rem),
+      xs: (gap: 1rem),
+    ));
   }
 
   .heading {
@@ -44,40 +34,22 @@
     gap: 0.5rem;
     align-items: baseline;
 
-    @include respond-to-h(lg){
-        font-size: 1.8rem;
-    }
-    @include respond-to-h(md){
-      font-size: 1.8rem;
-    }
-    @include respond-to-h(mdt){
-      font-size: 1.8rem;
-    }
-    @include respond-to-h(sm){
-      font-size: 1.8rem;
-    }
-    @include respond-to-h(xs){
-      font-size: 1.6rem;
-    }
-    @include respond-to-h(xxs){
-      font-size: 1.6rem;
-    }
+    @include hb((
+      lg: (font-size: 1.8rem),
+      md: (font-size: 1.8rem),
+      mdt: (font-size: 1.8rem),
+      sm: (font-size: 1.8rem),
+      xs: (font-size: 1.6rem),
+      xxs: (font-size: 1.6rem),
+    ));
 
-    @include respond-to-v(lg){
-      font-size: 1.8rem;
-    }
-    @include respond-to-v(md){
-      font-size: 1.8rem;
-    }
-    @include respond-to-v(s){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(xs){
-      font-size: 1.6rem;
-    }
+    @include vb((
+      lg: (font-size: 1.8rem),
+      md: (font-size: 1.8rem),
+      s: (font-size: 1.6rem),
+      sm: (font-size: 1.6rem),
+      xs: (font-size: 1.6rem),
+    ));
     &.inactive {
       opacity: 0.5;
       pointer-events: none;
@@ -123,42 +95,21 @@
     color: var(--ChText);
     margin-bottom: 0.25rem;
 
-    @include respond-to-h(md){
-        font-size: 1rem;
-    }
-    @include respond-to-h(mdt){
-        font-size: 1rem;
-    }
-    @include respond-to-h(sm){
-        font-size: 1rem;
-    }
-    @include respond-to-h(xs){
-        font-size: 0.9rem;
-        font-weight: 300;
-    }
-    @include respond-to-h(xxs){
-        font-size: 0.9rem;
-        font-weight: 300;
-    }
+    @include hb((
+        md: (font-size: 1rem),
+        mdt: (font-size: 1rem),
+        sm: (font-size: 1rem),
+        xs: (font-size: 0.9rem, font-weight: 300),
+        xxs: (font-size: 0.9rem, font-weight: 300),
+    ));
 
-    @include respond-to-v(lg){
-        font-size: 1rem;
-    }
-    @include respond-to-v(md){
-        font-size: 1rem;
-    }
-    @include respond-to-v(s){
-        font-size: 0.9rem;
-        font-weight: 300;
-    }
-    @include respond-to-v(sm){
-        font-size: 0.9rem;
-        font-weight: 300;
-    }
-    @include respond-to-v(xs){
-        font-size: 0.9rem;
-        font-weight: 300;
-    }
+    @include vb((
+        lg: (font-size: 1rem),
+        md: (font-size: 1rem),
+        s: (font-size: 0.9rem, font-weight: 300),
+        sm: (font-size: 0.9rem, font-weight: 300),
+        xs: (font-size: 0.9rem, font-weight: 300),
+    ));
   }
 
   .sectionText {
@@ -168,42 +119,21 @@
     margin-bottom: 0.25rem;
     font-family: "Sansation-Light";
 
-    @include respond-to-h(md){
-        font-size: 0.85rem;
-    }
-    @include respond-to-h(mdt){
-        font-size: 0.85rem;
-    }
-    @include respond-to-h(sm){
-        font-size: 0.85rem;
-    }
-    @include respond-to-h(xs){
-        font-size: 0.8rem;
-        font-weight: 300;
-    }
-    @include respond-to-h(xxs){
-        font-size: 0.8rem;
-        font-weight: 300;
-    }
+    @include hb((
+        md: (font-size: 0.85rem),
+        mdt: (font-size: 0.85rem),
+        sm: (font-size: 0.85rem),
+        xs: (font-size: 0.8rem, font-weight: 300),
+        xxs: (font-size: 0.8rem, font-weight: 300),
+    ));
 
-    @include respond-to-v(lg){
-        font-size: 0.85rem;
-    }
-    @include respond-to-v(md){
-        font-size: 0.85rem;
-    }
-    @include respond-to-v(s){
-        font-size: 0.8rem;
-        font-weight: 300;
-    }
-    @include respond-to-v(sm){
-        font-size: 0.8rem;
-        font-weight: 300;
-    }
-    @include respond-to-v(xs){
-        font-size: 0.8rem;
-        font-weight: 300;
-    }
+    @include vb((
+        lg: (font-size: 0.85rem),
+        md: (font-size: 0.85rem),
+        s: (font-size: 0.8rem, font-weight: 300),
+        sm: (font-size: 0.8rem, font-weight: 300),
+        xs: (font-size: 0.8rem, font-weight: 300),
+    ));
   }
 
   .summaryRow {

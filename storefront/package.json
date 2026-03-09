@@ -8,10 +8,12 @@
     "medusa-storefront"
   ],
   "scripts": {
+    "sync:styles": "node scripts/sync-styles.js",
+    "watch:styles": "chokidar \"src/**/*.@(scss|css)\" -i \"src/styles/**\" -i \"**/node_modules/**\" -i \"**/.next/**\" --initial --events add,change,unlink -c \"pnpm run sync:styles\"",
     "wait": "node ./scripts/await-backend.js",
     "wait:server": "await-backend",
     "launcher": "launch-storefront",
-    "dev": "npm run wait && npm run launcher dev",
+    "dev": "concurrently \"pnpm run watch:styles\" \"npm run wait && npm run launcher dev\"",
     "build": "npm run wait && npm run launcher build",
     "start": "npm run launcher start",
     "build:next": "next build",
@@ -50,6 +52,8 @@
     "@types/uuid": "^10.0.0",
     "algoliasearch": "^4.25.2",
     "axios": "^1.11.0",
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^9.2.1",
     "framer-motion": "^12.23.12",
     "lenis": "^1.3.8",
     "lodash": "^4.17.21",

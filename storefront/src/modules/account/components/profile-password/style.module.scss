@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   width: 100%;
@@ -8,18 +8,10 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem; /* gap-4 */
 
-    @include respond-to-v(s) {
-      grid-template-columns: 1fr;
-      row-gap: 0.5rem; /* gap-y-4 */
-    }
-
-    @include respond-to-v(sm) {
-      grid-template-columns: 1fr;
-      row-gap: 0.5rem; /* gap-y-4 */
-    }
-    @include respond-to-v(xs) {
-      grid-template-columns: 1fr;
-      row-gap: 0.5rem; /* gap-y-4 */
-    }
+    @include vb((
+      s: (grid-template-columns: 1fr, row-gap: 0.5rem),
+      sm: (grid-template-columns: 1fr, row-gap: 0.5rem),
+      xs: (grid-template-columns: 1fr, row-gap: 0.5rem),
+    ));
   }
 }

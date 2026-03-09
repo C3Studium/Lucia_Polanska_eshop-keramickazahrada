@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Account Layout styles (Sass module) */
 
@@ -19,41 +19,22 @@
 		padding-bottom: 3rem;
 	}
 
-	@include respond-to-h(lg) {
-		min-height: 110dvh;
-	}
-	@include respond-to-h(mdt) {
-		min-height: 120dvh;
-	}
-	@include respond-to-h(md) {
-		min-height: 150dvh;
-	}
-	@include respond-to-h(sm) {
-		min-height: 120dvh;
-	}
-	@include respond-to-h(xs) {
-		min-height: 240dvh;
-	}
+	@include hb((
+		lg: (min-height: 110dvh),
+		mdt: (min-height: 120dvh),
+		md: (min-height: 150dvh),
+		sm: (min-height: 120dvh),
+		xs: (min-height: 240dvh),
+		xxs: (min-height: 240dvh),
+	));
 
-	@include respond-to-h(xxs) {
-		min-height: 240dvh;
-	}
-
-	@include respond-to-v(lg) {
-		min-height: 80dvh;
-	}
-	@include respond-to-v(md) {
-		min-height: 110dvh;
-	}
-	@include respond-to-v(s) {
-		min-height: 130dvh;
-	}
-	@include respond-to-v(sm) {
-		min-height: 140dvh;
-	}
-	@include respond-to-v(xs) {
-		min-height: 160dvh;
-	}
+	@include vb((
+		lg: (min-height: 80dvh),
+		md: (min-height: 110dvh),
+		s: (min-height: 130dvh),
+		sm: (min-height: 140dvh),
+		xs: (min-height: 160dvh),
+	));
 
 
 	.container {
@@ -69,70 +50,25 @@
 		
 
 		// --- Horizontal (landscape) responsiveness ---
-		@include respond-to-h(huge) {
-			max-width: 80vw;
-			margin-top: 5dvh;
-		}
-
-		@include respond-to-h(xl) {
-			max-width: 80vw;
-			margin-top: 5dvh;
-		}
-
-		@include respond-to-h(lg) {
-			max-width: 80vw;
-			margin-top: 5dvh;
-		}
-		@include respond-to-h(md) {
-			max-width: 80vw;
-			height: 90%;
-			margin-top: 5dvh;
-		}
-		@include respond-to-h(mdt) {
-			max-width: 80vw;
-			height: 80%;
-			margin-top: 5dvh;
-		}
-
-
-		@include respond-to-h(sm) {
-			max-width: 80vw;
-			height: 100%;
-			margin-top: 5dvh;
-		}
-
-		@include respond-to-h(xs) {
-			max-width: 90vw;
-			margin-top: 5dvh;
-			height: 100%;
-		}
-
-		@include respond-to-h(xxs) {
-			max-width: 95vw;
-			margin-top: 5dvh;
-			height: 100%;
-		}
+		@include hb((
+			huge: (max-width: 80vw, margin-top: 5dvh),
+			xl: (max-width: 80vw, margin-top: 5dvh),
+			lg: (max-width: 80vw, margin-top: 5dvh),
+			md: (max-width: 80vw, height: 90%, margin-top: 5dvh),
+			mdt: (max-width: 80vw, height: 80%, margin-top: 5dvh),
+			sm: (max-width: 80vw, height: 100%, margin-top: 5dvh),
+			xs: (max-width: 90vw, height: 100%, margin-top: 5dvh),
+			xxs: (max-width: 95vw, height: 100%, margin-top: 5dvh),
+		));
 
 		// --- Vertical (portrait) responsiveness ---
-		@include respond-to-v(lg) {
-			max-width: 80vw;
-		}
-		@include respond-to-v(md) {
-			max-width: 80vw;
-		}
-
-
-		@include respond-to-v(s) {
-			max-width: 90vw;
-		}
-
-		@include respond-to-v(sm) {
-			max-width: 90vw;
-		}
-
-		@include respond-to-v(xs) {
-			max-width: 90vw;
-		}
+		@include vb((
+			lg: (max-width: 80vw),
+			md: (max-width: 80vw),
+			s: (max-width: 90vw),
+			sm: (max-width: 90vw),
+			xs: (max-width: 90vw),
+		));
 
 		.verifiedGrid {
 			display: grid;
@@ -146,89 +82,31 @@
 			}
 
 			// --- Horizontal (landscape) responsiveness ---
-			@include respond-to-h(huge) {
-				padding-top: 4rem;
-				padding-bottom: 4rem;
-			}
-
-			@include respond-to-h(lg) {
-				grid-template-columns: 260px 1fr;
-			}
-
-			@include respond-to-h(md) {
-				grid-template-columns: 240px 1fr;
-				padding-top: 3rem;
-				padding-bottom: 3rem;
-			}
-			
-
-			@include respond-to-h(mdt) {
-				grid-template-columns: 240px 1fr;
-			}
-			@include respond-to-h(sm) {
-				grid-template-columns: 240px 1fr;
-				padding-top: 3rem;
-				padding-bottom: 3rem;
-			}
-
-			@include respond-to-h(xs) {
-				grid-template-columns: 220px 1fr;
-				padding-top: 3rem;
-				padding-bottom: 3rem;
-			}
-			@include respond-to-h(xxs) {
-				grid-template-columns: 200px 1fr;
-				padding-top: 3rem;
-				padding-bottom: 3rem;
-			}
+			@include hb((
+				huge: (padding-top: 4rem, padding-bottom: 4rem),
+				lg: (grid-template-columns: 260px 1fr),
+				md: (grid-template-columns: 240px 1fr, padding-top: 3rem, padding-bottom: 3rem),
+				mdt: (grid-template-columns: 240px 1fr),
+				sm: (grid-template-columns: 240px 1fr, padding-top: 3rem, padding-bottom: 3rem),
+				xs: (grid-template-columns: 220px 1fr, padding-top: 3rem, padding-bottom: 3rem),
+				xxs: (grid-template-columns: 200px 1fr, padding-top: 3rem, padding-bottom: 3rem),
+			));
 
             // --- Vertical (portrait) responsiveness ---
-            @include respond-to-v(lg) {
-                grid-template-columns: 200px 1fr;
-            }
-
-            @include respond-to-v(md) {
-                grid-template-columns: 200px 1fr;
-            }
-
-            @include respond-to-v(s) {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-                gap: 0.25rem;
-				width: 95vw;
-            }
-
-            @include respond-to-v(sm) {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-                gap: 0.25rem;
-				width: 95vw;
-            }
-            @include respond-to-v(xs) {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-                gap: 0.25rem;
-				width: 95vw;
-            }			
+            @include vb((
+                lg: (grid-template-columns: 200px 1fr),
+                md: (grid-template-columns: 200px 1fr),
+                s: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
+                sm: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
+                xs: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
+            ));
 			.nav{
 
-				@include respond-to-v(s){
-					border-right: none;
-					border-bottom: 1px solid var(--border, #e5e7eb); // border-gray-200
-					max-width: 90vw;
-				}
-				@include respond-to-v(sm){
-					border-right: none;
-					border-bottom: 1px solid var(--border, #e5e7eb); // border-gray-200
-					padding: 5vh 2.5vw;
-					max-width: 90vw;
-				}
-				@include respond-to-v(xs){
-					border-right: none;
-					border-bottom: 1px solid var(--border, #e5e7eb); // border-gray-200
-					padding: 5vh 2.5vw;
-					max-width: 90vw;
-				}
+				@include vb((
+					s: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), max-width: 90vw),
+					sm: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), padding: 5vh 2.5vw, max-width: 90vw),
+					xs: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), padding: 5vh 2.5vw, max-width: 90vw),
+				));
 
 				padding: 5vh 2.5vw;
 				width: 100%;
@@ -237,17 +115,11 @@
 			}
 			.children {
 				flex: 1;
-				@include respond-to-v(s){
-					max-width: 90vw;
-				}
-				@include respond-to-v(sm){
-					padding: 5vh 2.5vw;
-					max-width: 90vw;
-				}
-				@include respond-to-v(xs){
-					padding: 5vh 2.5vw;
-					max-width: 90vw;
-				}
+				@include vb((
+					s: (max-width: 90vw),
+					sm: (padding: 5vh 2.5vw, max-width: 90vw),
+					xs: (padding: 5vh 2.5vw, max-width: 90vw),
+				));
 			}
 		}
 
@@ -259,9 +131,9 @@
 			justify-content: center;
 			margin-top: 5dvh;
 
-			@include respond-to-h(lg) {
-				height: 80%;
-			}
+			@include hb((
+				lg: (height: 80%),
+			));
 		}
 
 		.centerZ1 {
@@ -287,98 +159,40 @@
 		padding: 3rem 2.5dvw 3rem 2.5dvw;
 		width: 100%;
 		// --- Horizontal (landscape) responsiveness ---
-		@include respond-to-h(huge) {
-			max-width: 80vw;
-		}
-
-		@include respond-to-h(xl) {
-			max-width: 80vw;
-		}
-
-		@include respond-to-h(lg) {
-			max-width: 80vw;
-		}
-		@include respond-to-h(md) {
-			max-width: 80vw;
-			height: 90%;
-		}
-		@include respond-to-h(mdt) {
-			max-width: 80vw;
-			height: 80%;
-		}
-
-
-		@include respond-to-h(sm) {
-			max-width: 80vw;
-			height: 100%;
-		}
-
-		@include respond-to-h(xs) {
-			max-width: 90vw;
-			height: 100%;
-		}
-
-		@include respond-to-h(xxs) {
-			max-width: 95vw;
-			height: 100%;
-		}
+		@include hb((
+			huge: (max-width: 80vw),
+			xl: (max-width: 80vw),
+			lg: (max-width: 80vw),
+			md: (max-width: 80vw, height: 90%),
+			mdt: (max-width: 80vw, height: 80%),
+			sm: (max-width: 80vw, height: 100%),
+			xs: (max-width: 90vw, height: 100%),
+			xxs: (max-width: 95vw, height: 100%),
+		));
 
 		// --- Vertical (portrait) responsiveness ---
-		@include respond-to-v(lg) {
-			max-width: 80vw;
-		}
-		@include respond-to-v(md) {
-			max-width: 80vw;
-		}
+		@include vb((
+			lg: (max-width: 80vw),
+			md: (max-width: 80vw),
+			s: (max-width: 90vw, padding: 0 2.5dvw),
+			sm: (max-width: 90vw),
+			xs: (max-width: 90vw),
+		));
 
+		@include hb((
+			lg: (padding: 2rem 2.5dvw),
+			mdt: (padding: 1.5rem 2.5dvw),
+			md: (padding: 1rem 2.5dvw),
+			sm: (padding: 1rem 2.5dvw),
+			xs: (padding: 1rem 2.5dvw, gap: 1rem),
+			xxs: (padding: 0.5rem 0.5dvw, gap: 1rem),
+		));
 
-		@include respond-to-v(s) {
-			max-width: 90vw;
-			padding: 0 2.5dvw;
-		}
-
-		@include respond-to-v(sm) {
-			max-width: 90vw;
-		}
-
-		@include respond-to-v(xs) {
-			max-width: 90vw;
-		}
-
-		@include respond-to-h(lg){
-			padding: 2rem 2.5dvw;
-		}
-		@include respond-to-h(mdt){
-			padding: 1.5rem 2.5dvw;
-		}
-		@include respond-to-h(md){
-			padding: 1rem 2.5dvw;
-		}
-		@include respond-to-h(sm){
-			padding: 1rem 2.5dvw;
-		}
-		@include respond-to-h(xs){
-			padding: 1rem 2.5dvw;
-			gap: 1rem;
-		}
-		@include respond-to-h(xxs){
-			padding: 0.5rem 0.5dvw;
-			gap: 1rem;
-		}
-
-
-		@include respond-to-v(s){
-			padding: 2rem 2.5dvw;
-			gap: 1rem;
-		}
-		@include respond-to-v(sm){
-			padding: 1rem 2.5dvw;
-			gap: 1rem;
-		}
-		@include respond-to-v(xs){
-			padding: 1rem 2.5dvw;
-			gap: 1rem;
-		}
+		@include vb((
+			s: (padding: 2rem 2.5dvw, gap: 1rem),
+			sm: (padding: 1rem 2.5dvw, gap: 1rem),
+			xs: (padding: 1rem 2.5dvw, gap: 1rem),
+		));
 
 		.text{
 			width: 70%;
@@ -389,17 +203,11 @@
 			justify-content: center;
 			gap: 1rem;
 
-			@include respond-to-h(sm){
-				width: 80%;
-			}
-			@include respond-to-h(xs){
-				width: 90%;
-				gap: 0.25rem;
-			}
-			@include respond-to-h(xxs){
-				width: 100%;
-				gap: 0.25rem;
-			}
+			@include hb((
+				sm: (width: 80%),
+				xs: (width: 90%, gap: 0.25rem),
+				xxs: (width: 100%, gap: 0.25rem),
+			));
 
 			.title{
 				font-size: 2rem;
@@ -409,50 +217,24 @@
 				color: var(--ChText);
 
 				// --- Responsive typography ---
-				@include respond-to-h(huge) {
-					font-size: 2rem !important;
-				}
+				@include hb((
+					huge: (font-size: 2rem !important),
+					xl: (font-size: 2rem !important),
+					lg: (font-size: 1.8rem),
+					md: (font-size: 1.8rem),
+					mdt: (font-size: 1.8rem),
+					sm: (font-size: 1.6rem),
+					xs: (font-size: 1.3rem),
+					xxs: (font-size: 1.3rem),
+				));
 
-				@include respond-to-h(xl) {
-					font-size: 2rem !important;
-				}
-
-				@include respond-to-h(lg){
-					font-size: 1.8rem;
-				}
-				@include respond-to-h(md){
-					font-size: 1.8rem;
-				}
-				@include respond-to-h(mdt){
-					font-size: 1.8rem;
-				}
-				@include respond-to-h(sm){
-					font-size: 1.6rem;
-				}
-				@include respond-to-h(xs){
-					font-size: 1.3rem;
-				}
-				@include respond-to-h(xxs){
-					font-size: 1.3rem;
-				}
-
-				@include respond-to-v(lg){
-					font-size: 1.8rem;
-				}
-				@include respond-to-v(md){
-					font-size: 1.8rem;
-				}
-
-				@include respond-to-v(s) {
-					font-size: 1.6rem;
-				}
-				@include respond-to-v(sm) {
-					font-size: 1.6rem;
-				}
-
-				@include respond-to-v(xs) {
-					font-size: 1.45rem;
-				}
+				@include vb((
+					lg: (font-size: 1.8rem),
+					md: (font-size: 1.8rem),
+					s: (font-size: 1.6rem),
+					sm: (font-size: 1.6rem),
+					xs: (font-size: 1.45rem),
+				));
 			}
 
 			.textSpan{
@@ -463,41 +245,22 @@
 				color: var(--ChText);
 
 				// --- Responsive typography ---
-				@include respond-to-h(huge) {
-					font-size: 1.1rem;
-				}
-				@include respond-to-h(xl) {
-					font-size: 1rem;
-				}
-				@include respond-to-h(lg) {
-					font-size: 1rem;
-				}
-				@include respond-to-h(md) {
-					font-size: 1rem;
-				}
-				@include respond-to-h(mdt) {
-					font-size: 1rem;
-				}
-				@include respond-to-h(sm) {
-					font-size: 0.9rem;
-				}
+				@include hb((
+					huge: (font-size: 1.1rem),
+					xl: (font-size: 1rem),
+					lg: (font-size: 1rem),
+					md: (font-size: 1rem),
+					mdt: (font-size: 1rem),
+					sm: (font-size: 0.9rem),
+					xs: (font-size: 0.8rem !important),
+					xxs: (font-size: 0.8rem !important),
+				));
 
-				@include respond-to-h(xs) {
-					font-size: 0.8rem !important;
-				}
-				@include respond-to-h(xxs) {
-					font-size: 0.8rem !important;
-				}
-
-				@include respond-to-v(s) {
-					font-size: 0.9rem !important;
-				}	
-				@include respond-to-v(sm) {
-					font-size: 0.9rem !important;
-				}	
-				@include respond-to-v(xs) {
-					font-size: 0.8rem !important;
-				}	
+				@include vb((
+					s: (font-size: 0.9rem !important),
+					sm: (font-size: 0.9rem !important),
+					xs: (font-size: 0.8rem !important),
+				));
 			}
 
 
@@ -516,46 +279,30 @@
 				color: var(--ChText);
 				text-decoration: underline;
 
-				p{
-					font-size: 1.3rem;
-					font-weight: 300;
-					font-family: "Sansation-light";
-					color: var(--ChText);
+					p{
+						font-size: 1.3rem;
+						font-weight: 300;
+						font-family: "Sansation-light";
+						color: var(--ChText);
 
-					@include respond-to-h(lg){
-						font-size: 1.2rem !important;
-					}
-					@include respond-to-h(mdt){
-						font-size: 1.3rem !important;
-					}
-					@include respond-to-h(md){
-						font-size: 1.2rem !important;
-					}
-					@include respond-to-h(sm){
-						font-size: 1.2rem !important;
-					}
-					@include respond-to-h(xs){
-						font-size: 1.1rem !important;
-					}
-					@include respond-to-h(xxs){
-						font-size: 1rem !important;
-					}
+						@include hb((
+							lg: (font-size: 1.2rem !important),
+							mdt: (font-size: 1.3rem !important),
+							md: (font-size: 1.2rem !important),
+							sm: (font-size: 1.2rem !important),
+							xs: (font-size: 1.1rem !important),
+							xxs: (font-size: 1rem !important),
+						));
 
-					@include respond-to-v(md){
-						font-size: 1.2rem !important;
-					}
-					@include respond-to-v(s){
-						font-size: 1.1rem !important;
-					}
-					@include respond-to-v(sm){
-						font-size: 1.1rem !important;
-					}
-					@include respond-to-v(xs){
-						font-size: 1rem !important;
+						@include vb((
+							md: (font-size: 1.2rem !important),
+							s: (font-size: 1.1rem !important),
+							sm: (font-size: 1.1rem !important),
+							xs: (font-size: 1rem !important),
+						));
 					}
 				}
 			}
-		}
 
 		@media (min-width: 550px) {
 			// small:flex-row
@@ -564,32 +311,18 @@
 		}
 
 		// --- Horizontal (landscape) responsiveness ---
-		@include respond-to-h(huge) {
-			padding: 4rem 3dvw;
-			gap: 2.5rem;
-		}
-
-		@include respond-to-h(xl) {
-			padding: 3.5rem 3dvw;
-		}
-
-		@include respond-to-h(sm) {
-			padding: 3rem 2.5dvw;
-		}
-
-		@include respond-to-h(xxs) {
-			flex-direction: column;
-			gap: 1.5rem;
-			padding: 2rem 4dvw;
-			border-radius: 0 0 20px 20px;
-		}
+		@include hb((
+			huge: (padding: 4rem 3dvw, gap: 2.5rem),
+			xl: (padding: 3.5rem 3dvw),
+			sm: (padding: 3rem 2.5dvw),
+			xxs: (flex-direction: column, gap: 1.5rem, padding: 2rem 4dvw, border-radius: 0 0 20px 20px),
+		));
 
 		// --- Vertical (portrait) responsiveness ---
-		@include respond-to-v(lg) {
-			padding: 3.5rem 3dvw;
-		}
+		@include vb((
+			lg: (padding: 3.5rem 3dvw),
+		));
 		
 
 	}
 }
-

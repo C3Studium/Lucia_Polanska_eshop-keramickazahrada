@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 // Styles for Verify Email page (nested SCSS)
 
@@ -56,43 +56,18 @@
 		z-index: 2;
 		background-color: var(--WhiteBg);
 
-		@include respond-to-h(sm){
-			width: 50%;
-			height: 70%;
-		}
+		@include hb((
+			sm: (width: 50%, height: 70%),
+			xs: (width: 50%, height: 80%, margin-top: 10dvh),
+			xxs: (width: 50%, height: 80%, margin-top: 10dvh),
+		));
 
-		@include respond-to-h(xs){
-			width: 50%;
-			height: 80%;
-			margin-top: 10dvh;
-		}
-		@include respond-to-h(xxs){
-			width: 50%;
-			height: 80%;
-			margin-top: 10dvh;
-		}
-
-		@include respond-to-v(md){
-			width: 70%;
-			height: 50%;
-			margin-top: 10dvh;
-		}
-
-		@include respond-to-v(s){
-			width: 90%;
-			height: 60%;
-			margin-top: 10dvh;
-		}
-		@include respond-to-v(sm){
-			width: 90%;
-			height: 60%;
-			margin-top: 10dvh;
-		}
-		@include respond-to-v(xs){
-			width: 90%;
-			height: 60%;
-			margin-top: 10dvh;
-		}
+		@include vb((
+			md: (width: 70%, height: 50%, margin-top: 10dvh),
+			s: (width: 90%, height: 60%, margin-top: 10dvh),
+			sm: (width: 90%, height: 60%, margin-top: 10dvh),
+			xs: (width: 90%, height: 60%, margin-top: 10dvh),
+		));
 
 		.title {
 			font-family: "Sansation-Regular";
@@ -101,35 +76,19 @@
 			font-weight: 400; // font-bold
 			margin: 0;
 
-			@include respond-to-h(lg){
-				font-size: 1.8rem;
-			}
+			@include hb((
+				lg: (font-size: 1.8rem),
+				md: (font-size: 1.8rem),
+				sm: (font-size: 1.8rem),
+				xs: (font-size: 1.8rem),
+				xxs: (font-size: 1.8rem),
+			));
 
-			@include respond-to-h(md){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(sm){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(xs){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(xxs){
-				font-size: 1.8rem;
-			}
-
-			@include respond-to-v(s){
-				font-size: 1.6rem;
-				text-align: center;
-			}
-			@include respond-to-v(sm){
-				font-size: 1.6rem;
-				text-align: center;
-			}
-			@include respond-to-v(xs){
-				font-size: 1.6rem;
-				text-align: center;
-			}
+			@include vb((
+				s: (font-size: 1.6rem, text-align: center),
+				sm: (font-size: 1.6rem, text-align: center),
+				xs: (font-size: 1.6rem, text-align: center),
+			));
 		}
 
 		.desc {
@@ -180,10 +139,9 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 90px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 90px, height: 35px),
+        ));
 
         .slider{
             position: relative;
@@ -241,18 +199,11 @@
 		box-shadow: none;
 		background-color: transparent;
 
-		@include respond-to-v(s){
-			width: 150px;
-			height: 35px;
-		}
-		@include respond-to-v(sm){
-			width: 150px;
-			height: 35px;
-		}
-		@include respond-to-v(xs){
-			width: 150px;
-			height: 35px;
-		}
+		@include vb((
+			s: (width: 150px, height: 35px),
+			sm: (width: 150px, height: 35px),
+			xs: (width: 150px, height: 35px),
+		));
 
 		.slider{
 			position: relative;

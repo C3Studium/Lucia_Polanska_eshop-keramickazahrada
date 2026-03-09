@@ -1,29 +1,19 @@
-@use "../../../styles/mixins.scss" as *;
+@use "../../../styles/system/_shortcuts.scss" as *;
 
 /* Preview items scroll container */
 .root {
   padding-left: 1px;
-  @include respond-to-h(sm){
-    width: 100%;
-  }
-  @include respond-to-h(xs){
-    width: 100%;
-  }
-  @include respond-to-h(xxs){
-    width: 100%;
-  }
-  @include respond-to-v(md){
-    width: 100%;
-  }
-  @include respond-to-v(s){
-    width: 100%;
-  }
-  @include respond-to-v(sm){
-    width: 100%;
-  }
-  @include respond-to-v(xs){
-    width: 100%;
-  }
+  @include hb((
+    sm: (width: 100%),
+    xs: (width: 100%),
+    xxs: (width: 100%),
+  ));
+  @include vb((
+    md: (width: 100%),
+    s: (width: 100%),
+    sm: (width: 100%),
+    xs: (width: 100%),
+  ));
 
   &.scroll {
     padding-left: 1px; /* pl-[1px] */

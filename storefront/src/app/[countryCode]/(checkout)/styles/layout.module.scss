@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Checkout Layout styles - SASS nesting */
 .root {
@@ -71,12 +71,10 @@
 					height: auto;
 					transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
 
-					@include respond-to-v(sm){
-						max-width: 100px;
-					}
-					@include respond-to-v(xs){
-						max-width: 100px;
-					}
+					@include vb((
+						sm: (max-width: 100px),
+						xs: (max-width: 100px),
+					));
 				}
 				&:hover{
 					img{
@@ -96,15 +94,11 @@
 		width: 100%;
 		padding: 0 5vw;
 
-		@include respond-to-v(s){
-			padding: 0 3.5vw 0 2.5vw;
-		}
-		@include respond-to-v(sm){
-			padding: 0 3.5vw 0 2.5vw;
-		}
-		@include respond-to-v(xs){
-			padding: 0 3.5vw 0 2.5vw;
-		}
+		@include vb((
+			s: (padding: 0 3.5vw 0 2.5vw),
+			sm: (padding: 0 3.5vw 0 2.5vw),
+			xs: (padding: 0 3.5vw 0 2.5vw),
+		));
 	}
 
 	.footer {

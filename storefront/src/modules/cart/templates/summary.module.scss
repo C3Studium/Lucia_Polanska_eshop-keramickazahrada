@@ -1,4 +1,4 @@
-@use '../../../styles/mixins.scss' as *;
+@use "../../../styles/system/_shortcuts.scss" as *;
 /* Summary panel styles */
 .root {
   display: flex;
@@ -10,28 +10,16 @@
     line-height: 2.75rem;
     font-weight: 400;
     font-family: "Sansation-Light";
-    @include respond-to-h(lg){
-      font-size: 1.8rem;
-      line-height: 2rem;
-    }
+    @include hb((
+      lg: (font-size: 1.8rem, line-height: 2rem),
+      md: (font-size: 1.8rem, line-height: 2rem),
+      mdt: (font-size: 1.8rem, line-height: 2rem),
+    ));
 
-    @include respond-to-h(md){
-      font-size: 1.8rem;
-      line-height: 2rem;
-    }
-    @include respond-to-h(mdt){
-      font-size: 1.8rem;
-      line-height: 2rem;
-    }
-
-    @include respond-to-v(md){
-      font-size: 1.8rem;
-      line-height: 2rem;
-    }
-    @include respond-to-v(s){
-      font-size: 1.8rem;
-      line-height: 2rem;
-    }
+    @include vb((
+      md: (font-size: 1.8rem, line-height: 2rem),
+      s: (font-size: 1.8rem, line-height: 2rem),
+    ));
   }
 
   .link {
@@ -55,26 +43,13 @@
     box-shadow: 0 2px 8px var(--ButtonBorder); // subtle shadow here
     border-radius: 25px;
 
-    @include respond-to-v(lg){
-      width: fit-content;
-      height: fit-content;
-    }
-    @include respond-to-v(md){
-      width: fit-content;
-      height: fit-content;
-    }
-    @include respond-to-v(s){
-      width: fit-content;
-      height: fit-content;
-    }
-    @include respond-to-v(sm){
-      width: fit-content;
-      height: fit-content;
-    }
-    @include respond-to-v(xs){
-      width: fit-content;
-      height: fit-content;
-    }
+    @include vb((
+      lg: (width: fit-content, height: fit-content),
+      md: (width: fit-content, height: fit-content),
+      s: (width: fit-content, height: fit-content),
+      sm: (width: fit-content, height: fit-content),
+      xs: (width: fit-content, height: fit-content),
+    ));
     .button{
         position: relative;
         width: 100%;
@@ -86,26 +61,13 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(lg){
-          width: 250px;
-          height: 40px;
-        }
-         @include respond-to-v(md){
-          width: 250px;
-          height: 40px;
-        }
-        @include respond-to-v(s){
-          width: 200px;
-          height: 40px;
-        }
-        @include respond-to-v(sm){
-          width: 200px;
-          height: 40px;
-        }
-        @include respond-to-v(xs){
-          width: 200px;
-          height: 40px;
-        }
+        @include vb((
+          lg: (width: 250px, height: 40px),
+          md: (width: 250px, height: 40px),
+          s: (width: 200px, height: 40px),
+          sm: (width: 200px, height: 40px),
+          xs: (width: 200px, height: 40px),
+        ));
 
         .slider{
             position: relative;

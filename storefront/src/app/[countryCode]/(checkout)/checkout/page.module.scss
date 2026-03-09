@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Checkout page styles - SASS nesting */
 .root {
@@ -9,88 +9,76 @@
   width: 100%;
   box-sizing: border-box;
 
-  @include respond-to-v(lg){
-    padding: 10dvh 0;
-  }
-  @include respond-to-v(md){
-    padding: 10dvh 10vw;
-  }
-  @include respond-to-v(s){
-    padding: 5dvh 0;
-  }
-  @include respond-to-v(sm){
-    padding: 5dvh 0;
-  }
-  @include respond-to-v(xs){
-    padding: 5dvh 0;
-  }
+  @include vb((
+    lg: (padding: 10dvh 0),
+    md: (padding: 10dvh 10vw),
+    s: (padding: 5dvh 0),
+    sm: (padding: 5dvh 0),
+    xs: (padding: 5dvh 0),
+  ));
 
-  @include respond-to-h(sm){
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column-reverse;
-    height: auto;
-    gap: 2.5dvw;
-    div{
-      width: 100%;
-    };
-  }
-  @include respond-to-v(md){
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column-reverse;
-    div{
-      width: 100%;
-    };
-  }
-  @include respond-to-v(s){
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column-reverse;
-    div{
-      width: 100%;
-    };
-  }
-  @include respond-to-v(sm){
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column-reverse;
-    div{
-      width: 100%;
-    };
-  }
-  @include respond-to-v(xs){
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column-reverse;
-    div{
-      width: 100%;
-    };
-  }
+  @include hb((
+    sm: (
+      display: flex,
+      align-items: flex-start,
+      justify-content: center,
+      flex-direction: column-reverse,
+      height: auto,
+      gap: 2.5dvw,
+    ),
+    xs: (
+      flex-direction: column-reverse,
+      display: flex,
+      justify-content: center,
+      align-items: center,
+    ),
+    xxs: (
+      flex-direction: column-reverse,
+      display: flex,
+      justify-content: center,
+      align-items: center,
+    ),
+  ));
 
-  @include respond-to-h(xs){
-    flex-direction: column-reverse;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    div{
-      width: 100%;
-    }
-  }
-  @include respond-to-h(xxs){
-    flex-direction: column-reverse;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  @include vb((
+    md: (
+      display: flex,
+      align-items: flex-start,
+      justify-content: center,
+      flex-direction: column-reverse,
+    ),
+    s: (
+      display: flex,
+      align-items: flex-start,
+      justify-content: center,
+      flex-direction: column-reverse,
+    ),
+    sm: (
+      display: flex,
+      align-items: flex-start,
+      justify-content: center,
+      flex-direction: column-reverse,
+    ),
+    xs: (
+      display: flex,
+      align-items: flex-start,
+      justify-content: center,
+      flex-direction: column-reverse,
+    ),
+  ));
 
-    div{
-      width: 100%;
-    }
+  div {
+    @include hb((
+      sm: (width: 100%),
+      xs: (width: 100%),
+      xxs: (width: 100%),
+    ));
+    @include vb((
+      md: (width: 100%),
+      s: (width: 100%),
+      sm: (width: 100%),
+      xs: (width: 100%),
+    ));
   }
 
   @media (min-width: 640px) {

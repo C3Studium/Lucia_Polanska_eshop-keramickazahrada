@@ -1,0 +1,13 @@
+/* For word/char split animations */
+.charSplit {
+  white-space: normal;
+}
+
+.charSplit .word,
+.charSplit .char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Optional: keep spacing stable in word splits */
+.charSplit .word { white-space: pre; }

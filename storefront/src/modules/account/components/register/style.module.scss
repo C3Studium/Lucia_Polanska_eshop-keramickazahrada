@@ -1,4 +1,4 @@
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Register styles converted from Tailwind to Sass module (exact mapping) */
 
@@ -18,15 +18,11 @@
         font-family: "Sansation-Regular";
         margin-bottom: 1.5rem; /* mb-6 */
 
-        @include respond-to-h(sm) {
-            font-size: 1.8rem;
-        }
-        @include respond-to-h(xs) {
-            font-size: 1.8rem;
-        }
-        @include respond-to-h(xxs) {
-            font-size: 1.8rem;
-        }
+        @include hb((
+            sm: (font-size: 1.8rem),
+            xs: (font-size: 1.8rem),
+            xxs: (font-size: 1.8rem),
+        ));
         }
 
         .desc {
@@ -38,15 +34,11 @@
         color: var(--ChText);
         font-family: "Sansation-Light";
         margin-bottom: 2rem; /* mb-8 */
-        @include respond-to-h(sm) {
-            font-size: 1rem;
-        }  
-        @include respond-to-h(xs) {
-            font-size: 1rem;
-        }      
-        @include respond-to-h(xxs) {
-            font-size: 1rem;
-        }   
+        @include hb((
+            sm: (font-size: 1rem),
+            xs: (font-size: 1rem),
+            xxs: (font-size: 1rem),
+        ));
     }
 
     .form {
@@ -146,15 +138,11 @@
           font-size: 1.2rem;
           font-weight: 300;
 
-          @include respond-to-h(sm) {
-            font-size: 1.1rem;
-          }
-          @include respond-to-h(xs) {
-            font-size: 1.1rem;
-          }
-          @include respond-to-h(xxs) {
-            font-size: 1.1rem;
-          }
+          @include hb((
+            sm: (font-size: 1.1rem),
+            xs: (font-size: 1.1rem),
+            xxs: (font-size: 1.1rem),
+          ));
         }
 
         &:nth-of-type(2) {

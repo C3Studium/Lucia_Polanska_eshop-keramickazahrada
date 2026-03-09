@@ -1,4 +1,4 @@
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .ClickButton{
     width: auto;
@@ -20,47 +20,21 @@
         background-color: transparent;
 
 
-        @include respond-to-h(md){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-h(mdt){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-h(sm){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-h(xs){
-             min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-h(xxs){
-             min-width: 60px;
-            height: 35px;
-        }
+        @include hb((
+            md: (min-width: 60px, height: 35px),
+            mdt: (min-width: 60px, height: 35px),
+            sm: (min-width: 60px, height: 35px),
+            xs: (min-width: 60px, height: 35px),
+            xxs: (min-width: 60px, height: 35px),
+        ));
 
-        @include respond-to-v(lg){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-v(md){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-v(s){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-v(sm){
-            min-width: 60px;
-            height: 35px;
-        }
-        @include respond-to-v(xs){
-            min-width: 60px;
-            height: 35px;
-        }
+        @include vb((
+            lg: (min-width: 60px, height: 35px),
+            md: (min-width: 60px, height: 35px),
+            s: (min-width: 60px, height: 35px),
+            sm: (min-width: 60px, height: 35px),
+            xs: (min-width: 60px, height: 35px),
+        ));
 
         .slider{
             position: relative;
@@ -77,40 +51,22 @@
 
                     font-size: 1rem;
 
-                    @include respond-to-h(lg){
-                        font-size: 0.95rem;
-                    }
-                    @include respond-to-h(md){
-                        font-size: 0.95rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 0.95rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 0.95rem;
-                    }
-                    @include respond-to-h(xs){
-                    font-size: 0.9rem;
-                    }
-                    @include respond-to-h(xxs){
-                    font-size: 0.9rem;
-                    }
+                    @include hb((
+                        lg: (font-size: 0.95rem),
+                        md: (font-size: 0.95rem),
+                        mdt: (font-size: 0.95rem),
+                        sm: (font-size: 0.95rem),
+                        xs: (font-size: 0.9rem),
+                        xxs: (font-size: 0.9rem),
+                    ));
 
-                    @include respond-to-v(lg){
-                    font-size: 0.95rem;
-                    }
-                    @include respond-to-v(md){
-                    font-size: 0.95rem;
-                    }
-                    @include respond-to-v(s){
-                    font-size: 0.9rem;
-                    }
-                    @include respond-to-v(sm){
-                    font-size: 0.9rem;
-                    }
-                    @include respond-to-v(xs){
-                    font-size: 0.9rem;
-                    }
+                    @include vb((
+                        lg: (font-size: 0.95rem),
+                        md: (font-size: 0.95rem),
+                        s: (font-size: 0.9rem),
+                        sm: (font-size: 0.9rem),
+                        xs: (font-size: 0.9rem),
+                    ));
                 }
                 &:nth-of-type(2){
                     p{

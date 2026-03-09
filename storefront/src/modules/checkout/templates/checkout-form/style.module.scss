@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* CheckoutForm component styles - SASS nesting */
 .root {
@@ -8,27 +8,14 @@
   gap: 2rem;
   padding: 1rem 2.5vw 1rem 0;
 
-  @include respond-to-h(sm){
-    margin-top: 10dvh;
-  }
-  @include respond-to-v(lg){
-    margin-top: 10dvh;
-    padding: 0;
-  }
-  @include respond-to-v(md){
-    margin-top: 10dvh;
-    padding: 0;
-  }
-  @include respond-to-v(s){
-    margin-top: 5dvh;
-    padding: 1rem;
-  }
-  @include respond-to-v(sm){
-    margin-top: 5dvh;
-    padding: 1rem;
-  }
-  @include respond-to-v(xs){
-    margin-top: 5dvh;
-    padding: 0.5rem;
-  }
+  @include hb((
+    sm: (margin-top: 10dvh),
+  ));
+  @include vb((
+    lg: (margin-top: 10dvh, padding: 0),
+    md: (margin-top: 10dvh, padding: 0),
+    s: (margin-top: 5dvh, padding: 1rem),
+    sm: (margin-top: 5dvh, padding: 1rem),
+    xs: (margin-top: 5dvh, padding: 0.5rem),
+  ));
 }

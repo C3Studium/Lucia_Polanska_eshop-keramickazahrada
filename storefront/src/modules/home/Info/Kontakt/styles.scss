@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .kontakt{
     width: 100dvw;
@@ -8,27 +8,18 @@
     align-items: flex-start;
     justify-content: center;
 
-    @include respond-to-h(xs){
-        height: 300dvh; 
-    }
-    @include respond-to-h(xxs){
-        height: 300dvh; 
-    }
-    @include respond-to-v(lg){
-        height: 200dvh;
-    }
-    @include respond-to-v(md){
-        height: 200dvh;
-    }
-    @include respond-to-v(s){
-        height: 220dvh;
-    }
-    @include respond-to-v(sm){
-        height: 220dvh;
-    }
-    @include respond-to-v(xs){
-        height: 220dvh;
-    }
+    @include hb((
+        xs: (height: 300dvh),
+        xxs: (height: 300dvh),
+    ));
+
+    @include vb((
+        lg: (height: 200dvh),
+        md: (height: 200dvh),
+        s: (height: 220dvh),
+        sm: (height: 220dvh),
+        xs: (height: 220dvh),
+    ));
 
     .kontakt__wraper{
         width: 100dvw;
@@ -44,21 +35,13 @@
         gap: 5dvw;
         padding: 10dvh 5dvw;
 
-        @include respond-to-v(lg){
-            flex-direction: column-reverse;
-        }
-        @include respond-to-v(md){
-            flex-direction: column-reverse;
-        }
-        @include respond-to-v(s){
-            flex-direction: column-reverse;
-        }
-        @include respond-to-v(sm){
-            flex-direction: column-reverse;
-        }
-        @include respond-to-v(xs){
-            flex-direction: column-reverse;
-        }
+        @include vb((
+            lg: (flex-direction: column-reverse),
+            md: (flex-direction: column-reverse),
+            s: (flex-direction: column-reverse),
+            sm: (flex-direction: column-reverse),
+            xs: (flex-direction: column-reverse),
+        ));
         .kontakt__Newsletter{
             width: 50%;
             height: 100%;
@@ -69,45 +52,20 @@
             flex-direction: column;
             gap: 5dvh;
             z-index: 2;
-            @include respond-to-h(md){
-                width: 45%;
-            }
-            @include respond-to-h(sm){
-                width: 45%;
-            }
-            @include respond-to-h(xs){
-                width: 45%;
-                margin-top: 25dvh;
-            }
-            @include respond-to-h(xxs){
-                width: 45%;
-                margin-top: 25dvh;
-            }
-            @include respond-to-v(lg){
-                width: 80%;
-                align-items: flex-start;
-                justify-content: flex-end;
-                height: 30%;
-            }
-            @include respond-to-v(md){
-                width: 80%;
-                align-items: flex-start;
-                justify-content: space-evenly;
-                height: 30%;
+            @include hb((
+                md: (width: 45%),
+                sm: (width: 45%),
+                xs: (width: 45%, margin-top: 25dvh),
+                xxs: (width: 45%, margin-top: 25dvh),
+            ));
 
-            }
-            @include respond-to-v(s){
-                width: 100%;
-                height: 40%;
-            }
-            @include respond-to-v(sm){
-                width: 100%;
-                height: 30%;
-            }
-            @include respond-to-v(xs){
-                width: 100%;
-                height: 30%;
-            }
+            @include vb((
+                lg: (width: 80%, align-items: flex-start, justify-content: flex-end, height: 30%),
+                md: (width: 80%, align-items: flex-start, justify-content: space-evenly, height: 30%),
+                s: (width: 100%, height: 40%),
+                sm: (width: 100%, height: 30%),
+                xs: (width: 100%, height: 30%),
+            ));
 
 
             h3{
@@ -118,41 +76,22 @@
                 text-align: left;
                 margin: 0;
 
-                @include respond-to-h(lg){
-                    font-size: 2rem;
-                }
-                @include respond-to-h(mdt){
-                    font-size: 2rem;
-                }
-                @include respond-to-h(md){
-                    font-size: 1.8rem;
-                } 
-                @include respond-to-h(sm){
-                    font-size: 1.6rem;
-                }
-                @include respond-to-h(xs){
-                    font-size: 1.25rem;
-                }
-                @include respond-to-h(xxs){
-                    font-size: 1.25rem;
-                }
-                @include respond-to-v(lg){
-                    font-size: 1.8rem;
-                    width: 80%;
-                }
-                @include respond-to-v(md){
-                    font-size: 1.5rem;
-                    width: 80%;
-                }
-                @include respond-to-v(s){
-                    font-size: 1.5rem;
-                }
-                @include respond-to-v(sm){
-                    font-size: 1.3rem;
-                }
-                @include respond-to-v(xs){
-                    font-size: 1.3rem;
-                }
+                @include hb((
+                    lg: (font-size: 2rem),
+                    mdt: (font-size: 2rem),
+                    md: (font-size: 1.8rem),
+                    sm: (font-size: 1.6rem),
+                    xs: (font-size: 1.25rem),
+                    xxs: (font-size: 1.25rem),
+                ));
+
+                @include vb((
+                    lg: (font-size: 1.8rem, width: 80%),
+                    md: (font-size: 1.5rem, width: 80%),
+                    s: (font-size: 1.5rem),
+                    sm: (font-size: 1.3rem),
+                    xs: (font-size: 1.3rem),
+                ));
 
             }
 
@@ -167,37 +106,19 @@
                 border: 0.5px solid var(--ButtonBorder);
                 border-radius: 50px;
                 padding: 1dvh 1dvh;
-                @include respond-to-h(mdt){
-                    height: 5dvh;
-                }
-                @include respond-to-h(xs){
-                    height: 10dvh;
-                    padding: 1dvh 1dvh;
-                }
-                @include respond-to-h(xxs){
-                    height: 10dvh;
-                    padding: 1dvh 1dvh;
-                }
-                @include respond-to-v(lg){
-                    height: 4dvh;
-                    padding: 0.5dvh 0.5dvw;
-                }
-                @include respond-to-v(md){
-                    height: 5dvh;
-                    padding: 0.5dvh 0.5dvw;
-                }
-                @include respond-to-v(s){
-                    height: 5dvh;
-                    padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw;
-                }
-                @include respond-to-v(sm){
-                    height: 5dvh;
-                    padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw;
-                }
-                @include respond-to-v(xs){
-                    height: 5dvh;
-                    padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw;;
-                }
+                @include hb((
+                    mdt: (height: 5dvh),
+                    xs: (height: 10dvh, padding: 1dvh 1dvh),
+                    xxs: (height: 10dvh, padding: 1dvh 1dvh),
+                ));
+
+                @include vb((
+                    lg: (height: 4dvh, padding: 0.5dvh 0.5dvw),
+                    md: (height: 5dvh, padding: 0.5dvh 0.5dvw),
+                    s: (height: 5dvh, padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw),
+                    sm: (height: 5dvh, padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw),
+                    xs: (height: 5dvh, padding: 0.5dvh 0.5dvw 0.5dvh 2.5dvw),
+                ));
 
                 input{
                     width: 100%;
@@ -213,89 +134,44 @@
                         opacity: 0.8;
                     }
 
-                    @include respond-to-h(lg){
-                        font-size: 1.2rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 1.2rem;
-                    }
-                    @include respond-to-h(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(xs){
-                        font-size: 1rem;
-                    }
-                    @include respond-to-h(xxs){
-                        font-size: 0.9rem;
-                    }
-                    @include respond-to-v(lg){
-                        font-size: 1.2rem;
-                    }
-                    @include respond-to-v(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(s){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(sm){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(xs){
-                        font-size: 1rem;
-                    }
+                    @include hb((
+                        lg: (font-size: 1.2rem),
+                        mdt: (font-size: 1.2rem),
+                        md: (font-size: 1.1rem),
+                        sm: (font-size: 1.1rem),
+                        xs: (font-size: 1rem),
+                        xxs: (font-size: 0.9rem),
+                    ));
+
+                    @include vb((
+                        lg: (font-size: 1.2rem),
+                        md: (font-size: 1.1rem),
+                        s: (font-size: 1.1rem),
+                        sm: (font-size: 1.1rem),
+                        xs: (font-size: 1rem),
+                    ));
                 }
 
                 .ClickButton{
                     .button{
                         width: 160px;
                         height: 45px;
-                        @include respond-to-h(lg){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-h(mdt){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-h(md){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-h(sm){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-h(xs){
-                            width: 120px !important;
-                            height: 35px !important;
-                        }
-                        @include respond-to-h(xxs){
-                            width: 120px !important;
-                            height: 35px !important;
-                        }
-                        @include respond-to-v(lg){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-v(md){
-                            width: 150px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-v(s){
-                            width: 120px !important;
-                            height: 40px !important;
-                        }
-                        @include respond-to-v(sm){
-                            width: 120px !important;
-                            height: 35px !important;
-                        }
-                        @include respond-to-v(xs){
-                            width: 120px !important;
-                            height: 35px !important;
-                        }
+                        @include hb((
+                            lg: (width: 150px !important, height: 40px !important),
+                            mdt: (width: 150px !important, height: 40px !important),
+                            md: (width: 150px !important, height: 40px !important),
+                            sm: (width: 150px !important, height: 40px !important),
+                            xs: (width: 120px !important, height: 35px !important),
+                            xxs: (width: 120px !important, height: 35px !important),
+                        ));
+
+                        @include vb((
+                            lg: (width: 150px !important, height: 40px !important),
+                            md: (width: 150px !important, height: 40px !important),
+                            s: (width: 120px !important, height: 40px !important),
+                            sm: (width: 120px !important, height: 35px !important),
+                            xs: (width: 120px !important, height: 35px !important),
+                        ));
                         .slider{
                             .el{
                                 
@@ -307,39 +183,22 @@
                                     font-weight: 300;
                                     margin: 0;
 
-                                    @include respond-to-h(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 1rem;
-                                    }
+                                    @include hb((
+                                        lg: (font-size: 1.2rem),
+                                        mdt: (font-size: 1.2rem),
+                                        md: (font-size: 1.1rem),
+                                        sm: (font-size: 1.1rem),
+                                        xs: (font-size: 1rem),
+                                        xxs: (font-size: 1rem),
+                                    ));
+
+                                    @include vb((
+                                        lg: (font-size: 1.2rem),
+                                        md: (font-size: 1.1rem),
+                                        s: (font-size: 1.1rem),
+                                        sm: (font-size: 1.1rem),
+                                        xs: (font-size: 1rem),
+                                    ));
                                 }
                             }
                         }
@@ -361,43 +220,20 @@
             gap: 1dvh;
             z-index: 1;
             margin-bottom: 10dvh;
-            @include respond-to-h(md){
-                width: 55%;
-            }
-            @include respond-to-h(sm){
-                width: 55%;
-            }
-            @include respond-to-h(xs){
-                width: 55%;
-            }
-            @include respond-to-h(xxs){
-                width: 55%;
-            }
-            @include respond-to-v(lg){
-                width: 80%;
-                align-items: flex-start;
-                margin-bottom: 2.5dvh;
-            }
-            @include respond-to-v(md){
-                width: 80%;
-                align-items: flex-start;
-                margin-bottom: 2.5dvh;
-            }
-            @include respond-to-v(s){
-                width: 100%;
-                height: 60%;
-                margin-bottom: 5dvh;
-            }
-            @include respond-to-v(sm){
-                width: 100%;
-                height: 70%;
-                margin-bottom: 5dvh;
-            }
-            @include respond-to-v(xs){
-                width: 100%;
-                height: 70%;
-                margin-bottom: 5dvh;
-            }
+            @include hb((
+                md: (width: 55%),
+                sm: (width: 55%),
+                xs: (width: 55%),
+                xxs: (width: 55%),
+            ));
+
+            @include vb((
+                lg: (width: 80%, align-items: flex-start, margin-bottom: 2.5dvh),
+                md: (width: 80%, align-items: flex-start, margin-bottom: 2.5dvh),
+                s: (width: 100%, height: 60%, margin-bottom: 5dvh),
+                sm: (width: 100%, height: 70%, margin-bottom: 5dvh),
+                xs: (width: 100%, height: 70%, margin-bottom: 5dvh),
+            ));
 
 
             .kontakt__Contact__Title{
@@ -409,21 +245,16 @@
                 height: 7.5dvh;
                 gap: 0.5dvh;
 
-                @include respond-to-h(xs){
-                    height: 10dvh;
-                }
-                @include respond-to-h(xxs){
-                    height: 10dvh;
-                }
-                @include respond-to-v(lg){
-                    height: 5dvh;
-                }
-                @include respond-to-v(md){
-                    height: 5dvh;
-                }
-                @include respond-to-v(s){
-                    height: 5dvh;
-                }
+                @include hb((
+                    xs: (height: 10dvh),
+                    xxs: (height: 10dvh),
+                ));
+
+                @include vb((
+                    lg: (height: 5dvh),
+                    md: (height: 5dvh),
+                    s: (height: 5dvh),
+                ));
 
                 .divider{
                     width: 100%;
@@ -441,39 +272,22 @@
                     text-align: left;
                     margin: 0;
 
-                    @include respond-to-h(lg){
-                        font-size: 2rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 2rem;
-                    }
-                    @include respond-to-h(md){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(xs){
-                        font-size: 1.5rem;
-                    }
-                    @include respond-to-h(xxs){
-                        font-size: 1.3rem;
-                    }
-                    @include respond-to-v(lg){
-                        font-size: 2rem;
-                    }
-                    @include respond-to-v(md){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-v(s){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-v(sm){
-                        font-size: 1.5rem;
-                    }
-                    @include respond-to-v(xs){
-                        font-size: 1.3rem;
-                    }
+                    @include hb((
+                        lg: (font-size: 2rem),
+                        mdt: (font-size: 2rem),
+                        md: (font-size: 1.8rem),
+                        sm: (font-size: 1.8rem),
+                        xs: (font-size: 1.5rem),
+                        xxs: (font-size: 1.3rem),
+                    ));
+
+                    @include vb((
+                        lg: (font-size: 2rem),
+                        md: (font-size: 1.8rem),
+                        s: (font-size: 1.8rem),
+                        sm: (font-size: 1.5rem),
+                        xs: (font-size: 1.3rem),
+                    ));
                 }
 
             }
@@ -488,30 +302,19 @@
                 gap: 2dvh;
                 border-bottom: 1px solid var(--ButtonBorder);
 
-                @include respond-to-h(md){
-                    height: 55%;
-                }
-                @include respond-to-h(xs){
-                    height: 80%;
-                }
-                @include respond-to-h(xxs){
-                    height: 80%;
-                }
-                @include respond-to-v(lg){
-                    height: 80%;
-                }
-                @include respond-to-v(md){
-                    height: 100%;
-                }
-                @include respond-to-v(s){
-                    height: 100%;
-                }
-                @include respond-to-v(sm){
-                    height: 100%;
-                }
-                @include respond-to-v(xs){
-                    height: 100%;
-                }
+                @include hb((
+                    md: (height: 55%),
+                    xs: (height: 80%),
+                    xxs: (height: 80%),
+                ));
+
+                @include vb((
+                    lg: (height: 80%),
+                    md: (height: 100%),
+                    s: (height: 100%),
+                    sm: (height: 100%),
+                    xs: (height: 100%),
+                ));
                     
 
                 .kontakt__Contact__Form__Pillar{
@@ -524,15 +327,11 @@
                     align-items: center;
                     justify-content: center;
                     z-index: 0;
-                    @include respond-to-v(s){
-                        display: none;
-                    }
-                    @include respond-to-v(sm){
-                        display: none;
-                    }
-                    @include respond-to-v(xs){
-                        display: none;
-                    }
+                    @include vb((
+                        s: (display: none),
+                        sm: (display: none),
+                        xs: (display: none),
+                    ));
                 }
 
                 form{
@@ -545,15 +344,11 @@
                     flex-direction: column;
                     gap: 1dvh;
                     z-index: 1;
-                    @include respond-to-v(s){
-                        width: 100%;
-                    }
-                    @include respond-to-v(sm){
-                        width: 100%;
-                    }
-                    @include respond-to-v(xs){
-                        width: 100%;
-                    }
+                    @include vb((
+                        s: (width: 100%),
+                        sm: (width: 100%),
+                        xs: (width: 100%),
+                    ));
                     .kontakt__Contact__Form__Inputs{
                         width: 100%;
                         height: 30%;
@@ -575,27 +370,18 @@
                             gap: 1dvw;
                             border-top: 0.5px solid var(--ButtonBorder);
                             padding: 0 1dvw;
-                            @include respond-to-h(xs){
-                                height: 8dvh;
-                            }
-                            @include respond-to-h(xxs){
-                                height: 7.5dvh;
-                            }
-                            @include respond-to-v(lg){
-                                height: 3dvh;
-                            }
-                            @include respond-to-v(md){
-                                height: 3.5dvh;
-                            }
-                            @include respond-to-v(s){
-                                height: 4.5dvh;
-                            }
-                            @include respond-to-v(sm){
-                                height: 4.5dvh;
-                            }
-                            @include respond-to-v(xs){
-                                height: 5dvh;
-                            }
+                            @include hb((
+                                xs: (height: 8dvh),
+                                xxs: (height: 7.5dvh),
+                            ));
+
+                            @include vb((
+                                lg: (height: 3dvh),
+                                md: (height: 3.5dvh),
+                                s: (height: 4.5dvh),
+                                sm: (height: 4.5dvh),
+                                xs: (height: 5dvh),
+                            ));
 
                             p{
                                 font-size: 1.3rem;
@@ -605,46 +391,22 @@
                                 white-space: nowrap;
                                 width: 11%;
 
-                                @include respond-to-h(lg){
-                                    font-size: 1.2rem;
-                                    width: 10%;
-                                }
-                                @include respond-to-h(mdt){
-                                    font-size: 1.2rem;
-                                    width: 10%;
-                                }
-                                @include respond-to-h(md){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-h(sm){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-h(xs){
-                                    font-size: 1rem;
-                                    width: 13%;
-                                }
-                                @include respond-to-h(xxs){
-                                    font-size: 0.9rem;
-                                    width: 13%;
-                                }
-                                @include respond-to-v(lg){
-                                    font-size: 1.2rem;
-                                }
-                                @include respond-to-v(md){
-                                    font-size: 1.2rem;
-                                    width: 12%;
-                                }
-                                @include respond-to-v(s){
-                                    font-size: 1.2rem;
-                                    width: 20%;
-                                }
-                                @include respond-to-v(sm){
-                                    font-size: 1.2rem;
-                                    width: 20%;
-                                }@include respond-to-v(xs){
-                                    font-size: 1.1rem;
-                                    width: 20%;
-                                }
+                                @include hb((
+                                    lg: (font-size: 1.2rem, width: 10%),
+                                    mdt: (font-size: 1.2rem, width: 10%),
+                                    md: (font-size: 1.1rem),
+                                    sm: (font-size: 1.1rem),
+                                    xs: (font-size: 1rem, width: 13%),
+                                    xxs: (font-size: 0.9rem, width: 13%),
+                                ));
+
+                                @include vb((
+                                    lg: (font-size: 1.2rem),
+                                    md: (font-size: 1.2rem, width: 12%),
+                                    s: (font-size: 1.2rem, width: 20%),
+                                    sm: (font-size: 1.2rem, width: 20%),
+                                    xs: (font-size: 1.1rem, width: 20%),
+                                ));
                             }
 
                             input{
@@ -658,75 +420,42 @@
                                 font-weight: 300;
                                 &::placeholder{
                                     opacity: 0.8;
-                                    @include respond-to-h(lg){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-v(lg){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 1rem;
-                                    }
+                                    @include hb((
+                                        lg: (font-size: 1.1rem),
+                                        md: (font-size: 1rem),
+                                        sm: (font-size: 1rem),
+                                        xs: (font-size: 0.8rem),
+                                    ));
+
+                                    @include vb((
+                                        lg: (font-size: 1.1rem),
+                                        md: (font-size: 1.1rem),
+                                        s: (font-size: 1.1rem),
+                                        sm: (font-size: 1.1rem),
+                                        xs: (font-size: 1rem),
+                                    ));
 
                                 }
                                 &:focus{
                                     outline: none;
                                 }
 
-                                @include respond-to-h(lg){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-h(mdt){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-h(md){
-                                    font-size: 1rem;
-                                }
-                                @include respond-to-h(sm){
-                                    font-size: 1rem;
-                                }
-                                @include respond-to-h(xs){
-                                    font-size: 0.9rem;
-                                }
-                                @include respond-to-h(xxs){
-                                    font-size: 0.8rem;
-                                }
-                                @include respond-to-v(lg){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-v(md){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-v(s){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-v(sm){
-                                    font-size: 1.1rem;
-                                }
-                                @include respond-to-v(xs){
-                                    font-size: 1rem;
-                                }
+                                @include hb((
+                                    lg: (font-size: 1.1rem),
+                                    mdt: (font-size: 1.1rem),
+                                    md: (font-size: 1rem),
+                                    sm: (font-size: 1rem),
+                                    xs: (font-size: 0.9rem),
+                                    xxs: (font-size: 0.8rem),
+                                ));
+
+                                @include vb((
+                                    lg: (font-size: 1.1rem),
+                                    md: (font-size: 1.1rem),
+                                    s: (font-size: 1.1rem),
+                                    sm: (font-size: 1.1rem),
+                                    xs: (font-size: 1rem),
+                                ));
                             }
                         }
                     }
@@ -773,51 +502,22 @@
                                     margin: 0;
                                     text-align: left;
 
-                                    @include respond-to-h(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-v(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 1.1rem;
-                                    }
+                                    @include hb((
+                                        lg: (font-size: 1.2rem),
+                                        mdt: (font-size: 1.2rem),
+                                        md: (font-size: 1.1rem),
+                                        sm: (font-size: 1.1rem),
+                                        xs: (font-size: 1rem),
+                                        xxs: (font-size: 0.9rem),
+                                    ));
+
+                                    @include vb((
+                                        lg: (font-size: 1.2rem),
+                                        md: (font-size: 1.2rem),
+                                        s: (font-size: 1.2rem),
+                                        sm: (font-size: 1.2rem),
+                                        xs: (font-size: 1.1rem),
+                                    ));
                                 }
 
                                 textarea{
@@ -834,77 +534,43 @@
                                     &::placeholder{
                                         opacity: 0.8;
 
-                                        @include respond-to-h(lg){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-h(mdt){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-h(md){
-                                            font-size: 1rem;
-                                        }
-                                        @include respond-to-h(sm){
-                                            font-size: 1rem;
-                                        }
-                                        @include respond-to-h(xs){
-                                            font-size: 0.9rem;
-                                        }
-                                        @include respond-to-h(xxs){
-                                            font-size: 0.8rem;
-                                        }
-                                        @include respond-to-v(lg){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-v(md){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-v(s){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-v(sm){
-                                            font-size: 1.1rem;
-                                        }
-                                        @include respond-to-v(xs){
-                                            font-size: 1rem;
-                                        }
+                                        @include hb((
+                                            lg: (font-size: 1.1rem),
+                                            mdt: (font-size: 1.1rem),
+                                            md: (font-size: 1rem),
+                                            sm: (font-size: 1rem),
+                                            xs: (font-size: 0.9rem),
+                                            xxs: (font-size: 0.8rem),
+                                        ));
+
+                                        @include vb((
+                                            lg: (font-size: 1.1rem),
+                                            md: (font-size: 1.1rem),
+                                            s: (font-size: 1.1rem),
+                                            sm: (font-size: 1.1rem),
+                                            xs: (font-size: 1rem),
+                                        ));
                                     }
                                     &:focus{
                                         outline: none;
                                     }
 
-                                    @include respond-to-h(lg){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-v(lg){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 1rem;
-                                    }
+                                    @include hb((
+                                        lg: (font-size: 1.1rem),
+                                        mdt: (font-size: 1.1rem),
+                                        md: (font-size: 1rem),
+                                        sm: (font-size: 1rem),
+                                        xs: (font-size: 0.9rem),
+                                        xxs: (font-size: 0.8rem),
+                                    ));
+
+                                    @include vb((
+                                        lg: (font-size: 1.1rem),
+                                        md: (font-size: 1.1rem),
+                                        s: (font-size: 1.1rem),
+                                        sm: (font-size: 1.1rem),
+                                        xs: (font-size: 1rem),
+                                    ));
                                 }
 
                             }
@@ -923,50 +589,22 @@
                                     .button{
                                         width: 120px;
                                         height: 40px;
-                                        @include respond-to-h(lg){
-                                            width: 110px !important;
-                                            height: 40px !important;
-                                        }
-                                        @include respond-to-h(mdt){
-                                            width: 110px !important;
-                                            height: 40px !important;
-                                        }
-                                        @include respond-to-h(md){
-                                            width: 100px !important;
-                                            height: 35px !important;
-                                        }
-                                        @include respond-to-h(sm){
-                                            width: 100px !important;
-                                            height: 35px !important;
-                                        }
-                                        @include respond-to-h(xs){
-                                            width: 100px !important;
-                                            height: 35px !important;
-                                        }
-                                        @include respond-to-h(xxs){
-                                            width: 80px !important;
-                                            height: 30px !important;
-                                        }
-                                        @include respond-to-v(lg){
-                                            width: 120px !important;
-                                            height: 40px !important;
-                                        }
-                                        @include respond-to-v(md){
-                                            width: 120px !important;
-                                            height: 40px !important;
-                                        }
-                                        @include respond-to-v(s){
-                                            width: 120px !important;
-                                            height: 40px !important;
-                                        }
-                                        @include respond-to-v(sm){
-                                            width: 110px !important;
-                                            height: 35px !important;
-                                        }
-                                        @include respond-to-v(xs){
-                                            width: 110px !important;
-                                            height: 35px !important;
-                                        }
+                                        @include hb((
+                                            lg: (width: 110px !important, height: 40px !important),
+                                            mdt: (width: 110px !important, height: 40px !important),
+                                            md: (width: 100px !important, height: 35px !important),
+                                            sm: (width: 100px !important, height: 35px !important),
+                                            xs: (width: 100px !important, height: 35px !important),
+                                            xxs: (width: 80px !important, height: 30px !important),
+                                        ));
+
+                                        @include vb((
+                                            lg: (width: 120px !important, height: 40px !important),
+                                            md: (width: 120px !important, height: 40px !important),
+                                            s: (width: 120px !important, height: 40px !important),
+                                            sm: (width: 110px !important, height: 35px !important),
+                                            xs: (width: 110px !important, height: 35px !important),
+                                        ));
                                         .slider{
                                             .el{
                                                 
@@ -979,39 +617,22 @@
                                                         font-weight: 300;
                                                         margin: 0;
 
-                                                        @include respond-to-h(lg){
-                                                            font-size: 1.3rem;
-                                                        }
-                                                        @include respond-to-h(mdt){
-                                                            font-size: 1.3rem;
-                                                        }
-                                                        @include respond-to-h(md){
-                                                            font-size: 1.1rem;
-                                                        }
-                                                        @include respond-to-h(sm){
-                                                            font-size: 1.1rem;
-                                                        }
-                                                        @include respond-to-h(xs){
-                                                            font-size: 1rem;
-                                                        }
-                                                        @include respond-to-h(xxs){
-                                                            font-size: 1rem;
-                                                        }
-                                                        @include respond-to-v(lg){
-                                                            font-size: 1.3rem;
-                                                        }
-                                                        @include respond-to-v(md){
-                                                            font-size: 1.1rem;
-                                                        }
-                                                        @include respond-to-v(s){
-                                                            font-size: 1.1rem;
-                                                        }
-                                                        @include respond-to-v(sm){
-                                                            font-size: 1.1rem;
-                                                        }
-                                                        @include respond-to-v(xs){
-                                                            font-size: 1rem;
-                                                        }
+                                                        @include hb((
+                                                            lg: (font-size: 1.3rem),
+                                                            mdt: (font-size: 1.3rem),
+                                                            md: (font-size: 1.1rem),
+                                                            sm: (font-size: 1.1rem),
+                                                            xs: (font-size: 1rem),
+                                                            xxs: (font-size: 1rem),
+                                                        ));
+
+                                                        @include vb((
+                                                            lg: (font-size: 1.3rem),
+                                                            md: (font-size: 1.1rem),
+                                                            s: (font-size: 1.1rem),
+                                                            sm: (font-size: 1.1rem),
+                                                            xs: (font-size: 1rem),
+                                                        ));
                                                     }
                                                 }
                                             }
@@ -1041,50 +662,22 @@
                                 .button{
                                     width: 140px;
                                     height: 30px;
-                                    @include respond-to-h(lg){
-                                        width: 140px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        width: 120px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-h(md){
-                                        width: 120px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-h(sm){
-                                        width: 100px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-h(xs){
-                                        width: 100px !important;
-                                        height: 25px !important;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        width: 80px !important;
-                                        height: 25px !important;
-                                    }
-                                    @include respond-to-v(lg){
-                                        width: 120px !important;
-                                        height: 35px !important;
-                                    }
-                                    @include respond-to-v(md){
-                                        width: 120px !important;
-                                        height: 35px !important;
-                                    }
-                                    @include respond-to-v(s){
-                                        width: 110px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-v(sm){
-                                        width: 110px !important;
-                                        height: 30px !important;
-                                    }
-                                    @include respond-to-v(xs){
-                                        width: 110px !important;
-                                        height: 30px !important;
-                                    }
+                                    @include hb((
+                                        lg: (width: 200px, height: 50px),
+                                        mdt: (width: 200px, height: 50px),
+                                        md: (width: 180px, height: 45px),
+                                        sm: (width: 180px, height: 45px),
+                                        xs: (width: 180px, height: 45px),
+                                        xxs: (width: 180px, height: 45px),
+                                    ));
+
+                                    @include vb((
+                                        lg: (width: 200px, height: 50px),
+                                        md: (width: 180px, height: 45px),
+                                        s: (width: 180px, height: 45px),
+                                        sm: (width: 180px, height: 45px),
+                                        xs: (width: 160px, height: 40px),
+                                    ));
                                     .slider{
                                         .el{
                                             
@@ -1096,87 +689,25 @@
                                                     font-weight: 300;
                                                     margin: 0;
 
-                                                    @include respond-to-h(lg){
-                                                        font-size: 1.1rem;
-                                                    }
-                                                    @include respond-to-h(mdt){
-                                                        font-size: 1.1rem;
-                                                    }
-                                                    @include respond-to-h(md){
-                                                        font-size: 1rem;
-                                                    }
-                                                    @include respond-to-h(sm){
-                                                        font-size: 1rem;
-                                                    }
-                                                    @include respond-to-h(xs){
-                                                        font-size: 0.9rem;
-                                                    }
-                                                    @include respond-to-h(xxs){
-                                                        font-size: 0.9rem;
-                                                    }
-                                                    @include respond-to-v(lg){
-                                                        font-size: 1.1rem;
-                                                    }
-                                                    @include respond-to-v(md){
-                                                        font-size: 1rem;
-                                                    }
-                                                    @include respond-to-v(s){
-                                                        font-size: 1rem;
-                                                    }
-                                                    @include respond-to-v(sm){
-                                                        font-size: 1rem;
-                                                    }
-                                                    @include respond-to-v(xs){
-                                                        font-size: 0.9rem;
-                                                    }
+                                                    @include hb((
+                                                        lg: (font-size: 1.1rem),
+                                                        mdt: (font-size: 1.1rem),
+                                                        md: (font-size: 1rem),
+                                                        sm: (font-size: 1rem),
+                                                        xs: (font-size: 0.9rem),
+                                                        xxs: (font-size: 0.9rem),
+                                                    ));
+
+                                                    @include vb((
+                                                        lg: (font-size: 1.1rem),
+                                                        md: (font-size: 1rem),
+                                                        s: (font-size: 1rem),
+                                                        sm: (font-size: 1rem),
+                                                        xs: (font-size: 0.9rem),
+                                                    ));
                                                 }
                                             }
                                         }
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        width: 200px;
-                                        height: 50px;
-                                    }
-                                    @include respond-to-h(md){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        width: 200px;
-                                        height: 50px;
-                                    }
-                                    @include respond-to-h(sm){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-h(xs){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-v(lg){
-                                        width: 200px;
-                                        height: 50px;
-                                    }
-                                    @include respond-to-v(md){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-v(s){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-v(sm){
-                                        width: 180px;
-                                        height: 45px;
-                                    }
-                                    @include respond-to-v(xs){
-                                        width: 160px;
-                                        height: 40px;
                                     }
                                 }
 

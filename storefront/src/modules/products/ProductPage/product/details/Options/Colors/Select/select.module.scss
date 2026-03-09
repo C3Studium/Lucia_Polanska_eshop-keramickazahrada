@@ -1,4 +1,4 @@
-@use "../../../../../../../../styles/mixins.scss" as *;
+@use "../../../../../../../../styles/system/_shortcuts.scss" as *;
 
 .Select{
     width: 100%;
@@ -10,10 +10,8 @@
     position: relative;
     gap: 1rem;
 
-    @include respond-to-v(lg){
-        flex-wrap: wrap;
-    }
-    @include respond-to-v(md){
-        flex-wrap: wrap;
-    }
+    @include vb((
+        lg: (flex-wrap: wrap),
+        md: (flex-wrap: wrap),
+    ));
 }

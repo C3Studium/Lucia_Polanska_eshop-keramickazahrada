@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 .nav{
     display: flex;
     flex-direction: column;
@@ -19,22 +19,12 @@
         align-items: center;
         justify-content: center;
         flex-direction: column;
-        @include respond-to-v(lg){
-            height: 10dvh;
-            gap: 0dvh;
-        }
-        @include respond-to-v(md){
-            height: 10dvh;
-            gap: 0dvh;
-        }
-        @include respond-to-v(s){
-            height: 10dvh;
-            gap: 0dvh;
-        }
-        @include respond-to-v(xs){
-            height: 15dvh;
-            gap: 2dvh;
-        }
+        @include vb((
+            lg: (height: 10dvh, gap: 0dvh),
+            md: (height: 10dvh, gap: 0dvh),
+            s: (height: 10dvh, gap: 0dvh),
+            xs: (height: 15dvh, gap: 2dvh),
+        ));
         .logo{
             width: 10dvw;
             height: 5dvh;
@@ -42,25 +32,13 @@
             align-items: center;
             justify-content: center;
             z-index: 2;
-            @include respond-to-v(xs){
-                width: 8dvw;
-                height: 4dvh;
-            }
-            @include respond-to-v(lg){
-                height: 1.5dvh;
-            }
-            @include respond-to-v(md){
-                height: 2.5dvh;
-            }
-            @include respond-to-v(s){
-                height: 5dvh;
-            }
-            @include respond-to-v(sm){
-                height: 5dvh;
-            }
-            @include respond-to-v(xs){
-                height: 5dvh;
-            }
+            @include vb((
+                lg: (height: 1.5dvh),
+                md: (height: 2.5dvh),
+                s: (height: 5dvh),
+                sm: (height: 5dvh),
+                xs: (width: 8dvw, height: 5dvh),
+            ));
 
             a{
                 display: flex;
@@ -72,18 +50,12 @@
                 .logoImage{
                     width: 150px;
                     height: auto;
-                    @include respond-to-v(md){
-                        scale: 1.5;
-                    }
-                    @include respond-to-v(s){
-                        scale: 3;
-                    }
-                    @include respond-to-v(sm){
-                        scale: 3;
-                    }
-                    @include respond-to-v(xs){
-                        scale: 3;
-                    }
+                    @include vb((
+                        md: (scale: 1.5),
+                        s: (scale: 3),
+                        sm: (scale: 3),
+                        xs: (scale: 3),
+                    ));
                 }
             }
         }
@@ -98,9 +70,9 @@
                 color: var(--ChText);
                 font-weight: 300;
 
-                @include respond-to-v(xs){
-                    font-size: 1rem;
-                }
+                @include vb((
+                    xs: (font-size: 1rem),
+                ));
             }
         }
     }
@@ -112,24 +84,13 @@
         width: 100%;
         height: 100%;
         gap: 2.5rem;
-        @include respond-to-v(xs){
-            gap: 2rem;
-        }
-        @include respond-to-v(lg){
-            gap: 1rem;
-        }
-        @include respond-to-v(md){
-            gap: 1rem;
-        }
-         @include respond-to-v(s){
-            gap: 2rem;
-        }
-        @include respond-to-v(sm){
-            gap: 2rem;
-        }
-        @include respond-to-v(xs){
-            gap: 2rem;
-        }
+        @include vb((
+            lg: (gap: 1rem),
+            md: (gap: 1rem),
+            s: (gap: 2rem),
+            sm: (gap: 2rem),
+            xs: (gap: 2rem),
+        ));
         .linkContainer{
             width: 80dvw;
             height: 4dvh;
@@ -146,9 +107,9 @@
                     text-align: center;
                     font-weight: 300;
 
-                @include respond-to-v(xs){
-                    font-size: 2.2rem;
-                }       
+                @include vb((
+                    xs: (font-size: 2.2rem),
+                ));       
                 }
             }
         }
@@ -157,33 +118,20 @@
         display: flex;
         flex-direction: row;
         gap: 10dvw;
-        @include respond-to-v(lg){
-            gap: 5dvw;
-            margin-bottom: 0.5dvh;
-        }
-        @include respond-to-v(md){
-            gap: 5dvw;
-            margin-bottom: 0.5dvh;
-        }
-        @include respond-to-v(s){
-            gap: 15dvw;
-            margin-bottom: 0.5dvh;
-        }
-         @include respond-to-v(sm){
-            gap: 15dvw;
-            margin-bottom: 0.5dvh;
-        }
-         @include respond-to-v(xs){
-            gap: 15dvw;
-            margin-bottom: 0.5dvh;
-        }
+        @include vb((
+            lg: (gap: 5dvw, margin-bottom: 0.5dvh),
+            md: (gap: 5dvw, margin-bottom: 0.5dvh),
+            s: (gap: 15dvw, margin-bottom: 0.5dvh),
+            sm: (gap: 15dvw, margin-bottom: 0.5dvh),
+            xs: (gap: 15dvw, margin-bottom: 0.5dvh),
+        ));
         .a{
             width: 50%;
             margin-top: 5px;
             font-size: 1.3rem;
-            @include respond-to-v(xs){
-                font-size: 1.2rem;
-            }
+            @include vb((
+                xs: (font-size: 1.2rem),
+            ));
         }
     }
 
@@ -195,20 +143,12 @@
         justify-content: center;
         position: relative;
 
-        @include respond-to-v(lg){
-            height: 2dvh;
-        }
-         @include respond-to-v(md){
-            height: 3dvh;
-        }
-         @include respond-to-v(s){
-            height: 3dvh;
-        }
-         @include respond-to-v(sm){
-            height: 3dvh;
-        }
-         @include respond-to-v(xs){
-            height: 4dvh;
-        }
+        @include vb((
+            lg: (height: 2dvh),
+            md: (height: 3dvh),
+            s: (height: 3dvh),
+            sm: (height: 3dvh),
+            xs: (height: 4dvh),
+        ));
     }
 }

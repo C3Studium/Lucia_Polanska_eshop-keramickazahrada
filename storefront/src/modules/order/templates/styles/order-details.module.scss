@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
 	// flex flex-col justify-center gap-y-4
@@ -18,27 +18,29 @@
 		border-bottom: 1px solid var(--border-color, #e5e7eb);
 		margin-bottom: 1rem;
 
-		@include respond-to-v(s){
-			flex-direction: column-reverse;
-			align-items: flex-end;
-			row-gap: 1.5rem;
-			justify-content: center;
-			margin-bottom: 1rem;
-		}
-		@include respond-to-v(sm){
-			flex-direction: column-reverse;
-			align-items: flex-end;
-			row-gap: 1.5rem;
-			justify-content: center;
-			margin-bottom: 1rem;
-		}
-		@include respond-to-v(xs){
-			flex-direction: column-reverse;
-			align-items: flex-end;
-			row-gap: 1.5rem;
-			justify-content: center;
-			margin-bottom: 1rem;
-		}
+		@include vb((
+			s: (
+				flex-direction: column-reverse,
+				align-items: flex-end,
+				row-gap: 1.5rem,
+				justify-content: center,
+				margin-bottom: 1rem
+			),
+			sm: (
+				flex-direction: column-reverse,
+				align-items: flex-end,
+				row-gap: 1.5rem,
+				justify-content: center,
+				margin-bottom: 1rem
+			),
+			xs: (
+				flex-direction: column-reverse,
+				align-items: flex-end,
+				row-gap: 1.5rem,
+				justify-content: center,
+				margin-bottom: 1rem
+			),
+		));
 
 		.title {
 			// text-2xl-semi
@@ -50,40 +52,21 @@
 			text-align: left;
 
 
-			@include respond-to-h(md){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(mdt){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(sm){
-				font-size: 1.8rem;
-			}
-			@include respond-to-h(xs){
-				font-size: 1.6rem;
-			}
-			@include respond-to-h(xxs){
-				font-size: 1.6rem;
-			}
+			@include hb((
+				md: (font-size: 1.8rem),
+				mdt: (font-size: 1.8rem),
+				sm: (font-size: 1.8rem),
+				xs: (font-size: 1.6rem),
+				xxs: (font-size: 1.6rem),
+			));
 
-			@include respond-to-v(lg){
-				font-size: 1.8rem;
-			}
-			@include respond-to-v(md){
-				font-size: 1.8rem;
-			}
-			@include respond-to-v(s){
-				font-size: 1.6rem;
-				text-align: left;
-			}
-			@include respond-to-v(sm){
-				font-size: 1.6rem;
-				text-align: left;
-			}
-			@include respond-to-v(xs){
-				font-size: 1.6rem;
-				text-align: left;
-			}
+			@include vb((
+				lg: (font-size: 1.8rem),
+				md: (font-size: 1.8rem),
+				s: (font-size: 1.6rem, text-align: left),
+				sm: (font-size: 1.6rem, text-align: left),
+				xs: (font-size: 1.6rem, text-align: left),
+			));
 		}
 
 		.backLink {
@@ -136,42 +119,21 @@
     }
 
     // --- Horizontal (landscape) responsiveness ---
-    @include respond-to-h(huge) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-h(xl) {
-        font-size: 1rem;
-    }
-
-    @include respond-to-h(md) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(sm) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(xxs) {
-        font-size: 0.9rem;
-    }
+    @include hb((
+        huge: (font-size: 1.05rem),
+        xl: (font-size: 1rem),
+        md: (font-size: 0.95rem),
+        sm: (font-size: 0.95rem),
+        xxs: (font-size: 0.9rem),
+    ));
 
     // --- Vertical (portrait) responsiveness ---
-    @include respond-to-v(lg) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-v(s) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-v(sm) {
-        font-size: 0.9rem;
-    }
-
-    @include respond-to-v(xs) {
-        font-size: 0.85rem;
-    }
+    @include vb((
+        lg: (font-size: 1.05rem),
+        s: (font-size: 0.95rem),
+        sm: (font-size: 0.9rem),
+        xs: (font-size: 0.85rem),
+    ));
   }
 }
 

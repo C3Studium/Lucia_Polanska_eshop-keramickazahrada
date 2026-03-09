@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .mouse-anim{
     position: relative;
@@ -10,55 +10,29 @@
     align-items: center;
     justify-content: center;
 
-    @include respond-to-h(lg){
-        scale: 0.9;
-    }
+    @include hb((
+        lg: (scale: 0.9),
+        md: (scale: 0.9, height: 8dvh),
+        mdt: (scale: 0.9, height: 6dvh),
+        sm: (scale: 0.9, height: 6dvh),
+        xs: (height: 10dvh),
+        xxs: (height: 8dvh),
+    ));
 
-    @include respond-to-h(md){
-        scale: 0.9;
-        height: 8dvh;
-    }
-    @include respond-to-h(mdt){
-        scale: 0.9;
-        height: 6dvh;
-    }
-    @include respond-to-h(sm){
-        scale: 0.9;
-        height: 6dvh;
-    }
-    @include respond-to-h(xs){
-        height: 10dvh;
-    }
-    @include respond-to-h(xxs){
-        height: 8dvh;
-    }
-
-
-     @include respond-to-v(lg){
-        height: 3.5dvh;
-    }
-     @include respond-to-v(md){
-        height: 3.5dvh;
-    }
-    @include respond-to-v(s){
-        height: 4dvh;
-        width: 5dvw;
-    }
-    @include respond-to-v(sm){
-        height: 4dvh;
-        width: 5dvw;
-    }
-    @include respond-to-v(xs){
-        height: 4dvh;
-        width: 4dvw;
-    }
+    @include vb((
+        lg: (height: 3.5dvh),
+        md: (height: 3.5dvh),
+        s: (height: 4dvh, width: 5dvw),
+        sm: (height: 4dvh, width: 5dvw),
+        xs: (height: 4dvh, width: 4dvw),
+    ));
     
 
     .mouse-anim__border{
         position: relative;
         width: 100%;
         height: 100%;
-        border: 1px solid var(--WhiteBg);
+        border: 1px solid var(--iconsPink);
         border-radius: 50px;
     }
     .mouse-anim__wheel{
@@ -66,6 +40,6 @@
         width: 0.4dvw;
         height: 0.8dvw;
         border-radius: 25px;
-        background-color: var(--WhiteBg);
+        background-color: var(--bgWhite);
     }
 }

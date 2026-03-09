@@ -1,21 +1,15 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* CartTotals component styles - SASS nesting */
 .root {
   width: 100%;
   font-family: "Sansation-Light";
-  @include respond-to-v(md){
-    padding: 1rem;
-  }
-  @include respond-to-v(s){
-    padding: 1rem;
-  }
-  @include respond-to-v(sm){
-    padding: 1rem;
-  }
-  @include respond-to-v(xs){
-    padding: 1rem;
-  }
+  @include vb((
+    md: (padding: 1rem),
+    s: (padding: 1rem),
+    sm: (padding: 1rem),
+    xs: (padding: 1rem),
+  ));
   .totalsList {
     display: flex;
     flex-direction: column;
@@ -35,39 +29,21 @@
         font-size: 1.1rem;
         font-family: "Sansation-Regular";
 
-        @include respond-to-h(lg){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 1rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-v(md){
-          font-size: 1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.9rem;
-        }
+        @include hb((
+          lg: (font-size: 1.1rem),
+          md: (font-size: 1rem),
+          mdt: (font-size: 1rem),
+          sm: (font-size: 1rem),
+          xs: (font-size: 0.9rem),
+          xxs: (font-size: 0.9rem),
+        ));
+        @include vb((
+          lg: (font-size: 1rem),
+          md: (font-size: 1rem),
+          s: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.9rem),
+        ));
       }
 
       .labelValue {
@@ -75,39 +51,21 @@
         font-weight: 300;
         font-family: "Sansation-Light";
 
-        @include respond-to-h(lg){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 1rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-v(md){
-          font-size: 1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.9rem;
-        }
+        @include hb((
+          lg: (font-size: 1.1rem),
+          md: (font-size: 1rem),
+          mdt: (font-size: 1rem),
+          sm: (font-size: 1rem),
+          xs: (font-size: 0.9rem),
+          xxs: (font-size: 0.9rem),
+        ));
+        @include vb((
+          lg: (font-size: 1rem),
+          md: (font-size: 1rem),
+          s: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.9rem),
+        ));
       }
 
       .subtotal{
@@ -115,40 +73,22 @@
         font-weight: 400;
         font-size: 1.1rem;
         font-family: "Sansation-Regular";
-        @include respond-to-h(lg){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 1rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.9rem;
-        }
+        @include hb((
+          lg: (font-size: 1.1rem),
+          md: (font-size: 1rem),
+          mdt: (font-size: 1rem),
+          sm: (font-size: 1rem),
+          xs: (font-size: 0.9rem),
+          xxs: (font-size: 0.9rem),
+        ));
 
-        @include respond-to-v(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-v(md){
-          font-size: 1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.9rem;
-        }
+        @include vb((
+          lg: (font-size: 1rem),
+          md: (font-size: 1rem),
+          s: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.9rem),
+        ));
       }
       .discount, .giftCard {
         color: var(--ChText);
@@ -156,40 +96,22 @@
         font-weight: 300;
         font-family: "Sansation-Regular";
 
-        @include respond-to-h(lg){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 1rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.9rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.9rem;
-        }
+        @include hb((
+          lg: (font-size: 1.1rem),
+          md: (font-size: 1rem),
+          mdt: (font-size: 1rem),
+          sm: (font-size: 1rem),
+          xs: (font-size: 0.9rem),
+          xxs: (font-size: 0.9rem),
+        ));
 
-        @include respond-to-v(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-v(md){
-          font-size: 1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.9rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.9rem;
-        }
+        @include vb((
+          lg: (font-size: 1rem),
+          md: (font-size: 1rem),
+          s: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.9rem),
+        ));
       }
     }
     .taxRow {
@@ -203,40 +125,22 @@
         font-weight: 300;
         font-family: "Sansation-Light";
 
-        @include respond-to-h(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.85rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.85rem;
-        }
+        @include hb((
+          lg: (font-size: 1rem),
+          md: (font-size: 0.95rem),
+          mdt: (font-size: 0.95rem),
+          sm: (font-size: 0.95rem),
+          xs: (font-size: 0.85rem),
+          xxs: (font-size: 0.85rem),
+        ));
 
-        @include respond-to-v(lg){
-          font-size: 0.95rem;
-        }
-        @include respond-to-v(md){
-          font-size: 0.95rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.85rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.85rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.85rem;
-        }
+        @include vb((
+          lg: (font-size: 0.95rem),
+          md: (font-size: 0.95rem),
+          s: (font-size: 0.85rem),
+          sm: (font-size: 0.85rem),
+          xs: (font-size: 0.85rem),
+        ));
       }
 
       .labelValue{
@@ -244,40 +148,22 @@
         font-weight: 300;
         font-family: "Sansation-Light";
 
-        @include respond-to-h(lg){
-          font-size: 1rem;
-        }
-        @include respond-to-h(md){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 0.95rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.85rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.85rem;
-        }
+        @include hb((
+          lg: (font-size: 1rem),
+          md: (font-size: 0.95rem),
+          mdt: (font-size: 0.95rem),
+          sm: (font-size: 0.95rem),
+          xs: (font-size: 0.85rem),
+          xxs: (font-size: 0.85rem),
+        ));
 
-        @include respond-to-v(lg){
-          font-size: 0.95rem;
-        }
-        @include respond-to-v(md){
-          font-size: 0.95rem;
-        }
-        @include respond-to-v(s){
-          font-size: 0.85rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 0.85rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 0.85rem;
-        }
+        @include vb((
+          lg: (font-size: 0.95rem),
+          md: (font-size: 0.95rem),
+          s: (font-size: 0.85rem),
+          sm: (font-size: 0.85rem),
+          xs: (font-size: 0.85rem),
+        ));
       }
     }
   }
@@ -309,78 +195,42 @@
       color: var(--ChText);
 
 
-      @include respond-to-h(lg){
-        font-size: 1.1rem;
-      }
-      @include respond-to-h(md){
-        font-size: 1rem;
-      }
-      @include respond-to-h(mdt){
-        font-size: 1rem;
-      }
-      @include respond-to-h(sm){
-        font-size: 1rem;
-      }
-      @include respond-to-h(xs){
-        font-size: 0.9rem;
-      }
-      @include respond-to-h(xxs){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(lg){
-        font-size: 1rem;
-      }
-      @include respond-to-v(md){
-        font-size: 1rem;
-      }
-      @include respond-to-v(s){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(sm){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(xs){
-        font-size: 0.9rem;
-      }
+      @include hb((
+        lg: (font-size: 1.1rem),
+        md: (font-size: 1rem),
+        mdt: (font-size: 1rem),
+        sm: (font-size: 1rem),
+        xs: (font-size: 0.9rem),
+        xxs: (font-size: 0.9rem),
+      ));
+      @include vb((
+        lg: (font-size: 1rem),
+        md: (font-size: 1rem),
+        s: (font-size: 0.9rem),
+        sm: (font-size: 0.9rem),
+        xs: (font-size: 0.9rem),
+      ));
     }
     .totalValue {
       font-size: 1.1rem;
       font-weight: 300;
       font-family: "Sansation-Light";
 
-      @include respond-to-h(lg){
-        font-size: 1.1rem;
-      }
-      @include respond-to-h(md){
-        font-size: 1rem;
-      }
-      @include respond-to-h(mdt){
-        font-size: 1rem;
-      }
-      @include respond-to-h(sm){
-        font-size: 1rem;
-      }
-      @include respond-to-h(xs){
-        font-size: 0.9rem;
-      }
-      @include respond-to-h(xxs){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(lg){
-        font-size: 1rem;
-      }
-      @include respond-to-v(md){
-        font-size: 1rem;
-      }
-      @include respond-to-v(s){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(sm){
-        font-size: 0.9rem;
-      }
-      @include respond-to-v(xs){
-        font-size: 0.9rem;
-      }
+      @include hb((
+        lg: (font-size: 1.1rem),
+        md: (font-size: 1rem),
+        mdt: (font-size: 1rem),
+        sm: (font-size: 1rem),
+        xs: (font-size: 0.9rem),
+        xxs: (font-size: 0.9rem),
+      ));
+      @include vb((
+        lg: (font-size: 1rem),
+        md: (font-size: 1rem),
+        s: (font-size: 0.9rem),
+        sm: (font-size: 0.9rem),
+        xs: (font-size: 0.9rem),
+      ));
     }
   }
 }

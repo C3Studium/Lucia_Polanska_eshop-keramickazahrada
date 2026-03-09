@@ -1,0 +1,21 @@
+// Horizontal (landscape) min-width breakpoints (bp → up), ordered smallest → largest
+$h: (
+  xxs: 400px,
+  xs:  750px,
+  sm:  900px,
+  smt: 900px,   // special landscape, height >= 700
+  md:  1200px,
+  mdt: 1300px,  // special landscape, height >= 900
+  lg:  1400px,
+  xl:  1500px,
+  huge:1730px
+);
+
+// Vertical (portrait) min-width breakpoints (bp → up), ordered smallest → largest
+$v: (
+  xs: 320px,
+  sm: 380px,
+  s:  400px,
+  md: 600px,
+  lg: 1000px
+);

@@ -1,4 +1,4 @@
-@use '../../../../../styles/mixins.scss' as *;
+@use "../../../../../styles/system/_shortcuts.scss" as *;
 
 .InteractiveLinkButton{
     width: auto;
@@ -20,18 +20,11 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 220px;
-            height: 35px;
-        }
-        @include respond-to-v(sm){
-            width: 220px;
-            height: 35px;
-        }
-        @include respond-to-v(xs){
-            width: 220px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 220px, height: 35px),
+            sm: (width: 220px, height: 35px),
+            xs: (width: 220px, height: 35px),
+        ));
 
         .slider{
             position: relative;
@@ -49,33 +42,19 @@
                     gap: 4px;
                     font-size: 1.2rem;
 
-                    @include respond-to-h(md) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-                    @include respond-to-h(sm) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
+                    @include hb((
+                        md: (font-size: 1.1rem),
+                        sm: (font-size: 1.1rem),
+                        xs: (font-size: 1.1rem),
+                        xxs: (font-size: 1.1rem),
+                    ));
 
-                    @include respond-to-h(xs) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-                    @include respond-to-h(xxs) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-
-                    @include respond-to-v(md) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-
-                    @include respond-to-v(s) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-                    @include respond-to-v(sm) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
-                    @include respond-to-v(xs) {
-                        font-size: 1.1rem; /* text-2xl */
-                    }
+                    @include vb((
+                        md: (font-size: 1.1rem),
+                        s: (font-size: 1.1rem),
+                        sm: (font-size: 1.1rem),
+                        xs: (font-size: 1.1rem),
+                    ));
 
                     &:nth-of-type(2){
                         transform: rotateX(-90deg) translateY(15px);

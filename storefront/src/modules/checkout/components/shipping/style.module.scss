@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 /* Shipping component styles - SASS nesting */
 .root {
   background: #fff;
@@ -18,40 +18,22 @@
       align-items: baseline;
       font-family: "Sansation-Regular";
 
-      @include respond-to-h(lg){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(md){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(mdt){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(sm){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(xs){
-        font-size: 1.6rem;
-      }
-      @include respond-to-h(xxs){
-        font-size: 1.6rem;
-      }
+      @include hb((
+        lg: (font-size: 1.8rem),
+        md: (font-size: 1.8rem),
+        mdt: (font-size: 1.8rem),
+        sm: (font-size: 1.8rem),
+        xs: (font-size: 1.6rem),
+        xxs: (font-size: 1.6rem),
+      ));
 
-      @include respond-to-v(lg){
-        font-size: 1.8rem;
-      }
-      @include respond-to-v(md){
-        font-size: 1.8rem;
-      }
-      @include respond-to-v(s){
-        font-size: 1.6rem;
-      }
-      @include respond-to-v(sm){
-        font-size: 1.6rem;
-      }
-      @include respond-to-v(xs){
-        font-size: 1.6rem;
-      }
+      @include vb((
+        lg: (font-size: 1.8rem),
+        md: (font-size: 1.8rem),
+        s: (font-size: 1.6rem),
+        sm: (font-size: 1.6rem),
+        xs: (font-size: 1.6rem),
+      ));
       &.inactive {
         opacity: 0.5;
         pointer-events: none;
@@ -88,42 +70,21 @@
 				color: var(--ChText);
 				margin-bottom: 0.25rem;
 
-        @include respond-to-h(md){
-            font-size: 1rem;
-        }
-        @include respond-to-h(mdt){
-            font-size: 1rem;
-        }
-        @include respond-to-h(sm){
-            font-size: 1rem;
-        }
-        @include respond-to-h(xs){
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
-        @include respond-to-h(xxs){
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
+        @include hb((
+            md: (font-size: 1rem),
+            mdt: (font-size: 1rem),
+            sm: (font-size: 1rem),
+            xs: (font-size: 0.9rem, font-weight: 300),
+            xxs: (font-size: 0.9rem, font-weight: 300),
+        ));
 
-        @include respond-to-v(lg){
-            font-size: 1rem;
-        }
-        @include respond-to-v(md){
-            font-size: 1rem;
-        }
-        @include respond-to-v(s){
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(sm){
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(xs){
-            font-size: 0.9rem;
-            font-weight: 300;
-        }
+        @include vb((
+            lg: (font-size: 1rem),
+            md: (font-size: 1rem),
+            s: (font-size: 0.9rem, font-weight: 300),
+            sm: (font-size: 0.9rem, font-weight: 300),
+            xs: (font-size: 0.9rem, font-weight: 300),
+        ));
       }
       .radioAddress{
         margin: 0 !important;
@@ -133,42 +94,21 @@
 				margin-bottom: 0.25rem;
         font-family: "Sansation-Light";
 
-        @include respond-to-h(md){
-            font-size: 0.85rem;
-        }
-        @include respond-to-h(mdt){
-            font-size: 0.85rem;
-        }
-        @include respond-to-h(sm){
-            font-size: 0.85rem;
-        }
-        @include respond-to-h(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-h(xxs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
+        @include hb((
+            md: (font-size: 0.85rem),
+            mdt: (font-size: 0.85rem),
+            sm: (font-size: 0.85rem),
+            xs: (font-size: 0.8rem, font-weight: 300),
+            xxs: (font-size: 0.8rem, font-weight: 300),
+        ));
 
-        @include respond-to-v(lg){
-            font-size: 0.85rem;
-        }
-        @include respond-to-v(md){
-            font-size: 0.85rem;
-        }
-        @include respond-to-v(s){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(sm){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
+        @include vb((
+            lg: (font-size: 0.85rem),
+            md: (font-size: 0.85rem),
+            s: (font-size: 0.8rem, font-weight: 300),
+            sm: (font-size: 0.8rem, font-weight: 300),
+            xs: (font-size: 0.8rem, font-weight: 300),
+        ));
       }
     }
   }
@@ -185,27 +125,17 @@
     margin-bottom: 0.5rem;
     transition: box-shadow 0.15s;
     
-    @include respond-to-h(sm){
-      gap: 0.5rem;
-    }
-    @include respond-to-h(xs){
-      gap: 1rem;
-    }
-    @include respond-to-h(xxs){
-      gap: 1rem;
-    }
-    @include respond-to-v(md){
-      gap: 1rem;
-    }
-    @include respond-to-v(s){
-      gap: 1rem;
-    }
-    @include respond-to-v(sm){
-      gap: 1rem;
-    }
-    @include respond-to-v(xs){
-      gap: 1rem;
-    }
+    @include hb((
+      sm: (gap: 0.5rem),
+      xs: (gap: 1rem),
+      xxs: (gap: 1rem),
+    ));
+    @include vb((
+      md: (gap: 1rem),
+      s: (gap: 1rem),
+      sm: (gap: 1rem),
+      xs: (gap: 1rem),
+    ));
     &:hover {
       box-shadow: 0 0 0 2px var(--OliveBg);
     }
@@ -227,65 +157,20 @@
         font-size: 1rem;
         font-weight: 400;
         color: var(--ChText);
-        @include respond-to-h(sm){
-            white-space: nowrap;
-        }
-        @include respond-to-h(xs){
-            white-space: nowrap;
-        }
-        @include respond-to-h(xxs){
-            white-space: nowrap;
-        }
-        @include respond-to-v(md){
-          white-space: nowrap;
-        }
-        @include respond-to-v(s){
-          white-space: nowrap;
-        }
-        @include respond-to-v(sm){
-          white-space: nowrap;
-        }
-        @include respond-to-v(xs){
-          white-space: nowrap;
-        }
-
-
-        @include respond-to-h(md){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(mdt){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(sm){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-h(xxs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-
-        @include respond-to-v(lg){
-            font-size: 0.9rem;
-        }
-        @include respond-to-v(md){
-            font-size: 0.9rem;
-        }
-        @include respond-to-v(s){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(sm){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
+        @include hb((
+            md: (font-size: 0.9rem),
+            mdt: (font-size: 0.9rem),
+            sm: (white-space: nowrap, font-size: 0.9rem),
+            xs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+            xxs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+        ));
+        @include vb((
+            lg: (font-size: 0.9rem),
+            md: (white-space: nowrap, font-size: 0.9rem),
+            s: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+            sm: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+            xs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+        ));
       }
 
       .radioPrice {
@@ -295,42 +180,21 @@
         font-family: "Sansation-Regular";
         color: var(--ChText);
 
-        @include respond-to-h(md){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(mdt){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(sm){
-            font-size: 0.9rem;
-        }
-        @include respond-to-h(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-h(xxs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
+        @include hb((
+            md: (font-size: 0.9rem),
+            mdt: (font-size: 0.9rem),
+            sm: (font-size: 0.9rem),
+            xs: (font-size: 0.8rem, font-weight: 300),
+            xxs: (font-size: 0.8rem, font-weight: 300),
+        ));
 
-        @include respond-to-v(lg){
-            font-size: 0.9rem;
-        }
-        @include respond-to-v(md){
-            font-size: 0.9rem;
-        }
-        @include respond-to-v(s){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(sm){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
-        @include respond-to-v(xs){
-            font-size: 0.8rem;
-            font-weight: 300;
-        }
+        @include vb((
+            lg: (font-size: 0.9rem),
+            md: (font-size: 0.9rem),
+            s: (font-size: 0.8rem, font-weight: 300),
+            sm: (font-size: 0.8rem, font-weight: 300),
+            xs: (font-size: 0.8rem, font-weight: 300),
+        ));
       }
     }
 
@@ -370,42 +234,21 @@
       margin-bottom: 0.25rem;
       font-family: "Sansation-Regular";
 
-      @include respond-to-h(md){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(mdt){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(sm){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(xs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-h(xxs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
+      @include hb((
+          md: (font-size: 0.9rem),
+          mdt: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.8rem, font-weight: 300),
+          xxs: (font-size: 0.8rem, font-weight: 300),
+      ));
 
-      @include respond-to-v(lg){
-          font-size: 0.9rem;
-      }
-      @include respond-to-v(md){
-          font-size: 0.9rem;
-      }
-      @include respond-to-v(s){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-v(sm){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-v(xs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
+      @include vb((
+          lg: (font-size: 0.9rem),
+          md: (font-size: 0.9rem),
+          s: (font-size: 0.8rem, font-weight: 300),
+          sm: (font-size: 0.8rem, font-weight: 300),
+          xs: (font-size: 0.8rem, font-weight: 300),
+      ));
     }
 
     .packetaConfirmationValue{
@@ -415,42 +258,21 @@
       font-family: "Sansation-Light";
       font-weight: 300;
 
-      @include respond-to-h(md){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(mdt){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(sm){
-          font-size: 0.9rem;
-      }
-      @include respond-to-h(xs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-h(xxs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
+      @include hb((
+          md: (font-size: 0.9rem),
+          mdt: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.8rem, font-weight: 300),
+          xxs: (font-size: 0.8rem, font-weight: 300),
+      ));
 
-      @include respond-to-v(lg){
-          font-size: 0.9rem;
-      }
-      @include respond-to-v(md){
-          font-size: 0.9rem;
-      }
-      @include respond-to-v(s){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-v(sm){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
-      @include respond-to-v(xs){
-          font-size: 0.8rem;
-          font-weight: 300;
-      }
+      @include vb((
+          lg: (font-size: 0.9rem),
+          md: (font-size: 0.9rem),
+          s: (font-size: 0.8rem, font-weight: 300),
+          sm: (font-size: 0.8rem, font-weight: 300),
+          xs: (font-size: 0.8rem, font-weight: 300),
+      ));
     }
   }
 
@@ -490,9 +312,9 @@
   justify-content: center;
   align-items: center;
 
-  @include respond-to-v(md){
-    justify-content: flex-start;
-  }
+  @include vb((
+    md: (justify-content: flex-start),
+  ));
 
   .button{
     position: relative;

@@ -1,4 +1,4 @@
-@use "../../../../../../../styles/mixins.scss" as *;
+@use "../../../../../../../styles/system/_shortcuts.scss" as *;
 
 
 .title__Container{
@@ -51,24 +51,16 @@
             color: var(--ChText);
             font-weight: 400;
 
-            @include respond-to-h(md){
-                font-size: 2rem;
-            }   
-            @include respond-to-h(sm){
-                font-size: 2rem;
-            }  
-            @include respond-to-h(xs){
-                font-size: 1.8rem;
-            } 
-            @include respond-to-h(xxs){
-                font-size: 1.5rem;
-            } 
-                @include respond-to-v(md){
-                font-size: 2rem;
-            } 
-            @include respond-to-v(xs){
-                font-size: 2rem;
-            }          
+            @include hb((
+                md: (font-size: 2rem),
+                sm: (font-size: 2rem),
+                xs: (font-size: 1.8rem),
+                xxs: (font-size: 1.5rem),
+            ));
+            @include vb((
+                md: (font-size: 2rem),
+                xs: (font-size: 2rem),
+            ));          
         }
     }
 

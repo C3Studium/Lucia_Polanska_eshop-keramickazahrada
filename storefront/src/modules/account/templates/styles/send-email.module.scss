@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 // Styles for Verify Email Reminder page (nested SCSS)
 
 .section {
@@ -16,42 +16,19 @@
 
 
     // --- Horizontal (landscape) responsiveness ---
-    @include respond-to-h(md) {
-        margin-top: 20dvh;
-        min-height: 80dvh;
-    }
-    @include respond-to-h(sm) {
-        margin-top: 10dvh;
-        min-height: 80dvh;
-    }
-    @include respond-to-h(xs) {
-        margin-top: 10dvh;
-        min-height: 160dvh;
-    }
-     @include respond-to-h(xxs) {
-        margin-top: 10dvh;
-        min-height: 160dvh;
-    }
+    @include hb((
+        md: (margin-top: 20dvh, min-height: 80dvh),
+        sm: (margin-top: 10dvh, min-height: 80dvh),
+        xs: (margin-top: 10dvh, min-height: 160dvh),
+        xxs: (margin-top: 10dvh, min-height: 160dvh),
+    ));
 
     // --- Vertical (portrait) responsiveness ---
-    @include respond-to-v(lg) {
-        margin-top: 20dvh;
-        min-height: 60dvh;
-    }
-    @include respond-to-v(md) {
-        margin-top: 20dvh;
-        min-height: 80dvh;
-    }
-
-    @include respond-to-v(s) {
-        margin-top: -5dvh;
-        min-height: 90dvh;
-    }
-    @include respond-to-v(sm) {
-    }
-
-    @include respond-to-v(xs) {
-    }
+    @include vb((
+        lg: (margin-top: 20dvh, min-height: 60dvh),
+        md: (margin-top: 20dvh, min-height: 80dvh),
+        s: (margin-top: -5dvh, min-height: 90dvh),
+    ));
 
 
     .ImageContainer{
@@ -103,80 +80,23 @@
         }
 
         // --- Horizontal (landscape) responsiveness ---
-        @include respond-to-h(lg) {
-            top: -18%;
-            left: -35%;
-            width: 115dvw;
-            height: 115dvh;
-        }
-
-        @include respond-to-h(mdt) {
-            top: -26%;
-            left: -30%;
-            width: 120dvw;
-            height: 120dvh;
-        }
-        @include respond-to-h(md) {
-            top: -16%;
-            left: -30%;
-            width: 120dvw;
-            height: 120dvh;
-        }
-
-        @include respond-to-h(sm) {
-            top: -24%;
-            left: -25%;
-            width: 138dvw;
-            height: 138dvh;
-        }
-        @include respond-to-h(xs) {
-            top: -12%;
-            left: -30%;
-            width: 220dvw;
-            height: 220dvh;
-        }
-
-        @include respond-to-h(xxs) {
-            top: -20%;
-            left: -20%;
-            width: 225dvw;
-            height: 225dvh;
-        }
+        @include hb((
+            lg: (top: -18%, left: -35%, width: 115dvw, height: 115dvh),
+            mdt: (top: -26%, left: -30%, width: 120dvw, height: 120dvh),
+            md: (top: -16%, left: -30%, width: 120dvw, height: 120dvh),
+            sm: (top: -24%, left: -25%, width: 138dvw, height: 138dvh),
+            xs: (top: -12%, left: -30%, width: 220dvw, height: 220dvh),
+            xxs: (top: -20%, left: -20%, width: 225dvw, height: 225dvh),
+        ));
 
         // --- Vertical (portrait) responsiveness ---
-        @include respond-to-v(lg) {
-            top: -20%;
-            left: -28%;
-            width: 115dvw;
-            height: 115dvh;
-        }
-
-        @include respond-to-v(md) {
-            top: -16%;
-            left: -18%;
-            width: 115dvw;
-            height: 115dvh;
-        }
-
-        @include respond-to-v(s) {
-            top: -22%;
-            left: -12%;
-            width: 125dvw;
-            height: 125dvh;
-        }
-
-        @include respond-to-v(sm) {
-            top: -8%;
-            left: -5%;
-            width: 108dvw;
-            height: 108dvh;
-        }
-        @include respond-to-v(xs) {
-            top: -8%;
-            left: -5%;
-            width: 108dvw;
-            height: 108dvh;
-        }
+        @include vb((
+            lg: (top: -20%, left: -28%, width: 115dvw, height: 115dvh),
+            md: (top: -16%, left: -18%, width: 115dvw, height: 115dvh),
+            s: (top: -22%, left: -12%, width: 125dvw, height: 125dvh),
+            sm: (top: -8%, left: -5%, width: 108dvw, height: 108dvh),
+            xs: (top: -8%, left: -5%, width: 108dvw, height: 108dvh),
+        ));
     }
 
 	.container {
@@ -191,57 +111,24 @@
         z-index: 1;
 
         // --- Horizontal (landscape) responsiveness ---
-        @include respond-to-h(huge) {
-            max-width: 40rem;
-            row-gap: 1.25rem;
-        }
-
-        @include respond-to-h(xl) {
-            max-width: 38rem;
-        }
-
-        @include respond-to-h(lg) {
-            max-width: 36rem;
-        }
-
-        @include respond-to-h(md) {
-            max-width: 34rem;
-            margin-bottom: 8dvh;
-        }
-
-        @include respond-to-h(mdt) {
-            max-width: 34rem;
-        }
-
-        @include respond-to-h(xs) {
-            max-width: 28rem;
-        }
-
-        @include respond-to-h(xxs) {
-            max-width: 24rem;
-            row-gap: 0.75rem;
-        }
+        @include hb((
+            huge: (max-width: 40rem, row-gap: 1.25rem),
+            xl: (max-width: 38rem),
+            lg: (max-width: 36rem),
+            md: (max-width: 34rem, margin-bottom: 8dvh),
+            mdt: (max-width: 34rem),
+            xs: (max-width: 28rem),
+            xxs: (max-width: 24rem, row-gap: 0.75rem),
+        ));
 
         // --- Vertical (portrait) responsiveness ---
-        @include respond-to-v(lg) {
-            max-width: 38rem;
-        }
-
-        @include respond-to-v(md) {
-            max-width: 34rem;
-        }
-
-        @include respond-to-v(s) {
-            max-width: 30rem;
-        }
-
-        @include respond-to-v(sm) {
-            max-width: 26rem;
-        }
-
-        @include respond-to-v(xs) {
-            max-width: 22rem;
-        }
+        @include vb((
+            lg: (max-width: 38rem),
+            md: (max-width: 34rem),
+            s: (max-width: 30rem),
+            sm: (max-width: 26rem),
+            xs: (max-width: 22rem),
+        ));
 
 		.title {
 			font-size: 2rem; // text-2xl
@@ -252,62 +139,25 @@
             font-family: "Sansation-bold";
 
             // --- Horizontal (landscape) responsiveness ---
-            @include respond-to-h(huge) {
-                font-size: 2rem;
-                line-height: 1.5;
-            }
-
-            @include respond-to-h(xl) {
-                font-size: 2rem;
-                line-height: 1.5;
-            }
-
-            @include respond-to-h(lg) {
-                font-size: 1.8rem;
-            }
-
-            @include respond-to-h(md) {
-                font-size: 1.8rem;
-            }
-            @include respond-to-h(mdt) {
-                font-size: 1.8rem;
-            }
-
-            @include respond-to-h(sm) {
-                font-size: 1.8rem;
-            }
-
-            @include respond-to-h(xs) {
-                font-size: 1.6rem;
-            }
-
-            @include respond-to-h(xxs) {
-                font-size: 1.6rem;
-                line-height: 1.5;
-            }
+            @include hb((
+                huge: (font-size: 2rem, line-height: 1.5),
+                xl: (font-size: 2rem, line-height: 1.5),
+                lg: (font-size: 1.8rem),
+                md: (font-size: 1.8rem),
+                mdt: (font-size: 1.8rem),
+                sm: (font-size: 1.8rem),
+                xs: (font-size: 1.6rem),
+                xxs: (font-size: 1.6rem, line-height: 1.5),
+            ));
 
             // --- Vertical (portrait) responsiveness ---
-            @include respond-to-v(lg) {
-                font-size: 2.4rem;
-                line-height: 2.6rem;
-            }
-
-            @include respond-to-v(md) {
-                font-size: 2.1rem;
-            }
-
-            @include respond-to-v(s) {
-                font-size: 1.9rem;
-            }
-
-            @include respond-to-v(sm) {
-                font-size: 1.7rem;
-            }
-
-            @include respond-to-v(xs) {
-                font-size: 1.55rem;
-                line-height: 2rem;
-            }
+            @include vb((
+                lg: (font-size: 2.4rem, line-height: 2.6rem),
+                md: (font-size: 2.1rem),
+                s: (font-size: 1.9rem),
+                sm: (font-size: 1.7rem),
+                xs: (font-size: 1.55rem, line-height: 2rem),
+            ));
 		}
 
 		.desc {
@@ -326,57 +176,24 @@
             }
 
             // --- Horizontal (landscape) responsiveness ---
-            @include respond-to-h(huge) {
-                font-size: 1.1rem;
-                line-height: 1.5;
-            }
-
-            @include respond-to-h(xl) {
-                font-size: 1.1rem;
-            }
-
-            @include respond-to-h(lg) {
-                font-size: 1.1rem;
-            }
-
-            @include respond-to-h(md) {
-                font-size: 1rem;
-            }
-
-            @include respond-to-h(sm) {
-                font-size: 1rem;
-            }
-
-            @include respond-to-h(xs) {
-                font-size: 0.9rem;
-            }
-
-            @include respond-to-h(xxs) {
-                font-size: 0.8rem;
-                line-height: 1.4;
-            }
+            @include hb((
+                huge: (font-size: 1.1rem, line-height: 1.5),
+                xl: (font-size: 1.1rem),
+                lg: (font-size: 1.1rem),
+                md: (font-size: 1rem),
+                sm: (font-size: 1rem),
+                xs: (font-size: 0.9rem),
+                xxs: (font-size: 0.8rem, line-height: 1.4),
+            ));
 
             // --- Vertical (portrait) responsiveness ---
-            @include respond-to-v(lg) {
-                font-size: 1.15rem;
-            }
-
-            @include respond-to-v(md) {
-                font-size: 1.05rem;
-            }
-
-            @include respond-to-v(s) {
-                font-size: 1rem;
-            }
-
-            @include respond-to-v(sm) {
-                font-size: 0.95rem;
-            }
-
-            @include respond-to-v(xs) {
-                font-size: 0.9rem;
-                line-height: 1.35rem;
-            }
+            @include vb((
+                lg: (font-size: 1.15rem),
+                md: (font-size: 1.05rem),
+                s: (font-size: 1rem),
+                sm: (font-size: 0.95rem),
+                xs: (font-size: 0.9rem, line-height: 1.35rem),
+            ));
 		}
 
 		.subtle {
@@ -390,22 +207,15 @@
             opacity: 0.8;
 
             // --- Horizontal (landscape) responsiveness ---
-            @include respond-to-h(huge) {
-                font-size: 1.05rem;
-            }
-
-            @include respond-to-h(xl) {
-                // keep default if not specified
-            }
-
-            @include respond-to-h(xxs) {
-                font-size: 0.9rem;
-            }
+            @include hb((
+                huge: (font-size: 1.05rem),
+                xxs: (font-size: 0.9rem),
+            ));
 
             // --- Vertical (portrait) responsiveness ---
-            @include respond-to-v(xs) {
-                font-size: 0.85rem;
-            }
+            @include vb((
+                xs: (font-size: 0.85rem),
+            ));
 		}
 
     .ClickButton{
@@ -427,60 +237,26 @@
                 box-shadow: none;
                 background-color: transparent;
 
-                @include respond-to-v(s){
-                    width: 90px;
-                    height: 35px;
-                }
+                @include vb((
+                    s: (width: 90px, height: 35px),
+                ));
 
                 // --- Horizontal (landscape) responsiveness ---
-                @include respond-to-h(huge) {
-                    width: 320px;
-                    height: 48px;
-                    border-radius: 28px;
-                }
-
-                @include respond-to-h(xl) {
-                    width: 300px;
-                    height: 44px;
-                }
-
-                @include respond-to-h(md) {
-                    width: 280px;
-                    height: 42px;
-                }
-
-                @include respond-to-h(xs) {
-                    width: 240px;
-                    height: 40px;
-                }
-
-                @include respond-to-h(xxs) {
-                    width: 210px;
-                    height: 38px;
-                    border-radius: 22px;
-                }
+                @include hb((
+                    huge: (width: 320px, height: 48px, border-radius: 28px),
+                    xl: (width: 300px, height: 44px),
+                    md: (width: 280px, height: 42px),
+                    xs: (width: 240px, height: 40px),
+                    xxs: (width: 210px, height: 38px, border-radius: 22px),
+                ));
 
                 // --- Vertical (portrait) responsiveness ---
-                @include respond-to-v(lg) {
-                    width: 320px;
-                    height: 48px;
-                }
-
-                @include respond-to-v(s) {
-                    width: 260px;
-                    height: 42px;
-                }
-
-                @include respond-to-v(sm) {
-                    width: 220px;
-                    height: 38px;
-                }
-
-                @include respond-to-v(xs) {
-                    width: 200px;
-                    height: 36px;
-                    border-radius: 20px;
-                }
+                @include vb((
+                    lg: (width: 320px, height: 48px),
+                    s: (width: 260px, height: 42px),
+                    sm: (width: 220px, height: 38px),
+                    xs: (width: 200px, height: 36px, border-radius: 20px),
+                ));
 
                 .slider{
                     position: relative;
@@ -541,42 +317,21 @@
                 }
 
                 // --- Horizontal (landscape) responsiveness ---
-                @include respond-to-h(huge) {
-                    font-size: 1.05rem;
-                }
-
-                @include respond-to-h(xl) {
-                    font-size: 1rem;
-                }
-
-                @include respond-to-h(md) {
-                    font-size: 0.95rem;
-                }
-
-                @include respond-to-h(sm) {
-                    font-size: 0.95rem;
-                }
-
-                @include respond-to-h(xxs) {
-                    font-size: 0.9rem;
-                }
+                @include hb((
+                    huge: (font-size: 1.05rem),
+                    xl: (font-size: 1rem),
+                    md: (font-size: 0.95rem),
+                    sm: (font-size: 0.95rem),
+                    xxs: (font-size: 0.9rem),
+                ));
 
                 // --- Vertical (portrait) responsiveness ---
-                @include respond-to-v(lg) {
-                    font-size: 1.05rem;
-                }
-
-                @include respond-to-v(s) {
-                    font-size: 0.95rem;
-                }
-
-                @include respond-to-v(sm) {
-                    font-size: 0.9rem;
-                }
-
-                @include respond-to-v(xs) {
-                    font-size: 0.85rem;
-                }
+                @include vb((
+                    lg: (font-size: 1.05rem),
+                    s: (font-size: 0.95rem),
+                    sm: (font-size: 0.9rem),
+                    xs: (font-size: 0.85rem),
+                ));
             }
         }
 	}

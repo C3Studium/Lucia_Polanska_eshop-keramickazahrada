@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .perspectiveText{
   display: flex;
@@ -26,45 +26,22 @@
     }
 
     // --- Horizontal (landscape) responsiveness ---
-    @include respond-to-h(huge) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-h(xl) {
-        font-size: 1rem;
-    }
-
-    @include respond-to-h(md) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(sm) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(xs) {
-        font-size: 1rem;
-    }
-    @include respond-to-h(xxs) {
-        font-size: 0.95rem;
-    }
+    @include hb((
+        huge: (font-size: 1.05rem),
+        xl: (font-size: 1rem),
+        md: (font-size: 0.95rem),
+        sm: (font-size: 0.95rem),
+        xs: (font-size: 1rem),
+        xxs: (font-size: 0.95rem),
+    ));
 
     // --- Vertical (portrait) responsiveness ---
-    @include respond-to-v(lg) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-v(s) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-v(sm) {
-        font-size: 0.9rem;
-    }
-
-    @include respond-to-v(xs) {
-        font-size: 0.85rem;
-    }
+    @include vb((
+        lg: (font-size: 1.05rem),
+        s: (font-size: 0.95rem),
+        sm: (font-size: 0.9rem),
+        xs: (font-size: 0.85rem),
+    ));
   }
 }
 

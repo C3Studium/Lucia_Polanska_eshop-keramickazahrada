@@ -8,28 +8,27 @@ import { client } from "../../../sanity/lib/client";
 export default function Kurzy() {
     const [settings, setSettings] = useState<any>(null);
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const mainSettings = await client.fetch('*[_type == "mainPageSettings"][0]');
-            setSettings(mainSettings);
-        };
-        fetchSettings();
-    }, []);
+    // useEffect(() => {
+    //     const fetchSettings = async () => {
+    //         const mainSettings = await client.fetch('*[_type == "mainPageSettings"][0]');
+    //         setSettings(mainSettings);
+    //     };
+    //     fetchSettings();
+    // }, []);
 
-    const kurzyEnabled = settings?.kurzySection?.enabled !== false;
-    const introEnabled = settings?.kurzySection?.intro !== false;
-    const aboutEnabled = settings?.kurzySection?.about !== false;
-    const ctaEnabled = settings?.kurzySection?.cta !== false;
+    // const kurzyEnabled = settings?.kurzySection?.enabled !== false;
+    // const introEnabled = settings?.kurzySection?.intro !== false;
+    // const aboutEnabled = settings?.kurzySection?.about !== false;
+    // const ctaEnabled = settings?.kurzySection?.cta !== false;
 
-    if (!kurzyEnabled) {
-        return null;
-    }
+    // if (!kurzyEnabled) {
+    //     return null;
+    // }
 
     return (
         <section className="kurzy">
-            {introEnabled && <Intro />}
-            {aboutEnabled && <About />}
-            {ctaEnabled && <CTA />}
+            <Intro />
+            <About />
         </section>
     )
 }

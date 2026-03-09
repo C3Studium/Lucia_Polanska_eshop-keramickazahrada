@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   .title {
@@ -9,43 +9,21 @@
     font-weight: 400;
     font-family: "Sansation-Regular";
     margin-block: 1.5rem;
-    @include respond-to-h(md){
-		font-size: 1.8rem;
-	}
-	@include respond-to-h(mdt){
-		font-size: 1.8rem;
-	}
-	@include respond-to-h(sm){
-		font-size: 1.8rem;
-	}
-	@include respond-to-h(xs){
-		font-size: 1.6rem;
-	}
-	@include respond-to-h(xxs){
-		font-size: 1.6rem;
-	}
+    @include hb((
+		md: (font-size: 1.8rem),
+		mdt: (font-size: 1.8rem),
+		sm: (font-size: 1.8rem),
+		xs: (font-size: 1.6rem),
+		xxs: (font-size: 1.6rem),
+	));
 
-	@include respond-to-v(lg){
-	  font-size: 1.8rem;
-	}
-	@include respond-to-v(md){
-	  font-size: 1.8rem;
-	}
-	@include respond-to-v(s){
-	  font-size: 1.6rem;
-	  padding-bottom: 1rem;
-	  border-bottom: 0.5px solid var(--ButtonBorder);
-	}
-	@include respond-to-v(sm){
-	  font-size: 1.6rem;
-	  padding-bottom: 1rem;
-	  border-bottom: 0.5px solid var(--ButtonBorder);
-	}
-	@include respond-to-v(xs){
-	  font-size: 1.6rem;
-	  padding-bottom: 1rem;
-	  border-bottom: 0.5px solid var(--ButtonBorder);
-	}
+	@include vb((
+	  lg: (font-size: 1.8rem),
+	  md: (font-size: 1.8rem),
+	  s: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
+	  sm: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
+	  xs: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
+	));
   }
 
   .row {
@@ -54,50 +32,29 @@
     column-gap: 2rem; // gap-x-8
 	gap: 2rem;
 
-	@include respond-to-v(s){
-	  flex-wrap: wrap;
-	}
-	@include respond-to-v(sm){
-	  flex-wrap: wrap;
-	}
-	@include respond-to-v(xs){
-	  flex-wrap: wrap;
-	}
+	@include vb((
+	  s: (flex-wrap: wrap),
+	  sm: (flex-wrap: wrap),
+	  xs: (flex-wrap: wrap),
+	));
   }
 
   .col {
     display: flex;
     flex-direction: column;
     width: 40%;
-	@include respond-to-v(s){
-	  width: 60%;
-	  border-top: 0.5px solid var(--ButtonBorder);
-	  padding-top: 2rem;
+	@include vb((
+	  s: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
+	  sm: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
+	  xs: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
+	));
 
-	  &:nth-of-type(1) {
-		border-top: none;
-		padding-top: 0;
-	  }
-	}
-	@include respond-to-v(sm){
-	  width: 60%;
-	  border-top: 0.5px solid var(--ButtonBorder);
-	  padding-top: 2rem;
-
-	  &:nth-of-type(1) {
-		border-top: none;
-		padding-top: 0;
-	  }
-	}
-	@include respond-to-v(xs){
-	  width: 60%;
-	  border-top: 0.5px solid var(--ButtonBorder);
-	  padding-top: 2rem;
-
-	  &:nth-of-type(1) {
-		border-top: none;
-		padding-top: 0;
-	  }
+	&:nth-of-type(1) {
+	  @include vb((
+		s: (border-top: none, padding-top: 0),
+		sm: (border-top: none, padding-top: 0),
+		xs: (border-top: none, padding-top: 0),
+	  ));
 	}
   }
 
@@ -107,31 +64,19 @@
     font-family: "Sansation-Regular";
     color: var(--ChText);
     margin-bottom: 0.25rem;
-    @include respond-to-h(md){
-		font-size: 1.2rem;
-	}
-	@include respond-to-h(mdt){
-		font-size: 1.2rem;
-	}
-	@include respond-to-h(sm){
-		font-size: 1.2rem;
-	}
-	@include respond-to-h(xs){
-		font-size: 1.1rem;
-	}
-	@include respond-to-h(xxs){
-		font-size: 1.1rem;
-	}
+    @include hb((
+		md: (font-size: 1.2rem),
+		mdt: (font-size: 1.2rem),
+		sm: (font-size: 1.2rem),
+		xs: (font-size: 1.1rem),
+		xxs: (font-size: 1.1rem),
+	));
 
-	@include respond-to-v(s){
-	  font-size: 1.2rem;
-	}
-	@include respond-to-v(sm){
-	  font-size: 1.2rem;
-	}
-	@include respond-to-v(xs){
-	  font-size: 1.2rem;
-	}
+	@include vb((
+	  s: (font-size: 1.2rem),
+	  sm: (font-size: 1.2rem),
+	  xs: (font-size: 1.2rem),
+	));
   }
 
   .value {
@@ -139,30 +84,18 @@
     font-size: 1.1rem;
     font-family: "Sansation-Light";
     font-weight: 300;
-    @include respond-to-h(md){
-		font-size: 1rem;
-	}
-	@include respond-to-h(mdt){
-		font-size: 1rem;
-	}
-	@include respond-to-h(sm){
-		font-size: 1rem;
-	}
-	@include respond-to-h(xs){
-		font-size: 0.9rem;
-	}
-	@include respond-to-h(xxs){
-		font-size: 0.9rem;
-	}
-	@include respond-to-v(s){
-	  font-size: 1rem;
-	}
-	@include respond-to-v(sm){
-	  font-size: 1rem;
-	}
-	@include respond-to-v(xs){
-	  font-size: 1rem;
-	}
+    @include hb((
+		md: (font-size: 1rem),
+		mdt: (font-size: 1rem),
+		sm: (font-size: 1rem),
+		xs: (font-size: 0.9rem),
+		xxs: (font-size: 0.9rem),
+	));
+	@include vb((
+	  s: (font-size: 1rem),
+	  sm: (font-size: 1rem),
+	  xs: (font-size: 1rem),
+	));
   }
 
   .divider {

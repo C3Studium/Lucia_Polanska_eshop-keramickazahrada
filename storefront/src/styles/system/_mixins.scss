@@ -1,0 +1,162 @@
+@use "sass:map";
+@use "./breakpoints" as bp;
+
+// Define layer order (smallest → largest) to enforce cascade priority
+@layer bp-xxs, bp-xs, bp-sm, bp-smt, bp-md, bp-mdt, bp-lg, bp-xl, bp-huge;
+@layer vp-xs, vp-sm, vp-s, vp-md, vp-lg;
+
+$layer-h: (
+  xxs: bp-xxs,
+  xs:  bp-xs,
+  sm:  bp-sm,
+  smt: bp-smt,
+  md:  bp-md,
+  mdt: bp-mdt,
+  lg:  bp-lg,
+  xl:  bp-xl,
+  huge: bp-huge
+);
+
+$layer-v: (
+  xs: vp-xs,
+  sm: vp-sm,
+  s:  vp-s,
+  md: vp-md,
+  lg: vp-lg
+);
+
+// Convenience wrappers: drop content into the correct layer and media for a breakpoint
+@mixin h-layer($key) {
+  $layer: map.get($layer-h, $key);
+  @if $layer == null {
+    @warn "Unknown horizontal layer for breakpoint: #{$key}";
+  } @else {
+    @layer #{$layer} {
+      @include h($key) { @content; }
+    }
+  }
+}
+
+@mixin v-layer($key) {
+  $layer: map.get($layer-v, $key);
+  @if $layer == null {
+    @warn "Unknown vertical layer for breakpoint: #{$key}";
+  } @else {
+    @layer #{$layer} {
+      @include v($key) { @content; }
+    }
+  }
+}
+
+// Legacy-style aliases (respond-to-*) for compatibility with older usage.
+@mixin respond-to-h($key) {
+  @include h-layer($key) { @content; }
+}
+
+@mixin respond-to-v($key) {
+  @include v-layer($key) { @content; }
+}
+
+// Set a single property across multiple horizontal breakpoints with layer order baked in.
+// Usage: @include h-prop(height, (xs: 4vh, smt: 5vh, md: 6vh, lg: 6vh));
+@mixin h-prop($prop, $map) {
+  @each $bp, $val in $map {
+    @include h-layer($bp) { #{$prop}: $val; }
+  }
+}
+
+// Set a single property across multiple vertical breakpoints.
+@mixin v-prop($prop, $map) {
+  @each $bp, $val in $map {
+    @include v-layer($bp) { #{$prop}: $val; }
+  }
+}
+
+// Set multiple properties per horizontal breakpoint.
+// Usage:
+// @include h-block((
+//   xxs: (height: 6vh, flex-direction: column),
+//   smt: (height: 5vh, flex-direction: column),
+//   lg:  (height: 6vh)
+// ));
+@mixin h-block($map) {
+  @each $bp, $rules in $map {
+    @include h-layer($bp) {
+      @each $prop, $val in $rules {
+        #{$prop}: $val;
+      }
+    }
+  }
+}
+
+// Set multiple properties per vertical breakpoint.
+@mixin v-block($map) {
+  @each $bp, $rules in $map {
+    @include v-layer($bp) {
+      @each $prop, $val in $rules {
+        #{$prop}: $val;
+      }
+    }
+  }
+}
+
+// Landscape: breakpoint → up (with special rules for mdt/smt)
+@mixin h($key) {
+  $min: map.get(bp.$h, $key);
+  @if $min == null {
+    @warn "Unknown horizontal breakpoint: #{$key}";
+  } @else {
+  $layer: map.get($layer-h, $key);
+  @if $layer == null {
+    @warn "Unknown horizontal layer for breakpoint: #{$key}";
+  } @else {
+
+  // Special: mdt => width >= min AND height >= 950 (landscape)
+  @if $key == mdt {
+    $max: 1400px - 0.02px; // cap to keep tablets from overriding desktops
+    @layer #{$layer} {
+      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: 950px) and (orientation: landscape) {
+        @content;
+      }
+    }
+
+  // Special: smt => width >= min AND height >= 720 (landscape)
+  } @else if $key == smt {
+    $max: 1400px - 0.02px; // allow overlap with mdt; mdt layer overrides when both match
+    @layer #{$layer} {
+      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: 720px) and (orientation: landscape) {
+        @content;
+      }
+    }
+
+  // Normal: width >= breakpoint (landscape)
+  } @else {
+    @layer #{$layer} {
+      @media (min-width: #{$min}) and (orientation: landscape) {
+        @content;
+      }
+    }
+  }
+  }
+  }
+}
+
+// Portrait: breakpoint → up
+@mixin v($key) {
+  $min: map.get(bp.$v, $key);
+  @if $min == null {
+    @warn "Unknown vertical breakpoint: #{$key}";
+  } @else {
+  $layer: map.get($layer-v, $key);
+  @if $layer == null {
+    @warn "Unknown vertical layer for breakpoint: #{$key}";
+  } @else {
+
+  @layer #{$layer} {
+    @media (min-width: #{$min}) and (orientation: portrait) {
+      @content;
+    }
+  }
+  }
+  }
+}

@@ -1,1830 +1,393 @@
-@use "../../../styles/mixins.scss" as *;
+@use "../../../styles/system/_shortcuts.scss" as *;
 
 .footer{
-    width: 100dvw;
-    height: 75dvh;
     position: relative;
-    position: absolute;
-    bottom: 0;
-    left: 0;
+    width: 100%;
+    height: 500px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    background-color: var(--WhiteBg);
-    z-index: 100;
-    margin-bottom: 5px;
-
-    // WIP: Look at every viewport and check if the height needs to be adjusted or anything else mainly for mobile and tables vertical ports
-    // Horizontal above xs is looking good
-
-    @include respond-to-h(lg){
-        height: 65dvh;
-    }
-    @include respond-to-h(md){
-        height: 70dvh;
-    }
-    @include respond-to-h(mdt){
-        height: 50dvh;
-    }
-    @include respond-to-h(sm){
-        height: 60dvh;
-    }
-    @include respond-to-h(xs){
-        height: 90dvh;
-    }
-    @include respond-to-h(xxs){
-        height: 90dvh;
-    }
+    flex-direction: column;
+    background-color: var(--bgPrimary);
+    gap: 10%;
+    padding-bottom: 1.5%;
 
 
-    @include respond-to-v(lg){
-        height: 40dvh;
-        margin-bottom: 5dvh;
-    }
-    @include respond-to-v(md){
-        height: 45dvh;
-        margin-bottom: 5dvh;
-    }
-    @include respond-to-v(s){
-        height: 80dvh;
-        margin-bottom: 8dvh;
-    }
-    @include respond-to-v(sm){
-        height: 80dvh;
-        margin-bottom: 8dvh;
-    }
-    @include respond-to-v(xs){
-        height: 90dvh;
-        margin-bottom: 8dvh;
-    }
-
-
-    //NOTE: You can still use font weight to change the custom fonts
-
-
-    .footer__background{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        overflow: hidden;
-
-        .footer__gradient{
-            position: absolute;
-            top: 0%;
-            left: 0%;
-            width: 100%;
-            height: 100%;
-
-            svg{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                scale: 2;
-                opacity: 0.5;
-            }
-        }
-    }       
-
-    .footer__head{
-        width: 100%;
-        height: 20%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        @include respond-to-h(md){
-            height: 30%;
-        }
-        @include respond-to-h(sm){
-            height: 30%;
-        }
-
-        @include respond-to-h(xs){
-            height: 30%;
-            min-height: 20dvh;
-        }
-        @include respond-to-h(xxs){
-            height: 30%;
-            min-height: 20dvh;
-        }
-
-        @include respond-to-v(s){
-            height: 10%;
-            margin-top: 5%;
-        }
-        @include respond-to-v(sm){
-            height: 10%;
-            margin-top: 5%;
-        }
-        @include respond-to-v(xs){
-            height: 15%;
-            margin-top: 5%;
-        }
-
-        .footer__head__bg{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: -1;
-            .divider{
-                // width: 100%;
-                // height: 0.5px;
-                position: absolute;
-                left: 0;
-                z-index: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-
-                &:nth-of-type(1){
-                    top: 0dvh;
-                }
-                // &:nth-of-type(2){
-                //     top: 47.5%;
-                //     left: 50%;
-                //     transform: translate(-50%, -50%);
-                //     width: 10dvw;
-                //     height: 10dvw;
-                //     border-radius: 50%;
-                //     overflow: visible;
-
-                //     defs{
-                //         mask{
-                //             circle {
-                //                 border-radius: 50%;
-                //             }
-                //         }
-                //     }
-                // }
-                &:nth-of-type(2){
-                    bottom: 0dvh;
-                }
-            }
-
-
-            .footer__head__bg__overlay{
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 10dvw;
-                height: 10dvw;
-                opacity: 0.5;
-                overflow: hidden;
-                border-radius: 50%;
-                z-index: 2;
-
-                svg{
-                    @include respond-to-h(md){
-                        transform: scale(0.95);
-                    }
-                    @include respond-to-v(s){
-                        transform: scale(0.95);
-                    }
-                    @include respond-to-v(sm){
-                        transform: scale(0.95);
-                    }
-                    @include respond-to-v(xs){
-                        transform: scale(0.95);
-                    }
-                }
-            }
-        }
-
-        .footer__head__logo{
-            position: absolute;
-            top: -10%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 10dvw;
-            height: 10dvw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 0.5px solid var(--ButtonBorder);
-            border-radius: 50%;
-            z-index: 2;
-            overflow: hidden;
-
-            img{
-                width: 10dvw;
-                height: 10dvw;
-                object-fit: contain;
-            }
-            @include respond-to-h(xl){
-                width: 10dvw;
-                height: 10dvw;
-                top: -2.5%;
-            }
-            @include respond-to-h(md){
-                width: 10dvw;
-                height: 10dvw;
-                top: 0;
-            }
-            @include respond-to-h(sm){
-                top: -2.5%;
-                width: 11dvw;
-                height: 11dvw;
-            }
-            @include respond-to-h(xs){
-                top: -2.5%;
-                width: 10dvw;
-                height: 10dvw;
-            }
-            @include respond-to-h(xxs){
-                width: 12dvw;
-                height: 12dvw;
-            }
-
-            @include respond-to-v(lg){
-                width: 11dvw;
-                height: 11dvw;
-                top: -2.5%;
-            }
-            @include respond-to-v(md){
-                width: 12dvw;
-                height: 12dvw;
-                top: -2.5%;
-            }
-
-            @include respond-to-v(s){
-                width: 15dvw;
-                height: 15dvw;
-                top: 5%;
-                img{ 
-                    width: 15dvw;
-                    height: 15dvw;
-                }
-            }
-            @include respond-to-v(sm){
-                width: 15dvw;
-                height: 15dvw;
-                top: 5%;
-                img{ 
-                    width: 15dvw;
-                    height: 15dvw;
-                }
-            }
-            @include respond-to-v(xs){
-                width: 15dvw;
-                height: 15dvw;
-                top: 7.5%;
-                img{ 
-                    width: 15dvw;
-                    height: 15dvw;
-                }
-            }
-        }
-
-        .footer__head__socials{
-            position: absolute;
-            width: 30%;
-            top: 50%;
-            left: 50%;
-            height: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12.5dvw;
-            z-index: 2;
-            @include respond-to-v(md){
-                gap: 15dvw;
-                width: 80%;
-            }
-            @include respond-to-v(s){
-                gap: 30dvw;
-                width: 80%;
-            }
-            @include respond-to-v(sm){
-                gap: 30dvw;
-                width: 80%;
-            }
-            @include respond-to-v(xs){
-                gap: 30dvw;
-                width: 80%;
-            }
-
-            a{
-                width: 5dvw;
-                height: 5dvw;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-
-                @include respond-to-v(s){
-                    width: 40px;
-                    height: 40px;
-                }
-                @include respond-to-v(sm){
-                    width: 40px;
-                    height: 40px;
-                }
-                @include respond-to-v(xs){
-                    width: 40px;
-                    height: 40px;
-                }
-
-                .footer__head__socials__icon{
-                    width: 75px;
-                    height: 75px;
-
-                    @include respond-to-h(lg){
-                        width: 65px;
-                        height: 65px;
-                    }
-                    @include respond-to-h(mdt){
-                        width: 60px;
-                        height: 60px;
-                    }
-                    @include respond-to-h(md){
-                        width: 55px;
-                        height: 55px;
-                    }
-                    @include respond-to-h(sm){
-                        width: 50px;
-                        height: 50px;
-                    }
-                    @include respond-to-h(xs){
-                        width: 40px;
-                        height: 40px;
-                    }
-                    @include respond-to-h(xxs){
-                        width: 35px;
-                        height: 35px;
-                    }
-
-
-                    @include respond-to-v(lg){
-                        width: 50px;
-                        height: 50px;
-                    }
-                     @include respond-to-v(md){
-                        width: 45px;
-                        height: 45px;
-                    }
-                    @include respond-to-v(s){
-                        width: 50px;
-                        height: 50px;
-                    }
-                    @include respond-to-v(sm){
-                        width: 40px;
-                        height: 40px;
-                    }
-                    @include respond-to-v(xs){
-                        width: 45px;
-                        height: 45px;
-                    }
-                }
-            }
-        }
-
-        .footer__head__Titles{
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 5dvw;
-            z-index: 1;
-
-            @include respond-to-v(s){
-                display: none;
-            }
-            @include respond-to-v(sm){
-                display: none;
-            }
-            @include respond-to-v(xs){
-                display: none;
-            }
-
-            h3{
-                font-family: "ooohBaby-Regular";
-                color: var(--ChText);
-                font-size: 4rem;
-                opacity: 0.8;
-                font-weight: 300;
-
-                @include respond-to-h(lg){
-                    font-size: 3rem;
-                }
-                @include respond-to-h(mdt){
-                    font-size: 3rem;
-                }
-                @include respond-to-h(md){
-                    font-size: 3rem;
-                }
-                @include respond-to-h(sm){
-                    font-size: 2.5rem;
-                }
-                @include respond-to-h(xs){
-                    font-size: 2rem;
-                }
-                @include respond-to-h(xxs){
-                    font-size: 1.8rem;
-                }
-
-
-                @include respond-to-v(lg){
-                    font-size: 2.5rem;
-                }
-                @include respond-to-v(md){
-                    font-size: 2rem;
-                }
-            }
-        }
-    }
-
-    .footer__content{
+    .Upper__footer{
         width: 100%;
         height: 50%;
-        position: relative;
         display: flex;
         align-items: center;
-        justify-content: center; 
-        flex-direction: row;
-        padding: 5dvh 5dvw;
+        justify-content: space-between;
+        flex-direction: column;
+        padding: 0 5%;
 
-        @include respond-to-h(xs){
-            height: 45%;
-        }
-
-        @include respond-to-h(xxs){
-            height: 45%;
+        .div{
+            width: 100%;
+            height: 1px;
+            background-color: var(--iconsBlack);
         }
 
-        @include respond-to-v(md){
-            height: 45%;
-        }
-        @include respond-to-v(s){
-            height: 45%;
-            padding: 2.5dvh 5dvw;
-        }
-        @include respond-to-v(sm){
-            height: 45%;
-            padding: 2.5dvh 5dvw;
-        }
-        @include respond-to-v(xs){
-            height: 45%;
-            padding: 2.5dvh 5dvw;
-        }
-
-        .footer__content__info{
-            width: 50%;
+        .content__upperFooter{
+            width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
 
-            @include respond-to-h(lg){
-                gap: 0.25rem;
-                height: 90%;
-            }
-            @include respond-to-h(mdt){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(md){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(sm){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(xs){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(xxs){
-                gap: 0.5rem;
-                height: 75%;
-            }
+            .Links{
+                width: 60%;
+                height: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                padding: 25px 0;
+
+                .Important{
+
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+
+                    h3{
+                        font-size: 1.5rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                        margin-bottom: 15px;
+                    }
+
+                    .main__Links{
+                        width: 100%;
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: flex-start;
+                        flex-direction: column;
+
+                        .footer__link{
+                            text-decoration: none;
+                            transition: color 0.3s ease;
+
+                            &:hover{
+                                color: var(--primary);
+                            }
+
+                            p{
+                                margin: 0;
+                                font-size: 1.2rem;
+                                font-weight: 300;
+                                color: var(--blackText);
+                            }
+                        }
+                    }
+
+                }
+                .Social{
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+
+                    h3{
+                        font-size: 1.5rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                        margin-bottom: 15px;
+                    }
+                    .social__icons{
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
+                        gap: 25px;
+
+                        .footer__link{
+                            text-align: none;
+                            transition: color 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            
+                            img{
+                                width: 50px;
+                                height: 50px;
+                                object-fit: contain;
+                                margin-right: 10px;
+                            }
+                        }
+                    }
+
+                }
+                .Need__help{
+
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+
+                    h3{
+                        font-size: 1.5rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                        margin-bottom: 15px;
+                    }
 
 
-            @include respond-to-v(lg){
-                gap: 1rem;
-                height: 90%;
-            }
-            @include respond-to-v(md){
-                gap: 1rem;
-                height: 90%;
-            }
-            @include respond-to-v(s){
-                gap: 1rem;
-                height: 60%;
-                margin-bottom: 20%;
-            }
-             @include respond-to-v(sm){
-                gap: 1rem;
-                height: 60%;
-            }
-             @include respond-to-v(xs){
-                gap: 1rem;
-                height: 60%;
-            }
-            
+                    .links{
+                        width: 100%;
+                        position: relative;
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        justify-content: flex-start;
 
-            h3{
-                font-family: "Sansation-Light";
-                color: var(--ChText);
-                font-size: 2rem;
-                opacity: 0.8;
-                font-weight: 300;
-                margin: 0;
-                border-bottom: 1px solid var(--ButtonBorder);
-                padding-right: 0.5rem;
+                        .footer__link{
+                            text-decoration: none;
+                            transition: color 0.3s ease;
 
-                @include respond-to-h(lg){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(mdt){
-                    font-size: 1.8rem;
-                }
-                 @include respond-to-h(md){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(sm){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(xs){
-                    font-size: 1.5rem;
-                }
-                @include respond-to-h(xxs){
-                    font-size: 1.3rem;
-                }
+                            &:nth-of-type(1){
+                                border-right: 1px solid var(--iconsBlack);
+                                padding: 0 10px 0 0;
+                            }
+                            &:nth-of-type(2){
+                                border-right: 1px solid var(--iconsBlack);
+                                padding: 0 10px;
+                            }
+                            &:nth-of-type(3){
+                                padding: 0 0 0 10px;
+                            }
 
+                            &:hover{
+                                color: var(--primary);
+                            }
 
-                @include respond-to-v(lg){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-v(md){
-                    font-size: 1.5rem;
-                }
-                @include respond-to-v(s){
-                    font-size: 1.5rem;
-                }
-                 @include respond-to-v(sm){
-                    font-size: 1.3rem;
-                }
-                 @include respond-to-v(xs){
-                    font-size: 1.3rem;
+                            p{
+                                margin: 0;
+                                font-size: 1.2rem;
+                                font-weight: 300;
+                                color: var(--blackText);
+                            }
+                        }
+                    }
+
+                    .main__Links{
+                        width: 100%;
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: flex-start;
+                        flex-direction: column;
+
+                        .footer__link{
+                            text-decoration: none;
+                            transition: color 0.3s ease;
+
+                            &:hover{
+                                color: var(--primary);
+                            }
+
+                            p{
+                                margin: 0;
+                                font-size: 1.2rem;
+                                font-weight: 300;
+                                color: var(--blackText);
+                            }
+                        }
+                    }
+
                 }
             }
 
-            ul{
-                width: 100%;
+            .newsletter{
+                width: 35%;
                 height: 100%;
                 display: flex;
                 flex-direction: column;
                 align-items: flex-start;
                 justify-content: center;
-                list-style: none;
-                gap: 1rem;
-                font-family: "Sansation-Regular";
-                color: var(--ChText);
-                opacity: 0.8;
-                text-align: left;
-                @include respond-to-h(xxs){
-                    gap: 0.25rem;
+
+                h3{
+                    font-size: 1.5rem;
+                    font-weight: 300;
+                    color: var(--blackText);
+                    margin-bottom: 15px;
                 }
 
+                .newsletter__container{
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background-color: var(--bgWhite);
+                    border-radius: 25px;
+                    padding: 5px;
 
-                @include respond-to-v(lg){
-                    gap: 0.5rem;
-                }
-                @include respond-to-v(md){
-                    gap: 0.5rem;
-                }
-                @include respond-to-v(s){
-                    gap: 0.5rem;
-                }
-                @include respond-to-v(sm){
-                    gap: 0.5rem;
-                }
-                @include respond-to-v(xs){
-                    gap: 0.5rem;
-                }
-
-                li{
-                    font-family: "Sansation-Regular";
-                    color: var(--ChText);
-                    font-size: 1.3rem;
-                    opacity: 0.8;
-                    text-align: left;
-
-                    @include respond-to-h(lg){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 1.1rem;
-                    }
-
-                    @include respond-to-h(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(xs){
+                    .newsletter__input{
+                        width: 70%;
+                        padding: 10px;
                         font-size: 1rem;
-                    }
-                    @include respond-to-h(xxs){
-                        font-size: 0.9rem;
+                        background: transparent;
+                        border: none;
+                        outline: none;
+                        box-shadow: none;
+                        appearance: none;
+                        -webkit-appearance: none;
+
+                        &:focus,
+                        &:focus-visible{
+                            outline: none;
+                            box-shadow: none;
+                        }
                     }
 
-                    @include respond-to-v(lg){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(s){
-                        font-size: 1rem;
-                    }
-                     @include respond-to-v(sm){
-                        font-size: 0.9rem;
-                    }
-                     @include respond-to-v(xs){
-                        font-size: 0.9rem;
+                    .newsletter__button{
+                        box-shadow: none;
+                        border: none;
+                        background-color: var(--darkOlive);
+                        padding: 10px 20px;
+                        border-radius: 25px;
+                        cursor: pointer;
+
+                        p{
+                            color: var(--whiteText);
+                            margin: 0;
+                            font-size: 1rem;
+                            font-weight: 300;
+                        }
                     }
                 }
             }
         }
+    }
 
-        .footer__content__products{
-            width: 50%;
-            height: 100%;
+
+    .Bottom__footer{
+        width: 100%;
+        height: 40%;
+        display: flex;
+        flex-direction: column;
+        
+        .Main{
+            width: 100%;
+            height: 70%;
             display: flex;
-            flex-direction: column;
             align-items: flex-end;
-            justify-content: center;
-            gap: 1.5rem;
+            justify-content: space-between;
+            padding: 0 5%;
 
-            @include respond-to-h(lg){
-                gap: 0.25rem;
-                height: 90%;
-            }
-            @include respond-to-h(mdt){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(md){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(sm){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(xs){
-                gap: 0.5rem;
-                height: 90%;
-            }
-            @include respond-to-h(xxs){
-                gap: 0.5rem;
-                height: 75%;
-            }
-
-
-            @include respond-to-v(lg){
-                gap: 1rem;
-                height: 90%;
-            }
-            @include respond-to-v(md){
-                gap: 1rem;
-                height: 90%;
-            }
-            @include respond-to-v(s){
-                gap: 1rem;
-                height: 60%;
-                margin-top: 20%;
-            }
-            @include respond-to-v(sm){
-                gap: 1rem;
-                height: 60%;
-                margin-top: 20%;
-            }
-            @include respond-to-v(xs){
-                gap: 1rem;
-                height: 60%;
-                margin-top: 20%;
-            }
-
-            h3{
-                font-family: "Sansation-Light";
-                color: var(--ChText);
-                font-size: 2rem;
-                opacity: 0.8;
-                font-weight: 300;
-                border-bottom: 1px solid var(--ButtonBorder);
-                padding-left: 0.5rem;
-                @include respond-to-h(lg){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(mdt){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(md){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(sm){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-h(xs){
-                    font-size: 1.5rem;
-                }
-                @include respond-to-h(xxs){
-                    font-size: 1.3rem;
-                }
-
-                @include respond-to-v(lg){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-v(md){
-                    font-size: 1.8rem;
-                }
-                @include respond-to-v(s){
-                    font-size: 1.5rem;
-                }
-                @include respond-to-v(sm){
-                    font-size: 1.3rem;
-                }
-                @include respond-to-v(xs){
-                    font-size: 1.3rem;
-                }
-            }
-
-            ul{
-                width: 100%;
-                height: 100%;
+            .Logo{
                 display: flex;
+                align-items: flex-start;
+                justify-content: flex-end;
                 flex-direction: column;
+
+                .imgWrapper{
+                    width: fit-content;
+                    height: fit-content;
+                    position: relative;
+                    left: -25px;
+
+                    img{
+                        object-fit: contain;
+                        width: 120px;
+                        height: 50px;
+                    }
+                }
+
+                .Name{
+                    display: flex;
+                    flex-direction: row;
+                    align-items: flex-end;
+                    justify-content: center;
+                    gap: 15px;
+
+                    h2{
+                        line-height: 1.1;
+                        font-size: 5rem;
+                        font-weight: 500;
+                        color: var(--blackText);
+                    }
+
+                    p{
+                        font-size: 1.2rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                    }
+                }
+            }
+
+            .makers{
+                display: flex;
                 align-items: flex-end;
                 justify-content: center;
-                list-style: none;
-                gap: 1rem;
-                font-family: "Sansation-Regular";
-                color: var(--ChText);
-                opacity: 0.8;
-                text-align: left;
-
-                @include respond-to-h(xxs){
-                    gap: 0.25rem;
-                }
-
-                @include respond-to-v(lg){
-                    gap: 0.5rem;
-                }
-                @include respond-to-v(md){
-                    gap: 0.5rem;
-                }
-                 @include respond-to-v(s){
-                    gap: 0.5rem;
-                }
-                 @include respond-to-v(sm){
-                    gap: 0.5rem;
-                }
-                 @include respond-to-v(xs){
-                    gap: 0.5rem;
-                }
-
-                li{
-                    font-family: "Sansation-Regular";
-                    color: var(--ChText);
-                    font-size: 1.3rem;
-                    opacity: 0.8;
-                    text-align: left;
-
-                    @include respond-to-h(lg){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-h(xs){
-                        font-size: 1rem;
-                    }
-                    @include respond-to-h(xxs){
-                        font-size: 0.9rem;
-                    }
-
-                    @include respond-to-v(lg){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(md){
-                        font-size: 1.1rem;
-                    }
-                    @include respond-to-v(s){
-                        font-size: 1rem;
-                    }
-                    @include respond-to-v(sm){
-                        font-size: 0.9rem;
-                    }
-                    @include respond-to-v(xs){
-                        font-size: 0.9rem;
-                    }
-                }
-            }
-        }
-    }
-
-    .footer__pillar{
-        position: absolute;
-        top: 55%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        height: 10%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .footer__pillar__img{
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-
-            .footer__pillar__img__container{
-                width: 300px;
-                height: 300px;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 1;
-
-                .footer__pillar__img__icon{
-                    width: 100%;
-                    height: 100%;
-                    object-fit: contain;
-                }
-            }
-        }
-
-        @include respond-to-h(lg){
-            top: 52.5%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 280px;
-                    height: 280px;
-                }
-            }
-        }
-        @include respond-to-h(mdt){
-            top: 52.5%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 280px;
-                    height: 280px;
-                }
-            }
-        }
-        @include respond-to-h(md){
-            top: 50%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 200px !important;
-                    height: 200px;
-                }
-            }
-        }
-        @include respond-to-h(sm){
-            top: 50%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 180px !important;
-                    height: 180px;
-                }
-            }
-        }
-        @include respond-to-h(xs){
-            top: 45%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 150px;
-                    height: 150px;
-                }
-            }
-        }
-        @include respond-to-h(xxs){
-            top: 45%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 140px;
-                    height: 140px;
-                }
-            }
-        }
-
-        @include respond-to-v(lg){
-            top: 50%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 240px;
-                    height: 240px;
-                }
-            }
-        }
-        @include respond-to-v(md){
-            top: 47.5%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 200px;
-                    height: 200px;
-                }
-            }
-        }
-
-        @include respond-to-v(s){
-            display: none;
-            top: 42.5%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 160px;
-                    height: 160px;
-                }
-            }
-        }
-        @include respond-to-v(sm){
-            display: none;
-            top: 42.5%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 180px;
-                    height: 180px;
-                }
-            }
-        }
-        @include respond-to-v(xs){
-            display: none;
-            top: 45%;
-            .footer__pillar__img{
-                .footer__pillar__img__container{
-                    width: 170px;
-                    height: 170px;
-                }
-            }
-        }
-    }
-
-    .footer__bottom{
-        position: relative;
-        width: 100%;
-        height: 60px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-
-        .divider{
-            display: none;
-
-            @include respond-to-v(s){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-            }
-            @include respond-to-v(sm){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-            }
-            @include respond-to-v(xs){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-                background-color: var(--CharcoalBg);
-            }
-
-        }
-
-        @include respond-to-v(s){
-           height: 25%;
-           flex-direction: column;
-            justify-content: flex-end;
-        }
-        @include respond-to-v(sm){
-           height: 25%;
-           flex-direction: column;
-            justify-content: flex-end;
-        }
-        @include respond-to-v(xs){
-           height: 25%;
-           flex-direction: column;
-            justify-content: flex-end;
-        }
-        
-        
-        .footer__bottom__links__left{
-            width: 50%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 0 5dvw;
-            gap: 2.5dvw;
-
-            @include respond-to-h(xxs){
-                gap: 1dvw;
-            }
-
-            @include respond-to-v(md){
-                gap: 1dvw;
-
-            }
-            @include respond-to-v(s){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            @include respond-to-v(sm){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            @include respond-to-v(xs){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            .ScrollLink{
-                width: fit-content;
-                .button{
-                    width: 100%;
-                    .slider{
-                        .el{
-                            .perspectiveText{
-                                .footer__bottom__links__left__title{
-                                    font-family: "Sansation-Regular";
-                                    font-size: 1.3rem;
-                                    opacity: 0.8;
-                                    text-transform: capitalize;
-
-                                    &:nth-of-type(2){
-                                        transform: rotateX(-90deg) translateY(15px);
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.7rem;
-                                    }
-
-
-                                    @include respond-to-v(lg){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        .footer__bottom__links__center{
-            width: 40%;
-            height: 100%;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 2.5dvw;
-            @include respond-to-h(sm){
-                width: 45%;
-            }
-            @include respond-to-h(xs){
-                width: 45%;
-            }
-            @include respond-to-h(xxs){
-                width: 45%;
-            }
-
-
-            @include respond-to-v(md){
-                width: 45%;
-            }
-            @include respond-to-v(s){
-                width: 90%;
-                height: 50%;
-                top: 0;
-
-            }
-            @include respond-to-v(sm){
-                width: 90%;
-                height: 50%;
-                top: 0;
-
-            }
-            @include respond-to-v(xs){
-                width: 90%;
-                height: 50%;
-                top: 0;
-
-            }
-
-            .ScrollLink{
-                .button{
-                    width: fit-content;
-                    height: 60px;
-                    .slider{
-                        .el{
-                            .perspectiveText{
-                                padding: 0 0.5dvw;
-                                height: 100%;
-
-                                .footer__bottom__links__center__title{
-                                    font-family: "ooohBaby-Regular";
-                                    color: var(--ChText);
-                                    font-size: 2rem;
-                                    opacity: 0.8;
-                                    padding: 0 0.5dvw;
-                                    text-transform: none;
-                                    font-weight: 300;
-
-                                    &:nth-of-type(2){
-                                        transform: rotateX(-90deg) translateY(22px);
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        font-size: 1.8rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.8rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.8rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1.8rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 1.5rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 1.3rem;
-                                    }
-
-                                    @include respond-to-v(lg){
-                                        font-size: 1.5rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 1.3rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1.8rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 1.5rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 1.5rem;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            a{
-                text-decoration: none;
-                border-right: 0.5px solid var(--ButtonBorder);
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                
+                gap: 15px;
 
                 p{
-                    font-family: "ooohBaby-Regular";
-                    color: var(--ChText);
-                    font-size: 2rem;
-                    opacity: 0.8;
-                    @include respond-to-h(lg){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(mdt){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(md){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(sm){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-h(xs){
-                        font-size: 1.5rem;
-                    }
-                    @include respond-to-h(xxs){
-                        font-size: 1.3rem;
-                    }
-
-                    @include respond-to-v(lg){
-                        font-size: 1.5rem;
-                    }
-                    @include respond-to-v(md){
-                        font-size: 1.3rem;
-                    }
-                    @include respond-to-v(s){
-                        font-size: 1.8rem;
-                    }
-                    @include respond-to-v(sm){
-                        font-size: 1.5rem;
-                    }
-                     @include respond-to-v(xs){
-                        font-size: 1.5rem;
-                    }
-                }
-
-                &:nth-of-type(1){
-                    border-left: 0.5px solid var(--ButtonBorder);
-                }
-            }
-
-
-        }
-
-        .footer__bottom__links__right{
-            width: 50%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 0 5dvw;
-            gap: 2.5dvw;
-
-            @include respond-to-h(xxs){
-                gap: 1dvw;
-            }
-            @include respond-to-v(md){
-                gap: 1dvw;
-                padding: 0 2.5dvw;
-            }
-            @include respond-to-v(s){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-             @include respond-to-v(sm){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-             @include respond-to-v(xs){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-
-            .ScrollLink{
-                width: fit-content;
-                .button{
-                    width: 100%;
-                    .slider{
-                        .el{
-                            .perspectiveText{
-                                .footer__bottom__links__right__title{
-                                    font-family: "Sansation-Regular";
-                                    color: var(--ChText);
-                                    font-size: 1.3rem;
-                                    opacity: 0.8;
-                                    text-transform: capitalize;
-
-                                    &:nth-of-type(2){
-                                        transform: rotateX(-90deg) translateY(15px);
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.7rem;
-                                    }
-
-
-                                    @include respond-to-v(lg){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            
-        }
-    }
-    .footer__bottom__upper{
-        position: relative;
-        width: 100%;
-        height: 60px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 5dvw;
-
-        .divider{
-            display: none;
-
-            @include respond-to-v(s){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-            }
-            @include respond-to-v(sm){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-            }
-            @include respond-to-v(xs){
-                display: block;
-                top: 50%;
-                position: absolute;
-                left: 0;
-                transform: translateY(-50%);
-                width: 100%;
-                height: 0.5px;
-                background-color: var(--CharcoalBg);
-            }
-
-        }
-
-        @include respond-to-v(s){
-           height: 15%;
-           flex-direction: column;
-            justify-content: space-evenly;
-            gap: 1dvw;
-        }
-        @include respond-to-v(sm){
-           height: 15%;
-           flex-direction: column;
-            justify-content: space-evenly;
-            gap: 1dvw;
-        }
-        @include respond-to-v(xs){
-           height: 25%;
-           flex-direction: column;
-            justify-content: space-evenly;
-            gap: 1dvw;
-        }
-        
-        
-        .footer__bottom__links{
-            width: 50%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 0 5dvw;
-            gap: 2.5dvw;
-
-            @include respond-to-h(xxs){
-                gap: 1dvw;
-            }
-
-            @include respond-to-v(md){
-                gap: 1.5dvw;
-            }
-            @include respond-to-v(s){
-                gap: 5dvw;
-                justify-content: center;
-                height: 50%;
-                width: 100%;
-            }
-            @include respond-to-v(sm){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            @include respond-to-v(xs){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            .ScrollLink{
-                width: fit-content;
-                .button{
-                    width: 100%;
-                    .slider{
-                        .el{
-                            .perspectiveText{
-                                p{
-                                    font-family: "Sansation-Regular";
-                                    color: var(--ChText);
-                                    font-size: 1.3rem;
-                                    opacity: 0.8;
-                                    text-transform: capitalize;
-
-                                    &:nth-of-type(2){
-                                        transform: rotateX(-90deg) translateY(15px);
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1.2rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 1.1rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.7rem;
-                                    }
-
-
-                                    @include respond-to-v(lg){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    margin: 0;
+                    font-size: 1.2rem;
+                    color: var(--blackText);
                 }
             }
         }
 
-        .footer__bottom__Icons{
-            width: 50%;
-            height: 100%;
+        .div{
+            width: 100%;
+            height: 1px;
+            background-color: var(--iconsBlack);
+        }
+
+        .bottom{
+            width: 100%;
+            height: 30%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 5dvw;
-            gap: 2.5dvw;
+            padding: 0 5%;
 
-            @include respond-to-h(xxs){
-                gap: 1dvw;
-            }
 
-            @include respond-to-v(md){
-                gap: 1.5dvw;
-            }
-            @include respond-to-v(s){
-                gap: 5dvw;
-                justify-content: center;
-                height: 45%;
+            .payment__links{
                 width: 100%;
-            }
-            @include respond-to-v(sm){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-            @include respond-to-v(xs){
-                gap: 5dvw;
-                justify-content: center;
-                height: 25%;
-                width: 100%;
-            }
-
-            .footer__bottom__Icons__Item{
-                width: 75px;
-                height: 50px;
-                position: relative;
                 display: flex;
                 align-items: center;
-                justify-content: center;
+                justify-content: space-between;
+                gap: 15px;
 
-
-                .magnetic{
-                    width: 100%;
-                    height: 100%;
+                .payment__logos{
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    position: relative;
-                    cursor: pointer;
+                    gap: 15px;
 
-                    .footer__bottom__Icons__link{
-                        width: 100%;
-                        height: 100%;
-                        position: relative;
+                    .footer__link{
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        text-decoration: none;
-                        cursor: pointer;
+                        transition: transform 0.3s ease;
 
-                        .footer__bottom__Icons__icon{
-                            width: 100%;
-                            height: 100%;
+                        &:hover{
+                            transform: scale(1.1);
+                        }
+
+                        img{
+                            width: 80px;
+                            height: 50px;
                             object-fit: contain;
-                            pointer-events: none;
                         }
                     }
                 }
 
-                &:nth-of-type(1){
-                    width: 150px;
-                }
-                &:nth-of-type(2){
-                    width: 100px;
+                p{
+                    margin: 0;
+                    font-size: 1rem;
+                    color: var(--blackText);
                 }
             }
         }
     }
 
-    .footer__trademark{
-        position: relative;
-        width: 100%;
-        height: 5%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 5dvw;
-        @include respond-to-v(s){
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            height: 7.5%;
-            padding: 0.5rem 0;
-        }
-        @include respond-to-v(sm){
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.25rem;
-            height: 7.5%;
-            padding: 0.5rem 0;
-        }
-        @include respond-to-v(xs){
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.25rem;
-            height: 7.5%;
-            padding: 0.5rem 0;
-        }
-
-        .footer__trademark__promo{
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 0.5rem;
-
-            p{
-                font-family: "Sansation-Regular";
-                color: var(--ChText);
-                font-size: 1rem;
-                opacity: 0.8;
-                margin: 0;
-                line-height: 1;
-                @include respond-to-h(md){
-                    font-size: 0.9rem;
-                }
-                @include respond-to-h(sm){
-                    font-size: 0.9rem;
-                }
-                @include respond-to-h(xs){
-                    font-size: 0.8rem;
-                }
-                @include respond-to-h(xxs){
-                    font-size: 0.7rem;
-                }
-
-
-                @include respond-to-v(lg){
-                    font-size: 0.9rem;
-                }
-                @include respond-to-v(md){
-                    font-size: 0.8rem;
-                }
-                @include respond-to-v(s){
-                    font-size: 0.8rem;
-                }
-                @include respond-to-v(sm){
-                    font-size: 0.8rem;
-                }
-                @include respond-to-v(xs){
-                    font-size: 0.8rem;
-                }
-            }
-
-            .ScrollLink{
-                width: fit-content;
-                .button{
-                    width: 100%;
-                    .slider{
-                        .el{
-                            .perspectiveText{
-                                .footer__trademark__link{
-                                    font-family: "Sansation-Regular";
-                                    color: var(--ChText);
-                                    font-size: 1.1rem;
-                                    opacity: 0.8;
-                                    text-transform: uppercase;
-                                    border-bottom: 1px solid var(--ButtonBorder);
-
-                                    &:nth-of-type(2){
-                                        transform: rotateX(-90deg) translateY(9px);
-                                    }
-
-                                    @include respond-to-h(lg){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(mdt){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-h(md){
-                                        font-size: 0.95rem;
-                                    }
-                                    @include respond-to-h(sm){
-                                        font-size: 0.95rem;
-                                    }
-                                    @include respond-to-h(xs){
-                                        font-size: 0.8rem;
-                                    }
-                                    @include respond-to-h(xxs){
-                                        font-size: 0.7rem;
-                                    }
-
-
-                                    @include respond-to-v(lg){
-                                        font-size: 1rem;
-                                    }
-                                    @include respond-to-v(md){
-                                        font-size: 0.95rem;
-                                    }
-                                    @include respond-to-v(s){
-                                        font-size: 0.95rem;
-                                    }
-                                    @include respond-to-v(sm){
-                                        font-size: 0.9rem;
-                                    }
-                                    @include respond-to-v(xs){
-                                        font-size: 0.9rem;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-
-        p{
-            font-family: "Sansation-Regular";
-            color: var(--ChText);
-            font-size: 1rem;
-            opacity: 0.8;
-            margin: 0;
-            line-height: 1;
-            @include respond-to-h(md){
-                font-size: 0.9rem;
-            }
-            @include respond-to-h(sm){
-                font-size: 0.9rem;
-            }
-            @include respond-to-h(xs){
-                font-size: 0.8rem;
-            }
-            @include respond-to-h(xxs){
-                font-size: 0.7rem;
-            }
-
-
-            @include respond-to-v(lg){
-                font-size: 0.9rem;
-            }
-            @include respond-to-v(md){
-                font-size: 0.8rem;
-            }
-            @include respond-to-v(s){
-                font-size: 0.8rem;
-            }
-             @include respond-to-v(sm){
-                font-size: 0.8rem;
-            }
-             @include respond-to-v(xs){
-                font-size: 0.8rem;
-            }
-        }
-    }
 }

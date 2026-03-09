@@ -1,4 +1,4 @@
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   height: 100%;
@@ -30,19 +30,15 @@
         color: var(--Otext);
         font-size: 0.875rem;
 
-        @include respond-to-h(sm){
-          font-size: 0.8rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 0.75rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 0.75rem;
-        }
+        @include hb((
+          sm: (font-size: 0.8rem),
+          xs: (font-size: 0.75rem),
+          xxs: (font-size: 0.75rem),
+        ));
 
-        @include respond-to-v(lg){
-          font-size: 1.3rem;
-        }
+        @include vb((
+          lg: (font-size: 1.3rem),
+        ));
       }
     }
     .popoverPanel {
@@ -216,10 +212,9 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 90px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 90px, height: 35px),
+        ));
 
         .slider{
             position: relative;

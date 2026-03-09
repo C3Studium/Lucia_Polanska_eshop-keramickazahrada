@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* CheckoutSummary component styles - SASS nesting */
 .root {
@@ -10,34 +10,17 @@
   padding-top: 2rem;
   padding-bottom: 2rem;
 
-  @include respond-to-h(sm){
-    width: 100%;
-    position: relative;
-  }
-  @include respond-to-v(md){
-    width: 100%;
-    position: relative;
-  }
-  @include respond-to-h(xs){
-    position: relative;
-    width: 100%;
-  }
-  @include respond-to-h(xxs){
-    position: relative;
-    width: 100%;
-  }
-  @include respond-to-v(s){
-    width: 100%;
-    position: relative;
-  }
-  @include respond-to-v(sm){
-    width: 100%;
-    position: relative;
-  }
-  @include respond-to-v(xs){
-    width: 100%;
-    position: relative;
-  }
+  @include hb((
+    sm: (width: 100%, position: relative),
+    xs: (width: 100%, position: relative),
+    xxs: (width: 100%, position: relative),
+  ));
+  @include vb((
+    md: (width: 100%, position: relative),
+    s: (width: 100%, position: relative),
+    sm: (width: 100%, position: relative),
+    xs: (width: 100%, position: relative),
+  ));
 
   @media (min-width: 640px) {
     flex-direction: column;
@@ -61,40 +44,21 @@
       align-items: baseline;
       margin: 0;
 
-      @include respond-to-h(lg){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(md){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(sm){
-        font-size: 1.8rem;
-      }
-      @include respond-to-h(xs){
-        font-size: 1.6rem;
-      }
-      @include respond-to-h(xxs){
-        font-size: 1.6rem;
-      }
+      @include hb((
+        lg: (font-size: 1.8rem),
+        md: (font-size: 1.8rem),
+        sm: (font-size: 1.8rem),
+        xs: (font-size: 1.6rem),
+        xxs: (font-size: 1.6rem),
+      ));
 
-      @include respond-to-v(lg){
-        font-size: 1.8rem;
-      }
-      @include respond-to-v(md){
-        font-size: 1.8rem;
-      }
-      @include respond-to-v(s){
-        font-size: 1.6rem;
-        padding-left: 1rem;
-      }
-      @include respond-to-v(sm){
-        font-size: 1.6rem;
-        padding-left: 1rem;
-      }
-      @include respond-to-v(xs){
-        font-size: 1.6rem;
-        padding-left: 1rem;
-      }
+      @include vb((
+        lg: (font-size: 1.8rem),
+        md: (font-size: 1.8rem),
+        s: (font-size: 1.6rem, padding-left: 1rem),
+        sm: (font-size: 1.6rem, padding-left: 1rem),
+        xs: (font-size: 1.6rem, padding-left: 1rem),
+      ));
     }
     .divider {
       margin: 1.5rem 0;
@@ -111,15 +75,11 @@
       justify-content: center;
       align-items: center;
 
-      @include respond-to-v(s){
-        padding-left: 1rem;
-      }
-      @include respond-to-v(sm){
-        padding-left: 1rem;
-      }
-      @include respond-to-v(xs){
-        padding-left: 1rem;
-      }
+      @include vb((
+        s: (padding-left: 1rem),
+        sm: (padding-left: 1rem),
+        xs: (padding-left: 1rem),
+      ));
     }
   }
 }

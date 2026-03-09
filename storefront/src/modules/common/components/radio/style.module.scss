@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 /* Radio component styles */
 .root {
 	width: fit-content;
@@ -7,28 +7,18 @@
 	align-items: center;
 	justify-content: center;
 
-	@include respond-to-h(sm){
-		justify-content: flex-start;
-	}
-	@include respond-to-h(xs){
-		justify-content: flex-start;
-	}
-	@include respond-to-h(xxs){
-		justify-content: flex-start;
-	}
+	@include hb((
+		sm: (justify-content: flex-start),
+		xs: (justify-content: flex-start),
+		xxs: (justify-content: flex-start),
+	));
 
-	@include respond-to-v(md){
-		justify-content: flex-start;
-	}
-	@include respond-to-v(s){
-		justify-content: flex-start;
-	}
-	@include respond-to-v(sm){
-		justify-content: flex-start;
-	}
-	@include respond-to-v(xs){
-		justify-content: flex-start;
-	}
+	@include vb((
+		md: (justify-content: flex-start),
+		s: (justify-content: flex-start),
+		sm: (justify-content: flex-start),
+		xs: (justify-content: flex-start),
+	));
 
 	.button {
 		position: relative;

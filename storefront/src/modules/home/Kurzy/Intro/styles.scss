@@ -1,0 +1,413 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.kurzy__intro{
+    width: 100%;
+    height: 250dvh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 15dvh 5dvw;
+
+        @include hb((
+            mdt: (height: 250dvh),
+        ));
+        @include hb((
+            sm: (height: 220dvh),
+        ));
+        @include hb((
+            xs: (height: 250dvh),
+        ));
+        @include hb((
+            xxs: (height: 250dvh),
+        ));
+
+        @include vb((
+            lg: (height: 220dvh, justify-content: flex-start, gap: 5dvh),
+        ));
+        @include vb((
+            md: (height: 200dvh, justify-content: flex-start, gap: 5dvh),
+        ));
+        @include vb((
+            s: (height: 220dvh, justify-content: flex-start, gap: 5dvh),
+        ));
+        @include vb((
+            sm: (height: 220dvh, justify-content: flex-start, gap: 5dvh),
+        ));
+        @include vb((
+            xs: (height: 250dvh, justify-content: flex-start, gap: 5dvh, margin-bottom: 25dvh),
+        ));
+
+    .kurzy__intro__bgImages{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100dvw;
+        height: 100%;
+        z-index: 0;
+        overflow: hidden;
+
+        .kurzy__intro__Gradient{
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: -85dvh;
+            left: 5dvw;
+            z-index: 0;
+
+            @include hb((
+                mdt: (top: -85dvh),
+            ));
+            @include hb((
+                sm: (top: -75dvh),
+            ));
+                @include vb((
+                    lg: (top: -85dvh),
+                ));
+                @include vb((
+                    md: (top: -65dvh),
+                ));
+                @include vb((
+                    s: (top: -75dvh),
+                ));
+                @include vb((
+                    sm: (top: -75dvh),
+                ));
+                @include vb((
+                    xs: (top: -85dvh),
+                ));
+            
+
+            svg{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transform: scale(2);
+                opacity: 1;
+                @include vb((
+                    lg: (transform: scale(2.5)),
+                ));
+                @include vb((
+                    md: (transform: scale(2.5)),
+                ));
+                @include vb((
+                    s: (transform: scale(2.5)),
+                ));
+                @include vb((
+                    sm: (transform: scale(2.5)),
+                ));
+                @include vb((
+                    xs: (transform: scale(2.5)),
+                ));
+
+                g{
+                    width: 50dvw;
+                    height: 50dvh;
+                }
+            }
+
+            &:nth-of-type(2){
+                top: -45dvh;
+                left: -10dvw;
+                @include hb((
+                    mdt: (top: -35dvh),
+                ));
+                @include hb((
+                    sm: (top: -35dvh),
+                ));
+                @include vb((
+                    lg: (top: -45dvh),
+                ));
+                @include vb((
+                    md: (top: -40dvh),
+                ));
+                @include vb((
+                    s: (top: -45dvh),
+                ));
+                @include vb((
+                    sm: (top: -45dvh),
+                ));
+                @include vb((
+                    xs: (top: -55dvh),
+                ));
+
+                svg{
+                    transform: scale(1.5);
+                    opacity: 1;
+
+                    @include vb((
+                        lg: (transform: scale(2.75)),
+                    ));
+                    @include vb((
+                        md: (transform: scale(2.5)),
+                    ));
+                    @include vb((
+                        s: (transform: scale(3)),
+                    ));
+                    @include vb((
+                        sm: (transform: scale(3)),
+                    ));
+                    @include vb((
+                        xs: (transform: scale(3)),
+                    ));
+                }
+            }
+        }
+    }
+
+    .kurzy__intro__sticky{
+        width: 100%;
+        height: 150dvh;
+        position: sticky;
+        top: -40dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        gap: 20dvh;
+
+        @include vb((
+            lg: (top: -70dvh),
+        ));
+        @include vb((
+            md: (top: -60dvh),
+        ));
+
+        .kurzy__intro__title{
+            width: 100%;
+            height: 60dvh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            @include hb((
+                mdt: (height: 60dvh),
+            ));
+            @include hb((
+                sm: (height: 60dvh),
+            ));
+            @include hb((
+                xs: (height: 80dvh),
+            ));
+            @include hb((
+                xxs: (height: 80dvh),
+            ));
+            @include vb((
+                s: (height: 40dvh),
+            ));
+            @include vb((
+                sm: (height: 40dvh),
+            ));
+            @include vb((
+                xs: (height: 40dvh),
+            ));
+
+
+            .kurzy__intro__title__details{
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                
+                .kurzy__intro__title__details__title{
+                    width: fit-content;
+                    height: 100%;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    span{
+                        font-family: "Sansation-Light";
+                        font-size: 15rem;
+                        // color: var(--ChText);
+                        // WIP: under this text needs to be the cream gradient
+                        color: var(--whiteText);
+                        text-align: center;
+                        padding: 0;
+                        margin: 0;
+                        line-height: 1;
+
+                        @include hb((
+                            lg: (font-size: 12rem),
+                        ));
+                        @include hb((
+                            md: (font-size: 10rem),
+                        ));
+                        @include hb((
+                            mdt: (font-size: 12rem),
+                        ));
+                        @include hb((
+                            sm: (font-size: 10rem),
+                        ));
+                        @include hb((
+                            xs: (font-size: 8rem),
+                        ));
+                        @include hb((
+                            xxs: (font-size: 6rem),
+                        ));
+                        @include vb((
+                            md: (font-size: 10rem),
+                        ));
+                        @include vb((
+                            s: (font-size: 6rem),
+                        ));
+                        @include vb((
+                            sm: (font-size: 6rem),
+                        ));
+                        @include vb((
+                            xs: (font-size: 5rem),
+                        ));
+                    }
+
+                }
+                .kurzy__intro__title__details__img__inner{
+                    position: relative;
+                    width: 360px;
+                    height: 200px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    @include hb((
+                        mdt: (width: 15dvw, height: 15dvh),
+                    ));
+                    @include hb((
+                        sm: (width: 15dvw, height: 15dvh),
+                    ));
+
+                    @include vb((
+                        lg: (height: 10dvh),
+                    ));
+                    @include vb((
+                        md: (height: 10dvh),
+                    ));
+                    @include vb((
+                        s: (height: 5dvh),
+                    ));
+                    @include vb((
+                        sm: (height: 5dvh),
+                    ));
+                    @include vb((
+                        xs: (height: 5dvh),
+                    ));
+
+                    img{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                }
+            }
+        }
+
+        .kurzy__intro__content{
+            width: 100%;
+            height: 60dvh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 5dvh;
+
+            .kurzy__intro__content__text{
+                display: flex;
+                height: 60dvh;
+                width: 80%;
+                position: relative;
+                top: 0;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+
+                @include vb((
+                    lg: (width: 100%),
+                ));
+                @include vb((
+                    md: (width: 100%),
+                ));
+                @include vb((
+                    s: (width: 100%),
+                ));
+                @include vb((
+                    sm: (width: 100%),
+                ));
+                @include vb((
+                    xs: (width: 100%),
+                ));
+                
+                p{
+                    font-family: "Sansation-Light";
+                    font-size: 2rem;
+                    color: var(--whiteText);
+                    text-align: center;
+                    padding: 0 10dvw;
+                    margin: 0;
+                    line-height: 1.5;
+                    @include hb((
+                        lg: (font-size: 1.5rem),
+                    ));
+                    @include hb((
+                        md: (font-size: 1.3rem),
+                    ));
+                    @include hb((
+                        mdt: (font-size: 1.5rem),
+                    ));
+                    @include hb((
+                        sm: (font-size: 1.3rem),
+                    ));
+                    @include hb((
+                        xs: (font-size: 1.1rem),
+                    ));
+                    @include hb((
+                        xxs: (font-size: 1.1rem),
+                    ));
+                    @include vb((
+                        md: (font-size: 1.3rem),
+                    ));
+                    @include vb((
+                        s: (font-size: 1.3rem),
+                    ));
+                    @include vb((
+                        sm: (font-size: 1.2rem),
+                    ));
+                    @include vb((
+                        xs: (font-size: 1.1rem),
+                    ));
+                }
+
+                .kurzy__intro__content__mouse{
+                    width: 10dvw;
+                    height: 10dvw;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                @include hb((
+                    lg: (width: 85%),
+                ));
+                @include hb((
+                    md: (width: 82.5%),
+                ));
+                @include hb((
+                    sm: (width: 95%),
+                ));
+                @include hb((
+                    xs: (width: 95%),
+                ));
+                @include hb((
+                    xxs: (width: 95%),
+                ));
+            }
+
+        }
+    }
+}

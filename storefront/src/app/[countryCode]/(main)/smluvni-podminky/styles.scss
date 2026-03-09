@@ -1,3 +1,4 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
 .terms {
   /* Reserve space for the site header so page headings and nav aren't overlapped */
   --header-offset: 88px; /* mobile/default */

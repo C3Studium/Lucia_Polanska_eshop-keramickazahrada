@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   margin-top: 1.5rem;
@@ -11,37 +11,21 @@
     font-family: "Sansation-Regular";
     margin-bottom: 1rem;
 
-    @include respond-to-h(md){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(mdt){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(sm){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(xs){
-			font-size: 1.6rem;
-		}
-		@include respond-to-h(xxs){
-			font-size: 1.6rem;
-		}
+    @include hb((
+			md: (font-size: 1.8rem),
+			mdt: (font-size: 1.8rem),
+			sm: (font-size: 1.8rem),
+			xs: (font-size: 1.6rem),
+			xxs: (font-size: 1.6rem),
+		));
 
-    @include respond-to-v(lg){
-      font-size: 1.8rem;
-    }
-    @include respond-to-v(md){
-      font-size: 1.8rem;
-    }
-    @include respond-to-v(s){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(xs){
-      font-size: 1.6rem;
-    }
+    @include vb((
+      lg: (font-size: 1.8rem),
+      md: (font-size: 1.8rem),
+      s: (font-size: 1.6rem),
+      sm: (font-size: 1.6rem),
+      xs: (font-size: 1.6rem),
+    ));
   }
 
   .content {
@@ -56,101 +40,71 @@
         color: var(--handle);
         font-size: 1.3rem;
         font-family: "Sansation-Regular";
-        @include respond-to-h(md){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 1.1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 1.2rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 1.2rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 1.2rem;
-        }
+        @include hb((
+          md: (font-size: 1.2rem),
+          mdt: (font-size: 1.2rem),
+          sm: (font-size: 1.2rem),
+          xs: (font-size: 1.1rem),
+          xxs: (font-size: 1.1rem),
+        ));
+        @include vb((
+          s: (font-size: 1.2rem),
+          sm: (font-size: 1.2rem),
+          xs: (font-size: 1.2rem),
+        ));
         .contactHeader{
           color: var(--handle);
           font-size: 1.3rem;
           font-family: "Sansation-Regular";
 
-          @include respond-to-h(md){
-            font-size: 1.2rem;
-          }
-          @include respond-to-h(mdt){
-            font-size: 1.2rem;
-          }
-          @include respond-to-h(sm){
-            font-size: 1.2rem;
-          }
-          @include respond-to-h(xs){
-            font-size: 1.1rem;
-          }
-          @include respond-to-h(xxs){
-            font-size: 1.1rem;
-          }
-          @include respond-to-v(s){
-            font-size: 1.2rem;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            flex-direction: column;
-          }
-          @include respond-to-v(sm){
-            font-size: 1.2rem;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            flex-direction: column;
-          }
-          @include respond-to-v(xs){
-            font-size: 1.2rem;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            flex-direction: column;
-          }
+          @include hb((
+            md: (font-size: 1.2rem),
+            mdt: (font-size: 1.2rem),
+            sm: (font-size: 1.2rem),
+            xs: (font-size: 1.1rem),
+            xxs: (font-size: 1.1rem),
+          ));
+          @include vb((
+            s: (
+              font-size: 1.2rem,
+              display: flex,
+              align-items: flex-start,
+              justify-content: center,
+              flex-direction: column
+            ),
+            sm: (
+              font-size: 1.2rem,
+              display: flex,
+              align-items: flex-start,
+              justify-content: center,
+              flex-direction: column
+            ),
+            xs: (
+              font-size: 1.2rem,
+              display: flex,
+              align-items: flex-start,
+              justify-content: center,
+              flex-direction: column
+            ),
+          ));
           .contactInfo{
             color: var(--handle);
             font-size: 1.1rem;
             font-family: "Sansation-Light";
             margin-left: 1rem;
 
-            @include respond-to-h(md){
-              font-size: 1rem;
-            }
-            @include respond-to-h(mdt){
-              font-size: 1rem;
-            }
-            @include respond-to-h(sm){
-              font-size: 1rem;
-            }
-            @include respond-to-h(xs){
-              font-size: 0.9rem;
-            }
-            @include respond-to-h(xxs){
-              font-size: 0.9rem;
-            }
-            @include respond-to-v(s){
-              font-size: 1rem;
-            }
-            @include respond-to-v(sm){
-              font-size: 1rem;
-            }
-            @include respond-to-v(xs){
-              font-size: 1rem;
-            }
+            @include hb((
+              md: (font-size: 1rem),
+              mdt: (font-size: 1rem),
+              sm: (font-size: 1rem),
+              xs: (font-size: 0.9rem),
+              xxs: (font-size: 0.9rem),
+            ));
+            @include vb((
+              s: (font-size: 1rem),
+              sm: (font-size: 1rem),
+              xs: (font-size: 1rem),
+            ));
           }
         }
       }
@@ -160,30 +114,18 @@
         font-size: 1.3rem;
         font-family: "Sansation-Regular";
 
-        @include respond-to-h(md){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(mdt){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(sm){
-          font-size: 1.2rem;
-        }
-        @include respond-to-h(xs){
-          font-size: 1.1rem;
-        }
-        @include respond-to-h(xxs){
-          font-size: 1.1rem;
-        }
-        @include respond-to-v(s){
-          font-size: 1.2rem;
-        }
-        @include respond-to-v(sm){
-          font-size: 1.2rem;
-        }
-        @include respond-to-v(xs){
-          font-size: 1.2rem;
-        }
+        @include hb((
+          md: (font-size: 1.2rem),
+          mdt: (font-size: 1.2rem),
+          sm: (font-size: 1.2rem),
+          xs: (font-size: 1.1rem),
+          xxs: (font-size: 1.1rem),
+        ));
+        @include vb((
+          s: (font-size: 1.2rem),
+          sm: (font-size: 1.2rem),
+          xs: (font-size: 1.2rem),
+        ));
 
         &:hover {
           text-decoration: underline;

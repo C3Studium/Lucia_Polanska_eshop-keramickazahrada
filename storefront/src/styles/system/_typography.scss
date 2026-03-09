@@ -1,0 +1,367 @@
+@use "sass:map";
+@use "./mixins" as m;
+
+// Token structure:
+// - family: (primary, fallback...)
+// - sizes-h: map of sizes per landscape breakpoint
+// - sizes-v: optional map for portrait (if you want)
+$font-scale: (
+  transition: (family: ("Helvetica", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (huge: 3rem,
+      xl: 3rem,
+      lg: 2.5rem,
+      md: 2rem,
+      sm: 1.8rem,
+      xs: 1.6rem,
+      xxs: 1.5rem,
+
+      mdt: 2rem,
+      smt: 1.8rem),
+    sizes-v: (lg: 2.5rem,
+      md: 2rem,
+      s: 1.5rem,
+      sm: 1.5rem,
+      xs: 1.4rem)),
+
+  404: (family: ("Helvetica", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (huge: 30rem,
+      xl: 25rem,
+      lg: 20rem,
+      md: 18rem,
+      sm: 16rem,
+      xs: 14rem,
+      xxs: 12rem,
+
+      mdt: 20rem,
+      smt: 15rem),
+    sizes-v: (lg: 20rem,
+      md: 18rem,
+      s: 15rem,
+      sm: 12rem,
+      xs: 10rem)),
+
+  h1: (family: ("Helvetica", "Inter", system-ui, sans-serif),
+    sizes-h: (huge: 8rem,
+      xl: 8rem,
+      lg: 6rem,
+      md: 5.5rem,
+      sm: 5rem,
+      xs: 3.5rem,
+      xxs: 3rem,
+
+      mdt: 6rem,
+      smt: 5rem),
+    sizes-v: (lg: 6rem,
+      md: 5rem,
+      s: 4rem,
+      sm: 4rem,
+      xs: 3.5rem)),
+
+  h2: (family: ("Helvetica", system-ui, sans-serif),
+    sizes-h: (huge: 5rem,
+      xl: 5rem,
+      lg: 4rem,
+      md: 3rem,
+      sm: 3.5rem,
+      xs: 2.5rem,
+      xxs: 2rem,
+
+      mdt: 4.5rem,
+      smt: 3rem),
+    sizes-v: (lg: 3.5rem,
+      md: 3rem,
+      s: 2.5rem,
+      sm: 2.2rem,
+      xs: 2rem)),
+
+  h3: (family: ("Helvetica", system-ui, sans-serif),
+    sizes-h: (huge: 3rem,
+      xl: 3rem,
+      lg: 2.5rem,
+      md: 2rem,
+      sm: 2rem,
+      xs: 2rem,
+      xxs: 1.8rem,
+
+      mdt: 2.5rem,
+      smt: 2rem),
+    sizes-v: (lg: 2.5rem,
+      md: 2rem,
+      s: 1.5rem,
+      sm: 1.5rem,
+      xs: 1.3rem)),
+  h4: (family: ("Helvetica", system-ui, sans-serif),
+    sizes-h: (huge: 2.5rem,
+      xl: 2.5rem,
+      lg: 2rem,
+      md: 2rem,
+      sm: 1.8rem,
+      xs: 1.8rem,
+      xxs: 1.5rem,
+
+      mdt: 2rem,
+      smt: 1.8rem),
+    sizes-v: (lg: 2rem,
+      md: 1.8rem,
+      s: 1.3rem,
+      sm: 1.3rem,
+      xs: 1.2rem)),
+
+  BCTA: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 2rem,
+      xl: 2rem,
+      lg: 1.8rem,
+      md: 1.8rem,
+      sm: 1.5rem,
+      xs: 1.3rem,
+      xxs: 1.2rem,
+
+      mdt: 1.8rem,
+      smt: 1.5rem),
+    sizes-v: (lg: 1.8rem,
+      md: 1.5rem,
+      s: 1.3rem,
+      sm: 1.3rem,
+      xs: 1.2rem)),
+
+  SCTA: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1.3rem,
+      xl: 1.3rem,
+      lg: 1.2rem,
+      md: 1.2rem,
+      sm: 1.1rem,
+      xs: 1rem,
+      xxs: 1rem,
+
+      mdt: 1.2rem,
+      smt: 1.1rem),
+    sizes-v: (lg: 1.2rem,
+      md: 1.2rem,
+      s: 1.1rem,
+      sm: 1rem,
+      xs: 1rem)),
+  Nav: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1.5rem,
+      xl: 1.3rem,
+      lg: 1.15rem,
+      md: 1.15rem,
+      sm: 1rem,
+      xs: 1.2rem,
+      xxs: 1.2rem,
+
+      mdt: 1.2rem,
+      smt: 1.1rem),
+    sizes-v: (lg: 1.2rem,
+      md: 1.2rem,
+      s: 1.1rem,
+      sm: 1.1rem,
+      xs: 1.1rem)),
+  SBody: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1.3rem,
+      xl: 1.3rem,
+      lg: 1.2rem,
+      md: 1.2rem,
+      sm: 1rem,
+      xs: 1rem,
+      xxs: 0.85rem,
+
+      mdt: 1.2rem,
+      smt: 1.1rem),
+    sizes-v: (lg: 1.3rem,
+      md: 1.2rem,
+      s: 1.1rem,
+      sm: 1rem,
+      xs: 1rem)),
+  XSBody: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1rem,
+      xl: 1rem,
+      lg: 0.9rem,
+      md: 0.8rem,
+      sm: 0.75rem,
+      xs: 0.7rem,
+      xxs: 0.65rem,
+
+      mdt: 0.8rem,
+      smt: 0.75rem),
+    sizes-v: (lg: 0.9rem,
+      md: 0.9rem,
+      s: 0.8rem,
+      sm: 0.8rem,
+      xs: 0.7rem)),
+  MBody: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 2rem,
+      xl: 1.8rem,
+      lg: 1.5rem,
+      md: 1.35rem,
+      sm: 1.3rem,
+      xs: 1.3rem,
+      xxs: 1.15rem,
+
+      mdt: 1.2rem,
+      smt: 1.1rem),
+    sizes-v: (lg: 1.5rem,
+      md: 1.35rem,
+      s: 1.2rem,
+      sm: 1.15rem,
+      xs: 1.1rem)),
+  SLinks: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1rem,
+      xl: 1rem,
+      lg: 0.9rem,
+      md: 0.9rem,
+      sm: 0.8rem,
+      xs: 0.8rem,
+      xxs: 0.7rem,
+
+      mdt: 0.8rem,
+      smt: 0.7rem),
+    sizes-v: (lg: 0.9rem,
+      md: 0.9rem,
+      s: 0.8rem,
+      sm: 0.8rem,
+      xs: 0.7rem)),
+  legal: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1rem,
+      xl: 1rem,
+      lg: 0.9rem,
+      md: 0.9rem,
+      sm: 0.8rem,
+      xs: 0.8rem,
+      xxs: 0.7rem,
+
+      mdt: 0.8rem,
+      smt: 0.7rem),
+    sizes-v: (lg: 0.9rem,
+      md: 0.9rem,
+      s: 0.8rem,
+      sm: 0.8rem,
+      xs: 0.7rem)),
+  label: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1.3rem,
+      xl: 1.3rem,
+      lg: 1.2rem,
+      md: 1.15rem,
+      sm: 1.1rem,
+      xs: 1.1rem,
+      xxs: 1rem,
+
+      mdt: 1.3rem,
+      smt: 1.15rem),
+    sizes-v: (lg: 1.2rem,
+      md: 1.15rem,
+      s: 1.1rem,
+      sm: 1.1rem,
+      xs: 1rem)),
+
+  input: (family: ("Arimo", system-ui, sans-serif),
+    sizes-h: (huge: 1.15rem,
+      xl: 1.15rem,
+      lg: 1.05rem,
+      md: 1.05rem,
+      sm: 1rem,
+      xs: 1rem,
+      xxs: 0.9rem,
+
+      mdt: 1.15rem,
+      smt: 1.05rem),
+    sizes-v: (lg: 1.15rem,
+      md: 1.05rem,
+      s: 1rem,
+      sm: 1rem,
+      xs: 0.9rem)),
+);
+
+// Public mixin
+@mixin font($token) {
+  $cfg: map.get($font-scale, $token);
+
+  @if $cfg ==null {
+    @warn "Unknown type token: #{$token}";
+    $cfg: (
+    );
+}
+
+$family: map.get($cfg, family);
+$sizesH: map.get($cfg, sizes-h);
+$sizesV: map.get($cfg, sizes-v);
+
+font-family: $family;
+
+// Mobile-first: start at smallest layer, then scale up with min-width breakpoints.
+@include m.h-layer(xxs) {
+  font-size: map.get($sizesH, xxs);
+  height: map.get($sizesH, xxs);
+}
+
+@include m.h-layer(xs) {
+  font-size: map.get($sizesH, xs);
+  height: map.get($sizesH, xs);
+}
+
+@include m.h-layer(sm) {
+  font-size: map.get($sizesH, sm);
+  height: map.get($sizesH, sm);
+}
+
+@if map.get($sizesH, smt) !=null {
+  @include m.h-layer(smt) {
+    font-size: map.get($sizesH, smt);
+    height: map.get($sizesH, smt);
+  }
+}
+
+@include m.h-layer(md) {
+  font-size: map.get($sizesH, md);
+  height: map.get($sizesH, md);
+}
+
+@if map.get($sizesH, mdt) !=null {
+  @include m.h-layer(mdt) {
+    font-size: map.get($sizesH, mdt);
+    height: map.get($sizesH, mdt);
+  }
+}
+
+@include m.h-layer(lg) {
+  font-size: map.get($sizesH, lg);
+  height: map.get($sizesH, lg);
+}
+
+@include m.h-layer(xl) {
+  font-size: map.get($sizesH, xl);
+  height: map.get($sizesH, xl);
+}
+
+@include m.h-layer(huge) {
+  font-size: map.get($sizesH, huge);
+  height: map.get($sizesH, huge);
+}
+
+// Portrait overrides (optional but supported)
+@if $sizesV !=null {
+  @include m.v-layer(xs) {
+    font-size: map.get($sizesV, xs);
+    height: map.get($sizesV, xs);
+  }
+
+  @include m.v-layer(sm) {
+    font-size: map.get($sizesV, sm);
+    height: map.get($sizesV, sm);
+  }
+
+  @include m.v-layer(s) {
+    font-size: map.get($sizesV, s);
+    height: map.get($sizesV, s);
+  }
+
+  @include m.v-layer(md) {
+    font-size: map.get($sizesV, md);
+    height: map.get($sizesV, md);
+  }
+
+  @include m.v-layer(lg) {
+    font-size: map.get($sizesV, lg);
+    height: map.get($sizesV, lg);
+  }
+}
+}

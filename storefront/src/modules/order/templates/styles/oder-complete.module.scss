@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
 	// py-6 min-h-[calc(100dvh-64px)]
@@ -7,22 +7,13 @@
 	width: 100%;
 	position: relative;
 
-	@include respond-to-v(lg){
-		padding: 10dvh 10vw 5dvh 10vw; 
-	}
-	@include respond-to-v(md){
-		padding: 10dvh 10vw 5dvh 10vw; 
-	}
-
-	@include respond-to-v(s){
-		padding: 10dvh 2.5vw 5dvh 2.5vw; 
-	}
-	@include respond-to-v(sm){
-		padding: 10dvh 2.5vw 5dvh 2.5vw; 
-	}
-	@include respond-to-v(xs){
-		padding: 10dvh 2.5vw 5dvh 2.5vw; 
-	}
+	@include vb((
+		lg: (padding: 10dvh 10vw 5dvh 10vw),
+		md: (padding: 10dvh 10vw 5dvh 10vw),
+		s: (padding: 10dvh 2.5vw 5dvh 2.5vw),
+		sm: (padding: 10dvh 2.5vw 5dvh 2.5vw),
+		xs: (padding: 10dvh 2.5vw 5dvh 2.5vw),
+	));
 
 
 	.container {
@@ -71,34 +62,19 @@
 		font-family: "Sansation-Regular";
 		font-weight: 400;
 
-		@include respond-to-h(md){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(mdt){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(sm){
-			font-size: 1.8rem;
-		}
-		@include respond-to-h(xs){
-			font-size: 1.6rem;
-		}
-		@include respond-to-h(xxs){
-			font-size: 1.6rem;
-		}
+		@include hb((
+			md: (font-size: 1.8rem),
+			mdt: (font-size: 1.8rem),
+			sm: (font-size: 1.8rem),
+			xs: (font-size: 1.6rem),
+			xxs: (font-size: 1.6rem),
+		));
 
-		@include respond-to-v(s){
-			font-size: 1.8rem;
-			line-height: 1.25;
-		}
-		@include respond-to-v(sm){
-			font-size: 1.8rem;
-			line-height: 1.25;
-		}
-		@include respond-to-v(xs){
-			font-size: 1.8rem;
-			line-height: 1.25;
-		}
+		@include vb((
+			s: (font-size: 1.8rem, line-height: 1.25),
+			sm: (font-size: 1.8rem, line-height: 1.25),
+			xs: (font-size: 1.8rem, line-height: 1.25),
+		));
 	}
 
 	.sectionTitle {
@@ -110,30 +86,18 @@
 		font-weight: 300;
 		font-family: "Sansation-Regular";
 
-		@include respond-to-h(md){
-			font-size: 1.6rem;
-		}
-		@include respond-to-h(mdt){
-			font-size: 1.6rem;
-		}
-		@include respond-to-h(sm){
-			font-size: 1.6rem;
-		}
-		@include respond-to-h(xs){
-			font-size: 1.3rem;
-		}
-		@include respond-to-h(xxs){
-			font-size: 1.3rem;
-		}
-		@include respond-to-v(s){
-			font-size: 1.6rem;
-		}
-		@include respond-to-v(sm){
-			font-size: 1.6rem;
-		}
-		@include respond-to-v(xs){
-			font-size: 1.6rem;
-		}
+		@include hb((
+			md: (font-size: 1.6rem),
+			mdt: (font-size: 1.6rem),
+			sm: (font-size: 1.6rem),
+			xs: (font-size: 1.3rem),
+			xxs: (font-size: 1.3rem),
+		));
+		@include vb((
+			s: (font-size: 1.6rem),
+			sm: (font-size: 1.6rem),
+			xs: (font-size: 1.6rem),
+		));
 	}
 }
 

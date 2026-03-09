@@ -1,4 +1,4 @@
-@use '../../../styles/mixins.scss' as *;
+@use "../../../styles/system/_shortcuts.scss" as *;
 
 /* Cart page layout */
 
@@ -12,19 +12,15 @@
   min-height: 100dvh;
   border-radius: 25px;
 
-  @include respond-to-h(md) {
-    padding: 10dvh 2.5dvw;
-  }
+  @include hb((
+    md: (padding: 10dvh 2.5dvw),
+  ));
 
-  @include respond-to-v(s) {
-    padding: 5dvh 2.5dvw;
-  }
-    @include respond-to-v(sm) {
-    padding: 5dvh 2.5dvw;
-  }
-    @include respond-to-v(xs) {
-    padding: 7.5dvh 2.5dvw;
-  }
+  @include vb((
+    s: (padding: 5dvh 2.5dvw),
+    sm: (padding: 5dvh 2.5dvw),
+    xs: (padding: 7.5dvh 2.5dvw),
+  ));
 
   .container {
     width: 100%;
@@ -44,48 +40,21 @@
       min-height: 60dvh;
       padding: 5dvh 2.5dvw;
 
-      @include respond-to-h(lg) {
-        gap: 5rem;
-      }
-      @include respond-to-h(md) {
-        gap: 2.5rem;
-      }
-      @include respond-to-h(mdt) {
-        gap: 2.5rem;
-      }
-      @include respond-to-h(sm){
-        flex-direction: column;
-        gap: 1rem;
-      }
-      @include respond-to-h(xs){
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      @include respond-to-h(xxs){
-        flex-direction: column;
-        gap: 1rem;
-      }
-      @include respond-to-v(lg){
-        flex-direction: column;
-        gap: 1rem;
-      }
-       @include respond-to-v(md){
-        flex-direction: column;
-        gap: 1rem;
-      } 
-      @include respond-to-v(s){
-        flex-direction: column;
-        gap: 1rem;
-      }
-      @include respond-to-v(sm){
-        flex-direction: column;
-        gap: 1rem;
-      }
-      @include respond-to-v(xs){
-        flex-direction: column;
-        gap: 1rem;
-      }
+      @include hb((
+        lg: (gap: 5rem),
+        md: (gap: 2.5rem),
+        mdt: (gap: 2.5rem),
+        sm: (flex-direction: column, gap: 1rem),
+        xs: (flex-direction: column, gap: 1rem),
+        xxs: (flex-direction: column, gap: 1rem),
+      ));
+      @include vb((
+        lg: (flex-direction: column, gap: 1rem),
+        md: (flex-direction: column, gap: 1rem),
+        s: (flex-direction: column, gap: 1rem),
+        sm: (flex-direction: column, gap: 1rem),
+        xs: (flex-direction: column, gap: 1rem),
+      ));
 
 
       .left {
@@ -104,32 +73,19 @@
         align-items: flex-start;
         justify-content: center;
 
-        @include respond-to-h(lg){
-          flex: 0 0 400px;
-        }
-        
-        @include respond-to-h(mdt){
-          flex: 0 0 400px;
-        }
-        @include respond-to-h(md){
-          flex: 0 0 400px;
-        }
+        @include hb((
+          lg: (flex: 0 0 400px),
+          mdt: (flex: 0 0 400px),
+          md: (flex: 0 0 400px),
+        ));
 
-        @include respond-to-v(lg){
-          flex: 0 0 400px;
-        }
-        @include respond-to-v(md){
-          flex: 0 0 400px;
-        }
-        @include respond-to-v(s){
-          flex: 0 0 400px;
-        }
-        @include respond-to-v(sm){
-          flex: 0 0 380px;
-        }
-        @include respond-to-v(xs){
-          flex: 0 0 360px;
-        }
+        @include vb((
+          lg: (flex: 0 0 400px),
+          md: (flex: 0 0 400px),
+          s: (flex: 0 0 400px),
+          sm: (flex: 0 0 380px),
+          xs: (flex: 0 0 360px),
+        ));
 
         .sticky {
           position: sticky;
@@ -139,53 +95,19 @@
           flex-direction: column;
           gap: 2rem;
 
-          @include respond-to-h(sm){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-          }
-          @include respond-to-h(xs){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-          }
+          @include hb((
+            sm: (top: 0, position: relative, gap: 1rem),
+            xs: (top: 0, position: relative, gap: 1rem),
+            xxs: (top: 0, position: relative, gap: 1rem),
+          ));
 
-          @include respond-to-h(xxs){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-          }
-
-          @include respond-to-v(lg){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-            width: 70%;
-          }
-          @include respond-to-v(md){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-            width: 90%;
-          }
-          @include respond-to-v(s){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-            width: 90%;
-          }
-          @include respond-to-v(sm){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-            width: 90%;
-          }
-          @include respond-to-v(xs){
-            top: 0;
-            position: relative;
-            gap: 1rem;
-            width: 90%;
-          }
+          @include vb((
+            lg: (top: 0, position: relative, gap: 1rem, width: 70%),
+            md: (top: 0, position: relative, gap: 1rem, width: 90%),
+            s: (top: 0, position: relative, gap: 1rem, width: 90%),
+            sm: (top: 0, position: relative, gap: 1rem, width: 90%),
+            xs: (top: 0, position: relative, gap: 1rem, width: 90%),
+          ));
 
           .summaryBox {
             background-color: #ffffff;
@@ -193,37 +115,20 @@
         }
       }
 
-      @include respond-to-v(md) {
-        flex-direction: column;
-        gap: 2rem;
+      @include vb((
+        md: (flex-direction: column, gap: 2rem),
+        s: (flex-direction: column, gap: 2rem),
+        sm: (flex-direction: column, gap: 2rem),
+        xs: (flex-direction: column, gap: 2rem),
+      ));
 
-        .right {
-          flex: 1 1 0%;
-        }
-      }
-      @include respond-to-v(s) {
-        flex-direction: column;
-        gap: 2rem;
-
-        .right {
-          flex: 1 1 0%;
-        }
-      }
-      @include respond-to-v(sm) {
-        flex-direction: column;
-        gap: 2rem;
-
-        .right {
-          flex: 1 1 0%;
-        }
-      }
-      @include respond-to-v(xs) {
-        flex-direction: column;
-        gap: 2rem;
-
-        .right {
-          flex: 1 1 0%;
-        }
+      .right {
+        @include vb((
+          md: (flex: 1 1 0%),
+          s: (flex: 1 1 0%),
+          sm: (flex: 1 1 0%),
+          xs: (flex: 1 1 0%),
+        ));
       }
     }
 

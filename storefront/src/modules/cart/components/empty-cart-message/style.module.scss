@@ -1,4 +1,4 @@
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 
 .root {
@@ -14,21 +14,15 @@
   height: 100%;
   gap: 1rem; /* gap-4 */
 
-  @include respond-to-h(xs) {
-    padding: 4rem 2rem;
-  }
-  @include respond-to-h(xxs) {
-    padding: 4rem 2rem;
-  }
-  @include respond-to-v(s) {
-    padding: 12rem 2rem;
-  }
-  @include respond-to-v(xs) {
-    padding: 10rem 2rem;
-  }
-  @include respond-to-v(sm) {
-    padding: 10rem 2rem;
-  }
+  @include hb((
+    xs: (padding: 4rem 2rem),
+    xxs: (padding: 4rem 2rem),
+  ));
+  @include vb((
+    s: (padding: 12rem 2rem),
+    xs: (padding: 10rem 2rem),
+    sm: (padding: 10rem 2rem),
+  ));
 
 
   .title {
@@ -41,31 +35,19 @@
     font-weight: 400; /* regular */
     font-family: "Sansation-Regular";
 
-    @include respond-to-h(md) {
-      font-size: 2.25rem; /* text-2xl */
-    }
-    @include respond-to-h(sm) {
-      font-size: 2.25rem; /* text-2xl */
-    }
-    @include respond-to-h(xs) {
-      font-size: 2rem; /* text-2xl */
-    }
-    @include respond-to-h(xxs) {
-      font-size: 2rem; /* text-2xl */
-    }
+    @include hb((
+      md: (font-size: 2.25rem),
+      sm: (font-size: 2.25rem),
+      xs: (font-size: 2rem),
+      xxs: (font-size: 2rem),
+    ));
 
-    @include respond-to-v(md) {
-      font-size: 2.25rem; /* text-2xl */
-    }
-    @include respond-to-v(s) {
-      font-size: 2.25rem; /* text-2xl */
-    }
-    @include respond-to-v(sm) {
-      font-size: 2.25rem; /* text-2xl */
-    }
-    @include respond-to-v(xs) {
-      font-size: 2.25rem; /* text-2xl */
-    }
+    @include vb((
+      md: (font-size: 2.25rem),
+      s: (font-size: 2.25rem),
+      sm: (font-size: 2.25rem),
+      xs: (font-size: 2.25rem),
+    ));
     
   }
 
@@ -78,22 +60,15 @@
     font-weight: 300;
     font-family: "Sansation-Light";
 
-    @include respond-to-h(md) {
-      font-size: 1rem; /* text-2xl */
-    }
-    @include respond-to-h(sm) {
-      font-size: 1rem; /* text-2xl */
-    }
-    @include respond-to-h(xs) {
-      font-size: 1rem; /* text-2xl */
-    }
-    @include respond-to-h(xxs) {
-      font-size: 1rem; /* text-2xl */
-    }
+    @include hb((
+      md: (font-size: 1rem),
+      sm: (font-size: 1rem),
+      xs: (font-size: 1rem),
+      xxs: (font-size: 1rem),
+    ));
 
-
-    @include respond-to-v(md) {
-      font-size: 1rem; /* text-2xl */
-    }
+    @include vb((
+      md: (font-size: 1rem),
+    ));
   }
 }

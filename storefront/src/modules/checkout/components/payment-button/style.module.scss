@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Payment Button styles using nested Sass structure */
 
@@ -42,10 +42,9 @@
     box-shadow: 0 2px 8px var(--ButtonBorder); // subtle shadow here
     background-color: transparent;
 
-    @include respond-to-v(s){
-        width: 90px;
-        height: 35px;
-    }
+    @include vb((
+        s: (width: 90px, height: 35px),
+    ));
 
     .slider{
         position: relative;

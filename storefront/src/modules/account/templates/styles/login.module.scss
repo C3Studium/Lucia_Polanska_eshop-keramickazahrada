@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .container {
   width: 100%;
@@ -11,9 +11,9 @@
 
   border-radius: 25px;
 
-  @include respond-to-h(sm){
-    height: 130%;
-  }
+  @include hb((
+    sm: (height: 130%),
+  ));
 
   .ImageContainer{
     z-index: -1;
@@ -23,51 +23,19 @@
     top: -40%;
     left: -170%;
 
-    @include respond-to-h(mdt){
-      top: -70%;
-      left: -150%;
-      width: 140dvw;
-      height: 140dvh;
-    }
-    @include respond-to-h(md){
-      top: -30%;
-      left: -100%;
-    }
-     @include respond-to-h(sm){
-      top: -30%;
-      left: -100%;
-    }
-     @include respond-to-h(xs){
-      top: -40%;
-      left: -80%;
-      width: 250dvw;
-      height: 250dvh;
-    }
-     @include respond-to-h(xxs){
-      top: -40%;
-      left: -80%;
-      width: 250dvw;
-      height: 250dvh;
-    }
+    @include hb((
+      mdt: (top: -70%, left: -150%, width: 140dvw, height: 140dvh),
+      md: (top: -30%, left: -100%),
+      sm: (top: -30%, left: -100%),
+      xs: (top: -40%, left: -80%, width: 250dvw, height: 250dvh),
+      xxs: (top: -40%, left: -80%, width: 250dvw, height: 250dvh),
+    ));
 
-     @include respond-to-v(lg){
-      top: -80%;
-      left: -150%;
-      width: 140dvw;
-      height: 140dvh;
-    }
-      @include respond-to-v(md){
-      top: -80%;
-      left: -100%;
-      width: 140dvw;
-      height: 140dvh;
-    }
-      @include respond-to-v(s){
-      top: -80%;
-      left: -50%;
-      width: 200dvw;
-      height: 200dvh;
-    }
+    @include vb((
+      lg: (top: -80%, left: -150%, width: 140dvw, height: 140dvh),
+      md: (top: -80%, left: -100%, width: 140dvw, height: 140dvh),
+      s: (top: -80%, left: -50%, width: 200dvw, height: 200dvh),
+    ));
 
     .Image{
       position: absolute;

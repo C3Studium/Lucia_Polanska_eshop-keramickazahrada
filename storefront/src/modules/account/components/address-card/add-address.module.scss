@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 
 .addButtonContainer{
@@ -9,15 +9,11 @@
   flex-direction: column;
   margin-bottom: 1rem;
 
-  @include respond-to-v(s) {
-    margin-bottom: 2.5rem;
-  }
-  @include respond-to-v(sm) {
-    margin-bottom: 2.5rem;
-  }
-  @include respond-to-v(xs) {
-    margin-bottom: 2.5rem;
-  }
+  @include vb((
+    s: (margin-bottom: 2.5rem),
+    sm: (margin-bottom: 2.5rem),
+    xs: (margin-bottom: 2.5rem),
+  ));
   .addButton{
     width: 100%;
     display: flex;
@@ -35,40 +31,22 @@
       font-family: "Sansation-Regular";
       text-transform: capitalize;
 
-      @include respond-to-h(lg){
-				font-size: 1.2rem;
-			}
-			@include respond-to-h(md){
-				font-size: 1.2rem;
-			}
-			@include respond-to-h(mdt){
-				font-size: 1.2rem;
-			}
-			@include respond-to-h(sm){
-				font-size: 1.2rem;
-			}
-			@include respond-to-h(xs){
-				font-size: 1.1rem;
-			}
-			@include respond-to-h(xxs){
-				font-size: 1.1rem;
-			}
+      @include hb((
+				lg: (font-size: 1.2rem),
+				md: (font-size: 1.2rem),
+				mdt: (font-size: 1.2rem),
+				sm: (font-size: 1.2rem),
+				xs: (font-size: 1.1rem),
+				xxs: (font-size: 1.1rem),
+			));
 
-			@include respond-to-v(lg){
-				font-size: 1.2rem;
-			}
-			@include respond-to-v(md){
-				font-size: 1.2rem;
-			}
-			@include respond-to-v(s){
-				font-size: 1.1rem;
-			}
-			@include respond-to-v(sm){
-				font-size: 1.1rem;
-			}
-			@include respond-to-v(xs){
-				font-size: 1.1rem;
-			}
+			@include vb((
+				lg: (font-size: 1.2rem),
+				md: (font-size: 1.2rem),
+				s: (font-size: 1.1rem),
+				sm: (font-size: 1.1rem),
+				xs: (font-size: 1.1rem),
+			));
     }
     .cardButton {
       display: flex;
@@ -86,17 +64,11 @@
   justify-content: center;
 
   .title{
-    @include respond-to-v(s){
-      font-size: 1.3rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 1.3rem;
-      margin-bottom: 0;
-    }
-    @include respond-to-v(xs){
-      font-size: 1.3rem;
-      margin-bottom: 0;
-    }
+    @include vb((
+      s: (font-size: 1.3rem),
+      sm: (font-size: 1.3rem, margin-bottom: 0),
+      xs: (font-size: 1.3rem, margin-bottom: 0),
+    ));
   }
   .modalTitle {
     margin-bottom: 0.5rem;
@@ -105,42 +77,22 @@
     font-weight: 300;
     font-family: "Sansation-Regular";
 
-    @include respond-to-h(lg){
-      font-size: 1.6rem;
-    }
-    @include respond-to-h(md){
-      font-size: 1.6rem;
-    }
-    @include respond-to-h(mdt){
-      font-size: 1.6rem;
-    }
-    @include respond-to-h(sm){
-      font-size: 1.6rem;;
-    }
-    @include respond-to-h(xs){
-      font-size: 1.3rem;
-    }
-    @include respond-to-h(xxs){
-      font-size: 1.3rem;
-    }
+    @include hb((
+      lg: (font-size: 1.6rem),
+      md: (font-size: 1.6rem),
+      mdt: (font-size: 1.6rem),
+      sm: (font-size: 1.6rem),
+      xs: (font-size: 1.3rem),
+      xxs: (font-size: 1.3rem),
+    ));
 
-    @include respond-to-v(lg){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(md){
-      font-size: 1.6rem;
-    }
-    @include respond-to-v(s){
-      font-size: 1.3rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 1.3rem;
-      margin-bottom: 0;
-    }
-    @include respond-to-v(xs){
-      font-size: 1.3rem;
-      margin-bottom: 0;
-    }
+    @include vb((
+      lg: (font-size: 1.6rem),
+      md: (font-size: 1.6rem),
+      s: (font-size: 1.3rem),
+      sm: (font-size: 1.3rem, margin-bottom: 0),
+      xs: (font-size: 1.3rem, margin-bottom: 0),
+    ));
 
   }
 }
@@ -172,40 +124,22 @@
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 
-  @include respond-to-h(lg){
-    font-size: 0.85rem;
-  }
-  @include respond-to-h(md){
-    font-size: 0.85rem;
-  }
-  @include respond-to-h(mdt){
-    font-size: 0.85rem;
-  }
-  @include respond-to-h(sm){
-    font-size: 0.85rem;
-  }
-  @include respond-to-h(xs){
-    font-size: 0.8rem;
-  }
-  @include respond-to-h(xxs){
-    font-size: 0.8rem;
-  }
+  @include hb((
+    lg: (font-size: 0.85rem),
+    md: (font-size: 0.85rem),
+    mdt: (font-size: 0.85rem),
+    sm: (font-size: 0.85rem),
+    xs: (font-size: 0.8rem),
+    xxs: (font-size: 0.8rem),
+  ));
 
-  @include respond-to-v(lg){
-    font-size: 0.85rem;
-  }
-  @include respond-to-v(md){
-    font-size: 0.85rem;
-  }
-  @include respond-to-v(s){
-    font-size: 0.8rem;
-  }
-  @include respond-to-v(sm){
-    font-size: 0.8rem;
-  }
-  @include respond-to-v(xs){
-    font-size: 0.8rem;
-  }
+  @include vb((
+    lg: (font-size: 0.85rem),
+    md: (font-size: 0.85rem),
+    s: (font-size: 0.8rem),
+    sm: (font-size: 0.8rem),
+    xs: (font-size: 0.8rem),
+  ));
 }
 
 .actions {
@@ -213,15 +147,11 @@
   column-gap: 0.75rem; /* gap-3 */
   margin-top: 1.5rem; /* mt-6 */
 
-  @include respond-to-v(s){
-    margin-top: 0.5rem; /* mt-6 */
-  }
-  @include respond-to-v(sm){
-    margin-top: 0.5rem; /* mt-6 */
-  }
-  @include respond-to-v(xs){
-    margin-top: 0.5rem; /* mt-6 */
-  }
+  @include vb((
+    s: (margin-top: 0.5rem),
+    sm: (margin-top: 0.5rem),
+    xs: (margin-top: 0.5rem),
+  ));
 
   .cancelBtn {
     width: 120px;
@@ -303,42 +233,21 @@
     }
 
     // --- Horizontal (landscape) responsiveness ---
-    @include respond-to-h(huge) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-h(xl) {
-        font-size: 1rem;
-    }
-
-    @include respond-to-h(md) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(sm) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(xxs) {
-        font-size: 0.9rem;
-    }
+    @include hb((
+        huge: (font-size: 1.05rem),
+        xl: (font-size: 1rem),
+        md: (font-size: 0.95rem),
+        sm: (font-size: 0.95rem),
+        xxs: (font-size: 0.9rem),
+    ));
 
     // --- Vertical (portrait) responsiveness ---
-    @include respond-to-v(lg) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-v(s) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-v(sm) {
-        font-size: 0.9rem;
-    }
-
-    @include respond-to-v(xs) {
-        font-size: 0.85rem;
-    }
+    @include vb((
+        lg: (font-size: 1.05rem),
+        s: (font-size: 0.95rem),
+        sm: (font-size: 0.9rem),
+        xs: (font-size: 0.85rem),
+    ));
   }
 }
 
@@ -365,73 +274,22 @@
     border: 1px solid var(--border, #e5e7eb);
     border-radius: 15px; /* rounded */
 
-    @include respond-to-h(lg){
-      height: 60px;
-      width: 200px;
-      max-width: 250px;
-      max-height: 80px;
-    }
-    @include respond-to-h(md){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-h(mdt){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-h(sm){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-h(xs){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-h(xxs){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
+    @include hb((
+      lg: (height: 60px, width: 200px, max-width: 250px, max-height: 80px),
+      md: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      mdt: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      sm: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      xs: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      xxs: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+    ));
 
-    @include respond-to-v(lg){
-      height: 60px;
-      width: 200px;
-      max-width: 250px;
-      max-height: 80px;
-    }
-    @include respond-to-v(md){
-      height: 60px;
-      width: 200px;
-      max-width: 250px;
-      max-height: 80px;
-    }
-    @include respond-to-v(s){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-v(sm){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
-    @include respond-to-v(xs){
-      height: 50px;
-      width: 150px;
-      max-width: 200px;
-      max-height: 60px;
-    }
+    @include vb((
+      lg: (height: 60px, width: 200px, max-width: 250px, max-height: 80px),
+      md: (height: 60px, width: 200px, max-width: 250px, max-height: 80px),
+      s: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      sm: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+      xs: (height: 50px, width: 150px, max-width: 200px, max-height: 60px),
+    ));
 
     &:hover{
       .slider{

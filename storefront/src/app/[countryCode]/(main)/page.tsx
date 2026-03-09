@@ -48,8 +48,8 @@ export default async function Home(props: {
       <ScrollToTopOnReload />
       {heroEnabled && <HeroSection />}
       {ecomEnabled && <ECom />}
-      {kurzyEnabled && <Kurzy />}
-      {infoEnabled && <Info />}
+      {/* {kurzyEnabled && <Kurzy />}
+      {infoEnabled && <Info />} */}
       {/* <Hero />
       <div className="py-12">
         <ul className="flex flex-col gap-x-6">

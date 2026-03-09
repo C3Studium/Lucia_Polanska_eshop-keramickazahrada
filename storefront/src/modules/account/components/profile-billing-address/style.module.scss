@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   width: 100%;
@@ -21,18 +21,11 @@
     column-gap: 0.5rem; /* gap-x-2 */
 
 
-    @include respond-to-v(s) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
-    @include respond-to-v(sm) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
-    @include respond-to-v(xs) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
+    @include vb((
+      s: (grid-template-columns: 1fr, row-gap: 1rem),
+      sm: (grid-template-columns: 1fr, row-gap: 1rem),
+      xs: (grid-template-columns: 1fr, row-gap: 1rem),
+    ));
   }
 
   .rowPostal {
@@ -40,17 +33,10 @@
     grid-template-columns: 144px 1fr;
     column-gap: 0.5rem;
 
-    @include respond-to-v(s) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
-    @include respond-to-v(sm) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
-    @include respond-to-v(xs) {
-      grid-template-columns: 1fr;
-      row-gap: 1rem; /* gap-y-4 */
-    }
+    @include vb((
+      s: (grid-template-columns: 1fr, row-gap: 1rem),
+      sm: (grid-template-columns: 1fr, row-gap: 1rem),
+      xs: (grid-template-columns: 1fr, row-gap: 1rem),
+    ));
   }
 }

@@ -1,4 +1,4 @@
-@use "../../../../../styles/mixins.scss" as *;
+@use "../../../../../styles/system/_shortcuts.scss" as *;
 
 .navCat{
     display: flex;
@@ -11,33 +11,19 @@
     border-radius: 25px;
     overflow: hidden;
 
-    @include respond-to-h(lg){
-        padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw;
-    }
-    @include respond-to-h(md){
-        padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw;
-    }
-    @include respond-to-h(mdt){
-        padding: 5dvh 3.5dvw 5dvh 3.5dvw;
-    }
-    @include respond-to-h(sm){
-        padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw;
-    }
-    @include respond-to-h(xs){
-        padding: 12.5dvh 5dvw 5dvh 5dvw;
-    }
-    @include respond-to-h(xxs){
-        padding: 12.5dvh 5dvw 5dvh 5dvw;
-    }
-    @include respond-to-v(s){
-        padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw;
-    }
-    @include respond-to-v(sm){
-        padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw;
-    }
-    @include respond-to-v(xs){
-        padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw;
-    }
+    @include hb((
+        lg: (padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw),
+        md: (padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw),
+        mdt: (padding: 5dvh 3.5dvw 5dvh 3.5dvw),
+        sm: (padding: 7.5dvh 3.5dvw 7.5dvh 3.5dvw),
+        xs: (padding: 12.5dvh 5dvw 5dvh 5dvw),
+        xxs: (padding: 12.5dvh 5dvw 5dvh 5dvw),
+    ));
+    @include vb((
+        s: (padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw),
+        sm: (padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw),
+        xs: (padding: 7.5dvh 2.5dvw 2.5dvh 2.5dvw),
+    ));
     .bodyCat{
         position: relative;
         display: flex;
@@ -90,33 +76,19 @@
                         font-size: 1.2rem;
                         color: var(--ChText);
 
-                        @include respond-to-h(md){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-h(mdt){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-h(sm){
-                            font-size: 1.05rem;
-                        }
-                        @include respond-to-h(xs){
-                            font-size: 1.05rem;
-                        }
-                        @include respond-to-h(xxs){
-                            font-size: 1rem;
-                        }
-                        @include respond-to-v(md){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-v(s){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-v(sm){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-v(xs){
-                            font-size: 1rem;
-                        }
+                        @include hb((
+                            md: (font-size: 1.1rem),
+                            mdt: (font-size: 1.1rem),
+                            sm: (font-size: 1.05rem),
+                            xs: (font-size: 1.05rem),
+                            xxs: (font-size: 1rem),
+                        ));
+                        @include vb((
+                            md: (font-size: 1.1rem),
+                            s: (font-size: 1.1rem),
+                            sm: (font-size: 1.1rem),
+                            xs: (font-size: 1rem),
+                        ));
                     }
                     .category__icon{
                         width: 20px;
@@ -151,33 +123,19 @@
                             font-family: "Sansation-Light";
                             margin: 0;
 
-                            @include respond-to-h(md){
-                                font-size: 0.95rem;
-                            }
-                            @include respond-to-h(mdt){
-                                font-size: 0.95rem;
-                            }
-                            @include respond-to-h(sm){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-h(xs){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-h(xxs){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-v(md){
-                                font-size: 1rem;
-                            }
-                            @include respond-to-v(s){
-                                font-size: 1rem;
-                            }
-                            @include respond-to-v(sm){
-                                font-size: 1rem;
-                            }
-                            @include respond-to-v(xs){
-                                font-size: 0.95rem;
-                            }
+                            @include hb((
+                                md: (font-size: 0.95rem),
+                                mdt: (font-size: 0.95rem),
+                                sm: (font-size: 0.9rem),
+                                xs: (font-size: 0.9rem),
+                                xxs: (font-size: 0.9rem),
+                            ));
+                            @include vb((
+                                md: (font-size: 1rem),
+                                s: (font-size: 1rem),
+                                sm: (font-size: 1rem),
+                                xs: (font-size: 0.95rem),
+                            ));
                         }
 
                         &.active{

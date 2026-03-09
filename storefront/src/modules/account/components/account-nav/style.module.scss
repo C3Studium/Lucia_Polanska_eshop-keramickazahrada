@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
   // Main container
@@ -17,40 +17,6 @@
           font-family: "Sansation-Light";
           margin: 0;
 
-          @include respond-to-h(lg){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(md){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(mdt){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(sm){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(xs){
-            font-size: 1.6rem;
-          }
-          @include respond-to-h(xxs){
-            font-size: 1.6rem;
-          }
-
-          @include respond-to-v(lg){
-            font-size: 1.8rem;
-          }
-          @include respond-to-v(md){
-            font-size: 1.8rem;
-          }
-          @include respond-to-v(s){
-            font-size: 1.6rem;
-          }
-          @include respond-to-v(sm){
-            font-size: 1.6rem;
-          }
-          @include respond-to-v(xs){
-            font-size: 1.6rem;
-          }
         }
       }
       .navList {
@@ -82,40 +48,6 @@
                 cursor: pointer;
                 opacity: 0.8;
 
-                @include respond-to-h(lg){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(md){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(mdt){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(sm){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(xs){
-                  font-size: 1rem;
-                }
-                @include respond-to-h(xxs){
-                  font-size: 1rem;
-                }
-
-                @include respond-to-v(lg){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-v(md){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-v(s){
-                  font-size: 1rem;
-                }
-                @include respond-to-v(sm){
-                  font-size: 1rem;
-                }
-                @include respond-to-v(xs){
-                  font-size: 1rem;
-                }
                 color: var(--ChText);
                 &:hover {
                   color: var(--ChText);
@@ -182,21 +114,6 @@
                 height: 80dvh;
                 width: 100%;
 
-                @include respond-to-v(s) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
-                @include respond-to-v(sm) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
-                @include respond-to-v(xs) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
                 .modal {
                   background: #fff;
                   padding: 1.5rem;
@@ -283,40 +200,6 @@
                 cursor: pointer;
                 opacity: 0.8;
 
-                @include respond-to-h(lg){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(md){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(mdt){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(sm){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-h(xs){
-                  font-size: 1rem;
-                }
-                @include respond-to-h(xxs){
-                  font-size: 1rem;
-                }
-
-                @include respond-to-v(lg){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-v(md){
-                  font-size: 1.05rem;
-                }
-                @include respond-to-v(s){
-                  font-size: 1rem;
-                }
-                @include respond-to-v(sm){
-                  font-size: 1rem;
-                }
-                @include respond-to-v(xs){
-                  font-size: 1rem;
-                }
                 color: var(--ChText);
                 &:hover {
                   color: var(--ChText);
@@ -392,21 +275,6 @@
                 height: 80dvh;
                 width: 100%;
 
-                @include respond-to-v(s) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
-                @include respond-to-v(sm) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
-                @include respond-to-v(xs) {
-                  position: fixed;
-                  height: 100dvh;
-                  padding: 0 5vw;
-                }
                 .modal {
                   background: #fff;
                   padding: 1.5rem;
@@ -492,40 +360,7 @@
           font-family: "Sansation-Light";
           margin: 0;
 
-          @include respond-to-h(lg){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(md){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(mdt){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(sm){
-            font-size: 1.8rem;
-          }
-          @include respond-to-h(xs){
-            font-size: 1.6rem;
-          }
-          @include respond-to-h(xxs){
-            font-size: 1.6rem;
-          }
-
-          @include respond-to-v(lg){
-            font-size: 1.8rem;
-          }
-          @include respond-to-v(md){
-            font-size: 1.8rem;
-          }
-          @include respond-to-v(s){
-            font-size: 1.6rem;
-          }
-          @include respond-to-v(sm){
-            font-size: 1.6rem;
-          }
-          @include respond-to-v(xs){
-            font-size: 1.6rem;
-          }
+          
         }
       }
       .navList {
@@ -549,40 +384,7 @@
               cursor: pointer;
               opacity: 0.8;
 
-              @include respond-to-h(lg){
-                font-size: 1.05rem;
-              }
-              @include respond-to-h(md){
-                font-size: 1.05rem;
-              }
-              @include respond-to-h(mdt){
-                font-size: 1.05rem;
-              }
-              @include respond-to-h(sm){
-                font-size: 1.05rem;
-              }
-              @include respond-to-h(xs){
-                font-size: 1rem;
-              }
-              @include respond-to-h(xxs){
-                font-size: 1rem;
-              }
-
-              @include respond-to-v(lg){
-                font-size: 1.05rem;
-              }
-              @include respond-to-v(md){
-                font-size: 1.05rem;
-              }
-              @include respond-to-v(s){
-                font-size: 1rem;
-              }
-              @include respond-to-v(sm){
-                font-size: 1rem;
-              }
-              @include respond-to-v(xs){
-                font-size: 1rem;
-              }
+              
               color: var(--ChText);
               &:hover {
                 color: var(--ChText);
@@ -649,21 +451,7 @@
               height: 80dvh;
               width: 100%;
 
-              @include respond-to-v(s) {
-                position: fixed;
-                height: 100dvh;
-                padding: 0 5vw;
-              }
-              @include respond-to-v(sm) {
-                position: fixed;
-                height: 100dvh;
-                padding: 0 5vw;
-              }
-              @include respond-to-v(xs) {
-                position: fixed;
-                height: 100dvh;
-                padding: 0 5vw;
-              }
+              
               .modal {
                 background: #fff;
                 padding: 1.5rem;
@@ -816,46 +604,7 @@
       opacity: 0;
     }
 
-    // --- Horizontal (landscape) responsiveness ---
-    @include respond-to-h(huge) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-h(xl) {
-        font-size: 1rem;
-    }
-
-    @include respond-to-h(md) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(sm) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-h(xs) {
-        font-size: 0.9rem;
-    }
-    @include respond-to-h(xxs) {
-        font-size: 0.9rem;
-    }
-
-    // --- Vertical (portrait) responsiveness ---
-    @include respond-to-v(lg) {
-        font-size: 1.05rem;
-    }
-
-    @include respond-to-v(s) {
-        font-size: 0.95rem;
-    }
-
-    @include respond-to-v(sm) {
-        font-size: 0.9rem;
-    }
-
-    @include respond-to-v(xs) {
-        font-size: 0.85rem;
-    }
+    
   }
 }
 

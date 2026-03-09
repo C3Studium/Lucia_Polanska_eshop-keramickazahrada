@@ -1,4 +1,4 @@
-@use '../../../../../../../../styles/mixins.scss' as *;
+@use "../../../../../../../../styles/system/_shortcuts.scss" as *;
 .MButton{
     width: auto;
     height: auto;
@@ -17,50 +17,20 @@
         box-shadow: none;
         background-color: var(--OButton);
 
-        @include respond-to-h(lg){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-h(mdt){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-h(md){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-h(sm){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-h(xs){
-            width: 150px !important;
-            height: 40px !important;
-        }
-        @include respond-to-h(xxs){
-            width: 150px !important;
-            height: 40px !important;
-        }
-        @include respond-to-v(md){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-v(md){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-v(s){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-v(sm){
-            width: 180px !important;
-            height: 40px !important;
-        }
-        @include respond-to-v(xs){
-            width: 180px !important;
-            height: 40px !important;
-        }
+        @include hb((
+            lg: (width: 180px !important, height: 40px !important),
+            mdt: (width: 180px !important, height: 40px !important),
+            md: (width: 180px !important, height: 40px !important),
+            sm: (width: 180px !important, height: 40px !important),
+            xs: (width: 150px !important, height: 40px !important),
+            xxs: (width: 150px !important, height: 40px !important),
+        ));
+        @include vb((
+            md: (width: 180px !important, height: 40px !important),
+            s: (width: 180px !important, height: 40px !important),
+            sm: (width: 180px !important, height: 40px !important),
+            xs: (width: 180px !important, height: 40px !important),
+        ));
 
         .slider{
             position: relative;
@@ -81,30 +51,18 @@
                         color: var(--Wtext);
                         font-size: 1.3rem;
                         position: absolute;
-                        @include respond-to-h(md){
-                            font-size: 1.2rem;
-                        }
-                         @include respond-to-h(mdt){
-                            font-size: 1.2rem;
-                        }
-                         @include respond-to-h(sm){
-                            font-size: 1.2rem;
-                        }
-                        @include respond-to-h(xs){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-h(xxs){
-                            font-size: 1.1rem;
-                        }
-                        @include respond-to-v(s){
-                            font-size: 1.2rem;
-                        }
-                        @include respond-to-v(sm){
-                            font-size: 1.2rem;
-                        }
-                        @include respond-to-v(xs){
-                            font-size: 1.1rem;
-                        }
+                        @include hb((
+                            md: (font-size: 1.2rem),
+                            mdt: (font-size: 1.2rem),
+                            sm: (font-size: 1.2rem),
+                            xs: (font-size: 1.1rem),
+                            xxs: (font-size: 1.1rem),
+                        ));
+                        @include vb((
+                            s: (font-size: 1.2rem),
+                            sm: (font-size: 1.2rem),
+                            xs: (font-size: 1.1rem),
+                        ));
                     }
                 }
                 &:nth-of-type(2){

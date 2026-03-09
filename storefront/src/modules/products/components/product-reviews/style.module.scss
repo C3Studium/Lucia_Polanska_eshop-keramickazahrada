@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .container {
 	overflow: hidden;
@@ -38,21 +38,13 @@
             color: var(--Wtext);
             font-family: "Sansation-Regular";
 
-            @include respond-to-v(lg){
-                font-size: 1.8rem; // text-2xl-regular
-            }
-            @include respond-to-v(md){
-                font-size: 1.8rem; // text-2xl-regular
-            }
-            @include respond-to-v(s){
-                font-size: 1.6rem; // text-2xl-regular
-            }
-            @include respond-to-v(sm){
-                font-size: 1.6rem; // text-2xl-regular
-            }
-            @include respond-to-v(xs){
-                font-size: 1.6rem; // text-2xl-regular
-            }
+            @include vb((
+                lg: (font-size: 1.8rem),
+                md: (font-size: 1.8rem),
+                s: (font-size: 1.6rem),
+                sm: (font-size: 1.6rem),
+                xs: (font-size: 1.6rem),
+            ));
         }
 
         .starsAndCount {
@@ -138,10 +130,9 @@
         box-shadow: 0 2px 10px var(--ButtonBorder);
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 90px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 90px, height: 35px),
+        ));
 
         .slider{
             position: relative;

@@ -1,4 +1,4 @@
-@use "../../../../../../../styles/mixins.scss" as *;
+@use "../../../../../../../styles/system/_shortcuts.scss" as *;
 
 .desc__Container{
     width: 100%;
@@ -15,30 +15,18 @@
         color: var(--ChText);
         font-weight: 300;
 
-        @include respond-to-h(md){
-            font-size: 1.1rem;
-        } 
-        @include respond-to-h(sm){
-            font-size: 1.1rem;
-        } 
-        @include respond-to-h(xs){
-            font-size: 1rem;
-        } 
-        @include respond-to-h(xxs){
-            font-size: 0.9rem;
-        }
-            @include respond-to-v(md){
-            font-size: 1.1rem;
-        }  
-        @include respond-to-v(s){
-            font-size: 1.1rem;
-        } 
-            @include respond-to-v(sm){
-            font-size: 1.1rem;
-        }  
-            @include respond-to-v(xs){
-            font-size: 1rem;
-        }   
+        @include hb((
+            md: (font-size: 1.1rem),
+            sm: (font-size: 1.1rem),
+            xs: (font-size: 1rem),
+            xxs: (font-size: 0.9rem),
+        ));
+        @include vb((
+            md: (font-size: 1.1rem),
+            s: (font-size: 1.1rem),
+            sm: (font-size: 1.1rem),
+            xs: (font-size: 1rem),
+        ));   
     }
 
 }

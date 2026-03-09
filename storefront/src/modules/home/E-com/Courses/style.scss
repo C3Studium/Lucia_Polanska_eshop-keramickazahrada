@@ -1,0 +1,83 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+
+.courses__section{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5%;
+    background-color: var(--bgPrimary);
+    
+    .courses__wrapper{
+        border-radius: 40px;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 20px;
+        overflow: hidden;
+
+
+        .image__bg{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+
+            .black{
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1;
+            }
+
+            img{
+                object-fit: cover;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        .Courses__content{
+            z-index: 1;
+            width: 100%;
+            height: 70%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            flex-direction: column; 
+            padding: 50px 20px;
+
+            p{
+                font-size: 2rem;
+                color: var(--whiteText);
+                text-align: start;
+                line-height: 1.05;
+            }
+
+            .title{
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 50px;
+
+                h2{
+                    font-size: 10rem;
+                    font-weight: 300;
+                    color: var(--whiteText);
+                    text-align: start;
+                    line-height: 1.05;
+                }
+            }
+        }
+    }
+}

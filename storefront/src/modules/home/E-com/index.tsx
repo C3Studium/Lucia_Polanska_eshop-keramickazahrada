@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import CTA from "./CTA";
-import Desc from "./Desc";
-import Entry from "./Entry";
-import Intro from "./Intro";
 import { client } from "../../../sanity/lib/client";
+import IntroSection from "./Intro";
+import Collections from "./Collections";
+import CollectionTemplate from "@modules/collections/templates";
+import Courses from "./Courses";
 
 export default function ECom() {
     const [settings, setSettings] = useState<any>(null);
@@ -28,11 +28,10 @@ export default function ECom() {
     }
 
     return (
-        <section style={{ overflow: "hidden" }}>
-            {introEnabled && <Intro />}
-            {entryEnabled && <Entry />}
-            {descEnabled && <Desc settings={settings?.ecomSection?.desc} />}
-            {ctaEnabled && <CTA />}
+        <section>
+            <IntroSection />
+            <Collections /> 
+            <Courses /> 
         </section>
     )
 }

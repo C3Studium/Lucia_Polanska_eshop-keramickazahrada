@@ -1,4 +1,4 @@
-@use '../../../../../styles/mixins.scss' as *;
+@use "../../../../../styles/system/_shortcuts.scss" as *;
 .MButton{
     width: auto;
     height: auto;
@@ -17,10 +17,9 @@
         box-shadow: none;
         background-color: transparent;
 
-        @include respond-to-v(s){
-            width: 90px;
-            height: 35px;
-        }
+        @include vb((
+            s: (width: 90px, height: 35px),
+        ));
 
         .slider{
             position: relative;

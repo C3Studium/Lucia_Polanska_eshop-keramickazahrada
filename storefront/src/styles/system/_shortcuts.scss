@@ -1,0 +1,28 @@
+@use "./index.scss" as sys;
+
+// font shortcut
+@mixin font($token) { @include sys.font($token); }
+
+// layered breakpoint helpers
+@mixin h($bp)      { @include sys.h-layer($bp) { @content; } }
+@mixin v($bp)      { @include sys.v-layer($bp) { @content; } }
+@mixin hb($map)    { @include sys.h-block($map); }
+@mixin vb($map)    { @include sys.v-block($map); }
+
+// Horizontal per-breakpoint helpers (compact)
+@mixin xxs-h  { @include h(xxs)  { @content; } }
+@mixin xs-h   { @include h(xs)   { @content; } }
+@mixin sm-h   { @include h(sm)   { @content; } }
+@mixin smt-h  { @include h(smt)  { @content; } }
+@mixin md-h   { @include h(md)   { @content; } }
+@mixin mdt-h  { @include h(mdt)  { @content; } }
+@mixin lg-h   { @include h(lg)   { @content; } }
+@mixin xl-h   { @include h(xl)   { @content; } }
+@mixin huge-h { @include h(huge) { @content; } }
+
+// Vertical per-breakpoint helpers (compact)
+@mixin xs-v { @include v(xs) { @content; } }
+@mixin sm-v { @include v(sm) { @content; } }
+@mixin s-v  { @include v(s)  { @content; } }
+@mixin md-v { @include v(md) { @content; } }
+@mixin lg-v { @include v(lg) { @content; } }

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import AboutHero from "./AboutHero";
 import IntroHero from "./IntroHero";
 import { client } from "../../../sanity/lib/client";
 
@@ -26,7 +25,6 @@ export default function HeroSection() {
     return (
         <section>
             {introHeroEnabled && <IntroHero />}
-            {aboutHeroEnabled && <AboutHero />}
         </section>
     )
 }

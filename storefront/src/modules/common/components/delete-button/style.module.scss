@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* DeleteButton component styles - SASS nesting */
 .root {
@@ -7,37 +7,21 @@
   justify-content: space-between;
   font-size: 0.9rem;
   color: var(--ui-fg-subtle, #6B7280);
-  @include respond-to-h(md) {
-    font-size: 0.8rem;
-  }
-  @include respond-to-h(mdt) {
-    font-size: 0.8rem;
-  }
-  @include respond-to-h(sm) {
-    font-size: 0.8rem;
-  }
-  @include respond-to-h(xs) {
-    font-size: 0.7rem;
-  }
-  @include respond-to-h(xxs) {
-    font-size: 0.7rem;
-  }
+  @include hb((
+    md: (font-size: 0.8rem),
+    mdt: (font-size: 0.8rem),
+    sm: (font-size: 0.8rem),
+    xs: (font-size: 0.7rem),
+    xxs: (font-size: 0.7rem),
+  ));
 
-  @include respond-to-v(lg) {
-    font-size: 0.8rem !important;
-  }	
-  @include respond-to-v(md) {
-    font-size: 0.8rem !important;
-  }	
-  @include respond-to-v(s) {
-    font-size: 0.7rem !important;
-  }	
-  @include respond-to-v(sm) {
-    font-size: 0.7rem !important;
-  }	
-  @include respond-to-v(xs) {
-    font-size: 0.7rem !important;
-  }	
+  @include vb((
+    lg: (font-size: 0.8rem !important),
+    md: (font-size: 0.8rem !important),
+    s: (font-size: 0.7rem !important),
+    sm: (font-size: 0.7rem !important),
+    xs: (font-size: 0.7rem !important),
+  ));
 
   .button {
     display: flex;

@@ -1,0 +1,34 @@
+@use "../../../../../../styles/system/_shortcuts.scss" as *;
+
+
+.Carousel__button{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    padding: 2px;
+    border: 2px solid var(--iconsPink);
+    cursor: pointer;
+    overflow: hidden;
+
+    .image__bg{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        img{
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+    }   
+
+    p{
+        position: relative;
+        color: var(--whiteText);
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+}

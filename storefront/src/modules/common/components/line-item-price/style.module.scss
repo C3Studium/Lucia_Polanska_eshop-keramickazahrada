@@ -1,4 +1,4 @@
-@use '../../../../styles/mixins.scss' as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* LineItemPrice component styles - SASS nesting */
 .root {
@@ -15,40 +15,22 @@
     font-family: "Sansation-Regular";
     font-weight: 300;
     color: var(--ChText);
-    @include respond-to-h(lg){
-      font-size: 1rem;
-    }
-    @include respond-to-h(md){
-      font-size: 1rem;
-    }
-    @include respond-to-h(mdt){
-      font-size: 1rem;
-    }
-    @include respond-to-h(sm){
-      font-size: 1rem;
-    }
-    @include respond-to-h(xs){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(xxs){
-      font-size: 0.9rem;
-    }
+    @include hb((
+      lg: (font-size: 1rem),
+      md: (font-size: 1rem),
+      mdt: (font-size: 1rem),
+      sm: (font-size: 1rem),
+      xs: (font-size: 0.9rem),
+      xxs: (font-size: 0.9rem),
+    ));
 
-    @include respond-to-v(lg){
-      font-size: 1rem;
-    }
-    @include respond-to-v(md){
-      font-size: 1rem;
-    }
-    @include respond-to-v(s){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(xs){
-      font-size: 0.9rem;
-    }
+    @include vb((
+      lg: (font-size: 1rem),
+      md: (font-size: 1rem),
+      s: (font-size: 0.9rem),
+      sm: (font-size: 0.9rem),
+      xs: (font-size: 0.9rem),
+    ));
 
     .originalLabel {
       color: var(--ChText);
@@ -68,34 +50,20 @@
       font-weight: 400;
       font-family: "Sansation-Regular";
 
-      @include respond-to-h(md){
-        font-size: 1rem;
-      }
-      @include respond-to-h(sm){
-        font-size: 1rem;
-      }
-      @include respond-to-h(xs){
-        font-size: 0.95rem;
-      }
-      @include respond-to-h(xxs){
-        font-size: 0.95rem;
-      }
+      @include hb((
+        md: (font-size: 1rem),
+        sm: (font-size: 1rem),
+        xs: (font-size: 0.95rem),
+        xxs: (font-size: 0.95rem),
+      ));
 
-      @include respond-to-v(lg){
-        font-size: 0.95rem;
-      }
-      @include respond-to-v(md){
-        font-size: 0.95rem;
-      }
-      @include respond-to-v(s){
-        font-size: 0.95rem;
-      }
-      @include respond-to-v(sm){
-        font-size: 0.95rem;
-      }
-      @include respond-to-v(xs){
-        font-size: 0.95rem;
-      }
+      @include vb((
+        lg: (font-size: 0.95rem),
+        md: (font-size: 0.95rem),
+        s: (font-size: 0.95rem),
+        sm: (font-size: 0.95rem),
+        xs: (font-size: 0.95rem),
+      ));
 
       &.discounted {
         color: var(--handle);

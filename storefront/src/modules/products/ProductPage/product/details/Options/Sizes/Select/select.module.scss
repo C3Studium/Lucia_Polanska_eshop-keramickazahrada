@@ -1,4 +1,4 @@
-@use "../../../../../../../../styles/mixins.scss" as *;
+@use "../../../../../../../../styles/system/_shortcuts.scss" as *;
 
 .Select{
     width: 100%;
@@ -9,16 +9,18 @@
     justify-content: center;
     gap: 1rem;
 
-    @include respond-to-v(lg){
-        align-items: flex-start;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 0.25rem;
-    }
-    @include respond-to-v(md){
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: flex-start;
-        gap: 0.25rem;
-    }
+    @include vb((
+        lg: (
+            align-items: flex-start,
+            flex-wrap: wrap,
+            justify-content: flex-start,
+            gap: 0.25rem
+        ),
+        md: (
+            flex-wrap: wrap,
+            align-items: flex-start,
+            justify-content: flex-start,
+            gap: 0.25rem
+        ),
+    ));
 }

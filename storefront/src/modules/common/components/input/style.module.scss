@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Input component styles - SASS nesting */
 .root {
@@ -11,28 +11,18 @@
     font-size: 1rem;
     font-weight: 500;
 
-    @include respond-to-h(md){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(sm){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(xs){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(xxs){
-      font-size: 0.9rem;
-    }
+    @include hb((
+      md: (font-size: 0.9rem),
+      sm: (font-size: 0.9rem),
+      xs: (font-size: 0.9rem),
+      xxs: (font-size: 0.9rem),
+    ));
 
-    @include respond-to-v(s){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(xs){
-      font-size: 0.9rem;
-    }
+    @include vb((
+      s: (font-size: 0.9rem),
+      sm: (font-size: 0.9rem),
+      xs: (font-size: 0.9rem),
+    ));
   }
 
   .inputWrapper {
@@ -43,28 +33,18 @@
     font-size: 1rem;
     font-weight: 500;
 
-    @include respond-to-h(md){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(sm){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(xs){
-      font-size: 0.9rem;
-    }
-    @include respond-to-h(xxs){
-      font-size: 0.9rem;
-    }
+    @include hb((
+      md: (font-size: 0.9rem),
+      sm: (font-size: 0.9rem),
+      xs: (font-size: 0.9rem),
+      xxs: (font-size: 0.9rem),
+    ));
 
-    @include respond-to-v(s){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(sm){
-      font-size: 0.9rem;
-    }
-    @include respond-to-v(xs){
-      font-size: 0.9rem;
-    }
+    @include vb((
+      s: (font-size: 0.9rem),
+      sm: (font-size: 0.9rem),
+      xs: (font-size: 0.9rem),
+    ));
 
     input {
       padding-top: 1rem;

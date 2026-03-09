@@ -1,4 +1,4 @@
-@use "../../../../styles/mixins.scss" as *;
+@use "../../../../styles/system/_shortcuts.scss" as *;
 
 .details{
     width: 100dvw;
@@ -13,28 +13,17 @@
     gap: 1.5dvh;
     overflow: hidden;
 
-    @include respond-to-h(xs){
-        min-height: 60dvh;
-    }
-    @include respond-to-h(xxs){
-        min-height: 60dvh;
-    }
-    @include respond-to-v(lg){
-        min-height: 30dvh;
-    }
-    @include respond-to-v(md){
-        min-height: 30dvh;
-    }
-
-    @include respond-to-v(s){
-        min-height: 80dvh;
-    }
-    @include respond-to-v(sm){
-        min-height: 80dvh;
-    }
-    @include respond-to-v(xs){
-        min-height: 100dvh;
-    }
+    @include hb((
+        xs: (min-height: 60dvh),
+        xxs: (min-height: 60dvh),
+    ));
+    @include vb((
+        lg: (min-height: 30dvh),
+        md: (min-height: 30dvh),
+        s: (min-height: 80dvh),
+        sm: (min-height: 80dvh),
+        xs: (min-height: 100dvh),
+    ));
 
     .details__title{
         width: 100%;
@@ -45,16 +34,11 @@
         justify-content: flex-start;
         padding: 0 2.5dvw;
 
-        @include respond-to-h(mdt){
-            height: 5dvh;
-        }
-
-        @include respond-to-h(xs){
-            height: 15dvh;
-        }
-        @include respond-to-h(xxs){
-            height: 15dvh;
-        }
+        @include hb((
+            mdt: (height: 5dvh),
+            xs: (height: 15dvh),
+            xxs: (height: 15dvh),
+        ));
 
         h2{
             font-family: "OoohBaby-Regular";
@@ -65,33 +49,19 @@
             font-weight: 300;
             margin: 0;
 
-            @include respond-to-h(md){
-                font-size: 4rem;
-            }
-             @include respond-to-h(mdt){
-                font-size: 4rem;
-            }
-            @include respond-to-h(sm){
-                font-size: 3.5rem;
-            }
-            @include respond-to-h(xs){
-                font-size: 3rem;
-            }
-            @include respond-to-h(xxs){
-                font-size: 3rem;
-            }
-            @include respond-to-v(md){
-                font-size: 4rem;
-            }
-            @include respond-to-v(s){
-                font-size: 4rem;
-            }
-             @include respond-to-v(sm){
-                font-size: 4rem;
-            }
-             @include respond-to-v(xs){
-                font-size: 3rem;
-            }
+            @include hb((
+                md: (font-size: 4rem),
+                mdt: (font-size: 4rem),
+                sm: (font-size: 3.5rem),
+                xs: (font-size: 3rem),
+                xxs: (font-size: 3rem),
+            ));
+            @include vb((
+                md: (font-size: 4rem),
+                s: (font-size: 4rem),
+                sm: (font-size: 4rem),
+                xs: (font-size: 3rem),
+            ));
         }
     }
 
@@ -103,9 +73,9 @@
         align-items: flex-start;
         justify-content: flex-start;
         flex-direction: column;
-        @include respond-to-h(sm){
-            min-height: 40dvh;
-        }
+        @include hb((
+            sm: (min-height: 40dvh),
+        ));
 
         .details__content__list{
             width: 100%;
@@ -126,15 +96,11 @@
                 flex-direction: column;
                 border-top: 1px solid var(--WhiteBg);
                 padding: 0 2.5dvw;
-                @include respond-to-v(s){
-                    width: 90%;
-                }
-                @include respond-to-v(sm){
-                    width: 90%;
-                }
-                @include respond-to-v(xs){
-                    width: 90%;
-                }
+                @include vb((
+                    s: (width: 90%),
+                    sm: (width: 90%),
+                    xs: (width: 90%),
+                ));
 
                 .details__content__list__item__main{
                     width: 100%;
@@ -154,27 +120,17 @@
                         color: var(--Wtext);
                         font-weight: 300;
                         margin: 0;
-                        @include respond-to-h(sm){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-h(xs){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-h(xxs){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-v(md){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-v(s){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-v(sm){
-                            font-size: 1.3rem;
-                        }
-                        @include respond-to-v(xs){
-                            font-size: 1.2rem;
-                        }
+                        @include hb((
+                            sm: (font-size: 1.3rem),
+                            xs: (font-size: 1.3rem),
+                            xxs: (font-size: 1.3rem),
+                        ));
+                        @include vb((
+                            md: (font-size: 1.3rem),
+                            s: (font-size: 1.3rem),
+                            sm: (font-size: 1.3rem),
+                            xs: (font-size: 1.2rem),
+                        ));
                     }
 
                     .details__content__list__item__main__button{
@@ -186,34 +142,17 @@
                         justify-content: center;
                         cursor: pointer;
 
-                        @include respond-to-h(sm){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-h(xs){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-h(xxs){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-v(md){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-v(s){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-v(sm){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
-                        @include respond-to-v(xs){
-                            width: 1.3rem;
-                            height: 1.3rem;
-                        }
+                        @include hb((
+                            sm: (width: 1.3rem, height: 1.3rem),
+                            xs: (width: 1.3rem, height: 1.3rem),
+                            xxs: (width: 1.3rem, height: 1.3rem),
+                        ));
+                        @include vb((
+                            md: (width: 1.3rem, height: 1.3rem),
+                            s: (width: 1.3rem, height: 1.3rem),
+                            sm: (width: 1.3rem, height: 1.3rem),
+                            xs: (width: 1.3rem, height: 1.3rem),
+                        ));
                     }
                 }
 
@@ -240,18 +179,14 @@
                             margin: 0;
                             text-align: left;
                             padding: 1dvh 0 2.5dvh 0;
-                            @include respond-to-h(sm){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-h(xs){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-h(xxs){
-                                font-size: 0.9rem;
-                            }
-                            @include respond-to-v(xs){
-                                font-size: 0.9rem;
-                            }
+                            @include hb((
+                                sm: (font-size: 0.9rem),
+                                xs: (font-size: 0.9rem),
+                                xxs: (font-size: 0.9rem),
+                            ));
+                            @include vb((
+                                xs: (font-size: 0.9rem),
+                            ));
                         }
                     }
 
@@ -268,25 +203,23 @@
                             justify-content: space-between;
                             width: 100%;
 
-                            @include respond-to-v(s){
-                                flex-wrap: wrap;
-                                align-items: flex-start;
-                                justify-content: flex-start;
-
-                            }
-                            @include respond-to-v(sm){
-                                flex-wrap: wrap;
-                                align-items: flex-start;
-                                justify-content: flex-start;
-
-                            }
-
-                            @include respond-to-v(xs){
-                                flex-wrap: wrap;
-                                align-items: flex-start;
-                                justify-content: flex-start;
-
-                            }
+                            @include vb((
+                                s: (
+                                    flex-wrap: wrap,
+                                    align-items: flex-start,
+                                    justify-content: flex-start
+                                ),
+                                sm: (
+                                    flex-wrap: wrap,
+                                    align-items: flex-start,
+                                    justify-content: flex-start
+                                ),
+                                xs: (
+                                    flex-wrap: wrap,
+                                    align-items: flex-start,
+                                    justify-content: flex-start
+                                ),
+                            ));
 
 
                             li{
