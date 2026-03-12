@@ -20,6 +20,7 @@ import { usePathname } from "next/navigation";
 import Button from "./button";
 import SearchButton from "./searchButton";
 import ProductButton from "./productsButton";
+import CTA from "@modules/home/Kurzy/CTA";
 
 type NavbarProps = {
     cart: StoreCart | null;
@@ -119,7 +120,7 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="Výroba" href="/vyroba"/>
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="Kurzy" href="/kurzy"/>
                     <ProductButton />
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="Kontakt" href="/kontakt"/>
+                    <CTA text="Kontakt" kind="primary" img="/assets/links/home_img.png" alt="bg__image"/>
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="O mně" href="/o-mne"/>
                 </div>
                 <div className="navbar__right">

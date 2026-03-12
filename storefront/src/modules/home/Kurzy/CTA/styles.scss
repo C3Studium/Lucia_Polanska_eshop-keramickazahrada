@@ -1,582 +1,394 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.kurzy__cta{
-    width: 100%;
-    height: 100dvh;
+
+.CTA__block{
     position: relative;
+    width: fit-content;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin-top: 25dvh;
+    align-items: flex-end;
+    justify-content: flex-start;
 
-        @include hb((
-            xs: (height: 160dvh),
-        ));
-        @include hb((
-            xxs: (height: 160dvh),
-        ));
-        @include vb((
-            xs: (height: 80dvh),
-        ));
-        @include vb((
-            lg: (height: 70dvh, overflow: hidden),
-        ));
-        @include vb((
-            md: (height: 80dvh, overflow: hidden),
-        ));
-        @include vb((
-            s: (padding-bottom: 10dvh),
-        ));
-        @include vb((
-            sm: (padding-bottom: 10dvh),
-        ));
-        @include vb((
-            xs: (padding-bottom: 10dvh, height: 160dvh),
-        ));
+    .button__container{
+        position: relative;
+        z-index: 10;
+    }
 
-    .kurzy__cta__gradients{
-        position: absolute;
+    .form__parent{
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
-        z-index: 0;
-
-        .kurzy__Gradient{
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: -5dvh;
-            left: 0;
-            z-index: 0;
-                        @include vb((
-                            s: (top: -5dvh),
-                        ));
-                            @include vb((
-                                sm: (top: -5dvh),
-                            ));
-                            @include vb((
-                                xs: (top: 0dvh),
-                            ));
-
-            svg{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                transform: scale(2);
-                opacity: 0.8;
-
-                                @include vb((
-                                    s: (transform: scale(4)),
-                                ));
-                
-                                    @include vb((
-                                        sm: (transform: scale(4)),
-                                    ));
-                                    @include vb((
-                                        xs: (transform: scale(4)),
-                                    ));
-
-                g{
-                    width: 50dvw;
-                    height: 50dvh;
-                }
-            }
-
-            &:nth-of-type(2){
-                top: 15dvh;
-                left: 0dvw;
-                                @include vb((
-                                    s: (top: 25dvh),
-                                ));
-                                @include vb((
-                                    sm: (top: 25dvh),
-                                ));
-                                @include vb((
-                                    xs: (top: 50dvh),
-                                ));
-
-                svg{
-                    transform: scale(1.8);
-                    opacity: 1;
-                                        @include vb((
-                                            s: (transform: scale(4)),
-                                        ));
-                                        @include vb((
-                                            sm: (transform: scale(4)),
-                                        ));
-                                        @include vb((
-                                            xs: (transform: scale(4)),
-                                        ));
-                }
-            }
-        }
-    }
-
-    .kurzy__cta__content{
-        width: 50%;
-        height: 100%;
-        position: relative;
+        height: 100vh;
+        backdrop-filter: blur(5px);
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2dvh;
-        z-index: 4;
-                @include hb((
-                    md: (justify-content: flex-start, padding-top: 10dvh, gap: 10dvh),
-                ));
-                @include hb((
-                    sm: (justify-content: flex-start, padding-top: 15dvh, gap: 7.5dvh),
-                ));
-                @include hb((
-                    xs: (justify-content: flex-start, padding-top: 15dvh, gap: 20dvh),
-                ));
-                @include hb((
-                    xxs: (justify-content: flex-start, padding-top: 15dvh, gap: 20dvh),
-                ));
+        flex-direction: column;
+        z-index: 15;
 
-                @include vb((
-                    s: (width: 100%, justify-content: flex-end),
-                ));
-                @include vb((
-                    sm: (width: 100%, justify-content: flex-end),
-                ));
-                @include vb((
-                    xs: (width: 100%, justify-content: flex-end),
-                ));
-                @include vb((
-                    lg: (justify-content: flex-start),
-                ));
-                @include vb((
-                    md: (justify-content: flex-start),
-                ));
-        .kurzy__cta__content__title{
+        .clickable{
             width: 100%;
             height: 30%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 2dvh;
-
-
-                        @include vb((
-                            s: (height: 50%),
-                        ));
-                        @include vb((
-                            sm: (width: 100%, justify-content: flex-end),
-                        ));
-                        @include vb((
-                            xs: (width: 100%, justify-content: flex-end),
-                        ));
-                        @include vb((
-                            lg: (height: 40%),
-                        ));
-                        @include vb((
-                            md: (height: 40%),
-                        ));
-            h2{
-                font-family: "ooohBaby-regular";
-                font-size: 5rem;
-                color: var(--Wtext);
-                text-align: center;
-                padding: 0;
-                margin: 0;
-                line-height: 1;
-                font-weight: 300;
-
-                                @include hb((
-                                    lg: (font-size: 4rem),
-                                ));
-                                @include hb((
-                                    md: (font-size: 3.5rem),
-                                ));
-                                @include hb((
-                                    mdt: (font-size: 4rem),
-                                ));
-                                @include hb((
-                                    sm: (font-size: 3.5rem),
-                                ));
-                                @include hb((
-                                    xs: (font-size: 3rem),
-                                ));
-                                @include hb((
-                                    xxs: (font-size: 3rem),
-                                ));
-
-                                @include vb((
-                                    lg: (font-size: 5rem),
-                                ));
-                                @include vb((
-                                    md: (font-size: 3.5rem),
-                                ));
-                                @include vb((
-                                    s: (font-size: 3.5rem),
-                                ));
-                                    @include vb((
-                                        sm: (font-size: 3rem),
-                                    ));
-                                    @include vb((
-                                        xs: (font-size: 2.5rem),
-                                    ));
-            }
-
-            p{
-                font-family: "Sentient-Light";
-                text-align: center;
-                margin: 0;
-
-                span{
-                    font-family: "Sentient-Light";
-                    font-size: 1.5rem;
-                    color: var(--Wtext);
-                    line-height: 1.5;
-
-                                        @include hb((
-                                            lg: (font-size: 1.3rem),
-                                        ));
-                                        @include hb((
-                                            md: (font-size: 1.1rem),
-                                        ));
-                                        @include hb((
-                                            mdt: (font-size: 1.3rem),
-                                        ));
-                                        @include hb((
-                                            sm: (font-size: 1.1rem),
-                                        ));
-                                        @include hb((
-                                            xs: (font-size: 1rem),
-                                        ));
-                                        @include hb((
-                                            xxs: (font-size: 1rem),
-                                        ));
-
-                                        @include vb((
-                                            lg: (font-size: 1.5rem),
-                                        ));
-                                        @include vb((
-                                            md: (font-size: 1.2rem),
-                                        ));
-                                        @include vb((
-                                            s: (font-size: 1.3rem),
-                                        ));
-                                        @include vb((
-                                            sm: (font-size: 1.2rem),
-                                        ));
-                                        @include vb((
-                                            xs: (font-size: 1.1rem),
-                                        ));
-                }
-            }
-                        @include hb((
-                            lg: (width: 100%, height: 35%),
-                        ));
+            cursor: pointer;
         }
 
-        .kurzy__cta__content__CTA{
-            width: 100%;
-            height: 30%;
+        .form{
             position: relative;
+            width: 100%;
+            height: 80%;
             display: flex;
-            align-items: center;
             flex-direction: column;
-            justify-content: center;
-            gap: 2dvh;
 
-                        @include hb((
-                            lg: (width: 100%, height: 40%),
-                        ));
-                        @include hb((
-                            md: (width: 100%, height: 40%),
-                        ));
-            
-            
-            .kurzy__cta__content__CTA__button{
-                width: 100%;
-                height: 40%;
+            .form__container{
                 position: relative;
+                width: 100%;
+                height: 80%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                flex-direction: row;
 
-                    .LinkButton{
-                    .button{
-                        width: 250px;
-                        height: 60px;
-                        .slider{
-                            .el{
-                                &:nth-of-type(2){
-                                    background-color: var(--WhiteBg) !important;
-                                    p{
-                                        color: var(--ChText);
-                                        &:nth-of-type(2){
-                                            transform: rotateX(-90deg) translateY(20px) !important;
+                .form__wrapper{
+                    width: 70%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                    padding: 2.5% 5%;
+
+                    .header{
+                        width: 100%;
+                        height: 15%;
+                        position: relative;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-end;
+                        padding-bottom: 10px;
+
+                        .text{
+                            width: 40%;
+                            h2{ 
+                                font-size: 2rem;
+                                font-weight: 300;
+                                line-height: 1.05;
+                                color: var(--whiteText)
+                            }
+                        }
+
+                        .Faq{
+                            width: 40%;
+                            display: flex;
+                            gap: 15px;
+                            flex-direction: row;
+                            align-items: flex-end;
+                            justify-content: center;
+                            p{
+                                font-size: 1.1rem;
+                                font-weight: 300;
+                                line-height: 1.05;
+                                color: var(--whiteText)
+                            }
+                        }
+                    }
+
+                    .form__content{
+                        border-top: 1px solid var(--iconsWhite);
+                        border-bottom: 1px solid var(--iconsWhite);
+
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 5%;
+
+                        .pillar{
+                            overflow: hidden;
+                            width: 10%;
+                            height: 100%;
+                            position: relative;
+
+                            img{
+                                scale: 1.5;
+                            }
+                        }
+
+                        .form{
+                            position: relative;
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-direction: column;
+
+                            .header{
+                                width: 100%;
+                                p{
+                                    font-size: 2rem;
+                                    font-weight: 300;
+                                    color: var(--whiteText)
+                                }
+                            }
+
+                            .buttons{
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+
+                                .tag__buttons{
+                                    display: flex;
+                                    justify-content: flex-start;
+                                    align-items: center;
+                                    gap: 15px;
+                                    margin-bottom: 10px;
+                                }
+                            }
+
+                            .form__inputs{
+                                position: relative;
+                                width: 100%;
+                                height: 100%;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+
+                                .divider{
+                                    height: 1px;
+                                    width: 100%;
+                                    background-color: var(--bgWhite);
+                                }
+
+                                .form__input{
+                                    width: 100%;
+                                    padding: 10px;
+                                    display: flex;
+                                    justify-content: flex-start;
+                                    align-items: center;
+                                    gap: 10px;
+
+                                    label{
+                                        font-size: 1.3rem;
+                                        font-weight: 300;
+                                        color: var(--whiteText);
+                                    }
+
+                                    input{
+                                        background: transparent;
+                                        border: none;
+                                        outline: none;
+                                        box-shadow: none;
+                                        appearance: none;
+                                        -webkit-appearance: none;
+                                        font-size: 1.2rem;
+                                        font-weight: 300;
+                                        color: var(--whiteText);
+
+                                        ::placeholder{
+                                            font-size: 1.1rem;
+                                            color: var(--blackText)
+                                            
                                         }
+
+                                        &:focus,
+                                        &:focus-visible{
+                                            outline: none;
+                                            box-shadow: none;
+                                        }
+
+                                    }
+
+                                    .list{
+                                        display: none;
                                     }
                                 }
-                                p{
-                                    font-family: "Sentient-Light";
-                                    font-size: 1.5rem;
-                                    text-transform: capitalize;
-                                    font-weight: 300;
-                                                                        @include hb((
-                                                                            lg: (font-size: 1.3rem),
-                                                                        ));
-                                                                        @include hb((
-                                                                            md: (font-size: 1.1rem),
-                                                                        ));
-                                                                        @include hb((
-                                                                            mdt: (font-size: 1.3rem),
-                                                                        ));
-                                                                        @include hb((
-                                                                            sm: (font-size: 1.1rem),
-                                                                        ));
-                                                                        @include hb((
-                                                                            xs: (font-size: 1rem),
-                                                                        ));
-                                                                        @include hb((
-                                                                            xxs: (font-size: 1rem),
-                                                                        ));
-                                                                        @include vb((
-                                                                            lg: (font-size: 1.3rem),
-                                                                        ));
-                                                                        @include vb((
-                                                                            md: (font-size: 1.1rem),
-                                                                        ));
-                                                                        @include vb((
-                                                                            s: (font-size: 1.1rem),
-                                                                        ));
-                                                                        @include vb((
-                                                                            sm: (font-size: 1.1rem),
-                                                                        ));
-                                                                        @include vb((
-                                                                            xs: (font-size: 1rem),
-                                                                        ));
 
-                                    &:nth-of-type(2){
-                                        &:nth-of-type(2){
-                                            transform: rotateX(-90deg) translateY(15px);
+                                .form__input__area{
+                                    width: 100%;
+                                    height: 200px;
+                                    display: flex;
+                                    justify-content: flex-start;
+                                    align-items: flex-start;
+                                    gap: 10px;
+                                    padding-top: 10px;
+
+                                    .label{
+                                        border-bottom: 1px solid var(--whiteText);
+                                        padding: 0 0 10px 10px;
+
+                                        label{
+                                            font-size: 1.3rem;
+                                            font-weight: 300;
+                                            color: var(--whiteText);
+                                        }
+                                    }
+
+                                    textarea{
+                                        width: 100%;
+                                        height: 100%;
+                                        background: transparent;
+                                        border: none;
+                                        outline: none;
+                                        box-shadow: none;
+                                        appearance: none;
+                                        -webkit-appearance: none;
+                                        font-size: 1.2rem;
+                                        font-weight: 300;
+                                        color: var(--whiteText);
+
+                                        ::placeholder{
+                                            font-size: 1.1rem;
+                                            color: var(--blackText)
+                                            
+                                        }
+
+                                        &:focus,
+                                        &:focus-visible{
+                                            outline: none;
+                                            box-shadow: none;
                                         }
                                     }
                                 }
                             }
+
+                            
+
+                            .divider{
+                                height: 1px;
+                                width: 100%;
+                                background-color: var(--bgWhite);
+                            }
                         }
 
-                                                @include hb((
-                                                    lg: (width: 200px, height: 50px),
-                                                ));
-                                                @include hb((
-                                                    md: (width: 180px, height: 45px),
-                                                ));
-                                                @include hb((
-                                                    mdt: (width: 200px, height: 50px),
-                                                ));
-                                                @include hb((
-                                                    sm: (width: 180px, height: 45px),
-                                                ));
-                                                @include hb((
-                                                    xs: (width: 180px, height: 45px),
-                                                ));
-                                                @include hb((
-                                                    xxs: (width: 180px, height: 45px),
-                                                ));
-                                                @include vb((
-                                                    lg: (width: 200px, height: 50px),
-                                                ));
-                                                @include vb((
-                                                    md: (width: 180px, height: 45px),
-                                                ));
-                                                @include vb((
-                                                    s: (width: 180px, height: 45px),
-                                                ));
-                                                @include vb((
-                                                    sm: (width: 180px, height: 45px),
-                                                ));
-                                                @include vb((
-                                                    xs: (width: 160px, height: 40px),
-                                                ));
                     }
 
+                    .gdpr{
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
+                        padding-left: 5%;
+
+                        p{
+                            font-size: 1rem;
+                            font-weight: 300;
+                            color: var(--whiteText)
+                        }
+                    }
+                }
+
+                .image{
+                    position: relative;
+                    width: 30%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    
+                    .image__wrapper{
+                        position: relative;
+                        width: 350px;
+                        height: 550px;
+
+                        img{
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                        }
+                    }
                 }
             }
 
-            .kurzy__cta__content__CTA__image{
+            .information{
+                height: 20%;
                 width: 100%;
-                height: 100%;
                 position: relative;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                gap: 2dvh;
-            
-                .kurzy__cta__content__CTA__image__img{
-                    width: 25dvw;
-                    height: 25dvh;  
-
-                                        @include hb((
-                                            xs: (width: 30dvw, height: 30dvh),
-                                        ));
-                                        @include hb((
-                                            xxs: (width: 30dvw, height: 30dvh),
-                                        ));
-                }
-            }
-        }
-
-        
-    }
-
-    .kurzy__cta__images{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        z-index: 0;
-                @include vb((
-                    s: (display: none),
-                ));
-                @include vb((
-                    sm: (display: none),
-                ));
-                @include vb((
-                    xs: (display: none),
-                ));
-
-
-
-        .kurzy__cta__images__left{
-            width: 50%;
-            height: 100%;
-            position: relative;
-            
-            .kurzy__cta__images__left__image{
-                width: 22.5dvw;
-                height: 50dvh;
-                position: absolute;
-                top: 70%;
-                left: 40%;
-                transform: translate(-50%, -50%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                                @include hb((
-                                    md: (width: 20dvw),
-                                ));
-                                @include hb((
-                                    mdt: (height: 42.5dvh),
-                                ));
-                                @include hb((
-                                    sm: (height: 40dvh),
-                                ));
-                                @include hb((
-                                    xs: (height: 60dvh),
-                                ));
-                                @include vb((
-                                    lg: (height: 30dvh, width: 30dvw, top: 75%),
-                                ));
-                                @include vb((
-                                    md: (height: 30dvh, width: 30dvw, top: 75%),
-                                ));
-                .kurzy__cta__images__left__image__wrapper{
-                    width: 100%;
+                justify-content: space-between;
+                padding: 0 5%;
+                
+                .map{
+                    width: 35%;
                     height: 100%;
-                    position: relative;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    overflow: hidden;
-                    
-                    .kurzy__cta__images__left__image__img__container{
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    align-items: flex-start;
+
+                    .p{
+                        font-size: 2rem;
+                        font-weight: 300;
+                        color: var(--whiteText);
+                        border-bottom: 1px solid var(--bgWhite);
+
+                    }
+
+                    .text{
                         width: 100%;
-                        height: 100%;
                         position: relative;
                         display: flex;
                         align-items: center;
-                        justify-content: center;
-                        scale: 1.05;
-                        img{
-                            width: 100%;
-                            height: 100%;
-                            object-fit: cover;
+                        justify-content: space-between;
+
+                        p{
+                            font-size: 1.5rem;
+                            font-weight: 300;
+                            color: var(--whiteText);
+                        }
+
+                        .map_button{
+                            width: 250px !important;
+                            .button{
+                                width: 250px !important;
+                            }
                         }
                     }
                 }
 
-                &:nth-child(2){
-                    top: 30%;
-                    left: 20%;
-                }
-            }
-        }
-
-        .kurzy__cta__images__right{
-            width: 50%;
-            height: 100%;
-            position: relative;
-            
-            .kurzy__cta__images__right__image{
-                width: 22.5dvw;
-                height: 50dvh;
-                position: absolute;
-                top: 70%;
-                left: 60%;
-                transform: translate(-50%, -50%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                                @include hb((
-                                    md: (width: 20dvw),
-                                ));
-                                @include hb((
-                                    mdt: (height: 42.5dvh),
-                                ));
-                                @include hb((
-                                    sm: (height: 40dvh),
-                                ));
-                                @include hb((
-                                    xs: (height: 60dvh),
-                                ));
-                                @include vb((
-                                    lg: (height: 30dvh, width: 30dvw, top: 75%),
-                                ));
-                                @include vb((
-                                    md: (height: 30dvh, width: 30dvw, top: 75%),
-                                ));
-                .kurzy__cta__images__right__image__wrapper{
-                    width: 100%;
+                .information__kontakt{
+                     width: 35%;
                     height: 100%;
-                    position: relative;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    overflow: hidden;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    align-items: flex- ;
 
-                    .kurzy__cta__images__right__image__img__container{
+                    .p{
+                        font-size: 2rem;
+                        font-weight: 300;
+                        color: var(--whiteText);
+                        border-bottom: 1px solid var(--bgWhite);
+
+                    }
+
+                    .phone{
                         width: 100%;
-                        height: 100%;
                         position: relative;
                         display: flex;
                         align-items: center;
-                        justify-content: center;
-                        scale: 1.05;
-                        img{
-                            width: 100%;
-                            height: 100%;
-                            object-fit: cover;
+                        justify-content: space-between;
+
+                        p{
+                            font-size: 1.5rem;
+                            font-weight: 300;
+                            color: var(--whiteText);
+                        }
+
+                        .LinkButton{
+                            width: 250px !important;
+
+                            .button{
+                                width: 250px !important;
+                                p{
+                                    border-bottom: 1px solid var(--bgWhite);
+                                }
+                            }
                         }
                     }
-                }
-
-                &:nth-child(2){
-                    top: 30%;
-                    left: 80%;
                 }
             }
         }

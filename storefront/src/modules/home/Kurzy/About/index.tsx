@@ -22,10 +22,10 @@ export default function About() {
                     <div className="Images">
                         <div className="Images__container">
                             <div className="Image__wrapper">
-                                <Image src="/assets/img/kurzy/kurzy1.png" alt="Kurzy image" fill/>
+                                <Image src="/assets/img/roller/1h.jpg" alt="Kurzy image" fill/>
                             </div>
                             <div className="Image__wrapper">
-                                <Image src="/assets/img/kurzy/kurzy1.png" alt="Kurzy image" fill/>
+                                <Image src="/assets/img/roller/1v.jpg" alt="Kurzy image" fill/>
                             </div>
                         </div>
                     </div>
@@ -37,15 +37,21 @@ export default function About() {
                         </h3>
                         <CTA kind="primary" text="Zájem o kurzy"/>
                     </div>
+                    <div className="image__container">
+                        <div className="image__wrapper">
+                            <Image src="/assets/img/roller/2h.jpg" alt="Kurzy image" fill/>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="adults">
                 <div className="main">
                     <div className="mouseanim">
                         <MouseAnim />
+                        <p>Kurzy pro dospělé dole</p>
                     </div>
                     <div className="Video">
-                        <Image src="/assets/img/kurzy/kurzy_video.png" alt="Kurzy video" fill/>
+                        <Image src="/assets/img/roller/2v.jpg" alt="Kurzy video" fill/>
                     </div>
                 </div>
                 <div className="text">
@@ -53,7 +59,7 @@ export default function About() {
                         KURZY KERAMIKY PRO DOSPĚLÉ BUDOU PROSTOREM PRO ZPOMALENÍ, SOUSTŘEDĚNÍ A NÁVRAT K RUČNÍ PRÁCI. HLÍNA ZDE NEBUDE JEN MATERIÁLEM, ALE I CESTOU K TICHU, ROVNOVÁZE A RADOSTI Z VLASTNÍHO TVOŘENÍ. ZATÍM VE VÝVOJI . . .
                     </p>
                 </div>
-                <CTA kind="primary" text="Zájem o kurzy"/>
+                <CTA kind="primary" text="Zájem o kurzy" />
             </div>
         </section>
     )

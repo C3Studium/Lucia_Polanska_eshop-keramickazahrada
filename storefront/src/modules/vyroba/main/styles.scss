@@ -1,1 +1,29 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
+
+.main__vyroba{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    padding: 2rem 2rem;
+
+
+
+    .image__container{
+        position: relative;
+        width: 80%;
+        height: 80%;
+
+
+        .image__wrapper{
+            width: 50%;
+            height: 40%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    }
+}

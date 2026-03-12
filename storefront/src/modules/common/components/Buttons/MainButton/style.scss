@@ -1,8 +1,16 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 
-.ClickButton{
-    width: auto;
-    height: auto;
+
+.CTA__button{
+    width: 160px !important; 
+
+    .button{
+        width: 160px !important;
+    }
+}
+.MainButton{
+    width: 100px;
+    height: 40px;
     position: relative;
     display: flex;
     justify-content: center;
@@ -17,7 +25,8 @@
         overflow: hidden;
         border: none;
         box-shadow: none;
-        background-color: transparent;
+        background-color: var(--bgBlack);
+        border: 1px solid var(--bgPrimary);
 
         @include vb((
             s: (width: 90px, height: 35px),
@@ -33,10 +42,11 @@
                 height: 100%;
                 p{
                     margin: 0px;
+                    color: var(--whiteText);
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--Wtext);
+                        color: var(--whiteText);
                     }
                 }
                 &:hover{
@@ -59,7 +69,7 @@
     }
 }
 
-.perspectiveText{
+.perspectiveTextMain{
     display: flex;
     flex-direction: column;
     justify-content: center;

@@ -5,6 +5,8 @@ import { getRegion } from "@lib/data/regions"
 
 
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
+import DotazyMain from "@modules/dotazy/main"
+import FAQBody from "@modules/dotazy/FAQ"
 
 
 export const metadata: Metadata = {
@@ -37,9 +39,8 @@ export default async function Home(props: {
   return (
     <>
         <ScrollToTopOnReload />
-        <div>
-            <h1>FAQ</h1> 
-        </div>
+        <DotazyMain />
+        <FAQBody />
     </>
   )
 }

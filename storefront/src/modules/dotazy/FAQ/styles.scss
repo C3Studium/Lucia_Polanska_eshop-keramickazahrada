@@ -1,0 +1,10 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+.FAQBody{
+    width: 100vw;
+    height: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bgPrimary);
+}

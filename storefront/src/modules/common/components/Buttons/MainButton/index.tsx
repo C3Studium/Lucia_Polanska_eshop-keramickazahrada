@@ -5,7 +5,7 @@ import { useFormStatus } from 'react-dom';
 import LocalizedClientLink from '../../localized-client-link';
 
 type ClickButtonProps = {
-    kind?: "Link" | "Submit" | "Product" | "Tag"
+    kind?: "Link" | "Submit" | "Product" | "Tag" | "CTA";
     type: "button" | "submit" | "reset";
     text: string;
     onClickAction?: () => void | Promise<void>;
@@ -132,6 +132,42 @@ export default function MainButton({ onClickAction, ClickAction, disabled = fals
             </div>
         )
     }
+
+    if (kind === "CTA") {
+        return (
+            <div className={className ? `MainButton ${className}` : "MainButton"}>
+                <button 
+                    type={type}
+                    className="button"
+                    onClick={handleClick}
+                    disabled={isDisabled}
+                    aria-busy={isDisabled || undefined}
+                    onMouseEnter={() => setIsActive(true)}
+                    onMouseLeave={() => setIsActive(false)}
+                    data-testid={dataTestId}
+                >
+                    <motion.div 
+                        className="slider"
+                        animate={{top: isActive ? "-100%" : "0%"}}
+                        transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
+                    >
+                        <div 
+                            className="el"
+                            style={{ backgroundColor: "var(--OButton)" }}
+                        >
+                            <PerspectiveText label={text}/>
+                        </div>
+                        <div 
+                            className="el"
+                            style={{ backgroundColor: "var(--CharcoalBg)" }}
+                        >
+                            <PerspectiveText label={text} />
+                        </div>
+                    </motion.div>
+                </button>
+            </div>
+        )
+    };
     return (
         <div className={className ? `MainButton ${className}` : "MainButton"}>
             <LocalizedClientLink 
@@ -170,7 +206,7 @@ export default function MainButton({ onClickAction, ClickAction, disabled = fals
 
 function PerspectiveText({label}: {label: string}) {
     return (    
-        <div className="perspectiveText">
+        <div className="perspectiveTextMain">
             <p>{label}</p>
             <p>{label}</p>
         </div>

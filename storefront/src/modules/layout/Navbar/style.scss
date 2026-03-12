@@ -35,6 +35,17 @@
         background-color: var(--bgWhite);
         border-radius: 25px;
         padding: 0 5px;
+
+
+        .CTA__button{
+            width: 100px !important;
+            height: 40px !important;
+
+            .button{
+                width: 100px !important;
+                height: 40px !important;
+            }
+        }
     }
     .navbar__right {
         position: relative;
