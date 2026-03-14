@@ -7,8 +7,6 @@ import { getRegion } from "@lib/data/regions"
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import Kurzy from "@modules/home/Kurzy"
 import MainVyroba from "@modules/vyroba/main"
-import Gallery from "@modules/vyroba/gallery"
-import Collections from "@modules/home/E-com/Collections"
 
 
 export const metadata: Metadata = {
@@ -41,9 +39,6 @@ export default async function Home(props: {
   return (
     <>
       <ScrollToTopOnReload />
-      <MainVyroba />
-      <Gallery />
-      <Collections /> 
     </>
   )
 }

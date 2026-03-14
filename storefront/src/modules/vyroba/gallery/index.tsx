@@ -43,21 +43,20 @@ const Gallery = () => {
 
     return (
         <section className="Gallery">
-        {galleryArray.map((item,index) => {
-            const {src, alt, text} = item
-            return (
-                <div className="proces">
-                       <p> {text}
-                       </p>,
-                    <div className="imggallery">
-                       <Image src={src} alt={alt} fill />
+            {galleryArray.map((item, index) => {
+                const {src, alt, text} = item
+                return (
+                    <div className="proces" key={`gallery__vyroba${index}`}>
+                        <p> 
+                            {text}
+                        </p>
+                        <div className="img__gallery">
+                            <Image src={src} alt={alt} fill />
+                        </div>
                     </div>
-                </div>
 
-            )
-        })}
-
-
+                )
+            })}
         </section>
     )
 }

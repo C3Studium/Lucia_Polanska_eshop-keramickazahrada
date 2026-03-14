@@ -5,6 +5,157 @@
     height: auto;
     position: relative;
     display: flex;
-    flex-direction: column;
     background-color: var(--bgPrimary);
+    flex-direction: column;
+    padding: 15% 2.5%;
+
+    .header{
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h2{
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--blackText);
+            line-height: 1.05;
+        }
+        p{
+            font-size: 1.3rem;
+            font-weight: 300;
+            color: var(--blackText);
+            line-height: 1.1;
+        }
+    }
+
+    .faq__container{
+        border-bottom: 1px solid var(--iconsBlack);
+        border-top: 1px solid var(--iconsBlack);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+
+        .faq{
+            width: 60%;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            flex-direction: column;
+
+            .question{
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                flex-direction: column;
+                cursor: pointer;
+                padding: 5px 0;
+
+
+                .title{
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    padding: 10px 0;
+                    margin: 0;
+
+                    p{
+                        font-size: 1.5rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                        line-height: 1.1;
+                    }
+                }
+
+                .faq__content{
+                    height: fit-content;
+                    width: 100%;
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                    flex-direction: column;
+                    will-change: height, opacity;
+
+                    
+                    .divider{
+                        width: 80%;
+                        background-color: var(--iconsBlack);
+                    }
+
+                    p{
+                        font-size: 1.3rem;
+                        font-weight: 300;
+                        color: var(--blackText);
+                        line-height: 1.1;
+                    }
+                }
+
+                .divider{
+                    width: 100%;
+                    background-color: var(--iconsBlack);
+                }
+            }
+        }
+
+        .faq__kontakt{
+            width: 25%;
+            height: 25%;
+            bottom: 7.5%;
+            right: 0%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5%;
+
+            .connect{
+                position: relative;
+                width: 100%;
+                height: 40%;
+                display: flex;
+                justify-content: flex-start;
+                align-items: flex-end;
+                .p{
+                    font-size: 1.3rem;
+                    font-weight: 300;
+                    color: var(--blackText);
+                    text-transform: uppercase;
+                    margin-bottom: 1.5rem;
+                }
+            }
+
+            .phone{
+                position: relative;
+                width: 100%;
+                height: 40%;
+                display: flex;
+                justify-content: flex-start;
+                align-items: flex-start;
+                .p{
+                    font-size: 1.3rem;
+                    font-weight: 300;
+                    color: var(--blackText);
+                    text-transform: uppercase;
+                    margin-top: 1.5rem;
+                }
+
+                .LinkButton{
+                    width: 200px;
+                    .button{
+                        width: 200px;
+
+                        p{
+                            font-size: 1.3rem;
+                            border-bottom: 1px solid var(--iconsBlack);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

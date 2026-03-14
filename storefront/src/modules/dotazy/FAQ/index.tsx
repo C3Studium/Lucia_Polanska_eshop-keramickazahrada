@@ -1,8 +1,7 @@
 "use client"
 import LinkButton from "@modules/common/components/Buttons/LinkButton";
-import MainButton from "@modules/common/components/Buttons/MainButton";
 import CTA from "@modules/home/Kurzy/CTA";
-import { AnimatePresence, Easing, motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -49,13 +48,10 @@ const faq = [
     },
 ]
 
-type ActiveState = {
-  index: number | null,
-  state: boolean
-}
+type ActiveState = string | null
 
 export default function FAQBody () {
-    const [ active, setActive ] = useState<ActiveState>({index: null, state: false})
+    const [ active, setActive ] = useState<ActiveState>("Vyrábíte keramiku na zakázku?")
 
     return (
         <section className="FAQBody">
@@ -71,23 +67,30 @@ export default function FAQBody () {
             </div>
 
             <div className="faq__container">
-                <div className="faq" key={"faq__div"}>
-                    {faq.map((question, index) => {
+                <div className="faq">
+                    {faq.map((question) => {
                         const {title, desc} = question
                         return (
-                            <Question index={index} title={title} desc={desc} active={active} setActive={setActive}/>
+                            <Question 
+                                key={title}
+                                title={title} 
+                                desc={desc} 
+                                active={active} 
+                                setActive={setActive}
+                                id={title}
+                            />
                         )
                     })}
                 </div>
                 <div className="faq__kontakt">
                     <div className="connect">
-                        <p>
+                        <p className="p">
                             VAŠE OTÁZKA <br />CHYBÍ?
                         </p>
                         <CTA text="Spojte se" kind="secondary"/>
                     </div>
                     <div className="phone">
-                        <p>
+                        <p className="p">
                             NEBO <br />TELEFONICKY
                         </p>
                         <LinkButton text="+420 775 211 578" href="+420 775 211 578"/>
@@ -101,54 +104,37 @@ export default function FAQBody () {
 type QuestionProps = {
   desc: string
   title: string
-  index: number
+  id: string
   active: ActiveState
   setActive: (next: ActiveState) => void
 }
-const Question = ({desc, title, index, active, setActive} : QuestionProps) => {
-
-    const height = {
-        initial: {
-            height: "0%"
-        },
-        active: {
-            height: "100%",
-            transition: {
-                duration: 0.5,
-                ease: [ 0.76, 0, 0.25, 1] as Easing
-            }
-        },
-        closed: {
-            height: "0%",
-            transition: {
-                duration: 0.5,
-                ease: [ 0.76, 0, 0.25, 1] as Easing
-            }
-        }
-    }
+const Question = ({desc, title, id, active, setActive} : QuestionProps) => {
     return (
-        <div className="question" onClick={() => setActive({ index, state: !active.state })}>
+        <div className="question" onClick={() => setActive(active === id ? null : id)}>
             <div className="title">
                 <p>
                     {title}
                 </p>
-                <Image src="/assets/icons/plus.svg" alt="plus__icon" height={40} width={40}/>
+                <Image src="/assets/icons/cross.png" alt="plus__icon" height={20} width={20}/>
             </div>
-            <AnimatePresence>
-                {active.index === index &&
-                <div className="content__wrapper">
+            <AnimatePresence initial={false}>
+                {active === id &&
                     <motion.div 
-                        className="content" 
-                        key={`key_index${index}`}
-                        variants={height}
-                        initial="initial"
-                        animate={ active.index === index ? "active" : "closed"}
+                        className="faq__content" 
+                        key={id}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                        style={{ overflow: "hidden" }}
                     >
                         <div className="divider"/>
                         <p>{desc}</p>
+                        
                     </motion.div>
-                </div>}
+                }
             </AnimatePresence>
+            <div className="divider"/>
         </div>
     )
 }

@@ -3,27 +3,29 @@
 
 
 
-.gallery{
-    .proces{
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    }
-     
-   .imggallery{
-    position: absolute;
+.Gallery{
     width: 100%;
-    height: 100%;
-   }
-   
+    height: auto;
+    .proces{
+        position: relative;
+        width: 100vw;
+        height: 100vh;
 
-   p {
-    font-size: 1.5rem;
-    position: absolute;
-    top: 20%;
-    left: 15%;
-    right: 20%;
-   }
+        .img__gallery{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+
+        p {
+            font-size: 1.5rem;
+            position: absolute;
+            top: 20%;
+            left: 15%;
+            right: 20%;
+        }
+    }
 
 }
 
