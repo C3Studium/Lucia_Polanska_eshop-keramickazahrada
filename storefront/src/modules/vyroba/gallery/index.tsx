@@ -52,6 +52,7 @@ const Gallery = () => {
                         </p>
                         <div className="img__gallery">
                             <Image src={src} alt={alt} fill />
+                            <div className="overlay"/>
                         </div>
                     </div>
 
