@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { getBundleProduct, getProductReviews, listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import Product from "@modules/products/ProductPage/product"
-import Details from "@modules/products/ProductPage/details"
 import SoldProducts from "@modules/products/ProductPage/Sold"
 import { listCategories } from "@lib/data/categories"
 import ProductReviews from "@modules/products/components/product-reviews"
@@ -181,9 +180,6 @@ export default async function ProductPage(props: Props) {
           isAuthenticated={isAuthenticated}
         />
       )}
-      <Details 
-        product={pricedProduct} 
-      />
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} />
       <SoldProducts />
     </main>

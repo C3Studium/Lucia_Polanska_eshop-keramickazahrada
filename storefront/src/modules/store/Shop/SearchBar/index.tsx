@@ -279,7 +279,7 @@ const productTypes = products
         <div className="search__bar">
             <div className="search__bar__container" ref={searchBarRef}>
                 <div className="search__bar__container__categories">
-                    <div 
+                    {/* <div 
                         className="search__bar__container__main" 
                         ref={priceDropdownRef}
                     >
@@ -346,7 +346,10 @@ const productTypes = products
                         <button onClick={() => setIsNewAction(!isNew)} className={`filter__button ${isNew ? "active" : ""}`}>
                             <p>Novinky</p>
                         </button>
-                    </div>
+                    </div> */}
+                    <p>Novinky</p>
+                    <p>Slevy</p>
+                    <p>Balíčky</p>
                 </div>
 
                 {!isMobile && (<div 

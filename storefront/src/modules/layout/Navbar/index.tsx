@@ -19,7 +19,7 @@ import nav from "./nav";
 import { usePathname } from "next/navigation";
 import Button from "./button";
 import SearchButton from "./searchButton";
-import ProductButton from "./productsButton";
+import {CollectionList, ProductButton, } from "./productsButton";
 import CTA from "@modules/home/Kurzy/CTA";
 
 type NavbarProps = {
@@ -36,8 +36,13 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
     const [isActive, setIsActive] = useState<boolean>(false);
     const { firstLoad } = useStateContext();
 
+    const [ isOpen, setIsOpen ] = useState<boolean>(false);
+
     const pathname = usePathname();
 
+    const productClick = () => {
+        setIsOpen(!isOpen)
+    }
 
     const PreloaderAnim = {
         initial: {
@@ -111,6 +116,7 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
     return (
         <>
             <nav className="navbar">
+                <CollectionList active={isOpen} setActive={productClick}/>
                 <div className="navbar__left">
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="" href="/" icon1="/assets/icons/logowhite.svg" icon2="/assets/icons/logo.svg"/>
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="Dotazy" href="/dotazy"/>
@@ -119,7 +125,7 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
                 <div className="navbar__center">
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="Výroba" href="/vyroba"/>
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="Kurzy" href="/kurzy"/>
-                    <ProductButton />
+                    <ProductButton onClickAction={productClick}/>
                     <CTA text="Kontakt" kind="primary" img="/assets/links/home_img.png" alt="bg__image"/>
                     <Button img="/assets/links/home_img.png" alt="bg__image" title="O mně" href="/o-mne"/>
                 </div>

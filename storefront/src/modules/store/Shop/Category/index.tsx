@@ -40,40 +40,58 @@ export default function Categories({ category, setCategoryAction, categories, su
         }
     }
 
+    // return (
+    //     <div className="categories">
+    //         <div className="categories__mobile">
+    //             <motion.div 
+    //                 className="categories__mobile__menu"
+    //                 variants={menu}
+    //                 animate={isActive ? "open" : "closed"}
+    //                 initial="closed"
+    //             >
+    //                 <AnimatePresence>
+    //                     {isActive && (
+    //                         <CategoryNav 
+    //                             category={category}
+    //                             setCategoryAction={setCategoryAction}
+    //                             categories={categories}
+    //                             subcategory={subcategory}
+    //                             setSubcategoryAction={setSubcategoryAction}
+    //                         />
+    //                     )}
+    //                 </AnimatePresence>
+    //                 <AnimatePresence>
+    //                     {isActive && (
+    //                         <motion.div className="categories__mobile__button__confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 , transition: { delay: 0.5}}} exit={{ opacity: 0 }}>
+    //                             <button className="confirm__button" onClick={() => setIsActive(false)}>
+    //                                 <p>Potvrdit</p>
+    //                             </button>
+    //                         </motion.div>
+    //                     )}
+    //                 </AnimatePresence>
+    //             </motion.div>
+    //             <CategoryButton 
+    //                 isActive={isActive} 
+    //                 toggleMenu={() => setIsActive(!isActive)}
+    //             />
+    //         </div>
+    //     </div>
+    // );
+
     return (
         <div className="categories">
             <div className="categories__mobile">
-                <motion.div 
+                <div 
                     className="categories__mobile__menu"
-                    variants={menu}
-                    animate={isActive ? "open" : "closed"}
-                    initial="closed"
                 >
-                    <AnimatePresence>
-                        {isActive && (
-                            <CategoryNav 
-                                category={category}
-                                setCategoryAction={setCategoryAction}
-                                categories={categories}
-                                subcategory={subcategory}
-                                setSubcategoryAction={setSubcategoryAction}
-                            />
-                        )}
-                    </AnimatePresence>
-                    <AnimatePresence>
-                        {isActive && (
-                            <motion.div className="categories__mobile__button__confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 , transition: { delay: 0.5}}} exit={{ opacity: 0 }}>
-                                <button className="confirm__button" onClick={() => setIsActive(false)}>
-                                    <p>Potvrdit</p>
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
-                <CategoryButton 
-                    isActive={isActive} 
-                    toggleMenu={() => setIsActive(!isActive)}
-                />
+                    <CategoryNav 
+                        category={category}
+                        setCategoryAction={setCategoryAction}
+                        categories={categories}
+                        subcategory={subcategory}
+                        setSubcategoryAction={setSubcategoryAction}
+                    />
+                </div>
             </div>
         </div>
     );

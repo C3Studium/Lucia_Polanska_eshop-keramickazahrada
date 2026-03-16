@@ -57,7 +57,7 @@ export default function CTA({
                         ? "Vyberte variantu"
                         : !inStock || !isValidVariant
                         ? "Není skladem"
-                        : "Přidat do košíku"}
+                        : "Přidat"}
                 </CartButton>
             </div>
             <p>

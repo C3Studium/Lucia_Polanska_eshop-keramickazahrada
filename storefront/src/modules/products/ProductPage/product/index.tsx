@@ -1,8 +1,7 @@
 
 import { HttpTypes } from "@medusajs/types";
 import { notFound } from "next/navigation";
-import Details from "./details/details";
-import Gallery from "./Gallery/gallery";
+import ProductDetails from "./details/details";
 
 
 type ProductTemplateProps = {
@@ -27,9 +26,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
 
     return(
         <section className="product">
-            <Details product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} onWishlistUpdateAction={onWishlistUpdateAction} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} />
-            <Gallery product={product} region={region} countryCode={countryCode} />
-        </section>
+            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} onWishlistUpdateAction={onWishlistUpdateAction} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} />        </section>
     )
 }
 

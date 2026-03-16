@@ -1,9 +1,7 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .details{
-    width: 100dvw;
-    min-height: 40dvh;
-    padding: 10dvh 0dvw 15dvh 0;
+    width: 100%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -12,18 +10,7 @@
     background-color: var(--OliveBg);
     gap: 1.5dvh;
     overflow: hidden;
-
-    @include hb((
-        xs: (min-height: 60dvh),
-        xxs: (min-height: 60dvh),
-    ));
-    @include vb((
-        lg: (min-height: 30dvh),
-        md: (min-height: 30dvh),
-        s: (min-height: 80dvh),
-        sm: (min-height: 80dvh),
-        xs: (min-height: 100dvh),
-    ));
+    margin-top: 250px;
 
     .details__title{
         width: 100%;
@@ -32,7 +19,9 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 0 2.5dvw;
+        margin: 0 2.5dvw;
+        border-bottom: 1px solid var(--iconsBlack);
+
 
         @include hb((
             mdt: (height: 5dvh),
@@ -41,27 +30,14 @@
         ));
 
         h2{
-            font-family: "OoohBaby-Regular";
             position: relative;
+            text-transform: uppercase;
             z-index: 1;
             font-size: 5rem;
             color: var(--Wtext);
             font-weight: 300;
             margin: 0;
-
-            @include hb((
-                md: (font-size: 4rem),
-                mdt: (font-size: 4rem),
-                sm: (font-size: 3.5rem),
-                xs: (font-size: 3rem),
-                xxs: (font-size: 3rem),
-            ));
-            @include vb((
-                md: (font-size: 4rem),
-                s: (font-size: 4rem),
-                sm: (font-size: 4rem),
-                xs: (font-size: 3rem),
-            ));
+            line-height: 1.05;
         }
     }
 
@@ -85,17 +61,18 @@
             align-items: flex-start;
             justify-content: flex-start;
             flex-direction: column;
+            padding: 0 2.5dvw;
 
             .details__content__list__item{
-                width: 60%;
+                width: 100%;
                 height: fit-content;
                 position: relative;
                 display: flex;
                 align-items: space-between;
                 justify-content: center;
                 flex-direction: column;
-                border-top: 1px solid var(--WhiteBg);
-                padding: 0 2.5dvw;
+                border-bottom: 1px solid var(--iconsBlack);
+
                 @include vb((
                     s: (width: 90%),
                     sm: (width: 90%),

@@ -15,7 +15,7 @@ export default function SoldProducts () {
                         width={50}
                         height={50}  
                     />
-                    <h2>Již Prodané Výrobky</h2>
+                    <h2>Podobné Produkty</h2>
                     <Image 
                         src="/assets/icons/wheel_white.svg"
                         alt="Wheel Icon"

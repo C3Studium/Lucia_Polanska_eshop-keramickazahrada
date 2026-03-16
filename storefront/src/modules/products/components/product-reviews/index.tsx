@@ -118,9 +118,10 @@ export default function ProductReviews({
 
   return (
     <div className={`product-page-constraint ${styles.container}`}>
+      <div className={styles.reviews}>
         <div className={styles.header}>
         <p className={styles.title}>
-          Podívejte se, co o tomto produktu říkají naši zákazníci.
+          Recenze
         </p>
         {error && (
           <p className={styles.error} style={{ color: "#c00" }}>
@@ -163,6 +164,7 @@ export default function ProductReviews({
             />
           </div>
         )}
+      </div>
 
       <ProductReviewsForm productId={productId} />
     </div>

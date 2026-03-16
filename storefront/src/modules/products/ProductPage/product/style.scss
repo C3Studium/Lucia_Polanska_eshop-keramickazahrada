@@ -2,265 +2,453 @@
 
 
 .product{
-    width: 100dvw;
-    height: 100dvh;
+    width: 100%;
+    height: auto;
     position: relative;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    flex-direction: row;
-    background-color: var(--WhiteBg);
+    background-color: var(--bgWhite);
     gap: 2dvw;
     overflow: hidden;
 
-    @include hb((
-        xs: (height: 120dvh),
-    )); 
-    @include hb((
-        xxs: (height: 120dvh),
-    )); 
-    @include vb((
-        lg: (height: 70dvh, align-items: center),
-    ));
-    @include vb((
-        md: (height: 75dvh, align-items: center, padding-bottom: 5dvh),
-    ));
-    @include vb((
-        s: (overflow: hidden, height: 140dvh),
-    ));
-    @include vb((
-        sm: (overflow: hidden, height: 150dvh),
-    ));
-    @include vb((
-        xs: (overflow: hidden, height: 160dvh),
-    ));
-
     .product__details{
-        width: 50%;
-        height: 90%;
+        width: 100%;
+        height: fit-content;
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        flex-direction: column;
-        gap: 2.5dvh;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(1, 1fr);
+        padding: 25vh 0 0 0;
 
-        @include hb((
-            mdt: (gap: 1.5dvh),
-        ));
-        @include hb((
-            sm: (height: 90%),
-        ));
-        @include hb((
-            xs: (height: 100%),
-        ));
-        @include hb((
-            xxs: (height: 100%),
-        ));
-        @include vb((
-            lg: (width: 40%, justify-content: center, padding-top: 10dvh),
-        ));
-        @include vb((
-            md: (width: 40%, justify-content: center, padding-top: 10dvh),
-        ));
-
-        @include vb((
-            s: (width: 100%, height: 100%, justify-content: flex-start, padding-bottom: 5dvh),
-        ));
-        @include vb((
-            sm: (width: 100%, height: 100%, justify-content: flex-start, padding-bottom: 5dvh),
-        ));
-        @include vb((
-            xs: (width: 100%, height: 100%, justify-content: flex-start, padding-bottom: 5dvh),
-        ));
-
-        .product__reviews{
+        .info__container{
             width: 100%;
-            height: fit-content;
+            height: 100%;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            padding: 0 2.5vw;
-            gap: 0.25rem;
-
-            @include vb((
-                s: (padding: 0 5vw),
-            ));
-                @include vb((
-                    sm: (padding: 0 5vw),
-                ));
-                @include vb((
-                    xs: (padding: 0 5vw),
-                ));
-
-            span{
-                font-size: 1.5rem;
-                font-weight: 400;
-                font-family: "Sansation-Light";
-                margin: 0;
-                gap: 0.25rem;
-
-                @include hb((
-                    lg: (font-size: 1.3rem),
-                )); 
-                @include hb((
-                    md: (font-size: 1.3rem),
-                )); 
-                    @include hb((
-                        sm: (font-size: 1.3rem),
-                    )); 
-                @include hb((
-                    xs: (font-size: 1.2rem),
-                )); 
-                @include hb((
-                    xxs: (font-size: 1.1rem),
-                )); 
-                @include vb((
-                    md: (font-size: 1.3rem),
-                ));  
-
-                @include vb((
-                    s: (font-size: 1.2rem),
-                ));
-                    @include vb((
-                        sm: (font-size: 1.2rem),
-                    ));
-                    @include vb((
-                        xs: (font-size: 1.2rem),
-                    ));
-            }
-        }
-
-        .product__details__mainDetails{
-            width: 100%;
-            height: 20dvh;
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
             flex-direction: column;
-            gap: 1dvh;
-            padding: 0dvh 2.5dvw;
-            margin-top: 25dvh;
-
-            @include hb((
-                xs: (margin-top: 10dvh, height: 45dvh),
-            )); 
-            @include hb((
-                xxs: (margin-top: 10dvh, height: 40dvh),
-            ));
-
-            @include vb((
-                lg: (height: 15dvh, margin-top: 10dvh),
-            ));
-            @include vb((
-                md: (height: 20dvh, margin-top: 10dvh),
-            ));
-            @include vb((
-                s: (margin-top: 15dvh, margin-bottom: 50dvh),
-            ));
-             @include vb((
-                 sm: (margin-top: 15dvh, margin-bottom: 55dvh),
-             ));
-             @include vb((
-                 xs: (margin-top: 15dvh, margin-bottom: 60dvh),
-             ));
-        }
-
-        .product__details__subDetails{
-            width: 100%;
-            height: 10dvh;
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            flex-direction: column;
-            gap: 1dvw;
-            padding: 0 2.5dvw;
-
-            @include hb((
-                md: (height: 15dvh, gap: 0.25dvh),
-            )); 
-            @include hb((
-                mdt: (height: 15dvh, gap: 0.25dvh),
-            )); 
-            @include hb((
-                sm: (height: 15dvh, gap: 0.25dvh),
-            )); 
-            @include hb((
-                xs: (height: 15dvh),
-            )); 
-            @include hb((
-                xxs: (height: 25dvh),
-            ));
-            
-            @include vb((
-                lg: (height: 7.5dvh),
-            ));
-            @include vb((
-                s: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 20dvh),
-            )); 
-            @include vb((
-                sm: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 25dvh),
-            ));
-            @include vb((
-                xs: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 30dvh),
-            )); 
-
-            .product__details__subDetails__colors{
+            .product__details__mainDetails{
                 width: 100%;
-                height: 2.5dvh;
+                position: relative;
+                display: flex;
+                align-items: flex-start;
+                justify-content: flex-start;
+                flex-direction: column;
+                gap: 1dvh;
+                padding: 0dvh 2.5dvw;
+            }
+
+            .product__details__cta{
+                width: 100%;
                 position: relative;
                 display: flex;
                 align-items: center;
                 justify-content: flex-start;
+                flex-direction: row;
                 gap: 1dvw;
+                padding: 0 2.5dvw;
 
                 @include hb((
-                    md: (height: 5dvh),
-                )); 
-                @include hb((
-                    mdt: (height: 3.5dvh),
+                    xs: (height: 20dvh),
                 ));
                 @include hb((
-                    sm: (height: 5dvh),
-                ));  
-                @include hb((
-                    xs: (height: 7.5dvh),
-                )); 
-                @include hb((
-                    xxs: (height: 7.5dvh),
+                    xxs: (height: 20dvh),
+                ));
+
+                @include vb((
+                    lg: (flex-direction: column, height: 25dvh, justify-content: center, align-items: flex-start, gap: 0.5rem, margin-top: 2.5dvh),
+                ));
+
+                @include vb((
+                    md: (flex-direction: column, height: 20dvh, justify-content: center, align-items: flex-end, gap: 0.25rem, margin-top: 2.5dvh),
                 ));
                 @include vb((
-                    lg: (height: 5dvh, width: 100%),
-                )); 
+                    s: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
+                ));
                 @include vb((
-                    s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                )); 
+                    sm: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
+                ));
                 @include vb((
-                    sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                )); 
-
-                @include vb((
-                    xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                )); 
+                    xs: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
+                ));
 
 
-                p{
-                    font-family: "Sansation-Light";
+                .divider{
+                    position: absolute;
+                    width: 90%;
+                    height: 0.5px;
+                    background-color: var(--ButtonBorder);
+                    bottom: 0;
+                    left: 5%;
+                    z-index: 0;
+
+                }
+
+                .product__details__cta__price{
+                    width: 40%;
+                    height: 100%;
                     position: relative;
-                    z-index: 1;
-                    font-size: 1.5rem;
-                    color: var(--ChText);
-                    font-weight: 300;
-                    white-space: nowrap;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    flex-direction: row;
+                    gap: 1.5dvw;
+                    padding-top: 5dvh;
 
+                    @include hb((
+                        xxs: (width: 40%, flex-direction: column, align-items: flex-start),
+                    ));
+
+                    @include vb((
+                        lg: (width: 100%, padding: 0, height: 5dvh),
+                    ));
+                    @include vb((
+                        md: (width: 100%, padding: 0, height: 5dvh),
+                    ));
+                    @include vb((
+                        s: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
+                    ));
+                    @include vb((
+                        sm: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
+                    ));
+                    @include vb((
+                        xs: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
+                    ));
+
+                    p{
+                        font-family: "Sansation-Light";
+                        position: relative;
+                        z-index: 1;
+                        font-size: 1.5rem;
+                        color: var(--ChText);
+                        font-weight: 300;
+
+                        @include hb((
+                            md: (font-size: 1.3rem),
+                        ));
+                        @include hb((
+                            sm: (font-size: 1.2rem),
+                        ));
+                        @include hb((
+                            xs: (font-size: 1.1rem),
+                        ));
+                        @include hb((
+                            xxs: (font-size: 1rem),
+                        ));
+                        @include vb((
+                            md: (font-size: 1.3rem),
+                        ));  
+                    }
+                    .product__details__cta__price__main{
+                        width: 50%;
+                        height: 0.1%;
+                        position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start;
+                        span{
+                            position: relative;
+                            z-index: 1;
+                            font-size: 3rem;
+                            color: var(--ChText);
+                            font-weight: 300;
+                            margin: 0;
+
+                            @include hb((
+                                md: (font-size: 2.5rem),
+                            ));
+                            @include hb((
+                                mdt: (font-size: 2.5rem),
+                            ));
+                            @include hb((
+                                sm: (font-size: 2rem),
+                            ));
+                            @include hb((
+                                xs: (font-size: 1.8rem),
+                            ));
+                            @include hb((
+                                xxs: (font-size: 1.5rem),
+                            ));
+                            @include vb((
+                                md: (font-size: 2rem),
+                            ));  
+                            @include vb((
+                                s: (font-size: 2rem),
+                            ));  
+                            @include vb((
+                                sm: (font-size: 2rem),
+                            )); 
+                            @include vb((
+                                xs: (font-size: 2rem),
+                            )); 
+                        }
+                    }
+
+                }
+
+                .product__details__cta__buy{
+                    width: 60%;
+                    height: 100%;
+                    position: relative;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: flex-end;
+                    flex-direction: column;
+                    gap: 0.25dvw;
+                    padding: 1.5dvh 0;
+
+                    @include vb((
+                        lg: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
+                    ));
+                    @include vb((
+                        md: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
+                    ));
+                    @include vb((
+                        s: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
+                    ));
+                    @include vb((
+                        sm: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 2.5dvh 5dvw 0 5dvw),
+                    ));
+                    @include vb((
+                        xs: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
+                    ));
+
+                    .product__details__cta__buy__buttons{
+                        width: 100%;
+                        height: 50%;
+                        position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        flex-direction: row;
+                        gap: 1dvw;
+                        @include vb((
+                            lg: (justify-content: flex-start),
+                        ));
+                        @include vb((
+                            md: (justify-content: flex-start),
+                        ));
+                        @include vb((
+                            s: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
+                        ));
+                        @include vb((
+                            sm: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
+                        ));
+                        @include vb((
+                            xs: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
+                        ));
+
+                        .product__details__cta__buy__button__add{
+                            width: 35px;
+                            height: 35px;
+                            position: relative;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+
+                            @include hb((
+                                md: (width: 30px, height: 30px),
+                            ));
+                            @include hb((
+                                mdt: (width: 30px, height: 30px),
+                            ));
+                            @include hb((
+                                xs: (width: 30px, height: 30px),
+                            ));
+                            @include hb((
+                                xxs: (width: 30px, height: 30px),
+                            ));
+                            @include hb((
+                                sm: (width: 30px, height: 30px),
+                            ));
+                            img{ 
+                                width: 100%;
+                                height: 100%;
+                                object-fit: contain;
+                            }
+                            
+                        }
+                        .ClickButton{
+                            .button{
+                                width: 200px;
+                                height: 45px;
+                                @include hb((
+                                    lg: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include hb((
+                                    mdt: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include hb((
+                                    md: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include hb((
+                                    sm: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include hb((
+                                    xs: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include hb((
+                                    xxs: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include vb((
+                                    md: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include vb((
+                                    s: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include vb((
+                                    sm: (width: 150px !important, height: 40px !important),
+                                ));
+                                @include vb((
+                                    xs: (width: 150px !important, height: 40px !important),
+                                ));
+                                .slider{
+                                    .el{
+                                        &:nth-of-type(1){
+                                            .perspectiveText{
+                                                position: absolute;
+                                                top: 50%;
+                                                left: 50%;
+                                                transform: translate(-50%, -50%);
+                                    
+                                                p{
+                                                    &:nth-of-type(1){
+                                                        position: absolute;
+                                                        top: 50%;
+                                                        left: 50%;
+                                                        transform: translate(-50%, -50%);
+                                                        width: 100%;
+                                                        text-align: center;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        p{
+                                            font-family: "Sansation-Light";
+                                            text-transform: capitalize;
+                                            font-size: 1.3rem;
+                                            color: var(--WhiteBg);
+                                            font-weight: 300;
+                                            margin: 0;
+
+                                            @include hb((
+                                                lg: (font-size: 1.3rem),
+                                            ));
+                                            @include hb((
+                                                mdt: (font-size: 1.3rem),
+                                            ));
+                                            @include hb((
+                                                md: (font-size: 1.1rem),
+                                            ));
+                                            @include hb((
+                                                sm: (font-size: 1.1rem),
+                                            ));
+                                            @include hb((
+                                                xs: (font-size: 1rem),
+                                            ));
+                                            @include hb((
+                                                xxs: (font-size: 1rem),
+                                            ));
+                                            @include vb((
+                                                lg: (font-size: 1.3rem),
+                                            ));
+                                            @include vb((
+                                                md: (font-size: 1.1rem),
+                                            ));
+                                            @include vb((
+                                                s: (font-size: 1.1rem),
+                                            ));
+                                            @include vb((
+                                                sm: (font-size: 1.1rem),
+                                            ));
+                                            @include vb((
+                                                xs: (font-size: 0.9rem),
+                                            ));
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+
+                    p{
+                        font-family: "Sansation-Light";
+                        position: relative;
+                        z-index: 1;
+                        font-size: 1rem;
+                        color: var(--ChText);
+                        font-weight: 300;
+                        
+                        @include hb((
+                            md: (font-size: 0.9rem),
+                        ));
+
+                        @include hb((
+                            mdt: (font-size: 0.9rem),
+                        ));
+                        @include hb((
+                            sm: (font-size: 0.9rem),
+                        ));
+                        @include hb((
+                            xs: (font-size: 0.8rem),
+                        ));
+                        @include hb((
+                            xxs: (font-size: 0.8rem),
+                        ));
+
+                        @include vb((
+                            md: (font-size: 0.9rem),
+                        ));
+                        @include vb((
+                            s: (font-size: 0.9rem, text-align: right),
+                        ));
+                        @include vb((
+                            sm: (font-size: 0.9rem, text-align: right),
+                        ));
+                        @include vb((
+                            xs: (font-size: 0.9rem, text-align: right),
+                        ));
+                    }
+                }
+            }
+
+            .product__reviews{
+                width: 100%;
+                height: fit-content;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                padding: 0 2.5vw;
+                gap: 0.25rem;
+
+                @include vb((
+                    s: (padding: 0 5vw),
+                ));
+                    @include vb((
+                        sm: (padding: 0 5vw),
+                    ));
+                    @include vb((
+                        xs: (padding: 0 5vw),
+                    ));
+
+                span{
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                    font-family: "Sansation-Light";
+                    margin: 0;
+                    gap: 0.25rem;
+
+                    @include hb((
+                        lg: (font-size: 1.3rem),
+                    )); 
                     @include hb((
                         md: (font-size: 1.3rem),
                     )); 
-                     @include hb((
-                         sm: (font-size: 1.3rem),
-                     )); 
+                        @include hb((
+                            sm: (font-size: 1.3rem),
+                        )); 
                     @include hb((
                         xs: (font-size: 1.2rem),
                     )); 
@@ -274,681 +462,24 @@
                     @include vb((
                         s: (font-size: 1.2rem),
                     ));
-                     @include vb((
-                         sm: (text-align: center),
-                     ));
-                     @include vb((
-                         xs: (text-align: center),
-                     ));
+                        @include vb((
+                            sm: (font-size: 1.2rem),
+                        ));
+                        @include vb((
+                            xs: (font-size: 1.2rem),
+                        ));
                 }
-
-               .product__details__subDetails__colors__items{
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    gap: 0.5dvw;
-
-                    @include vb((
-                        lg: (align-items: flex-start),
-                    ));
-                    @include vb((
-                        md: (align-items: flex-start),
-                    ));
-                    @include vb((
-                        s: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
-                    ));
-                      @include vb((
-                          sm: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
-                      ));
-                      @include vb((
-                          xs: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
-                      ));
-
-                    .product__details__subDetails__colors__item{
-                        width: 1.5dvw;
-                        height: 1.5dvw;
-                        border-radius: 50%;
-                        cursor: pointer;
-
-                        @include hb((
-                            md: (width: 1.3dvw, height: 1.3dvw),
-                        )); 
-                        @include hb((
-                            sm: (width: 1.3dvw, height: 1.3dvw),
-                        ));
-                        @include hb((
-                            xs: (width: 1.3dvw, height: 1.3dvw),
-                        ));
-                        @include hb((
-                            xxs: (width: 1.1dvw, height: 1.1dvw),
-                        )); 
-
-                        @include vb((
-                            md: (width: 2dvw, height: 2dvw),
-                        )); 
-                        @include vb((
-                            s: (width: 8dvw, height: 8dvw),
-                        )); 
-                          @include vb((
-                              sm: (width: 6dvw, height: 6dvw),
-                          )); 
-                          @include vb((
-                              xs: (width: 6dvw, height: 6dvw),
-                          )); 
-                    }
-               }
             }
-
-            .product__details__subDetails__sizes{
-                width: 100%;
-                height: 2.5dvh;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                gap: 1dvw;
-
-                @include hb((
-                    md: (height: 5dvh),
-                )); 
-
-                 @include hb((
-                     xs: (height: 5dvh),
-                 ));
-                 @include hb((
-                     xxs: (height: 5dvh),
-                 )); 
-                @include vb((
-                    s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                )); 
-                  @include vb((
-                      sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                  )); 
-                  @include vb((
-                      xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                  )); 
-
-                p{
-                    font-family: "Sansation-Light";
-                    position: relative;
-                    z-index: 1;
-                    font-size: 1.5rem;
-                    color: var(--ChText);
-                    font-weight: 300;
-                    white-space: nowrap;
-
-                    @include hb((
-                        md: (font-size: 1.3rem),
-                    )); 
-                    @include hb((
-                        sm: (font-size: 1.2rem),
-                    ));
-                    @include hb((
-                        xs: (font-size: 1.1rem),
-                    ));
-                    @include hb((
-                        xxs: (font-size: 1.1rem),
-                    ));
-                    @include vb((
-                        md: (font-size: 1.3rem),
-                    ));  
-                    @include vb((
-                        s: (text-align: center),
-                    ));
-                     @include vb((
-                         sm: (text-align: center),
-                     ));
-                     @include vb((
-                         xs: (text-align: center),
-                     ));
-                }
-                
-
-                .product__details__subDetails__sizes__items{
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-                    display: flex;
-                    justify-content: flex-start;
-                    align-items: center;
-                    gap: 0.5dvw;
-                    @include vb((
-                        s: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
-                    )); 
-                     @include vb((
-                         sm: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
-                     ));
-                     @include vb((
-                         xs: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
-                     ));
-
-                    .product__details__subDetails__sizes__item{
-                        width: fit-content;
-                        height: 100%;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border-radius: 25px;
-                        background-color: var(--OButton);
-                        box-shadow: none;
-                        border: 0.5px solid var(--WhiteBg);
-                        padding: 0.5dvw 0.5dvw;
-                        cursor: pointer;
-                        @include vb((
-                            s: (padding: 0.5dvw 3dvw),
-                        ));
-                        @include vb((
-                            sm: (padding: 0.5dvw 3dvw),
-                        ));
-                        @include vb((
-                            xs: (padding: 0.5dvw 3dvw),
-                        ));
-
-                        p{
-                            font-family: "Sansation-Regular";
-                            position: relative;
-                            z-index: 1;
-                            font-size: 1.3rem;
-                            color: var(--Wtext);
-                            font-weight: 300;
-                            padding: 0.15rem;
-
-                            @include hb((
-                                md: (font-size: 1.1rem, padding: 0.15rem),
-                            )); 
-                            @include hb((
-                                sm: (font-size: 1.1rem, padding: 0.15rem),
-                            )); 
-                            @include hb((
-                                xs: (font-size: 1rem, padding: 0.15rem),
-                            ));
-                            @include hb((
-                                xxs: (font-size: 0.9rem, padding: 0.15rem),
-                            ));  
-                            @include vb((
-                                md: (font-size: 1.1rem, padding: 0 0.25rem),
-                            ));  
-                             @include vb((
-                                 sm: (font-size: 1.1rem, padding: 0 0.25rem),
-                             ));  
-                              @include vb((
-                                  xs: (font-size: 1.1rem, padding: 0 0.25rem),
-                              )); 
-                        }
-
-                        &.active{
-                            background-color: var(--CharcoalBg);
-                            border: 0.5px solid var(--OButton);
-                        }
-
-                        &:hover{
-                            background-color: var(--CharcoalBg);
-                            border: 0.5px solid var(--OButton);
-                        }
-                    }
-                }
-                
-            }
-            
         }
-        .product__details__cta{
+        .images_container{
             width: 100%;
-            height: 12.5dvh;
-            position: relative;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            flex-direction: row;
-            gap: 1dvw;
-            padding: 0 2.5dvw;
-
-            @include hb((
-                xs: (height: 20dvh),
-            ));
-            @include hb((
-                xxs: (height: 20dvh),
-            ));
-
-            @include vb((
-                lg: (flex-direction: column, height: 25dvh, justify-content: center, align-items: flex-start, gap: 0.5rem, margin-top: 2.5dvh),
-            ));
-
-            @include vb((
-                md: (flex-direction: column, height: 20dvh, justify-content: center, align-items: flex-end, gap: 0.25rem, margin-top: 2.5dvh),
-            ));
-            @include vb((
-                s: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-            ));
-             @include vb((
-                 sm: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-             ));
-             @include vb((
-                 xs: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-             ));
-
-
-            .divider{
-                position: absolute;
-                width: 90%;
-                height: 0.5px;
-                background-color: var(--ButtonBorder);
-                bottom: 0;
-                left: 5%;
-                z-index: 0;
-
-            }
-
-            .product__details__cta__price{
-                width: 40%;
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                flex-direction: row;
-                gap: 1.5dvw;
-                padding-top: 5dvh;
-
-                @include hb((
-                    xxs: (width: 40%, flex-direction: column, align-items: flex-start),
-                ));
-
-                @include vb((
-                    lg: (width: 100%, padding: 0, height: 5dvh),
-                ));
-                @include vb((
-                    md: (width: 100%, padding: 0, height: 5dvh),
-                ));
-                @include vb((
-                    s: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                ));
-                 @include vb((
-                     sm: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                 ));
-                 @include vb((
-                     xs: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                 ));
-
-                p{
-                    font-family: "Sansation-Light";
-                    position: relative;
-                    z-index: 1;
-                    font-size: 1.5rem;
-                    color: var(--ChText);
-                    font-weight: 300;
-
-                    @include hb((
-                        md: (font-size: 1.3rem),
-                    ));
-                    @include hb((
-                        sm: (font-size: 1.2rem),
-                    ));
-                    @include hb((
-                        xs: (font-size: 1.1rem),
-                    ));
-                    @include hb((
-                        xxs: (font-size: 1rem),
-                    ));
-                    @include vb((
-                        md: (font-size: 1.3rem),
-                    ));  
-                }
-                .product__details__cta__price__main{
-                    width: 50%;
-                    height: 0.1%;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    span{
-                        font-family: "ooohBaby-Regular";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 3rem;
-                        color: var(--ChText);
-                        font-weight: 300;
-                        margin: 0;
-
-                        @include hb((
-                            md: (font-size: 2.5rem),
-                        ));
-                        @include hb((
-                            mdt: (font-size: 2.5rem),
-                        ));
-                        @include hb((
-                            sm: (font-size: 2rem),
-                        ));
-                        @include hb((
-                            xs: (font-size: 1.8rem),
-                        ));
-                        @include hb((
-                            xxs: (font-size: 1.5rem),
-                        ));
-                        @include vb((
-                            md: (font-size: 2rem),
-                        ));  
-                        @include vb((
-                            s: (font-size: 2rem),
-                        ));  
-                        @include vb((
-                            sm: (font-size: 2rem),
-                        )); 
-                        @include vb((
-                            xs: (font-size: 2rem),
-                        )); 
-                    }
-                }
-
-            }
-
-            .product__details__cta__buy{
-                width: 60%;
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: flex-end;
-                justify-content: flex-end;
-                flex-direction: column;
-                gap: 0.25dvw;
-                padding: 1.5dvh 0;
-
-                @include vb((
-                    lg: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
-                ));
-                @include vb((
-                    md: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
-                ));
-                @include vb((
-                    s: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
-                ));
-                @include vb((
-                    sm: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 2.5dvh 5dvw 0 5dvw),
-                ));
-                @include vb((
-                    xs: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
-                ));
-
-                .product__details__cta__buy__buttons{
-                    width: 100%;
-                    height: 50%;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-end;
-                    flex-direction: row;
-                    gap: 1dvw;
-                    @include vb((
-                        lg: (justify-content: flex-start),
-                    ));
-                    @include vb((
-                        md: (justify-content: flex-start),
-                    ));
-                    @include vb((
-                        s: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                    ));
-                     @include vb((
-                         sm: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                     ));
-                     @include vb((
-                         xs: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                     ));
-
-                    .product__details__cta__buy__button__add{
-                        width: 35px;
-                        height: 35px;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        cursor: pointer;
-
-                        @include hb((
-                            md: (width: 30px, height: 30px),
-                        ));
-                        @include hb((
-                            mdt: (width: 30px, height: 30px),
-                        ));
-                        @include hb((
-                            xs: (width: 30px, height: 30px),
-                        ));
-                        @include hb((
-                            xxs: (width: 30px, height: 30px),
-                        ));
-                        @include hb((
-                            sm: (width: 30px, height: 30px),
-                        ));
-                        img{ 
-                            width: 100%;
-                            height: 100%;
-                            object-fit: contain;
-                        }
-                        
-                    }
-                    .ClickButton{
-                        .button{
-                            width: 200px;
-                            height: 45px;
-                            @include hb((
-                                lg: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include hb((
-                                mdt: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include hb((
-                                md: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include hb((
-                                sm: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include hb((
-                                xs: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include hb((
-                                xxs: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include vb((
-                                md: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include vb((
-                                s: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include vb((
-                                sm: (width: 150px !important, height: 40px !important),
-                            ));
-                            @include vb((
-                                xs: (width: 150px !important, height: 40px !important),
-                            ));
-                            .slider{
-                                .el{
-                                    &:nth-of-type(1){
-                                        .perspectiveText{
-                                            position: absolute;
-                                            top: 50%;
-                                            left: 50%;
-                                            transform: translate(-50%, -50%);
-                                 
-                                            p{
-                                                &:nth-of-type(1){
-                                                    position: absolute;
-                                                    top: 50%;
-                                                    left: 50%;
-                                                    transform: translate(-50%, -50%);
-                                                    width: 100%;
-                                                    text-align: center;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    p{
-                                        font-family: "Sansation-Light";
-                                        text-transform: capitalize;
-                                        font-size: 1.3rem;
-                                        color: var(--WhiteBg);
-                                        font-weight: 300;
-                                        margin: 0;
-
-                                        @include hb((
-                                            lg: (font-size: 1.3rem),
-                                        ));
-                                        @include hb((
-                                            mdt: (font-size: 1.3rem),
-                                        ));
-                                        @include hb((
-                                            md: (font-size: 1.1rem),
-                                        ));
-                                        @include hb((
-                                            sm: (font-size: 1.1rem),
-                                        ));
-                                        @include hb((
-                                            xs: (font-size: 1rem),
-                                        ));
-                                        @include hb((
-                                            xxs: (font-size: 1rem),
-                                        ));
-                                        @include vb((
-                                            lg: (font-size: 1.3rem),
-                                        ));
-                                        @include vb((
-                                            md: (font-size: 1.1rem),
-                                        ));
-                                        @include vb((
-                                            s: (font-size: 1.1rem),
-                                        ));
-                                        @include vb((
-                                            sm: (font-size: 1.1rem),
-                                        ));
-                                        @include vb((
-                                            xs: (font-size: 0.9rem),
-                                        ));
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                p{
-                    font-family: "Sansation-Light";
-                    position: relative;
-                    z-index: 1;
-                    font-size: 1rem;
-                    color: var(--ChText);
-                    font-weight: 300;
-                    
-                    @include hb((
-                        md: (font-size: 0.9rem),
-                    ));
-
-                    @include hb((
-                        mdt: (font-size: 0.9rem),
-                    ));
-                    @include hb((
-                        sm: (font-size: 0.9rem),
-                    ));
-                    @include hb((
-                        xs: (font-size: 0.8rem),
-                    ));
-                    @include hb((
-                        xxs: (font-size: 0.8rem),
-                    ));
-
-                    @include vb((
-                        md: (font-size: 0.9rem),
-                    ));
-                    @include vb((
-                        s: (font-size: 0.9rem, text-align: right),
-                    ));
-                      @include vb((
-                          sm: (font-size: 0.9rem, text-align: right),
-                      ));
-                      @include vb((
-                          xs: (font-size: 0.9rem, text-align: right),
-                      ));
-                }
-            }
-        }
-
-    }
-
-    .product__image{
-        width: 50%;
-        height: 90%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 1dvw;
-        @include hb((
-            xs: (margin-bottom: 5dvh),
-        ));
-        @include vb((
-            lg: (width: 60%, justify-content: flex-end),
-        ));
-        @include vb((
-            md: (width: 60%, justify-content: flex-end),
-        ));
-
-        @include vb((
-            s: (position: absolute, top: 50%, left: 50%, transform: translate(-50%, -50%), width: 100%, height: 40%, justify-content: center, align-items: center, padding: 0, gap: 0, margin: 0),
-        ));
-          @include vb((
-              sm: (position: absolute, top: 50%, left: 50%, transform: translate(-50%, -50%), width: 100%, height: 40%, justify-content: center, align-items: center, padding: 0, gap: 0, margin: 0),
-          ));
-          @include vb((
-              xs: (position: absolute, top: 50%, left: 50%, transform: translate(-50%, -50%), width: 100%, height: 40%, justify-content: center, align-items: center, padding: 0, gap: 0, margin: 0),
-          ));
-
-        .Image__container{
-            width: 45dvw;
-            height: 50dvh;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
-            padding: 2.5dvh 2.5dvw;
-            
-            @include hb((
-                md: (height: 60dvh),
-            ));
-            @include hb((
-                mdt: (height: 55dvh),
-            ));
-            @include hb((
-                sm: (height: 60dvh),
-            ));
 
-            @include hb((
-                xs: (height: 60dvh),
-            ));
-            @include hb((
-                xxs: (height: 60dvh),
-            ));
-            @include vb((
-                lg: (justify-content: flex-end, width: 50dvw, height: 30dvh, padding: 0),
-            ));
-            @include vb((
-                md: (justify-content: flex-end, width: 50dvw, height: 30dvh, padding: 0),
-            ));
-
-            @include vb((
-                s: (width: 90dvw, height: 40dvh),
-            ));
-              @include vb((
-                  sm: (width: 90dvw, height: 40dvh),
-              ));
-              @include vb((
-                  xs: (width: 90dvw, height: 40dvh),
-              ));
-
-            .Image__container__slider{
+            .product__image{
                 width: 100%;
                 height: 100%;
                 position: relative;
@@ -956,457 +487,383 @@
                 align-items: center;
                 justify-content: center;
                 flex-direction: column;
-                gap: 2dvh;
+                
+                gap: 1dvw;
 
-                .Image__container__slider__container{
-                    width: 40dvw;
-                    height: 40dvh;
+                .Image__container{
+                    width: 100%;
+                    height: 100%;   
                     position: relative;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    overflow: hidden;
-                    box-shadow: 0 0 5px var(--ButtonBorder); // subtle shadow here
-                    border-radius: 50px;
+                    flex-direction: column;
+                    padding: 2.5dvh 2.5dvw;
+                
 
-                    @include hb((
-                        md: (height: 50dvh),
-                    ));
-                    @include hb((
-                        mdt: (height: 45dvh),
-                    ));
-                    @include hb((
-                        sm: (height: 40dvh),
-                    ));
-
-                    @include vb((
-                        lg: (height: 30dvh, width: 50dvw),
-                    ));
-                    @include vb((
-                        md: (height: 30dvh, width: 50dvw),
-                    ));
-                    @include vb((
-                        s: (height: 30dvh, width: 90dvw),
-                    ));
-                    @include vb((
-                        sm: (height: 30dvh, width: 90dvw),
-                    ));
-                    @include vb((
-                        xs: (height: 30dvh, width: 90dvw),
-                    ));
-
-                    .slider-track{
-                        width: fit-content;
+                    .Image__container__slider{
+                        width: 100%;
                         height: 100%;
+                        position: relative;
                         display: flex;
-                        flex-direction: row;
                         align-items: center;
                         justify-content: flex-start;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
+                        flex-direction: column;
+                        gap: 2dvh;
+
                         .product__image__item{
-                            width: 40dvw;
-                            height: 40dvh;
+                            width: 100%;
+                            height: 350px;
+                            border-radius: 15px;
                             position: relative;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             overflow: hidden;
+
                             
-
-                            @include hb((
-                                md: (height: 50dvh),
-                            ));
-                            @include hb((
-                                mdt: (height: 45dvh),
-                            ));
-                            @include hb((
-                                sm: (height: 40dvh),
-                            ));
-                            @include hb((
-                                xs: (height: 50dvh),
-                            ));
-                            @include hb((
-                                xxs: (height: 50dvh),
-                            ));
-
-                            @include vb((
-                                lg: (height: 25dvh, width: 50dvw),
-                            ));
-                            @include vb((
-                                md: (height: 25dvh, width: 50dvw),
-                            ));
-                            @include vb((
-                                s: (width: 90dvw, height: 30dvh),
-                            ));
-                            @include vb((
-                                sm: (width: 90dvw, height: 30dvh),
-                            ));
-                            @include vb((
-                                xs: (width: 90dvw, height: 30dvh),
-                            ));
-
-                            .product__image__item__right{
-                                width: 5dvw;
-                                height: 5dvw;
-                                position: absolute;
-                                top: 50%;
-                                right: 1dvw;
-                                transform: translateY(-50%);
-                                z-index: 1;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-
-                                @include hb((
-                                    md: (right: 1dvw),
-                                ));
-                                @include hb((
-                                    xs: (right: 2dvw),
-                                ));
-
-                                @include vb((
-                                    s: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-                                @include vb((
-                                    sm: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-                                @include vb((
-                                    xs: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-                                .arrow{
-                                    width: 3dvw;
-                                    height: 3dvw;
-                                    border-radius: 50%;
-                                    border: 1px solid var(--ButtonBorder);
-                                    opacity: 0.5;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    transform: rotate(90deg);
-                                    transition: all 0.3s cubic-bezier(0.76, 0, 0.24, 1);
-                                    cursor: pointer;
-
-                                    @include vb((
-                                        s: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                    ));
-                                     @include vb((
-                                         sm: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                     ));
-                                     @include vb((
-                                         xs: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                     ));
-
-                                    &:hover{
-                                        opacity: 1;
-                                    }
-                                }
-                            }
-
-                            .product__image__item__left{
-                                width: 5dvw;
-                                height: 5dvw;
-                                position: absolute;
-                                top: 50%;
-                                left: 1dvw;
-                                transform: translateY(-50%);
-                                z-index: 1;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-
-                                @include hb((
-                                    md: (left: 1dvw),
-                                ));
-                                @include hb((
-                                    xs: (left: 2dvw),
-                                ));
-
-                                @include vb((
-                                    s: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-                                @include vb((
-                                    sm: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-                                @include vb((
-                                    xs: (width: 15dvw, height: 15dvw, opacity: 1 !important),
-                                ));
-
-                                .arrow{
-                                    width: 3dvw;
-                                    height: 3dvw;
-                                    border-radius: 50%;
-                                    border: 1px solid var(--ButtonBorder);
-                                    opacity: 0.5;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    transform: rotate(270deg);
-                                    transition: all 0.3s cubic-bezier(0.76, 0, 0.24, 1);
-                                    cursor: pointer;
-
-                                    @include vb((
-                                        s: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                    ));
-                                     @include vb((
-                                         sm: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                     ));
-                                     @include vb((
-                                         xs: (width: 10dvw, height: 10dvw, opacity: 0.8),
-                                     ));
-
-                                    &:hover{
-                                        opacity: 1;
-                                    }
-                                }
-                            }
                         }
                     }
-                }
-                
 
-                
-
-                .product__image__bar{
-                    width: 50%;
-                    height: 5dvh;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 1dvw;
-                    @include vb((
-                        s: (gap: 2.5dvw, width: 80%, height: 7dvh),
-                    ));  
-                    @include vb((
-                        sm: (gap: 2.5dvw, width: 80%, height: 7dvh),
-                    )); 
-                    @include vb((
-                        xs: (gap: 2.5dvw, width: 80%, height: 7dvh),
-                    )); 
-
-                    .dot{
-                        width: 1dvw;
-                        height: 1dvw;
-                        border-radius: 50%;
-                        background-color: var(--CharcoalBg);
-                        transition: all 0.3s ease-in-out;
-                        cursor: pointer;
-
-                        &.active{
-                            width: 1.1dvw;
-                            height: 1.1dvw;
-                            background-color: var(--OButton);
-                        }
-                        &:hover{
-                            width: 1.1dvw;
-                            height: 1.1dvw;
-                            background-color: var(--OButton);
-                        }
-
-                        @include vb((
-                            s: (width: 5dvw, height: 5dvw),
-                        ));
-                        @include vb((
-                            sm: (width: 4dvw, height: 4dvw),
-                        ));
-                        @include vb((
-                            xs: (width: 4dvw, height: 4dvw),
-                        ));
-
-                        &.active{
-                            @include vb((
-                                s: (width: 6dvw, height: 6dvw),
-                            ));
-                            @include vb((
-                                sm: (width: 5dvw, height: 5dvw),
-                            ));
-                            @include vb((
-                                xs: (width: 5dvw, height: 5dvw),
-                            ));
-                        }
-
-                    }
                 }
             }
-
         }
-
-        .product__image__benefits{
+        .choice__container{
             width: 100%;
-            height: 6dvh;
-            position: relative;
+            height: 100%;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             flex-direction: column;
 
-            @include hb((
-                md: (height: 8dvh, margin-bottom: 2dvh),
-            ));
-            @include hb((
-                mdt: (height: 6.5dvh),
-            ));
-            @include hb((
-                xs: (height: 10dvh),
-            ));
-            @include hb((
-                xxs: (height: 10dvh),
-            ));
-            @include vb((
-                s: (display: none),
-            ));
-              @include vb((
-                  sm: (display: none),
-              ));
-              @include vb((
-                  xs: (display: none),
-              ));
-
-            .divider{
-                width: 85%;
-                height: 0.5px;
-                background-color: var(--ButtonBorder);
-                @include hb((
-                    sm: (width: 95%),
-                ));
-                @include hb((
-                    xs: (width: 95%),
-                ));
-                 @include hb((
-                     xxs: (width: 95%),
-                 ));
-                @include vb((
-                    lg: (width: 95%),
-                ));
-                 @include vb((
-                     md: (width: 95%),
-                 ));
-
-                &:nth-of-type(3){
-                    width: 80%;
-                    @include hb((
-                        sm: (width: 90%),
-                    ));
-                    @include hb((
-                        xs: (width: 90%),
-                    ));
-                     @include hb((
-                         xxs: (width: 90%),
-                     ));
-                    @include vb((
-                        lg: (width: 90%),
-                    ));
-                      @include vb((
-                          md: (width: 90%),
-                      ));
-                }
-            }
-
-            .product__image__benefits__text{
-                width: 80%;
-                height: 100%;
+            .product__details__subDetails{
+                width: 100%;
                 position: relative;
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 justify-content: center;
-                flex-direction: row;
-                gap: 0.5dvw;
+                flex-direction: column;
+                gap: 1dvw;
+                padding: 0 2.5dvw;
+
                 @include hb((
-                    sm: (width: 90%),
+                    md: (height: 15dvh, gap: 0.25dvh),
+                )); 
+                @include hb((
+                    mdt: (height: 15dvh, gap: 0.25dvh),
+                )); 
+                @include hb((
+                    sm: (height: 15dvh, gap: 0.25dvh),
+                )); 
+                @include hb((
+                    xs: (height: 15dvh),
+                )); 
+                @include hb((
+                    xxs: (height: 25dvh),
                 ));
-                @include hb((
-                    xs: (width: 90%),
-                ));
-                @include hb((
-                    xxs: (width: 90%),
+                
+                @include vb((
+                    lg: (height: 7.5dvh),
                 ));
                 @include vb((
-                    lg: (width: 90%),
+                    s: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 20dvh),
+                )); 
+                @include vb((
+                    sm: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 25dvh),
                 ));
                 @include vb((
-                    md: (width: 95%),
-                ));
+                    xs: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 30dvh),
+                )); 
 
-                img{
-                    @include hb((
-                        md: (width: 45px, height: 45px),
-                    ));
-                    @include hb((
-                        mdt: (width: 45px, height: 45px),
-                    ));
-                    @include hb((
-                        sm: (width: 40px, height: 40px),
-                    ));
-                    @include hb((
-                        xs: (width: 35px, height: 35px),
-                    ));
-                    @include hb((
-                        xxs: (width: 35px, height: 35px),
-                    ));
-                    @include vb((
-                        lg: (width: 50px, height: 50px),
-                    ));
-                    @include vb((
-                        md: (width: 45px, height: 45px),
-                    ));
-                }
-
-               .product__image__benefits__text__items{
+                .product__details__subDetails__colors{
                     width: 100%;
-                    height: 100%;
+                    height: 2.5dvh;
                     position: relative;
                     display: flex;
                     align-items: center;
-                    justify-content: space-evenly;
-                    flex-direction: row;
+                    justify-content: flex-start;
+                    gap: 1dvw;
 
-                    .product__image__benefits__text__items__title{
-                        width: fit-content;
-                        height: fit-content;
+                    @include hb((
+                        md: (height: 5dvh),
+                    )); 
+                    @include hb((
+                        mdt: (height: 3.5dvh),
+                    ));
+                    @include hb((
+                        sm: (height: 5dvh),
+                    ));  
+                    @include hb((
+                        xs: (height: 7.5dvh),
+                    )); 
+                    @include hb((
+                        xxs: (height: 7.5dvh),
+                    ));
+                    @include vb((
+                        lg: (height: 5dvh, width: 100%),
+                    )); 
+                    @include vb((
+                        s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+                    @include vb((
+                        sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+
+                    @include vb((
+                        xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+
+
+                    p{
+                        font-family: "Sansation-Light";
+                        position: relative;
+                        z-index: 1;
+                        font-size: 1.5rem;
+                        color: var(--ChText);
+                        font-weight: 300;
+                        white-space: nowrap;
+
+                        @include hb((
+                            md: (font-size: 1.3rem),
+                        )); 
+                        @include hb((
+                            sm: (font-size: 1.3rem),
+                        )); 
+                        @include hb((
+                            xs: (font-size: 1.2rem),
+                        )); 
+                        @include hb((
+                            xxs: (font-size: 1.1rem),
+                        )); 
+                        @include vb((
+                            md: (font-size: 1.3rem),
+                        ));  
+
+                        @include vb((
+                            s: (font-size: 1.2rem),
+                        ));
+                        @include vb((
+                            sm: (text-align: center),
+                        ));
+                        @include vb((
+                            xs: (text-align: center),
+                        ));
+                    }
+
+                .product__details__subDetails__colors__items{
+                        width: 100%;
+                        height: 100%;
                         position: relative;
                         display: flex;
                         align-items: center;
-                        justify-content: center;
-                        border-radius: 25px;
-                        background-color: var(--OButton);
-                        box-shadow: none;
-                        border: 0.5px solid var(--WhiteBg);
-                        padding: 0.5dvw 1dvw;
+                        justify-content: flex-start;
+                        gap: 0.5dvw;
 
-                        p{
-                            font-family: "Sansation-Light";
+                        @include vb((
+                            lg: (align-items: flex-start),
+                        ));
+                        @include vb((
+                            md: (align-items: flex-start),
+                        ));
+                        @include vb((
+                            s: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                        ));
+                        @include vb((
+                            sm: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                        ));
+                        @include vb((
+                            xs: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                        ));
+
+                        .product__details__subDetails__colors__item{
+                            width: 1.5dvw;
+                            height: 1.5dvw;
+                            border-radius: 50%;
+                            cursor: pointer;
+
+                            @include hb((
+                                md: (width: 1.3dvw, height: 1.3dvw),
+                            )); 
+                            @include hb((
+                                sm: (width: 1.3dvw, height: 1.3dvw),
+                            ));
+                            @include hb((
+                                xs: (width: 1.3dvw, height: 1.3dvw),
+                            ));
+                            @include hb((
+                                xxs: (width: 1.1dvw, height: 1.1dvw),
+                            )); 
+
+                            @include vb((
+                                md: (width: 2dvw, height: 2dvw),
+                            )); 
+                            @include vb((
+                                s: (width: 8dvw, height: 8dvw),
+                            )); 
+                            @include vb((
+                                sm: (width: 6dvw, height: 6dvw),
+                            )); 
+                            @include vb((
+                                xs: (width: 6dvw, height: 6dvw),
+                            )); 
+                        }
+                }
+                }
+
+                .product__details__subDetails__sizes{
+                    width: 100%;
+                    height: 2.5dvh;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    gap: 1dvw;
+
+                    @include hb((
+                        md: (height: 5dvh),
+                    )); 
+
+                    @include hb((
+                        xs: (height: 5dvh),
+                    ));
+                    @include hb((
+                        xxs: (height: 5dvh),
+                    )); 
+                    @include vb((
+                        s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+                    @include vb((
+                        sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+                    @include vb((
+                        xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
+                    )); 
+
+                    p{
+                        font-family: "Sansation-Light";
+                        position: relative;
+                        z-index: 1;
+                        font-size: 1.5rem;
+                        color: var(--ChText);
+                        font-weight: 300;
+                        white-space: nowrap;
+
+                        @include hb((
+                            md: (font-size: 1.3rem),
+                        )); 
+                        @include hb((
+                            sm: (font-size: 1.2rem),
+                        ));
+                        @include hb((
+                            xs: (font-size: 1.1rem),
+                        ));
+                        @include hb((
+                            xxs: (font-size: 1.1rem),
+                        ));
+                        @include vb((
+                            md: (font-size: 1.3rem),
+                        ));  
+                        @include vb((
+                            s: (text-align: center),
+                        ));
+                        @include vb((
+                            sm: (text-align: center),
+                        ));
+                        @include vb((
+                            xs: (text-align: center),
+                        ));
+                    }
+                    
+
+                    .product__details__subDetails__sizes__items{
+                        width: 100%;
+                        height: 100%;
+                        position: relative;
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 0.5dvw;
+                        @include vb((
+                            s: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                        )); 
+                        @include vb((
+                            sm: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                        ));
+                        @include vb((
+                            xs: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                        ));
+
+                        .product__details__subDetails__sizes__item{
+                            width: fit-content;
+                            height: 100%;
                             position: relative;
-                            z-index: 1;
-                            font-size: 1.3rem;
-                            color: var(--Wtext);
-                            font-weight: 300;
-                            @include hb((
-                                lg: (font-size: 1.2rem),
-                            ));
-                            @include hb((
-                                md: (font-size: 1rem),
-                            ));
-                            @include hb((
-                                mdt: (font-size: 1.1rem),
-                            ));
-                            @include hb((
-                                sm: (font-size: 1rem),
-                            ));
-                            @include hb((
-                                xs: (font-size: 0.8rem),
-                            ));
-                            @include hb((
-                                xxs: (font-size: 0.7rem),
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 25px;
+                            background-color: var(--OButton);
+                            box-shadow: none;
+                            border: 0.5px solid var(--WhiteBg);
+                            padding: 0.5dvw 0.5dvw;
+                            cursor: pointer;
+                            @include vb((
+                                s: (padding: 0.5dvw 3dvw),
                             ));
                             @include vb((
-                                md: (font-size: 1rem),
+                                sm: (padding: 0.5dvw 3dvw),
                             ));
+                            @include vb((
+                                xs: (padding: 0.5dvw 3dvw),
+                            ));
+
+                            p{
+                                font-family: "Sansation-Regular";
+                                position: relative;
+                                z-index: 1;
+                                font-size: 1.3rem;
+                                color: var(--Wtext);
+                                font-weight: 300;
+                                padding: 0.15rem;
+
+                                @include hb((
+                                    md: (font-size: 1.1rem, padding: 0.15rem),
+                                )); 
+                                @include hb((
+                                    sm: (font-size: 1.1rem, padding: 0.15rem),
+                                )); 
+                                @include hb((
+                                    xs: (font-size: 1rem, padding: 0.15rem),
+                                ));
+                                @include hb((
+                                    xxs: (font-size: 0.9rem, padding: 0.15rem),
+                                ));  
+                                @include vb((
+                                    md: (font-size: 1.1rem, padding: 0 0.25rem),
+                                ));  
+                                @include vb((
+                                    sm: (font-size: 1.1rem, padding: 0 0.25rem),
+                                ));  
+                                @include vb((
+                                    xs: (font-size: 1.1rem, padding: 0 0.25rem),
+                                )); 
+                            }
+
+                            &.active{
+                                background-color: var(--CharcoalBg);
+                                border: 0.5px solid var(--OButton);
+                            }
+
+                            &:hover{
+                                background-color: var(--CharcoalBg);
+                                border: 0.5px solid var(--OButton);
+                            }
                         }
                     }
-               }
+                    
+                }
+                
             }
         }
+
     }
 }

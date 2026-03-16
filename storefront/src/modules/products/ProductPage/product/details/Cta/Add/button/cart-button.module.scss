@@ -15,7 +15,7 @@
         overflow: hidden;
         border: none;
         box-shadow: none;
-        background-color: var(--OButton);
+        background-color: var(--bgPrimary);
 
         @include hb((
             lg: (width: 180px !important, height: 40px !important),

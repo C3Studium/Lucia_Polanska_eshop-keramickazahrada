@@ -8,48 +8,90 @@
     justify-content: center;
     width: 100vw;
     height: 100vh;
-    padding: 2rem 2rem;
-    background-color: var(--bgPBlack);
+    background-color: var(--bgBlack);
     
-    .text__wrappper{
+    .text__content{ 
+        width: 95%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 0 5%;
+        .text__wrappper{    
+            width: 100%;
+            height: 60%;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-start;
+            
+
+            p {
+                width: 80%;
+                span{
+                    font-size: 4rem;
+                    margin-right: 10px;
+                }
+                font-size: 2.2rem;
+                font-weight: 300;
+                color: var(--whiteText);
+                line-height: 1.05;
+            
+            }
+
+            .mouse{
+                position: absolute;
+                bottom: 5%;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+
+                p{
+                    font-size: 1.3rem;
+                }
+
+                .mouse-anim{
+                    height: 6.5dvh
+                }
+                
+            }
+        }
+    }
+
+    .image__container{
+        position: relative;
+        width: 100%;
+        height: 90%;
+        z-index: 3;;
+
+
+        .image__wrapper{
+            width: 600px;
+            height: 320px;
+            position: absolute;
+            top: 60%;
+            right: 5%;
+        }
+    }
+
+    .kurzy__intro__Gradient{
+        z-index: 0;
         width: 100%;
         height: 100%;
         position: absolute;
         top: 0;
         left: 0;
+        overflow: hidden;
 
-
-         p {
-            span{
-                font-size: 2rem;
-            }
-            position: absolute;
-            top: 15%;
-            left: 5%;
-            right: 25%;
-            font-size: 1.3rem;
-            font-weight: 10;
-            color: var(--blackText);
-         }
-         }
-        
-
-
-
-
-    .image__container{
-        position: relative;
-        width: 80%;
-        height: 80%;
-
-
-        .image__wrapper{
-            width: 50%;
-            height: 40%;
-            position: absolute;
-            top: 50%;
-            right: 5%;
+        svg{
+            scale: 2.5;
         }
-    }
+    }   
 
 }

@@ -58,7 +58,8 @@ function PerspectiveText({label, icon1, icon2}: {label: string, icon1?: string, 
 function PerspectiveImage({img, alt}: {img: string, alt: string}) {
     return (
         <div className={styles.perspectiveImage}>
-            <Image src={img} alt={alt} fill style={{objectFit: 'cover'}}/>
+            <Image src={img} alt={alt} fill/>
+            <div className={styles.overlay}/>
         </div>
     )
 }

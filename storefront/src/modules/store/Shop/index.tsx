@@ -201,25 +201,6 @@ const ECom = ({
 
   return (
     <section className="ecom">
-      <SearchBar
-        products={initialProducts}
-        category={category}
-        setCategoryAction={setCategory}
-        subcategory={subcategory}
-        setSubcategoryAction={setSubcategory}
-        search={search}
-        setSearchAction={setSearch}
-        priceRange={priceRange}
-        setPriceRangeAction={setPriceRange}
-        sale={sale}
-        setSaleAction={setSale}
-        isNew={isNew}
-        setIsNewAction={setIsNew}
-        priceRanges={priceRanges}
-        categories={categories}
-        pendingCategory={pendingCategory}
-        setPendingCategoryAction={setPendingCategory}
-      />
       <Categories
         category={category}
         setCategoryAction={setCategory}
@@ -227,18 +208,38 @@ const ECom = ({
         setSubcategoryAction={setSubcategory}
         categories={categories}
       />
-      <ProductList
-        products={visibleProducts}
-        countryCode={countryCode}
-        ref={productListRef}
-      />
-      {loading && <div style={{ textAlign: "center", margin: "1rem", color: "var(--Wtext)", fontFamily: "Sansation-Regular" }}>Načítání dalších produktů...</div>}
-      {allLoaded && filteredProducts.length <= visibleProducts.length && (
-        <div style={{ textAlign: "center", margin: "1rem", color: "var(--Wtext)", fontFamily: "Sansation-Regular" }}>
-          Žádné další produkty k zobrazení
-        </div>
-      )}
-      <NewsLetter />
+      <div className="products__container">
+        <SearchBar
+          products={initialProducts}
+          category={category}
+          setCategoryAction={setCategory}
+          subcategory={subcategory}
+          setSubcategoryAction={setSubcategory}
+          search={search}
+          setSearchAction={setSearch}
+          priceRange={priceRange}
+          setPriceRangeAction={setPriceRange}
+          sale={sale}
+          setSaleAction={setSale}
+          isNew={isNew}
+          setIsNewAction={setIsNew}
+          priceRanges={priceRanges}
+          categories={categories}
+          pendingCategory={pendingCategory}
+          setPendingCategoryAction={setPendingCategory}
+        />
+        <ProductList
+          products={visibleProducts}
+          countryCode={countryCode}
+          ref={productListRef}
+        />
+        {loading && <div style={{ textAlign: "center", margin: "1rem", color: "var(--Wtext)", fontFamily: "Sansation-Regular" }}>Načítání dalších produktů...</div>}
+        {allLoaded && filteredProducts.length <= visibleProducts.length && (
+          <div style={{ textAlign: "center", margin: "1rem", color: "var(--Wtext)", fontFamily: "Sansation-Regular" }}>
+            Žádné další produkty k zobrazení
+          </div>
+        )}
+      </div>
       <div className="ecom__scroll__to__top"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       >

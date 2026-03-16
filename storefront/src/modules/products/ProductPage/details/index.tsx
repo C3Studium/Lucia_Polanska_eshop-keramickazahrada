@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { HttpTypes } from "@medusajs/types";
@@ -68,13 +68,26 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
         {
             title: "Doprava",
             component: <Shipment shipping={shipping} />
+        },
+        {
+            title: "Výroba",
+            component: <InfoDesc description={product.description || "N/A"} />
         }
     ];
 
-    console.log("Details component rendered with product:", product.id);
+    useEffect(() => {
+        const handleOpenDescription = () => {
+            setOpen((prev) => (prev.includes(0) ? prev : [0, ...prev]));
+        };
+
+        window.addEventListener("open-product-details-desc", handleOpenDescription);
+        return () => {
+            window.removeEventListener("open-product-details-desc", handleOpenDescription);
+        };
+    }, []);
 
     return (
-        <section className="details">
+        <section className="details" id="product-details">
             <div className="details__title">
                 <h2>Detaily</h2>
             </div>
@@ -90,7 +103,7 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
                                 <h3>{detail.title}</h3>
                                 <div className="details__content__list__item__main__button">
                                     <Image
-                                        src="/assets/icons/plus.svg"
+                                        src="/assets/icons/cross.png"
                                         alt="Toggle Icon"
                                         width={24}
                                         height={24}

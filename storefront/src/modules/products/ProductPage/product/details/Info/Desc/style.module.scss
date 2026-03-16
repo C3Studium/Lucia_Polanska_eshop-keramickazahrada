@@ -4,8 +4,9 @@
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     justify-content: flex-start;
-    align-items: center;
+    align-items: flex-start;
     
     p{
         font-family: "Sansation-Light";
@@ -27,6 +28,18 @@
             sm: (font-size: 1.1rem),
             xs: (font-size: 1rem),
         ));   
+    }
+
+    .desc__Link{
+        margin-top: 0.75rem;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: var(--ChText);
+        font-family: "Sansation-Regular";
+        font-size: 1rem;
+        text-decoration: underline;
+        cursor: pointer;
     }
 
 }

@@ -5,41 +5,83 @@
 
 .Gallery{
     width: 100%;
-    height: auto;
-    .proces{
-        position: relative;
-        width: 100vw;
-        height: 100vh;
+    position: relative;
+    .galerry__sections{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 0;
+        .proces{
+            position: relative;
+            width: 100vw;
+            height: 100vh;
 
-        .img__gallery{
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            .overlay{
+            .img__gallery{
                 position: absolute;
-                left: 0;
-                top: 0;
                 width: 100%;
                 height: 100%;
-                z-index: 1;
-                background-color: var(--bgBlack);
-                opacity: 50%;
+                z-index: 0;
+                .overlay{
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 1;
+                    background-color: var(--bgBlack);
+                    opacity: 50%;
 
+                }
+            }
+            
+
+            p {
+                position: absolute;
+                top: 50%;
+                left: 5%;
+                right: 40%;
+                font-size: 1.5rem;
+                font-weight: 20;
+                color: var(--whiteText);
+                z-index: 1;
             }
         }
-        
+    }
 
-        p {
-            position: absolute;
-            top: 50%;
-            left: 5%;
-            right: 40%;
-            font-size: 1.25rem;
-            font-weight: 20;
-            color: var(--whiteText);
-            z-index: 1;
+    .progress__bar{
+        position: sticky;
+        top: 90%;
+        width: 100%;
+        height: 10vh;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 25px;
+        z-index: 1;
+        padding: 0 5%;
+
+        .progress__bar__item{
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            p{
+                margin: 0 10px;
+                font-size: 1.5rem;
+                font-weight: 300;
+                color: var(--whiteText);
+                line-height: 1.2;
+            }
+            .progress__line{
+                width: 100%;
+                height: 1px;
+                background-color: var(--bgWhite);
+            }
         }
+
     }
 
 }

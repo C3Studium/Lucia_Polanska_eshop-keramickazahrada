@@ -1,1 +1,89 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
+
+.AboutMe{
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    padding: 5% 2.5%;
+    background-color: var(--bgPrimary);
+    
+    .Text__content{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-direction: column;
+
+
+        .image__intro{
+            position: relative;
+            width: 80%;
+            height: 80%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-start;
+
+
+            .image__wrapper{
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: 0;
+            }
+
+            h1{
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                align-items: flex-start;
+                font-size: 5rem;
+                font-weight: 300;
+                color: var(--whiteText);
+                z-index: 1;
+                padding: 2.5%;
+
+                span{
+                    line-height: 1.05;
+                    &:nth-of-type(2){
+                        margin-left: 100px;
+                        font-family: "ooohBaby-Regular";
+                    }
+                }
+            }
+        }
+
+        .greetings{
+            width: 80%;
+            height: 20%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+
+            img{
+                width: 150px;
+                height: 150px;
+            }
+
+            p{
+                font-size: 5rem;
+                font-weight: 300;
+                color: var(--blackText);
+                font-family: "ooohBaby-Regular";
+                line-height: 1;
+            }
+        }
+    }
+
+    .Images__content{
+        position: absolute;
+        right: 5%;
+        bottom: 5%;
+
+        width: 320px;
+        height: 500px
+    }
+
+}

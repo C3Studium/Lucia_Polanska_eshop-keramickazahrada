@@ -12,6 +12,8 @@ import CTA from "./Cta/Add";
 import { addToCart } from "@lib/data/cart";
 import { isEqual } from "lodash";
 import RestockForm from "../../restock";
+import Details from "@modules/products/ProductPage/details"
+import Gallery from "../Gallery/gallery";
 
 
 type ProductTemplateProps = {
@@ -36,7 +38,7 @@ const optionsAsKeymap = (
 }
 
 
-const Details: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, onWishlistUpdateAction, isAuthenticated, initialRating, initialCount }) => {
+const ProductDetails: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, onWishlistUpdateAction, isAuthenticated, initialRating, initialCount }) => {
     const [options, setOptions] = useState<Record<string, string | undefined>>({})
     const [isAdding, setIsAdding] = useState(false)
   
@@ -133,44 +135,29 @@ const Details: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
     // WIP finish here the styling and scss
     return (
         <div className="product__details">
+          <div className="info__container">
             <div className="product__details__mainDetails">
               <Title product={product} categories={categories} />
               <Desc product={product} />
             </div>
 
-            <div className="product__details__subDetails">
-                <Colors
-                  product={product}
-                  region={region}
-                  isAdding={isAdding}
-                  options={options}
-                  setOptionValue={setOptionValue}
-                />
-                <Sizes
-                  product={product}
-                  region={region}
-                  isAdding={isAdding}
-                  options={options}
-                  setOptionValue={setOptionValue}
-                />
-            </div>
             <div className="product__details__cta">
-                <ProductPrice product={product} variant={selectedVariant} countryCode={countryCode} />
-                <CTA
-                  inStock={inStock}
-                  selectedVariant={selectedVariant}
-                  isAdding={isAdding}
-                  isValidVariant={!!isValidVariant}
-                  handleAddToCart={handleAddToCart}
-                  options={options}
-                  product={product}
-                  wishlistItems={wishlistItems}
-                  onWishlistUpdateAction={onWishlistUpdateAction}
-                  isAuthenticated={isAuthenticated}
-                />
-                <div className="divider"/>
+              <ProductPrice product={product} variant={selectedVariant} countryCode={countryCode} />
+              <CTA
+                inStock={inStock}
+                selectedVariant={selectedVariant}
+                isAdding={isAdding}
+                isValidVariant={!!isValidVariant}
+                handleAddToCart={handleAddToCart}
+                options={options}
+                product={product}
+                wishlistItems={wishlistItems}
+                onWishlistUpdateAction={onWishlistUpdateAction}
+                isAuthenticated={isAuthenticated}
+              />
+              <div className="divider"/>
             </div>
-            <div className="product__reviews">
+            {/* <div className="product__reviews">
               {initialRating !== undefined && (
                 <div className="flex items-center gap-2">
                     <div className="flex items-center">
@@ -185,16 +172,48 @@ const Details: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
                       ))}
                     </div>
                     <span>
-                      {initialCount} {initialCount === 1 ? "recenze" : "recenzí"}
+                      {initialCount} {initialCount === 1  ? "recenze" : "recenzí"}
                     </span>
                 </div>
               )}
+            </div>             */}
+
+            <Details
+              product={product} 
+            />
+          </div>
+          <div className="images_container">
+              <Gallery product={product} region={region} countryCode={countryCode}/>
+          </div>
+          <div className="choice__container">
+            <div className="product__details__subDetails">
+              <Colors
+                product={product}
+                region={region}
+                isAdding={isAdding}
+                options={options}
+                setOptionValue={setOptionValue}
+              />
+              <Sizes
+                product={product}
+                region={region}
+                isAdding={isAdding}
+                options={options}
+                setOptionValue={setOptionValue}
+              />
             </div>
             {selectedVariant && !inStock && (
               <RestockForm variant={selectedVariant} product={product} />
             )}
+            <div className="next__prev__products"
+              //TODO
+            >
+
+            </div>
+          </div>
+            
         </div>
     )
 }
 
-export default Details;
+export default ProductDetails;
