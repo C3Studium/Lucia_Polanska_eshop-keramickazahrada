@@ -1,4 +1,4 @@
-import MainButton from "@modules/common/components/Buttons/MainButton";
+import Button from "@modules/common/components/Buttons/button";
 import Image from "next/image";
 
 export default function AboutInfo () {
@@ -20,7 +20,7 @@ export default function AboutInfo () {
                             Chcete vidět jak<br/>
                             vyrábím mé výrobky?
                         </p>
-                        <MainButton text="Výroba" type="button" kind="Link" href="/vyroba" className="link_button"/>
+                        <Button title="Výroba" Kind="Link" href="/vyroba"/>
                     </div>
                 </div>
             </div>
