@@ -4,7 +4,7 @@ import { IconProps } from "types/icon"
 
 const BookmarkFull: React.FC<IconProps> = ({
   size = "21",
-  color = "var(--OliveBg)",
+  color = "var(--bgPrimary)",
   ...attributes
 }) => {
   return (

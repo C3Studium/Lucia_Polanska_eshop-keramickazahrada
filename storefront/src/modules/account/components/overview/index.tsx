@@ -298,7 +298,7 @@ function PerspectiveText2({label, className, textColor}: {label: string; classNa
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}
@@ -306,7 +306,7 @@ function PerspectiveText2({label, className, textColor}: {label: string; classNa
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}

@@ -46,13 +46,13 @@ export default function ClickButton({ onClickAction, ClickAction, disabled = fal
                 >
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--OButton)" }}
+                        style={{ backgroundColor: "var(--darkOlive)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--CharcoalBg)" }}
+                        style={{ backgroundColor: "var(--bgBlack)" }}
                     >
                         <PerspectiveText label={text} />
                     </div>

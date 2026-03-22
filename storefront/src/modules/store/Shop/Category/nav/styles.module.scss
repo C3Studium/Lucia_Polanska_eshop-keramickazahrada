@@ -7,7 +7,7 @@
     padding: 5dvh 2.5dvw 5dvh 2.5dvw;
     height: 100%;
     width: 100%;
-    box-shadow: 0 2px 8px var(--ButtonBorder);
+    box-shadow: 0 2px 8px var(--shadows);
     border-radius: 25px;
     overflow: hidden;
 
@@ -47,7 +47,7 @@
                 flex-direction: column;
                 justify-content: flex-start;
                 align-items: flex-start;
-                border: 1px solid var(--ButtonBorder);
+                border: 1px solid var(--shadows);
                 border-radius: 25px;
             
                 .category__nav__item{
@@ -66,15 +66,15 @@
                     transition: all 0.25 cubic-bezier(0.24, 0, 0.76, 1);
 
                     &.active{
-                        background-color: var(--CharcoalBg);
+                        background-color: var(--bgBlack);
 
                         p{
-                            color: var(--Wtext)
+                            color: var(--whiteText)
                         }     
                     }
                     p{
                         font-size: 1.2rem;
-                        color: var(--ChText);
+                        color: var(--blackText);
 
                         @include hb((
                             md: (font-size: 1.1rem),
@@ -94,7 +94,7 @@
                         width: 20px;
                         height: 20px;
                         border-radius: 50%;
-                        border: 1px solid var(--ButtonBorder);
+                        border: 1px solid var(--shadows);
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -113,7 +113,7 @@
                     .subcategoryButton{
                         padding: 0.25rem 1rem;
                         margin: 0.5rem;
-                        background-color: var(--CreamDetails);
+                        background-color: var(--bgPrimary);
                         border-radius: 25px;
 
                         transition: all 0.25 cubic-bezier(0.24, 0, 0.76, 1);
@@ -139,10 +139,10 @@
                         }
 
                         &.active{
-                            background-color: var(--CharcoalBg);
+                            background-color: var(--bgBlack);
 
                             p{
-                                color: var(--Wtext)
+                                color: var(--whiteText)
                             } 
                         }
                     }

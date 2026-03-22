@@ -43,7 +43,7 @@
 		width: 100%; // content-container w-full
 		height: 90%; // h-full
 		max-width: 70rem; // max-w-5xl overrides content-container
-		background: var(--WhiteBg); // bg-white
+		background: var(--bgWhite); // bg-white
 		display: flex; // flex
 		flex-direction: column; // flex-col
 		border-radius: 25px 25px 0 0;
@@ -154,7 +154,7 @@
 		justify-content: space-between;
 		gap: 2rem; // gap-8
 		border-top: none;
-		background-color: var(--WhiteBg);
+		background-color: var(--bgWhite);
 		border-radius: 0 0 25px 25px;
 		padding: 3rem 2.5dvw 3rem 2.5dvw;
 		width: 100%;
@@ -214,7 +214,7 @@
 				font-weight: 300;
 				font-family: "Sansation-regular";
 				margin: 0;
-				color: var(--ChText);
+				color: var(--blackText);
 
 				// --- Responsive typography ---
 				@include hb((
@@ -242,7 +242,7 @@
 				font-weight: 300;
 				font-family: "Sansation-light";
 				margin: 0;
-				color: var(--ChText);
+				color: var(--blackText);
 
 				// --- Responsive typography ---
 				@include hb((
@@ -276,14 +276,14 @@
 				font-size: 1.3rem;
 				font-weight: 300;
 				font-family: "Sansation-light";
-				color: var(--ChText);
+				color: var(--blackText);
 				text-decoration: underline;
 
 					p{
 						font-size: 1.3rem;
 						font-weight: 300;
 						font-family: "Sansation-light";
-						color: var(--ChText);
+						color: var(--blackText);
 
 						@include hb((
 							lg: (font-size: 1.2rem !important),

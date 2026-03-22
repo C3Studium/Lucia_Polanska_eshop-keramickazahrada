@@ -27,7 +27,7 @@
         color: var(--ui-fg-base);
       }
       .cartCount {
-        color: var(--Otext);
+        color: var(--iconsPink);
         font-size: 0.875rem;
 
         @include hb((
@@ -172,7 +172,7 @@
             gap: 0.5rem;
 
             .emptyIcon {
-                background: var(--CharcoalBg);
+                background: var(--bgBlack);
                 font-size: 1.1rem;
                 display: flex;
                 align-items: center;
@@ -180,7 +180,7 @@
                 width: 2rem;
                 height: 2rem;
                 border-radius: 9999px;
-                color: var(--Wtext);
+                color: var(--whiteText);
             }
           }
           .emptyText {
@@ -227,11 +227,11 @@
                 p{
                     margin: 0px;
                     font-size: 1rem;
-                    color: var(--Wtext)
+                    color: var(--whiteText)
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--Wtext);
+                        color: var(--whiteText);
                     }
                 }
                 &:hover{

@@ -7,7 +7,7 @@
   justify-content: start;
   padding: 2rem 2rem;
   position: relative;
-  box-shadow: 0 0 10px var(--ButtonBorder); // subtle shadow here
+  box-shadow: 0 0 10px var(--shadows); // subtle shadow here
 
   border-radius: 25px;
 
@@ -54,7 +54,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: var(--CharcoalBg);
+        background: var(--bgBlack);
         opacity: 0.5;
         z-index: 1;
       }

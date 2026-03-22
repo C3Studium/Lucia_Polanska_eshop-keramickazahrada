@@ -207,7 +207,7 @@ function ScrollButton({
                     <PerspectiveText component={<Plus />} label={text} className={className} textColor={textColor}/>
                 </div>
                 <div className={s.el}>
-                    <PerspectiveText component={<Plus />} label={text} className={className} textColor={"var(--Wtext)"}/>
+                    <PerspectiveText component={<Plus />} label={text} className={className} textColor={"var(--whiteText)"}/>
                 </div>
             </div>
         </button>
@@ -279,13 +279,13 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, type 
         >
           <div
             className={s.el}
-            style={{ backgroundColor: "var(--OButton)" }}
+            style={{ backgroundColor: "var(--darkOlive)" }}
           >
             <PerspectiveText label={text}/>
           </div>
           <div
             className={s.el}
-            style={{ backgroundColor: "var(--CharcoalBg)" }}
+            style={{ backgroundColor: "var(--bgBlack)" }}
           >
             <PerspectiveText label={text} />
           </div>

@@ -479,7 +479,7 @@ const productTypes = products
                                                 setPendingCategoryAction("");
                                             }}
                                             style={{
-                                                background: highlightedIndex === idx ? "var(--OliveBg)" : undefined,
+                                                background: highlightedIndex === idx ? "var(--bgPrimary)" : undefined,
                                             }}
                                         >
                                             <p>{cat.name}</p>
@@ -497,7 +497,7 @@ const productTypes = products
                                                 setPendingCategoryAction("");
                                             }}
                                             style={{
-                                                background: highlightedIndex === idx ? "var(--OliveBg)" : undefined,
+                                                background: highlightedIndex === idx ? "var(--bgPrimary)" : undefined,
                                             }}
                                         >
                                             <p>{product.type?.value}</p>
@@ -648,7 +648,7 @@ const productTypes = products
                                                         setPendingCategoryAction("");
                                                     }}
                                                     style={{
-                                                        background: highlightedIndex === idx ? "var(--OliveBg)" : undefined,
+                                                        background: highlightedIndex === idx ? "var(--bgPrimary)" : undefined,
                                                     }}
                                                 >
                                                     <p>{cat.name}</p>

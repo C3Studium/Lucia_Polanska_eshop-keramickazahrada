@@ -32,7 +32,7 @@
 		.outer {
 			box-shadow: var(--borders-base);
 			background-color: var(--ui-bg-base);
-			border: 0.25px solid var(--ButtonBorder);
+			border: 0.25px solid var(--shadows);
 			display: flex;
 			height: 14px;
 			width: 14px;
@@ -41,7 +41,7 @@
 			border-radius: 9999px;
 			transition: all 0.2s;
 			&.checked {
-				border: 0.25px solid var(--ButtonBorder);
+				border: 0.25px solid var(--shadows);
 				box-shadow: var(--borders-interactive);
 			}
 			&:hover {
@@ -57,7 +57,7 @@
 
 
 			.inner {
-				background-color: var(--CharcoalBg);
+				background-color: var(--bgBlack);
 				box-shadow: var(--details-contrast-on-bg-interactive);
 				border-radius: 9999px;
 				height: 10px;

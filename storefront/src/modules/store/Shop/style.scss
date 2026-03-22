@@ -54,7 +54,7 @@
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        background-color: var(--WhiteBg);
+                        background-color: var(--bgWhite);
                         border-radius: 20px;
 
                         @include hb((
@@ -66,7 +66,7 @@
 
                         p{
                             font-size: 1.1rem;
-                            color: var(--ChText);
+                            color: var(--blackText);
                             font-weight: 300;
 
                             @include hb((
@@ -206,7 +206,7 @@
                             
                             p{
                                 font-size: 1.3rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 500;
 
                                 @include hb((
@@ -245,7 +245,7 @@
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                border: 1px solid var(--ButtonBorder);
+                                border: 1px solid var(--shadows);
                                 border-radius: 50%;
 
                                 @include vb((
@@ -283,8 +283,8 @@
                             left: 0;
                             width: 10dvw;
                             height: auto;
-                            background-color: var(--WhiteBg);
-                            border: 1px solid var(--ButtonBorder);
+                            background-color: var(--bgWhite);
+                            border: 1px solid var(--shadows);
                             border-radius: 10px;
                             display: flex;
                             flex-direction: column;
@@ -351,7 +351,7 @@
 
                                 p{
                                     font-size: 1.3rem;
-                                    color: var(--ChText);
+                                    color: var(--blackText);
                                     font-weight: 500;
 
                                     @include hb((
@@ -388,7 +388,7 @@
                                 .divider{
                                     width: 100%;
                                     height: 1px;
-                                    background-color: var(--ButtonBorder);
+                                    background-color: var(--shadows);
                                     opacity: 0.5;
                                 }
 
@@ -397,7 +397,7 @@
                                     border-bottom: 1px solid rgb(33, 34, 34, 0.5);
                                 }
                                 &.active{
-                                    background-color: var(--OliveBg);
+                                    background-color: var(--bgPrimary);
                                 }
                             }
                         }
@@ -417,12 +417,12 @@
                             
                             p{
                                 font-size: 1.3rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 500;
                                 transition: color 0.3s ease;
 
                                 &:hover{
-                                    color: var(--OButton);
+                                    color: var(--darkOlive);
                                 }
 
                                 @include hb((
@@ -458,7 +458,7 @@
 
                             &.active{
                                 p{
-                                    color: var(--OButton);
+                                    color: var(--darkOlive);
                                 }
                             }
                         }
@@ -500,9 +500,9 @@
                         flex-direction: row;
                         align-items: center;
                         justify-content: space-evenly;
-                        background-color: var(--WhiteBg);
+                        background-color: var(--bgWhite);
                         border-radius: 50px;
-                        box-shadow: 0 0 10px var(--ButtonBorder); // subtle shadow here
+                        box-shadow: 0 0 10px var(--shadows); // subtle shadow here
 
                         gap: 1dvw;
                         padding: 0 1dvw;
@@ -523,7 +523,7 @@
                             border: none;
                             outline: none;
                             font-size: 1.3rem;
-                            color: var(--ChText);
+                            color: var(--blackText);
 
                             @include vb((
                                 s: (width: 60%),
@@ -746,11 +746,11 @@
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            background-color: var(--WhiteBg);
-                            border: 1px solid var(--ButtonBorder);
+                            background-color: var(--bgWhite);
+                            border: 1px solid var(--shadows);
                             border-radius: 10px;
                             font-size: 1.3rem;
-                            color: var(--ChText);
+                            color: var(--blackText);
                             opacity: 0.2;
 
                             @include hb((
@@ -797,8 +797,8 @@
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            background-color: var(--WhiteBg);
-                            border: 1px solid var(--ButtonBorder);
+                            background-color: var(--bgWhite);
+                            border: 1px solid var(--shadows);
                             border-radius: 10px;
                             padding: 2.5dvh 0;
                             transform-origin: top center;
@@ -845,7 +845,7 @@
 
                                     p{
                                         font-size: 1.3rem;
-                                        color: var(--ChText);
+                                        color: var(--blackText);
 
                                         @include hb((
                                             md: (font-size: 1.2rem),
@@ -875,14 +875,14 @@
                                     }
 
                                     &:hover{
-                                        background-color: var(--OliveBg);
+                                        background-color: var(--bgPrimary);
                                     }
                                 }
                                 .active{
-                                    background-color: var(--OliveBg);
+                                    background-color: var(--bgPrimary);
                                     p{
                                         font-size: 1.3rem;
-                                        color: var(--ChText);
+                                        color: var(--blackText);
                                         
                                         @include hb((
                                             md: (font-size: 1.2rem),
@@ -915,7 +915,7 @@
                                     }
                                 }
                             }li.highlighted {
-                                background-color: var(--OliveBg);
+                                background-color: var(--bgPrimary);
                             }
                             
                         }
@@ -938,12 +938,12 @@
                 .active__filter {
                     display: flex;
                     align-items: center;
-                    background: var(--WhiteBg);
+                    background: var(--bgWhite);
                     border-radius: 20px;
                     padding: 0.3em 0.8em;
                     font-size: 1rem;
-                    color: var(--ChText);
-                    box-shadow: 0 1px 4px var(--ButtonBorder); // subtle shadow here
+                    color: var(--blackText);
+                    box-shadow: 0 1px 4px var(--shadows); // subtle shadow here
 
 
                     .filter__close__icon {
@@ -1030,13 +1030,13 @@
                     align-items: center;
                     justify-content: flex-start;
                     background-color: var(--bgWhite);
-                    box-shadow: 0 0 10px var(--ButtonBorder); // subtle shadow here
+                    box-shadow: 0 0 10px var(--shadows); // subtle shadow here
                     border-radius: 50px;
                     padding: 0.05dvh 0.05dvh;
                     transition: all 0.6s cubic-bezier(0.76, 0, 0.24, 1);
 
                     &:hover{
-                        box-shadow: 0 0 15px var(--ButtonBorder); // subtle shadow here
+                        box-shadow: 0 0 15px var(--shadows); // subtle shadow here
                         scale: 1.01;
                     }
 
@@ -1080,7 +1080,7 @@
                         align-items: center;
                         justify-content: center;
                         text-decoration: none;
-                        color: var(--ChText);
+                        color: var(--blackText);
 
                         @include hb((
                             md: (justify-content: space-between, padding-bottom: 2.5dvh),
@@ -1162,7 +1162,7 @@
                             .product__name{
                                 width: 100%;
                                 font-size: 1.5rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 300;
                                 text-align: left;
                                 line-height: 1;
@@ -1205,8 +1205,8 @@
                                     width: 1.5dvw;
                                     height: 1.5dvw;
                                     border-radius: 50%;
-                                    border: 1px solid var(--ButtonBorder);
-                                    background-color: var(--ChText);
+                                    border: 1px solid var(--shadows);
+                                    background-color: var(--blackText);
                                     cursor: pointer;
                                     @include hb((
                                         md: (width: 1.3dvw, height: 1.3dvw),
@@ -1232,7 +1232,7 @@
                                     ));
 
                                     &.active{
-                                        border: 2px solid var(--OButton);
+                                        border: 2px solid var(--darkOlive);
                                     }
                                 }
                                 
@@ -1264,7 +1264,7 @@
 
                             .product__new{
                                 font-size: 1.1rem;
-                                color: var(--OButton);
+                                color: var(--darkOlive);
                                 font-weight: 400;
 
                                 @include hb((
@@ -1295,7 +1295,7 @@
 
                             p{
                                 font-size: 1.1rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 400;
                                 text-align: left;
                                 line-height: 1.5;
@@ -1349,7 +1349,7 @@
 
                             .product__sale__price{
                                 font-size: 1.5rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 400;
                                 text-align: left;
                                 font-family: "Sansation-Light";
@@ -1384,7 +1384,7 @@
                             }
                             .product__price{
                                 font-size: 2rem;
-                                color: var(--ChText);
+                                color: var(--blackText);
                                 font-weight: 400;
                                 text-align: right;
                                 font-family: "Sansation-Light";
@@ -1487,8 +1487,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--OButton);
-        border: 0.5px solid var(--WhiteBg);
+        background-color: var(--darkOlive);
+        border: 0.5px solid var(--bgWhite);
         border-radius: 50%;
         z-index: 1001;
         cursor: pointer;

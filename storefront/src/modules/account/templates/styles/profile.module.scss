@@ -24,7 +24,7 @@
             line-height: 1.2;
             font-weight: 400;
             font-family: "Sansation-Light";
-			color: var(--ChText);
+			color: var(--blackText);
 
 			@include hb((
 				lg: (font-size: 1.6rem),
@@ -48,7 +48,7 @@
 			// text-base-regular
 			font-size: 1.1rem;
             line-height: 1.25rem;
-            color: var(--ChText);
+            color: var(--blackText);
             font-weight: 300;
             font-family: "Sansation-Light";
 

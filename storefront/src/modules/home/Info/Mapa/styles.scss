@@ -5,7 +5,7 @@
     height: 100dvh;
     position: relative;
     overflow: hidden;
-    background-color: var(--CharcoalBg);
+    background-color: var(--bgBlack);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -47,7 +47,7 @@
        
         h2{
             font-size: 5rem;
-            color: var(--WhiteBg);
+            color: var(--bgWhite);
             font-weight: 300;
             text-align: left;
             margin: 0;
@@ -132,7 +132,7 @@
                 h3{
                     font-family: "Sansation-Regular";
                     font-size: 2.5rem;
-                    color: var(--WhiteBg);
+                    color: var(--bgWhite);
                     font-weight: 300;
                     margin: 0;
 
@@ -157,7 +157,7 @@
                 p{
                     font-family: "Sansation-Light";
                     font-size: 1.5rem;
-                    color: var(--WhiteBg);
+                    color: var(--bgWhite);
                     font-weight: 300;
                     margin: 0;
 
@@ -203,9 +203,9 @@
                         .slider{
                             .el{
                                 &:nth-of-type(2){
-                                    background-color: var(--WhiteBg) !important;
+                                    background-color: var(--bgWhite) !important;
                                     p{
-                                        color: var(--ChText);
+                                        color: var(--blackText);
                                         &:nth-of-type(2){
                                             transform: rotateX(-90deg) translateY(18px) !important;
                                         }
@@ -216,7 +216,7 @@
                                     font-family: "Sansation-Light";
                                     text-transform: capitalize;
                                     font-size: 1.5rem;
-                                    color: var(--WhiteBg);
+                                    color: var(--bgWhite);
                                     font-weight: 300;
                                     margin: 0;
 
@@ -293,7 +293,7 @@
                 h3{
                     font-family: "ooohBaby-Regular";
                     font-size: 5rem;
-                    color: var(--WhiteBg);
+                    color: var(--bgWhite);
                     font-weight: 300;
                     margin: 0;
 
@@ -317,7 +317,7 @@
                 h4{
                     font-family: "Sansation-Light";
                     font-size: 2rem;
-                    color: var(--WhiteBg);
+                    color: var(--bgWhite);
                     font-weight: 300;
                     margin: 0;  
 
@@ -354,7 +354,7 @@
                 p{
                     font-family: "Sansation-Light";
                     font-size: 1.5rem;
-                    color: var(--WhiteBg);
+                    color: var(--bgWhite);
                     font-weight: 300;
                     margin: 0;
                     text-align: right;

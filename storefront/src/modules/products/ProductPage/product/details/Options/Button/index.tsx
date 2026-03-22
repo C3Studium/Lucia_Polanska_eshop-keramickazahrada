@@ -35,16 +35,16 @@ export default function HashtagButton({
                     <div 
                         className="el"
                         onClick={handleClick}
-                        style={{ backgroundColor: "var(--OButton)" }}
+                        style={{ backgroundColor: "var(--darkOlive)" }}
                     >
-                        <PerspectiveText label={`#${text}`} textColor={"var(--Wtext)"} />
+                        <PerspectiveText label={`#${text}`} textColor={"var(--whiteText)"} />
                     </div>
                     <div 
                         className="el"
                         onClick={handleClick}
-                        style={{ backgroundColor: "var(--CharcoalBg)" }}
+                        style={{ backgroundColor: "var(--bgBlack)" }}
                     >
-                        <PerspectiveText label={`#${text}`} textColor="var(--Wtext)" />
+                        <PerspectiveText label={`#${text}`} textColor="var(--whiteText)" />
                     </div>
                 </motion.div>
             </button>

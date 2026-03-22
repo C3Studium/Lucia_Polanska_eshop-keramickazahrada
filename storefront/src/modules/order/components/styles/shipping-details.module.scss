@@ -20,9 +20,9 @@
 	@include vb((
 	  lg: (font-size: 1.8rem),
 	  md: (font-size: 1.8rem),
-	  s: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
-	  sm: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
-	  xs: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--ButtonBorder)),
+	  s: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
+	  sm: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
+	  xs: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
 	));
   }
 
@@ -44,9 +44,9 @@
     flex-direction: column;
     width: 40%;
 	@include vb((
-	  s: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
-	  sm: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
-	  xs: (width: 60%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
+	  s: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
+	  sm: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
+	  xs: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
 	));
 
 	&:nth-of-type(1) {
@@ -62,7 +62,7 @@
     font-weight: 400;
     font-size: 1.3rem;
     font-family: "Sansation-Regular";
-    color: var(--ChText);
+    color: var(--blackText);
     margin-bottom: 0.25rem;
     @include hb((
 		md: (font-size: 1.2rem),

@@ -17,7 +17,7 @@
       font-size: 2rem; /* approx txt-xlarge */
       line-height: 1.5rem;
       font-weight: 400;
-      color: var(--ChText);
+      color: var(--blackText);
       font-family: "Sansation-Regular";
       @include hb((
         md: (font-size: 1.8rem),
@@ -40,7 +40,7 @@
       margin-top: 0.5rem; /* mt-2 */
       font-size: 1.3rem; /* txt-medium-ish */
       line-height: 1.25rem;
-      color: var(--ChText);
+      color: var(--blackText);
       font-weight: 300;
       font-family: "Sansation-Light";
 
@@ -79,7 +79,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 8px var(--ButtonBorder); // subtle shadow here
+    box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
     border-radius: 25px;
 
     @include vb((
@@ -118,11 +118,11 @@
                 height: 100%;
                 p{
                     margin: 0px;
-                    color: var(--Wtext);
+                    color: var(--whiteText);
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--ChText);
+                        color: var(--blackText);
                     }
                 }
                 &:hover{

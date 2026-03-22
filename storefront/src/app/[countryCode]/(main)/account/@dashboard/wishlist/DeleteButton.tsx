@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
+import s from "../styles/deleteButton.module.scss"
+
 export default function DeleteButton({ itemId }: { itemId: string }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -88,7 +90,7 @@ function PerspectiveText({label, className, textColor}: {label: string; classNam
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}
@@ -96,7 +98,7 @@ function PerspectiveText({label, className, textColor}: {label: string; classNam
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}

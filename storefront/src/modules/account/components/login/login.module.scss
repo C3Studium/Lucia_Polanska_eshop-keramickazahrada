@@ -33,7 +33,7 @@
   font-size: 1.1rem;
   line-height: 1.5rem;
   font-weight: 300;
-  color: var(--ChText);
+  color: var(--blackText);
   font-family: "Sansation-Light";
   margin-bottom: 2rem; /* mb-8 */
 
@@ -67,7 +67,7 @@
 .note {
   /* text-center text-ui-fg-base text-small-regular mt-6 */
   text-align: center;
-  color: var(--ChText);
+  color: var(--blackText);
   font-size: 1rem;
   line-height: 1.25rem;
   font-weight: 300;
@@ -85,7 +85,7 @@
 .forgotWrap {
   /* text-center text-ui-fg-base text-small-regular mt-2 */
   text-align: center;
-  color: var(--ChText);
+  color: var(--blackText);
   font-size: 1rem;
   line-height: 1.25rem;
   font-weight: 400;
@@ -133,7 +133,7 @@
                 p{
                   margin: 0px;
                   font-size: 1.2rem;
-                  color: var(--Wtext);
+                  color: var(--whiteText);
                   @include hb((
                     sm: (font-size: 1.1rem),
                     xs: (font-size: 1.1rem),
@@ -146,7 +146,7 @@
                 }
                 &:nth-of-type(2){
                   p{
-                    color: var(--Wtext);
+                    color: var(--whiteText);
                   }
                 }
                 &:hover{

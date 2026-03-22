@@ -74,7 +74,7 @@
 
         h2{
             font-family: "Sansation-Light";
-            color: var(--Wtext);
+            color: var(--whiteText);
             font-size: 10rem;
             text-align: left;
             line-height: 1.1;
@@ -113,7 +113,7 @@
             gap: 5dvw;
             h2{
                 font-family: "Sansation-Light";
-                color: var(--Wtext);
+                color: var(--whiteText);
                 font-size: 10rem;
                 text-align: left;   
 
@@ -138,7 +138,7 @@
                 position: relative;
                 width: 17.5dvw;
                 height: 17.5dvh;
-                border: 1px solid var(--ChText);
+                border: 1px solid var(--blackText);
 
                 .Hero__Intro__Img__Container__inner{
                     position: absolute;
@@ -217,7 +217,7 @@
 
             span{
                 width: 100%;
-                color: var(--Wtext);
+                color: var(--whiteText);
                 font-size: 1.8rem;
                 opacity: 0.8;
                 line-height: 1.2;
@@ -228,7 +228,7 @@
 
                 span {
                     width: auto;
-                    color: var(--Wtext);
+                    color: var(--whiteText);
                     font-size: 1.8rem;
                     opacity: 0.8;
                     line-height: 1.2;

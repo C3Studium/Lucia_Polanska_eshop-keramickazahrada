@@ -70,13 +70,13 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, type 
                 >
                     <div 
                         className={s.el}
-                        style={{ backgroundColor: "var(--OButton)" }}
+                        style={{ backgroundColor: "var(--darkOlive)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
                         className={s.el}
-                        style={{ backgroundColor: "var(--CreamDetails)" }}
+                        style={{ backgroundColor: "var(--bgPrimary)" }}
                     >
                         <PerspectiveText label={text} />
                     </div>

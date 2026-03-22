@@ -182,13 +182,13 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, type 
                 >
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--CreamDetails)" }}
+                        style={{ backgroundColor: "var(--bgPrimary)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--CharcoalBg)" }}
+                        style={{ backgroundColor: "var(--bgBlack)" }}
                     >
                         <PerspectiveText label={text} />
                     </div>

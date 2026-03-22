@@ -23,7 +23,7 @@
       .title {
         font-size: 1.3rem;
         line-height: 1.25rem;
-        color: var(--ChText); /* neutral-950 */
+        color: var(--blackText); /* neutral-950 */
         font-weight: 400;
         font-family: "Sansation-Regular";
 
@@ -48,7 +48,7 @@
       .desc {
         font-size: 1.1rem;
         line-height: 1.25rem; /* text-base-regular */
-        color: var(--ChText); /* neutral-500 */
+        color: var(--blackText); /* neutral-500 */
         font-weight: 300;
         font-family: "Sansation-Light";
 
@@ -149,7 +149,7 @@
       justify-content: space-between;
       padding: 1rem; /* p-4 */
       background: #fafafa; /* neutral-50 */
-      box-shadow: 0 0 2px var(--ButtonBorder); // subtle shadow here
+      box-shadow: 0 0 2px var(--shadows); // subtle shadow here
 
       width: 100%;
       align-self: stretch;
@@ -269,11 +269,11 @@
               height: 100%;
               p{
                   margin: 0px;
-                  color: var(--Wtext)
+                  color: var(--whiteText)
               }
               &:nth-of-type(2){
                   p{
-                      color: var(--Wtext);
+                      color: var(--whiteText);
                   }
               }
               &:hover{

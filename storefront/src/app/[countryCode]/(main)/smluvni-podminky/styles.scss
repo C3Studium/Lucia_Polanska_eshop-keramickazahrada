@@ -2,8 +2,8 @@
 .terms {
   /* Reserve space for the site header so page headings and nav aren't overlapped */
   --header-offset: 88px; /* mobile/default */
-  background: var(--WhiteBg);
-  color: var(--ChText);
+  background: var(--bgWhite);
+  color: var(--blackText);
 
   /* push content below the fixed header */
   padding-top: var(--header-offset);
@@ -45,10 +45,10 @@
   /* keep sidebar below the header as well */
   top: calc(var(--header-offset) + 12px);
     align-self: start;
-    border: 1px solid var(--ButtonBorder);
+    border: 1px solid var(--shadows);
     border-radius: 8px;
     padding: 8px;
-    background: var(--WhiteBg);
+    background: var(--bgWhite);
 
     ul {
       list-style: none;
@@ -61,14 +61,14 @@
     a {
       display: block;
       text-decoration: none;
-      color: var(--ChText);
+      color: var(--blackText);
       border-radius: 6px;
       padding: 6px 8px;
       border: 1px solid transparent;
       transition: border-color 0.15s ease, background-color 0.15s ease;
 
       &:hover {
-        border-color: var(--ChText);
+        border-color: var(--blackText);
         background: rgba(33, 34, 34, 0.04);
       }
     }

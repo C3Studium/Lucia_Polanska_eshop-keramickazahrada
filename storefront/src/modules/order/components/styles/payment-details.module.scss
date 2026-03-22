@@ -57,9 +57,9 @@
     width: 65%;
 
     @include vb((
-      s: (width: 100%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
-      sm: (width: 100%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
-      xs: (width: 100%, border-top: 0.5px solid var(--ButtonBorder), padding-top: 2rem),
+      s: (width: 100%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
+      sm: (width: 100%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
+      xs: (width: 100%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
     ));
   }
 
@@ -67,7 +67,7 @@
     font-weight: 400;
     font-size: 1.3rem;
     font-family: "Sansation-Regular";
-    color: var(--ChText);
+    color: var(--blackText);
     margin-bottom: 0.25rem;
 
     @include hb((

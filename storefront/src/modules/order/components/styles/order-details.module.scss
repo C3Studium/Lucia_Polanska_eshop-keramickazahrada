@@ -25,7 +25,7 @@
 
 
   .date{
-    color: var(--ChText);
+    color: var(--blackText);
     font-weight: 400;
     font-family: "Sansation-Regular";
     font-size: 1.3rem;
@@ -45,7 +45,7 @@
   }
 
   .email {
-    color: var(--ChText);
+    color: var(--blackText);
     font-weight: 300;
     font-family: "Sansation-Regular";
     font-size: 1.3rem;
@@ -94,7 +94,7 @@
 
   .statusText {
     font-size: 1.2rem;
-    color: var(--ChText);
+    color: var(--blackText);
     font-weight: 300;
     font-family: "Sansation-Light";
     @include hb((

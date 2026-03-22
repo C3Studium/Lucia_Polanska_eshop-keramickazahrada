@@ -378,13 +378,13 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, compo
               >
                   <div
                     className={styles.el}
-                    style={{ backgroundColor: "var(--OButton)" }}
+                    style={{ backgroundColor: "var(--darkOlive)" }}
                   >
                     {component ? <PerspectiveTextMobile component={component} /> : <PerspectiveText label={text || ""}/>}
                   </div>
                   <div
                     className={styles.el}
-                    style={{ backgroundColor: "var(--CharcoalBg)" }}
+                    style={{ backgroundColor: "var(--bgBlack)" }}
                   >
                     {component ? <PerspectiveTextMobile component={component} /> : <PerspectiveText label={text || ""} />}
                   </div>
@@ -439,13 +439,13 @@ function ClickButtonMobile({ onClickAction, ClickAction, disabled = false, compo
               >
                   <div
                     className={styles.el}
-                    style={{ backgroundColor: "var(--OButton)" }}
+                    style={{ backgroundColor: "var(--darkOlive)" }}
                   >
                     <PerspectiveTextMobile component={component} />
                   </div>
                   <div
                     className={styles.el}
-                    style={{ backgroundColor: "var(--CharcoalBg)" }}
+                    style={{ backgroundColor: "var(--bgBlack)" }}
                   >
                     <PerspectiveTextMobile component={component} />
                   </div>
@@ -554,7 +554,7 @@ function PerspectiveText2({label, className, textColor}: {label: string; classNa
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--bgBlack)",
             }}
           >
             {label}
@@ -562,7 +562,7 @@ function PerspectiveText2({label, className, textColor}: {label: string; classNa
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--bgBlack)",
             }}
           >
             {label}

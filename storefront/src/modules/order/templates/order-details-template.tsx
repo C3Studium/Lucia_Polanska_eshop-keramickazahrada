@@ -113,13 +113,13 @@ function ClickButton({ onClickAction, ClickAction, href, disabled = false, text,
         >
           <div
             className={s.el}
-            style={{ backgroundColor: "var(--OButton)" }}
+            style={{ backgroundColor: "var(--darkOlive)" }}
           >
             <PerspectiveText label={text} component={<XMark />} />
           </div>
           <div
             className={s.el}
-            style={{ backgroundColor: "var(--CharcoalBg)" }}
+            style={{ backgroundColor: "var(--bgBlack)" }}
           >
             <PerspectiveText label={text} component={<XMark />} />
           </div>

@@ -21,8 +21,8 @@ export default function ScrollLink({
   return (
     <LocalizedClientLink href={`/${href}`} className="ScrollLink"
       style={{
-        borderRight: borderR ? `1px solid ${borderColor}` : "var(--ButtonBorder)",  
-        borderLeft: borderL ? `1px solid ${borderColor}` : "var(--ButtonBorder)",
+        borderRight: borderR ? `1px solid ${borderColor}` : "var(--shadows)",  
+        borderLeft: borderL ? `1px solid ${borderColor}` : "var(--shadows)",
       }}
     >
         <button 
@@ -50,7 +50,7 @@ function PerspectiveText({label, className, textColor}: {label: string; classNam
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}
@@ -58,7 +58,7 @@ function PerspectiveText({label, className, textColor}: {label: string; classNam
           <p 
             className={className}
             style={{
-              color: textColor || "var(--ChText)",
+              color: textColor || "var(--blackText)",
             }}
           >
             {label}

@@ -50,7 +50,7 @@
       margin-bottom: 0.25rem;
       font-family: "Sansation-Regular";
       color: var(--ui-fg-base, #111827);
-      background: linear-gradient(135deg, var(--OButton, #ff6b35), var(--CharcoalBg, #2d3748));
+      background: linear-gradient(135deg, var(--darkOlive, #ff6b35), var(--bgBlack, #2d3748));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -79,7 +79,7 @@
     align-items: flex-start;
     flex-direction: column;
     justify-content: center;
-    color: var(--ChText);
+    color: var(--blackText);
 
     .metaLabel{
       font-weight: 300;
@@ -159,7 +159,7 @@
           font-weight: 500;
           font-size: 1.1rem;
           font-family: "Sansation-Regular";
-          color: var(--OButton, #ff6b35);
+          color: var(--darkOlive, #ff6b35);
           display: flex;
           align-items: center;
 
@@ -274,10 +274,10 @@
       align-items: center;
       font-size: 0.9rem;
       line-height: 1.25rem;
-      color: var(--ChText);
+      color: var(--blackText);
 
       .itemTitle {
-        color: var(--ChText);
+        color: var(--blackText);
         font-size: 1rem;
         font-family: "Sansation-Regular";
         font-weight: 400;
@@ -290,7 +290,7 @@
       .multiply {
         
         margin: 0 0.25rem;
-        color: var(--ChText);
+        color: var(--blackText);
         font-family: "Sansation-Light";
         font-weight: 400;
       }
@@ -348,11 +348,11 @@
                 height: 100%;
                 p{
                     margin: 0px;
-                    color: var(--Wtext);
+                    color: var(--whiteText);
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--ChText);
+                        color: var(--blackText);
                     }
                 }
                 &:hover{

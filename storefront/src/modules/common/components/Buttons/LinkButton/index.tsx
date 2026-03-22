@@ -52,13 +52,13 @@ export default function LinkButton({ text, href, className, index, onClickAction
                 >
                     <div 
                         className="el"
-                        style={{ backgroundColor: "var(--OButton)" }}
+                        style={{ backgroundColor: "var(--darkOlive)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
                         className="el"
-                        style={{ backgroundColor: "var(--CreamDetails)" }}
+                        style={{ backgroundColor: "var(--bgPrimary)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>

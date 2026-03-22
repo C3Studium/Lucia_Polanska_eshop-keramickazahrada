@@ -4,7 +4,7 @@
 .root {
   display: flex;
   flex-direction: column;
-  color: var(--ChText);
+  color: var(--blackText);
   justify-content: center;
   height: 100%;
   width: 100%;
@@ -13,7 +13,7 @@
   font-size: 1rem;
   line-height: 1.5rem;
   font-weight: 300; /* medium-plus analog */
-  color: var(--ChText);
+  color: var(--blackText);
   font-family: "Sansation-Light";
 
   @include hb((
@@ -34,7 +34,7 @@
   ));
 
   .originalLabel {
-    color: var(--ChText);
+    color: var(--blackText);
   }
 
   .originalPrice {
@@ -50,9 +50,9 @@
     font-size: 1.1rem;  
     font-weight: 400;
     font-family: "Sansation-Light";
-    color: var(--ChText);
+    color: var(--blackText);
     &.discounted {
-      color: var(--ChText);
+      color: var(--blackText);
     }
 
 

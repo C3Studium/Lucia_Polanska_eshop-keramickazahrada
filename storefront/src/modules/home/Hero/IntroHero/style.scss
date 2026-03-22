@@ -6,7 +6,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;    
-    background-color: var(--whiteBg);
+    background-color: var(--bgWhite);
     padding: 0 5dvw;
     overflow: hidden;
     z-index: 1;
@@ -59,7 +59,7 @@
         transform: translate(-50%, -50%);
         width: 45dvh;
         height: 65dvh;
-        // border: 1px solid var(--ChText);        
+        // border: 1px solid var(--blackText);        
         @include vb((
             lg: (width: 35dvh, height: 50dvh),
             md: (width: 32.5dvh, height: 45dvh),
@@ -319,7 +319,7 @@
                             cursor: pointer;
                             .perspectiveText{
                                 p{
-                                    color: var(--Wtext);
+                                    color: var(--whiteText);
                                     font-size: 1.3rem;
                                     font-family: "Sansation-Regular";
                                     text-transform: capitalize;
@@ -336,9 +336,9 @@
 
                             &:nth-of-type(2){
                                 p{
-                                    color: var(--ChText);    
+                                    color: var(--blackText);    
                                     &:nth-of-type(2){
-                                        color: var(--ChText);
+                                        color: var(--blackText);
                                         transform: rotateX(-90deg) translateY(15px);
                                     }
                                 }

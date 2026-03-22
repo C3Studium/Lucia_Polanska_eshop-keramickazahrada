@@ -76,7 +76,7 @@
                     position: absolute;
                     width: 90%;
                     height: 0.5px;
-                    background-color: var(--ButtonBorder);
+                    background-color: var(--shadows);
                     bottom: 0;
                     left: 5%;
                     z-index: 0;
@@ -119,7 +119,7 @@
                         position: relative;
                         z-index: 1;
                         font-size: 1.5rem;
-                        color: var(--ChText);
+                        color: var(--blackText);
                         font-weight: 300;
 
                         @include hb((
@@ -149,7 +149,7 @@
                             position: relative;
                             z-index: 1;
                             font-size: 3rem;
-                            color: var(--ChText);
+                            color: var(--blackText);
                             font-weight: 300;
                             margin: 0;
 
@@ -328,7 +328,7 @@
                                             font-family: "Sansation-Light";
                                             text-transform: capitalize;
                                             font-size: 1.3rem;
-                                            color: var(--WhiteBg);
+                                            color: var(--bgWhite);
                                             font-weight: 300;
                                             margin: 0;
 
@@ -378,7 +378,7 @@
                         position: relative;
                         z-index: 1;
                         font-size: 1rem;
-                        color: var(--ChText);
+                        color: var(--blackText);
                         font-weight: 300;
                         
                         @include hb((
@@ -619,7 +619,7 @@
                         position: relative;
                         z-index: 1;
                         font-size: 1.5rem;
-                        color: var(--ChText);
+                        color: var(--blackText);
                         font-weight: 300;
                         white-space: nowrap;
 
@@ -666,13 +666,13 @@
                             md: (align-items: flex-start),
                         ));
                         @include vb((
-                            s: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                            s: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
                         ));
                         @include vb((
-                            sm: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                            sm: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
                         ));
                         @include vb((
-                            xs: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--ButtonBorder)),
+                            xs: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
                         ));
 
                         .product__details__subDetails__colors__item{
@@ -744,7 +744,7 @@
                         position: relative;
                         z-index: 1;
                         font-size: 1.5rem;
-                        color: var(--ChText);
+                        color: var(--blackText);
                         font-weight: 300;
                         white-space: nowrap;
 
@@ -784,13 +784,13 @@
                         align-items: center;
                         gap: 0.5dvw;
                         @include vb((
-                            s: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                            s: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
                         )); 
                         @include vb((
-                            sm: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                            sm: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
                         ));
                         @include vb((
-                            xs: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--ButtonBorder), padding: 0.5dvh 0),
+                            xs: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
                         ));
 
                         .product__details__subDetails__sizes__item{
@@ -801,9 +801,9 @@
                             align-items: center;
                             justify-content: center;
                             border-radius: 25px;
-                            background-color: var(--OButton);
+                            background-color: var(--darkOlive);
                             box-shadow: none;
-                            border: 0.5px solid var(--WhiteBg);
+                            border: 0.5px solid var(--bgWhite);
                             padding: 0.5dvw 0.5dvw;
                             cursor: pointer;
                             @include vb((
@@ -821,7 +821,7 @@
                                 position: relative;
                                 z-index: 1;
                                 font-size: 1.3rem;
-                                color: var(--Wtext);
+                                color: var(--whiteText);
                                 font-weight: 300;
                                 padding: 0.15rem;
 
@@ -849,13 +849,13 @@
                             }
 
                             &.active{
-                                background-color: var(--CharcoalBg);
-                                border: 0.5px solid var(--OButton);
+                                background-color: var(--bgBlack);
+                                border: 0.5px solid var(--darkOlive);
                             }
 
                             &:hover{
-                                background-color: var(--CharcoalBg);
-                                border: 0.5px solid var(--OButton);
+                                background-color: var(--bgBlack);
+                                border: 0.5px solid var(--darkOlive);
                             }
                         }
                     }

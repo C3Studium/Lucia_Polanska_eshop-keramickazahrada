@@ -115,7 +115,7 @@ export default function WishlistToggle({ variantId, wishlistItems = [], onWishli
     console.log("User not authenticated, showing login link, isAuthenticated:", isAuthenticated)
     return (
       <LocalizedClientLink href="/account" className="wishlist-login-link">
-        <Bookmark size="24" color="var(--ChText)" />
+        <Bookmark size="24" color="var(--blackText)" />
       </LocalizedClientLink>
     )
   }

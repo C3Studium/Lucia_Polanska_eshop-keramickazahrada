@@ -252,7 +252,7 @@ function PerspectiveIcon({
       style={{ transformStyle: "preserve-3d" }}
     >
       <motion.div variants={frontText} className={styles.image__wrapper}>
-        <Image src={icon1} alt={alt} width={60} height={30} />
+        <Image src={icon1} alt={alt} width={50} height={25} />
       </motion.div>
       <motion.div
         variants={backText}

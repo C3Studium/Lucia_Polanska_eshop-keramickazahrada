@@ -10,7 +10,7 @@
     pointer-events: none;
     border-radius: 4px 0 0 4px;
     transform-origin: 0% 0%;
-    background-color: var(--CreamDetails);
+    background-color: var(--bgPrimary);
     /* ensure hidden when no progress due to scaleX */
     will-change: transform;
 

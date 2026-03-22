@@ -17,7 +17,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 0.5px solid var(--ChText);
+    border-bottom: 0.5px solid var(--blackText);
     &:nth-of-type(2){
       position: absolute;
       transform-origin: bottom center;
@@ -77,11 +77,11 @@
         height: 100%;
         p{
           margin: 0px;
-          color: var(--Wtext)
+          color: var(--whiteText)
         }
         &:nth-of-type(2){
           p{
-            color: var(--Wtext);
+            color: var(--whiteText);
           }
         }
         &:hover{

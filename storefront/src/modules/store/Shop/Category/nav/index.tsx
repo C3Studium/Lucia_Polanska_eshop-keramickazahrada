@@ -147,7 +147,7 @@ export default function CategoryNav({ category, setCategoryAction, categories, s
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     style={{
-                                        borderColor: category === cat.name ? "var(--WhiteBg)" : "var(--ButtonBorder)",
+                                        borderColor: category === cat.name ? "var(--bgWhite)" : "var(--shadows)",
                                     }}
                                 >
                                     <AnimatePresence>

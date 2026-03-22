@@ -1,6 +1,5 @@
-import InteractiveLink from "@modules/common/components/interactive-link"
 import s from "./style.module.scss"
-import InteractiveLinkButton from "@modules/common/components/Buttons/interactiveLink-button"
+import LinkButton from "@modules/common/components/Buttons/LinkButton"
 
 const EmptyCartMessage = () => {
   return (
@@ -10,7 +9,7 @@ const EmptyCartMessage = () => {
         Ve vašem košíku není nic. Změňte to, použijte odkaz níže a začněte procházet naše produkty.
       </p>
       <div>
-        <InteractiveLinkButton href="/store" text="Prozkoumat produkty" />
+        <LinkButton href="/store" text="Prozkoumat produkty" />
       </div>
     </div>
   )

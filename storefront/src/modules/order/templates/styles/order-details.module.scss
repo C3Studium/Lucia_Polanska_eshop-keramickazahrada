@@ -89,7 +89,7 @@
 		flex-direction: column;
 		row-gap: 1rem;
 		height: 100%;
-		background: var(--WhiteBg, #fff);
+		background: var(--bgWhite, #fff);
 		width: 100%;
 	}
 }
@@ -172,11 +172,11 @@
 				justify-content: space-between;
 				align-items: center;
 				margin: 0px;
-				color: var(--Wtext);
+				color: var(--whiteText);
               }
               &:nth-of-type(2){
                   p{
-                      color: var(--Wtext);
+                      color: var(--whiteText);
                   }
               }
               &:hover{

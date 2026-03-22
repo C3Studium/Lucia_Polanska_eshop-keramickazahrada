@@ -294,7 +294,7 @@
     &:hover{
       .slider{
         .el{
-          background-color: var(--OliveBg);
+          background-color: var(--bgPrimary);
         }
       }
     }
@@ -310,15 +310,15 @@
         transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
         p{
           margin: 0px;
-          color: var(--ChText);
+          color: var(--blackText);
 
           &:nth-of-type(2){
-            color: var(--Wtext) !important;
+            color: var(--whiteText) !important;
           }
         }
         &:nth-of-type(2){
           p{
-            color: var(--Wtext) !important;
+            color: var(--whiteText) !important;
           }
         }
         &:hover{
@@ -374,11 +374,11 @@
               height: 100%;
               p{
                   margin: 0px;
-                  color: var(--Wtext)
+                  color: var(--whiteText)
               }
               &:nth-of-type(2){
                   p{
-                      color: var(--Wtext);
+                      color: var(--whiteText);
                   }
               }
               &:hover{

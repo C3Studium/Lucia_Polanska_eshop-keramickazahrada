@@ -30,10 +30,10 @@
 		margin-left: auto;
 		margin-right: auto;
 		z-index: 1;
-		background: var(--WhiteBg, #fff);
+		background: var(--bgWhite, #fff);
 		border-radius: 25px;
 		overflow: hidden;
-		border: 1px solid var(--ButtonBorder);
+		border: 1px solid var(--shadows);
 
 
 		.panel {
@@ -55,7 +55,7 @@
 		display: flex;
 		flex-direction: column;
 		row-gap: 0.75rem;
-		color: var(--ChText);
+		color: var(--blackText);
 		font-size: 2rem;
 		line-height: 1.5rem;
 		margin-bottom: 1rem;
