@@ -1,5 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import Button from "@modules/layout/Navbar/button"
+import Button from "@modules/common/components/Buttons/button"
 import Image from "next/image"
 
 type ItemProps = {

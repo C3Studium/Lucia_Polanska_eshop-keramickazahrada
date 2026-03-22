@@ -1,26 +1,53 @@
 "use client";
-import { motion } from 'framer-motion';
+import { Easing, motion } from 'framer-motion';
 import { useState } from 'react';
-import LocalizedClientLink from '../../localized-client-link';
 
-import styles from './style.module.scss';
+import Arrow from '@modules/common/icons/arrow';
+
+import styles from "./styles.module.scss"
+import LocalizedClientLink from '@modules/common/components/localized-client-link';
 
 
-type AccLinkButtonProps = {
+type LinkButtonProps = {
     text: string;
     href: string; 
+    className?: string;
+    index?: number
+    onClickAction?: () => void
 }
 
-// This is base button for every button animation inside the website.
+const lineAnim = {
+    initial: {
+        x: "-100%",
+    },
+    enter: {
+        x: "0%",
+        transition: {
+            duration: 0.45,
+            ease: [0.76, 0, 0.24, 1] as Easing
+        }
+        
+    },
+    exit: {
+        x: "-100%",
+        transition: {
+            delay: 0.15,
+            duration: 0.45,
+            ease: [0.76, 0, 0.24, 1] as Easing
+        }
+        
+    },
+}
 
-export default function AccLinkButton({ text, href } : AccLinkButtonProps) {
+export default function LinkCat({ text, href, className, index, onClickAction } : LinkButtonProps) {
     const [ isActive , setIsActive ] = useState<boolean>(false);
     return (
-        <LocalizedClientLink href={href} className={styles.AccLinkButton}>
+        <LocalizedClientLink href={href} className={`${className} ${styles.LinkCat}`} key={`LinkButton ${index}`}>
             <button 
                 className={styles.button}
                 onMouseEnter={() => setIsActive(true)}
                 onMouseLeave={() => setIsActive(false)}
+                onClick={onClickAction}
             >
                 <motion.div 
                     className={styles.slider}
@@ -41,6 +68,7 @@ export default function AccLinkButton({ text, href } : AccLinkButtonProps) {
                     </div>
                 </motion.div>
             </button>
+            <motion.div className={styles.Line} variants={lineAnim} initial="initial" animate={isActive ? "enter" : "exit"}/>
         </LocalizedClientLink>
     )
 }
@@ -48,8 +76,8 @@ export default function AccLinkButton({ text, href } : AccLinkButtonProps) {
 function PerspectiveText({label}: {label: string}) {
     return (    
         <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
+            <p>{label}<span><Arrow size={15}/></span></p>
+            <p>{label}<span><Arrow size={15}/></span></p>
         </div>
     )
 }

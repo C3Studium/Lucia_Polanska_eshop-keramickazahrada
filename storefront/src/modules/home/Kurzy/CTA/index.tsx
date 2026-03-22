@@ -1,15 +1,13 @@
 "use client";
 import LinkButton from "@modules/common/components/Buttons/LinkButton";
-import MainButton from "@modules/common/components/Buttons/MainButton";
+import Button from "@modules/common/components/Buttons/button";
 import { AnimatePresence, motion, Easing } from "framer-motion";
 import Image from "next/image"
 import { usePathname } from "next/navigation";
-import { act, useState } from "react";
-import { text } from "stream/consumers";
+import { useState } from "react";
 
-type Tags = [
-    { text: string, active: boolean }
-]
+type Tag = { text: string, active: boolean }
+type Tags = Tag[]
 
 type CTA = {
     text: string,
@@ -72,7 +70,7 @@ const divAnim = {
 export default function CTA({ text, kind, img, alt }: CTA) {
     const pathname = usePathname();
     const [active, setActive] = useState<boolean>(false);
-    const tagValue = useState<Tags>([
+    const [tagValue, setTagValue] = useState<Tags>([
         { text: "#Dotaz", active: false }
     ]);
 
@@ -80,11 +78,25 @@ export default function CTA({ text, kind, img, alt }: CTA) {
     const handleClick = () => {
         setActive(!active);
     }
+
+    const Submit = () => {
+
+    }
+
+    const tagChoice = ({ input, state }: { input: string; state: boolean }) => {
+        setTagValue((prev) => {
+            const exists = prev.some((tag) => tag.text === input)
+            if (!exists) {
+                return [...prev, { text: input, active: state }]
+            }
+            return prev.map((tag) =>
+                tag.text === input ? { ...tag, active: state } : tag
+            )
+        })
+    }
     return (
         <div className="CTA__block">
-            <div className="button__container">
-                <MainButton text={text} kind="CTA" type="button" onClickAction={handleClick} className="CTA__button"/>
-            </div>
+            <Button img="/assets/links/home_img.png" alt="bg__image" Kind="Button" title={text} onClickAction={handleClick}/>
             <AnimatePresence>
                 { 
                     active && (
@@ -103,7 +115,7 @@ export default function CTA({ text, kind, img, alt }: CTA) {
                                                 <p>
                                                     Zkuste nejdříve FAQ
                                                 </p>
-                                                <MainButton href="/dotazy" kind="Link" text="FAQ" type="button"/>
+                                                <Button href="/dotazy" Kind="Link" title="FAQ" />
                                             </div>
                                         </div>
                                         <div className="form__content">
@@ -127,11 +139,11 @@ export default function CTA({ text, kind, img, alt }: CTA) {
                                                 <div className="buttons">
                                                     <div className="tag__buttons">
                                                         {tags.map((tag, index) => (
-                                                            <MainButton text={tag.text} kind="Submit" type="submit"/>
+                                                            <Button title={tag.text} Kind="Button" key={index} onTagAction={tagChoice}/>
                                                         ))}
                                                     </div>
                                                     <div className="send__button">
-                                                        <MainButton text="Odeslat" kind="Submit" type="submit"/>
+                                                        <Button title="Odeslat" Kind="Button" onClickAction={Submit}/>
                                                     </div>
                                                 </div>
                                             </form>
@@ -156,7 +168,7 @@ export default function CTA({ text, kind, img, alt }: CTA) {
                                             <p>
                                                 Putim 229, Písek 397 01
                                             </p>
-                                            <MainButton text="Mapa Google" kind="Link" type="button" href="" className="map_button"/>
+                                            <Button title="Mapa Google" Kind="Link" href="" className="map_button"/>
                                         </div>
                                     </div>
                                     <div className="information__kontakt">

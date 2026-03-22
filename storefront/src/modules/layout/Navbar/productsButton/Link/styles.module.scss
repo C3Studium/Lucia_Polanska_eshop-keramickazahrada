@@ -1,6 +1,7 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 
-.LinkButton{
+
+.LinkCat{
     width: fit-content;
     height: 40px;
     position: relative;
@@ -8,14 +9,12 @@
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    border-radius: 25px;
     overflow: hidden;
     .button{
         position: relative;
         width: 100%;
         height: 100%;
         cursor: pointer;
-        border-radius: 25px;
         overflow: hidden;
         border: none;
         box-shadow: none;
@@ -49,7 +48,7 @@
                     p{
                         transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
                         pointer-events: none;
-                        text-transform: uppercase;
+                        text-transform: capitalize;
                         display: flex;
                         align-items: flex-start;
                         justify-content: center;
@@ -58,18 +57,18 @@
                             width: fit-content;
                             position: absolute;
                             transform-origin: bottom center;
-                            transform: rotateX(-90deg) translateY(18px);
+                            transform: rotateX(-90deg) translateY(12px);
                             opacity: 0;
                         }
                     }
                 }
                 p{
                     margin: 0px;
-                    color: var(--Wtext);
+                    color: var(--blackText);
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--ChText);
+                        color: var(--blackText);
                     }
                 }
                 &:hover{
@@ -94,6 +93,6 @@
     .Line{
         width: 100% !important;
         height: 1px;
-        background-color: var(--whiteBoarder);
+        background-color: var(--shadows);
     }
 }

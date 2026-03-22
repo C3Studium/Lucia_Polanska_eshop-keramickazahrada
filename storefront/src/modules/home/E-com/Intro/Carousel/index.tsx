@@ -1,6 +1,6 @@
 import Image from "next/image";
 import CarouselButton from "./Button";
-import Button from "@modules/layout/Navbar/button";
+import Button from "@modules/common/components/Buttons/button";
 
 export default function Carousel () {
   return (

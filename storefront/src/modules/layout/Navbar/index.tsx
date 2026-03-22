@@ -17,7 +17,7 @@ import RegionsSelect from "./regions";
 import { useStateContext } from "@lib/context/StateContext";
 import nav from "./nav";
 import { usePathname } from "next/navigation";
-import Button from "./button";
+import Button from "../../common/components/Buttons/button";
 import SearchButton from "./searchButton";
 import {CollectionList, ProductButton, } from "./productsButton";
 import CTA from "@modules/home/Kurzy/CTA";
@@ -40,10 +40,6 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
 
     const pathname = usePathname();
 
-    const productClick = () => {
-        setIsOpen(!isOpen)
-    }
-
     const PreloaderAnim = {
         initial: {
             y: "-100%",
@@ -64,24 +60,6 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         },
-    }
-
-    // Dynamic menu animation based on device type
-    const menu = {
-        open: {
-            width: isTablet ? "450px" : "97dvw",
-            height: isTablet ? "700px" : "85dvh",
-            top: "1.5dvh",
-            right: "1.5dvw",
-            transition: { duration: 0.75, ease: [0.76, 0, 0.24, 1] as Easing }
-        },
-        closed: {
-            width: isTablet ? "100px" : "90px",
-            height: isTablet ? "40px" : "35px",
-            top: "1.5dvh",
-            right: "1.5dvw",
-            transition: { duration: 0.75, delay: 0.35, ease: [0.76, 0, 0.24, 1] as Easing }
-        }
     }
 
     useEffect(() => {
@@ -116,18 +94,18 @@ export default function Navbar({ cart, regions, isLoggedIn, wishlistItems = [] }
     return (
         <>
             <nav className="navbar">
-                <CollectionList active={isOpen} setActive={productClick}/>
+                <CollectionList active={isOpen} setActive={setIsOpen}/>
                 <div className="navbar__left">
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="" href="/" icon1="/assets/icons/logowhite.svg" icon2="/assets/icons/logo.svg"/>
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="Dotazy" href="/dotazy"/>
+                    <Button Kind="Link" img="/assets/links/home_img.png" alt="bg__image" title="" href="/" icon1="/assets/icons/logo.svg" icon2="/assets/icons/logowhite.svg"/>
+                    <Button Kind="Link" img="/assets/links/home_img.png" alt="bg__image" title="Dotazy" href="/dotazy"/>
                     <SearchButton />
                 </div>
                 <div className="navbar__center">
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="Výroba" href="/vyroba"/>
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="Kurzy" href="/kurzy"/>
-                    <ProductButton onClickAction={productClick}/>
+                    <Button Kind="Link" img="/assets/links/home_img.png" alt="bg__image" title="Výroba" href="/vyroba"/>
+                    <Button Kind="Link" img="/assets/links/home_img.png" alt="bg__image" title="Kurzy" href="/kurzy"/>
+                    <ProductButton onClickAction={setIsOpen} isActive={isOpen}/>
                     <CTA text="Kontakt" kind="primary" img="/assets/links/home_img.png" alt="bg__image"/>
-                    <Button img="/assets/links/home_img.png" alt="bg__image" title="O mně" href="/o-mne"/>
+                    <Button Kind="Link" img="/assets/links/home_img.png" alt="bg__image" title="O mně" href="/o-mne"/>
                 </div>
                 <div className="navbar__right">
                     <RegionsSelect 

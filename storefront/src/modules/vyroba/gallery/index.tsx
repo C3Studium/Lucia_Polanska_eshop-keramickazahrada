@@ -73,7 +73,7 @@ const Gallery = () => {
                     const { title } = item
 
                     return (
-                        <div className="progress__bar__item">
+                        <div className="progress__bar__item" key={index}>
                             <p>{title}</p>
                             <div className="progress__line"/>
                         </div>
