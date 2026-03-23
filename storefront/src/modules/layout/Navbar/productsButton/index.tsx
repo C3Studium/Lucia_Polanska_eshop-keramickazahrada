@@ -264,7 +264,7 @@ export function ProductButton({ onClickAction, isActive }: {onClickAction: (next
         transition: {
             delay: 0.15,
             duration: 0.35,
-            ease: [ 0.910, 0.075, 0.250, 0.960 ] as Easing
+            ease: [0.76, 0, 0.24, 1] as Easing
         }
     },
     exit: {
@@ -273,7 +273,7 @@ export function ProductButton({ onClickAction, isActive }: {onClickAction: (next
         transition: {
             delay: 0.1,
             duration: 0.35,
-            ease: [ 0.910, 0.075, 0.250, 0.960 ] as Easing
+            ease: [0.76, 0, 0.24, 1] as Easing
         }
     }
   }
@@ -446,7 +446,7 @@ export function CollectionList ({ active, setActive } : { active: boolean, setAc
             opacity: 1,
             transition: {
                 duration: 0.55,
-                ease: [0.910, 0.075, 0.250, 0.960] as Easing
+                ease: [0.76, 0, 0.24, 1] as Easing
             }
         },
         exit: {
@@ -455,7 +455,7 @@ export function CollectionList ({ active, setActive } : { active: boolean, setAc
             transition: {
                 delay: 0.2,
                 duration: 0.5,
-                ease: [0.910, 0.075, 0.250, 0.960] as Easing
+                ease: [0.76, 0, 0.24, 1] as Easing
             }
         }
     }
@@ -489,13 +489,13 @@ export function CollectionList ({ active, setActive } : { active: boolean, setAc
                                                 description={description}
                                                 title={title}
                                                 image={image}
-                                            href={href}
-                                            products={products}
-                                            setActive={setActive}
-                                        />
-                                    </motion.div>
-                                ) 
-                            })}
+                                                href={href}
+                                                products={products}
+                                                setActive={setActive}
+                                            />
+                                        </motion.div>
+                                    ) 
+                                })}
                             </motion.div>  
                         </motion.div>
 
@@ -573,15 +573,15 @@ const CollectionItem = ({ title, id, href, products, image, description, setActi
             scale: 1,
             transition: {
                 duration: 0.5,
-                ease: [ 0.9, 0, 0.25, 0.9 ] as Easing
+                ease: [0.76, 0, 0.24, 1] as Easing
             }
 
         },
         active: {
-            scale: 1.05,
+            scale: 1.01,
             transition: {
                 duration: 0.5,
-                ease: [ 0.9, 0, 0.25, 0.9 ] as Easing
+                ease: [0.76, 0, 0.24, 1] as Easing
             }
         },
     }
@@ -590,15 +590,15 @@ const CollectionItem = ({ title, id, href, products, image, description, setActi
             opacity: 0.6,
             transition: {
                 duration: 0.5,
-                ease: [ 0.9, 0, 0.25, 0.9 ] as Easing
+                ease: [ 0.76, 0., 0.25, 0.9 ] as Easing
             }
 
         },
         active: {
-            opacity: 0,
+            opacity: 0.25,
             transition: {
                 duration: 0.5,
-                ease: [ 0.9, 0, 0.25, 0.9 ] as Easing
+                ease: [0.76, 0, 0.24, 1] as Easing
             }
         },
     }

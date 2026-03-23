@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStateContext } from "@lib/context/StateContext";
 import { client } from "../../../../sanity/lib/client";
 import { urlFor } from "../../../../sanity/lib/image";
+import WebButton from "@modules/common/components/Buttons/webButton";
 
 export default function IntroHero() {
     const { firstLoad } = useStateContext();
@@ -179,7 +180,7 @@ export default function IntroHero() {
                     variants={PreloaderAnimButton}
                     custom={3}
                 >
-                    <LinkButton href="/store" text="Navštívit E-shop" />
+                    <WebButton href="/store" title="Navštívit E-shop" Kind="Link"/>
                 </motion.div>
             </div>
             <div className="Hero__Intro__Image__wrapper">

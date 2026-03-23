@@ -122,7 +122,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                       Uloženo
                     </span>
                   </div>
-                  <div className={s.LinkButton}>
+                  <div className={s.LinkButtonS}>
                     <ScrollLink
                       href={`/account/addresses`}
                       text={`Přidat adresu`}

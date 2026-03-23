@@ -56,13 +56,11 @@ export default function LinkCat({ text, href, className, index, onClickAction } 
                 >
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
                         className={styles.el}
-                        style={{ backgroundColor: "var(--bgPrimary)" }}
                     >
                         <PerspectiveText label={text}/>
                     </div>

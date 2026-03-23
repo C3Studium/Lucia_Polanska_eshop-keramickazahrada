@@ -134,7 +134,7 @@ type LinkButtonProps = {
 function LinkButton({ text, href } : LinkButtonProps) {
     const [ isActive , setIsActive ] = useState<boolean>(false);
     return (
-        <LocalizedClientLink href={href} className={styles.LinkButton}>
+        <LocalizedClientLink href={href} className={styles.LinkButtonS}>
             <button 
                 className={styles.button}
                 onMouseEnter={() => setIsActive(true)}

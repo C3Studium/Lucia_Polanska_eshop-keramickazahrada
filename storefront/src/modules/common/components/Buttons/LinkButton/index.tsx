@@ -40,7 +40,7 @@ export default function LinkButton({ text, href, className, index, onClickAction
     return (
         <LocalizedClientLink href={href} className={`${className} LinkButton`} key={`LinkButton ${index}`}>
             <button 
-                className="button"
+                className="LinkButton__container"
                 onMouseEnter={() => setIsActive(true)}
                 onMouseLeave={() => setIsActive(false)}
                 onClick={onClickAction}
@@ -51,14 +51,12 @@ export default function LinkButton({ text, href, className, index, onClickAction
                     transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
                 >
                     <div 
-                        className="el"
-                        style={{ backgroundColor: "var(--darkOlive)" }}
+                        className="elLink"
                     >
                         <PerspectiveText label={text}/>
                     </div>
                     <div 
-                        className="el"
-                        style={{ backgroundColor: "var(--bgPrimary)" }}
+                        className="elLink"
                     >
                         <PerspectiveText label={text}/>
                     </div>
@@ -72,8 +70,8 @@ export default function LinkButton({ text, href, className, index, onClickAction
 function PerspectiveText({label}: {label: string}) {
     return (    
         <div className="perspectiveText">
-            <p>{label}<span><Arrow size={15} color='white'/></span></p>
-            <p>{label}<span><Arrow size={15} color='white'/></span></p>
+            <p>{label}<span><Arrow size={15}/></span></p>
+            <p>{label}<span><Arrow size={15}/></span></p>
         </div>
     )
 }
