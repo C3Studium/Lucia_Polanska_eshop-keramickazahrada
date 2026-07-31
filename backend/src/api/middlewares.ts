@@ -1,6 +1,7 @@
 import {
   defineMiddlewares,
   validateAndTransformBody,
+  validateAndTransformQuery,
   authenticate,
   MedusaNextFunction,
   MedusaRequest,
@@ -8,6 +9,10 @@ import {
 } from "@medusajs/framework/http";
 import { PostCustomPriceSchema } from "./store/variants/[id]/price/route";
 import { PostStoreReviewSchema } from "./store/reviews/route";
+import { GetStoreReviewsSchema } from "./store/products/[id]/reviews/route";
+import { GetStoreCustomerReviewsSchema } from "./store/customers/me/reviews/route";
+import { GetAdminReviewsSchema } from "./admin/reviews/route";
+import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route";
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
 
 // Debug middleware to log incoming requests
@@ -44,6 +49,56 @@ export default defineMiddlewares({
       ],
     },
     {
+      matcher: "/store/products/:id/reviews",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetStoreReviewsSchema, {
+          isList: true,
+          defaults: [
+            "id",
+            "title",
+            "content",
+            "rating",
+            "first_name",
+            "last_name",
+            "status",
+            "product_id",
+            "created_at",
+          ],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/reviews",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetAdminReviewsSchema, {
+          isList: true,
+          defaults: [
+            "id",
+            "title",
+            "content",
+            "rating",
+            "first_name",
+            "last_name",
+            "product_id",
+            "customer_id",
+            "status",
+            "created_at",
+            "updated_at",
+            "product.*",
+          ],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/reviews/status",
+      methods: ["POST"],
+      middlewares: [
+        validateAndTransformBody(PostAdminUpdateReviewsStatusSchema),
+      ],
+    },
+    {
       matcher: "/store/customers/delete-account",
       methods: ["POST"],
       middlewares: [authenticate("customer", ["bearer", "session"])],
@@ -70,11 +125,29 @@ export default defineMiddlewares({
       methods: ["DELETE"],
       middlewares: [debugAuthMiddleware()],
     },
-    // Customer reviews - rely on Medusa's internal auth for /store/customers/me/*
+    // Customer reviews are explicitly authenticated because this is a custom
+    // route and its query contains private, customer-scoped review records.
     {
       matcher: "/store/customers/me/reviews",
       methods: ["GET"],
-      middlewares: [debugAuthMiddleware()],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformQuery(GetStoreCustomerReviewsSchema, {
+          isList: true,
+          defaults: [
+            "id",
+            "title",
+            "content",
+            "rating",
+            "first_name",
+            "last_name",
+            "status",
+            "product_id",
+            "created_at",
+            "updated_at",
+          ],
+        }),
+      ],
     },
   ],
 });

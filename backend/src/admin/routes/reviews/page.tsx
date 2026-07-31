@@ -159,7 +159,7 @@ const ReviewsPageInner = () => {
   const table = useDataTable({
     columns,
     data: data?.reviews || [],
-    rowCount: data?.count || 0,
+    rowCount: data?.count ?? data?.reviews?.length ?? 0,
     isLoading,
     pagination: {
       state: pagination,
@@ -202,4 +202,3 @@ export const config = defineRouteConfig({
 })
 
 export default ReviewsPage
-

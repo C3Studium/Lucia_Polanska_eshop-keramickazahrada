@@ -22,7 +22,6 @@ type ProductTemplateProps = {
   countryCode: string
   categories?: HttpTypes.StoreProductCategory[]
   wishlistItems?: any[]
-  onWishlistUpdateAction?: () => Promise<void>
   isAuthenticated?: boolean
   initialRating?: number
   initialCount?: number
@@ -44,7 +43,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   countryCode,
   categories,
   wishlistItems,
-  onWishlistUpdateAction,
   isAuthenticated,
   initialRating = 0,
   initialCount = 0,
@@ -240,7 +238,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                 isPreview={isBundlePreview}
                 wishlistVariantId={selectedVariant?.id}
                 wishlistItems={wishlistItems}
-                onWishlistUpdateAction={onWishlistUpdateAction}
                 isAuthenticated={isAuthenticated}
                 price={
                   <ProductPrice
@@ -284,7 +281,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     options={options}
                     product={product}
                     wishlistItems={wishlistItems}
-                    onWishlistUpdateAction={onWishlistUpdateAction}
                     isAuthenticated={isAuthenticated}
                   />
                 </div>

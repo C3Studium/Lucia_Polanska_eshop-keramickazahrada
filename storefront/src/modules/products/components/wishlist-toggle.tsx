@@ -5,7 +5,7 @@ import Bookmark from "@modules/common/icons/bookmark"
 import BookmarkFull from "@modules/common/icons/bookmark-full"
 import { toast } from "@medusajs/ui"
 import { AnimatePresence, motion } from "framer-motion"
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import s from "./wishlist-toggle.module.scss"
 
 type WishlistItem = {
@@ -17,11 +17,11 @@ type WishlistItem = {
 type WishlistToggleProps = {
   variantId?: string
   wishlistItems?: WishlistItem[]
-  onWishlistUpdateAction?: () => void | Promise<void>
   isAuthenticated?: boolean
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
+const wishlistUpdateEvent = "keramicka-zahrada:wishlist-updated"
 
 const findWishlistItem = (items: WishlistItem[], variantId?: string) =>
   items.find(
@@ -33,15 +33,37 @@ const findWishlistItem = (items: WishlistItem[], variantId?: string) =>
 export default function WishlistToggle({
   variantId,
   wishlistItems = [],
-  onWishlistUpdateAction,
   isAuthenticated,
 }: WishlistToggleProps) {
   const [localItems, setLocalItems] = useState<WishlistItem[]>(wishlistItems)
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
+
+  const updateWishlistState = useCallback((items: WishlistItem[]) => {
+    setLocalItems(items)
+
+    window.dispatchEvent(
+      new CustomEvent(wishlistUpdateEvent, { detail: { items } })
+    )
+  }, [])
 
   useEffect(() => {
     setLocalItems(wishlistItems)
   }, [wishlistItems])
+
+  useEffect(() => {
+    const syncWishlistState = (event: Event) => {
+      const items = (event as CustomEvent<{ items?: WishlistItem[] }>).detail
+        ?.items
+
+      if (Array.isArray(items)) {
+        setLocalItems(items)
+      }
+    }
+
+    window.addEventListener(wishlistUpdateEvent, syncWishlistState)
+    return () =>
+      window.removeEventListener(wishlistUpdateEvent, syncWishlistState)
+  }, [])
 
   const currentItem = useMemo(
     () => findWishlistItem(localItems, variantId),
@@ -57,41 +79,65 @@ export default function WishlistToggle({
       const data = await response.json()
 
       if (response.ok && data.success && data.wishlist) {
-        setLocalItems(data.wishlist.items || [])
+        updateWishlistState(data.wishlist.items || [])
       }
     } catch {
       // The optimistic state remains usable if the background refresh fails.
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, updateWishlistState])
 
   useEffect(() => {
     void refreshWishlist()
   }, [refreshWishlist])
 
-  const toggle = () => {
+  const toggle = async () => {
     if (!variantId) {
       toast.error("Nejprve vyberte provedení objektu.")
       return
     }
 
-    startTransition(async () => {
-      try {
-        if (inWishlist && currentItem?.id) {
-          const previousItems = localItems
-          setLocalItems((items) =>
-            items.filter((item) => item.id !== currentItem.id)
-          )
+    const previousItems = localItems
+    setIsPending(true)
 
+    try {
+      if (inWishlist && currentItem?.id) {
+        const nextItems = localItems.filter(
+          (item) => item.id !== currentItem.id
+        )
+        updateWishlistState(nextItems)
+
+        try {
           const response = await fetch(
             `/api/wishlist/items/${currentItem.id}`,
             { method: "DELETE" }
           )
+
           if (!response.ok) {
-            setLocalItems(previousItems)
             throw new Error("Objekt se nepodařilo odebrat.")
           }
+
           toast.success("Objekt byl odebrán z oblíbených.")
-        } else {
+        } catch (removeError) {
+          updateWishlistState(previousItems)
+          throw removeError
+        }
+      } else {
+        const optimisticItem: WishlistItem = {
+          id: `optimistic-${variantId}`,
+          product_variant_id: variantId,
+          product_variant: { id: variantId },
+        }
+        const optimisticItems = [
+          ...localItems.filter(
+            (item) =>
+              item.product_variant_id !== variantId &&
+              item.product_variant?.id !== variantId
+          ),
+          optimisticItem,
+        ]
+        updateWishlistState(optimisticItems)
+
+        try {
           const response = await fetch("/api/wishlist/items", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -103,27 +149,26 @@ export default function WishlistToggle({
             throw new Error(data?.message || "Objekt se nepodařilo uložit.")
           }
 
-          if (data?.item) {
-            setLocalItems((items) => [
-              ...items.filter(
-                (item) =>
-                  item.product_variant_id !== variantId &&
-                  item.product_variant?.id !== variantId
-              ),
-              data.item,
-            ])
+          const canonicalItems = data?.wishlist?.items
+          if (Array.isArray(canonicalItems)) {
+            updateWishlistState(canonicalItems)
+          } else {
+            await refreshWishlist()
           }
-          toast.success("Objekt byl uložen do oblíbených.")
-        }
 
-        await onWishlistUpdateAction?.()
-        await refreshWishlist()
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Změnu se nepodařilo uložit."
-        )
+          toast.success("Objekt byl uložen do oblíbených.")
+        } catch (saveError) {
+          updateWishlistState(previousItems)
+          throw saveError
+        }
       }
-    })
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Změnu se nepodařilo uložit."
+      )
+    } finally {
+      setIsPending(false)
+    }
   }
 
   const icon = inWishlist ? (
@@ -155,8 +200,9 @@ export default function WishlistToggle({
     <motion.button
       type="button"
       className={s.button}
-      onClick={toggle}
+      onClick={() => void toggle()}
       disabled={isPending}
+      data-saved={inWishlist ? "true" : "false"}
       aria-pressed={inWishlist}
       aria-label={
         inWishlist

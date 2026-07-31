@@ -11,7 +11,6 @@ type ProductTemplateProps = {
   countryCode: string
   categories?: HttpTypes.StoreProductCategory[]
   wishlistItems?: any[]
-  onWishlistUpdateAction?: () => Promise<void>
   isAuthenticated?: boolean
   initialRating?: number
   initialCount?: number
@@ -19,7 +18,7 @@ type ProductTemplateProps = {
   isBundlePreview?: boolean
 }
 
-const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, onWishlistUpdateAction, isAuthenticated, initialRating, initialCount, bundle, isBundlePreview }) => {
+const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, initialRating, initialCount, bundle, isBundlePreview }) => {
 
     // If the product is not found return not found page
     if (!product || !product.id) {
@@ -34,7 +33,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
             data-scroll-section
             data-scroll-label="Objekt"
         >
-            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} onWishlistUpdateAction={onWishlistUpdateAction} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} />
+            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} />
         </section>
     )
 }

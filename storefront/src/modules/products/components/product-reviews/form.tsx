@@ -97,9 +97,12 @@ export default function ProductReviewsForm({
           description: "Vaše recenze byla odeslána ke schválení.",
         })
       })
-      .catch(() => {
+      .catch((error) => {
         toast.error("Recenzi se nepodařilo odeslat", {
-          description: "Zkuste to prosím znovu za chvíli.",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Zkuste to prosím znovu za chvíli.",
         })
       })
       .finally(() => {

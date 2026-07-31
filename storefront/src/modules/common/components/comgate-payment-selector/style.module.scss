@@ -1,0 +1,546 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.selector {
+  width: 100%;
+  color: #20211c;
+  font-family: "Sansation-Regular", sans-serif;
+}
+
+.chooser,
+.pickerWrap {
+  overflow: hidden;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid rgba(32, 33, 28, 0.2);
+  border-left: 1px solid rgba(32, 33, 28, 0.2);
+}
+
+.group {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 98px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 13px;
+  padding: 16px 17px;
+  overflow: hidden;
+  border: 0;
+  border-right: 1px solid rgba(32, 33, 28, 0.2);
+  border-bottom: 1px solid rgba(32, 33, 28, 0.2);
+  color: #20211c;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.28s ease 0.16s;
+}
+
+.group[data-group="bank"] {
+  min-height: 112px;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.group:disabled,
+.method:disabled,
+.otherBank:disabled,
+.change:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.groupFill {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #20211c;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.68s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.group:hover .groupFill,
+.group:focus-visible .groupFill,
+.group[data-active="true"] .groupFill {
+  transform: scaleX(1);
+}
+
+.groupIndex {
+  align-self: start;
+  padding-top: 2px;
+  color: rgba(32, 33, 28, 0.48);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  transition: color 0.28s ease 0.16s;
+}
+
+.groupCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.groupCopy strong {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.groupCopy small {
+  color: rgba(32, 33, 28, 0.55);
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 12px;
+  line-height: 1.32;
+  transition: color 0.28s ease 0.16s;
+}
+
+.logoStack {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}
+
+.logoStack > span,
+.selectedLogo,
+.methodLogo {
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(32, 33, 28, 0.18);
+  border-radius: 50%;
+  background: #f8eee2;
+}
+
+.logoStack > span {
+  width: 30px;
+  height: 30px;
+  margin-left: -8px;
+}
+
+.logoStack img,
+.selectedLogo img,
+.methodLogo img {
+  display: block;
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+}
+
+.logoStack svg,
+.selectedLogo svg,
+.methodLogo svg {
+  display: block;
+  width: 68%;
+  height: 68%;
+  color: #20211c;
+}
+
+.logoStack span span,
+.selectedLogo > span,
+.methodLogo > span {
+  font-size: 11px;
+}
+
+.groupArrow {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+.group:hover,
+.group:focus-visible,
+.group[data-active="true"] {
+  color: #f8e2d0;
+  outline: none;
+}
+
+.group:hover .groupIndex,
+.group:focus-visible .groupIndex,
+.group[data-active="true"] .groupIndex,
+.group:hover .groupCopy small,
+.group:focus-visible .groupCopy small,
+.group[data-active="true"] .groupCopy small {
+  color: rgba(248, 226, 208, 0.67);
+}
+
+.picker {
+  padding: 18px 0 4px;
+}
+
+.pickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 11px;
+}
+
+.pickerHeader span,
+.search > span {
+  color: rgba(32, 33, 28, 0.55);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pickerHeader small {
+  color: rgba(32, 33, 28, 0.48);
+  font-size: 11px;
+}
+
+.search {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 1px solid rgba(32, 33, 28, 0.25);
+  border-radius: 999px;
+}
+
+.search input {
+  min-width: 0;
+  height: 45px;
+  border: 0;
+  outline: 0;
+  color: #20211c;
+  background: transparent;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+}
+
+.search input::placeholder {
+  color: rgba(32, 33, 28, 0.38);
+}
+
+.search input:-webkit-autofill,
+.search input:-webkit-autofill:hover,
+.search input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #20211c;
+  transition: background-color 9999s ease-out;
+  box-shadow: 0 0 0 1000px transparent inset;
+}
+
+.search button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  color: #20211c;
+  background: transparent;
+  cursor: pointer;
+}
+
+.methodGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid rgba(32, 33, 28, 0.18);
+  border-left: 1px solid rgba(32, 33, 28, 0.18);
+}
+
+.method {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 73px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 0;
+  border-right: 1px solid rgba(32, 33, 28, 0.18);
+  border-bottom: 1px solid rgba(32, 33, 28, 0.18);
+  color: #20211c;
+  background: transparent;
+  font: 400 13px/1.25 "Sansation-Regular", sans-serif;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.25s ease 0.12s;
+}
+
+.method::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #20211c;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.58s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.method:hover,
+.method:focus-visible {
+  color: #f8e2d0;
+  outline: none;
+}
+
+.method:hover::before,
+.method:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.methodLogo {
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+}
+
+.otherBank {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: 100%;
+  min-height: 67px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 9px 13px;
+  border: 1px solid rgba(32, 33, 28, 0.3);
+  border-radius: 999px;
+  color: #20211c;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.25s ease 0.12s;
+}
+
+.otherBank::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #20211c;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.62s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.otherBank:hover,
+.otherBank:focus-visible {
+  color: #f8e2d0;
+  outline: none;
+}
+
+.otherBank:hover::before,
+.otherBank:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.otherBank:hover small,
+.otherBank:focus-visible small {
+  color: rgba(248, 226, 208, 0.65);
+}
+
+.otherBank > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.otherBank strong {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.otherBank small {
+  color: rgba(32, 33, 28, 0.54);
+  font: 400 12px/1.3 "Sansation-Light", sans-serif;
+}
+
+.noResults {
+  margin: 12px 0 0;
+  color: rgba(32, 33, 28, 0.58);
+  font: 400 13px/1.4 "Sansation-Regular", sans-serif;
+}
+
+.selectedState {
+  display: grid;
+  gap: 15px;
+}
+
+.selected {
+  display: grid;
+  min-height: 86px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 14px;
+  border-top: 1px solid rgba(32, 33, 28, 0.25);
+  border-bottom: 1px solid rgba(32, 33, 28, 0.25);
+}
+
+.confirm {
+  display: flex;
+  width: 100%;
+}
+
+.confirm > button {
+  width: 100%;
+  min-height: 58px;
+  background: transparent;
+}
+
+.selectedLogo {
+  width: 48px;
+  height: 48px;
+}
+
+.selectedCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.selectedCopy small {
+  color: rgba(32, 33, 28, 0.48);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.selectedCopy strong {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectedCopy > span {
+  overflow: hidden;
+  color: rgba(32, 33, 28, 0.56);
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 7px 15px;
+  border: 1px solid #20211c;
+  border-radius: 999px;
+  color: #20211c;
+  background: transparent;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.24s ease 0.12s;
+}
+
+.change::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #20211c;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.55s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.change:hover,
+.change:focus-visible {
+  color: #f8e2d0;
+  outline: none;
+}
+
+.change:hover::before,
+.change:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.change span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+@media (max-width: 760px) {
+  .groups,
+  .methodGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .group {
+    min-height: 104px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 14px 12px;
+  }
+
+  .group[data-group="bank"] {
+    min-height: 108px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .logoStack {
+    display: none;
+  }
+
+  .groupCopy strong {
+    font-size: 16px;
+  }
+
+  .groupCopy small {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 430px) {
+  .search {
+    grid-template-columns: 1fr auto;
+  }
+
+  .search > span {
+    display: none;
+  }
+
+  .method {
+    min-height: 78px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .method > span:last-child {
+    display: none;
+  }
+
+  .selected {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .selectedCopy > span {
+    white-space: normal;
+  }
+
+  .change {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    width: 100%;
+  }
+}

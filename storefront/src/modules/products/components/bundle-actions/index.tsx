@@ -16,7 +16,6 @@ import { ReactNode, useEffect, useMemo, useState } from "react"
 type BundleActionsProps = {
   bundle: BundleProduct
   wishlistItems?: any[]
-  onWishlistUpdateAction?: () => Promise<void>
   isAuthenticated?: boolean
   region?: HttpTypes.StoreRegion
   isPreview?: boolean
@@ -43,7 +42,6 @@ const getInitialOptions = (bundle: BundleProduct) =>
 export default function BundleActions({
   bundle,
   wishlistItems,
-  onWishlistUpdateAction,
   isAuthenticated,
   region,
   isPreview = false,
@@ -215,7 +213,6 @@ export default function BundleActions({
             <WishlistToggle
               variantId={wishlistVariantId}
               wishlistItems={wishlistItems}
-              onWishlistUpdateAction={onWishlistUpdateAction}
               isAuthenticated={isAuthenticated}
             />
           </div>

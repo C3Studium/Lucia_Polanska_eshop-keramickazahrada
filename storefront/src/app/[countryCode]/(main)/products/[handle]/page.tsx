@@ -13,8 +13,6 @@ import SoldProducts from "@modules/products/ProductPage/Sold"
 import { listCategories } from "@lib/data/categories"
 import ProductReviews from "@modules/products/components/product-reviews"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
-import { revalidatePath, revalidateTag } from "next/cache"
-import { getCacheTag } from "@lib/data/cookies"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -193,14 +191,6 @@ export default async function ProductPage(props: Props) {
   // Fetch customer wishlist items
   const wishlistItems = await getCustomerWishlistItems()
 
-  async function refreshWishlist() {
-    'use server'
-    revalidatePath(`/${params.countryCode}/products/${params.handle}`)
-    // Also revalidate customer data to ensure wishlist is updated
-    const customerCacheTag = await getCacheTag("customers")
-    revalidateTag(customerCacheTag)
-  }
-
   return (
     <main>
       <Product
@@ -211,7 +201,6 @@ export default async function ProductPage(props: Props) {
         isBundlePreview={isBundlePreview}
         categories={productCategories}
         wishlistItems={wishlistItems}
-        onWishlistUpdateAction={refreshWishlist}
         isAuthenticated={isAuthenticated}
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}

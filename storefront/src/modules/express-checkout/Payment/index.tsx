@@ -1,19 +1,19 @@
 "use client"
 
-import { isComgate, paymentInfoMap } from "@lib/constants"
+import { isComgate } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
   extractComgateRedirectUrl,
   fromComgateOptionId,
-  getComgateMethodLogo,
   toComgateOptionId,
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import ComgatePaymentSelector from "@modules/common/components/comgate-payment-selector"
 import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import styles from "../style.module.scss"
 
 type PaymentProps = {
@@ -30,13 +30,6 @@ const legacyComgateMethods = [
   { id: "pp_comgate_googlepay", method: "GOOGLEPAY_REDIRECT" },
   { id: "pp_comgate_bank", method: "BANK_ALL" },
 ]
-
-const legacyDescription = (id: string) => {
-  if (id.includes("applepay")) return "Potvrzení přes Face ID nebo Touch ID"
-  if (id.includes("googlepay")) return "Rychlé potvrzení přes Google účet"
-  if (id.includes("bank")) return "Výběr banky v zabezpečené bráně Comgate"
-  return "Visa, Mastercard a další podporované karty"
-}
 
 const methodForOption = (id: string) =>
   fromComgateOptionId(id) ||
@@ -71,22 +64,7 @@ export const Payment = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const displayMethods = useMemo(() => {
-    const comgateAvailable = paymentMethods.some((method) =>
-      isComgate(method.id)
-    )
-    if (!comgateAvailable) return []
-
-    return comgateMethods.length
-      ? comgateMethods.map((method) => ({
-          id: toComgateOptionId(method.id),
-          method,
-        }))
-      : legacyComgateMethods.map(({ id }) => ({
-          id,
-          method: undefined,
-        }))
-  }, [comgateMethods, paymentMethods])
+  const comgateAvailable = paymentMethods.some((method) => isComgate(method.id))
 
   const shippingAddress = cart.shipping_address
   const ready =
@@ -149,6 +127,12 @@ export const Payment = ({
       setError(paymentError?.message || "Platbu se nepodařilo dokončit.")
       setIsSubmitting(false)
     }
+  }
+
+  const selectMethod = (optionId: string) => {
+    if (isSubmitting) return
+    setSelected(optionId)
+    setError(null)
   }
 
   return (
@@ -216,61 +200,25 @@ export const Payment = ({
           <span>Šifrovaně a bezpečně</span>
         </div>
         <p className={styles.paymentConsent}>
-          Klepnutím na metodu potvrdíte objednávku, souhlasíte s obchodními
-          podmínkami a přejdete rovnou k platbě.
+          Vyberte metodu. Potvrzením objednávky souhlasíte s obchodními
+          podmínkami a přejdete k zabezpečené platbě.
         </p>
-        <div className={styles.paymentMethods} aria-busy={isSubmitting}>
-          {!displayMethods.length && (
+        <div aria-busy={isSubmitting}>
+          {!comgateAvailable && (
             <p className={styles.paymentUnavailable} role="alert">
               Comgate nyní není dostupný. Zkuste to prosím za chvíli znovu.
             </p>
           )}
-          {displayMethods.map(({ id, method }) => {
-            const active = selected === id
-            const logo = method ? getComgateMethodLogo(method) : ""
-
-            return (
-              <motion.button
-                type="button"
-                key={id}
-                data-selected={active}
-                onClick={() => void pay(id)}
-                disabled={!ready || isSubmitting}
-                whileTap={isSubmitting ? undefined : { scale: 0.99 }}
-                aria-label={`Zaplatit – ${
-                  method?.name_short ||
-                  method?.name ||
-                  paymentInfoMap[id]?.title ||
-                  id
-                }`}
-              >
-                <span className={styles.paymentFill} aria-hidden="true" />
-                <span className={styles.radioMark}>
-                  <span />
-                </span>
-                <span className={styles.paymentCopy}>
-                  <strong>
-                    {method?.name_short ||
-                      method?.name ||
-                      paymentInfoMap[id]?.title ||
-                      id}
-                  </strong>
-                  <small>
-                    {active && isSubmitting
-                      ? "Otevíráme bezpečnou platbu…"
-                      : method?.description || legacyDescription(id)}
-                  </small>
-                </span>
-                <span className={styles.paymentIcon}>
-                  {logo ? (
-                    <img src={logo} alt="" loading="lazy" />
-                  ) : (
-                    paymentInfoMap[id]?.icon
-                  )}
-                </span>
-              </motion.button>
-            )
-          })}
+          {comgateAvailable && (
+            <ComgatePaymentSelector
+              methods={comgateMethods}
+              selectedOptionId={selected}
+              onSelect={selectMethod}
+              onConfirm={() => pay(selected)}
+              disabled={!ready || isSubmitting}
+              isSubmitting={isSubmitting}
+            />
+          )}
         </div>
       </div>
 

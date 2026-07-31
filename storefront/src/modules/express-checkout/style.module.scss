@@ -636,94 +636,10 @@
   font-size: 18px;
 }
 
-.paymentMethods {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
 .paymentConsent {
   margin: 0 0 12px;
   color: rgba(32, 33, 28, .62);
   font: 400 14px/1.5 "Sansation-Regular", sans-serif;
-}
-
-.paymentMethods > button {
-  position: relative;
-  display: grid;
-  min-height: 72px;
-  grid-template-columns: 20px 1fr 28px;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 14px;
-  overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, .32);
-  border-radius: 14px;
-  color: #20211c;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.paymentMethods > button:disabled {
-  cursor: wait;
-}
-
-.paymentFill {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  background: #e0d9b4;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .58s cubic-bezier(.76, 0, .24, 1);
-}
-
-.paymentMethods > button[data-selected="true"] .paymentFill {
-  transform: scaleX(1);
-}
-
-.paymentMethods > button[data-selected="true"] .radioMark span {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.paymentCopy,
-.paymentIcon {
-  position: relative;
-  z-index: 1;
-}
-
-.paymentCopy {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.paymentCopy strong {
-  font: 400 17px/1.15 "Sansation-Regular", sans-serif;
-}
-
-.paymentCopy small {
-  color: rgba(32, 33, 28, .57);
-  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
-}
-
-.paymentIcon {
-  display: grid;
-  place-items: center;
-}
-
-.paymentIcon svg {
-  width: 21px;
-  height: 21px;
-}
-
-.paymentIcon img {
-  display: block;
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
 }
 
 .payFooter {

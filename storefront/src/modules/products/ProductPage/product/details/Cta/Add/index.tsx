@@ -13,7 +13,6 @@ type CTAProps = {
   handleAddToCart: () => void
   options?: Record<string, string | undefined>
   wishlistItems?: any[]
-  onWishlistUpdateAction?: () => Promise<void>
   isAuthenticated?: boolean
 }
 
@@ -28,7 +27,6 @@ export default function CTA({
   variant,
   product,
   wishlistItems,
-  onWishlistUpdateAction,
   isAuthenticated
 }: CTAProps) {
         // WIP: Create new button that will accept variants to change the text and might even the colors, plus can be disabled. like the button bellow from medusa ui
@@ -40,7 +38,6 @@ export default function CTA({
                     <WishlistToggle 
                         variantId={selectedVariant?.id} 
                         wishlistItems={wishlistItems}
-                        onWishlistUpdateAction={onWishlistUpdateAction}
                         isAuthenticated={isAuthenticated}
                     />
                 </div>

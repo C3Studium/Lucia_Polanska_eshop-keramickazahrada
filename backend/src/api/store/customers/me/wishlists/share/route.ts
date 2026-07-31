@@ -1,6 +1,6 @@
 import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework";
 import { MedusaError } from "@medusajs/framework/utils";
-import jwt from "jsonwebtoken"
+import jwt, { type SignOptions } from "jsonwebtoken"
 
 export async function POST(
   req: AuthenticatedMedusaRequest,
@@ -39,12 +39,12 @@ export async function POST(
 
   const { http } = req.scope.resolve("configModule").projectConfig
 
-  const expiresIn = (http.jwtExpiresIn ?? "7d") as string;
+  const expiresIn = (http.jwtExpiresIn ?? "7d") as SignOptions["expiresIn"];
 
   const wishlistToken: string = jwt.sign(
     { wishlist_id: data[0].id },
     http.jwtSecret!,
-    { expiresIn: expiresIn as import("ms").StringValue }
+    { expiresIn }
   )
 
   return res.json({

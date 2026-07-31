@@ -10,7 +10,6 @@ import { initiatePaymentSession } from "@lib/data/cart"
 import {
   extractComgateRedirectUrl,
   fromComgateOptionId,
-  getComgateMethodLogo,
   toComgateOptionId,
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
@@ -21,6 +20,7 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer, {
   StripeCardContainer,
 } from "@modules/checkout/components/payment-container"
+import ComgatePaymentSelector from "@modules/common/components/comgate-payment-selector"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -76,18 +76,10 @@ const Payment = ({
     return activeSession?.provider_id ?? ""
   })
 
-  const displayPaymentMethods = useMemo(() => {
-    return availablePaymentMethods.flatMap((provider) => {
-      if (!isComgate(provider.id)) return [provider]
-
-      return comgateMethods.length
-        ? comgateMethods.map((method) => ({
-            id: toComgateOptionId(method.id),
-            comgateMethod: method,
-          }))
-        : legacyComgateOptions.map(({ id }) => ({ id }))
-    })
-  }, [availablePaymentMethods, comgateMethods])
+  const nonComgatePaymentMethods = useMemo(
+    () => availablePaymentMethods.filter((provider) => !isComgate(provider.id)),
+    [availablePaymentMethods]
+  )
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -183,6 +175,12 @@ const Payment = ({
       )
       setIsLoading(false)
     }
+  }
+
+  const selectComgate = (optionId: string) => {
+    if (isLoading) return
+    setSelectedPaymentMethod(optionId)
+    setError(null)
   }
 
   const setPaymentMethod = async (method: string) => {
@@ -283,62 +281,51 @@ const Payment = ({
                 <span>Vyberte způsob úhrady</span>
                 <p>
                   {hasComgate
-                    ? "Volbou metody potvrzujete objednávku a přejdete rovnou k bezpečné platbě."
+                    ? "Vyberte metodu. Objednávku potvrdíte tlačítkem a přejdete k bezpečné platbě."
                     : "Platbu dokončíte bezpečně v následujícím kroku."}
                 </p>
               </div>
-              <RadioGroup
-                className={styles.methodList}
-                value={selectedPaymentMethod}
-                onChange={(value: string) => void setPaymentMethod(value)}
-                aria-label="Způsob platby"
-              >
-                {displayPaymentMethods.map((paymentMethod) => {
-                  const methodInfo = paymentMethod.comgateMethod as
-                    | ComgatePaymentMethod
-                    | undefined
-                  const paymentMethodInfo = methodInfo
-                    ? {
-                        title: methodInfo.name_short || methodInfo.name,
-                        category:
-                          methodInfo.groupLabel || "Bezpečná platba Comgate",
-                        detail:
-                          isLoading &&
-                          selectedPaymentMethod === paymentMethod.id
-                            ? "Otevíráme bezpečnou platbu…"
-                            : methodInfo.description ||
-                              "Klepnutím přejdete přímo k platbě.",
-                        logo: getComgateMethodLogo(methodInfo),
-                      }
-                    : undefined
+              {hasComgate && (
+                <ComgatePaymentSelector
+                  methods={comgateMethods}
+                  selectedOptionId={selectedPaymentMethod}
+                  onSelect={selectComgate}
+                  onConfirm={() => openComgate(selectedPaymentMethod)}
+                  disabled={isLoading}
+                  isSubmitting={isLoading}
+                />
+              )}
 
-                  return isStripeFunc(paymentMethod.id) ? (
-                    <StripeCardContainer
-                      key={paymentMethod.id}
-                      paymentProviderId={paymentMethod.id}
-                      selectedPaymentOptionId={selectedPaymentMethod}
-                      paymentInfoMap={paymentInfoMap}
-                      setCardBrand={setCardBrand}
-                      setError={setError}
-                      setCardComplete={setCardComplete}
-                    />
-                  ) : (
-                    <PaymentContainer
-                      key={paymentMethod.id}
-                      paymentInfoMap={paymentInfoMap}
-                      paymentProviderId={paymentMethod.id}
-                      selectedPaymentOptionId={selectedPaymentMethod}
-                      paymentMethodInfo={paymentMethodInfo}
-                      disabled={isLoading}
-                      onSelectedAction={
-                        isComgate(paymentMethod.id)
-                          ? () => void openComgate(paymentMethod.id)
-                          : undefined
-                      }
-                    />
-                  )
-                })}
-              </RadioGroup>
+              {nonComgatePaymentMethods.length > 0 && (
+                <RadioGroup
+                  className={styles.methodList}
+                  value={selectedPaymentMethod}
+                  onChange={(value: string) => void setPaymentMethod(value)}
+                  aria-label="Další způsoby platby"
+                >
+                  {nonComgatePaymentMethods.map((paymentMethod) =>
+                    isStripeFunc(paymentMethod.id) ? (
+                      <StripeCardContainer
+                        key={paymentMethod.id}
+                        paymentProviderId={paymentMethod.id}
+                        selectedPaymentOptionId={selectedPaymentMethod}
+                        paymentInfoMap={paymentInfoMap}
+                        setCardBrand={setCardBrand}
+                        setError={setError}
+                        setCardComplete={setCardComplete}
+                      />
+                    ) : (
+                      <PaymentContainer
+                        key={paymentMethod.id}
+                        paymentInfoMap={paymentInfoMap}
+                        paymentProviderId={paymentMethod.id}
+                        selectedPaymentOptionId={selectedPaymentMethod}
+                        disabled={isLoading}
+                      />
+                    )
+                  )}
+                </RadioGroup>
+              )}
             </>
           )}
 

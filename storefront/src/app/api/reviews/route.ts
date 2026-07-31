@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { getAuthHeaders } from "@lib/data/cookies"
 
 export async function POST(req: Request) {
   try {
@@ -19,13 +19,17 @@ export async function POST(req: Request) {
       )
     }
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get("_medusa_jwt")?.value
-    if (!token) {
+    const authHeaders = await getAuthHeaders()
+    if (!("authorization" in authHeaders)) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const backend = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
+    const backend = (
+      process.env.MEDUSA_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
+      ""
+    ).replace(/\/+$/, "")
+
     if (!backend) {
       return NextResponse.json(
         { message: "Backend URL is not configured" },
@@ -39,7 +43,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${token}`,
+        ...authHeaders,
         ...(publishableKey
           ? { "x-publishable-api-key": publishableKey, "x-publishable-key": publishableKey }
           : {}),
@@ -71,6 +75,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(data ?? { success: true }, { status: 200 })
   } catch (err) {
+    console.error("[Reviews proxy] Failed to create review:", err)
     return NextResponse.json(
       { message: "Unexpected error while creating review" },
       { status: 500 }
