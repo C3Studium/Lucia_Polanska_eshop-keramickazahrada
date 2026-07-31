@@ -8,7 +8,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    gap: 1rem;
+    gap: 0.55rem;
 
     @include vb((
         lg: (flex-wrap: wrap),

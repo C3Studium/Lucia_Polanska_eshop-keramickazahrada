@@ -8,7 +8,7 @@ export const iconLinks = [
         alt: "search Icon button",
         width: 24,
         height: 24,
-        href: "/search"
+        href: "/store"
     },
     {
         src: "/assets/icons/bookmark.svg",

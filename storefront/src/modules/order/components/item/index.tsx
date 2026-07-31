@@ -1,5 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
-import { Divider, Table } from "@medusajs/ui"
+import { Table } from "@medusajs/ui"
 import styles from "../styles/item.module.scss"
 
 import LineItemOptions from "@modules/common/components/line-item-options"
@@ -26,7 +26,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
           {item.product_title}
         </p>
         <LineItemOptions variant={item.variant} data-testid="product-variant" />
-        <div className="text-sm text-ui-fg-muted">
+        <div className={styles.dimensions}>
           {!!item.metadata?.width && <div>Šířka: {item.metadata.width as number}cm</div>}
           {!!item.metadata?.height && <div>Výška: {item.metadata.height as number}cm</div>}
         </div>
@@ -36,7 +36,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
         <span className={styles.priceWrap}>
           <span className={styles.unitWrap}>
             <span className={styles.quantity}>
-              <span data-testid="product-quantity">{item.quantity}</span>x{" "}
+              <span data-testid="product-quantity">{item.quantity}</span> ×{" "}
             </span>
             <LineItemUnitPrice
               item={item}

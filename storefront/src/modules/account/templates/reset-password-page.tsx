@@ -2,13 +2,21 @@
 
 import { sdk } from "@lib/config"
 import { Toaster, toast } from "@medusajs/ui"
-import { useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeSlash } from "@medusajs/icons"
-import styles from "./styles/reset-password.module.scss"
-import { useFormStatus } from "react-dom"
-import { motion, useScroll, useTransform } from "framer-motion"
-import Image from "next/image"
+import AuthPortal from "../components/auth-portal"
+import {
+  PasswordToggle,
+  SupportButton,
+  SupportField,
+  SupportForm,
+  SupportHeader,
+  SupportLink,
+  SupportLinks,
+  SupportNotice,
+  SupportPanel,
+} from "../components/auth-support"
 
 export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
@@ -19,32 +27,11 @@ export default function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loginLoading, setLoginLoading] = useState(false)
   const router = useRouter()
-  const ref = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token")
+  const email = searchParams.get("email") ?? ""
 
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  })
-
-  const y = useTransform(scrollYProgress, [0, 1], ["-5%", "10%"])
-
-  const searchParams = useMemo(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-    return new URLSearchParams(window.location.search)
-  }, [])
-  const token = useMemo(() => {
-    return searchParams?.get("token")
-  }, [searchParams])
-    const email = useMemo(() => {
-    const value = searchParams?.get("email") ?? ""
-    return value
-  }, [searchParams])
-
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!token) {
       toast.error("Chybí token.")
@@ -60,20 +47,26 @@ export default function ResetPasswordForm() {
     }
     setLoading(true)
 
-    sdk.auth.updateProvider("customer", "emailpass", {
-      email,
-      password,
-    }, token)
-    .then(() => {
-      toast.success("Password reset successfully!")
-      setSuccess(true)
-    })
-    .catch((error) => {
-      toast.error(`Couldn't reset password: ${error.message}`)
-    })
-    .finally(() => {
-      setLoading(false)
-    })
+    sdk.auth
+      .updateProvider(
+        "customer",
+        "emailpass",
+        {
+          email,
+          password,
+        },
+        token
+      )
+      .then(() => {
+        toast.success("Heslo bylo úspěšně změněno.")
+        setSuccess(true)
+      })
+      .catch((error) => {
+        toast.error(`Heslo se nepodařilo změnit: ${error.message}`)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   // Auto-login handler
@@ -95,148 +88,97 @@ export default function ResetPasswordForm() {
   }
 
   return (
-   <section className={styles.section} ref={ref}>
-    <div className={styles.ImageContainer}>
-      <motion.div 
-        className={styles.Image}
-        style={{ y }}
-      >
-        <div className={styles.ImageOverlay} />
-        <Image 
-          src={"/assets/img/img/1.jpg"}
-          alt="Reset Password"
-          layout="fill"
-          objectFit="cover"
+    <AuthPortal mode="recovery">
+      <SupportPanel>
+        <SupportHeader
+          eyebrow="Nové přístupové údaje · 03"
+          title={
+            <>
+              Nové <em>heslo.</em>
+            </>
+          }
+          description={
+            "Zvolte nové heslo a vraťte se ke svým objednávkám a uloženým objektům."
+          }
         />
-      </motion.div>
-    </div>
-    <div className={styles.formContainer}>
-      <div className={styles.formHeader}>
-        <h1>Resetovat heslo</h1>
-        <p>Zadejte nové heslo pro svůj účet.</p>
-      </div>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <label>Nové heslo</label>
-        <div className={styles.inputWrap}>
-          <input 
-            placeholder="Heslo" 
-            type={showPassword ? "text" : "password"}
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)}
-            className={styles.input}
-            disabled={success}
-          />
-          <button
-            type="button"
-            className={styles.toggle}
-            tabIndex={-1}
-            onClick={() => setShowPassword((v) => !v)}
-          >
-            {showPassword ? <Eye /> : <EyeSlash />}
-          </button>
-        </div>
-        <label>Potvrdit heslo</label>
-        <div className={styles.inputWrap}>
-          <input 
-            placeholder="Potvrdit heslo" 
-            type={showConfirmPassword ? "text" : "password"}
-            value={confirmPassword} 
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={styles.input}
-            disabled={success}
-          />
-          <button
-            type="button"
-            className={styles.toggle}
-            tabIndex={-1}
-            onClick={() => setShowConfirmPassword((v) => !v)}
-          >
-            {showConfirmPassword ? <Eye /> : <EyeSlash />}
-          </button>
-        </div>
-        <ClickButton
-          type="submit"
-          disabled={loading || success}
-          text="Resetovat heslo"
-        />
-        {success && (
-          <div className={styles.successActions}>
-            <ClickButton
-              type="button"
-              onClickAction={handleAutoLogin}
-              disabled={loginLoading}
-              text={loginLoading ? "Logging in..." : "Go to My Account"}
+        <SupportForm onSubmit={handleSubmit}>
+          <SupportField label="Nové heslo" index="01" htmlFor="new-password">
+            <input
+              id="new-password"
+              placeholder="Alespoň 8 znaků"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={success}
+              autoComplete="new-password"
+              minLength={8}
+              required
             />
-          </div>
+            <PasswordToggle
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
+            >
+              {showPassword ? <Eye /> : <EyeSlash />}
+            </PasswordToggle>
+          </SupportField>
+          <SupportField
+            label="Potvrzení hesla"
+            index="02"
+            htmlFor="confirm-password"
+          >
+            <input
+              id="confirm-password"
+              placeholder="Zopakujte nové heslo"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={success}
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+            <PasswordToggle
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              aria-label={
+                showConfirmPassword
+                  ? "Skrýt potvrzení hesla"
+                  : "Zobrazit potvrzení hesla"
+              }
+            >
+              {showConfirmPassword ? <Eye /> : <EyeSlash />}
+            </PasswordToggle>
+          </SupportField>
+          <SupportButton type="submit" disabled={loading || success}>
+            {loading ? "Ukládáme…" : "Nastavit nové heslo"}
+          </SupportButton>
+          {success && (
+            <>
+              <SupportNotice eyebrow="Přístup obnoven" tone="success">
+                Heslo je bezpečně změněné.
+              </SupportNotice>
+              <SupportButton
+                type="button"
+                onClick={handleAutoLogin}
+                disabled={loginLoading}
+                variant="secondary"
+              >
+                {loginLoading ? "Přihlašujeme…" : "Pokračovat do účtu"}
+              </SupportButton>
+            </>
+          )}
+        </SupportForm>
+        {!success && (
+          <SupportLinks>
+            <SupportLink href="/login" label="Znám své heslo">
+              Přihlásit se
+            </SupportLink>
+            <SupportLink href="/forgot-password" label="Odkaz nefunguje">
+              Poslat nový
+            </SupportLink>
+          </SupportLinks>
         )}
         <Toaster />
-      </form>
-    </div>
-    
-   </section>
+      </SupportPanel>
+    </AuthPortal>
   )
-}
-
-
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-    type?: "button" | "submit";
-    className?: string;
-    "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const isSubmitting = type === "submit" ? pending : false;
-    const isDisabled = disabled || isSubmitting;
-    const handleClick = onClickAction ?? ClickAction;
-
-  return (
-    <div className={className ? `${styles.ClickButton} ${className}` : styles.ClickButton}>
-      <button
-        type={type}
-        className={styles.button}
-        onClick={handleClick}
-        disabled={isDisabled}
-        aria-busy={isDisabled || undefined}
-        onMouseEnter={() => setIsActive(true)}
-        onMouseLeave={() => setIsActive(false)}
-        data-testid={dataTestId}
-      >
-        <motion.div
-          className={styles.slider}
-            animate={{top: isActive ? "-100%" : "0%"}}
-            transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-          >
-          <div
-            className={styles.el}
-            style={{ backgroundColor: "var(--darkOlive)" }}
-            >
-                <PerspectiveText label={text}/>
-          </div>
-          <div
-            className={styles.el}
-            style={{ backgroundColor: "var(--bgBlack)" }}
-            >
-              <PerspectiveText label={text} />
-          </div>
-        </motion.div>
-      </button>
-    </div>
-  )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-    <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
 }

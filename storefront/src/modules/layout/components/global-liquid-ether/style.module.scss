@@ -1,0 +1,23 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.root {
+  --ambient-opacity: 0.1;
+
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  contain: strict;
+  pointer-events: none;
+  opacity: var(--ambient-opacity);
+  filter: saturate(0.82) contrast(1.02);
+  mix-blend-mode: normal;
+  transition: opacity 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.root[data-ambient-category="legal"],
+.root[data-ambient-category="commerce"],
+.root[data-ambient-category="account"] {
+  z-index: 0;
+  filter: saturate(0.68) contrast(0.96);
+}
+

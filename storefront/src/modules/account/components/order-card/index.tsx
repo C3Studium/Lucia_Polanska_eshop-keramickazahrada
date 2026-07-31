@@ -1,20 +1,22 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
+import { motion } from "framer-motion"
 
 import Thumbnail from "@modules/products/components/thumbnail"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import s from "./style.module.scss"
-import { motion } from 'framer-motion';
+import PremiumActionLink from "@modules/common/components/premium-action-link"
+import { accountListItemVariants } from "../../motion"
+import AccountInteractiveSurface from "../account-interactive-surface"
 
 type OrderCardProps = {
   order: HttpTypes.StoreOrder
 }
 
 const OrderCard = ({ order }: OrderCardProps) => {
-  const numberOfLines = useMemo(() => {
+  const numberOfItems = useMemo(() => {
     return (
       order.items?.reduce((acc, item) => {
         return acc + item.quantity
@@ -22,132 +24,113 @@ const OrderCard = ({ order }: OrderCardProps) => {
     )
   }, [order])
 
-  const numberOfProducts = useMemo(() => {
-    return order.items?.length ?? 0
-  }, [order])
+  const visibleItems = order.items?.slice(0, 5) ?? []
+  const hiddenItemsCount = Math.max(
+    (order.items?.length ?? 0) - visibleItems.length,
+    0
+  )
 
   const formattedDate = useMemo(() => {
-    const date = new Date(order.created_at)
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    return `${day}.${month}.${year} ${hours}:${minutes}`
+    return new Intl.DateTimeFormat("cs-CZ", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+      .format(new Date(order.created_at))
+      .replace(",", " ·")
   }, [order.created_at])
 
   return (
-    <div className={s.root} data-testid="order-card">
-      <div className={s.header}>
-        <span className={s.headerText}>
-          Objednávka: {" "}
-        </span>
-        <span className={s.headerNumber} data-testid="order-display-id">#{order.display_id}</span>
-      </div>
-      <div className={s.meta}>
-        <span className={s.metaLabel}>Detaily: {" "}</span>
-        <ul className={s.metaList}>
-          <li className={s.metaItem}>
-            <span>Vytvořeno: {" "}</span>
-            <span className={s.metaDate} data-testid="order-created-at">
-              {formattedDate}
-            </span>
-          </li>
-          <li className={s.metaItem}>
-            <span>Celková částka: {" "}</span>
-            <span className={s.metaAmount} data-testid="order-amount">
+    <motion.article
+      className={s.root}
+      variants={accountListItemVariants}
+      data-testid="order-card"
+    >
+      <AccountInteractiveSurface
+        className={s.interactiveRow}
+        contentClassName={s.rowContent}
+      >
+        <div className={s.identity}>
+          <span className={s.label}>Objednávka</span>
+          <strong className={s.orderNumber} data-testid="order-display-id">
+            #{order.display_id}
+          </strong>
+        </div>
+
+        <dl className={s.meta}>
+          <div>
+            <dt>Vytvořeno</dt>
+            <dd>
+              <time data-testid="order-created-at">{formattedDate}</time>
+            </dd>
+          </div>
+          <div>
+            <dt>Hodnota</dt>
+            <dd className={s.metaAmount} data-testid="order-amount">
               {convertToLocale({
                 amount: order.total,
                 currency_code: order.currency_code,
               })}
-            </span>
-          </li>
-          <li className={s.metaItem}>
-            <span>Počet produktů: {" "}</span>
-            <span className={s.metaLines}>{`${numberOfLines} ${
-              numberOfLines > 1 ? "produkty" : "produkt"
-            }`}</span>
-          </li>
-        </ul>
-      </div>
-      <div className={s.productsContainer}>
-        <div className={s.grid}>
-          {order.items?.map((i) => {
-            return (
-              <div
-                key={i.id}
-                className={s.item}
-                data-testid="order-item"
-              >
-                <Thumbnail thumbnail={i.thumbnail} images={[]} size="full" />
-                <div className={s.itemInfo}>
-                  <span className={s.itemTitle} data-testid="item-title">
-                    {i.title}
+            </dd>
+          </div>
+          <div>
+            <dt>Počet objektů</dt>
+            <dd>{numberOfItems} ks</dd>
+          </div>
+        </dl>
+
+        <div
+          className={s.products}
+          aria-label={`${numberOfItems} kusů v objednávce`}
+        >
+          <span className={s.label}>Výběr</span>
+          <div className={s.productIcons} data-testid="order-items-preview">
+            {visibleItems.map((item) => {
+              return (
+                <div
+                  key={item.id}
+                  className={s.productIcon}
+                  data-testid="order-item"
+                  aria-label={`${item.title}, ${item.quantity} ks`}
+                  title={`${item.title} · ${item.quantity} ks`}
+                >
+                  <Thumbnail
+                    thumbnail={item.thumbnail}
+                    images={[]}
+                    size="full"
+                  />
+                  <span className={s.visuallyHidden} data-testid="item-title">
+                    {item.title}
                   </span>
-                  <span className={s.multiply}>x</span>
-                  <span data-testid="item-quantity">{i.quantity}</span>
+                  <span className={s.quantityBadge} data-testid="item-quantity">
+                    {item.quantity}
+                  </span>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+            {hiddenItemsCount > 0 && (
+              <span
+                className={s.moreItems}
+                aria-label={`Dalších ${hiddenItemsCount} položek`}
+              >
+                +{hiddenItemsCount}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className={s.actions}>
-        <LinkButton 
-          text="Zobrazit detaily"
-          href={`/account/orders/details/${order.id}`}
-        />
-      </div>
-    </div>
+
+        <div className={s.actions}>
+          <PremiumActionLink
+            href={`/account/orders/details/${order.id}`}
+            text="Otevřít záznam"
+            className={s.detailsLink}
+          />
+        </div>
+      </AccountInteractiveSurface>
+    </motion.article>
   )
 }
 
 export default OrderCard
-
-type LinkButtonProps = {
-    text: string;
-    href: string; 
-}
-
-// This is base button for every button animation inside the website.
-
-function LinkButton({ text, href } : LinkButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    return (
-        <LocalizedClientLink href={href} className={s.LinkButtonS}>
-            <button 
-                className={s.button}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-            >
-                <motion.div 
-                    className={s.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-                >
-                    <div 
-                        className={s.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={s.el}
-                        style={{ backgroundColor: "var(--bgPrimary)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                </motion.div>
-            </button>
-        </LocalizedClientLink>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={s.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
-}

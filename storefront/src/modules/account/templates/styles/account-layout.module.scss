@@ -1,328 +1,155 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-/* Account Layout styles (Sass module) */
-
 .section {
-	flex: 1;
-	// small:py-12 and margin previously set via m-[5vh]
-    overflow: hidden;
-    max-width: 100vw;
-	min-height: 100dvh;
-	padding: 10dvh 2.5dvw;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100svh;
+  padding: clamp(96px, 11vh, 150px) clamp(6px, 1vw, 20px) clamp(38px, 6vh, 80px);
+  overflow: clip;
+  background:
+    radial-gradient(circle at 76% 16%, rgba(199, 196, 154, .26), transparent 30rem),
+    radial-gradient(circle at 20% 82%, rgba(255, 232, 214, .28), transparent 34rem),
+    #eee8d6;
+  color: #212222;
+}
 
-	@media (min-width: 768px) {
-		padding-top: 3rem; // py-12
-		padding-bottom: 3rem;
-	}
+.section::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+  content: "";
+  opacity: .12;
+  pointer-events: none;
+}
 
-	@include hb((
-		lg: (min-height: 110dvh),
-		mdt: (min-height: 120dvh),
-		md: (min-height: 150dvh),
-		sm: (min-height: 120dvh),
-		xs: (min-height: 240dvh),
-		xxs: (min-height: 240dvh),
-	));
+.archiveWord {
+  position: fixed;
+  right: -2vw;
+  bottom: -3vh;
+  z-index: -1;
+  color: transparent;
+  font: 400 clamp(9rem, 23vw, 28rem)/.7 "Sentient-Regular", serif;
+  letter-spacing: -.08em;
+  -webkit-text-stroke: 1px rgba(33, 34, 34, .055);
+  pointer-events: none;
+}
 
-	@include vb((
-		lg: (min-height: 80dvh),
-		md: (min-height: 110dvh),
-		s: (min-height: 130dvh),
-		sm: (min-height: 140dvh),
-		xs: (min-height: 160dvh),
-	));
+.container {
+  width: min(100wv, 1920px);
+  min-height: calc(100svh - clamp(140px, 17vh, 215px));
+  margin-inline: auto;
+  padding: 0 2.5vw
+}
 
+.verifiedGrid {
+  display: grid;
+  grid-template-columns: clamp(330px, 21vw, 400px) minmax(0, 1fr);
+  min-height: calc(100svh - clamp(140px, 17vh, 215px));
+  border-top: 1px solid rgba(33, 34, 34, .2);
+  border-bottom: 1px solid rgba(33, 34, 34, .2);
+}
 
-	.container {
-		// exact mapping of: flex-1 h-full max-w-5xl mx-auto pt-[2.5dvh] bg-white flex flex-col rounded-2xl content-container
-		flex: 1; // flex-1
-		width: 100%; // content-container w-full
-		height: 90%; // h-full
-		max-width: 70rem; // max-w-5xl overrides content-container
-		background: var(--bgWhite); // bg-white
-		display: flex; // flex
-		flex-direction: column; // flex-col
-		border-radius: 25px 25px 0 0;
-		
+.nav {
+  position: relative;
+  min-width: 0;
+  padding: clamp(34px, 3.2vw, 54px) clamp(30px, 3vw, 50px);
+  overflow: visible;
+  background: #20221d;
+  color: #f7e5d5;
+}
 
-		// --- Horizontal (landscape) responsiveness ---
-		@include hb((
-			huge: (max-width: 80vw, margin-top: 5dvh),
-			xl: (max-width: 80vw, margin-top: 5dvh),
-			lg: (max-width: 80vw, margin-top: 5dvh),
-			md: (max-width: 80vw, height: 90%, margin-top: 5dvh),
-			mdt: (max-width: 80vw, height: 80%, margin-top: 5dvh),
-			sm: (max-width: 80vw, height: 100%, margin-top: 5dvh),
-			xs: (max-width: 90vw, height: 100%, margin-top: 5dvh),
-			xxs: (max-width: 95vw, height: 100%, margin-top: 5dvh),
-		));
+.nav::after {
+  position: absolute;
+  top: 0;
+  right: -1px;
+  width: 1px;
+  height: 100%;
+  background: rgba(33, 34, 34, .2);
+  content: "";
+}
 
-		// --- Vertical (portrait) responsiveness ---
-		@include vb((
-			lg: (max-width: 80vw),
-			md: (max-width: 80vw),
-			s: (max-width: 90vw),
-			sm: (max-width: 90vw),
-			xs: (max-width: 90vw),
-		));
+.children {
+  position: relative;
+  min-width: 0;
+  padding: clamp(72px, 6vw, 108px) clamp(32px, 3.6vw, 68px);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, .12), transparent 34%),
+    rgba(247, 240, 228, .78);
+}
 
-		.verifiedGrid {
-			display: grid;
-			grid-template-columns: 1fr;
-			width: 100%;
-			height: 100%;
+.children::before {
+  position: absolute;
+  top: clamp(22px, 3vw, 44px);
+  right: clamp(26px, 4vw, 66px);
+  color: rgba(33, 34, 34, .42);
+  font: 10px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  content: "Keramická zahrada · soukromý archiv";
+}
 
-			@media (min-width: 550px) {
-				// small:grid-cols-[240px_1fr]
-				grid-template-columns: 240px 1fr;
-			}
+.center,
+.centerZ1 {
+  width: 100%;
+  min-height: calc(100svh - clamp(140px, 17vh, 215px));
+}
 
-			// --- Horizontal (landscape) responsiveness ---
-			@include hb((
-				huge: (padding-top: 4rem, padding-bottom: 4rem),
-				lg: (grid-template-columns: 260px 1fr),
-				md: (grid-template-columns: 240px 1fr, padding-top: 3rem, padding-bottom: 3rem),
-				mdt: (grid-template-columns: 240px 1fr),
-				sm: (grid-template-columns: 240px 1fr, padding-top: 3rem, padding-bottom: 3rem),
-				xs: (grid-template-columns: 220px 1fr, padding-top: 3rem, padding-bottom: 3rem),
-				xxs: (grid-template-columns: 200px 1fr, padding-top: 3rem, padding-bottom: 3rem),
-			));
+.centerZ1 {
+  display: grid;
+  place-items: center;
+}
 
-            // --- Vertical (portrait) responsiveness ---
-            @include vb((
-                lg: (grid-template-columns: 200px 1fr),
-                md: (grid-template-columns: 200px 1fr),
-                s: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
-                sm: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
-                xs: (grid-template-columns: 1fr, grid-template-rows: auto 1fr, gap: 0.25rem, width: 95vw),
-            ));
-			.nav{
+.section :global(a:focus-visible),
+.section :global(button:focus-visible),
+.section :global(input:focus-visible),
+.section :global(select:focus-visible),
+.section :global(textarea:focus-visible) {
+  outline: 2px solid #9a6f65;
+  outline-offset: 3px;
+}
 
-				@include vb((
-					s: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), max-width: 90vw),
-					sm: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), padding: 5vh 2.5vw, max-width: 90vw),
-					xs: (border-right: none, border-bottom: 1px solid var(--border, #e5e7eb), padding: 5vh 2.5vw, max-width: 90vw),
-				));
+@media (max-width: 1180px) {
+  .verifiedGrid {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
 
-				padding: 5vh 2.5vw;
-				width: 100%;
-				height: 100%;
-				border-right: 1px solid var(--border, #e5e7eb); // border-gray-200
-			}
-			.children {
-				flex: 1;
-				@include vb((
-					s: (max-width: 90vw),
-					sm: (padding: 5vh 2.5vw, max-width: 90vw),
-					xs: (padding: 5vh 2.5vw, max-width: 90vw),
-				));
-			}
-		}
+  .children {
+    padding: 68px 30px 52px;
+  }
 
-		.center {
-			display: flex;
-			width: 100%;
-			height: 80%;
-			align-items: center;
-			justify-content: center;
-			margin-top: 5dvh;
+  .nav {
+    padding-inline: 26px;
+  }
+}
 
-			@include hb((
-				lg: (height: 80%),
-			));
-		}
+@media (max-width: 760px) {
+  .section {
+    padding: 82px 10px 28px;
+  }
 
-		.centerZ1 {
-			display: flex;
-			width: 100%;
-			height: 80%;
-			align-items: center;
-			justify-content: center;
-			z-index: 1; // z-1
-		}
-	}
-	.footer {
-		position: relative; // to allow layering if needed
-		z-index: 2; // preserve z-2 intent
-		display: flex;
-		flex-direction: row;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 2rem; // gap-8
-		border-top: none;
-		background-color: var(--bgWhite);
-		border-radius: 0 0 25px 25px;
-		padding: 3rem 2.5dvw 3rem 2.5dvw;
-		width: 100%;
-		// --- Horizontal (landscape) responsiveness ---
-		@include hb((
-			huge: (max-width: 80vw),
-			xl: (max-width: 80vw),
-			lg: (max-width: 80vw),
-			md: (max-width: 80vw, height: 90%),
-			mdt: (max-width: 80vw, height: 80%),
-			sm: (max-width: 80vw, height: 100%),
-			xs: (max-width: 90vw, height: 100%),
-			xxs: (max-width: 95vw, height: 100%),
-		));
+  .verifiedGrid {
+    display: block;
+    min-height: 0;
+  }
 
-		// --- Vertical (portrait) responsiveness ---
-		@include vb((
-			lg: (max-width: 80vw),
-			md: (max-width: 80vw),
-			s: (max-width: 90vw, padding: 0 2.5dvw),
-			sm: (max-width: 90vw),
-			xs: (max-width: 90vw),
-		));
+  .nav {
+    padding: 12px 8px 16px;
+  }
 
-		@include hb((
-			lg: (padding: 2rem 2.5dvw),
-			mdt: (padding: 1.5rem 2.5dvw),
-			md: (padding: 1rem 2.5dvw),
-			sm: (padding: 1rem 2.5dvw),
-			xs: (padding: 1rem 2.5dvw, gap: 1rem),
-			xxs: (padding: 0.5rem 0.5dvw, gap: 1rem),
-		));
+  .children {
+    padding: 62px 18px 42px;
+  }
 
-		@include vb((
-			s: (padding: 2rem 2.5dvw, gap: 1rem),
-			sm: (padding: 1rem 2.5dvw, gap: 1rem),
-			xs: (padding: 1rem 2.5dvw, gap: 1rem),
-		));
+  .children::before {
+    top: 24px;
+    right: 18px;
+    font-size: 8px;
+  }
 
-		.text{
-			width: 70%;
-			height: auto;
-			display: flex;
-			flex-direction: column;
-			align-items: flex-start;
-			justify-content: center;
-			gap: 1rem;
-
-			@include hb((
-				sm: (width: 80%),
-				xs: (width: 90%, gap: 0.25rem),
-				xxs: (width: 100%, gap: 0.25rem),
-			));
-
-			.title{
-				font-size: 2rem;
-				font-weight: 300;
-				font-family: "Sansation-regular";
-				margin: 0;
-				color: var(--blackText);
-
-				// --- Responsive typography ---
-				@include hb((
-					huge: (font-size: 2rem !important),
-					xl: (font-size: 2rem !important),
-					lg: (font-size: 1.8rem),
-					md: (font-size: 1.8rem),
-					mdt: (font-size: 1.8rem),
-					sm: (font-size: 1.6rem),
-					xs: (font-size: 1.3rem),
-					xxs: (font-size: 1.3rem),
-				));
-
-				@include vb((
-					lg: (font-size: 1.8rem),
-					md: (font-size: 1.8rem),
-					s: (font-size: 1.6rem),
-					sm: (font-size: 1.6rem),
-					xs: (font-size: 1.45rem),
-				));
-			}
-
-			.textSpan{
-				font-size: 1.1rem;
-				font-weight: 300;
-				font-family: "Sansation-light";
-				margin: 0;
-				color: var(--blackText);
-
-				// --- Responsive typography ---
-				@include hb((
-					huge: (font-size: 1.1rem),
-					xl: (font-size: 1rem),
-					lg: (font-size: 1rem),
-					md: (font-size: 1rem),
-					mdt: (font-size: 1rem),
-					sm: (font-size: 0.9rem),
-					xs: (font-size: 0.8rem !important),
-					xxs: (font-size: 0.8rem !important),
-				));
-
-				@include vb((
-					s: (font-size: 0.9rem !important),
-					sm: (font-size: 0.9rem !important),
-					xs: (font-size: 0.8rem !important),
-				));
-			}
-
-
-		}
-
-		.Link{
-			width: 30%;
-			height: auto;
-			display: flex;
-			justify-content: flex-end;
-			align-items: center;
-			a{
-				font-size: 1.3rem;
-				font-weight: 300;
-				font-family: "Sansation-light";
-				color: var(--blackText);
-				text-decoration: underline;
-
-					p{
-						font-size: 1.3rem;
-						font-weight: 300;
-						font-family: "Sansation-light";
-						color: var(--blackText);
-
-						@include hb((
-							lg: (font-size: 1.2rem !important),
-							mdt: (font-size: 1.3rem !important),
-							md: (font-size: 1.2rem !important),
-							sm: (font-size: 1.2rem !important),
-							xs: (font-size: 1.1rem !important),
-							xxs: (font-size: 1rem !important),
-						));
-
-						@include vb((
-							md: (font-size: 1.2rem !important),
-							s: (font-size: 1.1rem !important),
-							sm: (font-size: 1.1rem !important),
-							xs: (font-size: 1rem !important),
-						));
-					}
-				}
-			}
-
-		@media (min-width: 550px) {
-			// small:flex-row
-			flex-direction: row;
-			border-top: 1px solid var(--border, #e5e7eb); // small:border-t border-gray-200
-		}
-
-		// --- Horizontal (landscape) responsiveness ---
-		@include hb((
-			huge: (padding: 4rem 3dvw, gap: 2.5rem),
-			xl: (padding: 3.5rem 3dvw),
-			sm: (padding: 3rem 2.5dvw),
-			xxs: (flex-direction: column, gap: 1.5rem, padding: 2rem 4dvw, border-radius: 0 0 20px 20px),
-		));
-
-		// --- Vertical (portrait) responsiveness ---
-		@include vb((
-			lg: (padding: 3.5rem 3dvw),
-		));
-		
-
-	}
+  .center,
+  .centerZ1 {
+    min-height: calc(100svh - 110px);
+  }
 }

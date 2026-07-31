@@ -7,8 +7,8 @@ import { retrieveCustomer } from "@lib/data/customer"
 import ProfileTemplate from "@modules/account/templates/profile-template"
 
 export const metadata: Metadata = {
-  title: "Profile",
-  description: "View and edit your Medusa Store profile.",
+  title: "Můj profil",
+  description: "Správa kontaktních a osobních údajů.",
 }
 
 export default async function Profile() {
@@ -27,4 +27,3 @@ export default async function Profile() {
     </main>
   )
 }
-

@@ -1,261 +1,299 @@
-"use client";
-import { useEffect, useMemo, useRef, useState } from "react";
-import Categories from "./Category";
-import ProductList from "./List";
-import NewsLetter from "./NewsLetter";
-import SearchBar from "./SearchBar";
-import Image from "next/image";
-import { HttpTypes } from "@medusajs/types";
-import { sdk } from "@lib/config";
-import { getProductPrice } from "@lib/util/get-product-price";
+"use client"
+
+import { listStoreCatalogue } from "@lib/data/products"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import type { HttpTypes } from "@medusajs/types"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import FilterPanel from "./components/FilterPanel"
+import ProductGrid from "./components/ProductGrid"
+import ShopHero from "./components/ShopHero"
+import ShopToolbar from "./components/ShopToolbar"
+import type { FilterChip, ShopCategory, ShopFilters } from "./types"
+import styles from "./style.module.scss"
 
 type EComProps = {
   countryCode: string
   products: HttpTypes.StoreProduct[]
-  categories?: HttpTypes.StoreProductCategory[]
-  regionId?: string
+  categories?: ShopCategory[]
+  totalCount?: number
+  initialFilters?: Partial<ShopFilters>
+  initialFilterLabel?: string
 }
 
-const PRODUCT_LIMIT = 16;
+const PRODUCT_LIMIT = 16
+const emptyFilters: ShopFilters = {
+  categoryId: "",
+  collectionId: "",
+  isNew: false,
+  onSale: false,
+  priceRange: "",
+  search: "",
+  sort: "featured",
+}
 
-const priceRangeDefs = [
-  { min: 0, max: 300, label: "0 - 300" },
-  { min: 300, max: 500, label: "300 - 500" },
-  { min: 500, max: 1000, label: "500 - 1 000" },
-  { min: 1000, max: 2500, label: "1 000 - 2 500" },
-  { min: 2500, max: Infinity, label: "2 500+" },
-];
+const priceLabels: Record<string, string> = {
+  "0-500": "Do 500 Kč",
+  "500-1000": "500–1 000 Kč",
+  "1000-2500": "1 000–2 500 Kč",
+  "2500+": "Nad 2 500 Kč",
+}
 
-const ECom = ({
+export default function ECom({
   countryCode,
   products: initialProducts,
   categories = [],
-  regionId,
-}: EComProps) => {
-  // Filter states
-  const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory ] = useState("")
-  const [pendingCategory, setPendingCategory] = useState("");
-  const [search, setSearch] = useState("");
-  const [priceRange, setPriceRange] = useState("");
-  const [sale, setSale] = useState(false);
-  const [isNew, setIsNew] = useState(false);
+  totalCount,
+  initialFilters,
+  initialFilterLabel,
+}: EComProps) {
+  const [products, setProducts] = useState(initialProducts)
+  const [filters, setFilters] = useState<ShopFilters>(() => ({
+    ...emptyFilters,
+    ...initialFilters,
+  }))
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const [requestVersion, setRequestVersion] = useState(0)
+  const [resultCount, setResultCount] = useState(
+    totalCount ?? initialProducts.length
+  )
+  const [allLoaded, setAllLoaded] = useState(
+    initialProducts.length >= (totalCount ?? initialProducts.length)
+  )
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const catalogueRef = useRef<HTMLDivElement>(null)
+  const initialQuery = useRef(true)
+  const requestSequence = useRef(0)
+  const filterTrigger = useRef<HTMLElement | null>(null)
 
-  // Infinite scroll & memoization
-  const [products, setProducts] = useState<HttpTypes.StoreProduct[]>(initialProducts);
-  const [offset, setOffset] = useState(initialProducts.length);
-  const [loading, setLoading] = useState(false);
-  const [allLoaded, setAllLoaded] = useState(false);
-
-  const productListRef = useRef<HTMLDivElement>(null);
-
-  // Enrich products with price info
-  const enrichedProducts = useMemo(() =>
-    products.map(product => {
-      const { cheapestPrice } = getProductPrice({ product });
-      return {
-        ...product,
-        cheapestPrice,
-      };
-    })
-  , [products]);
-
-  // Filtering logic
-  const filteredProducts = useMemo(() => {
-    let result = enrichedProducts;
-    if (category) {
-      const selectedCategory = categories.find(cat => cat.name === category);
-      if (selectedCategory && Array.isArray(selectedCategory.products) && selectedCategory.products.length > 0) {
-        const categoryProductIds = selectedCategory.products.map(p => p.id);
-        result = result.filter(product => categoryProductIds.includes(product.id));
-
-        if(subcategory) {
-          result = result.filter(p => p.type?.value === subcategory && categoryProductIds.includes(p.id))
-        }
-      } else {
-        return [];
-      }
-    } else if (subcategory) {
-      // subcategory selected without category
-      const allTypes = enrichedProducts.map(p => p.type?.value)
-      if (!allTypes.includes(subcategory)) return []
-      result = result.filter(p => p.type?.value === subcategory)
-    }
-
-    if(subcategory) {
-      const allTypes = enrichedProducts.map(p => p.type?.value)
-      if ( !allTypes.includes(subcategory)) {
-        return []
-      }
-      result = result.filter(product => product.type?.value === subcategory)
-    }
-    if (priceRange) {
-      const rangeDef = priceRangeDefs.find(r => r.label === priceRange);
-      if (!rangeDef) return [];
-      result = result.filter(product => {
-        const price = Number(product.cheapestPrice?.calculated_price_number ?? NaN);
-        if (isNaN(price)) return false;
-        if (rangeDef.max === Infinity) {
-          return price >= rangeDef.min;
-        }
-        return price >= rangeDef.min && price <= rangeDef.max;
-      });
-    }
-    if (sale) {
-      result = result.filter(product =>
-        product.cheapestPrice?.price_type === "sale"
-      );
-    }
-    if (isNew) {
-      result = result.filter(product => product.created_at && new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-    }
-    if (search) {
-      result = result.filter(product =>
-        product.title?.toLowerCase().includes(search.toLowerCase()) ||
-        product.categories?.some(cat =>
-          cat.name?.toLowerCase().includes(search.toLowerCase())
-        ) || 
-        product.type?.value.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    return result;
-  }, [enrichedProducts, category, priceRange, sale, isNew, search]);
-
-  // Pagination logic (client-side, infinite scroll)
-  const visibleProducts = useMemo(() => {
-    return filteredProducts.slice(0, offset);
-  }, [filteredProducts, offset]);
-
-  // Fetch more products if filteredProducts is less than offset and not all loaded
   useEffect(() => {
-    if (
-      filteredProducts.length < offset &&
-      !loading &&
-      !allLoaded &&
-      products.length < 1000 // or some max you expect
-    ) {
-      setLoading(true);
-      sdk.client
-        .fetch<{ products: HttpTypes.StoreProduct[] }>(
-          "/store/products",
-          {
-            method: "GET",
-            query: {
-              limit: PRODUCT_LIMIT,
-              offset: products.length,
-              fields: "*bundle",
-              region_id: regionId,
-            },
-          }
-        )
-        .then(({ products: newProducts }) => {
-          if (newProducts.length === 0) setAllLoaded(true);
-          setProducts(prev => {
-            const ids = new Set(prev.map(p => p.id));
-            return [...prev, ...newProducts.filter(p => !ids.has(p.id))];
-          });
+    setProducts(initialProducts)
+    setResultCount(totalCount ?? initialProducts.length)
+    setAllLoaded(
+      initialProducts.length >= (totalCount ?? initialProducts.length)
+    )
+  }, [initialProducts, totalCount])
+
+  const updateFilters = useCallback((patch: Partial<ShopFilters>) => {
+    setFilters((current) => ({ ...current, ...patch }))
+  }, [])
+
+  const resetFilters = useCallback(() => setFilters(emptyFilters), [])
+  const openFilters = useCallback(() => {
+    filterTrigger.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    setFiltersOpen(true)
+  }, [])
+  const closeFilters = useCallback(() => {
+    setFiltersOpen(false)
+    window.requestAnimationFrame(() => filterTrigger.current?.focus())
+  }, [])
+
+  useEffect(() => {
+    if (!filtersOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeFilters()
+    }
+
+    document.body.style.overflow = "hidden"
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [closeFilters, filtersOpen])
+
+  useEffect(() => {
+    if (initialQuery.current) {
+      initialQuery.current = false
+      return
+    }
+
+    const requestId = ++requestSequence.current
+    const delay = filters.search.trim() ? 320 : 0
+
+    setRefreshing(true)
+    setLoadError(false)
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const payload = await listStoreCatalogue({
+          filters,
+          limit: PRODUCT_LIMIT,
+          offset: 0,
+          countryCode,
         })
-        .finally(() => setLoading(false));
-    }
-  }, [filteredProducts.length, offset, loading, allLoaded, products.length, regionId]);
+        if (requestId !== requestSequence.current) return
 
-  // Infinite scroll effect (unchanged, but don't add filter params to query)
-  useEffect(() => {
-    if (loading || allLoaded) return;
-    const handleScroll = () => {
-      if (!productListRef.current) return;
-      const rect = productListRef.current.getBoundingClientRect();
-      if (
-        window.innerHeight > rect.bottom + 50 &&
-        !loading &&
-        !allLoaded
-      ) {
-        setOffset(prev => prev + PRODUCT_LIMIT);
+        setProducts(payload.products)
+        setResultCount(payload.count)
+        setAllLoaded(payload.products.length >= payload.count)
+      } catch (error) {
+        if (requestId !== requestSequence.current) return
+        console.error("Store catalogue query failed", error)
+        setLoadError(true)
+      } finally {
+        if (requestId === requestSequence.current) setRefreshing(false)
       }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [loading, allLoaded]);
+    }, delay)
 
-  // Reset visible products and scroll when filters change
-  useEffect(() => {
-    setOffset(PRODUCT_LIMIT);
-    setAllLoaded(false);
-    window.scrollTo({ top: 25, behavior: "smooth" });
-  }, [category, priceRange, sale, isNew, search, initialProducts]);
-
-  // Show all price ranges in the UI
-  const priceRanges = priceRangeDefs.map(range => range.label);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("shopFilters");
-    if (saved) {
-      const { category, search, priceRange, sale, isNew } = JSON.parse(saved);
-      setCategory(category || "");
-      setSearch(search || "");
-      setPriceRange(priceRange || "");
-      setSale(sale || false);
-      setIsNew(isNew || false);
+    return () => {
+      window.clearTimeout(timer)
+      requestSequence.current += 1
     }
-  }, []);
+  }, [countryCode, filters, requestVersion])
+
+  const activeChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = []
+    const category = categories.find((item) => item.id === filters.categoryId)
+    if (category)
+      chips.push({
+        id: "category",
+        label: category.name,
+        onRemove: () => updateFilters({ categoryId: "" }),
+      })
+    if (filters.collectionId)
+      chips.push({
+        id: "collection",
+        label: initialFilterLabel ?? "Kolekce",
+        onRemove: () => updateFilters({ collectionId: "" }),
+      })
+    if (filters.priceRange)
+      chips.push({
+        id: "price",
+        label: priceLabels[filters.priceRange],
+        onRemove: () => updateFilters({ priceRange: "" }),
+      })
+    if (filters.isNew)
+      chips.push({
+        id: "new",
+        label: "Novinky",
+        onRemove: () => updateFilters({ isNew: false }),
+      })
+    if (filters.onSale)
+      chips.push({
+        id: "sale",
+        label: "Ve slevě",
+        onRemove: () => updateFilters({ onSale: false }),
+      })
+    return chips
+  }, [
+    categories,
+    filters.categoryId,
+    filters.collectionId,
+    filters.isNew,
+    filters.onSale,
+    filters.priceRange,
+    initialFilterLabel,
+    updateFilters,
+  ])
+
+  const loadMore = useCallback(async () => {
+    if (loading || allLoaded) return
+    const requestId = ++requestSequence.current
+    setLoading(true)
+    setLoadError(false)
+
+    try {
+      const payload = await listStoreCatalogue({
+        filters,
+        limit: PRODUCT_LIMIT,
+        offset: products.length,
+        countryCode,
+      })
+      if (requestId !== requestSequence.current) return
+
+      const knownIds = new Set(products.map((product) => product.id))
+      const additions = payload.products.filter(
+        (product) => !knownIds.has(product.id)
+      )
+      setProducts((current) => {
+        return [...current, ...additions]
+      })
+      setResultCount(payload.count)
+      setAllLoaded(products.length + additions.length >= payload.count)
+    } catch (error) {
+      if (requestId !== requestSequence.current) return
+      console.error("Store catalogue pagination failed", error)
+      setLoadError(true)
+    } finally {
+      if (requestId === requestSequence.current) setLoading(false)
+    }
+  }, [allLoaded, countryCode, filters, loading, products])
+
+  const scrollToCatalogue = () => {
+    if (catalogueRef.current) scrollWithLenis(catalogueRef.current)
+  }
 
   return (
-    <section className="ecom">
-      <Categories
-        category={category}
-        setCategoryAction={setCategory}
-        subcategory={subcategory}
-        setSubcategoryAction={setSubcategory}
-        categories={categories}
+    <main className={styles.root}>
+      <ShopHero
+        productCount={totalCount || products.length}
+        onExplore={scrollToCatalogue}
       />
-      <div className="products__container">
-        <SearchBar
-          products={initialProducts}
-          category={category}
-          setCategoryAction={setCategory}
-          subcategory={subcategory}
-          setSubcategoryAction={setSubcategory}
-          search={search}
-          setSearchAction={setSearch}
-          priceRange={priceRange}
-          setPriceRangeAction={setPriceRange}
-          sale={sale}
-          setSaleAction={setSale}
-          isNew={isNew}
-          setIsNewAction={setIsNew}
-          priceRanges={priceRanges}
-          categories={categories}
-          pendingCategory={pendingCategory}
-          setPendingCategoryAction={setPendingCategory}
-        />
-        <ProductList
-          products={visibleProducts}
-          countryCode={countryCode}
-          ref={productListRef}
-        />
-        {loading && <div style={{ textAlign: "center", margin: "1rem", color: "var(--whiteText)", fontFamily: "Sansation-Regular" }}>Načítání dalších produktů...</div>}
-        {allLoaded && filteredProducts.length <= visibleProducts.length && (
-          <div style={{ textAlign: "center", margin: "1rem", color: "var(--whiteText)", fontFamily: "Sansation-Regular" }}>
-            Žádné další produkty k zobrazení
-          </div>
-        )}
-      </div>
-      <div className="ecom__scroll__to__top"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      >
-        <button className="scroll__to__top__button">
-          <Image
-            src="/assets/icons/arrow_up_white.svg"
-            alt="Scroll to top icon"
-            width={20}
-            height={20}
-            className="scroll__to__top__icon"
-            aria-label="Scroll to top"
-          />
-        </button>
-      </div>
-    </section>
-  );
-}
 
-export default ECom
+      <section
+        ref={catalogueRef}
+        className={styles.catalogue}
+        id="store-catalogue"
+        data-scroll-section
+        data-scroll-label="Katalog"
+        aria-label="Katalog produktů"
+      >
+        <header className={styles.introduction}>
+          <p>Ateliérový výběr</p>
+          <h2>
+            Vyberte si objekt,
+            <br />
+            <em>který zůstane.</em>
+          </h2>
+          <span>
+            Užitá keramika, autorské solitéry a drobné série. Přirozené odchylky
+            nejsou vadou, ale podpisem rukou.
+          </span>
+        </header>
+
+        <div className={styles.layout}>
+          <FilterPanel
+            categories={categories}
+            filters={filters}
+            isOpen={filtersOpen}
+            onChange={updateFilters}
+            onClose={closeFilters}
+            onReset={resetFilters}
+          />
+
+          <div className={styles.results}>
+            <ShopToolbar
+              chips={activeChips}
+              count={resultCount}
+              search={filters.search}
+              sort={filters.sort}
+              onOpenFilters={openFilters}
+              onSearch={(search) => updateFilters({ search })}
+              onSort={(sort) => updateFilters({ sort })}
+            />
+            <ProductGrid
+              products={products}
+              loading={loading}
+              refreshing={refreshing}
+              loadError={loadError}
+              canLoadMore={!allLoaded}
+              total={resultCount}
+              loadedCount={products.length}
+              onLoadMore={loadMore}
+              onRetry={() => setRequestVersion((current) => current + 1)}
+              onReset={resetFilters}
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}

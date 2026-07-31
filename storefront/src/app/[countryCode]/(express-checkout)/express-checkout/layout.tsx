@@ -1,33 +1,42 @@
-import { clx } from "@medusajs/ui"
-import { Inter, Roboto_Mono } from "next/font/google"
-import { RegionProvider } from "@lib/context/region"
-import { CartProvider } from "@lib/context/cart"
-import { SecondCol } from "@modules/express-checkout/SecondCol"
+import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
+import Image from "next/image"
+import Link from "next/link"
+import styles from "./style.module.scss"
 
-export default function Layout ({
+export default async function Layout ({
   children,
+  params,
 }: {
   children: React.ReactNode
+  params: Promise<{ countryCode: string }>
 }) {
+  const { countryCode } = await params
+
   return (
     <>
-      <section className="bg-ui-bg-subtle w-full h-full">
-        <div className={clx(
-          "flex justify-center items-center min-h-screen w-full",
-        )}>
-          <RegionProvider>
-            <CartProvider>
-              <div className={clx(
-                "flex gap-2 lg:my-16 my-4",
-                "lg:w-[758px] lg:mx-auto w-full mx-4 flex items-center justify-center",
-              )}>
-                <div className="flex flex-col gap-2 lg:w-1/2 w-full items-center justify-center">
-                  {children}
-                </div>
-                {/* <SecondCol /> */}
-              </div>
-            </CartProvider>
-          </RegionProvider>
+      <GlobalLiquidEther />
+      <section className={styles.shell}>
+        <div className={styles.frame}>
+          <header className={styles.brandHeader}>
+            <Link
+              href={`/${countryCode}`}
+              className={styles.brand}
+              aria-label="Keramická zahrada — zpět do obchodu"
+            >
+              <Image
+                src="/assets/icons/logo.svg"
+                alt=""
+                width={54}
+                height={32}
+              />
+              <span>
+                Keramická <em>zahrada.</em>
+              </span>
+            </Link>
+          </header>
+          <div className={styles.flow}>
+            {children}
+          </div>
         </div>
       </section>
     </>

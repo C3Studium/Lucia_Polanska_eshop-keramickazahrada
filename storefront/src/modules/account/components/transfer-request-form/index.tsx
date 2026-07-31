@@ -2,12 +2,14 @@
 
 import { useActionState } from "react"
 import { createTransferRequest } from "@lib/data/orders"
-import { Input, IconButton } from "@medusajs/ui"
+import { IconButton } from "@medusajs/ui"
 import { CheckCircleMiniSolid, XCircleSolid } from "@medusajs/icons"
 import { useEffect, useState } from "react"
 import s from "./style.module.scss"
-import { useFormStatus } from "react-dom"
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion"
+import Input from "@modules/common/components/input"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
+import { accountDisclosureVariants } from "../../motion"
 
 export default function TransferRequestForm() {
   const [showSuccess, setShowSuccess] = useState(false)
@@ -36,21 +38,40 @@ export default function TransferRequestForm() {
         </div>
         <form action={formAction} className={s.form}>
           <div className={s.formInner}>
-            <Input className={s.input} name="order_id" placeholder="ID objednávky" />
-            <ClickButton 
+            <Input
+              variant="contact"
+              className={s.input}
+              name="order_id"
+              label="ID objednávky"
+            />
+            <PremiumActionButton
               text="Požádat o převod"
               type="submit"
-              className={`${s.transferBtn} w-fit whitespace-nowrap self-end`}
+              className={s.transferBtn}
             />
           </div>
         </form>
       </div>
-      <div className={s.messages}>
+      <AnimatePresence initial={false}>
         {!state.success && state.error && (
-          <p className={s.error}>{state.error}</p>
+          <motion.p
+            className={s.error}
+            variants={accountDisclosureVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+          >
+            {state.error}
+          </motion.p>
         )}
         {showSuccess && (
-          <div className={s.success}>
+          <motion.div
+            className={s.success}
+            variants={accountDisclosureVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+          >
             <div className={s.successLeft}>
               <CheckCircleMiniSolid className={s.iconSuccess} />
               <div className={s.successTextWrap}>
@@ -65,89 +86,9 @@ export default function TransferRequestForm() {
             <IconButton variant="transparent" className={s.closeBtn} onClick={() => setShowSuccess(false)}>
               <XCircleSolid className={s.iconClose} />
             </IconButton>
-          </div>
+          </motion.div>
         )}
-      </div>
-    </div>
-  )
-}
-
-
-
-function PerspectiveText({label, className, textColor, component}: {label: string; className?: string; textColor?: string, component?: React.ReactNode}) {
-  return (    
-    <div className={s.perspectiveText}>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-    </div>
-  )
-}
-
-type ClickButtonProps = {
-  text: string;
-  onClickAction?: () => void | Promise<void>;
-  ClickAction?: () => void | Promise<void>; // backward compatibility
-  disabled?: boolean;
-  type?: "button" | "submit";
-  className?: string;
-  "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
-  const { pending } = useFormStatus();
-  const isSubmitting = type === "submit" ? pending : false;
-  const isDisabled = disabled || isSubmitting;
-  const handleClick = onClickAction ?? ClickAction;
-
-  return (
-    <div className={className ? `${s.ClickButton} ${className}` : s.ClickButton}>
-      <button
-        type={type}
-        className={s.button}
-        onClick={handleClick}
-        disabled={isDisabled}
-        aria-busy={isDisabled || undefined}
-        onMouseEnter={() => setIsActive(true)}
-        onMouseLeave={() => setIsActive(false)}
-        data-testid={dataTestId}
-      >
-        <motion.div
-          className={s.slider}
-          animate={{top: isActive ? "-100%" : "0%"}}
-          transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-        >
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--darkOlive)" }}
-          >
-            <PerspectiveText label={text}/>
-          </div>
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--bgBlack)" }}
-          >
-            <PerspectiveText label={text} />
-          </div>
-        </motion.div>
-      </button>
+      </AnimatePresence>
     </div>
   )
 }

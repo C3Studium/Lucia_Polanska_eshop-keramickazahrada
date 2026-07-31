@@ -1,6 +1,7 @@
 import { Container } from "@medusajs/ui"
 
 import { isStripe, paymentInfoMap } from "@lib/constants"
+import { translateStatus } from "@lib/i18n/statuses"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
@@ -16,8 +17,8 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
     ? (() => {
         const d = new Date(payment.created_at)
         const datePart = d.toLocaleDateString("cs-CZ", {
-          day: "2-digit",
-          month: "2-digit",
+          day: "numeric",
+          month: "long",
           year: "numeric",
         })
         const timePart = d.toLocaleTimeString("cs-CZ", {
@@ -25,7 +26,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
           minute: "2-digit",
           hour12: false,
         })
-        return `${datePart}, ${timePart}`
+        return `${datePart} v ${timePart}`
       })()
     : ""
 
@@ -50,10 +51,14 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
                 <p className={styles.value} data-testid="payment-amount">
                   {isStripe(payment.provider_id) && payment.data?.card_last4
                     ? `**** **** **** ${payment.data.card_last4}`
-                    : `${convertToLocale({
+                    : `${translateStatus(
+                        order.payment_status,
+                        "payment",
+                        "cs"
+                      )} · ${convertToLocale({
                         amount: payment.amount,
                         currency_code: order.currency_code,
-                      })} zaplaceno ${formattedCreated}`}
+                      })}${formattedCreated ? ` · ${formattedCreated}` : ""}`}
                 </p>
               </div>
             </div>

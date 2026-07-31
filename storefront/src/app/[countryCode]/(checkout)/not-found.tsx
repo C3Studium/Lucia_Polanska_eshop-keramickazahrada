@@ -1,4 +1,4 @@
-import InteractiveLink from "@modules/common/components/interactive-link"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./styles/notfound.module.scss"
 import { Metadata } from "next"
 
@@ -14,7 +14,7 @@ export default async function NotFound() {
       <p className={styles.message}>
         Stránka, kterou jste se pokusili otevřít, neexistuje.
       </p>
-      <InteractiveLink href="/">Zpět na úvodní stránku</InteractiveLink>
+      <LocalizedClientLink href="/">Zpět na úvodní stránku</LocalizedClientLink>
     </div>
   );
 }

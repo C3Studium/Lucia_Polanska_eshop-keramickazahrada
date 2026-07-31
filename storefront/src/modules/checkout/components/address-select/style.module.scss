@@ -1,107 +1,192 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+.accountAddressSelectRoot {
+  position: relative;
+  width: 100%;
+}
 
-.root {
-	.relative {
-		position: relative;
-		width: 100%;
-	}
+.accountAddressSelectButton {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  width: 100%;
+  min-height: 108px;
+  padding: 20px 22px;
+  border: 1px solid rgba(32, 33, 29, .26);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: #20211d;
+  text-align: left;
+  cursor: pointer;
+}
 
-	.listboxButton {
-		position: relative;
-		width: 100%;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding-left: 1rem;
-		padding-right: 1rem;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		text-align: left;
-		background: #fff;
-		cursor: pointer;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		outline: none;
-		font-size: 1rem;
-		font-family: inherit;
-		/* focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-gray-300 focus-visible:ring-offset-2 focus-visible:border-gray-300 */
-		&:focus-visible {
-			box-shadow: 0 0 0 2px rgba(255,255,255,0.75), 0 0 0 4px #d1d5db;
-			border-color: #d1d5db;
-		}
-	}
+.accountAddressSelectButton::after {
+  position: absolute;
+  right: 12px;
+  bottom: -12px;
+  left: 12px;
+  z-index: -1;
+  height: 12px;
+  border: 1px solid rgba(126, 137, 106, .36);
+  border-top: 0;
+  content: "";
+}
 
-	.block {
-		display: block;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+.accountAddressSelectButton:focus-visible {
+  outline: 2px solid rgba(126, 137, 106, .72);
+  outline-offset: 4px;
+}
 
-	.truncate {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+.accountAddressSelectedCopy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
 
-	.transitionRotate {
-		transition: transform 0.2s;
-		&.rotate180 {
-			transform: rotate(180deg);
-		}
-	}
+.accountAddressSelectedCopy small,
+.accountAddressOptionIndex,
+.accountAddressOptionState {
+  color: rgba(32, 33, 29, .5);
+  font: 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
 
-	.listboxOptions {
-		position: absolute;
-		z-index: 20;
-		width: 100%;
-		overflow: auto;
-		font-size: 0.875rem;
-		background: #fff;
-		border: 1px solid #e5e7eb;
-		border-top: none;
-		max-height: 15rem;
-		outline: none;
-	}
+.accountAddressSelectedCopy strong {
+  overflow: hidden;
+  font: 400 clamp(1.3rem, 1.8vw, 1.8rem)/1 "Sentient-Regular", serif;
+  letter-spacing: -.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-	.listboxOption {
-		cursor: pointer;
-		user-select: none;
-		position: relative;
-		padding-left: 1.5rem;
-		padding-right: 2.5rem;
-		background: none;
-		&:hover {
-			background: #f9fafb;
-		}
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
+.accountAddressSelectedCopy > span {
+  overflow: hidden;
+  color: rgba(32, 33, 29, .62);
+  font: 14px/1.4 "Sansation-Light", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-	.optionRow {
-		display: flex;
-		gap: 1rem;
-		align-items: flex-start;
-	}
+.accountAddressSelectControl {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #20211d;
+  border-radius: 50%;
+}
 
-	.optionText {
-		display: flex;
-		flex-direction: column;
-		.name {
-			text-align: left;
-			font-size: 1rem;
-			font-weight: 600;
-		}
-		.company {
-			font-size: 0.875rem;
-			color: var(--ui-fg-base, #111827);
-		}
-		.addressLines {
-			display: flex;
-			flex-direction: column;
-			text-align: left;
-			font-size: 1rem;
-			margin-top: 0.5rem;
-		}
-	}
+.accountAddressSelectControl svg {
+  width: 16px;
+  height: 16px;
+}
+
+.accountAddressOptionsClip {
+  position: absolute;
+  top: calc(100% + 13px);
+  right: 0;
+  left: 0;
+  z-index: 40;
+  overflow: hidden;
+  border: 1px solid rgba(32, 33, 29, .26);
+  border-top: 0;
+  background: #f8e2d1;
+  box-shadow: 0 28px 55px -36px rgba(32, 33, 29, .72);
+  transform-origin: top center;
+}
+
+.accountAddressOptions {
+  max-height: 330px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  outline: none;
+  list-style: none;
+  scrollbar-color: rgba(32, 33, 29, .35) transparent;
+  scrollbar-width: thin;
+}
+
+.accountAddressOption {
+  padding: 0;
+  border-bottom: 1px solid rgba(32, 33, 29, .16);
+  cursor: pointer;
+  outline: none;
+}
+
+.accountAddressOption:last-child {
+  border-bottom: 0;
+}
+
+.accountAddressOptionInner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 20px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  min-height: 118px;
+  padding: 20px;
+}
+
+.accountAddressOptionHighlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(126, 137, 106, .12);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.accountAddressOptionInner > *:not(.accountAddressOptionHighlight) {
+  position: relative;
+  z-index: 1;
+}
+
+.accountAddressOptionIndex {
+  padding-top: 3px;
+}
+
+.accountAddressOptionCopy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.accountAddressOptionCopy strong {
+  margin-bottom: 3px;
+  font: 400 17px/1.2 "Sansation-Regular", sans-serif;
+}
+
+.accountAddressOptionCopy small,
+.accountAddressOptionCopy span {
+  color: rgba(32, 33, 29, .62);
+  font: 13px/1.4 "Sansation-Light", sans-serif;
+}
+
+.accountAddressOptionState {
+  padding-top: 3px;
+  color: #6d755d;
+}
+
+@media (max-width: 620px) {
+  .accountAddressSelectButton {
+    min-height: 96px;
+    padding: 16px;
+  }
+
+  .accountAddressOptionInner {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px 14px;
+  }
+
+  .accountAddressOptionIndex,
+  .accountAddressOptionState {
+    display: none;
+  }
+
+  .accountAddressOptionCopy {
+    grid-column: 2;
+  }
 }

@@ -1,38 +1,47 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button, Toaster, toast } from "@medusajs/ui"
-import { verifyCustomerEmail, resendVerification, retrieveCustomer } from "@lib/data/customer"
-import styles from "./styles/verify-email.module.scss"
-import { motion, useScroll, useTransform } from "framer-motion"
-import Image from "next/image"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { Toaster, toast } from "@medusajs/ui"
+import {
+  verifyCustomerEmail,
+  resendVerification,
+  retrieveCustomer,
+} from "@lib/data/customer"
+import AuthPortal from "../components/auth-portal"
+import {
+  SupportButton,
+  SupportEmail,
+  SupportHeader,
+  SupportLink,
+  SupportLinks,
+  SupportNotice,
+  SupportPanel,
+} from "../components/auth-support"
+
+type VerificationState = "verifying" | "success" | "error"
 
 export default function VerifyEmailPage() {
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [status, setStatus] = useState<VerificationState>("verifying")
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
   const searchParams = useSearchParams()
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  })
-
-  const y = useTransform(scrollYProgress, [0, 1], ["-5%", "10%"])
-
   const token = searchParams.get("token") || ""
   const email = searchParams.get("email") || ""
 
   const handleVerify = async () => {
-    setLoading(true)
+    if (!token || !email) {
+      setStatus("error")
+      toast.error("Ověřovací odkaz je neúplný.")
+      return
+    }
+
+    setStatus("verifying")
     try {
       const result = await verifyCustomerEmail(token, email)
       if (result.ok) {
         toast.success(result.message || "Potvrzení e-mailu bylo úspěšné!")
-        setSuccess(true)
+        setStatus("success")
         // fetch fresh customer so UI reflects updated metadata
         try {
           await retrieveCustomer({ forceFresh: true })
@@ -41,12 +50,12 @@ export default function VerifyEmailPage() {
           console.warn("verify-email: failed to refresh customer", e)
         }
       } else {
+        setStatus("error")
         toast.error(result.message || "Ověření selhalo.")
       }
-    } catch (e) {
+    } catch {
+      setStatus("error")
       toast.error("Ověření selhalo.")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -78,142 +87,90 @@ export default function VerifyEmailPage() {
   }, [])
 
   return (
-    <section className={styles.section} ref={ref}>
-      <div className={styles.ImageContainer}>
-        <motion.div
-          className={styles.Image}
-          style={{ y }}
-        >
-          <div className={styles.ImageOverlay} />
-          <Image
-            src={"/assets/img/img/2.jpg"}
-            alt="Potvrzení e-mailové adresy"
-            layout="fill"
-            objectFit="cover"
-          />
-        </motion.div>
-      </div>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Potvrzení e-mailové adresy</h1>
-        <p className={styles.desc}>
-          { loading ? "Klikněte na tlačítko níže pro potvrzení vaší e-mailové adresy." : success ? "Potvrzení e-mailu bylo úspěšné!" : "Ověření selhalo."}
-        </p>
-        <ClickButton 
-          disabled={loading || success} 
-          onClickAction={handleVerify}
-          text={loading ? "Ověřuji..." : success ? "Ověřeno!" : "Potvrdit e-mail"}
+    <AuthPortal mode="verification">
+      <SupportPanel>
+        <SupportHeader
+          eyebrow="Ověření identity · 04"
+          title={
+            <>
+              Potvrďte <em>e-mail.</em>
+            </>
+          }
+          description={
+            status === "verifying"
+              ? "Právě ověřujeme bezpečný odkaz. Zabere to jen okamžik."
+              : status === "success"
+              ? "E-mail je potvrzený. Váš soukromý archiv je připravený."
+              : "Odkaz se nepodařilo ověřit. Mohl vypršet nebo už být použitý."
+          }
         />
-        {!success && (
-          <div className={styles.actions}>
-            <ClickButton
-              disabled={resending}
-              onClickAction={handleResend}
-              text={resending ? "Odesílání..." : resent ? "E-mail byl odeslán!" : "Znovu odeslat ověřovací e-mail"}
-            />
-          </div>
+        {email && <SupportEmail>{email}</SupportEmail>}
+        <SupportNotice
+          eyebrow={
+            status === "verifying"
+              ? "Probíhá ověření"
+              : status === "success"
+              ? "Přístup potvrzen"
+              : "Odkaz vyžaduje pozornost"
+          }
+          tone={
+            status === "success"
+              ? "success"
+              : status === "error"
+              ? "error"
+              : "neutral"
+          }
+        >
+          {status === "verifying"
+            ? "Kontrolujeme platnost odkazu a propojení s vaším účtem."
+            : status === "success"
+            ? "Můžete pokračovat ke svým objednávkám a uloženým objektům."
+            : resent
+            ? "Nový ověřovací e-mail je na cestě."
+            : "Zkuste ověření zopakovat, nebo si pošlete nový odkaz."}
+        </SupportNotice>
+        {status === "error" && token && email && (
+          <SupportButton type="button" onClick={handleVerify}>
+            Ověřit odkaz znovu
+          </SupportButton>
         )}
-        {success && (
-          <div className={styles.actions}>
-            <LinkButton text="Přejít na můj účet" href="/account" />
-            <LinkButton text="Přejít do obchodu" href="/" />
-          </div>
+        {status === "error" && (
+          <SupportButton
+            type="button"
+            onClick={handleResend}
+            disabled={resending || !email}
+            variant="secondary"
+          >
+            {resending
+              ? "Odesíláme…"
+              : resent
+              ? "Odesláno"
+              : "Poslat nový ověřovací odkaz"}
+          </SupportButton>
         )}
+        <SupportLinks>
+          {status === "success" ? (
+            <>
+              <SupportLink href="/account" label="Soukromý archiv">
+                Přejít na můj účet
+              </SupportLink>
+              <SupportLink href="/store" label="Pokračovat ve výběru">
+                Prohlédnout objekty
+              </SupportLink>
+            </>
+          ) : (
+            <>
+              <SupportLink href="/login" label="Jiný účet">
+                Přihlásit se
+              </SupportLink>
+              <SupportLink href="/dotazy" label="Potřebuji pomoc">
+                Kontaktovat ateliér
+              </SupportLink>
+            </>
+          )}
+        </SupportLinks>
         <Toaster />
-      </div>
-    </section>
+      </SupportPanel>
+    </AuthPortal>
   )
-}
-
-type LinkButtonProps = {
-    text: string;
-    href: string; 
-}
-
-// This is base button for every button animation inside the website.
-
-function LinkButton({ text, href } : LinkButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    return (
-        <LocalizedClientLink href={href} className={styles.LinkButtonS}>
-            <button 
-                className={styles.button}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-            >
-                <motion.div 
-                    className={styles.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-                >
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--bgPrimary)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                </motion.div>
-            </button>
-        </LocalizedClientLink>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
-}
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-}
-
-// This is base button for every button animation inside the website.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text }: ClickButtonProps) {
-    const [isActive, setIsActive] = useState<boolean>(false);
-    const handleClick = onClickAction ?? ClickAction;
-
-    return (
-        <div className={styles.ClickButton}>
-            <button
-                type="button"
-                className={styles.button}
-                onClick={handleClick}
-                disabled={disabled}
-                aria-busy={disabled || undefined}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-            >
-                <motion.div
-                    className={styles.slider}
-                    animate={{ top: isActive ? "-100%" : "0%" }}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1] }}
-                >
-                    <div
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                    <div
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--bgBlack)" }}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                </motion.div>
-            </button>
-        </div>
-    )
 }

@@ -1,51 +1,275 @@
-import MouseAnim from "@modules/common/components/MouseAnim";
-import Image from "next/image";
+"use client"
 
-const MainVyroba = () => {
+import Image from "next/image"
+import {
+  motion,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion"
+import { useRef } from "react"
+import {
+  firstProcessStep,
+  ProcessCopyVisual,
+  ProcessImageVisual,
+} from "@modules/vyroba/gallery"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 
-    return(
-        <section className="main__vyroba">
-            <div className="text__content">
-                <div className="text__wrappper">
-                    <p>
-                        <span>
-                            MOJE TVORBA 
-                        </span>
-                        VYCHÁZÍ Z PŘÍRODY, JEDNODUCHOSTI A TRADIČNÍHO ŘEMESLA. KAŽDÝ KUS VZNIKÁ RUČNĚ – OD PRVNÍ MYŠLENKY, PŘES MODELOVÁNÍ A POMALÉ SCHNUTÍ, AŽ PO DVA VÝPALLY PŘI VYSOKÝCH TEPLOTÁCH. PRACUJI S CERTIFIKOVANÝMI, ZDRAVOTNĚ NEZÁVADNÝMI MATERIÁLY A KAŽDÉMU KROKU VĚNUJI ČAS I POZORNOST. VÝSLEDKEM JE POCTIVÁ KERAMIKA S DUŠÍ, URČENÁ PRO KAŽDODENNÍ POUŽITÍ I DLOUHOU ŽIVOTNOST – UVNITŘ I VENKU.
-                    </p>
-                    <div className="mouse">
-                        <MouseAnim />
-                        <p>
-                            Scroll down
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div className="image__container">
-                <div className="image__wrapper">
-                    <Image src="/assets/img/vyroba/main.png" alt="Výroba keramiky" fill />
-                </div>
-            </div>
+export default function MainVyroba() {
+  const timelineRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: timelineRef,
+    offset: ["start start", "end end"],
+  })
 
-            <div className="kurzy__intro__Gradient">
-                <svg width={1182} height={1118} viewBox="0 0 1182 1118" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g filter="url(#filter0_f_1099_194)">
-                        <path d="M665.894 600.007C701.887 608.096 754.931 717.024 618.533 717.024C601.275 717.024 539.174 708.499 539.169 631.257C539.169 613.998 573.811 571.154 591.069 571.154C608.328 571.154 640.319 585.363 665.894 600.007Z" fill="#ff7000bf" fillOpacity="0.5"/>
-                        <path d="M740.718 534.27C776.712 542.358 829.755 651.287 693.358 651.287C676.099 651.287 613.998 642.762 613.994 565.52C613.994 548.261 766.299 621.356 665.894 505.417C683.152 505.417 715.143 519.625 740.718 534.27Z" fill="#ff7000bf" fillOpacity="0.5"/>
-                        <path d="M547.848 462.385C583.842 470.474 616.605 666.221 480.208 666.221C462.949 666.221 400.849 657.696 400.844 580.454C400.844 563.195 402.717 484.171 419.976 484.171C437.235 484.171 565.287 389.775 547.848 462.385Z" fill="#ff7000bf" fillOpacity="0.5"/>
-                        <path d="M683.275 436.704C719.268 444.792 772.312 553.721 635.915 553.721C618.656 553.721 556.555 545.196 556.55 467.954C556.55 450.695 591.192 407.851 608.451 407.851C625.709 407.851 694.077 379.889 683.275 436.704Z" fill="#ff7000bf" fillOpacity="0.5"/>
-                    </g>
-                    <defs>
-                        <filter id="filter0_f_1099_194" x="0.84375" y="0.970703" width="1180.86" height="1116.05" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                        <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                        <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                        <feGaussianBlur stdDeviation="40" result="effect1_foregroundBlur_1099_194"/>
-                        </filter>
-                    </defs>
-                </svg>
-            </div>
-        </section>
-    )
+  const pointerX = useMotionValue(0)
+  const pointerY = useMotionValue(0)
+  const mainX = useSpring(pointerX, { stiffness: 90, damping: 24, mass: 0.7 })
+  const mainY = useSpring(pointerY, { stiffness: 90, damping: 24, mass: 0.7 })
+  const detailX = useTransform(mainX, (value) => value * -1.2)
+  const detailY = useTransform(mainY, (value) => value * -1.2)
+  const objectX = useTransform(mainX, (value) => value * 0.65)
+  const objectY = useTransform(mainY, (value) => value * 0.65)
+
+  const metaOpacity = useTransform(scrollYProgress, [0.16, 0.34], [1, 0])
+  const metaY = useTransform(scrollYProgress, [0.16, 0.34], [0, -14])
+  const footerOpacity = useTransform(scrollYProgress, [0.22, 0.42], [1, 0])
+  const footerY = useTransform(scrollYProgress, [0.22, 0.42], [0, 22])
+  const footerRuleScale = useTransform(scrollYProgress, [0.2, 0.44], [1, 0.1])
+  const copyOpacity = useTransform(scrollYProgress, [0.28, 0.5], [1, 0])
+  const copyY = useTransform(scrollYProgress, [0.28, 0.5], [0, -36])
+  const objectOpacity = useTransform(scrollYProgress, [0.34, 0.56], [1, 0])
+  const objectScale = useTransform(scrollYProgress, [0.34, 0.56], [1, 0.9])
+  const mainImageOpacity = useTransform(scrollYProgress, [0.4, 0.68], [1, 0])
+  const mainImageScale = useTransform(scrollYProgress, [0.4, 0.68], [1, 0.96])
+  const lightLeakOpacity = useTransform(scrollYProgress, [0.38, 0.7], [0.26, 0])
+  const handoffOpacity = useTransform(scrollYProgress, [0.96, 1], [1, 0])
+  const handoffPointerEvents = useTransform(scrollYProgress, (progress) =>
+    progress >= 0.985 ? "none" : "auto"
+  )
+
+  const previewLeft = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    ["8%", "4.5%"]
+  )
+  const previewTop = useTransform(scrollYProgress, [0.58, 0.99], ["56%", "15%"])
+  const previewWidth = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    ["19vw", "61vw"]
+  )
+  const previewHeight = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    ["29%", "70%"]
+  )
+  const previewClip = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    [
+      "polygon(4% 0%, 96% 2%, 100% 96%, 0% 100%)",
+      "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+    ]
+  )
+  const previewImageScale = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    [1.08, 1.045]
+  )
+  const previewImageY = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    ["0%", "2.8%"]
+  )
+  const previewCopyOpacity = useTransform(scrollYProgress, [0.68, 0.92], [0, 1])
+  const previewCopyY = useTransform(scrollYProgress, [0.68, 0.94], [42, 18])
+  const previewCopyClip = useTransform(
+    scrollYProgress,
+    [0.68, 0.94],
+    ["inset(10% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
+  )
+  const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5
+
+    pointerX.set(x * 7)
+    pointerY.set(y * 5)
+  }
+
+  const resetPointer = () => {
+    pointerX.set(0)
+    pointerY.set(0)
+  }
+
+  const scrollToProcess = () => {
+    const process = document.getElementById("process-01")
+    if (process) scrollWithLenis(process)
+  }
+
+  return (
+    <section
+      className="main__vyroba"
+      id="process-intro"
+      data-scroll-section
+      data-scroll-label="Úvod"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={resetPointer}
+    >
+      <div ref={timelineRef} className="main__vyrobaTimeline">
+        <motion.div
+          className="main__vyrobaSticky"
+          style={{
+            opacity: handoffOpacity,
+            pointerEvents: handoffPointerEvents,
+          }}
+        >
+          <motion.div
+            className="vyrobaHero__lightLeak"
+            style={{ opacity: lightLeakOpacity }}
+            aria-hidden="true"
+          />
+
+          <motion.header
+            className="vyrobaHero__meta"
+            style={{ opacity: metaOpacity, y: metaY }}
+          >
+            <span>Výroba · Keramická zahrada</span>
+            <i />
+            <span>Písek · Ručně od roku 2014</span>
+          </motion.header>
+
+          <div className="vyrobaHero__visuals">
+            <motion.figure
+              className="vyrobaHero__photo vyrobaHero__photo--main"
+              style={{
+                x: mainX,
+                y: mainY,
+                opacity: mainImageOpacity,
+                scale: mainImageScale,
+              }}
+            >
+              <div className="vyrobaHero__photoScale">
+                <Image
+                  src="/assets/img/vyroba/5.png"
+                  alt="Lucie Polanská tvoří reliéf z keramické hlíny"
+                  fill
+                  priority
+                  sizes="(max-width: 720px) 94vw, 56vw"
+                />
+              </div>
+              <figcaption>
+                <span>01 · Ruce a materiál</span>
+                <i />
+                <span>Ateliér · Písek</span>
+              </figcaption>
+            </motion.figure>
+
+            <motion.figure
+              className="vyrobaHero__processProxy atelierProcess__image"
+              style={{
+                x: detailX,
+                y: detailY,
+                left: previewLeft,
+                top: previewTop,
+                width: previewWidth,
+                height: previewHeight,
+                clipPath: previewClip,
+                right: "auto",
+                bottom: "auto",
+              }}
+            >
+              <ProcessImageVisual
+                item={firstProcessStep}
+                imageStyle={{ scale: previewImageScale, y: previewImageY }}
+                edgeStyle={{ opacity: 0 }}
+                sizes="(max-width: 720px) 38vw, 61vw"
+              />
+            </motion.figure>
+
+            <motion.figure
+              className="vyrobaHero__photo vyrobaHero__photo--object"
+              style={{
+                x: objectX,
+                y: objectY,
+                opacity: objectOpacity,
+                scale: objectScale,
+              }}
+            >
+              <Image
+                src="/assets/img/vyroba/2.png"
+                alt="Dokončený keramický objekt"
+                fill
+                sizes="(max-width: 720px) 34vw, 17vw"
+              />
+              <figcaption>Výsledek · Originál</figcaption>
+            </motion.figure>
+          </div>
+
+          <div
+            className="vyrobaHero__processCopyStage atelierProcess__copyStage"
+            aria-hidden="true"
+          >
+            <motion.article
+              className="atelierProcess__copy"
+              style={{
+                opacity: previewCopyOpacity,
+                y: previewCopyY,
+                clipPath: previewCopyClip,
+              }}
+            >
+              <ProcessCopyVisual item={firstProcessStep} />
+            </motion.article>
+          </div>
+
+          <motion.div
+            className="vyrobaHero__copy"
+            style={{ opacity: copyOpacity, y: copyY }}
+          >
+            <motion.p className="vyrobaHero__eyebrow">
+              Sedm kroků. Dvě setkání s ohněm.
+            </motion.p>
+
+            <h1>
+              <span className="vyrobaHero__line">
+                <span>Než vznikne</span>
+              </span>
+              <span className="vyrobaHero__line vyrobaHero__line--accent">
+                <span>objekt.</span>
+              </span>
+            </h1>
+          </motion.div>
+
+          <motion.footer
+            className="vyrobaHero__footer"
+            style={{ opacity: footerOpacity, y: footerY }}
+          >
+            <motion.i
+              className="vyrobaHero__footerRule"
+              style={{ scaleX: footerRuleScale }}
+              aria-hidden="true"
+            />
+            <span className="vyrobaHero__footerLabel">
+              Materiál · Ruce · Oheň
+            </span>
+            <p>
+              Sedm kroků. Dva výpaly.
+              <br />
+              Jeden neopakovatelný výsledek.
+            </p>
+            <button
+              type="button"
+              onClick={scrollToProcess}
+              className="vyrobaHero__scroll"
+            >
+              <span>Objevovat proces</span>
+              <i aria-hidden="true" />
+            </button>
+          </motion.footer>
+        </motion.div>
+      </div>
+    </section>
+  )
 }
-
-export default MainVyroba;

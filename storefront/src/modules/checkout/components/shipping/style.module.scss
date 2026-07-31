@@ -1,7 +1,9 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 /* Shipping component styles - SASS nesting */
 .root {
-  background: #fff;
+  position: relative;
+  padding: 34px 0 42px 58px;
+  background: transparent;
 
   .header {
     display: flex;
@@ -12,11 +14,13 @@
     .heading {
       display: flex;
       flex-direction: row;
-      font-size: 2rem;
+      font-size: clamp(2rem, 2.8vw, 3.15rem);
       font-weight: 400;
       gap: 0.5rem;
       align-items: baseline;
-      font-family: "Sansation-Regular";
+      font-family: "Sentient-Regular", serif;
+      line-height: .98;
+      letter-spacing: -.025em;
 
       @include hb((
         lg: (font-size: 1.8rem),
@@ -41,8 +45,8 @@
       }
     }
     .editBtn {
-      width: 80px;
-			height: 20px;
+      width: auto;
+			height: auto;
     }
 
 
@@ -120,8 +124,9 @@
     font-size: 0.875rem;
     cursor: pointer;
     padding: 1rem 2rem 1rem 2rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
+    border: 1px solid rgba(33,34,34,.18);
+    border-radius: 12px;
+    background: rgba(255,248,238,.35);
     margin-bottom: 0.5rem;
     transition: box-shadow 0.15s;
     
@@ -286,6 +291,50 @@
     margin-top: 2rem;
   }
 
+  .completedSummary {
+    display: grid;
+    grid-template-columns: minmax(150px, .65fr) minmax(0, 1.35fr);
+    align-items: center;
+    gap: .65rem 1.5rem;
+    padding: 1.25rem 0;
+    border-top: 1px solid rgba(32, 33, 28, .18);
+    border-bottom: 1px solid rgba(32, 33, 28, .18);
+
+    .completedLabel {
+      grid-row: 1 / span 2;
+      align-self: start;
+      padding-top: .2rem;
+      color: rgba(32, 33, 28, .52);
+      font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .completedMethod {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1.5rem;
+
+      strong {
+        color: #20211c;
+        font: 400 1.05rem/1.25 "Sansation-Regular", sans-serif;
+      }
+
+      span {
+        color: #20211c;
+        font: 400 .92rem/1 "Sansation-Regular", sans-serif;
+        white-space: nowrap;
+      }
+    }
+
+    p {
+      margin: 0;
+      color: rgba(32, 33, 28, .55);
+      font: 300 .8rem/1.4 "Sansation-Light", sans-serif;
+    }
+  }
+
   .methodSummary {
     display: flex;
     flex-direction: column;
@@ -300,6 +349,26 @@
       font-size: 1rem;
       color: var(--ui-fg-subtle, #6B7280);
     }
+  }
+}
+
+.root::before {
+  content: "02";
+  position: absolute;
+  top: 48px;
+  left: 0;
+  font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .18em;
+  opacity: .48;
+}
+
+@media (max-width: 640px) {
+  .root { padding: 28px 0 32px 36px; }
+  .root::before { top: 40px; }
+  .root .completedSummary {
+    grid-template-columns: 1fr;
+
+    .completedLabel { grid-row: auto; }
   }
 }
 

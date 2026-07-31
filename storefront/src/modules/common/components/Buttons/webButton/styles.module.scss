@@ -1,10 +1,13 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 
 .button{
+    --web-button-ink: #212222;
+    --web-button-surface: rgba(255, 232, 214, 0.14);
+    --web-button-fill: #212222;
+
     position: relative;
     width: fit-content;
-    max-width: 250px;
-    height: 40px;
+    height: 50px;
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
@@ -13,14 +16,16 @@
     overflow: hidden;
     pointer-events: all;
     padding: 0;
-    border: 0;
+    border: 1px solid var(--web-button-ink);
     background: transparent;
+    color: var(--web-button-ink);
+    isolation: isolate;
 
 
     @include vb((
-        s: (height: 35px),
-        sm: (height: 35px),
-        xs: (height: 35px),
+        s: (height: 45px),
+        sm: (height: 45px),
+        xs: (height: 45px),
     ));
 
     .slider{
@@ -37,6 +42,24 @@
         cursor: pointer;
         transform-origin: left center;
 
+        .solidSurface,
+        .solidFill {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .solidSurface {
+            background: var(--web-button-surface);
+        }
+
+        .solidFill {
+            background: var(--web-button-fill);
+            transform-origin: left center;
+            will-change: transform;
+        }
 
         .el{
             width: 100%;
@@ -46,59 +69,9 @@
             justify-content: center;
             align-items: center;
             p{
-                padding: 10px;
+                font-size: 1.5rem;
+                padding: 10px 20px;
                 margin: 0px;
-                color: var(--blackText);
-            }
-            &:nth-of-type(2){
-                p{
-                    color: var(--whiteText);
-                    // white-space: none;
-                }
-            }
-        }
-
-
-        .imgWrapper{
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top:0;
-            left:0;
-            z-index: 0;
-            padding: 2px 4px;
-            background-color: var(--darkOlive);
-            border-radius: 25px;
-            overflow: hidden;
-            
-            .perspectiveImage{
-                width: 100%;
-                height: 100%;
-                position: relative;
-                overflow: hidden;
-                border: 1px solid var(--whiteBoarder);
-                border-radius: 25px;
-                
-                .img__wrapper{
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-
-                    .overlay{
-                        width: 100%;
-                        height: 100%;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        background-color: var(--bgBlack);
-                        opacity: 0.6;
-                        z-index: 1;
-                    } 
-                    
-                    img{
-                        z-index: 0;
-                    }
-                }
             }
         }
     }
@@ -106,6 +79,10 @@
 }
 
 .buttonIcon{
+    --web-button-ink: #212222;
+    --web-button-surface: rgba(255, 232, 214, 0.14);
+    --web-button-fill: #212222;
+
     position: relative;
     max-width: 120px;
     height: 40px;
@@ -115,8 +92,10 @@
     overflow: hidden;
     pointer-events: all;
     padding: 0;
-    border: 0;
+    border: 1px solid var(--web-button-ink);
     background: transparent;
+    color: var(--web-button-ink);
+    isolation: isolate;
 
 
     @include vb((
@@ -134,6 +113,25 @@
         pointer-events: all;
         cursor: pointer;
 
+        .solidSurface,
+        .solidFill {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .solidSurface {
+            background: var(--web-button-surface);
+        }
+
+        .solidFill {
+            background: var(--web-button-fill);
+            transform-origin: left center;
+            will-change: transform;
+        }
+
         .el{
             width: 100%;
             height: 100%;
@@ -143,61 +141,23 @@
             align-items: center;
             p{
                 margin: 0px;
-                color: var(--blackText);
-            }
-            &:nth-of-type(2){
-                p{
-                    color: var(--whiteText);
-                    // white-space: none;
-                }
-            }
-        }
-
-
-        .imgWrapper{
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top:0;
-            left:0;
-            z-index: 0;
-            padding: 2px 4px;
-            background-color: var(--darkOlive);
-            border-radius: 25px;
-            overflow: hidden;
-            
-            .perspectiveImage{
-                width: 100%;
-                height: 100%;
-                position: relative;
-                overflow: hidden;
-                border: 1px solid var(--whiteBoarder);
-                border-radius: 25px;
-                
-                .img__wrapper{
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-
-                    .overlay{
-                        width: 100%;
-                        height: 100%;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        background-color: var(--bgBlack);
-                        opacity: 0.6;
-                        z-index: 1;
-                    } 
-                    
-                    img{
-                        z-index: 0;
-                    }
-                }
             }
         }
     }
     
+}
+
+.toneLight {
+    --web-button-ink: #212222;
+    --web-button-surface: rgba(255, 232, 214, 0.14);
+    --web-button-fill: #212222;
+}
+
+.toneDark {
+    --web-button-ink: #ffe8d6;
+    --web-button-surface: rgba(20, 21, 17, 0.72);
+    --web-button-fill: #ffe8d6;
+    backdrop-filter: blur(8px);
 }
 
 .perspectiveText{
@@ -216,21 +176,29 @@
         justify-content: flex-start;
         white-space: nowrap;
         margin: 0;
-
-        &:nth-of-type(2){
-            position: absolute;
-            align-items: center;
-            gap: 2px;
-            width: 140%;
-        }
+        gap: 10px;
     }
 }
 
 .arrow{
     display: inline-flex;
+    width: 16px;
+    min-width: 16px;
+    margin-left: 6px;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    flex-shrink: 0;
+    transform-origin: left center;
+    will-change: transform, opacity, clip-path;
+}
+
+.arrowInner{
+    width: 16px;
+    min-width: 16px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
 }
 
 .PerspectiveIcon{

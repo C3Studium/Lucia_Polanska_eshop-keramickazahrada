@@ -1,9 +1,38 @@
-@use "../../../../styles/system/_shortcuts.scss" as *;
-/* Error Message styles using nested Sass structure */
-
 .root {
-  padding-top: 0.5rem; /* 8px */
-  color: #ef4444; /* rose-500 */
-  font-size: 0.875rem; /* small-regular proxy */
-  line-height: 1.25rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: stretch;
+  min-height: 42px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(154, 86, 75, .32);
+  background: rgba(154, 86, 75, .055);
+  color: #7f4139;
+  font: 400 14px/1.45 "Sansation-Regular", sans-serif;
+}
+
+.root::before {
+  display: grid;
+  place-items: center;
+  border-right: 1px solid rgba(154, 86, 75, .24);
+  content: "!";
+  font: 400 12px/1 "Sentient-Regular", serif;
+}
+
+.root span {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  padding: 9px 13px;
+}
+
+.marker {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 34px;
+  height: 1px;
+  background: rgba(154, 86, 75, .7);
+  transform-origin: left center;
 }

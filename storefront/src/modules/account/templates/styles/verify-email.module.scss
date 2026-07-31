@@ -118,6 +118,37 @@
 	}
 }
 
+.section {
+  min-height: 100svh;
+  height: auto;
+  width: 100%;
+  padding: clamp(7rem, 12vh, 10rem) 1.25rem 5rem;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(116,121,96,.18), transparent 26rem),
+    #eee8d6;
+
+  .ImageContainer { display: none; }
+
+  .container {
+    width: min(100%, 660px);
+    height: auto;
+    min-height: 520px;
+    padding: clamp(2rem, 5vw, 4.5rem);
+    border-top: 1px solid rgba(33,34,34,.22);
+    border-bottom: 1px solid rgba(33,34,34,.22);
+    border-radius: 0;
+    background: rgba(255,248,238,.3);
+    box-shadow: none;
+
+    .title {
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: .92;
+      letter-spacing: -.04em;
+    }
+  }
+}
+
 
 .LinkButtonS{
     width: auto;
@@ -263,4 +294,71 @@
             opacity: 0;
         }
     }
+}
+
+/* Auth portal content */
+.container {
+  width: 100%;
+  max-width: 31rem;
+  min-height: 0;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.eyebrow {
+  margin: 0 0 .9rem;
+  color: rgba(33, 34, 34, .5);
+  font-size: .7rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0 0 1.25rem;
+  font: 400 clamp(3.1rem, 4.8vw, 5.2rem)/.88 "Sentient-Regular", serif;
+  letter-spacing: -.05em;
+
+  em {
+    display: block;
+    margin-left: 12%;
+    color: #778064;
+    font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+    font-size: .76em;
+    font-weight: 300;
+  }
+}
+
+.desc {
+  max-width: 27rem;
+  color: rgba(33, 34, 34, .64);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.ClickButton,
+.LinkButtonS {
+  width: 100%;
+  justify-content: stretch;
+  border-radius: 999px;
+  box-shadow: none;
+
+  .button {
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+    border: 1px solid rgba(33, 34, 34, .7);
+    border-radius: 999px;
+  }
 }

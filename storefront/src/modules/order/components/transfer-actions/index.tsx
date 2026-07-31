@@ -1,7 +1,7 @@
 "use client"
 
 import { acceptTransferRequest, declineTransferRequest } from "@lib/data/orders"
-import { Button } from "@medusajs/ui"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { useState } from "react"
 import styles from "../styles/transfer-actions.module.scss"
 
@@ -12,10 +12,15 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
   const [status, setStatus] = useState<{
     accept: TransferStatus | null
     decline: TransferStatus | null
-  } | null>({
+  }>({
     accept: null,
     decline: null,
   })
+
+  const busy =
+    status.accept === "pending" || status.decline === "pending"
+  const completed =
+    status.accept === "success" || status.decline === "success"
 
   const acceptTransfer = async () => {
     setStatus({ accept: "pending", decline: null })
@@ -38,39 +43,57 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
   }
 
   return (
-    <div className={styles.root}>
-      {status?.accept === "success" && (
-        <p className={styles.success}>Vaše objednávka byla úspěšně převedena!</p>
-      )}
-      {status?.decline === "success" && (
-        <p className={styles.success}>Převod objednávky byl úspěšně zamítnut!</p>
-      )}
-      {status?.accept !== "success" && status?.decline !== "success" && (
+    <div className={styles.root} aria-live="polite">
+      {completed ? (
+        <div className={styles.result}>
+          <span>
+            {status.accept === "success"
+              ? "Převod potvrzen"
+              : "Převod odmítnut"}
+          </span>
+          <strong>
+            {status.accept === "success"
+              ? "Objednávka je nyní přiřazená k novému majiteli."
+              : "Objednávka zůstává beze změny."}
+          </strong>
+          <p>
+            {status.accept === "success"
+              ? "Další informace najdete ve svém účtu."
+              : "Tato žádost už nevyžaduje žádný další krok."}
+          </p>
+        </div>
+      ) : (
         <div className={styles.actions}>
-          <Button
-            size="large"
-            onClick={acceptTransfer}
-            isLoading={status?.accept === "pending"}
-            disabled={
-              status?.accept === "pending" || status?.decline === "pending"
+          <PremiumActionButton
+            text={
+              status.accept === "pending"
+                ? "Převádím objednávku…"
+                : "Přijmout převod"
             }
-          >
-            Přijmout převod
-          </Button>
-          <Button
-            size="large"
-            variant="secondary"
-            onClick={declineTransfer}
-            isLoading={status?.decline === "pending"}
-            disabled={
-              status?.accept === "pending" || status?.decline === "pending"
+            onClickAction={acceptTransfer}
+            disabled={busy}
+            active={status.accept === "pending"}
+          />
+          <PremiumActionButton
+            text={
+              status.decline === "pending"
+                ? "Zamítám žádost…"
+                : "Ponechat beze změny"
             }
-          >
-            Zamítnout převod
-          </Button>
+            onClickAction={declineTransfer}
+            disabled={busy}
+            active={status.decline === "pending"}
+            className={styles.secondary}
+          />
         </div>
       )}
-      {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+
+      {errorMessage && (
+        <div className={styles.error} role="alert">
+          <strong>Žádost se nepodařilo zpracovat.</strong>
+          <span>{errorMessage}</span>
+        </div>
+      )}
     </div>
   )
 }

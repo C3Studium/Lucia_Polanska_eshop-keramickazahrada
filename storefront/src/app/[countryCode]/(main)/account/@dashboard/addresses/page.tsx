@@ -8,8 +8,8 @@ import styles from "../styles/addresses.module.scss"
 import AddressesTemplate from "@modules/account/templates/addresses-template"
 
 export const metadata: Metadata = {
-  title: "Addresses",
-  description: "View your addresses",
+  title: "Doručovací adresy",
+  description: "Správa uložených doručovacích a fakturačních adres.",
 }
 
 export default async function Addresses(props: {

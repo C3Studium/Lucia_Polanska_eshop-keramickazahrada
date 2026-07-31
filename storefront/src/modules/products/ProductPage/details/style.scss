@@ -1,261 +1,115 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+.detailsProduct {
+  width: 100%;
+  height: fit-content;
+  margin: 0;
+  color: #ffe8d6;
+  background: transparent;
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  // justify-content: flex-end;
+}
 
-.details{
-    width: 100%;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    background-color: var(--bgPrimary);
-    gap: 1.5dvh;
-    overflow: hidden;
-    margin-top: 250px;
+.details__content{
+  width: 100%;
+}
+.details__title {
+  width: 100%;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 232, 214, 0.2);
+}
 
-    .details__title{
-        width: 100%;
-        height: 7.5dvh;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        margin: 0 2.5dvw;
-        border-bottom: 1px solid var(--iconsBlack);
+.details__title h2 {
+  margin: 0;
+  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
 
+.details__content__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 
-        @include hb((
-            mdt: (height: 5dvh),
-            xs: (height: 15dvh),
-            xxs: (height: 15dvh),
-        ));
+.details__content__list__item {
+  border-bottom: 1px solid rgba(255, 232, 214, 0.13);
+}
 
-        h2{
-            position: relative;
-            text-transform: uppercase;
-            z-index: 1;
-            font-size: 5rem;
-            color: var(--whiteText);
-            font-weight: 300;
-            margin: 0;
-            line-height: 1.05;
-        }
-    }
+.details__content__list__item__main {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
 
-    .details__content{
-        width: 100%;
-        min-height: 20dvh;
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        justify-content: flex-start;
-        flex-direction: column;
-        @include hb((
-            sm: (min-height: 40dvh),
-        ));
+.details__content__list__item__main:focus-visible {
+  outline: 1px solid rgba(187, 183, 136, .72);
+  outline-offset: 5px;
+}
 
-        .details__content__list{
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            flex-direction: column;
-            padding: 0 2.5dvw;
+.details__content__list__item__main h3 {
+  margin: 0;
+  font: 300 14px/1.2 "Sansation-Light", sans-serif;
+}
 
-            .details__content__list__item{
-                width: 100%;
-                height: fit-content;
-                position: relative;
-                display: flex;
-                align-items: space-between;
-                justify-content: center;
-                flex-direction: column;
-                border-bottom: 1px solid var(--iconsBlack);
+.details__content__list__item__main__button {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid rgba(255, 232, 214, .34);
+  border-radius: 50%;
+  opacity: 0.62;
+}
 
-                @include vb((
-                    s: (width: 90%),
-                    sm: (width: 90%),
-                    xs: (width: 90%),
-                ));
+.details__content__list__item__main__button i {
+  position: absolute;
+  width: 8px;
+  height: 1px;
+  background: currentColor;
+}
 
-                .details__content__list__item__main{
-                    width: 100%;
-                    height: fit-content;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    flex-direction: row;
-                    padding: 1dvh 0;
+.details__content__list__item__main__button i:last-child {
+  transform: rotate(90deg);
+}
 
-                    h3{
-                        font-family: "Sansation-Light";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 1.5rem;
-                        color: var(--whiteText);
-                        font-weight: 300;
-                        margin: 0;
-                        @include hb((
-                            sm: (font-size: 1.3rem),
-                            xs: (font-size: 1.3rem),
-                            xxs: (font-size: 1.3rem),
-                        ));
-                        @include vb((
-                            md: (font-size: 1.3rem),
-                            s: (font-size: 1.3rem),
-                            sm: (font-size: 1.3rem),
-                            xs: (font-size: 1.2rem),
-                        ));
-                    }
+.details__content__list__item__inner {
+  overflow: hidden;
+}
 
-                    .details__content__list__item__main__button{
-                        width: 1.5rem;
-                        height: 1.5rem;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        cursor: pointer;
+.details__content__list__item__inner .info,
+.details__content__list__item__inner .details__desc,
+.details__content__list__item__inner .details__shipment {
+  padding: 8px 0 18px;
+}
 
-                        @include hb((
-                            sm: (width: 1.3rem, height: 1.3rem),
-                            xs: (width: 1.3rem, height: 1.3rem),
-                            xxs: (width: 1.3rem, height: 1.3rem),
-                        ));
-                        @include vb((
-                            md: (width: 1.3rem, height: 1.3rem),
-                            s: (width: 1.3rem, height: 1.3rem),
-                            sm: (width: 1.3rem, height: 1.3rem),
-                            xs: (width: 1.3rem, height: 1.3rem),
-                        ));
-                    }
-                }
+.details__content__list__item__inner p,
+.details__content__list__item__inner h4 {
+  color: rgba(255, 232, 214, 0.62);
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
 
-                .details__content__list__item__inner{
-                    width: 100%;
-                    height: fit-content;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    border-top: 0.5px solid var(--bgWhite);
+.details__content__list__item__inner ul {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 
-                    .info{
-                        width: 100%;
-                        padding: 1dvh 0 2.5dvh 0;
-
-                        p{
-                            font-family: "Sansation-Light";
-                            position: relative;
-                            z-index: 1;
-                            font-size: 1.1rem;
-                            color: var(--whiteText);
-                            font-weight: 300;
-                            margin: 0;
-                            text-align: left;
-                            padding: 1dvh 0 2.5dvh 0;
-                            @include hb((
-                                sm: (font-size: 0.9rem),
-                                xs: (font-size: 0.9rem),
-                                xxs: (font-size: 0.9rem),
-                            ));
-                            @include vb((
-                                xs: (font-size: 0.9rem),
-                            ));
-                        }
-                    }
-
-                    .details__desc{
-                        width: 100%;
-                        padding: 1dvh 0 2.5dvh 0;
-
-                        ul{
-                            list-style: none;
-                            padding: 0;
-                            margin: 0;
-                            display: flex;
-                            flex-direction: row;
-                            justify-content: space-between;
-                            width: 100%;
-
-                            @include vb((
-                                s: (
-                                    flex-wrap: wrap,
-                                    align-items: flex-start,
-                                    justify-content: flex-start
-                                ),
-                                sm: (
-                                    flex-wrap: wrap,
-                                    align-items: flex-start,
-                                    justify-content: flex-start
-                                ),
-                                xs: (
-                                    flex-wrap: wrap,
-                                    align-items: flex-start,
-                                    justify-content: flex-start
-                                ),
-                            ));
-
-
-                            li{
-                                border-right: 0.5px solid var(--bgWhite);
-                                padding: 1dvh 2.5dvw;
-                                width: 25%;
-
-                                &:nth-of-type(1){
-                                    border-left: 0.5px solid var(--bgWhite);
-                                }
-
-                                h4{
-                                    font-family: "Sansation-Bold";
-                                    font-size: 1.1rem;
-                                    color: var(--whiteText);
-                                    font-weight: 400;
-                                    margin: 0;
-                                }
-
-                                p{
-                                    font-family: "Sansation-Light";
-                                    font-size: 1rem;
-                                    color: var(--whiteText);
-                                    font-weight: 300;
-                                    margin: 0;
-                                }
-                            }
-                        }
-                    }
-
-                    .shipment{
-                        width: 100%;
-                        padding: 1dvh 0 2.5dvh 0;
-
-                        .shipment__item{
-                            width: 100%;
-                            padding: 1dvh 0;
-                            border-bottom: 0.5px solid var(--bgWhite);
-
-                            h4{
-                                font-family: "Sansation-Bold";
-                                font-size: 1.1rem;
-                                color: var(--whiteText);
-                                font-weight: 400;
-                                margin: 0;
-                            }
-
-                            p{
-                                font-family: "Sansation-Light";
-                                font-size: 1rem;
-                                color: var(--whiteText);
-                                font-weight: 300;
-                                margin: 0;
-                            }
-                        }
-                    }
-                    
-                }
-            }
-        }
-    }
+.details__content__list__item__inner li {
+  padding: 8px 0;
+  border: 0;
 }

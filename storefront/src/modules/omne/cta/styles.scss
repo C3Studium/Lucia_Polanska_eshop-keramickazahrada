@@ -1,0 +1,273 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+.aboutCta {
+    --cta-ink: #212222;
+    --cta-olive: #686b4f;
+
+    position: relative;
+    height: clamp(560px, 66svh, 760px);
+    padding: clamp(30px, 3.6vw, 62px) 4.5%;
+    overflow: hidden;
+    color: var(--cta-ink);
+
+    &__meta {
+        height: 18px;
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 1.4vw, 24px);
+        color: rgba(33, 34, 34, .52);
+        font-size: clamp(.58rem, .62vw, .7rem);
+        letter-spacing: .16em;
+        text-transform: uppercase;
+
+        i {
+            flex: 1;
+            height: 1px;
+            background: rgba(33, 34, 34, .24);
+            transform-origin: left center;
+        }
+    }
+
+    &__composition {
+        position: relative;
+        height: calc(100% - 18px);
+        display: grid;
+        grid-template-columns: minmax(0, 1.04fr) minmax(440px, .96fr);
+        align-items: center;
+        gap: clamp(48px, 5.5vw, 112px);
+    }
+
+    &__visuals {
+        position: relative;
+        align-self: stretch;
+        min-width: 0;
+    }
+
+    &__image {
+        position: absolute;
+        margin: 0;
+        overflow: hidden;
+        box-shadow: 0 22px 58px -30px rgba(33, 34, 34, .42);
+        will-change: clip-path, transform;
+
+        img {
+            object-fit: cover;
+        }
+
+        &Scale {
+            position: absolute;
+            inset: -1px;
+            will-change: transform;
+        }
+
+        figcaption {
+            position: absolute;
+            z-index: 2;
+            color: rgba(255, 255, 255, .78);
+            font-size: clamp(.54rem, .58vw, .66rem);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            text-shadow: 0 2px 12px rgba(18, 18, 15, .46);
+        }
+
+        &--main {
+            left: 1%;
+            top: 15%;
+            width: min(39vw, 720px);
+            height: 70%;
+            z-index: 1;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: linear-gradient(180deg, transparent 52%, rgba(20, 20, 16, .38));
+            }
+
+            figcaption {
+                left: clamp(14px, 1.3vw, 24px);
+                right: clamp(14px, 1.3vw, 24px);
+                bottom: clamp(12px, 1.2vw, 20px);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                i {
+                    height: 1px;
+                    flex: 1;
+                    background: rgba(255, 255, 255, .42);
+                }
+            }
+        }
+
+        &--detail {
+            right: -1%;
+            bottom: 7%;
+            z-index: 2;
+            width: clamp(160px, 15vw, 280px);
+            aspect-ratio: .82;
+            box-shadow: 0 30px 66px -28px rgba(33, 34, 34, .58);
+
+            figcaption {
+                left: 12px;
+                bottom: 11px;
+            }
+        }
+    }
+
+    &__content {
+        position: relative;
+        z-index: 3;
+        width: min(100%, 800px);
+        padding-top: 1%;
+    }
+
+    &__eyebrow {
+        margin: 0 0 clamp(16px, 1.65vw, 26px);
+        color: rgba(33, 34, 34, .56);
+        font-size: clamp(.62rem, .67vw, .76rem);
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        will-change: opacity;
+    }
+
+    h2 {
+        margin: 0;
+        font-family: "Sentient-Regular", serif;
+        font-size: clamp(3.35rem, 5vw, 6.5rem);
+        font-weight: 400;
+        line-height: .88;
+        letter-spacing: -.05em;
+    }
+
+    &__line {
+        display: block;
+        width: fit-content;
+        overflow: hidden;
+
+        &--accent > span {
+            display: block;
+            will-change: opacity, transform, clip-path;
+        }
+
+        &--accent {
+            margin: .08em 0 0 clamp(46px, 6vw, 110px);
+            color: var(--cta-olive);
+            font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+            font-size: 1.05em;
+            font-weight: 300;
+        }
+    }
+
+    &__word {
+        display: inline-flex;
+
+        + .aboutCta__word {
+            margin-left: .22em;
+        }
+    }
+
+    &__character {
+        display: inline-block;
+        will-change: opacity, transform, clip-path;
+    }
+
+    &__action {
+        margin-top: clamp(36px, 3.6vw, 58px);
+        display: flex;
+        align-items: center;
+        gap: clamp(20px, 2.4vw, 38px);
+        will-change: opacity, transform;
+
+        > p {
+            width: min(27vw, 380px);
+            margin: 0;
+            color: rgba(33, 34, 34, .62);
+            font-size: clamp(.8rem, .84vw, .96rem);
+            font-weight: 300;
+            line-height: 1.4;
+        }
+    }
+
+    @media (max-width: 980px) {
+        height: clamp(540px, 62svh, 680px);
+
+        &__composition {
+            grid-template-columns: minmax(0, .9fr) minmax(400px, 1.1fr);
+            gap: 36px;
+        }
+
+        &__image--main {
+            left: 0;
+            width: 38vw;
+        }
+
+        &__image--detail {
+            right: -3%;
+        }
+
+        &__action > p {
+            display: none;
+        }
+    }
+
+    @media (max-width: 720px) {
+        height: min(68svh, 680px);
+        min-height: 540px;
+        padding: 28px 20px;
+
+        &__meta span:last-child {
+            display: none;
+        }
+
+        &__composition {
+            display: block;
+        }
+
+        &__visuals {
+            position: absolute;
+            inset: 0;
+            opacity: .46;
+        }
+
+        &__image--main {
+            left: auto;
+            right: -10%;
+            top: 10%;
+            width: 72vw;
+            height: 72%;
+
+            &::after {
+                background: linear-gradient(90deg, var(--about-cream) 0%, rgba(255, 232, 214, .26) 58%);
+            }
+        }
+
+        &__image--detail {
+            right: -4%;
+            bottom: 0;
+            width: 32vw;
+        }
+
+        &__image figcaption {
+            display: none;
+        }
+
+        &__content {
+            position: absolute;
+            inset: 18% 0 auto;
+            width: 100%;
+        }
+
+        h2 {
+            font-size: clamp(3.1rem, 13.5vw, 5rem);
+        }
+
+        &__line--accent {
+            margin-left: 13vw;
+        }
+
+        &__action {
+            margin-top: 42px;
+        }
+    }
+}

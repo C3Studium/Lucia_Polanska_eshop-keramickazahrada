@@ -2,7 +2,9 @@
 
 /* Addresses panel styles */
 .root {
-	background: #fff;
+	position: relative;
+	padding: 10px 0 42px 58px;
+	background: transparent;
 
     @include hb((
         sm: (width: 100%),
@@ -35,8 +37,12 @@
 			flex-direction: row;
 			gap: 0.5rem;
 			align-items: baseline;
-			font-size: 2rem;
+			max-width: 760px;
+			font-size: clamp(2rem, 2.8vw, 3.15rem);
 			font-weight: 400;
+            font-family: "Sentient-Regular", serif;
+            line-height: .98;
+            letter-spacing: -.025em;
             width: fit-content;
 
             @include hb((
@@ -63,8 +69,8 @@
             
 		}
 		.editBtn {
-			width: 80px;
-			height: 20px;
+			width: auto;
+			height: auto;
 		}
 	}
 
@@ -85,92 +91,88 @@
 		// .errorMsg: add error styles if needed
 	}
 
-	.summary {
-		font-size: 0.875rem;
-		.row {
-			display: flex;
-			align-items: start;
-			gap: 2rem;
-		}
-		.col {
-			display: flex;
-			flex-direction: column;
-			width: 33.3333%;
-			// &.shipping: shipping address column
-			// &.contact: contact column
-			// &.billing: billing address column
-			.label {
-                font-size: 1.1rem;
-				font-weight: 400;
-				color: var(--blackText);
-				margin-bottom: 0.25rem;
+		.summary {
+            padding-top: .2rem;
 
-                @include hb((
-                    md: (font-size: 1rem),
-                    mdt: (font-size: 1rem),
-                    sm: (font-size: 1rem),
-                    xs: (font-size: 0.9rem, font-weight: 300),
-                    xxs: (font-size: 0.9rem, font-weight: 300),
-                ));
-
-                @include vb((
-                    lg: (font-size: 1rem),
-                    md: (font-size: 1rem),
-                    s: (font-size: 0.9rem, font-weight: 300),
-                    sm: (font-size: 0.9rem, font-weight: 300),
-                    xs: (font-size: 0.9rem, font-weight: 300),
-                ));
+			.row {
+				display: grid;
+                grid-template-columns: 1.05fr .9fr 1.15fr;
+				align-items: stretch;
+				gap: 0;
+                border-top: 1px solid rgba(32, 33, 28, .18);
+                border-bottom: 1px solid rgba(32, 33, 28, .18);
 			}
-			.value {
-                font-size: 0.9rem;
-				font-weight: 300;
-				color: var(--blackText);
-				margin-bottom: 0.25rem;
-                font-family: "Sansation-Light";
 
-                @include hb((
-                    md: (font-size: 0.85rem),
-                    mdt: (font-size: 0.85rem),
-                    sm: (font-size: 0.85rem),
-                    xs: (font-size: 0.8rem, font-weight: 300),
-                    xxs: (font-size: 0.8rem, font-weight: 300),
-                ));
+			.col {
+				display: flex;
+				flex-direction: column;
+				width: auto;
+                min-height: 148px;
+                padding: 1.35rem 1.5rem 1.35rem 0;
+                border-right: 1px solid rgba(32, 33, 28, .14);
 
-                @include vb((
-                    lg: (font-size: 0.85rem),
-                    md: (font-size: 0.85rem),
-                    s: (font-size: 0.8rem, font-weight: 300),
-                    sm: (font-size: 0.8rem, font-weight: 300),
-                    xs: (font-size: 0.8rem, font-weight: 300),
-                ));
-			}
-			.note {
-                font-size: 0.9rem;
-				font-weight: 300;
-				color: var(--blackText);font-family: "Sansation-Light";
+                & + .col { padding-left: 1.5rem; }
 
-                @include hb((
-                    md: (font-size: 0.85rem),
-                    mdt: (font-size: 0.85rem),
-                    sm: (font-size: 0.85rem),
-                    xs: (font-size: 0.8rem, font-weight: 300),
-                    xxs: (font-size: 0.8rem, font-weight: 300),
-                ));
+                &:last-child {
+                    padding-right: 0;
+                    border-right: 0;
+                }
 
-                @include vb((
-                    lg: (font-size: 0.85rem),
-                    md: (font-size: 0.85rem),
-                    s: (font-size: 0.8rem, font-weight: 300),
-                    sm: (font-size: 0.8rem, font-weight: 300),
-                    xs: (font-size: 0.8rem, font-weight: 300),
-                ));
-			}
-		}
-	}
+				.label {
+                    margin: 0 0 .9rem;
+                    color: rgba(32, 33, 28, .52);
+                    font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+                    letter-spacing: .14em;
+                    text-transform: uppercase;
+			    }
+
+			    .value {
+                    margin: 0 0 .28rem;
+				    color: #20211c;
+                    font: 300 .92rem/1.4 "Sansation-Light", sans-serif;
+			    }
+
+			    .note {
+                    max-width: 260px;
+                    margin: 0;
+				    color: rgba(32, 33, 28, .62);
+                    font: 300 .86rem/1.45 "Sansation-Light", sans-serif;
+			    }
+		    }
+	    }
 
 	.divider {
 		margin-top: 2rem;
+        opacity: .42;
 	}
+}
+
+.root::before {
+	content: "01";
+	position: absolute;
+	top: 22px;
+	left: 0;
+	font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+	letter-spacing: .18em;
+	opacity: .48;
+}
+
+@media (max-width: 640px) {
+	.root { padding: 6px 0 32px 36px; }
+	.root::before { top: 14px; }
+    .root .summary {
+        .row { grid-template-columns: 1fr; }
+
+        .col {
+            min-height: auto;
+            padding: 1.1rem 0;
+            border-right: 0;
+            border-bottom: 1px solid rgba(32, 33, 28, .12);
+
+            & + .col { padding-left: 0; }
+            &:last-child { border-bottom: 0; }
+        }
+    }
 }
 
 

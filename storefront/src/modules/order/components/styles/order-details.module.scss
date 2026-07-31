@@ -1,133 +1,86 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.root {
-  margin-bottom: 2rem;
-  .text {
-    margin-top: 0.5rem;
-    font-size: 1.2rem;
-    font-weight: 300;
-    font-family: "Sansation-Light";
+.accountOrderMetaRoot {
+  display: grid;
+}
 
-	@include hb((
-		lg: (font-size: 1.15rem),
-		md: (font-size: 1.15rem),
-		mdt: (font-size: 1.15rem),
-		sm: (font-size: 1.15rem),
-		xs: (font-size: 1.05rem),
-		xxs: (font-size: 1.05rem),
-	));
+.accountOrderConfirmation {
+  display: grid;
+  grid-template-columns: minmax(160px, .42fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(32, 33, 29, .16);
+}
 
-    @include vb((
-		s: (font-size: 1.05rem),
-		sm: (font-size: 1.05rem),
-		xs: (font-size: 1.05rem),
-	));
+.accountOrderConfirmation > span,
+.accountOrderMetaGrid dt {
+  color: rgba(32, 33, 29, .5);
+  font: 11px/1.25 "Sansation-Regular", sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.accountOrderConfirmation p {
+  margin: 0;
+  font: 400 clamp(1.05rem, 1.2vw, 1.25rem)/1.45 "Sansation-Light", sans-serif;
+}
+
+.accountOrderConfirmation strong {
+  font-family: "Sansation-Regular", sans-serif;
+  font-weight: 400;
+}
+
+.accountOrderMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.accountOrderMetaGrid > div {
+  display: grid;
+  gap: 12px;
+  min-height: 116px;
+  padding: 24px 20px;
+  border-right: 1px solid rgba(32, 33, 29, .16);
+}
+
+.accountOrderMetaGrid > div:first-child {
+  padding-left: 0;
+}
+
+.accountOrderMetaGrid > div:last-child {
+  border-right: 0;
+}
+
+.accountOrderMetaGrid dd {
+  margin: 0;
+  font: 400 clamp(16px, 1vw, 18px)/1.4 "Sansation-Regular", sans-serif;
+}
+
+@media (max-width: 800px) {
+  .accountOrderMetaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-
-  .date{
-    color: var(--blackText);
-    font-weight: 400;
-    font-family: "Sansation-Regular";
-    font-size: 1.3rem;
-    @include hb((
-			md: (font-size: 1.2rem),
-			mdt: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.1rem),
-			xxs: (font-size: 1.1rem),
-		));
-
-    @include vb((
-			s: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.2rem),
-		));
+  .accountOrderMetaGrid > div:nth-child(2) {
+    border-right: 0;
   }
 
-  .email {
-    color: var(--blackText);
-    font-weight: 300;
-    font-family: "Sansation-Regular";
-    font-size: 1.3rem;
-    @include hb((
-			md: (font-size: 1.2rem),
-			mdt: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.1rem),
-			xxs: (font-size: 1.1rem),
-		));
+  .accountOrderMetaGrid > div:nth-child(n + 3) {
+    border-top: 1px solid rgba(32, 33, 29, .16);
+  }
+}
 
-    @include vb((
-			s: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.2rem),
-		));
+@media (max-width: 520px) {
+  .accountOrderConfirmation,
+  .accountOrderMetaGrid {
+    grid-template-columns: 1fr;
   }
 
-  .orderNumber {
-    margin-top: 0.5rem;
-    color: var(--disabled);
-    font-weight: 400;
-    font-family: "Sansation-Regular";
-    font-size: 1.3rem;
-    @include hb((
-			md: (font-size: 1.2rem),
-			mdt: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.1rem),
-			xxs: (font-size: 1.1rem),
-		));
-
-    @include vb((
-			s: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.2rem),
-		));
-  }
-
-  .statusRow {
-    display: flex;
-    align-items: center;
-    column-gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .statusText {
-    font-size: 1.2rem;
-    color: var(--blackText);
-    font-weight: 300;
-    font-family: "Sansation-Light";
-    @include hb((
-			md: (font-size: 1.1rem),
-			mdt: (font-size: 1.1rem),
-			sm: (font-size: 1.1rem),
-			xs: (font-size: 1rem),
-			xxs: (font-size: 1rem),
-		));
-    @include vb((
-			s: (font-size: 1.2rem),
-			sm: (font-size: 1.2rem),
-			xs: (font-size: 1.2rem),
-		));
-  }
-
-  .statusValue {
-    color: var(--handle);
-    font-size: 1.1rem;
-    font-weight: 300;
-    font-family: "Sansation-Regular";
-    @include hb((
-			md: (font-size: 1rem),
-			mdt: (font-size: 1rem),
-			sm: (font-size: 1rem),
-			xs: (font-size: 0.9rem),
-			xxs: (font-size: 0.9rem),
-		));
-
-    @include vb((
-			s: (font-size: 1.1rem),
-			sm: (font-size: 1.1rem),
-			xs: (font-size: 1.1rem),
-		));
+  .accountOrderMetaGrid > div {
+    min-height: 0;
+    padding-left: 0;
+    border-top: 1px solid rgba(32, 33, 29, .16);
+    border-right: 0;
   }
 }

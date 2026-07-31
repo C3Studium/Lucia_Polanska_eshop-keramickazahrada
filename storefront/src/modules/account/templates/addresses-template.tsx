@@ -1,9 +1,9 @@
 import styles from "./styles/addresses-template.module.scss"
 
 
-import BgImage from "@modules/account/components/BgImage"
 import { HttpTypes } from "@medusajs/types"
 import AddressBook from "../components/address-book"
+import { AccountPageReveal, AccountSectionReveal } from "../components/account-page-reveal"
 
 type AddressesTemplateProps = {
     customer: HttpTypes.StoreCustomer
@@ -13,17 +13,24 @@ type AddressesTemplateProps = {
 export const AddressesTemplate = ({ customer, region }: AddressesTemplateProps) => {
     return (
         <section className={styles.content}>
-            <div className={styles.content} data-testid="addresses-page-wrapper">
+            <AccountPageReveal className={styles.content} data-testid="addresses-page-wrapper">
+                <AccountSectionReveal>
                 <div className={styles.header}>
-                    <h1 className={styles.title}>Doručovací adresy</h1>
+                    <p className={styles.eyebrow}>Soukromý archiv · doručení</p>
+                    <h1 className={styles.title}>
+                        Místa <em>doručení.</em>
+                    </h1>
                     <Divider />
                     <p className={styles.desc}>
-                        Zobrazte a aktualizujte své doručovací adresy, můžete přidat libovolný počet. Uložení adres zajistí, že budou k dispozici při pokladně.
+                        Uložte místa, kam mají vaše další objekty bezpečně
+                        dorazit. Při příští objednávce je nabídneme automaticky.
                     </p>
                 </div>
-                <AddressBook customer={customer} region={region} />
-            </div>
-            <BgImage src="/assets/img/img/3.jpg" />
+                </AccountSectionReveal>
+                <AccountSectionReveal>
+                    <AddressBook customer={customer} region={region} />
+                </AccountSectionReveal>
+            </AccountPageReveal>
         </section>
     )
 }

@@ -21,10 +21,11 @@ const RegionContext = createContext<RegionContextType | null>(null)
 
 type RegionProviderProps = {
   children: React.ReactNode
+  initialCountryCode?: string
 }
 
 export const RegionProvider = (
-  { children }: RegionProviderProps
+  { children, initialCountryCode }: RegionProviderProps
 ) => {
   const [regions, setRegions] = useState<
     HttpTypes.StoreRegion[]
@@ -45,10 +46,38 @@ export const RegionProvider = (
   }, [])
 
   useEffect(() => {
+    if (!regions.length || !initialCountryCode) {
+      return
+    }
+
+    const routeRegion = regions.find((candidate) =>
+      candidate.countries?.some(
+        (country) => country.iso_2 === initialCountryCode.toLowerCase()
+      )
+    )
+
+    if (routeRegion && routeRegion.id !== region?.id) {
+      setRegion(routeRegion)
+    }
+  }, [regions, initialCountryCode, region?.id])
+
+  useEffect(() => {
     if (region) {
       // set its ID in the local storage in
       // case it changed
       localStorage.setItem("region_id", region.id)
+      return
+    }
+
+    const routeRegion = initialCountryCode
+      ? regions.find((candidate) =>
+          candidate.countries?.some(
+            (country) => country.iso_2 === initialCountryCode.toLowerCase()
+          )
+        )
+      : undefined
+    if (routeRegion) {
+      setRegion(routeRegion)
       return
     }
 
@@ -64,7 +93,7 @@ export const RegionProvider = (
         setRegion(dataRegion)
       })
     }
-  }, [region, regions])
+  }, [region, regions, initialCountryCode])
 
   return (
     <RegionContext.Provider value={{

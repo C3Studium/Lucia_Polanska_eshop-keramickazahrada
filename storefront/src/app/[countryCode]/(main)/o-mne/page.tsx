@@ -3,18 +3,13 @@ import { client } from "../../../../sanity/lib/client"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
-
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
-import AboutMe from "@modules/omne/main"
-import AboutInfo from "@modules/omne/about"
-import ProcessAbout from "@modules/omne/process"
-
-
+import AboutPageExperience from "@modules/omne/page"
 
 export const metadata: Metadata = {
-  title: "FAQ Page",
+  title: "O mně | Lucie Polanská",
   description:
-    "Frequently Asked Questions about our products, shipping, returns, and more.",
+    "Poznejte Lucii Polanskou, její cestu ke keramice, rukopis a inspiraci za objekty z Keramické zahrady.",
 }
 
 export default async function Home(props: {
@@ -41,11 +36,7 @@ export default async function Home(props: {
   return (
     <>
       <ScrollToTopOnReload />
-      <AboutMe />
-      <AboutInfo />
-      <ProcessAbout />
+      <AboutPageExperience />
     </>
   )
 }
-
-

@@ -1,142 +1,231 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
-/* Cart page layout */
-
 .root {
-  padding-top: 3rem; /* py-12 */
-  padding-bottom: 3rem;
-  padding: 10dvh 5dvw;
-  padding: 10dvh 5dvw;
-  width: 100dvw;
-  height: auto;
-  min-height: 100dvh;
-  border-radius: 25px;
+  --cart-ink: #20211c;
+  --cart-cream: #ffe8d6;
+  --cart-olive: #bbb788;
+  --cart-green: #747e62;
+  --cart-line: rgba(255, 232, 214, .2);
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100svh;
+  padding: clamp(94px, 10vh, 124px) 0 clamp(110px, 15vh, 180px);
+  overflow: clip;
+  color: var(--cart-cream);
+  background: var(--cart-ink);
+}
 
-  @include hb((
-    md: (padding: 10dvh 2.5dvw),
-  ));
+.root::before {
+  position: absolute;
+  z-index: -1;
+  inset: -5% -8%;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 86% 10%, rgba(228, 126, 79, .32), transparent 30rem),
+    radial-gradient(ellipse at 12% 48%, rgba(255, 232, 214, .18), transparent 48rem),
+    radial-gradient(ellipse at 76% 78%, rgba(187, 183, 136, .28), transparent 54rem);
+  opacity: .12;
+  animation: cartAmbient 32s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+}
 
-  @include vb((
-    s: (padding: 5dvh 2.5dvw),
-    sm: (padding: 5dvh 2.5dvw),
-    xs: (padding: 7.5dvh 2.5dvw),
-  ));
+.container {
+  position: relative;
+  z-index: 1;
+  width: min(96vw, 1980px);
+  margin: 0 auto;
+}
 
-  .container {
-    width: 100%;
-    height: 100%;
-    background-color: var(--bgWhite);
-    border-radius: 25px !important;
-    box-shadow: 0 2px 10px var(--shadows); // subtle shadow here
+.intro {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.2fr) minmax(280px, 1.05fr);
+  gap: clamp(44px, 4vw, 86px);
+  align-items: end;
+  min-height: 210px;
+  padding: 22px clamp(18px, 1.8vw, 36px) 42px;
+  border-bottom: 1px solid var(--cart-line);
+  animation: cartReveal .8s cubic-bezier(.22, 1, .36, 1) both;
 
-
-    .grid {
-      width: 100%;
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      gap: 10rem;
-      border-radius: 25px;
-      min-height: 60dvh;
-      padding: 5dvh 2.5dvw;
-
-      @include hb((
-        lg: (gap: 5rem),
-        md: (gap: 2.5rem),
-        mdt: (gap: 2.5rem),
-        sm: (flex-direction: column, gap: 1rem),
-        xs: (flex-direction: column, gap: 1rem),
-        xxs: (flex-direction: column, gap: 1rem),
-      ));
-      @include vb((
-        lg: (flex-direction: column, gap: 1rem),
-        md: (flex-direction: column, gap: 1rem),
-        s: (flex-direction: column, gap: 1rem),
-        sm: (flex-direction: column, gap: 1rem),
-        xs: (flex-direction: column, gap: 1rem),
-      ));
-
-
-      .left {
-        flex: 1 1 0%;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        background-color: #ffffff;
-      }
-
-      .right {
-        flex: 0 0 500px;
-        flex: 0 0 500px;
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-
-        @include hb((
-          lg: (flex: 0 0 400px),
-          mdt: (flex: 0 0 400px),
-          md: (flex: 0 0 400px),
-        ));
-
-        @include vb((
-          lg: (flex: 0 0 400px),
-          md: (flex: 0 0 400px),
-          s: (flex: 0 0 400px),
-          sm: (flex: 0 0 380px),
-          xs: (flex: 0 0 360px),
-        ));
-
-        .sticky {
-          position: sticky;
-          top: 8rem;
-          top: 8rem;
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-
-          @include hb((
-            sm: (top: 0, position: relative, gap: 1rem),
-            xs: (top: 0, position: relative, gap: 1rem),
-            xxs: (top: 0, position: relative, gap: 1rem),
-          ));
-
-          @include vb((
-            lg: (top: 0, position: relative, gap: 1rem, width: 70%),
-            md: (top: 0, position: relative, gap: 1rem, width: 90%),
-            s: (top: 0, position: relative, gap: 1rem, width: 90%),
-            sm: (top: 0, position: relative, gap: 1rem, width: 90%),
-            xs: (top: 0, position: relative, gap: 1rem, width: 90%),
-          ));
-
-          .summaryBox {
-            background-color: #ffffff;
-          }
-        }
-      }
-
-      @include vb((
-        md: (flex-direction: column, gap: 2rem),
-        s: (flex-direction: column, gap: 2rem),
-        sm: (flex-direction: column, gap: 2rem),
-        xs: (flex-direction: column, gap: 2rem),
-      ));
-
-      .right {
-        @include vb((
-          md: (flex: 1 1 0%),
-          s: (flex: 1 1 0%),
-          sm: (flex: 1 1 0%),
-          xs: (flex: 1 1 0%),
-        ));
-      }
-    }
-
-    .emptyWrap {
-      width: 100%;
-    }
+  h1 {
+    grid-column: 1;
+    margin: clamp(46px, 6vh, 68px) 0 0;
+    font: 400 clamp(44px, 4vw, 76px)/.9 "Sentient-Regular", serif;
+    letter-spacing: -.05em;
   }
+}
 
-  /* Optional: breakpoint hook if needed later without adding logic here */
-  /* .grid.small { grid-template-columns: 1fr 360px } */
+.eyebrow {
+  grid-column: 1 / -1;
+  align-self: start;
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--cart-line);
+  color: rgba(255, 232, 214, .5);
+  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.introCopy {
+  grid-column: 3;
+  margin: 0;
+  max-width: 34ch;
+  color: rgba(255, 232, 214, .62);
+  font: 300 clamp(14px, .92vw, 17px)/1.5 "Sansation-Light", sans-serif;
+}
+
+.objectMark {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  align-self: center;
+  justify-self: center;
+  width: clamp(104px, 9vw, 168px);
+  aspect-ratio: 1;
+  color: rgba(255,232,214,.22);
+  animation: objectDrift 12s ease-in-out infinite alternate;
+}
+
+.objectMark span,
+.objectMark i,
+.objectMark b {
+  position: absolute;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.objectMark span { inset: 0; }
+.objectMark i { inset: 20%; transform: rotate(14deg); }
+.objectMark b {
+  inset: 43%;
+  border: 0;
+  background: #bbb788;
+  box-shadow: 0 0 0 8px rgba(187,183,136,.08);
+}
+
+.objectMark::before,
+.objectMark::after {
+  position: absolute;
+  top: 50%;
+  left: -30%;
+  width: 160%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+}
+
+.objectMark::after { transform: rotate(90deg); }
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(370px, 22vw, 440px);
+  align-items: start;
+  gap: clamp(58px, 5vw, 96px);
+  padding: clamp(68px, 9vh, 104px) clamp(18px, 1.8vw, 36px) 0;
+}
+
+.left {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 48px;
+  color: var(--cart-cream);
+}
+
+.right { min-width: 0; }
+
+.sticky {
+  position: sticky;
+  top: clamp(86px, 9vh, 108px);
+}
+
+.summaryBox {
+  position: relative;
+  z-index: 1;
+  padding: clamp(30px, 3vw, 46px);
+  border: 1px solid rgba(32, 33, 28, .2);
+  background: var(--cart-cream);
+  color: var(--cart-ink);
+  box-shadow: 24px 30px 70px -48px rgba(0,0,0,.95);
+  transition: transform 700ms cubic-bezier(.22,1,.36,1);
+}
+
+.summaryBox::before {
+  position: absolute;
+  z-index: -1;
+  inset: 13px -13px -13px 13px;
+  content: "";
+  border: 1px solid rgba(187,183,136,.42);
+  background: rgba(187,183,136,.08);
+  transition: transform 700ms cubic-bezier(.22,1,.36,1);
+}
+
+.summaryBox::after {
+  position: absolute;
+  top: -19px;
+  right: 11px;
+  content: "02 · SOUHRN";
+  color: rgba(255,232,214,.38);
+  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .15em;
+}
+
+.summaryBox:hover { transform: translateY(-3px); }
+.summaryBox:hover::before { transform: translate(4px, 4px); }
+
+.secureNote {
+  margin: 0 0 clamp(34px, 4vw, 52px);
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(32, 33, 28, .2);
+  color: rgba(32, 33, 28, .5);
+  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.emptyWrap {
+  min-height: 72svh;
+  border-top: 1px solid var(--cart-line);
+  color: var(--cart-cream);
+}
+
+@keyframes cartAmbient {
+  from { opacity: .08; transform: scale(.99) translate3d(-.5%, 0, 0); }
+  to { opacity: .17; transform: scale(1.015) translate3d(.7%, -.3%, 0); }
+}
+
+@keyframes cartReveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes objectDrift {
+  from { transform: rotate(-4deg) translateY(-4px); }
+  to { transform: rotate(7deg) translateY(5px); }
+}
+
+@media (max-width: 1100px) {
+  .intro { grid-template-columns: 1fr 1fr; }
+  .objectMark { display: none; }
+  .introCopy { grid-column: 2; }
+  .grid { grid-template-columns: 1fr; }
+  .right { width: min(100%, 660px); margin-left: auto; }
+  .sticky { position: relative; top: 0; }
+}
+
+@media (max-width: 700px) {
+  .root { padding: 78px 0 90px; }
+  .container { width: calc(100% - 32px); }
+  .intro {
+    display: flex;
+    min-height: 220px;
+    padding: 18px 0 28px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .intro h1 { margin-top: 32px; font-size: clamp(48px, 16vw, 68px); }
+  .introCopy { max-width: 30ch; margin-top: auto; }
+  .grid { gap: 52px; padding: 42px 0 0; }
+  .summaryBox { padding: 28px 22px; }
 }

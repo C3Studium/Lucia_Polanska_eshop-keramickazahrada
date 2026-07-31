@@ -1,6 +1,10 @@
+"use client"
+
 import { ChevronUpDown } from "@medusajs/icons"
-import { clx } from "@medusajs/ui"
+import { motion } from "framer-motion"
 import {
+  ChangeEvent,
+  FocusEvent,
   SelectHTMLAttributes,
   forwardRef,
   useEffect,
@@ -14,53 +18,133 @@ export type NativeSelectProps = {
   placeholder?: string
   errors?: Record<string, unknown>
   touched?: Record<string, unknown>
+  variant?: "default" | "contact"
 } & SelectHTMLAttributes<HTMLSelectElement>
+
+const ease = [0.22, 1, 0.36, 1] as const
 
 const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
   (
-    { placeholder = "Zvolte...", defaultValue, className, children, ...props },
+    {
+      placeholder = "Zvolte…",
+      defaultValue,
+      value,
+      className,
+      children,
+      variant = "default",
+      errors,
+      touched,
+      onChange,
+      onFocus,
+      onBlur,
+      ...props
+    },
     ref
   ) => {
     const innerRef = useRef<HTMLSelectElement>(null)
-    const [isPlaceholder, setIsPlaceholder] = useState(false)
-
-    useImperativeHandle<HTMLSelectElement | null, HTMLSelectElement | null>(
-      ref,
-      () => innerRef.current
+    const [isFocused, setIsFocused] = useState(false)
+    const [isPlaceholder, setIsPlaceholder] = useState(
+      (value ?? defaultValue ?? "") === ""
+    )
+    const invalid = Boolean(
+      props.name && touched?.[props.name] && errors?.[props.name]
     )
 
-    useEffect(() => {
-      if (innerRef.current && innerRef.current.value === "") {
-        setIsPlaceholder(true)
-      } else {
-        setIsPlaceholder(false)
-      }
-    }, [innerRef.current?.value])
+    useImperativeHandle(ref, () => innerRef.current as HTMLSelectElement)
 
-      return (
-        <div className={s.root}>
-          <div
-            onFocus={() => innerRef.current?.focus()}
-            onBlur={() => innerRef.current?.blur()}
-            className={clx(s.wrapper, className, { [s.muted]: isPlaceholder })}
+    useEffect(() => {
+      if (value !== undefined) {
+        setIsPlaceholder(value === "")
+      }
+    }, [value])
+
+    const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+      setIsPlaceholder(event.target.value === "")
+      onChange?.(event)
+    }
+
+    const handleFocus = (event: FocusEvent<HTMLSelectElement>) => {
+      setIsFocused(true)
+      onFocus?.(event)
+    }
+
+    const handleBlur = (event: FocusEvent<HTMLSelectElement>) => {
+      setIsFocused(false)
+      onBlur?.(event)
+    }
+
+    const visualState = invalid
+      ? "invalid"
+      : isFocused
+      ? "focused"
+      : isPlaceholder
+      ? "placeholder"
+      : "rest"
+
+    return (
+      <div className={`${s.root} ${variant === "contact" ? s.contact : ""}`}>
+        <motion.div
+          className={`${s.wrapper} ${className ?? ""}`}
+          initial={false}
+          animate={visualState}
+          variants={{
+            rest: {
+              backgroundColor: "rgba(255, 248, 238, .16)",
+              color: "#20211c",
+            },
+            placeholder: {
+              backgroundColor: "rgba(255, 248, 238, .1)",
+              color: "rgba(32, 33, 28, .52)",
+            },
+            focused: {
+              backgroundColor: "rgba(187, 183, 136, .1)",
+              color: "#20211c",
+            },
+            invalid: {
+              backgroundColor: "rgba(154, 111, 101, .08)",
+              color: "#20211c",
+            },
+          }}
+          transition={{ duration: 0.4, ease }}
+          data-invalid={invalid || undefined}
+        >
+          <select
+            ref={innerRef}
+            defaultValue={value === undefined ? defaultValue : undefined}
+            value={value}
+            {...props}
+            className={s.select}
+            aria-invalid={invalid || undefined}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
           >
-            <select
-              ref={innerRef}
-              defaultValue={defaultValue}
-              {...props}
-              className={s.select}
-            >
-              <option disabled value="">
-                {placeholder}
-              </option>
-              {children}
-            </select>
-            <span className={s.icon}>
-              <ChevronUpDown />
-            </span>
-          </div>
-        </div>
-      )
+            <option disabled value="">
+              {placeholder}
+            </option>
+            {children}
+          </select>
+          <motion.span
+            className={s.icon}
+            initial={false}
+            animate={{ rotate: isFocused ? 180 : 0 }}
+            transition={{ duration: 0.46, ease }}
+            aria-hidden="true"
+          >
+            <ChevronUpDown />
+          </motion.span>
+          <motion.span
+            className={s.focusLine}
+            initial={false}
+            animate={{ scaleX: isFocused || invalid ? 1 : 0 }}
+            style={{ originX: invalid ? 0.5 : 0 }}
+            transition={{ duration: 0.52, ease: [0.76, 0, 0.24, 1] }}
+            data-invalid={invalid || undefined}
+            aria-hidden="true"
+          />
+        </motion.div>
+      </div>
+    )
   }
 )
 

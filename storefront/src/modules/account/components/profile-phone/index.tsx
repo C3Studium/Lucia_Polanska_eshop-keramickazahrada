@@ -49,7 +49,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
     <form action={formAction} className={s.root}>
       <AccountInfo
         label="Telefon"
-        currentInfo={`${customer.phone}`}
+        currentInfo={customer.phone || "Nezadáno"}
         isSuccess={successState}
         isError={!!state.error}
         errorMessage={state.error}
@@ -58,6 +58,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className={s.formGrid}>
           <Input
+            variant="contact"
             label="Telefon"
             name="phone"
             type="phone"

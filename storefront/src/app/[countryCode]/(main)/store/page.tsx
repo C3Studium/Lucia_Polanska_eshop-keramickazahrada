@@ -1,55 +1,69 @@
 import ECom from "@modules/store/Shop"
-import { listProducts } from "@lib/data/products"
+import type { ShopFilters } from "@modules/store/Shop/types"
+import { listStoreCatalogue } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
-import { HttpTypes } from "@medusajs/types"
-import { getRegion } from "@lib/data/regions"
-import StoreTemplate from "@modules/store/templates"
+import { getCollectionByHandle } from "@lib/data/collections"
 
-export default async function StorePage({ params }: { params: { countryCode: string } }) {
-  const awaitedParams = await params;
-  const countryCode = awaitedParams.countryCode;  
+type StorePageProps = {
+  params: Promise<{ countryCode: string }>
+  searchParams: Promise<{
+    category?: string
+    collection?: string
+    search?: string
+  }>
+}
 
-  // Fetch all products, including bundle info
-  const { response: { products, count } } = await listProducts({
-    queryParams: {
-      limit: 16,
-      fields: "*bundle, *type", 
-    },
+const defaultFilters: ShopFilters = {
+  categoryId: "",
+  collectionId: "",
+  isNew: false,
+  onSale: false,
+  priceRange: "",
+  search: "",
+  sort: "featured",
+}
+
+export default async function StorePage({
+  params,
+  searchParams,
+}: StorePageProps) {
+  const [{ countryCode }, query] = await Promise.all([params, searchParams])
+
+  const categories = await listCategories({
+    fields: "id,name,handle",
+    limit: 100,
+  })
+
+  const category = query.category
+    ? categories.find((item) => item.handle === query.category)
+    : undefined
+
+  const collection = query.collection
+    ? await getCollectionByHandle(query.collection).catch(() => undefined)
+    : undefined
+
+  const initialFilters: ShopFilters = {
+    ...defaultFilters,
+    categoryId: category?.id ?? "",
+    collectionId: collection?.id ?? "",
+    search: query.search?.trim() ?? "",
+  }
+
+  const { products, count } = await listStoreCatalogue({
+    filters: initialFilters,
+    limit: 16,
     countryCode,
   })
 
-  let region: HttpTypes.StoreRegion | undefined | null
-  
-  // Fetch region information based on country code
-  if (countryCode) {
-    region = await getRegion(countryCode)
-  }
-  // Merge products and mark bundles
-  const allProducts: HttpTypes.StoreProduct[] = products.map(product => ({
-    ...product,
-    isBundle: (!!product as any).bundle,
-    bundle: (product as any).bundle,
-  }))
-
-  // Fetch all categories (with products)
-  const categories = await listCategories({
-    fields: "*category_children, *products, *products.*, *parent_category, *parent_category.parent_category",
-    limit: 10,
-  })
-
-
-
   return (
     <ECom
+      key={`${initialFilters.categoryId}:${initialFilters.collectionId}:${initialFilters.search}`}
       countryCode={countryCode}
-      products={allProducts}
+      products={products}
       categories={categories}
-      regionId={region?.id}
+      totalCount={count}
+      initialFilters={initialFilters}
+      initialFilterLabel={category?.name ?? collection?.title}
     />
-    // <StoreTemplate
-    //   sortBy={sortBy}
-    //   page={currentPage}
-    //   countryCode={params.countryCode}
-    // />
   )
 }

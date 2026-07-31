@@ -1,0 +1,89 @@
+@use "../../../../../styles/system/_shortcuts.scss" as *;
+.results { position: relative; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 38px 16px; }
+
+.refreshing {
+  position: sticky;
+  top: 92px;
+  z-index: 5;
+  width: fit-content;
+  margin: 0 auto -34px;
+  padding: 8px 13px;
+  border: 1px solid rgba(33,34,34,.12);
+  border-radius: 999px;
+  background: rgba(247,243,234,.9);
+  box-shadow: 0 12px 28px -20px rgba(33,34,34,.65);
+  color: rgba(33,34,34,.66);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.loadMore { display: flex; flex-direction: column; align-items: center; padding: 65px 0 30px; }
+.progress { width: min(280px, 70%); height: 1px; overflow: hidden; background: rgba(33,34,34,.2); }
+.progress i { display: block; height: 100%; background: #212222; transition: width .5s ease; }
+.loadMore p { margin: 10px 0 19px; color: rgba(33,34,34,.5); font-size: 10px; }
+.loadMore button { display: flex; align-items: center; gap: 22px; padding: 9px 10px 9px 19px; border: 1px solid #212222; border-radius: 999px; background: transparent; color: #212222; font-size: 12px; cursor: pointer; transition: background-color .25s ease, color .25s ease; }
+.loadMore button span { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: #212222; color: #fff; transition: transform .3s ease, background-color .25s ease; }
+.loadMore button:hover { background: #212222; color: #fff; }
+.loadMore button:hover span { transform: translateY(2px); background: #ffe8d6; color: #212222; }
+.loadMore button:disabled { opacity: .55; cursor: wait; }
+.loadMore button:focus-visible,
+.empty button:focus-visible,
+.inlineError button:focus-visible { outline: 2px solid #9a6f65; outline-offset: 4px; }
+
+.empty { display: grid; place-items: center; min-height: 56vh; padding: 60px 20px; border: 1px solid rgba(33,34,34,.14); border-radius: 24px; text-align: center; }
+.empty > span { color: #9a6f65; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.empty h2 { margin: 11px 0; font-family: "Sentient-Regular", serif; font-size: clamp(32px, 4vw, 58px); font-weight: 400; }
+.empty p { max-width: 440px; margin: 0 0 25px; color: rgba(33,34,34,.58); font-size: 13px; line-height: 1.5; }
+.empty button { display: flex; align-items: center; gap: 16px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.empty button i { font-style: normal; transition: transform .25s ease; }
+.empty button:hover i { transform: translateX(5px); }
+.emptyActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 22px; }
+
+.inlineError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 34px;
+  padding: 13px 18px;
+  border: 1px solid rgba(152,95,86,.24);
+  border-radius: 14px;
+  background: rgba(255,232,214,.42);
+  color: #704c46;
+  font-size: 12px;
+
+  button { padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
+}
+
+.skeletonGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 38px 16px; }
+.skeletonCard {
+  display: grid;
+  gap: 12px;
+
+  div,
+  span,
+  i {
+    display: block;
+    overflow: hidden;
+    background: linear-gradient(100deg,rgba(222,217,203,.72) 24%,rgba(255,232,214,.62) 42%,rgba(222,217,203,.72) 60%);
+    background-size: 220% 100%;
+    animation: catalogueShimmer 1.65s ease-in-out infinite;
+  }
+
+  div { aspect-ratio: 4 / 4.75; border-radius: 20px; }
+  span { width: 74%; height: 26px; border-radius: 5px; }
+  i { width: 48%; height: 12px; border-radius: 4px; }
+}
+
+@keyframes catalogueShimmer { to { background-position: -120% 0; } }
+
+@media (min-width: 1520px) { .grid,.skeletonGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .grid,.skeletonGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) {
+  .grid,.skeletonGrid { grid-template-columns: 1fr; gap: 20px; }
+  .refreshing { top: 74px; }
+  .inlineError { align-items: flex-start; flex-direction: column; gap: 8px; }
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useActionState } from "react"
+import React from "react"
 import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
@@ -77,6 +77,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className={s.gridTwo}>
           <Input
+            variant="contact"
             label="Staré heslo"
             name="old_password"
             required
@@ -84,6 +85,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
             data-testid="old-password-input"
           />
           <Input
+            variant="contact"
             label="Nové heslo"
             type="password"
             name="new_password"
@@ -91,6 +93,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
             data-testid="new-password-input"
           />
           <Input
+            variant="contact"
             label="Potvrdit heslo"
             type="password"
             name="confirm_password"

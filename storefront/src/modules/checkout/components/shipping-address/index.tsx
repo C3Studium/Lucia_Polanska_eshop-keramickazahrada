@@ -1,24 +1,55 @@
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@medusajs/ui"
+import { motion, type Variants } from "framer-motion"
 import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
 import styles from "./style.module.scss"
+
+const savedAddressPromptVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 12,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.56,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.08,
+      delayChildren: 0.06,
+    },
+  },
+}
+
+const savedAddressPromptItemVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.46,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+}
 
 const ShippingAddress = ({
   customer,
   cart,
   checked,
   onChange,
+  countryCode,
 }: {
   customer: HttpTypes.StoreCustomer | null
   cart: HttpTypes.StoreCart | null
   checked: boolean
   onChange: () => void
+  countryCode: string
 }) => {
+  const routeCountry = countryCode.toLowerCase()
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -26,7 +57,7 @@ const ShippingAddress = ({
     "shipping_address.company": cart?.shipping_address?.company || "",
     "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
     "shipping_address.city": cart?.shipping_address?.city || "",
-    "shipping_address.country_code": cart?.shipping_address?.country_code || "",
+    "shipping_address.country_code": routeCountry,
     "shipping_address.province": cart?.shipping_address?.province || "",
     "shipping_address.phone": cart?.shipping_address?.phone || "",
     email: cart?.email || "",
@@ -59,7 +90,7 @@ const ShippingAddress = ({
         "shipping_address.company": address?.company || "",
         "shipping_address.postal_code": address?.postal_code || "",
         "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "",
+        "shipping_address.country_code": routeCountry,
         "shipping_address.province": address?.province || "",
         "shipping_address.phone": address?.phone || "",
       }))
@@ -80,7 +111,7 @@ const ShippingAddress = ({
     if (cart && !cart.email && customer?.email) {
       setFormAddress(undefined, customer.email)
     }
-  }, [cart]) // Add cart as a dependency
+  }, [cart, routeCountry]) // route country is the source of truth
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -96,18 +127,40 @@ const ShippingAddress = ({
   return (
     <div className={styles.root}>
       {customer && (addressesInRegion?.length || 0) > 0 && (
-        <Container className={styles.addressPrompt}>
-          <p>{`Dobrý den, ${customer.first_name}, chcete použít jednu z vašich uložených adres?`}</p>
-          <AddressSelect
-            addresses={customer.addresses}
-            addressInput={
-              mapKeys(formData, (_, key) =>
-                key.replace("shipping_address.", "")
-              ) as HttpTypes.StoreCartAddress
-            }
-            onSelect={setFormAddress}
-          />
-        </Container>
+        <motion.section
+          className={styles.addressPrompt}
+          variants={savedAddressPromptVariants}
+          initial="hidden"
+          animate="visible"
+          aria-labelledby="saved-addresses-heading"
+        >
+          <motion.div
+            className={styles.addressPromptIntro}
+            variants={savedAddressPromptItemVariants}
+          >
+            <span>Uložená místa · {String(addressesInRegion?.length).padStart(2, "0")}</span>
+            <div>
+              <h3 id="saved-addresses-heading">
+                Vítejte zpět{customer.first_name ? `, ${customer.first_name}` : ""}.
+              </h3>
+              <p>Vyberte uloženou adresu, nebo pokračujte vyplněním formuláře.</p>
+            </div>
+          </motion.div>
+          <motion.div
+            className={styles.addressPromptSelect}
+            variants={savedAddressPromptItemVariants}
+          >
+            <AddressSelect
+              addresses={addressesInRegion || []}
+              addressInput={
+                mapKeys(formData, (_, key) =>
+                  key.replace("shipping_address.", "")
+                ) as HttpTypes.StoreCartAddress
+              }
+              onSelect={setFormAddress}
+            />
+          </motion.div>
+        </motion.section>
       )}
       <div className={styles.formGrid}>
         <Input
@@ -119,6 +172,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-first-name-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="Příjmení"
@@ -129,6 +183,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-last-name-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="Adresa"
@@ -139,6 +194,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-address-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="Společnost"
@@ -148,6 +204,7 @@ const ShippingAddress = ({
           autoComplete="organization"
           data-testid="shipping-company-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="PSČ"
@@ -158,6 +215,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-postal-code-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="Město"
@@ -168,14 +226,17 @@ const ShippingAddress = ({
           required
           data-testid="shipping-city-input"
           className={styles.input}
+          variant="contact"
         />
-        <CountrySelect
+        <div className={styles.countryField}>
+          <span className={styles.countryLabel}>Země doručení</span>
+          <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
+          <span>Nastaveno podle zvolené verze obchodu</span>
+        </div>
+        <input
+          type="hidden"
           name="shipping_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["shipping_address.country_code"]}
-          onChange={handleChange}
-          required
+          value={routeCountry}
           data-testid="shipping-country-select"
         />
         <Input
@@ -186,6 +247,7 @@ const ShippingAddress = ({
           onChange={handleChange}
           data-testid="shipping-province-input"
           className={styles.input}
+          variant="contact"
         />
       </div>
       <div className={styles.checkboxRow}>
@@ -209,6 +271,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-email-input"
           className={styles.input}
+          variant="contact"
         />
         <Input
           label="Telefon"
@@ -218,6 +281,7 @@ const ShippingAddress = ({
           onChange={handleChange}
           data-testid="shipping-phone-input"
           className={styles.input}
+          variant="contact"
         />
       </div>
     </div>

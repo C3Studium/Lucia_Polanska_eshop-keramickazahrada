@@ -1,187 +1,359 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-.soldProducts{
-    width: 100dvw;
-    height: 50dvh;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--bgPrimary);
-    gap: 5dvh;
-    padding: 10dvh 0;
+.soldProducts {
+  --sold-edge: max(4vw, calc((100vw - 1800px) / 2));
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: clamp(78px, 10vh, 132px) 0 clamp(34px, 5vh, 62px);
+  color: #20211c;
+  background: radial-gradient(
+      circle at 72% 35%,
+      rgba(255, 232, 214, 0.13),
+      transparent 28%
+    ),
+    #bbb788;
+}
 
-    @include hb((
-        mdt: (height: 55dvh),
-        xs: (height: 75dvh),
-        xxs: (height: 75dvh),
-    ));
-    @include vb((
-        lg: (height: 25dvh, padding: 0, padding-bottom: 5dvh),
-        md: (height: 25dvh, padding: 0, padding-bottom: 5dvh),
-        s: (height: 35dvh, padding: 0, padding-bottom: 10dvh, overflow: hidden),
-        sm: (height: 35dvh, padding: 0, padding-bottom: 10dvh, overflow: hidden),
-        xs: (height: 35dvh, padding: 0, padding-bottom: 10dvh, overflow: hidden),
-    ));
+.soldProducts__head,
+.soldProducts__intro,
+.soldProducts__foot {
+  margin-inline: var(--sold-edge);
+}
 
-    .soldProducts__title{
-        width: 100%;
-        height: 5dvw;
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        justify-content: flex-end;
-        flex-direction: column;
-        padding: 0 5dvw;
-        @include hb((
-            xxs: (height: 10dvh),
-        ));
-        @include vb((
-            md: (height: 7.5dvh),
-            s: (height: 7.5dvh),
-            sm: (height: 7.5dvh),
-            xs: (height: 7.5dvh),
-        ));
+.soldProducts__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  color: rgba(32, 33, 28, 0.54);
+  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
 
-        .soldProducts__title__text{
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 1dvw;
-            padding: 0 2dvw;
+.soldProducts__line,
+.soldProducts__foot div {
+  height: 1px;
+  background: rgba(32, 33, 28, 0.23);
+}
 
-            img{
-                @include hb((
-                    md: (width: 40px, height: 40px),
-                    sm: (width: 40px, height: 40px),
-                    xs: (width: 35px, height: 35px),
-                    xxs: (width: 35px, height: 35px),
-                ));
-                @include vb((
-                    md: (width: 40px, height: 40px),
-                    s: (width: 40px, height: 40px),
-                    sm: (width: 40px, height: 40px),
-                    xs: (width: 40px, height: 40px),
-                ));
-            }
+.soldProducts__intro {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(250px, 0.6fr);
+  gap: 8vw;
+  align-items: end;
+  margin-top: clamp(44px, 6vh, 74px);
+  margin-bottom: clamp(32px, 4.5vh, 54px);
+}
 
-            h2{
-                font-family: "Sansation-Light";
-                position: relative;
-                z-index: 1;
-                font-size: 2.5rem;
-                color: var(--whiteText);
-                font-weight: 300;
+.soldProducts__intro h2 {
+  max-width: 9.5em;
+  margin: 0;
+  font: 400 clamp(52px, 6.7vw, 116px) / 0.85 "Sentient-Regular", serif;
+  letter-spacing: -0.057em;
+}
 
-                @include hb((
-                    md: (font-size: 2rem),
-                    sm: (font-size: 2rem),
-                    xs: (font-size: 1.8rem),
-                    xxs: (font-size: 1.8rem),
-                ));
-                @include vb((
-                    md: (font-size: 2rem),
-                    s: (font-size: 1.8rem),
-                    sm: (font-size: 1.6rem),
-                    xs: (font-size: 1.5rem),
-                ));
-            }
-        }
+.soldProducts__intro h2 em {
+  display: block;
+  margin-left: clamp(26px, 4.8vw, 92px);
+  color: #687158;
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-weight: 400;
+}
 
-        .divider{
-            width: 50%;
-            height: 1px;
-            background-color: var(--bgWhite);
+.soldProducts__intro p {
+  max-width: 34ch;
+  margin: 0 0 0.4em;
+  color: rgba(32, 33, 28, 0.64);
+  font: 300 clamp(16px, 1.05vw, 19px) / 1.48 "Sansation-Light", sans-serif;
+}
 
-            @include hb((
-                md: (width: 40%),
-                sm: (width: 50%),
-                xxs: (width: 65%),
-            ));
-            @include vb((
-                md: (width: 62.5%),
-                s: (width: 95%),
-                sm: (width: 95%),
-                xs: (width: 95%),
-            ));
-        }
+.soldProducts__viewport {
+  width: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
 
-    }
+.soldProducts__viewport:active {
+  cursor: grabbing;
+}
 
-    .soldProducts__image__bar{
-        width: 100%;
-        height: 80%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+.soldProducts__rail {
+  display: flex;
+  width: max-content;
+  padding-left: var(--sold-edge);
+  will-change: transform;
+}
 
-        .soldProducts__rotating__bar{
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+.soldProducts__railGroup {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(18px, 1.55vw, 30px);
+  padding-right: clamp(18px, 1.55vw, 30px);
+}
 
-            .soldProducts__rotating__bar__inner{
+.soldProducts__card {
+  --card-focus: 0;
+  display: block;
+  flex: 0 0 clamp(330px, 29vw, 560px);
+  color: inherit;
+  text-decoration: none;
+  -webkit-user-drag: none;
+  transform: scale(calc(0.93 + var(--card-focus) * 0.07));
+  transform-origin: 50% 100%;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: row;
-                gap: 1dvw;
+.soldProducts__card:nth-child(3n + 2) {
+  flex-basis: clamp(300px, 24vw, 470px);
+}
 
-                .soldProducts__image__bar{
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-                    display: flex;
-                    align-items: flex-end;
-                    justify-content: center;
-                    flex-direction: row;
-                    gap: 1dvw;
+.soldProducts__card:nth-child(3n + 3) {
+  flex-basis: clamp(315px, 26vw, 505px);
+}
 
-                    .soldProducts__image__bar__item {
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        width: 20dvw;
-                        // Default to horizontal
-                        height: 20dvh;
-                        // Optional: style the image inside
-                        border-radius: 10px;
-                        img {
-                            width: 100%;
-                            height: 100%;
-                            object-fit: cover;
-                        }
+.soldProducts__cardImage {
+  position: relative;
+  height: clamp(390px, 51vh, 630px);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.18);
+}
 
-                        @include hb((
-                            md: (height: 25dvh),
-                            mdt: (height: 17.5dvh),
-                            sm: (height: 20dvh),
-                            xs: (height: 30dvh),
-                            xxs: (height: 25dvh),
-                        ));
-                        @include vb((
-                            lg: (width: 30dvw, height: 15dvh),
-                            md: (width: 30dvw, height: 15dvh),
-                            s: (width: 50dvw, height: 15dvh),
-                            sm: (width: 50dvw, height: 15dvh),
-                            xs: (width: 50dvw, height: 15dvh),
-                        ));
-                    }
-                }
-            }
-        }
-    }
+.soldProducts__card:nth-child(3n + 2) .soldProducts__cardImage {
+  height: clamp(340px, 43vh, 530px);
+}
+
+.soldProducts__card:nth-child(3n + 3) .soldProducts__cardImage {
+  height: clamp(365px, 47vh, 575px);
+}
+
+.soldProducts__cardImage::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 66%, rgba(16, 17, 14, 0.22));
+  content: "";
+  opacity: 0.45;
+  transition: opacity 500ms ease;
+}
+
+.soldProducts__cardImage img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  object-fit: cover;
+  transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1), filter 650ms ease;
+}
+
+.soldProducts__imageIndex,
+.soldProducts__imageAction {
+  position: absolute;
+  z-index: 1;
+  bottom: 15px;
+  color: rgba(255, 248, 240, 0.86);
+  font: 400 9px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.soldProducts__imageIndex {
+  left: 16px;
+}
+
+.soldProducts__imageAction {
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 350ms ease, transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soldProducts__imageAction i {
+  font-style: normal;
+}
+
+.soldProducts__cardMeta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  padding-top: 14px;
+}
+
+.soldProducts__cardMeta > div > span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(32, 33, 28, 0.49);
+  font: 400 9px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.soldProducts__cardMeta h3 {
+  overflow: hidden;
+  margin: 0;
+  font: 400 clamp(24px, 1.8vw, 35px) / 1 "Sentient-Regular", serif;
+  letter-spacing: -0.038em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.soldProducts__arrow {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(32, 33, 28, 0.3);
+  border-radius: 50%;
+  transition: color 300ms ease, background-color 300ms ease,
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soldProducts__card:hover .soldProducts__cardImage img,
+.soldProducts__card:focus-visible .soldProducts__cardImage img {
+  transform: scale(1.028);
+  filter: saturate(1.04);
+}
+
+.soldProducts__card:hover .soldProducts__cardImage::after,
+.soldProducts__card:focus-visible .soldProducts__cardImage::after {
+  opacity: 0.72;
+}
+
+.soldProducts__card:hover .soldProducts__imageAction,
+.soldProducts__card:focus-visible .soldProducts__imageAction {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.soldProducts__card:hover .soldProducts__arrow,
+.soldProducts__card:focus-visible .soldProducts__arrow {
+  color: #ffe8d6;
+  background: #20211c;
+  transform: rotate(45deg);
+}
+
+.soldProducts__card:focus-visible {
+  outline: 1px solid #20211c;
+  outline-offset: 7px;
+}
+
+.soldProducts__foot {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  margin-top: clamp(30px, 4vh, 48px);
+  color: rgba(32, 33, 28, 0.48);
+  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 850px) {
+  .soldProducts__intro {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .soldProducts__intro p {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .soldProducts {
+    --sold-edge: 18px;
+    min-height: auto;
+    padding-top: 76px;
+  }
+
+  .soldProducts__head {
+    grid-template-columns: auto 1fr;
+  }
+
+  .soldProducts__head span:last-child {
+    display: none;
+  }
+
+  .soldProducts__intro {
+    margin-top: 38px;
+  }
+
+  .soldProducts__intro h2 {
+    max-width: 8.7em;
+    font-size: clamp(46px, 14vw, 72px);
+  }
+
+  .soldProducts__intro h2 em {
+    margin-left: 18px;
+  }
+
+  .soldProducts__intro p {
+    max-width: 30ch;
+    margin-left: 18px;
+    font-size: 16px;
+  }
+
+  .soldProducts__viewport {
+    overflow-x: auto;
+    cursor: auto;
+    scrollbar-width: none;
+    scroll-padding-left: var(--sold-edge);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .soldProducts__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .soldProducts__rail {
+    padding-left: 0;
+    transform: none !important;
+  }
+
+  .soldProducts__railGroup {
+    gap: 12px;
+    padding-right: var(--sold-edge);
+  }
+
+  .soldProducts__railGroup:first-child {
+    padding-left: var(--sold-edge);
+  }
+
+  .soldProducts__railGroup:nth-child(2) {
+    display: none;
+  }
+
+  .soldProducts__card,
+  .soldProducts__card:nth-child(n) {
+    flex-basis: min(78vw, 430px);
+    transform: none;
+    scroll-snap-align: start;
+  }
+
+  .soldProducts__cardImage,
+  .soldProducts__card:nth-child(n) .soldProducts__cardImage {
+    height: min(55svh, 520px);
+  }
+
+  .soldProducts__imageAction {
+    opacity: 1;
+    transform: none;
+  }
+
+  .soldProducts__foot {
+    grid-template-columns: 1fr auto;
+  }
+
+  .soldProducts__foot span:first-child {
+    display: none;
+  }
 }

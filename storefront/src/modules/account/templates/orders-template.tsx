@@ -1,38 +1,44 @@
 import s from "./styles/orders-template.module.scss"
 
-
-import BgImage from "@modules/account/components/BgImage"
 import { HttpTypes } from "@medusajs/types"
 import OrderOverview from "../components/order-overview"
-import TransferRequestForm from "../components/transfer-request-form"
+// TransferRequestForm is intentionally disabled until order transfers are part
+// of the customer-account product flow again.
+// import TransferRequestForm from "../components/transfer-request-form"
+import {
+  AccountPageReveal,
+  AccountSectionReveal,
+} from "../components/account-page-reveal"
 
 type ProfileTemplateProps = {
-    orders: HttpTypes.StoreOrder[]
+  orders: HttpTypes.StoreOrder[]
 }
 
 export const OrdersTemplate = ({ orders }: ProfileTemplateProps) => {
-    return (
-        <section className={s.content}>
-            <div className={s.content} data-testid="orders-page-wrapper">
-                <div className={s.header}>
-                    <h1 className={s.title}>Objednávky</h1>
-                    <Divider />
-                    <p className={s.desc}>
-                        Prohlédněte si své předchozí objednávky a jejich stav. Můžete si převést vaše staré objednávky před založení účtu na váš účet. Pokud je to nutné, můžete také vytvořit
-                        reklamaci nebo výměny svých objednávek (zatím není k dispozici).
-                    </p>
-                </div>
-                <div className={s.body}>
-                    <OrderOverview orders={orders} />
-                    <Divider />
-                    <TransferRequestForm />
-                </div>
-            </div>
-            <BgImage src="/assets/img/img/3.jpg" />
-        </section>
-    )
+  return (
+    <AccountPageReveal className={s.content} data-testid="orders-page-wrapper">
+      <AccountSectionReveal className={s.header}>
+        <p className={s.eyebrow}>Soukromý archiv · objednávky</p>
+        <div className={s.titleRow}>
+          <h1 className={s.title}>
+            Vaše <em>objednávky.</em>
+          </h1>
+          <span>{String(orders.length).padStart(2, "0")} záznamů</span>
+        </div>
+        <p className={s.desc}>
+          Objekty, které si k vám našly cestu, seřazené jako klidný archiv — s
+          částkou, datem i aktuálními detaily na jednom místě.
+        </p>
+      </AccountSectionReveal>
+      <AccountSectionReveal className={s.body}>
+        <OrderOverview orders={orders} />
+        {/* Order transfer is intentionally disabled for now.
+        <Divider />
+        <TransferRequestForm />
+        */}
+      </AccountSectionReveal>
+    </AccountPageReveal>
+  )
 }
-    
-export default OrdersTemplate
 
-const Divider = () => <div className={s.divider} />;
+export default OrdersTemplate

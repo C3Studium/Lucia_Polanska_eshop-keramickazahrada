@@ -1,13 +1,44 @@
+import s from "../../style.module.scss"
+
 const SkeletonOrderConfirmedHeader = () => {
   return (
-    <div className="flex flex-col gap-y-2 pb-10 animate-pulse">
-      <div className="w-2/5 h-4 bg-gray-100"></div>
-      <div className="w-3/6 h-6 bg-gray-100"></div>
-      <div className="flex gap-x-4">
-        <div className="w-16 h-4 bg-gray-100"></div>
-        <div className="w-12 h-4 bg-gray-100"></div>
-      </div>
-    </div>
+    <>
+      <header className={s.orderMasthead} aria-hidden="true">
+        <span className={`${s.block} ${s.lineMd}`} />
+        <span className={`${s.block} ${s.lineSm}`} />
+      </header>
+      <section className={s.orderHero} aria-hidden="true">
+        <div className={s.orderHeroCopy}>
+          <span className={`${s.block} ${s.lineMd}`} />
+          <span className={`${s.block} ${s.titleLg}`} />
+          <span className={`${s.block} ${s.titleMd}`} />
+        </div>
+        <div className={s.stack}>
+          <span className={`${s.block} ${s.lineFull}`} />
+          <span className={`${s.block} ${s.lineFull}`} />
+          <span className={`${s.block} ${s.lineMd}`} />
+        </div>
+      </section>
+      <section className={s.statusRail} aria-hidden="true">
+        {[0, 1, 2].map((step) => (
+          <div className={s.statusCell} key={step}>
+            <span className={`${s.block} ${s.lineXs}`} />
+            <div className={s.statusCopy}>
+              <span className={`${s.block} ${s.lineSm}`} />
+              <span className={`${s.block} ${s.lineMd}`} />
+            </div>
+          </div>
+        ))}
+      </section>
+      <section className={s.orderMeta} aria-hidden="true">
+        {[0, 1, 2, 3].map((item) => (
+          <div className={s.metaCell} key={item}>
+            <span className={`${s.block} ${s.lineSm}`} />
+            <span className={`${s.block} ${s.lineMd}`} />
+          </div>
+        ))}
+      </section>
+    </>
   )
 }
 

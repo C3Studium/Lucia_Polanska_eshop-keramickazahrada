@@ -2,7 +2,7 @@
 
 import { HttpTypes } from "@medusajs/types";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import OptionsSelect from "./Select/select";
 
 type ColorsProps = {

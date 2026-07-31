@@ -1,57 +1,108 @@
 "use client"
 
 import { transferCart } from "@lib/data/customer"
-import { ExclamationCircleSolid } from "@medusajs/icons"
 import { StoreCart, StoreCustomer } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
-import styles from "./style.module.scss"
+import { AnimatePresence, motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
+import styles from "./style.module.scss"
 
-function CartMismatchBanner(props: {
+type BannerState = "idle" | "pending" | "error"
+
+const ease = [0.22, 1, 0.36, 1] as const
+
+function CartMismatchBanner({
+  customer,
+  cart,
+}: {
   customer: StoreCustomer
   cart: StoreCart
 }) {
-  const { customer, cart } = props
-  const [isPending, setIsPending] = useState(false)
-  const [actionText, setActionText] = useState("Run transfer again")
+  const router = useRouter()
+  const [state, setState] = useState<BannerState>("idle")
 
-  if (!customer || !!cart.customer_id) {
-    return
-  }
+  if (!customer || cart.customer_id) return null
 
   const handleSubmit = async () => {
-    try {
-      setIsPending(true)
-      setActionText("Transferring..")
+    setState("pending")
 
+    try {
       await transferCart()
+      router.refresh()
     } catch {
-      setActionText("Run transfer again")
-      setIsPending(false)
+      setState("error")
     }
   }
 
   return (
-    <div className={styles.root}>
+    <motion.aside
+      className={styles.root}
+      initial={{ opacity: 0, y: -18, clipPath: "inset(0 0 100% 0)" }}
+      animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
+      exit={{ opacity: 0, y: -12, clipPath: "inset(0 0 100% 0)" }}
+      transition={{ duration: 0.62, ease }}
+      aria-live="polite"
+    >
       <div className={styles.content}>
-        <span className={styles.message}>
-          <ExclamationCircleSolid className="inline" />
-          Něco se pokazilo při pokusu o přenos vašeho košíku.
-        </span>
-
-        <span className={styles.divider}>·</span>
-
-        <Button
-          variant="transparent"
-          className={styles.actionBtn}
-          size="base"
-          disabled={isPending}
+        <div className={styles.index} aria-hidden="true">
+          01
+        </div>
+        <div className={styles.copy}>
+          <span>Košík čeká na propojení</span>
+          <p>
+            Přihlášení proběhlo správně, ale výběr ještě není přiřazený k vašemu
+            účtu.
+          </p>
+          <AnimatePresence mode="wait" initial={false}>
+            {state === "error" && (
+              <motion.small
+                key="error"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.35, ease }}
+                role="alert"
+              >
+                Propojení se nepodařilo. Zkuste to prosím znovu.
+              </motion.small>
+            )}
+          </AnimatePresence>
+        </div>
+        <motion.button
+          type="button"
+          className={styles.action}
+          disabled={state === "pending"}
           onClick={handleSubmit}
+          initial="rest"
+          animate={state === "pending" ? "pending" : "rest"}
+          whileHover={state === "pending" ? "pending" : "hover"}
+          whileTap={state === "pending" ? undefined : { scale: 0.985 }}
         >
-          {actionText}
-        </Button>
+          <motion.span
+            className={styles.actionFill}
+            variants={{
+              rest: { scaleX: 0 },
+              hover: { scaleX: 1 },
+              pending: { scaleX: 1 },
+            }}
+            transition={{ duration: 0.58, ease: [0.76, 0, 0.24, 1] }}
+            aria-hidden="true"
+          />
+          <span>{state === "pending" ? "Propojujeme…" : "Propojit košík"}</span>
+          <motion.i
+            animate={state === "pending" ? { rotate: 360 } : { rotate: 0 }}
+            transition={
+              state === "pending"
+                ? { duration: 1, repeat: Infinity, ease: "linear" }
+                : { duration: 0.4, ease }
+            }
+            aria-hidden="true"
+          >
+            ↗
+          </motion.i>
+        </motion.button>
       </div>
-    </div>
+    </motion.aside>
   )
 }
 

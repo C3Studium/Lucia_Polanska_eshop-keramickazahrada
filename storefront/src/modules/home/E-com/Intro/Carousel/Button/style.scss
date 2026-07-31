@@ -1,34 +1,132 @@
 @use "../../../../../../styles/system/_shortcuts.scss" as *;
 
 
-.Carousel__button{
+.Carousel__button__wrapper{
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 50px;
     height: 50px;
-    border-radius: 50%;
-    padding: 2px;
-    border: 2px solid var(--iconsPink);
-    cursor: pointer;
-    overflow: hidden;
 
-    .image__bg{
-        position: absolute;
+    .Carousel__button{
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
-        height: 100%;
-        img{
-            object-fit: cover;
+        height: 50px;
+        border-radius: 25px;
+        padding: 10px;
+        border: 2px solid var(--iconsPink);
+        cursor: pointer;
+        overflow: hidden;
+        background: transparent;
+        transform-origin: right center;
+
+        &:hover{
+            z-index: 3;
+        }
+
+        .image__bg{
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-        }
-    }   
+            img{
+                object-fit: cover;
+                width: 100%;
+                height: 100%;
+            }
 
-    p{
-        position: relative;
-        color: var(--whiteText);
-        font-size: 1.2rem;
-        font-weight: 500;
+            .image__overlay{
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                background-color: var(--bgBlack);
+                opacity: 0.6;
+                z-index: 1;
+            }
+        }
+
+        .arrowCarousel{
+            position: relative;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 18px;
+
+            .arrow__icon{
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 12px;
+
+                .arrow__line{
+                    position: absolute;
+                    top: calc(50% - 0.75px);
+                    right: 8px;
+                    width: 100%;
+                    height: 1.5px;
+                    transform-origin: right center;
+                    background-color: var(--whiteText);
+                }
+
+                .arrow__head{
+                    position: absolute;
+                    right: 6px;
+                    width: 8px;
+                    height: 1.5px;
+                    background-color: var(--whiteText);
+                    transform-origin: right center;
+
+                    &--top{
+                        top: 50%;
+                        transform: rotate(45deg);
+                    }
+
+                    &--bottom{
+                        bottom: 50%;
+                        transform: rotate(-45deg);
+                    }
+                }
+
+                &--left{
+
+                    .arrow__line{
+                        left: 8px;
+                        transform-origin: left center;
+                    }
+                    .arrow__head{
+                        right: auto;
+                        left: 6px;
+                        transform-origin: left center;
+
+                        &--top{
+                            transform: rotate(-45deg);
+                        }
+
+                        &--bottom{
+                            transform: rotate(45deg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    &--left{
+        .Carousel__button{
+        }
+    }
+
+    &--right{
+        .Carousel__button{
+        }
     }
 }

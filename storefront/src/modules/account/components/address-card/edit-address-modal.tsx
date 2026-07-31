@@ -1,22 +1,22 @@
 "use client"
 
 import React, { useEffect, useState, useActionState } from "react"
-import { PencilSquare as Edit, Trash } from "@medusajs/icons"
 import { clx, Divider } from "@medusajs/ui"
 import { motion, AnimatePresence } from "framer-motion"
-import { useFormStatus } from "react-dom"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
 import CountrySelect from "@modules/checkout/components/country-select"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
-import Spinner from "@modules/common/icons/spinner"
 import { HttpTypes } from "@medusajs/types"
 import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
 import s from "./styles.module.scss"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
+import { accountBackdropVariants, accountModalVariants } from "../../motion"
+import AccountInteractiveSurface from "../account-interactive-surface"
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -66,11 +66,11 @@ const EditAddress: React.FC<EditAddressProps> = ({
 
   return (
     <div className={s.editAddress}>
-      <div
+      <AccountInteractiveSurface
         className={clx(s.card, { [s.cardActive]: isActive })}
-        data-testid="address-container"
+        contentClassName={s.cardContent}
       >
-        <div className="flex flex-col">
+        <div className={s.cardDetails} data-testid="address-container">
           <h3 className={s.name} data-testid="address-name">
             {address.first_name} {address.last_name}
           </h3>
@@ -94,28 +94,29 @@ const EditAddress: React.FC<EditAddressProps> = ({
           </p>
         </div>
         <div className={s.actions}>
-          <ScrollButton
+          <PremiumActionButton
             text="Upravit"
             className={s.linkBtn}
             onClickAction={open}
+            compact
             data-testid="address-edit-button"
-            component={<Edit />}
           />
-          <ScrollButton
+          <PremiumActionButton
             text="Odstranit"
             className={s.linkBtn}
             onClickAction={() => setDeleteModalOpen(true)}
+            compact
             data-testid="address-delete-button"
-            component={removing ? <Spinner /> : <Trash />}
+            disabled={removing}
           />
         </div>
-      </div>
+      </AccountInteractiveSurface>
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
         <Modal.Title>
           <div className={s.modalTitleContent}>
             <h2 className={s.modalTitle}>Upravit adresu</h2>
-          < Divider />
+            <Divider />
           </div>
         </Modal.Title>
         <form action={formAction}>
@@ -124,6 +125,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             <div className={s.addressForm}>
               <div className={s.rowTwo}>
                 <Input
+                  variant="contact"
                   label="Jméno"
                   name="first_name"
                   required
@@ -132,6 +134,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="first-name-input"
                 />
                 <Input
+                  variant="contact"
                   label="Příjmení"
                   name="last_name"
                   required
@@ -141,6 +144,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
+                variant="contact"
                 label="Společnost"
                 name="company"
                 autoComplete="organization"
@@ -149,6 +153,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 className={s.input}
               />
               <Input
+                variant="contact"
                 label="Adresa"
                 name="address_1"
                 required
@@ -157,6 +162,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="address-1-input"
               />
               <Input
+                variant="contact"
                 label="Bytová jednotka, patro, apod."
                 name="address_2"
                 autoComplete="address-line2"
@@ -165,6 +171,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
               <div className={s.rowPostal}>
                 <Input
+                  variant="contact"
                   label="PSČ"
                   name="postal_code"
                   required
@@ -173,6 +180,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="postal-code-input"
                 />
                 <Input
+                  variant="contact"
                   label="Město"
                   name="city"
                   required
@@ -182,6 +190,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
+                variant="contact"
                 label="Kraj / Okres"
                 name="province"
                 autoComplete="address-level1"
@@ -189,6 +198,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="state-input"
               />
               <CountrySelect
+                variant="contact"
                 name="country_code"
                 region={region}
                 required
@@ -197,6 +207,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="country-select"
               />
               <Input
+                variant="contact"
                 label="Telefon"
                 name="phone"
                 autoComplete="phone"
@@ -210,14 +221,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
           </Modal.Body>
           <Modal.Footer>
             <div className={s.actionsRow}>
-              <ClickButton
+              <PremiumActionButton
                 text="Zrušit"
                 type="button"
                 onClickAction={close}
                 className={s.cancelBtn}
                 data-testid="cancel-button"
               />
-              <ClickButton
+              <PremiumActionButton
                 text="Uložit"
                 type="submit"
                 className={s.saveBtn}
@@ -231,32 +242,41 @@ const EditAddress: React.FC<EditAddressProps> = ({
       <AnimatePresence mode="wait">
         {deleteModalOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            variants={accountBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className={s.deleteModal}
             data-testid="delete-address-modal"
           >
-            <div className={s.modal}>
+            <motion.div
+              className={s.modal}
+              variants={accountModalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
               <h2>Odstranit adresu</h2>
-              <p>Opravdu chcete odstranit tuto adresu? Tuto akci nelze vrátit zpět.</p>
+              <p>
+                Opravdu chcete odstranit tuto adresu? Tuto akci nelze vrátit
+                zpět.
+              </p>
               <div className={s.modalActions}>
-                <ClickButton
+                <PremiumActionButton
                   text="Zrušit"
                   onClickAction={() => setDeleteModalOpen(false)}
                   className={s.cancelBtn}
                 />
-                <ClickButton
+                <PremiumActionButton
                   text="Odstranit"
                   onClickAction={async () => {
-                    setDeleteModalOpen(false);
-                    await removeAddress();
+                    setDeleteModalOpen(false)
+                    await removeAddress()
                   }}
                   className={s.deleteBtn}
                 />
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -265,119 +285,3 @@ const EditAddress: React.FC<EditAddressProps> = ({
 }
 
 export default EditAddress
-
-
-
-function ScrollButton({
-  text,
-  className,
-  textColor,
-  "data-testid": dataTestId,
-  onClickAction,
-  component
-}: {
-  text: string;
-  className?: string;
-  textColor?: string;
-  "data-testid"?: string;
-  onClickAction?: () => void | Promise<void>;
-  component?: React.ReactNode;
-}) {
-  return (
-    <div className={`${className} ${s.ScrollLink}`} data-testid={dataTestId} onClick={onClickAction} style={{ cursor: 'pointer' }}>
-        <button
-          className={s.button}
-            style={{
-            textDecoration: "none",
-          }}
-        >
-            <div className={s.slider}>
-                <div className={s.el}>
-                    <PerspectiveText label={text} className={className} textColor={textColor} component={component}/>
-                </div>
-                <div className={s.el}>
-                    <PerspectiveText label={text} className={className} textColor={textColor} component={component}/>
-                </div>
-            </div>
-        </button>
-    </div>
-  );
-}
-
-function PerspectiveText({label, className, textColor, component}: {label: string; className?: string; textColor?: string, component?: React.ReactNode}) {
-  return (    
-    <div className={s.perspectiveText}>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-    </div>
-  )
-}
-
-type ClickButtonProps = {
-  text: string;
-  onClickAction?: () => void | Promise<void>;
-  ClickAction?: () => void | Promise<void>; // backward compatibility
-  disabled?: boolean;
-  type?: "button" | "submit";
-  className?: string;
-  "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
-  const { pending } = useFormStatus();
-  const isSubmitting = type === "submit" ? pending : false;
-  const isDisabled = disabled || isSubmitting;
-  const handleClick = onClickAction ?? ClickAction;
-
-  return (
-    <div className={className ? `${s.ClickButton} ${className}` : s.ClickButton}>
-      <button
-        type={type}
-        className={s.button}
-        onClick={handleClick}
-        disabled={isDisabled}
-        aria-busy={isDisabled || undefined}
-        onMouseEnter={() => setIsActive(true)}
-        onMouseLeave={() => setIsActive(false)}
-        data-testid={dataTestId}
-      >
-        <motion.div
-          className={s.slider}
-          animate={{top: isActive ? "-100%" : "0%"}}
-          transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-        >
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--darkOlive)" }}
-          >
-            <PerspectiveText label={text}/>
-          </div>
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--bgBlack)" }}
-          >
-            <PerspectiveText label={text} />
-          </div>
-        </motion.div>
-      </button>
-    </div>
-  )
-}

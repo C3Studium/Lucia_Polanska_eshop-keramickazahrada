@@ -1,137 +1,126 @@
-When developing use this script: 
+# Responsive Sass system
 
-{
-  "name": "pk_website",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "sync:styles": "node scripts/sync-styles.js",
-    "watch:styles": "chokidar \"src/**/*.@(scss|css)\" -i \"src/styles/system/**\" -i \"**/node_modules/**\" -i \"**/.next/**\" -c \"npm run sync:styles\"",
-    "dev:next": "next dev --turbopack",
-    "dev": "npm-run-all -p watch:styles dev:next",
-    "build": "npm run sync:styles && next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@vercel/analytics": "^1.5.0",
-    "framer-motion": "^12.5.0",
-    "js-cookie": "^3.0.5",
-    "lenis": "^1.2.3",
-    "next": "^15.5.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "regl": "^2.1.1",
-    "resend": "^4.2.0",
-    "sass": "^1.85.1",
-    "sonner": "^2.0.2"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/react": "19.2.7",
-    "chokidar-cli": "^3.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "15.2.2",
-    "npm-run-all": "^4.1.5"
-  }
-}
+This storefront uses a compact, orientation-aware Sass API with deterministic
+cascade layers and automatic style discovery.
 
+## Daily workflow
 
-when running on production: 
+```bash
+pnpm dev
+```
 
+Development performs one style sync before Next.js starts. The watcher then
+reacts only when a `.scss` or `.css` file is added, removed, or renamed. Normal
+content edits are already handled by Next/Sass and do not regenerate the style
+manifest.
 
-{
-  "name": "pk_website",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@vercel/analytics": "^1.5.0",
-    "framer-motion": "^12.5.0",
-    "js-cookie": "^3.0.5",
-    "lenis": "^1.2.3",
-    "next": "^15.5.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "regl": "^2.1.1",
-    "resend": "^4.2.0",
-    "sass": "^1.85.1",
-    "sonner": "^2.0.2"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/react": "19.2.7",
-    "chokidar-cli": "^3.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "15.2.2",
-    "npm-run-all": "^4.1.5"
-  }
-}
+```bash
+pnpm build
+```
 
+Production performs the same one-shot sync before building. The generated CSS
+imports are not disabled by an environment variable: only the continuous
+watcher is development-only. This keeps local and production style graphs
+identical.
 
+Run a manual, idempotent sync at any time:
 
-########################
+```bash
+pnpm sync:styles
+```
 
-## What This System Does
-Layered responsive Sass: breakpoints ordered small → large with smt/mdt specials; layers guarantee larger viewports win.
+## Concise syntax
 
-Auto-scaling typography: sys.font scales across breakpoints via the layered mixins.
-Shortcut helpers: concise mixins for per-breakpoint styles (h-layer, h-prop, h-block, plus compact aliases).
+Every non-system SCSS file receives `_shortcuts.scss` automatically.
 
-JS breakpoint helper: mirrors the Sass breakpoints (including height guards) for matchMedia/Framer logic.
-Auto-wiring styles: a sync script injects shortcuts into new style files and regenerates imports into globals.scss.
-
-
-## Key Files to Copy
-_breakpoints.scss – breakpoint maps.
-_mixins.scss – layered mixins (h/v, h-layer/v-layer, h-prop/v-prop, h-block/v-block), layer order, smt/mdt caps.
-
-_typography.scss – font tokens + font mixin that scales via the layers.
-_shortcuts.scss – shorthand helpers (h/v, hb/vb, compact xxs-h etc., font).
-sync-styles.js – injects shortcuts into new styles and regenerates auto-import block in globals.
-package.json scripts – sync:styles, watch:styles, dev, build (with pre-sync).
-next.config.mjs – Sass includePath + additionalData if you want; ESM-safe __dirname.
-checkViewport.js – JS breakpoint mirror for matchMedia logic.
-
-## How It Works
-
-# Helpers: 
-Use include h(...) / h-layer / h-prop / h-block (and vertical counterparts) or the compact aliases (xxs-h, lg-h, etc.). Fonts via @include font(token).
-
-# Auto-wiring: 
-sync-styles.js prepends _shortcuts.scss" as *; to non-system style files and inserts @use "...relative-path..." as _sN; into an auto block in globals.scss. Watcher (watch:styles) runs on add/remove events; build runs sync:styles once.
-
-# JS helper: 
-checkViewport.js exports bpH/bpV, matchesH/V, currentH/V, and media query lists, matching the Sass maps (including smt/mdt height conditions).
-Usage (Sass)
-No per-file @use needed if the sync script injected shortcuts. Otherwise: _shortcuts.scss" as *;.
-
-## Set styles inline:
-.nav {
+```scss
+.card {
   @include hb((
-    xxs: (height: 6vh, flex-direction: column),
-    smt: (height: 5vh),
-    lg:  (height: 6vh)
+    xxs: (padding: 1rem, gap: 0.75rem),
+    md:  (padding: 1.5rem, gap: 1rem),
+    lg:  (padding: 2rem)
   ));
+
   @include vb((
-    xxs: (height: 6vh, flex-direction: column),
-    smt: (height: 5vh),
-    lg:  (height: 6vh)
+    xs: (padding: 1rem),
+    s:  (padding: 1.25rem),
+    md: (padding: 1.5rem)
   ));
-  @include font(Nav);
+
+  @include h(lg) {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  @include v(md) {
+    grid-template-columns: 1fr;
+  }
+
+  @include font(SBody);
 }
+```
 
+Available shortcuts:
 
-## Usage (JS/Framer)
-Import from checkViewport.js:
-import { currentH, matchesH } from "@/helpers/checkViewport";
-const bp = currentH();        // e.g., "lg"
-const isLgUp = matchesH("lg");
+- `h(key)` and `v(key)` for one responsive block.
+- `hb(map)` and `vb(map)` for several breakpoints in a compact declaration.
+- `font(token)` for the responsive typography scale.
+- Compatibility helpers such as `h-layer`, `v-layer`, `h-block`, `v-block`,
+  `xxs-h`, `md-h`, and `s-v` remain available.
 
-## Vision
-A self-contained responsive system for Next/React combining layered Sass (larger wins), auto-scaling typography, JS breakpoint parity, and automated wiring of styles—no off-the-shelf package needed, but packaged for reuse as a custom toolkit.
+## Viewport rules
+
+Landscape breakpoints:
+
+| Key | Minimum width | Extra constraint |
+| --- | ---: | --- |
+| `xxs` | 400px | — |
+| `xs` | 750px | — |
+| `sm` | 900px | — |
+| `smt` | 900px | max-width 1399.98px, min-height 720px |
+| `md` | 1200px | — |
+| `mdt` | 1300px | max-width 1399.98px, min-height 950px |
+| `lg` | 1400px | — |
+| `xl` | 1500px | — |
+| `huge` | 1730px | — |
+
+Portrait breakpoints are `xs: 320px`, `sm: 380px`, `s: 400px`, `md: 600px`,
+and `lg: 1000px`.
+
+All queries are min-width and orientation-specific. Named cascade layers keep
+larger breakpoint rules predictable even when component files are compiled in
+a different order.
+
+## Automatic file handling
+
+`scripts/sync-styles.js`:
+
+1. Discovers all non-system `.scss` and `.css` files in a stable sorted order.
+2. Adds or repairs the relative `_shortcuts.scss` import in every SCSS file.
+3. Writes `src/styles/_generated-styles.scss` with stable path-based aliases.
+4. Keeps one fixed generated entry in `globals.scss`.
+5. Writes only when output changed and uses atomic replacement for generated
+   files.
+
+Moving an SCSS file to a different directory therefore repairs its shortcut
+path automatically. Adding, deleting, or renaming a file updates the manifest.
+If TypeScript imports a CSS Module by filename, that TypeScript import still
+needs to be updated by the IDE or refactor tool.
+
+Do not edit `_generated-styles.scss` directly.
+
+## System files
+
+- `_breakpoints.scss`: horizontal and vertical breakpoint configuration.
+- `_mixins.scss`: side-effect-free query and layer mixins.
+- `_layers.scss`: emits global layer order once.
+- `_typography.scss`: responsive typography tokens and `font`.
+- `_shortcuts.scss`: compact API injected into component styles.
+- `_helpers.scss`: global helper CSS emitted once from `globals.scss`.
+- `index.scss`: public, side-effect-free system API.
+
+The old implementation nested every named layer inside another layer with the
+same name. The browser accepted that as a sublayer, but it produced paths such
+as `vp-s.vp-s` and repeated CSS in component builds. The system now owns the
+layer in one place while preserving the original top-level order and media
+queries. The rationale is also documented beside the mixins to prevent the
+duplicate nesting from being reintroduced accidentally.

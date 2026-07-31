@@ -1,0 +1,30 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+.root {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  overflow: hidden;
+}
+
+.surface {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(32, 33, 29, 0.075),
+    rgba(32, 33, 29, 0.026) 68%,
+    rgba(32, 33, 29, 0) 100%
+  );
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  will-change: transform;
+}

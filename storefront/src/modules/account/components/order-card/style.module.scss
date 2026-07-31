@@ -1,398 +1,226 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
 .root {
-  background: #fff;
+  width: 100%;
+  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  color: #20211d;
+}
+
+.interactiveRow {
+  min-height: 150px;
+}
+
+.rowContent {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 0.42fr)
+    minmax(400px, 1.22fr)
+    minmax(190px, 0.72fr)
+    auto;
+  gap: clamp(22px, 2.8vw, 48px);
+  align-items: center;
+  min-height: 150px;
+  padding: clamp(24px, 2.3vw, 36px) clamp(6px, 0.6vw, 10px);
+}
+
+.identity {
+  display: grid;
+  gap: 12px;
+}
+
+.label,
+.meta dt {
+  color: rgba(32, 33, 29, 0.48);
+  font: 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.orderNumber {
+  font: 400 clamp(2.5rem, 3.25vw, 4rem) / 0.82 "Sentient-Regular", serif;
+  letter-spacing: -0.045em;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: 1.45fr 0.9fr 0.75fr;
+  gap: 0;
+  margin: 0;
+}
+
+.meta > div {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+  padding: 4px clamp(16px, 2vw, 30px);
+  border-left: 1px solid rgba(32, 33, 29, 0.16);
+}
+
+.meta > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: rgba(32, 33, 29, 0.78);
+  font: 400 clamp(14px, 1vw, 17px) / 1.35 "Sansation-Regular", sans-serif;
+}
+
+.meta .metaAmount {
+  color: #20211d;
+  font-size: clamp(16px, 1.15vw, 19px);
+}
+
+.products {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.productIcons {
   display: flex;
-  flex-direction: column;
-  max-width: 400px;
-  max-height: 850px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.productIcons::-webkit-scrollbar {
+  display: none;
+}
+
+.productIcon {
+  position: relative;
+  width: 56px;
+  height: 64px;
+  flex: 0 0 auto;
   overflow: hidden;
-  padding: 1.5rem;
+  border: 1px solid rgba(32, 33, 29, 0.12);
+  background: rgba(255, 255, 255, 0.56);
+}
 
-  .header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+.productIcon > :first-child {
+  width: 100%;
+  height: 100%;
+}
 
-    .headerText {
-      margin-right: 0.25rem;
-      font-size: 1.5rem;
-      line-height: 1.25rem;
-      font-weight: 300;
-      margin-bottom: 0.25rem;
-      font-family: "Sansation-Light";
-      color: var(--ui-fg-muted, #6b7280);
+.productIcon > .quantityBadge {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  min-width: 19px;
+  height: 19px;
+  padding-inline: 4px;
+  place-items: center;
+  border-radius: 999px;
+  background: #20211d;
+  color: #f7e5d5;
+  font: 10px/1 "Sansation-Regular", sans-serif;
+}
 
-      @include hb((
-        lg: (font-size: 1.3rem),
-        md: (font-size: 1.3rem),
-        mdt: (font-size: 1.3rem),
-        sm: (font-size: 1.3rem),
-        xs: (font-size: 1.1rem),
-        xxs: (font-size: 1.1rem),
-      ));
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-      @include vb((
-        lg: (font-size: 1.3rem),
-        md: (font-size: 1.3rem),
-        s: (font-size: 1.1rem),
-        sm: (font-size: 1.1rem),
-        xs: (font-size: 1.1rem),
-      ));
-    }
+.moreItems {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(32, 33, 29, 0.28);
+  border-radius: 50%;
+  color: rgba(32, 33, 29, 0.7);
+  font-size: 12px;
+}
 
-    .headerNumber{
-      font-size: 1.6rem;
-      line-height: 1.25rem;
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-      font-family: "Sansation-Regular";
-      color: var(--ui-fg-base, #111827);
-      background: linear-gradient(135deg, var(--darkOlive, #ff6b35), var(--bgBlack, #2d3748));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+.detailsLink {
+  min-width: 11.5rem;
+  min-height: 44px;
+  --premium-link-ink: #20211d;
+  --premium-link-active-ink: #f7e5d5;
+  --premium-link-border: #20211d;
+  --premium-link-fill: #20211d;
+}
 
-      @include hb((
-        lg: (font-size: 1.4rem),
-        md: (font-size: 1.4rem),
-        mdt: (font-size: 1.4rem),
-        sm: (font-size: 1.4rem),
-        xs: (font-size: 1.3rem),
-        xxs: (font-size: 1.3rem),
-      ));
+@media (max-width: 1180px) {
+  .rowContent {
+    grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr) auto;
+  }
 
-      @include vb((
-        lg: (font-size: 1.4rem),
-        md: (font-size: 1.4rem),
-        s: (font-size: 1.3rem),
-        sm: (font-size: 1.3rem),
-        xs: (font-size: 1.3rem),
-      ));
-    }
+  .products {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .actions {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 780px) {
+  .rowContent {
+    grid-template-columns: minmax(115px, 0.35fr) minmax(0, 1fr);
   }
 
   .meta {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    justify-content: center;
-    color: var(--blackText);
-
-    .metaLabel{
-      font-weight: 300;
-      font-size: 1.3rem;
-      font-family: "Sansation-Light";
-      margin-bottom: 0.5rem;
-
-      @include hb((
-        lg: (font-size: 1.2rem),
-        md: (font-size: 1.2rem),
-        mdt: (font-size: 1.2rem),
-        sm: (font-size: 1.2rem),
-        xs: (font-size: 1.1rem),
-        xxs: (font-size: 1.1rem),
-      ));
-
-      @include vb((
-        lg: (font-size: 1.2rem),
-        md: (font-size: 1.2rem),
-        s: (font-size: 1.1rem),
-        sm: (font-size: 1.1rem),
-        xs: (font-size: 1.1rem),
-      ));
-    }
-
-    .metaList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 8px;
-      overflow: hidden;
-
-      .metaItem {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        transition: background-color 0.2s ease;
-        gap: 0.5rem;
-        cursor: pointer; 
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &:hover {
-          background: rgba(0, 0, 0, 0.04);
-        }
-
-        .metaDate {
-          font-weight: 400;
-          font-size: 1.1rem;
-          font-family: "Sansation-Light";
-          color: var(--ui-fg-base, #111827);
-          display: flex;
-          align-items: center;
-
-          @include hb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            mdt: (font-size: 1.05rem),
-            sm: (font-size: 1.05rem),
-            xs: (font-size: 1rem),
-            xxs: (font-size: 1rem),
-          ));
-
-          @include vb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            s: (font-size: 1rem),
-            sm: (font-size: 1rem),
-            xs: (font-size: 1rem),
-          ));
-        }
-
-        .metaAmount {
-          font-weight: 500;
-          font-size: 1.1rem;
-          font-family: "Sansation-Regular";
-          color: var(--darkOlive, #ff6b35);
-          display: flex;
-          align-items: center;
-
-          @include hb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            mdt: (font-size: 1.05rem),
-            sm: (font-size: 1.05rem),
-            xs: (font-size: 1rem),
-            xxs: (font-size: 1rem),
-          ));
-
-          @include vb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            s: (font-size: 1rem),
-            sm: (font-size: 1rem),
-            xs: (font-size: 1rem),
-          ));
-        }
-
-        .metaLines {
-          font-weight: 400;
-          font-size: 1.1rem;
-          font-family: "Sansation-Light";
-          color: var(--ui-fg-muted, #6b7280);
-          display: flex;
-          align-items: center;
-
-          @include hb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            mdt: (font-size: 1.05rem),
-            sm: (font-size: 1.05rem),
-            xs: (font-size: 1rem),
-            xxs: (font-size: 1rem),
-          ));
-
-          @include vb((
-            lg: (font-size: 1.05rem),
-            md: (font-size: 1.05rem),
-            s: (font-size: 1rem),
-            sm: (font-size: 1rem),
-            xs: (font-size: 1rem),
-          ));
-        }
-      }
-    }
+    grid-template-columns: 1fr 1fr;
   }
 
-  .productsContainer {
-    max-height: 350px;
-    height: fit-content;
-    min-height: 200px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.02);
-    margin-top: 1rem;
-
-    &::-webkit-scrollbar {
-      height: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.05);
-      border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 3px;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.3);
-      }
-    }
+  .meta > div:first-child {
+    grid-column: 1 / -1;
+    padding: 0 0 16px;
   }
 
-  .grid {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    margin: 0;
-    min-width: max-content;
-    padding: 0 0.5rem;
+  .meta > div:nth-child(2) {
+    padding-left: 0;
+    border-left: 0;
   }
 
-  .item {
-    display: flex;
-    flex-direction: column;
-    row-gap: 0.5rem;
-    min-width: 140px;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-    height: fit-content;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      border-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .itemInfo {
-      display: flex;
-      align-items: center;
-      font-size: 0.9rem;
-      line-height: 1.25rem;
-      color: var(--blackText);
-
-      .itemTitle {
-        color: var(--blackText);
-        font-size: 1rem;
-        font-family: "Sansation-Regular";
-        font-weight: 400;
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .multiply {
-        
-        margin: 0 0.25rem;
-        color: var(--blackText);
-        font-family: "Sansation-Light";
-        font-weight: 400;
-      }
-    }
+  .products,
+  .actions {
+    grid-column: auto;
+    grid-row: auto;
   }
 
-
+  .products {
+    grid-column: 1 / -1;
+  }
 
   .actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-
-    .detailsLink {
-      display: inline-block;
-      transition: transform 0.2s ease;
-
-      &:hover {
-        transform: translateY(-1px);
-      }
-    }
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
 
+@media (max-width: 520px) {
+  .rowContent {
+    grid-template-columns: 1fr;
+  }
 
+  .meta {
+    grid-template-columns: 1fr;
+  }
 
-.LinkButtonS{
-    width: fit-content;
-    height: fit-content;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 25px;
-    .button{
-        position: relative;
-        width: 200px;
-        height: 40px;
-        cursor: pointer;
-        border-radius: 25px;
-        overflow: hidden;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
+  .meta > div,
+  .meta > div:nth-child(2) {
+    padding: 13px 0;
+    border-top: 1px solid rgba(32, 33, 29, 0.12);
+    border-left: 0;
+  }
 
-        .slider{
-            position: relative;
-            width: 100%;
-            height: 100%;
-
-            .el{
-                width: 100%;
-                height: 100%;
-                p{
-                    margin: 0px;
-                    color: var(--whiteText);
-                }
-                &:nth-of-type(2){
-                    p{
-                        color: var(--blackText);
-                    }
-                }
-                &:hover{
-                    .perspectiveText{
-                        transform: rotateX(90deg);
-                        p{
-                            &:nth-of-type(1){
-                                transform: translateY(-100%);
-                                opacity: 0;
-                            }
-                            &:nth-of-type(2){
-                                opacity: 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-    }
-}
-
-.perspectiveText{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    p{
-        transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-        pointer-events: none;
-        text-transform: capitalize;
-        &:nth-of-type(2){
-            position: absolute;
-            transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(12px);
-            opacity: 0;
-        }
-    }
+  .meta > div:first-child {
+    grid-column: auto;
+  }
 }

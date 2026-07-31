@@ -1,209 +1,292 @@
 "use client"
 
-import { Button, Input, RadioGroup } from "@medusajs/ui"
-import { Card } from "../Card"
-import { useEffect, useMemo, useState } from "react"
+import { isComgate, paymentInfoMap } from "@lib/constants"
+import { initiatePaymentSession } from "@lib/data/cart"
+import {
+  extractComgateRedirectUrl,
+  fromComgateOptionId,
+  getComgateMethodLogo,
+  toComgateOptionId,
+  type ComgatePaymentMethod,
+} from "@lib/util/comgate"
+import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { useRouter } from "next/navigation"
-import { useCart } from "@lib/context/cart"
-import { sdk } from "@lib/config"
-import { formatPrice } from "@lib/util/price"
+import { AnimatePresence, motion } from "framer-motion"
+import Image from "next/image"
+import { useMemo, useState } from "react"
+import styles from "../style.module.scss"
 
 type PaymentProps = {
+  cart: HttpTypes.StoreCart
+  paymentMethods: HttpTypes.StorePaymentProvider[]
+  comgateMethods: ComgatePaymentMethod[]
+  countryCode: string
   handle: string
-  isActive: boolean
+}
+
+const legacyComgateMethods = [
+  { id: "pp_comgate_card", method: "CARD_ALL" },
+  { id: "pp_comgate_applepay", method: "APPLEPAY_REDIRECT" },
+  { id: "pp_comgate_googlepay", method: "GOOGLEPAY_REDIRECT" },
+  { id: "pp_comgate_bank", method: "BANK_ALL" },
+]
+
+const legacyDescription = (id: string) => {
+  if (id.includes("applepay")) return "Potvrzení přes Face ID nebo Touch ID"
+  if (id.includes("googlepay")) return "Rychlé potvrzení přes Google účet"
+  if (id.includes("bank")) return "Výběr banky v zabezpečené bráně Comgate"
+  return "Visa, Mastercard a další podporované karty"
+}
+
+const methodForOption = (id: string) =>
+  fromComgateOptionId(id) ||
+  legacyComgateMethods.find((method) => method.id === id)?.method ||
+  "ALL"
+
+const legacyOptionForMethod = (method: string) => {
+  if (method.includes("APPLE")) return "pp_comgate_applepay"
+  if (method.includes("GOOGLE")) return "pp_comgate_googlepay"
+  if (method.includes("BANK")) return "pp_comgate_bank"
+  return "pp_comgate_card"
 }
 
 export const Payment = ({
+  cart,
+  paymentMethods,
+  comgateMethods,
+  countryCode,
   handle,
-  isActive
 }: PaymentProps) => {
-  const { cart, updateItemQuantity, unsetCart } = useCart()
-  const [loading, setLoading] = useState(true)
-  const [paymentProviders, setPaymentProviders] = useState<HttpTypes.StorePaymentProvider[]>([])
-  const [selectedPaymentProvider, setSelectedPaymentProvider] = useState("")
-  const router = useRouter()
+  const activeSession = cart.payment_collection?.payment_sessions?.find(
+    (session) => session.status === "pending"
+  )
+  const activeComgateMethod = String(activeSession?.data?.method || "")
+  const activeMethod = isComgate(activeSession?.provider_id)
+    ? comgateMethods.some((method) => method.id === activeComgateMethod)
+      ? toComgateOptionId(activeComgateMethod)
+      : legacyOptionForMethod(activeComgateMethod)
+    : ""
 
-  console.log("availablePaymentMethods:", paymentProviders)
-  console.log("CartID:", cart?.region?.id)
-  console.log("CartObject:", cart)
+  const [selected, setSelected] = useState(activeMethod)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!loading || !cart) {
-      return
-    }
+  const displayMethods = useMemo(() => {
+    const comgateAvailable = paymentMethods.some((method) =>
+      isComgate(method.id)
+    )
+    if (!comgateAvailable) return []
 
-    sdk.store.payment.listPaymentProviders({
-      region_id: cart.region_id || "",
-    })
-      .then(({ payment_providers }) => {
-        setPaymentProviders(payment_providers)
-        setLoading(false)
+    return comgateMethods.length
+      ? comgateMethods.map((method) => ({
+          id: toComgateOptionId(method.id),
+          method,
+        }))
+      : legacyComgateMethods.map(({ id }) => ({
+          id,
+          method: undefined,
+        }))
+  }, [comgateMethods, paymentMethods])
+
+  const shippingAddress = cart.shipping_address
+  const ready =
+    !!shippingAddress && !!cart.email && !!cart.shipping_methods?.length
+
+  const pay = async (optionId: string) => {
+    if (!ready || isSubmitting || !isComgate(optionId)) return
+
+    setSelected(optionId)
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const shippingName = String(
+        cart.shipping_methods?.at(-1)?.name || ""
+      ).toLowerCase()
+      const result = await initiatePaymentSession(cart, {
+        provider_id: "pp_comgate_comgate",
+        data: {
+          email: cart.email,
+          first_name: shippingAddress?.first_name,
+          last_name: shippingAddress?.last_name,
+          cart_id: cart.id,
+          method: methodForOption(optionId),
+          country_code: shippingAddress?.country_code || countryCode,
+          billing_city: cart.billing_address?.city || shippingAddress?.city,
+          billing_street:
+            cart.billing_address?.address_1 || shippingAddress?.address_1,
+          billing_postal_code:
+            cart.billing_address?.postal_code || shippingAddress?.postal_code,
+          shipping_city: shippingAddress?.city,
+          shipping_street: shippingAddress?.address_1,
+          shipping_postal_code: shippingAddress?.postal_code,
+          delivery:
+            shippingName.includes("zásil") ||
+            shippingName.includes("zasil") ||
+            shippingName.includes("packeta") ||
+            shippingName.includes("výdej")
+              ? "PICKUP"
+              : "HOME_DELIVERY",
+          lang: "cs",
+          source: "express-checkout",
+          return_path: `/${countryCode}/express-checkout/${handle}`,
+        } as any,
       })
-  }, [loading, cart])
 
-  const handleSelectProvider = async () => {
-    if (!selectedPaymentProvider || !cart) {
-      return
-    }
+      if (!result.success) {
+        throw new Error(
+          result.message || "Platební bránu se nepodařilo otevřít."
+        )
+      }
 
-    setLoading(true)
+      const redirectUrl = extractComgateRedirectUrl(result.data)
+      if (!redirectUrl) {
+        throw new Error("Platební brána nevrátila adresu pro pokračování.")
+      }
 
-    sdk.store.payment.initiatePaymentSession(cart, {
-      provider_id: selectedPaymentProvider,
-    })
-      .then(() => {
-        setLoading(false)
-      })
-  }
-
-  useEffect(() => {
-    if (!selectedPaymentProvider || !cart) {
-      return
-    }
-
-    handleSelectProvider()
-  }, [selectedPaymentProvider])
-  const paymentUi = useMemo(() => {
-    if (!selectedPaymentProvider) {
-      return
-    }
-
-    switch (selectedPaymentProvider) {
-      // TODO handle other providers
-      default:
-        return <></>
-    }
-  }, [selectedPaymentProvider])
-  const canPlaceOrder = useMemo(() => {
-    switch (selectedPaymentProvider) {
-      case "":
-        return false
-      // TODO handle other providers
-      default:
-        return true
-    }
-  }, [selectedPaymentProvider])
-
-  const placeOrder = () => {
-    if (!cart || !canPlaceOrder) {
-      return
-    }
-    setLoading(true)
-
-    sdk.store.cart.complete(cart.id)
-      .then((data) => {
-        if (data.type === "cart") {
-          alert(data.error.message)
-          setLoading(false)
-        } else {
-          unsetCart()
-          // redirect to confirmation page
-          router.push(`/express-checkout/confirmation/${data.order.id}`)
-        }
-      })
-  }
-
-  const getProviderTitle = (providerId: string) => {
-    switch(true) {
-      case providerId.startsWith("pp_system_default"):
-        return "Cash on Delivery"
-      default:
-        return providerId
+      window.location.assign(redirectUrl)
+    } catch (paymentError: any) {
+      setError(paymentError?.message || "Platbu se nepodařilo dokončit.")
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <Card 
-      title="Payment" 
-      isActive={isActive} 
-      isDone={false}
-      path={`/express-checkout/${handle}?step=payment`}
-    >
-      <span className="text-sm">Vaše objednávka</span>
-      {cart?.items?.map((item) => (
-        <div className="flex gap-2" key={item.id}>
-          <img src={item.thumbnail} alt={item.title} className="w-24 h-24 rounded" />
-          <div className="flex flex-col gap-3">
-            <span className="text-base">{item.product_title}</span>
-            {item.variant?.options?.map((option) => (
-              <span className="flex gap-1 text-sm" key={option.id}>
-                <span className="text-ui-fg-muted">{option.option?.title}</span>
-                <span className="text-ui-fg-base">{option.value}</span>
-              </span>
-            ))}
-            <span className="flex gap-1 text-sm items-center">
-              <span className="text-ui-fg-muted">Množství</span>
-              <Input
-                type="number"
-                value={item.quantity}
-                onChange={(e) => {
-                  if (!e.target.value) {
-                    return
-                  }
-                  updateItemQuantity(item.id, parseInt(e.target.value))
-                }}
-              />
-            </span>
-          </div>
+    <div className={styles.paymentStep}>
+      <div className={styles.orderMiniature}>
+        <div className={styles.orderMiniatureHeader}>
+          <span className={styles.eyebrow}>Váš výběr</span>
+          <span>
+            {cart.items?.reduce((sum, item) => sum + item.quantity, 0)} ks
+          </span>
         </div>
-      ))}
-      <hr className="bg-ui-bg-subtle" />
-      <div className="flex justify-between">
-        <span className="text-sm text-ui-fg-muted">Celkem:</span>
-        <span className="text-sm text-ui-fg-base">{formatPrice(
-          cart?.item_subtotal || 0,
-          cart?.currency_code
-        )}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-sm text-ui-fg-muted">Doprava & manipulace:</span>
-        <span className="text-sm text-ui-fg-base">{formatPrice(
-          cart?.shipping_total || 0,
-          cart?.currency_code
-        )}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-sm text-ui-fg-muted">Celkem:</span>
-        <span className="text-sm text-ui-fg-base">{formatPrice(
-          cart?.total || 0,
-          cart?.currency_code
-        )}</span>
-      </div>
-      <hr className="bg-ui-bg-subtle" />
-      <span className="text-sm">Dodací adresa</span>
-      <p className="text-xs text-ui-fg-muted">
-        {cart?.shipping_address?.first_name} {cart?.shipping_address?.last_name}<br />
-        {cart?.shipping_address?.address_1}<br />
-        {cart?.shipping_address?.city}, {cart?.shipping_address?.postal_code}, {cart?.shipping_address?.country_code}<br />
-      </p>
-      <hr className="bg-ui-bg-subtle" />
-      <span className="text-sm">Platební metoda</span>
-      <div className="flex flex-col gap-2">
-        <RadioGroup
-          value={selectedPaymentProvider}
-          onValueChange={(value) => setSelectedPaymentProvider(value)}
-        >
-          {paymentProviders.map((paymentProvider) => (
-            <div className="flex gap-1" key={paymentProvider.id}>
-              <RadioGroup.Item value={paymentProvider.id} />
-              <div className="flex justify-between w-full gap-2">
-                <span className="text-sm">{getProviderTitle(paymentProvider.id)}</span>
-              </div>
+        {cart.items?.map((item) => (
+          <div className={styles.miniItem} key={item.id}>
+            <Image
+              src={item.thumbnail || "/assets/img/horizontal_prop.png"}
+              alt=""
+              width={58}
+              height={58}
+            />
+            <div>
+              <strong>{item.product_title || item.title}</strong>
+              <small>
+                {item.variant?.options
+                  ?.map((option) => option.value)
+                  .join(" · ")}
+              </small>
             </div>
-          ))}
-        </RadioGroup>
+            <span>{item.quantity}×</span>
+          </div>
+        ))}
+        <div className={styles.totalRows}>
+          <span>
+            <small>Výběr</small>
+            <strong>
+              {convertToLocale({
+                amount: cart.item_subtotal || 0,
+                currency_code: cart.currency_code,
+              })}
+            </strong>
+          </span>
+          <span>
+            <small>Doručení</small>
+            <strong>
+              {convertToLocale({
+                amount: cart.shipping_total || 0,
+                currency_code: cart.currency_code,
+              })}
+            </strong>
+          </span>
+          <span className={styles.grandTotal}>
+            <small>Celkem</small>
+            <strong>
+              {convertToLocale({
+                amount: cart.total || 0,
+                currency_code: cart.currency_code,
+              })}
+            </strong>
+          </span>
+        </div>
       </div>
-      {paymentUi}
-      <hr className="bg-ui-bg-subtle" />
-      <Button
-        className="w-full"
-        disabled={!canPlaceOrder || loading}
-        onClick={placeOrder}
-      >Zaplatit {formatPrice(
-        cart?.total || 0,
-        cart?.currency_code
-      )}</Button>
-    </Card>
+
+      <div className={styles.methodSection}>
+        <div className={styles.methodHeading}>
+          <span className={styles.eyebrow}>Jak zaplatíte</span>
+          <span>Šifrovaně a bezpečně</span>
+        </div>
+        <p className={styles.paymentConsent}>
+          Klepnutím na metodu potvrdíte objednávku, souhlasíte s obchodními
+          podmínkami a přejdete rovnou k platbě.
+        </p>
+        <div className={styles.paymentMethods} aria-busy={isSubmitting}>
+          {!displayMethods.length && (
+            <p className={styles.paymentUnavailable} role="alert">
+              Comgate nyní není dostupný. Zkuste to prosím za chvíli znovu.
+            </p>
+          )}
+          {displayMethods.map(({ id, method }) => {
+            const active = selected === id
+            const logo = method ? getComgateMethodLogo(method) : ""
+
+            return (
+              <motion.button
+                type="button"
+                key={id}
+                data-selected={active}
+                onClick={() => void pay(id)}
+                disabled={!ready || isSubmitting}
+                whileTap={isSubmitting ? undefined : { scale: 0.99 }}
+                aria-label={`Zaplatit – ${
+                  method?.name_short ||
+                  method?.name ||
+                  paymentInfoMap[id]?.title ||
+                  id
+                }`}
+              >
+                <span className={styles.paymentFill} aria-hidden="true" />
+                <span className={styles.radioMark}>
+                  <span />
+                </span>
+                <span className={styles.paymentCopy}>
+                  <strong>
+                    {method?.name_short ||
+                      method?.name ||
+                      paymentInfoMap[id]?.title ||
+                      id}
+                  </strong>
+                  <small>
+                    {active && isSubmitting
+                      ? "Otevíráme bezpečnou platbu…"
+                      : method?.description || legacyDescription(id)}
+                  </small>
+                </span>
+                <span className={styles.paymentIcon}>
+                  {logo ? (
+                    <img src={logo} alt="" loading="lazy" />
+                  ) : (
+                    paymentInfoMap[id]?.icon
+                  )}
+                </span>
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            className={styles.error}
+            role="alert"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

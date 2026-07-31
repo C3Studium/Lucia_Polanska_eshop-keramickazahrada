@@ -1,9 +1,8 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { sortProducts } from "@lib/util/sort-products"
+import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 import { StoreProductReview } from "../../types/global"
@@ -24,6 +23,9 @@ export type BundleProduct = {
   }[]
 }
 
+type StoreProductListQuery = HttpTypes.FindParams &
+  HttpTypes.StoreProductListParams
+
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
@@ -31,7 +33,7 @@ export const listProducts = async ({
   regionId,
 }: {
   pageParam?: number
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
+  queryParams?: StoreProductListQuery
   countryCode?: string
   regionId?: string
 }): Promise<{
@@ -39,7 +41,7 @@ export const listProducts = async ({
     bundle?: Omit<BundleProduct, "items">
   })[]; count: number }
   nextPage: number | null
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
+  queryParams?: StoreProductListQuery
 }> => {
   if (!countryCode && !regionId) {
     throw new Error("Country code or region ID is required")
@@ -102,55 +104,167 @@ export const listProducts = async ({
     })
 }
 
-/**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
- */
-export const listProductsWithSort = async ({
-  page = 0,
-  queryParams,
-  sortBy = "created_at",
-  countryCode,
-}: {
-  page?: number
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
-  sortBy?: SortOptions
-  countryCode: string
-}): Promise<{
-  response: { products: (HttpTypes.StoreProduct & { bundle?: Omit<BundleProduct, "items"> })[]; count: number }
-  nextPage: number | null
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
-}> => {
-  const limit = queryParams?.limit || 12
+export type StoreCatalogueFilters = {
+  categoryId: string
+  collectionId: string
+  isNew: boolean
+  onSale: boolean
+  priceRange: string
+  search: string
+  sort: "featured" | "newest" | "price-asc" | "price-desc"
+}
 
-  const {
-    response: { products, count },
-  } = await listProducts({
-    pageParam: 0,
-    queryParams: {
-      ...queryParams,
-      limit: 20,
-      fields: "*bundle",
-      //NOTE if products are not shown in the store page correctly, bump up the limit to one more 0
-    },
+const cataloguePriceRanges: Record<string, { min: number; max: number }> = {
+  "0-500": { min: 0, max: 500 },
+  "500-1000": { min: 500, max: 1000 },
+  "1000-2500": { min: 1000, max: 2500 },
+  "2500+": { min: 2500, max: Number.POSITIVE_INFINITY },
+}
+
+/**
+ * Store catalogue query built on the existing Medusa product data layer.
+ *
+ * Search, category, recency, ordering, region pricing and pagination are sent
+ * to Medusa. Price and sale filters use the returned regional calculated
+ * prices, so those refinements are resolved here on the server.
+ */
+export const listStoreCatalogue = async ({
+  filters,
+  limit = 16,
+  offset = 0,
+  countryCode,
+  regionId,
+}: {
+  filters: StoreCatalogueFilters
+  limit?: number
+  offset?: number
+  countryCode?: string
+  regionId?: string
+}): Promise<{
+  products: HttpTypes.StoreProduct[]
+  count: number
+}> => {
+  const normalizedLimit = Math.min(Math.max(limit, 1), 48)
+  const normalizedOffset = Math.max(offset, 0)
+  const needsCalculatedPriceRefinement = Boolean(
+    filters.priceRange ||
+    filters.onSale ||
+    filters.sort === "price-asc" ||
+    filters.sort === "price-desc"
+  )
+
+  const queryParams: StoreProductListQuery = {
+    limit: needsCalculatedPriceRefinement ? 100 : normalizedLimit,
+    fields: "*bundle,*type,*categories,*images",
+  }
+
+  if (filters.search.trim()) {
+    queryParams.q = filters.search.trim()
+  }
+
+  if (filters.categoryId) {
+    queryParams.category_id = [filters.categoryId]
+  }
+
+  if (filters.collectionId) {
+    queryParams.collection_id = [filters.collectionId]
+  }
+
+  if (filters.isNew) {
+    queryParams.created_at = {
+      $gte: new Date(Date.now() - 30 * 86400000).toISOString(),
+    }
+  }
+
+  if (filters.sort === "newest") {
+    queryParams.order = "-created_at"
+  }
+
+  if (!needsCalculatedPriceRefinement) {
+    const {
+      response: { products, count },
+    } = await listProducts({
+      pageParam: Math.floor(normalizedOffset / normalizedLimit) + 1,
+      queryParams,
+      countryCode,
+      regionId,
+    })
+
+    return { products, count }
+  }
+
+  const firstPage = await listProducts({
+    pageParam: 1,
+    queryParams,
     countryCode,
+    regionId,
+  })
+  const catalogueProducts = [...firstPage.response.products]
+  const pageCount = Math.ceil(firstPage.response.count / queryParams.limit!)
+
+  for (let page = 2; page <= pageCount; page += 1) {
+    const {
+      response: { products },
+    } = await listProducts({
+      pageParam: page,
+      queryParams,
+      countryCode,
+      regionId,
+    })
+
+    catalogueProducts.push(...products)
+  }
+
+  const priceRange = cataloguePriceRanges[filters.priceRange]
+  const refinedProducts = catalogueProducts.filter((product) => {
+    const { cheapestPrice } = getProductPrice({ product })
+    const price = cheapestPrice?.calculated_price_number
+
+    if (
+      priceRange &&
+      (typeof price !== "number" ||
+        price < priceRange.min ||
+        price > priceRange.max)
+    ) {
+      return false
+    }
+
+    if (filters.onSale && cheapestPrice?.price_type !== "sale") {
+      return false
+    }
+
+    return true
   })
 
-  const sortedProducts = sortProducts(products, sortBy)
+  if (filters.sort === "price-asc" || filters.sort === "price-desc") {
+    refinedProducts.sort((firstProduct, secondProduct) => {
+      const firstPrice = getProductPrice({
+        product: firstProduct,
+      }).cheapestPrice?.calculated_price_number
+      const secondPrice = getProductPrice({
+        product: secondProduct,
+      }).cheapestPrice?.calculated_price_number
 
-  const pageParam = (page - 1) * limit
+      if (typeof firstPrice !== "number") {
+        return typeof secondPrice === "number" ? 1 : 0
+      }
 
-  const nextPage = count > pageParam + limit ? pageParam + limit : null
+      if (typeof secondPrice !== "number") {
+        return -1
+      }
 
-  const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
+      return filters.sort === "price-asc"
+        ? firstPrice - secondPrice
+        : secondPrice - firstPrice
+    })
+  }
 
   return {
-    response: {
-      products: paginatedProducts,
-      count,
-    },
-    nextPage,
-    queryParams,
+    products: refinedProducts.slice(
+      normalizedOffset,
+      normalizedOffset + normalizedLimit
+    ),
+    count: refinedProducts.length,
   }
 }
 

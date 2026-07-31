@@ -1,641 +1,182 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
-.root{
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	min-height: 60dvh;
-	max-height: 100dvh;
-	padding: 5dvh 5vw 0 5vw;
-
-
-	@include hb((
-		sm: (min-height: 80dvh, max-height: 120dvh),
-		xs: (min-height: 200dvh, max-height: 250dvh),
-		xxs: (min-height: 200dvh, max-height: 250dvh),
-	));
-
-	@include vb((
-		s: (padding: 0 2.5dvw, align-items: flex-start),
-		sm: (padding: 0 2.5dvw, align-items: flex-start),
-		xs: (padding: 0 2.5dvw, min-height: 150dvh, align-items: flex-start),
-	));
-	.content {
-		min-height: 60vh;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: flex-start;
-		justify-content: center;
-		// CSS Modules root wrapper for nesting
-		--overview: 1; // no-op var to avoid empty ruleset
-		@include vb((
-			xs: (padding: 0 2.5dvw, min-height: 100dvh),
-		));
-
-		.contentVisibleOnSmall {
-			width: 100%;
-			height: 100%;
-			align-items: flex-start;
-			justify-content: flex-start;
-			flex-direction: column;
-			// hidden small:block
-			display: flex;
-
-			.headerRow {
-				// text-xl-semi flex justify-between items-center mb-4
-				display: flex;
-				justify-content: center;
-				align-items: flex-start;
-				flex-direction: column;
-				margin-bottom: 2rem;
-				margin-top: 0.75rem;
-				width: 100%;
-				height: 30%;
-
-				.headerWelcome{
-					width: 100%;
-					height: 100%;
-					display: flex;
-					flex-direction: row;
-					align-items: flex-end;
-					justify-content: space-between;
-
-					@include vb((
-						s: (flex-direction: column, align-items: flex-start),
-						sm: (flex-direction: column, align-items: flex-start),
-						xs: (flex-direction: column, align-items: flex-start),
-					));
-
-					.welcomeMessage{
-						font-size: 1.8rem;
-						line-height: 1.2;
-						font-weight: 300;
-						font-family: "Sansation-Light";
-
-						@include hb((
-							lg: (font-size: 1.6rem),
-							md: (font-size: 1.6rem),
-							mdt: (font-size: 1.6rem),
-							sm: (font-size: 1.6rem),
-							xs: (font-size: 1.3rem),
-							xxs: (font-size: 1.3rem),
-						));
-
-						@include vb((
-							lg: (font-size: 1.6rem),
-							md: (font-size: 1.6rem),
-							s: (font-size: 1.3rem),
-							sm: (font-size: 1.3rem),
-							xs: (font-size: 1.3rem),
-						));
-
-						span{
-							font-weight: 400;
-							font-family: "Sansation-Regular";
-						}
-					}
-
-					.headerSignedIn {
-						// text-small-regular text-ui-fg-base
-						font-size: 1.1rem;
-						line-height: 1.25rem;
-						color: var(--blackText);
-						font-weight: 300;
-						font-family: "Sansation-Light";
-
-						@include hb((
-							huge: (font-size: 1.1rem),
-							xl: (font-size: 1.1rem),
-							md: (font-size: 1.05rem),
-							sm: (font-size: 1.05rem),
-							xs: (font-size: 0.95rem),
-							xxs: (font-size: 0.95rem),
-						));
-
-						// --- Vertical (portrait) responsiveness ---
-						@include vb((
-							lg: (font-size: 1.05rem),
-							s: (font-size: 0.95rem),
-							sm: (font-size: 0.9rem),
-							xs: (font-size: 0.85rem),
-						));
-						.fontSemibold {
-							font-weight: 400;
-							font-family: "Sansation-Regular";
-						}
-					}
-				}
-			}
-		}
-
-
-		.section {
-			// flex flex-col py-8 border-t border-gray-200
-			display: flex;
-			flex-direction: column;
-			padding-top: 2rem;
-			padding-bottom: 2rem;
-			width: 100%;
-			height: 75%;
-
-			.cardsWrap {
-				// flex flex-col gap-y-4 h-full col-span-1 row-span-2 flex-1
-				display: flex;
-				flex-direction: column;
-				gap: 1rem;
-				height: 100%;
-				flex: 1 1 auto;
-
-				.profileRow {
-					// flex items-start gap-x-16 mb-6
-					display: flex;
-					align-items: flex-start;
-					column-gap: 4rem;
-					margin-bottom: 1.5rem;
-
-					@include hb((
-						sm: (flex-direction: column, row-gap: 1rem, column-gap: 0),
-						xs: (flex-direction: column, row-gap: 1rem, column-gap: 0),
-						xxs: (flex-direction: column, row-gap: 1rem, column-gap: 0),
-					));
-					@include vb((
-						s: (flex-direction: column, align-items: center, row-gap: 1rem, column-gap: 0),
-						sm: (flex-direction: column, align-items: center, row-gap: 1rem, column-gap: 0),
-						xs: (flex-direction: column, align-items: center, row-gap: 1rem, column-gap: 0),
-					));
-
-					.groupCol {
-						// flex flex-col gap-y-4
-						display: flex;
-						flex-direction: column;
-						align-items: center;
-						justify-content: flex-start;
-						row-gap: 1rem;
-						width: 50%;
-						height: 250px;
-						max-width: 600px;
-						max-height: 350px;
-						border: 1px solid var(--border, #e5e7eb);
-						background-color: var(--bgWhite);
-						padding: 2rem 1rem;
-						border-radius: 25px;
-						box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-						gap: 1rem;
-						transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-						cursor: pointer;
-
-
-						@include hb((
-							sm: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-							xs: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-							xxs: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-						));
-
-						@include vb((
-							s: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-							sm: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-							xs: (width: 90%, height: 250px, max-width: 600px, max-height: 350px),
-						));
-
-
-						&:hover {
-							box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-							transform: translateY(-1px);
-							background-color: #d3d4a7; // light gray background on hover
-						}
-
-
-						.titleLarge {
-							width: 100%;
-							// text-large-semi
-							font-size: 1.3rem;
-							line-height: 1rem;
-							font-weight: 400;
-							font-family: "Sansation-Regular";
-
-							@include hb((
-								lg: (font-size: 1.2rem),
-								md: (font-size: 1.2rem),
-								mdt: (font-size: 1.2rem),
-								sm: (font-size: 1.2rem),
-								xs: (font-size: 1.1rem),
-								xxs: (font-size: 1.1rem),
-							));
-
-							@include vb((
-								lg: (font-size: 1.2rem),
-								md: (font-size: 1.2rem),
-								s: (font-size: 1.1rem),
-								sm: (font-size: 1.1rem),
-								xs: (font-size: 1.1rem),
-							));
-						}
-
-						.statRow {
-							width: 100%;
-							// flex items-end gap-x-2
-							display: flex;
-							align-items: flex-end;
-							column-gap: 0.5rem;
-
-							.statValueLarge {
-								// text-3xl-semi leading-none
-								font-size: 1.5rem;
-								line-height: 1;
-								font-weight: 600;
-
-								@include hb((
-									lg: (font-size: 1.3rem),
-									md: (font-size: 1.3rem),
-									mdt: (font-size: 1.3rem),
-									sm: (font-size: 1.3rem),
-									xs: (font-size: 1.2rem),
-									xxs: (font-size: 1.2rem),
-								));
-
-								@include vb((
-									lg: (font-size: 1.3rem),
-									md: (font-size: 1.3rem),
-									s: (font-size: 1.2rem),
-									sm: (font-size: 1.2rem),
-									xs: (font-size: 1.2rem),
-								));
-							}
-
-							.subtleUpper {
-								// uppercase text-base-regular text-ui-fg-subtle
-								text-transform: capitalize;
-								font-size: 1.1rem;
-								line-height: 1.5rem;
-								color: var(--placeholder, #9ca3af);
-
-								@include hb((
-									huge: (font-size: 1.1rem),
-									xl: (font-size: 1.1rem),
-									md: (font-size: 1.05rem),
-									sm: (font-size: 1.05rem),
-									xs: (font-size: 0.95rem),
-									xxs: (font-size: 0.95rem),
-								));
-
-								// --- Vertical (portrait) responsiveness ---
-								@include vb((
-									lg: (font-size: 1.05rem),
-									s: (font-size: 0.95rem),
-									sm: (font-size: 0.9rem),
-									xs: (font-size: 0.85rem),
-								));
-							}
-						}
-						.LinkButtonS{
-							width: 70%;
-							height: 150px;
-							display: flex;
-							align-items: center;
-							justify-content: center;
-							cursor: pointer;
-							border: 1px solid var(--border, #e5e7eb);
-							border-radius: 25px;
-							transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-
-							&:hover {
-								box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      							transform: translateY(-1px);
-								background-color: #d3d4a7; // light gray background on hover
-							}
-							.stepButton {
-								flex: 0 0 60%; // 60% width for button
-								max-width: 120px;
-
-								.button {
-									min-height: 32px;
-									font-size: 0.75rem;
-								}
-							}
-						}
-
-						.progressBar {
-							width: 100%;
-							min-height: 10px;
-							background-color: var(--ui-bg-subtle, #f3f4f6);
-							border-radius: 6px;
-							overflow: hidden;
-							border: 1px solid var(--border, #e5e7eb);
-							position: relative;
-
-							.progressFill {
-								height: 100%;
-								background-color: var(--bgPrimary);
-								transition: width 0.5s ease-in-out;
-								border-radius: 5px;
-								position: relative;
-							}
-						}
-
-						.stepsList {
-							width: 100%;
-							margin-top: 1rem;
-							padding-left: 0;
-							list-style: none;
-
-							.stepItem {
-								margin-bottom: 0.5rem;
-								display: flex;
-								align-items: center;
-								justify-content: space-between;
-								gap: 0.5rem; // 10% space
-
-								.stepBullet {
-									color: var(--bgPrimary);
-									font-size: 3.5rem;
-									flex-shrink: 0;
-
-									@include hb((
-										huge: (font-size: 3.5rem),
-										xl: (font-size: 3.2rem),
-										md: (font-size: 3rem),
-										sm: (font-size: 3rem),
-										xs: (font-size: 2.5rem),
-										xxs: (font-size: 2.5rem),
-									));
-
-									// --- Vertical (portrait) responsiveness ---
-									@include vb((
-										lg: (font-size: 3rem),
-										s: (font-size: 2.5rem),
-										sm: (font-size: 2.5rem),
-										xs: (font-size: 2.5rem),
-									));
-								}
-
-								.stepText {
-									flex: 0 0 60%; // 60% width for text
-									display: flex;
-									align-items: center;
-									font-size: 1rem;
-									font-weight: 300;
-									font-family: "Sansation-Light";
-									color: var(--blackText);
-								}
-
-								.stepButton {
-									flex: 0 0 30%; // 30% width for button
-									max-width: 120px;
-
-									.button {
-										min-height: 32px;
-										font-size: 0.75rem;
-									}
-								}
-							}
-						}
-					}
-				}
-
-				.ordersGroup {
-					// flex flex-col gap-y-4
-					display: flex;
-					flex-direction: column;
-					row-gap: 1rem;
-
-					.ordersHeadingRow {
-						// flex items-center gap-x-2
-						display: flex;
-						align-items: center;
-						column-gap: 0.5rem;
-
-						.titleLarge {
-							width: 100%;
-							// text-large-semi
-							font-size: 1.3rem;
-							line-height: 1rem;
-							font-weight: 400;
-							font-family: "Sansation-Regular";
-
-							@include hb((
-								lg: (font-size: 1.2rem),
-								md: (font-size: 1.2rem),
-								mdt: (font-size: 1.2rem),
-								sm: (font-size: 1.2rem),
-								xs: (font-size: 1.1rem),
-								xxs: (font-size: 1.1rem),
-							));
-
-							@include vb((
-								lg: (font-size: 1.2rem),
-								md: (font-size: 1.2rem),
-								s: (font-size: 1.1rem),
-								sm: (font-size: 1.1rem),
-								xs: (font-size: 1.1rem),
-							));
-						}
-					}
-
-					.ordersList {
-						// flex flex-col gap-y-4
-						display: flex;
-						flex-direction: column;
-						row-gap: 1rem;
-
-						li{
-							list-style: none;
-
-							.orderCard {
-								// bg-gray-50 flex justify-between items-center p-4
-								background-color: #f9fafb;
-								display: flex !important;
-								justify-content: space-between;
-								align-items: center;
-								padding: 1rem;
-
-								border: 1px solid var(--border, #e5e7eb);
-								background-color: var(--bgWhite);
-								border-radius: 15px;
-								box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-								transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-								cursor: pointer;
-								
-
-
-								&:hover {
-									box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      								transform: translateY(-1px);
-									background-color: #d3d4a7; // light gray background on hover
-
-									.orderOpenBtn{
-										.rotateNeg90{
-											transform: translateX(5px) rotate(-90deg);
-										}
-									}
-								}
-
-								.orderGrid {
-									// grid grid-cols-3 grid-rows-2 text-small-regular gap-x-4 flex-1
-									display: grid;
-									grid-template-columns: repeat(3, minmax(0, 1fr));
-									grid-template-rows: repeat(2, minmax(0, auto));
-									font-size: 0.9rem;
-									line-height: 1.25rem;
-									font-family: "Sansation-Light";
-									font-weight: 300;
-									column-gap: 1rem;
-									flex: 1 1 auto;
-
-									.fontSemibold {
-										font-family: "Sansation-Regular";
-										font-weight: 400;
-									}
-								}
-
-								.orderOpenBtn {
-									// flex items-center justify-between
-									display: flex;
-									align-items: center;
-									justify-content: space-between;
-
-									.rotateNeg90 {
-										transition: all 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-										transform: rotate(-90deg);
-									}
-								}
-							}
-						}
-
-						span{
-							font-size: 1.1rem;
-							line-height: 1.25rem;
-							font-weight: 300;
-							font-family: "Sansation-Light";
-
-							@include hb((
-								huge: (font-size: 1.1rem),
-								xl: (font-size: 1.1rem),
-								md: (font-size: 1.05rem),
-								sm: (font-size: 1.05rem),
-								xs: (font-size: 0.95rem),
-								xxs: (font-size: 0.95rem),
-							));
-
-							// --- Vertical (portrait) responsiveness ---
-							@include vb((
-								lg: (font-size: 1.05rem),
-								s: (font-size: 0.95rem),
-								sm: (font-size: 0.9rem),
-								xs: (font-size: 0.85rem),
-							));
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-.perspectiveText{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+.accountOverviewRoot {
+  display: grid;
+  gap: clamp(48px, 7vh, 88px);
   width: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-  p{
-    transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    pointer-events: none;
-    text-transform: capitalize;
-    font-size: 1rem;
-	border-bottom: 1px solid var(--shadows);
-    &:nth-of-type(2){
-      position: absolute;
-      transform-origin: bottom center;
-      transform: rotateX(-90deg) translateY(9px);
-      opacity: 0;
-    }
-
-    // --- Horizontal (landscape) responsiveness ---
-    @include hb((
-        huge: (font-size: 1.05rem),
-        xl: (font-size: 1rem),
-        md: (font-size: 0.95rem),
-        sm: (font-size: 0.95rem),
-        xxs: (font-size: 0.9rem),
-    ));
-
-    // --- Vertical (portrait) responsiveness ---
-    @include vb((
-        lg: (font-size: 1.05rem),
-        s: (font-size: 0.95rem),
-        sm: (font-size: 0.9rem),
-        xs: (font-size: 0.85rem),
-    ));
-  }
+  color: #20211d;
 }
 
-.ScrollLink{
-  width: auto;
-  height: auto;
-  position: relative;
+.accountOverviewHero {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOverviewEyebrow,
+.accountOverviewIndex,
+.accountOverviewIntro span,
+.accountOverviewSectionHead > span {
+  margin: 0;
+  color: rgba(32, 33, 29, .5);
+  font: 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.accountOverviewHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .4fr);
+  gap: 30px;
+  align-items: end;
+}
+
+.accountOverviewHeading h1 {
+  margin: 0;
+  font: 400 clamp(3.4rem, 5.7vw, 6.5rem)/.83 "Sentient-Regular", serif;
+  letter-spacing: -.06em;
+}
+
+.accountOverviewHeading h1 em {
+  display: block;
+  margin-left: 12%;
+  color: #7e896a;
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-weight: 300;
+}
+
+.accountOverviewIntro {
+  padding-bottom: 5px;
+}
+
+.accountOverviewIntro p {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+  color: rgba(32, 33, 29, .7);
+  font-size: clamp(15px, 1vw, 18px);
+}
+
+.accountOverviewStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOverviewStat {
+  display: grid;
+  align-content: start;
+  min-height: 360px;
+  padding: clamp(26px, 3.6vw, 50px);
+}
+
+.accountOverviewStat + .accountOverviewStat {
+  border-left: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOverviewStatValue {
   display: flex;
-  justify-content: center;
+  gap: 18px;
+  align-items: end;
+  margin: clamp(38px, 6vh, 70px) 0 20px;
+}
+
+.accountOverviewStatValue strong {
+  font: 400 clamp(4.6rem, 7vw, 8.5rem)/.7 "Sentient-Regular", serif;
+  letter-spacing: -.07em;
+}
+
+.accountOverviewStatValue strong small {
+  font-size: .34em;
+}
+
+.accountOverviewStatValue p {
+  max-width: 9rem;
+  margin: 0 0 3px;
+  color: rgba(32, 33, 29, .62);
+  font-size: 14px;
+}
+
+.accountOverviewProgress {
+  height: 3px;
+  margin-bottom: 22px;
+  overflow: hidden;
+  background: rgba(32, 33, 29, .1);
+}
+
+.accountOverviewProgress i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #7e896a;
+  transform-origin: left center;
+}
+
+.accountOverviewNote {
+  max-width: 29rem;
+  min-height: 48px;
+  margin: 0 0 28px;
+  color: rgba(32, 33, 29, .6);
+  font: 15px/1.5 "Sansation-Light", sans-serif;
+}
+
+.accountOverviewAction {
+  justify-self: start;
+  margin-top: auto;
+  --premium-link-ink: #20211d;
+  --premium-link-active-ink: #f7e5d5;
+  --premium-link-border: #20211d;
+  --premium-link-fill: #20211d;
+}
+
+.accountOverviewOrders {
+  display: grid;
+  gap: 28px;
+}
+
+.accountOverviewSectionHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.accountOverviewSectionHead h2 {
+  margin: 13px 0 0;
+  font: 400 clamp(2.7rem, 4vw, 4.8rem)/.9 "Sentient-Regular", serif;
+  letter-spacing: -.05em;
+}
+
+.accountOverviewOrderList {
+  border-top: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOverviewEmpty {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
   align-items: center;
-  cursor: pointer;
+  min-height: 180px;
+  padding-block: 32px;
+  border-block: 1px solid rgba(32, 33, 29, .2);
+}
 
-  .button{
-    position: relative;
-    width: 100%;
-    max-width: 280px;
-    height: 40px;
-    cursor: pointer;
-    overflow: hidden;
-    border: none;
-    box-shadow: none;
-    background-color: transparent;
+.accountOverviewEmpty p {
+  margin: 0;
+  font: 400 clamp(1.8rem, 3vw, 3.2rem)/1 "Sentient-Regular", serif;
+}
 
-    .slider{
-      position: relative;
-      width: 100%;
-      height: 100%;
-
-      .el{
-        width: 100%;
-        height: 100%;
-        p{
-          margin: 0px;
-          color: var(--whiteText)
-        }
-        &:nth-of-type(2){
-          p{
-            color: var(--whiteText);
-          }
-        }
-        &:hover{
-          .perspectiveText{
-            transform: rotateX(90deg);
-            p{
-                &:nth-of-type(1){
-                  transform: translateY(-100%);
-                  opacity: 0;
-                }
-                &:nth-of-type(2){
-                  opacity: 1;
-                  transform: rotateX(-90deg) translateY(11px);
-                }
-            }
-          }
-        }
-      }
-    }
-      
+@media (max-width: 780px) {
+  .accountOverviewHeading,
+  .accountOverviewStats {
+    grid-template-columns: 1fr;
   }
 
-  &.active {
-    .button .slider .el p {
-      color: var(--blackText);
-      font-weight: 400;
-      font-family: "Sansation-regular";
-    }
+  .accountOverviewStat + .accountOverviewStat {
+    border-top: 1px solid rgba(32, 33, 29, .2);
+    border-left: 0;
+  }
+
+  .accountOverviewEmpty {
+    display: grid;
   }
 }

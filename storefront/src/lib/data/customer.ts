@@ -16,6 +16,19 @@ import {
 } from "./cookies"
 import { v4 as uuidv4 } from "uuid"
 
+const getSafeAuthRedirect = (formData: FormData): string | null => {
+  const redirectTo = formData.get("redirect_to")
+
+  if (
+    typeof redirectTo === "string" &&
+    /^\/[a-z]{2}\/cart(?:[/?#].*)?$/i.test(redirectTo)
+  ) {
+    return redirectTo
+  }
+
+  return null
+}
+
 /**
  * Attempts to refresh the auth token using Medusa SDK.
  * Returns the new token if successful, null otherwise.
@@ -38,9 +51,10 @@ export const refreshAuthToken = async (): Promise<string | null> => {
   }
 }
 
-export const retrieveCustomer = async (
-  opts?: { forceFresh?: boolean; _isRetry?: boolean }
-): Promise<HttpTypes.StoreCustomer | null> => {
+export const retrieveCustomer = async (opts?: {
+  forceFresh?: boolean
+  _isRetry?: boolean
+}): Promise<HttpTypes.StoreCustomer | null> => {
   const authHeaders = await getAuthHeaders()
 
   if (!authHeaders || !("authorization" in authHeaders)) return null
@@ -85,7 +99,8 @@ export const retrieveCustomer = async (
     return await fetchCustomer()
   } catch (error: any) {
     // Check if it's a 401 error and we haven't already retried
-    const is401 = error?.response?.status === 401 || error?.message?.includes("401")
+    const is401 =
+      error?.response?.status === 401 || error?.message?.includes("401")
 
     if (is401 && !opts?._isRetry) {
       // Try to refresh the token
@@ -119,6 +134,8 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
 export async function signup(_currentState: unknown, formData: FormData) {
   const password = formData.get("password") as string
   const email = formData.get("email") as string
+  const redirectTo = getSafeAuthRedirect(formData)
+  let createdCustomer: HttpTypes.StoreCustomer | undefined
   const customerForm = {
     email,
     first_name: formData.get("first_name") as string,
@@ -134,7 +151,11 @@ export async function signup(_currentState: unknown, formData: FormData) {
     // 1. Check if customer exists
     let existingCustomer = await getCustomerByEmail(email)
     if (existingCustomer) {
-      if (existingCustomer.has_account === false) {
+      const accountCustomer = existingCustomer as typeof existingCustomer & {
+        has_account?: boolean
+      }
+
+      if (accountCustomer.has_account === false) {
         // Delete guest and create new account
         const deleteRes = await deleteCustomer({
           email,
@@ -147,7 +168,10 @@ export async function signup(_currentState: unknown, formData: FormData) {
           return "Failed to delete guest account. Please try again."
         }
         // Proceed with standard signup
-      } else if (existingCustomer.has_account === true && existingCustomer.deleted_at) {
+      } else if (
+        accountCustomer.has_account === true &&
+        existingCustomer.deleted_at
+      ) {
         // Restore deleted customer, but do NOT log in
         const restoreRes = await restoreCustomer(existingCustomer.id)
         if (!restoreRes || restoreRes.success === false) {
@@ -171,7 +195,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
       ...(await getAuthHeaders()),
     }
 
-    const { customer: createdCustomer } = await sdk.store.customer.create(
+    const { customer } = await sdk.store.customer.create(
       {
         ...customerForm,
         metadata: {
@@ -183,6 +207,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
       {},
       headers
     )
+    createdCustomer = customer
 
     const loginToken = await sdk.auth.login("customer", "emailpass", {
       email,
@@ -195,15 +220,20 @@ export async function signup(_currentState: unknown, formData: FormData) {
     revalidateTag(customerCacheTag)
 
     await transferCart()
-
-    return createdCustomer
   } catch (error: any) {
     return error.toString()
   }
+
+  if (redirectTo) {
+    redirect(redirectTo)
+  }
+
+  return createdCustomer
 }
 export async function login(_currentState: unknown, formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
+  const redirectTo = getSafeAuthRedirect(formData)
 
   try {
     await sdk.auth
@@ -231,9 +261,18 @@ export async function login(_currentState: unknown, formData: FormData) {
   } catch (error: any) {
     return error?.message || error?.toString() || "Unknown error"
   }
+
+  if (redirectTo) {
+    redirect(redirectTo)
+  }
 }
 export async function signout(countryCode: string) {
-  await sdk.auth.logout()
+  try {
+    await sdk.auth.logout()
+  } catch {
+    // Always clear the local session, even if the deleted/expired remote
+    // identity can no longer accept a logout request.
+  }
 
   await removeAuthToken()
 
@@ -365,8 +404,6 @@ export const updateCustomerAddress = async (
     })
 }
 
-
-
 // FIXING THE ISSUE WITH THE ACC REGISTRATION - issue with email already registered inside db but acc not created
 export async function getCustomerByEmail(
   email: string
@@ -392,18 +429,21 @@ export async function getCustomerByEmail(
     .catch(() => null)
 }
 
-
-export async function resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+export async function resendVerification(
+  email: string
+): Promise<{ success: boolean; message: string }> {
   try {
     const headers = await getAuthHeaders()
 
     // Use sdk.client.fetch for internal Medusa API call
-    const res = await sdk.client
-      .fetch<{ message: string }>("store/customers/resend-verification-email", {
+    const res = await sdk.client.fetch<{ message: string }>(
+      "store/customers/resend-verification-email",
+      {
         method: "POST",
         headers,
         body: { email },
-      })
+      }
+    )
 
     return { success: true, message: res.message }
   } catch (e: any) {
@@ -412,8 +452,7 @@ export async function resendVerification(email: string): Promise<{ success: bool
   }
 }
 
-
-// NEED a new call and method to delete guest to registered account properly 
+// NEED a new call and method to delete guest to registered account properly
 export async function deleteCustomer({
   email,
   password,
@@ -436,31 +475,32 @@ export async function deleteCustomer({
   console.log("Upgrading guest account for email:", email)
   console.log("Headers:", headers)
 
-
   try {
-    const response = await sdk.client.fetch<{ message: string; customer?: any }>(
-      "store/customers/upgrade-guest",
-      {
-        method: "POST",
-        headers,
-        body: {
-          email,
-          password,
-          first_name,
-          last_name,
-          phone,
-          metadata
-        },
-      }
-    )
+    const response = await sdk.client.fetch<{
+      message: string
+      customer?: any
+    }>("store/customers/upgrade-guest", {
+      method: "POST",
+      headers,
+      body: {
+        email,
+        password,
+        first_name,
+        last_name,
+        phone,
+        metadata,
+      },
+    })
 
     return { success: true, message: response.message }
   } catch (error: any) {
     console.log("Upgrade error:", error)
-    return { success: false, message: error?.message || "Failed to upgrade account." }
+    return {
+      success: false,
+      message: error?.message || "Failed to upgrade account.",
+    }
   }
 }
-
 
 export async function verifyCustomerEmail(token: string, email: string) {
   const headers = {
@@ -486,7 +526,10 @@ export async function verifyCustomerEmail(token: string, email: string) {
       } catch (e) {
         // non-fatal: log and continue
         // eslint-disable-next-line no-console
-        console.warn("verifyCustomerEmail: failed to revalidate customer cache", e)
+        console.warn(
+          "verifyCustomerEmail: failed to revalidate customer cache",
+          e
+        )
       }
     }
 
@@ -495,7 +538,6 @@ export async function verifyCustomerEmail(token: string, email: string) {
     return { ok: false, message: e?.message || "Verification failed." }
   }
 }
-
 
 export async function restoreCustomer(customerId: string) {
   try {
@@ -507,35 +549,38 @@ export async function restoreCustomer(customerId: string) {
     const data = await res.json()
     return data
   } catch (e: any) {
-    return { success: false, message: e?.message || "Failed to restore account." }
+    return {
+      success: false,
+      message: e?.message || "Failed to restore account.",
+    }
   }
 }
 
-export async function deleteAccount(): Promise<{ success: boolean; message: string }> {
+export async function deleteAccount(): Promise<{
+  success: boolean
+  message: string
+}> {
   try {
     const headers = await getAuthHeaders()
-    // Get current customer to obtain their email
-    const customer = await retrieveCustomer()
-    if (!customer?.email) {
-      return { success: false, message: "Customer not found." }
+    if (!headers || !("authorization" in headers)) {
+      return { success: false, message: "Unauthorized." }
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/customers/me`, {
-      method: "DELETE",
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      return { success: false, message: data.message || "Failed to delete account." }
-    }
+    await sdk.client.fetch<{ success: boolean; message: string }>(
+      "/store/customers/delete-account",
+      {
+        method: "POST",
+        headers,
+        cache: "no-store",
+      }
+    )
 
     return { success: true, message: "Your account has been deleted." }
   } catch (e: any) {
-    return { success: false, message: e?.message || "Failed to delete account." }
+    return {
+      success: false,
+      message: e?.message || "Failed to delete account.",
+    }
   }
 }
 

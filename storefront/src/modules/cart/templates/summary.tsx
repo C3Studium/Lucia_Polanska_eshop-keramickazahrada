@@ -6,11 +6,16 @@ import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import {
+  PREMIUM_BUTTON_ACTIVE,
+  PREMIUM_BUTTON_REST,
+  premiumButtonFillTransition,
+  premiumButtonFillVariants,
+} from "@modules/common/components/premium-action-button/motion"
 import { HttpTypes } from "@medusajs/types"
 import s from "./summary.module.scss"
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 
 type SummaryProps = {
   cart: HttpTypes.StoreCart & {
@@ -33,7 +38,8 @@ const Summary = ({ cart }: SummaryProps) => {
 
   return (
     <div className={s.root}>
-      <h2 className={s.title}>Souhrn vašeho Košíku</h2>
+      <p className={s.eyebrow}>Objednávka</p>
+      <h2 className={s.title}>Souhrn košíku</h2>
       <DiscountCode cart={cart} />
       <Divider />
       <CartTotals totals={cart} />
@@ -61,43 +67,25 @@ type LinkButtonProps = {
 // This is base button for every button animation inside the website.
 
 function LinkButton({ text, href, className, buttonClassName, dataTestId } : LinkButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
   return (
     <LocalizedClientLink href={href} className={className ?? s.LinkButton}>
-      <button 
+      <motion.button
         className={buttonClassName ?? s.button}
-        onMouseEnter={() => setIsActive(true)}
-        onMouseLeave={() => setIsActive(false)}
         data-testid={dataTestId}
+        initial={PREMIUM_BUTTON_REST}
+        animate={PREMIUM_BUTTON_REST}
+        whileHover={PREMIUM_BUTTON_ACTIVE}
+        whileFocus={PREMIUM_BUTTON_ACTIVE}
+        whileTap={{ scale: .985 }}
       >
-        <motion.div 
-          className={s.slider}
-          animate={{top: isActive ? "-100%" : "0%"}}
-          transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-        >
-          <div 
-            className={s.el}
-            style={{ backgroundColor: "var(--darkOlive)" }}
-          >
-            <PerspectiveText label={text}/>
-          </div>
-          <div 
-            className={s.el}
-            style={{ backgroundColor: "var(--bgPrimary)" }}
-          >
-            <PerspectiveText label={text}/>
-          </div>
-        </motion.div>
-      </button>
+        <motion.span
+          className={s.indicator}
+          variants={premiumButtonFillVariants}
+          style={{ originX: 0 }}
+          transition={premiumButtonFillTransition}
+        />
+        <span className={s.label}>{text}</span>
+      </motion.button>
     </LocalizedClientLink>
   )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={s.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
 }

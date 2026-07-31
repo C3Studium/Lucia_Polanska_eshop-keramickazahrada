@@ -6,6 +6,15 @@
   --iconsPink: #FFA5A2;
   --iconsWhite: #fff;
   --iconsBlack: #212222;
+  --iconsBlackFilter:
+    brightness(0)
+    saturate(100%)
+    invert(11%)
+    sepia(5%)
+    saturate(285%)
+    hue-rotate(24deg)
+    brightness(94%)
+    contrast(90%);
   --darkOlive: #747E62;
   --whiteText: #fff;
   --blackText: #212222;

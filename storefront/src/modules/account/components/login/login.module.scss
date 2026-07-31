@@ -62,6 +62,13 @@
   /* w-full mt-6 */
   width: 100%;
   margin-top: 1.5rem;
+  --premium-button-surface: transparent;
+  --premium-button-fill: #20211d;
+}
+
+.submit > button {
+  width: 100%;
+  min-width: 0;
 }
 
 .note {
@@ -99,94 +106,98 @@
 }
 
 
-.ClickButton{
-    width: auto;
-    height: auto;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    .button{
-        position: relative;
-        width: 150px;
-        height: 40px;
-        cursor: pointer;
-        border-radius: 25px;
-        overflow: hidden;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
-
-        @include vb((
-            s: (width: 150px, height: 35px),
-        ));
-
-        .slider{
-            position: relative;
-            width: 100%;
-            height: 100%;
-
-            .el{
-                width: 100%;
-                height: 100%;
-                p{
-                  margin: 0px;
-                  font-size: 1.2rem;
-                  color: var(--whiteText);
-                  @include hb((
-                    sm: (font-size: 1.1rem),
-                    xs: (font-size: 1.1rem),
-                    xxs: (font-size: 1.1rem),
-                  ));
-
-                  @include vb((
-                    s: (font-size: 1.1rem),
-                  ));
-                }
-                &:nth-of-type(2){
-                  p{
-                    color: var(--whiteText);
-                  }
-                }
-                &:hover{
-                    .perspectiveText{
-                        transform: rotateX(90deg);
-                        p{
-                            &:nth-of-type(1){
-                                transform: translateY(-100%);
-                                opacity: 0;
-                            }
-                            &:nth-of-type(2){
-                                opacity: 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-    }
+/* Atelier passport — shared auth language */
+.root {
+  max-width: 31rem;
+  align-items: stretch;
 }
 
-.perspectiveText{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    p{
-        transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-        pointer-events: none;
-        text-transform: capitalize;
-        &:nth-of-type(2){
-            position: absolute;
-            transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(13px);
-            opacity: 0;
-        }
-    }
+.title {
+  margin: 0 0 .65rem;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.8rem, 2.25vw, 2.6rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -.025em;
+  text-transform: none;
+}
+
+.desc {
+  max-width: 23rem;
+  margin-bottom: clamp(1.5rem, 3vh, 2.25rem);
+  text-align: left;
+  font-size: .96rem;
+  line-height: 1.45;
+}
+
+.fields { row-gap: 1rem; }
+
+.fields :global(input) {
+  height: 3.5rem !important;
+  padding: 1.15rem 2.8rem .35rem 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 34, 34, .42) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #212222 !important;
+  font-size: 1.05rem !important;
+  box-shadow: none !important;
+}
+
+.fields :global(label) {
+  left: -.25rem !important;
+  margin-left: 0 !important;
+  color: rgba(33, 34, 34, .54) !important;
+  font-size: .78rem !important;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.fields :global(input:focus) {
+  border-color: #555d48 !important;
+  box-shadow: none !important;
+}
+
+.note,
+.forgotWrap { text-align: left; }
+
+.note {
+  margin-top: 1.1rem;
+  font-size: .9rem;
+}
+
+.forgotWrap {
+  margin-top: .7rem;
+  font-size: .9rem;
+}
+
+.underline {
+  position: relative;
+  text-decoration: none;
+}
+
+.underline::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  transform: scaleX(.28);
+  transform-origin: left;
+  transition: transform .55s cubic-bezier(.76, 0, .24, 1);
+}
+
+.underline:hover::after,
+.underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.fields :global(input:-webkit-autofill),
+.fields :global(input:-webkit-autofill:hover),
+.fields :global(input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: #212222 !important;
+  box-shadow: 0 0 0 1000px #f7f0e4 inset !important;
+  transition: background-color 9999s ease-out 0s;
 }

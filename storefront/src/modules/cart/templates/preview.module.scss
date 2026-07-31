@@ -3,6 +3,7 @@
 /* Preview items scroll container */
 .root {
   padding-left: 1px;
+  color: inherit;
   @include hb((
     sm: (width: 100%),
     xs: (width: 100%),
@@ -21,5 +22,11 @@
     overflow-x: hidden; /* overflow-x-hidden */
     max-height: 420px; /* max-h-[420px] */
     /* no-scrollbar would require vendor-specific rules; omitted intentionally */
+  }
+
+  :global(table),
+  :global(tbody) {
+    color: inherit;
+    background: transparent;
   }
 }

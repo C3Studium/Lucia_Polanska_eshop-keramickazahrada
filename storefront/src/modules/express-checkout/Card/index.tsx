@@ -1,45 +1,71 @@
-"use client"
-
 import { CheckCircle } from "@medusajs/icons"
-import { clx, Heading } from "@medusajs/ui"
-import { useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
+import styles from "./style.module.scss"
 
 type CardProps = {
+  step: string
   title: string
   isActive: boolean
   isDone: boolean
-  path: string
+  summary?: string
+  onOpenAction: () => void
   children: React.ReactNode
 }
 
 export const Card = ({
+  step,
   title,
   isActive,
   isDone,
-  path,
-  children
+  summary,
+  onOpenAction,
+  children,
 }: CardProps) => {
-  const router = useRouter()
-
   return (
-    <div className={clx(
-      "bg-ui-bg-base rounded-lg py-4 px-6 w-full",
-      "flex gap-4 flex-col shadow-elevation-card-rest",
-      !isActive && "cursor-pointer"
-    )}
-    onClick={() => {
-      if (isActive) {
-        return
-      }
-      
-      router.push(path)
-    }}
+    <motion.section
+      className={`${styles.card} ${isActive ? styles.active : ""} ${
+        !isActive ? styles.clickable : ""
+      }`}
+      layout="position"
+      transition={{ layout: { duration: .55, ease: [0.22, 1, 0.36, 1] } }}
     >
-      <Heading level="h2" className="flex justify-between items-center">
-        <span>{title}</span>
-        {isDone && <CheckCircle className="text-ui-tag-green-icon" />}
-      </Heading>
-      {isActive && children}
-    </div>
+      <button
+        type="button"
+        className={styles.heading}
+        onClick={onOpenAction}
+        aria-expanded={isActive}
+      >
+        <span className={styles.step}>{step}</span>
+        <span className={styles.headingCopy}>
+          <span className={styles.title}>{title}</span>
+          {!isActive && summary && (
+            <span className={styles.summary}>{summary}</span>
+          )}
+        </span>
+        <span className={styles.status}>
+          {isDone ? <CheckCircle className={styles.done} /> : isActive ? "—" : "↗"}
+        </span>
+      </button>
+      <AnimatePresence initial={false}>
+        {isActive && (
+          <motion.div
+            className={styles.content}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: .58, ease: [0.76, 0, 0.24, 1] }}
+          >
+            <motion.div
+              initial={{ y: 18 }}
+              animate={{ y: 0 }}
+              exit={{ y: 10 }}
+              transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {children}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
   )
 }

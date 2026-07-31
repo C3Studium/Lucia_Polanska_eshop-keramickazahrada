@@ -3,7 +3,9 @@
 /* Payment component styles using nested Sass structure */
 
 .root {
-  background: #fff;
+  position: relative;
+  padding: 34px 0 42px 58px;
+  background: transparent;
 
   .headerRow {
     display: flex;
@@ -28,9 +30,11 @@
   .heading {
     display: flex;
     flex-direction: row;
-    font-size: 2rem;
+    font-size: clamp(2rem, 2.8vw, 3.15rem);
     font-weight: 400;
-    font-family: "Sansation-Regular";
+    font-family: "Sentient-Regular", serif;
+    line-height: .98;
+    letter-spacing: -.025em;
     gap: 0.5rem;
     align-items: baseline;
 
@@ -64,8 +68,8 @@
   }
 
   .editBtn {
-    width: 80px;
-    height: 20px;
+    width: auto;
+    height: auto;
   }
 
   .open {
@@ -74,12 +78,46 @@
     .buttonRow{
       display: flex;
       justify-content: flex-start;
-      margin-top: 1rem; /* 16px */
+      margin-top: 2rem;
     }
   }
 
   .closed {
     display: none;
+  }
+
+  .methodIntro {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: .8rem;
+    padding-bottom: .9rem;
+
+    span {
+      color: rgba(32, 33, 28, .56);
+      font: 600 .65rem/1 "Sansation-Regular", sans-serif;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    p {
+      max-width: 330px;
+      margin: 0;
+      color: rgba(32, 33, 28, .54);
+      font: 300 .82rem/1.35 "Sansation-Light", sans-serif;
+      text-align: right;
+    }
+  }
+
+  .methodList {
+    width: 100%;
+  }
+
+  .paymentStatus {
+    margin: 1rem 0 0;
+    color: rgba(32, 33, 28, .66);
+    font: 400 .88rem/1.45 "Sansation-Regular", sans-serif;
   }
 
   .colThird {
@@ -89,58 +127,40 @@
   }
 
   .sectionTitle {
-    font-family: "Sansation-Regular";
-    font-size: 1.1rem;
-    font-weight: 400;
-    color: var(--blackText);
-    margin-bottom: 0.25rem;
-
-    @include hb((
-        md: (font-size: 1rem),
-        mdt: (font-size: 1rem),
-        sm: (font-size: 1rem),
-        xs: (font-size: 0.9rem, font-weight: 300),
-        xxs: (font-size: 0.9rem, font-weight: 300),
-    ));
-
-    @include vb((
-        lg: (font-size: 1rem),
-        md: (font-size: 1rem),
-        s: (font-size: 0.9rem, font-weight: 300),
-        sm: (font-size: 0.9rem, font-weight: 300),
-        xs: (font-size: 0.9rem, font-weight: 300),
-    ));
+    margin: 0 0 .85rem;
+    color: rgba(32, 33, 28, .52);
+    font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+    letter-spacing: .14em;
+    text-transform: uppercase;
   }
 
   .sectionText {
-    font-size: 0.9rem;
-    font-weight: 300;
-    color: var(--blackText);
-    margin-bottom: 0.25rem;
-    font-family: "Sansation-Light";
-
-    @include hb((
-        md: (font-size: 0.85rem),
-        mdt: (font-size: 0.85rem),
-        sm: (font-size: 0.85rem),
-        xs: (font-size: 0.8rem, font-weight: 300),
-        xxs: (font-size: 0.8rem, font-weight: 300),
-    ));
-
-    @include vb((
-        lg: (font-size: 0.85rem),
-        md: (font-size: 0.85rem),
-        s: (font-size: 0.8rem, font-weight: 300),
-        sm: (font-size: 0.8rem, font-weight: 300),
-        xs: (font-size: 0.8rem, font-weight: 300),
-    ));
+    margin: 0;
+    color: #20211c;
+    font: 300 .92rem/1.4 "Sansation-Light", sans-serif;
   }
 
   .summaryRow {
-    display: flex;
-    align-items: flex-start;
-    column-gap: 0.25rem; /* 4px */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 0;
     width: 100%;
+    border-top: 1px solid rgba(32, 33, 28, .18);
+    border-bottom: 1px solid rgba(32, 33, 28, .18);
+
+    .colThird {
+      width: auto;
+      min-height: 112px;
+      padding: 1.25rem 1.5rem 1.25rem 0;
+      border-right: 1px solid rgba(32, 33, 28, .14);
+
+      & + .colThird {
+        padding-right: 0;
+        padding-left: 1.5rem;
+        border-right: 0;
+      }
+    }
   }
 
   .detailsRow {
@@ -155,10 +175,14 @@
   .iconBox {
     display: flex;
     align-items: center;
-    height: 1.75rem; /* 28px */
-    width: fit-content;
-    padding: 0.5rem; /* 8px */
-    background: var(--button-neutral-hover);
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid rgba(32, 33, 28, .2);
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
   }
 
   .submitBtn {
@@ -172,6 +196,43 @@
   #comgate-container {
     /* reserved for Comgate iframe wrap styling */
     min-height: 1px;
+  }
+}
+
+.root::before {
+  content: "03";
+  position: absolute;
+  top: 48px;
+  left: 0;
+  font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .18em;
+  opacity: .48;
+}
+
+@media (max-width: 640px) {
+  .root { padding: 28px 0 32px 36px; }
+  .root::before { top: 40px; }
+  .root .methodIntro {
+    display: grid;
+    gap: .55rem;
+
+    p { text-align: left; }
+  }
+
+  .root .summaryRow {
+    grid-template-columns: 1fr;
+
+    .colThird {
+      min-height: auto;
+      padding: 1rem 0;
+      border-right: 0;
+      border-bottom: 1px solid rgba(32, 33, 28, .12);
+
+      & + .colThird {
+        padding: 1rem 0;
+        border-bottom: 0;
+      }
+    }
   }
 }
 

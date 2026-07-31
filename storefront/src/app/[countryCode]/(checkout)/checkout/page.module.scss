@@ -1,89 +1,200 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-/* Checkout page styles - SASS nesting */
 .root {
+  --checkout-ink: #20211c;
+  --checkout-cream: #ffe8d6;
+  --checkout-olive: #bbb788;
+  --checkout-green: #747e62;
+  --checkout-line: rgba(255, 232, 214, .2);
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2.5rem;
-  padding: 10dvh 5vw;
-  width: 100%;
-  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1.55fr) minmax(330px, .7fr);
+  align-items: start;
+  gap: clamp(54px, 6vw, 108px);
+  width: min(94vw, 1880px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: clamp(96px, 10vh, 124px) clamp(28px, 2.8vw, 58px) clamp(110px, 15vh, 180px);
+  color: var(--checkout-cream);
+}
 
-  @include vb((
-    lg: (padding: 10dvh 0),
-    md: (padding: 10dvh 10vw),
-    s: (padding: 5dvh 0),
-    sm: (padding: 5dvh 0),
-    xs: (padding: 5dvh 0),
-  ));
+.masthead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.2fr) minmax(280px, 1.05fr);
+  align-items: end;
+  gap: clamp(44px, 4vw, 86px);
+  min-height: 220px;
+  padding: 22px 0 38px;
+  border-bottom: 1px solid var(--checkout-line);
+  animation: checkoutReveal .8s cubic-bezier(.22, 1, .36, 1) both;
 
-  @include hb((
-    sm: (
-      display: flex,
-      align-items: flex-start,
-      justify-content: center,
-      flex-direction: column-reverse,
-      height: auto,
-      gap: 2.5dvw,
-    ),
-    xs: (
-      flex-direction: column-reverse,
-      display: flex,
-      justify-content: center,
-      align-items: center,
-    ),
-    xxs: (
-      flex-direction: column-reverse,
-      display: flex,
-      justify-content: center,
-      align-items: center,
-    ),
-  ));
-
-  @include vb((
-    md: (
-      display: flex,
-      align-items: flex-start,
-      justify-content: center,
-      flex-direction: column-reverse,
-    ),
-    s: (
-      display: flex,
-      align-items: flex-start,
-      justify-content: center,
-      flex-direction: column-reverse,
-    ),
-    sm: (
-      display: flex,
-      align-items: flex-start,
-      justify-content: center,
-      flex-direction: column-reverse,
-    ),
-    xs: (
-      display: flex,
-      align-items: flex-start,
-      justify-content: center,
-      flex-direction: column-reverse,
-    ),
-  ));
-
-  div {
-    @include hb((
-      sm: (width: 100%),
-      xs: (width: 100%),
-      xxs: (width: 100%),
-    ));
-    @include vb((
-      md: (width: 100%),
-      s: (width: 100%),
-      sm: (width: 100%),
-      xs: (width: 100%),
-    ));
+  h1 {
+    margin: clamp(46px, 6vh, 68px) 0 0;
+    font: 400 clamp(44px, 4vw, 76px)/.88 "Sentient-Regular", serif;
+    letter-spacing: -.05em;
   }
 
-  @media (min-width: 640px) {
-    grid-template-columns: 1fr 416px;
+  h1 em {
+    display: block;
+    margin-left: clamp(22px, 2.4vw, 46px);
+    color: var(--checkout-olive);
+    font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+    font-size: .62em;
+    font-weight: 300;
+    line-height: 1.04;
   }
+}
 
-  // If you have a content-container utility, add its styles here
+.mastheadMeta {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--checkout-line);
+  color: rgba(255, 232, 214, .5);
+  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.mastheadCopy {
+  margin: 0;
+  max-width: 34ch;
+  color: rgba(255, 232, 214, .62);
+  font: 300 clamp(14px, .92vw, 17px)/1.5 "Sansation-Light", sans-serif;
+}
+
+.mastheadAside {
+  grid-column: 3;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255,232,214,.4);
+  color: rgba(255,232,214,.82);
+  font: 400 11px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: color 220ms ease, border-color 220ms ease;
+}
+
+.backLink span {
+  transition: transform 420ms cubic-bezier(.22,1,.36,1);
+}
+
+.backLink:hover { color: var(--checkout-cream); border-color: var(--checkout-cream); }
+.backLink:hover span { transform: translateX(-4px); }
+
+.ledger {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  padding: clamp(36px, 4vw, 62px);
+  color: var(--checkout-ink);
+  background: var(--checkout-cream);
+  box-shadow: 28px 34px 80px -54px rgba(0,0,0,.95);
+  animation: ledgerReveal .9s .08s cubic-bezier(.22,1,.36,1) both;
+}
+
+.ledger::before {
+  position: absolute;
+  z-index: -1;
+  inset: 15px -15px -15px 15px;
+  content: "";
+  border: 1px solid rgba(187,183,136,.38);
+  background: rgba(187,183,136,.07);
+  pointer-events: none;
+}
+
+.ledger::after {
+  position: absolute;
+  top: -19px;
+  left: 0;
+  content: "01—04 · ÚDAJE OBJEDNÁVKY";
+  color: rgba(255,232,214,.38);
+  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.ledger :global(input:not([type="checkbox"]):not([type="radio"])),
+.ledger :global(select) {
+  border-radius: 0;
+  border-color: transparent transparent rgba(32, 33, 28, .25);
+  background: transparent;
+  box-shadow: none;
+}
+
+.ledger :global(input:not([type="checkbox"]):not([type="radio"]):focus),
+.ledger :global(select:focus) {
+  border-bottom-color: var(--checkout-green);
+}
+
+.order {
+  position: relative;
+  min-width: 0;
+  animation: orderReveal .9s .18s cubic-bezier(.22,1,.36,1) both;
+}
+
+.order::before {
+  position: absolute;
+  z-index: -1;
+  top: -80px;
+  right: -50px;
+  width: 180px;
+  aspect-ratio: 1;
+  content: "";
+  border: 1px solid rgba(255,232,214,.1);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 34px #20211c,
+    inset 0 0 0 35px rgba(255,232,214,.08);
+  pointer-events: none;
+}
+
+@keyframes checkoutReveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ledgerReveal {
+  from { opacity: 0; clip-path: inset(0 0 16% 0); transform: translateY(24px); }
+  to { opacity: 1; clip-path: inset(0); transform: translateY(0); }
+}
+
+@keyframes orderReveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1020px) {
+  .root {
+    display: flex;
+    width: min(calc(100% - 32px), 820px);
+    padding-inline: 0;
+    flex-direction: column;
+  }
+  .masthead, .ledger, .order { width: 100%; }
+  .ledger { order: 2; }
+  .order { order: 3; margin-top: 24px; }
+}
+
+@media (max-width: 700px) {
+  .root { width: calc(100% - 32px); padding: 78px 0 90px; gap: 42px; }
+  .masthead {
+    display: flex;
+    min-height: 220px;
+    padding: 18px 0 28px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .masthead h1 { margin-top: 32px; font-size: clamp(48px, 15vw, 66px); }
+  .mastheadAside { margin-top: auto; gap: 22px; }
+  .ledger { padding: 30px 20px; }
 }

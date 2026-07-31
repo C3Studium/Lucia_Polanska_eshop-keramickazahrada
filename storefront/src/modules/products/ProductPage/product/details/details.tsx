@@ -1,20 +1,20 @@
-'use client';
+"use client"
 
-import { useEffect, useMemo, useState } from "react";
-import Title from "./Info/Title";
-import Desc from "./Info/Desc";
-import Colors from "./Options/Colors";
-import { HttpTypes } from "@medusajs/types";
-import { Star, StarSolid } from "@medusajs/icons";
-import Sizes from "./Options/Sizes";
-import ProductPrice from "./Cta/Price";
-import CTA from "./Cta/Add";
-import { addToCart } from "@lib/data/cart";
-import { isEqual } from "lodash";
-import RestockForm from "../../restock";
+import { addToCart } from "@lib/data/cart"
+import { BundleProduct } from "@lib/data/products"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { HttpTypes } from "@medusajs/types"
 import Details from "@modules/products/ProductPage/details"
-import Gallery from "../Gallery/gallery";
-
+import RestockForm from "@modules/products/ProductPage/restock"
+import BundleActions from "@modules/products/components/bundle-actions"
+import { isEqual } from "lodash"
+import { motion } from "framer-motion"
+import { useEffect, useMemo, useState } from "react"
+import Gallery from "../Gallery/gallery"
+import CTA from "./Cta/Add"
+import ProductPrice from "./Cta/Price"
+import Colors from "./Options/Colors"
+import Sizes from "./Options/Sizes"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -26,194 +26,291 @@ type ProductTemplateProps = {
   isAuthenticated?: boolean
   initialRating?: number
   initialCount?: number
+  bundle?: BundleProduct
+  isBundlePreview?: boolean
 }
 
 const optionsAsKeymap = (
   variantOptions: HttpTypes.StoreProductVariant["options"]
-) => {
-  return variantOptions?.reduce((acc: Record<string, string>, varopt: any) => {
-    acc[varopt.option_id] = varopt.value
+) =>
+  variantOptions?.reduce((acc: Record<string, string>, option: any) => {
+    acc[option.option_id] = option.value
     return acc
-  }, {})
-}
+  }, {}) ?? {}
 
+const ProductDetails: React.FC<ProductTemplateProps> = ({
+  product,
+  region,
+  countryCode,
+  categories,
+  wishlistItems,
+  onWishlistUpdateAction,
+  isAuthenticated,
+  initialRating = 0,
+  initialCount = 0,
+  bundle,
+  isBundlePreview = false,
+}) => {
+  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [isAdding, setIsAdding] = useState(false)
 
-const ProductDetails: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, onWishlistUpdateAction, isAuthenticated, initialRating, initialCount }) => {
-    const [options, setOptions] = useState<Record<string, string | undefined>>({})
-    const [isAdding, setIsAdding] = useState(false)
-  
+  useEffect(() => {
+    const firstVariant = product.variants?.[0]
+    if (firstVariant) setOptions(optionsAsKeymap(firstVariant.options))
+  }, [product.variants])
 
-    console.log("Product: ", product);
-    // If there is only 1 variant, preselect the options
-    useEffect(() => {
-      if (product.variants?.length === 1) {
-        const variantOptions = optionsAsKeymap(product.variants[0].options)
-        setOptions(variantOptions ?? {})
-      }
-    }, [product.variants])
-    useEffect(() => {
-        if (product.variants && product.variants.length > 0) {
-            const variantOptions = optionsAsKeymap(product.variants[0].options)
-            setOptions(variantOptions ?? {})
-        }
-    }, [product.variants])
-  
-    const selectedVariant = useMemo(() => {
-      if (!product.variants || product.variants.length === 0) {
-        return
-      }
-  
-      return product.variants.find((v) => {
-        const variantOptions = optionsAsKeymap(v.options)
-        return isEqual(variantOptions, options)
-      })
-    }, [product.variants, options])
-  
-    // update the options when a variant is selected
-    const setOptionValue = (optionId: string, value: string) => {
-      setOptions((prev) => ({
-        ...prev,
-        [optionId]: value,
-      }))
+  const selectedVariant = useMemo(() => {
+    return product.variants?.find((variant) =>
+      isEqual(optionsAsKeymap(variant.options), options)
+    )
+  }, [product.variants, options])
+
+  const isValidVariant = useMemo(
+    () =>
+      !!product.variants?.some((variant) =>
+        isEqual(optionsAsKeymap(variant.options), options)
+      ),
+    [product.variants, options]
+  )
+
+  const inStock = useMemo(() => {
+    if (!selectedVariant) return false
+    if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
+      return true
     }
-  
-    //check if the selected options produce a valid variant
-    const isValidVariant = useMemo(() => {
-      return product.variants?.some((v) => {
-        const variantOptions = optionsAsKeymap(v.options)
-        return isEqual(variantOptions, options)
+    return (selectedVariant.inventory_quantity || 0) > 0
+  }, [selectedVariant])
+
+  const setOptionValue = (optionId: string, value: string) => {
+    setOptions((previous) => ({ ...previous, [optionId]: value }))
+  }
+
+  const handleAddToCart = async () => {
+    if (!selectedVariant?.id) return
+    setIsAdding(true)
+    try {
+      const result = await addToCart({
+        variantId: selectedVariant.id,
+        quantity: 1,
+        countryCode,
       })
-    }, [product.variants, options])
-  
-    // check if the selected variant is in stock
-    const inStock = useMemo(() => {
-      // If we don't manage inventory, we can always add to cart
-      if (selectedVariant && !selectedVariant.manage_inventory) {
-        return true
-      }
-
-      console.log("Product in stock: ", selectedVariant?.inventory_quantity);
-  
-      // If we allow back orders on the variant, we can add to cart
-      if (selectedVariant?.allow_backorder) {
-        return true
-      }
-  
-      // If there is inventory available, we can add to cart
-      if (
-        selectedVariant?.manage_inventory &&
-        (selectedVariant?.inventory_quantity || 0) > 0
-      ) {
-        return true
-      }
-  
-      // Otherwise, we can't add to cart
-      return false
-    }, [selectedVariant])  
-  
-    // add the selected variant to the cart
-    const handleAddToCart = async () => {
-      if (!selectedVariant?.id) return null
-
-      setIsAdding(true)
-      try {
-        const res = await addToCart({
-          variantId: selectedVariant.id,
-          quantity: 1,
-          countryCode,
-        })
-        if (!res?.success) {
-          console.error("Failed to add to cart:", res?.message)
-        }
-      } catch (e: any) {
-        console.error("Failed to add to cart:", e?.message || e)
-      } finally {
-        setIsAdding(false)
-      }
+      if (!result?.success)
+        console.error("Failed to add to cart:", result?.message)
+    } catch (error: any) {
+      console.error("Failed to add to cart:", error?.message || error)
+    } finally {
+      setIsAdding(false)
     }
+  }
 
-    // WIP finish here the styling and scss
-    return (
-        <div className="product__details">
-          <div className="info__container">
-            <div className="product__details__mainDetails">
-              <Title product={product} categories={categories} />
-              <Desc product={product} />
+  const category = categories
+    ?.map((item) => item.name || item.handle)
+    .filter(Boolean)
+    .join(" · ")
+
+  const description =
+    product.description?.trim() ||
+    "Ručně vytvořený keramický objekt z píseckého ateliéru."
+  const descriptionWords = description.split(/\s+/).filter(Boolean)
+  const hasLongDescription = descriptionWords.length > 25
+  const descriptionPreview = hasLongDescription
+    ? descriptionWords.slice(0, 25).join(" ")
+    : description
+  const selectedOptionLabels = product.options
+    ?.map((option) => options[option.id])
+    .filter(Boolean)
+    .join(" · ")
+  const displayTitle = bundle?.title || product.title
+  const openDescription = () => {
+    window.dispatchEvent(new CustomEvent("open-product-details-desc"))
+    const details = document.getElementById("product-details")
+    if (details) scrollWithLenis(details)
+  }
+  const scrollToReviews = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    const reviews = document.getElementById("product-reviews")
+    if (reviews) {
+      scrollWithLenis(reviews)
+      window.history.replaceState(null, "", "#product-reviews")
+    }
+  }
+
+  return (
+    <>
+      <div className="product__story">
+        <aside className="product__identity" aria-label="Informace o produktu">
+          <motion.div
+            className="product__identityInner"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="product__eyebrow">
+              <span>01 · {category || "Autorská keramika"}</span>
+              <span>Písek</span>
             </div>
 
-            <div className="product__details__cta">
-              <ProductPrice product={product} variant={selectedVariant} countryCode={countryCode} />
-              <CTA
-                inStock={inStock}
-                selectedVariant={selectedVariant}
-                isAdding={isAdding}
-                isValidVariant={!!isValidVariant}
-                handleAddToCart={handleAddToCart}
-                options={options}
-                product={product}
+            <h1>{displayTitle}</h1>
+            <p className="product__signature">
+              {bundle
+                ? "Objekty vybrané společně."
+                : "Originál vytvořený rukama."}
+            </p>
+            <p className="product__lead">
+              {descriptionPreview}
+              {hasLongDescription && (
+                <>
+                  {"… "}
+                  <button
+                    type="button"
+                    className="product__leadMore"
+                    onClick={openDescription}
+                  >
+                    více
+                  </button>
+                </>
+              )}
+            </p>
+
+            {initialCount >= 5 && (
+              <div
+                className="product__rating"
+                aria-label={`${initialRating} z 5, ${initialCount} recenzí`}
+              >
+                <span className="product__ratingValue">
+                  {initialRating.toFixed(1)}
+                </span>
+                <span className="product__ratingRule" />
+                <a href="#product-reviews" onClick={scrollToReviews}>
+                  {initialCount} recenzí
+                </a>
+              </div>
+            )}
+
+            <div className="product__detailsSlot">
+              <Details product={product} />
+            </div>
+          </motion.div>
+        </aside>
+
+        <div className="product__media" aria-label="Fotografie produktu">
+          <Gallery
+            product={product}
+            region={region}
+            countryCode={countryCode}
+            bundle={bundle}
+          />
+        </div>
+
+        <aside
+          className="product__purchase"
+          data-bundle={bundle ? "true" : undefined}
+          aria-label="Výběr varianty a nákup"
+        >
+          <motion.div
+            className="product__purchaseInner"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.8,
+              delay: 0.12,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
+            <div className="product__purchaseHeader">
+              <span>Volba objektu</span>
+              <span>{inStock ? "K dispozici" : "Na dotaz"}</span>
+            </div>
+
+            <div className="product__selection">
+              <small>Vaše provedení</small>
+              <span>
+                {bundle
+                  ? `${bundle.items.length} objekty · jeden celek`
+                  : selectedOptionLabels ||
+                    selectedVariant?.title ||
+                    "Originální provedení"}
+              </span>
+            </div>
+
+            {bundle ? (
+              <BundleActions
+                bundle={bundle}
+                region={region}
+                isPreview={isBundlePreview}
+                wishlistVariantId={selectedVariant?.id}
                 wishlistItems={wishlistItems}
                 onWishlistUpdateAction={onWishlistUpdateAction}
                 isAuthenticated={isAuthenticated}
+                price={
+                  <ProductPrice
+                    product={product}
+                    variant={selectedVariant}
+                    countryCode={countryCode}
+                  />
+                }
               />
-              <div className="divider"/>
-            </div>
-            {/* <div className="product__reviews">
-              {initialRating !== undefined && (
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center">
-                      {Array.from({ length: 5 }).map((_, index) => (
-                        <span key={index}>
-                          {index >= Math.round(initialRating || 0) ? (
-                              <Star/>
-                          ) : (
-                              <StarSolid className="text-ui-tag-orange-icon" />
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                    <span>
-                      {initialCount} {initialCount === 1  ? "recenze" : "recenzí"}
-                    </span>
+            ) : (
+              <>
+                <div className="product__optionPanel">
+                  <Colors
+                    product={product}
+                    region={region}
+                    isAdding={isAdding}
+                    options={options}
+                    setOptionValue={setOptionValue}
+                  />
+                  <Sizes
+                    product={product}
+                    region={region}
+                    isAdding={isAdding}
+                    options={options}
+                    setOptionValue={setOptionValue}
+                  />
                 </div>
-              )}
-            </div>             */}
 
-            <Details
-              product={product} 
-            />
-          </div>
-          <div className="images_container">
-              <Gallery product={product} region={region} countryCode={countryCode}/>
-          </div>
-          <div className="choice__container">
-            <div className="product__details__subDetails">
-              <Colors
-                product={product}
-                region={region}
-                isAdding={isAdding}
-                options={options}
-                setOptionValue={setOptionValue}
-              />
-              <Sizes
-                product={product}
-                region={region}
-                isAdding={isAdding}
-                options={options}
-                setOptionValue={setOptionValue}
-              />
-            </div>
-            {selectedVariant && !inStock && (
-              <RestockForm variant={selectedVariant} product={product} />
+                <div className="product__buyBlock">
+                  <ProductPrice
+                    product={product}
+                    variant={selectedVariant}
+                    countryCode={countryCode}
+                  />
+                  <CTA
+                    inStock={inStock}
+                    selectedVariant={selectedVariant}
+                    isAdding={isAdding}
+                    isValidVariant={isValidVariant}
+                    handleAddToCart={handleAddToCart}
+                    options={options}
+                    product={product}
+                    wishlistItems={wishlistItems}
+                    onWishlistUpdateAction={onWishlistUpdateAction}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </div>
+              </>
             )}
-            <div className="next__prev__products"
-              //TODO
-            >
 
+            <div className="product__serviceNotes">
+              <span>Bezpečně baleno</span>
+              <span>Ručně vytvořeno</span>
+              <span>Ateliér · Písek</span>
             </div>
-          </div>
-            
-        </div>
-    )
+
+            {!bundle && selectedVariant && !inStock && (
+              <RestockForm
+                variant={{
+                  id: selectedVariant.id,
+                  title: selectedVariant.title || undefined,
+                }}
+                product={{ title: product.title || undefined }}
+              />
+            )}
+          </motion.div>
+        </aside>
+      </div>
+    </>
+  )
 }
 
-export default ProductDetails;
+export default ProductDetails

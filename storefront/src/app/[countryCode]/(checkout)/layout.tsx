@@ -1,54 +1,44 @@
-
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import ChevronDown from "@modules/common/icons/chevron-down"
-import MedusaCTA from "@modules/layout/components/medusa-cta"
-import styles from "./styles/layout.module.scss"
-import Image from "next/image"
-import NavScrollLink, { MobileNavScrollLink } from "@modules/layout/components/scrollLinkCheckout"
-import Footer from "@modules/layout/Footer"
-import Scrollbar from "@modules/layout/scrollbar"
-import { MobileIconsNavbar } from "@modules/layout/Navbar"
 import { retrieveCart } from "@lib/data/cart"
+import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
+import { listRegions } from "@lib/data/regions"
+import { StoreRegion } from "@medusajs/types"
+import Footer from "@modules/layout/Footer"
+import Navbar from "@modules/layout/Navbar"
+import type { NavigationCollection } from "@modules/layout/Navbar/productsButton"
+import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
+import Scrollbar from "@modules/layout/scrollbar"
+import styles from "./styles/layout.module.scss"
 
 export default async function CheckoutLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cart = await retrieveCart()
+  const [cart, customer, regions, wishlistItems] = await Promise.all([
+    retrieveCart(),
+    retrieveCustomer(),
+    listRegions().then((items: StoreRegion[]) => items),
+    getCustomerWishlistItems(),
+  ])
+  const navigationCollections: NavigationCollection[] = []
+
   return (
     <div className={styles.root}>
-      <div className={styles.header}>
-        <nav>
-          <LocalizedClientLink
-            href="/cart"
-            className={styles.backLink}
-            data-testid="back-to-cart-link"
-          >
-            <NavScrollLink text="Zpět do košíku" />
-            <MobileNavScrollLink text="Zpět" />
-          </LocalizedClientLink>
-          <LocalizedClientLink
-            href="/"
-            className={styles.storeLink}
-            data-testid="store-link"
-          >
-            <Image 
-              src={"/assets/icons/logo.svg"}
-              alt="KeramickaZahrada_logo"
-              width={120}
-              height={40}
-            />
-          </LocalizedClientLink>
-          <div className={styles.spacer} />
-        </nav>
-      </div>
-      <div className={styles.checkoutContainer} data-testid="checkout-container">{children}</div>
+      <GlobalLiquidEther />
+      <Navbar
+        cart={cart}
+        regions={regions}
+        isLoggedIn={!!customer}
+        wishlistItems={wishlistItems}
+        navigationCollections={navigationCollections}
+      />
+      <Scrollbar />
+      <main className={styles.checkoutContainer} data-testid="checkout-container">
+        {children}
+      </main>
       <div className={styles.footer}>
         <Footer />
       </div>
-      <Scrollbar />
-      <MobileIconsNavbar cart={cart} />
     </div>
   )
 }

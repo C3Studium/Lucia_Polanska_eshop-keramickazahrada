@@ -1,17 +1,15 @@
-"use client";
-import { Easing, motion } from 'framer-motion';
-import { useState } from 'react';
+"use client"
 
-import Arrow from '@modules/common/icons/arrow';
-
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import Arrow from "@modules/common/icons/arrow"
+import { Easing, motion } from "framer-motion"
+import { useState } from "react"
 import styles from "./styles.module.scss"
-import LocalizedClientLink from '@modules/common/components/localized-client-link';
-
 
 type LinkButtonProps = {
-    text: string;
-    href: string; 
-    className?: string;
+    text: string
+    href: string
+    className?: string
     index?: number
     onClickAction?: () => void
 }
@@ -37,45 +35,48 @@ const lineAnim = {
         }
         
     },
-}
+} as const
 
 export default function LinkCat({ text, href, className, index, onClickAction } : LinkButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
+    const [isActive, setIsActive] = useState(false)
+
     return (
-        <LocalizedClientLink href={href} className={`${className} ${styles.LinkCat}`} key={`LinkButton ${index}`}>
-            <button 
-                className={styles.button}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-                onClick={onClickAction}
-            >
-                <motion.div 
-                    className={styles.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
+        <LocalizedClientLink
+            href={href}
+            className={`${styles.LinkCat} ${className ?? ""}`}
+            data-link-index={index}
+            onClick={onClickAction}
+            onMouseEnter={() => setIsActive(true)}
+            onMouseLeave={() => setIsActive(false)}
+            onFocus={() => setIsActive(true)}
+            onBlur={() => setIsActive(false)}
+        >
+            <span className={styles.textWindow}>
+                <motion.span
+                    className={styles.textTrack}
+                    animate={{ y: isActive ? "-50%" : "0%" }}
+                    transition={{ duration: 0.48, ease: [0.76, 0, 0.24, 1] }}
                 >
-                    <div 
-                        className={styles.el}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={styles.el}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                </motion.div>
-            </button>
-            <motion.div className={styles.Line} variants={lineAnim} initial="initial" animate={isActive ? "enter" : "exit"}/>
+                    <LinkFace label={text} />
+                    <LinkFace label={text} />
+                </motion.span>
+            </span>
+            <motion.span
+                className={styles.Line}
+                variants={lineAnim}
+                initial="initial"
+                animate={isActive ? "enter" : "exit"}
+            >
+            </motion.span>
         </LocalizedClientLink>
     )
 }
 
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}<span><Arrow size={15}/></span></p>
-            <p>{label}<span><Arrow size={15}/></span></p>
-        </div>
+function LinkFace({ label }: { label: string }) {
+    return (
+        <span className={styles.linkFace}>
+            <span>{label}</span>
+            <Arrow size={14} />
+        </span>
     )
 }

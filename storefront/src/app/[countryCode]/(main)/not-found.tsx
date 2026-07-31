@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 
-import InteractiveLink from "@modules/common/components/interactive-link"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 export const metadata: Metadata = {
   title: "404",
@@ -14,7 +14,9 @@ export default function NotFound() {
       <p className="text-small-regular text-ui-fg-base">
         Stránka, kterou jste se pokusili otevřít, neexistuje.
       </p>
-      <InteractiveLink href="/">Zpět na úvodní stránku</InteractiveLink>
+      <LocalizedClientLink className="underline" href="/">
+        Zpět na úvodní stránku
+      </LocalizedClientLink>
     </div>
   )
 }

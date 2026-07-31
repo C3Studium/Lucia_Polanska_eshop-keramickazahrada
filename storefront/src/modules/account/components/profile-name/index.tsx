@@ -50,7 +50,10 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
     <form action={formAction} className={s.root}>
       <AccountInfo
         label="Jméno"
-        currentInfo={`${customer.first_name} ${customer.last_name}`}
+        currentInfo={
+          [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
+          "Nezadáno"
+        }
         isSuccess={successState}
         isError={!!state?.error}
         clearState={clearState}
@@ -58,6 +61,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className={s.rowTwoWideGap}>
           <Input
+            variant="contact"
             label="Jméno"
             name="first_name"
             required
@@ -65,6 +69,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
             data-testid="first-name-input"
           />
           <Input
+            variant="contact"
             label="Příjmení"
             name="last_name"
             required

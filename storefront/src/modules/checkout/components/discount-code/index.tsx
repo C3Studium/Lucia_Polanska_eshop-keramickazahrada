@@ -1,16 +1,15 @@
 "use client"
 
 import { Badge, Heading, Input, Label, Text } from "@medusajs/ui"
-import React, { useActionState } from "react";
+import React, { useActionState } from "react"
 
 import { applyPromotions, submitPromotionForm } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import Trash from "@modules/common/icons/trash"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 import ErrorMessage from "../error-message"
-import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { AnimatePresence, motion } from "framer-motion"
 
 import styles from "./style.module.scss"
 
@@ -59,10 +58,11 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
       <div className={styles.content}>
         <form action={formAction} className={styles.form}>
           <Label className={styles.label}>
-            <ClickButton
+            <PremiumActionButton
+              compact
               text="Zadat slevový kód(y)"
-                onClickAction={() => setIsOpen(!isOpen)}
-                active={isOpen}
+              onClickAction={() => setIsOpen((current) => !current)}
+              active={isOpen}
               type="button"
               className={styles.toggleBtn}
               data-testid="add-discount-button"
@@ -73,31 +73,44 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
             </Tooltip> */}
           </Label>
 
-          {isOpen && (
-            <>
-              <div className={styles.row}>
-                <Input
-                  className={styles.input}
-                  id="promotion-input"
-                  name="code"
-                  type="text"
-                  autoFocus={false}
-                  data-testid="discount-input"
-                />
-                <ClickButton
-                  text="Použít"
-                  type="submit"
-                  data-testid="discount-apply-button"
-                  className={styles.applyBtn}
-                />
-              </div>
+          <AnimatePresence initial={false}>
+            {isOpen && (
+              <motion.div
+                className={styles.promoReveal}
+                initial={{ height: 0, opacity: 0, y: -8 }}
+                animate={{ height: "auto", opacity: 1, y: 0 }}
+                exit={{ height: 0, opacity: 0, y: -6 }}
+                transition={{
+                  height: { duration: 0.48, ease: [0.76, 0, 0.24, 1] },
+                  opacity: { duration: 0.24, delay: 0.08 },
+                  y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+                }}
+              >
+                <div className={styles.row}>
+                  <Input
+                    className={styles.input}
+                    id="promotion-input"
+                    name="code"
+                    type="text"
+                    autoFocus
+                    data-testid="discount-input"
+                  />
+                  <PremiumActionButton
+                    compact
+                    text="Použít"
+                    type="submit"
+                    data-testid="discount-apply-button"
+                    className={styles.applyBtn}
+                  />
+                </div>
 
-              <ErrorMessage
-                error={message}
-                data-testid="discount-error-message"
-              />
-            </>
-          )}
+                <ErrorMessage
+                  error={message}
+                  data-testid="discount-error-message"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
 
         {promotions.length > 0 && (
@@ -178,67 +191,3 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
 }
 
 export default DiscountCode
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-  active?: boolean; // external state to force animation (e.g. open)
-    type?: "button" | "submit";
-    className?: string;
-    "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, active = false, "data-testid": dataTestId }: ClickButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const isSubmitting = type === "submit" ? pending : false;
-    const isDisabled = disabled || isSubmitting;
-    const handleClick = onClickAction ?? ClickAction;
-  const animateActive = isActive || active;
-
-    return (
-        <div className={className ? `${styles.ClickButton} ${className}` : styles.ClickButton}>
-          <button 
-            type={type}
-            className={styles.button}
-            onClick={handleClick}
-            disabled={isDisabled}
-            aria-busy={isDisabled || undefined}
-            onMouseEnter={() => setIsActive(true)}
-            onMouseLeave={() => setIsActive(false)}
-            data-testid={dataTestId}
-          >
-            <motion.div 
-              className={styles.slider}
-              animate={{top: animateActive ? "-100%" : "0%"}}
-              transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-            >
-              <div 
-                  className={styles.el}
-                  style={{ backgroundColor: "var(--darkOlive)" }}
-              >
-                  <PerspectiveText label={text}/>
-              </div>
-              <div 
-                  className={styles.el}
-                  style={{ backgroundColor: "var(--bgBlack)" }}
-              >
-                  <PerspectiveText label={text} />
-              </div>
-            </motion.div>
-          </button>
-        </div>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
-}

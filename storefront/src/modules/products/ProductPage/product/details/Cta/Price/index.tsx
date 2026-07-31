@@ -1,4 +1,3 @@
-import { clx } from "@medusajs/ui"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
 
@@ -19,39 +18,43 @@ export default function ProductPrice({
   })
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
+  const calculatedPrice = selectedPrice?.calculated_price
+  const originalPrice = selectedPrice?.original_price
+  const hasPrice = calculatedPrice != null
 
   return (
     <div className="product__details__cta__price">
       <p>Cena |</p>
       <div className="product__details__cta__price__main">
         <span
-          className={clx(
-            "text-xl-semi",
-            { "text-ui-fg-interactive": selectedPrice?.price_type === "sale" },
-            className
-          )}
+          className={[
+            "product__priceCurrent",
+            selectedPrice?.price_type === "sale" ? "product__priceCurrent--sale" : "",
+            !hasPrice ? "product__priceUnavailable" : "",
+            className ?? "",
+          ].filter(Boolean).join(" ")}
           data-testid="product-price"
           data-value={selectedPrice?.calculated_price_number}
         >
-      {cheapestPrice?.calculated_price !== undefined
-          ? `${String(cheapestPrice.calculated_price).replace(/czk/i, "")}`
-        : "Cena není k dispozici"}
+          {hasPrice
+            ? String(calculatedPrice).replace(/czk/i, "").trim()
+            : "Cena na dotaz"}
         </span>
         {selectedPrice?.price_type === "sale" && (
           <>
             <p>
-              <span className="text-ui-fg-subtle">Původní cena: </span>
+              <span className="product__priceOriginalLabel">Původní cena: </span>
               <span
-                className="line-through"
+                className="product__priceOriginal"
                 data-testid="original-product-price"
                 data-value={selectedPrice.original_price_number}
               >
-                 {cheapestPrice?.original_price !== undefined
-                ? `${String(cheapestPrice.original_price).replace(/czk/i, "")}`
-                : "Cena není k dispozici"}
+                {originalPrice !== undefined
+                  ? String(originalPrice).replace(/czk/i, "").trim()
+                  : "Na dotaz"}
               </span>
             </p>
-            <span className="text-ui-fg-interactive">
+            <span className="product__priceDiscount">
               -{selectedPrice.percentage_diff}%
             </span>
           </>

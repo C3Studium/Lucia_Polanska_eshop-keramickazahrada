@@ -1,461 +1,396 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.Hero__Intro{
-    width: 100dvw;
-    height: 100dvh;
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;    
-    background-color: var(--bgWhite);
-    padding: 0 5dvw;
+.Hero__Intro__Journey {
+  position: relative;
+  width: 100%;
+  height: 148svh;
+  background: #212222;
+}
+
+.Hero__Intro {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100svh;
+  min-height: 43rem;
+  overflow: hidden;
+  color: #ffe8d6;
+  background: #212222;
+  isolation: isolate;
+
+  .Hero__Intro__Image__wrapper {
+    position: absolute;
+    inset: clamp(5.8rem, 10vh, 7.5rem) 1.4vw clamp(3.9rem, 6.5vh, 5.5rem);
+    z-index: 0;
     overflow: hidden;
-    z-index: 1;
+    border-radius: 0.45rem;
+    background: #161715;
 
-    @include hb((
-        sm: (padding: 0 2.5dvw),
-        xs: (padding: 0 2.5dvw),
-        xxs: (padding: 0 2.5dvw),
-    ));
-    @include vb((
-        s: (height: 100dvh),
-        sm: (height: 100dvh),
-        xs: (height: 100dvh),
-    ));
-
-    .Hero__Intro__Image__wrapper{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-
-        .Hero__Intro__Cover{
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            img{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                object-position: center;
-            }
-
-        }
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
     }
 
-    .Hero__Intro__Img{
-        position: absolute;
-        top: 55%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 45dvh;
-        height: 65dvh;
-        // border: 1px solid var(--blackText);        
-        @include vb((
-            lg: (width: 35dvh, height: 50dvh),
-            md: (width: 32.5dvh, height: 45dvh),
-            s: (width: 35dvh, height: 50dvh, top: 45%),
-            sm: (width: 35dvh, height: 50dvh, top: 45%),
-            xs: (width: 35dvh, height: 50dvh, top: 45%),
-        ));
-
-        .Hero__Intro__Img__inner{
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-
-            img{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                object-position: center;
-                mix-blend-mode: difference;
-            }
-        }
+    &::before {
+      background:
+        linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
+        linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
     }
 
-    .Hero__Intro__Header{
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        width: 80%;
-        height: 50%;
+    &::after {
+      box-shadow: inset 0 0 0 1px rgba(255, 232, 214, 0.1);
+    }
+
+    .Hero__Intro__Cover {
+      position: absolute;
+      inset: -5%;
+      width: 110%;
+      height: 110%;
+      overflow: hidden;
+      will-change: transform;
+    }
+
+    .Hero__Intro__Cover__Image,
+    .homeHeroShader,
+    .homeHeroShader canvas,
+    .homeHeroShaderFallback,
+    .homeHeroShaderFallbackImage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .Hero__Intro__Cover__Image {
+      overflow: hidden;
+      will-change: clip-path, transform;
+    }
+
+    .homeHeroShader {
+      overflow: hidden;
+      background: #171816;
+
+      canvas {
+        z-index: 2;
+        display: block;
+        opacity: 0;
+        transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      &.is-ready canvas {
+        opacity: 1;
+      }
+    }
+
+    .homeHeroShaderFallback {
+      z-index: 1;
+      opacity: 1;
+      transition: opacity 0.65s ease;
+    }
+
+    .homeHeroShader.is-ready .homeHeroShaderFallback {
+      opacity: 0;
+    }
+
+    .homeHeroShaderFallbackImage {
+      overflow: hidden;
+
+      img {
+        object-fit: cover;
+        object-position: center 44%;
+        filter: brightness(1.2) saturate(0.96) contrast(0.98);
+      }
+    }
+
+    .homeHeroShaderShadows {
+      display: none;
+    }
+  }
+
+  .Hero__Intro__Topline {
+    position: absolute;
+    top: clamp(4.5rem, 7.6vh, 5.6rem);
+    left: 4.7vw;
+    right: 4.7vw;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: max-content 1fr max-content;
+    align-items: center;
+    gap: 1rem;
+    color: rgba(255, 232, 214, 0.62);
+    font-family: "Sansation-Regular";
+    font-size: clamp(0.61rem, 0.64vw, 0.72rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+
+    .line {
+      height: 1px;
+      background: rgba(255, 232, 214, 0.25);
+      transform-origin: left center;
+    }
+  }
+
+  .Hero__Intro__Header {
+    position: absolute;
+    bottom: clamp(10rem, 17vh, 13.5rem);
+    left: 5vw;
+    z-index: 5;
+    display: flex;
+    width: min(68rem, 62vw);
+    flex-direction: column;
+    align-items: flex-start;
+    color: #ffe8d6;
+    pointer-events: none;
+    transform-origin: left bottom;
+    will-change: transform, opacity;
+
+    h1 {
+      margin: 0;
+      color: inherit;
+      text-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    .Hero__Intro__Header__Title h1 {
+      font-family: "Sentient-Regular";
+      font-size: clamp(6rem, 10.2vw, 12rem);
+      font-weight: 400;
+      line-height: 0.73;
+      letter-spacing: -0.06em;
+    }
+
+    .Hero__Intro__Header__Subtitle {
+      margin-top: clamp(0.25rem, 0.8vh, 0.7rem);
+      margin-left: clamp(8rem, 14vw, 17rem);
+      transform: rotate(-1.2deg);
+      transform-origin: left center;
+
+      h1 {
+        color: #cbc69d;
         font-family: "ooohBaby-Regular";
-        gap: 10dvw;
-
-        @include vb((
-            lg: (top: 45%),
-            md: (top: 45%),
-            s: (top: 35%, flex-direction: column, height: 70%, width: 95%),
-            sm: (top: 35%, flex-direction: column, height: 70%, width: 95%),
-            xs: (top: 35%, flex-direction: column, height: 70%, width: 95%),
-        ));
-
-        .Hero__Intro__Header__Title{
-            width: 50%;
-            height: 85%;
-            position: relative;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 15%;
-            padding-right: 5%;
-            @include vb((
-                s: (justify-content: flex-start, align-items: flex-end, width: 100%, margin: 0, padding: 0),
-                sm: (justify-content: flex-start, align-items: flex-end, width: 100%, margin: 0, padding: 0),
-                xs: (justify-content: flex-start, align-items: flex-end, width: 100%, margin: 0, padding: 0),
-            ));
-            
-            h1{
-                color: var(--whiteText);
-                font-size: 10rem;
-                opacity: 0.8;
-                font-weight: 300;
-                mix-blend-mode: difference;
-
-                @include hb((
-                    lg: (font-size: 8rem),
-                    md: (font-size: 6rem),
-                    mdt: (font-size: 8rem),
-                    sm: (font-size: 6rem),
-                    xs: (font-size: 4.5rem),
-                    xxs: (font-size: 4rem),
-                ));
-
-                @include vb((
-                    lg: (font-size: 8rem),
-                    md: (font-size: 6rem),
-                    s: (font-size: 6rem),
-                    sm: (font-size: 5.5rem),
-                    xs: (font-size: 5rem),
-                ));
-            }
-        }
-
-        .Hero__Intro__Header__Subtitle{
-            width: 50%;
-            height: 90%;
-            position: relative;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            margin-top: 5%;
-
-            @include vb((
-                lg: (padding-top: 35%),
-                md: (padding-top: 25%),
-                s: (align-items: flex-end, height: 5%),
-                sm: (align-items: flex-end, height: 5%),
-                xs: (align-items: flex-end, height: 5%),
-            ));
-            h1{
-                color: var(--whiteText);
-                font-size: 10rem;
-                opacity: 0.8;
-                font-weight: 300;
-                mix-blend-mode: difference;
-
-                @include hb((
-                    lg: (font-size: 8rem),
-                    md: (font-size: 6rem),
-                    mdt: (font-size: 8rem),
-                    sm: (font-size: 6rem),
-                    xs: (font-size: 4.5rem),
-                    xxs: (font-size: 4rem),
-                ));
-
-                @include vb((
-                    lg: (font-size: 8rem),
-                    md: (font-size: 6rem),
-                    s: (font-size: 6rem),
-                    sm: (font-size: 5.5rem),
-                    xs: (font-size: 5rem),
-                ));
-            }
-            @include hb((
-                md: (margin-left: 5%),
-                mdt: (margin-left: 10%),
-                sm: (margin-left: 10%),
-                xs: (margin-left: 5%, align-self: flex-end, height: 100%),
-                xxs: (margin-left: 5%, align-self: flex-end, height: 100%),
-            ));
-
-            @include vb((
-                lg: (margin-left: 10%, align-self: flex-end),
-                md: (margin-left: 10%, align-self: flex-end),
-            ));
-        }
+        font-size: clamp(4.8rem, 7.4vw, 8.8rem);
+        font-weight: 300;
+        line-height: 0.76;
+        letter-spacing: -0.035em;
+      }
     }
 
-    .Hero__Intro__Content{
-        position: relative;
-        width: 90%;
-        height: 35%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 1.5rem;
-        padding: 0 2.5dvw;
-        @include hb((
-            sm: (width: 100%),
-            xs: (width: 100%),
-            xxs: (width: 100%),
-        ));
+    .precise-char {
+      display: inline-block;
+      color: inherit;
+    }
+  }
 
-         @include vb((
-            lg: (width: 100%),
-            md: (height: 30%, padding: 10% 0 0 0, width: 100%),
-            s: (height: 30%, padding: 10% 0 0 0, width: 100%, align-items: flex-start),
-            sm: (height: 30%, padding: 10% 0 0 0, width: 100%, align-items: flex-start),
-            xs: (height: 30%, padding: 10% 0 0 0, width: 100%, align-items: flex-start),
-        ));
+  .Hero__Intro__Content {
+    position: absolute;
+    right: 5vw;
+    bottom: clamp(9.8rem, 15.5vh, 12rem);
+    z-index: 5;
+    width: clamp(20rem, 24vw, 27rem);
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 232, 214, 0.32);
+    will-change: transform, opacity;
 
-
-        .Hero__Intro__Content__Text{
-            width: 100%;
-            height: 20%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            text-align: left;
-            font-family: "Sentient-Regular";
-
-            p{
-                width: 30%;
-                margin-bottom: 1rem;
-                font-size: 1.3rem;
-                line-height: 1.2;
-                opacity: 0.8;
-                color: var(--whiteText);
-                text-align: left;
-                // Add these properties for word wrapping
-                display: flex;
-                flex-wrap: wrap;
-
-
-                @include hb((
-                    lg: (font-size: 1.2rem, width: 32.5%),
-                    md: (font-size: 1.1rem, width: 35%),
-                    mdt: (font-size: 1.2rem, width: 35%),
-                    sm: (font-size: 1.1rem, width: 37.5%),
-                    xs: (font-size: 0.9rem, width: 37.5%),
-                    xxs: (font-size: 0.8rem, width: 40%),
-                ));
-
-                @include vb((
-                    lg: (width: 45%),
-                    md: (font-size: 1.1rem, width: 50%),
-                    s: (font-size: 1.1rem, width: 100%),
-                    sm: (font-size: 1.1rem, width: 100%),
-                    xs: (font-size: 1.1rem, width: 100%),
-                ));
-
-                span{
-                    font-size: inherit;
-                    line-height: inherit;
-                    display: inline-block;
-                }
-            }
-
-            
-        }
-
-        .Hero__Intro__Content__Button{
-            width: 70%;
-            height: 15%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            margin-top: 1rem;
-
-            @include hb((
-                mdt: (width: 65%),
-                sm: (width: 65%),
-                xs: (width: 65%),
-                xxs: (width: 65%),
-            ));
-            @include vb((
-                lg: (width: 55%),
-                md: (width: 55%),
-                s: (width: 55%, justify-content: flex-start),
-                sm: (width: 55%, justify-content: flex-start),
-                xs: (width: 55%, justify-content: flex-start),
-            ));
-
-            .LinkButton{
-                .button{
-                    width: 200px;
-                    height: 50px;
-                    @include hb((
-                        lg: (width: 180px, height: 45px),
-                        mdt: (width: 180px, height: 45px),
-                        md: (width: 160px, height: 40px),
-                        sm: (width: 160px, height: 40px),
-                        xs: (width: 150px, height: 40px),
-                        xxs: (width: 150px, height: 40px),
-                    ));
-                    .slider{
-                        .el{
-                            cursor: pointer;
-                            .perspectiveText{
-                                p{
-                                    color: var(--whiteText);
-                                    font-size: 1.3rem;
-                                    font-family: "Sansation-Regular";
-                                    text-transform: capitalize;
-                                    @include hb((
-                                        lg: (font-size: 1.1rem),
-                                        mdt: (font-size: 1.1rem),
-                                        md: (font-size: 1rem),
-                                        sm: (font-size: 1rem),
-                                        xs: (font-size: 0.9rem),
-                                        xxs: (font-size: 0.9rem),
-                                    ));
-                                }
-                            }
-
-                            &:nth-of-type(2){
-                                p{
-                                    color: var(--blackText);    
-                                    &:nth-of-type(2){
-                                        color: var(--blackText);
-                                        transform: rotateX(-90deg) translateY(15px);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            @include hb((
-                md: (margin: 0.5rem),
-                sm: (margin: 0.5rem 5rem 0.5rem 0.5rem),
-                xs: (margin: 0.5rem 2.5rem 0.5rem 0.5rem),
-                xxs: (margin: 0.5rem),
-            ));
-        }
-
-        @include hb((
-            lg: (padding: 0),
-            mdt: (padding: 0 0 0 5dvw),
-        ));
+    &::before {
+      content: "Objekty s vlastním příběhem";
+      display: block;
+      margin-bottom: 0.85rem;
+      color: rgba(255, 232, 214, 0.68);
+      font-family: "Sansation-Regular";
+      font-size: clamp(0.61rem, 0.62vw, 0.7rem);
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
     }
 
-    .Hero__Intro__Updates{
+    .Hero__Intro__Content__Text p {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0 0 1.45rem;
+      color: rgba(255, 244, 235, 0.88);
+      font-family: "Sentient-Light";
+      font-size: clamp(1.02rem, 1.05vw, 1.22rem);
+      line-height: 1.38;
+    }
+
+    .Hero__Intro__Content__Text span {
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    .Hero__Intro__Content__Button {
+      display: flex;
+      min-height: 3.25rem;
+      justify-content: flex-start;
+
+      > a,
+      > button {
+        min-width: 10.5rem;
+        min-height: 3.1rem;
+      }
+    }
+  }
+
+  .Hero__Intro__FooterRail {
+    position: absolute;
+    right: 4.7vw;
+    bottom: 1.35rem;
+    left: 4.7vw;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 2rem;
+    color: rgba(255, 232, 214, 0.62);
+    font-family: "Sansation-Regular";
+    font-size: clamp(0.61rem, 0.64vw, 0.72rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    will-change: opacity;
+  }
+
+  .Hero__Intro__Updates {
+    overflow: hidden;
+
+    p {
+      margin: 0;
+      color: inherit;
+      font: inherit;
+      letter-spacing: inherit;
+    }
+  }
+
+  .Hero__Intro__ScrollCue {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    i {
+      position: relative;
+      display: block;
+      width: clamp(3.5rem, 5vw, 6rem);
+      height: 1px;
+      overflow: hidden;
+      background: rgba(255, 232, 214, 0.2);
+
+      &::after {
+        content: "";
         position: absolute;
-        bottom: 0;
-        left: 5dvw;
-        width: 30dvw;
-        height: 10dvh;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        font-family: "Sansation-Regular";
-        z-index: 0;
+        inset: 0;
+        background: #cbc69d;
+        transform: translateX(-100%);
+        animation: heroRailTravel 3.4s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+      }
+    }
+  }
 
-        @include vb((
-            s: (width: 90dvw),
-            sm: (width: 90dvw),
-            xs: (width: 90dvw),
-        ));
-        p{
-            width: 100%;
-            text-align: left;
-            margin: 0;
-            color: var(--whiteText);
-            font-size: 2rem;
-            opacity: 0.8;
+  .Hero__Intro__ObjectCount {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 0.85rem;
 
-            @include hb((
-                lg: (font-size: 1.8rem),
-                md: (font-size: 1.5rem),
-                mdt: (font-size: 1.8rem),
-                sm: (font-size: 1.5rem),
-                xs: (font-size: 1.3rem),
-                xxs: (font-size: 1.1rem),
-            ));
+    span:first-child {
+      display: grid;
+      width: 1.9rem;
+      height: 1.9rem;
+      place-items: center;
+      border: 1px solid rgba(255, 232, 214, 0.28);
+      border-radius: 50%;
+    }
+  }
 
-            @include vb((
-                md: (font-size: 1.5rem),
-                s: (font-size: 1.8rem),
-                sm: (font-size: 1.5rem),
-                xs: (font-size: 1.5rem),
-            ));
-        }
+  .Hero__Intro__Img {
+    display: none;
+  }
+}
+
+@keyframes heroRailTravel {
+  0%,
+  18% {
+    transform: translateX(-100%);
+  }
+
+  58%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 900px) {
+  .Hero__Intro__Journey {
+    height: 142svh;
+  }
+
+  .Hero__Intro {
+    min-height: 42rem;
+
+    .Hero__Intro__Image__wrapper {
+      inset: 4.7rem 0.7rem 3.8rem;
+
+      &::before {
+        background:
+          linear-gradient(0deg, rgba(12, 13, 12, 0.72) 0%, rgba(12, 13, 12, 0.06) 68%),
+          linear-gradient(90deg, rgba(12, 13, 12, 0.32), transparent 72%);
+      }
     }
 
-    .Hero__Intro__Updates__Mask{
-        position: absolute;
-        bottom: 0;
-        left: 5dvw;
-        width: 30dvw;
-        height: 10dvh;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        font-family: "Sansation-Regular";
-        z-index: 1;
+    .Hero__Intro__Topline {
+      top: 5.2rem;
+      right: 1.3rem;
+      left: 1.3rem;
 
-        @include vb((
-            s: (width: 90dvw),
-            sm: (width: 90dvw),
-            xs: (width: 90dvw),
-        ));
-        p{
-            width: 100%;
-            text-align: left;
-            margin: 0;
-            color: var(--blackText);
-            font-size: 2rem;
-            opacity: 0.8;
-            mask-image: url("/assets/mask.png");
-            mask-position: center;
-            mask-size: cover;
-            mask-repeat: no-repeat;
-            -webkit-mask-image: url("/assets/mask.png");
-            -webkit-mask-position: center;
-            -webkit-mask-size: cover;
-            -webkit-mask-repeat: no-repeat;
-
-            &.revealed{
-                color: var(--whiteText);
-            }
-
-            @include hb((
-                lg: (font-size: 1.8rem),
-                md: (font-size: 1.5rem),
-                mdt: (font-size: 1.8rem),
-                sm: (font-size: 1.5rem),
-                xs: (font-size: 1.3rem),
-                xxs: (font-size: 1.1rem),
-            ));
-
-            @include vb((
-                md: (font-size: 1.5rem),
-                s: (font-size: 1.8rem),
-                sm: (font-size: 1.5rem),
-                xs: (font-size: 1.5rem),
-            ));
-        }
+      span:last-child {
+        display: none;
+      }
     }
+
+    .Hero__Intro__Header {
+      right: 1.3rem;
+      bottom: 18.5rem;
+      left: 1.3rem;
+      width: auto;
+
+      .Hero__Intro__Header__Title h1 {
+        font-size: clamp(4.8rem, 21vw, 7.6rem);
+      }
+
+      .Hero__Intro__Header__Subtitle {
+        margin-left: clamp(2.5rem, 14vw, 5.5rem);
+
+        h1 {
+          font-size: clamp(3.8rem, 17vw, 6.2rem);
+        }
+      }
+    }
+
+    .Hero__Intro__Content {
+      right: 1.3rem;
+      bottom: 7.1rem;
+      left: 1.3rem;
+      width: auto;
+
+      .Hero__Intro__Content__Text p {
+        max-width: 28rem;
+        font-size: 1rem;
+      }
+    }
+
+    .Hero__Intro__FooterRail {
+      right: 1.3rem;
+      bottom: 1.2rem;
+      left: 1.3rem;
+      grid-template-columns: 1fr auto;
+
+      .Hero__Intro__Updates {
+        display: none;
+      }
+    }
+
+    .Hero__Intro__ObjectCount span:last-child {
+      display: none;
+    }
+  }
 }

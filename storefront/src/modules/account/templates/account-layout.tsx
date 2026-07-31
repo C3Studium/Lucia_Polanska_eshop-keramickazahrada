@@ -1,7 +1,5 @@
 import React from "react"
 
-import UnderlineLink from "@modules/common/components/interactive-link"
-
 import AccountNav from "../components/account-nav"
 import { HttpTypes } from "@medusajs/types"
 import s from "./styles/account-layout.module.scss"
@@ -19,6 +17,9 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   return (
     <div className={s.section} data-testid="account-page">
+      {customer && isVerified && (
+        <div className={s.archiveWord} aria-hidden="true">ARCHIV</div>
+      )}
       <div className={s.container}>
         {customer && isVerified && (
           <div className={s.verifiedGrid}>
@@ -32,34 +33,14 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
         )}
         {!customer && (
           <div className={s.center}>
-            <div>
-              {children}
-            </div>
+            {children}
           </div>
         )}
        {customer && !isVerified && (
          <div className={s.centerZ1}>
           {children}
-            {/* <div>
-              <AccountNav customer={customer} />
-            </div> */}
         </div>
-        
        )}
-      </div>
-      <div className={s.footer}>
-        <div className={s.text}>
-          <h3 className={s.title}>Máte dotaz?</h3>
-          <span className={s.textSpan}>
-            Nejčastější dotazy a odpovědi najdete na naší stránce
-            zákaznického servisu.
-          </span>
-        </div>
-        <div className={s.Link}>
-          <UnderlineLink href="/customer-service">
-            Zákaznický servis
-          </UnderlineLink>
-        </div>
       </div>
     </div>
   )

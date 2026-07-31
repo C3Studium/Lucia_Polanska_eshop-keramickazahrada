@@ -1,0 +1,72 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.root {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  grid-template-columns: 1fr auto;
+  min-width: 14.5rem;
+  min-height: 3.2rem;
+  align-items: center;
+  gap: 1.2rem;
+  padding: .45rem .55rem .45rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--premium-link-border, rgba(255, 232, 214, .78));
+  border-radius: 999px;
+  outline: none;
+  font: 400 .9rem/1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+}
+
+.root:hover,
+.root:focus-visible {
+  text-decoration: none;
+}
+
+.root:focus-visible {
+  outline: 2px solid rgba(255, 232, 214, .72);
+  outline-offset: 4px;
+}
+
+.surface {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--premium-link-fill, #ffe8d6);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.label,
+.arrow {
+  position: relative;
+  z-index: 1;
+}
+
+.label {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.arrow {
+  display: grid;
+  width: 2.15rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.arrow i {
+  display: block;
+  font-style: normal;
+  text-decoration: none;
+  will-change: transform;
+}
+
+@media (max-width: 620px) {
+  .root {
+    width: 100%;
+    min-width: 0;
+  }
+}

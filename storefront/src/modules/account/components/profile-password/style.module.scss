@@ -5,13 +5,11 @@
 
   .gridTwo {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem; /* gap-4 */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
 
-    @include vb((
-      s: (grid-template-columns: 1fr, row-gap: 0.5rem),
-      sm: (grid-template-columns: 1fr, row-gap: 0.5rem),
-      xs: (grid-template-columns: 1fr, row-gap: 0.5rem),
-    ));
+    @media (max-width: 820px) {
+      grid-template-columns: 1fr;
+    }
   }
 }

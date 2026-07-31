@@ -2,11 +2,10 @@
 @forward "./mixins";
 // @forward "./colors"; nefunkcni u souboru s .module.scss, protoze :root neni pure a dela conflikt
 @forward "./typography";
-@forward "./helpers";
 
 // Responsive desing HAS TO BE DONE from the smallest viewport of any type of device. 
 
 // Laptop 1220 by 660
 // Then just horizontal phones separatelly only for the smallest phone but by using the bigger viewport, the system is set up from bp to 0. 
 
-// then smallest vertical phone and tablets, but also using the biggest bp for those devices. they go from bp to 0 so they include the smaller viewports. 
+// then smallest vertical phone and tablets, but also using the biggest bp for those devices. they go from bp to 0 so they include the smaller viewports.

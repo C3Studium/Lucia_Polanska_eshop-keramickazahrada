@@ -1,64 +1,158 @@
-'use client';
+"use client"
 
-import { useState } from "react";
-import { subscribeToRestock } from "@lib/data/products";
+import { subscribeToRestock } from "@lib/data/products"
+import { AnimatePresence, motion, type Variants } from "framer-motion"
+import { FormEvent, useId, useState } from "react"
+import s from "./style.module.scss"
 
 type RestockFormProps = {
   variant: { id: string; title?: string }
   product: { title?: string }
 }
 
-const RestockForm: React.FC<RestockFormProps> = ({ variant, product }) => {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+type FormState = "idle" | "loading" | "success" | "error"
 
-  if (!variant) return null;
+const ease = [0.22, 1, 0.36, 1] as const
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setToast(null);
+const formVariants: Variants = {
+  idle: { opacity: 1, y: 0 },
+  loading: { opacity: 0.72, y: 0 },
+  success: { opacity: 1, y: 0 },
+  error: { opacity: 1, x: [0, -4, 4, -2, 0] },
+}
+
+const messageVariants: Variants = {
+  initial: { opacity: 0, y: 9, clipPath: "inset(0 0 100% 0)" },
+  animate: { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" },
+  exit: { opacity: 0, y: -6, clipPath: "inset(100% 0 0 0)" },
+}
+
+const RestockForm = ({ variant, product }: RestockFormProps) => {
+  const emailId = useId()
+  const [email, setEmail] = useState("")
+  const [state, setState] = useState<FormState>("idle")
+
+  if (!variant) return null
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    setState("loading")
 
     try {
       await subscribeToRestock({
         variant_id: variant.id,
         email,
-      });
-      setToast({ type: "success", message: "Subscribed! You'll be notified when it's back in stock." });
-      setEmail("");
-    } catch (err) {
-      setToast({ type: "error", message: "Something went wrong. Please try again." });
-    } finally {
-      setLoading(false);
+      })
+      setEmail("")
+      setState("success")
+    } catch {
+      setState("error")
     }
-  };
+  }
+
+  const isLoading = state === "loading"
+  const objectName = variant.title || product.title || "tento objekt"
 
   return (
-    <div className="restock-form">
-      <form onSubmit={handleSubmit}>
-        <label>
-          Get notified when <strong>{variant.title || product.title}</strong> is back in stock:
-        </label>
-        <input
-          type="email"
-          required
-          placeholder="Your email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading || !email}>
-          {loading ? "Subscribing..." : "Notify Me"}
-        </button>
-      </form>
-      {toast && (
-        <div className={`toast toast--${toast.type}`}>
-          {toast.message}
-        </div>
-      )}
-    </div>
-  );
-};
+    <motion.section
+      className={s.root}
+      variants={formVariants}
+      initial="idle"
+      animate={state}
+      transition={{ duration: 0.55, ease }}
+      aria-labelledby={`${emailId}-title`}
+    >
+      <div className={s.heading}>
+        <span>Objekt je právě vybraný</span>
+        <strong id={`${emailId}-title`}>Dejte mi vědět.</strong>
+        <p>
+          Jakmile bude {objectName} znovu k dispozici, pošleme vám jediný
+          stručný e-mail.
+        </p>
+      </div>
 
-export default RestockForm;
+      <form className={s.form} onSubmit={handleSubmit}>
+        <label htmlFor={emailId}>Váš e-mail</label>
+        <div className={s.control}>
+          <input
+            id={emailId}
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="vas@email.cz"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              if (state !== "idle") setState("idle")
+            }}
+            disabled={isLoading}
+          />
+          <motion.button
+            type="submit"
+            disabled={isLoading || !email}
+            whileTap={isLoading ? undefined : { scale: 0.985 }}
+            initial="rest"
+            animate={isLoading ? "loading" : "rest"}
+            whileHover={isLoading || !email ? "rest" : "hover"}
+          >
+            <motion.span
+              className={s.buttonFill}
+              variants={{
+                rest: { scaleX: 0 },
+                hover: { scaleX: 1 },
+                loading: { scaleX: 1 },
+              }}
+              transition={{ duration: 0.58, ease: [0.76, 0, 0.24, 1] }}
+              aria-hidden="true"
+            />
+            <span>{isLoading ? "Ukládáme…" : "Upozornit mě"}</span>
+            <motion.i
+              animate={isLoading ? { rotate: 360 } : { rotate: 0 }}
+              transition={
+                isLoading
+                  ? { duration: 1, ease: "linear", repeat: Infinity }
+                  : { duration: 0.35, ease }
+              }
+              aria-hidden="true"
+            >
+              ↗
+            </motion.i>
+          </motion.button>
+        </div>
+      </form>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {state === "success" && (
+          <motion.p
+            className={s.success}
+            key="success"
+            variants={messageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.48, ease }}
+            role="status"
+          >
+            Hotovo. Jakmile bude objekt dostupný, ozveme se.
+          </motion.p>
+        )}
+        {state === "error" && (
+          <motion.p
+            className={s.error}
+            key="error"
+            variants={messageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.48, ease }}
+            role="alert"
+          >
+            Uložení se nepodařilo. Zkontrolujte e-mail a zkuste to znovu.
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </motion.section>
+  )
+}
+
+export default RestockForm

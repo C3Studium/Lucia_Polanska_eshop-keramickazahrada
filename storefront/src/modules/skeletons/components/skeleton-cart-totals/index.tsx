@@ -1,27 +1,28 @@
-const SkeletonCartTotals = ({ header = true }) => {
+import s from "../../style.module.scss"
+
+type SkeletonCartTotalsProps = {
+  header?: boolean
+}
+
+const SkeletonCartTotals = ({ header = true }: SkeletonCartTotalsProps) => {
   return (
-    <div className="flex flex-col">
-      {header && <div className="w-32 h-4 bg-gray-100 mb-4"></div>}
-      <div className="flex items-center justify-between">
-        <div className="w-32 h-3 bg-gray-100"></div>
-        <div className="w-32 h-3 bg-gray-100"></div>
+    <div className={s.totals} aria-hidden="true">
+      {header && <span className={`${s.block} ${s.lineMd}`} />}
+      <div className={s.totalRow}>
+        <span className={`${s.block} ${s.lineMd}`} />
+        <span className={`${s.block} ${s.lineSm}`} />
       </div>
-
-      <div className="flex items-center justify-between my-4">
-        <div className="w-24 h-3 bg-gray-100"></div>
-        <div className="w-24 h-3 bg-gray-100"></div>
+      <div className={s.totalRow}>
+        <span className={`${s.block} ${s.lineSm}`} />
+        <span className={`${s.block} ${s.lineXs}`} />
       </div>
-
-      <div className="flex items-center justify-between">
-        <div className="w-28 h-3 bg-gray-100 "></div>
-        <div className="w-20 h-3 bg-gray-100"></div>
+      <div className={s.totalRow}>
+        <span className={`${s.block} ${s.lineSm}`} />
+        <span className={`${s.block} ${s.lineXs}`} />
       </div>
-
-      <div className="w-full border-b border-gray-200 border-dashed my-4"></div>
-
-      <div className="flex items-center justify-between">
-        <div className="w-32 h-6 bg-gray-100 mb-4"></div>
-        <div className="w-24 h-6 bg-gray-100 mb-4"></div>
+      <div className={`${s.totalRow} ${s.totalGrand}`}>
+        <span className={`${s.block} ${s.lineMd}`} />
+        <span className={`${s.block} ${s.lineSm}`} />
       </div>
     </div>
   )

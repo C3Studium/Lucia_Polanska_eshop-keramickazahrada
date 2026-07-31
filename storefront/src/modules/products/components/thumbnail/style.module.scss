@@ -1,0 +1,45 @@
+.root {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(32, 33, 29, .1);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 70% 12%, rgba(187, 183, 136, .16), transparent 48%),
+    #f4f1ec;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    0 18px 38px -34px rgba(32, 33, 29, .72);
+}
+
+.small { width: min(180px, 100%); }
+.medium { width: min(290px, 100%); }
+.large { width: min(440px, 100%); }
+.full { width: 100%; height: 100%; }
+.square { aspect-ratio: 1; }
+
+.small:not(.featured),
+.medium:not(.featured),
+.large:not(.featured) {
+  aspect-ratio: 9 / 16;
+}
+
+.featured { aspect-ratio: 11 / 14; }
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(32, 33, 29, .42);
+}

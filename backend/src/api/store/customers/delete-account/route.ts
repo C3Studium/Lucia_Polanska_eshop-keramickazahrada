@@ -1,29 +1,32 @@
-import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Modules } from "@medusajs/framework/utils"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http";
+import { Modules } from "@medusajs/framework/utils";
 
-export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const { email } = req.body as { email: string }
+export const POST = async (
+  req: AuthenticatedMedusaRequest,
+  res: MedusaResponse
+) => {
+  const customerId = req.auth_context?.actor_id;
 
-  if (!email) {
-    return res.status(400).json({ message: "Missing email." })
+  if (!customerId) {
+    return res.status(401).json({ success: false, message: "Unauthorized." });
   }
 
-  const customerModuleService = req.scope.resolve(Modules.CUSTOMER)
+  const customerModuleService = req.scope.resolve(Modules.CUSTOMER);
 
-  // 1. Find customer by email
-  const customers = await customerModuleService.listCustomers({ email })
-  const customer = customers[0] as any
-
-  if (!customer) {
-    return res.status(404).json({ message: "Customer not found." })
-  }
-
-  // 2. Soft delete the customer
   try {
-    await customerModuleService.softDeleteCustomers([customer.id])
+    await customerModuleService.softDeleteCustomers([customerId]);
   } catch (e) {
-    return res.status(500).json({ message: "Failed to soft delete customer.", error: e })
+    return res.status(500).json({
+      success: false,
+      message: "Failed to soft delete customer.",
+    });
   }
 
-  return res.status(200).json({ message: "Customer soft deleted." })
-}
+  return res.status(200).json({
+    success: true,
+    message: "Customer soft deleted.",
+  });
+};

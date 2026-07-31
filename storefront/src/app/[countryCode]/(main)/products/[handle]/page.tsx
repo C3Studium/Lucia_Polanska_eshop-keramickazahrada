@@ -1,13 +1,17 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getBundleProduct, getProductReviews, listProducts } from "@lib/data/products"
+import {
+  // BundleProduct, // Re-enable with the static preview block below.
+  getBundleProduct,
+  getProductReviews,
+  listProducts,
+} from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import Product from "@modules/products/ProductPage/product"
+import ProductChapter from "@modules/products/ProductPage/product/chapter"
 import SoldProducts from "@modules/products/ProductPage/Sold"
 import { listCategories } from "@lib/data/categories"
 import ProductReviews from "@modules/products/components/product-reviews"
-import ProductTemplate from "@modules/products/templates"
-import BundleActions from "@modules/products/components/bundle-actions"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { getCacheTag } from "@lib/data/cookies"
@@ -16,12 +20,15 @@ type Props = {
   params: Promise<{ countryCode: string; handle: string }>
 }
 
-const ENABLE_BUNDLES = true
+// Temporary visual preview for responsive bundle work.
+// Uncomment together with the previewBundle block below when a static bundle is
+// needed without creating one in Medusa.
+// const FORCE_BUNDLE_PREVIEW = true
 
 export async function generateStaticParams() {
   try {
     const countryCodes = await listRegions().then((regions) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
+      regions?.map((r) => r.countries?.map((c: { iso_2?: string }) => c.iso_2)).flat()
     )
 
     if (!countryCodes) {
@@ -142,6 +149,47 @@ export default async function ProductPage(props: Props) {
     offset: 0,
   })
 
+  const relatedProducts = await listProducts({
+    countryCode,
+    queryParams: {
+      limit: 8,
+      fields: "id,title,handle,thumbnail,*images,*options,*variants,*collection",
+      ...(pricedProduct.collection_id
+        ? { collection_id: [pricedProduct.collection_id] }
+        : {}),
+    },
+  }).then(({ response }) =>
+    response.products.filter((product) => product.id !== pricedProduct.id)
+  )
+
+  const realBundle = bundleProduct?.bundle_product
+
+  /*
+  const previewBundle: BundleProduct = {
+    id: `preview-${pricedProduct.id}`,
+    title: "Ateliérový výběr",
+    product: {
+      id: pricedProduct.id,
+      thumbnail: pricedProduct.thumbnail || "",
+      title: pricedProduct.title,
+      handle: pricedProduct.handle || "",
+    },
+    items: [pricedProduct, ...relatedProducts].slice(0, 3).map((product) => ({
+      id: `preview-item-${product.id}`,
+      title: product.title,
+      product,
+    })),
+  }
+
+  const displayedBundle =
+    realBundle || (FORCE_BUNDLE_PREVIEW ? previewBundle : undefined)
+  const isBundlePreview = !realBundle && FORCE_BUNDLE_PREVIEW
+  */
+
+  // Production path: only bundles returned by Medusa are displayed.
+  const displayedBundle = realBundle
+  const isBundlePreview = false
+
   // Fetch customer wishlist items
   const wishlistItems = await getCustomerWishlistItems()
 
@@ -154,17 +202,13 @@ export default async function ProductPage(props: Props) {
   }
 
   return (
-    // <ProductTemplate
-    //   product={pricedProduct}
-    //   region={region}
-    //   countryCode={params.countryCode}
-    //   bundle={bundleProduct?.bundle_product}
-    // />
     <main>
-     <Product
+      <Product
         product={pricedProduct}
         region={region}
         countryCode={countryCode}
+        bundle={displayedBundle}
+        isBundlePreview={isBundlePreview}
         categories={productCategories}
         wishlistItems={wishlistItems}
         onWishlistUpdateAction={refreshWishlist}
@@ -172,16 +216,9 @@ export default async function ProductPage(props: Props) {
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}
       />
-      {ENABLE_BUNDLES && bundleProduct && (
-        <BundleActions 
-          bundle={bundleProduct?.bundle_product}
-          wishlistItems={wishlistItems}
-          onWishlistUpdateAction={refreshWishlist}
-          isAuthenticated={isAuthenticated}
-        />
-      )}
+      <ProductChapter />
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} />
-      <SoldProducts />
+      <SoldProducts products={relatedProducts} />
     </main>
   )
 }

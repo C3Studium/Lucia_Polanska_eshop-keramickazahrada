@@ -1,12 +1,19 @@
+"use client"
 
-import { clx, Container, Divider } from "@medusajs/ui"
-import s from "./style.module.scss"
-
-import ChevronDown from "@modules/common/icons/chevron-down"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import BgImage from "../BgImage"
+import { motion } from "framer-motion"
+
+import PremiumActionLink from "@modules/common/components/premium-action-link"
+import OrderCard from "../order-card"
+import {
+  AccountPageReveal,
+  AccountSectionReveal,
+} from "../account-page-reveal"
+import {
+  accountListItemVariants,
+  accountListVariants,
+} from "../../motion"
+import s from "./style.module.scss"
 
 type OverviewProps = {
   customer: HttpTypes.StoreCustomer | null
@@ -15,194 +22,128 @@ type OverviewProps = {
 
 const Overview = ({ customer, orders }: OverviewProps) => {
   const { percentage, incompleteSteps } = getProfileCompletion(customer)
+  const addressCount = customer?.addresses?.length || 0
+  const recentOrders = orders?.slice(0, 3) || []
+  const displayName =
+    [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
+    "váš archiv"
+
   return (
-    <main className={s.root} data-testid="overview-page">
-      <div data-testid="overview-page-wrapper" className={s.content}>
-        <div className={s.contentVisibleOnSmall}>
-          <div className={s.headerRow}>
-            <div className={s.headerWelcome}>
-              <p data-testid="welcome-message" data-value={customer?.first_name} className={s.welcomeMessage}>
-                Dobrý den, {" "}
-                  <span>
-                  {customer?.first_name}
-                  </span>
-              </p>
-              <span className={s.headerSignedIn}>
-                Přihlášen jako:{" "}
-                <span className={s.fontSemibold} data-testid="customer-email" data-value={customer?.email}>
-                  {customer?.email}
-                </span>
-              </span>
-            </div>
-            <Divider />
-          </div>
-          <div className={s.section}>
-            <div className={s.cardsWrap}>
-              <div className={s.profileRow}>
-                <div className={s.groupCol}>
-                  <h3 className={s.titleLarge}>Profil</h3>
-                  <Divider />
-                  <div className={s.statRow}>
-                    <span
-                      className={s.statValueLarge}
-                      data-testid="customer-profile-completion"
-                      data-value={percentage}
-                    >
-                      {percentage}%
-                    </span>
-                    <span className={s.subtleUpper}>
-                      Dokončeno
-                    </span>
-                  </div>
-                  <div className={s.progressBar}>
-                    <div 
-                      className={s.progressFill} 
-                      style={{ width: `${percentage}%`, minWidth: percentage > 0 ? '2px' : '0px' }}
-                      data-percentage={percentage}
-                    ></div>
-                  </div>
-                  {incompleteSteps.length > 0 && (
-                    <ul className={s.stepsList}>
-                      {incompleteSteps.map(step => {
-                        const getStepLink = (key: string) => {
-                          switch (key) {
-                            case 'email':
-                            case 'name':
-                            case 'phone':
-                              return '/account/profile'
-                            case 'billing':
-                              return '/account/addresses'
-                            default:
-                              return '/account/profile'
-                          }
-                        }
-
-                        const getStepButtonText = (key: string) => {
-                          switch (key) {
-                            case 'email':
-                              return 'Přidat'
-                            case 'name':
-                              return 'Přidat'
-                            case 'phone':
-                              return 'Přidat'
-                            case 'billing':
-                              return 'Přidat'
-                            default:
-                              return 'Přidat'
-                          }
-                        }
-
-                        return (
-                          <li key={step.key} className={s.stepItem}>
-                            <span className={s.stepBullet}>•</span>
-                            <span className={s.stepText}>{step.label}</span>
-                            <ScrollLink
-                              href={getStepLink(step.key)}
-                              text={getStepButtonText(step.key)}
-                              className={s.stepButton}
-                            />
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </div>
-
-                <div className={s.groupCol}>
-                  <h3 className={s.titleLarge}>Adresy</h3>
-                  <div className={s.statRow}>
-                    <span
-                      className={s.statValueLarge}
-                      data-testid="addresses-count"
-                      data-value={customer?.addresses?.length || 0}
-                    >
-                      {customer?.addresses?.length || 0}
-                    </span>
-                    <span className={s.subtleUpper}>
-                      Uloženo
-                    </span>
-                  </div>
-                  <div className={s.LinkButtonS}>
-                    <ScrollLink
-                      href={`/account/addresses`}
-                      text={`Přidat adresu`}
-                      className={s.stepButton}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={s.ordersGroup}>
-                <div className={s.ordersHeadingRow}>
-                  <h3 className={s.titleLarge}>Nedávné objednávky</h3>
-                </div>
-                <Divider />
-                <ul className={s.ordersList} data-testid="orders-wrapper">
-                  {orders && orders.length > 0 ? (
-                    orders.slice(0, 5).map((order) => {
-                      return (
-                        <li
-                          key={order.id}
-                          data-testid="order-wrapper"
-                          data-value={order.id}
-                        >
-                          <LocalizedClientLink
-                            href={`/account/orders/details/${order.id}`}
-                          >
-                            <Container className={s.orderCard}>
-                              <div className={s.orderGrid}>
-                                <span className={s.fontSemibold}>Datum objednání</span>
-                                <span className={s.fontSemibold}>
-                                  Číslo objednávky
-                                </span>
-                                <span className={s.fontSemibold}>
-                                  Celková částka
-                                </span>
-                                <span data-testid="order-created-date">
-                                  {new Date(order.created_at).toLocaleString('cs-CZ', {
-                                    day: 'numeric',
-                                    month: 'numeric',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false
-                                  })}
-                                </span>
-                                <span
-                                  data-testid="order-id"
-                                  data-value={order.display_id}
-                                >
-                                  #{order.display_id}
-                                </span>
-                                <span data-testid="order-amount">
-                                  {convertToLocale({
-                                    amount: order.total,
-                                    currency_code: order.currency_code,
-                                  })}
-                                </span>
-                              </div>
-                              <button className={s.orderOpenBtn} data-testid="open-order-button">
-                                <span className="sr-only">
-                                  Přejít na objednávku #{order.display_id}
-                                </span>
-                                <ChevronDown className={s.rotateNeg90} />
-                              </button>
-                            </Container>
-                          </LocalizedClientLink>
-                        </li>
-                      )
-                    })
-                  ) : (
-                    <span data-testid="no-orders-message">Žádné nedávné objednávky</span>
-                  )}
-                </ul>
-              </div>
-            </div>
+    <AccountPageReveal
+      className={s.accountOverviewRoot}
+      data-testid="overview-page"
+    >
+      <AccountSectionReveal className={s.accountOverviewHero}>
+        <p className={s.accountOverviewEyebrow}>Soukromý archiv · přehled</p>
+        <div className={s.accountOverviewHeading}>
+          <h1 data-testid="welcome-message" data-value={customer?.first_name}>
+            Dobrý den,
+            <em>{displayName}.</em>
+          </h1>
+          <div className={s.accountOverviewIntro}>
+            <span>Přihlášený archiv</span>
+            <p data-testid="customer-email" data-value={customer?.email}>
+              {customer?.email}
+            </p>
           </div>
         </div>
-      </div>
-      <BgImage src="/assets/img/img/2.jpg" />
-    </main>
+      </AccountSectionReveal>
+
+      <AccountSectionReveal className={s.accountOverviewStats}>
+        <article className={s.accountOverviewStat}>
+          <span className={s.accountOverviewIndex}>01 · profil</span>
+          <div className={s.accountOverviewStatValue}>
+            <strong
+              data-testid="customer-profile-completion"
+              data-value={percentage}
+            >
+              {percentage}
+              <small>%</small>
+            </strong>
+            <p>Profil dokončen</p>
+          </div>
+          <div className={s.accountOverviewProgress} aria-hidden="true">
+            <motion.i
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: percentage / 100 }}
+              transition={{ duration: 1.1, delay: 0.42, ease: [0.76, 0, 0.24, 1] }}
+            />
+          </div>
+          {incompleteSteps.length > 0 ? (
+            <p className={s.accountOverviewNote}>
+              Zbývá doplnit: {incompleteSteps.map((step) => step.label).join(", ")}.
+            </p>
+          ) : (
+            <p className={s.accountOverviewNote}>Všechny základní údaje jsou připravené.</p>
+          )}
+          <PremiumActionLink
+            href="/account/profile"
+            text={percentage === 100 ? "Zkontrolovat profil" : "Dokončit profil"}
+            className={s.accountOverviewAction}
+          />
+        </article>
+
+        <article className={s.accountOverviewStat}>
+          <span className={s.accountOverviewIndex}>02 · doručení</span>
+          <div className={s.accountOverviewStatValue}>
+            <strong data-testid="addresses-count" data-value={addressCount}>
+              {String(addressCount).padStart(2, "0")}
+            </strong>
+            <p>{addressCount === 1 ? "Uložená adresa" : "Uložené adresy"}</p>
+          </div>
+          <p className={s.accountOverviewNote}>
+            Oblíbená místa doručení budete mít při příštím výběru po ruce.
+          </p>
+          <PremiumActionLink
+            href="/account/addresses"
+            text={addressCount ? "Spravovat adresy" : "Přidat adresu"}
+            className={s.accountOverviewAction}
+          />
+        </article>
+      </AccountSectionReveal>
+
+      <AccountSectionReveal className={s.accountOverviewOrders}>
+        <div className={s.accountOverviewSectionHead}>
+          <div>
+            <span className={s.accountOverviewIndex}>03 · poslední záznamy</span>
+            <h2>Nedávné objednávky</h2>
+          </div>
+          <span>{String(orders?.length || 0).padStart(2, "0")} celkem</span>
+        </div>
+
+        {recentOrders.length ? (
+          <motion.div
+            className={s.accountOverviewOrderList}
+            variants={accountListVariants}
+            initial="hidden"
+            animate="visible"
+            data-testid="orders-wrapper"
+          >
+            {recentOrders.map((order) => (
+              <motion.div
+                key={order.id}
+                variants={accountListItemVariants}
+                data-testid="order-wrapper"
+                data-value={order.id}
+              >
+                <OrderCard order={order} />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <div className={s.accountOverviewEmpty}>
+            <p data-testid="no-orders-message">
+              V archivu zatím není žádná objednávka.
+            </p>
+            <PremiumActionLink
+              href="/store"
+              text="Objevit objekty"
+              className={s.accountOverviewAction}
+            />
+          </div>
+        )}
+      </AccountSectionReveal>
+    </AccountPageReveal>
   )
 }
 
@@ -211,109 +152,33 @@ const getProfileCompletion = (customer: HttpTypes.StoreCustomer | null) => {
     return { percentage: 0, incompleteSteps: [] }
   }
 
-  let count = 0
   const steps = [
-    { 
-      key: 'email', 
-      label: 'Přidat e-mail', 
-      completed: !!(customer.email && customer.email.trim() !== '') 
+    {
+      label: "jméno",
+      completed: Boolean(customer.first_name?.trim() && customer.last_name?.trim()),
     },
-    { 
-      key: 'name', 
-      label: 'Přidat jméno a příjmení', 
-      completed: !!(customer.first_name && customer.first_name.trim() !== '' && customer.last_name && customer.last_name.trim() !== '') 
+    {
+      label: "telefon",
+      completed: Boolean(customer.phone?.trim()),
     },
-    { 
-      key: 'phone', 
-      label: 'Přidat telefonní číslo', 
-      completed: !!(customer.phone && customer.phone.trim() !== '') 
+    {
+      label: "e-mail",
+      completed: Boolean(customer.email?.trim()),
     },
-    { 
-      key: 'billing', 
-      label: 'Přidat fakturační adresu', 
-      completed: !!(customer.addresses && customer.addresses.length > 0 && customer.addresses.find(addr => addr.is_default_billing)) 
+    {
+      label: "fakturační adresu",
+      completed: Boolean(
+        customer.addresses?.some((address) => address.is_default_billing)
+      ),
     },
   ]
 
-  steps.forEach(step => {
-    if (step.completed) count++
-  })
-
-  const percentage = Math.round((count / steps.length) * 100)
-  const incompleteSteps = steps.filter(step => !step.completed)
-
-  return { percentage, incompleteSteps }
+  return {
+    percentage: Math.round(
+      (steps.filter((step) => step.completed).length / steps.length) * 100
+    ),
+    incompleteSteps: steps.filter((step) => !step.completed),
+  }
 }
 
 export default Overview
-
-
-
-function ScrollLink({
-  href,
-  text,
-  className,
-  textColor,
-  borderColor,
-  borderR = false,
-  borderL = false,
-  "data-testid": dataTestId,
-}: {
-  href: string;
-  text: string;
-  className?: string;
-  textColor?: string;
-  borderColor?: string;
-  borderR?: boolean;
-  borderL?: boolean;
-  "data-testid"?: string;
-}) {
-  return (
-    <LocalizedClientLink href={href} className={clx(s.ScrollLink, className)} data-testid={dataTestId}
-      style={{
-      }}
-    >
-        <button 
-          className={s.button}
-            style={{
-            textDecoration: "none",
-          }}
-        >
-            <div className={s.slider}>
-                <div className={s.el}>
-                    <PerspectiveText2 label={text} className={className} textColor={textColor}/>
-                </div>
-                <div className={s.el}>
-                    <PerspectiveText2 label={text} className={className} textColor={textColor}/>
-                </div>
-            </div>
-        </button>
-    </LocalizedClientLink>
-  );
-}
-
-function PerspectiveText2({label, className, textColor}: {label: string; className?: string; textColor?: string}) {
-  return (    
-      <div className={s.perspectiveText}>
-          <p 
-            className={className}
-            style={{
-              color: textColor || "var(--blackText)",
-            }}
-          >
-            {label}
-          </p>
-          <p 
-            className={className}
-            style={{
-              color: textColor || "var(--blackText)",
-            }}
-          >
-            {label}
-          </p>
-      </div>
-  )
-}
-
-
-

@@ -1,211 +1,341 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
 .row {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: clamp(190px, 16vw, 250px) minmax(250px, 1fr) clamp(205px, 17vw, 255px);
+  grid-template-rows: repeat(3, minmax(92px, auto));
   width: 100%;
-  height: 10dvh;
+  min-height: 320px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 232, 214, .22);
+  border-bottom: 1px solid rgba(255, 232, 214, .11);
+  color: #ffe8d6;
+  background:
+    radial-gradient(circle at 72% 18%, rgba(187,183,136,.06), transparent 18rem),
+    linear-gradient(105deg, rgba(255,232,214,.042), transparent 58%);
+  animation: itemReveal .75s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.row::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255,232,214,.018), rgba(255,232,214,.12)),
+    rgba(187,183,136,.025);
+  transform: translateX(101%);
+  transition: transform .58s cubic-bezier(.76, 0, .24, 1);
+  will-change: transform;
+}
+
+.row::after {
+  position: absolute;
+  z-index: 2;
+  right: 15px;
+  bottom: 14px;
+  width: 5px;
+  height: 5px;
+  content: "";
+  border-radius: 50%;
+  background: #bbb788;
+  box-shadow: 0 0 0 5px rgba(187,183,136,.1);
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity 300ms ease, transform 500ms cubic-bezier(.22,1,.36,1);
+}
+
+.row:hover::before,
+.row:focus-within::before { transform: translateX(0); }
+
+.row:hover::after { opacity: 1; transform: scale(1); }
+
+.cellThumb,
+.cellTitle,
+.cellActions,
+.cellUnit,
+.cellPrice {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.cellThumb {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  padding: 22px 28px 22px 0;
+}
+
+.thumbLink {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  background: #ded9cb;
+  box-shadow: 18px 22px 55px -36px rgba(0,0,0,.95);
+
+  > div { width: 100%; height: 100%; }
+  img {
+    object-fit: cover;
+    transition: transform 900ms cubic-bezier(.22, 1, .36, 1);
+  }
+}
+
+.thumbLink::after {
+  position: absolute;
+  inset: 54% 0 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(20,21,17,.3));
+}
+
+.row:hover .thumbLink img { transform: scale(1.04); }
+
+.imageIndex {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  bottom: 11px;
+  left: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.42);
+  color: rgba(255,255,255,.86);
+  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.cellTitle {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  padding: clamp(34px, 4vw, 58px);
+  border-left: 1px solid rgba(255,232,214,.1);
+}
+
+.kicker,
+.controlLabel {
+  display: block;
+  margin: 0 0 12px;
+  color: rgba(255,232,214,.46);
+  font: 400 10px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.title {
+  max-width: 13ch;
+  margin: 0 0 13px;
+  color: #ffe8d6;
+  font: 400 clamp(2.2rem, 3vw, 3.6rem)/.92 "Sentient-Regular", serif;
+  letter-spacing: -.04em;
+  transition: color 240ms ease;
+}
+
+.row:hover .title { color: #bbb788; }
+
+.options {
+  color: rgba(255,232,214,.68);
+  font: 300 15px/1.45 "Sansation-Light", sans-serif;
+}
+
+.options :global(*) { color: inherit !important; }
+
+.dimensions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 16px;
+  color: rgba(255,232,214,.5);
+  font: 300 13px/1.4 "Sansation-Light", sans-serif;
+}
+
+.cellActions,
+.cellUnit,
+.cellPrice {
+  grid-column: 3;
+  display: flex;
+  justify-content: center;
+  padding: 20px clamp(18px, 2vw, 28px);
+  border-left: 1px solid rgba(255,232,214,.13);
+  border-bottom: 1px solid rgba(255,232,214,.11);
+}
+
+.cellActions {
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: center;
+  align-items: center;
+  gap: 12px;
+  --delete-button-ink: rgba(255, 232, 214, .66);
+  --delete-button-active-ink: #20211d;
+  --delete-button-border: rgba(255, 232, 214, .28);
+  --delete-button-fill: #ffe8d6;
+  --delete-button-focus: #bbb788;
+}
+
+.cellActions .controlLabel { grid-column: 1 / -1; }
+
+.actionsRow {
   display: flex;
   align-items: center;
+  gap: 9px;
+}
+
+.actionsRow select {
+  min-width: 58px;
+  height: 36px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255,232,214,.32);
+  border-radius: 999px;
+  color: #ffe8d6;
+  background: rgba(255,232,214,.05);
+}
+
+.cellActions button {
+  color: rgba(255,232,214,.62);
+  font-size: 12px;
+  text-decoration-color: rgba(255,232,214,.24);
+  transition: color 220ms ease;
+}
+
+.cellActions button:hover { color: #ffe8d6; }
+
+.cellUnit {
+  grid-row: 2;
+  align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+}
 
-  @include hb((
-    md: (height: 12.5dvh),
-    sm: (height: 12.5dvh),
-    xs: (height: 20dvh),
-    xxs: (height: 20dvh),
-  ));
+.cellPrice {
+  grid-row: 3;
+  align-items: center;
+  border-bottom: 0;
+}
 
-  @include vb((
-    lg: (height: 7.5dvh, gap: 1rem),
-    md: (height: 7.5dvh, gap: 1rem),
-  ));
+.cellUnit .controlLabel,
+.cellPrice .controlLabel { margin: 0; }
 
+.cellUnit :global(*),
+.cellPrice :global(*) {
+  color: #ffe8d6 !important;
+  font-size: 16px;
+}
+
+.priceWrap {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.previewQtyRow {
+  display: flex;
+  gap: 5px;
+  color: rgba(255,232,214,.5);
+  font-size: 12px;
+}
+
+.muted { color: rgba(255,232,214,.5); }
+.mobileControls { display: none; }
+
+.previewRow {
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  grid-template-rows: 104px;
+  min-height: 104px;
+  border-color: rgba(255,232,214,.14);
+  background: transparent;
+
+  &::before { display: none; }
+  &::after { display: none; }
+  &:hover { background: rgba(255,255,255,.025); }
   .cellThumb {
-    display: flex;
-    align-items: center;
-    padding-left: 0 !important;
-    padding-right: 0.5rem !important;
-    width: 4rem; /* w-24 */
-    height: 6rem; /* h-24 */
-    @include hb((
-      xxs: (width: 3rem, height: 4rem),
-    ));
-    @include vb((
-      md: (width: 3rem, height: 4rem),
-      s: (width: 4rem, height: 5rem, margin-right: 0.5rem),
-      sm: (width: 4rem, height: 5rem),
-      xs: (width: 4rem, height: 5rem),
-    ));
-
-    .thumbLink {
-      display: flex;
-
-      &.thumbLinkPreview {
-        width: 4rem; /* w-16 */
-        @include hb((
-          xxs: (width: 3rem),
-        ));
-        @include vb((
-          md: (width: 3rem),
-          s: (width: 5rem),
-          sm: (width: 5rem),
-          xs: (width: 4rem),
-        ));
-      }
-      &.thumbLinkFull {
-        width: 4rem; /* w-12 */
-        @include hb((
-          xxs: (width: 3rem),
-        ));
-        @include vb((
-          md: (width: 3rem),
-          s: (width: 5rem),
-          sm: (width: 5rem),
-          xs: (width: 4rem),
-        ));
-      }
-    }
+    grid-column: 1;
+    grid-row: 1;
+    padding: 12px 14px 12px 0;
   }
-
+  .thumbLink { min-height: 0; box-shadow: none; }
+  .kicker, .dimensions { display: none; }
   .cellTitle {
-    text-align: left;
-    display: flex;
-    align-items: flex-start;
+    grid-column: 2;
+    grid-row: 1;
+    padding: 15px 12px 15px 0;
+    border-left: 0;
+  }
+  .title { max-width: 14ch; margin-bottom: 6px; font-size: 1.18rem; }
+  .options { font-size: 12px; }
+  .cellPrice {
+    grid-column: 3;
+    grid-row: 1;
+    padding: 14px 0 14px 10px;
+    border: 0;
+  }
+  .priceWrap {
+    width: auto;
+    align-items: flex-end;
     justify-content: center;
     flex-direction: column;
-    width: fit-content; /* w-24 */
-    height: 6rem; /* h-24 */
-    width: 18rem;
-    padding: 1rem 0;
-
-    @include hb((
-      xxs: (width: 12rem, flex: 0 0 12rem),
-    ));
-    @include vb((
-      md: (width: 14rem, flex: 0 0 14rem),
-      s: (width: 16rem, flex: 0 0 16rem),
-      sm: (width: 12rem, flex: 0 0 12rem),
-      xs: (width: 12rem, flex: 0 0 12rem),
-    ));
-
-    .title {
-      font-size: 1rem;
-      line-height: 1.5rem;
-      font-weight: 400; /* medium-plus analog */
-      color: var(--blackText);
-      font-family: "Sansation-Regular";
-
-      @include hb((
-        lg: (font-size: 1rem),
-        md: (font-size: 0.95rem),
-        mdt: (font-size: 0.95rem),
-        sm: (font-size: 0.95rem),
-        xs: (font-size: 0.85rem),
-        xxs: (font-size: 0.85rem),
-      ));
-
-      @include vb((
-        lg: (font-size: 0.95rem),
-        md: (font-size: 0.95rem),
-        s: (font-size: 0.85rem),
-        sm: (font-size: 0.85rem),
-        xs: (font-size: 0.85rem),
-      ));
-    }
   }
+  .cellPrice :global(*) { font-size: 13px; }
+}
 
-  .cellActions {
-    /* container for actions cell */
-    vertical-align: middle;
-    width: fit-content; /* w-24 */
-    height: 6rem; /* h-24 */
+.row:nth-child(2) { animation-delay: 60ms; }
+.row:nth-child(3) { animation-delay: 120ms; }
+.row:nth-child(4) { animation-delay: 180ms; }
+
+@keyframes itemReveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 920px) {
+  .row:not(.previewRow) {
+    grid-template-columns: 185px minmax(210px, 1fr) 205px;
+  }
+  .cellTitle { padding: 32px 28px; }
+  .title { font-size: clamp(2rem, 4vw, 2.8rem); }
+}
+
+@media (max-width: 680px) {
+  .row:not(.previewRow) {
+    grid-template-columns: 124px minmax(0, 1fr);
+    grid-template-rows: minmax(184px, auto);
+    min-height: 184px;
+  }
+  .row:not(.previewRow) .cellThumb {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 14px 14px 14px 0;
+  }
+  .row:not(.previewRow) .cellTitle {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 24px 4px 24px 18px;
+  }
+  .row:not(.previewRow) .cellActions,
+  .row:not(.previewRow) .cellUnit,
+  .row:not(.previewRow) .cellPrice { display: none; }
+  .imageIndex { display: none; }
+  .mobileControls {
     display: flex;
+    width: 100%;
+    margin-top: 18px;
     align-items: center;
-    justify-content: center;
-    width: 12rem; /* w-28 */
-    @include hb((
-      xxs: (width: 8rem),
-    ));
-    @include vb((
-      md: (width: 8rem),
-      s: (width: 8rem),
-      sm: (width: 8rem),
-      xs: (width: 8rem),
-    ));
-
-    .actionsRow {
-      display: flex;
-      gap: 1rem; /* gap-2 */
-      column-gap: 0.5rem; /* gap-2 */
-      align-items: center;
-      justify-content: center;
-      width: 12rem; /* w-28 */
-      @include hb((
-        xxs: (width: 8rem),
-      ));
-      @include vb((
-        md: (width: 8rem),
-        s: (width: 8rem),
-        sm: (width: 8rem),
-        xs: (width: 8rem),
-      ));
-    }
+    gap: 12px;
+    font-size: 12px;
   }
-
-  .cellUnit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 4rem;
-  }
-
-  .cellPrice {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-right: 0 !important;
-    width: 3rem;
-
-    .priceWrap {
-      padding-right: 0 !important;
-      width: 3rem;
-
-      &.previewPriceWrap {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        height: 100%;
-        justify-content: center;
-
-        .previewQtyRow {
-          display: flex;
-          column-gap: 0.25rem; /* gap-x-1 */
-        }
-      }
-    }
-  }
-
-  .muted {
-    color: var(--shadows);
-    font-size: 0.875rem;
-    line-height: 1.5rem;
-    font-weight: 300; /* medium-plus analog */
-    font-family: "Sansation-Light";
-
-    @include hb((
-      lg: (font-size: 0.875rem),
-      md: (font-size: 0.8rem),
-      mdt: (font-size: 0.8rem),
-      sm: (font-size: 0.8rem),
-      xs: (font-size: 0.7rem),
-      xxs: (font-size: 0.7rem),
-    ));
-
-    @include vb((
-      lg: (font-size: 0.8rem),
-      md: (font-size: 0.8rem),
-      s: (font-size: 0.7rem),
-      sm: (font-size: 0.7rem),
-      xs: (font-size: 0.7rem),
-    ));
-  }
+  .mobileControls > *:nth-child(2) { margin-left: auto; }
+  .title { font-size: 1.65rem; }
+  .options { font-size: 12px; }
 }

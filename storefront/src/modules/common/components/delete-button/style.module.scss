@@ -1,55 +1,56 @@
-@use "../../../../styles/system/_shortcuts.scss" as *;
-
-/* DeleteButton component styles - SASS nesting */
 .root {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  color: var(--ui-fg-subtle, #6B7280);
-  @include hb((
-    md: (font-size: 0.8rem),
-    mdt: (font-size: 0.8rem),
-    sm: (font-size: 0.8rem),
-    xs: (font-size: 0.7rem),
-    xxs: (font-size: 0.7rem),
-  ));
-
-  @include vb((
-    lg: (font-size: 0.8rem !important),
-    md: (font-size: 0.8rem !important),
-    s: (font-size: 0.7rem !important),
-    sm: (font-size: 0.7rem !important),
-    xs: (font-size: 0.7rem !important),
-  ));
-
-  .button {
-    display: flex;
-    gap: 0.25rem;
-    color: var(--ui-fg-subtle, #6B7280);
-    cursor: pointer;
-    transition: color 0.15s;
-    align-items: center;
-    &:hover {
-      color: var(--ui-fg-base, #111827);
-    }
-    .spinner {
-      animation: spin 1s linear infinite;
-    }
-    svg{
-      width: 1rem;
-      height: 1rem;
-    }
-    span{ 
-      font-size: 1rem;
-    }
-  // .icon for Trash icon
-  // span for children text
-  }
+  display: inline-flex;
+  color: var(--delete-button-ink, rgba(32, 33, 29, .62));
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  overflow: hidden;
+  border: 1px solid var(--delete-button-border, rgba(32, 33, 29, .25));
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.button:focus-visible {
+  outline: 1px solid var(--delete-button-focus, rgba(116, 126, 98, .82));
+  outline-offset: 2px;
+}
+
+.button:disabled { cursor: wait; }
+
+.fill {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--delete-button-fill, rgba(187, 183, 136, .3));
+  transform-origin: left center;
+}
+
+.icon,
+.icon > span {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+}
+
+.icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
 }

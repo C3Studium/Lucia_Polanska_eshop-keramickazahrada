@@ -1,27 +1,23 @@
 "use client";
 import { useInView, motion, Easing } from "framer-motion";
 import Image from "next/image";
-import { useRef, useState, useEffect } from "react";
-import { client } from "../../../../../sanity/lib/client";
+import { useRef } from "react";
 import { urlFor } from "../../../../../sanity/lib/image";
 
-export default function Intro () {
+export default function Intro ({
+    data,
+    active,
+}: {
+    data?: any
+    active?: boolean
+}) {
     const ref = useRef<HTMLDivElement>(null);
-    const isInView = useInView(ref, {
+    const observedInView = useInView(ref, {
         once: true,  
         margin: "-50px",    
         amount: 0.05,        
     });
-    const [data, setData] = useState<any>(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            const ecomIntroData = await client.fetch('*[_type == "ecomIntro"][0]');
-            setData(ecomIntroData);
-        };
-        fetchData();
-    }, []);
-
+    const isInView = active ?? observedInView;
     const imageAnim = {
         start: {
             opacity: 0,
@@ -29,16 +25,21 @@ export default function Intro () {
         },
         enter: {
             opacity: 1,
-            width: "auto",
+            width: "clamp(12rem, 21vw, 28rem)",
             transition: {
-                duration: 0.75,
-                delay: 1.5,
+                duration: 1.05,
+                delay: 0.75,
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         }
     }
     return (
         <section className="ECom__Intro" ref={ref}>
+            <div className="ECom__Intro__Rail" aria-hidden="true">
+                <span>01 · Keramická zahrada</span>
+                <span className="rail__line" />
+                <span>Objekty s vlastním příběhem</span>
+            </div>
             <div className="ECom__Intro__Title">
                 <h2>
                     {charSplit(data?.title1 || "Vítejte", isInView)}
@@ -73,6 +74,11 @@ export default function Intro () {
             <div className="ECom__Intro__Content">
                 <p>
                     {data?.content1 ? textWithBreaks(data.content1, isInView) : wordSplit("Objevte svět ručně vyráběné keramiky, kde každý kousek nese osobní příběh, každý výrobek je originál.", isInView)}
+                </p>
+                <p className="ECom__Intro__Aside">
+                    {data?.content2
+                        ? textWithBreaks(data.content2, isInView)
+                        : wordSplit("Pro zahradu i domov. Vytvořeno pomalu, rukama a v malém počtu.", isInView)}
                 </p>
             </div>
         </section>

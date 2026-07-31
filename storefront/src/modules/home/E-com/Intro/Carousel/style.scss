@@ -1,169 +1,229 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
+@keyframes wheelAnim {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.4; }
+  50% { transform: translate(-50%, 0.55rem); opacity: 1; }
+}
 
-.Intro__Carousel{
-    height: 100vh;
-    width: 100%;
+.Intro__Carousel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
+  gap: clamp(2rem, 3.5vw, 5rem);
+  width: 100%;
+  min-height: 116svh;
+  padding: clamp(8rem, 14vh, 11rem) 5vw clamp(7rem, 13vh, 11rem);
+  background: transparent;
+
+  .Intro__Carousel__Rail {
+    position: absolute;
+    top: 3rem;
+    left: 5vw;
+    right: 5vw;
+    display: grid;
+    grid-template-columns: max-content 1fr max-content;
+    align-items: center;
+    gap: 1rem;
+    color: rgba(33, 34, 34, 0.54);
+    font-family: "Sansation-Regular";
+    font-size: clamp(0.62rem, 0.68vw, 0.76rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    .rail__line {
+      height: 1px;
+      background: rgba(33, 34, 34, 0.2);
+    }
+  }
+
+  .Left__section,
+  .Right__section {
     position: relative;
     display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0 2.5vw;
-    background-color: transparent;
-    top: -35dvh;
-    z-index: 1;
+    min-width: 0;
+    flex-direction: column;
+  }
 
-    .Left__section{
-        width: 60%;
-        height: 70%;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-end;
+  .Left__section {
+    justify-content: flex-start;
+    padding-top: 2vh;
 
-        .Content{
-            width: 90%;
-            height: 80px;
-            justify-content: space-between;
-            display: flex;
-            align-items: center;
+    .Content {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+      width: 100%;
+      min-height: 6rem;
+      padding: 0 0 1.25rem;
 
-            .text{
-                width: 35%;
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-
-                p{
-                   color: var(--blackText);
-                   font-weight: 300;
-                   font-size: 1.5rem;
-                    font-family: "Sentient-Light";
-                    line-height: 1.2;
-                }
-
-            }
-
-            .mouse__anim{
-                width: 25%;
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 15px;
-
-                .mouse{
-                    position: relative;
-                    border-radius: 15px;
-                    width: 30px;
-                    height: 50px;
-                    border: 2px solid var(--iconsPink);
-
-                    .wheel{
-                        width: 4px;
-                        height: 8px;
-                        background-color: var(--bgWhite);
-                        position: absolute;
-                        top: 8px;
-                        left: 50%;
-                        border-radius: 2.5px;
-                        transform: translateX(-50%);
-                        animation: wheelAnim 1.5s ease-in-out infinite;
-                    }
-                }
-
-                p{
-                    color: var(--blackText);
-                    font-size: 1.3rem;
-                    font-family: "Sentient-Light";
-                }
-            }
-
-            .buttons{
-                width: 15%;
-                height: 100%;   
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 10px;
-            }
-
+      .text {
+        span {
+          display: block;
+          margin-bottom: 0.4rem;
+          color: rgba(33, 34, 34, 0.52);
+          font-family: "Sansation-Regular";
+          font-size: 0.7rem;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
         }
 
-        .Images{
-            width: 100%;
-            height: fit-content;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            .Image__Wrapper{
-                width: 950px;
-                height: 600px;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                border-radius: 15px;
-
-                img{
-                    object-fit: cover;
-                    width: 100%;
-                    height: 100%;
-                }
-            }
+        p {
+          margin: 0;
+          color: var(--blackText);
+          font-family: "Sentient-Regular";
+          font-size: clamp(1.65rem, 2.2vw, 2.8rem);
+          line-height: 1;
+          letter-spacing: -0.03em;
         }
-        
-    }
-    .Right__section{
-        width: 40%;
-        height: 100%;
-        position: relative;
+      }
+
+      .right__content {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        flex-direction: column;
+        gap: 2rem;
 
-        .Images{
-            width: 100%;
-            height: fit-content;
+        .mouse__anim {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          color: rgba(33, 34, 34, 0.68);
+          font-family: "Sansation-Regular";
+          font-size: 0.85rem;
+
+          .mouse {
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            .Image__Wrapper{
-                width: 700px;
-                height: 950px;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                border-radius: 15px;
+            width: 1.4rem;
+            height: 2.25rem;
+            border: 1px solid rgba(33, 34, 34, 0.48);
+            border-radius: 999px;
 
-                img{
-                    object-fit: cover;
-                    width: 100%;
-                    height: 100%;
-                }
+            .wheel {
+              position: absolute;
+              top: 0.42rem;
+              left: 50%;
+              width: 2px;
+              height: 0.4rem;
+              border-radius: 999px;
+              background: var(--blackText);
+              animation: wheelAnim 1.7s ease-in-out infinite;
             }
+          }
         }
 
-        .Custom__orders{
-            width: 100%;
-            height: fit-content;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 50px 0;
-
+        .buttons {
+          display: flex;
+          gap: 0.7rem;
         }
+      }
     }
+
+    .Images .ImageCarousel {
+      position: relative;
+      width: 100%;
+      height: min(70vh, 52rem);
+      min-height: 34rem;
+      overflow: hidden;
+      border-radius: 0.35rem;
+      perspective: 1200px;
+    }
+  }
+
+  .Right__section {
+    justify-content: flex-end;
+    padding-top: clamp(8rem, 17vh, 14rem);
+
+    .Images .ImageCarousel {
+      position: relative;
+      width: 100%;
+      height: min(57vh, 43rem);
+      min-height: 30rem;
+      overflow: hidden;
+      border-radius: 0.35rem;
+      perspective: 1200px;
+    }
+
+    .Custom__orders {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 8rem;
+      align-items: flex-start;
+      flex-direction: column;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(33, 34, 34, 0.2);
+
+      > p {
+        max-width: 15rem;
+        margin: 0;
+        color: rgba(33, 34, 34, 0.68);
+        font-family: "Sansation-Light";
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+    }
+  }
+
+  .ImageCarousel__slide,
+  .ImageCarousel__clip,
+  .ImageCarousel__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    will-change: transform, clip-path;
+  }
+
+  .ImageCarousel__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 900px) {
+  .Intro__Carousel {
+    display: flex;
+    min-height: auto;
+    flex-direction: column;
+    padding: 8rem 1.25rem 6rem;
+
+    .Intro__Carousel__Rail {
+      top: 3rem;
+      left: 1.25rem;
+      right: 1.25rem;
+      grid-template-columns: max-content 1fr;
+
+      span:last-child {
+        display: none;
+      }
+    }
+
+    .Left__section {
+      padding-top: 0;
+
+      .Content {
+        .right__content .mouse__anim {
+          display: none;
+        }
+      }
+
+      .Images .ImageCarousel {
+        height: 62svh;
+        min-height: 26rem;
+      }
+    }
+
+    .Right__section {
+      .Images .ImageCarousel {
+        height: 72svh;
+        min-height: 32rem;
+      }
+
+      .Custom__orders {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  }
 }

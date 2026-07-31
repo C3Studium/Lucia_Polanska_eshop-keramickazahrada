@@ -1,11 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { HttpTypes } from "@medusajs/types";
 import InfoDesc from "./components/info";
 import Desc from "./components/desc";
 import Shipment from "./components/delivery";
+
+const disclosureVariants = {
+    closed: { height: 0, opacity: 0, y: -6 },
+    open: { height: "auto", opacity: 1, y: 0 },
+};
+
+const disclosureIconVariants = {
+    closed: { rotate: 0, scale: 1 },
+    open: { rotate: 45, scale: 1.04 },
+};
 
 export default function Details({ product }: { product: HttpTypes.StoreProduct }) {
     const [open, setOpen] = useState<number[]>([]);
@@ -87,7 +96,7 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
     }, []);
 
     return (
-        <section className="details" id="product-details">
+        <section className="detailsProduct" id="product-details">
             <div className="details__title">
                 <h2>Detaily</h2>
             </div>
@@ -95,37 +104,39 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
                 <ul className="details__content__list">
                     {details.map((detail, idx) => (
                         <li className="details__content__list__item" key={idx}>
-                            <div
+                            <motion.button
+                                type="button"
                                 className="details__content__list__item__main"
                                 onClick={() => toggleOpen(idx)}
-                                style={{ cursor: "pointer" }}
+                                aria-expanded={open.includes(idx)}
+                                aria-controls={`product-detail-panel-${idx}`}
+                                initial="closed"
+                                animate={open.includes(idx) ? "open" : "closed"}
                             >
                                 <h3>{detail.title}</h3>
-                                <div className="details__content__list__item__main__button">
-                                    <Image
-                                        src="/assets/icons/cross.png"
-                                        alt="Toggle Icon"
-                                        width={24}
-                                        height={24}
-                                        style={{
-                                            transform: open.includes(idx) ? "rotate(45deg)" : "none",
-                                            transition: "transform 0.3s"
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                                <motion.span
+                                    className="details__content__list__item__main__button"
+                                    variants={disclosureIconVariants}
+                                    transition={{ duration: .52, ease: [0.76, 0, 0.24, 1] }}
+                                    aria-hidden="true"
+                                >
+                                    <i />
+                                    <i />
+                                </motion.span>
+                            </motion.button>
                             <AnimatePresence initial={false}>
                                 {open.includes(idx) && (
                                     <motion.div
+                                        id={`product-detail-panel-${idx}`}
                                         className="details__content__list__item__inner"
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "fit-content", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
+                                        variants={disclosureVariants}
+                                        initial="closed"
+                                        animate="open"
+                                        exit="closed"
                                         transition={{
-                                            duration: 0.5,
+                                            duration: 0.62,
                                             ease: [0.76, 0, 0.24, 1],
                                         }}
-                                        style={{ overflow: "hidden" }}
                                     >
                                         {detail.component}
                                     </motion.div>

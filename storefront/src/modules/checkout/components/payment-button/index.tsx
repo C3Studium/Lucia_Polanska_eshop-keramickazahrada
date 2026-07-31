@@ -1,7 +1,7 @@
 "use client"
 
 import { isManual, isStripe, isComgate } from "@lib/constants"
-import { placeOrder, capturePayment } from "@lib/data/cart"
+import { placeOrder } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 // Button from @medusajs/ui replaced with local ClickButton
 import { useElements, useStripe } from "@stripe/react-stripe-js"
@@ -292,52 +292,38 @@ type ClickButtonProps = {
 
 // Base animated button used across the site. Can act as a submit button in forms.
 function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
   const { pending } = useFormStatus();
   const isSubmitting = type === "submit" ? pending : false;
   const isDisabled = disabled || isSubmitting;
   const handleClick = onClickAction ?? ClickAction;
+  const fillVariants = {
+    rest: { scaleX: 0 },
+    hover: { scaleX: 1 },
+  }
 
   return (
       <div className={className ? `${styles.ClickButton} ${className}` : styles.ClickButton}>
-          <button 
+          <motion.button
               type={type}
               className={styles.button}
               onClick={handleClick}
               disabled={isDisabled}
               aria-busy={isDisabled || undefined}
-              onMouseEnter={() => setIsActive(true)}
-              onMouseLeave={() => setIsActive(false)}
               data-testid={dataTestId}
+              initial="rest"
+              animate="rest"
+              whileHover={isDisabled ? "rest" : "hover"}
+              whileFocus={isDisabled ? "rest" : "hover"}
+              whileTap={isDisabled ? undefined : { scale: .985 }}
           >
-              <motion.div 
-                  className={styles.slider}
-                  animate={{top: isActive ? "-100%" : "0%"}}
-                  transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-              >
-                  <div 
-                      className={styles.el}
-                      style={{ backgroundColor: "var(--darkOlive)" }}
-                  >
-                      <PerspectiveText label={text}/>
-                  </div>
-                  <div 
-                      className={styles.el}
-                      style={{ backgroundColor: "var(--bgBlack)" }}
-                  >
-                      <PerspectiveText label={text} />
-                  </div>
-              </motion.div>
-          </button>
+              <motion.span
+                className={styles.indicator}
+                variants={fillVariants}
+                style={{ originX: 0 }}
+                transition={{ duration: .48, ease: [.76, 0, .24, 1] }}
+              />
+              <span className={styles.label}>{text}</span>
+          </motion.button>
       </div>
   )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
 }

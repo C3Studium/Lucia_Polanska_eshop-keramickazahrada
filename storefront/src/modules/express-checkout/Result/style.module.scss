@@ -1,0 +1,172 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+.root {
+  display: flex;
+  min-height: calc(100svh - 160px);
+  padding: 34px 0 18px;
+  flex-direction: column;
+}
+
+.mark {
+  position: relative;
+  display: grid;
+  width: 106px;
+  height: 106px;
+  margin: 5px auto 28px;
+  place-items: center;
+}
+
+.mark > span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(32, 33, 28, .22);
+  border-radius: 50%;
+}
+
+.mark > span:nth-child(2) {
+  inset: 14px;
+}
+
+.mark > span:nth-child(3) {
+  inset: 28px;
+}
+
+.mark strong {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff1e5;
+  background: #7e896b;
+  font: 400 16px/1 "Sansation-Regular", sans-serif;
+}
+
+.root[data-status="failed"] .mark strong,
+.root[data-status="canceled"] .mark strong {
+  background: #9d6258;
+}
+
+.copy {
+  text-align: center;
+}
+
+.eyebrow {
+  color: rgba(32, 33, 28, .52);
+  font: 600 11px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.copy h1 {
+  margin: 14px auto 17px;
+  font: 400 clamp(48px, 13vw, 75px)/.82 "Times New Roman", serif;
+  letter-spacing: -.05em;
+}
+
+.copy h1 em {
+  display: block;
+  color: #7e896b;
+  font-weight: 400;
+}
+
+.root[data-status="failed"] .copy h1 em,
+.root[data-status="canceled"] .copy h1 em {
+  color: #9d6258;
+}
+
+.copy p {
+  max-width: 42ch;
+  margin: 0 auto;
+  color: rgba(32, 33, 28, .62);
+  font: 400 14px/1.55 "Sansation-Regular", sans-serif;
+}
+
+.receipt {
+  margin-top: 34px;
+  border: 1px solid rgba(32, 33, 28, .2);
+  background: rgba(255, 247, 236, .22);
+}
+
+.receiptHeader,
+.receiptTotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 13px;
+  border-bottom: 1px solid rgba(32, 33, 28, .17);
+  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.receiptHeader span:last-child {
+  color: rgba(32, 33, 28, .5);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(32, 33, 28, .13);
+}
+
+.item img {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+}
+
+.item div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.item strong,
+.item span {
+  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+}
+
+.item small {
+  color: rgba(32, 33, 28, .55);
+  font: 400 13px/1.3 "Sansation-Regular", sans-serif;
+}
+
+.receiptTotal {
+  border: 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.actions {
+  display: flex;
+  margin-top: auto;
+  padding-top: 30px;
+  flex-direction: column;
+  gap: 13px;
+  align-items: center;
+}
+
+.action {
+  width: 100%;
+}
+
+.action button {
+  min-width: 0;
+}
+
+.secondary {
+  padding: 3px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  color: rgba(32, 33, 28, .65);
+  background: transparent;
+  cursor: pointer;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+}

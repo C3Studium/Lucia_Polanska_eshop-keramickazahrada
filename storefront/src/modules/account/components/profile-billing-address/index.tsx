@@ -74,18 +74,17 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
     return (
       <div className={s.currentInfo} data-testid="current-info">
-        <span>
+        <strong>
           {billingAddress.first_name} {billingAddress.last_name}
-        </span>
-        <span>{billingAddress.company}</span>
+          {billingAddress.company ? ` · ${billingAddress.company}` : ""}
+        </strong>
         <span>
           {billingAddress.address_1}
           {billingAddress.address_2 ? `, ${billingAddress.address_2}` : ""}
         </span>
         <span>
-          {billingAddress.postal_code}, {billingAddress.city}
+          {billingAddress.postal_code} {billingAddress.city} · {country}
         </span>
-        <span>{country}</span>
       </div>
     )
   }, [billingAddress, regionOptions])
@@ -104,6 +103,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         <div className={s.formGrid}>
           <div className={s.rowTwo}>
             <Input
+              variant="contact"
               label="Jméno"
               name="first_name"
               defaultValue={billingAddress?.first_name || undefined}
@@ -111,6 +111,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
               data-testid="billing-first-name-input"
             />
             <Input
+              variant="contact"
               label="Příjmení"
               name="last_name"
               defaultValue={billingAddress?.last_name || undefined}
@@ -119,12 +120,14 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             />
           </div>
           <Input
+            variant="contact"
             label="Společnost"
             name="company"
             defaultValue={billingAddress?.company || undefined}
             data-testid="billing-company-input"
           />
           <Input
+            variant="contact"
             label="Adresa"
             name="address_1"
             defaultValue={billingAddress?.address_1 || undefined}
@@ -132,6 +135,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             data-testid="billing-address-1-input"
           />
           <Input
+            variant="contact"
             label="Bytová jednotka, patro, apod."
             name="address_2"
             defaultValue={billingAddress?.address_2 || undefined}
@@ -139,6 +143,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
           />
           <div className={s.rowPostal}>
             <Input
+              variant="contact"
               label="PSČ"
               name="postal_code"
               defaultValue={billingAddress?.postal_code || undefined}
@@ -146,6 +151,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
               data-testid="billing-postcal-code-input"
             />
             <Input
+              variant="contact"
               label="Město"
               name="city"
               defaultValue={billingAddress?.city || undefined}
@@ -154,12 +160,14 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             />
           </div>
           <Input
+            variant="contact"
             label="Kraj / Okres"
             name="province"
             defaultValue={billingAddress?.province || undefined}
             data-testid="billing-province-input"
           />
           <NativeSelect
+            variant="contact"
             name="country_code"
             defaultValue={billingAddress?.country_code || undefined}
             required

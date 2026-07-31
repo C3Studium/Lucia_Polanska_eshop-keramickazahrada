@@ -1,134 +1,51 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
-/* Items table styles */
-.root {
-  width: 100%;
+.root { width: 100%; }
 
-  .headerRow {
-    padding-bottom: 0.75rem; /* pb-3 */
-    display: flex;
-    align-items: center;
+.headerRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 0 25px;
+  border-bottom: 1px solid rgba(255,232,214,.22);
+}
 
-    .title {
-      font-size: 2rem;
-      line-height: 2.75rem;
-      font-weight: 400;
-      font-family: "Sansation-Light";
+.title {
+  margin: 0;
+  color: #ffe8d6;
+  font: 400 clamp(2.8rem, 3.6vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  letter-spacing: -.05em;
+}
 
-      @include hb((
-        lg: (font-size: 1.8rem, line-height: 2rem),
-        md: (font-size: 1.8rem, line-height: 2rem),
-        mdt: (font-size: 1.8rem, line-height: 2rem),
-      ));
+.sectionMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px;
+  color: rgba(255,232,214,.46);
+  font: 400 9px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
 
-      @include vb((
-        md: (font-size: 1.8rem, line-height: 2rem),
-        s: (font-size: 1.8rem, line-height: 2rem),
-        sm: (font-size: 1.8rem, line-height: 2rem),
-        xs: (font-size: 1.8rem, line-height: 2rem),
-      ));
-    }
-  }
+.sectionMeta span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(255,232,214,.3);
+  border-radius: 50%;
+  color: #bbb788;
+  letter-spacing: 0;
+}
 
-  .tableHeader {
-    /* Prevent default table header grouping so padding and widths apply */
-    display: block;
-    border-top: 0; /* border-t-0 */
-    position: relative;
+.tableBody {
+  display: block;
+  padding-top: 16px;
+}
 
-    .tableHeaderRow {
-      /* switch the row to flex so th cells become flex items and respond to padding/width */
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: var(--ui-fg-subtle, #6b7280);
-      font-weight: 600; /* txt-medium-plus approx */
-      width: 100%;
-      padding: 0 1rem 0 1rem;
-
-      .colItem {
-        padding-left: 0 !important; /* !pl-0 */
-        padding-right: 0 !important; /* !pr-0 */
-        width: 4rem;
-        flex: 0 0 4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        @include hb((
-          xxs: (width: 3rem),
-        ));
-        @include vb((
-          md: (width: 3rem),
-          s: (width: 4rem),
-          sm: (width: 4rem),
-          xs: (width: 4rem),
-        ));
-      }
-
-      .colSpacer {
-        padding-right: 0 !important; /* !pr-0 */
-        width: 18rem;
-        flex: 0 0 18rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        @include hb((
-          xxs: (width: 12rem, flex: 0 0 12rem),
-        ));
-        @include vb((
-          md: (width: 12rem, flex: 0 0 12rem),
-          s: (width: 12rem, flex: 0 0 12rem),
-          sm: (width: 12rem, flex: 0 0 12rem),
-          xs: (width: 12rem, flex: 0 0 12rem),
-        ));
-      }
-
-      .colQty {
-        padding-right: 0 !important; /* !pr-0 */
-        text-align: left;
-        width: 12rem;
-        flex: 0 0 12rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        @include hb((
-          xxs: (width: 8rem, flex: 0 0 8rem),
-        ));
-        @include vb((
-          md: (width: 8rem, flex: 0 0 8rem),
-          s: (width: 8rem, flex: 0 0 8rem),
-          sm: (width: 8rem, flex: 0 0 8rem),
-          xs: (width: 8rem, flex: 0 0 8rem),
-        ));
-      }
-
-      .colPrice {
-        padding-right: 1rem; /* !pr-0 */
-        text-align: left;
-        width: 4rem;
-        flex: 0 0 4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .colTotal {
-        padding-right: 0 !important; /* !pr-0 */
-        text-align: right;
-        width: 4rem;
-        flex: 0 0 4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-    }
-  }
-
-  .tableBody {
-    /* make tbody block so rows align under the header flex layout */
-    display: block;
-  }
+@media (max-width: 680px) {
+  .headerRow { align-items: flex-start; flex-direction: column; padding-bottom: 18px; }
+  .title { font-size: clamp(2.6rem, 13vw, 3.6rem); }
 }

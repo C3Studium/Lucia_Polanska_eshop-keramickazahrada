@@ -1,10 +1,10 @@
 import { HttpTypes } from "@medusajs/types"
 import Input from "@modules/common/components/input"
 import React, { useState } from "react"
-import CountrySelect from "../country-select"
 import s from "./style.module.scss"
 
-const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
+const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | null, countryCode: string }) => {
+  const routeCountry = countryCode.toLowerCase()
   const [formData, setFormData] = useState<any>({
     "billing_address.first_name": cart?.billing_address?.first_name || "",
     "billing_address.last_name": cart?.billing_address?.last_name || "",
@@ -12,7 +12,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
     "billing_address.company": cart?.billing_address?.company || "",
     "billing_address.postal_code": cart?.billing_address?.postal_code || "",
     "billing_address.city": cart?.billing_address?.city || "",
-    "billing_address.country_code": cart?.billing_address?.country_code || "",
+    "billing_address.country_code": routeCountry,
     "billing_address.province": cart?.billing_address?.province || "",
     "billing_address.phone": cart?.billing_address?.phone || "",
   })
@@ -40,6 +40,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-first-name-input"
           className={s.input}
+          variant="contact"
         />
         <Input
           label="Příjmení"
@@ -50,6 +51,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-last-name-input"
           className={s.input}
+          variant="contact"
         />
         <Input
           label="Adresa"
@@ -60,6 +62,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-address-input"
           className={s.input}
+          variant="contact"
         />
         <Input
           label="Společnost"
@@ -69,6 +72,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           autoComplete="organization"
           data-testid="billing-company-input"
           className={s.input}
+          variant="contact"
         />
         <Input
           label="PSČ"
@@ -79,6 +83,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-postal-input"
           className={s.input}
+          variant="contact"
         />
         <Input
           label="Město"
@@ -87,14 +92,16 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           value={formData["billing_address.city"]}
           onChange={handleChange}
           className={s.input}
+          variant="contact"
         />
-        <CountrySelect
+        <div className={s.countryField}>
+          <span>Země fakturace</span>
+          <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
+        </div>
+        <input
+          type="hidden"
           name="billing_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["billing_address.country_code"]}
-          onChange={handleChange}
-          required
+          value={routeCountry}
           data-testid="billing-country-select"
         />
         <Input
@@ -104,6 +111,8 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           value={formData["billing_address.province"]}
           onChange={handleChange}
           data-testid="billing-province-input"
+          className={s.input}
+          variant="contact"
         />
         <Input
           label="Telefon"
@@ -113,6 +122,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           onChange={handleChange}
           data-testid="billing-phone-input"
           className={s.input}
+          variant="contact"
         />
       </div>
     </div>

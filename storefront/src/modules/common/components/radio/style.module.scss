@@ -1,73 +1,27 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-/* Radio component styles */
+
 .root {
-	width: fit-content;
-	height: fit-content;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  pointer-events: none;
+}
 
-	@include hb((
-		sm: (justify-content: flex-start),
-		xs: (justify-content: flex-start),
-		xxs: (justify-content: flex-start),
-	));
+.outer {
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border: 1px solid rgba(32, 33, 28, 0.48);
+  border-radius: 50%;
+}
 
-	@include vb((
-		md: (justify-content: flex-start),
-		s: (justify-content: flex-start),
-		sm: (justify-content: flex-start),
-		xs: (justify-content: flex-start),
-	));
-
-	.button {
-		position: relative;
-		display: flex;
-		height: 1.25rem;
-		width: 1.25rem;
-		align-items: center;
-		justify-content: center;
-		outline: none;
-
-		.outer {
-			box-shadow: var(--borders-base);
-			background-color: var(--ui-bg-base);
-			border: 0.25px solid var(--shadows);
-			display: flex;
-			height: 14px;
-			width: 14px;
-			align-items: center;
-			justify-content: center;
-			border-radius: 9999px;
-			transition: all 0.2s;
-			&.checked {
-				border: 0.25px solid var(--shadows);
-				box-shadow: var(--borders-interactive);
-			}
-			&:hover {
-				box-shadow: var(--borders-strong-with-shadow);
-			}
-			&:focus {
-				box-shadow: var(--borders-interactive-with-focus);
-			}
-			&.disabled {
-				background-color: var(--ui-bg-disabled);
-				box-shadow: var(--borders-base);
-			}
-
-
-			.inner {
-				background-color: var(--bgBlack);
-				box-shadow: var(--details-contrast-on-bg-interactive);
-				border-radius: 9999px;
-				height: 10px;
-				width: 10px;
-				&.disabled {
-					background-color: var(--disabled);
-					box-shadow: none;
-				}
-			}
-		}
-	}
-
+.inner {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #20211c;
+  box-shadow: 0 0 0 3px rgba(32, 33, 28, 0.07);
 }

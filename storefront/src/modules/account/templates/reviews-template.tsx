@@ -1,210 +1,160 @@
-'use client'
-import DebugReviewsLogger from "app/[countryCode]/(main)/account/@dashboard/reviews/DebugReviewsLogger";
-import { motion } from 'framer-motion';
-import { useState, useRef, type WheelEvent, type TouchEvent } from 'react';
-import { useFormStatus } from 'react-dom';
-import { Divider } from "@medusajs/ui";
-import { Star, StarSolid } from "@medusajs/icons";
+"use client"
 
-import s from "./styles/reviews-template.module.scss";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import Image from "next/image";
+import { Star, StarSolid } from "@medusajs/icons"
+import { motion } from "framer-motion"
+import Image from "next/image"
 
-export default function ReviewsTemplate({ reviews }: { reviews: any[]} ) {
-    const reviewsListRef = useRef<HTMLUListElement | null>(null)
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import PremiumActionLink from "@modules/common/components/premium-action-link"
+import {
+  AccountPageReveal,
+  AccountSectionReveal,
+} from "../components/account-page-reveal"
+import { accountListItemVariants, accountListVariants } from "../motion"
+import s from "./styles/reviews-template.module.scss"
+import AccountInteractiveSurface from "../components/account-interactive-surface"
 
-    const renderStars = (rating: number) => {
-        return Array.from({ length: 5 }).map((_, index) => (
-            <span key={index} className={s.star}>
-                {index < rating ? (
-                    <StarSolid className="text-ui-tag-orange-icon" />
-                ) : (
-                    <Star />
-                )}
-            </span>
-        ))
-    }
-    
-    const handleWheel = (e: WheelEvent<HTMLUListElement>) => {
-        const el = reviewsListRef.current
-        if (!el) return
+type ReviewsTemplateProps = {
+  reviews: any[]
+  isPreview?: boolean
+}
 
-        const delta = e.deltaY
-        const atTop = el.scrollTop === 0
-        const atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight
+const formatReviewDate = (value?: string) => {
+  if (!value) return null
 
-        const tryingToScrollUpPastTop = atTop && delta < 0
-        const tryingToScrollDownPastBottom = atBottom && delta > 0
+  return new Intl.DateTimeFormat("cs-CZ", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(value))
+}
 
-        // If the container can scroll in the wheel direction, keep the event inside.
-        // If the user is trying to scroll past the top or bottom, prevent the event so the page doesn't scroll.
-        const canScrollUp = el.scrollTop > 0
-        const canScrollDown = Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight
+export default function ReviewsTemplate({
+  reviews,
+  isPreview = false,
+}: ReviewsTemplateProps) {
+  const visibleReviews = reviews?.filter(Boolean) || []
 
-        if ((delta < 0 && canScrollUp) || (delta > 0 && canScrollDown)) {
-            // inner scrolling — stop propagation so the page doesn't pick up the event
-            e.stopPropagation()
-            return
-        }
-
-        if (tryingToScrollUpPastTop || tryingToScrollDownPastBottom) {
-            // prevent the page from scrolling when flinging past edges
-            e.preventDefault()
-            e.stopPropagation()
-        }
-    }
-
-    // Touch handling for mobile scroll
-    const handleTouchStart = (e: TouchEvent<HTMLUListElement>) => {
-        // Store initial touch position
-        const touch = e.touches[0]
-        if (reviewsListRef.current) {
-            reviewsListRef.current.dataset.touchStartY = touch.clientY.toString()
-        }
-    }
-
-    const handleTouchMove = (e: TouchEvent<HTMLUListElement>) => {
-        const el = reviewsListRef.current
-        if (!el) return
-
-        const touch = e.touches[0]
-        const startY = parseFloat(el.dataset.touchStartY || '0')
-        const deltaY = startY - touch.clientY
-
-        const atTop = el.scrollTop === 0
-        const atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight
-
-        // If at top and trying to scroll up, or at bottom and trying to scroll down
-        if ((atTop && deltaY < 0) || (atBottom && deltaY > 0)) {
-            // Prevent the page from scrolling
-            e.preventDefault()
-        }
-    }
-    return (
-        <div className={s.content} data-testid="reviews-page-wrapper">
-            <div className={s.header}>
-                <h1 className={s.title}>Mé recenze</h1>
-                <Divider />
-                <p className={s.desc}>Všechny recenze, které jste napsali.</p>
-            </div>
-
-            <div className={s.body}>
-                <DebugReviewsLogger reviews={reviews} />
-                {(!reviews || reviews.length === 0) ? (
-                    <p className={s.emptyState}>Ještě jste nenapsali žádné recenze...</p>
-                ) : (
-                    <ul 
-                        className={s.reviewsList} 
-                        ref={reviewsListRef} 
-                        onWheel={handleWheel}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                    >
-                    {reviews
-                        .filter((r: any) => !!r)
-                        .map((review: any) => (
-                        <li key={review.id} className={s.reviewCard}>
-                            <LocalizedClientLink href={`/${review?.product?.handle ? `products/${review.product.handle}` : ''}`} className={s.viewProductLink}>
-                                <div className={s.reviewContent}>
-                                    <div className={s.productName}>
-                                        {review?.product?.handle ? (
-                                            <ClickButton 
-                                                text={(review?.product?.title || review?.product?.handle).split(' ').slice(0, 2).join(' ')}
-                                            />
-                                        ) : (
-                                            <span>{review?.product?.title || review?.product?.id || review?.product_id || "neznámý produkt"}</span>
-                                        )}
-                                        <div className={s.reviewStars}>
-                                            {renderStars(review?.rating ?? 0)}
-                                        </div>
-                                    </div>
-                                    <div className={s.reviewText}>
-                                        <span>
-                                            <strong>{review?.title || "Bez názvu"}</strong>
-                                        </span>
-                                        <p>{review?.content ?? ""}</p>
-                                    </div>
-                                </div>
-                                <div className={s.reviewImage}>
-                                    <Image    
-                                        src={
-                                          (typeof review?.product?.thumbnail === 'string' 
-                                            ? review.product.thumbnail 
-                                            : review?.product?.thumbnail?.url) 
-                                          || '/assets/img/horizontal_prop.png'
-                                        }
-                                        alt={review?.product?.title || 'Product image'}
-                                        width={100}
-                                        height={100}
-                                        style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                    />
-                                </div>
-                            </LocalizedClientLink>
-                        </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+  return (
+    <AccountPageReveal
+      className={s.accountReviewsRoot}
+      data-testid="reviews-page-wrapper"
+    >
+      <AccountSectionReveal className={s.accountReviewsHeader}>
+        <p>Soukromý archiv · recenze</p>
+        <div className={s.accountReviewsHeading}>
+          <h1>
+            Vaše
+            <em>zkušenosti.</em>
+          </h1>
+          <span>{String(visibleReviews.length).padStart(2, "0")} příběhů</span>
         </div>
-    )
-}
+        <p className={s.accountReviewsDescription}>
+          Zkušenosti s objekty, které už našly své místo u vás. Vaše slova
+          pomáhají ostatním vybírat pomalu a s jistotou.
+        </p>
+      </AccountSectionReveal>
 
+      <AccountSectionReveal className={s.accountReviewsBody}>
+        {isPreview && (
+          <div className={s.accountPreviewNotice}>
+            <span>Vývojový náhled</span>
+            <p>
+              Ukázkové recenze se zobrazují jen lokálně, dokud účet nemá vlastní
+              záznamy.
+            </p>
+          </div>
+        )}
 
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-    type?: "button" | "submit";
-    className?: string;
-    active?: boolean; // New prop to keep button in active/animated state
-    "data-testid"?: string;
-}
+        {!visibleReviews.length ? (
+          <div className={s.accountReviewsEmpty}>
+            <div>
+              <span>Zatím bez příběhu</span>
+              <p>Recenzi můžete přidat u objektu, který už máte doma.</p>
+            </div>
+            <PremiumActionLink
+              href="/store"
+              text="Prohlédnout obchod"
+              className={s.accountReviewsAction}
+            />
+          </div>
+        ) : (
+          <motion.ul
+            className={s.accountReviewsList}
+            variants={accountListVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {visibleReviews.map((review: any, index: number) => {
+              const product = review?.product
+              const href = product?.handle
+                ? `/products/${product.handle}`
+                : "/store"
+              const image =
+                (typeof product?.thumbnail === "string"
+                  ? product.thumbnail
+                  : product?.thumbnail?.url) ||
+                "/assets/img/horizontal_prop.png"
 
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, text, className, active = false, "data-testid": dataTestId }: ClickButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const handleClick = onClickAction ?? ClickAction;
-    
-    // Button stays in animated state if active prop is true, otherwise uses hover state
-    const shouldAnimate = active || isActive;
-
-    return (
-        <div className={className ? `${s.ClickButton} ${className}` : s.ClickButton}>
-            <div 
-                className={s.button}
-                onClick={handleClick}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-                data-testid={dataTestId}
-            >
-                <motion.div 
-                    className={s.slider}
-                    animate={{top: shouldAnimate ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
+              return (
+                <motion.li
+                  key={review.id}
+                  className={s.accountReviewCard}
+                  variants={accountListItemVariants}
                 >
-                    <div 
-                        className={s.el}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={s.el}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                </motion.div>
-            </div>
-        </div>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={s.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
+                  <AccountInteractiveSurface
+                    className={s.accountReviewSurface}
+                    contentClassName={s.accountReviewSurfaceContent}
+                  >
+                    <LocalizedClientLink href={href}>
+                      <span className={s.accountReviewIndex}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className={s.accountReviewCopy}>
+                        <span className={s.accountReviewProduct}>
+                          {product?.title || "Ateliérový objekt"}
+                        </span>
+                        <h2>{review?.title || "Vaše zkušenost"}</h2>
+                        <p>{review?.content || "Bez doprovodného textu."}</p>
+                        <div className={s.accountReviewFooter}>
+                          <div
+                            className={s.accountReviewStars}
+                            aria-label={`${review?.rating ?? 0} z 5 hvězd`}
+                          >
+                            {Array.from({ length: 5 }).map((_, starIndex) => (
+                              <span key={starIndex}>
+                                {starIndex < (review?.rating ?? 0) ? (
+                                  <StarSolid />
+                                ) : (
+                                  <Star />
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                          {formatReviewDate(review?.created_at) && (
+                            <time dateTime={review.created_at}>
+                              {formatReviewDate(review.created_at)}
+                            </time>
+                          )}
+                        </div>
+                      </div>
+                      <div className={s.accountReviewImage}>
+                        <Image
+                          src={image}
+                          alt={product?.title || "Objekt z recenze"}
+                          width={260}
+                          height={320}
+                        />
+                      </div>
+                      <i aria-hidden="true">↗</i>
+                    </LocalizedClientLink>
+                  </AccountInteractiveSurface>
+                </motion.li>
+              )
+            })}
+          </motion.ul>
+        )}
+      </AccountSectionReveal>
+    </AccountPageReveal>
+  )
 }

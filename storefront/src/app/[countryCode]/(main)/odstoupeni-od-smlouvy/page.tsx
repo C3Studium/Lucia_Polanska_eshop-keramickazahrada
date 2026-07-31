@@ -1,16 +1,10 @@
 "use client"
 
-import React from "react"
-import "./styles.scss"
+import LegalDocument, {
+  type LegalSectionData,
+} from "@modules/legal/LegalDocument"
 
-type Section = {
-  id: string
-  title: string
-  paragraphs?: string[]
-  bullets?: string[]
-}
-
-const sections: Section[] = [
+const sections: LegalSectionData[] = [
   {
     id: "uvod",
     title: "Oznámení o odstoupení od kupní smlouvy (spotřebitel)",
@@ -46,9 +40,7 @@ const sections: Section[] = [
   {
     id: "rozsah",
     title: "Rozsah odstoupení",
-    paragraphs: [
-      "(zvolte jednu z možností, nehodící se škrtněte):",
-    ],
+    paragraphs: ["(zvolte jednu z možností, nehodící se škrtněte):"],
     bullets: [
       "a) Od smlouvy odstupuji v plném rozsahu a vracím vše, co je uvedeno na faktuře.",
       "b) Od smlouvy odstupuji v částečném rozsahu, tj. pouze co do níže uvedeného zboží:",
@@ -75,54 +67,14 @@ const sections: Section[] = [
 ]
 
 export default function Page() {
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault()
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" })
-      history.replaceState(null, "", `#${id}`)
-    }
-  }
-
   return (
-    <main className="terms" aria-labelledby="page-title">
-      <div className="container">
-        <header className="header">
-          <h1 id="page-title">Odstoupení od smlouvy</h1>
-        </header>
-
-        <div className="layout">
-          <aside className="sidebar" role="navigation" aria-label="Navigace sekcí">
-            <ul>
-              {sections.map((s) => (
-                <li key={s.id}>
-                  <a href={`#${s.id}`} onClick={(e) => handleNavClick(e, s.id)}>
-                    {s.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </aside>
-
-          <div className="content">
-            {sections.map((s) => (
-              <section key={s.id} id={s.id} className="section" aria-labelledby={`${s.id}-title`}>
-                <h2 id={`${s.id}-title`}>{s.title}</h2>
-                {s.paragraphs?.map((p, idx) => (
-                  <p key={idx}>{p}</p>
-                ))}
-                {s.bullets && s.bullets.length > 0 && (
-                  <ul className="bullets">
-                    {s.bullets.map((b, idx) => (
-                      <li key={idx}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
+    <LegalDocument
+      code="FORM · 03"
+      eyebrow="Vrácení · krok za krokem"
+      title="Odstoupení od smlouvy"
+      accent="Jednoduše a bez nejistoty."
+      description="Vzor oznámení a všechny údaje potřebné k odstoupení od kupní smlouvy na jednom místě."
+      sections={sections}
+    />
   )
 }

@@ -1,0 +1,4 @@
+// Emit cascade order once from globals.scss. The mixin API itself stays
+// side-effect-free so component and CSS Module builds do not repeat this CSS.
+@layer bp-xxs, bp-xs, bp-sm, bp-smt, bp-md, bp-mdt, bp-lg, bp-xl, bp-huge;
+@layer vp-xs, vp-sm, vp-s, vp-md, vp-lg;

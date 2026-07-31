@@ -1,6 +1,4 @@
 import { HttpTypes } from "@medusajs/types";
-import Image from "next/image";
-import { toast } from "@medusajs/ui";
 import CartButton from "./button/cart-button";
 import WishlistToggle from "@modules/products/components/wishlist-toggle";
 
@@ -57,7 +55,7 @@ export default function CTA({
                         ? "Vyberte variantu"
                         : !inStock || !isValidVariant
                         ? "Není skladem"
-                        : "Přidat"}
+                        : "Přidat do košíku"}
                 </CartButton>
             </div>
             <p>

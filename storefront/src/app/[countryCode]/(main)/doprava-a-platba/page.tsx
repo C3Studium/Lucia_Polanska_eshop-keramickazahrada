@@ -1,16 +1,10 @@
 "use client"
 
-import React from "react"
-import "./styles.scss"
+import LegalDocument, {
+  type LegalSectionData,
+} from "@modules/legal/LegalDocument"
 
-type Section = {
-  id: string
-  title: string
-  paragraphs?: string[]
-  bullets?: string[]
-}
-
-const sections: Section[] = [
+const sections: LegalSectionData[] = [
   {
     id: "uvod",
     title: "Doprava a platba",
@@ -152,7 +146,7 @@ const sections: Section[] = [
     id: "sk-doprava",
     title: "Doprava na Slovensko",
     paragraphs: [
-      "Vaši objednávku Vám můžeme doručit také na Slovensko. V horním rohu e-shopu si můžete přepnout měnu na EUR a automaticky se Vám ceny na e-shopu přepočítají. V objednávkovém formuláři následně musíte zvolit zemi dodání \"Slovensko\".",
+      'Vaši objednávku Vám můžeme doručit také na Slovensko. V horním rohu e-shopu si můžete přepnout měnu na EUR a automaticky se Vám ceny na e-shopu přepočítají. V objednávkovém formuláři následně musíte zvolit zemi dodání "Slovensko".',
     ],
   },
   {
@@ -213,54 +207,14 @@ const sections: Section[] = [
 ]
 
 export default function Page() {
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault()
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" })
-      history.replaceState(null, "", `#${id}`)
-    }
-  }
-
   return (
-    <main className="terms" aria-labelledby="page-title">
-      <div className="container">
-        <header className="header">
-          <h1 id="page-title">Doprava a platba</h1>
-        </header>
-
-        <div className="layout">
-          <aside className="sidebar" role="navigation" aria-label="Navigace sekcí">
-            <ul>
-              {sections.map((s) => (
-                <li key={s.id}>
-                  <a href={`#${s.id}`} onClick={(e) => handleNavClick(e, s.id)}>
-                    {s.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </aside>
-
-          <div className="content">
-            {sections.map((s) => (
-              <section key={s.id} id={s.id} className="section" aria-labelledby={`${s.id}-title`}>
-                <h2 id={`${s.id}-title`}>{s.title}</h2>
-                {s.paragraphs?.map((p, idx) => (
-                  <p key={idx}>{p}</p>
-                ))}
-                {s.bullets && s.bullets.length > 0 && (
-                  <ul className="bullets">
-                    {s.bullets.map((b, idx) => (
-                      <li key={idx}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
+    <LegalDocument
+      code="SERVIS · 04"
+      eyebrow="Od ateliéru k vám"
+      title="Doprava a platba"
+      accent="Bezpečně zabalené. Jasně doručené."
+      description="Možnosti dopravy, ceny, doručovací časy a bezpečné způsoby platby přehledně podle místa objednávky."
+      sections={sections}
+    />
   )
 }

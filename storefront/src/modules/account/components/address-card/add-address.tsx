@@ -1,6 +1,5 @@
 "use client"
 
-import { Plus } from "@medusajs/icons"
 import { Divider, Text } from "@medusajs/ui"
 import { useEffect, useState, useActionState } from "react"
 
@@ -11,10 +10,7 @@ import Modal from "@modules/common/components/modal"
 import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
 import s from "./add-address.module.scss"
-import { useFormStatus } from "react-dom"
-import { motion } from "framer-motion"
-
-
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 
 const AddAddress = ({
   region,
@@ -55,10 +51,11 @@ const AddAddress = ({
       <div className={s.addButtonContainer}>
         <div className={s.addButton}>
           <Text className={s.addressText}>Vaše adresy:</Text>
-          <ScrollButton
+          <PremiumActionButton
             text="Nová adresa"
             className={s.cardButton}
             onClickAction={open}
+            compact
             data-testid="add-address-button"
           />
         </div>
@@ -78,6 +75,7 @@ const AddAddress = ({
             >
               <div className={s.rowTwo}>
                 <Input
+                  variant="contact"
                   label="Jméno"
                   name="first_name"
                   required
@@ -85,6 +83,7 @@ const AddAddress = ({
                   data-testid="first-name-input"
                 />
                 <Input
+                  variant="contact"
                   label="Příjmení"
                   name="last_name"
                   required
@@ -93,12 +92,14 @@ const AddAddress = ({
                 />
               </div>
               <Input
+                variant="contact"
                 label="Společnost"
                 name="company"
                 autoComplete="organization"
                 data-testid="company-input"
               />
               <Input
+                variant="contact"
                 label="Adresa"
                 name="address_1"
                 required
@@ -106,6 +107,7 @@ const AddAddress = ({
                 data-testid="address-1-input"
               />
               <Input
+                variant="contact"
                 label="Bytová jednotka, patro, apod."
                 name="address_2"
                 autoComplete="address-line2"
@@ -113,6 +115,7 @@ const AddAddress = ({
               />
               <div className={s.rowPostal}>
                 <Input
+                  variant="contact"
                   label="PSČ"
                   name="postal_code"
                   required
@@ -120,6 +123,7 @@ const AddAddress = ({
                   data-testid="postal-code-input"
                 />
                 <Input
+                  variant="contact"
                   label="Město"
                   name="city"
                   required
@@ -128,12 +132,14 @@ const AddAddress = ({
                 />
               </div>
               <Input
+                variant="contact"
                 label="Kraj / Okres"
                 name="province"
                 autoComplete="address-level1"
                 data-testid="state-input"
               />
               <CountrySelect
+                variant="contact"
                 region={region}
                 name="country_code"
                 required
@@ -141,6 +147,7 @@ const AddAddress = ({
                 data-testid="country-select"
               />
               <Input
+                variant="contact"
                 label="Telefon"
                 name="phone"
                 autoComplete="phone"
@@ -155,14 +162,14 @@ const AddAddress = ({
           </Modal.Body>
           <Modal.Footer>
             <div className={s.actions}>
-              <ClickButton
+              <PremiumActionButton
                 text="Zrušit"
                 type="button"
                 onClickAction={close}
                 className={s.cancelBtn}
                 data-testid="cancel-button"
               />
-              <ClickButton
+              <PremiumActionButton
                 text="Uložit"
                 type="submit"
                 className={s.saveBtn}
@@ -177,120 +184,3 @@ const AddAddress = ({
 }
 
 export default AddAddress
-
-
-function ScrollButton({
-  text,
-  className,
-  textColor,
-  "data-testid": dataTestId,
-  onClickAction
-}: {
-  text: string;
-  className?: string;
-  textColor?: string;
-  "data-testid"?: string;
-  onClickAction?: () => void | Promise<void>;
-}) {
-  return (
-    <div className={s.ScrollLink} data-testid={dataTestId}
-      onClick={onClickAction}
-    >
-        <button 
-          className={s.button}
-            style={{
-            textDecoration: "none",
-          }}
-        >
-            <div className={s.slider}>
-                <div className={s.el}>
-                    <PerspectiveText component={<Plus />} label={text} className={className} textColor={textColor}/>
-                </div>
-                <div className={s.el}>
-                    <PerspectiveText component={<Plus />} label={text} className={className} textColor={"var(--whiteText)"}/>
-                </div>
-            </div>
-        </button>
-    </div>
-  );
-}
-
-function PerspectiveText({label, className, textColor, component}: {label: string; className?: string; textColor?: string, component?: React.ReactNode}) {
-  return (    
-    <div className={s.perspectiveText}>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-        <p 
-          className={className}
-          style={{
-            color: textColor,
-          }}
-        >
-          {label}
-          {component}
-        </p>
-    </div>
-  )
-}
-
-
-
-type ClickButtonProps = {
-  text: string;
-  onClickAction?: () => void | Promise<void>;
-  ClickAction?: () => void | Promise<void>; // backward compatibility
-  disabled?: boolean;
-  type?: "button" | "submit";
-  className?: string;
-  "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-  const [ isActive , setIsActive ] = useState<boolean>(false);
-  const { pending } = useFormStatus();
-  const isSubmitting = type === "submit" ? pending : false;
-  const isDisabled = disabled || isSubmitting;
-  const handleClick = onClickAction ?? ClickAction;
-
-  return (
-    <div className={className ? `${s.ClickButton} ${className}` : s.ClickButton}>
-      <button
-        type={type}
-        className={s.button}
-        onClick={handleClick}
-        disabled={isDisabled}
-        aria-busy={isDisabled || undefined}
-        onMouseEnter={() => setIsActive(true)}
-        onMouseLeave={() => setIsActive(false)}
-        data-testid={dataTestId}
-      >
-        <motion.div
-          className={s.slider}
-          animate={{top: isActive ? "-100%" : "0%"}}
-          transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-        >
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--darkOlive)" }}
-          >
-            <PerspectiveText label={text}/>
-          </div>
-          <div
-            className={s.el}
-            style={{ backgroundColor: "var(--bgBlack)" }}
-          >
-            <PerspectiveText label={text} />
-          </div>
-        </motion.div>
-      </button>
-    </div>
-  )
-}

@@ -1,99 +1,211 @@
 "use client"
 
-import { HttpTypes } from "@medusajs/types";
-import { motion } from "framer-motion";
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-
+import { HttpTypes } from "@medusajs/types"
+import { BundleProduct } from "@lib/data/products"
+import { motion } from "framer-motion"
+import Image from "next/image"
+import { useMemo } from "react"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   countryCode: string
+  bundle?: BundleProduct
 }
 
-const Gallery: React.FC<ProductTemplateProps> = ({ product, region, countryCode }) => {
-    const [ isHovered, setIsHovered ] = useState<boolean>(false);
+const captions = [
+  ["Celý objekt", "Tvar a proporce"],
+  ["Detail povrchu", "Stopa ruky"],
+  ["V prostoru", "Měřítko a světlo"],
+  ["Zblízka", "Glazura a materiál"],
+  ["Připraveno pro vás", "Každý kus je originál"],
+]
 
-    const images = useMemo(() => {
-        return product.images || [];
-    }, [product.images]);
+const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
+  const images = useMemo(
+    () => (product.images ?? []).filter((image) => Boolean(image.url)),
+    [product.images]
+  )
+  const bundleImages = useMemo(
+    () =>
+      (bundle?.items ?? [])
+        .map((item) => ({
+          id: item.id,
+          title: item.product.title,
+          url: item.product.thumbnail || item.product.images?.[0]?.url,
+        }))
+        .filter((item): item is { id: string; title: string; url: string } =>
+          Boolean(item.url)
+        ),
+    [bundle]
+  )
+  const galleryImages = useMemo(() => {
+    if (!bundle) {
+      return images.map((image, index) => ({
+        key: image.id || image.url || `product-image-${index}`,
+        url: image.url!,
+        productTitle: product.title,
+        viewIndex: index,
+      }))
+    }
 
-    const [ currentIndex, setCurrentIndex ] = useState<number>(0);
-    const length = images.length;
+    return bundle.items.flatMap((item) => {
+      const itemImages = (item.product.images ?? []).filter((image) =>
+        Boolean(image.url)
+      )
+      const sources = itemImages.length
+        ? itemImages
+        : item.product.thumbnail
+        ? [{ id: `${item.id}-thumbnail`, url: item.product.thumbnail }]
+        : []
 
-    useEffect(()=> {
-        if(images.length > 0){
-            setCurrentIndex(0);
-        }
-    },[images])
+      return sources.map((image, viewIndex) => ({
+        key: `${item.id}-${image.id || image.url || viewIndex}`,
+        url: image.url!,
+        productTitle: item.product.title,
+        viewIndex,
+      }))
+    })
+  }, [bundle, images, product.title])
 
-    const goNext = () => {
-        if (images.length === 0) return;
-        setCurrentIndex((i) => (i + 1) % images.length);
-    };
-    const goPrev = () => {
-        if (images.length === 0) return;
-        setCurrentIndex((i) => (i - 1 + images.length) % images.length);
-    };
+  if (!galleryImages.length && !bundleImages.length) {
+    return <div className="product__mediaEmpty">Fotografie připravujeme.</div>
+  }
 
-    return (
-        <div className="product__image">
-            <div className="Image__container">
-                {(images.length > 1) ? (
-                    <div className="Image__container__slider">
-                        {images.map((image, idx) => (
-                            <div
-                                key={image.id}
-                                className="product__image__item"
-                                
-                                onMouseEnter={() => setIsHovered(true)}
-                                onMouseLeave={() => setIsHovered(false)}
-                            >
-                                {image.url ? (
-                                    <Image
-                                        src={image.url}
-                                        alt={`Product image ${image.rank}`}
-                                        layout="fill"
-                                        objectFit="cover"
-                                        className="image active"
-                                    />
-                                ) : (
-                                    <div>No image available</div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ):(
-                    images[0] ? (
-                        <motion.div
-                            key={images[0].id}
-                            className='product__image__item active'
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            {!images[0].url ? (
-                                <div>No image available</div>
-                            ) : (
-                                <Image
-                                    key={images[0].id}
-                                    src={images[0].url}
-                                    alt={`Product image ${images[0].rank}`}
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className='image'
-                                />
-                            )}
-                        </motion.div>
-                    ) : (
-                        <div>No image available</div>
-                    )
-                )}
-            </div>
-        </div>
-    )
+  const galleryCount = galleryImages.length + (bundleImages.length ? 1 : 0)
+
+  return (
+    <div className="product__gallery">
+      <div className="product__galleryIntro">
+        <span>{bundle ? "Soubor v detailu" : "Objekt v detailu"}</span>
+        <span>{String(galleryCount).padStart(2, "0")} pohledů</span>
+      </div>
+
+      {bundleImages.length > 0 && (
+        <motion.figure
+          className="product__mediaFrame product__bundleFrame"
+          initial={{ opacity: 0.35, clipPath: "inset(7% 0 7% 0)" }}
+          whileInView={{ opacity: 1, clipPath: "inset(0% 0 0% 0)" }}
+          viewport={{ amount: 0.28 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="product__bundleComposition">
+            {bundleImages.map((item, index) => (
+              <motion.div
+                key={item.id}
+                className="product__bundleObject"
+                data-index={index}
+                initial={{ opacity: 0, y: 24 + index * 8, scale: 0.96 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ amount: 0.4 }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.12 + index * 0.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <Image
+                  src={item.url}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 900px) 38vw, 20vw"
+                  quality={90}
+                  className="product__bundleAsset"
+                  priority={index === 0}
+                />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </motion.div>
+            ))}
+          </div>
+          <figcaption>
+            <span>01 · Celý soubor</span>
+            <span>{bundle?.title}</span>
+          </figcaption>
+        </motion.figure>
+      )}
+
+      {galleryImages.map((image, index) => {
+        const caption = captions[image.viewIndex % captions.length]
+        const displayIndex = index + (bundleImages.length ? 2 : 1)
+        return (
+          <motion.figure
+            key={image.key}
+            className="product__mediaFrame"
+            initial={{ opacity: 0.35, clipPath: "inset(7% 0 7% 0)" }}
+            whileInView={{ opacity: 1, clipPath: "inset(0% 0 0% 0)" }}
+            viewport={{ amount: 0.28, margin: "-8% 0px -8% 0px" }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.div
+              className="product__mediaImage"
+              initial={{ scale: 1.045, y: 16 }}
+              whileInView={{ scale: 1, y: 0 }}
+              viewport={{ amount: 0.3 }}
+              transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                src={image.url}
+                alt={`${image.productTitle} – ${caption[0].toLowerCase()}`}
+                fill
+                sizes="(max-width: 900px) 100vw, 52vw"
+                quality={90}
+                className="product__mediaAsset"
+                priority={index === 0}
+              />
+            </motion.div>
+            <figcaption>
+              <span>
+                {String(displayIndex).padStart(2, "0")} · {image.productTitle}
+              </span>
+              <span>
+                {String(image.viewIndex + 1).padStart(2, "0")} · {caption[1]}
+              </span>
+            </figcaption>
+          </motion.figure>
+        )
+      })}
+
+      <div className="product__galleryOutro">
+        <span>Každý objekt nese drobnou odchylku.</span>
+        <p>Právě v ní zůstává viditelná práce rukou.</p>
+
+        <motion.div
+          className="product__galleryOutroGraphic"
+          aria-hidden="true"
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.7 }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <span>01 · stopa ruky</span>
+          <motion.i
+            initial={{ scaleX: 0.08 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true, amount: 0.7 }}
+            transition={{
+              duration: 1,
+              delay: 0.12,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          />
+          <b>
+            <em />
+          </b>
+          <motion.i
+            initial={{ scaleX: 0.08 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true, amount: 0.7 }}
+            transition={{
+              duration: 1,
+              delay: 0.12,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          />
+          <span>pokračovat · 02</span>
+        </motion.div>
+      </div>
+    </div>
+  )
 }
 
-export default Gallery;
+export default Gallery

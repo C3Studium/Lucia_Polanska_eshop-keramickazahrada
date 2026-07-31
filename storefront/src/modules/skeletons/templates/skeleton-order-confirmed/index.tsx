@@ -1,20 +1,18 @@
 import SkeletonOrderConfirmedHeader from "@modules/skeletons/components/skeleton-order-confirmed-header"
 import SkeletonOrderInformation from "@modules/skeletons/components/skeleton-order-information"
 import SkeletonOrderItems from "@modules/skeletons/components/skeleton-order-items"
+import s from "../../style.module.scss"
 
 const SkeletonOrderConfirmed = () => {
   return (
-    <div className="bg-gray-50 py-6 min-h-[calc(100dvh-64px)] animate-pulse">
-      <div className="content-container flex justify-center">
-        <div className="max-w-4xl h-full bg-white w-full p-10">
-          <SkeletonOrderConfirmedHeader />
-
-          <SkeletonOrderItems />
-
-          <SkeletonOrderInformation />
-        </div>
+    <main className={s.orderPage} aria-busy="true" aria-live="polite">
+      <span className={s.srOnly}>Načítáme údaje objednávky.</span>
+      <div className={s.orderContainer}>
+        <SkeletonOrderConfirmedHeader />
+        <SkeletonOrderItems />
+        <SkeletonOrderInformation />
       </div>
-    </div>
+    </main>
   )
 }
 

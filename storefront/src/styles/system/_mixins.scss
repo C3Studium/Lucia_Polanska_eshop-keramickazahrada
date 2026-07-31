@@ -1,19 +1,15 @@
 @use "sass:map";
 @use "./breakpoints" as bp;
 
-// Define layer order (smallest → largest) to enforce cascade priority
-@layer bp-xxs, bp-xs, bp-sm, bp-smt, bp-md, bp-mdt, bp-lg, bp-xl, bp-huge;
-@layer vp-xs, vp-sm, vp-s, vp-md, vp-lg;
-
 $layer-h: (
   xxs: bp-xxs,
-  xs:  bp-xs,
-  sm:  bp-sm,
+  xs: bp-xs,
+  sm: bp-sm,
   smt: bp-smt,
-  md:  bp-md,
+  md: bp-md,
   mdt: bp-mdt,
-  lg:  bp-lg,
-  xl:  bp-xl,
+  lg: bp-lg,
+  xl: bp-xl,
   huge: bp-huge
 );
 
@@ -25,9 +21,15 @@ $layer-v: (
   lg: vp-lg
 );
 
-// Convenience wrappers: drop content into the correct layer and media for a breakpoint
+// Legacy note: this system previously emitted the same layer twice
+// (`@layer vp-s { @layer vp-s { ... } }`). It appeared to work because the
+// browser created a nested `vp-s.vp-s` sublayer. One wrapper is intentional:
+// `_layers.scss` preserves the original top-level cascade order, while these
+// mixins preserve the exact media queries. Do not restore duplicate nesting
+// without a full cascade regression test.
 @mixin h-layer($key) {
   $layer: map.get($layer-h, $key);
+
   @if $layer == null {
     @warn "Unknown horizontal layer for breakpoint: #{$key}";
   } @else {
@@ -39,6 +41,7 @@ $layer-v: (
 
 @mixin v-layer($key) {
   $layer: map.get($layer-v, $key);
+
   @if $layer == null {
     @warn "Unknown vertical layer for breakpoint: #{$key}";
   } @else {
@@ -48,7 +51,7 @@ $layer-v: (
   }
 }
 
-// Legacy-style aliases (respond-to-*) for compatibility with older usage.
+// Legacy aliases kept for compatibility with existing styles.
 @mixin respond-to-h($key) {
   @include h-layer($key) { @content; }
 }
@@ -100,63 +103,39 @@ $layer-v: (
   }
 }
 
-// Landscape: breakpoint → up (with special rules for mdt/smt)
+// Low-level landscape query. Layer ownership stays in h-layer().
 @mixin h($key) {
   $min: map.get(bp.$h, $key);
+
   @if $min == null {
     @warn "Unknown horizontal breakpoint: #{$key}";
   } @else {
-  $layer: map.get($layer-h, $key);
-  @if $layer == null {
-    @warn "Unknown horizontal layer for breakpoint: #{$key}";
-  } @else {
+    $constraints: map.get(bp.$h-constraints, $key);
 
-  // Special: mdt => width >= min AND height >= 950 (landscape)
-  @if $key == mdt {
-    $max: 1400px - 0.02px; // cap to keep tablets from overriding desktops
-    @layer #{$layer} {
-      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: 950px) and (orientation: landscape) {
+    @if $constraints {
+      $max: map.get($constraints, max-width);
+      $min-height: map.get($constraints, min-height);
+
+      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: #{$min-height}) and (orientation: landscape) {
         @content;
       }
-    }
-
-  // Special: smt => width >= min AND height >= 720 (landscape)
-  } @else if $key == smt {
-    $max: 1400px - 0.02px; // allow overlap with mdt; mdt layer overrides when both match
-    @layer #{$layer} {
-      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: 720px) and (orientation: landscape) {
-        @content;
-      }
-    }
-
-  // Normal: width >= breakpoint (landscape)
-  } @else {
-    @layer #{$layer} {
+    } @else {
       @media (min-width: #{$min}) and (orientation: landscape) {
         @content;
       }
     }
   }
-  }
-  }
 }
 
-// Portrait: breakpoint → up
+// Low-level portrait query. Layer ownership stays in v-layer().
 @mixin v($key) {
   $min: map.get(bp.$v, $key);
+
   @if $min == null {
     @warn "Unknown vertical breakpoint: #{$key}";
   } @else {
-  $layer: map.get($layer-v, $key);
-  @if $layer == null {
-    @warn "Unknown vertical layer for breakpoint: #{$key}";
-  } @else {
-
-  @layer #{$layer} {
     @media (min-width: #{$min}) and (orientation: portrait) {
       @content;
     }
-  }
-  }
   }
 }

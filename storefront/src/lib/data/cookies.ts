@@ -87,3 +87,27 @@ export const removeCartId = async () => {
     maxAge: -1,
   })
 }
+
+const EXPRESS_CART_COOKIE = "_medusa_express_cart_id"
+
+export const getExpressCartId = async () => {
+  const cookies = await nextCookies()
+  return cookies.get(EXPRESS_CART_COOKIE)?.value
+}
+
+export const setExpressCartId = async (cartId: string) => {
+  const cookies = await nextCookies()
+  cookies.set(EXPRESS_CART_COOKIE, cartId, {
+    maxAge: 60 * 60 * 24,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  })
+}
+
+export const removeExpressCartId = async () => {
+  const cookies = await nextCookies()
+  cookies.set(EXPRESS_CART_COOKIE, "", {
+    maxAge: -1,
+  })
+}

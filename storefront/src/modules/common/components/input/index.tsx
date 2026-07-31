@@ -14,10 +14,24 @@ type InputProps = Omit<
   name: string
   topLabel?: string
   className?: string
+  variant?: "default" | "contact"
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ type, name, label, touched, required, topLabel, className, ...props }, ref) => {
+  (
+    {
+      type,
+      name,
+      label,
+      touched,
+      required,
+      topLabel,
+      className,
+      variant = "default",
+      ...props
+    },
+    ref
+  ) => {
     const inputRef = React.useRef<HTMLInputElement>(null)
     const [showPassword, setShowPassword] = useState(false)
     const [inputType, setInputType] = useState(type)
@@ -35,7 +49,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     useImperativeHandle(ref, () => inputRef.current!)
 
     return (
-      <div className={`${styles.root} ${className}`}>
+      <div
+        className={`${styles.root} ${
+          variant === "contact" ? styles.contact : ""
+        } ${className ?? ""}`}
+      >
         {topLabel && (
           <Label className={styles.topLabel}>{topLabel}</Label>
         )}

@@ -1,869 +1,947 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+.product {
+  --pdp-ink: #20211c;
+  --pdp-cream: #ffe8d6;
+  --pdp-olive: #bbb788;
+  --pdp-green: #747e62;
+  --pdp-clay: #e47e4f;
+  --pdp-line-dark: rgba(255, 232, 214, 0.2);
+  --pdp-line-light: rgba(32, 33, 28, 0.2);
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  // `hidden` makes this the scrolling ancestor and prevents the two product
+  // rails from sticking to the viewport. `clip` keeps the ambient artwork
+  // contained without creating a scroll container.
+  overflow: clip;
+  display: flex;
+  justify-content: center;
+  border-radius: 0 !important;
+  color: var(--pdp-cream);
+  background: var(--pdp-ink);
+}
 
+.product::before {
+  position: absolute;
+  z-index: 0;
+  inset: -4% -8%;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(
+      circle at 82% 12%,
+      rgba(228, 126, 79, 0.34) 0,
+      rgba(228, 126, 79, 0.12) 16rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      ellipse at 18% 35%,
+      rgba(255, 232, 214, 0.22) 0,
+      rgba(255, 232, 214, 0.08) 24rem,
+      transparent 48rem
+    ),
+    radial-gradient(
+      ellipse at 76% 68%,
+      rgba(187, 183, 136, 0.3) 0,
+      rgba(187, 183, 136, 0.08) 28rem,
+      transparent 56rem
+    ),
+    radial-gradient(
+      circle at 28% 88%,
+      rgba(255, 232, 214, 0.16) 0,
+      transparent 42rem
+    );
+  opacity: 0.1;
+  transform: scale(0.99) translate3d(-0.5%, 0, 0);
+  transform-origin: 58% 42%;
+  will-change: opacity, transform;
+  animation: productAmbientGlaze 32s cubic-bezier(0.45, 0, 0.55, 1) infinite
+    alternate;
+}
 
-.product{
-    width: 100%;
-    height: auto;
+@keyframes productAmbientGlaze {
+  0% {
+    opacity: 0.08;
+    transform: scale(0.99) translate3d(-0.5%, 0, 0);
+  }
+
+  50% {
+    opacity: 0.17;
+    transform: scale(1.015) translate3d(0.75%, -0.35%, 0);
+  }
+
+  100% {
+    opacity: 0.11;
+    transform: scale(1.005) translate3d(-0.2%, 0.45%, 0);
+  }
+}
+
+.product__story {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.05fr) minmax(420px, 1.2fr) minmax(300px, 1.05fr);
+  align-items: start;
+  gap: clamp(44px, 4vw, 86px);
+  width: min(94vw, 1880px);
+  margin-inline: auto;
+  padding: clamp(82px, 8.5vh, 105px) 0 clamp(180px, 24vh, 270px);
+  border-radius: 0 !important;
+}
+
+.wishlist-toggle{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product__identity,
+.product__purchase {
+  position: sticky;
+  top: clamp(82px, 8.5vh, 105px);
+  z-index: 3;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.product__identity {
+  padding-left: clamp(28px, 2.8vw, 58px);
+}
+
+.product__purchase {
+  padding-right: clamp(28px, 2.8vw, 58px);
+}
+
+.product__identityInner,
+.product__purchaseInner {
+  display: flex;
+  min-height: min(76vh, 780px);
+  flex-direction: column;
+}
+
+.product__eyebrow,
+.product__purchaseHeader,
+.product__galleryIntro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--pdp-line-dark);
+  color: rgba(255, 232, 214, 0.5);
+  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.product__identity h1 {
+  max-width: 9ch;
+  margin: clamp(52px, 8vh, 88px) 0 0;
+  font: 400 clamp(44px, 4vw, 76px) / 0.9 "Sentient-Regular", serif;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.product__signature {
+  max-width: 9em;
+  margin: 12px 0 clamp(44px, 6vh, 66px) clamp(24px, 2.4vw, 46px);
+  color: var(--pdp-olive);
+  font: 400 clamp(20px, 1.7vw, 30px) / 1.02 "Sentient-LightItalic", "Sentient-Regular", serif;
+}
+
+.product__lead {
+  max-width: 36ch;
+  margin: 0;
+  color: rgba(255, 232, 214, 0.62);
+  font: 300 clamp(15px, 0.92vw, 17px) / 1.5 "Sansation-Light", sans-serif;
+}
+
+.product__leadMore {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  color: var(--pdp-cream);
+  font: inherit;
+  line-height: 1.15;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 220ms ease;
+}
+
+.product__leadMore:hover {
+  opacity: 0.58;
+}
+
+.product__leadMore:focus-visible {
+  outline: 1px solid var(--pdp-cream);
+  outline-offset: 3px;
+}
+
+.product__rating {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  margin-top: clamp(32px, 6vh, 64px);
+  font: 400 10px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.product__ratingValue {
+  font: 400 20px/1 "Sentient-Regular", serif;
+  letter-spacing: 0;
+}
+
+.product__ratingRule {
+  height: 1px;
+  background: var(--pdp-line-dark);
+}
+
+.product__rating a {
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 220ms ease;
+}
+
+.product__rating a:hover {
+  opacity: 0.55;
+}
+
+.product__detailsSlot {
+  margin-top: auto;
+  padding-top: clamp(38px, 7vh, 72px);
+}
+
+.product__media {
+  position: relative;
+  min-width: 0;
+}
+
+.product__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 3.5vh, 42px);
+}
+
+.product__galleryIntro {
+  margin-bottom: 10px;
+}
+
+.product__mediaFrame {
+  position: relative;
+  width: 100%;
+  height: min(64vh, 700px);
+  margin: 0;
+  overflow: hidden;
+  background: #efefed;
+  border-radius: 0;
+  transform: translateZ(0);
+}
+
+.product__mediaFrame:nth-of-type(even) {
+  height: min(56vh, 620px);
+}
+
+.product__bundleFrame {
+  height: min(68vh, 740px);
+  background:
+    radial-gradient(circle at 52% 42%, rgba(187, 183, 136, 0.2), transparent 40%),
+    #f2f0eb;
+}
+
+.product__bundleComposition {
+  position: absolute;
+  inset: 7% 6% 10%;
+}
+
+.product__bundleObject {
+  position: absolute;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.product__bundleObject[data-index="0"] {
+  z-index: 3;
+  top: 6%;
+  left: 27%;
+  width: 48%;
+  height: 78%;
+}
+
+.product__bundleObject[data-index="1"] {
+  z-index: 2;
+  bottom: 5%;
+  left: 1%;
+  width: 36%;
+  height: 51%;
+}
+
+.product__bundleObject[data-index="2"] {
+  z-index: 1;
+  top: 1%;
+  right: 0;
+  width: 35%;
+  height: 48%;
+}
+
+.product__bundleObject:nth-child(n + 4) {
+  display: none;
+}
+
+.product__bundleAsset {
+  padding: 7%;
+  object-fit: contain;
+}
+
+.product__bundleObject > span {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  bottom: 8px;
+  color: rgba(32, 33, 28, 0.54);
+  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+}
+
+.product__mediaImage {
+  position: absolute;
+  inset: -2%;
+}
+
+.product__mediaAsset {
+  object-fit: cover;
+}
+
+.product__mediaFrame figcaption {
+  position: absolute;
+  z-index: 2;
+  right: 18px;
+  bottom: 16px;
+  left: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.82);
+  font: 400 8px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.product__galleryOutro {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: clamp(44px, 5vw, 84px);
+  align-items: start;
+  min-height: 42vh;
+  padding: clamp(70px, 11vh, 120px) 0 clamp(126px, 17vh, 190px);
+  border-top: 1px solid var(--pdp-line-dark);
+}
+
+.product__galleryOutro span {
+  color: rgba(255, 232, 214, 0.46);
+  font: 400 9px/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.product__galleryOutro p {
+  max-width: 15ch;
+  margin: 0 0 0 auto;
+  text-align: right;
+  font: 400 clamp(26px, 2.45vw, 44px) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
+  letter-spacing: -0.035em;
+}
+
+.product__galleryOutroGraphic {
+  position: absolute;
+  right: 0;
+  bottom: clamp(38px, 5vh, 58px);
+  left: 0;
+  display: grid;
+  grid-template-columns: auto minmax(36px, 1fr) 18px minmax(36px, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.1vw, 18px);
+  color: rgba(255, 232, 214, 0.38);
+  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.product__galleryOutroGraphic > i {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 232, 214, 0.1),
+    rgba(255, 232, 214, 0.48)
+  );
+  transform-origin: right center;
+}
+
+.product__galleryOutroGraphic > i:nth-of-type(2) {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 232, 214, 0.48),
+    rgba(255, 232, 214, 0.1)
+  );
+  transform-origin: left center;
+}
+
+.product__galleryOutroGraphic > b {
+  position: relative;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgba(255, 232, 214, 0.44);
+  border-radius: 50%;
+}
+
+.product__galleryOutroGraphic > b::before,
+.product__galleryOutroGraphic > b::after {
+  position: absolute;
+  content: "";
+  background: var(--pdp-ink);
+}
+
+.product__galleryOutroGraphic > b::before {
+  width: 7px;
+  height: 20px;
+}
+
+.product__galleryOutroGraphic > b::after {
+  width: 20px;
+  height: 7px;
+}
+
+.product__galleryOutroGraphic > b em {
+  position: relative;
+  z-index: 1;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--pdp-cream);
+  box-shadow: 0 0 0 3px rgba(255, 232, 214, 0.1);
+}
+
+.product__purchaseInner {
+  padding-top: 0;
+  border-bottom: 1px solid var(--pdp-line-dark);
+}
+
+.product__purchase[data-bundle="true"] .product__purchaseInner {
+  min-height: min(82vh, 860px);
+}
+
+.product__purchase[data-bundle="true"] .product__purchaseHeader {
+  font-size: 10px;
+}
+
+.product__purchase[data-bundle="true"] .product__selection {
+  padding: clamp(46px, 6vh, 66px) 0 clamp(34px, 4.5vh, 46px);
+}
+
+.product__purchase[data-bundle="true"] .product__selection small {
+  font-size: 12px;
+}
+
+.product__purchase[data-bundle="true"] .product__selection span {
+  margin-top: 13px;
+  font-size: clamp(27px, 2vw, 35px);
+}
+
+.product__purchase[data-bundle="true"] .product__serviceNotes {
+  margin-top: 28px;
+  padding: 18px 0;
+  font-size: 11px;
+}
+
+.product__selection {
+  padding: clamp(40px, 6vh, 62px) 0 30px;
+  border-bottom: 1px solid var(--pdp-line-dark);
+}
+
+.product__selection small {
+  display: block;
+  color: rgba(255, 232, 214, 0.45);
+  font: 400 11px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.product__selection span {
+  display: block;
+  margin-top: 10px;
+  color: var(--pdp-olive);
+  font: 400 clamp(22px, 1.8vw, 31px) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
+}
+
+.product__optionPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--pdp-line-dark);
+}
+
+.product__details__subDetails__colors {
+  display: grid;
+  grid-template-columns: clamp(82px, 6vw, 112px) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 232, 214, 0.1);
+}
+
+.product__details__subDetails__colors:last-child {
+  border-bottom: 0;
+}
+
+.product__details__subDetails__colors > p {
+  margin: 0;
+  color: rgba(255, 232, 214, 0.46);
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.product__details__subDetails__colors__items,
+.product__details__subDetails__colors__items__select {
+  min-width: 0;
+}
+
+.product__buyBlock {
+  margin-top: auto;
+  padding-top: clamp(38px, 6vh, 64px);
+}
+
+.product__details__cta__price {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.product__details__cta__price > p {
+  margin: 5px 0 0;
+  color: rgba(255, 232, 214, 0.46);
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.product__details__cta__price__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  text-align: right;
+}
+
+.product__details__cta__price__main > span:first-child {
+  color: var(--pdp-cream);
+  font: 400 clamp(34px, 2.8vw, 52px) / 0.9 "Sentient-Regular", serif;
+  letter-spacing: -0.04em;
+}
+
+.product__details__cta__price__main > .product__priceUnavailable {
+  max-width: 8ch;
+  font-size: clamp(21px, 1.45vw, 28px);
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.product__priceCurrent--sale,
+.product__priceDiscount {
+  color: #bbb788 !important;
+}
+
+.product__details__cta__price__main > p {
+  margin: 0;
+  color: rgba(255, 232, 214, .62);
+  font: 300 12px/1.35 "Sansation-Light", sans-serif;
+}
+
+.product__priceOriginalLabel {
+  color: rgba(255, 232, 214, .42);
+}
+
+.product__priceOriginal {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(255, 232, 214, .48);
+}
+
+.product__priceDiscount {
+  font: 400 11px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .08em;
+}
+
+.product__details__cta__buy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+}
+
+.product__details__cta__buy__buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+}
+
+.product__details__cta__buy__button__add {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 232, 214, 0.58);
+  border-radius: 50%;
+  background: rgba(255, 232, 214, 0.06);
+  transition:
+    background-color 320ms ease,
+    border-color 320ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product__details__cta__buy__button__add:hover {
+  border-color: var(--pdp-cream);
+  background: rgba(255, 232, 214, 0.13);
+  transform: translateY(-2px);
+}
+
+.product__details__cta__buy__button__add button {
+  width: 40px;
+  height: 40px;
+}
+
+.product__details__cta__buy__buttons > div:nth-child(2),
+.product__details__cta__buy__buttons > div:nth-child(2) > button {
+  width: clamp(210px, 14vw, 250px) !important;
+  height: 50px !important;
+}
+
+.product__details__cta__buy > p {
+  margin: 0;
+  color: rgba(255, 232, 214, 0.48);
+  font: 300 14px/1.35 "Sansation-Light", sans-serif;
+}
+
+.product__serviceNotes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 7px 12px;
+  margin-top: 22px;
+  padding: 15px 0;
+  border-top: 1px solid var(--pdp-line-dark);
+  color: rgba(255, 232, 214, 0.4);
+  font: 400 10px/1.35 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.productChapter {
+  --pdp-ink: #20211c;
+  --pdp-cream: #ffe8d6;
+  --pdp-green: #747e62;
+  --pdp-line-dark: rgba(255, 232, 214, 0.2);
+  --pdp-line-light: rgba(32, 33, 28, 0.2);
+  position: relative;
+  // Keep the chapter in the normal hit-testing stack. A negative layer made
+  // the CTA visible but placed its link behind the page surface.
+  z-index: 0;
+  width: 100%;
+  overflow: hidden;
+  background: var(--pdp-ink);
+}
+
+.product__chapterEnd {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(400px, 0.92fr) minmax(520px, 1.08fr);
+  gap: clamp(70px, 8vw, 150px);
+  align-items: center;
+  width: 100%;
+  min-height: 72vh;
+  margin-top: 0;
+  padding: clamp(80px, 10vh, 120px) max(5vw, calc((100vw - 1800px) / 2));
+  border-radius: 0;
+  color: var(--pdp-ink);
+  background: var(--pdp-cream);
+}
+
+.product__chapterEnd > p {
+  grid-column: 2;
+  max-width: 12ch;
+  margin: 0 0 0 auto;
+  text-align: right;
+  font: 400 clamp(52px, 5.8vw, 104px) / 0.84 "Sentient-Regular", serif;
+  letter-spacing: -0.055em;
+}
+
+.product__chapterEnd > p em {
+  display: block;
+  color: var(--pdp-green);
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-weight: 400;
+}
+
+.product__chapterCta {
+  grid-column: 1;
+  align-self: center;
+  width: 100%;
+  max-width: 46rem;
+}
+
+.product__chapterVisualHeader {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  color: rgba(32, 33, 28, 0.52);
+  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.product__chapterVisualHeader i {
+  height: 1px;
+  background: var(--pdp-line-light);
+}
+
+.product__chapterPreview {
+  position: relative;
+  height: clamp(330px, 43vh, 490px);
+}
+
+.product__chapterPreview figure {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  background: #d8d5cd;
+}
+
+.product__chapterPreviewMain {
+  top: 0;
+  left: 0;
+  width: 86%;
+  height: 86%;
+}
+
+.product__chapterPreviewDetail {
+  right: 0;
+  bottom: 0;
+  width: 36%;
+  height: 48%;
+}
+
+.product__chapterPreviewImage {
+  object-fit: cover;
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product__chapterPreviewMain::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(180deg, transparent 54%, rgba(20, 21, 17, 0.52));
+}
+
+.product__chapterPreviewMain figcaption,
+.product__chapterPreviewDetail span {
+  position: absolute;
+  z-index: 2;
+  color: rgba(255, 232, 214, 0.82);
+  font: 400 8px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.product__chapterPreviewMain figcaption {
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 232, 214, 0.35);
+}
+
+.product__chapterPreviewDetail span {
+  right: 9px;
+  bottom: 8px;
+}
+
+.product__chapterCta:hover .product__chapterPreviewMain .product__chapterPreviewImage {
+  transform: scale(1.025);
+}
+
+.product__chapterCta:hover .product__chapterPreviewDetail .product__chapterPreviewImage {
+  transform: scale(1.04);
+}
+
+.product__chapterAction {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.product__chapterAction > p {
+  max-width: 28ch;
+  margin: 0;
+  color: rgba(32, 33, 28, 0.7);
+  font: 300 clamp(15px, 0.95vw, 18px) / 1.5 "Sansation-Light", sans-serif;
+}
+
+.product__chapterButton {
+  min-width: 168px;
+}
+
+.product__mediaEmpty {
+  display: grid;
+  min-height: 72vh;
+  place-items: center;
+  border: 1px solid var(--pdp-line-dark);
+  border-radius: 0;
+  color: rgba(255, 232, 214, 0.55);
+}
+
+@media (max-width: 1180px) {
+  .product__story {
+    grid-template-columns: minmax(230px, 1fr) minmax(380px, 1.16fr) minmax(240px, 1fr);
+    gap: 28px;
+    width: 96vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .product__story {
+    display: flex;
+    width: min(92vw, 720px);
+    flex-direction: column;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 135px 0 110px;
+    transform: none;
+  }
+
+  .product__identity,
+  .product__purchase {
     position: relative;
-    background-color: var(--bgWhite);
-    gap: 2dvw;
-    overflow: hidden;
+    top: auto;
+    width: 100%;
+    padding-right: 0;
+    padding-left: 0;
+  }
 
-    .product__details{
-        width: 100%;
-        height: fit-content;
-        position: relative;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        grid-template-rows: repeat(1, 1fr);
-        padding: 25vh 0 0 0;
+  .product__identityInner,
+  .product__purchaseInner {
+    min-height: 0;
+  }
 
-        .info__container{
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-direction: column;
-            .product__details__mainDetails{
-                width: 100%;
-                position: relative;
-                display: flex;
-                align-items: flex-start;
-                justify-content: flex-start;
-                flex-direction: column;
-                gap: 1dvh;
-                padding: 0dvh 2.5dvw;
-            }
+  .product__identity h1 {
+    max-width: none;
+  }
 
-            .product__details__cta{
-                width: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                flex-direction: row;
-                gap: 1dvw;
-                padding: 0 2.5dvw;
+  .product__detailsSlot {
+    display: none;
+  }
 
-                @include hb((
-                    xs: (height: 20dvh),
-                ));
-                @include hb((
-                    xxs: (height: 20dvh),
-                ));
+  .product__media {
+    order: 2;
+    width: 100%;
+    margin-top: 48px;
+  }
 
-                @include vb((
-                    lg: (flex-direction: column, height: 25dvh, justify-content: center, align-items: flex-start, gap: 0.5rem, margin-top: 2.5dvh),
-                ));
+  .product__purchase {
+    order: 3;
+    margin-top: 28px;
+  }
 
-                @include vb((
-                    md: (flex-direction: column, height: 20dvh, justify-content: center, align-items: flex-end, gap: 0.25rem, margin-top: 2.5dvh),
-                ));
-                @include vb((
-                    s: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-                ));
-                @include vb((
-                    sm: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-                ));
-                @include vb((
-                    xs: (flex-direction: column, justify-content: center, align-items: flex-start, height: 15dvh, z-index: 1),
-                ));
+  .product__mediaFrame,
+  .product__mediaFrame:nth-of-type(even) {
+    height: min(74vh, 720px);
+  }
 
+  .product__chapterEnd {
+    grid-template-columns: 1fr;
+    gap: 64px;
+  }
 
-                .divider{
-                    position: absolute;
-                    width: 90%;
-                    height: 0.5px;
-                    background-color: var(--shadows);
-                    bottom: 0;
-                    left: 5%;
-                    z-index: 0;
+  .product__chapterEnd > p {
+    grid-column: 1;
+    margin-top: 0;
+  }
+}
 
-                }
+@media (max-width: 560px) {
+  .product__story {
+    width: 100%;
+    padding: 115px 16px 78px;
+  }
 
-                .product__details__cta__price{
-                    width: 40%;
-                    height: 100%;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    flex-direction: row;
-                    gap: 1.5dvw;
-                    padding-top: 5dvh;
+  .product__identity h1 {
+    font-size: clamp(48px, 17vw, 72px);
+  }
 
-                    @include hb((
-                        xxs: (width: 40%, flex-direction: column, align-items: flex-start),
-                    ));
+  .product__mediaFrame,
+  .product__mediaFrame:nth-of-type(even) {
+    height: 62vh;
+    min-height: 450px;
+    border-radius: 0;
+  }
 
-                    @include vb((
-                        lg: (width: 100%, padding: 0, height: 5dvh),
-                    ));
-                    @include vb((
-                        md: (width: 100%, padding: 0, height: 5dvh),
-                    ));
-                    @include vb((
-                        s: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                    ));
-                    @include vb((
-                        sm: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                    ));
-                    @include vb((
-                        xs: (width: 100%, padding: 0, height: 10dvh, position: absolute, top: 0, left: 5dvw, z-index: 1),
-                    ));
+  .product__galleryOutro {
+    grid-template-columns: 1fr;
+  }
 
-                    p{
-                        font-family: "Sansation-Light";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 1.5rem;
-                        color: var(--blackText);
-                        font-weight: 300;
+  .product__galleryOutroGraphic {
+    grid-template-columns: minmax(36px, 1fr) 18px minmax(36px, 1fr);
+  }
 
-                        @include hb((
-                            md: (font-size: 1.3rem),
-                        ));
-                        @include hb((
-                            sm: (font-size: 1.2rem),
-                        ));
-                        @include hb((
-                            xs: (font-size: 1.1rem),
-                        ));
-                        @include hb((
-                            xxs: (font-size: 1rem),
-                        ));
-                        @include vb((
-                            md: (font-size: 1.3rem),
-                        ));  
-                    }
-                    .product__details__cta__price__main{
-                        width: 50%;
-                        height: 0.1%;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
-                        span{
-                            position: relative;
-                            z-index: 1;
-                            font-size: 3rem;
-                            color: var(--blackText);
-                            font-weight: 300;
-                            margin: 0;
+  .product__galleryOutroGraphic > span {
+    display: none;
+  }
 
-                            @include hb((
-                                md: (font-size: 2.5rem),
-                            ));
-                            @include hb((
-                                mdt: (font-size: 2.5rem),
-                            ));
-                            @include hb((
-                                sm: (font-size: 2rem),
-                            ));
-                            @include hb((
-                                xs: (font-size: 1.8rem),
-                            ));
-                            @include hb((
-                                xxs: (font-size: 1.5rem),
-                            ));
-                            @include vb((
-                                md: (font-size: 2rem),
-                            ));  
-                            @include vb((
-                                s: (font-size: 2rem),
-                            ));  
-                            @include vb((
-                                sm: (font-size: 2rem),
-                            )); 
-                            @include vb((
-                                xs: (font-size: 2rem),
-                            )); 
-                        }
-                    }
+  .product__chapterEnd {
+    min-height: 36vh;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
 
-                }
+  .product__chapterEnd > p {
+    text-align: left;
+  }
 
-                .product__details__cta__buy{
-                    width: 60%;
-                    height: 100%;
-                    position: relative;
-                    display: flex;
-                    align-items: flex-end;
-                    justify-content: flex-end;
-                    flex-direction: column;
-                    gap: 0.25dvw;
-                    padding: 1.5dvh 0;
+  .product__chapterCta {
+    width: 100%;
+    max-width: none;
+  }
 
-                    @include vb((
-                        lg: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
-                    ));
-                    @include vb((
-                        md: (width: 100%, padding: 0, height: 7.5dvh, align-items: flex-start),
-                    ));
-                    @include vb((
-                        s: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
-                    ));
-                    @include vb((
-                        sm: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 2.5dvh 5dvw 0 5dvw),
-                    ));
-                    @include vb((
-                        xs: (width: 100%, height: 10dvh, align-items: flex-end, justify-content: space-between, position: absolute, bottom: 0, right: 0, z-index: 2, padding: 3.5dvh 5dvw 0 5dvw),
-                    ));
+  .product__chapterPreview {
+    height: min(64vw, 440px);
+  }
 
-                    .product__details__cta__buy__buttons{
-                        width: 100%;
-                        height: 50%;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-end;
-                        flex-direction: row;
-                        gap: 1dvw;
-                        @include vb((
-                            lg: (justify-content: flex-start),
-                        ));
-                        @include vb((
-                            md: (justify-content: flex-start),
-                        ));
-                        @include vb((
-                            s: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                        ));
-                        @include vb((
-                            sm: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                        ));
-                        @include vb((
-                            xs: (justify-content: flex-start, height: 100%, flex-direction: row-reverse, gap: 5dvw, padding: 0 5dvw),
-                        ));
-
-                        .product__details__cta__buy__button__add{
-                            width: 35px;
-                            height: 35px;
-                            position: relative;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            cursor: pointer;
-
-                            @include hb((
-                                md: (width: 30px, height: 30px),
-                            ));
-                            @include hb((
-                                mdt: (width: 30px, height: 30px),
-                            ));
-                            @include hb((
-                                xs: (width: 30px, height: 30px),
-                            ));
-                            @include hb((
-                                xxs: (width: 30px, height: 30px),
-                            ));
-                            @include hb((
-                                sm: (width: 30px, height: 30px),
-                            ));
-                            img{ 
-                                width: 100%;
-                                height: 100%;
-                                object-fit: contain;
-                            }
-                            
-                        }
-                        .ClickButton{
-                            .button{
-                                width: 200px;
-                                height: 45px;
-                                @include hb((
-                                    lg: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include hb((
-                                    mdt: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include hb((
-                                    md: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include hb((
-                                    sm: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include hb((
-                                    xs: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include hb((
-                                    xxs: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include vb((
-                                    md: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include vb((
-                                    s: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include vb((
-                                    sm: (width: 150px !important, height: 40px !important),
-                                ));
-                                @include vb((
-                                    xs: (width: 150px !important, height: 40px !important),
-                                ));
-                                .slider{
-                                    .el{
-                                        &:nth-of-type(1){
-                                            .perspectiveText{
-                                                position: absolute;
-                                                top: 50%;
-                                                left: 50%;
-                                                transform: translate(-50%, -50%);
-                                    
-                                                p{
-                                                    &:nth-of-type(1){
-                                                        position: absolute;
-                                                        top: 50%;
-                                                        left: 50%;
-                                                        transform: translate(-50%, -50%);
-                                                        width: 100%;
-                                                        text-align: center;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        p{
-                                            font-family: "Sansation-Light";
-                                            text-transform: capitalize;
-                                            font-size: 1.3rem;
-                                            color: var(--bgWhite);
-                                            font-weight: 300;
-                                            margin: 0;
-
-                                            @include hb((
-                                                lg: (font-size: 1.3rem),
-                                            ));
-                                            @include hb((
-                                                mdt: (font-size: 1.3rem),
-                                            ));
-                                            @include hb((
-                                                md: (font-size: 1.1rem),
-                                            ));
-                                            @include hb((
-                                                sm: (font-size: 1.1rem),
-                                            ));
-                                            @include hb((
-                                                xs: (font-size: 1rem),
-                                            ));
-                                            @include hb((
-                                                xxs: (font-size: 1rem),
-                                            ));
-                                            @include vb((
-                                                lg: (font-size: 1.3rem),
-                                            ));
-                                            @include vb((
-                                                md: (font-size: 1.1rem),
-                                            ));
-                                            @include vb((
-                                                s: (font-size: 1.1rem),
-                                            ));
-                                            @include vb((
-                                                sm: (font-size: 1.1rem),
-                                            ));
-                                            @include vb((
-                                                xs: (font-size: 0.9rem),
-                                            ));
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
-                    p{
-                        font-family: "Sansation-Light";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 1rem;
-                        color: var(--blackText);
-                        font-weight: 300;
-                        
-                        @include hb((
-                            md: (font-size: 0.9rem),
-                        ));
-
-                        @include hb((
-                            mdt: (font-size: 0.9rem),
-                        ));
-                        @include hb((
-                            sm: (font-size: 0.9rem),
-                        ));
-                        @include hb((
-                            xs: (font-size: 0.8rem),
-                        ));
-                        @include hb((
-                            xxs: (font-size: 0.8rem),
-                        ));
-
-                        @include vb((
-                            md: (font-size: 0.9rem),
-                        ));
-                        @include vb((
-                            s: (font-size: 0.9rem, text-align: right),
-                        ));
-                        @include vb((
-                            sm: (font-size: 0.9rem, text-align: right),
-                        ));
-                        @include vb((
-                            xs: (font-size: 0.9rem, text-align: right),
-                        ));
-                    }
-                }
-            }
-
-            .product__reviews{
-                width: 100%;
-                height: fit-content;
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                padding: 0 2.5vw;
-                gap: 0.25rem;
-
-                @include vb((
-                    s: (padding: 0 5vw),
-                ));
-                    @include vb((
-                        sm: (padding: 0 5vw),
-                    ));
-                    @include vb((
-                        xs: (padding: 0 5vw),
-                    ));
-
-                span{
-                    font-size: 1.5rem;
-                    font-weight: 400;
-                    font-family: "Sansation-Light";
-                    margin: 0;
-                    gap: 0.25rem;
-
-                    @include hb((
-                        lg: (font-size: 1.3rem),
-                    )); 
-                    @include hb((
-                        md: (font-size: 1.3rem),
-                    )); 
-                        @include hb((
-                            sm: (font-size: 1.3rem),
-                        )); 
-                    @include hb((
-                        xs: (font-size: 1.2rem),
-                    )); 
-                    @include hb((
-                        xxs: (font-size: 1.1rem),
-                    )); 
-                    @include vb((
-                        md: (font-size: 1.3rem),
-                    ));  
-
-                    @include vb((
-                        s: (font-size: 1.2rem),
-                    ));
-                        @include vb((
-                            sm: (font-size: 1.2rem),
-                        ));
-                        @include vb((
-                            xs: (font-size: 1.2rem),
-                        ));
-                }
-            }
-        }
-        .images_container{
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-direction: column;
-
-            .product__image{
-                width: 100%;
-                height: 100%;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                
-                gap: 1dvw;
-
-                .Image__container{
-                    width: 100%;
-                    height: 100%;   
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-direction: column;
-                    padding: 2.5dvh 2.5dvw;
-                
-
-                    .Image__container__slider{
-                        width: 100%;
-                        height: 100%;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
-                        flex-direction: column;
-                        gap: 2dvh;
-
-                        .product__image__item{
-                            width: 100%;
-                            height: 350px;
-                            border-radius: 15px;
-                            position: relative;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            overflow: hidden;
-
-                            
-                        }
-                    }
-
-                }
-            }
-        }
-        .choice__container{
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-direction: column;
-
-            .product__details__subDetails{
-                width: 100%;
-                position: relative;
-                display: flex;
-                align-items: flex-start;
-                justify-content: center;
-                flex-direction: column;
-                gap: 1dvw;
-                padding: 0 2.5dvw;
-
-                @include hb((
-                    md: (height: 15dvh, gap: 0.25dvh),
-                )); 
-                @include hb((
-                    mdt: (height: 15dvh, gap: 0.25dvh),
-                )); 
-                @include hb((
-                    sm: (height: 15dvh, gap: 0.25dvh),
-                )); 
-                @include hb((
-                    xs: (height: 15dvh),
-                )); 
-                @include hb((
-                    xxs: (height: 25dvh),
-                ));
-                
-                @include vb((
-                    lg: (height: 7.5dvh),
-                ));
-                @include vb((
-                    s: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 20dvh),
-                )); 
-                @include vb((
-                    sm: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 25dvh),
-                ));
-                @include vb((
-                    xs: (flex-direction: column, align-items: center, justify-content: space-evenly, padding: 0 5dvw, height: 30dvh),
-                )); 
-
-                .product__details__subDetails__colors{
-                    width: 100%;
-                    height: 2.5dvh;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    gap: 1dvw;
-
-                    @include hb((
-                        md: (height: 5dvh),
-                    )); 
-                    @include hb((
-                        mdt: (height: 3.5dvh),
-                    ));
-                    @include hb((
-                        sm: (height: 5dvh),
-                    ));  
-                    @include hb((
-                        xs: (height: 7.5dvh),
-                    )); 
-                    @include hb((
-                        xxs: (height: 7.5dvh),
-                    ));
-                    @include vb((
-                        lg: (height: 5dvh, width: 100%),
-                    )); 
-                    @include vb((
-                        s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-                    @include vb((
-                        sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-
-                    @include vb((
-                        xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-
-
-                    p{
-                        font-family: "Sansation-Light";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 1.5rem;
-                        color: var(--blackText);
-                        font-weight: 300;
-                        white-space: nowrap;
-
-                        @include hb((
-                            md: (font-size: 1.3rem),
-                        )); 
-                        @include hb((
-                            sm: (font-size: 1.3rem),
-                        )); 
-                        @include hb((
-                            xs: (font-size: 1.2rem),
-                        )); 
-                        @include hb((
-                            xxs: (font-size: 1.1rem),
-                        )); 
-                        @include vb((
-                            md: (font-size: 1.3rem),
-                        ));  
-
-                        @include vb((
-                            s: (font-size: 1.2rem),
-                        ));
-                        @include vb((
-                            sm: (text-align: center),
-                        ));
-                        @include vb((
-                            xs: (text-align: center),
-                        ));
-                    }
-
-                .product__details__subDetails__colors__items{
-                        width: 100%;
-                        height: 100%;
-                        position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-start;
-                        gap: 0.5dvw;
-
-                        @include vb((
-                            lg: (align-items: flex-start),
-                        ));
-                        @include vb((
-                            md: (align-items: flex-start),
-                        ));
-                        @include vb((
-                            s: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
-                        ));
-                        @include vb((
-                            sm: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
-                        ));
-                        @include vb((
-                            xs: (justify-content: center, gap: 2.5dvw, padding: 0.5dvh 0, border-top: 1px solid var(--shadows)),
-                        ));
-
-                        .product__details__subDetails__colors__item{
-                            width: 1.5dvw;
-                            height: 1.5dvw;
-                            border-radius: 50%;
-                            cursor: pointer;
-
-                            @include hb((
-                                md: (width: 1.3dvw, height: 1.3dvw),
-                            )); 
-                            @include hb((
-                                sm: (width: 1.3dvw, height: 1.3dvw),
-                            ));
-                            @include hb((
-                                xs: (width: 1.3dvw, height: 1.3dvw),
-                            ));
-                            @include hb((
-                                xxs: (width: 1.1dvw, height: 1.1dvw),
-                            )); 
-
-                            @include vb((
-                                md: (width: 2dvw, height: 2dvw),
-                            )); 
-                            @include vb((
-                                s: (width: 8dvw, height: 8dvw),
-                            )); 
-                            @include vb((
-                                sm: (width: 6dvw, height: 6dvw),
-                            )); 
-                            @include vb((
-                                xs: (width: 6dvw, height: 6dvw),
-                            )); 
-                        }
-                }
-                }
-
-                .product__details__subDetails__sizes{
-                    width: 100%;
-                    height: 2.5dvh;
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    gap: 1dvw;
-
-                    @include hb((
-                        md: (height: 5dvh),
-                    )); 
-
-                    @include hb((
-                        xs: (height: 5dvh),
-                    ));
-                    @include hb((
-                        xxs: (height: 5dvh),
-                    )); 
-                    @include vb((
-                        s: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-                    @include vb((
-                        sm: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-                    @include vb((
-                        xs: (height: 5dvh, width: 50%, flex-direction: column, align-items: center, justify-content: center),
-                    )); 
-
-                    p{
-                        font-family: "Sansation-Light";
-                        position: relative;
-                        z-index: 1;
-                        font-size: 1.5rem;
-                        color: var(--blackText);
-                        font-weight: 300;
-                        white-space: nowrap;
-
-                        @include hb((
-                            md: (font-size: 1.3rem),
-                        )); 
-                        @include hb((
-                            sm: (font-size: 1.2rem),
-                        ));
-                        @include hb((
-                            xs: (font-size: 1.1rem),
-                        ));
-                        @include hb((
-                            xxs: (font-size: 1.1rem),
-                        ));
-                        @include vb((
-                            md: (font-size: 1.3rem),
-                        ));  
-                        @include vb((
-                            s: (text-align: center),
-                        ));
-                        @include vb((
-                            sm: (text-align: center),
-                        ));
-                        @include vb((
-                            xs: (text-align: center),
-                        ));
-                    }
-                    
-
-                    .product__details__subDetails__sizes__items{
-                        width: 100%;
-                        height: 100%;
-                        position: relative;
-                        display: flex;
-                        justify-content: flex-start;
-                        align-items: center;
-                        gap: 0.5dvw;
-                        @include vb((
-                            s: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
-                        )); 
-                        @include vb((
-                            sm: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
-                        ));
-                        @include vb((
-                            xs: (justify-content: center, gap: 2.5dvw, border-top: 1px solid var(--shadows), padding: 0.5dvh 0),
-                        ));
-
-                        .product__details__subDetails__sizes__item{
-                            width: fit-content;
-                            height: 100%;
-                            position: relative;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border-radius: 25px;
-                            background-color: var(--darkOlive);
-                            box-shadow: none;
-                            border: 0.5px solid var(--bgWhite);
-                            padding: 0.5dvw 0.5dvw;
-                            cursor: pointer;
-                            @include vb((
-                                s: (padding: 0.5dvw 3dvw),
-                            ));
-                            @include vb((
-                                sm: (padding: 0.5dvw 3dvw),
-                            ));
-                            @include vb((
-                                xs: (padding: 0.5dvw 3dvw),
-                            ));
-
-                            p{
-                                font-family: "Sansation-Regular";
-                                position: relative;
-                                z-index: 1;
-                                font-size: 1.3rem;
-                                color: var(--whiteText);
-                                font-weight: 300;
-                                padding: 0.15rem;
-
-                                @include hb((
-                                    md: (font-size: 1.1rem, padding: 0.15rem),
-                                )); 
-                                @include hb((
-                                    sm: (font-size: 1.1rem, padding: 0.15rem),
-                                )); 
-                                @include hb((
-                                    xs: (font-size: 1rem, padding: 0.15rem),
-                                ));
-                                @include hb((
-                                    xxs: (font-size: 0.9rem, padding: 0.15rem),
-                                ));  
-                                @include vb((
-                                    md: (font-size: 1.1rem, padding: 0 0.25rem),
-                                ));  
-                                @include vb((
-                                    sm: (font-size: 1.1rem, padding: 0 0.25rem),
-                                ));  
-                                @include vb((
-                                    xs: (font-size: 1.1rem, padding: 0 0.25rem),
-                                )); 
-                            }
-
-                            &.active{
-                                background-color: var(--bgBlack);
-                                border: 0.5px solid var(--darkOlive);
-                            }
-
-                            &:hover{
-                                background-color: var(--bgBlack);
-                                border: 0.5px solid var(--darkOlive);
-                            }
-                        }
-                    }
-                    
-                }
-                
-            }
-        }
-
-    }
+  .product__chapterAction {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

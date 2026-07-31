@@ -1,16 +1,10 @@
 "use client"
 
-import React from "react"
-import "./styles.scss"
+import LegalDocument, {
+  type LegalSectionData,
+} from "@modules/legal/LegalDocument"
 
-type Section = {
-  id: string
-  title: string
-  paragraphs?: string[]
-  bullets?: string[]
-}
-
-const sections: Section[] = [
+const sections: LegalSectionData[] = [
   {
     id: "uvod",
     title: "Zásady ochrany osobních údajů",
@@ -58,9 +52,7 @@ const sections: Section[] = [
   {
     id: "pravni-zaklad",
     title: "Právní základ zpracování",
-    paragraphs: [
-      "Vaše osobní údaje zpracováváme na základě:",
-    ],
+    paragraphs: ["Vaše osobní údaje zpracováváme na základě:"],
     bullets: [
       "Váš souhlas",
       "Plnění smlouvy",
@@ -106,54 +98,14 @@ const sections: Section[] = [
 ]
 
 export default function Page() {
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault()
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" })
-      history.replaceState(null, "", `#${id}`)
-    }
-  }
-
   return (
-    <main className="terms" aria-labelledby="page-title">
-      <div className="container">
-        <header className="header">
-          <h1 id="page-title">Zásady ochrany osobních údajů</h1>
-        </header>
-
-        <div className="layout">
-          <aside className="sidebar" role="navigation" aria-label="Navigace sekcí">
-            <ul>
-              {sections.map((s) => (
-                <li key={s.id}>
-                  <a href={`#${s.id}`} onClick={(e) => handleNavClick(e, s.id)}>
-                    {s.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </aside>
-
-          <div className="content">
-            {sections.map((s) => (
-              <section key={s.id} id={s.id} className="section" aria-labelledby={`${s.id}-title`}>
-                <h2 id={`${s.id}-title`}>{s.title}</h2>
-                {s.paragraphs?.map((p, idx) => (
-                  <p key={idx}>{p}</p>
-                ))}
-                {s.bullets && s.bullets.length > 0 && (
-                  <ul className="bullets">
-                    {s.bullets.map((b, idx) => (
-                      <li key={idx}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
+    <LegalDocument
+      code="GDPR · 02"
+      eyebrow="Soukromí · transparentně"
+      title="Ochrana osobních údajů"
+      accent="Vaše soukromí zůstává vaše."
+      description="Přehled toho, jaké údaje používáme, proč je potřebujeme a jaká práva máte při návštěvě nebo nákupu."
+      sections={sections}
+    />
   )
 }

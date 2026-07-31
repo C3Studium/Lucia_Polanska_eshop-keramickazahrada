@@ -1,142 +1,214 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
-import { toast } from "@medusajs/ui"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Bookmark from "@modules/common/icons/bookmark"
 import BookmarkFull from "@modules/common/icons/bookmark-full"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { toast } from "@medusajs/ui"
+import { AnimatePresence, motion } from "framer-motion"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import s from "./wishlist-toggle.module.scss"
 
-export default function WishlistToggle({ variantId, wishlistItems = [], onWishlistUpdateAction, isAuthenticated }: { 
-  variantId?: string, 
-  wishlistItems?: any[],
-  onWishlistUpdateAction?: () => void,
+type WishlistItem = {
+  id?: string
+  product_variant_id?: string
+  product_variant?: { id?: string }
+}
+
+type WishlistToggleProps = {
+  variantId?: string
+  wishlistItems?: WishlistItem[]
+  onWishlistUpdateAction?: () => void | Promise<void>
   isAuthenticated?: boolean
-}) {
-  const [itemId, setItemId] = useState<string | null>(null)
-  const [isAuthed, setIsAuthed] = useState<boolean | null>(isAuthenticated ?? null)
-  const [loading, startTransition] = useTransition()
-  const [localWishlistItems, setLocalWishlistItems] = useState<any[]>(wishlistItems)
+}
 
-  const inWishlist = useMemo(() => Boolean(itemId), [itemId])
+const ease = [0.22, 1, 0.36, 1] as const
 
-  const fetchWishlist = async () => {
+const findWishlistItem = (items: WishlistItem[], variantId?: string) =>
+  items.find(
+    (item) =>
+      item.product_variant_id === variantId ||
+      item.product_variant?.id === variantId
+  )
+
+export default function WishlistToggle({
+  variantId,
+  wishlistItems = [],
+  onWishlistUpdateAction,
+  isAuthenticated,
+}: WishlistToggleProps) {
+  const [localItems, setLocalItems] = useState<WishlistItem[]>(wishlistItems)
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    setLocalItems(wishlistItems)
+  }, [wishlistItems])
+
+  const currentItem = useMemo(
+    () => findWishlistItem(localItems, variantId),
+    [localItems, variantId]
+  )
+  const inWishlist = Boolean(currentItem?.id)
+
+  const refreshWishlist = useCallback(async () => {
+    if (!isAuthenticated) return
+
     try {
-      const res = await fetch('/api/wishlist/items')
-      const data = await res.json()
-      if (data.success && data.wishlist) {
-        setLocalWishlistItems(data.wishlist.items || [])
+      const response = await fetch("/api/wishlist/items")
+      const data = await response.json()
+
+      if (response.ok && data.success && data.wishlist) {
+        setLocalItems(data.wishlist.items || [])
       }
-    } catch (e) {
-      console.error('Failed to fetch wishlist', e)
-    }
-  }
-
-  //WIP: fix the issue with the wishlist, it says the item is not there, but it is. thats bigg issue. It needs to display full icon that it is in the wishlist
-
-  console.log("WishlistToggle State:", {
-    variantId,
-    itemId,
-    inWishlist,
-    isAuthenticated,
-    wishlistItemsCount: localWishlistItems?.length || 0,
-    variantIdType: typeof variantId
-  })
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchWishlist()
+    } catch {
+      // The optimistic state remains usable if the background refresh fails.
     }
   }, [isAuthenticated])
 
   useEffect(() => {
-    if (!variantId || !isAuthenticated) {
-      setItemId(null)
-      return
-    }
-    console.log("WishlistToggle Debug:", {
-      variantId,
-      wishlistItems: localWishlistItems,
-      isAuthenticated,
-      wishlistItemsLength: localWishlistItems?.length,
-      firstWishlistItem: localWishlistItems?.[0]
-    })
-    // Check if this variant is in the wishlist
-    const found = localWishlistItems.find((i: any) => 
-      i?.product_variant_id === variantId || 
-      i?.product_variant?.id === variantId
-    )
-    console.log("Found wishlist item:", found)
-    setItemId(found?.id || null)
-  }, [variantId, localWishlistItems, isAuthenticated])
+    void refreshWishlist()
+  }, [refreshWishlist])
 
-  useEffect(() => {
-    setIsAuthed(isAuthenticated ?? null)
-  }, [isAuthenticated])
-
-  const toggle = async () => {
+  const toggle = () => {
     if (!variantId) {
-      toast.error("Vyberte variantu")
+      toast.error("Nejprve vyberte provedení objektu.")
       return
     }
+
     startTransition(async () => {
       try {
-        if (inWishlist && itemId) {
-          const res = await fetch(`/api/wishlist/items/${itemId}`, { method: "DELETE" })
-          if (!res.ok) throw new Error("Mazání selhalo")
-          setItemId(null)
-          toast.success("Odebráno z wishlistu")
-          onWishlistUpdateAction?.()
-          fetchWishlist()
+        if (inWishlist && currentItem?.id) {
+          const previousItems = localItems
+          setLocalItems((items) =>
+            items.filter((item) => item.id !== currentItem.id)
+          )
+
+          const response = await fetch(
+            `/api/wishlist/items/${currentItem.id}`,
+            { method: "DELETE" }
+          )
+          if (!response.ok) {
+            setLocalItems(previousItems)
+            throw new Error("Objekt se nepodařilo odebrat.")
+          }
+          toast.success("Objekt byl odebrán z oblíbených.")
         } else {
-          const res = await fetch(`/api/wishlist/items`, {
+          const response = await fetch("/api/wishlist/items", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ variant_id: variantId }),
           })
-          const data = await res.json()
-          if (!res.ok || !data?.success) throw new Error(data?.message || "Přidání selhalo")
-          
-          // Optimistically update itemId if response includes the new item
-          if (data?.item?.id) {
-            setItemId(data.item.id)
+          const data = await response.json()
+
+          if (!response.ok || !data?.success) {
+            throw new Error(data?.message || "Objekt se nepodařilo uložit.")
           }
-          
-          toast.success("Přidáno do wishlistu")
-          onWishlistUpdateAction?.()
-          fetchWishlist()
+
+          if (data?.item) {
+            setLocalItems((items) => [
+              ...items.filter(
+                (item) =>
+                  item.product_variant_id !== variantId &&
+                  item.product_variant?.id !== variantId
+              ),
+              data.item,
+            ])
+          }
+          toast.success("Objekt byl uložen do oblíbených.")
         }
-      } catch (e: any) {
-        toast.error(e?.message || "Operace selhala")
+
+        await onWishlistUpdateAction?.()
+        await refreshWishlist()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Změnu se nepodařilo uložit."
+        )
       }
     })
   }
 
+  const icon = inWishlist ? (
+    <BookmarkFull size="22" color="#ffe8d6" />
+  ) : (
+    <Bookmark size="22" color="#ffe8d6" />
+  )
+
   if (isAuthenticated === false) {
-    console.log("User not authenticated, showing login link, isAuthenticated:", isAuthenticated)
     return (
-      <LocalizedClientLink href="/account" className="wishlist-login-link">
-        <Bookmark size="24" color="var(--blackText)" />
+      <LocalizedClientLink
+        href="/account"
+        className={s.login}
+        aria-label="Přihlásit se a uložit objekt"
+        title="Přihlásit se a uložit objekt"
+      >
+        <motion.span
+          whileHover={{ scale: 1.08, rotate: -4 }}
+          whileTap={{ scale: 0.94 }}
+          transition={{ duration: 0.42, ease }}
+        >
+          {icon}
+        </motion.span>
       </LocalizedClientLink>
     )
   }
 
-  console.log("User authenticated, showing toggle button, isAuthenticated:", isAuthenticated)
-
   return (
-    <button
+    <motion.button
       type="button"
-      className={`wishlist-toggle ${inWishlist ? "active" : ""}`}
+      className={s.button}
       onClick={toggle}
-      disabled={loading}
+      disabled={isPending}
       aria-pressed={inWishlist}
-      aria-label={inWishlist ? "Odebrat z wishlistu" : "Přidat do wishlistu"}
-      title={inWishlist ? "Odebrat z wishlistu" : "Přidat do wishlistu"}
+      aria-label={
+        inWishlist
+          ? "Odebrat objekt z oblíbených"
+          : "Uložit objekt do oblíbených"
+      }
+      title={
+        inWishlist
+          ? "Odebrat objekt z oblíbených"
+          : "Uložit objekt do oblíbených"
+      }
+      initial={false}
+      animate={inWishlist ? "saved" : "idle"}
+      whileHover={isPending ? undefined : "hover"}
+      whileTap={isPending ? undefined : { scale: 0.94 }}
+      variants={{
+        idle: { scale: 1 },
+        hover: { scale: 1.06 },
+        saved: { scale: [1, 1.12, 1] },
+      }}
+      transition={{ duration: 0.52, ease }}
     >
-      {inWishlist ? (
-        <BookmarkFull size="24" />
-      ) : (
-        <Bookmark size="24" />
+      <motion.span
+        className={s.surface}
+        variants={{
+          idle: { scale: 0.2, opacity: 0 },
+          hover: { scale: 0.68, opacity: 0.45 },
+          saved: { scale: 1, opacity: 1 },
+        }}
+        transition={{ duration: 0.55, ease }}
+        aria-hidden="true"
+      />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          className={s.icon}
+          key={inWishlist ? "saved" : "idle"}
+          initial={{ opacity: 0, scale: 0.65, rotate: -12 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          exit={{ opacity: 0, scale: 0.68, rotate: 10 }}
+          transition={{ duration: 0.38, ease }}
+        >
+          {icon}
+        </motion.span>
+      </AnimatePresence>
+      {isPending && (
+        <motion.span
+          className={s.pending}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+          aria-hidden="true"
+        />
       )}
-    </button>
+    </motion.button>
   )
 }

@@ -1,9 +1,13 @@
+"use client"
+
 import React from "react"
+import { motion } from "framer-motion"
 
 import AddAddress from "../address-card/add-address"
 import EditAddress from "../address-card/edit-address-modal"
 import { HttpTypes } from "@medusajs/types"
 import s from "./style.module.scss"
+import { accountListItemVariants, accountListVariants } from "../../motion"
 
 type AddressBookProps = {
   customer: HttpTypes.StoreCustomer
@@ -12,16 +16,25 @@ type AddressBookProps = {
 
 const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
   const { addresses } = customer
+
   return (
     <div className={s.root}>
-      <div className={s.grid}>
-        <AddAddress region={region} addresses={addresses} />
+      <AddAddress region={region} addresses={addresses} />
+      <motion.div
+        className={s.grid}
+        variants={accountListVariants}
+        initial="hidden"
+        animate="visible"
+        data-testid="address-list"
+      >
         {addresses.map((address) => {
           return (
-            <EditAddress region={region} address={address} key={address.id} />
+            <motion.div key={address.id} variants={accountListItemVariants}>
+              <EditAddress region={region} address={address} />
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
     </div>
   )
 }

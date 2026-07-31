@@ -1,203 +1,503 @@
-"use client";
+"use client"
 
-import Magnetic from "@modules/common/components/Buttons/Magnetic";
-import ScrollLink from "@modules/common/components/Buttons/ScrollLink";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { paymentIcons, paymentIconsWhite } from "constants/icons";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import PremiumActionButton from "@modules/common/components/premium-action-button"
+import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
+import { paymentIcons } from "constants/icons"
+import { motion } from "framer-motion"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import {
+  FormEvent,
+  type CSSProperties,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
+
+type FooterTone = "light" | "dark"
+
+const DEFAULT_SURFACE = "#bbb788"
 
 const currentYear = new Date().getFullYear()
 
 const importantLinks = [
-    {
-        label: "Smluvní podmínky",
-        href: "/smluvni-podminky"
-    },
-    {
-        label: "Ochrana osobních údajů",
-        href: "/ochrana-osobnich-udaju"
-    },
-    {
-        label: "Obchodní podmínky",
-        href: "/obchodni-podminky"
-    }
+  { label: "Smluvní podmínky", href: "/smluvni-podminky" },
+  { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
+  { label: "Obchodní podmínky", href: "/smluvni-podminky" },
 ]
 
-const socialLinks = [
-    {
-        label: "Facebook",
-        href: "https://www.facebook.com/keramickazahrada",
-        icon: "/assets/icons/facebook.svg"
-    },
-    {
-        label: "Instagram",
-        href: "https://www.instagram.com/luciepolanska/",
-        icon: "/assets/icons/instagram.svg"
-    }
-]
-
-const links = [
-    {
-        label: "Kontakt",
-        href: "/kontakt"
-    },
-    {
-        label: "Dotazy",
-        href: "/dotazy"
-    },
-    {
-        label: "Kurzy",
-        href: "/kurzy"
-    }
+const discoverLinks = [
+  { label: "Kontakt", href: "/kontakt" },
+  { label: "Dotazy", href: "/dotazy" },
+  { label: "Kurzy", href: "/kurzy" },
 ]
 
 const helpLinks = [
-    {
-        label: "Odstoupení od smlouvy",
-        href: "/odstoupeni_od_smlouvy"
-    },
-    {
-        label: "Doprava a platba",
-        href: "/doprava-a-platba"
-    },
-    {
-        label: "Reklamační protokol",
-        href: "/reklamacni-protokol"
-    } 
+  { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
+  { label: "Doprava a platba", href: "/doprava-a-platba" },
+  { label: "Reklamační protokol", href: "/reklamacni-protokol" },
 ]
 
+const socialLinks = [
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/keramickazahrada",
+    icon: "/assets/icons/facebook.svg",
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/luciepolanska/",
+    icon: "/assets/icons/instagram.svg",
+  },
+]
+
+const reveal = {
+  hidden: { opacity: 0, y: 26 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.72,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
+  },
+}
+
 export default function Footer() {
-  const pathname = usePathname();
-  const params = useParams();
-  const countryCode = params?.countryCode as string | undefined;
+  const pathname = usePathname()
+  const footerRef = useRef<HTMLElement>(null)
+  const [surface, setSurface] = useState(DEFAULT_SURFACE)
+  const [tone, setTone] = useState<FooterTone>("light")
 
+  useLayoutEffect(() => {
+    const footer = footerRef.current
 
-    return (
-        <footer
-            className="footer"
-        >
-            <div className="Upper__footer">
-                <div className="div"/>
-                <div className="content__upperFooter">
-                    <div className="Links">
-                        <div className="Important">
-                            <h3>
-                                Důležité odkazy
-                            </h3>
+    if (!footer) {
+      return
+    }
 
-                            <div className="main__Links">
-                                {importantLinks.map((link, index) => (
-                                    <FooterLink key={index} href={link.href} label={link.label} />
-                                ))}
-                            </div>
-                        </div>
-                        <div className="Social">
-                            <h3>
-                                Sledujte mě
-                            </h3>
+    let frame = 0
+    let observedElement: HTMLElement | null = null
 
-                            <div className="social__icons">
-                                {socialLinks.map((link, index) => (
-                                    <FooterIcon key={index} href={link.href} icon={link.icon} />
-                                ))}
-                            </div>
-                        </div>
-                        <div className="Need__help">
-                            <h3>
-                                Potřebujete pomoc?
-                            </h3>
-                            <div className="links">
-                                {links.map((link, index) => (
-                                    <FooterLink key={index} href={link.href} label={link.label} />
-                                ))}
-                                <div className="divider"/>
-                                <div className="divider"/>
-                            </div>
-                            <div className="main__Links">
-                                {helpLinks.map((link, index) => (
-                                    <FooterLink key={index} href={link.href} label={link.label} />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="newsletter">
-                        <h3>
-                            Přihlaste se k odběru novinek
-                        </h3>
-                        <Newsletter />
-                    </div>
-                </div>
-            </div>
-            <div className="Bottom__footer">
-                <div className="Main">
-                    <div className="Logo">
-                        <div className="imgWrapper">
-                            <Image src="/assets/icons/logo.svg" alt="logo" width={50} height={50}/>
-                        </div>
-                        <div className="Name">
-                            <h2>Keramická zahrada</h2>
-                            <p>Lucie Polanská</p>
-                        </div>
+    const updateTheme = () => {
+      const previousElement = getPreviousVisualElement(footer)
+      observedElement = previousElement
 
-                    </div>
-                    <div className="makers">
-                        <p>
-                            Design&Code by <LocalizedClientLink href="https://www.matejforejt.com" className="maker__link">C3Studium</LocalizedClientLink>
-                        </p>
-                    </div>
-                </div>
-                <div className="div"/>
-                <div className="bottom">
-                    <div className="payment__links">
-                        <div className="payment__logos">
-                            {paymentIconsWhite.map((icon, index) => (
-                                <FooterIcon key={index} icon={icon.src} href={icon.href} />
-                            ))}
-                        </div>
-                        <p>
-                            © {currentYear} Keramická zahrada. Všechna práva vyhrazena.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </footer>
-    );
-}
+      const resolvedSurface = getVisualSurface(previousElement)
+      const resolvedTone =
+        previousElement?.closest<HTMLElement>("[data-footer-tone]")?.dataset
+          .footerTone === "dark"
+          ? "dark"
+          : previousElement?.closest<HTMLElement>("[data-footer-tone]")?.dataset
+                .footerTone === "light"
+            ? "light"
+            : getTone(resolvedSurface)
 
+      setSurface((current) =>
+        current === resolvedSurface ? current : resolvedSurface
+      )
+      setTone((current) =>
+        current === resolvedTone ? current : resolvedTone
+      )
+    }
 
-const FooterLink = ({href, label}: {href: string, label: string}) => {
-    return (
-        <LocalizedClientLink href={href} className="footer__link">
-            <p>
-                {label}
-            </p>
-        </LocalizedClientLink>
-    )
-}
-const FooterIcon = ({href, icon}: {href: string, icon: string}) => {
-    return (
-        <LocalizedClientLink href={href} className="footer__link">
-            <Image src={icon} alt={`${icon}__icon`} width={20} height={20}/>
-        </LocalizedClientLink>
-    )
-}
+    const scheduleUpdate = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(updateTheme)
+    }
 
-const Newsletter = () => {
-    return (
-        <div className="newsletter__container">
-            <input type="email" placeholder="Zadejte svůj E-mail" className="newsletter__input"/>
-            <NewsButton />
+    updateTheme()
+
+    const mutationObserver = new MutationObserver(scheduleUpdate)
+    const resizeObserver = new ResizeObserver(scheduleUpdate)
+
+    if (observedElement) {
+      mutationObserver.observe(observedElement, {
+        attributes: true,
+        attributeFilter: [
+          "class",
+          "style",
+          "data-footer-surface",
+          "data-footer-tone",
+        ],
+      })
+      resizeObserver.observe(observedElement)
+    }
+
+    window.addEventListener("resize", scheduleUpdate)
+    window.addEventListener("load", scheduleUpdate)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener("resize", scheduleUpdate)
+      window.removeEventListener("load", scheduleUpdate)
+      mutationObserver.disconnect()
+      resizeObserver.disconnect()
+    }
+  }, [pathname])
+
+  const footerStyle = {
+    "--footer-surface": surface,
+  } as CSSProperties
+
+  return (
+    <footer
+      ref={footerRef}
+      className="Mainfooter"
+      data-tone={tone}
+      style={footerStyle}
+    >
+      <motion.div
+        className="footer__frame"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.08 }}
+        variants={reveal}
+      >
+        <div className="footer__topline">
+          <span>Keramická zahrada</span>
+          <span>Ateliér Lucie Polanské · Písek</span>
         </div>
-    );
+
+        <div className="footer__main">
+          <div className="footer__brand">
+            <div className="footer__brandMeta">
+              <Image
+                src={
+                  tone === "dark"
+                    ? "/assets/icons/logowhite.svg"
+                    : "/assets/icons/logo.svg"
+                }
+                alt="Keramická zahrada"
+                width={96}
+                height={48}
+                priority={false}
+              />
+              <span>00 · PATIČKA</span>
+            </div>
+
+            <h2>
+              Keramická <em>zahrada.</em>
+            </h2>
+
+            <p className="footer__statement">
+              Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
+              v píseckém ateliéru.
+            </p>
+
+            <div className="footer__socials" aria-label="Sociální sítě">
+              {socialLinks.map((link) => (
+                <FooterIcon
+                  key={link.label}
+                  href={link.href}
+                  icon={link.icon}
+                  alt={link.label}
+                  className="footer__socialLink"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="footer__utility">
+            <section
+              className="footer__newsletter"
+              aria-labelledby="newsletter-title"
+            >
+              <div className="footer__newsletterCopy">
+                <span>Novinky · 01</span>
+                <h3 id="newsletter-title">Zůstaňte blízko ateliéru.</h3>
+                <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
+              </div>
+              <Newsletter />
+            </section>
+
+            <nav className="footer__navigation" aria-label="Navigace v patičce">
+              <FooterLinkGroup title="Informace" links={importantLinks} />
+              <FooterLinkGroup title="Objevovat" links={discoverLinks} />
+              <FooterLinkGroup title="Pomoc" links={helpLinks} />
+            </nav>
+          </div>
+        </div>
+
+        <div className="footer__bottom">
+          <div className="footer__payments">
+            <span className="footer__eyebrow">Bezpečná platba</span>
+            <div className="payment__logos">
+              {paymentIcons.map((icon) => (
+                <FooterIcon
+                  key={icon.alt}
+                  icon={icon.src}
+                  href={icon.href}
+                  alt={icon.alt}
+                  className="footer__paymentLink"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="footer__legal">
+            <p>© {currentYear} Keramická zahrada. Všechna práva vyhrazena.</p>
+            <p>
+              Design &amp; vývoj{" "}
+              <a
+                href="https://www.matejforejt.com"
+                target="_blank"
+                rel="noreferrer"
+                className="maker__link"
+              >
+                ValeStudium
+              </a>
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </footer>
+  )
 }
 
-const NewsButton = () => {
-    return (
-        <button className="newsletter__button">
-            <p>Odebírat</p>
-        </button>
-    );
+function FooterLinkGroup({
+  title,
+  links,
+}: {
+  title: string
+  links: { label: string; href: string }[]
+}) {
+  return (
+    <div className="footer__linkGroup">
+      <h3>{title}</h3>
+      <div>
+        {links.map((link) => (
+          <FooterLink key={link.label} href={link.href} label={link.label} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FooterLink({ href, label }: { href: string; label: string }) {
+  return (
+    <CollectionCategoryLink
+      href={href}
+      label={label}
+      className="footer__animatedLink"
+      color="var(--footer-ink)"
+      hoverColor="var(--footer-ink)"
+      hoverOpacity={0.56}
+    />
+  )
+}
+
+function FooterIcon({
+  href,
+  icon,
+  alt,
+  className,
+}: {
+  href: string
+  icon: string
+  alt: string
+  className: string
+}) {
+  return (
+    <a
+      href={href}
+      className={className}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={alt}
+    >
+      <Image src={icon} alt={alt} width={96} height={48} />
+    </a>
+  )
+}
+
+function Newsletter() {
+  const handleNewsletterSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    // TODO(newsletter): connect this form to the backend newsletter subscription flow.
+  }
+
+  return (
+    <form
+      className="newsletter__container"
+      onSubmit={handleNewsletterSubmit}
+    >
+      <label htmlFor="footer-newsletter-email">Váš e-mail</label>
+      <div className="newsletter__controls">
+        <input
+          id="footer-newsletter-email"
+          type="email"
+          placeholder="vas@email.cz"
+          className="newsletter__input"
+          autoComplete="email"
+          required
+        />
+        <PremiumActionButton
+          type="submit"
+          text="Odebírat"
+          compact
+          className="newsletter__button"
+        />
+      </div>
+      <p>
+        Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.
+      </p>
+    </form>
+  )
+}
+
+function getPreviousVisualElement(footer: HTMLElement) {
+  let anchor: HTMLElement | null = footer
+
+  while (anchor && !anchor.previousElementSibling) {
+    const parentElement: HTMLElement | null = anchor.parentElement
+
+    if (!parentElement || parentElement === document.body) {
+      break
+    }
+
+    anchor = parentElement
+  }
+
+  return anchor?.previousElementSibling instanceof HTMLElement
+    ? anchor.previousElementSibling
+    : null
+}
+
+function getVisualSurface(element: HTMLElement | null) {
+  if (!element) {
+    return DEFAULT_SURFACE
+  }
+
+  const explicitSurface =
+    element.dataset.footerSurface ??
+    element.querySelector<HTMLElement>("[data-footer-surface]")?.dataset
+      .footerSurface
+
+  if (explicitSurface && parseColor(explicitSurface)) {
+    return explicitSurface
+  }
+
+  const bounds = element.getBoundingClientRect()
+  const sampleY = bounds.bottom - 2
+  const candidates = [
+    element,
+    ...Array.from(element.querySelectorAll<HTMLElement>("*")),
+  ]
+  const samplePoints = [8, window.innerWidth - 8, window.innerWidth / 2]
+
+  for (const sampleX of samplePoints) {
+    for (let index = candidates.length - 1; index >= 0; index -= 1) {
+      const candidate = candidates[index]
+      const candidateBounds = candidate.getBoundingClientRect()
+
+      if (
+        sampleX < candidateBounds.left ||
+        sampleX > candidateBounds.right ||
+        sampleY < candidateBounds.top ||
+        sampleY > candidateBounds.bottom
+      ) {
+        continue
+      }
+
+      const background = window.getComputedStyle(candidate).backgroundColor
+      const parsed = parseColor(background)
+
+      if (parsed && parsed.alpha > 0.12) {
+        return toOpaqueColor(parsed, getDocumentSurface())
+      }
+    }
+  }
+
+  let current: HTMLElement | null = element
+
+  while (current) {
+    const parsed = parseColor(window.getComputedStyle(current).backgroundColor)
+
+    if (parsed && parsed.alpha > 0.12) {
+      return toOpaqueColor(parsed, getDocumentSurface())
+    }
+
+    current = current.parentElement
+  }
+
+  return getDocumentSurface()
+}
+
+function getDocumentSurface() {
+  const body = parseColor(window.getComputedStyle(document.body).backgroundColor)
+  const html = parseColor(
+    window.getComputedStyle(document.documentElement).backgroundColor
+  )
+  const surface =
+    body && body.alpha > 0.12
+      ? body
+      : html && html.alpha > 0.12
+        ? html
+        : parseColor(DEFAULT_SURFACE)
+
+  return surface ? toOpaqueColor(surface, DEFAULT_SURFACE) : DEFAULT_SURFACE
+}
+
+function getTone(color: string): FooterTone {
+  const parsed = parseColor(color)
+
+  if (!parsed) {
+    return "light"
+  }
+
+  const linear = [parsed.red, parsed.green, parsed.blue].map((channel) => {
+    const normalized = channel / 255
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4
+  })
+  const luminance =
+    0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+  return luminance < 0.34 ? "dark" : "light"
+}
+
+function parseColor(color: string) {
+  const match = color.match(
+    /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)/i
+  )
+
+  if (!match) {
+    if (/^#[\da-f]{6}$/i.test(color)) {
+      return {
+        red: Number.parseInt(color.slice(1, 3), 16),
+        green: Number.parseInt(color.slice(3, 5), 16),
+        blue: Number.parseInt(color.slice(5, 7), 16),
+        alpha: 1,
+      }
+    }
+
+    return null
+  }
+
+  return {
+    red: Number(match[1]),
+    green: Number(match[2]),
+    blue: Number(match[3]),
+    alpha: match[4] === undefined ? 1 : Number(match[4]),
+  }
+}
+
+function toOpaqueColor(
+  color: NonNullable<ReturnType<typeof parseColor>>,
+  backdrop: string
+) {
+  if (color.alpha >= 0.995) {
+    return `rgb(${Math.round(color.red)}, ${Math.round(color.green)}, ${Math.round(color.blue)})`
+  }
+
+  const parsedBackdrop =
+    parseColor(backdrop) ?? parseColor(DEFAULT_SURFACE)!
+  const blend = (foreground: number, background: number) =>
+    Math.round(
+      foreground * color.alpha + background * (1 - color.alpha)
+    )
+
+  return `rgb(${blend(color.red, parsedBackdrop.red)}, ${blend(color.green, parsedBackdrop.green)}, ${blend(color.blue, parsedBackdrop.blue)})`
 }

@@ -1,42 +1,17 @@
-import { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 
-import SearchResultsTemplate from "@modules/search/templates/search-results-template"
-
-import { search } from "@modules/search/actions"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-
-export const metadata: Metadata = {
-  title: "Search",
-  description: "Explore all of our products.",
+type ResultsPageProps = {
+  params: Promise<{ query: string; countryCode: string }>
 }
 
-type Params = {
-  params: { query: string; countryCode: string }
-  searchParams: {
-    sortBy?: SortOptions
-    page?: string
-  }
-}
+/**
+ * Compatibility route for shared legacy search URLs. Results now render in
+ * the store catalogue rather than through the retired listing template.
+ */
+export default async function ResultsPage({ params }: ResultsPageProps) {
+  const { query, countryCode } = await params
 
-export default async function SearchResults({ params, searchParams }: Params) {
-  const { query } = params
-  const { sortBy, page } = searchParams
-
-  const hits = await search(query).then((data) => data)
-
-  const ids = hits
-    .map((h) => h.objectID || h.id)
-    .filter((id): id is string => {
-      return typeof id === "string"
-    })
-
-  return (
-    <SearchResultsTemplate
-      query={query}
-      ids={ids}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-    />
+  permanentRedirect(
+    `/${countryCode}/store?search=${encodeURIComponent(query)}`
   )
 }

@@ -1,121 +1,152 @@
 "use client"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import DeleteButton from "../components/delete-button/DeleteButton"
-import s from "./styles/wishlist-template.module.scss"
+import { motion } from "framer-motion"
 import Image from "next/image"
-import { Divider } from "@medusajs/ui"
+
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import PremiumActionLink from "@modules/common/components/premium-action-link"
+import DeleteButton from "../components/delete-button/DeleteButton"
 import ShareButton from "../components/share-button/ShareButton"
-import ClickButton from "../components/edit-button"
+import {
+  AccountPageReveal,
+  AccountSectionReveal,
+} from "../components/account-page-reveal"
+import { accountListItemVariants, accountListVariants } from "../motion"
+import s from "./styles/wishlist-template.module.scss"
+import AccountInteractiveSurface from "../components/account-interactive-surface"
 
 function getVariantOptionsSummary(variant: any): string {
   if (!variant) return ""
-  const values: string[] = Array.isArray(variant.options)
-    ? variant.options.map((o: any) => o?.value).filter(Boolean)
+  const values = Array.isArray(variant.options)
+    ? variant.options.map((option: any) => option?.value).filter(Boolean)
     : []
-  if (values.length) return values.join(" / ")
-  return variant.title || ""
-}
-
-function truncateTitle(title: string): string {
-  const words = title.split(' ')
-  if (words.length <= 2) return title
-  return words.slice(0, 2).join(' ') + '...'
+  return values.length ? values.join(" / ") : variant.title || ""
 }
 
 type WishlistTemplateProps = {
   items: any[]
   countryCode: string
+  isPreview?: boolean
 }
 
-export default function WishlistTemplate({ items, countryCode }: WishlistTemplateProps) {
-    return (
-        <div className={s.content} data-testid="wishlist-page-wrapper">
-            <div className={s.header}>
-                <h1 className={s.title}>Seznam přání</h1>
-                <Divider />
-                <p className={s.desc}>Produkty, které jste si uložili na později.</p>
-            </div>
-
-            <div className={s.body}>
-                <div
-                    className={s.actions}
-                    // NOTE: this div is here for future if other features are added to the wishlist page, like sorting or filtering, adding/editing new wishlist, etc.
-                    //WIP : add share functionality, add filtering system similar to store page
-                >
-                    <ShareButton 
-                        data-testid="share-button"
-                        
-                    />
-                    {/* <ClickButton 
-                        data-testid="edit-button"
-                        text="Upravit"
-                    />
-                    <ClickButton 
-                        data-testid="edit-button"
-                        text="Vytvořit nový"
-                    /> */}
-                </div>
-                <Divider />
-                <div className={s.wishlistContainer}>
-                    {items.length === 0 ? (
-                        <p>Žádné položky v seznamu přání.</p>
-                    ) : (
-                        <ul className={s.wishlistList}>
-                        {items.map((item: any) => {
-                            const variant = item?.product_variant
-                            const product = variant?.product
-                            const title = product?.title || variant?.title || "Unknown product"
-                            const handle = product?.handle
-                            const thumb = product?.thumbnail
-                            const subtitle = getVariantOptionsSummary(variant)
-                            console.log("Rendering wishlist item", item)
-
-                            return (
-                            <li key={item.id} className={s.wishlistCard}>
-                                <LocalizedClientLink
-                                    className={s.wishlistLink}
-                                    href={handle ? `/products/${handle}` : `/`}
-                                >
-                                    <div className={s.wishlistThumb}>
-                                        {thumb ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <Image 
-                                                src={thumb} 
-                                                alt={title}
-                                                width={100}
-                                                height={100}
-                                                style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                            />
-                                        ) : (
-                                            <Image 
-                                                src={"/assets/img/horizontal_prop.png"} 
-                                                alt={"placeholder"}
-                                                width={100}
-                                                height={100}
-                                                style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                            />
-                                        )}
-                                    </div>
-                                    <div className={s.wishlistInfo}>
-                                        <h3 className={s.wishlistTitle}>{truncateTitle(title)}</h3>
-                                        <Divider />
-                                        {subtitle ? (
-                                        <div className={s.wishlistSubtitle}>{subtitle}</div>
-                                        ) : null}
-                                    </div>
-
-                                    <div className={s.wishlistActions}>
-                                        <DeleteButton itemId={item.id} />
-                                    </div>
-                                </LocalizedClientLink>
-                            </li>
-                            )
-                        })}
-                        </ul>
-                    )}
-                </div>
-            </div>
+export default function WishlistTemplate({
+  items,
+  isPreview = false,
+}: WishlistTemplateProps) {
+  return (
+    <AccountPageReveal
+      className={s.accountWishlistRoot}
+      data-testid="wishlist-page-wrapper"
+    >
+      <AccountSectionReveal className={s.accountWishlistHeader}>
+        <p>Soukromý archiv · uložené</p>
+        <div className={s.accountWishlistHeading}>
+          <h1>
+            Oblíbené
+            <em>objekty.</em>
+          </h1>
+          <span>{String(items.length).padStart(2, "0")} uložených</span>
         </div>
-    )
+        <div className={s.accountWishlistIntro}>
+          <p>
+            Osobní výběr objektů, ke kterým se můžete vrátit, až přijde jejich
+            čas.
+          </p>
+          {items.length > 0 && !isPreview && (
+            <ShareButton data-testid="share-button" />
+          )}
+        </div>
+      </AccountSectionReveal>
+
+      <AccountSectionReveal className={s.accountWishlistBody}>
+        {isPreview && (
+          <div className={s.accountPreviewNotice}>
+            <span>Vývojový náhled</span>
+            <p>
+              Ukázkové položky se zobrazují jen lokálně, dokud seznam přání
+              neobsahuje vlastní objekty.
+            </p>
+          </div>
+        )}
+
+        {items.length === 0 ? (
+          <div className={s.accountWishlistEmpty}>
+            <div>
+              <span>Výběr je zatím prázdný</span>
+              <p>Až vás některý objekt osloví, uložte si jej záložkou.</p>
+            </div>
+            <PremiumActionLink
+              href="/store"
+              text="Objevovat objekty"
+              className={s.accountWishlistAction}
+            />
+          </div>
+        ) : (
+          <motion.ul
+            className={s.accountWishlistGrid}
+            variants={accountListVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {items.map((item: any, index: number) => {
+              const variant = item?.product_variant
+              const product = variant?.product
+              const title =
+                product?.title || variant?.title || "Ateliérový objekt"
+              const subtitle = getVariantOptionsSummary(variant)
+              const href = product?.handle
+                ? `/products/${product.handle}`
+                : "/store"
+              const image =
+                product?.thumbnail || "/assets/img/horizontal_prop.png"
+
+              return (
+                <motion.li
+                  key={item.id}
+                  className={s.accountWishlistCard}
+                  variants={accountListItemVariants}
+                >
+                  <AccountInteractiveSurface
+                    className={s.accountWishlistSurface}
+                    contentClassName={s.accountWishlistSurfaceContent}
+                  >
+                    <LocalizedClientLink
+                      className={s.accountWishlistProduct}
+                      href={href}
+                    >
+                      <div className={s.accountWishlistImage}>
+                        <Image
+                          src={image}
+                          alt={title}
+                          width={520}
+                          height={640}
+                        />
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        {isPreview && <i>Náhled</i>}
+                      </div>
+                    </LocalizedClientLink>
+                    <div className={s.accountWishlistCardFooter}>
+                      <LocalizedClientLink
+                        className={s.accountWishlistInfo}
+                        href={href}
+                      >
+                        <span>Ateliérový objekt</span>
+                        <h2>{title}</h2>
+                        {subtitle && <p>{subtitle}</p>}
+                      </LocalizedClientLink>
+                      {!isPreview && (
+                        <div className={s.accountWishlistCardAction}>
+                          <DeleteButton itemId={item.id} />
+                        </div>
+                      )}
+                    </div>
+                  </AccountInteractiveSurface>
+                </motion.li>
+              )
+            })}
+          </motion.ul>
+        )}
+      </AccountSectionReveal>
+    </AccountPageReveal>
+  )
 }

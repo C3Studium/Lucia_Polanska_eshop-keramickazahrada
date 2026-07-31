@@ -1,77 +1,99 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+.searchControl {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    border-radius: 25px;
+    overflow: hidden;
+    border: 1px solid rgba(47, 51, 41, 0.09);
+    box-shadow: 0 4px 12px -8px rgba(31, 35, 25, 0.48);
+    background: rgba(255, 255, 255, 0.48);
+    will-change: width;
+
+    &.active {
+        border-color: rgba(116, 126, 98, 0.26);
+        box-shadow: inset 0 0 0 1px rgba(116, 126, 98, 0.08), 0 5px 16px -10px rgba(31, 35, 25, 0.5);
+    }
+
+    @include vb((
+        s: (height: 35px),
+        sm: (height: 35px),
+        xs: (height: 35px),
+    ));
+}
+
 .button{
     position: relative;
-    width: 50px;
-    height: 40px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
     cursor: pointer;
     border-radius: 25px;
     overflow: hidden;
-    box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
+    border: 0;
+    background: transparent;
+    padding: 0;
+    transition: background-color 0.35s ease;
+
+    &:hover,
+    &:focus-visible {
+        background-color: rgba(116, 126, 98, 0.14);
+
+        img { transform: scale(0.9); }
+    }
+
+    .searchControl.active & {
+        background-color: transparent;
+
+        img {
+            filter: none;
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--darkOlive);
+        outline-offset: 3px;
+    }
 
 
     @include vb((
-        s: (width: 90px, height: 35px),
-        sm: (width: 90px, height: 35px),
-        xs: (width: 90px, height: 35px),
+        s: (width: 36px, height: 35px),
+        sm: (width: 36px, height: 35px),
+        xs: (width: 36px, height: 35px),
     ));
-
-    .slider{
-        position: relative;
-        width: 100%;
-        height: 100%;
-
-        .el{
-            width: 100%;
-            height: 100%;
-            background-color: var(--darkOlive);
-            p{
-                margin: 0px;
-                color: var(--whiteText);
-            }
-            &:nth-of-type(2){
-                background-color: var(--bgBlack);
-                p{
-                    color: var(--whiteText);
-                }
-            }
-            &:hover{
-                .perspectiveText{
-                    transform: rotateX(90deg);
-                    p{
-                        &:nth-of-type(1){
-                            transform: translateY(-100%);
-                            opacity: 0;
-                        }
-                        &:nth-of-type(2){
-                            opacity: 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
 }
 
-.perspectiveText{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
+.searchIcon {
+    display: block;
+    width: 19px;
+    height: 19px;
+    opacity: 0.76;
+    transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.input {
     width: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    p{
-        transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-        pointer-events: none;
-        text-transform: uppercase;
-        &:nth-of-type(2){
-            position: absolute;
-            transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(9px);
-            opacity: 0;
-        }
+    min-width: 0;
+    height: 100%;
+    padding: 0 20px 0 10px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--bgBlack);
+    font-size: clamp(15px, 1vw, 18px);
+    font-weight: 300;
+
+    &::placeholder {
+        color: rgba(43, 48, 35, 0.48);
+    }
+
+    &::-webkit-search-cancel-button {
+        display: none;
     }
 }

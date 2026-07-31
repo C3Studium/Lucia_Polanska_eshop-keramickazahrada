@@ -1,162 +1,128 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
-  // container styles if needed
+  position: relative;
+  width: 100%;
+  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+
+  .summaryRow {
+    min-height: 124px;
+  }
 
   .headerRow {
-    display: flex;
+    display: grid;
+    grid-template-columns:
+      minmax(150px, 0.3fr)
+      minmax(0, 1fr)
+      auto;
     align-items: center;
-    justify-content: space-between;
-    @include hb((
-      sm: (gap: 0.5rem),
-      xs: (gap: 1rem),
-      xxs: (gap: 1rem),
-    ));
-    @include vb((
-      md: (gap: 1rem),
-      s: (gap: 1rem),
-      sm: (gap: 1rem),
-      xs: (gap: 1rem),
-    ));
+    gap: clamp(20px, 4vw, 54px);
+    min-height: 124px;
+    padding: clamp(24px, 3vw, 38px) clamp(4px, 0.7vw, 12px);
+  }
 
-    .leftCol {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
+  .labelUpper {
+    color: rgba(32, 33, 29, 0.5);
+    font: 11px/1.2 "Sansation-Regular", sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
 
-      .leftColContent{
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        align-items: center;
-        justify-content: flex-start;
+  .currentValue {
+    min-width: 0;
+  }
 
-        @include vb((
-          s: (
-            flex-direction: column,
-            justify-content: center,
-            align-items: flex-start,
-            gap: 0.25rem,
-          ),
-          sm: (
-            flex-direction: column,
-            justify-content: center,
-            align-items: flex-start,
-            gap: 0.25rem,
-          ),
-          xs: (
-            flex-direction: column,
-            justify-content: center,
-            align-items: flex-start,
-            gap: 0.25rem,
-          ),
-        ));
-        .labelUpper {
-          font-size: 1.5rem;
-          line-height: 1.2;
-          font-weight: 300;
-          font-family: "Sansation-Regular";
-          white-space: nowrap;
+  .valueText {
+    display: block;
+    overflow-wrap: anywhere;
+    color: #20211d;
+    font: 400 clamp(1.12rem, 1.25vw, 1.36rem) / 1.4 "Sansation-Light",
+      sans-serif;
+  }
 
-          @include hb((
-            lg: (font-size: 1.35rem),
-            md: (font-size: 1.35rem),
-            mdt: (font-size: 1.35rem),
-            sm: (font-size: 1.35rem),
-            xs: (font-size: 1.15rem),
-            xxs: (font-size: 1.15rem),
-          ));
+  .editAction {
+    justify-self: end;
+  }
 
-          @include vb((
-            lg: (font-size: 1.35rem),
-            md: (font-size: 1.25rem),
-            s: (font-size: 1.15rem),
-            sm: (font-size: 1.15rem),
-            xs: (font-size: 1.15rem),
-          ));
-        }
-        .rightInfoRow {
-          display: flex;
-          flex-direction: row;
-          
-
-          .fontSemibold {
-            font-size: 1.1rem;
-            line-height: 1.2;
-            font-weight: 300;
-            font-family: "Sansation-Light";
-
-            @include hb((
-              lg: (font-size: 1.05rem),
-              md: (font-size: 1.05rem),
-              mdt: (font-size: 1.05rem),
-              sm: (font-size: 1.05rem),
-              xs: (font-size: 1rem),
-              xxs: (font-size: 1rem),
-            ));
-
-            @include vb((
-              lg: (font-size: 1.05rem),
-              md: (font-size: 1rem),
-              s: (font-size: 1rem),
-              sm: (font-size: 1rem),
-              xs: (font-size: 1rem),
-            ));
-          }
-        }
-      }
-    }
-    .editBtn {
-      // Button styles if needed
-    }
+  .editBtn,
+  .saveBtn {
+    --premium-button-surface: transparent;
   }
 
   .successPanel,
   .errorPanel,
   .editPanel {
-    transition-property: max-height, opacity;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
     overflow: hidden;
   }
+
   .editPanel {
-    overflow: visible;
+    width: 100%;
   }
-  .panelOpen {
-    max-height: 1000px;
-    opacity: 1;
+
+  .successPanel p,
+  .errorPanel p {
+    margin: 0 0 18px;
+    padding: 12px 16px;
+    border-left: 2px solid #7e896a;
+    background: rgba(126, 137, 106, 0.09);
+    font-size: 14px;
   }
-  .panelClosed {
-    max-height: 0;
-    opacity: 0;
+
+  .errorPanel p {
+    border-left-color: #a85042;
+    background: rgba(168, 80, 66, 0.09);
   }
-  .badgeSuccess {
-    padding: 0.5rem;
-    margin: 1rem 0;
-  }
-  .badgeError {
-    padding: 0.5rem;
-    margin: 1rem 0;
-  }
+
   .editContent {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem 0;
+    display: grid;
+    grid-template-columns: minmax(150px, 0.3fr) minmax(0, 1fr) auto;
+    gap: 1.6rem clamp(20px, 4vw, 54px);
+    padding: 10px clamp(4px, 0.7vw, 12px) 36px;
+
+    > div:first-child {
+      grid-column: 2 / -1;
+    }
 
     .editActions {
+      grid-column: 2 / -1;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      margin-top: 0.5rem;
+      margin-top: 0.4rem;
 
       .saveBtn {
-        width: 100%;
-        @media (min-width: 640px) {
-          max-width: 140px;
-        }
+        width: min(100%, 220px);
       }
     }
+  }
+}
+
+@media (max-width: 720px) {
+  .root .headerRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .root .labelUpper {
+    grid-column: 1;
+  }
+
+  .root .currentValue {
+    grid-column: 1;
+  }
+
+  .root .editAction {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .root .editContent {
+    grid-template-columns: 1fr;
+  }
+
+  .root .editContent > div:first-child,
+  .root .editContent .editActions {
+    grid-column: 1;
   }
 }

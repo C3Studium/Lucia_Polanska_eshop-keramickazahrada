@@ -3,6 +3,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import styles from "./page.module.scss"
@@ -20,13 +21,32 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   }
 
   const customer = await retrieveCustomer()
+  const itemCount = cart.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
 
   return (
     <div className={styles.root}>
-      <PaymentWrapper cart={cart}>
-        <CheckoutForm cart={cart} customer={customer} countryCode={countryCode} />
-      </PaymentWrapper>
-      <CheckoutSummary cart={cart} />
+      <header className={styles.masthead}>
+        <div>
+          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "objekt" : "objekty"}</p>
+          <h1>Dokončete<br /><em>svůj výběr.</em></h1>
+        </div>
+        <div className={styles.mastheadAside}>
+          <p className={styles.mastheadCopy}>
+            Několik klidných kroků a váš objekt může vyrazit z píseckého ateliéru.
+          </p>
+          <LocalizedClientLink href="/cart" className={styles.backLink}>
+            <span>←</span> Zpět do košíku
+          </LocalizedClientLink>
+        </div>
+      </header>
+      <section className={styles.ledger}>
+        <PaymentWrapper cart={cart}>
+          <CheckoutForm cart={cart} customer={customer} countryCode={countryCode} />
+        </PaymentWrapper>
+      </section>
+      <aside className={styles.order}>
+        <CheckoutSummary cart={cart} />
+      </aside>
     </div>
   )
 }

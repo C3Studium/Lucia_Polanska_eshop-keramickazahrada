@@ -86,8 +86,11 @@ export async function getOrSetCart(countryCode: string) {
   return cart
 }
 
-export async function updateCart(data: HttpTypes.StoreUpdateCart) {
-  const cartId = await getCartId()
+export async function updateCart(
+  data: HttpTypes.StoreUpdateCart,
+  explicitCartId?: string
+) {
+  const cartId = explicitCartId || (await getCartId())
 
   if (!cartId) {
     throw new Error("No existing cart found, please create one before updating")
@@ -115,19 +118,23 @@ export async function addToCart({
   variantId,
   quantity,
   countryCode,
-  metadata = {}
+  metadata = {},
+  cartId,
 }: {
   variantId: string
   quantity: number
   countryCode: string
   metadata?: Record<string, any>
+  cartId?: string
 }): Promise<{ success: boolean; message?: string }> {
   try {
     if (!variantId) {
       return { success: false, message: "Missing variant ID when adding to cart" }
     }
 
-    const cart = await getOrSetCart(countryCode)
+    const cart = cartId
+      ? await retrieveCart(cartId)
+      : await getOrSetCart(countryCode)
 
     if (!cart) {
       return { success: false, message: "Error retrieving or creating cart" }
@@ -623,6 +630,7 @@ export async function addBundleToCart({
   quantity,
   countryCode,
   items,
+  cartId,
 }: {
   bundleId: string
   quantity: number
@@ -631,12 +639,15 @@ export async function addBundleToCart({
     item_id: string
     variant_id: string
   }[]
+  cartId?: string
 }) {
   if (!bundleId) {
     throw new Error("Missing bundle ID when adding to cart")
   }
 
-  const cart = await getOrSetCart(countryCode)
+  const cart = cartId
+    ? await retrieveCart(cartId)
+    : await getOrSetCart(countryCode)
 
   if (!cart) {
     throw new Error("Error retrieving or creating cart")

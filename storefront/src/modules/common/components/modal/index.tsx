@@ -1,7 +1,8 @@
 
-import { Dialog, Transition } from "@headlessui/react"
+import { Dialog } from "@headlessui/react"
 import { clx } from "@medusajs/ui"
-import React, { Fragment } from "react"
+import { AnimatePresence, motion, type Variants } from "framer-motion"
+import React from "react"
 import { ModalProvider, useModal } from "@lib/context/modal-context"
 import X from "@modules/common/icons/x"
 
@@ -15,13 +16,28 @@ type ModalProps = {
   children: React.ReactNode
   'data-testid'?: string
 }
-// WIP: finish the styling of Adresa page and its components
-// WIP: Add more finishing touches - animations, slight responsivness
-// WIP: Finish styling page objednavky, both of the main page, buttons, and chceck its functions, if they work. 
-// Pluch stylize the order details component for it, so it fits the styling of the accoung page. 
-// WIP: after that just stylize Recenze page, and add some functionality to it, not just to inspect the review, but also show the product link page, so they see it
-// THINK of how to add avatar picture to the account page, and make it work with the backend.
-// Connect sanity with the main front page, and news - mainly use AI to generate the schemas and implementation for the images, texts, and info navbar component
+const modalBackdropVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: .3, ease: "easeOut" } },
+  exit: { opacity: 0, transition: { duration: .22, ease: "easeIn" } },
+}
+
+const modalPanelVariants: Variants = {
+  hidden: { opacity: 0, y: 34, scale: .985 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: .58, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: 18,
+    scale: .99,
+    transition: { duration: .28, ease: "easeIn" },
+  },
+}
+
 const Modal = ({
   isOpen,
   close,
@@ -31,57 +47,51 @@ const Modal = ({
   'data-testid': dataTestId
 }: ModalProps) => {
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className={styles.modal} onClose={close}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+    <AnimatePresence>
+      {isOpen && (
+        <Dialog
+          static
+          open={isOpen}
+          as="div"
+          className={styles.modal}
+          onClose={close}
         >
-          <div className={styles.backdrop} />
-        </Transition.Child>
+          <motion.div
+            className={styles.backdrop}
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          />
 
-        <div className={clx(styles.container, {
-          [styles.search]: search,
-        })}>
           <div
             className={clx(styles.container, {
-              ["items-center"]: !search,
-              ["items-start"]: search,
+              [styles.search]: search,
             })}
           >
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+            <Dialog.Panel
+              as={motion.div}
+              data-testid={dataTestId}
+              className={clx(
+                styles.panel,
+                {
+                  [styles.small]: size === "small",
+                  [styles.medium]: size === "medium",
+                  [styles.large]: size === "large",
+                  [styles.transparent]: search,
+                }
+              )}
+              variants={modalPanelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              <Dialog.Panel
-                data-testid={dataTestId}
-                className={clx(
-                  styles.panel,
-                  {
-                    [styles.small]: size === "small",
-                    [styles.medium]: size === "medium",
-                    [styles.large]: size === "large",
-                    [styles.transparent]: search,
-                  }
-                )}
-              >
-                <ModalProvider close={close}>{children}</ModalProvider>
-              </Dialog.Panel>
-            </Transition.Child>
+              <ModalProvider close={close}>{children}</ModalProvider>
+            </Dialog.Panel>
           </div>
-        </div>
-      </Dialog>
-    </Transition>
+        </Dialog>
+      )}
+    </AnimatePresence>
   )
 }
 

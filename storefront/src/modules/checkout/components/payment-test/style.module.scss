@@ -2,7 +2,17 @@
 /* Payment Test badge styles with nested Sass */
 
 .root {
+  min-height: auto !important;
+  padding: .28rem .48rem !important;
+  border: 1px solid rgba(154, 111, 101, .28) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 232, 214, .46) !important;
+  color: #75574f !important;
+  box-shadow: none !important;
+  font: 400 .62rem/1.2 "Sansation-Regular", sans-serif !important;
+  letter-spacing: .02em;
+
   .labelStrong {
-    font-weight: 600; /* font-semibold */
+    font-weight: 600;
   }
 }

@@ -1,48 +1,52 @@
 import s from "./styles/profile.module.scss"
 
-import ProfilePhone from "@modules/account//components/profile-phone"
+import ProfilePhone from "@modules/account/components/profile-phone"
 import ProfileBillingAddress from "@modules/account/components/profile-billing-address"
 import ProfileEmail from "@modules/account/components/profile-email"
 import ProfileName from "@modules/account/components/profile-name"
 import ProfilePassword from "@modules/account/components/profile-password"
+import {
+  AccountPageReveal,
+  AccountSectionReveal,
+} from "../components/account-page-reveal"
 
-import BgImage from "@modules/account/components/BgImage"
 import { HttpTypes } from "@medusajs/types"
 
 type ProfileTemplateProps = {
-    customer: HttpTypes.StoreCustomer
-    regions: HttpTypes.StoreRegion[]
+  customer: HttpTypes.StoreCustomer
+  regions: HttpTypes.StoreRegion[]
 }
 
-export const ProfileTemplate = ({ customer, regions }: ProfileTemplateProps) => {
-    return (
-        <section className={s.content}>
-            <div className={s.content} data-testid="profile-page-wrapper">
-                <div className={s.header}>
-                    <h1 className={s.title}>Profil</h1>
-                    <Divider />
-                    <p className={s.desc}>
-                        Zde můžete zobrazit a aktualizovat informace o svém profilu, včetně svého jména, e-mailu a telefonního čísla. Také můžete aktualizovat svou fakturační adresu nebo změnit heslo.
-                    </p>
-                </div>
-                <div className={s.body}>
-                    <ProfileName customer={customer} />
-                    <Divider />
-                    <ProfileEmail customer={customer} />
-                    <Divider />
-                    <ProfilePhone customer={customer} />
-                    <Divider />
-                    <ProfilePassword customer={customer} />
-                    <Divider />
-                    <ProfileBillingAddress customer={customer} regions={regions} />
-                </div>
-            </div>
-            <BgImage  src="/assets/img/img/1.jpg" />
-        </section>
-    )
+export const ProfileTemplate = ({
+  customer,
+  regions,
+}: ProfileTemplateProps) => {
+  return (
+    <AccountPageReveal className={s.content} data-testid="profile-page-wrapper">
+      <AccountSectionReveal>
+        <div className={s.header}>
+          <p className={s.eyebrow}>Soukromý archiv · osobní údaje</p>
+          <h1 className={s.title}>
+            Váš <em>profil.</em>
+          </h1>
+          <Divider />
+          <p className={s.desc}>
+            Kontaktní údaje, heslo a fakturační informace přehledně na jednom
+            místě.
+          </p>
+        </div>
+      </AccountSectionReveal>
+      <AccountSectionReveal className={s.body}>
+        <ProfileName customer={customer} />
+        <ProfileEmail customer={customer} />
+        <ProfilePhone customer={customer} />
+        <ProfilePassword customer={customer} />
+        <ProfileBillingAddress customer={customer} regions={regions} />
+      </AccountSectionReveal>
+    </AccountPageReveal>
+  )
 }
 
 export default ProfileTemplate
 
 const Divider = () => <div className={s.divider} />
-;``

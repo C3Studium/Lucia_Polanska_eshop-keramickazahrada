@@ -1,200 +1,124 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
-.root {
-	// flex flex-col justify-center gap-y-4
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	row-gap: 1rem;
-	padding: 5vh 2rem 0 2rem;
-
-	.header {
-		// flex gap-2 justify-between items-center
-		display: flex;
-		column-gap: 0.5rem;
-		justify-content: space-between;
-		align-items: center;
-		padding-bottom: 0.5rem;
-		border-bottom: 1px solid var(--border-color, #e5e7eb);
-		margin-bottom: 1rem;
-
-		@include vb((
-			s: (
-				flex-direction: column-reverse,
-				align-items: flex-end,
-				row-gap: 1.5rem,
-				justify-content: center,
-				margin-bottom: 1rem
-			),
-			sm: (
-				flex-direction: column-reverse,
-				align-items: flex-end,
-				row-gap: 1.5rem,
-				justify-content: center,
-				margin-bottom: 1rem
-			),
-			xs: (
-				flex-direction: column-reverse,
-				align-items: flex-end,
-				row-gap: 1.5rem,
-				justify-content: center,
-				margin-bottom: 1rem
-			),
-		));
-
-		.title {
-			// text-2xl-semi
-			font-size: 2rem;
-			line-height: 1.25rem;
-			font-weight: 300;
-			font-family: "Sansation-Light";
-			width: 100%;
-			text-align: left;
-
-
-			@include hb((
-				md: (font-size: 1.8rem),
-				mdt: (font-size: 1.8rem),
-				sm: (font-size: 1.8rem),
-				xs: (font-size: 1.6rem),
-				xxs: (font-size: 1.6rem),
-			));
-
-			@include vb((
-				lg: (font-size: 1.8rem),
-				md: (font-size: 1.8rem),
-				s: (font-size: 1.6rem, text-align: left),
-				sm: (font-size: 1.6rem, text-align: left),
-				xs: (font-size: 1.6rem, text-align: left),
-			));
-		}
-
-		.backLink {
-			// flex gap-2 items-center text-ui-fg-subtle hover:text-ui-fg-base
-			display: flex;
-			align-items: center;
-			column-gap: 0.5rem;
-			color: var(--text-subtle, #6b7280);
-			text-decoration: none;
-
-			&:hover {
-				color: var(--text-color, inherit);
-			}
-		}
-	}
-
-	.container {
-		// flex flex-col gap-4 h-full bg-white w-full
-		display: flex;
-		flex-direction: column;
-		row-gap: 1rem;
-		height: 100%;
-		background: var(--bgWhite, #fff);
-		width: 100%;
-	}
+.accountOrderDetailsRoot {
+  container: account-order / inline-size;
+  display: grid;
+  gap: clamp(42px, 6vh, 74px);
+  width: 100%;
+  color: #20211d;
 }
 
+.accountOrderDetailsHeader {
+  display: grid;
+  gap: 22px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(32, 33, 29, .2);
+}
 
-// Button and animation styles
-.perspectiveText{
+.accountOrderDetailsHeader > p,
+.accountOrderDetailsSection > span,
+.accountOrderDetailsAside > span {
+  margin: 0;
+  color: rgba(32, 33, 29, .5);
+  font: 11px/1.25 "Sansation-Regular", sans-serif;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.accountOrderDetailsHeading {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-  p{
-    transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    pointer-events: none;
-    text-transform: capitalize;
-    font-size: 1rem;
-    gap: 1rem;
-    &:nth-of-type(2){
-      position: absolute;
-      transform-origin: bottom center;
-      transform: rotateX(-90deg) translateY(12px);
-      opacity: 0;
-    }
+  justify-content: space-between;
+  gap: 28px;
+  align-items: end;
+}
 
-    // --- Horizontal (landscape) responsiveness ---
-    @include hb((
-        huge: (font-size: 1.05rem),
-        xl: (font-size: 1rem),
-        md: (font-size: 0.95rem),
-        sm: (font-size: 0.95rem),
-        xxs: (font-size: 0.9rem),
-    ));
+.accountOrderDetailsHeading h1 {
+  margin: 0;
+  font: 400 clamp(3.4rem, 5.7vw, 6.5rem)/.82 "Sentient-Regular", serif;
+  letter-spacing: -.06em;
+}
 
-    // --- Vertical (portrait) responsiveness ---
-    @include vb((
-        lg: (font-size: 1.05rem),
-        s: (font-size: 0.95rem),
-        sm: (font-size: 0.9rem),
-        xs: (font-size: 0.85rem),
-    ));
+.accountOrderDetailsHeading h1 em {
+  display: block;
+  margin-left: 15%;
+  color: #7e896a;
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-weight: 300;
+}
+
+.accountOrderBackLink {
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+  --premium-link-ink: #20211d;
+  --premium-link-active-ink: #f7e5d5;
+  --premium-link-border: #20211d;
+  --premium-link-fill: #20211d;
+}
+
+.accountOrderDetailsIntro {
+  border-block: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOrderDetailsLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, .72fr);
+  gap: clamp(28px, 3.8vw, 60px);
+  align-items: start;
+}
+
+.accountOrderDetailsMain {
+  display: grid;
+  border-top: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOrderDetailsSection {
+  display: grid;
+  gap: 18px;
+  padding: clamp(28px, 4vw, 48px) 0;
+  border-bottom: 1px solid rgba(32, 33, 29, .2);
+}
+
+.accountOrderDetailsSection > h2 {
+  margin: 0;
+  font: 400 clamp(2.4rem, 3.7vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  letter-spacing: -.05em;
+}
+
+.accountOrderDetailsAside {
+  position: sticky;
+  top: 120px;
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding: clamp(28px, 2.7vw, 44px);
+  border: 1px solid rgba(32, 33, 29, .22);
+  background: #20221d;
+  color: #f7e5d5;
+  box-shadow: 16px 18px 0 -1px rgba(126, 137, 106, .28);
+}
+
+.accountOrderDetailsAside > span {
+  color: rgba(247, 229, 213, .5);
+}
+
+@container account-order (max-width: 980px) {
+  .accountOrderDetailsLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .accountOrderDetailsAside {
+    position: static;
+    width: min(100%, 520px);
+    justify-self: end;
   }
 }
 
+@container account-order (max-width: 620px) {
+  .accountOrderDetailsHeading {
+    display: grid;
+  }
 
-.ClickButton{
-  width: auto;
-  height: auto;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-
-  .button{
-      position: relative;
-      width: 180px;
-      max-width: 200px;
-      height: 40px;
-      cursor: pointer;
-      border-radius: 25px;
-      overflow: hidden;
-      border: none;
-      box-shadow: none;
-      background-color: transparent;
-
-      .slider{
-          position: relative;
-          width: 100%;
-          height: 100%;
-
-          .el{
-              width: 100%;
-              height: 100%;
-              p{
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin: 0px;
-				color: var(--whiteText);
-              }
-              &:nth-of-type(2){
-                  p{
-                      color: var(--whiteText);
-                  }
-              }
-              &:hover{
-                  .perspectiveText{
-                      transform: rotateX(90deg);
-                      p{
-                          &:nth-of-type(1){
-                              transform: translateY(-100%);
-                              opacity: 0;
-                          }
-                          &:nth-of-type(2){
-                              opacity: 1;
-                          }
-                      }
-                  }
-              }
-          }
-      }
-
+  .accountOrderDetailsAside {
+    width: 100%;
+    justify-self: stretch;
   }
 }

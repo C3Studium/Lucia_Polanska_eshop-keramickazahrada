@@ -4,6 +4,7 @@
 .root {
   width: 100%;
   font-family: "Sansation-Light";
+  color: inherit;
   @include vb((
     md: (padding: 1rem),
     s: (padding: 1rem),
@@ -234,3 +235,19 @@
     }
   }
 }
+
+/* Totals are used on both paper and ink surfaces. */
+.root .totalsList,
+.root .totalsList .row .label,
+.root .totalsList .row .subtotal,
+.root .totalsList .row .labelValue,
+.root .totalsList .row .discount,
+.root .totalsList .row .giftCard,
+.root .totalsList .taxRow .label,
+.root .totalsList .taxRow .labelValue,
+.root .totalRow .total,
+.root .totalRow .totalValue {
+  color: inherit;
+}
+
+.root .divider { border-color: currentColor; opacity: .16; }

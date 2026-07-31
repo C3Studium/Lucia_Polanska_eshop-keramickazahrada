@@ -1,41 +1,47 @@
 "use client";
-import Image from "next/image";
-import { Easing, motion, useMotionTemplate, useScroll, useTransform } from "framer-motion";
-import LinkButton from "@modules/common/components/Buttons/LinkButton";
-import { useEffect, useRef, useState } from "react";
+import { Easing, motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { useStateContext } from "@lib/context/StateContext";
-import { client } from "../../../../sanity/lib/client";
 import { urlFor } from "../../../../sanity/lib/image";
 import WebButton from "@modules/common/components/Buttons/webButton";
+import HeroImageShader from "./HeroImageShader";
 
-export default function IntroHero() {
+export default function IntroHero({
+    data,
+    newsText = "Dovolená | Novinky",
+}: {
+    data?: any
+    newsText?: string
+}) {
     const { firstLoad } = useStateContext();
     const ref = useRef<HTMLElement>(null);
-    const [data, setData] = useState<any>(null);
-    const [newsText, setNewsText] = useState<string>("Dovolená | Novinky");
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const introHeroData = await client.fetch('*[_type == "introHero"][0]');
-                const newsTextData = await client.fetch('*[_type == "newsText"][0]');
-                console.log('IntroHero data:', introHeroData);
-                console.log('News text data:', newsTextData);
-                setData(introHeroData);
-                if (newsTextData) setNewsText(newsTextData.text);
-            } catch (error) {
-                console.error('Error fetching IntroHero data:', error);
-            }
-        };
-        fetchData();
-    }, []);
+    const pointerX = useMotionValue(0);
+    const pointerY = useMotionValue(0);
+    // Shader/cursor reduced-motion fallback is intentionally disabled for now.
+    // const reduceMotion = useReducedMotion();
+    const heroImage = data?.images?.[0]
+        ? urlFor(data.images[0]).width(2400).quality(90).url()
+        : "/assets/img/img/2.jpg";
     const { scrollYProgress } = useScroll({
         target: ref,
         offset: ["start start", "end start"]
     });
 
-    const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-    const maskY = useTransform(scrollYProgress, [0, 1], [0, 100]);
+    const localJourneyProgress = useSpring(scrollYProgress, {
+        stiffness: 82,
+        damping: 26,
+        mass: 0.42,
+        restDelta: 0.0005,
+    });
+    const journeyProgress = localJourneyProgress;
+    const y = useTransform(journeyProgress, [0, 1], ["-1.5%", "2.5%"]);
+    const imageScale = useTransform(journeyProgress, [0, 1], [1.035, 1.09]);
+    const nameY = useTransform(journeyProgress, [0, 0.7, 1], [0, -8, -34]);
+    const nameScale = useTransform(journeyProgress, [0, 0.76, 1], [1, 0.99, 0.965]);
+    const nameOpacity = useTransform(journeyProgress, [0, 0.82, 1], [1, 1, 0]);
+    const contentOpacity = useTransform(journeyProgress, [0, 0.78, 1], [1, 1, 0]);
+    const contentY = useTransform(journeyProgress, [0, 0.78, 1], [0, -4, -22]);
+    const chromeOpacity = useTransform(journeyProgress, [0, 0.84, 1], [1, 1, 0]);
 
     // const PreloaderAnimSVG = {
     //     start: {
@@ -72,22 +78,25 @@ export default function IntroHero() {
             }
         }
     }
-      const PreloaderAnimImage2 = {
+    const PreloaderAnimImage2 = {
         initial: {
-            height: "0%",
+            clipPath: "inset(0 0 100% 0)",
+            scale: 1.06,
         },
         start: {
-            height: "0%",
+            clipPath: "inset(0 0 100% 0)",
+            scale: 1.06,
             transition: {
-                duration: 0.75,
+                duration: 1.1,
                 delay: 0.25,
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         },
         enter: {
-            height: "100%",
+            clipPath: "inset(0 0 0% 0)",
+            scale: 1,
             transition: {
-                duration: 0.75,
+                duration: 1.1,
                 delay: !firstLoad ? 0.25 : 0,
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
@@ -104,7 +113,7 @@ export default function IntroHero() {
             y: "0%",
             transition: {
                 duration: 0.75,
-                delay: !firstLoad ? 3 : 0,
+                delay: !firstLoad ? 1.25 : 0,
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         }
@@ -123,15 +132,40 @@ export default function IntroHero() {
             y: 0,
             transition: {
                 duration: 0.5,
-                delay: !firstLoad ? 3 : 0.5,
+                delay: !firstLoad ? 1.35 : 0.5,
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         }
     }
 
-    const maskPosition = useMotionTemplate`0px ${maskY}px`;
     return (
-        <section className="Hero__Intro" ref={ref}>
+        <section
+          className="Hero__Intro__Journey"
+          ref={ref}
+        >
+          <div
+            className="Hero__Intro"
+            onPointerMove={(event) => {
+                const bounds = event.currentTarget.getBoundingClientRect();
+                pointerX.set((event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5);
+                pointerY.set((event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5);
+            }}
+            onPointerLeave={() => {
+                pointerX.set(0);
+                pointerY.set(0);
+            }}
+        >
+            <motion.div
+                className="Hero__Intro__Topline"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, delay: firstLoad ? 0.15 : 0.85 }}
+                style={{ opacity: chromeOpacity }}
+            >
+                <span>Autorská keramika</span>
+                <span className="line" />
+                <span>Písek · od roku 2014</span>
+            </motion.div>
             <div className="Hero__Intro__Img">
                 {/* <motion.div 
                     className="Hero__Intro__Img__inner"
@@ -149,15 +183,21 @@ export default function IntroHero() {
                     />
                 </motion.div> */}
             </div>
-            <div className="Hero__Intro__Header">
+            <motion.div
+                className="Hero__Intro__Header"
+                style={{ y: nameY, scale: nameScale, opacity: nameOpacity }}
+            >
                 <div className="Hero__Intro__Header__Title">
                     <PreciseBlendedText i={4} text={data?.title1 || "Lucie"} delay={0} />
                 </div>
                 <div className="Hero__Intro__Header__Subtitle">
                     <PreciseBlendedText i={0} text={data?.title2 || "Polanská"} delay={0.5} />
                 </div>
-            </div>
-            <div className="Hero__Intro__Content">
+            </motion.div>
+            <motion.div
+                className="Hero__Intro__Content"
+                style={{ opacity: contentOpacity, y: contentY }}
+            >
                 <div className="Hero__Intro__Content__Text">
                     {data?.content ? (
                         // Sanity data loaded - use textWithBreaks for \n line breaks
@@ -180,17 +220,19 @@ export default function IntroHero() {
                     variants={PreloaderAnimButton}
                     custom={3}
                 >
-                    <WebButton href="/store" title="Navštívit E-shop" Kind="Link"/>
+                    <WebButton href="/store" title="Prohlédnout objekty" Kind="Link" tone="dark"/>
                 </motion.div>
-            </div>
-            <div className="Hero__Intro__Image__wrapper">
+            </motion.div>
+            <motion.div
+                className="Hero__Intro__Image__wrapper"
+            >
                 <motion.div 
                     className="Hero__Intro__Cover"
                     initial="initial"
                     animate="enter"
                     exit="exit"
                     variants={PreloaderAnimImage}
-                    style={{ y }}
+                    style={{ y, scale: imageScale }}
                 >
                     <motion.div
                         className="Hero__Intro__Cover__Image"
@@ -198,49 +240,47 @@ export default function IntroHero() {
                         animate="enter"
                         exit="exit"
                         variants={PreloaderAnimImage2}
-                        style={{ height: "100%", width: "100%", position: "relative", transformOrigin: "center center" }}
+                        style={{ width: "100%", height: "100%", position: "relative", transformOrigin: "center center" }}
                     >
-                        <Image 
-                            src={data?.images?.[0] ? urlFor(data.images[0]).url() : "/assets/img/img/2.jpg"}
-                            alt="Intro Image"
-                            sizes="100dvw"
-                            fill={true}
-                            className="Hero__Intro__Cover"
-                            style={{ objectFit: "cover", zIndex: -1 }}
+                        <HeroImageShader
+                            src={heroImage}
+                            pointerX={pointerX}
+                            pointerY={pointerY}
                         />
                     </motion.div>
                 </motion.div>
-            </div>
-            <motion.div 
-                className="Hero__Intro__Updates"
-                initial="initial"
-                animate="enter"
-                exit="exit"
-                variants={PreloaderAnimUpdates}
-                custom={2}
-            >
-                <motion.p
-                >
-                    {newsText || "Dovolena | Novinky"}
-                </motion.p>
             </motion.div>
-            <motion.div 
-                className="Hero__Intro__Updates__Mask"
-                initial="initial"
-                animate="enter"
-                exit="exit"
-                variants={PreloaderAnimUpdates}
-                custom={2}
-            >
-                <motion.p
-                    style={{
-                        WebkitMaskPosition: maskPosition,
-                        WebkitMaskSize: "100% 100%",
-                    }}
+            <motion.div className="Hero__Intro__FooterRail" style={{ opacity: chromeOpacity }}>
+                <motion.div
+                    className="Hero__Intro__Updates"
+                    initial="initial"
+                    animate="enter"
+                    exit="exit"
+                    variants={PreloaderAnimUpdates}
+                    custom={2}
                 >
-                    {newsText || "Dovolena | Novinky"}
-                </motion.p>
+                    <p>{newsText || "Dovolena | Novinky"}</p>
+                </motion.div>
+                <motion.div
+                    className="Hero__Intro__ScrollCue"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.65, delay: firstLoad ? 0.35 : 1.2 }}
+                >
+                    <span>Pokračovat</span>
+                    <i aria-hidden="true" />
+                </motion.div>
+                <motion.div
+                    className="Hero__Intro__ObjectCount"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.65, delay: firstLoad ? 0.3 : 1.1 }}
+                >
+                    <span>01</span>
+                    <span>Ručně · pomalu · v malém počtu</span>
+                </motion.div>
             </motion.div>
+          </div>
         </section>
     )
 }
@@ -302,7 +342,7 @@ const wordSplit = (text: string, firstLoad: boolean) => {
             y: 0,
             transition: {
                 duration: 0.5,
-                delay: !firstLoad ? 3 + (i * 0.01) : 0.5 + (i * 0.01),
+                delay: !firstLoad ? 1.05 + (i * 0.018) : 0.5 + (i * 0.01),
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         })
@@ -333,7 +373,7 @@ const textWithBreaks = (text: string, firstLoad: boolean) => {
             y: 0,
             transition: {
                 duration: 0.5,
-                delay: !firstLoad ? 3 + (i * 0.01) : 0.5 + (i * 0.01),
+                delay: !firstLoad ? 1.05 + (i * 0.018) : 0.5 + (i * 0.01),
                 ease: [0.76, 0, 0.24, 1] as Easing,
             }
         })

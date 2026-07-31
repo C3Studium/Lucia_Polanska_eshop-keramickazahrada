@@ -1,17 +1,139 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
+.sidebar {
+  position: fixed;
+  z-index: 20000;
+  top: 50%;
+  right: clamp(10px, 1.2vw, 24px);
+  display: flex;
+  justify-content: flex-end;
+  color: #ffe8d6;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
 
-.scrollbarProgress{
-    position: fixed;
-    bottom: 0dvh;
-    left: 0;
-    width: 100dvw;
-    height: 5px;
-    z-index: 2000;
-    pointer-events: none;
-    border-radius: 4px 0 0 4px;
-    transform-origin: 0% 0%;
-    background-color: var(--bgPrimary);
-    /* ensure hidden when no progress due to scaleX */
-    will-change: transform;
+.rail {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: clamp(5px, 0.65vh, 8px);
+  padding: 12px 0 12px 18px;
+  cursor: pointer;
+  pointer-events: auto;
+}
 
+.item {
+  display: flex;
+  min-height: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  color: currentColor;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.label {
+  display: flex;
+  max-width: 0;
+  overflow: hidden;
+  color: rgba(255, 232, 214, 0.78);
+  font: 400 9px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: translateX(12px);
+  transition: max-width 560ms cubic-bezier(0.76, 0, 0.24, 1),
+    transform 560ms cubic-bezier(0.76, 0, 0.24, 1);
+  white-space: nowrap;
+  text-shadow: 0 1px 10px rgba(32, 33, 28, 0.5);
+}
+
+.label i {
+  display: inline-block;
+  font: inherit;
+  font-style: normal;
+}
+
+.lineTrack,
+.minorTrack {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 1px;
+  flex: 0 0 auto;
+}
+
+.lineTrack {
+  width: 44px;
+  transform-origin: right center;
+}
+
+.minorTrack {
+  width: 17px;
+  padding: 0;
+  border: 0;
+  margin-right: 2px;
+  appearance: none;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  transform-origin: right center;
+}
+
+.lineBase,
+.lineProgress {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: currentColor;
+}
+
+.lineBase {
+  opacity: 0.5;
+}
+
+.lineProgress {
+  opacity: 1;
+  transform: scaleX(var(--line-progress, 0));
+  transform-origin: right center;
+  transition: transform 100ms linear;
+}
+
+.label[data-visible],
+.item:focus-visible .label {
+  max-width: 190px;
+  transform: translateX(0);
+}
+
+.item:focus-visible {
+  outline: none;
+}
+
+.item:focus-visible .label {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    right: 7px;
+  }
+
+  .rail {
+    gap: 8px;
+    padding-left: 8px;
+  }
+
+  .lineTrack {
+    width: 30px;
+  }
+
+  .minorTrack {
+    width: 11px;
+    margin-right: 1px;
+  }
+
+  .label {
+    display: none;
+  }
 }

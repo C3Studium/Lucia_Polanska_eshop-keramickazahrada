@@ -1,246 +1,238 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
-//WIP: finalize styles for wishlist page and responsive design, then create sanity for the main page and news 
-// then checkout the full site for any inconsistencies and styles errors or add new functionality that was left out during the development
-
-.content{ 
+.accountWishlistRoot {
+  display: grid;
+  gap: clamp(40px, 6vh, 72px);
   width: 100%;
-  min-height: 70dvh;
-  height: auto;
+  color: #20211d;
+}
+
+.accountWishlistHeader {
+  display: grid;
+  gap: 22px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+}
+
+.accountWishlistHeader > p,
+.accountWishlistHeading > span,
+.accountWishlistInfo > span,
+.accountWishlistImage > span {
+  margin: 0;
+  color: rgba(32, 33, 29, 0.5);
+  font: 10px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.accountWishlistHeading {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.accountWishlistHeading h1 {
+  margin: 0;
+  font: 400 clamp(3.2rem, 5.15vw, 5.9rem) / 0.84 "Sentient-Regular", serif;
+  letter-spacing: -0.06em;
+}
+
+.accountWishlistHeading h1 em {
+  display: block;
+  margin-left: 16%;
+  color: #7e896a;
+  font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+  font-weight: 300;
+}
+
+.accountWishlistIntro {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.accountWishlistIntro > p {
+  max-width: 38rem;
+  margin: 0;
+  color: rgba(32, 33, 29, 0.62);
+  font: clamp(15px, 1vw, 18px) / 1.55 "Sansation-Light", sans-serif;
+}
+
+.accountWishlistBody {
+  display: grid;
+  gap: 24px;
+}
+
+.accountPreviewNotice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  padding: 16px 0;
+  border-block: 1px solid rgba(126, 137, 106, 0.35);
+}
+
+.accountPreviewNotice span {
+  color: #647052;
+  font: 10px/1.2 "Sansation-Bold", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.accountPreviewNotice p {
+  margin: 0;
+  color: rgba(32, 33, 29, 0.65);
+  font-size: 14px;
+}
+
+.accountWishlistGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2.2vw, 30px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.accountWishlistCard {
+  min-width: 0;
+  border-bottom: 1px solid rgba(32, 33, 29, 0.22);
+}
+
+.accountWishlistSurface {
+  height: 100%;
+}
+
+.accountWishlistSurfaceContent {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding-bottom: 18px;
+}
+
+.accountWishlistProduct {
+  display: block;
+  color: inherit;
+}
+
+.accountWishlistImage {
+  position: relative;
+  aspect-ratio: 5 / 6;
+  overflow: hidden;
+  border: 1px solid rgba(32, 33, 29, 0.14);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.accountWishlistImage::after {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(32, 33, 29, 0.12);
+  content: "";
+  pointer-events: none;
+}
+
+.accountWishlistImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.accountWishlistImage > span {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 1;
+}
+
+.accountWishlistImage > i {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
+  padding: 7px 10px;
+  border: 1px solid rgba(32, 33, 29, 0.22);
+  border-radius: 999px;
+  background: rgba(245, 237, 223, 0.88);
+  font: 9px/1 "Sansation-Regular", sans-serif;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.accountWishlistCardFooter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  padding-top: 18px;
+}
+
+.accountWishlistInfo {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: inherit;
+}
+
+.accountWishlistInfo h2 {
+  margin: 0;
+  font: 400 clamp(1.7rem, 2.3vw, 2.7rem) / 0.96 "Sentient-Regular", serif;
+  letter-spacing: -0.04em;
+}
+
+.accountWishlistInfo p {
+  margin: 0;
+  color: rgba(32, 33, 29, 0.55);
+  font-size: 15px;
+}
+
+.accountWishlistCardAction {
+  align-self: end;
+}
+
+.accountWishlistEmpty {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
   align-items: center;
-  justify-content: flex-start;
-  gap: 2rem;
-  padding-bottom: 2.5dvh;
+  min-height: 210px;
+  padding: 36px 0;
+  border-block: 1px solid rgba(32, 33, 29, 0.2);
+}
 
-  .header {
-    // mb-8 flex flex-col gap-y-4
-    display: flex;
-    flex-direction: column;
-    row-gap: 1rem;
-    margin-bottom: 2rem;
-    width: 100%;
+.accountWishlistEmpty span {
+  font: 400 clamp(2.5rem, 4vw, 4.8rem) / 0.9 "Sentient-Regular", serif;
+  letter-spacing: -0.05em;
+}
 
-    .title {
-      // text-2xl-semi
-      font-size: 1.8rem;
-      line-height: 1.2;
-      font-weight: 400;
-      font-family: "Sansation-Light";
-      color: var(--blackText);
+.accountWishlistEmpty p {
+  color: rgba(32, 33, 29, 0.62);
+}
 
-      @include hb((
-        lg: (font-size: 1.6rem),
-        md: (font-size: 1.6rem),
-        mdt: (font-size: 1.6rem),
-        sm: (font-size: 1.6rem),
-        xs: (font-size: 1.3rem),
-        xxs: (font-size: 1.3rem),
-      ));
+.accountWishlistAction {
+  --premium-link-ink: #20211d;
+  --premium-link-active-ink: #f7e5d5;
+  --premium-link-border: #20211d;
+  --premium-link-fill: #20211d;
+}
 
-      @include vb((
-        lg: (font-size: 1.6rem),
-        md: (font-size: 1.6rem),
-        s: (font-size: 1.3rem),
-        sm: (font-size: 1.3rem),
-        xs: (font-size: 1.3rem),
-      ));
-    }
+@media (max-width: 1050px) {
+  .accountWishlistGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
-    .desc {
-      // text-base-regular
-      font-size: 1.1rem;
-      line-height: 1.25rem;
-      color: var(--blackText);
-      font-weight: 300;
-      font-family: "Sansation-Light";
+@media (max-width: 680px) {
+  .accountWishlistHeading,
+  .accountWishlistIntro,
+  .accountPreviewNotice,
+  .accountWishlistEmpty {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 
-      @include hb((
-        lg: (font-size: 1.05rem),
-        md: (font-size: 1.05rem),
-        mdt: (font-size: 1.05rem),
-        sm: (font-size: 1.05rem),
-        xs: (font-size: 1rem),
-        xxs: (font-size: 1rem),
-      ));
-
-      @include vb((
-        lg: (font-size: 1.05rem),
-        md: (font-size: 1.05rem),
-        s: (font-size: 1rem),
-        sm: (font-size: 1rem),
-        xs: (font-size: 1rem),
-      ));
-    }
-	}
-
-  .body {
-    display: flex;
-		flex-direction: column;
-		row-gap: 0.5rem;
-		width: 100%;
-
-    .actions{
-      width: 100%;
-      position: relative;
-      display: flex;
-      flex-direction: row-reverse;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 0.25rem;
-    }
-    
-    .wishlistContainer{
-      width: 100%;
-
-      display: flex;
-      position: relative;
-      height: 60vh;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--bgPrimary) transparent;
-
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: var(--bgPrimary);
-        border-radius: 3px;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: rgba(var(--bgPrimary), 0.8);
-      }
-      .wishlistList {
-        width: 100%;
-        height: fit-content;
-        margin-top: 1rem;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1rem;
-        align-items: flex-start;
-        justify-content: flex-start;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-
-        .wishlistCard {
-          background: var(--bg-component, #fff);
-          border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 10px;
-          overflow: hidden;
-          transition: box-shadow .2s ease, transform .2s ease;
-          position: relative;
-          max-height: fit-content;
-
-          &:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transform: translateY(-1px);
-          }
-
-          .wishlistLink {
-            display: flex;
-            align-items: stretch;
-            gap: 12px;
-            color: inherit;
-            text-decoration: none;
-            padding: 10px;
-
-            .wishlistThumb {
-              width: 84px;
-              height: 84px;
-              flex: 0 0 84px;
-              border-radius: 8px;
-              background: #f5f5f5;
-              display: grid;
-              place-items: center;
-              overflow: hidden;
-
-              img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-              }
-            }
-
-            .wishlistInfo {
-              display: grid;
-              align-content: center;
-              gap: 4px;
-              min-width: 0;
-
-              .wishlistTitle {
-                font-size: 1.1rem;
-                font-weight: 400;
-                font-family: "Sansation-Regular";
-                line-height: 1.3;
-                margin: 0;
-                color: var(--blackText, #111);
-                
-                @include hb((
-                  lg: (font-size: 1.05rem),
-                  md: (font-size: 1.05rem),
-                  mdt: (font-size: 1.05rem),
-                  sm: (font-size: 1.05rem),
-                  xs: (font-size: 1rem),
-                  xxs: (font-size: 1rem),
-                ));
-
-                @include vb((
-                  lg: (font-size: 1.05rem),
-                  md: (font-size: 1.05rem),
-                  s: (font-size: 1rem),
-                  sm: (font-size: 1rem),
-                  xs: (font-size: 1rem),
-                ));
-              }
-
-              .wishlistSubtitle {
-                font-size: 1rem;
-                font-weight: 300;
-                font-family: "Sansation-Light";
-                line-height: 1.2;
-                color: var(--blackText);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-
-                @include hb((
-                  lg: (font-size: 0.95rem),
-                  md: (font-size: 0.95rem),
-                  mdt: (font-size: 0.95rem),
-                  sm: (font-size: 0.9rem),
-                  xs: (font-size: 0.9rem),
-                  xxs: (font-size: 0.9rem),
-                ));
-
-                @include vb((
-                  lg: (font-size: 0.95rem),
-                  md: (font-size: 0.9rem),
-                  s: (font-size: 0.9rem),
-                  sm: (font-size: 0.9rem),
-                  xs: (font-size: 0.9rem),
-                ));
-              }
-            }
-            .wishlistActions {
-              position: relative;
-              display: flex;
-              align-items: flex-start;
-              justify-content: flex-end;
-              padding: 8px 10px 10px;
-              z-index: 10;
-            }
-          }
-        }
-      }
-    }
+  .accountWishlistGrid {
+    grid-template-columns: 1fr;
   }
 }

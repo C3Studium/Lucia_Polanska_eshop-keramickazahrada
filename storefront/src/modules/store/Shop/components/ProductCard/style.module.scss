@@ -1,0 +1,116 @@
+@use "../../../../../styles/system/_shortcuts.scss" as *;
+.root { min-width: 0; }
+
+.link { display: block; color: #212222; text-decoration: none; }
+.link:focus-visible { outline: none; }
+.link:focus-visible .visual { outline: 2px solid #9a6f65; outline-offset: 4px; }
+
+.visual {
+  position: relative;
+  aspect-ratio: 4 / 4.75;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ded9cb;
+  isolation: isolate;
+
+  &::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 2; background: linear-gradient(transparent, rgba(20,20,17,.28)); pointer-events: none; }
+  img { object-fit: cover; }
+}
+
+.primary,
+.secondary { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+
+.primary { opacity: 1; }
+
+.secondary {
+  z-index: 1;
+  opacity: 0;
+  transform-origin: right center;
+}
+
+.badges { position: absolute; top: 13px; left: 13px; z-index: 3; display: flex; gap: 5px; }
+.badges span { padding: 8px 11px; border-radius: 999px; background: rgba(247,243,234,.9); color: #212222; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(8px); }
+
+.discover {
+  position: absolute;
+  right: 13px;
+  bottom: 13px;
+  z-index: 3;
+  display: block;
+  box-sizing: border-box;
+  width: 146px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 12px;
+  pointer-events: none;
+  isolation: isolate;
+
+  i {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #212222;
+    color: #fff;
+    font-style: normal;
+  }
+}
+
+.discoverBackground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: inherit;
+  background: rgba(247,243,234,.92);
+  box-shadow: 0 9px 25px -17px rgba(20,20,17,.72);
+  transform-origin: right center;
+  backdrop-filter: blur(9px);
+}
+
+.discoverLabel {
+  position: absolute;
+  top: 50%;
+  right: 50px;
+  z-index: 1;
+  display: inline-flex;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1;
+  transform: translateY(-50%);
+
+  > span { display: inline-block; }
+}
+
+.meta { padding: 14px 4px 24px; }
+.heading { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid rgba(33,34,34,.18); }
+.heading p { margin: 0 0 6px; color: rgba(33,34,34,.6); font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
+.heading h3 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(23px, 1.65vw, 31px); font-weight: 400; line-height: 1.08; }
+.index { flex: 0 0 auto; display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid rgba(33,34,34,.35); border-radius: 50%; font-size: 8px; }
+
+.bottom { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-top: 12px; }
+.description { display: -webkit-box; max-width: 60%; margin: 0; overflow: hidden; color: rgba(33,34,34,.65); font-size: 13px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.price { display: flex; flex-direction: column; align-items: end; white-space: nowrap; }
+.price del { color: #985f56; font-size: 12px; }
+.price strong { font-family: "Sentient-Regular", serif; font-size: 20px; font-weight: 400; }
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover .primary,
+  .link:hover .secondary,
+  .link:hover .discover,
+  .link:focus-visible .primary,
+  .link:focus-visible .secondary,
+  .link:focus-visible .discover { will-change: transform, opacity, clip-path; }
+}
+@media (max-width: 700px) {
+  .visual { border-radius: 17px; }
+  .meta { padding-bottom: 34px; }
+  .heading h3 { font-size: 24px; }
+}

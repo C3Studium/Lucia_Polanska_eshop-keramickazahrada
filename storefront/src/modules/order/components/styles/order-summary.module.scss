@@ -1,33 +1,51 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
-  .title {
-    font-weight: 600;
-    font-size: 1rem;
-    line-height: 1.5rem;
-  }
+  display: grid;
+  gap: 34px;
+}
 
-  .content {
-    color: var(--ui-fg-base, #111827);
-    margin-block: 0.5rem;
+.title {
+  max-width: 100%;
+  margin: 0;
+  color: #f7e5d5;
+  font: 400 clamp(2.65rem, 3vw, 4.25rem)/.84 "Sentient-Regular", serif;
+  letter-spacing: -.055em;
+  overflow-wrap: break-word;
+}
 
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
+.content {
+  display: grid;
+  gap: 12px;
+  color: rgba(247, 229, 213, .7);
+  font: 16px/1.45 "Sansation-Light", sans-serif;
+}
 
-    .meta {
-      display: flex;
-      flex-direction: column;
-      row-gap: 0.25rem;
-    }
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: baseline;
+}
 
-    .separator {
-      height: 1px;
-      width: 100%;
-      border-bottom: 1px dashed #e5e7eb;
-      margin-block: 1rem;
-    }
-  }
+.row > span:last-child {
+  flex: 0 0 auto;
+  color: rgba(247, 229, 213, .86);
+  text-align: right;
+}
+
+.meta {
+  display: grid;
+  gap: 9px;
+}
+
+.separator {
+  height: 1px;
+  margin: 12px 0;
+  background: rgba(247, 229, 213, .2);
+}
+
+.separator + .row {
+  color: #f7e5d5;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 19px;
 }

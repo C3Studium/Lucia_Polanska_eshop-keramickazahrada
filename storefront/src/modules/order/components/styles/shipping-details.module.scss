@@ -1,104 +1,74 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
 .root {
-  .title {
-    display: flex;
-    flex-direction: row;
-    font-size: 2rem;
-    line-height: 1.5rem;
-    font-weight: 400;
-    font-family: "Sansation-Regular";
-    margin-block: 1.5rem;
-    @include hb((
-		md: (font-size: 1.8rem),
-		mdt: (font-size: 1.8rem),
-		sm: (font-size: 1.8rem),
-		xs: (font-size: 1.6rem),
-		xxs: (font-size: 1.6rem),
-	));
+  display: grid;
+  gap: 26px;
+}
 
-	@include vb((
-	  lg: (font-size: 1.8rem),
-	  md: (font-size: 1.8rem),
-	  s: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
-	  sm: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
-	  xs: (font-size: 1.6rem, padding-bottom: 1rem, border-bottom: 0.5px solid var(--shadows)),
-	));
-  }
+.title {
+  margin: 0;
+  font: 400 clamp(2.4rem, 3.7vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  letter-spacing: -.05em;
+}
 
+.row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  border-block: 1px solid rgba(32, 33, 29, .2);
+}
+
+.col {
+  min-height: 180px;
+  padding: 24px;
+  border-right: 1px solid rgba(32, 33, 29, .2);
+}
+
+.col:first-child {
+  padding-left: 0;
+}
+
+.col:last-child {
+  border-right: 0;
+}
+
+.label {
+  margin: 0 0 18px;
+  color: rgba(32, 33, 29, .5);
+  font: 11px/1.25 "Sansation-Regular", sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.value {
+  margin: 3px 0;
+  color: rgba(32, 33, 29, .82);
+  font: 16px/1.5 "Sansation-Light", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.secondaryValue {
+  margin: 8px 0 0;
+  color: rgba(32, 33, 29, .56);
+  font: 14px/1.45 "Sansation-Light", sans-serif;
+}
+
+.divider {
+  display: none;
+}
+
+@media (max-width: 680px) {
   .row {
-    display: flex;
-    align-items: flex-start;
-    column-gap: 2rem; // gap-x-8
-	gap: 2rem;
-
-	@include vb((
-	  s: (flex-wrap: wrap),
-	  sm: (flex-wrap: wrap),
-	  xs: (flex-wrap: wrap),
-	));
+    grid-template-columns: 1fr;
   }
 
-  .col {
-    display: flex;
-    flex-direction: column;
-    width: 40%;
-	@include vb((
-	  s: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
-	  sm: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
-	  xs: (width: 60%, border-top: 0.5px solid var(--shadows), padding-top: 2rem),
-	));
-
-	&:nth-of-type(1) {
-	  @include vb((
-		s: (border-top: none, padding-top: 0),
-		sm: (border-top: none, padding-top: 0),
-		xs: (border-top: none, padding-top: 0),
-	  ));
-	}
+  .col,
+  .col:first-child {
+    min-height: 0;
+    padding: 22px 0;
+    border-right: 0;
+    border-bottom: 1px solid rgba(32, 33, 29, .16);
   }
 
-  .label {
-    font-weight: 400;
-    font-size: 1.3rem;
-    font-family: "Sansation-Regular";
-    color: var(--blackText);
-    margin-bottom: 0.25rem;
-    @include hb((
-		md: (font-size: 1.2rem),
-		mdt: (font-size: 1.2rem),
-		sm: (font-size: 1.2rem),
-		xs: (font-size: 1.1rem),
-		xxs: (font-size: 1.1rem),
-	));
-
-	@include vb((
-	  s: (font-size: 1.2rem),
-	  sm: (font-size: 1.2rem),
-	  xs: (font-size: 1.2rem),
-	));
-  }
-
-  .value {
-    color: var(--handle);
-    font-size: 1.1rem;
-    font-family: "Sansation-Light";
-    font-weight: 300;
-    @include hb((
-		md: (font-size: 1rem),
-		mdt: (font-size: 1rem),
-		sm: (font-size: 1rem),
-		xs: (font-size: 0.9rem),
-		xxs: (font-size: 0.9rem),
-	));
-	@include vb((
-	  s: (font-size: 1rem),
-	  sm: (font-size: 1rem),
-	  xs: (font-size: 1rem),
-	));
-  }
-
-  .divider {
-    margin-top: 2rem;
+  .col:last-child {
+    border-bottom: 0;
   }
 }

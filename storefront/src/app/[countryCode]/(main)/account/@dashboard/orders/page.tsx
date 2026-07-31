@@ -6,8 +6,8 @@ import OrdersTemplate from "@modules/account/templates/orders-template"
 
 
 export const metadata: Metadata = {
-  title: "Orders",
-  description: "Overview of your previous orders.",
+  title: "Moje objednávky",
+  description: "Přehled předchozích objednávek a jejich stavu.",
 }
 
 export default async function Orders() {

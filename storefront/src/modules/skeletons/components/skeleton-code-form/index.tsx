@@ -1,10 +1,12 @@
+import s from "../../style.module.scss"
+
 const SkeletonCodeForm = () => {
   return (
-    <div className="w-full flex flex-col">
-      <div className="bg-gray-100 h-7 w-24 mb-4"></div>
-      <div className="grid grid-cols-[1fr_80px] gap-x-2">
-        <div className="bg-gray-100 h-12"></div>
-        <div className="bg-gray-100 h-12"></div>
+    <div className={s.codeForm} aria-hidden="true">
+      <span className={`${s.block} ${s.lineMd}`} />
+      <div className={s.codeInputRow}>
+        <span className={s.codeField} />
+        <span className={s.button} />
       </div>
     </div>
   )

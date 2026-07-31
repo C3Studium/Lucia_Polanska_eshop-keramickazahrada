@@ -1,8 +1,6 @@
-
 "use client"
 
 import styles from "./style.module.scss"
-
 
 import { RadioGroup, Radio } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
@@ -15,9 +13,8 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { useFormStatus } from "react-dom"
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 
 const PICKUP_OPTION_ON = "__PICKUP_ON"
 const PICKUP_OPTION_OFF = "__PICKUP_OFF"
@@ -55,6 +52,10 @@ function formatAddress(address: StoreOrderAddress | null): string {
   return ret
 }
 
+const getFulfillmentType = (
+  option: HttpTypes.StoreCartShippingOption
+): string | undefined => (option as any).service_zone?.fulfillment_set?.type
+
 const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
@@ -70,32 +71,46 @@ const Shipping: React.FC<ShippingProps> = ({
     Record<string, number>
   >({})
   const [error, setError] = useState<string | null>(null)
-  const [packetaPickupPointSelected, setPacketaPickupPointSelected] = useState<boolean | null>(false)
-  const [packetaPickupPointInfo, setPacketaPickupPointInfo] = useState<string | null>(null)
+  const [packetaPickupPointSelected, setPacketaPickupPointSelected] = useState<
+    boolean | null
+  >(false)
+  const [packetaPickupPointInfo, setPacketaPickupPointInfo] = useState<
+    string | null
+  >(null)
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(
     cart.shipping_methods?.at(-1)?.shipping_option_id || null
   )
 
   async function onPointSelected(pickupPoint: string) {
-    const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(/\/+$/, "")
+    const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(
+      /\/+$/,
+      ""
+    )
     const url = `${base}/store/carts/${cart.id}`
     const metadataUrl = `${base}/store/carts/${cart.id}/metadata`
 
     try {
-      console.log('Fetching URL:', url)
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || ""
+          "x-publishable-api-key":
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
         },
-        body: JSON.stringify({ metadata: { packeta_pickup_point: pickupPoint } }),
+        body: JSON.stringify({
+          metadata: { packeta_pickup_point: pickupPoint },
+        }),
       })
 
       if (!res.ok) {
         const body = await res.text().catch(() => "<unreadable>")
-        console.error('Failed to POST pickup metadata', res.status, res.statusText, body)
-        setError('Nepodařilo se uložit místo vyzvednutí. Zkuste to znovu.')
+        console.error(
+          "Failed to POST pickup metadata",
+          res.status,
+          res.statusText,
+          body
+        )
+        setError("Nepodařilo se uložit místo vyzvednutí. Zkuste to znovu.")
         return
       }
 
@@ -104,18 +119,19 @@ const Shipping: React.FC<ShippingProps> = ({
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || ""
-        }
+          "x-publishable-api-key":
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
+        },
       })
       if (!md.ok) {
-        console.warn('Metadata GET returned', md.status, md.statusText)
+        console.warn("Metadata GET returned", md.status, md.statusText)
       }
 
       setPacketaPickupPointSelected(true)
       setError(null)
     } catch (err: any) {
-      console.error('Network error while saving pickup point:', err)
-      setError('Došlo k síťové chybě při ukládání místa vyzvednutí.')
+      console.error("Network error while saving pickup point:", err)
+      setError("Došlo k síťové chybě při ukládání místa vyzvednutí.")
     }
   }
 
@@ -125,12 +141,20 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const isOpen = searchParams.get("step") === "delivery"
 
-  const _shippingMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type !== "pickup"
+  const _shippingMethods = useMemo(
+    () =>
+      availableShippingMethods?.filter(
+        (option) => getFulfillmentType(option) !== "pickup"
+      ),
+    [availableShippingMethods]
   )
 
-  const _pickupMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type === "pickup"
+  const _pickupMethods = useMemo(
+    () =>
+      availableShippingMethods?.filter(
+        (option) => getFulfillmentType(option) === "pickup"
+      ),
+    [availableShippingMethods]
   )
 
   const hasPickupOptions = !!_pickupMethods?.length
@@ -153,30 +177,40 @@ const Shipping: React.FC<ShippingProps> = ({
           setCalculatedPricesMap(pricesMap)
           setIsLoadingPrices(false)
         })
+      } else {
+        setIsLoadingPrices(false)
       }
+    } else {
+      setIsLoadingPrices(false)
     }
 
     if (_pickupMethods?.find((m) => m.id === shippingMethodId)) {
       setShowPickupOptions(PICKUP_OPTION_ON)
     }
-  }, [availableShippingMethods])
+  }, [_pickupMethods, _shippingMethods, cart.id, shippingMethodId])
 
   // (removed debug logging)
 
   useEffect(() => {
-    if (typeof window === 'undefined'){
-      console.warn("Window is not defined, skipping Packeta widget initialization")
+    if (typeof window === "undefined") {
+      console.warn(
+        "Window is not defined, skipping Packeta widget initialization"
+      )
       return
     }
-    if ((window as any).Packeta?.Widget){
-      console.warn("Packeta Widget is already loaded, skipping script injection")
+    if ((window as any).Packeta?.Widget) {
+      console.warn(
+        "Packeta Widget is already loaded, skipping script injection"
+      )
       return
     }
-    let script = document.getElementById('packeta-widget-script') as HTMLScriptElement | null
+    let script = document.getElementById(
+      "packeta-widget-script"
+    ) as HTMLScriptElement | null
     if (!script) {
-      script = document.createElement('script')
-      script.id = 'packeta-widget-script'
-      script.src = 'https://widget.packeta.com/v6/www/js/library.js'
+      script = document.createElement("script")
+      script.id = "packeta-widget-script"
+      script.src = "https://widget.packeta.com/v6/www/js/library.js"
       script.async = true
       document.body.appendChild(script)
     }
@@ -190,12 +224,13 @@ const Shipping: React.FC<ShippingProps> = ({
     router.push(pathname + "?step=payment", { scroll: false })
   }
 
-    const handleOpenWidget = () => {
+  const handleOpenWidget = () => {
     const key = packetaApiKey
 
     const packetaOptions = {
-      language: "en",
-      valueFormat: "\"Packeta\",id,carrierId,carrierPickupPointId,name,city,street",
+      language: "cs",
+      valueFormat:
+        '"Packeta",id,carrierId,carrierPickupPointId,name,city,street',
       view: "modal",
       vendors: [
         { country: "cz" },
@@ -208,28 +243,32 @@ const Shipping: React.FC<ShippingProps> = ({
         { country: "pl" },
         { country: "ro", group: "zbox" },
       ],
-    };
+    }
 
     function showSelectedPickupPoint(point: any) {
       try {
-        const saveElement: any = document.querySelector(".packeta-selector-value");
+        const saveElement: any = document.querySelector(
+          ".packeta-selector-value"
+        )
         if (saveElement) {
-          saveElement.innerText = "";
+          saveElement.innerText = ""
         } else {
           console.warn(".packeta-selector-value element not found in DOM")
         }
 
         if (point) {
-          console.log("Selected point", point);
           if (saveElement) {
-            saveElement.innerText = "Address2: " + point.formatedValue;
+            saveElement.innerText = "Address2: " + point.formatedValue
           }
           // store a normalized formatted value for confirmation UI
           try {
             const formatted = point.formatedValue || String(point)
             const normalize = (val: string) => {
               if (!val) return val
-              const parts = val.split(',').map((p: string) => p.trim()).filter(Boolean)
+              const parts = val
+                .split(",")
+                .map((p: string) => p.trim())
+                .filter(Boolean)
 
               // Heuristic 1: look for repeating city pattern like [.., city, street, city, street]
               for (let i = 0; i + 2 < parts.length; i++) {
@@ -240,7 +279,7 @@ const Shipping: React.FC<ShippingProps> = ({
 
               // Heuristic 2: find a part that looks like a street (contains a digit or parentheses)
               for (let i = 1; i < parts.length; i++) {
-                if (/\d/.test(parts[i]) || parts[i].includes('(')) {
+                if (/\d/.test(parts[i]) || parts[i].includes("(")) {
                   const city = parts[i - 1] ?? parts[i]
                   const street = parts[i]
                   return `${city}, ${street}`
@@ -260,10 +299,9 @@ const Shipping: React.FC<ShippingProps> = ({
             // ignore state set errors in odd environments
           }
 
-          const parts = point.formatedValue.split(",");
-          const number = parts[1]?.trim(); // druhý prvek (index 1)
-          console.log("Číslo výdejního místa:", number);
-          onPointSelected(number);
+          const parts = point.formatedValue.split(",")
+          const number = parts[1]?.trim() // druhý prvek (index 1)
+          onPointSelected(number)
         }
       } catch (err) {
         console.error("Error in showSelectedPickupPoint:", err)
@@ -273,30 +311,40 @@ const Shipping: React.FC<ShippingProps> = ({
     const open = () => {
       if (!(window as any).Packeta?.Widget) return
       if (!key) {
-        console.error('PACKETA_API_KEY is not configured')
-        setError('Pickup point selector is not configured.')
+        console.error("PACKETA_API_KEY is not configured")
+        setError("Výběr výdejního místa není nakonfigurovaný.")
         return
       }
       try {
-        ;(window as any).Packeta.Widget.pick(key, showSelectedPickupPoint, packetaOptions)
+        ;(window as any).Packeta.Widget.pick(
+          key,
+          showSelectedPickupPoint,
+          packetaOptions
+        )
       } catch (err) {
-        console.error('Packeta.Widget.pick threw:', err)
+        console.error("Packeta.Widget.pick threw:", err)
       }
     }
 
     if (!(window as any).Packeta?.Widget) {
-      console.warn('Widget is not loaded yet, will open when ready')
-      let script = document.getElementById('packeta-widget-script') as HTMLScriptElement | null
+      console.warn("Widget is not loaded yet, will open when ready")
+      let script = document.getElementById(
+        "packeta-widget-script"
+      ) as HTMLScriptElement | null
       if (!script) {
-        script = document.createElement('script')
-        script.id = 'packeta-widget-script'
-        script.src = 'https://widget.packeta.com/v6/www/js/library.js'
+        script = document.createElement("script")
+        script.id = "packeta-widget-script"
+        script.src = "https://widget.packeta.com/v6/www/js/library.js"
         script.async = true
         document.body.appendChild(script)
       }
-      script.addEventListener('load', () => open(), { once: true })
-      script.addEventListener('error', () => console.error('Failed to load Packeta widget script'), { once: true })
-      setError('Loading pickup point selector…')
+      script.addEventListener("load", () => open(), { once: true })
+      script.addEventListener(
+        "error",
+        () => console.error("Failed to load Packeta widget script"),
+        { once: true }
+      )
+      setError("Načítáme výběr výdejního místa…")
       return
     }
 
@@ -308,7 +356,6 @@ const Shipping: React.FC<ShippingProps> = ({
     variant: "shipping" | "pickup"
   ) => {
     setError(null)
-    console.log("Setting shipping method ID:", id, "for variant:", variant)
 
     if (variant === "pickup") {
       setShowPickupOptions(PICKUP_OPTION_ON)
@@ -318,10 +365,8 @@ const Shipping: React.FC<ShippingProps> = ({
     let currentId: string | null = null
     setIsLoading(true)
 
-    console.log("Setting shipping method ID (pre-set):", shippingMethodId, "->", id)
     // If this is the special Packeta / Zásilkovna method, open the widget immediately
     if (id === packetaShippingMethodId?.toString()) {
-      console.log("Opening Packeta widget (user gesture preserved)")
       handleOpenWidget()
     } else {
       setPacketaPickupPointSelected(false)
@@ -332,21 +377,27 @@ const Shipping: React.FC<ShippingProps> = ({
       return id
     })
 
-    const res = await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
-    if (!res?.success) {
+    try {
+      const res = await setShippingMethod({
+        cartId: cart.id,
+        shippingMethodId: id,
+      })
+
+      if (res?.success) return
+
       setShippingMethodId(currentId)
-      setError(res?.message || "Failed to set shipping method")
+      setError(res?.message || "Způsob dopravy se nepodařilo uložit.")
+    } catch {
+      setShippingMethodId(currentId)
+      setError("Způsob dopravy se nepodařilo uložit.")
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   useEffect(() => {
     setError(null)
   }, [isOpen])
-
-  console.log('Fetching URL:', `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/carts/${cart.id}`);
-  console.log('Using publishable key:', process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY);  
-
 
   return (
     <div className={styles.root}>
@@ -361,11 +412,12 @@ const Shipping: React.FC<ShippingProps> = ({
             <CheckCircleSolid />
           )}
         </h2>
-          {!isOpen &&
+        {!isOpen &&
           cart?.shipping_address &&
           cart?.billing_address &&
           cart?.email && (
-            <ClickButton
+            <PremiumActionButton
+              compact
               text="Upravit"
               onClickAction={handleEdit}
               className={styles.editBtn}
@@ -378,8 +430,12 @@ const Shipping: React.FC<ShippingProps> = ({
         <>
           <div className={styles.deliveryOptions}>
             <div className={styles.deliveryOptionsHeader}>
-              <span className={clx(styles.radioLabel, "font-medium")}>Způsob dopravy:</span>
-              <span className={clx(styles.radioAddress, "mb-4")}>Jak byste chtěli, aby byla vaše objednávka doručena?</span>
+              <span className={clx(styles.radioLabel, "font-medium")}>
+                Způsob dopravy:
+              </span>
+              <span className={clx(styles.radioAddress, "mb-4")}>
+                Jak byste chtěli, aby byla vaše objednávka doručena?
+              </span>
             </div>
             <div data-testid="delivery-options-container">
               <div className={styles.deliveryOptions}>
@@ -403,8 +459,12 @@ const Shipping: React.FC<ShippingProps> = ({
                       })}
                     >
                       <div className={styles.radioContent}>
-                        <MedusaRadio checked={showPickupOptions === PICKUP_OPTION_ON} />
-                        <span className={styles.radioLabel}>Vyberte způsob vyzvednutí</span>
+                        <MedusaRadio
+                          checked={showPickupOptions === PICKUP_OPTION_ON}
+                        />
+                        <span className={styles.radioLabel}>
+                          Vyberte způsob vyzvednutí
+                        </span>
                       </div>
                       <span className={styles.radioPrice}>-</span>
                     </Radio>
@@ -431,8 +491,12 @@ const Shipping: React.FC<ShippingProps> = ({
                         })}
                       >
                         <div className={styles.radioContent}>
-                          <MedusaRadio checked={option.id === shippingMethodId} />
-                          <span className={styles.radioLabel}>{option.name}</span>
+                          <MedusaRadio
+                            checked={option.id === shippingMethodId}
+                          />
+                          <span className={styles.radioLabel}>
+                            {option.name}
+                          </span>
                         </div>
                         <span className={styles.radioPrice}>
                           {option.price_type === "flat" ? (
@@ -462,8 +526,12 @@ const Shipping: React.FC<ShippingProps> = ({
           {showPickupOptions === PICKUP_OPTION_ON && (
             <div className={styles.deliveryOptions}>
               <div>
-                <span className={clx(styles.radioLabel, "font-medium")}>Obchod</span>
-                <span className={clx(styles.radioAddress, "mb-4")}>Vyberte si obchod poblíž vás</span>
+                <span className={clx(styles.radioLabel, "font-medium")}>
+                  Obchod
+                </span>
+                <span className={clx(styles.radioAddress, "mb-4")}>
+                  Vyberte si obchod poblíž vás
+                </span>
               </div>
               <div data-testid="delivery-options-container">
                 <div className={styles.deliveryOptions}>
@@ -484,12 +552,17 @@ const Shipping: React.FC<ShippingProps> = ({
                           })}
                         >
                           <div className={styles.radioContent}>
-                            <MedusaRadio checked={option.id === shippingMethodId} />
+                            <MedusaRadio
+                              checked={option.id === shippingMethodId}
+                            />
                             <div className={styles.methodSummary}>
-                              <span className={styles.methodLabel}>{option.name}</span>
+                              <span className={styles.methodLabel}>
+                                {option.name}
+                              </span>
                               <span className={styles.methodText}>
                                 {formatAddress(
-                                  (option as any).service_zone?.fulfillment_set?.location?.address
+                                  (option as any).service_zone?.fulfillment_set
+                                    ?.location?.address
                                 )}
                               </span>
                             </div>
@@ -512,57 +585,74 @@ const Shipping: React.FC<ShippingProps> = ({
           <div className={styles.packetaSelector}></div>
 
           {/* If packeta shipping method is selected but no pickup point chosen, show notice and reopen button */}
-          {shippingMethodId === packetaShippingMethodId?.toString() && !packetaPickupPointSelected && (
-            <div className={styles.packetaNotice}>
-              <p className={styles.packetaNoticeText}>Prosím, zvolte místo vyzvednutí v okně výdejního místa.</p>
-              <ClickButton
-                text="Znovu vybrat místo"
-                onClickAction={handleOpenWidget}
-                className={styles.openPacketaBtn}
-                data-testid="reopen-packeta-button"
-              />
-            </div>
-          )}
+          {shippingMethodId === packetaShippingMethodId?.toString() &&
+            !packetaPickupPointSelected && (
+              <div className={styles.packetaNotice}>
+                <p className={styles.packetaNoticeText}>
+                  Prosím, zvolte místo vyzvednutí v okně výdejního místa.
+                </p>
+                <PremiumActionButton
+                  text="Znovu vybrat místo"
+                  onClickAction={handleOpenWidget}
+                  className={styles.openPacketaBtn}
+                  data-testid="reopen-packeta-button"
+                />
+              </div>
+            )}
 
           {/* Show confirmation of selected pickup point once chosen */}
-          {shippingMethodId === packetaShippingMethodId?.toString() && packetaPickupPointSelected && packetaPickupPointInfo && (
-            <div className={styles.packetaConfirmation} data-testid="packeta-confirmation">
-              <p className={styles.packetaConfirmationLabel}>Vybrané výdejní místo:</p>
-              <p className={styles.packetaConfirmationValue}>{packetaPickupPointInfo}</p>
-            </div>
-          )}
+          {shippingMethodId === packetaShippingMethodId?.toString() &&
+            packetaPickupPointSelected &&
+            packetaPickupPointInfo && (
+              <div
+                className={styles.packetaConfirmation}
+                data-testid="packeta-confirmation"
+              >
+                <p className={styles.packetaConfirmationLabel}>
+                  Vybrané výdejní místo:
+                </p>
+                <p className={styles.packetaConfirmationValue}>
+                  {packetaPickupPointInfo}
+                </p>
+              </div>
+            )}
 
           <div className={styles.actions}>
             <ErrorMessage
               error={error}
               data-testid="delivery-option-error-message"
             />
-            <ClickButton
+            <PremiumActionButton
               text="Pokračovat k platbě"
               onClickAction={handleSubmit}
               className={styles.divider}
-              disabled={!cart.shipping_methods?.[0] || (shippingMethodId === packetaShippingMethodId?.toString() && !packetaPickupPointSelected) || isLoading}
+              disabled={
+                !cart.shipping_methods?.[0] ||
+                (shippingMethodId === packetaShippingMethodId?.toString() &&
+                  !packetaPickupPointSelected) ||
+                isLoading
+              }
               data-testid="submit-delivery-option-button"
             />
           </div>
         </>
       ) : (
-        <div>
-          <div className={styles.methodSummary}>
-            {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
-              <div className={styles.methodSummary}>
-                <span className={clx(styles.methodLabel, "mb-1")}>Způsob dopravy</span>
-                <span className={styles.methodText}>
-                  {cart.shipping_methods?.at(-1)?.name}{" "}
-                  {convertToLocale({
-                    amount: cart.shipping_methods?.at(-1)?.amount!,
-                    currency_code: cart?.currency_code,
-                  })}
-                </span>
-              </div>
-            )}
+        cart &&
+        (cart.shipping_methods?.length ?? 0) > 0 && (
+          <div className={styles.completedSummary}>
+            <span className={styles.completedLabel}>Vybrané doručení</span>
+            <div className={styles.completedMethod}>
+              <strong>{cart.shipping_methods?.at(-1)?.name}</strong>
+              <span>
+                {convertToLocale({
+                  amount: cart.shipping_methods?.at(-1)?.amount!,
+                  currency_code: cart?.currency_code,
+                })}
+              </span>
+            </div>
+            <p>Dopravu můžete upravit až do potvrzení objednávky.</p>
           </div>
-        </div>
+        )
       )}
       <Divider className={styles.divider} />
     </div>
@@ -570,67 +660,3 @@ const Shipping: React.FC<ShippingProps> = ({
 }
 
 export default Shipping
-
-
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-    type?: "button" | "submit";
-    className?: string;
-    "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const isSubmitting = type === "submit" ? pending : false;
-    const isDisabled = disabled || isSubmitting;
-    const handleClick = onClickAction ?? ClickAction;
-
-    return (
-        <div className={className ? `${styles.ClickButton} ${className}` : styles.ClickButton}>
-            <button 
-                type={type}
-                className={styles.button}
-                onClick={handleClick}
-                disabled={isDisabled}
-                aria-busy={isDisabled || undefined}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-                data-testid={dataTestId}
-            >
-                <motion.div 
-                    className={styles.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-                >
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--bgBlack)" }}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                </motion.div>
-            </button>
-        </div>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
-}

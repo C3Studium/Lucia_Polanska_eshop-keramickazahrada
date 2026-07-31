@@ -1,73 +1,43 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
-import { AnimatePresence, Easing, motion, useScroll, useTransform } from "framer-motion"
-
-import styles from "./styles/login.module.scss"
-import Image from "next/image"
+import { AnimatePresence, motion } from "framer-motion"
+import AuthPortal from "../components/auth-portal"
 
 export enum LOGIN_VIEW {
   SIGN_IN = "sign-in",
   REGISTER = "register",
 }
 
-const bgImages = [
-  {
-    src: "/assets/img/img/1.jpg",
-    alt: "Login"
-  },
-  {
-    src: "/assets/img/img/2.jpg",
-    alt: "Register"
-  },
-]
+type LoginTemplateProps = {
+  redirectTo?: string
+}
 
-const LoginTemplate = () => {
-  const [currentView, setCurrentView] = useState("sign-in")
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  })
-
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "20%"])
+const LoginTemplate = ({ redirectTo }: LoginTemplateProps) => {
+  const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
+  const isSignIn = currentView === LOGIN_VIEW.SIGN_IN
 
   return (
-    <div className={styles.container} ref={ref}>
+    <AuthPortal mode={isSignIn ? "login" : "register"}>
       <AnimatePresence mode="wait" initial={false}>
-        {(() => {
-          const isSignIn = currentView === LOGIN_VIEW.SIGN_IN || currentView === "sign-in"
-          const img = isSignIn ? bgImages[0] : bgImages[1]
-          return (
-            <motion.div
-              key={isSignIn ? "bg-login" : "bg-register"}
-              className={styles.ImageContainer}
-              initial={{ opacity: 0.75 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0.75 }}
-              transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] as Easing }}
-            >
-              <motion.div className={styles.Image} style={{ y }}>
-                <div className={styles.ImageOverlay} />
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  layout="fill"
-                  objectFit="cover"
-                />
-              </motion.div>
-            </motion.div>
-          )
-        })()}
+        <motion.div
+          key={currentView}
+          initial={{ opacity: 0, x: 18 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -18 }}
+          transition={{ duration: .42, ease: [0.76, 0, 0.24, 1] }}
+          style={{ width: "100%" }}
+        >
+          {isSignIn ? (
+            <Login setCurrentView={setCurrentView} redirectTo={redirectTo} />
+          ) : (
+            <Register setCurrentView={setCurrentView} redirectTo={redirectTo} />
+          )}
+        </motion.div>
       </AnimatePresence>
-      {currentView === "sign-in" ? (
-        <Login setCurrentView={setCurrentView} />
-      ) : (
-        <Register setCurrentView={setCurrentView} />
-      )}
-    </div>
+    </AuthPortal>
   )
 }
 

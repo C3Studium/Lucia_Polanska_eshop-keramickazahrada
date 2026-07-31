@@ -3,15 +3,14 @@ import { client } from "../../../../sanity/lib/client"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
-
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import Kurzy from "@modules/home/Kurzy"
-
+import type { KurzyIntroData } from "@modules/home/Kurzy/Intro"
 
 export const metadata: Metadata = {
-  title: "FAQ Page",
+  title: "Keramické kurzy | Keramická zahrada",
   description:
-    "Frequently Asked Questions about our products, shipping, returns, and more.",
+    "Keramické kurzy pro děti a připravované kurzy pro dospělé v ateliéru Lucie Polanské u Písku.",
 }
 
 export default async function Home(props: {
@@ -22,14 +21,11 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const region = await getRegion(countryCode)
-
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
-
-  // Fetch main page settings from Sanity
-  const settings = await client.fetch('*[_type == "mainPageSettings"][0]')
+  const [region, { collections }, kurzyIntroData] = await Promise.all([
+    getRegion(countryCode),
+    listCollections({ fields: "id, handle, title" }),
+    client.fetch<KurzyIntroData>('*[_type == "kurzyIntro"][0]'),
+  ])
 
   if (!collections || !region) {
     return null
@@ -37,8 +33,8 @@ export default async function Home(props: {
 
   return (
     <>
-        <ScrollToTopOnReload />
-        <Kurzy />
+      <ScrollToTopOnReload />
+      <Kurzy introData={kurzyIntroData} />
     </>
   )
 }

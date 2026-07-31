@@ -65,3 +65,22 @@
     }
   }
 }
+
+/* Shared authentication canvas */
+.container {
+  display: grid;
+  min-height: min(680px, 72svh);
+  place-items: center;
+  padding: clamp(2rem, 6vw, 6rem);
+  border-top: 1px solid rgba(33,34,34,.2);
+  border-bottom: 1px solid rgba(33,34,34,.2);
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(199,196,154,.18), transparent 24rem),
+    rgba(255,248,238,.34);
+  box-shadow: none;
+
+  .ImageContainer {
+    display: none;
+  }
+}

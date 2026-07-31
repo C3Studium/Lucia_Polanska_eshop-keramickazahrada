@@ -1,0 +1,47 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+.root { min-height: 100vh; overflow: clip; background: #f2eee5; color: #212222; padding: clamp(10px, 0.8vw, 16px); }
+
+.catalogue {
+  scroll-margin-top: 65px;
+  padding: clamp(78px, 10vw, 150px) clamp(16px, 2vw, 32px) clamp(80px, 10vw, 145px);
+}
+
+.introduction {
+  display: grid;
+  grid-template-columns: 1fr 1.7fr 1fr;
+  align-items: end;
+  gap: 30px;
+  max-width: 1860px;
+  margin: 0 auto clamp(58px, 7vw, 100px);
+
+  > p { align-self: start; margin: 10px 0 0; color: #8c6259; font-size: 12px; letter-spacing: .13em; text-transform: uppercase; }
+  h2 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(44px, 6vw, 92px); font-weight: 400; line-height: .91; letter-spacing: -.045em; }
+  h2 em { color: #85866b; font-style: italic; }
+  > span { max-width: 390px; color: rgba(33,34,34,.68); font-size: 15px; line-height: 1.55; }
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  align-items: start;
+  gap: 64px;
+  max-width: 1860px;
+  margin: 0 auto;
+}
+
+.results { min-width: 0; }
+.results > :last-child { margin-top: 24px; }
+
+@media (max-width: 1100px) {
+  .introduction { grid-template-columns: 1fr 2fr; }
+  .introduction > span { grid-column: 2; }
+  .layout { display: block; }
+}
+
+@media (max-width: 700px) {
+  .catalogue { padding-inline: 10px; }
+  .introduction { display: block; margin-bottom: 55px; }
+  .introduction > p { margin-bottom: 18px; }
+  .introduction h2 { font-size: clamp(43px, 13.3vw, 66px); }
+  .introduction > span { display: block; margin-top: 25px; }
+}

@@ -1,202 +1,330 @@
 "use client"
 
+import {
+  selectExpressBundle,
+  selectExpressVariant,
+} from "@lib/data/express-cart"
+import { BundleProduct } from "@lib/data/products"
+import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { Button, Input, Select } from "@medusajs/ui"
-import { useEffect, useMemo, useState } from "react"
-import { Spinner } from "@medusajs/icons"
-import { useRouter } from "next/navigation"
-import { Card } from "../Card"
-import { useRegion } from "@lib/context/region"
-import { useCart } from "@lib/context/cart"
-import { sdk } from "@lib/config"
-import { formatPrice } from "@lib/util/price"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
+import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
+import { useEffect, useMemo, useState } from "react"
+import styles from "../style.module.scss"
+
+const optionsAsKeymap = (
+  options: HttpTypes.StoreProductVariant["options"] | undefined
+) =>
+  options?.reduce((result: Record<string, string>, option: any) => {
+    result[option.option_id] = option.value
+    return result
+  }, {}) ?? {}
+
+const findVariant = (
+  product: HttpTypes.StoreProduct,
+  selection: Record<string, string>
+) =>
+  product.variants?.find((variant) => {
+    const candidate = optionsAsKeymap(variant.options)
+    return (
+      Object.keys(candidate).length === Object.keys(selection).length &&
+      Object.entries(candidate).every(([key, value]) => selection[key] === value)
+    )
+  })
+
+const isAvailable = (variant?: HttpTypes.StoreProductVariant) =>
+  !!variant &&
+  (!variant.manage_inventory ||
+    variant.allow_backorder ||
+    (variant.inventory_quantity || 0) > 0)
 
 type ProductProps = {
-  handle: string
-  isActive: boolean
+  product: HttpTypes.StoreProduct
+  bundle?: BundleProduct
+  region: HttpTypes.StoreRegion
+  countryCode: string
+  onContinueAction: () => void
 }
 
-export const Product = ({ handle, isActive }: ProductProps) => {
-  const [loading, setLoading] = useState(true)
-  const [product, setProduct] = useState<HttpTypes.StoreProduct>()
-  const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string>
-  >({})
+export const Product = ({
+  product,
+  bundle,
+  region,
+  countryCode,
+  onContinueAction,
+}: ProductProps) => {
   const [quantity, setQuantity] = useState(1)
-  const { region } = useRegion()
-  const { cart, addToCart } = useCart()
-  const router = useRouter()
-
+  const [selection, setSelection] = useState<Record<string, string>>({})
+  const [bundleSelections, setBundleSelections] = useState<
+    Record<string, Record<string, string>>
+  >({})
+  const [activeBundleItem, setActiveBundleItem] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (product || !region) {
-      return
-    }
-    
-    sdk.store.product.list({
-      handle,
-      region_id: region.id,
-      fields: `*bundle,*variants.calculated_price,+variants.inventory_quantity`,
-    })
-    .then(({ products }) => {
-      if (products.length) {
-        setProduct(products[0])
-      }
-      setLoading(false)
-    })
-  }, [product, region])
+    const first = product.variants?.[0]
+    if (first) setSelection(optionsAsKeymap(first.options))
+  }, [product])
 
-  const selectedVariant = useMemo(() => {
-    if (
-      !product?.variants ||
-      !product.options || 
-      Object.keys(selectedOptions).length !== product.options?.length
-    ) {
-      return
-    }
-
-    return product.variants.find((variant) => variant.options?.every(
-      (optionValue) => optionValue.id === selectedOptions[optionValue.option_id!]
-    ))
-  }, [selectedOptions, product])
-
-  const price = useMemo(() => {
-    const selectedVariantPrice = selectedVariant || 
-      product?.variants?.sort((a: HttpTypes.StoreProductVariant, b: HttpTypes.StoreProductVariant) => {
-        if (!a.calculated_price?.calculated_amount && !b.calculated_price?.calculated_amount) {
-          return 0
-        }
-        if (!a.calculated_price?.calculated_amount) {
-          return 1
-        }
-        if (!b.calculated_price?.calculated_amount) {
-          return -1
-        }
-        return (
-          a.calculated_price?.calculated_amount -
-          b.calculated_price?.calculated_amount
+  useEffect(() => {
+    if (!bundle) return
+    const initial = bundle.items.reduce(
+      (result, item) => {
+        result[item.product.id] = optionsAsKeymap(
+          item.product.variants?.[0]?.options
         )
-      })[0]
-
-    return formatPrice(
-      selectedVariantPrice?.calculated_price?.calculated_amount || 0,
-      region?.currency_code
+        return result
+      },
+      {} as Record<string, Record<string, string>>
     )
-  }, [selectedVariant, product, region])
+    setBundleSelections(initial)
+  }, [bundle])
 
-  const isInStock = useMemo(() => {
-    if (!selectedVariant) {
-      return undefined
-    }
+  const selectedVariant = useMemo(
+    () => findVariant(product, selection),
+    [product, selection]
+  )
 
-    return selectedVariant.manage_inventory === false || (selectedVariant.inventory_quantity || 0) > 0
-  }, [selectedVariant])
+  const selectedBundleVariants = useMemo(
+    () =>
+      bundle?.items.map((item) =>
+        findVariant(item.product, bundleSelections[item.product.id] || {})
+      ) || [],
+    [bundle, bundleSelections]
+  )
 
-  const handleAddToCart = () => {
-    if (!selectedVariant || !isInStock || !quantity) {
+  const ready = bundle
+    ? selectedBundleVariants.length === bundle.items.length &&
+      selectedBundleVariants.every(isAvailable)
+    : isAvailable(selectedVariant)
+
+  const amount =
+    selectedVariant?.calculated_price?.calculated_amount ??
+    product.variants?.[0]?.calculated_price?.calculated_amount ??
+    0
+
+  const submit = async () => {
+    if (!ready || isSubmitting) return
+    setIsSubmitting(true)
+    setError(null)
+
+    const result = bundle
+      ? await selectExpressBundle({
+          bundleId: bundle.id,
+          quantity,
+          countryCode,
+          items: bundle.items.map((item, index) => ({
+            item_id: item.id,
+            variant_id: selectedBundleVariants[index]!.id!,
+          })),
+        })
+      : await selectExpressVariant({
+          variantId: selectedVariant!.id!,
+          quantity,
+          countryCode,
+        })
+
+    setIsSubmitting(false)
+    if (!result.success) {
+      setError(result.message || "Výběr se nepodařilo uložit.")
       return
     }
-    setLoading(true)
-
-    addToCart(selectedVariant.id!, quantity)
-    .then(() => {
-      router.push(`/express-checkout/${handle}?step=address`)
-    })
+    onContinueAction()
   }
-// WIP: add here BundleActions and BundleProduct to display bundle products and their options
+
+  const activeItem = bundle?.items[activeBundleItem]
+
   return (
-    <Card 
-      title="Product" 
-      isActive={isActive} 
-      isDone={cart?.items !== undefined && cart?.items?.length > 0}
-      path={`/express-checkout/${handle}`}
-    >
-      {loading && <Spinner />}
-      {!loading && !product && <div>Produkt nebyl nalezen</div>}
-      {!loading && product && (
-        <div className="flex gap-4 flex-col">
-          <div className="flex gap-4">
-            <Image 
-              src={product.thumbnail || product.images?.[0]?.url || "/assets/img/horizontal_prop.png"}
-              alt={product.title || ""}
-              className="rounded"
-              width={160}
-              height={200}
-            />
-            <div className="flex flex-col gap-1">
-              {product.categories?.length && (
-                <span className="text-xs text-ui-fg-muted">
-                  {product.categories[0].name}
-                </span>
-              )}
-              <span className="text-base text-ui-fg-base">
-                {product.title}
-              </span>
-              <span className="text-sm text-ui-fg-subtle">
-                {price}
-              </span>
-            </div>
-          </div>
-          <p className="text-sm text-ui-fg-subtle">
-            {product.description}
-          </p>
-          {product.options?.map((option) => (
-            <div className="flex flex-col gap-1" key={option.id}>
-              <span className="text-xs text-ui-fg-muted">
-                {option.title}
-              </span>
-              <Select 
-                onValueChange={(value) => {
-                  setSelectedOptions((prev) => ({
-                    ...prev,
-                    [option.id!]: value,
-                  }))
-                }}
-                value={selectedOptions[option.id!]}
-              >
-                <Select.Trigger>
-                  <Select.Value placeholder={`Zvolit ${option.title}`} />
-                </Select.Trigger>
-                <Select.Content>
-                  {option.values?.map((value) => (
-                    <Select.Item
-                      key={value.id}
-                      value={value.id}
-                    >
-                      {value.value}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select>
-            </div>
-          ))}
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-ui-fg-muted">
-              Množství
-            </span>
-            <Input
-              name="quantity"
-              placeholder="Množství"
-              type="number"
-              min="1"
-              max={selectedVariant?.inventory_quantity}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
-            />
-          </div>
-          <hr className="bg-ui-bg-subtle" />
-          <Button
-            disabled={!selectedVariant || !isInStock || loading}
-            onClick={handleAddToCart}
-            className="w-full"
-          >
-            {!selectedVariant && "Zvolit možnosti"}
-            {selectedVariant && !isInStock && "Není skladem"}
-            {selectedVariant && isInStock && "Přidat do košíku"}
-          </Button>
+    <div className={styles.productStep}>
+      <motion.div
+        className={styles.productPortrait}
+        initial={{ clipPath: "inset(0 0 100% 0)" }}
+        animate={{ clipPath: "inset(0 0 0% 0)" }}
+        transition={{ duration: .8, ease: [0.76, 0, 0.24, 1] }}
+      >
+        <Image
+          src={
+            product.thumbnail ||
+            product.images?.[0]?.url ||
+            "/assets/img/horizontal_prop.png"
+          }
+          alt={product.title || ""}
+          width={620}
+          height={760}
+          priority
+        />
+        <span>{bundle ? "Ateliérový soubor" : "Originál z ateliéru"}</span>
+      </motion.div>
+
+      <div className={styles.productIdentity}>
+        <div>
+          <span className={styles.eyebrow}>
+            {bundle ? `${bundle.items.length} objekty společně` : "Váš objekt"}
+          </span>
+          <h2>{bundle?.title || product.title}</h2>
         </div>
+        {!bundle && (
+          <strong>
+            {convertToLocale({
+              amount: amount * quantity,
+              currency_code: region.currency_code,
+            })}
+          </strong>
+        )}
+      </div>
+
+      {bundle ? (
+        <div className={styles.bundleConfigurator}>
+          <div className={styles.bundleTabs} role="tablist">
+            {bundle.items.map((item, index) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeBundleItem === index}
+                data-active={activeBundleItem === index}
+                onClick={() => setActiveBundleItem(index)}
+                key={item.id}
+              >
+                <Image
+                  src={
+                    item.product.thumbnail ||
+                    item.product.images?.[0]?.url ||
+                    "/assets/img/horizontal_prop.png"
+                  }
+                  alt=""
+                  width={68}
+                  height={68}
+                />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </button>
+            ))}
+          </div>
+
+          <AnimatePresence mode="wait">
+            {activeItem && (
+              <motion.div
+                className={styles.bundleItem}
+                key={activeItem.id}
+                initial={{ opacity: 0, x: 14 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span className={styles.eyebrow}>Upravujete</span>
+                <h3>{activeItem.product.title}</h3>
+                <OptionGroups
+                  product={activeItem.product}
+                  selection={bundleSelections[activeItem.product.id] || {}}
+                  onChangeAction={(optionId, value) =>
+                    setBundleSelections((previous) => ({
+                      ...previous,
+                      [activeItem.product.id]: {
+                        ...previous[activeItem.product.id],
+                        [optionId]: value,
+                      },
+                    }))
+                  }
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <OptionGroups
+          product={product}
+          selection={selection}
+          onChangeAction={(optionId, value) =>
+            setSelection((previous) => ({ ...previous, [optionId]: value }))
+          }
+        />
       )}
-    </Card>
+
+      <div className={styles.purchaseBar}>
+        <div className={styles.quantity} aria-label="Množství">
+          <span>Množství</span>
+          <div>
+            <button
+              type="button"
+              onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+              aria-label="Snížit množství"
+            >
+              −
+            </button>
+            <output>{quantity}</output>
+            <button
+              type="button"
+              onClick={() => setQuantity((value) => Math.min(9, value + 1))}
+              aria-label="Zvýšit množství"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <PremiumActionButton
+          text={
+            isSubmitting
+              ? "Připravuji výběr"
+              : ready
+                ? "Pokračovat k doručení"
+                : "Zvolte provedení"
+          }
+          disabled={!ready || isSubmitting}
+          onClickAction={submit}
+          className={styles.primaryAction}
+        />
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            className={styles.error}
+            role="alert"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
+
+const OptionGroups = ({
+  product,
+  selection,
+  onChangeAction,
+}: {
+  product: HttpTypes.StoreProduct
+  selection: Record<string, string>
+  onChangeAction: (optionId: string, value: string) => void
+}) => (
+  <div className={styles.optionGroups}>
+    {product.options?.map((option) => (
+      <fieldset key={option.id}>
+        <legend>{option.title}</legend>
+        <div>
+          {option.values?.map((value) => {
+            const active = selection[option.id!] === value.value
+            return (
+              <motion.button
+                type="button"
+                key={value.id}
+                data-active={active}
+                aria-pressed={active}
+                onClick={() => onChangeAction(option.id!, value.value!)}
+                whileTap={{ scale: .97 }}
+              >
+                <span aria-hidden="true" />
+                {value.value}
+              </motion.button>
+            )
+          })}
+        </div>
+      </fieldset>
+    ))}
+  </div>
+)

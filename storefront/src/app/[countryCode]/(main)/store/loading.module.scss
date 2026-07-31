@@ -1,0 +1,36 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.root { min-height:100svh; padding:clamp(10px,.8vw,16px); background:#f2eee5; }
+.hero,
+.catalogue span,
+.catalogue i,
+.products div {
+  overflow:hidden;
+  background:linear-gradient(100deg,#d8d3c4 24%,#ffe8d6 42%,#d8d3c4 60%);
+  background-size:220% 100%;
+  animation:storeLoading 1.7s ease-in-out infinite;
+}
+.hero {
+  position:relative;
+  min-height:80svh;
+  overflow:hidden;
+  border-radius:32px;
+  background-color:#34362c;
+
+  span { position:absolute; bottom:22%; left:5%; width:min(58%,720px); height:clamp(62px,8vw,124px); border-radius:8px; }
+  i { position:absolute; bottom:13%; left:5%; width:min(32%,440px); height:18px; border-radius:5px; }
+  i:last-child { bottom:7%; width:180px; height:42px; border-radius:999px; }
+}
+.catalogue { padding:clamp(70px,9vw,130px) clamp(10px,2vw,32px); }
+.catalogue header { display:flex; align-items:end; justify-content:space-between; margin-bottom:56px; }
+.catalogue header span { display:block; width:min(48%,620px); height:clamp(54px,6vw,92px); border-radius:8px; }
+.catalogue header i { display:block; width:220px; height:16px; border-radius:5px; }
+.products { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.products div { aspect-ratio:4/4.75; border-radius:20px; }
+@keyframes storeLoading { to { background-position:-120% 0; } }
+@media (max-width:1100px) { .products { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:620px) {
+  .hero { min-height:84svh; border-radius:0 0 22px 22px; }
+  .hero span { width:86%; }
+  .catalogue header i { display:none; }
+  .products { grid-template-columns:1fr; }
+}

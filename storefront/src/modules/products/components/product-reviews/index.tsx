@@ -8,8 +8,7 @@ import { useState, useEffect } from "react"
 import ProductReviewsForm from "./form"
 import styles from "./style.module.scss"
 
-import { motion } from 'framer-motion';
-import { useFormStatus } from 'react-dom';
+import { motion } from "framer-motion"
 
 type ProductReviewsProps = {
   productId: string
@@ -18,82 +17,211 @@ type ProductReviewsProps = {
   initialCount: number
 }
 
+const REVIEW_DESIGN_PREVIEW = true
+
+const previewReviews: StoreProductReview[] = [
+  {
+    id: "preview-review-01",
+    title: "Ještě krásnější než na fotografii",
+    rating: 5,
+    content:
+      "Objekt má své místo u vstupu do zahrady. Každý den vypadá trochu jinak podle světla a přesně to na ruční práci miluji.",
+    first_name: "Jana",
+    last_name: "K.",
+  },
+  {
+    id: "preview-review-02",
+    title: "Kousek s opravdovým charakterem",
+    rating: 5,
+    content:
+      "Povrch, barva i drobné nepravidelnosti působí velmi přirozeně. Balíček dorazil pečlivě zabalený a objekt dělá radost celé rodině.",
+    first_name: "Petra",
+    last_name: "M.",
+  },
+  {
+    id: "preview-review-03",
+    title: "Radost, která zůstává",
+    rating: 5,
+    content:
+      "Byl to dárek, ale nakonec jsme si objednali další i pro sebe. Je poznat, že každý kus prošel rukama a není jen kopií.",
+    first_name: "Alena",
+    last_name: "S.",
+  },
+  {
+    id: "preview-review-04",
+    title: "Jemný detail zahrady",
+    rating: 5,
+    content:
+      "Keramika působí klidně a přirozeně, ale přitom si jí návštěvy vždy všimnou. Oceňuji hlavně povrch a citlivě zvolenou barevnost.",
+    first_name: "Marie",
+    last_name: "H.",
+  },
+  {
+    id: "preview-review-05",
+    title: "Poctivě vytvořený originál",
+    rating: 5,
+    content:
+      "Naživo je krásně vidět práce rukou a drobné odlišnosti materiálu. Přesně takový osobní objekt jsme do našeho prostoru hledali.",
+    first_name: "Eva",
+    last_name: "P.",
+  },
+  {
+    id: "preview-review-06",
+    title: "Bezpečně až k nám domů",
+    rating: 5,
+    content:
+      "Měla jsem obavu z dopravy, ale objekt dorazil opravdu pečlivě zabalený. Komunikace i celý zážitek z objednávky byly výborné.",
+    first_name: "Hana",
+    last_name: "R.",
+  },
+  {
+    id: "preview-review-07",
+    title: "Dárek s vlastním příběhem",
+    rating: 5,
+    content:
+      "Vybrali jsme jej jako výroční dárek a měl velký úspěch. Není to jen dekorace, ale věc, ke které si člověk vytvoří vztah.",
+    first_name: "Klára",
+    last_name: "D.",
+  },
+  {
+    id: "preview-review-08",
+    title: "Krása v každém světle",
+    rating: 5,
+    content:
+      "Během dne se mění podle světla a okolní zeleně. I po několika měsících mě stále baví objevovat nové drobné detaily.",
+    first_name: "Lenka",
+    last_name: "V.",
+  },
+]
+
 export default function ProductReviews({
   productId,
   initialReviews,
   initialRating,
   initialCount,
 }: ProductReviewsProps) {
-  const [page, setPage] = useState(1)
-  const defaultLimit = 10
+  const pageSize = 4
+  const [visibleCount, setVisibleCount] = useState(pageSize)
   const [reviews, setReviews] = useState<StoreProductReview[]>(initialReviews)
   const [rating, setRating] = useState(initialRating)
-  const [hasMoreReviews, setHasMoreReviews] = useState(false)
+  const [hasMoreReviews, setHasMoreReviews] = useState(
+    initialCount > initialReviews.length
+  )
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [count, setCount] = useState(initialCount)
   const [error, setError] = useState<string | null>(null)
-
-  // Mount debug to verify hydration
-  useEffect(() => {
-    console.log("[ProductReviews] mounted", { productId, initialCount, initialRating })
-  }, [])
-
-  //WIP: Test and correct if needed - there is/was error on local hosting
-
-  useEffect(() => {
-    console.log("Fetching reviews for product:", productId, "Page:", page)
-    fetch(`/api/product-reviews/${productId}?limit=${defaultLimit}&offset=${(page - 1) * defaultLimit}`, {
-      method: "GET",
-      cache: "no-store",
-    })
-    .then((r) => r.json())
-    .then(({ reviews, average_rating, count, limit }) => {
-      console.log("CLIENT got reviews:", reviews, average_rating, count, limit)
-      const incoming = Array.isArray(reviews) ? reviews : []
-      const safeIncoming = incoming.filter(
-        (r): r is StoreProductReview => !!r && typeof r.id === "string"
-      )
-
-      setReviews((prev) => {
-        const newReviews = safeIncoming.filter(
-          (review) => !prev.some((r) => r.id === review.id)
-        )
-        return [...prev, ...newReviews]
-      })
-      setRating(Math.round(average_rating || 0))
-      console.log("Reviews after filtering:", safeIncoming)
-      console.log("Count:", count, limit, page, count > (limit || 0) * page)
-      setHasMoreReviews(!!(count && limit && count > limit * page))
-      setCount(count)
-    })
-    .catch((e) => {
-      console.error("[ProductReviews] fetch failed", e)
-      setError(e?.message || "Chyba při načítání recenzí")
-    })
-  }, [page])
+  const displayedReviews =
+    reviews.length > 0
+      ? reviews
+      : REVIEW_DESIGN_PREVIEW
+      ? previewReviews
+      : reviews
+  const displayedRating =
+    reviews.length > 0 ? rating : REVIEW_DESIGN_PREVIEW ? 5 : rating
+  const displayedCount =
+    reviews.length > 0
+      ? count
+      : REVIEW_DESIGN_PREVIEW
+      ? previewReviews.length
+      : count
 
   // Refetch first page when productId changes (navigating between products client-side)
   useEffect(() => {
-    setPage(1)
     setReviews(initialReviews)
     setRating(initialRating)
     setCount(initialCount)
-  }, [productId])
+    setVisibleCount(pageSize)
+    setHasMoreReviews(initialCount > initialReviews.length)
+    setError(null)
+  }, [productId, initialReviews, initialRating, initialCount])
 
+  const visibleReviews = displayedReviews
+    .filter((review): review is StoreProductReview => !!review)
+    .slice(0, visibleCount)
+  const canRevealLocalReviews = visibleCount < displayedReviews.length
+  const canShowMoreReviews = canRevealLocalReviews || hasMoreReviews
 
-  console.log("ProductReviews", { productId, page, reviews, rating, hasMoreReviews, count })
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      console.log(
-        localStorage.getItem("medusa_jwt") || localStorage.getItem("token")
-      )
+  const showMoreReviews = async () => {
+    if (canRevealLocalReviews) {
+      setVisibleCount((current) => current + pageSize)
+      return
     }
-  }, [])
-  
 
-  function Review({ review }: { review: StoreProductReview }) {
+    setIsLoadingMore(true)
+    setError(null)
+
+    try {
+      const response = await fetch(
+        `/api/product-reviews/${productId}?limit=${pageSize}&offset=${reviews.length}`,
+        { method: "GET", cache: "no-store" }
+      )
+
+      if (!response.ok) {
+        throw new Error("Chyba při načítání recenzí")
+      }
+
+      const payload = await response.json()
+      const incoming: unknown[] = Array.isArray(payload.reviews)
+        ? payload.reviews
+        : []
+      const safeIncoming = incoming.filter(
+        (review): review is StoreProductReview => {
+          if (!review || typeof review !== "object") {
+            return false
+          }
+
+          return (
+            "id" in review &&
+            typeof (review as { id?: unknown }).id === "string"
+          )
+        }
+      )
+      const newReviews = safeIncoming.filter(
+        (review) => !reviews.some((current) => current.id === review.id)
+      )
+      const nextCount = Number(payload.count) || count
+      const totalLoaded = reviews.length + newReviews.length
+
+      setReviews((current) => [...current, ...newReviews])
+      setRating(Math.round(payload.average_rating || rating))
+      setCount(nextCount)
+      setVisibleCount((current) => current + pageSize)
+      setHasMoreReviews(totalLoaded < nextCount)
+    } catch (loadError) {
+      console.error("[ProductReviews] fetch failed", loadError)
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Chyba při načítání recenzí"
+      )
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  function Review({
+    review,
+    index,
+  }: {
+    review: StoreProductReview
+    index: number
+  }) {
     return (
-      <div key={review?.id ?? Math.random()} className={styles.review}>
+      <motion.article
+        className={styles.review}
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.45 }}
+        transition={{
+          duration: 0.7,
+          delay: index * 0.08,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      >
+        <div className={styles.reviewMeta}>
+          <span>{String(index + 1).padStart(2, "0")} · zkušenost</span>
+          <span>ověřený objekt</span>
+        </div>
         <div className={styles.reviewHeader}>
           {review?.title ? <strong>{review.title}</strong> : null}
           <div className={styles.reviewStars}>
@@ -108,128 +236,88 @@ export default function ProductReviews({
             ))}
           </div>
         </div>
-        <div>{review?.content ?? ""}</div>
+        <p className={styles.reviewContent}>{review?.content ?? ""}</p>
         <div className={styles.reviewFooter}>
-          {(review?.first_name ?? "")} {(review?.last_name ?? "")}
+          <span>
+            {review?.first_name ?? ""} {review?.last_name ?? ""}
+          </span>
+          <i />
         </div>
-      </div>
+      </motion.article>
     )
   }
 
   return (
-    <div className={`product-page-constraint ${styles.container}`}>
+    <div
+      id="product-reviews"
+      className={`product-page-constraint ${styles.container}`}
+      data-scroll-section
+      data-scroll-label="Recenze"
+    >
       <div className={styles.reviews}>
         <div className={styles.header}>
-        <p className={styles.title}>
-          Recenze
-        </p>
-        {error && (
-          <p className={styles.error} style={{ color: "#c00" }}>
-            Nepodařilo se načíst recenze: {error}
-          </p>
-        )}
-        <div className={styles.starsAndCount}>
+          <div className={styles.headerCopy}>
+            <span>03 · zkušenosti</span>
+            <p className={styles.title}>Recenze</p>
+          </div>
+          {error && !REVIEW_DESIGN_PREVIEW && (
+            <p className={styles.error}>
+              Nepodařilo se načíst recenze: {error}
+            </p>
+          )}
+          <div className={styles.starsAndCount}>
             <div className={styles.stars}>
-            {Array.from({ length: 5 }).map((_, index) => (
+              {Array.from({ length: 5 }).map((_, index) => (
                 <span key={index}>
-                {!rating || index > rating ? (
+                  {!displayedRating || index >= displayedRating ? (
                     <Star />
-                ) : (
+                  ) : (
                     <StarSolid className="text-ui-tag-orange-icon" />
-                )}
+                  )}
                 </span>
-            ))}
+              ))}
             </div>
             <span className={styles.count}>
-            {count} {count === 1 ? "recenze" : "recenzí"}
+              {displayedCount} {displayedCount === 1 ? "recenze" : "recenzí"}
             </span>
-        </div>
+          </div>
         </div>
 
         <div className={styles.reviewsGrid}>
-          {reviews
-            .filter((r): r is StoreProductReview => !!r)
-            .map((review) => (
-              <Review key={review.id} review={review} />
-            ))}
+          {visibleReviews.map((review, index) => (
+            <Review key={review.id} review={review} index={index} />
+          ))}
         </div>
 
-        {hasMoreReviews && (
-          <div className="flex justify-center mt-8">
-            <ClickButton
-              text="Načíst další recenze"
-              onClickAction={() => setPage(page + 1)}
+        {canShowMoreReviews && (
+          <div className={styles.reviewPagination}>
+            <div className={styles.reviewProgress}>
+              <i
+                style={{
+                  width: `${Math.min(
+                    100,
+                    (visibleReviews.length / Math.max(displayedCount, 1)) * 100
+                  )}%`,
+                }}
+              />
+            </div>
+            <p>{`Zobrazeno ${visibleReviews.length} z ${displayedCount} recenzí`}</p>
+            <button
               type="button"
-              className={styles.loadMoreButton}
-            />
+              onClick={showMoreReviews}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? "Načítám…" : "Objevit další recenze"}
+              <span>↓</span>
+            </button>
           </div>
         )}
       </div>
 
-      <ProductReviewsForm productId={productId} />
+      <ProductReviewsForm
+        productId={productId}
+        previewMode={REVIEW_DESIGN_PREVIEW}
+      />
     </div>
   )
-}
-
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-    type?: "button" | "submit";
-    className?: string;
-    "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const isSubmitting = type === "submit" ? pending : false;
-    const isDisabled = disabled || isSubmitting;
-    const handleClick = onClickAction ?? ClickAction;
-
-    return (
-        <div className={className ? `${styles.ClickButton} ${className}` : styles.ClickButton}>
-            <button 
-                type={type}
-                className={styles.button}
-                onClick={handleClick}
-                disabled={isDisabled}
-                aria-busy={isDisabled || undefined}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-                data-testid={dataTestId}
-            >
-                <motion.div
-                    className={styles.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-                >
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--bgPrimary)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div 
-                        className={styles.el}
-                        style={{ backgroundColor: "var(--bgBlack)" }}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                </motion.div>
-            </button>
-        </div>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={styles.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
 }

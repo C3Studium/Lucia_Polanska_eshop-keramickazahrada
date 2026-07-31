@@ -59,6 +59,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className={s.formGrid}>
           <Input
+            variant="contact"
             label="E-mail"
             name="email"
             type="email"

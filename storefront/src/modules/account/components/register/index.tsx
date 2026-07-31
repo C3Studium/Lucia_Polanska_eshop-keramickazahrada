@@ -1,20 +1,20 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState } from "react"
 import Input from "@modules/common/components/input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 import s from "./style.module.scss"
-import { useFormStatus } from "react-dom"
-import { motion } from "framer-motion"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
+  redirectTo?: string
 }
 
-const Register = ({ setCurrentView }: Props) => {
+const Register = ({ setCurrentView, redirectTo }: Props) => {
   const [message, formAction] = useActionState(signup, null)
 
   return (
@@ -23,10 +23,13 @@ const Register = ({ setCurrentView }: Props) => {
         Staňte se členem!
       </h1>
       <p className={s.desc}>
-        Vytvořte si profil člena Medusa Store a získejte přístup k vylepšenému
-        zážitku z nakupování.
+        Vytvořte si profil v Keramické zahradě a mějte své objednávky, adresy
+        i uložené objekty na jednom místě.
       </p>
       <form className={s.form} action={formAction}>
+        {redirectTo && (
+          <input type="hidden" name="redirect_to" value={redirectTo} />
+        )}
         <div className={s.fields}>
           <Input
             label="Jméno"
@@ -70,21 +73,26 @@ const Register = ({ setCurrentView }: Props) => {
         <span className={s.note}>
           Vytvořením účtu souhlasíte se{" "}
           <LocalizedClientLink
-            href="/content/privacy-policy"
+            href="/ochrana-osobnich-udaju"
             className={s.underline}
           >
             Zásadami ochrany osobních údajů
           </LocalizedClientLink>{" "}
           a{" "}
           <LocalizedClientLink
-            href="/content/terms-of-use"
+            href="/smluvni-podminky"
             className={s.underline}
           >
             Podmínkami použití
           </LocalizedClientLink>
           .
         </span>
-        <ClickButton type="submit" className={s.submit} data-testid="register-button" text="Připojit se"/>
+        <PremiumActionButton
+          type="submit"
+          className={s.submit}
+          data-testid="register-button"
+          text="Připojit se"
+        />
       </form>
       <span className={s.note}>
         Již jste členem?{" "}
@@ -101,66 +109,3 @@ const Register = ({ setCurrentView }: Props) => {
 }
 
 export default Register
-
-
-type ClickButtonProps = {
-    text: string;
-    onClickAction?: () => void | Promise<void>;
-    ClickAction?: () => void | Promise<void>; // backward compatibility
-    disabled?: boolean;
-    type?: "button" | "submit";
-    className?: string;
-    "data-testid"?: string;
-}
-
-// Base animated button used across the site. Can act as a submit button in forms.
-function ClickButton({ onClickAction, ClickAction, disabled = false, text, type = "button", className, "data-testid": dataTestId }: ClickButtonProps) {
-    const [ isActive , setIsActive ] = useState<boolean>(false);
-    const { pending } = useFormStatus();
-    const isSubmitting = type === "submit" ? pending : false;
-    const isDisabled = disabled || isSubmitting;
-    const handleClick = onClickAction ?? ClickAction;
-
-    return (
-        <div className={className ? `${s.ClickButton} ${className}` : s.ClickButton}>
-            <button
-                type={type}
-                className={s.button}
-                onClick={handleClick}
-                disabled={isDisabled}
-                aria-busy={isDisabled || undefined}
-                onMouseEnter={() => setIsActive(true)}
-                onMouseLeave={() => setIsActive(false)}
-                data-testid={dataTestId}
-            >
-                <motion.div
-                    className={s.slider}
-                    animate={{top: isActive ? "-100%" : "0%"}}
-                    transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1]}}
-                >
-                    <div
-                        className={s.el}
-                        style={{ backgroundColor: "var(--darkOlive)" }}
-                    >
-                        <PerspectiveText label={text}/>
-                    </div>
-                    <div
-                        className={s.el}
-                        style={{ backgroundColor: "var(--bgBlack)" }}
-                    >
-                        <PerspectiveText label={text} />
-                    </div>
-                </motion.div>
-            </button>
-        </div>
-    )
-}
-
-function PerspectiveText({label}: {label: string}) {
-    return (    
-        <div className={s.perspectiveText}>
-            <p>{label}</p>
-            <p>{label}</p>
-        </div>
-    )
-}

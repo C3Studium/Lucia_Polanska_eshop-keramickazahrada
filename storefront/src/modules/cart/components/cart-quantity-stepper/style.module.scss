@@ -1,0 +1,51 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+.root {
+  display: grid;
+  grid-template-columns: 32px 34px 32px;
+  align-items: center;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid rgba(255,232,214,.34);
+  border-radius: 999px;
+  color: #ffe8d6;
+  background: rgba(255,232,214,.045);
+}
+
+.control {
+  display: grid;
+  height: 100%;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font: 400 17px/1 "Sansation-Regular", sans-serif;
+  transition: color 220ms ease, background-color 220ms ease;
+}
+
+.control:hover:not(:disabled),
+.control:focus-visible {
+  color: #20211c;
+  background: #bbb788;
+}
+
+.control:disabled {
+  cursor: default;
+  opacity: .28;
+}
+
+.value {
+  display: grid;
+  height: 22px;
+  place-items: center;
+  border-right: 1px solid rgba(255,232,214,.18);
+  border-left: 1px solid rgba(255,232,214,.18);
+  color: #ffe8d6;
+  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 680px) {
+  .root { grid-template-columns: 28px 30px 28px; height: 34px; }
+}

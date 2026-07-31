@@ -6,6 +6,15 @@ export const metadata: Metadata = {
   description: "Sign in to your Medusa Store account.",
 }
 
-export default function Login() {
-  return <LoginTemplate/>
+type LoginPageProps = {
+  params: Promise<{ countryCode: string }>
+  searchParams: Promise<{ redirectTo?: string | string[] }>
+}
+
+export default async function Login({ params, searchParams }: LoginPageProps) {
+  const [{ countryCode }, query] = await Promise.all([params, searchParams])
+  const redirectTo =
+    query.redirectTo === "/cart" ? `/${countryCode}/cart` : undefined
+
+  return <LoginTemplate redirectTo={redirectTo} />
 }

@@ -1,20 +1,17 @@
 import { Metadata } from "next"
 
-// import Hero from "@modules/home/components/original/hero"
-// import FeaturedProducts from "@modules/home/components/original/featured-products"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import ECom from "@modules/home/E-com"
-import Kurzy from "@modules/home/Kurzy"
-import Info from "@modules/home/Info"
 import HeroSection from "@modules/home/Hero"
+import HomeExperience from "@modules/home/HomeExperience"
 import { client } from "../../../sanity/lib/client"
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
+  title: "Keramická zahrada | Autorská keramika Lucie Polanské",
   description:
-    "A performant frontend ecommerce starter template with Next.js 15 and Medusa.",
+    "Ručně tvořená autorská keramika pro zahradu i domov. Objevte originální objekty, zakázkovou tvorbu a keramické kurzy Lucie Polanské.",
 }
 
 export default async function Home(props: {
@@ -31,31 +28,28 @@ export default async function Home(props: {
     fields: "id, handle, title",
   })
 
-  // Fetch main page settings from Sanity
-  const settings = await client.fetch('*[_type == "mainPageSettings"][0]')
+  const [settings, introHero, newsText, ecomIntro] = await Promise.all([
+    client.fetch('*[_type == "mainPageSettings"][0]'),
+    client.fetch('*[_type == "introHero"][0]'),
+    client.fetch('*[_type == "newsText"][0]'),
+    client.fetch('*[_type == "ecomIntro"][0]'),
+  ])
 
   if (!collections || !region) {
     return null
   }
 
-  const heroEnabled = settings?.heroSection?.enabled !== false
-  const kurzyEnabled = settings?.kurzySection?.enabled !== false
-  const ecomEnabled = settings?.ecomSection?.enabled !== false
-  const infoEnabled = settings?.infoSection?.enabled !== false
-
   return (
     <>
       <ScrollToTopOnReload />
-      {heroEnabled && <HeroSection />}
-      {ecomEnabled && <ECom />}
-      {/* {kurzyEnabled && <Kurzy />}
-      {infoEnabled && <Info />} */}
-      {/* <Hero />
-      <div className="py-12">
-        <ul className="flex flex-col gap-x-6">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      </div> */}
+      <HomeExperience>
+        <HeroSection
+          settings={settings}
+          introHero={introHero}
+          newsText={newsText?.text}
+        />
+        <ECom settings={settings} introData={ecomIntro} />
+      </HomeExperience>
     </>
   )
 }

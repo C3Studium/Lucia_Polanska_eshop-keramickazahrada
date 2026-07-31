@@ -1,14 +1,14 @@
-
 "use client"
 
 import styles from "./style.module.scss"
 
-import { clx } from "@medusajs/ui"
-
+import { AnimatePresence, motion } from "framer-motion"
 import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
 
-const Review = ({ cart, countryCode }: { cart: any, countryCode: string }) => {
+const ease = [0.22, 1, 0.36, 1] as const
+
+const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
   const searchParams = useSearchParams()
 
   const isOpen = searchParams.get("step") === "review"
@@ -24,30 +24,72 @@ const Review = ({ cart, countryCode }: { cart: any, countryCode: string }) => {
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <h2
-          className={clx(styles.heading, {
-            [styles.inactive]: !isOpen,
-          })}
+        <motion.h2
+          className={styles.heading}
+          initial={false}
+          animate={{
+            opacity: isOpen ? 1 : 0.42,
+            x: isOpen ? 0 : -4,
+          }}
+          transition={{ duration: 0.46, ease }}
         >
           Přehled
-        </h2>
+        </motion.h2>
       </div>
-      {isOpen && previousStepsCompleted && (
-        <>
-          <div className={styles.reviewRow}>
-            <div className={styles.reviewTextWrap}>
+      <AnimatePresence initial={false}>
+        {isOpen && previousStepsCompleted && (
+          <motion.div
+            className={styles.content}
+            key="review-content"
+            initial={{
+              opacity: 0,
+              height: 0,
+              y: 12,
+              clipPath: "inset(0 0 100% 0)",
+            }}
+            animate={{
+              opacity: 1,
+              height: "auto",
+              y: 0,
+              clipPath: "inset(0 0 0% 0)",
+            }}
+            exit={{
+              opacity: 0,
+              height: 0,
+              y: -8,
+              clipPath: "inset(100% 0 0 0)",
+            }}
+            transition={{ duration: 0.58, ease }}
+          >
+            <motion.div
+              className={styles.reviewRow}
+              initial={{ opacity: 0, x: -14 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.12, ease }}
+            >
+              <span className={styles.confirmationMark}>Souhlas</span>
               <p className={styles.reviewText}>
-                Kliknutím na tlačítko Objednat potvrzujete, že jste si přečetli, porozuměli a souhlasíte s našimi Podmínkami použití, Podmínkami prodeje a Reklamačním řádem a potvrzujete, že jste si přečetli Zásady ochrany osobních údajů obchodu Keramická zahrada.
+                Odesláním objednávky potvrzujete souhlas s obchodními
+                podmínkami, reklamačním řádem a zpracováním osobních údajů
+                obchodu Keramická zahrada.
               </p>
-            </div>
-          </div>
-          <PaymentButton cart={cart} data-testid="submit-order-button" countryCode={countryCode} />
-        </>
-      )}
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.48, delay: 0.2, ease }}
+            >
+              <PaymentButton
+                cart={cart}
+                data-testid="submit-order-button"
+                countryCode={countryCode}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
 export default Review
-
-

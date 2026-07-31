@@ -1,11 +1,12 @@
-import { Disclosure } from "@headlessui/react"
-import { Badge, clx, Divider } from "@medusajs/ui"
+import { AnimatePresence, motion } from "framer-motion"
 import s from "./style.module.scss"
 import { useEffect } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { useFormStatus } from "react-dom"
-import ClickButton from "../edit-button"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
+import AccountInteractiveSurface from "../account-interactive-surface"
+import { accountDisclosureVariants, accountSectionVariants } from "../../motion"
 
 type AccountInfoProps = {
   label: string
@@ -15,7 +16,7 @@ type AccountInfoProps = {
   errorMessage?: string
   clearState: () => void
   children?: React.ReactNode
-  'data-testid'?: string
+  "data-testid"?: string
 }
 
 const AccountInfo = ({
@@ -26,7 +27,7 @@ const AccountInfo = ({
   clearState,
   errorMessage = "An error occurred, please try again",
   children,
-  'data-testid': dataTestid
+  "data-testid": dataTestid,
 }: AccountInfoProps) => {
   const { state, close, toggle } = useToggleState()
 
@@ -34,7 +35,7 @@ const AccountInfo = ({
 
   const handleToggle = () => {
     clearState()
-    setTimeout(() => toggle(), 100)
+    toggle()
   }
 
   useEffect(() => {
@@ -44,97 +45,86 @@ const AccountInfo = ({
   }, [isSuccess, close])
 
   return (
-    <div className={s.root} data-testid={dataTestid}>
-      <div className={s.headerRow}>
-        <div className={s.leftCol}>
-          <div className={s.leftColContent}>
-            <span className={s.labelUpper}>{label}:{" "}</span>
-            <div className={s.rightInfoRow}>
-              {typeof currentInfo === "string" ? (
-                <span className={s.fontSemibold} data-testid="current-info">{currentInfo}</span>
-              ) : (
-                currentInfo
-              )}
-            </div>
-          </div>
-          <Divider />
+    <motion.div
+      className={s.root}
+      variants={accountSectionVariants}
+      data-testid={dataTestid}
+    >
+      <AccountInteractiveSurface
+        className={s.summaryRow}
+        contentClassName={s.headerRow}
+      >
+        <span className={s.labelUpper}>{label}</span>
+        <div className={s.currentValue}>
+          {typeof currentInfo === "string" ? (
+            <span className={s.valueText} data-testid="current-info">
+              {currentInfo}
+            </span>
+          ) : (
+            currentInfo
+          )}
         </div>
-        <div>
-          <ClickButton
+        <div className={s.editAction}>
+          <PremiumActionButton
             text={state ? "Zrušit" : "Upravit"}
             onClickAction={handleToggle}
-            type={state ? "button" : "button"}
             className={s.editBtn}
             active={state}
+            compact
             data-testid="edit-button"
           />
         </div>
-      </div>
+      </AccountInteractiveSurface>
 
-      {/* Success state */}
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            s.successPanel,
-            {
-              [s.panelOpen]: isSuccess,
-              [s.panelClosed]: !isSuccess,
-            }
-          )}
-          data-testid="success-message"
-        >
-          <Badge className={s.badgeSuccess} color="green">
-            <span>{label} Aktualizováno úspěšně</span>
-          </Badge>
-        </Disclosure.Panel>
-      </Disclosure>
-
-      {/* Error state  */}
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            s.errorPanel,
-            {
-              [s.panelOpen]: isError,
-              [s.panelClosed]: !isError,
-            }
-          )}
-          data-testid="error-message"
-        >
-          <Badge className={s.badgeError} color="red">
-            <span>{errorMessage}</span>
-          </Badge>
-        </Disclosure.Panel>
-      </Disclosure>
-
-      <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            s.editPanel,
-            {
-              [s.panelOpen]: state,
-              [s.panelClosed]: !state,
-            }
-          )}
-        >
-          <div className={s.editContent}>
-            <div>{children}</div>
-            <div className={s.editActions}>
-              <ClickButton
-                text="Uložit změny"
-                type="submit"
-                disabled={pending}
-                className={s.saveBtn}
-                data-testid="save-button"
-              />
+      <AnimatePresence initial={false}>
+        {isSuccess && (
+          <motion.div
+            className={s.successPanel}
+            variants={accountDisclosureVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            data-testid="success-message"
+          >
+            <p>{label} bylo úspěšně aktualizováno.</p>
+          </motion.div>
+        )}
+        {isError && (
+          <motion.div
+            className={s.errorPanel}
+            variants={accountDisclosureVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            data-testid="error-message"
+          >
+            <p>{errorMessage}</p>
+          </motion.div>
+        )}
+        {state && (
+          <motion.div
+            className={s.editPanel}
+            variants={accountDisclosureVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+          >
+            <div className={s.editContent}>
+              <div>{children}</div>
+              <div className={s.editActions}>
+                <PremiumActionButton
+                  text="Uložit změny"
+                  type="submit"
+                  disabled={pending}
+                  className={s.saveBtn}
+                  data-testid="save-button"
+                />
+              </div>
             </div>
-          </div>
-        </Disclosure.Panel>
-      </Disclosure>
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 

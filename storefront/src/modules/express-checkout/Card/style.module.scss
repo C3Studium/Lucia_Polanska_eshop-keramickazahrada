@@ -1,0 +1,110 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+.card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px clamp(12px, 3vw, 18px);
+  border-top: 1px solid rgba(32, 33, 28, .2);
+  background: transparent;
+  transition:
+    padding .52s cubic-bezier(.76, 0, .24, 1),
+    background .42s ease;
+}
+
+.card:last-child {
+  border-bottom: 1px solid rgba(32, 33, 28, .2);
+}
+
+.active {
+  padding: 20px clamp(18px, 4.5vw, 28px);
+  border-radius: 18px;
+  background: rgba(255, 248, 238, .58);
+  box-shadow: inset 0 0 0 1px rgba(32, 33, 28, .07);
+}
+
+.heading {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 76px;
+  grid-template-columns: 32px minmax(0, 1fr) 30px;
+  gap: 12px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.step {
+  align-self: start;
+  padding-top: 22px;
+  color: rgba(32, 33, 28, .55);
+  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .14em;
+}
+
+.headingCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.title {
+  font: 400 clamp(30px, 7.5vw, 43px)/.95 "Times New Roman", serif;
+  letter-spacing: -.035em;
+  transition: transform .35s cubic-bezier(.76, 0, .24, 1);
+}
+
+.summary {
+  overflow: hidden;
+  color: rgba(32, 33, 28, .62);
+  font: 400 14px/1.4 "Sansation-Regular", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clickable:hover .title {
+  transform: translateX(4px);
+}
+
+.status {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(32, 33, 28, .56);
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+.done {
+  width: 16px;
+  height: 16px;
+  color: #596248;
+}
+
+.content {
+  overflow: hidden;
+}
+
+.content > div {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 0 28px;
+}
+
+@media (max-width: 390px) {
+  .card,
+  .active {
+    padding-inline: 14px;
+  }
+
+  .heading {
+    grid-template-columns: 27px minmax(0, 1fr) 30px;
+    gap: 9px;
+  }
+}

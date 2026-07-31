@@ -8,11 +8,11 @@ const CheckoutSummary = ({ cart }: { cart: any }) => {
   return (
     <div className={styles.root}>
       <div className={styles.summary}>
-        <Divider className={`${styles.divider} ${styles.hidden}`} />
-        <h2 className={styles.heading}>Ve vašem košíku</h2>
+        <p className={styles.eyebrow}>Objednávka · přehled</p>
+        <h2 className={styles.heading}>Váš výběr</h2>
+        <ItemsPreviewTemplate cart={cart} />
         <Divider className={styles.divider} />
         <CartTotals totals={cart} />
-        <ItemsPreviewTemplate cart={cart} />
         <div className={styles.discount}>
           <DiscountCode cart={cart} />
         </div>

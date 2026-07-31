@@ -1,292 +1,209 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
+.home__introChapter {
+  position: relative;
+  background: transparent;
 
-.ECom__Intro{
-    width: 100dvw;
-    height: 100dvh;
+  .home__introChapter__Opening,
+  .home__introChapter__Gallery {
     position: relative;
+    will-change: transform, opacity;
+  }
+
+  .home__introChapter__Opening {
+    z-index: 1;
+  }
+
+  .home__introChapter__Gallery {
+    z-index: 2;
+    margin-top: 0;
+    transform-origin: center top;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 1rem;
+      left: 5vw;
+      z-index: 3;
+      width: clamp(3rem, 6vw, 7rem);
+      height: 1px;
+      background: rgba(33, 34, 34, 0.34);
+      pointer-events: none;
+    }
+  }
+}
+
+.ECom__Intro {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  padding: clamp(9rem, 17vh, 14rem) 5vw clamp(6rem, 12vh, 10rem);
+  color: var(--blackText);
+
+  .ECom__Intro__Rail {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: clamp(5rem, 10vh, 8rem);
+    color: rgba(33, 34, 34, 0.58);
+    font-family: "Sansation-Regular";
+    font-size: clamp(0.62rem, 0.68vw, 0.76rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    .rail__line {
+      height: 1px;
+      background: rgba(33, 34, 34, 0.22);
+    }
+  }
+
+  .ECom__Intro__Title {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10dvh 5dvw;
-    gap: 10%;
+    width: 100%;
 
-    @include hb((
-       xs: (height: 140dvh, padding: 20dvh 5dvw),
-       xxs: (height: 140dvh, padding: 20dvh 5dvw),
-    ));
+    h2 {
+      margin: 0;
+      color: var(--blackText);
+      font-family: "Sentient-Regular";
+      font-size: clamp(4.8rem, 9vw, 10rem);
+      font-weight: 400;
+      line-height: 0.82;
+      letter-spacing: -0.055em;
 
-    @include vb((
-       lg: (height: 80dvh, padding: 10dvh 5dvw),
-       md: (height: 80dvh, padding: 10dvh 5dvw),
-       s: (height: 90dvh, padding: 10dvh 5dvw),
-       sm: (height: 90dvh, padding: 10dvh 5dvw),
-       xs: (height: 100dvh, padding: 10dvh 5dvw),
-    ));
+      &:last-child {
+        align-self: flex-end;
+        padding-right: 7vw;
+      }
 
-    .ECom__Intro__Details{
-        width: 100%;
-        height: 100%;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 0;
+      .precise__char {
+        display: inline-block;
+        color: inherit;
+        font-size: inherit;
+        white-space: nowrap;
+      }
+    }
+
+    .Hero__Intro__Container {
+      display: flex;
+      align-items: center;
+      gap: clamp(1rem, 2.5vw, 3rem);
+      margin: 0.8rem 0 1rem 10vw;
+
+      h2 {
+        color: #747e62;
+        font-family: "Sentient-LightItalic";
+        font-size: clamp(4.2rem, 7.8vw, 8.8rem);
+        letter-spacing: -0.045em;
+      }
+
+      .Hero__Intro__Img_Wrapper {
+        flex: 0 0 auto;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .Hero__Intro__Img__Container {
+        position: relative;
+        width: clamp(12rem, 21vw, 28rem);
+        height: clamp(5.4rem, 10vw, 11rem);
         overflow: hidden;
 
-        .ECom__Intro__Gradient{
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: -10dvh;
-            left: 5dvw;
-            z-index: 0;
-
-            svg{
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                transform: scale(2);
-                opacity: 1;
-
-                g{
-                    width: 50dvw;
-                    height: 50dvh;
-                }
-            }
+        img {
+          object-fit: cover;
+          object-position: center;
+          filter: saturate(0.86) contrast(0.96);
+          transform: scale(1.04);
         }
+      }
     }
-    .ECom__Intro__Title{
-        width: 100%;
-        height: 55%;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        z-index: 1;
+  }
 
-         @include vb((
-            lg: (height: 100%),
-            md: (height: 100%),
-            s: (height: 40%),
-            sm: (height: 40%),
-            xs: (height: 40%),
-        ));
+  .ECom__Intro__Content {
+    display: grid;
+    grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
+    justify-content: space-between;
+    gap: 4rem;
+    margin-top: clamp(5rem, 11vh, 9rem);
 
+    p {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0;
+      color: rgba(33, 34, 34, 0.76);
+      font-family: "Sentient-Light";
+      font-size: clamp(1.15rem, 1.35vw, 1.55rem);
+      line-height: 1.38;
 
-        h2{
-            font-family: "Sansation-Light";
-            color: var(--whiteText);
-            font-size: 10rem;
-            text-align: left;
-            line-height: 1.1;
-
-            .precise__char{
-                color: inherit;
-                font-size: inherit;
-                display: inline-block;
-                white-space: nowrap;
-            }
-
-            @include hb((
-                lg: (font-size: 8rem),
-                md: (font-size: 6rem),
-                mdt: (font-size: 8rem),
-                sm: (font-size: 6rem),
-                xs: (font-size: 4rem),
-                xxs: (font-size: 4rem),
-            ));
-
-            @include vb((
-              lg: (font-size: 7rem),
-              md: (font-size: 5rem),
-              s: (font-size: 4rem),
-              sm: (font-size: 3.5rem),
-              xs: (font-size: 3rem),
-            ));
-        }
-
-        .Hero__Intro__Container{
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 5dvw;
-            h2{
-                font-family: "Sansation-Light";
-                color: var(--whiteText);
-                font-size: 10rem;
-                text-align: left;   
-
-                @include hb((
-                    lg: (font-size: 8rem),
-                    md: (font-size: 6rem),
-                    mdt: (font-size: 8rem),
-                    sm: (font-size: 6rem),
-                    xs: (font-size: 4rem),
-                    xxs: (font-size: 4rem),
-                ));
-
-                @include vb((
-                    lg: (font-size: 7rem),
-                    md: (font-size: 5rem),
-                    s: (font-size: 4rem),
-                    sm: (font-size: 3.5rem),
-                    xs: (font-size: 3rem),
-                ));
-            }
-            .Hero__Intro__Img__Container{
-                position: relative;
-                width: 17.5dvw;
-                height: 17.5dvh;
-                border: 1px solid var(--blackText);
-
-                .Hero__Intro__Img__Container__inner{
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                @include hb((
-                    mdt: (width: 20dvw, height: 15dvh),
-                    sm: (width: 20dvw, height: 15dvh),
-                    xs: (width: 15dvw, height: 17.5dvh),
-                    xxs: (width: 15dvw, height: 17.5dvh),
-                ));
-
-                @include vb((
-                    lg: (width: 25dvw, height: 10dvh),
-                    md: (width: 25dvw, height: 10dvh),
-                    s: (display: none),
-                    sm: (display: none),
-                    xs: (display: none),
-                ));
-                
-            }
-        }
-
-    }   
-
-    .ECom__Intro__Content{
-        width: 100%;
-        height: 40%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        text-align: center;
-        z-index: 1;
-
-        @include vb((
-            lg: (height: 100%),
-            md: (height: 100%),
-            s: (height: 100%, align-items: flex-start),
-            sm: (height: 100%, align-items: flex-start),
-            xs: (height: 100%, align-items: flex-start),
-        ));
-
-        p{
-            font-family: "Sentient-Light";
-            position: relative;
-            width: 35%;
-            display: flex;
-            flex-wrap: wrap;
-            line-height: 1.4;
-            @include hb((
-                sm: (width: 45%),
-            ));
-
-            &:nth-of-type(2){
-                text-align: right;
-                width: 25%;
-                margin-top: 10dvh;
-                justify-content: flex-end;
-
-                span{
-                    text-align: right;
-                }
-
-                @include hb((
-                    sm: (width: 35%),
-                ));
-            }
-
-            span{
-                width: 100%;
-                color: var(--whiteText);
-                font-size: 1.8rem;
-                opacity: 0.8;
-                line-height: 1.2;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: left;
-
-                span {
-                    width: auto;
-                    color: var(--whiteText);
-                    font-size: 1.8rem;
-                    opacity: 0.8;
-                    line-height: 1.2;
-                    text-align: left;
-                    display: inline-block;
-                    
-                    @include hb((
-                        lg: (font-size: 1.5rem),
-                        md: (font-size: 1.3rem),
-                        mdt: (font-size: 1.5rem),
-                        sm: (font-size: 1.3rem),
-                        xs: (font-size: 1.2rem),
-                        xxs: (font-size: 1.2rem),
-                    ));
-
-                    @include vb((
-                        lg: (font-size: 1.5rem),
-                        md: (font-size: 1.3rem),
-                        s: (font-size: 1.3rem),
-                        sm: (font-size: 1.2rem),
-                        xs: (font-size: 1.1rem),
-                    ));
-                }
-                
-                @include hb((
-                    lg: (font-size: 1.5rem),
-                    md: (font-size: 1.3rem),
-                    mdt: (font-size: 1.5rem),
-                    sm: (font-size: 1.3rem),
-                    xs: (font-size: 1.2rem),
-                    xxs: (font-size: 1.2rem),
-                ));
-
-                @include vb((
-                    lg: (font-size: 1.5rem),
-                    md: (font-size: 1.3rem),
-                    s: (font-size: 1.3rem),
-                    sm: (font-size: 1.2rem),
-                    xs: (font-size: 1.1rem),
-                ));
-            }
-
-            @include vb((
-                md: (width: 45%),
-                s: (width: 100%),
-                sm: (width: 100%),
-                xs: (width: 100%),
-            ));
-
-            &:nth-of-type(2){
-                @include vb((
-                    md: (width: 40%),
-                    s: (width: 100%, margin-top: 25dvh),
-                    sm: (width: 100%, margin-top: 25dvh),
-                    xs: (width: 100%, margin-top: 25dvh),
-                ));
-            }
-        }
-
+      span {
+        width: auto;
+        color: inherit;
+        font: inherit;
+        line-height: inherit;
+      }
     }
+
+    .ECom__Intro__Aside {
+      align-self: end;
+      padding-top: 1.2rem;
+      border-top: 1px solid rgba(33, 34, 34, 0.24);
+      font-family: "Sansation-Light";
+      font-size: clamp(0.95rem, 1vw, 1.12rem);
+      line-height: 1.45;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .home__introChapter .home__introChapter__Gallery {
+    margin-top: -2vh;
+
+    &::before {
+      left: 1.25rem;
+    }
+  }
+
+  .ECom__Intro {
+    min-height: 85svh;
+    padding-right: 1.25rem;
+    padding-left: 1.25rem;
+
+    .ECom__Intro__Rail {
+      grid-template-columns: max-content 1fr;
+
+      span:last-child {
+        display: none;
+      }
+    }
+
+    .ECom__Intro__Title {
+      h2,
+      .Hero__Intro__Container h2 {
+        font-size: clamp(3.4rem, 15vw, 6rem);
+      }
+
+      h2:last-child {
+        padding-right: 0;
+      }
+
+      .Hero__Intro__Container {
+        margin-left: 0;
+
+        .Hero__Intro__Img_Wrapper,
+        .Hero__Intro__Img__Container {
+          display: none;
+        }
+      }
+    }
+
+    .ECom__Intro__Content {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-top: 4rem;
+
+      p {
+        max-width: 34rem;
+      }
+    }
+  }
 }

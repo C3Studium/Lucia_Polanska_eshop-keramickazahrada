@@ -12,13 +12,17 @@ const Help = () => {
           <li>
             <div className={styles.contact}>
               <p className={styles.contactHeader}>
-                Kontakt:
-                <span className={styles.contactInfo}>
-                  Tel: +420 775 211 578
-                </span> 
-                <span className={styles.contactInfo}>
-                  Email: info@example.com
-                </span></p>
+                Kontakt
+                <a className={styles.contactInfo} href="tel:+420775211578">
+                  +420 775 211 578
+                </a>
+                <a
+                  className={styles.contactInfo}
+                  href="mailto:info@keramickazahrada.cz"
+                >
+                  info@keramickazahrada.cz
+                </a>
+              </p>
             </div>
           </li>
           <li>

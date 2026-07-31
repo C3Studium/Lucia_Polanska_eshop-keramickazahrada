@@ -1,64 +1,219 @@
 "use client"
 
+import { BundleProduct } from "@lib/data/products"
+import { HttpTypes } from "@medusajs/types"
+import { motion } from "framer-motion"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useMemo } from "react"
-import { Product } from "../Product"
-import { Address } from "../Address"
-import { Shipping } from "../Shipping"
+import { Card } from "../Card"
 import { Payment } from "../Payment"
-import { useCart } from "@lib/context/cart"
-import { StoreRegion } from "@medusajs/types"
+import { Product } from "../Product"
+import { Shipping } from "../Shipping"
+import styles from "../style.module.scss"
+import type { ComgatePaymentMethod } from "@lib/util/comgate"
 
-type ActiveTab = "product" | "address" | "shipping" | "payment"
+type ActiveStep = "selection" | "delivery" | "payment"
 
 type RouterProps = {
+  product: HttpTypes.StoreProduct
+  bundle?: BundleProduct
+  cart: HttpTypes.StoreCart | null
+  region: HttpTypes.StoreRegion
+  shippingMethods: HttpTypes.StoreCartShippingOption[]
+  paymentMethods: HttpTypes.StorePaymentProvider[]
+  comgateMethods: ComgatePaymentMethod[]
   handle: string
-  regions: StoreRegion[]
+  countryCode: string
+  packetaApiKey?: string
+  packetaShippingMethodId?: string
 }
 
 export const Router = ({
+  product,
+  bundle,
+  cart,
+  region,
+  shippingMethods,
+  paymentMethods,
+  comgateMethods,
   handle,
-  regions
+  countryCode,
+  packetaApiKey,
+  packetaShippingMethodId,
 }: RouterProps) => {
-  const { cart } = useCart()
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const currentStep = searchParams.get("step")
+  const searchParams = useSearchParams()
+  const basePath = `/${countryCode}/express-checkout/${handle}`
+  const bundleProductIds = new Set(
+    bundle?.items.map((item) => item.product.id) || []
+  )
+  const matchesProduct = !!cart?.items?.some(
+    (item) => item.product_handle === handle || item.product_id === product.id
+  )
+  const matchesBundle =
+    !!bundle &&
+    !!cart?.items?.length &&
+    cart.items.every((item) => bundleProductIds.has(item.product_id!))
+  const hasSelection =
+    !!cart?.items?.length && (matchesProduct || matchesBundle)
+  const hasAddress = !!cart?.shipping_address && !!cart?.email
+  const hasShipping = !!cart?.shipping_methods?.length
 
-  const isCartValid = useMemo(() => {
-    return cart?.items?.[0]?.product_handle === handle
-  }, [cart, handle])
+  const requested = searchParams.get("step")
+  let active: ActiveStep =
+    requested === "delivery" || requested === "payment"
+      ? requested
+      : "selection"
 
-  const activeTab: ActiveTab = currentStep === "product" || currentStep === "address" || 
-    currentStep === "shipping" || currentStep === "payment" ? currentStep : "product"
+  if (!hasSelection) active = "selection"
+  else if (active === "payment" && (!hasAddress || !hasShipping)) {
+    active = "delivery"
+  }
 
-  // WIP: FIX the problem with bundles
-  useEffect(() => {
-    if (!cart) {
-      return
-    }
-    
-    if ((activeTab !== "product") && !isCartValid) {
-      return router.push(`express-checkout/${handle}`)
-    }
+  const go = (step: ActiveStep) => {
+    if (step === "delivery" && !hasSelection) return
+    if (step === "payment" && (!hasAddress || !hasShipping)) return
+    const suffix = step === "selection" ? "" : `?step=${step}`
+    router.push(`${basePath}${suffix}`, { scroll: false })
+  }
 
-    if (activeTab === "shipping" && (!cart?.shipping_address || !cart?.billing_address)) {
-      return router.push(`express-checkout/${handle}?step=address`)
-    }
-  
-    if (activeTab === "payment" && (
-      !cart?.shipping_address || !cart?.billing_address || !cart?.shipping_methods?.length
-    )) {
-      return router.push(`express-checkout/${handle}?step=shipping`)
-    }
-  }, [isCartValid, activeTab])
+  const advance = (step: ActiveStep) => {
+    go(step)
+    router.refresh()
+  }
+
+  const selectedTitle =
+    cart?.items?.length === 1
+      ? cart.items[0].product_title || cart.items[0].title
+      : `${cart?.items?.length || 0} objektů v souboru`
 
   return (
     <>
-      <Product handle={handle} isActive={activeTab === "product"} />
-      <Address handle={handle} isActive={activeTab === "address"} regions={regions} />
-      <Shipping handle={handle} isActive={activeTab === "shipping"} />
-      <Payment handle={handle} isActive={activeTab === "payment"} />
+      <motion.header
+        className={styles.intro}
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.09 } },
+        }}
+      >
+        <motion.div
+          className={styles.introLine}
+          variants={{
+            hidden: { opacity: 0, y: 8 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+            },
+          }}
+        >
+          Rychlý nákup · {countryCode.toUpperCase()}
+        </motion.div>
+        <motion.h1
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+            },
+          }}
+        >
+          Váš výběr.
+          <em>Bez zdržení.</em>
+        </motion.h1>
+        <motion.p
+          variants={{
+            hidden: { opacity: 0, y: 10 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+            },
+          }}
+        >
+          Navrženo pro nákup ze sociálních sítí. Vyberete provedení, doručení a
+          bezpečně zaplatíte — bez opakovaného vyplňování.
+        </motion.p>
+      </motion.header>
+
+      <nav className={styles.progress} aria-label="Postup rychlého nákupu">
+        <span data-active={active === "selection"}>01 Výběr</span>
+        <span data-active={active === "delivery"}>02 Doručení</span>
+        <span data-active={active === "payment"}>03 Platba</span>
+      </nav>
+
+      <main>
+        <Card
+          step="01"
+          title="Váš objekt"
+          isActive={active === "selection"}
+          isDone={hasSelection}
+          summary={hasSelection ? selectedTitle : undefined}
+          onOpenAction={() => go("selection")}
+        >
+          <Product
+            product={product}
+            bundle={bundle}
+            region={region}
+            countryCode={countryCode}
+            onContinueAction={() => advance("delivery")}
+          />
+        </Card>
+
+        <Card
+          step="02"
+          title="Doručení"
+          isActive={active === "delivery"}
+          isDone={hasAddress && hasShipping}
+          summary={
+            hasAddress
+              ? `${cart?.shipping_address?.city} · ${
+                  cart?.shipping_methods?.at(-1)?.name || "vyberte dopravu"
+                }`
+              : undefined
+          }
+          onOpenAction={() => go("delivery")}
+        >
+          {cart && (
+            <Shipping
+              cart={cart}
+              region={region}
+              countryCode={countryCode}
+              shippingMethods={shippingMethods}
+              packetaApiKey={packetaApiKey}
+              packetaShippingMethodId={packetaShippingMethodId}
+              onContinueAction={() => advance("payment")}
+            />
+          )}
+        </Card>
+
+        <Card
+          step="03"
+          title="Platba"
+          isActive={active === "payment"}
+          isDone={false}
+          summary="Bezpečné dokončení objednávky"
+          onOpenAction={() => go("payment")}
+        >
+          {cart && (
+            <Payment
+              cart={cart}
+              paymentMethods={paymentMethods}
+              comgateMethods={comgateMethods}
+              countryCode={countryCode}
+              handle={handle}
+            />
+          )}
+        </Card>
+      </main>
+
+      <footer className={styles.trust}>
+        <span>Bezpečná platba</span>
+        <span>Pečlivé balení</span>
+        <span>Pomoc z ateliéru</span>
+      </footer>
     </>
   )
 }

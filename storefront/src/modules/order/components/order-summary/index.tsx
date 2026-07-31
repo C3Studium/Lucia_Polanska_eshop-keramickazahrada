@@ -8,7 +8,7 @@ type OrderSummaryProps = {
 
 const OrderSummary = ({ order }: OrderSummaryProps) => {
   const getAmount = (amount?: number | null) => {
-    if (!amount) {
+    if (amount === null || amount === undefined) {
       return
     }
 

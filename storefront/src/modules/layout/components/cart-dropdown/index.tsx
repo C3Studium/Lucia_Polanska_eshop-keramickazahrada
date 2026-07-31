@@ -9,7 +9,7 @@ import {
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import LinkButton from "@modules/common/components/Buttons/LinkButton"
+import WebButton from "@modules/common/components/Buttons/webButton"
 import Magnetic from "@modules/common/components/Buttons/Magnetic"
 import DeleteButton from "@modules/common/components/delete-button"
 import LineItemOptions from "@modules/common/components/line-item-options"
@@ -18,7 +18,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Cart from "@modules/common/icons/cart"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
-import { Fragment, useEffect, useRef, useState, type WheelEvent, type TouchEvent } from "react"
+import { Fragment, useEffect, useRef, useState, type WheelEvent } from "react"
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 
@@ -27,7 +27,6 @@ const CartDropdown = ({
 }: {
   cart?: HttpTypes.StoreCart | null
 }) => {
-  const pathaname = usePathname()
   const [activeTimer, setActiveTimer] = useState<ReturnType<typeof setTimeout> | undefined>(
     undefined
   )
@@ -44,9 +43,6 @@ const CartDropdown = ({
   const subtotal = cartState?.subtotal ?? 0
   const itemRef = useRef<number>(totalItems || 0)
   const itemsRef = useRef<HTMLDivElement | null>(null)
-  const longPressTimerRef = useRef<number | null>(null)
-  const longPressActivatedRef = useRef(false)
-  const LONG_PRESS_MS = 500
 
   const timedOpen = () => {
     open()
@@ -69,9 +65,6 @@ const CartDropdown = ({
     return () => {
       if (activeTimer) {
         clearTimeout(activeTimer)
-      }
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current)
       }
     }
   }, [activeTimer])
@@ -115,41 +108,6 @@ const CartDropdown = ({
     }
   }
 
-  // Touch long-press handlers: hold > LONG_PRESS_MS opens the dropdown panel
-  const handleTouchStart = (e: TouchEvent) => {
-    // start long-press timer
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
-    longPressActivatedRef.current = false
-    // Use window.setTimeout to get a numeric id that's compatible with clearTimeout
-    longPressTimerRef.current = window.setTimeout(() => {
-      setCartDropdownOpen(true)
-      longPressActivatedRef.current = true
-    }, LONG_PRESS_MS)
-  }
-
-  const handleTouchEnd = (e: TouchEvent) => {
-    // clear timer
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
-    }
-
-    if (longPressActivatedRef.current) {
-      // if long-press was activated, prevent the tap/click navigation
-      e.preventDefault()
-      e.stopPropagation()
-      longPressActivatedRef.current = false
-    }
-  }
-
-  const handleTouchCancel = (e: TouchEvent) => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
-    }
-    longPressActivatedRef.current = false
-  }
-
   return (
     <div
       className={styles.root}
@@ -159,22 +117,18 @@ const CartDropdown = ({
       <Popover className={styles.popover}>
         <PopoverButton
           className={styles.popoverButton}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchCancel}
+          onClick={() => setCartDropdownOpen((current) => !current)}
+          aria-label={`Košík, ${totalItems} položek`}
+          aria-expanded={cartDropdownOpen}
         >
-          <LocalizedClientLink
-            className={styles.cartLink}
-            href="/cart"
-            data-testid="nav-cart-link"
-          >
+          <span className={styles.cartLink} data-testid="nav-cart-link">
             <Magnetic>
               <Cart  size={40}/>
               <p className={styles.cartCount}>
                 {totalItems}
               </p>
             </Magnetic>
-          </LocalizedClientLink>
+          </span>
         </PopoverButton>
         <Transition
           show={cartDropdownOpen}
@@ -190,9 +144,6 @@ const CartDropdown = ({
             static
             className={styles.popoverPanel}
             data-testid="nav-cart-dropdown"
-            style={{
-              right: pathaname.includes("/checkout") ? "0px" : "-200px",
-            }}
           >
             <div className={styles.panelHeader}>
               <h3>Košík</h3>
@@ -304,8 +255,14 @@ const CartDropdown = ({
                   </div>
 
                   <span className={styles.emptyText}>Váš nákupní košík je prázdný.</span>
-                  <div onClick={close}>
-                    <LinkButton text="Do obchodu" href="/store"/>
+                  <div className={styles.emptyAction} onClick={close}>
+                    <WebButton
+                      title="Do obchodu"
+                      href="/store"
+                      Kind="Link"
+                      className={styles.emptyStoreButton}
+                      alt="Keramická zahrada"
+                    />
                   </div>
                 </div>
               </div>

@@ -1,13 +1,9 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
-.kurzy{
-    width: 100dvw;
-    height: auto;
-    background-color: var(--bgBlack);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-
+.kurzy {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  overflow: clip;
+  background: #1d1e1a;
 }
