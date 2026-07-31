@@ -17,6 +17,11 @@ type ProductReviewsProps = {
   initialCount: number
 }
 
+/*
+ * VISUAL TESTING ONLY:
+ * Re-enable this static review template if the product review component needs
+ * further visual testing without review records from the backend.
+ *
 const REVIEW_DESIGN_PREVIEW = true
 
 const previewReviews: StoreProductReview[] = [
@@ -93,6 +98,7 @@ const previewReviews: StoreProductReview[] = [
     last_name: "V.",
   },
 ]
+*/
 
 export default function ProductReviews({
   productId,
@@ -110,6 +116,15 @@ export default function ProductReviews({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [count, setCount] = useState(initialCount)
   const [error, setError] = useState<string | null>(null)
+  const displayedReviews = reviews
+  const displayedRating = rating
+  const displayedCount = count
+
+  /*
+   * VISUAL TESTING ONLY:
+   * Replace the three assignments above with this fallback if the component
+   * needs further visual testing without backend reviews.
+   *
   const displayedReviews =
     reviews.length > 0
       ? reviews
@@ -124,6 +139,7 @@ export default function ProductReviews({
       : REVIEW_DESIGN_PREVIEW
       ? previewReviews.length
       : count
+  */
 
   // Refetch first page when productId changes (navigating between products client-side)
   useEffect(() => {
@@ -260,7 +276,7 @@ export default function ProductReviews({
             <span>03 · zkušenosti</span>
             <p className={styles.title}>Recenze</p>
           </div>
-          {error && !REVIEW_DESIGN_PREVIEW && (
+          {error && (
             <p className={styles.error}>
               Nepodařilo se načíst recenze: {error}
             </p>
@@ -314,10 +330,7 @@ export default function ProductReviews({
         )}
       </div>
 
-      <ProductReviewsForm
-        productId={productId}
-        previewMode={REVIEW_DESIGN_PREVIEW}
-      />
+      <ProductReviewsForm productId={productId} previewMode={false} />
     </div>
   )
 }

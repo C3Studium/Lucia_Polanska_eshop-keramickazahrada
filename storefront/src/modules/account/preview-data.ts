@@ -1,10 +1,10 @@
-/**
- * Development-only account previews.
+/*
+ * VISUAL TESTING ONLY:
+ * These static account review and wishlist templates are intentionally
+ * disabled so both pages can be tested against real backend data and their
+ * genuine empty states. Re-enable them if either page needs further visual
+ * testing without backend records.
  *
- * The account pages use these records only when the backend returns an empty
- * collection in development. Production always renders real customer data or
- * the real empty state.
- */
 export const accountPreviewReviews = [
   {
     id: "preview-review-01",
@@ -79,3 +79,4 @@ export const accountPreviewWishlistItems = [
     },
   },
 ]
+*/

@@ -8,7 +8,9 @@ import ReviewsTemplate from "@modules/account/templates/reviews-template"
 import { listRegions } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { accountPreviewReviews } from "@modules/account/preview-data"
+// VISUAL TESTING ONLY: re-enable this import together with the commented
+// fallback below if the account reviews page needs further visual testing.
+// import { accountPreviewReviews } from "@modules/account/preview-data"
 
 export const metadata: Metadata = {
   title: "Moje recenze",
@@ -133,9 +135,14 @@ export default async function ReviewsPage(props: PageProps) {
     product: getProductByReview(review) || review.product, // fallback to mock data if not found
   }))
 
-  const isPreview =
-    process.env.NODE_ENV === "development" && enrichedReviews.length === 0
-  const visibleReviews = isPreview ? accountPreviewReviews : enrichedReviews
+  const isPreview = false
+  const visibleReviews = enrichedReviews
+
+  // VISUAL TESTING ONLY: re-enable this fallback if the account reviews page
+  // needs further visual testing without review records from the backend.
+  // const isPreview =
+  //   process.env.NODE_ENV === "development" && enrichedReviews.length === 0
+  // const visibleReviews = isPreview ? accountPreviewReviews : enrichedReviews
 
   return (
     <main className={s.root}>

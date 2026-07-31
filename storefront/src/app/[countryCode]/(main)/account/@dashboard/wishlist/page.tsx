@@ -6,7 +6,9 @@ import { retrieveProduct } from "@lib/data/products"
 import WishlistTemplate from "@modules/account/templates/wishlist-template"
 import { listRegions } from "@lib/data/regions"
 import { sdk } from "@lib/config"
-import { accountPreviewWishlistItems } from "@modules/account/preview-data"
+// VISUAL TESTING ONLY: re-enable this import together with the commented
+// fallback below if the account wishlist needs further visual testing.
+// import { accountPreviewWishlistItems } from "@modules/account/preview-data"
 
 import s from "../styles/profile.module.scss"
 
@@ -121,9 +123,14 @@ export default async function WishlistPage(props: PageProps) {
   )
   console.log("Fetched wishlist items", wishlistItems)
 
-  const isPreview =
-    process.env.NODE_ENV === "development" && enrichedItems.length === 0
-  const visibleItems = isPreview ? accountPreviewWishlistItems : enrichedItems
+  const isPreview = false
+  const visibleItems = enrichedItems
+
+  // VISUAL TESTING ONLY: re-enable this fallback if the account wishlist
+  // needs further visual testing without wishlist records from the backend.
+  // const isPreview =
+  //   process.env.NODE_ENV === "development" && enrichedItems.length === 0
+  // const visibleItems = isPreview ? accountPreviewWishlistItems : enrichedItems
 
   return (
     <main className={s.root}>

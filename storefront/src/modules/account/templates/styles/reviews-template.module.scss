@@ -207,12 +207,12 @@
   border-block: 1px solid rgba(32, 33, 29, 0.2);
 }
 
-.accountReviewsEmpty span {
+.accountReviewsEmpty > div > span {
   font: 400 clamp(2.5rem, 4vw, 4.8rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
-.accountReviewsEmpty p {
+.accountReviewsEmpty > div > p {
   color: rgba(32, 33, 29, 0.62);
 }
 

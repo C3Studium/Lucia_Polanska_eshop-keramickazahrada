@@ -1,3 +1,4 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   display: inline-flex;
   color: var(--delete-button-ink, rgba(32, 33, 29, .62));
