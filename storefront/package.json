@@ -10,10 +10,10 @@
   "scripts": {
     "sync:styles": "node scripts/sync-styles.js",
     "watch:styles": "chokidar \"src\" -i \"src/styles/system/**\" -i \"src/styles/globals.scss\" -i \"src/styles/_generated-styles.scss\" -i \"**/node_modules/**\" -i \"**/.next/**\" -c \"node scripts/sync-styles.js --event {event} --path '{path}'\"",
-    "dev": "pnpm run sync:styles && concurrently \"pnpm run watch:styles\" \"next dev -p 8000\"",
-    "build": "pnpm run sync:styles && next build",
+    "dev": "pnpm run sync:styles && concurrently \"pnpm run watch:styles\" \"node scripts/run-next-with-storefront-env.js dev -p 8000\"",
+    "build": "pnpm run sync:styles && node scripts/run-next-with-storefront-env.js build",
     "start": "next start -p 8000",
-    "build:next": "next build",
+    "build:next": "node scripts/run-next-with-storefront-env.js build",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
     "test-e2e": "playwright test e2e"
