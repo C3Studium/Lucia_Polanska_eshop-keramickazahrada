@@ -134,6 +134,9 @@ importers:
       three:
         specifier: ^0.180.0
         version: 0.180.0
+      uuid:
+        specifier: 11.1.0
+        version: 11.1.0
       webpack:
         specifier: ^5
         version: 5.101.1(esbuild@0.25.8)
