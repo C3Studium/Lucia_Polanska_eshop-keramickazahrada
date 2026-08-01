@@ -1,5 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from "next/server"
 
-export const GET = (req: NextRequest) => {
-  return NextResponse.json({ status: 'ok' });
-};
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
+
+export function GET() {
+  return NextResponse.json(
+    { status: "ok" },
+    {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
+  )
+}
