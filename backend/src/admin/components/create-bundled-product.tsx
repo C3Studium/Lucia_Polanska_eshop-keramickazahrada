@@ -1,315 +1,154 @@
-import { 
-  Button,
-  FocusModal,
-  Heading,
-  Input,
-  Label,
-  Select,
-  toast
-} from "@medusajs/ui"
-import { useState, useRef, useCallback, useMemo } from "react"
-import { useQuery, useMutation, useQueryClient, QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { sdk } from "../lib/sdk"
-import { HttpTypes } from "@medusajs/framework/types"
+import { Button, FocusModal, Heading, Text, toast } from "@medusajs/ui";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { BundleComposer, BundleEditorItem } from "./bundle-composer";
+import { sdk } from "../lib/sdk";
 
-const queryClientProvider = new QueryClient()
+const CreateBundledProduct = () => {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [items, setItems] = useState<BundleEditorItem[]>([]);
+  const queryClient = useQueryClient();
 
-const CreateBundledProductInner = () => {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [items, setItems] = useState<{
-    product_id: string | undefined
-    quantity: number
-  }[]>([
-    {
-      product_id: undefined,
-      quantity: 1,
-    }
-  ])
-  const [products, setProducts] = useState<HttpTypes.AdminProduct[]>([])
-  const productsLimit = 15
-  const [currnetProductPage, setCurrentProductPage] = useState(0)
-  const [productsCount, setProductsCount] = useState(0)
-  const hasNextPage = useMemo(() => 
-    productsCount ? productsCount > productsLimit : true, 
-  [productsCount, productsLimit])
-  const queryClient = useQueryClient()
-  useQuery({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const { products, count } = await sdk.admin.product.list({
-        limit: productsLimit,
-        offset: currnetProductPage * productsLimit,
-      })
-      setProductsCount(count)
-      setProducts((prev) => [...prev, ...products])
-      return products
-    },
-    enabled: hasNextPage,
-  })
-
-  const fetchMoreProducts = () => {
-    if (!hasNextPage) {
-      return
-    }
-    setCurrentProductPage(currnetProductPage + 1)
-  }
-
-  // ...existing code...
-  const { mutateAsync: createBundledProduct, isPending: isCreating } = useMutation({
-    mutationFn: async (data: Record<string, any>) => {
-      console.log(data)
-      await sdk.client.fetch("/admin/bundled-products", {
+  const { mutateAsync: createBundle, isPending } = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) =>
+      sdk.client.fetch("/admin/bundled-products", {
         method: "POST",
-        body: data
-      })
-    }
-  })
+        body: payload,
+      }),
+  });
 
-  const isValid = title.trim().length > 0 && items.every(
-    (it) => !!it.product_id && Number.isFinite(it.quantity) && it.quantity > 0
-  )
+  const reset = () => {
+    setTitle("");
+    setItems([]);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen && !isPending) reset();
+  };
+
+  const isValid =
+    title.trim().length > 0 &&
+    items.length > 0 &&
+    items.every(
+      (item) =>
+        item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
+    );
 
   const handleCreate = async () => {
-    const validTitle = title.trim()
-    console.log(validTitle)
-    const validItems = items.every((it) => !!it.product_id && Number.isFinite(it.quantity) && it.quantity > 0)
+    const validTitle = title.trim();
 
     if (!validTitle) {
-      toast.error("Bundle title is required")
-      return
+      toast.error("Doplňte název balíčku");
+      return;
     }
-    if (!validItems) {
-      toast.error("Please select a product and set quantity > 0 for each item")
-      return
+
+    if (!items.length) {
+      toast.error("Přidejte do balíčku alespoň jeden produkt");
+      return;
     }
 
     try {
-      await createBundledProduct({
+      await createBundle({
         title: validTitle,
         product: {
           title: validTitle,
           options: [
             {
               title: "Default",
-              values: ["default"]
-            }
+              values: ["default"],
+            },
           ],
           status: "published",
           variants: [
             {
               title: validTitle,
-              // You can set prices in the product's page
               prices: [],
               options: {
-                Default: "default"
+                Default: "default",
               },
-              manage_inventory: false
-            }
-          ]
+              manage_inventory: false,
+            },
+          ],
         },
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
-        }))
-      })
-      setOpen(false)
-      toast.success("Bundled product created successfully")
-      queryClient.invalidateQueries({
-        queryKey: ["bundled-products"]
-      })
-      setTitle("")
-      setItems([{ product_id: undefined, quantity: 1 }])
-    } catch (error) {
-      toast.error("Failed to create bundled product")
+        })),
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["bundled-products"] });
+      toast.success("Balíček byl vytvořen");
+      setOpen(false);
+      reset();
+    } catch {
+      toast.error("Balíček se nepodařilo vytvořit");
     }
-  }
+  };
 
   return (
-    <FocusModal open={open} onOpenChange={setOpen}>
+    <FocusModal open={open} onOpenChange={handleOpenChange}>
       <FocusModal.Trigger asChild>
-        <Button variant="primary">Create</Button>
+        <Button variant="primary">Vytvořit balíček</Button>
       </FocusModal.Trigger>
       <FocusModal.Content>
         <FocusModal.Header>
-          <div className="flex items-center justify-end gap-x-2">
-            <Heading level={"h1"}>Create Bundled Product</Heading>
+          <div className="flex w-full items-center justify-between gap-x-3">
+            <div className="hidden items-center gap-x-2 sm:flex">
+              <span className="bg-ui-tag-neutral-bg text-ui-fg-subtle rounded-md px-2 py-1 font-mono text-xs">
+                01
+              </span>
+              <Text size="small" weight="plus">
+                Nový balíček
+              </Text>
+            </div>
+            <div className="ml-auto flex items-center gap-x-2">
+              <FocusModal.Close asChild>
+                <Button variant="secondary" size="small" disabled={isPending}>
+                  Zrušit
+                </Button>
+              </FocusModal.Close>
+              <Button
+                variant="primary"
+                size="small"
+                onClick={handleCreate}
+                isLoading={isPending}
+                disabled={!isValid}
+              >
+                Vytvořit balíček
+              </Button>
+            </div>
           </div>
         </FocusModal.Header>
+
         <FocusModal.Body>
-          <div className="flex flex-1 flex-col items-center overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-[720px] flex-col gap-y-8 px-2 py-16">
-              <div>
-                <Label>Bundle Title</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+          <div className="flex h-full flex-col items-center overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-[780px] flex-col px-4 py-12 sm:px-8 sm:py-16">
+              <div className="border-ui-border-base mb-10 border-b pb-8">
+                <FocusModal.Title asChild>
+                  <Heading level="h1">Sestavit nový balíček</Heading>
+                </FocusModal.Title>
+                <FocusModal.Description asChild>
+                  <Text className="text-ui-fg-subtle mt-2 max-w-xl">
+                    Najděte konkrétní objekty, určete jejich množství a seřaďte
+                    je tak, jak se mají zákazníkovi zobrazit.
+                  </Text>
+                </FocusModal.Description>
               </div>
-              <div>
-                <Heading level={"h2"}>Bundle Items</Heading>
-                {items.map((item, index) => (
-                  <BundledProductItem
-                    key={index}
-                    item={item}
-                    index={index}
-                    setItems={setItems}
-                    products={products}
-                    fetchMoreProducts={fetchMoreProducts}
-                    hasNextPage={hasNextPage}
-                  />
-                ))}
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    setItems([
-                      ...items,
-                      { product_id: undefined, quantity: 1 },
-                    ])
-                  }
-                >
-                  Add Item
-                </Button>
-              </div>
+
+              <BundleComposer
+                title={title}
+                onTitleChange={setTitle}
+                items={items}
+                onItemsChange={setItems}
+              />
             </div>
           </div>
         </FocusModal.Body>
-        <FocusModal.Footer>
-          <div className="flex items-center justify-end gap-x-2">
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreate}
-              isLoading={isCreating}
-              disabled={!isValid}
-            >
-              Create Bundle
-            </Button>
-          </div>
-        </FocusModal.Footer>
       </FocusModal.Content>
     </FocusModal>
-  )
-}
+  );
+};
 
-const CreateBundledProduct = () => (
-  <QueryClientProvider client={queryClientProvider}>
-    <CreateBundledProductInner />
-  </QueryClientProvider>
-)
-
-export default CreateBundledProduct
-
-type BundledProductItemProps = {
-  item: { 
-    product_id: string | undefined, 
-    quantity: number, 
-  }
-  index: number
-  setItems: React.Dispatch<React.SetStateAction<{
-    product_id: string | undefined;
-    quantity: number;
-  }[]>>
-  products: HttpTypes.AdminProduct[] | undefined
-  fetchMoreProducts: () => void
-  hasNextPage: boolean
-}
-
-const BundledProductItem = ({ 
-  item, 
-  index, 
-  setItems, 
-  products, 
-  fetchMoreProducts, 
-  hasNextPage
-}: BundledProductItemProps) => {
-  const observer = useRef(
-    new IntersectionObserver(
-      (entries) => {
-        if (!hasNextPage) {
-          return
-        }
-        const first = entries[0]
-        if (first.isIntersecting) {
-          fetchMoreProducts()
-        }
-      },
-      { threshold: 1 }
-    )
-  )
-
-  const lastOptionRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (!hasNextPage) {
-        return
-      }
-      if (observer.current) {
-        observer.current.disconnect()
-      }
-      if (node) {
-        observer.current.observe(node)
-      }
-    },
-    [hasNextPage]
-  )
-
-  return (
-    <div className="my-2">
-      <Heading level={"h3"} className="mb-2">Item {index + 1}</Heading>
-        <Select 
-          value={item.product_id} 
-          onValueChange={(value) => 
-            setItems((items) => 
-              items.map((item, i) => 
-                i === index 
-                  ? { 
-                      ...item, 
-                      product_id: value, 
-                    } 
-                  : item
-              )
-            )
-          }
-        >
-          <Select.Trigger>
-            <Select.Value placeholder="Select Product" />
-          </Select.Trigger>
-          <Select.Content>
-            {products?.map((product, productIndex) => (
-              <Select.Item 
-                key={product.id} 
-                value={product.id} 
-                ref={
-                  productIndex === products.length - 1 
-                    ? lastOptionRef 
-                    : null
-                }
-              >
-                {product.title}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select>
-        <div className="flex items-center gap-x-2 [&_div]:flex-1">
-          <Label>Quantity</Label>
-          <Input
-            type="number"
-            placeholder="Quantity"
-            className="w-full mt-1 rounded-md border border-gray-200 p-2"
-            value={item.quantity}
-            onChange={(e) => 
-              setItems((items) => 
-                items.map((item, i) => 
-                  i === index 
-                    ? { ...item, quantity: parseInt(e.target.value) } 
-                    : item
-                )
-              )
-            }
-          />
-        </div>
-    </div>
-  )
-}
+export default CreateBundledProduct;

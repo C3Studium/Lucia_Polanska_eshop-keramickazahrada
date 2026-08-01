@@ -1,136 +1,199 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { CubeSolid } from "@medusajs/icons"
-import { 
+import { defineRouteConfig } from "@medusajs/admin-sdk";
+import { CubeSolid } from "@medusajs/icons";
+import {
+  Badge,
   Container,
-  Heading,
-  DataTable,
-  useDataTable,
   createDataTableColumnHelper,
+  DataTable,
   DataTablePaginationState,
-} from "@medusajs/ui"
-import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query"
-// Použijeme obyčejný <a> místo Link, abychom nevyžadovali Router kontext
-import { useMemo, useState } from "react"
-import { sdk } from "../../lib/sdk"
-import CreateBundledProduct from "../../components/create-bundled-product"
-import UpdateBundledProduct from "../../components/update-bundled-product"
-import DeleteBundledProduct from "../../components/delete-bundled-product"
+  Heading,
+  Text,
+  useDataTable,
+} from "@medusajs/ui";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import CreateBundledProduct from "../../components/create-bundled-product";
+import DeleteBundledProduct from "../../components/delete-bundled-product";
+import UpdateBundledProduct from "../../components/update-bundled-product";
+import { sdk } from "../../lib/sdk";
 
 type BundledProduct = {
-  id: string
-  title?: string | null
+  id: string;
+  title?: string | null;
   product?: {
-    id?: string | null
-  } | null
+    id?: string | null;
+    title?: string | null;
+    thumbnail?: string | null;
+  } | null;
   items?: Array<{
-    id?: string | null
+    id?: string | null;
     product?: {
-      id?: string | null
-      title?: string | null
-    } | null
-    quantity?: number | null
-  }> | null
-  created_at?: Date
-  updated_at?: Date
-}
+      id?: string | null;
+      title?: string | null;
+      thumbnail?: string | null;
+    } | null;
+    quantity?: number | null;
+  }> | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
-const columnHelper = createDataTableColumnHelper<BundledProduct>()
+const ItemThumb = ({
+  item,
+}: {
+  item: NonNullable<BundledProduct["items"]>[number];
+}) => (
+  <div className="bg-ui-bg-subtle shadow-borders-base flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md">
+    {item.product?.thumbnail ? (
+      <img
+        src={item.product.thumbnail}
+        alt=""
+        className="size-full object-cover"
+      />
+    ) : (
+      <span className="text-ui-fg-muted text-[10px] font-medium">
+        {item.product?.title?.slice(0, 1).toLocaleUpperCase("cs") || "–"}
+      </span>
+    )}
+  </div>
+);
+
+const formatDate = (value?: string) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat("cs-CZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
+
+const columnHelper = createDataTableColumnHelper<BundledProduct>();
 
 const columns = [
-  columnHelper.accessor("id", {
-    header: "ID",
-  }),
   columnHelper.accessor("title", {
-    header: "Title",
+    header: "Balíček",
+    cell: ({ row }) => (
+      <div className="flex min-w-0 flex-col py-1">
+        <Text size="small" weight="plus" className="truncate">
+          {row.original.title || "Balíček bez názvu"}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-muted truncate font-mono">
+          {row.original.id}
+        </Text>
+      </div>
+    ),
   }),
   columnHelper.accessor("items", {
-    header: "Items",
+    header: "Složení",
     cell: ({ row }) => {
       const items = Array.isArray(row.original.items)
         ? row.original.items.filter(Boolean)
-        : []
+        : [];
 
       if (!items.length) {
-        return <span>—</span>
+        return <Badge color="grey">Prázdný</Badge>;
       }
 
-      return items.map((item, idx) => {
-        const pid = item?.product?.id ?? undefined
-        const ptitle = item?.product?.title ?? "(bez názvu)"
-        const qty = typeof item?.quantity === "number" ? item?.quantity : "?"
-
-        return (
-          <div key={item?.id ?? idx}>
-            {pid ? (
-              <a href={`/products/${pid}`}>{ptitle}</a>
-            ) : (
-              <span>{ptitle}</span>
-            )}{" "}
-            x {qty}
+      return (
+        <div className="flex items-center gap-x-3">
+          <div className="flex -space-x-1.5">
+            {items.slice(0, 4).map((item, index) => (
+              <ItemThumb key={item.id || index} item={item} />
+            ))}
           </div>
-        )
-      })
+          <div className="flex flex-col">
+            <Text size="small" weight="plus">
+              {items.length} {items.length === 1 ? "položka" : "položky"}
+            </Text>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {items.reduce((total, item) => total + (item.quantity || 1), 0)}{" "}
+              ks celkem
+            </Text>
+          </div>
+        </div>
+      );
     },
   }),
   columnHelper.accessor("product", {
-    header: "Product",
+    header: "Produkt v katalogu",
     cell: ({ row }) => {
-      const pid = row.original.product?.id ?? undefined
-      if (!pid) {
-        return <span>—</span>
-      }
-      return <a href={`/products/${pid}`}>View Product</a>
+      const product = row.original.product;
+      if (!product?.id) return <Text className="text-ui-fg-muted">—</Text>;
+
+      return (
+        <Link
+          to={`/products/${product.id}`}
+          className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-sm font-medium"
+        >
+          Otevřít produkt ↗
+        </Link>
+      );
     },
   }),
-  // new actions column
+  columnHelper.accessor("updated_at", {
+    header: "Upraveno",
+    cell: ({ row }) => (
+      <Text size="small" className="text-ui-fg-subtle">
+        {formatDate(row.original.updated_at || row.original.created_at)}
+      </Text>
+    ),
+  }),
   columnHelper.display({
     id: "actions",
     header: "Akce",
-    cell: ({ row }) => {
-      return (
-        <div className="flex gap-2">
-          <UpdateBundledProduct id={row.original.id} initialTitle={row.original.title ?? undefined} />
-          <DeleteBundledProduct id={row.original.id} />
-        </div>
-      )
-    },
+    cell: ({ row }) => (
+      <div className="flex justify-end gap-x-2">
+        <UpdateBundledProduct
+          id={row.original.id}
+          initialTitle={row.original.title || undefined}
+        />
+        <DeleteBundledProduct id={row.original.id} />
+      </div>
+    ),
   }),
-]
+];
 
-const limit = 15
-
-const queryClient = new QueryClient()
+const limit = 15;
+const queryClient = new QueryClient();
 
 const BundledProductsPageInner = () => {
   const [pagination, setPagination] = useState<DataTablePaginationState>({
     pageSize: limit,
     pageIndex: 0,
-  })
-
-  const offset = useMemo(() => {
-    return pagination.pageIndex * limit
-  }, [pagination])
+  });
+  const offset = pagination.pageIndex * limit;
 
   const { data, isLoading } = useQuery<{
-    bundled_products: BundledProduct[]
-    count: number
+    bundled_products: BundledProduct[];
+    count: number;
   }>({
     queryKey: ["bundled-products", offset, limit],
-    queryFn: () => sdk.client.fetch("/admin/bundled-products", {
-      method: "GET",
-      query: {
-        limit,
-        offset,
-      },
-    }),
-  })
+    queryFn: () =>
+      sdk.client.fetch("/admin/bundled-products", {
+        method: "GET",
+        query: { limit, offset },
+      }),
+  });
 
-  const safeData = useMemo(() => {
-    const arr = Array.isArray(data?.bundled_products)
-      ? data!.bundled_products
-      : []
-    return arr.filter((bp): bp is BundledProduct => !!bp && typeof (bp as any).id === "string")
-  }, [data])
+  const safeData = useMemo(
+    () =>
+      (Array.isArray(data?.bundled_products)
+        ? data.bundled_products
+        : []
+      ).filter(
+        (bundle): bundle is BundledProduct =>
+          !!bundle && typeof bundle.id === "string"
+      ),
+    [data]
+  );
 
   const table = useDataTable({
     columns,
@@ -141,31 +204,36 @@ const BundledProductsPageInner = () => {
       onPaginationChange: setPagination,
     },
     rowCount: data?.count ?? 0,
-  })
+  });
 
   return (
     <Container className="divide-y p-0">
       <DataTable instance={table}>
-        <DataTable.Toolbar className="flex items-start justify-between gap-2 md:flex-row md:items-center">
-          <Heading>Balíčky Produktů</Heading>
+        <DataTable.Toolbar className="flex items-start justify-between gap-4 px-6 py-5 md:items-center">
+          <div>
+            <Heading>Balíčky produktů</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-1">
+              Sestavujte společné výběry z existujících produktů.
+            </Text>
+          </div>
           <CreateBundledProduct />
         </DataTable.Toolbar>
         <DataTable.Table />
         <DataTable.Pagination />
       </DataTable>
     </Container>
-  )
-}
+  );
+};
 
 const BundledProductsPage = () => (
   <QueryClientProvider client={queryClient}>
     <BundledProductsPageInner />
   </QueryClientProvider>
-)
+);
 
 export const config = defineRouteConfig({
-  label: "Balíčky Produktů",
+  label: "Balíčky produktů",
   icon: CubeSolid,
-})
+});
 
-export default BundledProductsPage
+export default BundledProductsPage;

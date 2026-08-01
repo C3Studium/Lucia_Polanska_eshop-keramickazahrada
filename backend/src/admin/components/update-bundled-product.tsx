@@ -1,274 +1,200 @@
-import { Button, FocusModal, Heading, Input, Label, Select, toast } from "@medusajs/ui"
-import { useState, useEffect, useMemo, useRef, useCallback } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { sdk } from "../lib/sdk"
-import { HttpTypes } from "@medusajs/framework/types"
+import { Button, Drawer, Skeleton, Text, toast } from "@medusajs/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { BundleComposer, BundleEditorItem } from "./bundle-composer";
+import { sdk } from "../lib/sdk";
 
 type UpdateBundledProductProps = {
-  id: string
-  initialTitle?: string
-}
+  id: string;
+  initialTitle?: string;
+};
 
-const UpdateBundledProduct = ({ id, initialTitle }: UpdateBundledProductProps) => {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState(initialTitle ?? "")
-  const [items, setItems] = useState<{
-    product_id: string | undefined
-    quantity: number
-  }[]>([])
-  // Produkty pro výběr v selectu
-  const [products, setProducts] = useState<HttpTypes.AdminProduct[]>([])
-  const productsLimit = 15
-  const [currentProductPage, setCurrentProductPage] = useState(0)
-  const [productsCount, setProductsCount] = useState(0)
-  const hasNextPage = useMemo(() => products.length < productsCount, [products.length, productsCount])
-  const queryClient = useQueryClient()
+type BundleDetails = {
+  bundled_product?: {
+    title?: string;
+    product?: { id?: string | null } | null;
+    items?: Array<{
+      quantity?: number | null;
+      product?: {
+        id: string;
+        title: string;
+        thumbnail?: string | null;
+        handle?: string | null;
+        status?: "draft" | "proposed" | "published" | "rejected";
+      } | null;
+    }>;
+  };
+};
 
-  // optional: fetch latest details when opening (keeps simple: just title)
-  const { data } = useQuery<{ bundled_product?: { title?: string, items?: Array<{ quantity?: number | null, product?: { id?: string | null } | null }> } }>({
+const UpdateBundledProduct = ({
+  id,
+  initialTitle,
+}: UpdateBundledProductProps) => {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(initialTitle ?? "");
+  const [items, setItems] = useState<BundleEditorItem[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery<BundleDetails>({
     queryKey: ["bundled-product", id],
-    queryFn: async () =>
+    queryFn: () =>
       sdk.client.fetch(`/admin/bundled-products/${id}`, {
         method: "GET",
       }),
     enabled: open && !!id,
-  })
-
-  // Načítání produktů pro select (stejně jako v create)
-  useQuery({
-    queryKey: ["products", currentProductPage],
-    queryFn: async () => {
-      const { products: fetched, count } = await sdk.admin.product.list({
-        limit: productsLimit,
-        offset: currentProductPage * productsLimit,
-      })
-      setProductsCount(count)
-      setProducts((prev) => [...prev, ...fetched])
-      return fetched
-    },
-    enabled: true,
-  })
+  });
 
   useEffect(() => {
-    if (!open) return
-    if (data?.bundled_product?.title) {
-      setTitle(data.bundled_product.title)
-    }
-    if (Array.isArray(data?.bundled_product?.items)) {
-      setItems(
-        (data!.bundled_product!.items || []).map((it) => ({
-          product_id: it?.product?.id || undefined,
-          quantity: typeof it?.quantity === "number" && it.quantity > 0 ? it.quantity : 1,
-        }))
-      )
-    } else {
-      setItems([])
-    }
-  }, [open, data])
+    if (!open || !data?.bundled_product) return;
+
+    setTitle(data.bundled_product.title || initialTitle || "");
+    setItems(
+      (data.bundled_product.items || []).flatMap((item) => {
+        if (!item.product?.id) return [];
+
+        return [
+          {
+            product_id: item.product.id,
+            quantity:
+              typeof item.quantity === "number" && item.quantity > 0
+                ? item.quantity
+                : 1,
+            product: {
+              id: item.product.id,
+              title: item.product.title,
+              thumbnail: item.product.thumbnail,
+              handle: item.product.handle,
+              status: item.product.status,
+            },
+          },
+        ];
+      })
+    );
+  }, [data, initialTitle, open]);
 
   const { mutateAsync: updateBundle, isPending } = useMutation({
-    mutationFn: async (payload: Record<string, any>) => {
-      await sdk.client.fetch(`/admin/bundled-products/${id}`, {
+    mutationFn: async (payload: Record<string, unknown>) =>
+      sdk.client.fetch(`/admin/bundled-products/${id}`, {
         method: "PATCH",
         body: payload,
-      })
-    },
-  })
+      }),
+  });
+
+  const isValid =
+    title.trim().length > 0 &&
+    items.length > 0 &&
+    items.every(
+      (item) =>
+        item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
+    );
 
   const handleUpdate = async () => {
-    const validTitle = title.trim()
-    const validItems = items.every((it) => !!it.product_id && Number.isFinite(it.quantity) && it.quantity > 0)
-    if (!validTitle) {
-      toast.error("Bundle title is required")
-      return
+    if (!title.trim()) {
+      toast.error("Doplňte název balíčku");
+      return;
     }
-    if (!validItems) {
-      toast.error("Please select a product and set quantity > 0 for each item")
-      return
+
+    if (!items.length) {
+      toast.error("Balíček musí obsahovat alespoň jeden produkt");
+      return;
     }
 
     try {
       await updateBundle({
-        title: validTitle,
-        items: items.map((it) => ({ product_id: it.product_id, quantity: it.quantity })),
-      })
-      setOpen(false)
-      toast.success("Balíček aktualizován")
-      queryClient.invalidateQueries({ queryKey: ["bundled-products"] })
-      queryClient.invalidateQueries({ queryKey: ["bundled-product", id] })
+        title: title.trim(),
+        items: items.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+        })),
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["bundled-products"] }),
+        queryClient.invalidateQueries({ queryKey: ["bundled-product", id] }),
+      ]);
+      toast.success("Balíček byl aktualizován");
+      setOpen(false);
     } catch {
-      toast.error("Nepodařilo se aktualizovat balíček")
+      toast.error("Balíček se nepodařilo aktualizovat");
     }
-  }
+  };
 
-  useEffect(() => {
-    if (open) {
-      setTitle(initialTitle ?? "")
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      setTitle(initialTitle || "");
+      setItems([]);
     }
-  }, [open, initialTitle])
+  };
 
   return (
-    <FocusModal open={open} onOpenChange={setOpen}>
-      <FocusModal.Trigger asChild>
-        <Button variant="secondary">Upravit</Button>
-      </FocusModal.Trigger>
-      <FocusModal.Content>
-        <FocusModal.Header>
-          <div className="flex items-center justify-end gap-x-2">
-            <Heading level={"h2"}>Upravit balíček</Heading>
-          </div>
-        </FocusModal.Header>
-        <FocusModal.Body>
-          <div className="flex flex-1 flex-col items-center overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-[720px] flex-col gap-y-8 px-2 py-4">
-              <div>
-                <Label>Název balíčku</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-              </div>
-              <div>
-                <Heading level={"h3"}>Položky balíčku</Heading>
-                {items.map((item, index) => (
-                  <BundledProductItem
-                    key={index}
-                    item={item}
-                    index={index}
-                    setItems={setItems}
-                    products={products}
-                    fetchMoreProducts={() => setCurrentProductPage((p) => p + 1)}
-                    hasNextPage={hasNextPage}
-                    onRemove={() => setItems((arr) => arr.filter((_, i) => i !== index))}
-                  />
-                ))}
-                <Button
-                  variant="secondary"
-                  onClick={() => setItems((arr) => [...arr, { product_id: undefined, quantity: 1 }])}
-                >
-                  Přidat položku
-                </Button>
-              </div>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      <Drawer.Trigger asChild>
+        <Button variant="secondary" size="small">
+          Upravit
+        </Button>
+      </Drawer.Trigger>
+      <Drawer.Content className="flex h-full flex-col">
+        <Drawer.Header>
+          <Drawer.Title>Upravit balíček</Drawer.Title>
+          <Drawer.Description>
+            Vyhledejte produkty a upravte pořadí nebo množství položek.
+          </Drawer.Description>
+        </Drawer.Header>
+
+        <Drawer.Body className="flex-1 overflow-y-auto px-6 py-6">
+          {isLoading && (
+            <div className="flex flex-col gap-y-6">
+              <Skeleton className="h-16 rounded-lg" />
+              <Skeleton className="h-36 rounded-lg" />
+              <Skeleton className="h-48 rounded-lg" />
             </div>
-          </div>
-        </FocusModal.Body>
-        <FocusModal.Footer>
-          <div className="flex items-center justify-end gap-x-2">
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Zrušit
-            </Button>
-            <Button variant="primary" onClick={handleUpdate} isLoading={isPending}>
-              Uložit
-            </Button>
-          </div>
-        </FocusModal.Footer>
-      </FocusModal.Content>
-    </FocusModal>
-  )
-}
+          )}
 
-export default UpdateBundledProduct
+          {isError && (
+            <div className="border-ui-border-error bg-ui-bg-base flex min-h-32 items-center justify-center rounded-lg border px-6 text-center">
+              <Text size="small" className="text-ui-fg-error">
+                Podrobnosti balíčku se nepodařilo načíst. Zavřete editor a
+                zkuste to znovu.
+              </Text>
+            </div>
+          )}
 
-type BundledProductItemProps = {
-  item: {
-    product_id: string | undefined
-    quantity: number
-  }
-  index: number
-  setItems: React.Dispatch<
-    React.SetStateAction<
-      {
-        product_id: string | undefined
-        quantity: number
-      }[]
-    >
-  >
-  products: HttpTypes.AdminProduct[] | undefined
-  fetchMoreProducts: () => void
-  hasNextPage: boolean
-  onRemove: () => void
-}
+          {!isLoading && !isError && (
+            <BundleComposer
+              title={title}
+              onTitleChange={setTitle}
+              items={items}
+              onItemsChange={setItems}
+              excludedProductIds={
+                data?.bundled_product?.product?.id
+                  ? [data.bundled_product.product.id]
+                  : []
+              }
+            />
+          )}
+        </Drawer.Body>
 
-const BundledProductItem = ({
-  item,
-  index,
-  setItems,
-  products,
-  fetchMoreProducts,
-  hasNextPage,
-  onRemove,
-}: BundledProductItemProps) => {
-  const observer = useRef(
-    new IntersectionObserver(
-      (entries) => {
-        if (!hasNextPage) return
-        const first = entries[0]
-        if (first.isIntersecting) {
-          fetchMoreProducts()
-        }
-      },
-      { threshold: 1 }
-    )
-  )
-
-  const lastOptionRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (!hasNextPage) return
-      if (observer.current) observer.current.disconnect()
-      if (node) observer.current.observe(node)
-    },
-    [hasNextPage]
-  )
-
-  return (
-    <div className="my-2">
-  <Heading level={"h3"} className="mb-2">
-        Položka {index + 1}
-      </Heading>
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <Label>Produkt</Label>
-          <Select
-            value={item.product_id}
-            onValueChange={(value) =>
-              setItems((items) =>
-                items.map((it, i) => (i === index ? { ...it, product_id: value } : it))
-              )
-            }
+        <Drawer.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
           >
-            <Select.Trigger>
-              <Select.Value placeholder="Vyber produkt" />
-            </Select.Trigger>
-            <Select.Content>
-              {products?.map((product, productIndex) => (
-                <Select.Item
-                  key={product.id}
-                  value={product.id}
-                  ref={productIndex === products.length - 1 ? lastOptionRef : null}
-                >
-                  {product.title}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select>
-        </div>
-        <div className="flex-1">
-          <Label>Množství</Label>
-          <Input
-            type="number"
-            value={item.quantity}
-            onChange={(e) =>
-              setItems((items) =>
-                items.map((it, i) =>
-                  i === index ? { ...it, quantity: Math.max(1, parseInt(e.target.value || "1", 10)) } : it
-                )
-              )
-            }
-          />
-        </div>
-        <div>
-          <Button variant="secondary" onClick={onRemove}>
-            Odebrat
+            Zrušit
           </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+          <Button
+            variant="primary"
+            onClick={handleUpdate}
+            isLoading={isPending}
+            disabled={!isValid || isLoading || isError}
+          >
+            Uložit změny
+          </Button>
+        </Drawer.Footer>
+      </Drawer.Content>
+    </Drawer>
+  );
+};
+
+export default UpdateBundledProduct;
