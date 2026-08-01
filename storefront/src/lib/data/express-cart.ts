@@ -69,7 +69,7 @@ async function emptyExpressCart(cart: HttpTypes.StoreCart) {
   const headers = { ...(await getAuthHeaders()) }
   await Promise.all(
     (cart.items || []).map((item) =>
-      sdk.store.cart.deleteLineItem(cart.id, item.id, headers)
+      sdk.store.cart.deleteLineItem(cart.id, item.id, {}, headers)
     )
   )
   await refreshExpressCart()

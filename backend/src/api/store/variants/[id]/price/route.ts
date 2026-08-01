@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { getCustomPriceWorkflow } from "../../../../../workflows/get-custom-price"
-import { z } from "zod"
+import { z } from "@medusajs/framework/zod"
 
 export const PostCustomPriceSchema = z.object({
   region_id: z.string(),

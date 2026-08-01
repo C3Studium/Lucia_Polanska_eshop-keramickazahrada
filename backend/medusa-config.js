@@ -1,4 +1,4 @@
-import { loadEnv, Modules, defineConfig } from '@medusajs/utils';
+import { loadEnv, Modules, defineConfig } from '@medusajs/framework/utils';
 import {
   ADMIN_CORS,
   AUTH_CORS,
@@ -20,8 +20,6 @@ import {
   MINIO_ACCESS_KEY,
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
-  MEILISEARCH_HOST,
-  MEILISEARCH_ADMIN_KEY,
   JWT_EXPIRES_IN,
   STOREFRONT_URL,
   SANITY_API_TOKEN,
@@ -161,17 +159,17 @@ const medusaConfig = {
     },
     ...(REDIS_URL ? [{
       key: Modules.EVENT_BUS,
-      resolve: '@medusajs/event-bus-redis',
+      resolve: '@medusajs/medusa/event-bus-redis',
       options: {
         redisUrl: REDIS_URL
       }
     },
     {
       key: Modules.WORKFLOW_ENGINE,
-      resolve: '@medusajs/workflow-engine-redis',
+      resolve: '@medusajs/medusa/workflow-engine-redis',
       options: {
         redis: {
-          url: REDIS_URL,
+          redisUrl: REDIS_URL,
         }
       }
     }] : []),
@@ -208,7 +206,6 @@ const medusaConfig = {
       options: {
         providers: [
           // Custom Comgate provider
-          // Custom Comgate provider
           {
             resolve: './src/modules/comgate',
             id: 'comgate',
@@ -233,30 +230,6 @@ const medusaConfig = {
         ],
       },
     },
-  ],
-  plugins: [
-  ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
-      resolve: '@rokmohar/medusa-plugin-meilisearch',
-      options: {
-        config: {
-          host: MEILISEARCH_HOST,
-          apiKey: MEILISEARCH_ADMIN_KEY
-        },
-        settings: {
-          products: {
-            type: 'products',
-            enabled: true,
-            fields: ['id', 'title', 'description', 'handle', 'variant_sku', 'thumbnail'],
-            indexSettings: {
-              searchableAttributes: ['title', 'description', 'variant_sku'],
-              displayedAttributes: ['id', 'handle', 'title', 'description', 'variant_sku', 'thumbnail'],
-              filterableAttributes: ['id', 'handle'],
-            },
-            primaryKey: 'id',
-          }
-        }
-      }
-    }] : [])
   ]
 };
 

@@ -1,5 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
-import { z } from "zod";
+import { z } from "@medusajs/framework/zod";
 import { addBundleToCartWorkflow } from "../../../../../workflows/add-bundle-to-cart";
 
 export const PostCartsBundledLineItemsSchema = z.object({

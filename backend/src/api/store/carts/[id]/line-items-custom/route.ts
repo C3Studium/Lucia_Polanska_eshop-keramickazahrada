@@ -1,5 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { z } from "zod"
+import { z } from "@medusajs/framework/zod"
 import { 
   customAddToCartWorkflow,
 } from "../../../../../workflows/custom-add-to-cart"
@@ -7,7 +7,7 @@ import {
 export const PostAddCustomLineItemSchema = z.object({
   variant_id: z.string(),
   quantity: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 type PostAddCustomLineItemSchemaType = z.infer<

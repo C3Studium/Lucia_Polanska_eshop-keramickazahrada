@@ -203,6 +203,10 @@ function PerspectiveIcon({
   icon2: string | undefined
   alt: string
 }) {
+  if (!icon1 || !icon2) {
+    return null
+  }
+
   return (
     <motion.div
       className={styles.PerspectiveIcon}

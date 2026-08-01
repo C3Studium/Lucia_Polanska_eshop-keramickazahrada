@@ -8,12 +8,7 @@ checkEnvVariables()
  */
 const nextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  outputFileTracingRoot: __dirname,
   sassOptions: {
     includePaths: [path.join(__dirname, 'src')],
   },
@@ -68,9 +63,6 @@ const nextConfig = {
         hostname: "cdn.sanity.io",
       },
     ],
-  },
-  serverRuntimeConfig: {
-    port: process.env.PORT || 3000
   }
 }
 

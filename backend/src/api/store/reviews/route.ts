@@ -4,7 +4,7 @@ import type {
 } from "@medusajs/framework/http"
 import { createReviewWorkflow } from "../../../workflows/create-review"
 
-import { z } from "zod"
+import { z } from "@medusajs/framework/zod"
 
 export const PostStoreReviewSchema = z.object({
   title: z.string().optional(),
@@ -80,7 +80,6 @@ export const POST = async (
     })
   }
 }
-
 
 
 

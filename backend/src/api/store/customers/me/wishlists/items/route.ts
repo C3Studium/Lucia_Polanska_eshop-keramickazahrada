@@ -1,7 +1,7 @@
 import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework"
 import { createWishlistItemWorkflow } from "../../../../../../workflows/create-wishlist-item"
 import { MedusaError } from "@medusajs/framework/utils"
-import { z } from "zod"
+import { z } from "@medusajs/framework/zod"
 import { PostStoreCreateWishlistItem } from "./validators"
 
 type PostStoreCreateWishlistItemType = z.infer<typeof PostStoreCreateWishlistItem>

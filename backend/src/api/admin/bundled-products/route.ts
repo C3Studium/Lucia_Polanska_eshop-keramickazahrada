@@ -2,7 +2,7 @@ import {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http";
-import { z } from "zod";
+import { z } from "@medusajs/framework/zod";
 import { AdminCreateProduct } from "@medusajs/medusa/api/admin/products/validators";
 import {
   createBundledProductWorkflow,
