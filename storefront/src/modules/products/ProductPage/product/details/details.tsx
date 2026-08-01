@@ -303,7 +303,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               />
             )}
           </motion.div>
-        </aside>
+        </aside> 
       </div>
     </>
   )
