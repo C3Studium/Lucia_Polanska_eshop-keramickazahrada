@@ -16,7 +16,6 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import CreateBundledProduct from "../../components/create-bundled-product";
 import DeleteBundledProduct from "../../components/delete-bundled-product";
 import UpdateBundledProduct from "../../components/update-bundled-product";
@@ -75,6 +74,21 @@ const formatDate = (value?: string) => {
   }).format(date);
 };
 
+const getAdminProductHref = (productId: string) => {
+  if (typeof window === "undefined") {
+    return `/app/products/${productId}`;
+  }
+
+  const routeMarker = "/bundled-products";
+  const markerIndex = window.location.pathname.indexOf(routeMarker);
+  const adminBase =
+    markerIndex >= 0
+      ? window.location.pathname.slice(0, markerIndex)
+      : "/app";
+
+  return `${adminBase}/products/${productId}`;
+};
+
 const columnHelper = createDataTableColumnHelper<BundledProduct>();
 
 const columns = [
@@ -129,12 +143,12 @@ const columns = [
       if (!product?.id) return <Text className="text-ui-fg-muted">—</Text>;
 
       return (
-        <Link
-          to={`/products/${product.id}`}
+        <a
+          href={getAdminProductHref(product.id)}
           className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-sm font-medium"
         >
           Otevřít produkt ↗
-        </Link>
+        </a>
       );
     },
   }),
