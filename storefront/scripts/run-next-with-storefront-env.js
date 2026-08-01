@@ -7,13 +7,14 @@ const { spawn } = require("child_process")
 const command = process.argv[2]
 const commandArgs = process.argv.slice(3)
 
-if (!command || !["build", "dev"].includes(command)) {
-  console.error("Usage: run-next-with-storefront-env.js <build|dev> [...args]")
+if (!command || !["build", "dev", "start"].includes(command)) {
+  console.error("Usage: run-next-with-storefront-env.js <build|dev|start> [...args]")
   process.exit(1)
 }
 
 function loadLocalEnvironment() {
-  const environment = process.env.NODE_ENV || (command === "build" ? "production" : "development")
+  const environment =
+    process.env.NODE_ENV || (command === "dev" ? "development" : "production")
   const candidates = [
     `.env.${environment}.local`,
     ".env.local",
@@ -127,4 +128,3 @@ main().catch((error) => {
   console.error(`Storefront bootstrap failed: ${error.message}`)
   process.exit(1)
 })
-
