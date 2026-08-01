@@ -19,6 +19,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { sdk } from "../lib/sdk";
+import {
+  BundleProductDetails,
+  BundleProductDetailsFields,
+} from "./bundle-product-details";
 
 type BundleProductSummary = {
   id: string;
@@ -35,11 +39,12 @@ export type BundleEditorItem = {
 };
 
 type BundleComposerProps = {
-  title: string;
-  onTitleChange: (value: string) => void;
+  details: BundleProductDetails;
+  onDetailsChange: (patch: Partial<BundleProductDetails>) => void;
   items: BundleEditorItem[];
   onItemsChange: (items: BundleEditorItem[]) => void;
   excludedProductIds?: string[];
+  onUploadingChange?: (uploading: boolean) => void;
 };
 
 const normalizeQuantity = (value: number) =>
@@ -382,33 +387,19 @@ const BundleComposition = ({
 };
 
 export const BundleComposer = ({
-  title,
-  onTitleChange,
+  details,
+  onDetailsChange,
   items,
   onItemsChange,
   excludedProductIds,
+  onUploadingChange,
 }: BundleComposerProps) => (
   <div className="flex flex-col gap-y-10">
-    <section className="flex flex-col gap-y-3">
-      <div>
-        <Heading level="h2">Název a identita</Heading>
-        <Text size="small" className="text-ui-fg-subtle mt-1">
-          Použijte krátký název, pod kterým zákazník sestavu pozná v obchodě.
-        </Text>
-      </div>
-      <div className="flex flex-col gap-y-2">
-        <Label htmlFor="bundle-title" size="small" weight="plus">
-          Název balíčku
-        </Label>
-        <Input
-          id="bundle-title"
-          value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="Například Letní výběr zahrady"
-          autoComplete="off"
-        />
-      </div>
-    </section>
+    <BundleProductDetailsFields
+      details={details}
+      onChange={onDetailsChange}
+      onUploadingChange={onUploadingChange}
+    />
 
     <BundleProductSearch
       items={items}

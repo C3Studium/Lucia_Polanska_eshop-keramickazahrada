@@ -2,12 +2,20 @@ import { Button, FocusModal, Heading, Text, toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { BundleComposer, BundleEditorItem } from "./bundle-composer";
+import {
+  bundleDetailsToProductPayload,
+  BundleProductDetails,
+  createEmptyBundleProductDetails,
+} from "./bundle-product-details";
 import { sdk } from "../lib/sdk";
 
 const CreateBundledProduct = () => {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+  const [details, setDetails] = useState<BundleProductDetails>(
+    createEmptyBundleProductDetails
+  );
   const [items, setItems] = useState<BundleEditorItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
 
   const { mutateAsync: createBundle, isPending } = useMutation({
@@ -19,8 +27,9 @@ const CreateBundledProduct = () => {
   });
 
   const reset = () => {
-    setTitle("");
+    setDetails(createEmptyBundleProductDetails());
     setItems([]);
+    setIsUploading(false);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -29,18 +38,30 @@ const CreateBundledProduct = () => {
   };
 
   const isValid =
-    title.trim().length > 0 &&
+    details.title.trim().length > 0 &&
+    details.handle.trim().length > 0 &&
     items.length > 0 &&
+    !isUploading &&
     items.every(
       (item) =>
         item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
     );
 
   const handleCreate = async () => {
-    const validTitle = title.trim();
+    const validTitle = details.title.trim();
 
     if (!validTitle) {
       toast.error("Doplňte název balíčku");
+      return;
+    }
+
+    if (!details.handle.trim()) {
+      toast.error("Doplňte URL identifikátor balíčku");
+      return;
+    }
+
+    if (isUploading) {
+      toast.error("Počkejte prosím na dokončení nahrávání obrázků");
       return;
     }
 
@@ -53,14 +74,13 @@ const CreateBundledProduct = () => {
       await createBundle({
         title: validTitle,
         product: {
-          title: validTitle,
+          ...bundleDetailsToProductPayload(details),
           options: [
             {
               title: "Default",
               values: ["default"],
             },
           ],
-          status: "published",
           variants: [
             {
               title: validTitle,
@@ -138,10 +158,13 @@ const CreateBundledProduct = () => {
               </div>
 
               <BundleComposer
-                title={title}
-                onTitleChange={setTitle}
+                details={details}
+                onDetailsChange={(patch) =>
+                  setDetails((current) => ({ ...current, ...patch }))
+                }
                 items={items}
                 onItemsChange={setItems}
+                onUploadingChange={setIsUploading}
               />
             </div>
           </div>

@@ -14,6 +14,8 @@ import { GetStoreCustomerReviewsSchema } from "./store/customers/me/reviews/rout
 import { GetAdminReviewsSchema } from "./admin/reviews/route";
 import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route";
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
+import { PostBundledProductsSchema } from "./admin/bundled-products/route";
+import { PatchBundledProductsSchema } from "./admin/bundled-products/[id]/route";
 
 // Debug middleware to log incoming requests
 const debugAuthMiddleware = () => {
@@ -35,6 +37,16 @@ const debugAuthMiddleware = () => {
 
 export default defineMiddlewares({
   routes: [
+    {
+      matcher: "/admin/bundled-products",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostBundledProductsSchema)],
+    },
+    {
+      matcher: "/admin/bundled-products/:id",
+      methods: ["PATCH"],
+      middlewares: [validateAndTransformBody(PatchBundledProductsSchema)],
+    },
     {
       matcher: "/store/variants/:id/price",
       methods: ["POST"],

@@ -10,14 +10,14 @@ import {
 } from "../../../workflows/create-bundled-product";
 
 export const PostBundledProductsSchema = z.object({
-  title: z.string(),
+  title: z.string().min(1),
   product: AdminCreateProduct(),
   items: z.array(
     z.object({
       product_id: z.string(),
-      quantity: z.number(),
+      quantity: z.number().int().positive(),
     })
-  ),
+  ).min(1),
 });
 
 type PostBundledProductsSchema = z.infer<typeof PostBundledProductsSchema>;
@@ -26,12 +26,12 @@ export async function POST(
   req: AuthenticatedMedusaRequest<PostBundledProductsSchema>,
   res: MedusaResponse
 ) {
-  console.log("Creating bundled product with data (validatedBody):", req.body);
+  const payload = req.validatedBody || req.body;
   const { result: bundledProduct } = await createBundledProductWorkflow(
     req.scope
   ).run({
     input: {
-      bundle: req.body,
+      bundle: payload,
     } as CreateBundledProductWorkflowInput,
   });
 
@@ -55,7 +55,13 @@ export async function GET(
   const { data: bundledProducts, metadata: { count, take, skip } = {} } =
     await query.graph({
       entity: "bundle",
-      fields: ["*", "product.*", "items.*", "items.product.*"],
+      fields: [
+        "*",
+        "product.*",
+        "product.images.*",
+        "items.*",
+        "items.product.*",
+      ],
       pagination: {
         take: limit,
         skip: offset,

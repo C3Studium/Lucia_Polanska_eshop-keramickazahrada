@@ -1,6 +1,8 @@
 import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { z } from "@medusajs/framework/zod"
-import { Modules } from "@medusajs/framework/utils"
+import { MedusaError, Modules } from "@medusajs/framework/utils"
+import { AdminUpdateProduct } from "@medusajs/medusa/api/admin/products/validators"
+import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -15,6 +17,8 @@ export async function GET(
       "*",
       "items.*",
       "items.product.*",
+      "product.*",
+      "product.images.*",
     ],
     filters: {
       id,
@@ -26,8 +30,9 @@ export async function GET(
   })
 }
 
-const PatchSchema = z.object({
+export const PatchBundledProductsSchema = z.object({
   title: z.string().min(1).optional(),
+  product: AdminUpdateProduct().optional(),
   items: z
     .array(
       z.object({
@@ -38,18 +43,34 @@ const PatchSchema = z.object({
     .optional(),
 })
 
-type PatchSchema = z.infer<typeof PatchSchema>
+type PatchBundledProductsSchema = z.infer<typeof PatchBundledProductsSchema>
 
 export async function PATCH(
-  req: AuthenticatedMedusaRequest<PatchSchema>,
+  req: AuthenticatedMedusaRequest<PatchBundledProductsSchema>,
   res: MedusaResponse
 ) {
   const { id } = req.params
-  const { title } = req.body || {}
+  const payload = req.validatedBody || req.body
+  const { product } = payload || {}
+  const title = payload?.title || product?.title
 
   const service = req.scope.resolve("bundledProduct") as any
   const query = req.scope.resolve("query")
   const remoteLink = req.scope.resolve("remoteLink") as any
+
+  const { data: existing } = await query.graph({
+    entity: "bundle",
+    filters: { id },
+    fields: ["items.*", "items.product.*", "product.*"],
+  })
+  const existingBundle = existing?.[0]
+
+  if (!existingBundle) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Bundle with id "${id}" was not found`
+    )
+  }
 
   let updatedEntity: any = null
 
@@ -58,17 +79,25 @@ export async function PATCH(
     updatedEntity = updated?.[0] ?? null
   }
 
-  if (Array.isArray(req.body?.items)) {
-    // 1) Smazat existující položky balíčku
-    const { data: existing } = await query.graph({
-      entity: "bundle",
-      filters: { id },
-      fields: ["items.*", "items.product.*"],
+  const bundleProductId = existingBundle.product?.id
+
+  if (product && bundleProductId) {
+    await updateProductsWorkflow(req.scope).run({
+      input: {
+        selector: { id: bundleProductId },
+        update: product,
+      },
     })
-    const existingItemIds = (existing?.[0]?.items ?? []).map((it: any) => it.id).filter(Boolean)
+  }
+
+  if (Array.isArray(payload?.items)) {
+    // 1) Smazat existující položky balíčku
+    const existingItemIds = (existingBundle.items ?? [])
+      .map((it: any) => it.id)
+      .filter(Boolean)
     // 1a) Odstranit remote linky položek -> produkt
-    if (existing?.[0]?.items?.length) {
-      const linksToDelete = existing[0].items
+    if (existingBundle.items?.length) {
+      const linksToDelete = existingBundle.items
         .filter((it: any) => it?.id && it?.product?.id)
         .map((it: any) => ({
           ["bundledProduct"]: { bundle_item_id: it.id },
@@ -85,13 +114,13 @@ export async function PATCH(
 
     // 2) Vytvořit nové položky
     const createdItems = await service.createBundleItems(
-      req.body.items.map((it) => ({ bundle_id: id, quantity: it.quantity }))
+      payload.items.map((it) => ({ bundle_id: id, quantity: it.quantity }))
     )
 
     // 3) Vytvořit remote linky na produkty
     const links = createdItems.map((created: any, index: number) => ({
       ["bundledProduct"]: { bundle_item_id: created.id },
-      [Modules.PRODUCT]: { product_id: req.body.items![index].product_id },
+      [Modules.PRODUCT]: { product_id: payload.items![index].product_id },
     }))
     if (links.length) {
       await remoteLink.create(links)
@@ -101,7 +130,13 @@ export async function PATCH(
   // Vrátit aktuální stav bundlu
   const { data } = await query.graph({
     entity: "bundle",
-    fields: ["*", "items.*", "items.product.*"],
+    fields: [
+      "*",
+      "items.*",
+      "items.product.*",
+      "product.*",
+      "product.images.*",
+    ],
     filters: { id },
   })
 

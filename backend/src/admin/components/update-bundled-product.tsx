@@ -2,6 +2,11 @@ import { Button, Drawer, Skeleton, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { BundleComposer, BundleEditorItem } from "./bundle-composer";
+import {
+  bundleDetailsToProductPayload,
+  BundleProductDetails,
+  createEmptyBundleProductDetails,
+} from "./bundle-product-details";
 import { sdk } from "../lib/sdk";
 
 type UpdateBundledProductProps = {
@@ -12,7 +17,18 @@ type UpdateBundledProductProps = {
 type BundleDetails = {
   bundled_product?: {
     title?: string;
-    product?: { id?: string | null } | null;
+    product?: {
+      id?: string | null;
+      title?: string | null;
+      subtitle?: string | null;
+      description?: string | null;
+      handle?: string | null;
+      material?: string | null;
+      discountable?: boolean | null;
+      status?: "draft" | "proposed" | "published" | "rejected";
+      thumbnail?: string | null;
+      images?: Array<{ id?: string | null; url: string }> | null;
+    } | null;
     items?: Array<{
       quantity?: number | null;
       product?: {
@@ -31,8 +47,12 @@ const UpdateBundledProduct = ({
   initialTitle,
 }: UpdateBundledProductProps) => {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(initialTitle ?? "");
+  const [details, setDetails] = useState<BundleProductDetails>(() => ({
+    ...createEmptyBundleProductDetails(),
+    title: initialTitle ?? "",
+  }));
   const [items, setItems] = useState<BundleEditorItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery<BundleDetails>({
@@ -47,7 +67,24 @@ const UpdateBundledProduct = ({
   useEffect(() => {
     if (!open || !data?.bundled_product) return;
 
-    setTitle(data.bundled_product.title || initialTitle || "");
+    const product = data.bundled_product.product;
+    const images = (product?.images || []).map((image) => ({
+      ...(image.id ? { id: image.id } : {}),
+      url: image.url,
+    }));
+
+    setDetails({
+      title:
+        product?.title || data.bundled_product.title || initialTitle || "",
+      subtitle: product?.subtitle || "",
+      description: product?.description || "",
+      handle: product?.handle || "",
+      material: product?.material || "",
+      discountable: product?.discountable !== false,
+      status: product?.status === "draft" ? "draft" : "published",
+      images,
+      thumbnail: product?.thumbnail || images[0]?.url || null,
+    });
     setItems(
       (data.bundled_product.items || []).flatMap((item) => {
         if (!item.product?.id) return [];
@@ -81,16 +118,28 @@ const UpdateBundledProduct = ({
   });
 
   const isValid =
-    title.trim().length > 0 &&
+    details.title.trim().length > 0 &&
+    details.handle.trim().length > 0 &&
     items.length > 0 &&
+    !isUploading &&
     items.every(
       (item) =>
         item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
     );
 
   const handleUpdate = async () => {
-    if (!title.trim()) {
+    if (!details.title.trim()) {
       toast.error("Doplňte název balíčku");
+      return;
+    }
+
+    if (!details.handle.trim()) {
+      toast.error("Doplňte URL identifikátor balíčku");
+      return;
+    }
+
+    if (isUploading) {
+      toast.error("Počkejte prosím na dokončení nahrávání obrázků");
       return;
     }
 
@@ -101,7 +150,8 @@ const UpdateBundledProduct = ({
 
     try {
       await updateBundle({
-        title: title.trim(),
+        title: details.title.trim(),
+        product: bundleDetailsToProductPayload(details),
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -122,8 +172,12 @@ const UpdateBundledProduct = ({
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
-      setTitle(initialTitle || "");
+      setDetails({
+        ...createEmptyBundleProductDetails(),
+        title: initialTitle || "",
+      });
       setItems([]);
+      setIsUploading(false);
     }
   };
 
@@ -162,10 +216,13 @@ const UpdateBundledProduct = ({
 
           {!isLoading && !isError && (
             <BundleComposer
-              title={title}
-              onTitleChange={setTitle}
+              details={details}
+              onDetailsChange={(patch) =>
+                setDetails((current) => ({ ...current, ...patch }))
+              }
               items={items}
               onItemsChange={setItems}
+              onUploadingChange={setIsUploading}
               excludedProductIds={
                 data?.bundled_product?.product?.id
                   ? [data.bundled_product.product.id]
