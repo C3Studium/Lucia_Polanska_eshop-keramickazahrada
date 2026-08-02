@@ -1,8 +1,17 @@
+console.log('[Constants] Loading constants.ts...')
+console.log('[Constants] Current working directory:', process.cwd())
+console.log('[Constants] NODE_ENV:', process.env.NODE_ENV)
+
 import { loadEnv } from '@medusajs/framework/utils'
 
-import { assertValue } from 'utils/assert-value'
+import { assertValue } from '../utils/assert-value'
 
+console.log('[Constants] About to load environment...')
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
+console.log('[Constants] Environment loaded')
+console.log('[Constants] DATABASE_URL present:', !!process.env.DATABASE_URL)
+console.log('[Constants] JWT_SECRET present:', !!process.env.JWT_SECRET)
+console.log('[Constants] COOKIE_SECRET present:', !!process.env.COOKIE_SECRET)
 
 /**
  * Is development environment
@@ -22,10 +31,20 @@ export const STOREFRONT_URL = process.env.STOREFRONT_PUBLIC_URL ?? process.env.R
 /**
  * Database URL for Postgres instance used by the backend
  */
-export const DATABASE_URL = assertValue(
-  process.env.DATABASE_URL,
-  'Environment variable for DATABASE_URL is not set',
-)
+console.log('[Constants] About to assert DATABASE_URL...')
+export const DATABASE_URL = (() => {
+  try {
+    const url = assertValue(
+      process.env.DATABASE_URL,
+      'Environment variable for DATABASE_URL is not set',
+    )
+    console.log('[Constants] DATABASE_URL asserted successfully')
+    return url
+  } catch (error) {
+    console.error('[Constants] FAILED to assert DATABASE_URL:', error)
+    throw error
+  }
+})()
 
 /**
  * (optional) Redis URL for Redis instance used by the backend
@@ -50,10 +69,20 @@ export const STORE_CORS = process.env.STORE_CORS;
 /**
  * JWT Secret used for signing JWT tokens
  */
-export const JWT_SECRET = assertValue(
-  process.env.JWT_SECRET,
-  'Environment variable for JWT_SECRET is not set',
-)
+console.log('[Constants] About to assert JWT_SECRET...')
+export const JWT_SECRET = (() => {
+  try {
+    const secret = assertValue(
+      process.env.JWT_SECRET,
+      'Environment variable for JWT_SECRET is not set',
+    )
+    console.log('[Constants] JWT_SECRET asserted successfully')
+    return secret
+  } catch (error) {
+    console.error('[Constants] FAILED to assert JWT_SECRET:', error)
+    throw error
+  }
+})()
 
 /**
  * JWT Expires In
@@ -63,10 +92,20 @@ export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d'
 /**
  * Cookie secret used for signing cookies
  */
-export const COOKIE_SECRET = assertValue(
-  process.env.COOKIE_SECRET,
-  'Environment variable for COOKIE_SECRET is not set',
-)
+console.log('[Constants] About to assert COOKIE_SECRET...')
+export const COOKIE_SECRET = (() => {
+  try {
+    const secret = assertValue(
+      process.env.COOKIE_SECRET,
+      'Environment variable for COOKIE_SECRET is not set',
+    )
+    console.log('[Constants] COOKIE_SECRET asserted successfully')
+    return secret
+  } catch (error) {
+    console.error('[Constants] FAILED to assert COOKIE_SECRET:', error)
+    throw error
+  }
+})()
 
 /**
  * (optional) Minio configuration for file storage

@@ -1,4 +1,10 @@
+console.log('[Medusa Config] Starting to load medusa-config.js...')
+console.log('[Medusa Config] Current working directory:', process.cwd())
+console.log('[Medusa Config] NODE_ENV:', process.env.NODE_ENV)
+
 import { loadEnv, Modules, defineConfig } from '@medusajs/framework/utils';
+
+console.log('[Medusa Config] About to import constants from lib/constants...')
 import {
   ADMIN_CORS,
   AUTH_CORS,
@@ -33,8 +39,15 @@ import {
   COMGATE_CURRENCY,
   COMGATE_METHOD
 } from 'lib/constants';
+console.log('[Medusa Config] Constants imported successfully')
+console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
+console.log('[Medusa Config] JWT_SECRET present:', !!JWT_SECRET)
+console.log('[Medusa Config] COOKIE_SECRET present:', !!COOKIE_SECRET)
 
 loadEnv(process.env.NODE_ENV, process.cwd());
+
+console.log('[Medusa Config] Environment loaded')
+console.log('[Medusa Config] About to build config object...')
 
 // Log JWT configuration at startup
 const resolvedJwtExpiresIn = JWT_EXPIRES_IN || '30d'
@@ -241,5 +254,8 @@ const medusaConfig = {
     },
   ]
 };
+
+console.log('[Medusa Config] Config object created successfully')
+console.log('[Medusa Config] About to export with defineConfig...')
 
 export default defineConfig(medusaConfig);
