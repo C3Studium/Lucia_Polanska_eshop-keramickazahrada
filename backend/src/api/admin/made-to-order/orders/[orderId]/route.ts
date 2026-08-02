@@ -9,7 +9,7 @@ const toNumber = (value: unknown): number => {
     const source = value as Record<string, unknown>
     return Number(source.value ?? source.numeric_ ?? source.raw ?? 0)
   }
-  return Number(value ?? 0)
+  return Number(value ?? 0) 
 }
 
 /**
