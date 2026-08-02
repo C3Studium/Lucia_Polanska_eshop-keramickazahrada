@@ -170,9 +170,9 @@ const medusaConfig = {
     {
       resolve: "./src/modules/bundled-product",
     },
-    // {
-    //   resolve: "./src/modules/merchant-catalog",
-    // },
+    {
+      resolve: "./src/modules/merchant-catalog",
+    },
     // {
     //   resolve: "./src/modules/merchant-order",
     // },
