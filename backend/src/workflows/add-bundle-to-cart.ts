@@ -21,7 +21,7 @@ export const addBundleToCartWorkflow = createWorkflow(
       fields: ["id", "region_id", "currency_code"],
       filters: { id: cart_id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-cart-details" })
 
     const { data } = useQueryGraphStep({
       entity: "bundle",
@@ -69,7 +69,7 @@ export const addBundleToCartWorkflow = createWorkflow(
           },
         },
       }
-    })
+    }).config({ name: "get-bundle-details" })
     
     const itemsToAdd = prepareBundleCartDataStep({
       bundle: data[0],

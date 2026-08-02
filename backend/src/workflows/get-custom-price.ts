@@ -21,7 +21,7 @@ export const getCustomPriceWorkflow = createWorkflow(
       options: {
         throwIfKeyNotFound: true,
       },
-    })
+    }).config({ name: "get-region-details" })
     const { data: variants } = useQueryGraphStep({
       entity: "variant",
       fields: [

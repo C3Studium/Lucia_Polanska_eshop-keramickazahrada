@@ -32,7 +32,7 @@ export const deleteBundledProductWorkflow = createWorkflow(
       ],
       filters: { id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-bundle-details" })
 
     const links = transform({ data }, ({ data }) => {
       const bundle = data[0]

@@ -21,7 +21,7 @@ export const removeBundleFromCartWorkflow = createWorkflow(
       options: {
         throwIfKeyNotFound: true,
       }
-    })
+    }).config({ name: "get-cart-items" })
 
     const itemsToRemove = transform({
       cart: carts[0],

@@ -20,7 +20,7 @@ export const createWishlistItemWorkflow = createWorkflow(
       filters: {
         customer_id: input.customer_id,
       },
-    })
+    }).config({ name: "get-wishlist-details" })
 
     validateWishlistExistsStep({
       wishlists,

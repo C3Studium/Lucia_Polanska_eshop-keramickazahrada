@@ -77,7 +77,7 @@ export const updateMerchantCollectionWorkflow = createWorkflow(
       fields: ["id"],
       filters: { id: input.id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-collection-details" })
 
     const hasNativeUpdate = transform({ input }, ({ input }) =>
       input.title !== undefined ||
@@ -121,7 +121,7 @@ export const deleteMerchantCollectionWorkflow = createWorkflow(
       fields: ["id"],
       filters: { id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-collection-to-delete" })
     deleteCollectionMerchandisingStep({ collection_id: id })
     deleteCollectionsWorkflow.runAsStep({ input: { ids: [id] } })
     releaseLockStep({ key: lockKey })

@@ -38,7 +38,7 @@ export const updateBundledProductWorkflow = createWorkflow(
       fields: ["id", "product.id"],
       filters: { id: input.id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-existing-bundle" })
 
     when("validate-replacement-bundle-items", { input }, ({ input }) =>
       Array.isArray(input.items)

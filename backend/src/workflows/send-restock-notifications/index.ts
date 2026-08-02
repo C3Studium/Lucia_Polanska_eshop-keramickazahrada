@@ -35,7 +35,7 @@ export const sendRestockNotificationsWorkflow = createWorkflow(
         variant_id: variant_ids,
         sales_channel_id: sales_channel_ids
       }
-    })
+    }).config({ name: "get-restocked-subscriptions-with-emails" })
 
     // @ts-ignore
     sendRestockNotificationStep(restockedSubscriptionsWithEmails)

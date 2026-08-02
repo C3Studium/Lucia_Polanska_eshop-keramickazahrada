@@ -96,7 +96,7 @@ export const createBundledProductWorkflow = createWorkflow(
       filters: {
         id: bundle.id,
       },
-    })
+    }).config({ name: "get-created-bundle" })
 
     releaseLockStep({ key: lockKey })
 

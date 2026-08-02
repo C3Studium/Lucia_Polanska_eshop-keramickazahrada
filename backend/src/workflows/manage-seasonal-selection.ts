@@ -28,7 +28,7 @@ export const updateSeasonalSelectionWorkflow = createWorkflow(
       fields: ["id"],
       filters: { id: input.id },
       options: { throwIfKeyNotFound: true },
-    })
+    }).config({ name: "get-seasonal-selection" })
     updateSeasonalSelectionStep(input)
     releaseLockStep({ key })
     return new WorkflowResponse({ id: input.id })

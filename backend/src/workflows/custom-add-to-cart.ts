@@ -23,7 +23,7 @@ export const customAddToCartWorkflow = createWorkflow(
       options: {
         throwIfKeyNotFound: true,
       },
-    })
+    }).config({ name: "get-cart-region" })
     const price = getCustomPriceWorkflow.runAsStep({
       input: {
         variant_id: input.item.variant_id,

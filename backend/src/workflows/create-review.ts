@@ -29,7 +29,7 @@ export const createReviewWorkflow = createWorkflow(
       options: {
         throwIfKeyNotFound: true
       }
-    })
+    }).config({ name: "check-product-exists" })
 
     // Create the review
     const review = createReviewStep(input)

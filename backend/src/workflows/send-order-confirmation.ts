@@ -34,7 +34,7 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
       filters: {
         id
       }
-    })
+    }).config({ name: "get-order-confirmation-details" })
     
     const notification = sendNotificationStep([{
       to: orders[0].email,

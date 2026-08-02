@@ -29,7 +29,7 @@ export const trackOrderPlacedWorkflow = createWorkflow(
       filters: {
         id,
       },
-    })
+    }).config({ name: "get-order-details" })
 
     const order = transform({
       order: orders[0],
