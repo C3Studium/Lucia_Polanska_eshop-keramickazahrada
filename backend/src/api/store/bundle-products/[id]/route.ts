@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { QueryContext } from "@medusajs/framework/utils";
+import { presentBundle } from "../../../../modules/bundled-product/presentation";
 
 export async function GET(
   req: MedusaRequest,
@@ -13,6 +14,9 @@ export async function GET(
     entity: "bundle",
     fields: [
       "*", 
+      "product.*",
+      "product.variants.*",
+      "product.variants.calculated_price.*",
       "items.*", 
       "items.product.*", 
       "items.product.options.*",
@@ -20,11 +24,18 @@ export async function GET(
       "items.product.variants.*",
       "items.product.variants.calculated_price.*",
       "items.product.variants.options.*",
+      "items.product_variant.*",
+      "items.product_variant.calculated_price.*",
     ],
     filters: {
       id
     },
     context: {
+      product: {
+        variants: {
+          calculated_price: QueryContext({ region_id, currency_code }),
+        },
+      },
       items: {
         product: {
           variants: {
@@ -33,7 +44,10 @@ export async function GET(
               currency_code,
             }),
           },
-        }
+        },
+        product_variant: {
+          calculated_price: QueryContext({ region_id, currency_code }),
+        },
       }
     },
   
@@ -42,6 +56,6 @@ export async function GET(
   })
 
   res.json({
-    bundle_product: data[0]
+    bundle_product: presentBundle(data[0])
   })
 }

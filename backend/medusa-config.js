@@ -157,6 +157,15 @@ const medusaConfig = {
     {
       resolve: "./src/modules/bundled-product",
     },
+    {
+      resolve: "./src/modules/merchant-catalog",
+    },
+    {
+      resolve: "./src/modules/merchant-order",
+    },
+    {
+      resolve: "./src/modules/made-to-order",
+    },
     ...(REDIS_URL ? [{
       key: Modules.EVENT_BUS,
       resolve: '@medusajs/medusa/event-bus-redis',

@@ -17,6 +17,8 @@ type UpdateBundledProductProps = {
 type BundleDetails = {
   bundled_product?: {
     title?: string;
+    pricing_mode?: BundleProductDetails["pricing_mode"];
+    discount_percentage?: number | null;
     product?: {
       id?: string | null;
       title?: string | null;
@@ -31,12 +33,24 @@ type BundleDetails = {
     } | null;
     items?: Array<{
       quantity?: number | null;
+      display_order?: number | null;
+      variant_mode?: BundleEditorItem["variant_mode"];
+      variant?: {
+        id: string;
+        title: string;
+        sku?: string | null;
+      } | null;
       product?: {
         id: string;
         title: string;
         thumbnail?: string | null;
         handle?: string | null;
         status?: "draft" | "proposed" | "published" | "rejected";
+        variants?: Array<{
+          id: string;
+          title: string;
+          sku?: string | null;
+        }>;
       } | null;
     }>;
   };
@@ -84,9 +98,17 @@ const UpdateBundledProduct = ({
       status: product?.status === "draft" ? "draft" : "published",
       images,
       thumbnail: product?.thumbnail || images[0]?.url || null,
+      pricing_mode:
+        data.bundled_product.pricing_mode || "component_sum",
+      discount_percentage:
+        data.bundled_product.discount_percentage ?? null,
     });
     setItems(
-      (data.bundled_product.items || []).flatMap((item) => {
+      [...(data.bundled_product.items || [])]
+        .sort((first, second) =>
+          (first.display_order ?? 0) - (second.display_order ?? 0)
+        )
+        .flatMap((item) => {
         if (!item.product?.id) return [];
 
         return [
@@ -96,16 +118,21 @@ const UpdateBundledProduct = ({
               typeof item.quantity === "number" && item.quantity > 0
                 ? item.quantity
                 : 1,
+            display_order:
+              typeof item.display_order === "number" ? item.display_order : 0,
+            variant_mode: item.variant_mode || "customer_selects",
+            variant_id: item.variant?.id || null,
             product: {
               id: item.product.id,
               title: item.product.title,
               thumbnail: item.product.thumbnail,
               handle: item.product.handle,
               status: item.product.status,
+              variants: item.product.variants || [],
             },
           },
         ];
-      })
+        })
     );
   }, [data, initialTitle, open]);
 
@@ -124,7 +151,10 @@ const UpdateBundledProduct = ({
     !isUploading &&
     items.every(
       (item) =>
-        item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
+        item.product_id &&
+        Number.isFinite(item.quantity) &&
+        item.quantity > 0 &&
+        (item.variant_mode !== "fixed_variant" || !!item.variant_id)
     );
 
   const handleUpdate = async () => {
@@ -148,13 +178,29 @@ const UpdateBundledProduct = ({
       return;
     }
 
+    if (
+      items.some(
+        (item) => item.variant_mode === "fixed_variant" && !item.variant_id
+      )
+    ) {
+      toast.error("U položek s pevným provedením vyberte konkrétní variantu");
+      return;
+    }
+
     try {
       await updateBundle({
         title: details.title.trim(),
+        pricing_mode: details.pricing_mode,
+        discount_percentage: details.discount_percentage,
         product: bundleDetailsToProductPayload(details),
-        items: items.map((item) => ({
+        items: items.map((item, displayOrder) => ({
           product_id: item.product_id,
           quantity: item.quantity,
+          display_order: displayOrder,
+          variant_mode: item.variant_mode,
+          ...(item.variant_mode === "fixed_variant" && item.variant_id
+            ? { variant_id: item.variant_id }
+            : {}),
         })),
       });
 

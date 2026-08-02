@@ -24,6 +24,8 @@ import { sdk } from "../../lib/sdk";
 type BundledProduct = {
   id: string;
   title?: string | null;
+  pricing_mode?: "component_sum" | "component_sum_discount" | "fixed_price";
+  discount_percentage?: number | null;
   product?: {
     id?: string | null;
     title?: string | null;
@@ -152,6 +154,19 @@ const columns = [
       );
     },
   }),
+  columnHelper.accessor("pricing_mode", {
+    header: "Cena",
+    cell: ({ row }) => {
+      const pricingMode = row.original.pricing_mode || "component_sum";
+      const labels = {
+        component_sum: "Součet položek",
+        component_sum_discount: `Součet − ${row.original.discount_percentage ?? 0} %`,
+        fixed_price: "Pevná cena",
+      };
+
+      return <Badge color="grey">{labels[pricingMode]}</Badge>;
+    },
+  }),
   columnHelper.accessor("updated_at", {
     header: "Upraveno",
     cell: ({ row }) => (
@@ -246,8 +261,10 @@ const BundledProductsPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Balíčky produktů",
+  label: "Balíčky",
   icon: CubeSolid,
+  nested: "/products",
+  rank: 30,
 });
 
 export default BundledProductsPage;

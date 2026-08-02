@@ -6,6 +6,8 @@ type CreateBundleItemsStepInput = {
   bundle_id: string
   items: {
     quantity: number
+    display_order?: number
+    variant_mode?: "customer_selects" | "fixed_variant"
   }[]
 }
 
@@ -17,9 +19,11 @@ export const createBundleItemsStep = createStep(
     )
 
     const bundleItems = await bundledProductModuleService.createBundleItems(
-      items.map(item => ({
+      items.map((item, index) => ({
         bundle_id,
         quantity: item.quantity,
+        display_order: item.display_order ?? index,
+        variant_mode: item.variant_mode ?? "customer_selects",
       }))
     )
 

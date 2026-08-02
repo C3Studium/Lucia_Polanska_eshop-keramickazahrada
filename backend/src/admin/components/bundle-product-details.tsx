@@ -37,6 +37,8 @@ export type BundleProductDetails = {
   status: "draft" | "published";
   images: BundleEditorImage[];
   thumbnail: string | null;
+  pricing_mode: "component_sum" | "component_sum_discount" | "fixed_price";
+  discount_percentage: number | null;
 };
 
 export const createEmptyBundleProductDetails = (): BundleProductDetails => ({
@@ -49,6 +51,8 @@ export const createEmptyBundleProductDetails = (): BundleProductDetails => ({
   status: "published",
   images: [],
   thumbnail: null,
+  pricing_mode: "component_sum",
+  discount_percentage: null,
 });
 
 export const bundleDetailsToProductPayload = (
@@ -438,6 +442,79 @@ export const BundleProductDetailsFields = ({
               </Select.Content>
             </Select>
           </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-y-4">
+        <div>
+          <Heading level="h2">Cena balíčku</Heading>
+          <Text size="small" className="text-ui-fg-subtle mt-1">
+            Cena může vzniknout součtem vybraných provedení, nebo lze na celý
+            součet použít slevu.
+          </Text>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-y-2">
+            <Label htmlFor="bundle-pricing-mode" size="small" weight="plus">
+              Způsob výpočtu
+            </Label>
+            <Select
+              value={details.pricing_mode}
+              onValueChange={(pricingMode) =>
+                onChange({
+                  pricing_mode: pricingMode as BundleProductDetails["pricing_mode"],
+                  discount_percentage:
+                    pricingMode === "component_sum_discount"
+                      ? details.discount_percentage ?? 10
+                      : null,
+                })
+              }
+            >
+              <Select.Trigger id="bundle-pricing-mode">
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="component_sum">
+                  Součet vybraných provedení
+                </Select.Item>
+                <Select.Item value="component_sum_discount">
+                  Součet se slevou balíčku
+                </Select.Item>
+                <Select.Item value="fixed_price">Pevná cena produktu</Select.Item>
+              </Select.Content>
+            </Select>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              Pevnou cenu upravíte u katalogového produktu balíčku.
+            </Text>
+          </div>
+
+          {details.pricing_mode === "component_sum_discount" && (
+            <div className="flex flex-col gap-y-2">
+              <Label htmlFor="bundle-discount" size="small" weight="plus">
+                Sleva balíčku v %
+              </Label>
+              <Input
+                id="bundle-discount"
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={details.discount_percentage ?? 0}
+                onChange={(event) =>
+                  onChange({
+                    discount_percentage: Math.min(
+                      100,
+                      Math.max(0, Number(event.target.value) || 0)
+                    ),
+                  })
+                }
+              />
+              <Text size="xsmall" className="text-ui-fg-muted">
+                Sleva se počítá až z konkrétních provedení zvolených zákazníkem.
+              </Text>
+            </div>
+          )}
         </div>
       </section>
 

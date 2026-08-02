@@ -4,16 +4,20 @@ import { BUNDLED_PRODUCT_MODULE } from "../../modules/bundled-product"
 
 type CreateBundleStepInput = {
   title: string
+  pricing_mode?: "component_sum" | "component_sum_discount" | "fixed_price"
+  discount_percentage?: number | null
 }
 
 export const createBundleStep = createStep(
   "create-bundle",
-  async ({ title }: CreateBundleStepInput, { container }) => {
+  async (input: CreateBundleStepInput, { container }) => {
     const bundledProductModuleService: BundledProductModuleService =
       container.resolve(BUNDLED_PRODUCT_MODULE)
 
     const bundle = await bundledProductModuleService.createBundles({
-      title,
+      title: input.title,
+      pricing_mode: input.pricing_mode ?? "component_sum",
+      discount_percentage: input.discount_percentage ?? null,
     })
 
     return new StepResponse(bundle, bundle.id)

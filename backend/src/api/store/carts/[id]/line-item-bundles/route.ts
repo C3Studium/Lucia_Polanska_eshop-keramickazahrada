@@ -8,7 +8,7 @@ export const PostCartsBundledLineItemsSchema = z.object({
   items: z.array(z.object({
     item_id: z.string(),
     variant_id: z.string()
-  }))
+  })).default([])
 })
 
 type PostCartsBundledLineItemsSchema = z.infer<typeof PostCartsBundledLineItemsSchema>

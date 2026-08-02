@@ -9,6 +9,7 @@ import {
   createDataTableCommandHelper, 
   DataTableRowSelectionState, 
   StatusBadge, 
+  Text,
   Toaster, 
   toast,
   DataTablePaginationState
@@ -67,7 +68,7 @@ const columns = [
     header: "Product",
     cell: ({ row }) => {
       return (
-        <a href={`/products/${row.original.product_id}`}>
+        <a href={`/app/products/${row.original.product_id}`} className="text-ui-fg-interactive">
           {row.original.product?.title}
         </a>
       )
@@ -138,7 +139,7 @@ const ReviewsPageInner = () => {
     return pagination.pageIndex * limit
   }, [pagination])
 
-  const { data, isLoading, refetch } = useQuery<{
+  const { data, isLoading, isError, refetch } = useQuery<{
     reviews: Review[]
     count: number
     limit: number
@@ -174,16 +175,30 @@ const ReviewsPageInner = () => {
   })
 
   return (
-    <Container>
+    <Container className="divide-y p-0">
       <DataTable instance={table}>
-        <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
-          <Heading>
-            Recenze
-          </Heading>
+        <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 px-6 py-5 md:flex-row md:items-center">
+          <div>
+            <Heading>Recenze</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-1">
+              Schvalujte zkušenosti zákazníků před zveřejněním v obchodě.
+            </Text>
+          </div>
         </DataTable.Toolbar>
-        <DataTable.Table />
-        <DataTable.Pagination />
-        <DataTable.CommandBar selectedLabel={(count) => `${count} vybráno`} />
+        {isError ? (
+          <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
+            <Heading level="h2">Recenze se nepodařilo načíst</Heading>
+            <Text size="small" className="text-ui-fg-error mt-1">
+              Obnovte stránku a zkuste to znovu.
+            </Text>
+          </div>
+        ) : (
+          <>
+            <DataTable.Table />
+            <DataTable.Pagination />
+            <DataTable.CommandBar selectedLabel={(count) => `${count} vybráno`} />
+          </>
+        )}
       </DataTable>
       <Toaster />
     </Container>
@@ -197,8 +212,10 @@ const ReviewsPage = () => (
 )
 
 export const config = defineRouteConfig({
-  label: "Rezenze",
-  icon: ChatBubbleLeftRight
+  label: "Recenze",
+  icon: ChatBubbleLeftRight,
+  nested: "/products",
+  rank: 40,
 })
 
 export default ReviewsPage

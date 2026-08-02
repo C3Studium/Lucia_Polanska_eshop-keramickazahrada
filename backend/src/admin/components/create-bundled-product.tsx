@@ -44,7 +44,10 @@ const CreateBundledProduct = () => {
     !isUploading &&
     items.every(
       (item) =>
-        item.product_id && Number.isFinite(item.quantity) && item.quantity > 0
+        item.product_id &&
+        Number.isFinite(item.quantity) &&
+        item.quantity > 0 &&
+        (item.variant_mode !== "fixed_variant" || !!item.variant_id)
     );
 
   const handleCreate = async () => {
@@ -70,9 +73,20 @@ const CreateBundledProduct = () => {
       return;
     }
 
+    if (
+      items.some(
+        (item) => item.variant_mode === "fixed_variant" && !item.variant_id
+      )
+    ) {
+      toast.error("U položek s pevným provedením vyberte konkrétní variantu");
+      return;
+    }
+
     try {
       await createBundle({
         title: validTitle,
+        pricing_mode: details.pricing_mode,
+        discount_percentage: details.discount_percentage,
         product: {
           ...bundleDetailsToProductPayload(details),
           options: [
@@ -92,9 +106,14 @@ const CreateBundledProduct = () => {
             },
           ],
         },
-        items: items.map((item) => ({
+        items: items.map((item, displayOrder) => ({
           product_id: item.product_id,
           quantity: item.quantity,
+          display_order: displayOrder,
+          variant_mode: item.variant_mode,
+          ...(item.variant_mode === "fixed_variant" && item.variant_id
+            ? { variant_id: item.variant_id }
+            : {}),
         })),
       });
 

@@ -13,6 +13,7 @@ import {
   IconButton,
   Input,
   Label,
+  Select,
   Skeleton,
   Text,
 } from "@medusajs/ui";
@@ -30,11 +31,19 @@ type BundleProductSummary = {
   thumbnail?: string | null;
   handle?: string | null;
   status?: HttpTypes.AdminProduct["status"];
+  variants?: Array<{
+    id: string;
+    title: string | null;
+    sku?: string | null;
+  }>;
 };
 
 export type BundleEditorItem = {
   product_id: string;
   quantity: number;
+  display_order: number;
+  variant_mode: "customer_selects" | "fixed_variant";
+  variant_id?: string | null;
   product?: BundleProductSummary;
 };
 
@@ -54,7 +63,10 @@ const ProductThumb = ({
   product,
   size = "large",
 }: {
-  product?: BundleProductSummary;
+  product?: {
+    title?: string | null;
+    thumbnail?: string | null;
+  };
   size?: "small" | "large";
 }) => (
   <div
@@ -107,7 +119,7 @@ const BundleProductSearch = ({
       sdk.admin.product.list({
         q: debouncedSearch,
         limit: 12,
-        fields: "id,title,thumbnail,handle,status",
+        fields: "id,title,thumbnail,handle,status,variants.id,variants.title,variants.sku",
       }),
     enabled: canSearch,
     staleTime: 30_000,
@@ -125,12 +137,20 @@ const BundleProductSearch = ({
       {
         product_id: product.id,
         quantity: 1,
+        display_order: items.length,
+        variant_mode: "customer_selects",
+        variant_id: null,
         product: {
           id: product.id,
           title: product.title,
           thumbnail: product.thumbnail,
           handle: product.handle,
           status: product.status,
+          variants: (product.variants || []).map((variant) => ({
+            id: variant.id,
+            title: variant.title,
+            sku: variant.sku,
+          })),
         },
       },
     ]);
@@ -251,7 +271,12 @@ const BundleComposition = ({
       nextItems[nextIndex],
       nextItems[index],
     ];
-    onItemsChange(nextItems);
+    onItemsChange(
+      nextItems.map((item, displayOrder) => ({
+        ...item,
+        display_order: displayOrder,
+      }))
+    );
   };
 
   return (
@@ -282,7 +307,7 @@ const BundleComposition = ({
         {items.map((item, index) => (
           <article
             key={item.product_id}
-            className="bg-ui-bg-component shadow-elevation-card-rest grid grid-cols-[40px_56px_minmax(0,1fr)] gap-3 rounded-xl p-3 md:grid-cols-[40px_56px_minmax(0,1fr)_150px_auto] md:items-center"
+            className="bg-ui-bg-component shadow-elevation-card-rest grid grid-cols-[40px_56px_minmax(0,1fr)] gap-3 rounded-xl p-3 md:grid-cols-[40px_56px_minmax(0,1fr)_220px_auto] md:items-center"
           >
             <div className="bg-ui-bg-subtle shadow-borders-base text-ui-fg-subtle flex size-10 items-center justify-center rounded-lg font-mono text-xs font-medium">
               {String(index + 1).padStart(2, "0")}
@@ -297,50 +322,100 @@ const BundleComposition = ({
               </Text>
             </div>
 
-            <div className="col-span-3 flex items-center justify-between gap-x-2 md:col-span-1 md:justify-start">
-              <Label size="small" className="md:sr-only">
-                Množství
-              </Label>
-              <div className="bg-ui-bg-field shadow-borders-base flex items-center rounded-md p-0.5">
-                <IconButton
-                  type="button"
-                  variant="transparent"
-                  size="small"
-                  aria-label={`Snížit množství položky ${index + 1}`}
-                  disabled={item.quantity <= 1}
-                  onClick={() =>
+            <div className="col-span-3 flex flex-col gap-y-3 md:col-span-1">
+              <div className="flex items-center justify-between gap-x-2 md:justify-start">
+                <Label size="small" className="md:sr-only">
+                  Množství
+                </Label>
+                <div className="bg-ui-bg-field shadow-borders-base flex items-center rounded-md p-0.5">
+                  <IconButton
+                    type="button"
+                    variant="transparent"
+                    size="small"
+                    aria-label={`Snížit množství položky ${index + 1}`}
+                    disabled={item.quantity <= 1}
+                    onClick={() =>
+                      updateItem(index, {
+                        quantity: normalizeQuantity(item.quantity - 1),
+                      })
+                    }
+                  >
+                    <MinusMini />
+                  </IconButton>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(event) =>
+                      updateItem(index, {
+                        quantity: normalizeQuantity(Number(event.target.value)),
+                      })
+                    }
+                    aria-label={`Množství položky ${index + 1}`}
+                    className="w-12 border-0 bg-transparent px-1 text-center shadow-none"
+                  />
+                  <IconButton
+                    type="button"
+                    variant="transparent"
+                    size="small"
+                    aria-label={`Zvýšit množství položky ${index + 1}`}
+                    onClick={() =>
+                      updateItem(index, {
+                        quantity: normalizeQuantity(item.quantity + 1),
+                      })
+                    }
+                  >
+                    <PlusMini />
+                  </IconButton>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-y-2">
+                <Select
+                  value={item.variant_mode}
+                  onValueChange={(variantMode) =>
                     updateItem(index, {
-                      quantity: normalizeQuantity(item.quantity - 1),
+                      variant_mode: variantMode as BundleEditorItem["variant_mode"],
+                      variant_id:
+                        variantMode === "fixed_variant"
+                          ? item.variant_id || item.product?.variants?.[0]?.id || null
+                          : null,
                     })
                   }
                 >
-                  <MinusMini />
-                </IconButton>
-                <Input
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={(event) =>
-                    updateItem(index, {
-                      quantity: normalizeQuantity(Number(event.target.value)),
-                    })
-                  }
-                  aria-label={`Množství položky ${index + 1}`}
-                  className="w-12 border-0 bg-transparent px-1 text-center shadow-none"
-                />
-                <IconButton
-                  type="button"
-                  variant="transparent"
-                  size="small"
-                  aria-label={`Zvýšit množství položky ${index + 1}`}
-                  onClick={() =>
-                    updateItem(index, {
-                      quantity: normalizeQuantity(item.quantity + 1),
-                    })
-                  }
-                >
-                  <PlusMini />
-                </IconButton>
+                  <Select.Trigger aria-label={`Provedení položky ${index + 1}`}>
+                    <Select.Value />
+                  </Select.Trigger>
+                  <Select.Content>
+                    <Select.Item value="customer_selects">
+                      Zákazník vybere provedení
+                    </Select.Item>
+                    <Select.Item value="fixed_variant">
+                      Pevně dané provedení
+                    </Select.Item>
+                  </Select.Content>
+                </Select>
+
+                {item.variant_mode === "fixed_variant" && (
+                  <Select
+                    value={item.variant_id || undefined}
+                    onValueChange={(variantId) =>
+                      updateItem(index, { variant_id: variantId })
+                    }
+                  >
+                    <Select.Trigger aria-label={`Pevné provedení položky ${index + 1}`}>
+                      <Select.Value placeholder="Vyberte provedení" />
+                    </Select.Trigger>
+                    <Select.Content>
+                      {(item.product?.variants || []).map((variant) => (
+                        <Select.Item key={variant.id} value={variant.id}>
+                          {variant.title || "Výchozí provedení"}
+                          {variant.sku ? ` · ${variant.sku}` : ""}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select>
+                )}
               </div>
             </div>
 
@@ -372,7 +447,12 @@ const BundleComposition = ({
                 aria-label={`Odebrat položku ${index + 1}`}
                 onClick={() =>
                   onItemsChange(
-                    items.filter((_, itemIndex) => itemIndex !== index)
+                    items
+                      .filter((_, itemIndex) => itemIndex !== index)
+                      .map((nextItem, displayOrder) => ({
+                        ...nextItem,
+                        display_order: displayOrder,
+                      }))
                   )
                 }
               >

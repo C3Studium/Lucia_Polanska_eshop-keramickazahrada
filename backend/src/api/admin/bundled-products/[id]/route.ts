@@ -1,8 +1,8 @@
 import { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { z } from "@medusajs/framework/zod"
-import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { AdminUpdateProduct } from "@medusajs/medusa/api/admin/products/validators"
-import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { updateBundledProductWorkflow } from "../../../../workflows/update-bundled-product"
+import { deleteBundledProductWorkflow } from "../../../../workflows/delete-bundled-product"
 
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -17,6 +17,7 @@ export async function GET(
       "*",
       "items.*",
       "items.product.*",
+      "items.product_variant.*",
       "product.*",
       "product.images.*",
     ],
@@ -32,12 +33,18 @@ export async function GET(
 
 export const PatchBundledProductsSchema = z.object({
   title: z.string().min(1).optional(),
+  pricing_mode: z.enum(["component_sum", "component_sum_discount", "fixed_price"]).optional(),
+  discount_percentage: z.number().gt(0).lt(100).nullable().optional(),
   product: AdminUpdateProduct().optional(),
   items: z
     .array(
       z.object({
         product_id: z.string(),
         quantity: z.number().int().positive(),
+        display_order: z.number().int().nonnegative().optional(),
+        variant_mode: z.enum(["customer_selects", "fixed_variant"]).default("customer_selects"),
+        fixed_variant_id: z.string().nullable().optional(),
+        variant_id: z.string().nullable().optional(),
       })
     )
     .optional(),
@@ -49,151 +56,30 @@ export async function PATCH(
   req: AuthenticatedMedusaRequest<PatchBundledProductsSchema>,
   res: MedusaResponse
 ) {
-  const { id } = req.params
   const payload = req.validatedBody || req.body
-  const { product } = payload || {}
-  const title = payload?.title || product?.title
-
-  const service = req.scope.resolve("bundledProduct") as any
-  const query = req.scope.resolve("query")
-  const remoteLink = req.scope.resolve("remoteLink") as any
-
-  const { data: existing } = await query.graph({
-    entity: "bundle",
-    filters: { id },
-    fields: ["items.*", "items.product.*", "product.*"],
-  })
-  const existingBundle = existing?.[0]
-
-  if (!existingBundle) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      `Bundle with id "${id}" was not found`
-    )
-  }
-
-  let updatedEntity: any = null
-
-  if (title) {
-    const updated = await service.updateBundles([{ id, title }])
-    updatedEntity = updated?.[0] ?? null
-  }
-
-  const bundleProductId = existingBundle.product?.id
-
-  if (product && bundleProductId) {
-    await updateProductsWorkflow(req.scope).run({
-      input: {
-        selector: { id: bundleProductId },
-        update: product,
-      },
-    })
-  }
-
-  if (Array.isArray(payload?.items)) {
-    // 1) Smazat existující položky balíčku
-    const existingItemIds = (existingBundle.items ?? [])
-      .map((it: any) => it.id)
-      .filter(Boolean)
-    // 1a) Odstranit remote linky položek -> produkt
-    if (existingBundle.items?.length) {
-      const linksToDelete = existingBundle.items
-        .filter((it: any) => it?.id && it?.product?.id)
-        .map((it: any) => ({
-          ["bundledProduct"]: { bundle_item_id: it.id },
-          [Modules.PRODUCT]: { product_id: it.product.id },
-        }))
-      if (linksToDelete.length) {
-        const remoteLink = req.scope.resolve("remoteLink") as any
-        await remoteLink.delete(linksToDelete)
-      }
-    }
-    if (existingItemIds.length) {
-      await service.deleteBundleItems(existingItemIds, { hardDelete: true })
-    }
-
-    // 2) Vytvořit nové položky
-    const createdItems = await service.createBundleItems(
-      payload.items.map((it) => ({ bundle_id: id, quantity: it.quantity }))
-    )
-
-    // 3) Vytvořit remote linky na produkty
-    const links = createdItems.map((created: any, index: number) => ({
-      ["bundledProduct"]: { bundle_item_id: created.id },
-      [Modules.PRODUCT]: { product_id: payload.items![index].product_id },
-    }))
-    if (links.length) {
-      await remoteLink.create(links)
-    }
-  }
-
-  // Vrátit aktuální stav bundlu
-  const { data } = await query.graph({
-    entity: "bundle",
-    fields: [
-      "*",
-      "items.*",
-      "items.product.*",
-      "product.*",
-      "product.images.*",
-    ],
-    filters: { id },
+  const { result } = await updateBundledProductWorkflow(req.scope).run({
+    input: {
+      id: req.params.id,
+      ...payload,
+      title: payload.title ?? (
+        typeof payload.product?.title === "string" ? payload.product.title : undefined
+      ),
+      items: payload.items?.map((item) => ({
+        ...item,
+        fixed_variant_id: item.fixed_variant_id || item.variant_id || null,
+      })),
+    },
   })
 
-  return res.json({ bundled_product: data?.[0] ?? updatedEntity })
+  return res.json({ bundled_product: result })
 }
 
 export async function DELETE(
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) {
-  const { id } = req.params
-  const service = req.scope.resolve("bundledProduct") as any
-  const query = req.scope.resolve("query")
-  const remoteLink = req.scope.resolve("remoteLink") as any
-  const productService = req.scope.resolve(Modules.PRODUCT) as any
-
-  // Nejprve smažeme položky, aby FK neblokoval smazání bundlu
-  const { data: existing } = await query.graph({
-    entity: "bundle",
-    filters: { id },
-    fields: ["items.*", "items.product.*", "product.*"],
+  const { result } = await deleteBundledProductWorkflow(req.scope).run({
+    input: { id: req.params.id },
   })
-  const existingItemIds = (existing?.[0]?.items ?? []).map((it: any) => it.id).filter(Boolean)
-  // Smazat remote linky položek
-  if (existing?.[0]?.items?.length) {
-    const linksToDelete = existing[0].items
-      .filter((it: any) => it?.id && it?.product?.id)
-      .map((it: any) => ({
-        ["bundledProduct"]: { bundle_item_id: it.id },
-        [Modules.PRODUCT]: { product_id: it.product.id },
-      }))
-    if (linksToDelete.length) {
-      await remoteLink.delete(linksToDelete)
-    }
-  }
-  if (existingItemIds.length) {
-    await service.deleteBundleItems(existingItemIds, { hardDelete: true })
-  }
-
-  // Smazat remote link bundle -> produkt a smazat bundle produkt (tvůj "product" reprezentace bundlu)
-  const bundleProductId = existing?.[0]?.product?.id
-  if (bundleProductId) {
-    await remoteLink.delete([
-      {
-        ["bundledProduct"]: { bundle_id: id },
-        [Modules.PRODUCT]: { product_id: bundleProductId },
-      },
-    ])
-    // hard delete produktu, který reprezentuje bundle (NE maže produkty položek)
-    if (productService?.deleteProducts) {
-      await productService.deleteProducts([bundleProductId], { hardDelete: true })
-    } else if (productService?.softDeleteProducts) {
-      // fallback, kdyby deleteProducts nebylo k dispozici
-      await productService.softDeleteProducts([bundleProductId])
-    }
-  }
-
-  await service.deleteBundles([id], { hardDelete: true })
-  return res.json({ id, deleted: true, object: "bundled_product" })
+  return res.json({ ...result, object: "bundled_product" })
 }

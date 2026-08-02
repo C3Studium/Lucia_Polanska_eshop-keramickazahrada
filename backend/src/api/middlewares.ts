@@ -16,6 +16,19 @@ import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
 import { PostBundledProductsSchema } from "./admin/bundled-products/route";
 import { PatchBundledProductsSchema } from "./admin/bundled-products/[id]/route";
+import { PostCartsBundledLineItemsSchema } from "./store/carts/[id]/line-item-bundles/route";
+import {
+  GetMerchantCollectionsSchema,
+  PostMerchantCollectionSchema,
+} from "./admin/merchant-catalog/collections/route";
+import { PatchMerchantCollectionSchema } from "./admin/merchant-catalog/collections/[id]/route";
+import { GetMerchantCategoriesSchema } from "./admin/merchant-catalog/categories/route";
+import {
+  GetSeasonalSelectionsSchema,
+  PostSeasonalSelectionSchema,
+} from "./admin/merchant-catalog/seasonal-selections/route";
+import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
+import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 
 // Debug middleware to log incoming requests
 const debugAuthMiddleware = () => {
@@ -40,12 +53,118 @@ export default defineMiddlewares({
     {
       matcher: "/admin/bundled-products",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(PostBundledProductsSchema)],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostBundledProductsSchema),
+      ],
+    },
+    {
+      matcher: "/admin/bundled-products",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
     },
     {
       matcher: "/admin/bundled-products/:id",
       methods: ["PATCH"],
-      middlewares: [validateAndTransformBody(PatchBundledProductsSchema)],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PatchBundledProductsSchema),
+      ],
+    },
+    {
+      matcher: "/admin/bundled-products/:id",
+      methods: ["GET", "DELETE"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/merchant-catalog/collections",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformQuery(GetMerchantCollectionsSchema, {
+          isList: true,
+          defaults: [],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/collections",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostMerchantCollectionSchema),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/collections/:id",
+      methods: ["GET", "DELETE"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/merchant-catalog/collections/:id",
+      methods: ["PATCH"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PatchMerchantCollectionSchema),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/categories",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformQuery(GetMerchantCategoriesSchema, {
+          isList: true,
+          defaults: [],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/seasonal-selections",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformQuery(GetSeasonalSelectionsSchema, {
+          isList: true,
+          defaults: [],
+        }),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/seasonal-selections",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostSeasonalSelectionSchema),
+      ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/seasonal-selections/:id",
+      methods: ["GET", "DELETE"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/merchant-catalog/seasonal-selections/:id",
+      methods: ["PATCH"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PatchSeasonalSelectionSchema),
+      ],
+    },
+    {
+      matcher: "/store/merchant-catalog",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetStoreMerchantCatalogSchema, {
+          isList: false,
+          defaults: [],
+        }),
+      ],
+    },
+    {
+      matcher: "/store/carts/:id/line-item-bundles",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostCartsBundledLineItemsSchema)],
     },
     {
       matcher: "/store/variants/:id/price",
