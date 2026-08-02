@@ -14,10 +14,10 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import type { IEventBusModuleService } from "@medusajs/framework/types"
-import { MADE_TO_ORDER_MODULE } from "../../../../../../../modules/made-to-order"
-import MadeToOrderModuleService from "../../../../../../../modules/made-to-order/service"
-import { MERCHANT_ORDER_MODULE } from "../../../../../../../modules/merchant-order"
-import MerchantOrderModuleService from "../../../../../../../modules/merchant-order/service"
+import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
+import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
+import { MERCHANT_ORDER_MODULE } from "../../../../../../modules/merchant-order"
+import MerchantOrderModuleService from "../../../../../../modules/merchant-order/service"
 
 type ProductionAction =
   | "confirm_specification"

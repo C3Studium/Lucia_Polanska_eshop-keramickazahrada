@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
-import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
+import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
+import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
