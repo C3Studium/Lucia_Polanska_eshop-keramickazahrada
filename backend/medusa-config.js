@@ -172,21 +172,12 @@ const medusaConfig = {
     },
     {
       resolve: "./src/modules/merchant-catalog",
-      definition: {
-        isQueryable: true,
-      },
     },
     {
       resolve: "./src/modules/merchant-order",
-      definition: {
-        isQueryable: true,
-      },
     },
     {
       resolve: "./src/modules/made-to-order",
-      definition: {
-        isQueryable: true,
-      },
     },
     ...(REDIS_URL ? [{
       key: Modules.EVENT_BUS,
