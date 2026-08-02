@@ -14,9 +14,7 @@
   ],
   "scripts": {
     "build": "medusa build",
-    "predeploy": "medusa db:migrate --all-or-nothing --execute-safe-links",
-    "deploy": "medusa start",
-    "db:migrate": "medusa db:migrate --all-or-nothing --execute-safe-links",
+    "db:migrate": "pnpm exec medusa db:migrate --all-or-nothing --execute-safe-links",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "medusa start",
     "dev": "medusa develop",
