@@ -16,7 +16,7 @@
     "build": "medusa build",
     "db:migrate": "medusa db:migrate --all-or-nothing --execute-safe-links",
     "seed": "medusa exec ./src/scripts/seed.ts",
-    "start": "cd .medusa/server && medusa start",
+    "start": "medusa start",
     "dev": "medusa develop",
     "dev:email": "email dev --dir ./src/modules/resend/emails"
   },
