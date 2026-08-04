@@ -479,7 +479,7 @@
 
   a:focus-visible,
   button:focus-visible {
-    outline: 1px solid rgba(55, 62, 43, 0.82);
+    outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 2px;
   }
 

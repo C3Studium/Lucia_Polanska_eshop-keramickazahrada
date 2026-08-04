@@ -36,7 +36,7 @@
 
   .link {
     text-decoration: none;
-    &:focus-visible { outline: 2px solid #9a6f65; outline-offset: 4px; }
+    &:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 
     .button {
         width: 100%;

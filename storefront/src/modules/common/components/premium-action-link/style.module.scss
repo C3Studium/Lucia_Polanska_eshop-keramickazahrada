@@ -12,7 +12,6 @@
   overflow: hidden;
   border: 1px solid var(--premium-link-border, rgba(255, 232, 214, .78));
   border-radius: 999px;
-  outline: none;
   font: 400 .9rem/1 "Sansation-Regular", sans-serif;
   text-decoration: none;
 }
@@ -23,7 +22,7 @@
 }
 
 .root:focus-visible {
-  outline: 2px solid rgba(255, 232, 214, .72);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 4px;
 }
 

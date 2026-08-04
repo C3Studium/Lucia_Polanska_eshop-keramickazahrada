@@ -35,4 +35,4 @@
   line-height: 1.55;
 }
 
-.root a:focus-visible { outline: 2px solid #9a6f65; outline-offset: 4px; }
+.root a:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }

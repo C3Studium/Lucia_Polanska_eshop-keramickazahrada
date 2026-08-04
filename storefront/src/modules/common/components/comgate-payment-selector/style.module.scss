@@ -158,7 +158,6 @@
 .group:focus-visible,
 .group[data-active="true"] {
   color: #f8e2d0;
-  outline: none;
 }
 
 .group:hover .groupIndex,
@@ -211,7 +210,6 @@
   min-width: 0;
   height: 45px;
   border: 0;
-  outline: 0;
   color: #20211c;
   background: transparent;
   font: 400 15px/1 "Sansation-Regular", sans-serif;
@@ -283,7 +281,6 @@
 .method:hover,
 .method:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .method:hover::before,
@@ -332,7 +329,6 @@
 .otherBank:hover,
 .otherBank:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .otherBank:hover::before,
@@ -464,7 +460,6 @@
 .change:hover,
 .change:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .change:hover::before,

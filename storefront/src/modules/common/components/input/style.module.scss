@@ -29,7 +29,6 @@
   border: 1px solid rgba(33, 34, 34, .2);
   border-radius: 12px;
   appearance: none;
-  outline: none;
   background: rgba(255, 248, 238, .42);
   box-shadow: none;
   transition: border-color .2s ease, box-shadow .2s ease;
@@ -71,7 +70,6 @@
   right: 0;
   padding-inline: 1rem;
   border: 0;
-  outline: none;
   background: transparent;
   color: #6b7280;
 }
@@ -119,7 +117,6 @@
 .contact .inputWrapper input:focus,
 .contact .inputWrapper input:active {
   border: 0;
-  outline: 0;
   background: transparent;
   box-shadow: none;
 }

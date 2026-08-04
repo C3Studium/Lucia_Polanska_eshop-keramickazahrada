@@ -978,3 +978,43 @@ It now requests `"Sansation-Regular"`, verified as a registered family in
   `/kurzy` and `/vyroba`, which had the densest small-type clusters.
 
 ---
+
+## B3 — one focus ring, and the 34 suppressions deleted (spec §7.2, §14 P1 item 1.3)
+
+**Files:** `src/styles/globals.scss` (the rule + tokens) and 40-odd stylesheets.
+
+**Before:** 34 `outline: none` / `outline: 0` declarations, **nine of them offering no replacement
+at all** — the site-wide native select, the review and restock forms, both password flows,
+express checkout and the FAQ. Where a ring did exist, six different colours were in use.
+
+**Now:** one rule in `globals.scss`:
+
+```
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+```
+
+`--focus-ring` is clay `#9a6f65` — already the dominant treatment in the codebase, so this
+promotes the site's own best pattern rather than inventing one. It clears the 3:1 non-text
+contrast floor on **both** signature surfaces (3.75:1 on cream `#f2eee5`, 3.7:1 on the ink
+product stage `#20211c`), so no per-surface variant is needed; a surface that needs a different
+ring overrides `--focus-ring` locally. All 38 remaining per-component focus declarations were
+normalised onto the token, so there is now literally one ring colour on the site.
+
+`:focus-visible` rather than `:focus` means pointer users never see it and keyboard users always
+do — which is why the suppressions existed in the first place.
+
+**A bug I introduced and caught.** My cleanup also removed rules left empty by the deletion, and
+one of those was `&:hover, &:focus-visible { outline: none }` — removing the second selector
+orphaned `&:hover,` and broke the Sass compile. Repaired, and a dangling-selector scan across
+every stylesheet confirmed it was the only case.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `pnpm build` → exit 0.
+- **Keyboard verification, 18 tab stops each on `/store`, `/account` and `/cart`: 54 stops,
+  0 with no visible ring.** Before this change nine files could not produce a ring at all.
+
+---

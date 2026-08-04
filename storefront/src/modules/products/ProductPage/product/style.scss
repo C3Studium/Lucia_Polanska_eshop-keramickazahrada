@@ -174,7 +174,7 @@
 }
 
 .product__leadMore:focus-visible {
-  outline: 1px solid var(--pdp-cream);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 

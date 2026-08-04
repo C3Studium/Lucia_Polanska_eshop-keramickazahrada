@@ -202,7 +202,7 @@
 }
 
 .consentBox:focus-visible {
-  outline: 2px solid #9a6f65;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -247,7 +247,7 @@
 }
 
 .payButton:focus-visible {
-  outline: 2px solid #9a6f65;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 

@@ -168,6 +168,29 @@
 
   --type-leading-tight: 1.4;
   --type-leading-body: 1.55;
+
+  /*
+   * One focus ring for the whole site (spec §7.2). Clay is already the dominant treatment in
+   * the codebase, so this promotes the site's own best pattern to law rather than inventing one.
+   * It clears 3:1 non-text contrast on both signature surfaces — 3.75:1 on cream #f2eee5 and
+   * 3.7:1 on the ink product stage #20211c — so no per-surface variant is needed. A surface that
+   * genuinely needs a different ring overrides --focus-ring locally.
+   */
+  --focus-ring: #9a6f65;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+}
+
+/*
+ * The only focus rule on the site. Every `outline: none` was deleted in favour of it (34 of
+ * them, nine of which offered no replacement at all — the site-wide select, the review and
+ * restock forms, both password flows, express checkout and the FAQ).
+ *
+ * `:focus-visible` means pointer users never see it and keyboard users always do.
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 body {

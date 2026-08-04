@@ -2,8 +2,7 @@
 .root { min-width: 0; }
 
 .link { display: block; color: #212222; text-decoration: none; }
-.link:focus-visible { outline: none; }
-.link:focus-visible .visual { outline: 2px solid #9a6f65; outline-offset: 4px; }
+.link:focus-visible .visual { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 
 .visual {
   position: relative;

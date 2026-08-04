@@ -11,7 +11,7 @@
     line-height: 1.15;
 
     &:focus-visible {
-        outline: 1px solid rgba(116, 126, 98, 0.7);
+        outline: var(--focus-ring-width) solid var(--focus-ring);
         outline-offset: 3px;
     }
 }

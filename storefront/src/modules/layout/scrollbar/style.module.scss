@@ -105,9 +105,6 @@
   transform: translateX(0);
 }
 
-.item:focus-visible {
-  outline: none;
-}
 
 .item:focus-visible .label {
   text-decoration: underline;

@@ -90,11 +90,10 @@
 }
 
 .close:focus {
-  outline: none;
 }
 
 .close:focus-visible {
-  outline: 1px solid #9a6f65;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 4px;
 }
 

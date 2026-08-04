@@ -240,7 +240,7 @@
 }
 
 .soldProducts__card:focus-visible {
-  outline: 1px solid #20211c;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 7px;
 }
 

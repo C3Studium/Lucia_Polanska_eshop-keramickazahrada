@@ -15,7 +15,6 @@
   padding: 20px 22px;
   border: 1px solid rgba(32, 33, 29, .26);
   border-radius: 0;
-  outline: none;
   background: transparent;
   color: #20211d;
   text-align: left;
@@ -35,7 +34,7 @@
 }
 
 .accountAddressSelectButton:focus-visible {
-  outline: 2px solid rgba(126, 137, 106, .72);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 4px;
 }
 
@@ -103,7 +102,6 @@
   margin: 0;
   padding: 0;
   overflow-y: auto;
-  outline: none;
   list-style: none;
   scrollbar-color: rgba(32, 33, 29, .35) transparent;
   scrollbar-width: thin;
@@ -113,7 +111,6 @@
   padding: 0;
   border-bottom: 1px solid rgba(32, 33, 29, .16);
   cursor: pointer;
-  outline: none;
 }
 
 .accountAddressOption:last-child {

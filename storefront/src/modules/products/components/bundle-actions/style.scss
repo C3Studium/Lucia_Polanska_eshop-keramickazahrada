@@ -44,11 +44,10 @@
   cursor: pointer;
 
   &:focus {
-    outline: none;
   }
 
   &:focus-visible .bundleInline__previewMedia {
-    outline: 1px solid var(--bundle-cream);
+    outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 3px;
   }
 

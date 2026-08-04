@@ -258,7 +258,7 @@
       }
 
       &:focus-visible {
-        outline: 1px solid rgba(255, 232, 214, 0.68);
+        outline: var(--focus-ring-width) solid var(--focus-ring);
         outline-offset: 3px;
       }
     }

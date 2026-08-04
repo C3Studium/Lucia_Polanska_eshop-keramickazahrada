@@ -31,7 +31,7 @@
 .loadMore button:disabled { opacity: .55; cursor: wait; }
 .loadMore button:focus-visible,
 .empty button:focus-visible,
-.inlineError button:focus-visible { outline: 2px solid #9a6f65; outline-offset: 4px; }
+.inlineError button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 
 .empty { display: grid; place-items: center; min-height: 56vh; padding: 60px 20px; border: 1px solid rgba(33,34,34,.14); border-radius: 24px; text-align: center; }
 .empty > span { color: #9a6f65; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }

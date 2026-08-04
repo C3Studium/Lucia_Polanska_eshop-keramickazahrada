@@ -134,7 +134,7 @@
 .footer__socialLink:focus-visible,
 .footer__paymentLink:focus-visible,
 .maker__link:focus-visible {
-  outline: 1px solid var(--footer-ink);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
