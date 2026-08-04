@@ -869,3 +869,52 @@ Rules: one phase = deployable increment; **gate after every task**: `pnpm typech
 **References:** Medusa 2.18 docs (Admin Widgets, UI Routes, Layout Configurations, workflows reference — URLs in [docs/denni-prace-audit.md](docs/denni-prace-audit.md) §7) · installed source paths cited inline throughout · ComGate API (apidoc.comgate.cz — provider verified: verified-callback + `retrieveDetails` + `refundPayment` in [service.ts](backend/src/modules/comgate/service.ts)) · Packeta REST API (docs.packetery.com — **verify `value`/COD units in P4-2 against current docs, do not trust the in-code comment**) · Resend (resend.com/docs — provider working) · Balíkovna/ČP B2B (requires credentials — Q8) · Railway (existing deployment; per-phase smoke in §24).
 
 *End of WorkflowPlan. Implementation may begin at Phase 0 upon approval; Phases must not be reordered without updating §24 dependencies.*
+
+---
+
+## §0-notes — P0-1 runtime findings (appended 2026-08-04)
+
+Gathered read-only against the production database via Railway's TCP proxy with
+`default_transaction_read_only=on` (method in `docs/p0-1-runtime-findings.md`).
+Partial: four facts verified, four still pending a human-run query batch.
+
+**1. Stock locations — TWO, not one. §10's assumption fails.**
+
+| id | name |
+| --- | --- |
+| `sloc_01K2JKVD3PGPRMHY7SHBT55W65` | European Warehouse |
+| `sloc_01K2YB46G59T1BRH6EYKQ6K30D` | Keramická Zahrada |
+
+„European Warehouse" looks like boilerplate seed data, but which location
+actually holds inventory and fulfilment sets is not yet verified. Consequence:
+§10's „one stock location assumed" no longer holds, so every stock query must
+aggregate `available` **across** locations rather than read one. Deactivating
+the dormant location is a production action for Matěj.
+
+**2. Shipping options — two, both flat price, no COD (D1 holds).**
+
+| id | name | provider_id |
+| --- | --- | --- |
+| `so_01K2JNAER4GEGP0R011HC37PWS` | Česká pošta | `ceska-posta-fulfillment_ceska-posta-fulfillment` |
+| `so_01K2JN98M2ACBVFCZREZTD2HTF` | Zásilkovna | `packeta_packeta` |
+
+**3. Fulfilment providers:** `packeta_packeta` (enabled),
+`ceska-posta-fulfillment_ceska-posta-fulfillment` (enabled), `manual_manual`
+(disabled).
+
+→ **P4-1 constraint:** the Balíkovna provider must register under the composite
+id `ceska-posta-fulfillment_ceska-posta-fulfillment` — module key *and* static
+`identifier` both `ceska-posta-fulfillment` — to reuse the existing „Česká
+pošta" shipping option. Any other id means migrating that option's
+`provider_id` in production.
+
+**4. Payment providers:** `pp_comgate_comgate` (enabled) and
+`pp_system_default` (**enabled**). D1 says prepaid only; an enabled
+manual-payment provider is a COD-shaped hole if checkout ever offers it.
+Flagged for Matěj — provider enablement is production state, not an agent's
+call.
+
+**Still pending** (read-only query batch in `docs/p0-1-runtime-findings.md`):
+which location is actually wired · MTO `enabled × manage_inventory` counts
+(P6-6) · unshipped Zásilkovna orders by status (P0-4 → P4-5) · backfill scale
+(P3-3).
