@@ -1079,3 +1079,51 @@ shape, the failure mode is a blocked dispatch, not a silent bypass.
 
 **AC-3 is now complete on both halves** — the workflow refuses, and the native
 API refuses. Runbook §10c's known gap is closed.
+
+---
+
+## FIX — boot crash in `send-order-confirmation`   (2026-08-04)
+
+- Files: `backend/src/workflows/send-order-confirmation.ts`,
+  `backend/src/workflows/__tests__/composition.unit.spec.ts` (new).
+
+### What broke
+
+The idempotency key added in P2-2b was built with a template literal directly
+inside the workflow composer:
+
+```ts
+idempotency_key: `order-placed:${id}`
+```
+
+`id` is not a string there — it is a `WorkflowData` placeholder for a value the
+workflow will only have when it runs. Interpolating it coerces the placeholder
+to a primitive, which throws `object is not a function` **while the module is
+being imported**. `order-placed-email.ts` imports this workflow, Medusa loads
+subscribers at boot, so the whole server failed to start. Migrations were fine
+and unrelated — every module reported „up-to-date".
+
+Fixed by building the payload inside `transform()`, which is what defers string
+construction until the values are real. Property access (`orders[0].email`) was
+always fine; only string building is not.
+
+### Why the gate missed it, and what now closes it
+
+`tsc` and `medusa build` **compile** workflow files without ever importing
+them, so the composer never runs. And `WorkflowData<string>` is *typed* as
+`string`, so the interpolation type-checks perfectly. Unit tests did not import
+workflows either. The result: three green checks and a boot crash in
+production.
+
+`src/workflows/__tests__/composition.unit.spec.ts` now imports every file under
+`src/workflows/` — one test per file, no behavioural assertions, because
+importing *is* the test. It fails on exactly the class of error that got
+through. Suite count went 9 → 10, tests 84 → **149**.
+
+The other two idempotency keys added in P2-2b (`restock`, `abandoned-cart`) were
+never affected: both are built inside `createStep`, which runs at execution time
+with real values. The ship-workflow lock key and the `review.created` payload
+already used `transform`.
+
+- Gate: typecheck ✓ · build ✓ (backend 5.82 s, admin 18.29 s) · tests: **149
+  passed** in 10 suites.
