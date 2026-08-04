@@ -592,6 +592,28 @@
   gap: 9px;
 }
 
+/*
+ * Add-to-cart feedback. The PDP stage is ink (--pdp-ink ≈ #20211c) with cream text, so both
+ * states are set on cream tones measured against it: confirm #bcd0a8 ≈ 9.6:1, error #f3b3a4 ≈ 7.9:1.
+ */
+.product__details__cta__confirm,
+.product__details__cta__error {
+  width: 100%;
+  margin: 0;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.product__details__cta__confirm {
+  color: #bcd0a8;
+}
+
+.product__details__cta__error {
+  color: #f3b3a4;
+}
+
 .product__details__cta__buy__buttons {
   display: flex;
   align-items: center;

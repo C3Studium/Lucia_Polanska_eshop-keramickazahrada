@@ -683,3 +683,51 @@ one line with status, URL and the raw message for us, while the customer gets th
   pattern in `error-messages.ts`, nothing else to touch.
 
 ---
+
+## A9 — add-to-cart feedback, product and bundle (spec §14 P0 item 0.10)
+
+**Files**
+
+- `products/ProductPage/product/details/details.tsx` — `AddToCartState` replaces the bare
+  `isAdding` boolean.
+- `products/ProductPage/product/details/Cta/Add/index.tsx` — states rendered; availability note.
+- `products/ProductPage/product/style.scss`, `products/components/bundle-actions/style.scss`.
+- `products/components/bundle-actions/index.tsx` — the bundle path had **no error handling at all**.
+
+**The leak.** Both paths swallowed failures: the PDP handler did `console.error` and reset the
+button as if nothing had happened, and the bundle handler had only a `finally`. Success was
+signalled solely by the header dropdown opening — off-viewport at the moment of the click. So a
+customer could click, see nothing, and click again: double-adds and abandoned carts from the same
+defect. The spec calls this the #1 mechanical leak and it is hard to disagree.
+
+**Now**: the button morphs to **"Přidáváme…" → "Přidáno ✓"** and a `role="status"` line reads
+"Objekt je v košíku." (bundle: "Soubor je v košíku."), reverting after 4 s; failures render an
+inline `role="alert"` under the button carrying **the Czech message from A8's layer**. The
+dropdown still opens — it is now confirmation, not the only signal. `[conversion]` `[usability]`
+
+**Contradiction fixed.** The note under the CTA read `inventory_quantity ? "N skladem" : "Není
+skladem"`, so every variant with `manage_inventory: false` said **"Není skladem" while the button
+beside it said "Přidat do košíku"**. It now follows the same `inStock` the button uses. The full
+vocabulary (Skladem / Poslední kus / Prodáno / Na objednávku) is Phase C item 2.1; this is only
+the contradiction.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Exercised on a real product (`/cz/products/vlci-mak`) against the live backend:
+  **success** — button "Přidat do košíku" → "Přidáno ✓", status line shown, note reads "Skladem",
+  dropdown opens. **Failure** — with the server action aborted, the button returns to its resting
+  label and the alert reads *"Spojení se serverem se nepodařilo navázat. Zkontrolujte prosím
+  připojení a zkuste to znovu."*, which is A8's mapping working end to end in the UI.
+- Bundle path verified by build and types only — no bundle product exists in the catalogue to
+  click through.
+
+**Notes for Matěj**
+
+- The mini-cart still shows **"Celkem (bez DPH)"** as its headline figure — visible in the QA
+  screenshot. That is spec §4's abandonment trigger and is scheduled as Phase C item 2.4
+  (incl.-VAT headline totals); not touched here.
+- The seed t-shirt is the first card in `/store` and correctly renders as "Není skladem" —
+  another symptom of O-8.
+
+---

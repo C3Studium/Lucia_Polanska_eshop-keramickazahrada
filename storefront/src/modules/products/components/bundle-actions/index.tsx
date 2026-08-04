@@ -1,6 +1,8 @@
 "use client"
 
 import { addBundleToCart } from "@lib/data/cart"
+import { toCzechErrorMessage } from "@lib/util/error-messages"
+import type { AddToCartState } from "@modules/products/ProductPage/product/details/Cta/Add"
 import { BundleProduct } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
 import CartButton from "@modules/products/ProductPage/product/details/Cta/Add/button/cart-button"
@@ -11,7 +13,7 @@ import WishlistToggle from "@modules/products/components/wishlist-toggle"
 import { AnimatePresence, motion } from "framer-motion"
 import { isEqual } from "lodash"
 import { useParams } from "next/navigation"
-import { ReactNode, useEffect, useMemo, useState } from "react"
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react"
 
 type BundleActionsProps = {
   bundle: BundleProduct
@@ -51,7 +53,11 @@ export default function BundleActions({
   const [productOptions, setProductOptions] = useState(() =>
     getInitialOptions(bundle)
   )
-  const [isAdding, setIsAdding] = useState(false)
+  const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
+  const resetTimer = useRef<number | undefined>(undefined)
+  const isAdding = addState.kind === "adding"
+
+  useEffect(() => () => window.clearTimeout(resetTimer.current), [])
   const [activeItemIndex, setActiveItemIndex] = useState(0)
   const countryCode = useParams().countryCode as string
 
@@ -96,8 +102,11 @@ export default function BundleActions({
   const handleAddToCart = async () => {
     if (isPreview || !allVariantsSelected || isAdding) return
 
-    setIsAdding(true)
+    window.clearTimeout(resetTimer.current)
+    setAddState({ kind: "adding" })
+
     try {
+      // addBundleToCart throws on failure rather than returning a result.
       await addBundleToCart({
         bundleId: bundle.id,
         quantity: 1,
@@ -107,8 +116,14 @@ export default function BundleActions({
           variant_id: selectedVariants[index]?.id ?? "",
         })),
       })
-    } finally {
-      setIsAdding(false)
+
+      setAddState({ kind: "added" })
+      resetTimer.current = window.setTimeout(
+        () => setAddState({ kind: "idle" }),
+        4000
+      )
+    } catch (error: any) {
+      setAddState({ kind: "error", message: toCzechErrorMessage(error?.message) })
     }
   }
 
@@ -227,9 +242,23 @@ export default function BundleActions({
               ? "Náhled souboru"
               : !allVariantsSelected
               ? "Dokončete provedení"
+              : addState.kind === "added"
+              ? "Přidáno ✓"
+              : addState.kind === "adding"
+              ? "Přidáváme…"
               : "Přidat soubor do košíku"}
           </CartButton>
         </div>
+        {addState.kind === "error" && (
+          <p className="bundleInline__error" role="alert">
+            {addState.message}
+          </p>
+        )}
+        {addState.kind === "added" && (
+          <p className="bundleInline__confirm" role="status">
+            Soubor je v košíku.
+          </p>
+        )}
         <p>
           {isPreview
             ? "Ukázkové provedení · nákup bude dostupný po napojení dat."
