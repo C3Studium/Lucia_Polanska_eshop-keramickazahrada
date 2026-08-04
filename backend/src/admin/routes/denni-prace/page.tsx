@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
+  BackfillBanner,
   fetchQueue,
   stageMeta,
   stageRoutes,
@@ -28,6 +29,8 @@ const OverviewInner = () => {
   const summaryQuery = useQuery<MerchantOrdersResponse>({
     queryKey: ["merchant-orders", "summary"],
     queryFn: () => fetchQueue("received"),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
   const summary = summaryQuery.data?.summary;
 
@@ -40,6 +43,14 @@ const OverviewInner = () => {
           v detailu objednávky.
         </Text>
       </header>
+
+      {/*
+        Only rendered when older orders are genuinely missing from the queues.
+        It lives here rather than on all five stage pages: this is where she
+        lands, and the check walks the order history, so repeating it per queue
+        would cost five scans for one answer.
+      */}
+      <BackfillBanner />
 
       <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 lg:grid-cols-3">
         {summaryQuery.isLoading &&

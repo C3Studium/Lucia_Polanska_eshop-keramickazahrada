@@ -14,6 +14,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatAmount, formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
@@ -147,15 +148,93 @@ export const paymentStatusMeta: Record<
   partially_refunded: { label: "Vráceno částečně", color: "orange" },
 };
 
-export const queueQueryKey = (stage: MerchantOrderStage) => [
+/** One page of a queue. 50 keeps a page scannable without endless scrolling. */
+export const QUEUE_PAGE_SIZE = 50;
+
+export const queueQueryKey = (stage: MerchantOrderStage, page = 0) => [
   "merchant-orders",
   stage,
+  page,
 ];
 
-export const fetchQueue = (stage: MerchantOrderStage) =>
+export const fetchQueue = (stage: MerchantOrderStage, page = 0) =>
   sdk.client.fetch<MerchantOrdersResponse>("/admin/merchant-orders", {
-    query: { stage, limit: 100 },
+    query: {
+      stage,
+      limit: QUEUE_PAGE_SIZE,
+      offset: page * QUEUE_PAGE_SIZE,
+    },
   });
+
+type BackfillStatus = { scanned: number; missing: number; truncated: boolean };
+
+/**
+ * „Some older orders are not in the queues" — with the button that fixes it.
+ *
+ * Orders placed before the merchant-order module existed have no stage row, so
+ * they are silently absent from every queue. That is safe but indistinguishable
+ * from having no work, which is exactly the ambiguity the queues exist to
+ * remove. The banner only appears when something is actually missing.
+ */
+export const BackfillBanner = () => {
+  const queryClient = useQueryClient();
+
+  const status = useQuery<BackfillStatus>({
+    queryKey: ["merchant-orders", "backfill-status"],
+    queryFn: () => sdk.client.fetch("/admin/merchant-orders/backfill"),
+    // The scan walks the order history, and the answer only changes when
+    // someone runs the backfill — no reason to repeat it on every visit.
+    staleTime: 5 * 60_000,
+  });
+
+  const run = useMutation<{ created: number }>({
+    mutationFn: () =>
+      sdk.client.fetch("/admin/merchant-orders/backfill", { method: "POST" }),
+    onSuccess: async (result) => {
+      toast.success(
+        result.created === 1
+          ? "1 objednávka byla doplněna do front"
+          : `${result.created} objednávek bylo doplněno do front`
+      );
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Objednávky se nepodařilo doplnit"
+      );
+    },
+  });
+
+  if (!status.data?.missing) {
+    return null;
+  }
+
+  return (
+    <div className="bg-ui-bg-subtle flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div>
+        <Text size="small" weight="plus">
+          {status.data.missing === 1
+            ? "1 starší objednávka není ve frontách"
+            : `${status.data.missing} starších objednávek není ve frontách`}
+        </Text>
+        <Text size="small" className="text-ui-fg-subtle mt-1">
+          Jsou to objednávky z doby před zavedením Denní práce. Načtením je
+          zařadíme do správného kroku.
+        </Text>
+      </div>
+      <Button
+        size="small"
+        variant="secondary"
+        isLoading={run.isPending}
+        onClick={() => run.mutate()}
+      >
+        Načíst
+      </Button>
+    </div>
+  );
+};
 
 /**
  * The one order card. Přehled's „Na řadě" list renders the same component, so a
@@ -293,16 +372,33 @@ const QueueInner = ({
   stage: MerchantOrderStage;
   description: string;
 }) => {
+  const [page, setPage] = useState(0);
+
   const ordersQuery = useQuery<MerchantOrdersResponse>({
-    queryKey: queueQueryKey(stage),
-    queryFn: () => fetchQueue(stage),
+    queryKey: queueQueryKey(stage, page),
+    queryFn: () => fetchQueue(stage, page),
+    // Two people can work the same shop, and an order also moves on its own
+    // (a payment lands, a fulfilment is created on the native page). A stale
+    // queue would send her to pack something that is already packed.
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    // Keeping the previous page mounted stops the list collapsing to skeletons
+    // every time she pages.
+    placeholderData: (previous) => previous,
   });
   const orders = ordersQuery.data?.orders ?? [];
+  const total = ordersQuery.data?.count ?? orders.length;
+  const pageCount = Math.max(1, Math.ceil(total / QUEUE_PAGE_SIZE));
+  const firstOnPage = total === 0 ? 0 : page * QUEUE_PAGE_SIZE + 1;
+  const lastOnPage = Math.min(total, page * QUEUE_PAGE_SIZE + orders.length);
 
   return (
     <Container className="divide-y p-0">
       <header className="px-6 py-5">
-        <Heading>{stageMeta[stage].label}</Heading>
+        <Heading>
+          {stageMeta[stage].label}
+          {total > 0 ? ` (${total})` : ""}
+        </Heading>
         <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
           {description}
         </Text>
@@ -341,6 +437,34 @@ const QueueInner = ({
             <OrderRow key={order.order_id} order={order} stage={stage} />
           ))}
       </div>
+
+      {pageCount > 1 && (
+        <div className="flex items-center justify-between gap-3 px-6 py-4">
+          <Text size="small" className="text-ui-fg-subtle">
+            {firstOnPage}–{lastOnPage} z {total}
+          </Text>
+          <div className="flex items-center gap-2">
+            <Button
+              size="small"
+              variant="secondary"
+              disabled={page === 0 || ordersQuery.isFetching}
+              onClick={() => setPage((current) => Math.max(0, current - 1))}
+            >
+              Předchozí
+            </Button>
+            <Button
+              size="small"
+              variant="secondary"
+              disabled={page >= pageCount - 1 || ordersQuery.isFetching}
+              onClick={() =>
+                setPage((current) => Math.min(pageCount - 1, current + 1))
+              }
+            >
+              Další
+            </Button>
+          </div>
+        </div>
+      )}
     </Container>
   );
 };
