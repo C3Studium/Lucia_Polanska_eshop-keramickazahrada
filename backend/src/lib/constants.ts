@@ -166,4 +166,36 @@ export const COMGATE_COUNTRY = process.env.COMGATE_COUNTRY || 'CZ'
 export const COMGATE_CURRENCY = process.env.COMGATE_CURRENCY || 'CZK'
 export const COMGATE_METHOD = process.env.COMGATE_METHOD || 'ALL'
 
+/**
+ * Legacy — Packeta is being retired (WorkflowPlan.md D8). Kept only so the
+ * dormant provider keeps compiling; do not use it in new code.
+ */
 export const PACKETA_API_KEY = process.env.PACKETA_API_KEY
+
+/**
+ * (optional) Merchant notification recipients — WorkflowPlan.md D7.
+ *
+ * DEV receives technical failures (carrier/API errors, e-mail delivery
+ * failures), OWNER receives business events (new paid order, balance received,
+ * payment problems, stock digest, reviews). The daily summary goes to both.
+ *
+ * Both are deliberately optional: an empty value means the notification is
+ * skipped with a logged warning, never a crash.
+ */
+export const DEV_NOTIFICATION_EMAIL = process.env.DEV_NOTIFICATION_EMAIL
+export const OWNER_NOTIFICATION_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL
+
+/**
+ * (optional) Balíkovna / Česká pošta B2B fulfilment provider — WorkflowPlan.md
+ * D8, implemented in P4-1/P4-2.
+ *
+ * While any of these are absent the provider runs in record-only mode: it
+ * registers the fulfilment without calling the carrier, so one-click shipping
+ * never blocks on missing configuration. Exact endpoint and credential names
+ * are confirmed against the official B2B documentation in P4-2 — these are the
+ * placeholders Phase 0 creates.
+ */
+export const BALIKOVNA_API_URL = process.env.BALIKOVNA_API_URL
+export const BALIKOVNA_API_KEY = process.env.BALIKOVNA_API_KEY
+export const BALIKOVNA_API_SECRET = process.env.BALIKOVNA_API_SECRET
+export const BALIKOVNA_API_CUSTOMER_ID = process.env.BALIKOVNA_API_CUSTOMER_ID
