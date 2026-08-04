@@ -18,6 +18,7 @@ import { emailVerificationEmail } from "./emails/email-verification";
 import { variantRestockEmail } from "./emails/restock";
 import { abandonedCartEmail } from "./emails/abandoned-cart";
 import { merchantNotificationEmail } from "./emails/merchant-notification";
+import { merchantDailySummaryEmail } from "./emails/merchant-daily-summary";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -30,6 +31,7 @@ enum Templates {
   // every bell item that also goes to an inbox; the subject travels in
   // `data.subject` so each e-mail is distinguishable.
   MERCHANT_NOTIFICATION = "merchant-notification",
+  MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
   //WIP add in more templates and triggers
   // Add in Order Status
   // Add in payment status
@@ -48,6 +50,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.VARIANT_RESTOCK]: variantRestockEmail,
   [Templates.ABANDONED_CART]: abandonedCartEmail,
   [Templates.MERCHANT_NOTIFICATION]: merchantNotificationEmail,
+  [Templates.MERCHANT_DAILY_SUMMARY]: merchantDailySummaryEmail,
 }
 
 export enum EmailTemplates {
@@ -58,6 +61,7 @@ export enum EmailTemplates {
   VARIANT_RESTOCK = "variant-restock",
   ABANDONED_CART = "abandoned-cart",
   MERCHANT_NOTIFICATION = "merchant-notification",
+  MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
 }
 
 /**
@@ -172,6 +176,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Don't forget your items"
       case Templates.MERCHANT_NOTIFICATION:
         return "Upozornění z e-shopu"
+      case Templates.MERCHANT_DAILY_SUMMARY:
+        return "Denní souhrn"
       // WIP: Add more cases for other templates as needed
       default:
         return "New Email"

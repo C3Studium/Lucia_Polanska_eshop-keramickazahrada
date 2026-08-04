@@ -794,3 +794,79 @@ Přehled 0, Denní práce 10, Zakázková výroba 20, Recenze 30, Sezónní výb
   now recorded as a failure (P2-2b), surfaced on Přehled and on this page, sent
   to your address as an urgent notification, and retryable with the real reason
   shown if it fails again. Still **no migrations**.
+
+---
+
+## P2-5 — daily summary   (2026-08-04)
+
+- Files: `backend/src/jobs/send-daily-summary.ts` (new),
+  `backend/src/modules/resend/emails/merchant-daily-summary.tsx` (new),
+  `backend/src/modules/resend/service.ts` (template registration).
+- Native used: `getOrdersListWorkflow` for takings (the only source of the
+  computed `payment_status`), `query.graph` for drafts and carts,
+  `createNotifications` for delivery and dedupe.
+- Custom added: one job, one template.
+
+Content is D7's, and its leanness is the point: yesterday's takings, the number
+of unfinished purchases, a link to Přehled. Explicitly not an order report — the
+orders belong in Denní práce, and a competing list in an inbox is how someone
+ends up working from two places.
+
+Details worth keeping: the window is **yesterday as a whole day**, not a rolling
+24 hours, because a summary that means „since 07:05 yesterday" is impossible to
+reconcile with anything. Unfinished purchases use the same definition the
+existing abandoned-cart job uses (has an e-mail, has items, never completed,
+untouched for a day) plus draft orders, so the two features cannot disagree. The
+dedupe key is `mn:digest:{day}:{recipient}` — one digest per day per address
+regardless of restarts or a changed schedule. It is skipped entirely when
+`daily_digest_enabled` is off, and logs-and-returns when neither address is
+configured (D7).
+
+- Deviations: none.
+- Gate: typecheck ✓ · build ✓ (backend 5.25 s, admin 15.60 s) · tests: 55 passed.
+
+---
+
+### Phase 2 summary   (2026-08-04)
+
+**Done:** P2-1 (feed provider — plus lifting the notification module out of its
+e-mail-only condition), P2-2 (notify helper + five notifications), P2-2b
+(Matěj's follow-ups: failed e-mails recorded and shown, real empty states,
+settings read route), P2-3 (summary endpoint + Přehled), P2-4 (failed-e-mail
+page, retry, poller), P2-5 (daily summary).
+
+Two new templates exist where the plan budgeted one: the generic
+`merchant-notification` (approved by Matěj — one shape for every merchant alert
+while the e-mail design is being reworked) and `merchant-daily-summary`.
+
+**Smoke checklist for Railway (after Matěj deploys this branch):**
+
+1. Service boots. `GET /health` = 200. The notification module is now registered
+   unconditionally — the boot log should show no provider errors.
+2. Open the bell (top bar). It should render without error even when empty.
+3. Place a test order end to end. Within a moment the bell shows „Nová zaplacená
+   objednávka #…", and — once `OWNER_NOTIFICATION_EMAIL` is set — the same
+   arrives by e-mail. Placing it twice must never produce two bell entries for
+   the same order.
+4. Open **Přehled**. Tiles should match reality: compare „Nové objednávky" with
+   the count on Denní práce → Nové, and „Recenze ke schválení" with the Recenze
+   pending tab. „Vyžaduje pozornost" should be absent when nothing is wrong.
+5. „Na řadě" shows up to five oldest orders with the same card and the same
+   single action as the queue pages.
+6. Force an e-mail failure to check the loop: temporarily set an invalid
+   `RESEND_API_KEY` on staging, place an order, then open **Přehled → Nezdařené
+   e-maily**. The row must be there marked „Nepodařilo se"; „Poslat znovu" must
+   report Resend's actual reason. Restore the key and retry — it should succeed.
+7. Leave the instance running past a quarter hour and confirm the
+   `watch-failed-emails` job logged, and that a failure produced exactly one
+   bell entry.
+8. `/prehled/emaily` must **not** appear in the sidebar (it is reached from the
+   tile).
+
+**Open items:** P0-1/P0-4 findings still needed — they block Phase 4 and P6-6.
+The „Drafts" label decision is still open. `OWNER_NOTIFICATION_EMAIL` /
+`DEV_NOTIFICATION_EMAIL` are unset, so every merchant e-mail is currently
+skipped with a logged warning (by design) while the bell works.
+
+**Migrations: none, in any phase so far.** Nothing in Phase 0–2 adds a table, a
+column or an index.
