@@ -27,6 +27,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (onlyFailures) {
     filters.status = "failure"
   }
+  // Every customer e-mail is tagged with its order, so the order page can show
+  // exactly what that customer was told (§16, P5-3).
+  if (typeof req.query.order_id === "string" && req.query.order_id) {
+    filters.resource_id = req.query.order_id
+  }
 
   const [rows, count] = await notifications.listAndCountNotifications(
     filters as never,
