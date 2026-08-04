@@ -74,6 +74,42 @@ type CollectionDraft = {
   category_ids: string[];
 };
 
+/**
+ * Published products nobody can browse to (§9, P8-4).
+ *
+ * Only shown when there are some — a permanent "0 unclassified" row is
+ * furniture. Links nowhere clever: the native product list with a filter is
+ * where this gets fixed, and duplicating that here would be a second way to do
+ * one job.
+ */
+const UnclassifiedBanner = () => {
+  const { data } = useQuery<{ unclassified_count: number }>({
+    queryKey: ["catalog-health"],
+    queryFn: () => sdk.client.fetch("/admin/operations/catalog-health"),
+    staleTime: 5 * 60_000,
+  });
+
+  if (!data?.unclassified_count) {
+    return null;
+  }
+
+  return (
+    <div className="bg-ui-bg-subtle flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div>
+        <Text size="small" weight="plus">
+          {data.unclassified_count === 1
+            ? "1 produkt není nikde zařazený"
+            : `${data.unclassified_count} produktů není nikde zařazených`}
+        </Text>
+        <Text size="small" className="text-ui-fg-subtle mt-1">
+          Zákazníci je najdou jen přes vyhledávání. Přiřaďte je ke kolekci nebo
+          kategorii, ať jsou k nalezení i při procházení.
+        </Text>
+      </div>
+    </div>
+  );
+};
+
 const queryClient = new QueryClient();
 
 const getInitialDraft = (collection: CatalogCollection): CollectionDraft => ({
@@ -442,6 +478,7 @@ const CatalogPageInner = () => {
 
   return (
     <Container className="divide-y p-0">
+      <UnclassifiedBanner />
       <header className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-end md:justify-between">
         <div>
           <Heading>Kolekce a kategorie</Heading>

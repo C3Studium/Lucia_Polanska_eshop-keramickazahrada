@@ -1673,3 +1673,35 @@ PDFs with no further wiring.
 - Notes for Matěj: **a build failure caught this** — the new module was written
   to the repo root instead of `backend/` and `medusa build` failed with
   „Cannot find module". Moved and rebuilt clean; nothing shipped broken.
+
+---
+
+### Phases 5–12 summary   (2026-08-04, unattended session)
+
+Worked on `feat/phases-5-12`. Nothing pushed to `main` — Matěj asked for a
+branch so his Railway environment stayed stable while he worked elsewhere.
+
+**Done:** P5-1 · P5-2 · P5-3 · P6-2 · P6-3 · P6-4 · P6-5 · P7-2 · P7-3 · P8-1 ·
+P8-2 · P8-4 · P9-1 · P9-2 · P10-1 · P11-1 · P11-4 · P12-3, plus the výprodej
+work requested mid-session.
+
+**Not done, with reasons:**
+
+| Task | Why |
+| --- | --- |
+| P5-4 template copy pass | Subjects and data are §16-correct; nobody has read the bodies *as a customer*. Needs a human — see open question 4. |
+| P6-6 MTO inventory alignment | Needs the P0-1 query batch (which variants have `manage_inventory` on) and a production script run. |
+| P9-3 seasonal wizard | The five-step create flow. Substantial UI, and the read/edit surface already covers the daily need. |
+| P9-4 auto-archive | **Done early** as `close-finished-sales`, extended with the výprodej `on_end` behaviour. |
+| P11-2 onboarding cards | Deliberately skipped — see open question 8. |
+| P11-3 a11y | Static pass only; axe needs a browser — see open question 7. |
+| P12-1, P12-2 | Matěj's: staging smoke, prod backfill, layout apply, locale. |
+
+**Two migrations** are on this branch, both hand-written and idempotent:
+`allow_full_prepayment` on `product_production_profile`, and `on_end` on
+`seasonal_selection`.
+
+**Tests: 163 → 236.** The four owed from earlier phases are written, including
+the A1 dispatch invariant, which had been shipped with no coverage of the branch
+the whole invariant rests on. §17's banlist is now a test rather than a one-off
+grep.
