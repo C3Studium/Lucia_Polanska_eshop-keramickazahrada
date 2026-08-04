@@ -4,6 +4,7 @@ import {
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk"
 import { createReviewStep } from "./steps/create-review"
+import { guardReviewSpamStep } from "./steps/guard-review-spam"
 import { emitEventStep, useQueryGraphStep } from "@medusajs/medusa/core-flows"
 
 type CreateReviewInput = {
@@ -31,6 +32,16 @@ export const createReviewWorkflow = createWorkflow(
         throwIfKeyNotFound: true
       }
     }).config({ name: "check-product-exists" })
+
+    // §12 spam guard. Every review is moderated by hand (D5), so a flood does
+    // not reach the storefront — it reaches a queue she has to read. This
+    // protects her attention rather than the shop's reputation.
+    guardReviewSpamStep({
+      product_id: input.product_id,
+      customer_id: input.customer_id,
+      first_name: input.first_name,
+      last_name: input.last_name,
+    })
 
     // Create the review
     const review = createReviewStep(input)
