@@ -1468,3 +1468,80 @@ reaches that branch at all.
 - Notes for Matěj: **this deploy migrates.** Railway runs `db:migrate` before
   start, so the column is added on the way up. Nothing else in Phases 0–4
   touched the schema.
+
+---
+
+## P4-1 — Balíkovna provider + two-phase dispatch (A1)   (2026-08-04)
+
+- Files: `src/modules/ceskaPostaFulfillment/service.ts` (rewritten),
+  `src/workflows/confirm-merchant-handover.ts` (new),
+  `src/workflows/ship-merchant-order.ts`, `medusa-config.js`,
+  `src/lib/constants.ts`, `.env.template`,
+  `src/api/admin/merchant-orders/[orderId]/route.ts`,
+  `src/api/admin/merchant-orders/projection.ts`,
+  `src/admin/components/merchant-order-queue.tsx`,
+  `docs/TODO-carrier-account.md` (new).
+
+### What the provider replaced
+
+A stub. It advertised two options, implemented **no `createFulfillment` at
+all**, and therefore made the one-click ship fail outright for every Česká pošta
+order — the §1 defect. It now implements the real interface.
+
+**The identifier stays `ceska-posta-fulfillment`**, which P0-1 made necessary:
+the live shipping option carries
+`provider_id = "ceska-posta-fulfillment_ceska-posta-fulfillment"`, and renaming
+the module would orphan it and require repointing production data. The name is
+historical; the provider is Balíkovna-aware.
+
+Three options are offered: Balíkovna (`NB`), ČP na adresu (`DR`), and **Osobní
+odběr** — the last per Matěj's clarification that „pickup point" means
+collection at her own address, not a carrier's.
+
+### A1 is now real, not just specified
+
+`createFulfillment` returns `data.mode`. Without credentials that is `"manual"`,
+and the ship workflow branches on it:
+
+- **manual** — stop after the fulfilment. Items are packed and stock is
+  decremented (both true), but no shipment, no „odesláno" status, no e-mail, and
+  the stage stays `shipping`. The card shows „Čeká na ruční podání zásilky." and
+  its action becomes **„Zásilku jsem předala dopravci"**.
+- **api** — carrier holds the parcel, so the single click ships end to end.
+
+The blocking state is **derived, with no new column**: `stage = shipping` plus a
+fulfilment that exists and has not shipped. That is the whole definition, and
+both fields were already in the projection.
+
+`confirmMerchantHandoverWorkflow` is the only other thing that can produce a
+shipment. It takes the same lock the dispatch does, and is idempotent by
+construction — no open unshipped fulfilment means nothing to ship, so a second
+confirmation reports „už je předaná" instead of shipping twice.
+
+A pre-existing fulfilment created on the native page has no `mode` of ours to
+read, so it is treated as record-only too. That is the safe direction: the worst
+case is she confirms a handover that already happened, rather than a customer
+being told a parcel is moving when it is not.
+
+### Credentials — researched, not guessed
+
+The public sources establish the shape (`docs/TODO-carrier-account.md`): nAPI
+REST with an API token (UUID), a base64 secret that signs each request, and the
+ID CČK. `BALIKOVNA_API_KEY` was renamed to `BALIKOVNA_API_TOKEN` to match. The
+older POLService API was rejected because it authenticates with PostSignum
+client certificates, which would mean mounting cert files into the container.
+
+**P4-2 is not implemented and is marked as such** — the request-signing scheme
+comes with the profile's YAML spec and is the one thing that cannot be inferred
+from outside. Guessing it would produce a provider that looks finished and fails
+on the first real parcel. If credentials are set but the call is still
+unimplemented, the provider falls back to record-only **and logs a warning**
+rather than throwing: a missing integration must never be why she cannot ship.
+
+- Deviations: P4-3's carrier pickup-point gate is **dropped entirely** — Matěj
+  clarified that „pickup point" means personal collection at her address, so
+  there is no carrier point to validate. Personal collection is a fulfilment
+  option instead. The payment side of that (collection paid in person) is an
+  open question — it contradicts D1 and is not built.
+- Gate: typecheck ✓ · build ✓ (backend 5.45 s, admin 16.15 s) · tests: 156
+  passed in 11 suites.

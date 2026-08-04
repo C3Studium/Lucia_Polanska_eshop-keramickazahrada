@@ -189,13 +189,20 @@ export const OWNER_NOTIFICATION_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL
  * (optional) Balíkovna / Česká pošta B2B fulfilment provider — WorkflowPlan.md
  * D8, implemented in P4-1/P4-2.
  *
+ * Names confirmed against the nAPI (B2BZasilka) REST interface: an API token
+ * (UUID), a base64 secret used to sign each request, and the ID CČK from the
+ * contract. All three are generated in Správa B2B profilu.
+ *
  * While any of these are absent the provider runs in record-only mode: it
- * registers the fulfilment without calling the carrier, so one-click shipping
- * never blocks on missing configuration. Exact endpoint and credential names
- * are confirmed against the official B2B documentation in P4-2 — these are the
- * placeholders Phase 0 creates.
+ * records the parcel without calling the carrier, so one-click shipping never
+ * blocks on missing configuration — and dispatch then requires her explicit
+ * „Zásilku jsem předala dopravci" confirmation (A1).
+ *
+ * The older POLService API is deliberately not used: it authenticates with
+ * PostSignum client certificates, which would mean mounting cert and key files
+ * into the container.
  */
 export const BALIKOVNA_API_URL = process.env.BALIKOVNA_API_URL
-export const BALIKOVNA_API_KEY = process.env.BALIKOVNA_API_KEY
+export const BALIKOVNA_API_TOKEN = process.env.BALIKOVNA_API_TOKEN
 export const BALIKOVNA_API_SECRET = process.env.BALIKOVNA_API_SECRET
 export const BALIKOVNA_API_CUSTOMER_ID = process.env.BALIKOVNA_API_CUSTOMER_ID

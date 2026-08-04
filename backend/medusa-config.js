@@ -37,7 +37,11 @@ import {
   COMGATE_TEST,
   COMGATE_COUNTRY,
   COMGATE_CURRENCY,
-  COMGATE_METHOD
+  COMGATE_METHOD,
+  BALIKOVNA_API_URL,
+  BALIKOVNA_API_TOKEN,
+  BALIKOVNA_API_SECRET,
+  BALIKOVNA_API_CUSTOMER_ID
 } from 'lib/constants';
 console.log('[Medusa Config] Constants imported successfully')
 console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
@@ -130,9 +134,17 @@ const medusaConfig = {
       options: {
         providers: [
           {
+            // Named for Česká pošta but Balíkovna-aware (D8). The id must stay
+            // as it is: the live shipping option's provider_id is derived from
+            // it, and changing it would orphan that option in production.
             resolve: "./src/modules/ceskaPostaFulfillment",
             id: "ceska-posta-fulfillment",
-            options: {},
+            options: {
+              api_url: BALIKOVNA_API_URL,
+              api_token: BALIKOVNA_API_TOKEN,
+              api_secret: BALIKOVNA_API_SECRET,
+              customer_id: BALIKOVNA_API_CUSTOMER_ID,
+            },
           },
           {
             resolve: "./src/modules/zasilkovnaFulfillment",

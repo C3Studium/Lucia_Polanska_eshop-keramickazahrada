@@ -55,6 +55,9 @@ export type MerchantOrder = {
 
   /** Czech reason dispatch is blocked (A2), or null when it is not. */
   ship_block_reason: string | null;
+
+  /** Packed, but nobody has handed it to a carrier yet (A1, §5.4). */
+  awaiting_handover: boolean;
 };
 
 export type MerchantOrdersResponse = {
@@ -263,7 +266,7 @@ export const OrderRow = ({
       await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
       toast.success(
         stage === "shipping"
-          ? "Zásilka byla vytvořena a objednávka označena jako odeslaná"
+          ? "Zásilka je připravená. Až ji předáte dopravci, potvrďte to tlačítkem."
           : "Stav objednávky byl změněn"
       );
     },
@@ -273,7 +276,34 @@ export const OrderRow = ({
       );
     },
   });
+  const handover = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
+        method: "PATCH",
+        body: { stage: "handover_confirmed" },
+      }),
+    onSuccess: async (result: any) => {
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      toast.success(
+        result?.confirmed
+          ? "Zásilka byla předána dopravci a zákazník dostal e-mail"
+          : (result?.message ?? "Tato zásilka už je předaná dopravci.")
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Předání se nepodařilo potvrdit"
+      );
+    },
+  });
+
   const targetStage = nextStage[order.stage];
+  // A1: a parcel that exists but has not left. The next step is not „ship" —
+  // that already happened as far as packing goes — it is her confirming she
+  // has physically handed it over.
+  const needsHandover = order.awaiting_handover;
   // The reason comes from the server, computed by the same rules the ship
   // workflow enforces — so the button is hidden for exactly the orders the
   // backend would reject, and the merchant is told why instead of being left
@@ -330,6 +360,11 @@ export const OrderRow = ({
             {order.ship_block_reason}
           </Text>
         )}
+        {needsHandover && !blockedFromShipping && (
+          <Text size="small" className="text-ui-fg-subtle mt-1">
+            Čeká na ruční podání zásilky.
+          </Text>
+        )}
       </div>
 
       <div>
@@ -364,9 +399,21 @@ export const OrderRow = ({
         <Button variant="secondary" size="small" asChild>
           <Link to={`/orders/${order.order_id}`}>Otevřít objednávku</Link>
         </Button>
+        {needsHandover && !blockedFromShipping && (
+          <Button
+            variant="primary"
+            size="small"
+            isLoading={handover.isPending}
+            onClick={() => handover.mutate()}
+          >
+            Zásilku jsem předala dopravci
+          </Button>
+        )}
+
         {targetStage &&
           order.stage !== "payment_problem" &&
-          !blockedFromShipping && (
+          !blockedFromShipping &&
+          !needsHandover && (
             <Button
               variant="primary"
               size="small"

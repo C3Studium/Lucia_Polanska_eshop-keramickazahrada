@@ -37,6 +37,13 @@ export type MerchantOrderRow = {
   production_stage: string | null
 
   /**
+   * True when the parcel is packed but nobody has handed it over yet — the
+   * derived A1 state (§5.4). No new column: `stage = shipping` plus a
+   * fulfilment that exists and has not shipped is the whole definition.
+   */
+  awaiting_handover: boolean
+
+  /**
    * Why dispatch is blocked, in Czech, or `null` when it is not (A2).
    * Computed server-side by the same rules the ship workflow enforces, so the
    * card can never offer a button the backend would refuse.
@@ -118,6 +125,12 @@ export const toMerchantOrderRow = (
     has_fulfillment: Boolean(
       (order?.fulfillments || []).some((f: any) => !f?.canceled_at)
     ),
+
+    awaiting_handover:
+      state.stage === "shipping" &&
+      (order?.fulfillments || []).some(
+        (f: any) => !f?.canceled_at && !f?.shipped_at
+      ),
 
     is_made_to_order: Boolean(productionOrder),
     production_stage: productionOrder?.stage ?? null,

@@ -184,20 +184,44 @@ export const shipMerchantOrderWorkflow = createWorkflow(
 
     const shipment = transform(
       { createdFulfillment, plan, input },
-      ({ createdFulfillment, plan, input }) => ({
-        order_id: input.order_id,
-        fulfillment_id:
-          (createdFulfillment as any)?.id ?? plan.existingFulfillmentId,
-        items: plan.itemsToShip,
-        created_by: input.created_by ?? undefined,
-        no_notification: input.no_notification,
-      })
+      ({ createdFulfillment, plan, input }) => {
+        const fulfillment = createdFulfillment as any
+
+        // A1 — the dispatch invariant.
+        //
+        // A fulfilment with no carrier-side record means the goods are packed
+        // and nothing more. Creating a shipment here would tell the customer
+        // „odesláno" and set the native status to shipped on the strength of a
+        // database row, when in reality the parcel is still on her table.
+        //
+        // So record-only mode stops after the fulfilment. The order stays in
+        // K odeslání showing „Čeká na ruční podání zásilky.", and only her
+        // explicit „Zásilku jsem předala dopravci" — which runs
+        // `confirmMerchantHandoverWorkflow` — produces a real shipment.
+        const mode = fulfillment?.data?.mode
+        const carrierHasParcel = mode === "api"
+
+        return {
+          order_id: input.order_id,
+          fulfillment_id: fulfillment?.id ?? plan.existingFulfillmentId,
+          items: plan.itemsToShip,
+          created_by: input.created_by ?? undefined,
+          no_notification: input.no_notification,
+          // A pre-existing fulfilment (created on the native page) has no mode
+          // of ours to read, so it is treated as record-only too — the safe
+          // direction.
+          carrier_has_parcel: carrierHasParcel,
+        }
+      }
     )
 
     when(
       "create-shipment-when-fulfilled",
       { shipment, plan },
-      ({ shipment, plan }) => plan.needsShipment && !!shipment.fulfillment_id
+      ({ shipment, plan }) =>
+        plan.needsShipment &&
+        !!shipment.fulfillment_id &&
+        shipment.carrier_has_parcel
     ).then(() => {
       createOrderShipmentWorkflow.runAsStep({
         input: {
@@ -210,17 +234,27 @@ export const shipMerchantOrderWorkflow = createWorkflow(
       })
     })
 
-    // Recorded last: the queue only claims the order is shipped once Medusa agrees.
-    const state = transitionMerchantOrderWorkflow.runAsStep({
-      input: {
-        order_id: input.order_id,
-        stage: "shipped",
-        changed_by: input.created_by ?? null,
-      },
+    // Recorded last, and only when a shipment actually happened. In
+    // record-only mode the stage stays `shipping` — the order is packed, not
+    // gone — and the card switches its action to „Zásilku jsem předala
+    // dopravci".
+    when(
+      "advance-stage-when-shipped",
+      { shipment, plan },
+      ({ shipment, plan }) =>
+        shipment.carrier_has_parcel && (plan.needsShipment || plan.needsFulfillment)
+    ).then(() => {
+      transitionMerchantOrderWorkflow.runAsStep({
+        input: {
+          order_id: input.order_id,
+          stage: "shipped",
+          changed_by: input.created_by ?? null,
+        },
+      })
     })
 
     releaseLockStep({ key: lockKey })
 
-    return new WorkflowResponse(state)
+    return new WorkflowResponse(shipment)
   }
 )
