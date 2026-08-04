@@ -145,3 +145,87 @@ their own titles belong to the express-checkout pass.
 - `pnpm exec playwright install chromium` was run once to make the visual gate possible.
 
 ---
+
+## A2 — real catalogue data in the Produkty menu (spec §14 P0 item 0.2, trap 10)
+
+**Files**
+
+- `src/lib/data/navigation.ts` — **new.** `listNavigationCollections()` builds the mega-menu from
+  the catalogue.
+- `src/app/[countryCode]/(main)/layout.tsx` and `(checkout)/layout.tsx` — both hardcoded
+  `navigationCollections = []` (trap 10); both now call the helper. The main layout's 30-line
+  commented-out draft of this logic is deleted, superseded by the helper.
+- `src/modules/layout/Navbar/productsButton/index.tsx` — `hardcodedCollections` ("Kolekce 1…6",
+  36 fake category links, all pointing at `/store`) deleted along with the fallback that
+  substituted it whenever real data was empty.
+- `src/modules/layout/Navbar/index.tsx` — passes `hasMenu`.
+
+**What / why.** Every entry in the "Produkty" mega-menu was invented: six cards titled
+"Kolekce 1"…"Kolekce 6", each with six links labelled "kategorie", every one of them navigating
+to an unfiltered `/store`. It is the first thing a customer opens and the clearest signal in the
+spec's "prototype seams shipped to production" list. The menu now shows six real categories with
+their own product photography, each filtering the catalogue. `[trust]` `[conversion]` `[usability]`
+
+**Deviation — the audit assumed collections; the backend has none.** Verified against the live
+backend: `/store/collections` returns **0**, `/store/product-categories` returns **12**. The
+commented-out code in the layout said as much ("Re-enable once collections and their products
+exist in Medusa"). Implementing the spec's intent — real, navigable destinations — the helper
+prefers collections when they exist and falls back to top-level **categories** when they do not.
+No behaviour changes for the editor when collections are eventually created.
+
+**TODO(backend) — seed data.** Four of the twelve categories are Medusa starter data
+(Shirts, Sweatshirts, Pants, Merch, one demo apparel product each). Per Matěj (2026-08-04) these
+exist only because the backend is not finished, and the storefront should proceed and flag it:
+
+> **This must be revisited once the new backend admin work is complete.** The storefront
+> excludes those four handles in `SEED_CATEGORY_HANDLES` (`src/lib/data/navigation.ts`), which is
+> the single place the catalogue is filtered by hand. When the seed data is deleted from Medusa,
+> **delete that constant and the `.filter()` that uses it.** The demo *products* are still
+> reachable in `/store` and its filter panel — that cleanup is backend-side and is not something
+> the storefront should paper over.
+
+**Bug found and fixed during visual QA.** The card links were built as `/store?collection=<handle>`
+by a presentation-layer helper. With categories in the cards, that parameter resolves against a
+different backend lookup and silently returned the *unfiltered* catalogue. The destination is now
+built in the data layer, which knows what each entry is (`catalogueHref("category" | "collection")`),
+and `NavigationCollection`/`NavigationCategory` carry a ready `href` instead of a raw `handle`.
+Verified end to end: the first card leads to a catalogue reading "Prohlédnout 14 originálů",
+matching that category's product count in the backend exactly.
+
+**Also in this task**
+
+- With no navigation data at all, "Produkty" no longer opens an empty panel — it becomes a link
+  to `/store`. A control that opens nothing is worse than a link.
+- A card without sub-categories used to offer "Všechny produkty" → unfiltered `/store`, throwing
+  away the customer's context. It now reads "Zobrazit vše" and keeps the card's own filter.
+- The card eyebrow read "Kolekce 01" on what is a category; it is now the archival numeral alone.
+- Removed `usePathname`/`useRouter` from `CollectionList`: both fed a `currentCollection` lookup
+  used only by commented-out JSX, and matched `/collections/<handle>` routes that are now
+  redirect stubs. The commented block itself is left untouched. `[performance]` (a persistent
+  navbar component no longer re-renders on every route change)
+
+**Gate**
+
+- `pnpm lint` → exit 0, no new warnings. `npx tsc --noEmit` → clean.
+- `pnpm build` → exit 0.
+- Visual QA at 1024/1280/1536: menu opens with six cards — Zvonková tlačítka, Do zahrady a na
+  fasádu, Do bytu a do kuchyně, Květiny, Dárkové poukazy, Zakázková Výroba — each with real
+  photography from its own products. Card expansion, stagger and vertical titles unchanged.
+- e2e deferred (no backend URL provided for the Playwright suite).
+
+**Notes for Matěj**
+
+1. **Dev-server hazard worth knowing:** running `pnpm build` while `pnpm dev` is running corrupts
+   `.next` — the dev server then serves 404s for its own CSS chunks and pages render unstyled,
+   which looks exactly like a CSS regression. Both commands run `sync:styles` over the same
+   generated sheet (trap 1). Fix is `rm -rf .next` and restart; the working habit is to never run
+   them concurrently.
+2. **Pre-existing interaction defect, logged not fixed:** the section-rail scrollbar
+   (`layout/scrollbar`) renders above the open mega-menu and swallows pointer events over the
+   sixth card's right edge. It belongs to the scrollbar re-engineering in Phase D (spec §4,
+   §11.7); noting it here so it is not rediscovered as new.
+3. Only six cards fit the layout. Today that means "Unikátní kus" (2 products) and "Výrobky se
+   slevou" (0 products, excluded as an empty destination) do not appear. Order follows the `rank`
+   you set in Medusa admin, so the menu is yours to control.
+
+---

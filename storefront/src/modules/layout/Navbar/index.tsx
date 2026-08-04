@@ -205,6 +205,7 @@ export default function Navbar({
           <ProductButton
             onClickAction={handleProductsOpenChange}
             isActive={isOpen}
+            hasMenu={navigationCollections.length > 0}
           />
           <div className="navbar__center-side navbar__center-side--right">
             <CTA

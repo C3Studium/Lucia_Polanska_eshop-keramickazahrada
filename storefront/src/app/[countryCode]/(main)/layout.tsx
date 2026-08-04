@@ -11,9 +11,7 @@ import Navbar from "@modules/layout/Navbar"
 import Footer from "@modules/layout/Footer"
 import Scrollbar from "@modules/layout/scrollbar"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
-import type { NavigationCollection } from "@modules/layout/Navbar/productsButton"
-// import { listCollections } from "@lib/data/collections"
-// import { listCategories } from "@lib/data/categories"
+import { listNavigationCollections } from "@lib/data/navigation"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -28,36 +26,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   // Fetch customer wishlist items
   const wishlistItems = await getCustomerWishlistItems()
 
-  // TODO: Re-enable once collections and their products exist in Medusa.
-  // const [collectionResult, categories] = await Promise.all([
-  //   listCollections({ fields: "*products" }).catch(() => ({ collections: [], count: 0 })),
-  //   listCategories({ limit: 100 }).catch(() => []),
-  // ])
-  //
-  // const navigationCollections: NavigationCollection[] = collectionResult.collections.map(
-  //   (collection, collectionIndex) => {
-  //     const productIds = new Set(collection.products?.map((product) => product.id) ?? [])
-  //     const matchingCategories = categories.filter((category) =>
-  //       category.products?.some((product) => productIds.has(product.id))
-  //     )
-  //     const metadata = (collection.metadata ?? {}) as Record<string, unknown>
-  //     const metadataImage = typeof metadata.image === "string" ? metadata.image : null
-  //     const productImage = collection.products?.find((product) => product.thumbnail)?.thumbnail
-  //
-  //     return {
-  //       id: collection.id,
-  //       title: collection.title,
-  //       handle: collection.handle ?? null,
-  //       image: metadataImage ?? productImage ?? "/assets/img/img/home_image.png",
-  //       categories: matchingCategories.map((category) => ({
-  //         id: category.id,
-  //         name: category.name,
-  //         handle: category.handle ?? null,
-  //       })),
-  //     }
-  //   }
-  // )
-  const navigationCollections: NavigationCollection[] = []
+  const navigationCollections = await listNavigationCollections()
 
   if (cart) {
     try {
