@@ -148,27 +148,8 @@
     margin-top: 0.45rem;
   }
 
-  .stripeWrap {
-    display: grid;
-    grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 1rem;
-    margin: 1.1rem 0 0 2.35rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(32, 33, 28, 0.16);
-  }
 
-  .stripeMotion {
-    overflow: hidden;
-  }
 
-  .stripeLabel {
-    margin: 0;
-    color: rgba(32, 33, 28, 0.52);
-    font: 600 0.62rem/1.2 "Sansation-Regular", sans-serif;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-  }
 
   .cardBase {
     display: block;
@@ -211,10 +192,6 @@
     }
     .direction {
       display: none;
-    }
-    .stripeWrap {
-      grid-template-columns: 1fr;
-      margin-left: 1.85rem;
     }
   }
 }

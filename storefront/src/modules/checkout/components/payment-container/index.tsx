@@ -7,10 +7,7 @@ import React, { Fragment, useContext, useMemo, type JSX } from "react"
 
 import { isManual } from "@lib/constants"
 import SkeletonCardDetails from "@modules/skeletons/components/skeleton-card-details"
-import { CardElement } from "@stripe/react-stripe-js"
-import { StripeCardElementOptions } from "@stripe/stripe-js"
 import PaymentTest from "../payment-test"
-import { StripeContext } from "../payment-wrapper/stripe-wrapper"
 import styles from "./style.module.scss"
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -211,94 +208,3 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
 }
 
 export default PaymentContainer
-
-export const StripeCardContainer = ({
-  paymentProviderId,
-  selectedPaymentOptionId,
-  paymentInfoMap,
-  disabled = false,
-  setCardBrand,
-  setError,
-  setCardComplete,
-}: Omit<PaymentContainerProps, "children"> & {
-  setCardBrand: (brand: string) => void
-  setError: (error: string | null) => void
-  setCardComplete: (complete: boolean) => void
-}) => {
-  const stripeReady = useContext(StripeContext)
-
-  const useOptions: StripeCardElementOptions = useMemo(() => {
-    return {
-      style: {
-        base: {
-          fontFamily: "Inter, sans-serif",
-          color: "#20211c",
-          "::placeholder": {
-            color: "rgba(32, 33, 28, .45)",
-          },
-        },
-      },
-      classes: {
-        base: styles.cardBase,
-      },
-    }
-  }, [])
-
-  const selected = selectedPaymentOptionId === paymentProviderId
-
-  return (
-    <PaymentContainer
-      paymentProviderId={paymentProviderId}
-      selectedPaymentOptionId={selectedPaymentOptionId}
-      paymentInfoMap={paymentInfoMap}
-      disabled={disabled}
-    >
-      <AnimatePresence initial={false}>
-        {selected && (
-          <motion.div
-            key="card-details"
-            className={styles.stripeMotion}
-            initial={{
-              opacity: 0,
-              height: 0,
-              clipPath: "inset(0 0 100% 0)",
-            }}
-            animate={{
-              opacity: 1,
-              height: "auto",
-              clipPath: "inset(0 0 0% 0)",
-            }}
-            exit={{
-              opacity: 0,
-              height: 0,
-              clipPath: "inset(100% 0 0 0)",
-            }}
-            transition={{ duration: 0.55, ease }}
-          >
-            {stripeReady ? (
-              <div className={styles.stripeWrap}>
-                <Text className={styles.stripeLabel}>
-                  Zadejte údaje o kartě:
-                </Text>
-                <CardElement
-                  options={useOptions as StripeCardElementOptions}
-                  onChange={(event) => {
-                    setCardBrand(
-                      event.brand &&
-                        event.brand.charAt(0).toUpperCase() +
-                          event.brand.slice(1)
-                    )
-                    setError(event.error?.message || null)
-                    setCardComplete(event.complete)
-                  }}
-                />
-              </div>
-            ) : (
-              <SkeletonCardDetails />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </PaymentContainer>
-  )
-}

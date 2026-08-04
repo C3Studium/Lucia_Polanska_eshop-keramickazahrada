@@ -731,3 +731,50 @@ the contradiction.
   another symptom of O-8.
 
 ---
+
+## A10 — Stripe and PayPal removed (D-S4, spec §11.6)
+
+**Files**
+
+- **Deleted:** `checkout/components/payment-wrapper/stripe-wrapper.tsx`,
+  `common/icons/paypal.tsx`.
+- Rewritten/trimmed: `payment-wrapper/index.tsx`, `lib/constants.tsx`,
+  `payment-button/index.tsx`, `payment-container/index.tsx` (+ its dead Stripe CSS),
+  `payment/index.tsx`, `order/components/payment-details/index.tsx`.
+- `package.json` — `@stripe/react-stripe-js`, `@stripe/stripe-js`, `@paypal/paypal-js`,
+  `@paypal/react-paypal-js` removed.
+
+**Checked before deleting** (§11.4 — deletions where reality might contradict the audit): the
+live backend's `/store/payment-providers` for the CZ region returns exactly
+**`pp_comgate_comgate`** and **`pp_system_default`**. No Stripe, no PayPal. Nothing was live, so
+D-S4 applies as written.
+
+**What this removes.** `payment-wrapper/index.tsx` called `loadStripe(stripeKey)` at **module
+scope**, so merely parsing the checkout bundle fetched Stripe's remote script — on every checkout,
+for a shop that cannot take Stripe payments. That is gone with the wrapper itself, along with the
+`StripePaymentButton`, the `StripeCardContainer` and its CSS, the PayPal script provider and icon,
+the `isStripe`/`isPaypal` predicates and the four dead `paymentInfoMap` entries.
+
+Simplifications that fell out: `setPaymentMethod` no longer branches on provider type,
+`handleSubmit` loses `shouldInputCard` (there is no card-entry step any more), and the button
+label is simply "Pokračovat k přehledu" instead of choosing between that and "Zadat údaje o kartě".
+
+**Measured** (same build, route `/[countryCode]/checkout`):
+
+| | Route JS | First load |
+|---|---|---|
+| Before (A9) | 40.7 kB | 467 kB |
+| After (A10) | **30.5 kB** | **455 kB** |
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- No `stripe`/`paypal` identifier remains anywhere in `src/` except the comment in
+  `payment-wrapper` recording why the file is now a passthrough.
+
+**Notes for Matěj**
+
+- `.env.local` still carries `NEXT_PUBLIC_STRIPE_KEY`. Nothing reads it. I have not touched your
+  env file — remove it there and on Railway when convenient.
+
+---

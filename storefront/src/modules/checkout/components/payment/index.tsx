@@ -1,11 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import {
-  isComgate,
-  isStripe as isStripeFunc,
-  paymentInfoMap,
-} from "@lib/constants"
+import { isComgate, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
   legacyComgateOptionForMethod,
@@ -16,9 +12,7 @@ import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Text, clx } from "@medusajs/ui"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import PaymentContainer, {
-  StripeCardContainer,
-} from "@modules/checkout/components/payment-container"
+import PaymentContainer from "@modules/checkout/components/payment-container"
 import ComgatePaymentSelector from "@modules/common/components/comgate-payment-selector"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -41,8 +35,6 @@ const Payment = ({
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cardBrand, setCardBrand] = useState<string | null>(null)
-  const [cardComplete, setCardComplete] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(() => {
     if (isComgate(activeSession?.provider_id)) {
       return comgateMethods.some((method) => method.id === activeComgateMethod)
@@ -61,7 +53,6 @@ const Payment = ({
   const router = useRouter()
   const pathname = usePathname()
   const isOpen = searchParams.get("step") === "payment"
-  const isStripe = isStripeFunc(selectedPaymentMethod)
   const hasComgate = availablePaymentMethods.some((method) =>
     isComgate(method.id)
   )
@@ -118,13 +109,10 @@ const Payment = ({
       return
     }
 
-    if (isStripeFunc(method)) {
-      const result = await initiatePaymentSession(cart, {
-        provider_id: method,
-      })
-      if (!result.success) {
-        setError(result.message || "Platební metodu se nepodařilo připravit.")
-      }
+    const result = await initiatePaymentSession(cart, { provider_id: method })
+
+    if (!result.success) {
+      setError(result.message || "Platební metodu se nepodařilo připravit.")
     }
   }
 
@@ -140,8 +128,6 @@ const Payment = ({
 
     setIsLoading(true)
     try {
-      const shouldInputCard =
-        isStripeFunc(selectedPaymentMethod) && !activeSession
       const hasSelectedSession =
         activeSession?.provider_id === selectedPaymentMethod
 
@@ -154,11 +140,9 @@ const Payment = ({
         }
       }
 
-      if (!shouldInputCard) {
-        router.push(pathname + "?" + createQueryString("step", "review"), {
-          scroll: false,
-        })
-      }
+      router.push(pathname + "?" + createQueryString("step", "review"), {
+        scroll: false,
+      })
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -229,27 +213,15 @@ const Payment = ({
                   onChange={(value: string) => void setPaymentMethod(value)}
                   aria-label="Další způsoby platby"
                 >
-                  {nonComgatePaymentMethods.map((paymentMethod) =>
-                    isStripeFunc(paymentMethod.id) ? (
-                      <StripeCardContainer
-                        key={paymentMethod.id}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={paymentInfoMap}
-                        setCardBrand={setCardBrand}
-                        setError={setError}
-                        setCardComplete={setCardComplete}
-                      />
-                    ) : (
-                      <PaymentContainer
-                        key={paymentMethod.id}
-                        paymentInfoMap={paymentInfoMap}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        disabled={isLoading}
-                      />
-                    )
-                  )}
+                  {nonComgatePaymentMethods.map((paymentMethod) => (
+                    <PaymentContainer
+                      key={paymentMethod.id}
+                      paymentInfoMap={paymentInfoMap}
+                      paymentProviderId={paymentMethod.id}
+                      selectedPaymentOptionId={selectedPaymentMethod}
+                      disabled={isLoading}
+                    />
+                  ))}
                 </RadioGroup>
               )}
             </>
@@ -278,18 +250,12 @@ const Payment = ({
             (selectedPaymentMethod && !isComgate(selectedPaymentMethod))) && (
             <div className={styles.buttonRow}>
               <PremiumActionButton
-                text={
-                  !activeSession && isStripeFunc(selectedPaymentMethod)
-                    ? "Zadat údaje o kartě"
-                    : "Pokračovat k přehledu"
-                }
+                text="Pokračovat k přehledu"
                 onClickAction={handleSubmit}
                 className={styles.submitBtn}
                 data-testid="submit-payment-button"
                 disabled={
-                  (isStripe && !cardComplete) ||
-                  (!selectedPaymentMethod && !paidByGiftcard) ||
-                  isLoading
+                  (!selectedPaymentMethod && !paidByGiftcard) || isLoading
                 }
               />
             </div>
@@ -317,9 +283,7 @@ const Payment = ({
                     )}
                   </Container>
                   <Text className={styles.sectionText}>
-                    {isStripeFunc(selectedPaymentMethod) && cardBrand
-                      ? cardBrand
-                      : "Připraveno k dokončení"}
+                    Připraveno k dokončení
                   </Text>
                 </div>
               </div>
