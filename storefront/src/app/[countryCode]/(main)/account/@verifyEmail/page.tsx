@@ -9,7 +9,6 @@ export const metadata: Metadata = {
 
 export default async function VerifyEmail() {
   const customer = await retrieveCustomer().catch(() => null)
-  console.log("Customer data:", customer)
 
   if (!customer) {
     // Optionally render a fallback or redirect

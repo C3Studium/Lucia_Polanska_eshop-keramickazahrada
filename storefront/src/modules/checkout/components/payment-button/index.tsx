@@ -222,7 +222,6 @@ const ComgatePaymentButton = ({
     (s) => s.status === "pending"
   )
   const country_code = cart?.shipping_address?.country_code?.toLowerCase?.()
-  console.log("session:", session)
 
   const redirectUrl: string | undefined =
     typeof session?.data?.redirectUrl === "string"
@@ -233,7 +232,9 @@ const ComgatePaymentButton = ({
 
   const handlePayment = () => {
     if (!redirectUrl) {
-      setErrorMessage("Přesměrovací URL ComgateComgate nebyla nalezena.")
+      setErrorMessage(
+        "Platební bránu se nepodařilo otevřít. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
+      )
       return
     }
 
@@ -244,12 +245,8 @@ const ComgatePaymentButton = ({
         window.addEventListener('message', async function (e) {
             // validace, že message obsahuje data
             if (!e || !(e !== null && e !== void 0 && e.data)) return;
-            const { id, status /* refId, ... */ } = e.data;
-            if (['PAID', 'AUTHORIZED'].includes(status)) {
-                console.log("Payment successful:", id);
-            } 
-            else {
-                console.log("redirecting to cancelled payment page")
+            const { status } = e.data;
+            if (!['PAID', 'AUTHORIZED'].includes(status)) {
                 redirect(`/${country_code}/cart/${cart.id}/canceled`)
             }
         }, false);

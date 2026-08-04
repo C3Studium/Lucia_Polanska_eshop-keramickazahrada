@@ -452,3 +452,68 @@ reads correctly both before and after the PDF lands.
    naší skupiny") for what is a sole trader. Worth a lawyer's eye before launch; out of scope here.
 
 ---
+
+## A6 — payment state pages and the shipped debug output (spec §14 P0 item 0.6)
+
+**Files**
+
+- `src/modules/cart/components/payment-pending/` — **new** (`index.tsx`, `style.module.scss`).
+- `(main)/cart/[id]/pending/page.tsx` — rewritten.
+- `src/modules/cart/components/payment-confirmed/index.tsx` — failure path.
+- `(main)/cart/[id]/confirmed/page.tsx` — passes support contacts.
+- `src/modules/checkout/components/payment-button/index.tsx` — logging + a copy typo.
+- `(main)/account/@verifyEmail/page.tsx` — customer-data log.
+
+**The pending page.** It rendered `<h1>pending page</h1>`. Bank transfer is a prominently offered
+method, so this is where those customers land *after paying*. It now uses the site's own
+`OrderStateShell`: what is happening ("banka ji ještě nepotvrdila… u bankovního převodu to bývá i
+několik hodin, o víkendu déle"), that nothing is required of them, the reference number they will
+need if they call, e-mail and phone, and a quiet note that the page re-checks itself. It refreshes
+every 20 s via `router.refresh()`, and shows the real order number instead of the cart reference
+when an order already exists. `[trust]` `[conversion]`
+
+**The confirm flow had no failure path.** `placeOrder` + `capturePayment` ran in a `useEffect`
+with no `.catch()`: any failure left the customer on "Ještě okamžik…" forever, after paying.
+Now both are awaited and failures render a distinct state.
+
+Two details that matter more than they look:
+
+- **A successful `placeOrder` redirects**, and Next signals that by rejecting with a
+  `NEXT_REDIRECT` digest. Catching naively would turn every *successful* order into an error
+  screen. The handler recognises the redirect signal and lets it through.
+- **The failure copy never tells the customer to pay again.** The money has already left their
+  account; the page says we have a record of the payment, that we will finish the order by hand,
+  and gives the reference plus both contact routes. A "try again" button here would risk a double
+  charge.
+- A `useRef` guard stops React's development double-effect from placing the order twice.
+
+**Shipped debug output removed.** `console.log("session:", session)` logged the entire payment
+session — provider ids, redirect URLs, payment metadata — into the browser console of every
+customer reaching the payment step, and two further logs traced the ComGate postMessage flow.
+`@verifyEmail` logged the whole customer object (`console.log("Customer data:", customer)`) — PII
+in the console. All removed. The now-unused `id` binding in the postMessage handler went with
+them, and the inverted branch reads plainly.
+
+Also fixed in passing: the payment button's error read **"Přesměrovací URL ComgateComgate nebyla
+nalezena."** — a doubled word in a customer-facing string, in a message that told the customer
+nothing useful. It now says the gateway could not be opened and gives the support e-mail.
+
+Debug logging in the reviews and wishlist account pages is left for Phase C's account pass, where
+the brief allocates it.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Visual QA at 1024/1280/1536 + reduced motion on `/cart/{id}/pending`: renders in the
+  order-state design, all text ≥13px on measured tones.
+- The confirmed page's failure branch was reviewed by reading, not exercised: triggering it needs
+  a real cart whose completion fails. Flagged rather than claimed. e2e deferred.
+
+**Notes for Matěj**
+
+- `placeOrder` and `capturePayment` fire concurrently on the confirmed page. That is pre-existing
+  behaviour and I have not reordered it — capture-then-complete may well be the correct sequence,
+  but it is a payment-flow decision that needs the backend's view, not a storefront guess.
+  Worth confirming with the backend session.
+
+---
