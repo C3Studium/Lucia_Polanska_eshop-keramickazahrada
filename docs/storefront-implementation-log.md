@@ -113,21 +113,32 @@ that surface. Listed so they are not rediscovered as new.
 - **Mobile navigation and touch equivalents** — spec roadmap item 0.9. Moved to the final
   responsive phase by D-S3 / amendment A-3. `MobileIconsNavbar` remains exported and unmounted.
 
-## T-6 · The whole of Phases B–F is untouched
+## T-7 · Left behind by Phase B (added after B completed)
+
+| # | Item | Where | Phase |
+|---|---|---|---|
+| T-7a | **`useReducedMotion` is not swept through the scroll-linked components.** Layers 1 (global CSS) and 3 (Lenis not initialising) are done and cover the 19 infinite animations and all scroll hijacking. Layer 2 — turning scroll-bound `useTransform` chains into their static finals, the Sold marquee into its scroll-snap rail, RotatingText static — is not. Reduced-motion users get a settled page, but scroll-linked parallax still tracks. | ~99 motion files, chiefly `home/*`, `omne/*`, `vyroba/*` | **D** (motion/perf work) |
+| T-7b | **`/checkout` and the kontakt modal are not in the automated axe run.** Checkout needs a cart with a priced shipping method (blocked by T-4a); the modal needs a click. Both were hand-verified in Phase A. | `qa-axe.mjs` route list | when T-4a clears |
+| T-7c | **The `input ~ label` utility (T-3a) is still live.** B4 fixed the primitives' ids and labels, but the Tailwind utility in `globals.scss:53` that shrinks any label following an input to 10px was not removed — the primitive's own floated-label styling depends on it. It needs replacing with a scoped rule, not deleting. | `src/styles/globals.scss:53` | **C** or a follow-up |
+| T-7d | **Type floors were applied mechanically.** 431 declarations were raised by script with a block-aware rule (uppercase → 12px, everything else → 13px). Spot-checked visually on `/store`, `/dotazy`, `/o-mne` and a product page, but not every one of the 84 files was inspected by eye. | 84 stylesheets | worth your review |
+
+## T-6 · The whole of Phases C–F is untouched
 
 For scale, measured on the branch as it stands:
 
-| Signal | Count today | Phase |
-|---|---|---|
-| `outline: none` / `outline: 0` occurrences | **34** | B |
-| Files with any `prefers-reduced-motion` | **1** | B |
-| Sub-13px declarations in the footer alone | 3 × 9px, 3 × 11px, 1 × 12px | B |
-| `checkbox/index.tsx` hardcoded `id="checkbox"` | still there (line 24) | B |
-| `input/index.tsx` `htmlFor={name}` with no matching `id` | still there (line 71) | B |
-| 3-second scroll lock | still there | B |
+*(The Phase B row of this table is now historical — all six signals below were closed by B.)*
 
-Phase A deliberately did not touch the "archival label" idiom, the motion governance, the WebGL
-policy, or any page's composition. That is B, C, D and E.
+| Signal | At end of Phase A | Now |
+|---|---|---|
+| `outline: none` / `outline: 0` | 34 | **0** |
+| Sub-12px customer-facing declarations | 212 | **0** |
+| `checkbox` hardcoded `id="checkbox"` | yes | **fixed** |
+| `input` `htmlFor` with no matching `id` | yes | **fixed** |
+| 3-second scroll lock | yes | **deleted** |
+| axe violations, seven key routes | 14 nodes | **0** |
+
+Phases C, D, E and F remain untouched: conversion mechanics, the WebGL/CSS/font performance work,
+the elevation pass, and the responsive port.
 
 ---
 
@@ -1163,5 +1174,24 @@ all labelled and ≥16px, scroll working 0.6 s after load, Lenis absent under re
 **Note:** `/checkout` and the kontakt modal are not in this run — checkout needs a cart with a
 priced shipping method (blocked, see T-4a) and the modal needs a click. Both were verified by
 hand in Phase A; they should join the automated run once the backend unblocks.
+
+---
+
+# Phase B complete
+
+| | Task | Commit |
+|---|---|---|
+| B1 | Type tokens + floors, sub-12px retired | `9687013` |
+| B3 | One focus ring, 34 suppressions deleted | `36236d5` |
+| B4 | Form primitives | `6355650` |
+| B6/B7/B8 | Reduced motion, scroll lock, heading outline | `59c0438` |
+| B2/B5 | Colour pairs, target floor, axe gate | `8ed04d9` |
+
+**Spec §14's P1 acceptance, checked:** zero customer-facing text below 12px ✅ · zero text below
+AA on the seven routes (axe) ✅ · visible focus everywhere, forms fully labelled ✅ ·
+`prefers-reduced-motion` honoured and scroll never blocked ✅ (layer 2 partial — T-7a).
+
+The "V2 look" the spec says emerges in P1 is now in place: the archival idiom kept, but at
+12–13px with capped tracking and measured colour pairs instead of alpha over an unknown backdrop.
 
 ---
