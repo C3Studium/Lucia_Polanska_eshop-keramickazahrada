@@ -511,3 +511,82 @@ the page itself lands in P2-3.
 - Notes for Matěj: production has `RESEND_API_KEY`/`RESEND_FROM_EMAIL` set, so
   the notification module was already live there; this change only adds the feed
   provider next to Resend. Nothing about e-mail delivery changes.
+
+---
+
+## P2-2 — notify helper + first five merchant notifications   (2026-08-04)
+
+- Files: `backend/src/lib/notify.ts` (new),
+  `backend/src/lib/__tests__/notify.unit.spec.ts` (new),
+  `backend/src/subscribers/merchant-notifications.ts` (new),
+  `backend/src/modules/resend/emails/merchant-notification.tsx` (new),
+  `backend/src/modules/resend/service.ts` (template registration + subject),
+  `backend/src/workflows/create-review.ts` (emits `review.created`),
+  `backend/src/api/hooks/payment/pp_comgate_comgate/route.ts` (emits
+  `made-to-order.balance-paid`).
+- Native used: `createNotifications` (dedupe, audit and delivery all come free),
+  `emitEventStep`, the event bus, `getLastPaymentStatus`, `query.graph`.
+- Custom added: the policy layer around notifications — dedupe keys, D7
+  recipient routing, and the bell's actual payload contract. Native Medusa has
+  no opinion about any of those.
+
+### The bell's contract, verified rather than assumed
+
+The dashboard queries `sdk.admin.notification.list({ to: [me.id, me.email, ""],
+channel: "feed" })` and its renderer returns `null` when `data.title` is missing.
+So a merchant notification must use `to: ""` — that is how a notification
+addresses „whichever admin is looking" — and must always carry a title. Both are
+enforced in `buildFeedNotification` instead of being remembered per subscriber.
+The bell has no link support, so notifications are text only; the CTA lives on
+Přehled.
+
+Deduplication is native: `createNotifications` skips an `idempotency_key` it has
+already sent and *retries* one whose previous attempt failed
+(`notification-module-service.js:51-55`). Handlers therefore just re-send on
+retry — the test asserts both calls emit identical keys rather than trying to be
+clever about it.
+
+### The five
+
+| § | Notification | Event | Key |
+| --- | --- | --- | --- |
+| #1 | Nová zaplacená objednávka | `order.placed`, not a payment problem | `mn:new-order:{order}` |
+| #3 | Nové zadání zakázky | `order.placed`, made-to-order | `mn:mto-new:{order}` |
+| #9 | Připravená k odeslání | `merchant-order.stage-changed` → shipping | `mn:ready:{order}` |
+| #7 | Doplatek přijat | `made-to-order.balance-paid` (new) | `mn:balpaid:{req}` |
+| #14 | Recenze ke schválení | `review.created` (new) | `mn:review:{review}` |
+
+Two details worth keeping: made-to-order is detected from the payment
+collection's metadata, **not** from the `production_order` row — the subscriber
+that creates that row listens to the same `order.placed` event, so reading its
+output would be a race. And `items.*` is in the order projection because
+`total` is computed and silently comes back as zero without it (trap 1).
+
+Both new events are emitted rather than notified inline. For the ComGate
+callback that is load-bearing: Comgate retries the whole notification if the
+route does not return 2xx, so a notification problem must never fail a verified
+payment.
+
+- Deviations: one, deliberate. The plan budgets a single new e-mail template
+  (`merchant-daily-summary`, P2-5), but D7 also requires per-event owner e-mails
+  for #1 and #7, and §15 requires urgent e-mails for #10/#11/#15 in later
+  phases. Rather than five near-identical templates, this adds **one generic
+  `merchant-notification` template** (title, optional description, urgency
+  marker, link to Přehled) and lets the subject travel in `data.subject`. The
+  provider change is additive: a per-send subject wins over the template
+  default, and templates that do not set one behave exactly as before. Without
+  this, D7's inbox requirement could not be met at all and P3-5's urgent e-mail
+  would have nothing to send.
+- Gate: typecheck ✓ · build ✓ (backend 5.40 s, admin 15.55 s) · tests: **36
+  passed** in 5 suites (11 new).
+- Notes for Matěj: with `OWNER_NOTIFICATION_EMAIL` unset (the current state) the
+  bell works and the e-mails are skipped with a logged warning, exactly as D7
+  specifies. Set the variable when you want the inbox copies.
+
+### Found while working — fixed in P2-4, not here
+
+The Resend provider returns `{}` instead of throwing when a template is missing
+or the send fails (`src/modules/resend/service.ts`), so the notification row is
+recorded as **success** even though nothing was sent. Notification #15 and the
+whole `/prehled/emaily` page depend on `status = failure`, so P2-4 fixes it
+there rather than widening this task.

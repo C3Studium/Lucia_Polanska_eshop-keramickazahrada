@@ -17,6 +17,7 @@ import { passwordResetEmail } from "./emails/password-reset";
 import { emailVerificationEmail } from "./emails/email-verification";
 import { variantRestockEmail } from "./emails/restock";
 import { abandonedCartEmail } from "./emails/abandoned-cart";
+import { merchantNotificationEmail } from "./emails/merchant-notification";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -25,6 +26,10 @@ enum Templates {
   EMAIL_VERIFICATION = "email-verification",
   VARIANT_RESTOCK = "variant-restock",
   ABANDONED_CART = "abandoned-cart",
+  // The merchant's own notifications (WorkflowPlan.md §15) — one template for
+  // every bell item that also goes to an inbox; the subject travels in
+  // `data.subject` so each e-mail is distinguishable.
+  MERCHANT_NOTIFICATION = "merchant-notification",
   //WIP add in more templates and triggers
   // Add in Order Status
   // Add in payment status
@@ -42,6 +47,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.EMAIL_VERIFICATION]: emailVerificationEmail,
   [Templates.VARIANT_RESTOCK]: variantRestockEmail,
   [Templates.ABANDONED_CART]: abandonedCartEmail,
+  [Templates.MERCHANT_NOTIFICATION]: merchantNotificationEmail,
 }
 
 export enum EmailTemplates {
@@ -51,6 +57,7 @@ export enum EmailTemplates {
   EMAIL_VERIFICATION = "email-verification",
   VARIANT_RESTOCK = "variant-restock",
   ABANDONED_CART = "abandoned-cart",
+  MERCHANT_NOTIFICATION = "merchant-notification",
 }
 
 type ResendOptions = {
@@ -128,6 +135,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Product Back in Stock"
       case Templates.ABANDONED_CART:
         return "Don't forget your items"
+      case Templates.MERCHANT_NOTIFICATION:
+        return "Upozornění z e-shopu"
       // WIP: Add more cases for other templates as needed
       default:
         return "New Email"
@@ -145,10 +154,19 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       return {}
     }
 
+    // A per-send subject wins over the template default. Merchant notifications
+    // all share one template but must not all share one subject line — an inbox
+    // full of identical subjects is unreadable. Templates that do not set it
+    // behave exactly as before.
+    const providedSubject = (notification.data as Record<string, unknown> | undefined)?.subject
+
     const commonOptions = {
       from: this.options.from,
       to: [notification.to],
-      subject: this.getTemplateSubject(notification.template as Templates),
+      subject:
+        typeof providedSubject === "string" && providedSubject.trim().length
+          ? providedSubject
+          : this.getTemplateSubject(notification.template as Templates),
     }
 
     let emailOptions: CreateEmailOptions

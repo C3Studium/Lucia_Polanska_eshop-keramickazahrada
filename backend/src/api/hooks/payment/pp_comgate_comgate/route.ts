@@ -75,6 +75,22 @@ const reconcileMadeToOrderPayment = async (
       ready_to_ship_at: productionOrder.ready_to_ship_at || now,
     } as any)
   }
+
+  // D4 makes the balance flow entirely manual: she asked for the money, and
+  // this is the moment she has been waiting for. The notification is emitted as
+  // an event rather than sent inline so that a notification problem can never
+  // fail a verified payment callback — Comgate would retry the whole thing.
+  const eventBus = req.scope.resolve(Modules.EVENT_BUS)
+  await eventBus.emit({
+    name: "made-to-order.balance-paid",
+    data: {
+      order_id: productionOrder.order_id,
+      production_order_id: productionOrder.id,
+      payment_request_id: request.id,
+      amount: request.amount,
+      currency_code: request.currency_code,
+    },
+  })
 }
 
 /**
