@@ -34,6 +34,22 @@ export const formatAmount = (
   }).format(numericAmount)
 }
 
+/** Day precision, for things measured in days: seasons, deadlines, terms. */
+export const formatDate = (value?: string | Date | null): string => {
+  if (!value) {
+    return "—"
+  }
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return "—"
+  }
+  return new Intl.DateTimeFormat(CZ_LOCALE, {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+  }).format(date)
+}
+
 export const formatDateTime = (value?: string | Date | null): string => {
   if (!value) {
     return "—"

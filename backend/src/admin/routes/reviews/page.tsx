@@ -6,12 +6,12 @@ import {
   DataTable, 
   useDataTable, 
   Heading, 
-  createDataTableCommandHelper, 
-  DataTableRowSelectionState, 
-  StatusBadge, 
+  createDataTableCommandHelper,
+  DataTableRowSelectionState,
   Text,
-  Toaster, 
+  Toaster,
   toast,
+  Tabs,
   DataTablePaginationState
 } from "@medusajs/ui"
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -35,13 +35,35 @@ type Review = {
 }
 
 
+type ReviewStatus = Review["status"]
+
+/**
+ * One tab per status (§12). „Čekají na schválení" is the default because it is
+ * the only tab with work in it; the other two are archives.
+ */
+const tabs: Array<{ status: ReviewStatus; label: string; empty: string }> = [
+  {
+    status: "čeká na schválení",
+    label: "Čekají na schválení",
+    empty: "Žádné recenze nečekají",
+  },
+  {
+    status: "schváleno",
+    label: "Schválené",
+    empty: "Zatím jste žádnou recenzi neschválili",
+  },
+  {
+    status: "zamítnuto",
+    label: "Zamítnuté",
+    empty: "Žádnou recenzi jste nezamítli",
+  },
+]
+
 const columnHelper = createDataTableColumnHelper<Review>()
 
+// No ID column: technical identifiers never appear on custom pages (§17).
 const columns = [
   columnHelper.select(),
-  columnHelper.accessor("id", {
-    header: "ID",
-  }),
   columnHelper.accessor("title", {
     header: "Název",
   }),
@@ -51,21 +73,9 @@ const columns = [
   columnHelper.accessor("content", {
     header: "Obsah"
   }),
-  columnHelper.accessor("status", {
-    header: "Status",
-    cell: ({ row }) => {
-      const color = row.original.status === "schváleno" ? 
-        "green" : row.original.status === "zamítnuto" 
-        ? "red" : "grey"
-      return (
-        <StatusBadge color={color}>
-          {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
-          </StatusBadge>
-      )
-    }
-  }),
+  // No status column either — the active tab already states it for every row.
   columnHelper.accessor("product", {
-    header: "Product",
+    header: "Produkt",
     cell: ({ row }) => {
       return (
         <a href={`/app/products/${row.original.product_id}`} className="text-ui-fg-interactive">
@@ -134,6 +144,7 @@ const ReviewsPageInner = () => {
     pageIndex: 0
   })
   const [rowSelection, setRowSelection] = useState<DataTableRowSelectionState>({})
+  const [status, setStatus] = useState<ReviewStatus>("čeká na schválení")
 
   const offset = useMemo(() => {
     return pagination.pageIndex * limit
@@ -145,15 +156,27 @@ const ReviewsPageInner = () => {
     limit: number
     offset: number
   }>({
-    queryKey: ["reviews", offset, limit],
+    queryKey: ["reviews", status, offset, limit],
     queryFn: () => sdk.client.fetch("/admin/reviews", {
       query: {
+        status,
         offset: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         order: "-created_at"
       }
     })
   })
+
+  const activeTab = tabs.find((tab) => tab.status === status) ?? tabs[0]
+  // Only claim the tab is empty once the answer is actually known.
+  const isEmpty = !isLoading && !isError && (data?.count ?? 0) === 0
+
+  const onTabChange = (value: string) => {
+    setStatus(value as ReviewStatus)
+    // A page 3 of pending reviews is meaningless on the approved tab.
+    setPagination((current) => ({ ...current, pageIndex: 0 }))
+    setRowSelection({})
+  }
 
   const commands = useCommands(refetch)
 
@@ -185,11 +208,27 @@ const ReviewsPageInner = () => {
             </Text>
           </div>
         </DataTable.Toolbar>
+        <Tabs value={status} onValueChange={onTabChange}>
+          <Tabs.List className="px-6 pb-4">
+            {tabs.map((tab) => (
+              <Tabs.Trigger key={tab.status} value={tab.status}>
+                {tab.label}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+        </Tabs>
         {isError ? (
           <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
             <Heading level="h2">Recenze se nepodařilo načíst</Heading>
             <Text size="small" className="text-ui-fg-error mt-1">
               Obnovte stránku a zkuste to znovu.
+            </Text>
+          </div>
+        ) : isEmpty ? (
+          <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
+            <Heading level="h2">{activeTab.empty}</Heading>
+            <Text size="small" className="text-ui-fg-subtle mt-1">
+              Po doručení objednávky zákazníky sami poprosíme o recenzi.
             </Text>
           </div>
         ) : (

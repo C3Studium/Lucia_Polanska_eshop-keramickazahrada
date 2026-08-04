@@ -318,3 +318,76 @@ it stays reachable for bookmarks without appearing twice in the sidebar — the
 - Gate: typecheck ✓ · build ✓ (backend 5.41 s, admin 15.77 s) · tests: 25 passed.
 - Notes for Matěj: the sidebar order is still the default one — the §2.2
   interleaving with native items is P1-4 + your „Default view" apply.
+
+---
+
+## P1-3 — Sklad children, reviews tabs, seasonal selections   (2026-08-04)
+
+- Files: `backend/src/admin/routes/sklad-nizky-stav/page.tsx` (new),
+  `backend/src/admin/routes/sklad-vyprodano/page.tsx` (new),
+  `backend/src/admin/routes/sezonni-vybery/page.tsx` (new),
+  `backend/src/admin/routes/reviews/page.tsx` (tabs),
+  `backend/src/api/admin/reviews/route.ts` (status filter),
+  `backend/src/admin/lib/format.ts` (`formatDate`).
+- Native used: `nested: "/inventory"` route placement; `validateAndTransformQuery`'s
+  `req.filterableFields` for the review status filter; `query.graph` for both lists.
+- Custom added: three pages and one query parameter. No new module, no migration.
+
+### Reviews — tabs by Czech status
+
+`GetAdminReviewsSchema` gained an optional `status` enum with the model's literal
+Czech values (`src/modules/product-review/models/review.ts` — diacritics
+included). Anything in a validated query that is not limit/offset/fields/order
+lands in `req.filterableFields`
+(`@medusajs/framework/dist/http/utils/validate-query.js:72`), so the route just
+forwards those to `query.graph` — no hand-rolled filter parsing.
+
+The page now has three tabs, „Čekají na schválení" first because it is the only
+one with work in it. Switching tabs resets pagination and the selection, which
+otherwise carry over into a list they do not belong to. Empty states are real
+here: the endpoint returns a count, so „Žádné recenze nečekají" is only claimed
+when it is true.
+
+Two §17 cleanups on the way through: the **ID column is gone** (technical
+identifiers must never appear on custom pages — AC-8), and so is the status
+column, which repeats the active tab on every row. The English header „Product"
+became „Produkt".
+
+### Sezónní výběry
+
+Read-only overview over the API that already exists, grouped into §13's three
+tabs. Grouping is derived client-side from `publication_status` **and** the
+dates, because a published selection whose `ends_at` has passed is over
+regardless of what the status column still says (the auto-archive job in P9-4
+catches up later). No „+ Nový výběr" button yet — P9-3 builds the wizard, and a
+button that opens nothing is worse than no button.
+
+### Sklad children
+
+Both routes are `nested: "/inventory"`, which is one of the six paths the
+dashboard accepts, and neither has children — so they do not hit the
+„nested route cannot have children" constraint.
+
+- Deviations: one, applied consistently. P1-3's acceptance says „pages render
+  empty states §19", and Sezónní výběry and Recenze do exactly that. **Nízký
+  stav and Vyprodáno do not**: their data endpoint (`/admin/inventory-alerts`)
+  arrives in P7-1, so those pages cannot know whether anything is low or sold
+  out. Printing „Zásoby jsou v pořádku" over genuinely low stock would be a
+  false all-clear on the one page whose whole job is to warn — the same class of
+  mistake §20 rejects for „delivered" without a carrier signal. They show the
+  true explanatory text and a link to the native stock page instead, and P7-1
+  restores the §19 empty states once they can be verified. Same reasoning as the
+  Zakázky shell in P1-2.
+- Gate: typecheck ✓ · build ✓ (backend 5.59 s, admin 15.91 s) · tests: 25 passed.
+
+### Generated sidebar verified in the built bundle
+
+```
+/denni-prace              rank 0     /zakazkova-vyroba          rank 20
+/reviews                  rank 10    /sezonni-vybery            rank 40
+/merchant-catalog         rank 10  nested /products
+/bundled-products         rank 30  nested /products
+/sklad-nizky-stav         rank 10  nested /inventory
+/sklad-vyprodano          rank 20  nested /inventory
++ 5 Denní práce children, 2 Zakázková výroba children
+```
