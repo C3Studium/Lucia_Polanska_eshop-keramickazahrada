@@ -1,18 +1,12 @@
 "use client"
 
-import PremiumActionButton from "@modules/common/components/premium-action-button"
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
+import type { MerchantIdentity } from "@lib/data/merchant"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import {
-  FormEvent,
-  type CSSProperties,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
 
 type FooterTone = "light" | "dark"
 
@@ -20,14 +14,16 @@ const DEFAULT_SURFACE = "#bbb788"
 
 const currentYear = new Date().getFullYear()
 
+// One label per destination: "Smluvní podmínky" and "Obchodní podmínky" both pointed here,
+// under two names, for a page that calls itself Obchodní podmínky.
 const importantLinks = [
-  { label: "Smluvní podmínky", href: "/smluvni-podminky" },
-  { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
   { label: "Obchodní podmínky", href: "/smluvni-podminky" },
+  { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
+  { label: "Používání cookies", href: "/cookies" },
 ]
 
 const discoverLinks = [
-  { label: "Kontakt", href: "/kontakt" },
+  { label: "Obchod", href: "/store" },
   { label: "Dotazy", href: "/dotazy" },
   { label: "Kurzy", href: "/kurzy" },
 ]
@@ -35,7 +31,7 @@ const discoverLinks = [
 const helpLinks = [
   { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
   { label: "Doprava a platba", href: "/doprava-a-platba" },
-  { label: "Reklamační protokol", href: "/reklamacni-protokol" },
+  { label: "Jak vzniká keramika", href: "/vyroba" },
 ]
 
 const socialLinks = [
@@ -63,7 +59,7 @@ const reveal = {
   },
 }
 
-export default function Footer() {
+export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
   const pathname = usePathname()
   const footerRef = useRef<HTMLElement>(null)
   const [surface, setSurface] = useState(DEFAULT_SURFACE)
@@ -185,6 +181,8 @@ export default function Footer() {
               v píseckém ateliéru.
             </p>
 
+            <MerchantBlock merchant={merchant} />
+
             <div className="footer__socials" aria-label="Sociální sítě">
               {socialLinks.map((link) => (
                 <FooterIcon
@@ -208,7 +206,7 @@ export default function Footer() {
                 <h3 id="newsletter-title">Zůstaňte blízko ateliéru.</h3>
                 <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
               </div>
-              <Newsletter />
+              <Newsletter email={merchant.email} />
             </section>
 
             <nav className="footer__navigation" aria-label="Navigace v patičce">
@@ -311,38 +309,59 @@ function FooterIcon({
   )
 }
 
-function Newsletter() {
-  const handleNewsletterSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    // TODO(newsletter): connect this form to the backend newsletter subscription flow.
-  }
-
+/**
+ * Until a newsletter platform is chosen, this is a line and a mailto — not a form.
+ * The previous input and "Odebírat" button accepted an address and discarded it silently,
+ * which is the one failure a made-to-order atelier cannot afford. An absent form is honest.
+ */
+function Newsletter({ email }: { email: string }) {
   return (
-    <form
-      className="newsletter__container"
-      onSubmit={handleNewsletterSubmit}
-    >
-      <label htmlFor="footer-newsletter-email">Váš e-mail</label>
-      <div className="newsletter__controls">
-        <input
-          id="footer-newsletter-email"
-          type="email"
-          placeholder="vas@email.cz"
-          className="newsletter__input"
-          autoComplete="email"
-          required
-        />
-        <PremiumActionButton
-          type="submit"
-          text="Odebírat"
-          compact
-          className="newsletter__button"
-        />
+    <p className="newsletter__invitation">
+      Napište nám na{" "}
+      <a
+        href={`mailto:${email}?subject=${encodeURIComponent("Novinky z ateliéru")}`}
+        className="newsletter__mailto"
+      >
+        {email}
+      </a>{" "}
+      a zařadíme vás mezi odběratele novinek.
+    </p>
+  )
+}
+
+/**
+ * The seller's identity: the block a cautious Czech buyer looks for before paying.
+ * Ink on the footer surface (7.8:1 on sage) rather than the muted token — this is
+ * information to be read, not atmosphere.
+ */
+function MerchantBlock({ merchant }: { merchant: MerchantIdentity }) {
+  return (
+    <dl className="footer__identity">
+      <div>
+        <dt>Prodávající</dt>
+        <dd>{merchant.name}</dd>
       </div>
-      <p>
-        Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.
-      </p>
-    </form>
+      <div>
+        <dt>Sídlo</dt>
+        <dd>{merchant.address}</dd>
+      </div>
+      <div>
+        <dt>IČO</dt>
+        <dd>{merchant.registrationNumber}</dd>
+      </div>
+      <div>
+        <dt>E-mail</dt>
+        <dd>
+          <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>Telefon</dt>
+        <dd>
+          <a href={`tel:${merchant.phoneDial}`}>{merchant.phone}</a>
+        </dd>
+      </div>
+    </dl>
   )
 }
 

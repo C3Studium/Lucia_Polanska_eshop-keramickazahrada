@@ -5,6 +5,7 @@ import { StoreRegion } from "@medusajs/types"
 import Footer from "@modules/layout/Footer"
 import Navbar from "@modules/layout/Navbar"
 import { listNavigationCollections } from "@lib/data/navigation"
+import { getMerchantIdentity } from "@lib/data/merchant"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Scrollbar from "@modules/layout/scrollbar"
 import styles from "./styles/layout.module.scss"
@@ -38,7 +39,7 @@ export default async function CheckoutLayout({
         {children}
       </main>
       <div className={styles.footer}>
-        <Footer />
+        <Footer merchant={getMerchantIdentity()} />
       </div>
     </div>
   )

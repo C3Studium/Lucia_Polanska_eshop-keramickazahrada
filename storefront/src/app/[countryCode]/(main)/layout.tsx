@@ -12,6 +12,7 @@ import Footer from "@modules/layout/Footer"
 import Scrollbar from "@modules/layout/scrollbar"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import { listNavigationCollections } from "@lib/data/navigation"
+import { getMerchantIdentity } from "@lib/data/merchant"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -61,7 +62,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         />
       )}
       {props.children}
-      <Footer />
+      <Footer merchant={getMerchantIdentity()} />
     </>
   )
 }

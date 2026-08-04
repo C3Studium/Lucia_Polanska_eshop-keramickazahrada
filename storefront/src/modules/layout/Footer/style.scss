@@ -180,82 +180,68 @@
   font: 300 clamp(15px, 0.94vw, 17px)/1.45 "Sansation-Light", sans-serif;
 }
 
-.newsletter__container {
+.newsletter__invitation {
+  min-width: 0;
+  margin: 0;
+  color: var(--footer-ink);
+  font: 300 clamp(15px, 0.94vw, 17px)/1.5 "Sansation-Light", sans-serif;
+}
+
+.newsletter__mailto {
+  color: var(--footer-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.newsletter__mailto:hover {
+  opacity: 0.66;
+}
+
+.footer__identity {
+  display: grid;
+  margin: clamp(22px, 2vw, 32px) 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.2vw, 20px) clamp(18px, 1.6vw, 30px);
+}
+
+/* Sídlo is the longest value; it takes the full width rather than wrapping awkwardly. */
+.footer__identity > div:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+.footer__identity > div {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  gap: 4px;
 }
 
-.newsletter__container > label {
-  margin-bottom: 9px;
-  color: var(--footer-muted);
-  font: 400 clamp(9px, 0.56vw, 11px)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.17em;
-  text-transform: uppercase;
-}
-
-.newsletter__controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 9px;
-  align-items: center;
-}
-
-.newsletter__input {
-  width: 100%;
-  min-width: 0;
-  height: 40px;
-  padding: 0 15px;
-  border: 1px solid var(--footer-line);
-  border-radius: 999px;
-  outline: 0;
+.footer__identity dt {
   color: var(--footer-ink);
-  background: var(--footer-soft);
-  box-shadow: none;
-  font: 300 16px/1 "Sansation-Light", sans-serif;
-  appearance: none;
-  -webkit-appearance: none;
-  transition:
-    border-color 0.3s ease,
-    background-color 0.3s ease;
+  font: 500 13px/1.4 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.78;
 }
 
-.newsletter__input:hover,
-.newsletter__input:focus,
-.newsletter__input:focus-visible {
-  border-color: var(--footer-ink);
-  outline: 0;
-  background: var(--footer-soft);
-  box-shadow: none;
+.footer__identity dd {
+  margin: 0;
+  color: var(--footer-ink);
+  font: 400 clamp(15px, 0.94vw, 16px)/1.45 "Sansation-Regular", sans-serif;
 }
 
-.newsletter__input::placeholder {
-  color: var(--footer-muted);
-  opacity: 0.72;
+.footer__identity a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.newsletter__input:-webkit-autofill,
-.newsletter__input:-webkit-autofill:hover,
-.newsletter__input:-webkit-autofill:focus {
-  border-color: var(--footer-line);
-  -webkit-text-fill-color: var(--footer-ink);
-  caret-color: var(--footer-ink);
-  -webkit-box-shadow: 0 0 0 1000px var(--footer-surface) inset;
-  box-shadow: 0 0 0 1000px var(--footer-surface) inset;
-  transition: background-color 9999s ease-out 0s;
-}
-
-.newsletter__button {
-  --premium-button-ink: var(--footer-ink);
-  --premium-button-surface: transparent;
-  --premium-button-fill: var(--footer-ink);
-  --premium-button-active-ink: var(--footer-button-ink);
-}
-
-.newsletter__container > p {
-  margin: 8px 0 0;
-  color: var(--footer-muted);
-  font: 300 clamp(11px, 0.66vw, 13px)/1.42 "Sansation-Light", sans-serif;
+.footer__identity a:hover {
+  opacity: 0.66;
 }
 
 .footer__navigation {
@@ -466,18 +452,6 @@
   .footer__newsletter {
     grid-template-columns: 1fr;
     gap: 28px;
-  }
-
-  .newsletter__controls {
-    grid-template-columns: 1fr;
-  }
-
-  .newsletter__button {
-    width: 100%;
-  }
-
-  .newsletter__button > button {
-    min-width: 100%;
   }
 
   .footer__navigation {

@@ -229,3 +229,73 @@ matching that category's product count in the backend exactly.
    you set in Medusa admin, so the menu is yours to control.
 
 ---
+
+## A3 — footer identity block, honest links, dead routes deleted (spec §3.5, §14 P0 item 0.3)
+
+**Files**
+
+- `src/lib/data/merchant.ts` — **new**, server-only. `getMerchantIdentity()`.
+- `src/modules/layout/Footer/index.tsx` — identity block, link map, newsletter.
+- `src/modules/layout/Footer/style.scss` — styles for the block; newsletter form styles removed.
+- Both layouts — pass `merchant` to `<Footer />`.
+- **Deleted:** `src/app/[countryCode]/smluvni_podminky/page.tsx` and
+  `src/app/api/reset-password/route.ts` (both 0 bytes).
+
+**Merchant identity block.** The single highest-trust element a Czech e-shop renders, and it was
+absent: seller name, registered seat, IČO, e-mail, phone now sit permanently in the footer's brand
+column. Address and IČO come from `SIDLO_ADRESA` / `IDENTIFIKACNI_CISLO` — the env vars the audit
+found that nothing read — with the registered values as fallbacks so the block cannot render
+blank. Seller name is **Lucie Polanská, IČO 03441482** per Matěj's decision (2026-08-04).
+`[trust]` `[conversion]`
+
+Those env vars deliberately have no `NEXT_PUBLIC_` prefix, and `Footer` is a client component, so
+the module is marked `server-only` and the layouts read it and pass the result down — rather than
+re-declaring business data as public env. Values are rendered in `--footer-ink`, not the muted
+token: **7.8:1 on the sage surface**, measured. This is information to be read, not atmosphere.
+
+**Link map — one label per destination, no dead ends.**
+
+| Before | After |
+|---|---|
+| "Smluvní podmínky" **and** "Obchodní podmínky", both → `/smluvni-podminky` | "Obchodní podmínky" (the name the page gives itself) |
+| "Kontakt" → `/kontakt` — **404** | removed; contact is permanently visible in the identity block. A4 adds the modal trigger in its place |
+| "Reklamační protokol" → `/reklamacni-protokol` — **404** | removed; A5 re-adds it pointing at the real page |
+| — | "Používání cookies", "Obchod", "Jak vzniká keramika" fill the freed slots |
+
+Removing the two dead links now rather than waiting for A4/A5 keeps every commit free of 404s.
+Verified: all nine internal footer destinations return HTTP 200; `/kontakt`,
+`/reklamacni-protokol` and `/smluvni_podminky` all correctly 404. `[trust]` `[clarity]`
+
+**Newsletter — brought forward from A4 (D-S1).** The footer form accepted an address and
+discarded it (`preventDefault()` and a TODO). It is replaced by one line and a `mailto:` in the
+same footer styling, per D-S1: no platform is chosen yet, and **a dead form must never ship**.
+Done here rather than in A4 because it is the same component and the same concern — the footer
+being honest — and editing it twice would risk conflicting edits. A4 keeps the kontakt modal.
+`[trust]`
+
+**Dead routes.** `smluvni_podminky/page.tsx` (0 bytes, exported nothing, still built as a route
+and a 500 risk — spec §12) is gone along with the duplicate label that pointed near it. A second
+0-byte file the audit did not list, `src/app/api/reset-password/route.ts`, is also gone: verified
+first that nothing references it and that the backend's password-reset e-mail links to the
+`/reset-password` **page**, not this route (`backend/src/subscribers/handle-reset-password.ts:49`,
+read-only check). `[maintainability]` `[trust]`
+
+**Gate**
+
+- `pnpm lint` → exit 0, no new warnings. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Visual QA at 1024/1280/1536: identity block reads clearly in two columns with Sídlo on its own
+  row; footer tone-switching (the sage/dark sampling of the preceding section) still works; link
+  columns balanced. A hydration warning appears in the console on `/dotazy` — it originates in
+  `DotazyMain`, is unrelated to this change and pre-dates it.
+- e2e deferred.
+
+**Notes for Matěj**
+
+- The right-hand footer column now has more empty space than before: the newsletter shrank from a
+  form to a line while the brand column grew by the identity block. The whitespace is in the
+  original editorial idiom (navigation stays bottom-aligned), so it is left as designed rather
+  than re-composed. Say the word if you want the two columns rebalanced.
+- Newsletter platform is still parked (D-S1). When you pick one, the mailto line is the only
+  thing that needs replacing.
+
+---
