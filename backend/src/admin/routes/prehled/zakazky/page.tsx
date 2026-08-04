@@ -31,6 +31,7 @@ type ProductionOrder = {
   outstanding: number;
   deposit_percentage: number;
   has_open_balance_request: boolean;
+  balance_requested_at: string | null;
   estimated_completion_at: string | null;
   customer_note: string | null;
 };
@@ -71,6 +72,21 @@ const stages: Array<{ key: string; label: string; description: string }> = [
     description: "Zaplaceno a hotovo — odešlete v Denní práci.",
   },
 ];
+
+/**
+ * Days a balance request has gone unanswered, once it passes a week.
+ * `null` below that — a customer taking three days is not a problem.
+ */
+const balanceOverdueDays = (order: ProductionOrder): number | null => {
+  if (order.stage !== "awaiting_balance" || !order.balance_requested_at) {
+    return null;
+  }
+  const days = Math.floor(
+    (Date.now() - new Date(order.balance_requested_at).getTime()) /
+      (24 * 60 * 60 * 1000)
+  );
+  return days >= 7 ? days : null;
+};
 
 /** How much of the agreed price has arrived, as a bar she can read at a glance. */
 const PaymentBar = ({ order }: { order: ProductionOrder }) => {
@@ -221,6 +237,13 @@ const ZakazkyInner = () => {
                         {order.has_open_balance_request && (
                           <Badge size="2xsmall" color="orange">
                             Odkaz odeslán
+                          </Badge>
+                        )}
+                        {/* +7 dní (§7.2). The badge is the prompt — nothing is
+                            sent to the customer without her clicking. */}
+                        {balanceOverdueDays(order) !== null && (
+                          <Badge size="2xsmall" color="red">
+                            Čeká {balanceOverdueDays(order)} dní
                           </Badge>
                         )}
                         <Button size="small" variant="transparent" asChild>

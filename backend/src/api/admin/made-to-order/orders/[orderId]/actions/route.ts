@@ -24,6 +24,7 @@ type ProductionAction =
   | "start_production"
   | "complete_production"
   | "request_balance"
+  | "remind_balance"
   | "cancel"
 
 type ActionBody = {
@@ -219,6 +220,10 @@ export const POST = async (
     "start_production",
     "complete_production",
     "request_balance",
+    // P6-5. Deliberately a *manual* action with no scheduled counterpart: D4
+    // says nothing chases a customer on its own, so the only reminder that ever
+    // goes out is one she chose to send.
+    "remind_balance",
     "cancel",
   ]
   if (!actions.includes(body.action)) {
@@ -490,6 +495,47 @@ export const POST = async (
         }
       }
     }
+  }
+
+  if (body.action === "remind_balance") {
+    requireStage(productionOrder.stage, ["awaiting_balance"])
+    const payments = await madeToOrder.listProductionPaymentRequests({
+      production_order_id: productionOrder.id,
+    } as any)
+
+    const open = payments.find(
+      (payment: any) =>
+        payment.type === "balance" &&
+        ["pending", "sent"].includes(payment.status)
+    ) as any
+
+    if (!open) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Není o co připomínat — u zakázky není otevřená žádost o doplatek."
+      )
+    }
+
+    // The same request, therefore the same e-mail dedupe key: a reminder is a
+    // re-send of one link, not a second demand for money. The subscriber's key
+    // is `paylink:{request}`, so the notification module recognises this and
+    // does not deliver twice — which is the behaviour the confirm dialog
+    // promises her.
+    const eventBus2 = req.scope.resolve<IEventBusModuleService>(Modules.EVENT_BUS)
+    await eventBus2.emit({
+      name: "made-to-order.balance-requested",
+      data: { order_id: req.params.orderId, payment_request_id: open.id },
+    })
+
+    productionOrder = await madeToOrder.updateProductionPaymentRequests({
+      id: open.id,
+      status: "sent",
+      sent_at: now,
+      notification_sent_at: now,
+    } as any)
+
+    res.status(200).json({ reminded: true, payment_url: open.payment_url ?? null })
+    return
   }
 
   if (body.action === "cancel") {

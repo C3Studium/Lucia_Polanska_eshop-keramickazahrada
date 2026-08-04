@@ -32,6 +32,9 @@ export type ProductionOrderSummary = {
   paid_total: number;
   outstanding: number;
   customer_note: string | null;
+  /** A balance link already exists, so it can be re-sent rather than re-made. */
+  has_open_balance_request?: boolean;
+  balance_requested_at?: string | null;
 };
 
 type Action =
@@ -39,6 +42,7 @@ type Action =
   | "start_production"
   | "complete_production"
   | "request_balance"
+  | "remind_balance"
   | "cancel";
 
 const useAction = (orderId: string) => {
@@ -306,6 +310,28 @@ export const ProductionOrderActions = ({
           }
           confirmLabel="Dokončit"
           successMessage="Výroba označena jako dokončená"
+        />
+      )}
+
+      {/*
+        P6-5. Only ever her click: D4 rules out an automatic reminder, and the
+        overdue badge plus a daily nudge to *her* are the only prompts. Sends
+        the same link again rather than a second demand — the notification
+        module recognises the key and does not deliver twice.
+      */}
+      {order.stage === "awaiting_balance" && order.has_open_balance_request && (
+        <ConfirmedAction
+          order={order}
+          action="remind_balance"
+          label="Připomenout doplatek"
+          variant="secondary"
+          title="Poslat zákazníkovi připomínku?"
+          description={`Znovu odešleme stejný odkaz na ${formatAmount(
+            order.outstanding,
+            order.currency_code
+          )}. Nevytváří se nová platba a zákazník nedostane dvě různé výzvy.`}
+          confirmLabel="Připomenout"
+          successMessage="Připomínka byla odeslána"
         />
       )}
 
