@@ -5,6 +5,7 @@ import { MERCHANT_ORDER_MODULE } from "../../../../modules/merchant-order"
 import MerchantOrderModuleService from "../../../../modules/merchant-order/service"
 import { isMerchantOrderStage } from "../../../../modules/merchant-order/stages"
 import type { MerchantOrderStage } from "../../../../modules/merchant-order/stages"
+import { notifyMerchant } from "../../../../lib/notify"
 import { shipMerchantOrderWorkflow } from "../../../../workflows/ship-merchant-order"
 import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
 import { toMerchantOrderRow } from "../projection"
@@ -18,6 +19,7 @@ const ORDER_FIELDS = [
   "currency_code",
   "total",
   "items.*",
+  "summary.*",
   "shipping_methods.*",
   "shipping_address.*",
   "billing_address.*",
@@ -50,21 +52,28 @@ const load = async (req: MedusaRequest) => {
     filters: { order_id: req.params.orderId },
   })
 
+  const { data: orderChanges } = await query.graph({
+    entity: "order_change",
+    fields: ["id", "status"],
+    filters: { order_id: req.params.orderId },
+  })
+
   return {
     state: states[0] || null,
     order: order || null,
     production_order: productionOrders[0] || null,
+    order_changes: orderChanges || [],
   }
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const { state, order, production_order } = await load(req)
+  const { state, order, production_order, order_changes } = await load(req)
   if (!order) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
   }
   res.status(200).json({
     merchant_order: state
-      ? toMerchantOrderRow(state, order, production_order)
+      ? toMerchantOrderRow(state, order, production_order, order_changes)
       : null,
     order,
     production_order,
@@ -89,11 +98,38 @@ export const PATCH = async (
   // the native fulfilment and shipment workflows, and only records the merchant stage
   // once Medusa has accepted both.
   if (req.body.stage === "shipped") {
-    const { result } = await shipMerchantOrderWorkflow(req.scope).run({
-      input: { order_id: req.params.orderId, created_by: changedBy },
-    })
-    res.status(200).json({ merchant_order_state: result })
-    return
+    try {
+      const { result } = await shipMerchantOrderWorkflow(req.scope).run({
+        input: { order_id: req.params.orderId, created_by: changedBy },
+      })
+      res.status(200).json({ merchant_order_state: result })
+      return
+    } catch (error) {
+      // Notification #10. A failed dispatch is the one failure that looks like
+      // success from across the workshop: the parcel is packed and the order
+      // looks handled, but nothing left. The stage is deliberately unchanged,
+      // so the order stays in K odeslání and can simply be retried.
+      //
+      // Keyed by the hour so a customer who clicks repeatedly gets one alert
+      // per hour rather than one per click, while a failure that persists into
+      // the next hour is reported again.
+      const hourKey = new Date().toISOString().slice(0, 13)
+      const message =
+        error instanceof Error ? error.message : "Neznámá chyba."
+
+      await notifyMerchant(req.scope, {
+        key: `mn:shipfail:${req.params.orderId}:${hourKey}`,
+        title: "Zásilku se nepodařilo vytvořit",
+        description: `${message} Objednávka zůstává v kroku K odeslání a můžete to zkusit znovu.`,
+        audience: "dev",
+        urgent: true,
+        resource: { id: req.params.orderId, type: "order" },
+      }).catch(() => {
+        // Never let a notification problem replace the real error below.
+      })
+
+      throw error
+    }
   }
 
   const { result } = await transitionMerchantOrderWorkflow(req.scope).run({

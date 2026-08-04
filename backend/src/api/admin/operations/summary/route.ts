@@ -66,6 +66,7 @@ const ORDER_FIELDS = [
   // projection, so a narrower selection silently yields zero.
   "total",
   "items.*",
+  "summary.*",
   "shipping_methods.*",
   "shipping_address.first_name",
   "shipping_address.last_name",
@@ -273,11 +274,29 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     ])
   )
 
+  // Order changes feed the A2 gate, so „Na řadě" blocks exactly what the
+  // queues block.
+  const { data: nextUpChanges } = nextUpStates.length
+    ? await query.graph({
+        entity: "order_change",
+        fields: ["id", "order_id", "status"],
+        filters: { order_id: nextUpStates.map((state) => state.order_id) },
+      })
+    : { data: [] as any[] }
+
+  const changesByOrderId = new Map<string, any[]>()
+  for (const change of nextUpChanges as any[]) {
+    const existing = changesByOrderId.get(change.order_id) || []
+    existing.push(change)
+    changesByOrderId.set(change.order_id, existing)
+  }
+
   const nextUp = nextUpStates.map((state) =>
     toMerchantOrderRow(
       state,
       orderById.get(state.order_id) || null,
-      productionByOrderId.get(state.order_id) || null
+      productionByOrderId.get(state.order_id) || null,
+      changesByOrderId.get(state.order_id) || []
     )
   )
 

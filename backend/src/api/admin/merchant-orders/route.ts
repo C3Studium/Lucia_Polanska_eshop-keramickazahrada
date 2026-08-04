@@ -36,6 +36,9 @@ const ORDER_FIELDS = [
   "currency_code",
   "total",
   "items.*",
+  // `summary` and the collection amounts are what the A2 ship gate compares —
+  // the card must not offer an action the backend would refuse.
+  "summary.*",
   "shipping_methods.*",
   "shipping_address.first_name",
   "shipping_address.last_name",
@@ -96,7 +99,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { data: productionOrders } = orderIds.length
     ? await query.graph({
         entity: "production_order",
-        fields: ["id", "order_id", "stage"],
+        fields: [
+          "id",
+          "order_id",
+          "stage",
+          "agreed_total",
+          "original_total",
+          "payment_requests.status",
+          "payment_requests.amount",
+        ],
+        filters: { order_id: orderIds },
+      })
+    : { data: [] as any[] }
+
+  // Order changes are a separate entity, and an open one means the total is
+  // still moving — the gate has to see them.
+  const { data: orderChanges } = orderIds.length
+    ? await query.graph({
+        entity: "order_change",
+        fields: ["id", "order_id", "status"],
         filters: { order_id: orderIds },
       })
     : { data: [] as any[] }
@@ -105,12 +126,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const productionByOrderId = new Map(
     productionOrders.map((production: any) => [production.order_id, production])
   )
+  const changesByOrderId = new Map<string, any[]>()
+  for (const change of orderChanges as any[]) {
+    const existing = changesByOrderId.get(change.order_id) || []
+    existing.push(change)
+    changesByOrderId.set(change.order_id, existing)
+  }
 
   const rows = states.map((state: any) =>
     toMerchantOrderRow(
       state,
       orderById.get(state.order_id) || null,
-      productionByOrderId.get(state.order_id) || null
+      productionByOrderId.get(state.order_id) || null,
+      changesByOrderId.get(state.order_id) || []
     )
   )
 

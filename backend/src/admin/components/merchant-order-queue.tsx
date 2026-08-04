@@ -52,6 +52,9 @@ export type MerchantOrder = {
 
   is_made_to_order: boolean;
   production_stage: string | null;
+
+  /** Czech reason dispatch is blocked (A2), or null when it is not. */
+  ship_block_reason: string | null;
 };
 
 export type MerchantOrdersResponse = {
@@ -271,6 +274,12 @@ export const OrderRow = ({
     },
   });
   const targetStage = nextStage[order.stage];
+  // The reason comes from the server, computed by the same rules the ship
+  // workflow enforces — so the button is hidden for exactly the orders the
+  // backend would reject, and the merchant is told why instead of being left
+  // to guess at a rejection toast.
+  const blockedFromShipping =
+    order.stage === "shipping" && Boolean(order.ship_block_reason);
 
   return (
     <article className="bg-ui-bg-base grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(0,1.3fr)_minmax(0,1fr)_160px_auto] lg:items-center">
@@ -316,6 +325,11 @@ export const OrderRow = ({
             {order.attention_reason || "Objednávka vyžaduje kontrolu"}
           </Text>
         )}
+        {blockedFromShipping && (
+          <Text size="small" className="text-ui-fg-error mt-1">
+            {order.ship_block_reason}
+          </Text>
+        )}
       </div>
 
       <div>
@@ -350,16 +364,18 @@ export const OrderRow = ({
         <Button variant="secondary" size="small" asChild>
           <Link to={`/orders/${order.order_id}`}>Otevřít objednávku</Link>
         </Button>
-        {targetStage && order.stage !== "payment_problem" && (
-          <Button
-            variant="primary"
-            size="small"
-            isLoading={transition.isPending}
-            onClick={() => transition.mutate(targetStage)}
-          >
-            {nextStageLabel[order.stage]}
-          </Button>
-        )}
+        {targetStage &&
+          order.stage !== "payment_problem" &&
+          !blockedFromShipping && (
+            <Button
+              variant="primary"
+              size="small"
+              isLoading={transition.isPending}
+              onClick={() => transition.mutate(targetStage)}
+            >
+              {nextStageLabel[order.stage]}
+            </Button>
+          )}
       </div>
     </article>
   );

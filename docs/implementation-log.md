@@ -870,3 +870,168 @@ skipped with a logged warning (by design) while the bell works.
 
 **Migrations: none, in any phase so far.** Nothing in Phase 0–2 adds a table, a
 column or an index.
+
+---
+
+## P3-1 — cancelled orders leave the queues   (2026-08-04)
+
+- Files: `backend/src/subscribers/reconcile-merchant-order.ts`.
+- Native used: the `order.canceled` event (`@medusajs/utils/dist/core-flows/events.js:149`).
+- Custom added: one handler on the existing reconciliation subscriber.
+- Deviations: none.
+- Gate: typecheck ✓ · build ✓ · tests: 55 passed.
+
+`cancelled` is an outcome rather than a queue (`MERCHANT_ORDER_ACTIVE_STAGES`
+excludes it), so reconciling to it is what actually removes the order from her
+day. Two stages are left alone: an already-cancelled order (the transition step
+no-ops anyway) and a shipped one — Medusa refuses to cancel an order with live
+fulfilments, so reaching that combination would mean something else is wrong,
+and un-shipping it would make the queue lie.
+
+---
+
+## P3-2, P3-3 — pagination, live refetch, backfill   (2026-08-04)
+
+- Files: `backend/src/admin/components/merchant-order-queue.tsx`,
+  `backend/src/admin/routes/denni-prace/page.tsx`,
+  `backend/src/api/admin/merchant-orders/backfill/route.ts` (new).
+- Native used: the module service's own paginated counts; `getOrdersListWorkflow`
+  for the backfill scan (the only source of the computed `payment_status` the
+  initial stage is derived from).
+- Custom added: a paginated queue, a status/run endpoint pair, a banner.
+
+Queues fetched 100 rows flat and never refreshed. They now page at 50 with the
+total in the header, refetch every 30 s and on window focus, and keep the
+previous page mounted while the next loads so the list does not collapse into
+skeletons on every click.
+
+Backfill covers orders placed before the merchant-order module existed: no stage
+row means invisible in every queue — safe, but indistinguishable from having no
+work. `GET` counts, `POST` creates. Both are idempotent (rows are only created
+for orders that have none, never updated), draft orders are skipped because
+completing one emits `order.placed` and takes the normal path, and a cancelled
+order backfills straight to the outcome stage instead of resurfacing in „Nové"
+years later.
+
+- Deviations: two paths instead of the plan's `backfill-status` + separate
+  endpoint — one path, two verbs. Verified safe against
+  `/admin/merchant-orders/:orderId`: `RoutesSorter` orders
+  global → wildcard → regex → **static** → params, so the static segment wins.
+  The banner lives on the Denní práce overview rather than all five stage pages,
+  because the check walks the order history and five scans for one answer is
+  waste.
+- Gate: typecheck ✓ · build ✓ · tests: 55 passed.
+
+---
+
+## P3-4, P3-5 — the A2 ship gate, the lock, and failure #10   (2026-08-04)
+
+- Files: `backend/src/lib/ship-gate.ts` (new),
+  `backend/src/lib/__tests__/ship-gate.unit.spec.ts` (new),
+  `backend/src/workflows/steps/assert-ship-gate.ts` (new),
+  `backend/src/workflows/ship-merchant-order.ts`,
+  `backend/src/api/admin/merchant-orders/projection.ts`,
+  `backend/src/api/admin/merchant-orders/route.ts`,
+  `backend/src/api/admin/merchant-orders/[orderId]/route.ts`,
+  `backend/src/api/admin/operations/summary/route.ts`,
+  `backend/src/admin/components/merchant-order-queue.tsx`.
+- Native used: `getEpsilonFromDecimalPrecision` + `defaultCurrencies` for the
+  tolerance, `order.summary.pending_difference`, the `order_change` entity, the
+  payment collections' own captured/refunded amounts, `acquireLockStep` /
+  `releaseLockStep`.
+- Custom added: the gate rules and the Czech reasons. Medusa has no opinion
+  about whether an order is paid *enough* to leave the workshop.
+
+### The rules are arithmetic, and that is the point
+
+`payment_status === "captured"` is a snapshot, and the made-to-order flow
+deliberately invalidates it: confirming a specification raises the total through
+a native Order Edit *after* the deposit was captured, so the status still says
+„captured" while the customer now owes more. Same after a partial refund. The
+gate therefore compares numbers, in this order:
+
+1. an open order change → blocked (checked first: every amount below would be
+   measured against a total that is about to move)
+2. captured − refunded ≥ payable total, within the currency's rounding error
+3. `summary.pending_difference` is not a real amount
+4. no payment collection still waiting for money
+5. commissions: nothing outstanding on the production order
+
+The tolerance is Medusa's own `getEpsilonFromDecimalPrecision(decimal_digits)`,
+so CZK forgives a haléř and a zero-decimal currency like JPY forgives nothing —
+rather than a hardcoded `0.005` that is wrong for both.
+
+### One rule set, three consumers
+
+`src/lib/ship-gate.ts` is pure — no container, no queries — because the same
+rules have to hold in places that cannot share a call stack: the ship workflow
+(here), the middleware on the native fulfilment route (P4-4, which exists
+precisely because `createOrderFulfillmentWorkflow` offers only a post-hoc hook),
+and the projection that decides whether the card even shows the button. Two
+copies of a money rule is how a shop ships something it was not paid for.
+
+The projection now carries `ship_block_reason`, computed by the same function,
+so the UI hides the action for exactly the orders the backend would reject —
+never one more, never one fewer — and tells her *why* instead of leaving her to
+discover it through a rejection toast.
+
+### The lock is safe to nest
+
+`shipMerchantOrderWorkflow` now holds `merchant-order:{id}` for its whole run, so
+a double click cannot start two fulfilment chains. That key is also taken by
+`transitionMerchantOrderWorkflow`, which this workflow runs as a sub-workflow —
+which would deadlock, except that `acquireLockStep` **skips itself when
+`parentStepIdempotencyKey` is set and `executeOnSubWorkflow` is not**
+(`acquire-lock.js:27-30`). The outer lock holds, the inner one stands down. The
+lock is also released by the step's compensation if anything throws, so a
+blocked or failed dispatch cannot leave the order wedged.
+
+### Failure #10
+
+A failed dispatch looks like success from across the workshop: the parcel is
+packed and the order looks handled, but nothing left. The PATCH route now
+catches, raises the urgent notification to `DEV_NOTIFICATION_EMAIL` and rethrows
+so the merchant still sees the real error. The key is per order per hour, so
+repeated clicking produces one alert rather than one per click while a failure
+that persists into the next hour is reported again. A notification problem is
+swallowed there on purpose — it must never replace the actual error.
+
+- Deviations: none. Both `getEpsilonFromDecimalPrecision` and
+  `summary.pending_difference` were verified present (the former in
+  `@medusajs/utils/dist/totals/big-number.js`, re-exported through
+  `@medusajs/framework/utils`; the latter is computed rather than a stored
+  column, which is why it does not appear as a literal in the order package).
+- Gate: typecheck ✓ · build ✓ (backend 6.63 s, admin 18.03 s) · tests: **78
+  passed** in 8 suites (23 new, the full §22 matrix plus A2's three named cases:
+  edited-after-capture, deposit-only capture, refund-then-reship).
+
+---
+
+### Phase 3 summary   (2026-08-04)
+
+**Done:** all five tasks. AC-3 is now provable numerically at the unit level; the
+UI-bypass half lands with P4-4's middleware.
+
+**Smoke checklist for Railway (after Matěj deploys this branch):**
+
+1. Cancel an order from the native page. It must disappear from its queue within
+   30 s (or on focus) rather than sitting in „Nové".
+2. With more than 50 orders in one stage, the queue pages at 50 and the header
+   shows the total. Paging must not flash skeletons.
+3. Open Denní práce. If older orders predate the queue, the banner appears —
+   click „Načíst", confirm the count, then confirm the banner is gone and
+   clicking again reports 0 created (idempotent).
+4. **The gate.** Take a paid order in K odeslání: the „Vytvořit zásilku a
+   odeslat" button is present. Then, on the native page, edit the order to
+   increase its total and go back — the button must be gone and the card must
+   say what is missing. `POST /admin/merchant-orders/:id` with
+   `{"stage":"shipped"}` via curl must be rejected with the same Czech reason.
+5. Ship a fully paid order and confirm on the native page that both a fulfilment
+   **and** a shipment exist and `fulfillment_status` is `shipped`.
+6. Double-click the ship button: exactly one shipment, no error.
+7. Force a dispatch failure (an order whose shipping method has no stock
+   location) and confirm the order stays in K odeslání, the toast carries the
+   real reason, and a bell entry „Zásilku se nepodařilo vytvořit" appears.
+
+**Open items:** unchanged — P0-1/P0-4 findings block Phase 4 and P6-6. **No
+migrations in Phase 3 either.**

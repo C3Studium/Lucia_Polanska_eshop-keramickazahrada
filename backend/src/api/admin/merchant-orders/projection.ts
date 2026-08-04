@@ -1,3 +1,4 @@
+import { evaluateShipGate } from "../../../lib/ship-gate"
 import { paymentProblemReason } from "../../../modules/merchant-order/payment-state"
 import type { MerchantOrderStage } from "../../../modules/merchant-order/stages"
 
@@ -34,6 +35,13 @@ export type MerchantOrderRow = {
 
   is_made_to_order: boolean
   production_stage: string | null
+
+  /**
+   * Why dispatch is blocked, in Czech, or `null` when it is not (A2).
+   * Computed server-side by the same rules the ship workflow enforces, so the
+   * card can never offer a button the backend would refuse.
+   */
+  ship_block_reason: string | null
 }
 
 const customerName = (order: any): string | null => {
@@ -64,12 +72,28 @@ const shippingMethod = (order: any): string | null => {
 export const toMerchantOrderRow = (
   state: any,
   order: any | null,
-  productionOrder: any | null
+  productionOrder: any | null,
+  orderChanges: any[] = []
 ): MerchantOrderRow => {
   // Medusa's payment status is authoritative. A stored flag can go stale (a payment that
   // succeeded after the order was flagged), so the derived signal wins and the stored one
   // only adds detail.
   const derivedReason = paymentProblemReason(order?.payment_status)
+
+  // The same verdict the ship workflow will reach, so the UI hides the action
+  // for exactly the orders the backend would reject — never one more, never one
+  // fewer. Only meaningful for orders that are still on their way out.
+  const gate =
+    order && !["shipped", "cancelled"].includes(state.stage)
+      ? evaluateShipGate({
+          currency_code: order.currency_code,
+          total: order.total,
+          summary: order.summary,
+          payment_collections: order.payment_collections || [],
+          order_changes: orderChanges,
+          production_order: productionOrder,
+        })
+      : { allowed: true, reason: null }
 
   return {
     id: state.id,
@@ -97,5 +121,7 @@ export const toMerchantOrderRow = (
 
     is_made_to_order: Boolean(productionOrder),
     production_stage: productionOrder?.stage ?? null,
+
+    ship_block_reason: gate.allowed ? null : gate.reason,
   }
 }

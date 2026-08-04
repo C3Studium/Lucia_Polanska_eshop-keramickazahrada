@@ -5,10 +5,13 @@ import {
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk"
 import {
+  acquireLockStep,
   createOrderFulfillmentWorkflow,
   createOrderShipmentWorkflow,
+  releaseLockStep,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
+import { assertShipGateStep } from "./steps/assert-ship-gate"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
 
 /**
@@ -46,16 +49,32 @@ const toNumber = (value: unknown): number => {
 export const shipMerchantOrderWorkflow = createWorkflow(
   "ship-merchant-order",
   (input: ShipMerchantOrderInput) => {
+    // The same lock the stage transition takes. Held for the whole run so a
+    // double click cannot start two fulfilment chains for one order — the
+    // second caller waits, then finds the goods already fulfilled and shipped.
+    const lockKey = transform(
+      input,
+      ({ order_id }) => `merchant-order:${order_id}`
+    )
+    acquireLockStep({ key: lockKey, timeout: 10, ttl: 120 })
+
     const orderQuery = useQueryGraphStep({
       entity: "order",
       fields: [
         "id",
         "status",
-        "items.id",
-        "items.quantity",
-        "items.requires_shipping",
+        "currency_code",
+        // `total` is derived from the item projection; `summary` and the
+        // payment collections are what the A2 gate does its arithmetic on.
+        "total",
+        "items.*",
         "items.detail.fulfilled_quantity",
         "items.detail.shipped_quantity",
+        "summary.*",
+        "payment_collections.status",
+        "payment_collections.amount",
+        "payment_collections.captured_amount",
+        "payment_collections.refunded_amount",
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",
@@ -63,6 +82,48 @@ export const shipMerchantOrderWorkflow = createWorkflow(
       filters: { id: input.order_id },
       options: { throwIfKeyNotFound: true },
     }).config({ name: "ship-merchant-order-get-order" })
+
+    // Read-only module links are uni-directional: a production order can only be
+    // reached *from* `production_order`, never from the order.
+    const productionQuery = useQueryGraphStep({
+      entity: "production_order",
+      fields: [
+        "id",
+        "order_id",
+        "agreed_total",
+        "original_total",
+        "payment_requests.status",
+        "payment_requests.amount",
+      ],
+      filters: { order_id: input.order_id },
+    }).config({ name: "ship-merchant-order-get-production" })
+
+    // Order changes are their own entity — an edit in flight means the total is
+    // not settled yet, whatever `payment_status` currently claims.
+    const orderChangeQuery = useQueryGraphStep({
+      entity: "order_change",
+      fields: ["id", "status"],
+      filters: { order_id: input.order_id },
+    }).config({ name: "ship-merchant-order-get-order-changes" })
+
+    const gateInput = transform(
+      { orderQuery, productionQuery, orderChangeQuery },
+      ({ orderQuery, productionQuery, orderChangeQuery }) => {
+        const order = (orderQuery.data || [])[0] as any
+        return {
+          currency_code: order?.currency_code,
+          total: order?.total,
+          summary: order?.summary,
+          payment_collections: order?.payment_collections || [],
+          order_changes: (orderChangeQuery.data || []) as any[],
+          production_order: ((productionQuery.data || [])[0] as any) ?? null,
+        }
+      }
+    )
+
+    // Before anything native is touched, so a blocked order has nothing to
+    // compensate: no fulfilment, no inventory movement, no stage change.
+    assertShipGateStep(gateInput)
 
     const plan = transform({ orderQuery }, ({ orderQuery }) => {
       const order = (orderQuery.data || [])[0] as any
@@ -157,6 +218,8 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         changed_by: input.created_by ?? null,
       },
     })
+
+    releaseLockStep({ key: lockKey })
 
     return new WorkflowResponse(state)
   }
