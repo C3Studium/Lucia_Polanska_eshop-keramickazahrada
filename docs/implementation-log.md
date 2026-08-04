@@ -391,3 +391,87 @@ dashboard accepts, and neither has children — so they do not hit the
 /sklad-vyprodano          rank 20  nested /inventory
 + 5 Denní práce children, 2 Zakázková výroba children
 ```
+
+---
+
+## P1-4 — sidebar default layout payload   (2026-08-04)   apply is Matěj's
+
+- Files: `backend/scripts/set-sidebar-order.md` (rewritten for the §2.2 target).
+- Native used: `POST /admin/layouts/sidebar/configuration` — the Layout
+  Configuration mechanism, which is the only thing that can interleave native and
+  extension sidebar items (§2.1).
+- Custom added: none. Nav ordering stays out of code entirely.
+
+### Id schemes verified in installed source (one plan detail sharpened)
+
+- Top level: `core:nav:${path}`. `SidebarRoutes` renders
+  `<LayoutComposer.Entry id={`nav:${route.to}`}>` and `buildCoreEntries`
+  (`chunk-Z3OGJXAM.mjs`) prefixes every entry key with `core:`.
+- Children: **`nav-child:${parentPath}:${childPath}`, with no `core:` prefix** —
+  children are not composer entries at all. `NavSubItems` builds the id itself
+  (`childId = (to) => \`nav-child:${parentTo}:${to}\``) and reads
+  `activePreference.widgets[id]` directly through `isHidden` / `orderChildren`.
+  Both segments are full paths, so a Denní práce child is
+  `nav-child:/denni-prace:/denni-prace/nove` — not a bare slug.
+- Native children come from the hardcoded `useCoreRoutes()` array: `/products` →
+  `/collections`, `/categories`, `/product-options`; `/inventory` →
+  `/reservations`; `/customers` → `/customer-groups`; `/promotions` →
+  `/campaigns`; `/orders` → **none** (the draft-orders entry is commented out
+  upstream; the plugin's item is pushed in via its `nested: "/orders"`).
+- The validator accepts free-form keys (`z.record(z.string(), { hidden?,
+  section?, order? })`), so an id for a route that does not exist yet is stored
+  and ignored until it does.
+- `Nastavení` is rendered by `UtilitySection`, outside the composer zone, so it
+  cannot be reordered or hidden by this payload — which is exactly what §2.2
+  wants (Settings untouched, AC-10).
+
+The payload was checked by parsing it as JSON: 32 entries, top-level order
+matching §2.2 exactly, `/price-lists`, `/sanity`, `/segment` hidden plus the
+native Kolekce/Kategorie children.
+
+- Deviations: `core:nav:/prehled` is included although P2-3 has not built that
+  page yet. Harmless (inert until the route exists) and it means the payload is
+  the final one rather than something to redo. Documented in the file.
+- Gate: typecheck ✓ · build ✓ (backend 6.03 s, admin 18.76 s) · tests: 25 passed.
+- Notes for Matěj: **applying is yours** — `is_default: true` rewrites the
+  sidebar for every admin user (§7.1). Staging first. The doc also records an
+  open cosmetic decision about the plugin's English „Drafts" label with two
+  options and a recommendation to leave it for now; your call, nothing depends
+  on it.
+
+---
+
+### Phase 1 summary   (2026-08-04)
+
+**Done:** P1-1 (settings accessor — and A3's preferred storage held, so the
+plan's only migration no longer exists), P1-2 (Zakázková výroba promoted to a
+top-level section, old URL redirects), P1-3 (Sklad children, reviews tabs,
+seasonal-selection overview), P1-4 (sidebar payload written; applying is Matěj's).
+
+Test infrastructure now exists: `pnpm test:unit`, 25 tests across 4 suites.
+The gate from here on is **typecheck + build + test:unit**.
+
+**Smoke checklist for Railway (after Matěj deploys this branch):**
+
+1. Service boots — no new required env, so a boot failure would be unrelated.
+   `GET /health` = 200.
+2. Sidebar shows **Zakázková výroba** with two children (Zakázky, Produkty na
+   zakázku), and **Sklad** now has Nízký stav and Vyprodáno under it. „Výroba na
+   zakázku" is gone from under Produkty.
+3. Open `/app/made-to-order` — it must redirect to
+   `/app/zakazkova-vyroba/produkty`, and the profile manager must work exactly as
+   before (open a product, edit deposit %, save).
+4. Recenze shows three tabs, „Čekají na schválení" selected. Switch tabs and
+   confirm the list changes and pagination resets. Approve one review from the
+   pending tab and confirm it moves to „Schválené". No ID column anywhere.
+5. Sezónní výběry loads. If selections exist they appear under the right tab
+   (check one whose `ends_at` has passed — it belongs under Archivované even if
+   its status still says published).
+6. Apply the sidebar payload from `backend/scripts/set-sidebar-order.md` on
+   staging, log in as a **second** admin user and confirm the §2.2 order and the
+   hidden sections. Then production.
+7. Nothing under Nastavení changed — spot-check one settings page.
+
+**Open items:** P0-1/P0-4 findings still needed (blocks Phase 4 and P6-6). The
+„Drafts" label decision is open. `/prehled` appears in the sidebar payload but
+the page itself lands in P2-3.
