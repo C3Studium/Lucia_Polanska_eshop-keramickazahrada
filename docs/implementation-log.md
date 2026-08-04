@@ -735,3 +735,62 @@ window focus, since this page sits open on a workbench all day.
   exclusions — which also pre-satisfies P7-1's listed tests).
 - Notes for Matěj: still **no migrations**. `/prehled` now exists, so the
   `core:nav:/prehled` entry in the sidebar payload is no longer inert.
+
+---
+
+## P2-4 — failed-e-mail visibility   (2026-08-04)
+
+- Files: `backend/src/api/admin/operations/emails/route.ts` (new),
+  `backend/src/api/admin/notifications/[id]/retry/route.ts` (new),
+  `backend/src/jobs/watch-failed-emails.ts` (new),
+  `backend/src/admin/routes/prehled/emaily/page.tsx` (new).
+- Native used: the notification module's records and `createNotifications`; the
+  model's own `original_notification_id` column for chaining retries.
+- Custom added: a list endpoint, a retry endpoint, a poller and a page.
+
+### Why the list is not the native route
+
+§22 suggests filtering the native `GET /admin/notifications`. Its validator
+accepts `q`, `id`, `channel` and `to` — and nothing else, so there is no way to
+ask it for the failures, which is the only question this page exists to answer.
+`GET /admin/operations/emails?status=failure` does that instead; the rows are
+the native records, only filtered and flattened.
+
+### Retry semantics
+
+A retry is a **new** notification pointing at the original through
+`original_notification_id`, with a suffixed key (`…:r2`, `…:r3`). Re-sending
+under the original key would work — the module retries a key whose previous
+attempt failed — but it would overwrite the failure record and destroy the
+evidence that anything went wrong.
+
+The retry responds `{ sent: false, message }` with the provider's own words
+rather than an HTTP error, and the page shows that message verbatim. This is
+deliberate: **the failure reason is not stored anywhere.** The notification model
+has `status` but no error column, so after the fact the only places the reason
+exists are the server log and what a fresh attempt reports. „Nepodařilo se"
+alone would not tell anyone whether it is a bad address or an expired API key.
+
+### The poller
+
+15-minute schedule, 90-minute lookback — comfortably wider than the interval, so
+a missed run or a restart cannot leave a failure permanently unreported, and the
+per-notification dedupe key (`mn:emailfail:{id}`) makes the overlap free. It is
+a poller and not a subscriber because the module records the failure inside
+`createNotifications` and emits no event for it. Routed to
+`DEV_NOTIFICATION_EMAIL` (D7): a delivery failure is a technical problem, and
+the person who can fix an unverified sending domain is Matěj.
+
+### Verified in the built bundle
+
+`/prehled/emaily` registers as a **route with no menu item** (§22: reached from
+the Přehled tile, not the sidebar), and the renumbered ranks come out as
+Přehled 0, Denní práce 10, Zakázková výroba 20, Recenze 30, Sezónní výběry 40.
+
+- Deviations: the list endpoint is custom rather than the native notifications
+  route, for the reason above. Recorded because §22 assumed otherwise.
+- Gate: typecheck ✓ · build ✓ (backend 5.31 s, admin 16.23 s) · tests: 55 passed.
+- Notes for Matěj: this closes the loop you asked for — a failed Resend call is
+  now recorded as a failure (P2-2b), surfaced on Přehled and on this page, sent
+  to your address as an urgent notification, and retryable with the real reason
+  shown if it fails again. Still **no migrations**.
