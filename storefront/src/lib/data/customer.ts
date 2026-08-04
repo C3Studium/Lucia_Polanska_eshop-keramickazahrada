@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { toCzechErrorMessage } from "@lib/util/error-messages"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -165,7 +166,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
           phone: customerForm.phone,
         })
         if (!deleteRes.success) {
-          return "Failed to delete guest account. Please try again."
+          return "Účet se nepodařilo připravit k registraci. Zkuste to prosím znovu."
         }
         // Proceed with standard signup
       } else if (
@@ -175,11 +176,11 @@ export async function signup(_currentState: unknown, formData: FormData) {
         // Restore deleted customer, but do NOT log in
         const restoreRes = await restoreCustomer(existingCustomer.id)
         if (!restoreRes || restoreRes.success === false) {
-          return restoreRes?.message || "Failed to restore deleted account."
+          return toCzechErrorMessage(restoreRes?.message)
         }
-        return "Your account has been restored. If you don't remember your password, please reset it."
+        return "Váš účet jsme obnovili. Pokud si nepamatujete heslo, nechte si ho prosím zaslat znovu."
       } else {
-        return "An account with this email already exists."
+        return "Účet s tímto e-mailem už existuje. Zkuste se prosím přihlásit."
       }
     }
 
@@ -248,18 +249,18 @@ export async function login(_currentState: unknown, formData: FormData) {
     if (error?.response) {
       try {
         const data = await error.response.json()
-        return data?.message || JSON.stringify(data)
+        return toCzechErrorMessage(data?.message)
       } catch {
-        return error.response.statusText || "Unknown error"
+        return toCzechErrorMessage(error.response.statusText)
       }
     }
-    return error?.message || error?.toString() || "Unknown error"
+    return toCzechErrorMessage(error?.message ?? error?.toString())
   }
 
   try {
     await transferCart()
   } catch (error: any) {
-    return error?.message || error?.toString() || "Unknown error"
+    return toCzechErrorMessage(error?.message ?? error?.toString())
   }
 
   if (redirectTo) {
@@ -411,7 +412,6 @@ export async function getCustomerByEmail(
   const headers = {
     ...(await getAuthHeaders()),
   }
-  console.log("Fetching customer by email:", email)
 
   return await sdk.client
     .fetch<{ customer: HttpTypes.StoreCustomer }>(
@@ -448,7 +448,7 @@ export async function resendVerification(
     return { success: true, message: res.message }
   } catch (e: any) {
     // If sdk.client.fetch throws, try to extract the error message
-    return { success: false, message: e?.message || "Failed to resend email." }
+    return { success: false, message: toCzechErrorMessage(e?.message) }
   }
 }
 
@@ -472,7 +472,6 @@ export async function deleteCustomer({
     ...(await getAuthHeaders()),
   }
 
-  console.log("Upgrading guest account for email:", email)
   console.log("Headers:", headers)
 
   try {
@@ -494,10 +493,9 @@ export async function deleteCustomer({
 
     return { success: true, message: response.message }
   } catch (error: any) {
-    console.log("Upgrade error:", error)
     return {
       success: false,
-      message: error?.message || "Failed to upgrade account.",
+      message: toCzechErrorMessage(error?.message),
     }
   }
 }
@@ -535,7 +533,7 @@ export async function verifyCustomerEmail(token: string, email: string) {
 
     return result
   } catch (e: any) {
-    return { ok: false, message: e?.message || "Verification failed." }
+    return { ok: false, message: toCzechErrorMessage(e?.message) }
   }
 }
 
@@ -551,7 +549,7 @@ export async function restoreCustomer(customerId: string) {
   } catch (e: any) {
     return {
       success: false,
-      message: e?.message || "Failed to restore account.",
+      message: toCzechErrorMessage(e?.message),
     }
   }
 }
@@ -579,7 +577,7 @@ export async function deleteAccount(): Promise<{
   } catch (e: any) {
     return {
       success: false,
-      message: e?.message || "Failed to delete account.",
+      message: toCzechErrorMessage(e?.message),
     }
   }
 }

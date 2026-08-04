@@ -635,3 +635,51 @@ work (P1 item 1.3), noted there rather than fixed globally here.
   variants add fine.
 
 ---
+
+## A8 — Czech error layer over the data layer (spec §14 P0 item 0.8)
+
+**Files**
+
+- `src/lib/util/error-messages.ts` — **new**: the mapping table and `toCzechErrorMessage()`.
+- `src/lib/constants/contact.ts` — **new**: `SUPPORT_EMAIL` / `SUPPORT_PHONE`, importable from
+  client code (the merchant identity module is `server-only`, so it cannot serve this).
+- `src/lib/util/medusa-error.ts` — translates instead of capitalising.
+- `src/lib/data/customer.ts`, `cart.ts`, `products.ts` — the paths that returned English
+  directly, bypassing `medusaError`.
+
+**What / why.** `medusaError` capitalised the backend's English and rethrew it, so
+*"Cart with id cart_01ABC was not found."* and *"Insufficient inventory for variant"* reached a
+Czech customer mid-checkout. Every `@lib/data` call funnels through this one function, so
+translating here covers the whole surface — which is exactly why the spec puts the layer here.
+
+`toCzechErrorMessage()` matches token sets (all tokens must appear, most specific rules first)
+across stock, shipping, cart, payment, account, address, discount and transport failures.
+Two properties worth stating:
+
+- **Already-Czech messages pass through untouched**, detected by diacritics — so a translated
+  backend response is never mangled by a partial English match.
+- **Unmapped errors never leak.** They become "Něco se nepovedlo. Zkuste to prosím znovu, nebo
+  nám napište na info@keramickazahrada.cz." — what to do next, not what went wrong.
+
+Several `@lib/data` functions returned English strings *without* going through `medusaError`
+("Failed to add to cart", "Unknown error", "Verification failed.", "Failed to upgrade account.").
+Those now call the mapper directly. Three `console.log`s in `customer.ts` that printed customer
+e-mail addresses went with them.
+
+`medusaError` also stopped logging response **headers** — they carry auth tokens — and now logs
+one line with status, URL and the raw message for us, while the customer gets the translation.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- The table was exercised standalone against messages **this backend actually returned today**,
+  including the two real failures found in A7: the stock-location error and
+  "Shipping options with IDs … do not have a price". 9 of 11 cases mapped; "An unknown error
+  occurred." and an empty message correctly fell back; an already-Czech message passed through.
+
+**Notes for Matěj**
+
+- The table is a starting set. As real failures show up in production, add rules — one entry per
+  pattern in `error-messages.ts`, nothing else to touch.
+
+---

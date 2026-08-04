@@ -14,6 +14,7 @@ import {
   setCartId,
 } from "./cookies"
 import { getRegion } from "./regions"
+import { toCzechErrorMessage } from "@lib/util/error-messages"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -165,7 +166,7 @@ export async function addToCart({
     return { success: true }
   } catch (e: any) {
     // Normalize Medusa error messages
-    const message = e?.message || "Failed to add to cart"
+    const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
 }
@@ -254,7 +255,7 @@ export async function setShippingMethod({
 
     return { success: true }
   } catch (e: any) {
-    const message = e?.message || "Failed to set shipping method"
+    const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
 }
@@ -277,7 +278,7 @@ export async function initiatePaymentSession(
     if (cartCacheTag) revalidateTag(cartCacheTag)
     return { success: true, data: resp }
   } catch (e: any) {
-    const message = e?.message || "Failed to initiate payment session"
+    const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
 }
@@ -319,7 +320,7 @@ export async function capturePayment({
 
     return { success: !!res.ok, data: res.data, message: res.message }
   } catch (e: any) {
-    const message = e?.message || "Failed to capture payment"
+    const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
 }
@@ -356,7 +357,7 @@ export async function initComgateMetadata({
     if (cartCacheTag) revalidateTag(cartCacheTag)
     return { success: true }
   } catch (e: any) {
-    return { success: false, message: e?.message || "Failed to init Comgate metadata" }
+    return { success: false, message: toCzechErrorMessage(e?.message) }
   }
 }
 

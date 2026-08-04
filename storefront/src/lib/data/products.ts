@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 import { StoreProductReview } from "../../types/global"
+import { toCzechErrorMessage } from "@lib/util/error-messages"
 
 export type BundleProduct = {
   id: string
@@ -341,7 +342,7 @@ export const addProductReview = async (input: {
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(data?.message || "Failed to create review")
+    throw new Error(toCzechErrorMessage(data?.message))
   }
 
   return res.json()
