@@ -11,14 +11,18 @@ import type {
 /**
  * Česká pošta / Balíkovna fulfilment provider (WorkflowPlan.md D8, P4-1).
  *
- * ## Why the module keeps its old name
+ * ## Naming, and what the admin actually shows
  *
- * The identifier stays `ceska-posta-fulfillment` deliberately. The live
- * shipping option `so_01K2JNAER4GEGP0R011HC37PWS` carries
- * `provider_id = "ceska-posta-fulfillment_ceska-posta-fulfillment"` (P0-1), and
- * changing the identifier would orphan it — every existing option would have to
- * be repointed in production. The name is historical; the provider is now
- * Balíkovna-aware.
+ * The `identifier` here is only half of the composite provider id — the other
+ * half is the registration id in `medusa-config.js`, which is set to
+ * `balikovna`. That matters because **the dashboard has no display name for a
+ * provider**: `formatProvider` splits the composite id on `_` and shows the
+ * *second* segment. With both halves equal the admin read
+ * „Ceska Posta Fulfillment"; it now reads „Balikovna".
+ *
+ * The identifier itself stays `ceska-posta-fulfillment` because the module
+ * directory, its migrations and its module key are all named that, and renaming
+ * them buys nothing the registration id has not already bought.
  *
  * ## What it replaces
  *

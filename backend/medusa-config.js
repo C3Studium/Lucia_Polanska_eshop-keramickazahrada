@@ -134,11 +134,17 @@ const medusaConfig = {
       options: {
         providers: [
           {
-            // Named for Česká pošta but Balíkovna-aware (D8). The id must stay
-            // as it is: the live shipping option's provider_id is derived from
-            // it, and changing it would orphan that option in production.
+            // The registration id is what the admin *displays*: the dashboard
+            // has no name field for a provider and derives the label from the
+            // second segment of `<identifier>_<id>` (`formatProvider`). With
+            // both segments equal it read "Ceska Posta Fulfillment"; `balikovna`
+            // makes it read "Balikovna".
+            //
+            // This changes the composite provider_id, so the existing
+            // "Česká pošta" shipping option has to be re-pointed at the provider
+            // once — see docs/TODO-carrier-account.md.
             resolve: "./src/modules/ceskaPostaFulfillment",
-            id: "ceska-posta-fulfillment",
+            id: "balikovna",
             options: {
               api_url: BALIKOVNA_API_URL,
               api_token: BALIKOVNA_API_TOKEN,

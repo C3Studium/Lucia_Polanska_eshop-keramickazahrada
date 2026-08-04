@@ -4,6 +4,26 @@
 **Blocks:** P4-2 only. Everything else ships today; shipping already works
 without it, in record-only mode.
 
+## ⚠ One admin action needed after the next deploy
+
+The provider now registers as `balikovna`, so the admin shows it as
+**„Balikovna"** instead of „Ceska Posta Fulfillment". The dashboard has no
+display name for a provider — it derives the label from the composite id
+`<identifier>_<registration id>` and shows the second segment — so the
+registration id is the only way to control it.
+
+That changes the composite provider id from
+`ceska-posta-fulfillment_ceska-posta-fulfillment` to
+`ceska-posta-fulfillment_balikovna`, which means:
+
+**The existing „Česká pošta" shipping option (`so_01K2JNAER4GEGP0R011HC37PWS`)
+must be re-pointed at the provider once** — Settings → Locations & Shipping →
+edit the option → pick **Balikovna** and its fulfilment option. Or delete and
+recreate it, which you may be doing anyway alongside removing Zásilkovna.
+
+Until that is done, fulfilling an order on that option fails: its `provider_id`
+no longer resolves to a registered provider.
+
 ## What to ask for at the meeting
 
 A **B2B profile with nAPI (`B2BZasilka`) access**, from the ČP sales rep.
