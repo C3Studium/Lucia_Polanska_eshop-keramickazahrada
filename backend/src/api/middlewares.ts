@@ -30,6 +30,7 @@ import {
 import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
+import { PostProductionPaymentModeSchema } from "./store/carts/[id]/production-payment-mode/route";
 
 // Debug middleware to log incoming requests
 const debugAuthMiddleware = () => {
@@ -182,6 +183,11 @@ export default defineMiddlewares({
           defaults: [],
         }),
       ],
+    },
+    {
+      matcher: "/store/carts/:id/production-payment-mode",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostProductionPaymentModeSchema)],
     },
     {
       matcher: "/store/carts/:id/line-item-bundles",

@@ -83,17 +83,37 @@ call separately.
   „Nabídnout zaplacení celé částky" — some pieces she may not want prepaid at
   all.
 
-## Open questions for Matěj
+## Decisions
 
-1. **Refunds.** Someone who paid 6 000 Kč up front and cancels in week two is
-   owed more than a deposit refund. D3 says deposit refunds are decided per
-   case; does the same hold for a full prepayment, or should that always be
-   refunded in full?
-2. **Discount.** Prepaying is a favour to the shop — worth 5 %? That is a real
-   business decision, not a technical one, and it changes the checkout copy.
-3. **Does the choice survive a price change?** If she raises the price at
-   specification confirmation, does a „paid in full" customer get a balance
-   request like anyone else (recommended), or does she absorb it?
+**1. Refunds — DECIDED (Matěj, 2026-08-04).** A refund is capped at **the amount
+that actually arrived**, never more. A customer who prepaid in full and cancels
+gets the full prepayment back; one who paid only a deposit gets the deposit
+back. Whether to refund at all remains her call per D3 — this fixes the
+*amount*, not the decision.
+
+Implementation note: this needs no special case. „Refund what was paid" is
+already what the ComGate refund on the native order page does, and the cancel
+dialog already names the paid figure.
+
+**2. Discount for prepaying — OPEN, deferred.** Matěj will ask the client.
+Nothing is built for it: prepaying currently costs the same as paying a deposit.
+If a discount is wanted later it belongs in the cart calculation, not in the
+production profile, because it changes the order total rather than the payment
+schedule — and the checkout copy would need to state it.
+
+**3. Price rises after a full prepayment — OPEN, deferred.** Matěj will ask the
+client. **Implemented default: the customer is treated like anyone else** — the
+raised total leaves an outstanding balance and the normal „Požádat o doplatek"
+flow applies.
+
+That default was chosen because it is the behaviour that needs *no* code: a full
+prepayment is stored as a deposit equal to the total, so when the total rises,
+`agreed_total − paid` simply becomes positive and every existing surface — the
+ship gate, the Zakázky bar, the Přehled tile — reacts correctly on its own. The
+alternative (the shop absorbs the difference) would need a new branch in each of
+them, and a missed branch is a way to ship an unpaid order. If the client wants
+absorption, the cheapest honest version is for her to lower the agreed price
+back down, which is one existing action rather than new logic.
 
 ## Sequencing
 

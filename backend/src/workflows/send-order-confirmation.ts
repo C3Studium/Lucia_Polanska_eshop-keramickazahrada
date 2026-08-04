@@ -1,5 +1,7 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
+import { balancePaymentUrl } from "../lib/balance-payment-link";
+import { resolveBalanceStep } from "./steps/resolve-balance";
 import { sendNotificationStep } from "./steps/send-notification";
 
 type WorkflowInput = {
@@ -48,17 +50,32 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // "object is not a function" while the module is still being imported,
     // which takes the whole server down at boot. Property access
     // (`orders[0].email`) is fine; string building is not.
-    const notificationData = transform({ id, orders }, ({ id, orders }) => [
-      {
-        to: orders[0].email,
-        channel: "email",
-        template: "order-placed",
-        idempotency_key: `order-placed:${id}`,
-        data: {
-          order: orders[0],
+    // Whether this order still owes money, and how much. A commission paid
+    // only as a deposit does; one paid in full does not, and must not be shown
+    // a "pay the rest" button for zero.
+    const balance = resolveBalanceStep({ order_id: id })
+
+    const notificationData = transform(
+      { id, orders, balance },
+      ({ id, orders, balance }) => [
+        {
+          to: orders[0].email,
+          channel: "email",
+          template: "order-placed",
+          idempotency_key: `order-placed:${id}`,
+          data: {
+            order: orders[0],
+            balance_due: balance.outstanding,
+            balance_currency: balance.currency_code,
+            // Signed, so the customer can pay from the e-mail without an
+            // account. Absent when nothing is owed.
+            balance_payment_url: balance.outstanding > 0
+              ? balancePaymentUrl(id)
+              : null,
+          },
         },
-      },
-    ])
+      ]
+    )
 
     const notification = sendNotificationStep(notificationData)
 

@@ -47,6 +47,7 @@ type MadeToOrderProduct = {
   default_deposit_percentage: number;
   contact_customer_after_order: boolean;
   allow_final_price_adjustment: boolean;
+  allow_full_prepayment: boolean;
   variants?: VariantProfile[];
 };
 
@@ -105,6 +106,7 @@ const toDraft = (product: MadeToOrderProduct): ProductDraft => ({
   contact_customer_after_order: product.contact_customer_after_order !== false,
   allow_final_price_adjustment:
     product.allow_final_price_adjustment !== false,
+  allow_full_prepayment: product.allow_full_prepayment !== false,
   variants: (product.variants || []).map((variant) => ({ ...variant })),
 });
 
@@ -360,6 +362,26 @@ const ProductSettingsDrawer = ({
                     }
                   />
                 </label>
+                <label className="bg-ui-bg-subtle shadow-borders-base flex cursor-pointer items-center justify-between gap-4 rounded-lg p-4">
+                  <span>
+                    <Text size="small" weight="plus">
+                      Nabídnout zaplacení celé částky
+                    </Text>
+                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                      Zákazník si v košíku může vybrat, jestli zaplatí jen zálohu,
+                      nebo rovnou všechno. Pak už doplatek neřešíte.
+                    </Text>
+                  </span>
+                  <Switch
+                    checked={draft.allow_full_prepayment}
+                    onCheckedChange={(allowFullPrepayment) =>
+                      setDraft((current) => ({
+                        ...current,
+                        allow_full_prepayment: allowFullPrepayment,
+                      }))
+                    }
+                  />
+                </label>
               </div>
             </section>
 
@@ -495,6 +517,7 @@ const AddProductDrawer = () => {
           production_time_max_days: 42,
           contact_customer_after_order: true,
           allow_final_price_adjustment: true,
+          allow_full_prepayment: true,
         },
       }),
     onSuccess: async () => {

@@ -19,6 +19,7 @@ type ProfileInput = {
   default_deposit_percentage?: number
   contact_customer_after_order?: boolean
   allow_final_price_adjustment?: boolean
+  allow_full_prepayment?: boolean
   variants?: VariantProfileInput[]
 }
 
@@ -102,6 +103,7 @@ export const PATCH = async (
     default_deposit_percentage: input.default_deposit_percentage ?? 25,
     contact_customer_after_order: input.contact_customer_after_order ?? true,
     allow_final_price_adjustment: input.allow_final_price_adjustment ?? true,
+    allow_full_prepayment: input.allow_full_prepayment ?? true,
   }
   const profile = existing[0]
     ? await service.updateProductProductionProfiles({

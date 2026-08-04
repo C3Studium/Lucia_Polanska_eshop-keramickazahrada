@@ -1375,3 +1375,96 @@ Details that matter:
   and the overdue badge (P6-5).
 - Gate: typecheck ✓ · build ✓ (backend 5.31 s, admin 15.68 s) · tests: 149
   passed in 10 suites.
+
+---
+
+## F1 — pay a commission in full up front   (2026-08-04)   **HAS A MIGRATION**
+
+Built from `docs/plan-pay-in-full-for-commissions.md` after Matěj answered the
+refund question. Backend, database and e-mail only — the storefront *design* is
+his, but everything it needs to call now exists.
+
+- Files: `src/modules/made-to-order/models/product-production-profile.ts`,
+  `src/modules/made-to-order/migrations/Migration20260804120000.ts` (new),
+  `src/lib/balance-payment.ts` (new), `src/lib/balance-payment-link.ts` (new),
+  `src/lib/__tests__/balance-payment-link.unit.spec.ts` (new),
+  `src/workflows/steps/resolve-balance.ts` (new),
+  `src/workflows/prepare-made-to-order-payment.ts`,
+  `src/workflows/send-order-confirmation.ts`,
+  `src/api/store/carts/[id]/production-payment-mode/route.ts` (new),
+  `src/api/store/made-to-order/[orderId]/pay-balance/route.ts` (new),
+  `src/api/admin/made-to-order/products/[productId]/route.ts`,
+  `src/admin/routes/zakazkova-vyroba/produkty/page.tsx`,
+  `src/modules/resend/emails/order-placed.tsx`, `src/api/middlewares.ts`.
+
+### ⚠ Migration — the first one in this whole effort
+
+`Migration20260804120000` adds `allow_full_prepayment` (boolean, default
+`true`) to `product_production_profile`. **Written by hand**, because
+`medusa db:generate` diffs against a live database and production is only
+reachable from inside Railway. The statement is
+`add column if not exists … default true`, so it is idempotent and safe to
+re-run — which the deploy does on every boot.
+
+Default `true` means every existing commission gains the option without anyone
+editing products one at a time; she turns it off per product where taking six
+weeks of money up front is not something she wants.
+
+### How „paid in full" is represented — the decision that carries the feature
+
+**As a deposit of 100 %, not as a flag.** `prepare-made-to-order-payment`
+already computes a deposit percentage per line; when the cart asks to pay in
+full it uses 100 instead of the profile's figure. Everything downstream —
+`agreed_total − paid`, the A2 ship gate, the Zakázky bar, the „Čeká na doplatek"
+tile, the `complete_production` branch that picks `ready_to_ship` over
+`awaiting_balance` — is already derived from that sum, so **not one of them
+needed a new branch**. A `paid_in_full` boolean would have had to be honoured in
+each, and the one that got missed would have been a way to ship something
+unpaid.
+
+It also gives decision 3 for free: if she later raises the agreed price, the sum
+goes positive again and the ordinary balance flow resumes on its own.
+
+### The customer's side
+
+- `GET|POST /store/carts/:id/production-payment-mode` — reads and sets the
+  choice on `cart.metadata`. The GET returns both amounts and
+  `can_pay_full`, so checkout never does deposit arithmetic itself; two
+  implementations would drift and the customer would be shown a number they are
+  not charged. „Pay everything" is offered only when *every* commission in the
+  basket allows it — mixed permission would mean a button that does not do what
+  it says.
+- `GET /store/made-to-order/:orderId/pay-balance?token=…` — the e-mail button.
+  A mail client can only send a plain GET with no credentials, so the link
+  carries an HMAC of the order id under the server's own secret: unguessable, no
+  new column, and useless against a different order. It redirects **straight to
+  ComGate**, so inbox to payment page is one click.
+
+  A side-effecting GET is a deliberate trade — it is the only shape an e-mail
+  button has. It is safe because the effect is idempotent: an open request or
+  collection is reused, so a prefetching mail client or three impatient clicks
+  all land on the same payment. Failures redirect to the storefront with a
+  reason rather than showing an API error to somebody who was trying to pay.
+
+### One implementation of the balance link, not two
+
+She can now create a balance link from the admin and the customer can create one
+from an e-mail. Two implementations would mean two payment collections for one
+balance — and a customer able to pay twice, with the second payment attached to
+nothing. The reuse rules therefore live once in `src/lib/balance-payment.ts`
+(`ensureBalancePaymentLink`), which both doors call.
+
+### E-mail
+
+The order-placed confirmation now carries „Zbývá doplatit {X}" and a **Doplatit**
+button, shown **only when something is genuinely owed** — a commission paid in
+full at checkout must never be asked for more, and an ordinary order never
+reaches that branch at all.
+
+- Deviations: none from the plan doc; decisions 2 and 3 there remain open and
+  are marked as such, with the implemented default recorded.
+- Gate: typecheck ✓ · build ✓ (backend 5.52 s, admin 15.91 s) · tests: **155
+  passed** in 11 suites (6 new, covering token forgery and cross-order reuse).
+- Notes for Matěj: **this deploy migrates.** Railway runs `db:migrate` before
+  start, so the column is added on the way up. Nothing else in Phases 0–4
+  touched the schema.

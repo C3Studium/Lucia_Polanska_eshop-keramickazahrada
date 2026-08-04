@@ -76,6 +76,7 @@ const calculateMadeToOrderPaymentStep = createStep(
         "id",
         "total",
         "currency_code",
+        "metadata",
         "items.id",
         "items.product_id",
         "items.variant_id",
@@ -93,6 +94,13 @@ const calculateMadeToOrderPaymentStep = createStep(
     }
 
     const items = Array.isArray(cart.items) ? cart.items : []
+
+    // The customer's choice at checkout. Per cart rather than per product: a
+    // cart can mix a commission with ordinary stock, and „pay everything now"
+    // is one decision about the whole basket.
+    const payFullRequested =
+      (cart.metadata as Record<string, unknown> | null)
+        ?.production_payment_mode === "full"
     const productIds = [...new Set(items.map((item: any) => item.product_id).filter(Boolean))]
     const variantIds = [...new Set(items.map((item: any) => item.variant_id).filter(Boolean))]
     const [productProfiles, variantProfiles] = await Promise.all([
@@ -124,17 +132,29 @@ const calculateMadeToOrderPaymentStep = createStep(
       if (!profile?.enabled) continue
 
       const override: any = profilesByVariant.get(item.variant_id)
-      const depositPercentage = Math.min(
-        100,
-        Math.max(
-          1,
-          toNumber(
-            override?.deposit_percentage_override ??
-              profile.default_deposit_percentage ??
-              25
+
+      // Paying in full is expressed as a deposit of 100 %, not as a separate
+      // flag. Everything downstream — the production order's outstanding sum,
+      // the ship gate, the Zakázky bar, the „čeká na doplatek" tile — is
+      // derived from `agreed_total − paid`, so a full prepayment simply lands
+      // as „already paid" with no branch anywhere. A `paid_in_full` boolean
+      // would have to be honoured in each of those places, and the one that got
+      // missed would be a way to ship something unpaid.
+      const prepayFull = payFullRequested && profile.allow_full_prepayment !== false
+
+      const depositPercentage = prepayFull
+        ? 100
+        : Math.min(
+            100,
+            Math.max(
+              1,
+              toNumber(
+                override?.deposit_percentage_override ??
+                  profile.default_deposit_percentage ??
+                  25
+              )
+            )
           )
-        )
-      )
       const lineTotal = toNumber(
         item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
       )

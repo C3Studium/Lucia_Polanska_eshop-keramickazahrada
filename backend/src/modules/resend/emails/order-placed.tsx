@@ -25,9 +25,27 @@ type OrderPlacedEmailProps = {
     title: string
     url: string
   }
+  /** Still owed after checkout — only ever non-zero for a commission. */
+  balance_due?: number
+  balance_currency?: string
+  /** Signed „doplatit" link; absent when nothing is owed. */
+  balance_payment_url?: string | null
 }
 
-function OrderPlacedEmailComponent({ order, email_banner }: OrderPlacedEmailProps) {
+function OrderPlacedEmailComponent({
+  order,
+  email_banner,
+  balance_due,
+  balance_payment_url,
+  balance_currency,
+}: OrderPlacedEmailProps) {
+  const owes = typeof balance_due === "number" && balance_due > 0
+  const balanceText = owes
+    ? new Intl.NumberFormat("cs-CZ", {
+        style: "currency",
+        currency: (balance_currency || order.currency_code || "CZK").toUpperCase(),
+      }).format(balance_due as number)
+    : null
   const shouldDisplayBanner = email_banner && "title" in email_banner
 
   const formatter = new Intl.NumberFormat([], {
@@ -180,6 +198,33 @@ function OrderPlacedEmailComponent({ order, email_banner }: OrderPlacedEmailProp
                 </Row>
               </div>
             </Section>
+
+            {/*
+              Outstanding balance on a commission. Shown only when something is
+              genuinely owed — a piece paid in full at checkout must never be
+              asked for more, and an ordinary order never reaches this at all.
+            */}
+            {owes && (
+              <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
+                <Heading className="text-[#212222] text-[20px] font-normal m-0">
+                  Zbývá doplatit {balanceText}
+                </Heading>
+                <Text className="text-[#212222] text-[16px] leading-[24px] mt-2">
+                  Váš kousek se vyrábí na míru. Doplatek můžete zaplatit hned,
+                  nebo počkat, až vám napíšeme, že je hotovo — jak je vám milejší.
+                </Text>
+                {balance_payment_url && (
+                  <Section className="mt-4">
+                    <a
+                      href={balance_payment_url}
+                      className="bg-[#212222] text-white rounded-full px-6 py-3 text-[16px] no-underline inline-block"
+                    >
+                      Doplatit {balanceText}
+                    </a>
+                  </Section>
+                )}
+              </Section>
+            )}
 
             {/* Footer */}
             <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
