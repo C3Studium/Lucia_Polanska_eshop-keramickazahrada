@@ -8,8 +8,7 @@ import {
 } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
-  extractComgateRedirectUrl,
-  fromComgateOptionId,
+  legacyComgateOptionForMethod,
   toComgateOptionId,
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
@@ -25,29 +24,6 @@ import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import styles from "./style.module.scss"
-
-const legacyComgateOptions = [
-  { id: "pp_comgate_card", method: "CARD_ALL" },
-  { id: "pp_comgate_applepay", method: "APPLEPAY_REDIRECT" },
-  { id: "pp_comgate_googlepay", method: "GOOGLEPAY_REDIRECT" },
-  { id: "pp_comgate_bank", method: "BANK_ALL" },
-]
-
-const legacyOptionForMethod = (method: string) => {
-  if (method === "BANK_ALL") return "pp_comgate_bank"
-  if (method === "APPLEPAY_REDIRECT" || method === "APPLEPAY") {
-    return "pp_comgate_applepay"
-  }
-  if (method === "GOOGLEPAY_REDIRECT" || method === "GOOGLEPAY") {
-    return "pp_comgate_googlepay"
-  }
-  return "pp_comgate_card"
-}
-
-const methodForOption = (optionId: string) =>
-  fromComgateOptionId(optionId) ||
-  legacyComgateOptions.find((option) => option.id === optionId)?.method ||
-  "ALL"
 
 const Payment = ({
   cart,
@@ -71,7 +47,7 @@ const Payment = ({
     if (isComgate(activeSession?.provider_id)) {
       return comgateMethods.some((method) => method.id === activeComgateMethod)
         ? toComgateOptionId(activeComgateMethod)
-        : legacyOptionForMethod(activeComgateMethod)
+        : legacyComgateOptionForMethod(activeComgateMethod)
     }
     return activeSession?.provider_id ?? ""
   })
@@ -110,71 +86,21 @@ const Payment = ({
     })
   }
 
-  const openComgate = async (optionId: string) => {
-    if (isLoading) return
+  /**
+   * Picking a ComGate method no longer goes to the bank. It carries the choice to the Review
+   * step, where the customer sees the recap and gives consent; the payment session is created
+   * there, from the final action. Consent has to exist before the payment does.
+   */
+  const continueToReview = (optionId: string) => {
+    if (isLoading || !optionId) return
 
     setSelectedPaymentMethod(optionId)
-    setIsLoading(true)
     setError(null)
 
-    const shippingAddress = cart?.shipping_address
-    const billingAddress = cart?.billing_address || shippingAddress
-    const shippingName = String(
-      cart?.shipping_methods?.at(-1)?.name || ""
-    ).toLowerCase()
-
-    try {
-      const result = await initiatePaymentSession(cart, {
-        provider_id: "pp_comgate_comgate",
-        data: {
-          cart_id: cart.id,
-          method: methodForOption(optionId),
-          email: cart?.email || null,
-          first_name:
-            billingAddress?.first_name || shippingAddress?.first_name || null,
-          last_name:
-            billingAddress?.last_name || shippingAddress?.last_name || null,
-          country_code:
-            shippingAddress?.country_code ||
-            billingAddress?.country_code ||
-            "cz",
-          billing_city: billingAddress?.city,
-          billing_street: billingAddress?.address_1,
-          billing_postal_code: billingAddress?.postal_code,
-          shipping_city: shippingAddress?.city,
-          shipping_street: shippingAddress?.address_1,
-          shipping_postal_code: shippingAddress?.postal_code,
-          delivery:
-            shippingName.includes("zásil") ||
-            shippingName.includes("zasil") ||
-            shippingName.includes("packeta") ||
-            shippingName.includes("výdej")
-              ? "PICKUP"
-              : "HOME_DELIVERY",
-          lang: "cs",
-        } as any,
-      })
-
-      if (!result.success) {
-        throw new Error(
-          result.message || "Platební bránu se nepodařilo připravit."
-        )
-      }
-
-      const redirectUrl = extractComgateRedirectUrl(result.data)
-      if (!redirectUrl) {
-        throw new Error("Platební brána nevrátila adresu pro pokračování.")
-      }
-
-      window.location.assign(redirectUrl)
-    } catch (paymentError) {
-      setError(
-        paymentError instanceof Error
-          ? paymentError.message
-          : "Platební bránu se nepodařilo otevřít."
-      )
-      setIsLoading(false)
-    }
+    const params = new URLSearchParams(searchParams)
+    params.set("step", "review")
+    params.set("method", optionId)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const selectComgate = (optionId: string) => {
@@ -188,7 +114,7 @@ const Payment = ({
     setSelectedPaymentMethod(method)
 
     if (isComgate(method)) {
-      await openComgate(method)
+      continueToReview(method)
       return
     }
 
@@ -281,7 +207,7 @@ const Payment = ({
                 <span>Vyberte způsob úhrady</span>
                 <p>
                   {hasComgate
-                    ? "Vyberte metodu. Objednávku potvrdíte tlačítkem a přejdete k bezpečné platbě."
+                    ? "Vyberte metodu. V dalším kroku uvidíte celou objednávku a teprve pak přejdete k platbě."
                     : "Platbu dokončíte bezpečně v následujícím kroku."}
                 </p>
               </div>
@@ -290,7 +216,7 @@ const Payment = ({
                   methods={comgateMethods}
                   selectedOptionId={selectedPaymentMethod}
                   onSelect={selectComgate}
-                  onConfirm={() => openComgate(selectedPaymentMethod)}
+                  onConfirm={() => continueToReview(selectedPaymentMethod)}
                   disabled={isLoading}
                   isSubmitting={isLoading}
                 />

@@ -8,6 +8,59 @@ Format per task: **files** · **what/why** · **deviations** · **gate** · **no
 
 ---
 
+# ⚠ Open items — everything that needs Matěj's attention
+
+Living index, kept current as tasks land. Each item names where it came from; the per-task entry
+below has the detail. **Nothing here blocks further storefront work** — every item was either
+implemented under a stated assumption or shipped in an honest interim state.
+
+## 1. Decide / confirm — these change what ships
+
+| # | Item | Why it needs you | Raised in |
+|---|---|---|---|
+| **O-1** | **Confirm the bank account.** `/doprava-a-platba` carried **three different account numbers** (2500675505/2010, 7010757121/2010, 2701281289/2010), two of them paired with an IBAN belonging to a fourth combination. A bank-transfer customer could have paid an account that is not yours. All sites now read **7010757121/2010** / `CZ34 2010 0000 0070 1075 7121` — the value in `.env.local`, confirmed by the IBAN checksum. **If any other number was the live one, say so before this reaches production.** | Money goes to the wrong place if this is wrong | A5 |
+| **O-2** | **Legal texts reviewed for accuracy, not sufficiency.** Another company's boilerplate is gone, but the privacy policy still reads as generic corporate text ("Jsme společnost…", "Společnostmi v rámci naší skupiny") for what is a sole trader. Worth a lawyer's eye before launch. | Out of an engineer's scope | A5 |
+| **O-3** | **Order of `placeOrder` and `capturePayment`** on the confirmed page: they fire concurrently. Pre-existing, deliberately not reordered — capture-then-complete may be correct, but that is a payment decision needing the backend's view. | Needs backend session input | A6 |
+| **O-4** | **Consent text wording.** The terms checkbox added before payment states agreement with obchodní podmínky and acknowledgement of the privacy policy, and records the moment of consent. Confirm the wording is what your lawyer wants recorded. | Legal record of consent | A7 |
+
+## 2. Waiting on you to supply something
+
+| # | Item | What to do | Raised in |
+|---|---|---|---|
+| **O-5** | **Reklamační protokol PDF.** The page ships a clearly-marked placeholder instead of a download button that would 404. | Drop the PDF into `public/dokumenty/` and set `PROTOCOL_PDF_PATH` in `(main)/reklamacni-protokol/download.tsx`. Nothing else changes. | A5 (D-S6) |
+| **O-6** | **Contact endpoint.** The dialog is built against the D-S1 contract and is switched off, showing direct contact details instead. | When `POST /store/contact` is live, set `NEXT_PUBLIC_CONTACT_FORM_ENABLED=true` on Railway. | A4 (D-S1) |
+| **O-7** | **Newsletter platform.** Parked by D-S1. The footer shows one line and a `mailto:` — no inert form. | Pick a platform; the mailto line is the only thing to replace. | A3 |
+
+## 3. Backend work the storefront is waiting on
+
+| # | Item | Detail | Raised in |
+|---|---|---|---|
+| **O-8** | **Medusa seed data must be deleted.** Four categories (Shirts, Sweatshirts, Pants, Merch) and their demo apparel products are starter data. Per your instruction they are excluded storefront-side **as a temporary measure**. | `SEED_CATEGORY_HANDLES` in `src/lib/data/navigation.ts` is the only hand-filter in the codebase. **When the backend admin work removes the seed data, delete that constant and the `.filter()` that uses it.** The demo *products* are still reachable in `/store` and its filter panel — that cleanup is backend-side. | A2 |
+| **O-9** | **No collections exist** (0 collections, 12 categories). The menu falls back to categories and will switch to collections automatically if you create them. Nothing to do unless you want collections. | — | A2 |
+| **O-10** | **Pickup point on the order e-mail.** The Review step now shows the Zásilkovna point before payment; putting it on the confirmation e-mail is backend-side. | Coordinate with the backend session | A7 |
+
+## 4. Known-unverified / deferred
+
+| # | Item | Status | Raised in |
+|---|---|---|---|
+| **O-11** | **Playwright e2e never run.** `pnpm test-e2e` needs a running backend. | Provide a backend URL and it runs at a phase end. Deferred, not skipped. | all tasks |
+| **O-12** | **Confirmed-page failure branch reviewed by reading, not exercised.** Triggering it needs a real cart whose completion fails. | Flagged rather than claimed as tested | A6 |
+| **O-13** | **Review step verified with a mocked cart, not a live purchase.** A real end-to-end ComGate purchase has not been made from this branch. | Needs a test order against the live backend | A7 |
+| **O-14** | **Scrollbar rail overlaps the open mega-menu** and swallows pointer events over the sixth card's right edge. Pre-existing. | Belongs to Phase D's scrollbar re-engineering (spec §4, §11.7) | A2 |
+| **O-15** | **`next lint` is deprecated**, removed in Next 16. Not in any phase. | Follow-up ticket: `npx @next/codemod@canary next-lint-to-eslint-cli .` | baseline |
+| **O-16** | **Pre-existing hydration mismatch on `/dotazy`**, originating in `DotazyMain`. Unrelated to this work, pre-dates it. | Candidate for Phase C's page work | A3 |
+
+## 5. Working notes
+
+- **Never run `pnpm build` while `pnpm dev` is running.** Both write the same generated stylesheet
+  (trap 1) and it corrupts `.next`; the dev server then serves 404s for its own CSS and pages
+  render unstyled, which looks exactly like a CSS regression. Fix: `rm -rf .next`, restart.
+- Local, uncommitted QA helpers live in `storefront/qa-*.mjs` (Playwright screenshots at
+  1024/1280/1536 + reduced motion). They are listed in `.git/info/exclude`, not in the repo.
+- `pnpm exec playwright install chromium` was run once to make the visual gate possible.
+
+---
+
 ## Baseline — 2026-08-04
 
 **Setup deviation (worth knowing).** The session was launched in the *main* working tree on
@@ -515,5 +568,70 @@ the brief allocates it.
   behaviour and I have not reordered it — capture-then-complete may well be the correct sequence,
   but it is a payment-flow decision that needs the backend's view, not a storefront guess.
   Worth confirming with the backend session.
+
+---
+
+## A7 — mandatory Review step with consent (spec §14 P0 item 0.7)
+
+**Files**
+
+- `src/modules/checkout/components/review/` — `index.tsx` rewritten, **new** `recap.tsx` and
+  `motion.ts`, `style.module.scss` rebuilt.
+- `src/modules/checkout/components/payment/index.tsx` — no longer redirects to the bank.
+- `src/lib/util/comgate.ts` — `buildComgateSessionPayload`, plus the legacy option table moved
+  out of the payment component.
+
+**The leak.** `openComgate()` ended in `window.location.assign(...)`: picking a card icon sent
+the customer straight to ComGate. The Review step existed but was unreachable in the ComGate
+flow — and its "consent" was a passive sentence, not a recorded act. **No terms checkbox existed
+anywhere in the application**, which for a Czech e-shop is a compliance gap as much as a
+conversion one.
+
+**The flow now.** Payment step → carries the chosen method in the URL (`?step=review&method=…`)
+→ Review shows the recap → consent → payment.
+
+The recap answers "let me check everything once more": every object with quantity and line total,
+the delivery address, the shipping method, **the Zásilkovna pickup point** (the detail most often
+lost between checkout and confirmation — this is the customer's last chance to catch a wrong one),
+and the totals with **incl.-VAT "Celkem" as the headline figure** and the VAT amount below it.
+The final action reads `Zaplatit 1 379,-` — the amount, not a generic verb. `[trust]` `[conversion]`
+
+**Where consent is recorded, and why there.** The session used to be created in the payment step.
+It is now created from Review's final action, *after* `updateCart` writes
+`terms_accepted_at` + `terms_version` to the cart metadata. Two reasons for that order: the
+consent record exists regardless of what happens at the gateway, and updating a cart can
+invalidate a payment session — so consent must never be written to a cart whose session is
+already in flight. Existing metadata (including the pickup point) is preserved.
+
+**Bug found while verifying.** The consent sentence rendered at **10px**. `globals.scss` carries a
+Tailwind utility `input:not(:placeholder-shown) ~ label { @apply -translate-y-2 text-xsmall-regular }`
+for the Input primitive's floating label — and it matches *any* input followed by a label. The
+checkbox is now wrapped so the sibling selector cannot match, and the label measures 16px.
+**This rule will bite any input+label pair on the site**; it belongs to the Phase B form-primitive
+work (P1 item 1.3), noted there rather than fixed globally here.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Verified against a fixture cart on a throwaway local route (removed after; never committed):
+  final button reads "Zaplatit 1 379,-"; **disabled before consent, enabled after**; the hint
+  "K pokračování prosím potvrďte souhlas s podmínkami." shows while ungated; the checkbox is
+  24×24 px in a 44px target with its label programmatically bound; the recap renders items,
+  address, pickup point and totals. Computed type in the block: label 16px, section headings
+  13px, totals 15–16px — **nothing below 13px**.
+- **Not verified against a live purchase (O-13).** See below.
+
+**Notes for Matěj**
+
+- **Blocker found on the backend, not in the storefront:** all three shipping options
+  (Česká Pošta ×2, Zásilkovna) currently have **no price** in the CZ region —
+  `POST /store/carts/{id}/shipping-methods` fails with *"Shipping options with IDs … do not have
+  a price"*. No shipping method can be attached, so **no checkout can currently be completed on
+  this backend**, by me or by a customer. Those option IDs were created today, so the backend
+  session may simply be mid-edit. This is why A7 is verified against a fixture rather than a real
+  order — worth confirming before launch either way.
+- Seed products also cannot be added to a cart ("Sales channel … is not associated with any stock
+  location"), which is consistent with O-8: the starter data is half-configured. Real ceramics
+  variants add fine.
 
 ---

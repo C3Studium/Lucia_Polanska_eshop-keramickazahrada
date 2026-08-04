@@ -1,9 +1,19 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * Review is the last thing the customer reads before money moves, so nothing here is quiet:
+ * ink #20211c on the checkout cream measures 15.2:1, the label tone #4f5147 measures 7.3:1.
+ * No text below 13px.
+ */
+
 .root {
   position: relative;
   padding: 34px 0 4px 58px;
   background: transparent;
+
+  --review-ink: #20211c;
+  --review-label: #4f5147;
+  --review-rule: rgba(32, 33, 28, 0.18);
 }
 
 .root::before {
@@ -35,28 +45,231 @@
   overflow: hidden;
 }
 
-.reviewRow {
+/* ---------- recap ---------- */
+
+.recap {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  gap: 18px;
-  width: 100%;
-  margin-bottom: 1.8rem;
-  padding: 22px 0;
-  border-top: 1px solid rgba(32, 33, 28, 0.18);
-  border-bottom: 1px solid rgba(32, 33, 28, 0.18);
+  margin-bottom: 1.6rem;
+  padding: 24px 0;
+  border-top: 1px solid var(--review-rule);
+  border-bottom: 1px solid var(--review-rule);
+  gap: 26px;
 }
 
-.confirmationMark {
-  color: rgba(32, 33, 28, 0.48);
-  font: 600 10px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+.recapBlock h3 {
+  margin: 0 0 12px;
+  color: var(--review-label);
+  font: 500 13px/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.reviewText {
-  max-width: 72ch;
+.recapColumns {
+  display: grid;
+  gap: 26px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.itemList {
+  display: grid;
   margin: 0;
-  color: rgba(32, 33, 28, 0.72);
-  font: 300 clamp(0.98rem, 1vw, 1.1rem) / 1.55 "Sansation-Light", sans-serif;
+  padding: 0;
+  gap: 10px;
+  list-style: none;
+}
+
+.itemList li {
+  display: grid;
+  align-items: baseline;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.itemTitle {
+  color: var(--review-ink);
+  font: 400 16px/1.45 "Sansation-Regular", sans-serif;
+}
+
+.itemQuantity {
+  color: var(--review-label);
+  font: 400 15px/1.4 "Sansation-Regular", sans-serif;
+}
+
+.itemTotal {
+  color: var(--review-ink);
+  font: 400 16px/1.4 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
+}
+
+.recapText {
+  margin: 0;
+  color: var(--review-ink);
+  font: 400 16px/1.55 "Sansation-Regular", sans-serif;
+}
+
+.recapNote {
+  margin: 10px 0 0;
+  color: var(--review-label);
+  font: 400 15px/1.45 "Sansation-Regular", sans-serif;
+}
+
+.pickupPoint {
+  display: grid;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--review-rule);
+  border-radius: 10px;
+  color: var(--review-ink);
+  font: 400 15px/1.45 "Sansation-Regular", sans-serif;
+  gap: 4px;
+}
+
+.pickupPoint span {
+  color: var(--review-label);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.totals {
+  display: grid;
+  margin: 0;
+  gap: 8px;
+}
+
+.totals > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.totals dt {
+  color: var(--review-label);
+  font: 400 15px/1.4 "Sansation-Regular", sans-serif;
+}
+
+.totals dd {
+  margin: 0;
+  color: var(--review-ink);
+  font: 400 16px/1.4 "Sansation-Regular", sans-serif;
+}
+
+.totalRow {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--review-rule);
+}
+
+.totalRow dt,
+.totalRow dd {
+  color: var(--review-ink);
+  font: 400 20px/1.3 "Sentient-Regular", serif;
+}
+
+.vatNote {
+  margin: 10px 0 0;
+  color: var(--review-label);
+  font: 400 13px/1.5 "Sansation-Regular", sans-serif;
+}
+
+/* ---------- consent ---------- */
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.2rem;
+  gap: 14px;
+}
+
+.consentBoxWrap {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 24px box inside a 44px target, per the interaction floor. */
+.consentBox {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  margin: 10px 10px 10px 0;
+  border: 1px solid var(--review-ink);
+  border-radius: 4px;
+  accent-color: #555d48;
+  cursor: pointer;
+}
+
+.consentBox:focus-visible {
+  outline: 2px solid #9a6f65;
+  outline-offset: 3px;
+}
+
+.consentLabel {
+  max-width: 62ch;
+  padding: 10px 0;
+  color: var(--review-ink);
+  cursor: pointer;
+  font: 400 16px/1.55 "Sansation-Regular", sans-serif;
+}
+
+.consentLabel a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ---------- action ---------- */
+
+.payButton {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px;
+  border: 1px solid var(--review-ink);
+  border-radius: 999px;
+  background: var(--review-ink);
+  color: #ffe8d6;
+  cursor: pointer;
+  font: 400 16px/1 "Sansation-Regular", sans-serif;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.payButton:hover:not(:disabled) {
+  background: transparent;
+  color: var(--review-ink);
+}
+
+.payButton:focus-visible {
+  outline: 2px solid #9a6f65;
+  outline-offset: 3px;
+}
+
+.payButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.gateHint {
+  margin: 10px 0 0;
+  color: var(--review-label);
+  font: 400 14px/1.5 "Sansation-Regular", sans-serif;
+}
+
+.error {
+  margin: 0 0 1rem;
+  padding: 12px 16px;
+  border: 1px solid rgba(140, 62, 48, 0.34);
+  border-radius: 10px;
+  background: rgba(255, 236, 228, 0.66);
+  color: #8c3e30;
+  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
 }
 
 @media (max-width: 640px) {
@@ -68,7 +281,7 @@
     top: 40px;
   }
 
-  .reviewRow {
+  .recapColumns {
     grid-template-columns: 1fr;
   }
 }
