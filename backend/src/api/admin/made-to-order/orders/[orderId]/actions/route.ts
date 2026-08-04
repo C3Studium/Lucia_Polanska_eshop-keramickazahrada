@@ -250,6 +250,47 @@ export const POST = async (
         "Domluvená celková cena musí být vyšší než nula."
       )
     }
+
+    // P6-2. The deposit is already in the bank; agreeing a price below it would
+    // leave the shop owing money the moment the specification is confirmed,
+    // which is a refund conversation and not something to stumble into by
+    // typing a number. The card warns about this too, but the check has to live
+    // here — the card is not the only way to reach this route.
+    const paidSoFar = (
+      await madeToOrder.listProductionPaymentRequests({
+        production_order_id: productionOrder.id,
+      } as any)
+    )
+      .filter((payment: any) => payment.status === "paid")
+      .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
+
+    if (requestedTotal < paidSoFar - 0.005) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Cena nemůže být nižší než už zaplacená záloha (${roundMoney(paidSoFar)}). ` +
+          `Přeplatek vraťte v detailu objednávky.`
+      )
+    }
+
+    // Dates: a deadline in the past is always a typo, and it would immediately
+    // show the commission as overdue on Přehled.
+    if (body.estimated_completion_at) {
+      const deadline = new Date(body.estimated_completion_at)
+      if (Number.isNaN(deadline.getTime())) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "Termín dokončení není platné datum."
+        )
+      }
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      if (deadline.getTime() < startOfToday.getTime()) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "Termín dokončení nemůže být v minulosti."
+        )
+      }
+    }
     const order = await loadOrder(req)
     const finalTotal = await adjustNativeOrderTotal(req, order, requestedTotal)
     productionOrder = await madeToOrder.updateProductionOrders({

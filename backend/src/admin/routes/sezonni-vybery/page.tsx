@@ -4,15 +4,19 @@ import {
   Badge,
   Container,
   Heading,
+  Select,
   Skeleton,
   Tabs,
   Text,
+  Toaster,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { EmptyState } from "../../components/empty-state";
 import { formatDate } from "../../lib/format";
@@ -34,6 +38,8 @@ type SeasonalSelection = {
   starts_at?: string | null;
   ends_at?: string | null;
   linked_price_list_id?: string | null;
+  /** What happens to the products when the sale finishes. */
+  on_end?: "keep_selling" | "hide_products";
   items?: SeasonalItem[];
 };
 
@@ -90,6 +96,60 @@ const period = (selection: SeasonalSelection): string => {
     return "Bez termínu";
   }
   return `${formatDate(selection.starts_at)} – ${formatDate(selection.ends_at)}`;
+};
+
+/**
+ * What happens to the products when this sale ends.
+ *
+ * A Vánoční kolekce ends and the pieces go back to full price — they are still
+ * good stock. A **výprodej** ends because the pieces are gone, and leaving them
+ * published means listings nobody can buy. Those want opposite behaviour, so
+ * she says which this is rather than the system guessing.
+ */
+const OnEndControl = ({ selection }: { selection: SeasonalSelection }) => {
+  const queryClient = useQueryClient();
+  const value = selection.on_end ?? "keep_selling";
+
+  const save = useMutation({
+    mutationFn: (onEnd: string) =>
+      sdk.client.fetch(
+        `/admin/merchant-catalog/seasonal-selections/${selection.id}`,
+        { method: "PATCH", body: { on_end: onEnd } }
+      ),
+    onSuccess: async () => {
+      toast.success("Uloženo");
+      await queryClient.invalidateQueries({ queryKey: ["seasonal-selections"] });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Nepodařilo se uložit"
+      ),
+  });
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <Text size="small" className="text-ui-fg-subtle">
+        Až akce skončí:
+      </Text>
+      <Select
+        size="small"
+        value={value}
+        onValueChange={(next) => save.mutate(next)}
+      >
+        <Select.Trigger className="w-64">
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Item value="keep_selling">
+            Vrátit na běžnou cenu a prodávat dál
+          </Select.Item>
+          <Select.Item value="hide_products">
+            Schovat produkty z e-shopu (výprodej)
+          </Select.Item>
+        </Select.Content>
+      </Select>
+    </div>
+  );
 };
 
 const queryClient = new QueryClient();
@@ -218,11 +278,15 @@ const SezonniVyberyInner = () => {
                     Sleva na balíček zlevní i produkty, které jsou v něm.
                   </Text>
                 )}
+
+                <OnEndControl selection={selection} />
               </article>
             );
           })}
         </div>
       )}
+
+      <Toaster />
     </Container>
   );
 };

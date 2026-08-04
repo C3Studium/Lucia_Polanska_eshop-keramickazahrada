@@ -17,6 +17,7 @@ export const PostSeasonalSelectionSchema = z.object({
   starts_at: z.coerce.date().nullable().optional(),
   ends_at: z.coerce.date().nullable().optional(),
   linked_price_list_id: z.string().nullable().optional(),
+  on_end: z.enum(["keep_selling", "hide_products"]).optional(),
   items: z.array(SeasonalSelectionItemSchema).default([]),
 })
 
