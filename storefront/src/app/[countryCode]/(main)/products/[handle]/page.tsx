@@ -83,15 +83,35 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  const description = summarize(
+    product.subtitle || product.description,
+    `${product.title} — ručně tvořený keramický objekt z ateliéru Lucie Polanské.`
+  )
+
   return {
-    title: `${product.title} | Keramická Zahrada`,
-    description: `${product.title}`,
+    title: product.title,
+    description,
     openGraph: {
-      title: `${product.title} | Keramická Zahrada`,
-      description: `${product.title}`,
+      title: `${product.title} | Keramická zahrada`,
+      description,
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }
+}
+
+/** Trims CMS copy to a length search engines actually render, on a word boundary. */
+function summarize(text: string | null | undefined, fallback: string) {
+  const clean = text?.replace(/\s+/g, " ").trim()
+
+  if (!clean) {
+    return fallback
+  }
+
+  if (clean.length <= 160) {
+    return clean
+  }
+
+  return `${clean.slice(0, 157).replace(/\s+\S*$/, "")}…`
 }
 
 export default async function ProductPage(props: Props) {

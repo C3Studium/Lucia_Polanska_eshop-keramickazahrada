@@ -4,7 +4,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Resetovat heslo",
-  description: "Resetujte své heslo pro svůj účet Keramická Zahrada.",
+  description: "Nastavte si nové heslo ke svému účtu v Keramické zahradě.",
 }
 
 export default function ResetPassword() {

@@ -9,7 +9,8 @@ import { notFound } from "next/navigation"
 import styles from "./page.module.scss"
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Pokladna",
+  description: "Dokončení objednávky — doprava, platba a rekapitulace.",
 }
 
 export default async function Checkout(props:{params: Promise<{countryCode:string}>}) {

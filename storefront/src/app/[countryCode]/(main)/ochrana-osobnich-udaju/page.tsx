@@ -1,8 +1,14 @@
-"use client"
+import { Metadata } from "next"
 
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+export const metadata: Metadata = {
+  title: "Ochrana osobních údajů",
+  description:
+    "Jaké osobní údaje o vás zpracováváme, proč je potřebujeme, jak dlouho je uchováváme a jaká práva k nim máte.",
+}
 
 const sections: LegalSectionData[] = [
   {

@@ -8,7 +8,7 @@ import Kurzy from "@modules/home/Kurzy"
 import type { KurzyIntroData } from "@modules/home/Kurzy/Intro"
 
 export const metadata: Metadata = {
-  title: "Keramické kurzy | Keramická zahrada",
+  title: "Keramické kurzy",
   description:
     "Keramické kurzy pro děti a připravované kurzy pro dospělé v ateliéru Lucie Polanské u Písku.",
 }

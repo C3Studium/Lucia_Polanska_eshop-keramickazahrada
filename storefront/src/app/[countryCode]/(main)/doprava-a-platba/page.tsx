@@ -1,8 +1,14 @@
-"use client"
+import { Metadata } from "next"
 
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+export const metadata: Metadata = {
+  title: "Doprava a platba",
+  description:
+    "Způsoby doručení po České republice, doručovací doby, doprava zdarma a všechny podporované způsoby platby.",
+}
 
 const sections: LegalSectionData[] = [
   {

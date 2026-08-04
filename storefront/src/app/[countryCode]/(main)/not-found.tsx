@@ -3,8 +3,8 @@ import { Metadata } from "next"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 export const metadata: Metadata = {
-  title: "404",
-  description: "Something went wrong",
+  title: "Stránka nenalezena",
+  description: "Stránka, kterou jste se pokusili otevřít, neexistuje.",
 }
 
 export default function NotFound() {

@@ -1,3 +1,5 @@
+import { Metadata } from "next"
+
 import ECom from "@modules/store/Shop"
 import type { ShopFilters } from "@modules/store/Shop/types"
 import { listStoreCatalogue } from "@lib/data/products"
@@ -11,6 +13,12 @@ type StorePageProps = {
     collection?: string
     search?: string
   }>
+}
+
+export const metadata: Metadata = {
+  title: "Obchod",
+  description:
+    "Ateliérový výběr autorské keramiky Lucie Polanské — originální objekty pro zahradu i domov, každý kus ručně tvořený.",
 }
 
 const defaultFilters: ShopFilters = {

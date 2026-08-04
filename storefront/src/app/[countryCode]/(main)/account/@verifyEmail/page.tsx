@@ -4,7 +4,7 @@ import VerifyEmailReminderPage from "@modules/account/templates/send-email-verif
 
 export const metadata: Metadata = {
   title: "Potvrzení e-mailu",
-  description: "Ověřte svou e-mailovou adresu pro svůj účet Medusa Store.",
+  description: "Ověřte svou e-mailovou adresu pro svůj účet v Keramické zahradě.",
 }
 
 export default async function VerifyEmail() {

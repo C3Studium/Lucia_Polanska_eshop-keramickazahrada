@@ -3,8 +3,8 @@ import { Metadata } from "next"
 
 
 export const metadata: Metadata = {
-  title: "Verify Email",
-  description: "Verify your email address for your Medusa Store account.",
+  title: "Potvrzení e-mailu",
+  description: "Ověřte svou e-mailovou adresu pro svůj účet v Keramické zahradě.",
 }
 
 export default function VerifyEmail() {

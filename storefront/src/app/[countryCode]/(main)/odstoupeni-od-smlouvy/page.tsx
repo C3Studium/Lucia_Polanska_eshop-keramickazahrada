@@ -1,8 +1,14 @@
-"use client"
+import { Metadata } from "next"
 
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+export const metadata: Metadata = {
+  title: "Odstoupení od smlouvy",
+  description:
+    "Jak vrátit zboží do 14 dnů od převzetí — postup, lhůty a vzorové oznámení o odstoupení od kupní smlouvy.",
+}
 
 const sections: LegalSectionData[] = [
   {

@@ -6,11 +6,19 @@ import "styles/globals.scss"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  // Every page inherits the brand suffix; pages that are the brand itself opt out
+  // with `title: { absolute: … }`.
+  title: {
+    default: "Keramická zahrada | Autorská keramika Lucie Polanské",
+    template: "%s | Keramická zahrada",
+  },
+  description:
+    "Ručně tvořená autorská keramika pro zahradu i domov. Objevte originální objekty, zakázkovou tvorbu a keramické kurzy Lucie Polanské.",
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-mode="light">
+    <html lang="cs" data-mode="light">
       <body>
         <StateProvider>
           <LenisProvider>

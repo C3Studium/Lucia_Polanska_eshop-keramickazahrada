@@ -80,3 +80,68 @@ on `feat/storefront-v2`.
 **Gate:** lint ✅ · build ✅ · visual QA n/a (no UI change).
 
 ---
+
+## A1 — `lang="cs"` + Czech metadata sweep (spec §14 P0 item 0.1)
+
+**Files**
+
+- `src/app/layout.tsx` — `lang="en"` → `lang="cs"`; root `title.default` + `title.template`
+  (`"%s | Keramická zahrada"`) and a Czech default description.
+- Not-found surfaces, all four: `src/app/not-found.tsx` (was fully English in body copy too),
+  `(express-checkout)/not-found.tsx` (same), `(main)/not-found.tsx`, `(checkout)/not-found.tsx`,
+  `(main)/cart/not-found.tsx` — titles "404"/"Something went wrong" → Czech.
+- Auth + account: `@login` ("Sign in" / "Sign in to your Medusa Store account."),
+  `forgot-password` (Slovak → Czech, "Medusa Store" → Keramická zahrada), `verify-email`
+  (English), `@verifyEmail`, `reset-password` ("Keramická Zahrada" casing).
+- Checkout: `(checkout)/checkout/page.tsx` "Checkout" → "Pokladna".
+- Payment states: `cart/[id]/confirmed` and `cart/[id]/pending` — both carried
+  `"Order Confirmed" / "You purchase was successful"`; pending now says it is waiting for
+  confirmation (its body is rewritten in A6).
+- Suffix de-duplication now that the template supplies the brand: `(main)/page.tsx`
+  (`title.absolute`), `kurzy`, `dotazy`, `vyroba`, `o-mne`, `products/[handle]`.
+- `products/[handle]/page.tsx` — description was `product.title` repeated; now the product's
+  subtitle/description trimmed to 160 chars on a word boundary via a local `summarize()` helper,
+  with a Czech fallback. Brand casing normalised to "Keramická zahrada".
+- Metadata added where there was none: `store` and the five legal pages.
+
+**What / why.** `<html lang="en">` on a Czech store is the SC 3.1.1 failure the spec opens with —
+screen readers apply English phonetics to Czech copy and browsers offer to translate the page.
+The metadata sweep removes the remaining "Medusa Store" / "Sign in" / "You purchase was
+successful" / Slovak leftovers a customer sees in their tab and in search results. The root
+template means no page can silently ship an unbranded or English title again.
+`[trust]` `[accessibility]` `[clarity]` `[maintainability]`
+
+**Deviation — legal pages converted from client to server components.** The five legal pages
+(`cookies`, `smluvni-podminky`, `ochrana-osobnich-udaju`, `odstoupeni-od-smlouvy`,
+`doprava-a-platba`) were `"use client"`, which forbids `export const metadata`. Each was only a
+data array plus a render of the client `LegalDocument`, with no hooks or handlers, so `"use client"`
+was dropped. This is the minimal way to give them titles, and it moved their text off the client
+bundle: **7.76 kB → 142 B route JS, 165 kB → 157 kB first load, per legal page.** `LegalDocument`
+itself is untouched and still a client component, so the animation and scroll behaviour are
+unchanged (verified visually). `[performance]` alongside the intended `[trust]`.
+
+**Not done here (deliberate).** `collections/[handle]`, `categories/[…]`, `search` and
+`results/[query]` are `permanentRedirect` stubs — metadata on them would never render. The three
+express-checkout pages have no metadata of their own and now inherit the Czech root default;
+their own titles belong to the express-checkout pass.
+
+**Gate**
+
+- `pnpm lint` → exit 0 (same 9 pre-existing warnings, none new).
+- `pnpm build` → exit 0.
+- Visual QA: dev server at 1024/1280/1536 px plus a `prefers-reduced-motion` pass. The two most
+  at-risk pages (`smluvni-podminky`, `cookies` — the server-component conversion) render pixel-wise
+  as before; no console errors, no failed requests. `lang="cs"` and the intended `<title>` verified
+  by HTTP on 12 routes: `/`, `/store`, all five legal pages, `/dotazy`, `/kurzy`, `/vyroba`,
+  `/o-mne`, `/cart`.
+- e2e deferred (no backend URL for Playwright e2e; the storefront's own dev server runs against
+  the live Railway backend, which is what the visual QA used).
+
+**Notes for Matěj**
+
+- A local QA harness (`storefront/qa-shot.mjs`, Playwright screenshots at the three desktop widths
+  + reduced motion) is **not committed** — it is listed in `.git/info/exclude`. That exclude file
+  is shared with the main working tree; the entry is inert there.
+- `pnpm exec playwright install chromium` was run once to make the visual gate possible.
+
+---
