@@ -590,3 +590,76 @@ or the send fails (`src/modules/resend/service.ts`), so the notification row is
 recorded as **success** even though nothing was sent. Notification #15 and the
 whole `/prehled/emaily` page depend on `status = failure`, so P2-4 fixes it
 there rather than widening this task.
+
+---
+
+## P2-2b — follow-ups requested by Matěj   (2026-08-04)
+
+Three directions after reviewing P2-2's deviations. All three are implemented
+here rather than deferred.
+
+### 1. E-mail templates stay generic (approved)
+
+The generic `merchant-notification` template is confirmed as the right shape —
+the whole e-mail design is being reworked soon, so per-event templates would be
+thrown away twice. No change needed; the deviation is now a decision.
+
+### 2. Placeholder pages show a real empty state
+
+Reversed from P1-2/P1-3's caution: Zakázky, Nízký stav and Vyprodáno now render
+the §19 empty states. They are accurate today for a reason that will not last —
+none of the three has a data source yet, so „nothing here" is the only possible
+state — and P6-1 / P7-1 replace them with the real lists.
+
+- New `src/admin/components/empty-state.tsx`: one component for every custom
+  page, so they cannot drift apart (and P11-2 has something to build the
+  onboarding cards on). Includes a `pieces()` helper because Czech counts three
+  ways and „5 kusy" reads as a bug.
+- Recenze and Sezónní výběry were refactored onto the same component.
+- New `GET /admin/merchant-settings` (read-only) so the low-stock page can name
+  the threshold it warns at instead of hardcoding 3 — the sentence stays true
+  when P7-1 makes the value editable. It goes through the P1-1 accessor, so it
+  cannot widen the A3 allowlist. Writing is deliberately not exposed until the
+  „Hranice upozornění" drawer needs it (P7-1).
+
+### 3. Failed e-mails are now recorded as failures, not successes
+
+This is the defect flagged at the end of P2-2, fixed here because a silent
+failure is unfixable by definition.
+
+`ResendNotificationProviderService.send()` returned `{}` on both "template not
+registered" and "Resend rejected the send". A returned result means the
+notification module writes `status = success`
+(`notification-module-service.js:100-102`), so a customer who never received an
+order confirmation looked, in every record we keep, like one who did. It now
+**throws**, which makes the module persist `status = failure` and rethrow
+(`:95-99`) — the state that notification #15, `/prehled/emaily` (P2-4) and the
+Přehled failure tile all read.
+
+Two supporting changes it needs to be safe:
+
+- `describeResendError()` turns both failure shapes into one readable line. The
+  SDK reports API rejections as a returned `error` object but transport problems
+  (DNS, timeout) as a *thrown* exception; the latter used to escape unlabelled,
+  and the former logged as `[object Object]`. The error **name** is preserved
+  because that is the part that says whose problem it is: `validation_error` /
+  `missing_api_key` are ours, `rate_limit_exceeded` / `application_error` are
+  Resend's.
+- **Idempotency keys on the three existing e-mail sends**, which had none:
+  `order-placed:{order_id}`, `restock:{subscription_id}`,
+  `abandoned-cart:{cart_id}`. This is required by the fix, not incidental —
+  failures now propagate, so the event bus and the daily jobs retry, and without
+  a key each retry would be a *new* e-mail rather than another attempt at the
+  same one. §18 already requires this ("Duplicate e-mails → native notification
+  `idempotency_key` unique"); §16 claimed order-placed already had one, and it
+  did not. The auth e-mails (§16 #19–25, "keep as-is") are left alone: their
+  payload carries a fresh token each time, so there is no stable key to use.
+
+- Gate: typecheck ✓ · build ✓ (backend 5.25 s, admin 15.87 s) · tests: **41
+  passed** in 6 suites (5 new, covering the error description paths).
+- Notes for Matěj: **no migrations.** Nothing in Phase 0–2 so far adds a table,
+  a column or an index — the A3 decision put merchant settings in
+  `store.metadata`, which is an existing JSON column, and everything else is
+  subscribers, routes, pages and config. The `notification` module's own tables
+  already exist on production, because it was registered there (Resend is
+  configured); registering an extra *provider* does not change schema.

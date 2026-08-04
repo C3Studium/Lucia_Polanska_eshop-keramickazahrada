@@ -14,6 +14,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { useState } from "react";
+import { EmptyState } from "../../components/empty-state";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
@@ -143,15 +144,10 @@ const SezonniVyberyInner = () => {
       )}
 
       {!isLoading && !isError && visible.length === 0 && (
-        <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
-          <Heading level="h2">
-            {selections.length === 0 ? "Zatím žádný výběr" : activeGroup.empty}
-          </Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1 max-w-md">
-            Vytvořte např. „Vánoční kolekci" — vyberete produkty, termín a
-            volitelně slevu.
-          </Text>
-        </div>
+        <EmptyState
+          title={selections.length === 0 ? "Zatím žádný výběr" : activeGroup.empty}
+          description="Vytvořte např. „Vánoční kolekci“ — vyberete produkty, termín a volitelně slevu."
+        />
       )}
 
       {!isLoading && !isError && visible.length > 0 && (

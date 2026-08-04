@@ -2,14 +2,14 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { XCircle } from "@medusajs/icons";
 import { Button, Container, Heading, Text } from "@medusajs/ui";
 import { Link } from "react-router-dom";
+import { EmptyState } from "../../components/empty-state";
 
 /**
  * Vyprodáno (§10, §22).
  *
- * Route registered by P1-3; **P7-1 fills it** with
- * `/admin/inventory-alerts?type=out`, which also excludes made-to-order
- * variants and anything that does not track stock at all. Same reasoning as
- * Nízký stav: no data yet means no claim about being sold out or not.
+ * The list arrives with **P7-1** (`/admin/inventory-alerts?type=out`), which
+ * also excludes made-to-order variants and anything that does not track stock.
+ * Until then the page is its empty state.
  */
 const VyprodanoPage = () => (
   <Container className="divide-y p-0">
@@ -21,14 +21,15 @@ const VyprodanoPage = () => (
       </Text>
     </header>
 
-    <div className="flex flex-col items-start gap-y-3 px-6 py-8">
-      <Text size="small" className="text-ui-fg-subtle max-w-2xl">
-        Počty kusů upravíte ve skladu.
-      </Text>
-      <Button size="small" variant="secondary" asChild>
-        <Link to="/inventory">Otevřít sklad</Link>
-      </Button>
-    </div>
+    <EmptyState
+      title="Nic není vyprodané"
+      description="Jakmile něčeho zbude nula kusů, objeví se to tady."
+      action={
+        <Button size="small" variant="secondary" asChild>
+          <Link to="/inventory">Otevřít sklad</Link>
+        </Button>
+      }
+    />
   </Container>
 );
 

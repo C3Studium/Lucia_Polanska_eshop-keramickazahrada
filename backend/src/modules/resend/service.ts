@@ -60,6 +60,41 @@ export enum EmailTemplates {
   MERCHANT_NOTIFICATION = "merchant-notification",
 }
 
+/**
+ * Turns whatever Resend (or the network) handed back into one readable line.
+ *
+ * The SDK reports failures two different ways — a returned `error` object for
+ * API-level rejections and a thrown exception for transport problems — and both
+ * used to end up in the log as `[object Object]` or nothing at all. The name is
+ * kept because it is the part that says *whose* fault it is:
+ * `validation_error` / `missing_api_key` are ours, `rate_limit_exceeded` and
+ * `application_error` are Resend's.
+ */
+export const describeResendError = (error: unknown): string => {
+  if (!error) {
+    return "Resend nevrátil ID e-mailu ani chybu."
+  }
+  if (typeof error === "string") {
+    return error
+  }
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`
+  }
+  if (typeof error === "object") {
+    const candidate = error as { name?: unknown; message?: unknown; statusCode?: unknown }
+    const parts = [
+      typeof candidate.name === "string" ? candidate.name : null,
+      typeof candidate.message === "string" ? candidate.message : null,
+      typeof candidate.statusCode === "number" ? `HTTP ${candidate.statusCode}` : null,
+    ].filter(Boolean)
+
+    if (parts.length) {
+      return parts.join(": ")
+    }
+  }
+  return JSON.stringify(error)
+}
+
 type ResendOptions = {
   api_key: string
   from: string
@@ -150,8 +185,18 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     const template = this.getTemplate(notification.template as Templates)
 
     if (!template) {
-      this.logger.error(`Couldn't find an email template for ${notification.template}. The valid options are ${Object.values(Templates)}`)
-      return {}
+      // Throw rather than return: a returned result is recorded as a *successful*
+      // notification, so an unregistered template used to look delivered while
+      // the customer got nothing. Throwing makes the notification module mark the
+      // row `status = failure` (notification-module-service.js:95-99), which is
+      // what the bell, /prehled/emaily and notification #15 all read.
+      const message =
+        `Nepodařilo se odeslat e-mail: šablona "${notification.template}" není v Resend providovi zaregistrovaná. ` +
+        `Registrované šablony: ${Object.values(Templates).join(", ")}.`
+      this.logger.error(
+        `[resend] ${message} (příjemce: ${notification.to}, kanál: ${notification.channel})`
+      )
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, message)
     }
 
     // A per-send subject wins over the template default. Merchant notifications
@@ -182,15 +227,33 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       }
     }
 
-    const { data, error } = await this.resendClient.emails.send(emailOptions)
+    let data: { id: string } | null = null
+    let error: unknown = null
+
+    try {
+      const response = await this.resendClient.emails.send(emailOptions)
+      data = response.data
+      error = response.error
+    } catch (thrown) {
+      // The SDK throws on transport-level problems (DNS, timeout, aborted
+      // connection) instead of returning an `error`, and those used to escape
+      // this method unlabelled.
+      error = thrown
+    }
 
     if (error || !data) {
-      if (error) {
-        this.logger.error("Failed to send email", error)
-      } else {
-        this.logger.error("Failed to send email: unknown error")
-      }
-      return {}
+      const detail = describeResendError(error)
+
+      // Logged with everything needed to tell a Resend problem (bad API key,
+      // unverified domain, rate limit) apart from ours (bad template data).
+      this.logger.error(
+        `[resend] Nepodařilo se odeslat e-mail "${notification.template}" na ${notification.to}: ${detail}`
+      )
+
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Resend odmítl e-mail "${notification.template}" pro ${notification.to}: ${detail}`
+      )
     }
 
     return { id: data.id }

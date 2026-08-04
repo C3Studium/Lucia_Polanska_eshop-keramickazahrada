@@ -19,10 +19,15 @@ export const sendAbandonedNotificationsStep = createStep(
       Modules.NOTIFICATION
     )
 
+    // One nudge per cart, ever. The cart's own `abandoned_notification` metadata
+    // flag is only set after this step succeeds, so a failed send leaves the
+    // cart eligible again tomorrow — the key makes that a retry of the same
+    // e-mail instead of a second one.
     const notificationData = input.carts.map((cart) => ({
       to: cart.email!,
-      channel: "email", 
+      channel: "email",
       template: EmailTemplates.ABANDONED_CART || "",
+      idempotency_key: `abandoned-cart:${cart.id}`,
       data: {
         customer: {
           first_name: cart.customer?.first_name || cart.shipping_address?.first_name,

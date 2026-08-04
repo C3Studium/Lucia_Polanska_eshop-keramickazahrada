@@ -17,6 +17,7 @@ import {
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query"
 // Použijeme obyčejný <a> místo Link, abychom nevyžadovali Router kontext
 import { useMemo, useState } from "react"
+import { EmptyState } from "../../components/empty-state"
 import { sdk } from "../../lib/sdk"
 import { HttpTypes } from "@medusajs/framework/types"
 
@@ -225,12 +226,10 @@ const ReviewsPageInner = () => {
             </Text>
           </div>
         ) : isEmpty ? (
-          <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
-            <Heading level="h2">{activeTab.empty}</Heading>
-            <Text size="small" className="text-ui-fg-subtle mt-1">
-              Po doručení objednávky zákazníky sami poprosíme o recenzi.
-            </Text>
-          </div>
+          <EmptyState
+            title={activeTab.empty}
+            description="Po doručení objednávky zákazníky sami poprosíme o recenzi."
+          />
         ) : (
           <>
             <DataTable.Table />

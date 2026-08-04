@@ -36,10 +36,15 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
       }
     }).config({ name: "get-order-confirmation-details" })
     
+    // Keyed per order so at-least-once event delivery cannot send a second
+    // confirmation. This matters more now that a failed send is recorded as a
+    // failure and therefore retried: without the key, every retry would be a
+    // brand-new e-mail rather than another attempt at the same one.
     const notification = sendNotificationStep([{
       to: orders[0].email,
       channel: "email",
       template: "order-placed",
+      idempotency_key: `order-placed:${id}`,
       data: {
         order: orders[0]
       }
