@@ -6,6 +6,7 @@ import MerchantOrderModuleService from "../../../../modules/merchant-order/servi
 import { isMerchantOrderStage } from "../../../../modules/merchant-order/stages"
 import type { MerchantOrderStage } from "../../../../modules/merchant-order/stages"
 import { notifyMerchant } from "../../../../lib/notify"
+import { completePersonalPickupWorkflow } from "../../../../workflows/complete-personal-pickup"
 import { confirmMerchantHandoverWorkflow } from "../../../../workflows/confirm-merchant-handover"
 import { shipMerchantOrderWorkflow } from "../../../../workflows/ship-merchant-order"
 import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
@@ -83,17 +84,28 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
 export const PATCH = async (
   req: MedusaRequest<{
-    stage: MerchantOrderStage | "handover_confirmed"
+    stage: MerchantOrderStage | "handover_confirmed" | "pickup_collected"
     internal_note?: string | null
     attention_reason?: string | null
   }>,
   res: MedusaResponse
 ) => {
-  if (req.body.stage !== "handover_confirmed" && !isMerchantOrderStage(req.body.stage)) {
+  const customVerbs = ["handover_confirmed", "pickup_collected"]
+  if (!customVerbs.includes(req.body.stage) && !isMerchantOrderStage(req.body.stage)) {
     throw new MedusaError(MedusaError.Types.INVALID_DATA, "Neplatný stav objednávky.")
   }
 
   const changedBy = (req as any).auth_context?.actor_id || null
+
+  // „Vyzvednuto a zaplaceno" — personal collection: cash and goods change
+  // hands at the same moment, so one action records both.
+  if (req.body.stage === "pickup_collected") {
+    await completePersonalPickupWorkflow(req.scope).run({
+      input: { order_id: req.params.orderId, created_by: changedBy },
+    })
+    res.status(200).json({ collected: true })
+    return
+  }
 
   // „Zásilku jsem předala dopravci" — phase two of A1. A separate verb from
   // the ordinary stage move, because it asserts a fact about the physical

@@ -1545,3 +1545,80 @@ rather than throwing: a missing integration must never be why she cannot ship.
   open question — it contradicts D1 and is not built.
 - Gate: typecheck ✓ · build ✓ (backend 5.45 s, admin 16.15 s) · tests: 156
   passed in 11 suites.
+
+---
+
+## P4-3 (redefined) — personal collection, paid at the counter   (2026-08-04)
+
+Matěj's clarification replaced this task entirely: „pickup point" never meant a
+carrier's collection point, it meant **the customer driving to her address**.
+The plan's Packeta/Balíkovna pickup-point gate is dropped; this is what was
+built instead.
+
+- Files: `src/modules/pickupPayment/{service,index}.ts` (new),
+  `src/workflows/complete-personal-pickup.ts` (new),
+  `src/workflows/__tests__/personal-pickup.unit.spec.ts` (new),
+  `medusa-config.js`, `src/api/admin/merchant-orders/[orderId]/route.ts`,
+  `src/api/admin/merchant-orders/projection.ts`,
+  `src/admin/components/merchant-order-queue.tsx`.
+
+### It is not dobírka, and the difference matters
+
+Dobírka is money collected by a **carrier** on delivery, which D1 forbids. This
+is money handed to her, in her workshop, at the moment the customer takes the
+piece. It is the only case where goods and money meet outside the online flow —
+and because it is the only one, it is worth naming precisely rather than
+bending an existing concept.
+
+Suggested customer-facing wording: **„Zaplatím při vyzvednutí"** for the payment
+method, **„Osobní odběr"** for the shipping option.
+
+### Authorize, never capture — and why that carries the whole design
+
+Checkout cannot complete without a payment session, so the provider exists; it
+reports **`authorized`** and stops. Every downstream surface then behaves
+correctly *without knowing this provider exists*:
+
+- `authorized` is not a payment problem, so the order lands in „Nové" rather
+  than the problem queue;
+- the A2 ship gate compares **captured** against the total, so it **blocks**
+  dispatch — correct, nobody has paid;
+- Statistiky and the daily digest count captured money, so an order that was
+  promised and never collected never inflates the takings.
+
+Money becomes real only when she captures it. Had the provider reported
+`captured` at checkout — the obvious shortcut — every uncollected order would
+have looked paid, been shippable, and counted as revenue.
+
+### One action, in the order the facts happen
+
+„Vyzvednuto a zaplaceno" captures the payment, fulfils, ships. **Capture is
+first on purpose**: if it fails there is nothing to undo, the piece is still on
+the shelf. Doing it last would mean handing over goods and *then* finding the
+record could not be written.
+
+The workflow **refuses to run on anything that is not a personal collection**.
+Cash at the counter is the one exception to „no money, no goods", and an
+exception that can be applied to any order is not an exception — it is a hole.
+That boundary is where the tests are pointed.
+
+---
+
+## §5.2/§5.3 — the two gaps I had missed   (2026-08-04)
+
+- **„Kontaktovat"** is now on every card: a `mailto:` with the subject already
+  written („Vaše objednávka #{display_id} z Keramické zahrady"). She writes to
+  customers from her own inbox, and retyping the order number every time is
+  exactly the friction this admin exists to remove. Contacting is deliberately
+  **not** a stage change — an order does not stop moving because somebody asked
+  a question (§3.6).
+- **A failed action now marks the row.** §5.1 asks for „Nepodařilo se — zkusit
+  znovu"; only the toast and the bell existed, so a failure was invisible the
+  moment she looked away. The row now carries the failure and the reason until
+  the next attempt succeeds.
+
+- Gate: typecheck ✓ · build ✓ (backend 7.30 s, admin 25.25 s) · tests: **163
+  passed** in 12 suites (7 new).
+- Notes for Matěj: the pickup provider must be **enabled on the region** to
+  appear in checkout, and the storefront should only offer it when „Osobní
+  odběr" is the chosen shipping option.

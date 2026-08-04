@@ -283,6 +283,16 @@ const medusaConfig = {
               method: COMGATE_METHOD
             },
           },
+          {
+            // „Zaplatím při vyzvednutí" — cash taken in person at the
+            // workshop. Not dobírka: no carrier is involved and D1 still
+            // forbids that. It authorizes and never captures, so an order that
+            // was promised but never collected can neither ship nor count as
+            // revenue until she records the money (see the provider's docs).
+            resolve: './src/modules/pickupPayment',
+            id: 'pickup',
+            options: {},
+          },
           // Stripe provider (conditionally enabled if env present)
           ...(STRIPE_API_KEY && STRIPE_WEBHOOK_SECRET ? [{
             resolve: '@medusajs/payment-stripe',

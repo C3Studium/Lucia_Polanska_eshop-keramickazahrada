@@ -43,6 +43,9 @@ export type MerchantOrderRow = {
    */
   awaiting_handover: boolean
 
+  /** Collected in person at the workshop — money and goods meet at the counter. */
+  is_personal_pickup: boolean
+
   /**
    * Why dispatch is blocked, in Czech, or `null` when it is not (A2).
    * Computed server-side by the same rules the ship workflow enforces, so the
@@ -125,6 +128,13 @@ export const toMerchantOrderRow = (
     has_fulfillment: Boolean(
       (order?.fulfillments || []).some((f: any) => !f?.canceled_at)
     ),
+
+    is_personal_pickup: (order?.shipping_methods || []).some((method: any) => {
+      const methodData = method?.data || {}
+      return (
+        methodData.personal_pickup === true || methodData.service_code === "PICKUP"
+      )
+    }),
 
     awaiting_handover:
       state.stage === "shipping" &&

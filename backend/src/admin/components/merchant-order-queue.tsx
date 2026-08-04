@@ -58,6 +58,9 @@ export type MerchantOrder = {
 
   /** Packed, but nobody has handed it to a carrier yet (A1, §5.4). */
   awaiting_handover: boolean;
+
+  /** Collected in person at the workshop, paid at the counter. */
+  is_personal_pickup: boolean;
 };
 
 export type MerchantOrdersResponse = {
@@ -271,9 +274,10 @@ export const OrderRow = ({
       );
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Stav se nepodařilo změnit"
-      );
+      const message =
+        error instanceof Error ? error.message : "Stav se nepodařilo změnit";
+      setLastFailure(message);
+      toast.error(message);
     },
   });
   const handover = useMutation({
@@ -291,11 +295,34 @@ export const OrderRow = ({
       );
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Předání se nepodařilo potvrdit"
-      );
+      const message =
+        error instanceof Error ? error.message : "Předání se nepodařilo potvrdit";
+      setLastFailure(message);
+      toast.error(message);
+    },
+  });
+
+  // §5.1: a dispatch that failed leaves the stage untouched, which is right —
+  // but then nothing on the row says so, and the only trace is in the bell. If
+  // she looks away after a failure she has no way to know it happened.
+  const [lastFailure, setLastFailure] = useState<string | null>(null);
+
+  const pickup = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
+        method: "PATCH",
+        body: { stage: "pickup_collected" },
+      }),
+    onSuccess: async () => {
+      setLastFailure(null);
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      toast.success("Vyzvednutí a platba zaznamenány");
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Akci se nepodařilo dokončit";
+      setLastFailure(message);
+      toast.error(message);
     },
   });
 
@@ -365,6 +392,11 @@ export const OrderRow = ({
             Čeká na ruční podání zásilky.
           </Text>
         )}
+        {lastFailure && (
+          <Text size="small" className="text-ui-fg-error mt-1">
+            Nepodařilo se — zkusit znovu. {lastFailure}
+          </Text>
+        )}
       </div>
 
       <div>
@@ -399,7 +431,43 @@ export const OrderRow = ({
         <Button variant="secondary" size="small" asChild>
           <Link to={`/orders/${order.order_id}`}>Otevřít objednávku</Link>
         </Button>
-        {needsHandover && !blockedFromShipping && (
+
+        {/*
+          §5.3 item 6. A plain mailto with the subject already written: she
+          writes to customers from her own inbox, and retyping the order number
+          every time is exactly the friction this admin exists to remove.
+          Contacting is never a stage change — an order does not stop moving
+          because somebody asked a question.
+        */}
+        {order.email && (
+          <Button variant="transparent" size="small" asChild>
+            <a
+              href={`mailto:${order.email}?subject=${encodeURIComponent(
+                `Vaše objednávka #${order.display_id ?? ""} z Keramické zahrady`
+              )}`}
+            >
+              Kontaktovat
+            </a>
+          </Button>
+        )}
+        {/*
+          Personal collection never ships: the customer arrives, pays and
+          leaves with it. One action records both facts — see
+          `complete-personal-pickup.ts` for why the money is taken first.
+        */}
+        {order.is_personal_pickup &&
+          !["shipped", "cancelled"].includes(order.stage) && (
+            <Button
+              variant="primary"
+              size="small"
+              isLoading={pickup.isPending}
+              onClick={() => pickup.mutate()}
+            >
+              Vyzvednuto a zaplaceno
+            </Button>
+          )}
+
+        {needsHandover && !blockedFromShipping && !order.is_personal_pickup && (
           <Button
             variant="primary"
             size="small"
@@ -413,7 +481,8 @@ export const OrderRow = ({
         {targetStage &&
           order.stage !== "payment_problem" &&
           !blockedFromShipping &&
-          !needsHandover && (
+          !needsHandover &&
+          !order.is_personal_pickup && (
             <Button
               variant="primary"
               size="small"
