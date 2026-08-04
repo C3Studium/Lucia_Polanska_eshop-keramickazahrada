@@ -299,3 +299,81 @@ read-only check). `[maintainability]` `[trust]`
   thing that needs replacing.
 
 ---
+
+## A4 — kontakt modal refit and promotion (D-S1 + D-S5, spec §14 P0 item 0.4)
+
+**Files**
+
+- `src/modules/layout/ContactDialog/` — **new**: `index.tsx` (provider + `useContactDialog`),
+  `panel.tsx` (the dialog), `trigger.tsx` (the button), `motion.ts`, `style.module.scss`.
+- `src/lib/motion-tokens.ts` — **new**, created early (see below).
+- **Deleted:** `src/modules/home/Kurzy/CTA/` (`index.tsx` + global `styles.scss`).
+- Migrated call sites: `layout/Navbar`, `dotazy/FAQ`, `home/Kurzy/Intro`.
+- `layout/Footer` — "Kontakt" entry is now a dialog trigger; `+ .footer__dialogLink`.
+- Both route layouts — mount `ContactDialogProvider`.
+- `common/components/Buttons/webButton` — gains `type` and `disabled`.
+
+**Promotion out of Kurzy (D-S5).** The contact dialog lived in `home/Kurzy/CTA` and shipped its
+button and its dialog together, so each trigger mounted its own copy — and nothing outside a
+component tree could open it. It is now a layout surface: one instance per route layout, opened
+through `useContactDialog().open(topic?)`. The footer's Kontakt entry is a button that calls it,
+which is what finally removes the `/kontakt` 404 without inventing a route (no `/kontakt` page
+is created, per D-S5). Three trigger sites migrated; `Kurzy/Intro`'s CTA now opens pre-set to
+the "Kurzy" topic. `[conversion]` `[maintainability]`
+
+**Working submit (D-S1), behind `NEXT_PUBLIC_CONTACT_FORM_ENABLED`.**
+`POST {NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/contact` · `{ name, email, phone?, message }` ·
+honeypot `website` · `200` → success, `400` → validation copy, `429` → rate-limit copy,
+anything else or a network failure → the generic Czech fallback. Every failure message ends with
+the atelier's e-mail as a live `mailto:`. The chosen topic rides in the message body
+(`Téma: Zakázka\n\n…`) so the agreed contract is untouched.
+
+The flag is **off** by default, and with it off the dialog renders no form at all — it shows
+e-mail, phone and address as the way to reach the atelier. A dead form never ships. Turn the flag
+on once the backend route is live.
+
+**Accessibility.** `role="dialog"` + `aria-modal` + `aria-labelledby` (already present) now come
+with: a real focus trap (Tab and Shift+Tab cycle inside; verified — focus escaped on **0 of 30**
+tabs), focus moved to the close button on open and **restored to the trigger** on close, Escape
+to close, body scroll lock. Every field has a real `id`/`htmlFor` pair (`useId`), a **13px**
+label and its requirement stated in words — "(povinné)" / "(nepovinné)" — not by colour. The
+2.1:1 placeholder is gone: placeholders are `#5c5e54` (**6.5:1** on the panel's lightest cream),
+labels `#4d4e46` (**8.3:1**). Nothing in the component is below 12px any more — the census here
+was 8–11px across meta, eyebrow, legend, fine print and the details card. Topic chips are 44px.
+Failures scroll into view, because the form panel scrolls and the alert can otherwise appear
+below the fold on the very click that caused it. `[accessibility]` `[readability]` `[trust]`
+
+**Conventions applied (§5).** `styles.scss` (a global emitter concatenated into the 241 KB
+sheet) became `style.module.scss` — the trap-1 sanctioned conversion, verified gone from
+`_generated-styles.scss`. Declarative motion moved to `motion.ts`; the hook-driven bits stay in
+the component. `src/lib/motion-tokens.ts` is created **now rather than in Phase B**: the
+convention binds every file I touch, and writing fresh magic numbers into a new `motion.ts`
+only to replace them later would be worse. It holds `easeReveal`, `easeMicro` and the duration
+budget; Phase B's job becomes adopting it everywhere else, not creating it.
+
+`WebButton` gained `type` and `disabled` because a primary button inside a form has to be able
+to submit and to disable itself while in flight; it defaulted to a hardcoded `type="button"`.
+
+**Verified end to end** (dev, flag on, endpoint mocked): submitting posts exactly
+`{name, email, phone, message, website:""}` and the success state replaces the form with
+"Zpráva odešla." plus the two-working-day promise. With the real (not yet existing) endpoint the
+failure state renders the Czech fallback and the support e-mail.
+
+**Gate**
+
+- `pnpm lint` → exit 0, no new warnings. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Visual QA at 1280 (flag off and flag on) plus keyboard-only: dialog opens from the navbar and
+  from the footer, ESC closes, focus returns to the trigger, no page errors. The panel's visual
+  identity — cream drift, light sweep, grain, clip-path reveal of the photo aside — is unchanged.
+- e2e deferred.
+
+**Notes for Matěj**
+
+1. **Backend coordination:** the storefront is ready for `POST /store/contact` exactly as
+   specified in D-S1. When it is live, set `NEXT_PUBLIC_CONTACT_FORM_ENABLED=true` on Railway and
+   the form replaces the direct-contact panel. Nothing else needs changing.
+2. With the flag off, the contact details appear both in the dialog's left panel and in its photo
+   card — mild duplication that resolves itself when the form turns on. Left as is rather than
+   restructuring a state that is meant to be temporary.
+
+---

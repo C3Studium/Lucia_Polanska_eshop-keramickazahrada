@@ -1,6 +1,6 @@
 "use client"
 
-import CTA from "@modules/home/Kurzy/CTA"
+import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import { AnimatePresence, motion, type Easing, type Variants } from "framer-motion"
 import Image from "next/image"
 import { useMemo, useState } from "react"
@@ -209,7 +209,7 @@ export default function FAQBody() {
                         <h3>Nenašli jste odpověď?</h3>
                         <p>Napište přímo do ateliéru. Ozveme se zpravidla do dvou pracovních dnů.</p>
                         <div className="faqContactActions">
-                            <CTA text="Napsat zprávu" kind="secondary" />
+                            <ContactTrigger text="Napsat zprávu" />
                             <a href="tel:+420775211578">+420 775 211 578</a>
                         </div>
                     </div>

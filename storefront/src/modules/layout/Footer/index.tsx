@@ -1,6 +1,7 @@
 "use client"
 
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
+import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { MerchantIdentity } from "@lib/data/merchant"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
@@ -26,6 +27,8 @@ const discoverLinks = [
   { label: "Obchod", href: "/store" },
   { label: "Dotazy", href: "/dotazy" },
   { label: "Kurzy", href: "/kurzy" },
+  // Kontakt is a dialog, not a page (D-S5) — rendered as a button by FooterLinkGroup.
+  { label: "Kontakt", action: "contact" as const },
 ]
 
 const helpLinks = [
@@ -253,20 +256,37 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
   )
 }
 
+type FooterEntry =
+  | { label: string; href: string; action?: never }
+  | { label: string; action: "contact"; href?: never }
+
 function FooterLinkGroup({
   title,
   links,
 }: {
   title: string
-  links: { label: string; href: string }[]
+  links: readonly FooterEntry[]
 }) {
+  const { open } = useContactDialog()
+
   return (
     <div className="footer__linkGroup">
       <h3>{title}</h3>
       <div>
-        {links.map((link) => (
-          <FooterLink key={link.label} href={link.href} label={link.label} />
-        ))}
+        {links.map((link) =>
+          link.action === "contact" ? (
+            <button
+              key={link.label}
+              type="button"
+              className="footer__dialogLink"
+              onClick={() => open()}
+            >
+              {link.label}
+            </button>
+          ) : (
+            <FooterLink key={link.label} href={link.href} label={link.label} />
+          )
+        )}
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ import Scrollbar from "@modules/layout/scrollbar"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -39,8 +40,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
     }
   }
 
+  const merchant = getMerchantIdentity()
+
   return (
-    <>
+    <ContactDialogProvider merchant={merchant}>
       <GlobalLiquidEther />
       <Navbar
         cart={cart}
@@ -62,7 +65,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         />
       )}
       {props.children}
-      <Footer merchant={getMerchantIdentity()} />
-    </>
+      <Footer merchant={merchant} />
+    </ContactDialogProvider>
   )
 }

@@ -275,6 +275,22 @@
   text-shadow: none;
 }
 
+/* Kontakt opens the dialog, so it is a button — styled to sit level with its link siblings. */
+.footer__dialogLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--footer-ink);
+  cursor: pointer;
+  font: 400 clamp(15px, 1vw, 18px)/1.2 "Sansation-Regular", sans-serif;
+  text-align: left;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.footer__dialogLink:hover {
+  opacity: 0.56;
+}
+
 .footer__bottom {
   display: grid;
   grid-template-columns: 1fr auto;

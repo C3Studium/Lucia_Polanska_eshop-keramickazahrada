@@ -18,7 +18,7 @@ import {
   NavigationCollection,
   ProductButton,
 } from "./productsButton"
-import CTA from "@modules/home/Kurzy/CTA"
+import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import NavbarSearch from "./navbarSearch"
 
 type NavbarProps = {
@@ -208,11 +208,10 @@ export default function Navbar({
             hasMenu={navigationCollections.length > 0}
           />
           <div className="navbar__center-side navbar__center-side--right">
-            <CTA
+            <ContactTrigger
               text="Kontakt"
-              kind="primary"
               img="/assets/links/home_img.png"
-              alt="bg__image"
+              alt=""
             />
             <Button
               className="navbar__nav-link"

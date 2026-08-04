@@ -6,6 +6,7 @@ import Footer from "@modules/layout/Footer"
 import Navbar from "@modules/layout/Navbar"
 import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Scrollbar from "@modules/layout/scrollbar"
 import styles from "./styles/layout.module.scss"
@@ -24,23 +25,27 @@ export default async function CheckoutLayout({
       listNavigationCollections(),
     ])
 
+  const merchant = getMerchantIdentity()
+
   return (
-    <div className={styles.root}>
-      <GlobalLiquidEther />
-      <Navbar
-        cart={cart}
-        regions={regions}
-        isLoggedIn={!!customer}
-        wishlistItems={wishlistItems}
-        navigationCollections={navigationCollections}
-      />
-      <Scrollbar />
-      <main className={styles.checkoutContainer} data-testid="checkout-container">
-        {children}
-      </main>
-      <div className={styles.footer}>
-        <Footer merchant={getMerchantIdentity()} />
+    <ContactDialogProvider merchant={merchant}>
+      <div className={styles.root}>
+        <GlobalLiquidEther />
+        <Navbar
+          cart={cart}
+          regions={regions}
+          isLoggedIn={!!customer}
+          wishlistItems={wishlistItems}
+          navigationCollections={navigationCollections}
+        />
+        <Scrollbar />
+        <main className={styles.checkoutContainer} data-testid="checkout-container">
+          {children}
+        </main>
+        <div className={styles.footer}>
+          <Footer merchant={merchant} />
+        </div>
       </div>
-    </div>
+    </ContactDialogProvider>
   )
 }
