@@ -307,6 +307,38 @@ export const OrderRow = ({
   // she looks away after a failure she has no way to know it happened.
   const [lastFailure, setLastFailure] = useState<string | null>(null);
 
+  // §5.1 „stage before shipping": the label is what she prints and sticks on
+  // the box, so the button belongs where the packing happens. It downloads
+  // whatever the carrier issued — it never draws one, because a home-made
+  // barcode is a parcel the post office refuses after the box is taped shut.
+  const label = useMutation<{
+    available: boolean;
+    reason?: string;
+    labels: Array<{ url: string; tracking_number: string | null }>;
+  }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}/label`),
+    onSuccess: (result) => {
+      if (!result.available) {
+        toast.info(result.reason ?? "Štítek zatím není k dispozici");
+        return;
+      }
+      for (const item of result.labels) {
+        window.open(item.url, "_blank", "noopener,noreferrer");
+      }
+      toast.success(
+        result.labels.length === 1
+          ? "Štítek se otevřel v novém okně"
+          : `${result.labels.length} štítků se otevřelo v nových oknech`
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Štítek se nepodařilo načíst"
+      );
+    },
+  });
+
   const pickup = useMutation({
     mutationFn: () =>
       sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
@@ -450,6 +482,19 @@ export const OrderRow = ({
             </a>
           </Button>
         )}
+        {/* Only where packing happens, and never for a personal collection —
+            nothing is posted, so there is nothing to label. */}
+        {order.stage === "shipping" && !order.is_personal_pickup && (
+          <Button
+            variant="secondary"
+            size="small"
+            isLoading={label.isPending}
+            onClick={() => label.mutate()}
+          >
+            Štítek na balík
+          </Button>
+        )}
+
         {/*
           Personal collection never ships: the customer arrives, pays and
           leaves with it. One action records both facts — see

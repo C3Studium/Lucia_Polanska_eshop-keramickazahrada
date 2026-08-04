@@ -116,13 +116,26 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
         service_code: CP_SERVICE_CODES.address,
       },
       {
-        id: "personal-pickup",
-        name: "Osobní odběr",
-        // Nothing is ever handed to a carrier; she gives it to the customer.
-        service_code: "PICKUP",
-        is_personal_pickup: true,
+        // Kept from the original stub: ceramics break, and the fragile service
+        // is the reason this shop needs a carrier option at all.
+        id: "cp-fragile",
+        name: "Česká pošta – křehké",
+        service_code: CP_SERVICE_CODES.address,
+        fragile: true,
+      },
+      {
+        // Returns come back through the same carrier. Ceramics being returned
+        // are, if anything, more fragile than when they went out.
+        id: "cp-return-fragile",
+        name: "Česká pošta – křehké (vrácení)",
+        service_code: CP_SERVICE_CODES.address,
+        fragile: true,
+        is_return: true,
       },
     ]
+
+    // Osobní odběr deliberately lives in its own provider
+    // (`src/modules/pickupFulfillment`) rather than here — see its docs.
   }
 
   async validateFulfillmentData(
@@ -158,21 +171,6 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     fulfillment: Partial<Omit<FulfillmentDTO, "provider_id" | "data" | "items">>
   ): Promise<CreateFulfillmentResult> {
     const serviceCode = String(data?.service_code ?? CP_SERVICE_CODES.address)
-    const isPersonalPickup = serviceCode === "PICKUP"
-
-    // Personal collection never involves a carrier at all, so it is always
-    // record-only regardless of configuration.
-    if (isPersonalPickup) {
-      return {
-        data: {
-          mode: "manual" satisfies FulfillmentMode,
-          service_code: serviceCode,
-          personal_pickup: true,
-          recorded_at: new Date().toISOString(),
-        },
-        labels: [],
-      }
-    }
 
     if (!this.hasCredentials()) {
       this.logger_.info(

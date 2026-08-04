@@ -153,6 +153,14 @@ const medusaConfig = {
             },
           },
           {
+            // Osobní odběr as its own provider — nothing here involves a
+            // carrier, so listing it under Balíkovna described a journey that
+            // never happens. The registration id is what the admin displays.
+            resolve: "./src/modules/pickupFulfillment",
+            id: "osobni-odber",
+            options: {},
+          },
+          {
             resolve: "./src/modules/zasilkovnaFulfillment",
             id: "packeta",
             options: {},

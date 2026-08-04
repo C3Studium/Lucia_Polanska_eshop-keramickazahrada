@@ -1622,3 +1622,54 @@ That boundary is where the tests are pointed.
 - Notes for Matěj: the pickup provider must be **enabled on the region** to
   appear in checkout, and the storefront should only offer it when „Osobní
   odběr" is the chosen shipping option.
+
+---
+
+## P4-3b — Osobní odběr as its own provider, return options, label button   (2026-08-04)
+
+- Files: `src/modules/pickupFulfillment/{service,index}.ts` (new),
+  `src/modules/ceskaPostaFulfillment/service.ts`, `medusa-config.js`,
+  `src/api/admin/merchant-orders/[orderId]/label/route.ts` (new),
+  `src/admin/components/merchant-order-queue.tsx`.
+
+### Osobní odběr moved out of the Česká pošta provider
+
+It was an *option* under the carrier, which read wrong in the admin: choosing
+provider „Balikovna" and then „Osobní odběr" describes a journey that never
+happens. It is now its own provider, registered as `osobni-odber` so the admin
+displays **„Osobni Odber"**. Always record-only — there is no carrier to book.
+
+### Fulfilment options now offered
+
+| Provider | Options |
+| --- | --- |
+| Balikovna (ČP) | Balíkovna · Česká pošta – na adresu · **Česká pošta – křehké** · *Česká pošta – křehké (vrácení)* |
+| Osobni Odber | Osobní odběr v dílně · *Osobní dovoz zpět* |
+
+Italic entries carry `is_return: true`. **„Česká pošta – křehké" is restored** —
+it existed on the original stub and my P4-1 rewrite dropped it, which was a
+regression: fragile shipping is the reason a ceramics shop needs a carrier
+option at all.
+
+### The label button — built as plumbing, not as a generator
+
+„Štítek na balík" appears on cards in the packing stage (not on personal
+collections — nothing is posted, so there is nothing to label).
+
+It **downloads whatever the carrier issued** and never draws one. A ČP label
+carries a barcode ČP allocated when the parcel was booked; printing a lookalike
+produces a parcel the post office refuses *after* she has taped the box shut.
+So in record-only mode it says exactly that: book it in the ČP portal, and once
+the e-shop is connected the label downloads from here.
+
+The path is complete — `fulfillment.labels` → endpoint → button. When P4-2 lands
+and the provider starts returning labels, the same button starts producing real
+PDFs with no further wiring.
+
+- Deviations: none. This is P4-3 as redefined plus the label plumbing from P4-2
+  that does not need credentials.
+- Gate: typecheck ✓ · build ✓ (backend 5.64 s, admin 17.16 s) · tests: 163
+  passed in 12 suites.
+- Notes for Matěj: **a build failure caught this** — the new module was written
+  to the repo root instead of `backend/` and `medusa build` failed with
+  „Cannot find module". Moved and rebuilt clean; nothing shipped broken.
