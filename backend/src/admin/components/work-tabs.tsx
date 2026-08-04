@@ -18,13 +18,26 @@ import { Link, useLocation } from "react-router-dom";
  * bookmarkable and survives a refresh — the same reason the queues were
  * separate routes to begin with.
  */
-export type WorkTabKey = "prehled" | "prace" | "zakazky" | "emaily";
+export type WorkTabKey =
+  | "prehled"
+  | "prace"
+  | "zakazky"
+  | "platby"
+  | "statistiky"
+  | "emaily";
 
+/**
+ * Ordered by how often she needs them, not by how interesting they are: the
+ * day's work first, the money next, the insight last. Statistiky sits at the
+ * far end deliberately — it is for thinking about the shop, not running it.
+ */
 const tabs: Array<{ key: WorkTabKey; label: string; to: string }> = [
   { key: "prehled", label: "Přehled", to: "/prehled" },
   { key: "prace", label: "Denní práce", to: "/prehled/prace" },
   { key: "zakazky", label: "Zakázky", to: "/prehled/zakazky" },
+  { key: "platby", label: "Platby", to: "/prehled/platby" },
   { key: "emaily", label: "Odeslané e-maily", to: "/prehled/emaily" },
+  { key: "statistiky", label: "Statistiky", to: "/prehled/statistiky" },
 ];
 
 export const WorkTabs = ({ active }: { active: WorkTabKey }) => {

@@ -1207,3 +1207,97 @@ Sidebar is now `/prehled` (rank 0), `/reviews`, `/sezonni-vybery`,
 `/zakazkova-vyroba`, the two Sklad children and the two Produkty children —
 **no Denní práce entry**. All seven retired paths are present as routes with no
 menu item.
+
+---
+
+## UI-2 — Přehled tabs, Sezónní akce, Zakázky money   (2026-08-04)
+
+Requested by Matěj. A second deliberate **deviation from §4**, which says
+Přehled is „not analytics — nothing here needs a trend to act".
+
+- Files: `src/api/admin/operations/statistics/route.ts` (new),
+  `src/api/admin/operations/payments/route.ts` (new),
+  `src/api/admin/made-to-order/orders/route.ts` (new),
+  `src/admin/routes/prehled/{statistiky,platby}/page.tsx` (new),
+  `src/admin/routes/prehled/zakazky/page.tsx`,
+  `src/admin/routes/sezonni-vybery/page.tsx`,
+  `src/admin/components/work-tabs.tsx`,
+  `src/api/admin/operations/summary/route.ts`,
+  `src/api/admin/merchant-catalog/seasonal-selections/route.ts`,
+  `docs/plan-pay-in-full-for-commissions.md` (new).
+
+### Where the analytics went, and why not on the dashboard
+
+The trends live behind their own **Statistiky** tab rather than on Přehled. The
+plan's reasoning still holds for the dashboard itself: a best-seller ranking
+over a year is not something anybody acts on this morning, and putting it beside
+„3 objednávky k zabalení" makes the urgent compete with the interesting.
+Behind a tab, looking at it is a deliberate act. The first tab stays trend-free.
+
+### Statistiky
+
+Periods 30 d / 3 m / 6 m / 1 rok / vše, in the query string so a period is
+linkable. Per period: takings, order count, average order value, abandoned
+carts with a rate, and the ten best-selling products.
+
+Three decisions worth recording:
+
+- **Best sellers count paid orders only.** A piece that was ordered and never
+  paid for was not sold, and letting it rank would make the list advise badly.
+- **Empty carts are excluded** from the abandonment figure. „Started but never
+  finished" is the question; a cart with no items is a page view.
+- **The scan is capped** (5 000 orders, 20 000 carts) and the response says when
+  it truncated. „Vše" grows forever, and an unbounded scan is a request that
+  gets slower every month until it times out. A partial total presented as
+  complete would be worse than saying so.
+
+### Platby
+
+Built on orders rather than payment tables, for two reasons that are easy to get
+wrong: `payment_status` is computed inside `getOrdersListWorkflow` and available
+nowhere else, and a *failed* payment often leaves no `payment` row at all — only
+a collection that never completed — so a list built from payments would omit
+exactly the rows the page exists to show. Read-only: refunds and captures stay
+on the native order page, where Medusa's guards and audit trail are. A second
+way to move money is what §18 exists to prevent.
+
+### Zakázky — the money picture
+
+Needed a list endpoint, which did not exist (P6-1 was going to build it), so
+`GET /admin/made-to-order/orders` is added here read-only. Each commission shows
+paid vs agreed as a bar with the shortfall named, because a commission is the
+one order type where „paid" is a spectrum — deposit up front, balance on
+completion — and the next step cannot be judged without seeing where a piece
+sits on it. Money comes from the module's own payment-request snapshots.
+
+**P6-1 still owns the actions** (confirm specification, start production,
+request balance). This is the read-only half.
+
+### Sezónní akce
+
+Renamed from „Sezónní výběry" throughout the UI. Each row now lists its products
+with thumbnails, and **marks the bundles** — a bundle is an ordinary product
+with a `bundle` record linked to it, so nothing in the product row shows it,
+but it matters: discounting a bundle discounts everything inside it, which the
+page now says out loud. The link is traversed from the bundle side, the only
+direction it has (`src/links/bundle-product.ts`).
+
+### Dashboard: running discounts
+
+One tile counting all four instruments (§13) — seasonal sales, price lists,
+discount codes, automatic discounts — because they run independently and are
+easy to forget once live. One tile rather than four; the breakdown is the hint.
+
+### Planned, not built
+
+`docs/plan-pay-in-full-for-commissions.md` records the „customer pays the whole
+sum up front" feature Matěj asked to plan ahead. Key design decision captured
+there: express it as *a deposit that equals the total*, not a new
+`paid_in_full` flag — the ship gate, the Zakázky bar and the Přehled tile all
+derive from `agreed_total − paid`, so that shape needs no new branches anywhere,
+and a missed branch would be a way to ship an unpaid order. Three business
+questions are left open for Matěj (refund policy, prepay discount, behaviour
+when the price rises after confirmation).
+
+- Gate: typecheck ✓ · build ✓ (backend 5.49 s, admin 16.59 s) · tests: 149
+  passed in 10 suites.

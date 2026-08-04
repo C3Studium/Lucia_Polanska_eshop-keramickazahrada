@@ -18,6 +18,14 @@ import { EmptyState } from "../../components/empty-state";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
+type SeasonalItem = {
+  id: string;
+  product_id: string;
+  product?: { id: string; title?: string | null; thumbnail?: string | null } | null;
+  /** Set when the product is a bundle — a sale on it discounts its contents too. */
+  bundle?: { id: string; title: string } | null;
+};
+
 type SeasonalSelection = {
   id: string;
   title: string;
@@ -26,7 +34,7 @@ type SeasonalSelection = {
   starts_at?: string | null;
   ends_at?: string | null;
   linked_price_list_id?: string | null;
-  items?: Array<{ id: string }>;
+  items?: SeasonalItem[];
 };
 
 type SeasonalSelectionsResponse = {
@@ -40,9 +48,9 @@ const groups: Array<{ key: GroupKey; label: string; empty: string }> = [
   {
     key: "planned",
     label: "Naplánované",
-    empty: "Zatím žádný naplánovaný výběr",
+    empty: "Zatím žádná naplánovaná akce",
   },
-  { key: "active", label: "Aktivní", empty: "Právě neběží žádný výběr" },
+  { key: "active", label: "Aktivní", empty: "Právě neběží žádná akce" },
   { key: "archived", label: "Archivované", empty: "Archiv je zatím prázdný" },
 ];
 
@@ -110,10 +118,10 @@ const SezonniVyberyInner = () => {
   return (
     <Container className="divide-y p-0">
       <header className="px-6 py-5">
-        <Heading>Sezónní výběry</Heading>
-        <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
+        <Heading>Sezónní akce</Heading>
+        <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Vánoční nebo jarní kolekce na úvodní stránce. Volitelně se slevou po
-          dobu výběru.
+          dobu akce.
         </Text>
       </header>
 
@@ -136,7 +144,7 @@ const SezonniVyberyInner = () => {
 
       {isError && (
         <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
-          <Heading level="h2">Výběry se nepodařilo načíst</Heading>
+          <Heading level="h2">Akce se nepodařilo načíst</Heading>
           <Text size="small" className="text-ui-fg-error mt-1">
             Obnovte stránku a zkuste to znovu.
           </Text>
@@ -145,31 +153,74 @@ const SezonniVyberyInner = () => {
 
       {!isLoading && !isError && visible.length === 0 && (
         <EmptyState
-          title={selections.length === 0 ? "Zatím žádný výběr" : activeGroup.empty}
+          title={selections.length === 0 ? "Zatím žádná akce" : activeGroup.empty}
           description="Vytvořte např. „Vánoční kolekci“ — vyberete produkty, termín a volitelně slevu."
         />
       )}
 
       {!isLoading && !isError && visible.length > 0 && (
         <div className="divide-y">
-          {visible.map((selection) => (
-            <article
-              key={selection.id}
-              className="flex flex-col gap-y-1 px-6 py-4"
-            >
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <Heading level="h3">{selection.title}</Heading>
-                {selection.linked_price_list_id && (
-                  <Badge size="2xsmall" color="orange">
-                    Se slevou
-                  </Badge>
+          {visible.map((selection) => {
+            const items = selection.items ?? [];
+            const bundles = items.filter((item) => item.bundle);
+
+            return (
+              <article
+                key={selection.id}
+                className="flex flex-col gap-y-3 px-6 py-5"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <Heading level="h3">{selection.title}</Heading>
+                    {selection.linked_price_list_id && (
+                      <Badge size="2xsmall" color="orange">
+                        Se slevou
+                      </Badge>
+                    )}
+                  </div>
+                  <Text size="small" className="text-ui-fg-subtle mt-1">
+                    {period(selection)} · {items.length} produktů
+                    {bundles.length > 0 ? ` · ${bundles.length} balíčků` : ""}
+                  </Text>
+                </div>
+
+                {items.length > 0 && (
+                  <ul className="flex flex-col gap-y-1">
+                    {items.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex items-center gap-x-2"
+                      >
+                        {item.product?.thumbnail ? (
+                          <img
+                            src={item.product.thumbnail}
+                            alt=""
+                            className="h-6 w-6 shrink-0 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="bg-ui-bg-subtle h-6 w-6 shrink-0 rounded" />
+                        )}
+                        <Text size="small" className="min-w-0 truncate">
+                          {item.product?.title ?? "Produkt"}
+                        </Text>
+                        {item.bundle && (
+                          <Badge size="2xsmall" color="purple">
+                            Balíček
+                          </Badge>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </div>
-              <Text size="small" className="text-ui-fg-subtle">
-                {period(selection)} · {selection.items?.length ?? 0} produktů
-              </Text>
-            </article>
-          ))}
+
+                {bundles.length > 0 && selection.linked_price_list_id && (
+                  <Text size="small" className="text-ui-fg-subtle">
+                    Sleva na balíček zlevní i produkty, které jsou v něm.
+                  </Text>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
     </Container>
@@ -192,7 +243,7 @@ const SezonniVyberyPage = () => (
 );
 
 export const config = defineRouteConfig({
-  label: "Sezónní výběry",
+  label: "Sezónní akce",
   icon: Calendar,
   rank: 40,
 });

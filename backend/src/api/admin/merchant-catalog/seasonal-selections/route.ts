@@ -39,8 +39,46 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       : {},
     pagination: { take: input.limit, skip: input.offset },
   })
+
+  // Which of these products are bundles.
+  //
+  // A bundle is a real product with a `bundle` record linked to it, so nothing
+  // distinguishes it in the product row itself — but the merchant needs to know,
+  // because putting a bundle in a sale also discounts everything inside it. The
+  // link is defined from the bundle side, which is the only direction it can be
+  // traversed (`src/links/bundle-product.ts`).
+  const productIds = (data as any[]).flatMap((selection) =>
+    (selection.items || []).map((item: any) => item.product_id)
+  )
+
+  const { data: bundles } = productIds.length
+    ? await query.graph({
+        entity: "bundle",
+        fields: ["id", "title", "product.id"],
+      })
+    : { data: [] as any[] }
+
+  const bundleByProductId = new Map<string, { id: string; title: string }>()
+  for (const bundle of bundles as any[]) {
+    for (const product of [bundle.product].flat().filter(Boolean)) {
+      bundleByProductId.set(product.id, { id: bundle.id, title: bundle.title })
+    }
+  }
+
+  const annotated = (data as any[]).map((selection) => ({
+    ...selection,
+    items: (selection.items || [])
+      .map((item: any) => ({
+        ...item,
+        bundle: bundleByProductId.get(item.product_id) ?? null,
+      }))
+      .sort(
+        (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
+      ),
+  }))
+
   res.json({
-    seasonal_selections: data,
+    seasonal_selections: annotated,
     count: metadata?.count ?? data.length,
     limit: metadata?.take ?? input.limit,
     offset: metadata?.skip ?? input.offset,

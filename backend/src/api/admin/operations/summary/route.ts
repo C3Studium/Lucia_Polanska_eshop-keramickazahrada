@@ -222,6 +222,24 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }),
     ])
 
+  // Active discounts, so she can see at a glance what is currently cheaper than
+  // usual — three separate instruments (§13) that are easy to forget about
+  // once they are running.
+  const [{ data: activePriceLists }, { data: promotions }] = await Promise.all([
+    query.graph({
+      entity: "price_list",
+      fields: ["id", "title", "status", "starts_at", "ends_at"],
+      filters: { status: "active" },
+    }),
+    query.graph({
+      entity: "promotion",
+      fields: ["id", "code", "status", "is_automatic"],
+      filters: { status: "active" },
+    }),
+  ])
+
+  const activePromotions = promotions as any[]
+
   const endingSoon = [
     ...(endingPriceLists as any[]).map((list) => ({
       type: "price_list" as const,
@@ -339,6 +357,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       low_stock_threshold: inventory.default_threshold,
       pending_reviews: (pendingReviewsResult.data as any[]).length,
       ending_soon: endingSoon,
+      active_sales: (activePriceLists as any[]).length,
+      active_selections: (endingSelections as any[]).length,
+      discount_codes: activePromotions.filter((promotion) => !promotion.is_automatic)
+        .length,
+      automatic_discounts: activePromotions.filter(
+        (promotion) => promotion.is_automatic
+      ).length,
     },
     next_up: nextUp,
   })

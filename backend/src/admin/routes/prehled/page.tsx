@@ -56,6 +56,10 @@ type OperationsSummary = {
     low_stock_threshold: number;
     pending_reviews: number;
     ending_soon: EndingSoon[];
+    active_sales: number;
+    active_selections: number;
+    discount_codes: number;
+    automatic_discounts: number;
   };
   next_up: MerchantOrder[];
 };
@@ -336,6 +340,32 @@ const shopTiles = (summary: OperationsSummary): Tile[] => {
     to: "/reviews",
     cta: "Otevřít",
   });
+
+  // What is currently discounted. Three instruments run independently (§13) and
+  // are easy to forget once live, so they get one tile rather than three.
+  const discountsRunning =
+    shop.active_sales + shop.active_selections + shop.discount_codes +
+    shop.automatic_discounts;
+
+  if (discountsRunning > 0) {
+    const parts = [
+      shop.active_selections > 0 ? `${shop.active_selections} akce` : null,
+      shop.active_sales > 0 ? `${shop.active_sales} ceníky` : null,
+      shop.discount_codes > 0 ? `${shop.discount_codes} kódů` : null,
+      shop.automatic_discounts > 0
+        ? `${shop.automatic_discounts} automatických`
+        : null,
+    ].filter(Boolean);
+
+    tiles.push({
+      key: "discounts",
+      label: "Běžící slevy",
+      value: String(discountsRunning),
+      hint: parts.join(" · "),
+      to: "/sezonni-vybery",
+      cta: "Zobrazit",
+    });
+  }
 
   if (shop.ending_soon.length) {
     const first = shop.ending_soon[0];
