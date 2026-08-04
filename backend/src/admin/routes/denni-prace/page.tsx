@@ -93,7 +93,7 @@ const DenniPraceOverview = () => (
 export const config = defineRouteConfig({
   label: "Denní práce",
   icon: ListCheckbox,
-  rank: 0,
+  rank: 10,
 });
 
 export default DenniPraceOverview;

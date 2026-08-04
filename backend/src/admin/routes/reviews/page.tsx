@@ -257,7 +257,7 @@ const ReviewsPage = () => (
 export const config = defineRouteConfig({
   label: "Recenze",
   icon: ChatBubbleLeftRight,
-  rank: 10,
+  rank: 30,
 })
 
 export default ReviewsPage

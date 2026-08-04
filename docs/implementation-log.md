@@ -663,3 +663,75 @@ Two supporting changes it needs to be safe:
   subscribers, routes, pages and config. The `notification` module's own tables
   already exist on production, because it was registered there (Resend is
   configured); registering an extra *provider* does not change schema.
+
+---
+
+## P2-3 — operations summary endpoint + /prehled page   (2026-08-04)
+
+- Files: `backend/src/api/admin/operations/summary/route.ts` (new),
+  `backend/src/admin/routes/prehled/page.tsx` (new),
+  `backend/src/lib/inventory-alerts.ts` (new),
+  `backend/src/lib/__tests__/inventory-alerts.unit.spec.ts` (new),
+  `backend/src/admin/components/merchant-order-queue.tsx` (exports `OrderRow`),
+  rank renumbering in `denni-prace/page.tsx` and `reviews/page.tsx`.
+- Native used: `getOrdersListWorkflow` (the only source of correct totals and
+  computed `payment_status`), `query.graph` for reviews, price lists, seasonal
+  selections and inventory levels, the notification module's own
+  `listAndCountNotifications`, and the module services' indexed counts.
+- Custom added: one read-only aggregation endpoint and one page. No stored
+  aggregate, no cache, nothing written.
+
+### Inventory rules extracted rather than inlined
+
+`src/lib/inventory-alerts.ts` holds what counts as low or sold out, because
+three later tasks need the identical answer (P7-1's endpoint and two pages,
+P7-2's daily job) and three copies would drift within a week. Three decisions
+worth recording:
+
+- **Availability is `stocked − reserved`, computed here.** The level's
+  `available_quantity` exists but is a *computed* model field, exactly the kind
+  of projection that comes back silently empty (trap 1). Two plain columns and
+  subtraction cannot surprise anyone.
+- **Made-to-order is excluded by production profile, not by `manage_inventory`.**
+  §10 assumes P6-6 will have set `manage_inventory = false` on those variants,
+  but P6-6 is blocked behind P0-1. Reading the profiles makes the exclusion
+  correct now *and* after that cleanup.
+- **A `low_stock_threshold` of 0 is a deliberate override**, not a missing
+  value — „warn me only when it is actually gone" is a reasonable thing to want
+  for a slow-moving piece.
+
+### Endpoint
+
+One request feeds all thirteen tiles plus „Na řadě". The two failure counts are
+**windowed to 7 days**: a notification has no resolved state, so an unwindowed
+count would only ever grow and the „Vyžaduje pozornost" zone would never clear.
+Carrier failures are identified by `trigger_type`, which the notify helper
+derives from the dedupe key's second segment — so #10 (P3-5) will land in this
+tile without further wiring. Outstanding balance money comes from the
+made-to-order module's own request snapshots, never from re-deriving what a
+customer owes.
+
+### Page
+
+Three zones in the order the day runs: what is broken, what is in progress, what
+the shop needs. „Vyžaduje pozornost" renders **only when non-empty** — an
+attention zone showing four zeroes is clutter, not reassurance. Tiles that would
+be meaningless at zero (doplatek, vyprodáno, končí brzy) hide; tiles that are
+part of the pipeline stay visible with their §19 empty-state sentence, because
+„Žádné nové — máte klid ☕" is information.
+
+„Na řadě" renders the **same `OrderRow` component** the queues use — now
+exported for that purpose — so an order looks and behaves identically wherever
+she meets it, including which single action it offers. Refetch is 30 s plus
+window focus, since this page sits open on a workbench all day.
+
+- Deviations: none from §4. Two small things done here that the plan leaves
+  implicit: the shared inventory helper (P7-1 would otherwise duplicate it) and
+  renumbering the top-level extension ranks (Přehled 0, Denní práce 10,
+  Zakázková výroba 20, Recenze 30, Sezónní výběry 40) so the pre-layout default
+  order is coherent — Přehled and Denní práce were both rank 0.
+- Gate: typecheck ✓ · build ✓ (backend 5.33 s, admin 15.80 s) · tests: **55
+  passed** in 7 suites (14 new, covering the threshold merge and both
+  exclusions — which also pre-satisfies P7-1's listed tests).
+- Notes for Matěj: still **no migrations**. `/prehled` now exists, so the
+  `core:nav:/prehled` entry in the sidebar payload is no longer inert.

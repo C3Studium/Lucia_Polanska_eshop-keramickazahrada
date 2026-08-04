@@ -157,7 +157,12 @@ export const fetchQueue = (stage: MerchantOrderStage) =>
     query: { stage, limit: 100 },
   });
 
-const OrderRow = ({
+/**
+ * The one order card. Přehled's „Na řadě" list renders the same component, so a
+ * card cannot start looking or behaving differently depending on which page it
+ * is on — including which action it offers.
+ */
+export const OrderRow = ({
   order,
   stage,
 }: {
