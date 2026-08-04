@@ -19,6 +19,18 @@ import { variantRestockEmail } from "./emails/restock";
 import { abandonedCartEmail } from "./emails/abandoned-cart";
 import { merchantNotificationEmail } from "./emails/merchant-notification";
 import { merchantDailySummaryEmail } from "./emails/merchant-daily-summary";
+import { PaymentReceivedEmail } from "./emails/payment-received";
+import { PaymentFailedEmail } from "./emails/payment-failed";
+import { PaymentPendingEmail } from "./emails/payment-pending";
+import { PaymentRefundedEmail } from "./emails/payment-refunded";
+import { OrderShipmentEmail } from "./emails/order-shipment";
+import { OrderCancelledEmail } from "./emails/order-cancelled";
+import { OrderProcessingEmail } from "./emails/order-processing";
+import { OrderRefundedEmail } from "./emails/order-refunded";
+import { OrderReviewEmail } from "./emails/order-review";
+import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
+import { OrderDeliveredEmail } from "./emails/order-delivered";
+import { OrderDelayedEmail } from "./emails/order-delayed";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -32,6 +44,20 @@ enum Templates {
   // `data.subject` so each e-mail is distinguishable.
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  // The lifecycle templates (§16). All 12 existed as files and none were ever
+  // sent, because the provider only maps what it lists here.
+  PAYMENT_RECEIVED = "payment-received",
+  PAYMENT_FAILED = "payment-failed",
+  PAYMENT_PENDING = "payment-pending",
+  PAYMENT_REFUNDED = "payment-refunded",
+  ORDER_SHIPMENT = "order-shipment",
+  ORDER_CANCELLED = "order-cancelled",
+  ORDER_PROCESSING = "order-processing",
+  ORDER_REFUNDED = "order-refunded",
+  ORDER_REVIEW = "order-review",
+  ORDER_READY_PICKUP = "order-ready-pickup",
+  ORDER_DELIVERED = "order-delivered",
+  ORDER_DELAYED = "order-delayed",
   //WIP add in more templates and triggers
   // Add in Order Status
   // Add in payment status
@@ -51,6 +77,18 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ABANDONED_CART]: abandonedCartEmail,
   [Templates.MERCHANT_NOTIFICATION]: merchantNotificationEmail,
   [Templates.MERCHANT_DAILY_SUMMARY]: merchantDailySummaryEmail,
+  [Templates.PAYMENT_RECEIVED]: PaymentReceivedEmail,
+  [Templates.PAYMENT_FAILED]: PaymentFailedEmail,
+  [Templates.PAYMENT_PENDING]: PaymentPendingEmail,
+  [Templates.PAYMENT_REFUNDED]: PaymentRefundedEmail,
+  [Templates.ORDER_SHIPMENT]: OrderShipmentEmail,
+  [Templates.ORDER_CANCELLED]: OrderCancelledEmail,
+  [Templates.ORDER_PROCESSING]: OrderProcessingEmail,
+  [Templates.ORDER_REFUNDED]: OrderRefundedEmail,
+  [Templates.ORDER_REVIEW]: OrderReviewEmail,
+  [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
+  [Templates.ORDER_DELIVERED]: OrderDeliveredEmail,
+  [Templates.ORDER_DELAYED]: OrderDelayedEmail,
 }
 
 export enum EmailTemplates {
@@ -62,6 +100,20 @@ export enum EmailTemplates {
   ABANDONED_CART = "abandoned-cart",
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  // The lifecycle templates (§16). All 12 existed as files and none were ever
+  // sent, because the provider only maps what it lists here.
+  PAYMENT_RECEIVED = "payment-received",
+  PAYMENT_FAILED = "payment-failed",
+  PAYMENT_PENDING = "payment-pending",
+  PAYMENT_REFUNDED = "payment-refunded",
+  ORDER_SHIPMENT = "order-shipment",
+  ORDER_CANCELLED = "order-cancelled",
+  ORDER_PROCESSING = "order-processing",
+  ORDER_REFUNDED = "order-refunded",
+  ORDER_REVIEW = "order-review",
+  ORDER_READY_PICKUP = "order-ready-pickup",
+  ORDER_DELIVERED = "order-delivered",
+  ORDER_DELAYED = "order-delayed",
 }
 
 /**
@@ -178,6 +230,31 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Upozornění z e-shopu"
       case Templates.MERCHANT_DAILY_SUMMARY:
         return "Denní souhrn"
+      // §16 subjects, verbatim.
+      case Templates.PAYMENT_RECEIVED:
+        return "Platba přijata — děkujeme"
+      case Templates.PAYMENT_FAILED:
+        return "Platba se nezdařila"
+      case Templates.PAYMENT_PENDING:
+        return "Odkaz k platbě objednávky"
+      case Templates.PAYMENT_REFUNDED:
+        return "Vracíme peníze"
+      case Templates.ORDER_SHIPMENT:
+        return "Objednávka odeslána 📦"
+      case Templates.ORDER_CANCELLED:
+        return "Objednávka zrušena"
+      case Templates.ORDER_PROCESSING:
+        return "Zadání potvrzeno — začínáme"
+      case Templates.ORDER_REFUNDED:
+        return "Objednávka vrácena"
+      case Templates.ORDER_REVIEW:
+        return "Jak se vám líbí nový kousek?"
+      case Templates.ORDER_READY_PICKUP:
+        return "Zásilka připravena k vyzvednutí"
+      case Templates.ORDER_DELIVERED:
+        return "Zásilka doručena"
+      case Templates.ORDER_DELAYED:
+        return "Výroba se protáhne"
       // WIP: Add more cases for other templates as needed
       default:
         return "New Email"

@@ -264,6 +264,16 @@ export const POST = async (
       internal_note: body.internal_note?.trim() || productionOrder.internal_note,
     })
     await setMerchantStage(req, req.params.orderId, "working")
+    // §16 #6 — the customer agreed a price and a piece is now being made for
+    // them. Emitted rather than sent inline so a mail problem cannot fail the
+    // Order Edit chain that just adjusted the money.
+    await eventBus.emit({
+      name: "made-to-order.specification-confirmed",
+      data: {
+        order_id: req.params.orderId,
+        production_order_id: productionOrder.id,
+      },
+    })
   }
 
   if (body.action === "start_production") {
