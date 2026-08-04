@@ -6,6 +6,27 @@ const amountOf = (variant: any): number | null => {
   return Number.isFinite(amount) ? amount : null
 }
 
+/**
+ * How many of this bundle a single variant could supply.
+ *
+ * `Infinity` when stock is not the limit (untracked, or backorders allowed) —
+ * so it never becomes the constraint in a `Math.min`, which is exactly what it
+ * means.
+ */
+const variantCapacity = (variant: any, quantity = 1): number => {
+  if (!variant) {
+    return 0
+  }
+  if (!variant.manage_inventory || variant.allow_backorder) {
+    return Number.POSITIVE_INFINITY
+  }
+  const inventory = Number(variant.inventory_quantity)
+  if (!Number.isFinite(inventory) || quantity <= 0) {
+    return 0
+  }
+  return Math.floor(inventory / quantity)
+}
+
 const isVariantAvailable = (variant: any, quantity = 1) => {
   if (!variant) {
     return false
@@ -38,6 +59,17 @@ export function presentBundle(bundle: any) {
         is_available: item.variant_mode === "fixed_variant"
           ? isVariantAvailable(fixedVariant, item.quantity)
           : availableVariants.length > 0,
+        // How many bundles this component alone could supply. When the customer
+        // picks the variant, the best one is what matters — she is not limited
+        // by the colour nobody chose.
+        capacity:
+          item.variant_mode === "fixed_variant"
+            ? variantCapacity(fixedVariant, item.quantity)
+            : variants.reduce(
+                (best: number, variant: any) =>
+                  Math.max(best, variantCapacity(variant, item.quantity)),
+                0
+              ),
         price_range: {
           min: prices.length ? Math.min(...prices) : null,
           max: prices.length ? Math.max(...prices) : null,
@@ -70,9 +102,30 @@ export function presentBundle(bundle: any) {
     ...bundle,
     product: one(bundle.product),
     items: orderedItems,
-    availability: {
-      is_available: orderedItems.length > 0 && orderedItems.every((item) => item.is_available),
-    },
+    availability: (() => {
+      // A bundle can only be sold as often as its scarcest component allows
+      // (§11). Naming that component is the useful half: „4 available" tells
+      // her nothing, „4, limited by Miska modrá" tells her what to make.
+      const limiting = orderedItems.reduce(
+        (worst: any, item: any) =>
+          worst === null || item.capacity < worst.capacity ? item : worst,
+        null as any
+      )
+      const capacity = orderedItems.length
+        ? Math.min(...orderedItems.map((item: any) => item.capacity))
+        : 0
+
+      return {
+        is_available:
+          orderedItems.length > 0 && orderedItems.every((item) => item.is_available),
+        // `null` where nothing is stock-limited, rather than a fake big number.
+        available_quantity: Number.isFinite(capacity) ? capacity : null,
+        limited_by:
+          Number.isFinite(capacity) && limiting
+            ? one(limiting.product)?.title ?? null
+            : null,
+      }
+    })(),
     calculated_bundle_price: {
       min,
       max,
