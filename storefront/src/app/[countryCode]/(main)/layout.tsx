@@ -14,6 +14,7 @@ import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
+import CookieNotice from "@modules/layout/CookieNotice"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -66,6 +67,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
       )}
       {props.children}
       <Footer merchant={merchant} />
+      <CookieNotice />
     </ContactDialogProvider>
   )
 }

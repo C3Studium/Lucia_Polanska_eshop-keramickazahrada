@@ -778,3 +778,73 @@ label is simply "Pokračovat k přehledu" instead of choosing between that and "
   env file — remove it there and on Railway when convenient.
 
 ---
+
+## A11 — cookie notice (spec §14 P0 item 0.11, amended by §4)
+
+**Files**
+
+- `src/modules/layout/CookieNotice/` — **new**: `index.tsx`, `motion.ts`, `style.module.scss`.
+- `(main)/layout.tsx` — mounts it.
+
+**An informational notice, not a consent gate.** Per §4: no third-party tracker is wired into the
+storefront (re-verified — the only cookies are `_medusa_cart_id`, `_medusa_jwt`,
+`_medusa_cache_id` and the region choice), so there is nothing to withhold pending consent and a
+consent-management platform would be theatre. The notice states what is stored in plain Czech,
+links to `/cookies`, and is dismissed with "Rozumím"; the acknowledgement is remembered in
+`localStorage`, with the storage access wrapped because private browsing can refuse it (worst
+case the notice reappears next visit).
+
+The component comment records the condition that changes this: **if a tracker is ever added, this
+has to become a real consent manager.**
+
+Built to the floors: 14px body, 48px action, ink on cream at 14.8:1, `useReducedMotion` skips the
+entrance, dismissal is a real `<button>` with a visible focus ring.
+
+Mounted in `(main)` only — not on checkout, which the spec wants kept as a calm zone.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Verified in the browser: appears on first visit, "Rozumím" is 111×48 px, dismisses, and is
+  **still absent after a reload**.
+
+---
+
+# Phase A complete
+
+All eleven P0 tasks are done and committed; `pnpm lint` and `pnpm build` are green on every one.
+
+| | Task | Commit |
+|---|---|---|
+| A1 | `lang="cs"` + Czech metadata sweep | `50c3886` |
+| A2 | Real collections in the navbar | `9255d39` |
+| A3 | Footer identity, honest links, dead routes | `9ae77bc` |
+| A4 | Kontakt modal refit and promotion | `0095715` |
+| A5 | Legal content + reklamační protokol | `6347dcf` |
+| A6 | Payment state pages, debug output | `2ad0664` |
+| A7 | Review step with consent | `8f4dc6a` |
+| A8 | Czech error layer | `3869310` |
+| A9 | Add-to-cart feedback | `28966e9` |
+| A10 | Stripe/PayPal removal | `e043f48` |
+| A11 | Cookie notice | this commit |
+
+**What Phase A set out to fix, and where it stands** (spec §1's three systemic gaps):
+
+- *Prototype seams shipped to production* — fake product menu, inert contact and newsletter forms,
+  two 404 links, the `<h1>pending page</h1>` stub, another company's legal boilerplate,
+  `<html lang="en">`: all gone. The one placeholder that remains is the reklamační protokol PDF,
+  and it is clearly marked as such (O-5).
+- *Purchase mechanics* — add-to-cart now confirms and fails audibly, the review step is mandatory
+  and records consent before payment, backend English no longer reaches a customer, and the
+  payment pages tell the truth.
+- *The "archival label" idiom* — untouched by design. That is Phase B's subject, and it is where
+  the remaining sub-13px census (footer, scrollbar, product meta) gets retired.
+
+**Not done in Phase A, by instruction:** mobile navigation and touch equivalents (D-S3/A-3 move
+them to the final responsive phase).
+
+**Before Phase B, Matěj's attention is needed on the open items above** — particularly **O-1**
+(bank account) and the backend blocker noted in A7 (shipping options have no price, so no order
+can currently be completed).
+
+---

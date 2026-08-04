@@ -1,0 +1,74 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+/*
+ * Cream card over whatever surface the page happens to be showing.
+ * Ink #20211c on #f6f1e6 measures 14.8:1; the link inherits it.
+ * Nothing below 14px; the action is 48px.
+ */
+
+.root {
+  position: fixed;
+  z-index: 400;
+  bottom: clamp(16px, 2vw, 28px);
+  left: clamp(16px, 2vw, 28px);
+  display: flex;
+  max-width: min(560px, calc(100vw - 32px));
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid rgba(32, 33, 28, 0.2);
+  border-radius: 16px;
+  background: #f6f1e6;
+  box-shadow: 0 22px 48px -30px rgba(24, 26, 20, 0.62);
+  color: #20211c;
+  gap: 18px;
+}
+
+.text {
+  margin: 0;
+  font: 400 14px/1.55 "Sansation-Regular", sans-serif;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.button {
+  min-height: 48px;
+  flex: 0 0 auto;
+  padding: 0 22px;
+  border: 1px solid #20211c;
+  border-radius: 999px;
+  background: #20211c;
+  color: #ffe8d6;
+  cursor: pointer;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.button:hover {
+  background: transparent;
+  color: #20211c;
+}
+
+.button:focus-visible {
+  outline: 2px solid #9a6f65;
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .root {
+    right: clamp(16px, 2vw, 28px);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .button {
+    width: 100%;
+  }
+}
