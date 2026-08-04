@@ -61,6 +61,76 @@ implemented under a stated assumption or shipped in an honest interim state.
 
 ---
 
+# 📋 TODO — what was NOT done
+
+Everything left behind after Phase A, for Matěj's review. All eleven P0 tasks are implemented and
+green; nothing below is a task that was skipped. These are, in order: TODOs deliberately left in
+the code, features built but switched off, defects found and consciously deferred to a later
+phase, verification I could not perform, and work moved out of Phase A by instruction.
+
+**Nothing here is unknown-unknown.** Each item states where it lives and what closes it.
+
+## T-1 · TODOs written into the code (2)
+
+| File | Marker | What closes it |
+|---|---|---|
+| `src/lib/data/navigation.ts:26` | `TODO(backend)` | `SEED_CATEGORY_HANDLES` hides the four Medusa starter categories from the Produkty menu. When the backend admin work deletes the seed data, **delete the constant and the `.filter()` at line 79.** This is the only hand-filter in the codebase. |
+| `src/app/[countryCode]/(main)/reklamacni-protokol/download.tsx:13` | `TODO(matej)` | `PROTOCOL_PDF_PATH = null` → the page shows a marked placeholder rather than a download button that 404s. Drop the PDF into `public/dokumenty/` and set the path. |
+
+*(`src/lib/data/cart.ts:454` also carries a TODO — that one is pre-existing, not mine.)*
+
+## T-2 · Built but switched off (2)
+
+| What | State | What closes it |
+|---|---|---|
+| **Contact form** | Complete against the D-S1 contract, `NEXT_PUBLIC_CONTACT_FORM_ENABLED` **off**; dialog shows direct contact details instead | Backend `POST /store/contact` goes live → set the flag on Railway |
+| **Newsletter** | One line + `mailto:` in the footer; no form, per D-S1 | Choose a platform |
+
+## T-3 · Defects found in Phase A, deferred to a later phase by scope (5)
+
+These I could have fixed and chose not to, because each belongs to a phase whose job is exactly
+that surface. Listed so they are not rediscovered as new.
+
+| # | Defect | Where | Phase |
+|---|---|---|---|
+| T-3a | **A global `input ~ label` utility shrinks any label following an input to ~10px.** It rendered the checkout consent sentence at 10px until I wrapped the checkbox so the selector could not match. The rule is untouched and still affects every other input+label pair. | `src/styles/globals.scss:53` | **B** (P1 1.3, form primitives) |
+| T-3b | **Availability vocabulary.** I fixed only the contradiction (note said "Není skladem" while the button said "Přidat do košíku"). The single vocabulary — Skladem / Poslední kus / Prodáno / Na objednávku — across badge, PDP and CTA is not built. Code comment marks the spot. | `…/Cta/Add/index.tsx:79-82` | **C** (2.1) |
+| T-3c | **Cart totals still headline ex-VAT.** "Dohromady (bez DPH)" and the mini-cart's "(bez DPH)" — spec §4's classic abandonment trigger. The *checkout Review* step I built does show incl.-VAT correctly; the cart and mini-cart do not. | `common/components/cart-totals/index.tsx:38`, `layout/components/cart-dropdown/index.tsx:224` | **C** (2.4) |
+| T-3d | **15 `console.log`s still ship** in the account reviews and wishlist pages (plus a whole `DebugReviewsLogger` component). I removed only the payment-path and customer-PII ones, which is what A6 scoped. | `(main)/account/@dashboard/reviews/*`, `…/wishlist/page.tsx` | **C** (account pass) |
+| T-3e | **Scrollbar rail renders above the open mega-menu** and swallows pointer events over the sixth card's right edge. Pre-existing; surfaced by A2's real cards. | `modules/layout/scrollbar` | **D** (§11.7) |
+
+## T-4 · Could not be verified (4)
+
+| # | What | Why | What unblocks it |
+|---|---|---|---|
+| T-4a | **No live purchase has been completed on this branch.** A7's Review step is verified against a fixture cart. | **All three shipping options have no price in the CZ region** — `POST /store/carts/{id}/shipping-methods` fails with *"…do not have a price"*. No order can currently be completed by anyone. | Backend prices the shipping options |
+| T-4b | **A6's confirmed-page failure branch** reviewed by reading, not exercised | Needs a real cart whose completion fails | A test order once T-4a clears |
+| T-4c | **Bundle add-to-cart feedback** passed build and types only | No bundle product exists in the catalogue | A bundle product |
+| T-4d | **Playwright e2e never run** (`pnpm test-e2e`) | Needs a running backend | A backend URL |
+
+## T-5 · Moved out of Phase A by instruction (not a gap)
+
+- **Mobile navigation and touch equivalents** — spec roadmap item 0.9. Moved to the final
+  responsive phase by D-S3 / amendment A-3. `MobileIconsNavbar` remains exported and unmounted.
+
+## T-6 · The whole of Phases B–F is untouched
+
+For scale, measured on the branch as it stands:
+
+| Signal | Count today | Phase |
+|---|---|---|
+| `outline: none` / `outline: 0` occurrences | **34** | B |
+| Files with any `prefers-reduced-motion` | **1** | B |
+| Sub-13px declarations in the footer alone | 3 × 9px, 3 × 11px, 1 × 12px | B |
+| `checkbox/index.tsx` hardcoded `id="checkbox"` | still there (line 24) | B |
+| `input/index.tsx` `htmlFor={name}` with no matching `id` | still there (line 71) | B |
+| 3-second scroll lock | still there | B |
+
+Phase A deliberately did not touch the "archival label" idiom, the motion governance, the WebGL
+policy, or any page's composition. That is B, C, D and E.
+
+---
+
 ## Baseline — 2026-08-04
 
 **Setup deviation (worth knowing).** The session was launched in the *main* working tree on
