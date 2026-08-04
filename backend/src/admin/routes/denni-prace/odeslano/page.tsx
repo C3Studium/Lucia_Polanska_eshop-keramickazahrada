@@ -1,23 +1,11 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { MerchantOrderQueue } from "../../../components/merchant-order-queue";
-
-const DESCRIPTION =
-  "Odeslané objednávky. Nic dalšího po vás nechtějí.";
+import { Navigate } from "react-router-dom";
 
 /**
- * The "Odesláno" queue as its own admin route.
+ * Compatibility redirect. The queue moved into the Přehled section; the stage is now a tab.
  *
- * Sidebar nesting is derived from the directory structure: because this file lives under
- * `routes/denni-prace/`, the dashboard attaches it to the `/denni-prace` parent item.
- * No `nested` property is involved — that option only targets Medusa's six core sections.
+ * No `config` export on purpose: a route without a label never becomes a
+ * sidebar item, so this cannot show up as a duplicate entry.
  */
-const Page = () => (
-  <MerchantOrderQueue stage="shipped" description={DESCRIPTION} />
-);
+const Redirect = () => <Navigate to="/prehled/prace?krok=odeslano" replace />;
 
-export const config = defineRouteConfig({
-  label: "Odesláno",
-  rank: 40,
-});
-
-export default Page;
+export default Redirect;

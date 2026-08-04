@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
+import { WorkTabs } from "../../../components/work-tabs";
 import { formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 
@@ -173,17 +174,16 @@ const EmailyInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <header className="flex flex-wrap items-start justify-between gap-2 px-6 py-5">
+      <WorkTabs active="emaily" />
+
+      <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
         <div>
           <Heading>Odeslané e-maily</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
+          <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Co jsme zákazníkům poslali a co se nepodařilo doručit. Nezdařený
             e-mail můžete poslat znovu.
           </Text>
         </div>
-        <Button size="small" variant="secondary" asChild>
-          <Link to="/prehled">Zpět na Přehled</Link>
-        </Button>
       </header>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as TabKey)}>

@@ -120,7 +120,7 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
 
         {slug && (
           <Button variant="transparent" size="small" asChild>
-            <Link to={`/denni-prace/${slug}`}>
+            <Link to={`/prehled/prace?krok=${slug}`}>
               Zpět do fronty „{stageMeta[merchantOrder.stage].label}"
             </Link>
           </Button>

@@ -38,16 +38,13 @@ it is deliberately not run automatically. Either apply it yourself with the payl
 or do the equivalent by dragging entries in the admin's layout-edit mode (pencil icon in
 the top bar → Main sidebar) and saving as default — both produce the same stored state.
 
-## Target structure (WorkflowPlan.md §2.2)
+## Target structure
 
 ```
-Přehled                                        /prehled              ← exists after P2-3
-Denní práce                                    /denni-prace
- ├ Nové · Připravujeme · K odeslání · Odesláno · Problém s platbou
+Přehled                                        /prehled
+ ├ Přehled · Denní práce · Zakázky · Odeslané e-maily   (tabs, not sidebar items)
 Objednávky                                     /orders
  └ Drafts                                      /draft-orders         ← plugin, English label
-Zakázková výroba                               /zakazkova-vyroba
- ├ Zakázky · Produkty na zakázku
 Sklad                                          /inventory
  ├ Rezervace · Nízký stav · Vyprodáno
 Produkty                                       /products
@@ -55,13 +52,27 @@ Produkty                                       /products
  └ (hidden) Kolekce, Kategorie
 Recenze                                        /reviews
 Sezónní výběry                                 /sezonni-vybery
+Produkty na zakázku                            /zakazkova-vyroba
 Propagace                                      /promotions
  └ Kampaně
 Zákazníci                                      /customers
- └ Skupiny zákazníků
 (hidden) Ceníky, Sanity CMS, Segment Analytics
 Nastavení                                      /settings             ← separate footer, untouched
 ```
+
+**Deviation from §2.2, decided by Matěj after seeing it running.** The plan gave
+Denní práce its own section with five stage children, and Zakázky a section of
+its own. Everything the merchant does in a day now lives behind **one** sidebar
+item, Přehled, as tabs — she has a single job („what do I do now?"), and making
+her pick a section before she can pick a task earned nothing. The stage queues
+survive as tabs *within* the Denní práce tab, because they map to physically
+different activities.
+
+Consequences for this payload: `core:nav:/denni-prace` and its five
+`nav-child:` rows are gone (those routes still exist as redirects, but a route
+without a label is never a sidebar item). Zakázková výroba collapsed from a
+two-child section into the single top-level item „Produkty na zakázku" — the
+made-to-order *configuration*, since the commissions queue moved into Přehled.
 
 `Nastavení` is rendered by `UtilitySection`, outside the composer zone, so it is not part
 of this payload and cannot be reordered or hidden here. That matches §2.2, which wants it
@@ -87,30 +98,20 @@ curl -X POST "$BACKEND_URL/admin/layouts/sidebar/configuration" \
         "core:Searchbar":                 { "order": 0 },
 
         "core:nav:/prehled":              { "order": 1 },
-        "core:nav:/denni-prace":          { "order": 2 },
-        "core:nav:/orders":               { "order": 3 },
-        "core:nav:/zakazkova-vyroba":     { "order": 4 },
-        "core:nav:/inventory":            { "order": 5 },
-        "core:nav:/products":             { "order": 6 },
-        "core:nav:/reviews":              { "order": 7 },
-        "core:nav:/sezonni-vybery":       { "order": 8 },
-        "core:nav:/promotions":           { "order": 9 },
-        "core:nav:/customers":            { "order": 10 },
+        "core:nav:/orders":               { "order": 2 },
+        "core:nav:/inventory":            { "order": 3 },
+        "core:nav:/products":             { "order": 4 },
+        "core:nav:/reviews":              { "order": 5 },
+        "core:nav:/sezonni-vybery":       { "order": 6 },
+        "core:nav:/zakazkova-vyroba":     { "order": 7 },
+        "core:nav:/promotions":           { "order": 8 },
+        "core:nav:/customers":            { "order": 9 },
 
-        "core:nav:/price-lists":          { "order": 11, "hidden": true },
-        "core:nav:/sanity":               { "order": 12, "hidden": true },
-        "core:nav:/segment":              { "order": 13, "hidden": true },
-
-        "nav-child:/denni-prace:/denni-prace/nove":               { "order": 0 },
-        "nav-child:/denni-prace:/denni-prace/pripravujeme":       { "order": 1 },
-        "nav-child:/denni-prace:/denni-prace/k-odeslani":         { "order": 2 },
-        "nav-child:/denni-prace:/denni-prace/odeslano":           { "order": 3 },
-        "nav-child:/denni-prace:/denni-prace/problem-s-platbou":  { "order": 4 },
+        "core:nav:/price-lists":          { "order": 10, "hidden": true },
+        "core:nav:/sanity":               { "order": 11, "hidden": true },
+        "core:nav:/segment":              { "order": 12, "hidden": true },
 
         "nav-child:/orders:/draft-orders":                        { "order": 0 },
-
-        "nav-child:/zakazkova-vyroba:/zakazkova-vyroba/zakazky":  { "order": 0 },
-        "nav-child:/zakazkova-vyroba:/zakazkova-vyroba/produkty": { "order": 1 },
 
         "nav-child:/inventory:/reservations":                     { "order": 0 },
         "nav-child:/inventory:/sklad-nizky-stav":                 { "order": 1 },

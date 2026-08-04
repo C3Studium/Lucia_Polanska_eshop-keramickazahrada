@@ -1127,3 +1127,83 @@ already used `transform`.
 
 - Gate: typecheck ✓ · build ✓ (backend 5.82 s, admin 18.29 s) · tests: **149
   passed** in 10 suites.
+
+---
+
+## UI-1 — Přehled becomes the one work section   (2026-08-04)
+
+Requested by Matěj after seeing Phases 0–3 running. It is a deliberate
+**deviation from §2.2**, recorded here and in `set-sidebar-order.md`.
+
+- Files: `backend/src/admin/components/work-tabs.tsx` (new),
+  `backend/src/admin/routes/prehled/prace/page.tsx` (new),
+  `backend/src/admin/routes/prehled/zakazky/page.tsx` (new),
+  `backend/src/admin/routes/prehled/page.tsx`,
+  `backend/src/admin/routes/prehled/emaily/page.tsx`,
+  `backend/src/admin/routes/denni-prace/**` (6 files → redirects),
+  `backend/src/admin/routes/zakazkova-vyroba/{page,zakazky/page,produkty/page}.tsx`,
+  `backend/src/admin/routes/merchant-orders/page.tsx`,
+  `backend/src/admin/widgets/merchant-order-state.tsx`,
+  `backend/scripts/set-sidebar-order.md`.
+
+### The change
+
+Everything the merchant does in a day now lives behind **one** sidebar item.
+Přehled gained a tab bar: **Přehled · Denní práce · Zakázky · Odeslané e-maily**.
+She has a single job — „what do I do now?" — and the old structure made her pick
+a *section* before she could pick a *task*, which earned nothing.
+
+Two things were kept against the simplest reading of the request:
+
+1. **The dashboard stays the first tab.** Its whole value is the glance, and a
+   glance that shares a screen with a workspace stops being one. Landing on
+   Přehled still answers „co teď"; the work is one click away rather than one
+   section away.
+2. **The five stage queues stay separate**, as tabs within the Denní práce tab
+   rather than one merged list. §2.3's reasoning still holds: the stages map to
+   physically different activities (the pack table, the post-office run), and
+   merging them would put work she cannot act on yet in front of work she can.
+
+The stage lives in the query string (`/prehled/prace?krok=k-odeslani`), so a
+queue stays addressable, bookmarkable and refresh-safe — the property the
+separate routes bought, kept without the sidebar cost. Every Přehled tile and
+the order-detail widget link to it.
+
+### Knock-on: Zakázková výroba collapsed
+
+With the commissions queue moved into Přehled, that section wrapped a single
+child, which is noise. It is now the top-level item **„Produkty na zakázku"** at
+`/zakazkova-vyroba`, rendering the same component; `/zakazkova-vyroba/produkty`
+still resolves. The split is deliberate — the commissions are *work*, deciding
+which products are made to order is *configuration*.
+
+### Nothing breaks on an old link
+
+All seven retired URLs are redirect stubs with no `config` export, so they stay
+reachable and never appear twice in the sidebar: `/denni-prace` and its five
+stage paths, plus `/zakazkova-vyroba/zakazky`. `/merchant-orders` was retargeted
+to the new location too.
+
+### Visual work Matěj asked for
+
+- Tiles: taller (`min-h-[8.5rem]`), more padding, and the CTA pushed to the
+  bottom with `mt-auto` so every card's action sits on the same line regardless
+  of how much text is above it.
+- Zone headers were small uppercase grey text, which read as decoration. They
+  are real `Heading` elements now, each with a sentence saying what the group is
+  for — „Obchod" alone told nobody anything.
+- Header and section spacing opened up throughout; the tab bar is mounted in the
+  loading and error states too, so the page does not jump as data arrives.
+
+- Deviations: this task **is** the deviation. §2.2's sidebar and §2.3's
+  „Denní práce keeps per-stage pages" are superseded for the section layout;
+  the per-stage *separation* is preserved as tabs.
+- Gate: typecheck ✓ · build ✓ (backend 5.44 s, admin 16.33 s) · tests: 149
+  passed in 10 suites.
+
+### Verified in the built bundle
+
+Sidebar is now `/prehled` (rank 0), `/reviews`, `/sezonni-vybery`,
+`/zakazkova-vyroba`, the two Sklad children and the two Produkty children —
+**no Denní práce entry**. All seven retired paths are present as routes with no
+menu item.

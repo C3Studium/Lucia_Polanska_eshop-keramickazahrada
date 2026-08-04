@@ -1,5 +1,4 @@
 import { HttpTypes } from "@medusajs/framework/types";
-import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Tools } from "@medusajs/icons";
 import {
   Badge,
@@ -738,17 +737,12 @@ const MadeToOrderPage = () => (
 );
 
 /**
- * Moved here from `/made-to-order` (WorkflowPlan.md §2.2, P1-2).
+ * The made-to-order product manager.
  *
- * It used to hang under Produkty as „Výroba na zakázku", which split the
- * made-to-order workflow across two places: the profiles here and the actual
- * commissions nowhere. Both now live under one Zakázková výroba section, so
- * `nested` is gone — the parent route supplies the placement.
+ * **No `config` export.** Once Zakázky moved into Přehled, this was the only
+ * page left in the Zakázková výroba section, and a section wrapping a single
+ * child is pure noise in a sidebar. `/zakazkova-vyroba` renders this same
+ * component as a top-level item instead; this path stays valid so existing
+ * links keep working.
  */
-export const config = defineRouteConfig({
-  label: "Produkty na zakázku",
-  icon: Tools,
-  rank: 20,
-});
-
 export default MadeToOrderPage;

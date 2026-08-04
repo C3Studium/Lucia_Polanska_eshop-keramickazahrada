@@ -6,6 +6,7 @@ import {
   Heading,
   Skeleton,
   Text,
+  clx,
 } from "@medusajs/ui";
 import {
   QueryClient,
@@ -17,6 +18,7 @@ import {
   OrderRow,
   type MerchantOrder,
 } from "../../components/merchant-order-queue";
+import { WorkTabs } from "../../components/work-tabs";
 import { formatAmount, formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
@@ -80,40 +82,57 @@ const toneClass: Record<Tone, string> = {
 const TileCard = ({ tile }: { tile: Tile }) => (
   <Link
     to={tile.to}
-    className="bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg flex flex-col gap-y-1 px-6 py-5 outline-none focus-visible:shadow-borders-focus"
+    className="bg-ui-bg-base hover:bg-ui-bg-base-hover transition-fg flex min-h-[8.5rem] flex-col px-6 py-6 outline-none focus-visible:shadow-borders-focus"
   >
     <Text size="small" className="text-ui-fg-subtle">
       {tile.label}
     </Text>
-    <Heading level="h2" className={toneClass[tile.tone ?? "default"]}>
+    <Heading
+      level="h2"
+      className={clx("mt-2 text-2xl leading-tight", toneClass[tile.tone ?? "default"])}
+    >
       {tile.value}
     </Heading>
     {tile.hint && (
       <Text
         size="small"
-        className={
+        className={clx(
+          "mt-1.5",
           tile.tone === "critical" ? "text-ui-fg-error" : "text-ui-fg-subtle"
-        }
+        )}
       >
         {tile.hint}
       </Text>
     )}
-    <Text size="small" className="text-ui-fg-interactive mt-1">
+    {/* Pushed to the bottom so every card's action sits on the same line,
+        however much text is above it. */}
+    <Text size="small" className="text-ui-fg-interactive mt-auto pt-3">
       {tile.cta}
     </Text>
   </Link>
 );
 
-const Zone = ({ title, tiles }: { title: string; tiles: Tile[] }) => {
+const Zone = ({
+  title,
+  description,
+  tiles,
+}: {
+  title: string;
+  description?: string;
+  tiles: Tile[];
+}) => {
   if (!tiles.length) {
     return null;
   }
   return (
-    <section>
-      <header className="px-6 pb-3 pt-5">
-        <Text size="small" weight="plus" className="text-ui-fg-subtle uppercase">
-          {title}
-        </Text>
+    <section className="pt-2">
+      <header className="flex flex-col gap-y-1 px-6 pb-4 pt-6">
+        <Heading level="h2">{title}</Heading>
+        {description && (
+          <Text size="small" className="text-ui-fg-subtle max-w-2xl">
+            {description}
+          </Text>
+        )}
       </header>
       <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((tile) => (
@@ -140,7 +159,7 @@ const attentionTiles = (summary: OperationsSummary): Tile[] => {
       value: String(attention.payment_problems),
       tone: "critical",
       hint: "Platba nedorazila nebo se nezdařila.",
-      to: "/denni-prace/problem-s-platbou",
+      to: "/prehled/prace?krok=problem-s-platbou",
       cta: "Vyřešit",
     });
   }
@@ -164,7 +183,7 @@ const attentionTiles = (summary: OperationsSummary): Tile[] => {
       value: String(attention.carrier_failures),
       tone: "critical",
       hint: "Zkuste vytvoření zásilky znovu.",
-      to: "/denni-prace/k-odeslani",
+      to: "/prehled/prace?krok=k-odeslani",
       cta: "Zkusit znovu",
     });
   }
@@ -176,7 +195,7 @@ const attentionTiles = (summary: OperationsSummary): Tile[] => {
       value: String(attention.overdue_production),
       tone: "critical",
       hint: "Slíbený termín už uplynul.",
-      to: "/zakazkova-vyroba/zakazky",
+      to: "/prehled/zakazky",
       cta: "Zobrazit zakázky",
     });
   }
@@ -192,7 +211,7 @@ const workTiles = (summary: OperationsSummary): Tile[] => {
       label: "Nové objednávky",
       value: String(today.new_orders),
       hint: today.new_orders === 0 ? "Žádné nové — máte klid ☕" : undefined,
-      to: "/denni-prace/nove",
+      to: "/prehled/prace?krok=nove",
       cta: today.new_orders === 0 ? "Otevřít frontu" : "Začít",
     },
     {
@@ -200,7 +219,7 @@ const workTiles = (summary: OperationsSummary): Tile[] => {
       label: "Připravujeme",
       value: String(today.working),
       hint: today.working === 0 ? "Nic rozpracovaného" : undefined,
-      to: "/denni-prace/pripravujeme",
+      to: "/prehled/prace?krok=pripravujeme",
       cta: "Otevřít",
     },
     {
@@ -220,7 +239,7 @@ const workTiles = (summary: OperationsSummary): Tile[] => {
         today.shipping_oldest_days > 3
           ? "critical"
           : "default",
-      to: "/denni-prace/k-odeslani",
+      to: "/prehled/prace?krok=k-odeslani",
       cta: "Otevřít",
     },
   ];
@@ -244,7 +263,7 @@ const workTiles = (summary: OperationsSummary): Tile[] => {
             today.awaiting_balance.count === 1 ? "a" : "y"
           } čeká na zaplacení.`,
       tone: overdue ? "critical" : "default",
-      to: "/zakazkova-vyroba/zakazky",
+      to: "/prehled/zakazky",
       cta: "Zobrazit",
     });
   }
@@ -272,7 +291,7 @@ const workTiles = (summary: OperationsSummary): Tile[] => {
       deadlineDays !== null && deadlineDays <= 3 && today.in_production.count > 0
         ? "critical"
         : "default",
-    to: "/zakazkova-vyroba/zakazky",
+    to: "/prehled/zakazky",
     cta: "Zobrazit",
   });
 
@@ -351,7 +370,8 @@ const PrehledInner = () => {
   if (isLoading) {
     return (
       <Container className="divide-y p-0">
-        <header className="px-6 py-5">
+        <WorkTabs active="prehled" />
+        <header className="px-6 pb-2 pt-6">
           <Heading>Přehled</Heading>
         </header>
         <div className="grid gap-px bg-ui-border-base sm:grid-cols-2 lg:grid-cols-3">
@@ -368,7 +388,8 @@ const PrehledInner = () => {
   if (isError || !data) {
     return (
       <Container className="p-0">
-        <div className="flex min-h-64 flex-col items-center justify-center gap-y-3 px-6 text-center">
+        <WorkTabs active="prehled" />
+        <div className="flex min-h-64 flex-col items-center justify-center gap-y-3 px-6 py-10 text-center">
           <Heading level="h2">Přehled se nepodařilo načíst</Heading>
           <Text size="small" className="text-ui-fg-subtle">
             Zkuste to prosím znovu.
@@ -395,10 +416,12 @@ const PrehledInner = () => {
   return (
     <div className="flex flex-col gap-y-3">
       <Container className="divide-y p-0">
-        <header className="flex flex-wrap items-center justify-between gap-2 px-6 py-5">
+        <WorkTabs active="prehled" />
+
+        <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
           <div>
             <Heading>Přehled</Heading>
-            <Text size="small" className="text-ui-fg-subtle mt-1">
+            <Text size="small" className="text-ui-fg-subtle mt-2">
               {formatDate(data.generated_at)} — co je dnes potřeba udělat.
             </Text>
           </div>
@@ -413,15 +436,30 @@ const PrehledInner = () => {
           </Button>
         </header>
 
-        <Zone title="Vyžaduje pozornost" tiles={attention} />
-        <Zone title="Dnešní práce" tiles={work} />
-        <Zone title="Obchod" tiles={shop} />
+        {/* Three groups in the order the day runs: what is broken, what is
+            moving, what the shop needs. Each says what it is for — „Obchod"
+            alone told nobody anything. */}
+        <Zone
+          title="Vyžaduje pozornost"
+          description="Něco se nepovedlo a čeká to na vás."
+          tiles={attention}
+        />
+        <Zone
+          title="Dnešní práce"
+          description="Objednávky a zakázky, které dnes posunete dál."
+          tiles={work}
+        />
+        <Zone
+          title="Obchod"
+          description="Zásoby, recenze a akce — nic z toho nehoří."
+          tiles={shop}
+        />
       </Container>
 
       <Container className="divide-y p-0">
-        <header className="px-6 py-5">
+        <header className="px-6 pb-4 pt-6">
           <Heading level="h2">Na řadě</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1">
+          <Text size="small" className="text-ui-fg-subtle mt-2">
             Nejdéle čekající objednávky, u kterých je na tahu někdo z vás.
           </Text>
         </header>
