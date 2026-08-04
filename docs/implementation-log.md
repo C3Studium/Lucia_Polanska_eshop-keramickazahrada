@@ -268,3 +268,53 @@ pre-existing convention and was left alone. Integration tests with
   not built.
 - Gate: typecheck ✓ · build ✓ (backend 6.27 s, admin 17.14 s) · tests: 25 passed
   in 4 suites (the 2 pre-existing specs included, still green).
+
+---
+
+## P1-2 — move the made-to-order section   (2026-08-04)
+
+- Files: `backend/src/admin/routes/made-to-order/page.tsx` → moved (git mv) to
+  `backend/src/admin/routes/zakazkova-vyroba/produkty/page.tsx`;
+  `backend/src/admin/routes/made-to-order/page.tsx` recreated as a redirect stub;
+  `backend/src/admin/routes/zakazkova-vyroba/page.tsx` (new section landing);
+  `backend/src/admin/routes/zakazkova-vyroba/zakazky/page.tsx` (new route, filled
+  in by P6-1).
+- Native used: `defineRouteConfig` + the dashboard's parent-path child grouping.
+- Custom added: nothing beyond the pages themselves.
+
+### What changed
+
+The profile manager was nested under Produkty as „Výroba na zakázku", which split
+the made-to-order workflow: profiles lived under products and the actual
+commissions lived nowhere. It is now „Produkty na zakázku" under a top-level
+**Zakázková výroba** section with its two §2.2 children. `nested` had to go —
+the dashboard refuses to render children of a route that declares it
+(the same constraint that made Denní práce top-level).
+
+The old `/made-to-order` URL is a redirect stub with **no** `config` export, so
+it stays reachable for bookmarks without appearing twice in the sidebar — the
+`/merchant-orders` pattern.
+
+### Verified in the built admin bundle
+
+```
+/zakazkova-vyroba            nested: undefined  rank: 20   (menu item)
+/zakazkova-vyroba/zakazky    nested: undefined  rank: 10   (menu item)
+/zakazkova-vyroba/produkty   nested: undefined  rank: 20   (menu item)
+/made-to-order               route present, NO menu item   (redirect)
+```
+
+- Deviations: two, both small and within the plan's intent.
+  1. P1-2's file list names only `{page, produkty/page}.tsx`, but its acceptance
+     is „sidebar shows section+**children**" and §2.2 lists two. The `zakazky`
+     route is therefore created here as well; P6-1 still builds the queue itself.
+  2. The `zakazky` shell does **not** render §19's „Žádná zakázka" empty state.
+     There is no list endpoint yet (`/admin/made-to-order/orders` serves a single
+     commission by id — P6-1 adds the list), so the page cannot know whether it
+     is empty, and claiming it is would be a lie over real commissions. It shows
+     the explanatory half of the §19 text, which is true either way, plus the
+     link to Produkty na zakázku. P6-1 restores the full empty state once it can
+     tell.
+- Gate: typecheck ✓ · build ✓ (backend 5.41 s, admin 15.77 s) · tests: 25 passed.
+- Notes for Matěj: the sidebar order is still the default one — the §2.2
+  interleaving with native items is P1-4 + your „Default view" apply.
