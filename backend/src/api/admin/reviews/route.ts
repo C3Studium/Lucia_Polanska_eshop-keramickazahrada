@@ -22,6 +22,7 @@ export const REVIEW_STATUSES = [
 export const GetAdminReviewsSchema = createFindParams().merge(
   z.object({
     status: z.enum(REVIEW_STATUSES).optional(),
+    customer_id: z.string().optional(),
   })
 )
 
