@@ -55,8 +55,8 @@
 
 .eyebrow {
   color: rgba(32, 33, 28, .52);
-  font: 600 11px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .15em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -97,7 +97,7 @@
   gap: 15px;
   padding: 13px;
   border-bottom: 1px solid rgba(32, 33, 28, .17);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -168,5 +168,5 @@
   color: rgba(32, 33, 28, .65);
   background: transparent;
   cursor: pointer;
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
 }

@@ -20,8 +20,8 @@
         align-items: center;
         gap: clamp(12px, 1.4vw, 24px);
         color: rgba(33, 34, 34, .5);
-        font-size: clamp(.58rem, .62vw, .7rem);
-        letter-spacing: .16em;
+        font-size: clamp(0.75rem, .62vw, 0.75rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
 
         i {
@@ -67,8 +67,8 @@
             position: absolute;
             z-index: 2;
             color: rgba(255, 255, 255, .76);
-            font-size: clamp(.54rem, .58vw, .66rem);
-            letter-spacing: .14em;
+            font-size: clamp(0.75rem, .58vw, 0.75rem);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             text-shadow: 0 2px 12px rgba(18, 18, 15, .46);
         }
@@ -127,8 +127,8 @@
     &__eyebrow {
         margin: 0 0 clamp(16px, 1.65vw, 26px);
         color: rgba(33, 34, 34, .56);
-        font-size: clamp(.62rem, .67vw, .76rem);
-        letter-spacing: .16em;
+        font-size: clamp(0.75rem, .67vw, .76rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
     }
 

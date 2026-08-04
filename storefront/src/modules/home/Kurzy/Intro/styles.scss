@@ -48,8 +48,8 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 22px;
     color: rgba(255, 232, 214, 0.42);
-    font-size: clamp(0.52rem, 0.56vw, 0.65rem);
-    letter-spacing: 0.14em;
+    font-size: clamp(0.75rem, 0.56vw, 0.75rem);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     mix-blend-mode: difference;
     pointer-events: none;
@@ -109,8 +109,8 @@
   align-items: center;
   gap: clamp(14px, 1.5vw, 24px);
   color: rgba(255, 232, 214, 0.5);
-  font-size: clamp(0.56rem, 0.62vw, 0.7rem);
-  letter-spacing: 0.16em;
+  font-size: clamp(0.75rem, 0.62vw, 0.75rem);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   mix-blend-mode: difference;
 
@@ -189,8 +189,8 @@
         z-index: 2;
         color: rgba(255, 248, 241, 0.74);
         font-family: "Sansation-Light", sans-serif;
-        font-size: 0.5rem;
-        letter-spacing: 0.13em;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
     }
@@ -213,8 +213,8 @@
     }
 
     > span {
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -251,8 +251,8 @@
     align-items: center;
     gap: 13px;
     color: rgba(255, 232, 214, 0.5);
-    font-size: 0.56rem;
-    letter-spacing: 0.13em;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 
     > div {
@@ -307,8 +307,8 @@
       align-items: center;
       gap: 12px;
       color: rgba(255, 255, 255, 0.75);
-      font-size: 0.52rem;
-      letter-spacing: 0.13em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       i {
@@ -342,8 +342,8 @@
 
     > span {
       color: rgba(36, 37, 31, 0.5);
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -397,8 +397,8 @@
 
     dt {
       color: rgba(36, 37, 31, 0.48);
-      font-size: 0.54rem;
-      letter-spacing: 0.14em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -422,8 +422,8 @@
 
     > span {
       color: rgba(36, 37, 31, 0.5);
-      font-size: 0.6rem;
-      letter-spacing: 0.14em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -499,8 +499,8 @@
       align-items: center;
       gap: 12px;
       color: rgba(255, 255, 255, 0.75);
-      font-size: 0.52rem;
-      letter-spacing: 0.13em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       i {
@@ -522,8 +522,8 @@
 
     > span {
       color: rgba(36, 37, 31, 0.54);
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -558,7 +558,7 @@
     align-items: center;
     gap: 12px;
     color: rgba(36, 37, 31, 0.5);
-    font-size: 0.58rem;
+    font-size: 0.8125rem;
     letter-spacing: 0.13em;
 
     i {
@@ -612,8 +612,8 @@
       left: 16px;
       z-index: 2;
       color: rgba(255, 232, 214, 0.66);
-      font-size: 0.54rem;
-      letter-spacing: 0.14em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
   }
@@ -641,8 +641,8 @@
 
     > span {
       color: rgba(255, 232, 214, 0.46);
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
@@ -750,8 +750,8 @@
     display: flex;
     gap: 24px;
     color: rgba(255, 232, 214, 0.44);
-    font-size: 0.55rem;
-    letter-spacing: 0.13em;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 }
@@ -795,7 +795,7 @@
         font-size: 0;
 
         &::before {
-          font-size: 0.52rem;
+          font-size: 0.8125rem;
         }
 
         &:nth-child(1)::before {

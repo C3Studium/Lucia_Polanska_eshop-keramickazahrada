@@ -31,8 +31,8 @@
   display: block;
   margin-bottom: 15px;
   color: rgba(32, 33, 28, 0.48);
-  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -64,7 +64,7 @@
 
 .count {
   color: rgba(32, 33, 28, 0.55);
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -93,8 +93,8 @@
   gap: 18px;
   margin-bottom: clamp(28px, 4vh, 44px);
   color: rgba(32, 33, 28, 0.43);
-  font: 400 8px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.13em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -124,7 +124,7 @@
   margin-top: auto;
   padding-top: 18px;
   color: rgba(32, 33, 28, 0.48);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .reviewFooter i {
@@ -163,7 +163,7 @@
 .reviewPagination > p {
   margin: 10px 0 19px;
   color: rgba(32, 33, 28, 0.5);
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
 }
 
 .reviewPagination > button {
@@ -174,7 +174,7 @@
   border: 1px solid #20211c;
   border-radius: 999px;
   color: #20211c;
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   background: transparent;
   cursor: pointer;
   transition:

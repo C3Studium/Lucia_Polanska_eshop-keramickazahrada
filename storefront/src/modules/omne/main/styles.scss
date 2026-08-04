@@ -109,8 +109,8 @@
         z-index: 6;
         margin: 0;
         color: rgba(33, 34, 34, .62);
-        font-size: clamp(.66rem, .7vw, .78rem);
-        letter-spacing: .15em;
+        font-size: clamp(0.75rem, .7vw, .78rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         animation: aboutCopyIn .75s .08s both cubic-bezier(.22, 1, .36, 1);
 
@@ -183,8 +183,8 @@
                 align-items: center;
                 gap: 12px;
                 color: rgba(255, 255, 255, .68);
-                font-size: clamp(.56rem, .58vw, .67rem);
-                letter-spacing: .13em;
+                font-size: clamp(0.75rem, .58vw, 0.75rem);
+                letter-spacing: 0.12em;
                 text-transform: uppercase;
                 text-shadow: 0 2px 12px rgba(10, 10, 8, .45);
                 animation: aboutCopyIn .75s .28s both cubic-bezier(.22, 1, .36, 1);
@@ -322,8 +322,8 @@
         bottom: calc(8% + 16px);
         z-index: 6;
         color: rgba(255, 255, 255, .86);
-        font-size: .68rem;
-        letter-spacing: .13em;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
         text-shadow: 0 2px 12px rgba(10, 10, 8, .58);
         text-transform: uppercase;
         pointer-events: none;
@@ -342,8 +342,8 @@
         align-items: center;
         gap: clamp(12px, 1.5vw, 24px);
         color: rgba(33, 34, 34, .62);
-        font-size: clamp(.58rem, .62vw, .72rem);
-        letter-spacing: .15em;
+        font-size: clamp(0.75rem, .62vw, 0.75rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
 
         i{
@@ -500,7 +500,7 @@
         > .portrait__caption{
             right: 30px;
             bottom: calc(5% + 11px);
-            font-size: .57rem;
+            font-size: 0.8125rem;
         }
 
         .about__chapterTransition{
@@ -509,7 +509,7 @@
             bottom: 1.5%;
             width: 40%;
             gap: 9px;
-            font-size: .52rem;
+            font-size: 0.8125rem;
         }
     }
 }

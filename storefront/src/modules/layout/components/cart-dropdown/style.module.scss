@@ -34,9 +34,9 @@
         font-size: 0.875rem;
 
         @include hb((
-          sm: (font-size: 0.8rem),
-          xs: (font-size: 0.75rem),
-          xxs: (font-size: 0.75rem),
+          sm: (font-size: 0.8125rem),
+          xs: (font-size: 0.8125rem),
+          xxs: (font-size: 0.8125rem),
         ));
 
         @include vb((
@@ -81,7 +81,7 @@
         &::after {
           content: "ATELIÉROVÝ VÝBĚR";
           color: rgba(36,37,31,.48);
-          font-size: .64rem;
+          font-size: 0.8125rem;
           letter-spacing: .14em;
         }
         h3 {

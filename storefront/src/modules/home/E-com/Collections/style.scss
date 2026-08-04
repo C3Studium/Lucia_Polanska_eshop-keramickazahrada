@@ -66,8 +66,8 @@
         border-bottom: 1px solid rgba(33, 34, 34, 0.22);
         color: rgba(33, 34, 34, 0.56);
         font-family: "Sansation-Regular";
-        font-size: clamp(0.62rem, 0.68vw, 0.76rem);
-        letter-spacing: 0.14em;
+        font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
@@ -210,8 +210,8 @@
             border-bottom: 1px solid rgba(255, 232, 214, 0.34);
             color: rgba(255, 240, 228, 0.9);
             font-family: "Sansation-Regular";
-            font-size: clamp(0.56rem, 0.58vw, 0.66rem);
-            letter-spacing: 0.13em;
+            font-size: clamp(0.75rem, 0.58vw, 0.75rem);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
           }
 
@@ -243,7 +243,7 @@
             margin-top: clamp(1rem, 1.5vh, 1.5rem);
             color: #fff1e7;
             font-family: "Sansation-Regular";
-            font-size: clamp(0.78rem, 0.82vw, 0.92rem);
+            font-size: clamp(0.8125rem, 0.82vw, 0.92rem);
 
             i {
               display: grid;

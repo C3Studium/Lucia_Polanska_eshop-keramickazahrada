@@ -21,7 +21,7 @@
   padding: 25px 22px 20px;
   border-bottom: 1px solid rgba(255,255,255,.16);
 
-  span { color: #ffe8d6; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+  span { color: #ffe8d6; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
   h2 { margin: 5px 0 0; font-family: "Sentient-Regular", serif; font-size: 29px; font-weight: 400; }
 }
 
@@ -33,7 +33,7 @@
   border-bottom: 1px solid rgba(255,255,255,.16);
 
   header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
-  small { color: rgba(255,255,255,.42); font-size: 9px; }
+  small { color: rgba(255,255,255,.42); font-size: 12px; }
   h3 { margin: 0; font-size: 14px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
 }
 
@@ -75,7 +75,7 @@
     border-radius: 999px;
     background: transparent;
     color: rgba(255,255,255,.64);
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     transition: border-color .25s ease, background-color .25s ease, color .25s ease;
 
@@ -124,7 +124,7 @@
   justify-content: space-between;
   padding: 17px 22px 20px;
   color: rgba(255,255,255,.46);
-  font-size: 10px;
+  font-size: 13px;
 
   button { border: 0; background: transparent; color: #ffe8d6; text-decoration: underline; cursor: pointer; }
   button:disabled { opacity: .3; cursor: default; }

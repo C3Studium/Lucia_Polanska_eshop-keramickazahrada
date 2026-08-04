@@ -44,8 +44,8 @@
   border-top: 1px solid var(--footer-line);
   border-bottom: 1px solid var(--footer-line);
   color: var(--footer-muted);
-  font: 400 clamp(9px, 0.56vw, 11px)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.18em;
+  font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -81,8 +81,8 @@
 .footer__eyebrow,
 .footer__newsletterCopy > span {
   color: var(--footer-muted);
-  font: 400 clamp(9px, 0.56vw, 11px)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.17em;
+  font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -255,8 +255,8 @@
 .footer__linkGroup h3 {
   margin: 0 0 18px;
   color: var(--footer-muted);
-  font: 400 clamp(9px, 0.56vw, 11px)/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.17em;
+  font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -350,7 +350,7 @@
 .footer__legal p {
   margin: 0;
   color: var(--footer-muted);
-  font: 300 clamp(12px, 0.72vw, 14px)/1.38 "Sansation-Light", sans-serif;
+  font: 300 clamp(13px, 0.72vw, 14px)/1.38 "Sansation-Light", sans-serif;
 }
 
 .maker__link {

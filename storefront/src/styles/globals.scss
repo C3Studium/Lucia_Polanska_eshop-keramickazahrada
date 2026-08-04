@@ -148,8 +148,30 @@
 }
 
 
+/*
+ * V2.0 type scale (spec §5.2). The voice is unchanged — Sentient for display, Sansation for
+ * UI and body, the archival uppercase label kept. Only the floors move.
+ *
+ * The rule these encode: nothing below 12px reaches a customer, and 12px is reserved for the
+ * uppercase archival eyebrow. Anything a customer must read to decide — prices, availability,
+ * form labels, shipping terms — sits at --type-caption or larger.
+ */
+:root {
+  --type-eyebrow: 0.75rem; /* 12px — uppercase archival label, absolute minimum */
+  --type-caption: 0.8125rem; /* 13px — smallest customer-facing text */
+  --type-ui: 0.9375rem; /* 15px — buttons, nav, compact controls */
+  --type-body: 1rem; /* 16px — paragraph floor; inputs never below this */
+  --type-body-editorial: 1.125rem; /* 18px — long-form prose on solid surfaces */
+
+  /* Tracking above this makes uppercase word-shapes fall apart at small sizes. */
+  --type-tracking-eyebrow: 0.12em;
+
+  --type-leading-tight: 1.4;
+  --type-leading-body: 1.55;
+}
+
 body {
-  font-family: "Poppins-Regular", sans-serif;
+  font-family: "Sansation-Regular", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: fit-content;

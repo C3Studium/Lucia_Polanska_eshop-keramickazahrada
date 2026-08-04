@@ -918,3 +918,63 @@ them to the final responsive phase).
 can currently be completed).
 
 ---
+
+# Phase B — the readability & accessibility system
+
+## B1 — type tokens and the sub-12px retirement (spec §5.2, §14 P1 item 1.1)
+
+**Files:** `src/styles/globals.scss` (tokens + body font), `src/styles/system/_typography.scss`
+(the mixin), and **84 stylesheets** across `src/modules` and `src/app`.
+
+**Audit correction — trap 2 is not a trap.** The brief warns that the type mixin's
+`height: <font-size>` line has layouts "silently depending on it" and that removing it will make
+wrapping appear. Verified exhaustively: `@include font(...)` has **zero call sites**. The mixin is
+defined in `_typography.scss`, re-exported by `_shortcuts.scss` (which 156 files `@use`, but only
+for the breakpoint helpers), and never called. The 14 `height:` lines are removed with no visual
+consequence anywhere — recorded so the next session does not go hunting for the fallout.
+
+**Type tokens.** `:root` in `globals.scss` now carries the §5.2 scale as custom properties —
+`--type-eyebrow` 12px, `--type-caption` 13px, `--type-ui` 15px, `--type-body` 16px,
+`--type-body-editorial` 18px, plus `--type-tracking-eyebrow: 0.12em` and two leading tokens.
+They are documented with the rule they encode and are what new code should reach for.
+
+**The floors, applied.** A block-aware sweep raised every declaration below the floor. The rule:
+a declaration inside a rule that also sets `text-transform: uppercase` is the archival eyebrow and
+floors at **12px**; everything else floors at **13px**. Uppercase blocks additionally had tracking
+capped at **0.12em** (the census ran 0.14–0.18em, which is what makes small uppercase word-shapes
+disintegrate — spec §13.1).
+
+| | Before | After |
+|---|---|---|
+| `px` declarations below 12px | **142** (7px ×1, 8px ×13, 9px ×39, 10px ×59, 11px ×30) | **0** |
+| `rem` declarations below 12px | **70** (down to 0.5rem = 8px) | **0** |
+| Total declarations changed | — | **431 across 84 files** |
+
+**Two bugs I introduced and caught.** Raising a `clamp()`'s lower bound can push it above the
+upper bound, which CSS resolves to the lower bound — it renders correctly but reads as nonsense
+and breaks the next person's edit. 3 px-based and 22 rem-based clamps were repaired to
+`clamp(floor, preferred, floor)`. Both censuses re-run clean afterwards.
+
+**Also fixed here:** `body` requested `"Poppins-Regular"`, a font that is not in the repo
+(spec §5.1) — so the brand's body voice was silently rendering in the system font on every page.
+It now requests `"Sansation-Regular"`, verified as a registered family in
+`public/fonts/Sansation/css/sansation.css`.
+
+**Scope note.** The floors were applied to `/vyroba` and `/o-mne` too. Those pages keep their
+*design* (§3 non-negotiable 3), but the brief is explicit that "floors are not designs".
+
+**Gate**
+
+- `pnpm lint` → exit 0. `pnpm build` → exit 0.
+- Visual QA at 1024/1280/1536 + reduced motion on `/store`, `/dotazy`, `/o-mne` and a product
+  page: the archival label idiom survives intact at 12–13px — eyebrows, index numerals and
+  section markers all still read as the same design, now legible. No layout broke; no clipping
+  or unexpected wrapping appeared (consistent with the mixin never having been used).
+
+**Notes for Matěj**
+
+- This is the change the spec calls "the single highest-leverage visual change on the site". It
+  touches 84 stylesheets, so it is worth your own look at the pages you know best — particularly
+  `/kurzy` and `/vyroba`, which had the densest small-type clusters.
+
+---

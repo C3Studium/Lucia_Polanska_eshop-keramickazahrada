@@ -38,8 +38,8 @@
     align-items: center;
     gap: clamp(14px, 1.5vw, 24px);
     color: rgba(255, 232, 214, 0.46);
-    font-size: clamp(0.6rem, 0.64vw, 0.72rem);
-    letter-spacing: 0.16em;
+    font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 
     i {
@@ -103,8 +103,8 @@
       align-items: center;
       gap: 14px;
       color: rgba(255, 255, 255, 0.7);
-      font-size: clamp(0.56rem, 0.6vw, 0.7rem);
-      letter-spacing: 0.14em;
+      font-size: clamp(0.75rem, 0.6vw, 0.75rem);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       i {
@@ -163,7 +163,7 @@
     align-items: center;
     gap: 10px;
     color: rgba(255, 232, 214, 0.45);
-    font-size: clamp(0.6rem, 0.64vw, 0.74rem);
+    font-size: clamp(0.8125rem, 0.64vw, 0.8125rem);
     letter-spacing: 0.15em;
 
     span:first-child {
@@ -180,8 +180,8 @@
   &__label {
     margin: clamp(28px, 3.2vh, 44px) 0 0;
     color: rgba(255, 232, 214, 0.5);
-    font-size: clamp(0.6rem, 0.65vw, 0.74rem);
-    letter-spacing: 0.16em;
+    font-size: clamp(0.75rem, 0.65vw, 0.75rem);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -235,7 +235,7 @@
       transition: color 0.4s ease;
 
       span {
-        font-size: 0.58rem;
+        font-size: 0.8125rem;
         letter-spacing: 0.09em;
       }
 
@@ -287,8 +287,8 @@
   > span {
     margin-bottom: clamp(20px, 2vw, 34px);
     color: rgba(255, 232, 214, 0.58);
-    font-size: clamp(0.62rem, 0.67vw, 0.76rem);
-    letter-spacing: 0.16em;
+    font-size: clamp(0.75rem, 0.67vw, 0.76rem);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -347,8 +347,8 @@
       align-items: center;
       gap: 14px;
       color: rgba(255, 232, 214, 0.48);
-      font-size: 0.62rem;
-      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       i {
@@ -390,8 +390,8 @@
           bottom: 18px;
           z-index: 2;
           color: rgba(255, 255, 255, 0.72);
-          font-size: 0.6rem;
-          letter-spacing: 0.14em;
+          font-size: 0.75rem;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
         }
       }
@@ -399,7 +399,7 @@
       > div {
         > span {
           color: #df8356;
-          font-size: 0.62rem;
+          font-size: 0.8125rem;
           letter-spacing: 0.14em;
         }
 

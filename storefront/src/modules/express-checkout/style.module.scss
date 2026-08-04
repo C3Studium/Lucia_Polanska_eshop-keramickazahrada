@@ -9,8 +9,8 @@
   align-items: center;
   gap: 12px;
   color: rgba(32, 33, 28, .55);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .15em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -58,7 +58,7 @@
   position: relative;
   padding: 14px 12px;
   color: rgba(32, 33, 28, .4);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -135,8 +135,8 @@
   left: 14px;
   bottom: 12px;
   color: #fff4ea;
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .14em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -149,8 +149,8 @@
 
 .eyebrow {
   color: rgba(32, 33, 28, .5);
-  font: 600 11px/1.25 "Sansation-Regular", sans-serif;
-  letter-spacing: .14em;
+  font: 600 12px/1.25 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -185,8 +185,8 @@
   float: left;
   padding: 11px 0 0;
   color: rgba(32, 33, 28, .55);
-  font: 600 11px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .14em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -243,8 +243,8 @@
 
 .quantity > span {
   color: rgba(32, 33, 28, .5);
-  font: 600 11px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .14em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -325,7 +325,7 @@
   border-radius: 50%;
   color: #fff4ea;
   background: #20211c;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .bundleItem {
@@ -382,8 +382,8 @@
 .field span,
 .countryField small {
   color: rgba(32, 33, 28, .5);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .13em;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -436,7 +436,7 @@
 
 .methodHeading > span:last-child {
   color: rgba(32, 33, 28, .45);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -562,7 +562,7 @@
 
 .orderMiniatureHeader > span:last-child {
   color: rgba(32, 33, 28, .56);
-  font: 600 10px/1 "Sansation-Regular", sans-serif;
+  font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -674,7 +674,7 @@
   min-width: 0;
   padding: 13px 5px;
   color: rgba(32, 33, 28, .5);
-  font: 600 10px/1.35 "Sansation-Regular", sans-serif;
+  font: 600 12px/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: .1em;
   text-align: center;
   text-transform: uppercase;
@@ -691,7 +691,7 @@
 
   .progress span {
     padding-inline: 8px;
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .progress span[data-active="true"]::before {

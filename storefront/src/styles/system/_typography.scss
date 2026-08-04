@@ -271,7 +271,12 @@ $font-scale: (
       xs: 0.9rem)),
 );
 
-// Public mixin
+// Public mixin.
+//
+// NOTE: this used to set `height` equal to `font-size` at every breakpoint, which clips Czech
+// diacritics on capitals and breaks any text that wraps. The audit flagged it as a trap on the
+// assumption that layouts depended on it — verified 2026-08-04 that the mixin has **zero call
+// sites**, so the height lines were removed with no visual consequence anywhere.
 @mixin font($token) {
   $cfg: map.get($font-scale, $token);
 
@@ -290,78 +295,64 @@ font-family: $family;
 // Mobile-first: start at smallest layer, then scale up with min-width breakpoints.
 @include m.h-layer(xxs) {
   font-size: map.get($sizesH, xxs);
-  height: map.get($sizesH, xxs);
 }
 
 @include m.h-layer(xs) {
   font-size: map.get($sizesH, xs);
-  height: map.get($sizesH, xs);
 }
 
 @include m.h-layer(sm) {
   font-size: map.get($sizesH, sm);
-  height: map.get($sizesH, sm);
 }
 
 @if map.get($sizesH, smt) !=null {
   @include m.h-layer(smt) {
     font-size: map.get($sizesH, smt);
-    height: map.get($sizesH, smt);
   }
 }
 
 @include m.h-layer(md) {
   font-size: map.get($sizesH, md);
-  height: map.get($sizesH, md);
 }
 
 @if map.get($sizesH, mdt) !=null {
   @include m.h-layer(mdt) {
     font-size: map.get($sizesH, mdt);
-    height: map.get($sizesH, mdt);
   }
 }
 
 @include m.h-layer(lg) {
   font-size: map.get($sizesH, lg);
-  height: map.get($sizesH, lg);
 }
 
 @include m.h-layer(xl) {
   font-size: map.get($sizesH, xl);
-  height: map.get($sizesH, xl);
 }
 
 @include m.h-layer(huge) {
   font-size: map.get($sizesH, huge);
-  height: map.get($sizesH, huge);
 }
 
 // Portrait overrides (optional but supported)
 @if $sizesV !=null {
   @include m.v-layer(xs) {
     font-size: map.get($sizesV, xs);
-    height: map.get($sizesV, xs);
   }
 
   @include m.v-layer(sm) {
     font-size: map.get($sizesV, sm);
-    height: map.get($sizesV, sm);
   }
 
   @include m.v-layer(s) {
     font-size: map.get($sizesV, s);
-    height: map.get($sizesV, s);
   }
 
   @include m.v-layer(md) {
     font-size: map.get($sizesV, md);
-    height: map.get($sizesV, md);
   }
 
   @include m.v-layer(lg) {
     font-size: map.get($sizesV, lg);
-    height: map.get($sizesV, lg);
   }
 }
 }
