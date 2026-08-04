@@ -229,3 +229,31 @@ body::-webkit-scrollbar {
 [data-scroll-section] {
   scroll-margin-top: clamp(72px, 9vh, 112px);
 }
+
+
+/*
+ * Reduced motion, layer 1 of 3 (spec §8.5).
+ *
+ * Layer 2 is `useReducedMotion` inside the motion-heavy components; layer 3 is LenisProvider,
+ * which does not initialise at all under this preference so the browser's native scrolling
+ * takes over.
+ *
+ * This layer kills the 19 infinite keyframe animations and collapses transitions, without
+ * removing any content: reduced-motion visitors get the same composed pages, settled.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.15s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Perpetual ambience has no settled state worth animating to — stop it where it stands. */
+  [data-marquee],
+  [data-ambient] {
+    animation: none !important;
+  }
+}

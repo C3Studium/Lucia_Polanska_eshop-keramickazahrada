@@ -175,9 +175,11 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
               <span>00 · PATIČKA</span>
             </div>
 
-            <h2>
+            {/* Styled as a heading, but not one: the footer repeats on every page and used
+                to inject an h2 + two h3s into each page's outline (spec §6). */}
+            <p className="footer__wordmark">
               Keramická <em>zahrada.</em>
-            </h2>
+            </p>
 
             <p className="footer__statement">
               Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
@@ -206,7 +208,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
             >
               <div className="footer__newsletterCopy">
                 <span>Novinky · 01</span>
-                <h3 id="newsletter-title">Zůstaňte blízko ateliéru.</h3>
+                <p id="newsletter-title" className="footer__newsletterTitle">Zůstaňte blízko ateliéru.</p>
                 <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
               </div>
               <Newsletter email={merchant.email} />
@@ -271,7 +273,7 @@ function FooterLinkGroup({
 
   return (
     <div className="footer__linkGroup">
-      <h3>{title}</h3>
+      <p className="footer__groupTitle">{title}</p>
       <div>
         {links.map((link) =>
           link.action === "contact" ? (

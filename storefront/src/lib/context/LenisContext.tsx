@@ -1,14 +1,19 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
-import { useStateContext } from "./StateContext";
+import "lenis/dist/lenis.css";
 
 export default function LenisProvider({ children }: { children: React.ReactNode }) {
-  const { firstLoad } = useStateContext();
   const rafId = useRef<number | null>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
+    // Reduced-motion visitors get the browser's own scrolling: smooth-scroll hijacking is
+    // exactly the kind of motion the preference asks us to drop.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -33,18 +38,11 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
-  // Control scrolling based on firstLoad state
-  useEffect(() => {
-    if (lenisRef.current) {
-      if (firstLoad) {
-        // Enable scrolling when firstLoad is true
-        lenisRef.current.start();
-      } else {
-        // Disable scrolling when firstLoad is false
-        lenisRef.current.stop();
-      }
-    }
-  }, [firstLoad]);
+  // The 3-second scroll lock that used to live here is gone (spec §8.3). It called
+  // lenis.stop(), which preventDefault()s wheel and touch, while keyboard scrolling still
+  // worked and then snapped back — the site read as frozen for the first three seconds.
+  // The intro still plays: `firstLoad` in StateContext continues to drive the hero's timing,
+  // it just no longer holds the page still.
 
   return <>{children}</>;
 }

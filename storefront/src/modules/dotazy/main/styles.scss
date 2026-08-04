@@ -172,7 +172,7 @@
         text-transform: uppercase;
     }
 
-    h2 {
+    h1 {
         max-width: 10.5em;
         margin: clamp(18px, 2.2vh, 28px) 0 0;
         font-family: "Sentient-Regular", serif;
@@ -296,7 +296,7 @@
         bottom: 28px;
         width: min(330px, 78vw);
 
-        h2 { font-size: clamp(30px, 9vw, 44px); }
+        h1 { font-size: clamp(30px, 9vw, 44px); }
         p { display: none; }
         a { margin-top: 16px; }
     }

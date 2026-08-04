@@ -1054,3 +1054,56 @@ inherits the global ring.
   (povinné)", "Nové heslo", "Potvrzení hesla".
 
 ---
+
+## B7 + B6 + B8 — scroll lock, reduced motion, heading outline
+
+Three P1 items landed together because they share the same files and the same verification run.
+
+### B7 — the 3-second scroll lock is gone (spec §8.3, item 1.6)
+
+`LenisContext` called `lenis.stop()` until `firstLoad` flipped after 3000 ms, which
+`preventDefault()`s wheel and touch. Keyboard scrolling still worked, desynced Lenis, and snapped
+back. The spec calls it "the single worst defect" and says delete, not shorten — a slow-browsing
+60-year-old's first three seconds read as *the site is frozen*.
+
+Deleted. `firstLoad` stays in `StateContext` because the hero's intro timing uses it — the intro
+still plays, it just no longer holds the page still. **Verified: 1200 px scrolled 0.6 s after
+load, well inside the old lock's window.**
+
+### B6 — reduced motion, three layers (spec §8.5, item 1.5)
+
+1. **CSS** — one global `@media (prefers-reduced-motion: reduce)` block in `globals.scss`:
+   animations collapse to a single 0.01 ms iteration (killing the 19 infinite keyframes),
+   transitions cap at 150 ms, `scroll-behavior` goes auto. No content is removed — reduced-motion
+   visitors get the same composed pages, settled.
+2. **Lenis** — `LenisProvider` now **does not initialise at all** under the preference, so the
+   browser's native scrolling takes over. Smooth-scroll hijacking is exactly what the preference
+   asks us to drop. **Verified: `window.lenis` is undefined under `reducedMotion: "reduce"`.**
+3. **JS** — `useReducedMotion` is already wired in the components added during Phase A
+   (ContactDialog, CookieNotice). Sweeping it through the remaining scroll-linked components is
+   left with the motion work in Phase D — noted in the TODO section rather than half-done.
+
+**Two long-standing Lenis defects fixed alongside** (trap 3):
+
+- `lenis/dist/lenis.css` was **never imported**, which is why `data-lenis-prevent` never worked
+  and the cart drawer had to hand-roll a wheel trap. Imported.
+- `scrollWithLenis` always passed `offset: 0`, so the declared
+  `scroll-margin-top: clamp(72px, 9vh, 112px)` was ignored and **every anchor landed underneath
+  the fixed navbar**. It now reads the target's own computed `scroll-margin-top`.
+
+### B8 — the document outline (spec §6, item 1.7)
+
+- **`/dotazy` had no `h1`** — and the reason was that the decorative scroll-driven "FAQ"
+  wordmark *was* the `h1`, so the real caption had to start at `h2`. The wordmark is now an
+  `aria-hidden` `<p>` (it is ornament, and it is animated across the viewport), and the caption
+  is the page's `h1`.
+- **The footer injected an `h2` and two `h3`s into every page's outline.** All three are now
+  styled `<p>`s: `.footer__wordmark`, `.footer__newsletterTitle`, `.footer__groupTitle`. The
+  newsletter section keeps its `aria-labelledby`, so the landmark is still named.
+
+**Verified: `/dotazy` and `/store` each have exactly one `h1`,** and the outline descends h1 → h2
+→ h3 without the phantom footer branch.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · behavioural checks above.
+
+---
