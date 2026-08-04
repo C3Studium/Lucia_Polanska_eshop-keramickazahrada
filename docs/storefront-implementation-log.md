@@ -1018,3 +1018,39 @@ every stylesheet confirmed it was the only case.
   0 with no visible ring.** Before this change nine files could not produce a ring at all.
 
 ---
+
+## B4 — form primitives fixed once, everywhere (spec §7.2.3, §14 P1 item 1.3, traps 5 & 6)
+
+**Files:** `common/components/input/` (index + styles), `common/components/checkbox/`
+(index + styles), plus the eight controls that were below the input floor.
+
+**Trap 5 — no checkout field had a programmatic label.** `Input` rendered
+`<label htmlFor={name}>` against an input that had **no `id` at all**, so the association was
+dead on every login, register, address and checkout field. Now `useId()` generates
+`${name}-${id}` (respecting an explicit `props.id`), which also survives two fields sharing a
+`name` — as the reset-password form does with its two `password` inputs.
+
+**Trap 6 — `id="checkbox"` was hardcoded**, so any two checkboxes on a page shared an id and the
+second label pointed at the first control. Now `useId()`, with the box at 24px inside a 44px hit
+area (SC 2.5.8).
+
+**Required marker.** Was a red asterisk — colour alone (SC 1.4.1). Now the word **"(povinné)"**
+beside the label, which is also what a screen reader announces.
+
+**Input floor.** Eight controls sat below 16px (down to 14px). All raised: `Input`,
+`NativeSelect`, the shop toolbar's search and sort, the FAQ search, the restock form, the search
+button and the ComGate selector. 16px is both the §5.2 UI floor and what stops iOS zooming the
+page on focus — done here so Phase F does not have to revisit it.
+
+Also: the password reveal button had no accessible name; it now says "Zobrazit heslo" /
+"Skrýt heslo". The native select's non-compliant 1px-underline "focus" was removed in B3, so it
+inherits the global ring.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0.
+- Regression-tested exactly where the brief says to (login, forgot-password, reset-password):
+  **5 fields, 0 unlabelled, 0 below 16px.** Labels render as "E-mail (povinné)", "Heslo
+  (povinné)", "Nové heslo", "Potvrzení hesla".
+
+---

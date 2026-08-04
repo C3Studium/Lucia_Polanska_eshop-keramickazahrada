@@ -107,7 +107,7 @@
   background: transparent;
   color: #282a22;
   font-family: inherit;
-  font-size: clamp(.95rem, 1vw, 1.08rem);
+  font-size: clamp(1rem, 1vw, 1.08rem);
   font-weight: 300;
   line-height: 1.35;
   cursor: text;
@@ -178,4 +178,11 @@
   .inputWrapper {
     font-size: .9rem;
   }
+}
+
+/* Requirement stated in words beside the label, not by a colour-only asterisk (SC 1.4.1). */
+.requiredHint {
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  opacity: 0.82;
 }
