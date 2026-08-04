@@ -201,3 +201,70 @@ for the exact read-only script and curl list), plus the production click of P0-2
 
 **Open items:** Phase 4 (all tasks) and P6-6 stay unstarted until the §0-notes
 findings exist. Everything else proceeds.
+
+---
+
+## P1-1 — merchant-settings accessor (A3)   (2026-08-04)
+
+- Files: `backend/src/lib/merchant-settings.ts` (new),
+  `backend/src/lib/__tests__/merchant-settings.unit.spec.ts` (new),
+  `backend/jest.config.js` (new), `backend/package.json` (`test:unit` script).
+- Native used: `updateStoresWorkflow` (`@medusajs/medusa/core-flows`) for writes;
+  the store module service for reads. No direct module writes, no SQL.
+- Custom added: one accessor file. Native Medusa has no generic settings store —
+  `@medusajs/settings` is layout/view configuration only (A3 verified this) — so
+  a shop-global preferences bag has nowhere native to live. It is held in
+  `store.metadata.merchant_settings`, which *is* native storage written through a
+  native workflow.
+
+### Storage decision — `store.metadata` wins, no migration
+
+A3 required evaluating `store.metadata` before creating a table. It works, so
+**the plan's only migration is gone** and no `merchant-settings` module exists:
+
+- `store.metadata` is a nullable JSON column
+  (`@medusajs/store/dist/models/store.js:16`) and `updateStoresWorkflow` accepts
+  `{ selector: { id }, update: { metadata } }`.
+- Nothing else in this repo writes `store.metadata`, so the `merchant_settings`
+  sub-key cannot collide, and writes preserve any other key anyway.
+- Every consumer (subscriber, job, route) has a container, so reads work
+  everywhere.
+
+Trade-offs found, none blocking: a metadata write replaces the whole object (so
+`setMerchantSettings` re-reads and merges), and each read costs one query against
+a single-row table (settings are consumed by daily jobs and page loads, not hot
+loops — and A3 forbids caching them). Both are documented in the file header
+along with what would count as a concrete blocker later.
+
+### Shape
+
+Closed allowlist of exactly the six A3 keys, each with its own zod schema, all in
+one `KEY_SCHEMAS` object — adding a setting means editing that object and nothing
+else. Reads are forgiving (a corrupted value falls back to its default and logs a
+warning, unknown keys are dropped) so bad data cannot take the shop down; writes
+are strict (`z.strictObject(...).partial()`, unknown key throws `MedusaError
+INVALID_DATA`). The pure core — `parseMerchantSettings`,
+`applyMerchantSettingsPatch`, `buildStoreMetadata` — is separated from the two
+container functions, which is what makes the round-trip unit-testable without a
+database.
+
+Defaults seeded in code, so they are readable through the accessor before
+anything is ever written: threshold 3 ks, parcel 2,5 kg (D2), review request
+after 10 days, „Výroba začala" e-mail off (§16 #7), daily digest on, no
+onboarding dismissals.
+
+### Test infrastructure (first task that needed it)
+
+`jest.config.js` + `pnpm test:unit` added — the repo had jest, `@swc/jest` and
+`@medusajs/test-utils` in devDependencies plus two orphaned unit specs, but no
+config and no script, so nothing ever ran. The config is deliberately minimal
+(swc transform, `**/__tests__/**/*.unit.spec.ts`). `tsconfig.json` excludes
+`__tests__`, so specs are not part of `pnpm typecheck` — that is the
+pre-existing convention and was left alone. Integration tests with
+`@medusajs/test-utils` arrive in P11-4. **The gate is now typecheck + build +
+`pnpm test:unit` for every following task.**
+
+- Deviations: none. A3's preferred storage was viable, so the fallback module was
+  not built.
+- Gate: typecheck ✓ · build ✓ (backend 6.27 s, admin 17.14 s) · tests: 25 passed
+  in 4 suites (the 2 pre-existing specs included, still green).
