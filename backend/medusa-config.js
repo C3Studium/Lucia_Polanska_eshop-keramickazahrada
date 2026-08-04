@@ -87,6 +87,17 @@ const medusaConfig = {
 
     disable: SHOULD_DISABLE_ADMIN,
   },
+  // Draft Orders is an official Medusa plugin, not a custom build. It was already a
+  // dependency but was never registered, so its module, API routes and admin screens
+  // were all inert. Registering it is what produces the `Objednávky > Draft Orders`
+  // sidebar entry: the plugin's own admin extension declares `nested: "/orders"`, which
+  // the dashboard appends to the core Orders item.
+  plugins: [
+    {
+      resolve: '@medusajs/draft-order',
+      options: {},
+    },
+  ],
   modules: [
     {
       key: Modules.FILE,

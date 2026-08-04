@@ -1,5 +1,10 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { getLastPaymentStatus } from "@medusajs/medusa/core-flows"
+import {
+  initialStageForPayment,
+  paymentProblemReason,
+} from "../modules/merchant-order/payment-state"
 import {
   MADE_TO_ORDER_MODULE,
 } from "../modules/made-to-order"
@@ -53,6 +58,10 @@ export default async function initializeMerchantOrder({
       "items.variant_id",
       "items.metadata",
       "payment_collections.*",
+      "payment_collections.status",
+      "payment_collections.amount",
+      "payment_collections.captured_amount",
+      "payment_collections.refunded_amount",
       "payment_collections.payment_sessions.*",
       "payment_collections.payments.*",
     ],
@@ -65,10 +74,20 @@ export default async function initializeMerchantOrder({
     order_id: order.id,
   })
   if (!existingStates.length) {
+    // Medusa's own aggregation decides where the order starts. An order whose payment
+    // never landed opens in the problem queue instead of looking ready to pack in "Nové".
+    const paymentStatus = getLastPaymentStatus({
+      currency_code: order.currency_code,
+      payment_collections: order.payment_collections || [],
+    } as any)
+    const stage = initialStageForPayment(paymentStatus)
     await merchantOrderService.createMerchantOrderStates({
       order_id: order.id,
-      stage: "received",
+      stage,
       stage_changed_at: new Date(),
+      requires_attention: stage === "payment_problem",
+      attention_reason:
+        paymentProblemReason(paymentStatus) ?? null,
     })
   }
 

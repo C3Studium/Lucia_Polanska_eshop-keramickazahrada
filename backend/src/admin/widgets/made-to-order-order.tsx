@@ -20,6 +20,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 
 type ProductionStage =
@@ -95,15 +96,6 @@ const actionForStage: Partial<
   confirmed: { action: "start_production", label: "Začít výrobu" },
   in_production: { action: "complete_production", label: "Výroba dokončena" },
   awaiting_balance: { action: "request_balance", label: "Požádat o doplatek" },
-};
-
-const formatAmount = (value: number | string | null | undefined, currency: string) => {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "—";
-  return new Intl.NumberFormat("cs-CZ", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(number);
 };
 
 const MadeToOrderOrderWidgetInner = ({

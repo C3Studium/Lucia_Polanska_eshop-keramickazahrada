@@ -13,14 +13,12 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { MERCHANT_ORDER_MODULE } from "../modules/merchant-order"
 import MerchantOrderModuleService from "../modules/merchant-order/service"
+import {
+  MERCHANT_ORDER_STAGE_TRANSITIONS,
+  type MerchantOrderStage,
+} from "../modules/merchant-order/stages"
 
-export type MerchantOrderStage =
-  | "received"
-  | "working"
-  | "shipping"
-  | "shipped"
-  | "payment_problem"
-  | "cancelled"
+export type { MerchantOrderStage }
 
 type TransitionMerchantOrderInput = {
   order_id: string
@@ -28,15 +26,16 @@ type TransitionMerchantOrderInput = {
   changed_by?: string | null
   internal_note?: string | null
   attention_reason?: string | null
-}
-
-const allowedTransitions: Record<MerchantOrderStage, MerchantOrderStage[]> = {
-  received: ["working", "payment_problem", "cancelled"],
-  working: ["shipping", "payment_problem", "cancelled"],
-  shipping: ["shipped", "payment_problem", "cancelled"],
-  shipped: [],
-  payment_problem: ["received", "working", "cancelled"],
-  cancelled: [],
+  /**
+   * Set when the transition mirrors something Medusa has already done (a fulfilment was
+   * created, a payment was captured) rather than something the merchant chose.
+   *
+   * The transition table encodes what the merchant is *allowed* to click. Reality is not
+   * bound by it: if a shipment is cancelled natively, the queue has to follow even though
+   * `shipped` has no outgoing merchant transitions. Reconciliation therefore skips the
+   * guard — it is reporting a fact, not requesting a change.
+   */
+  reconcile?: boolean
 }
 
 const updateMerchantOrderStateStep = createStep(
@@ -50,8 +49,14 @@ const updateMerchantOrderStateStep = createStep(
     const previousStage: MerchantOrderStage =
       (current?.stage as MerchantOrderStage) || "received"
 
-    if (previousStage !== input.stage) {
-      const allowed = allowedTransitions[previousStage] || []
+    // Nothing to do — keeps event-driven reconciliation idempotent under at-least-once
+    // delivery instead of writing a new `stage_changed_at` on every redelivery.
+    if (current && previousStage === input.stage) {
+      return new StepResponse(current, null)
+    }
+
+    if (!input.reconcile) {
+      const allowed = MERCHANT_ORDER_STAGE_TRANSITIONS[previousStage] || []
       if (!allowed.includes(input.stage)) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,

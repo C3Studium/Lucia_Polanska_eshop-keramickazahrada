@@ -1,61 +1,134 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
 import { MERCHANT_ORDER_MODULE } from "../../../modules/merchant-order"
 import MerchantOrderModuleService from "../../../modules/merchant-order/service"
+import {
+  MERCHANT_ORDER_STAGES,
+  type MerchantOrderStage,
+} from "../../../modules/merchant-order/stages"
+import { toMerchantOrderRow } from "./projection"
 
 const asPositiveInt = (value: unknown, fallback: number) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : fallback
 }
 
+/**
+ * Fields handed to `getOrdersListWorkflow`.
+ *
+ * `items.*` is mandatory rather than a convenience: `order.total` is not a column,
+ * it is derived by `decorateCartTotals()` from `unit_price * quantity`. Selecting a
+ * narrow subset of item columns silently yields wrong totals, because MikroORM drops
+ * unlisted columns from the projection. The native list workflow adds `items.*` for
+ * exactly this reason, and we mirror it.
+ *
+ * `payment_collections` / `fulfillments` are requested explicitly because the workflow
+ * strips them from its output unless the caller asked for them, and we need them for
+ * the payment and shipping badges.
+ */
+const ORDER_FIELDS = [
+  "id",
+  "display_id",
+  "status",
+  "created_at",
+  "email",
+  "currency_code",
+  "total",
+  "items.*",
+  "shipping_methods.*",
+  "shipping_address.first_name",
+  "shipping_address.last_name",
+  "customer.first_name",
+  "customer.last_name",
+  "payment_collections.status",
+  "payment_collections.amount",
+  "payment_collections.captured_amount",
+  "payment_collections.refunded_amount",
+  "fulfillments.id",
+  "fulfillments.packed_at",
+  "fulfillments.shipped_at",
+  "fulfillments.delivered_at",
+  "fulfillments.canceled_at",
+]
+
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const service = req.scope.resolve<MerchantOrderModuleService>(MERCHANT_ORDER_MODULE)
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
   const limit = Math.min(asPositiveInt(req.query.limit, 50), 100)
   const offset = asPositiveInt(req.query.offset, 0)
-  const stage = typeof req.query.stage === "string" ? req.query.stage : undefined
-  const filters = stage ? { stage } : {}
-  const [states, count] = await service.listAndCountMerchantOrderStates(filters as any, {
-    take: limit,
-    skip: offset,
-    order: { created_at: "DESC" },
-  })
+  const stage =
+    typeof req.query.stage === "string" &&
+    MERCHANT_ORDER_STAGES.includes(req.query.stage as MerchantOrderStage)
+      ? (req.query.stage as MerchantOrderStage)
+      : undefined
+
+  const [states, count] = await service.listAndCountMerchantOrderStates(
+    (stage ? { stage } : {}) as any,
+    { take: limit, skip: offset, order: { created_at: "DESC" } }
+  )
+
   const orderIds = states.map((state: any) => state.order_id)
-  const { data: orders } = orderIds.length
+
+  // Orders always come from the native list workflow. It is the only supported way to
+  // obtain `total`, `payment_status` and `fulfillment_status`: the first is derived from
+  // the full item projection, the latter two do not exist on the `order` entity at all
+  // and are computed by `getLastPaymentStatus()` / `getLastFulfillmentStatus()` inside
+  // this workflow.
+  let orders: any[] = []
+  if (orderIds.length) {
+    const { result } = await getOrdersListWorkflow(req.scope).run({
+      input: {
+        fields: ORDER_FIELDS,
+        variables: { filters: { id: orderIds } },
+      },
+    })
+    // The workflow returns a bare array when no pagination is requested, and
+    // `{ rows, metadata }` when it is. Pagination happens on the state table here,
+    // but normalise both shapes so this cannot silently break.
+    orders = Array.isArray(result) ? result : ((result as any)?.rows ?? [])
+  }
+
+  // Read-only module links are uni-directional: `production_order -> order` can only be
+  // traversed from `production_order`. Querying `production_order` from `order` silently
+  // returns nothing, which is why the made-to-order badge never rendered.
+  const { data: productionOrders } = orderIds.length
     ? await query.graph({
-        entity: "order",
-        fields: [
-          "id",
-          "display_id",
-          "created_at",
-          "email",
-          "currency_code",
-          "total",
-          "payment_status",
-          "fulfillment_status",
-          "items.id",
-          "items.title",
-          "items.quantity",
-          "items.thumbnail",
-          "items.variant_title",
-          "items.metadata",
-          "shipping_methods.*",
-        ],
-        filters: { id: orderIds },
+        entity: "production_order",
+        fields: ["id", "order_id", "stage"],
+        filters: { order_id: orderIds },
       })
-    : { data: [] }
-  const byId = new Map(orders.map((order: any) => [order.id, order]))
-  const result = states.map((state: any) => ({
-    ...state,
-    order: byId.get(state.order_id) || null,
-  }))
+    : { data: [] as any[] }
 
-  const allStates = await service.listMerchantOrderStates({})
-  const summary = allStates.reduce((acc: Record<string, number>, item: any) => {
-    acc[item.stage] = (acc[item.stage] || 0) + 1
-    return acc
-  }, {})
+  const orderById = new Map(orders.map((order: any) => [order.id, order]))
+  const productionByOrderId = new Map(
+    productionOrders.map((production: any) => [production.order_id, production])
+  )
 
-  res.status(200).json({ orders: result, count, limit, offset, summary })
+  const rows = states.map((state: any) =>
+    toMerchantOrderRow(
+      state,
+      orderById.get(state.order_id) || null,
+      productionByOrderId.get(state.order_id) || null
+    )
+  )
+
+  // Counting per stage keeps this O(stages) indexed count queries instead of loading
+  // every state row into memory just to bucket it.
+  const summaryEntries = await Promise.all(
+    MERCHANT_ORDER_STAGES.map(async (item) => {
+      const [, stageCount] = await service.listAndCountMerchantOrderStates(
+        { stage: item } as any,
+        { take: 1 }
+      )
+      return [item, stageCount] as const
+    })
+  )
+  const summary = Object.fromEntries(summaryEntries) as Record<
+    MerchantOrderStage,
+    number
+  >
+
+  res.status(200).json({ orders: rows, count, limit, offset, summary })
 }
-

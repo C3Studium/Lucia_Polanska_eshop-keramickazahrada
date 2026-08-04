@@ -211,11 +211,15 @@ const ReviewsPage = () => (
   </QueryClientProvider>
 )
 
+// Promoted out of "/products" to a top-level item so it can sit next to Orders in the
+// client's requested workflow order (Denní práce, Orders, Reviews, Promotions, Price
+// lists, Products, Inventory, Customers). `rank` only orders this item relative to our
+// other top-level extension items (Denní práce, Sanity CMS, Segment Analytics) — it
+// cannot interleave with native core items. See docs/denni-prace-audit.md §9.3 for why.
 export const config = defineRouteConfig({
   label: "Recenze",
   icon: ChatBubbleLeftRight,
-  nested: "/products",
-  rank: 40,
+  rank: 10,
 })
 
 export default ReviewsPage

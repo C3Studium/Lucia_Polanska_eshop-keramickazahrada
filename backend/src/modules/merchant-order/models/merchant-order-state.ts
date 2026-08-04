@@ -1,17 +1,13 @@
 import { model } from "@medusajs/framework/utils"
+import { MERCHANT_ORDER_STAGES } from "../stages"
 
 export const MerchantOrderState = model.define("merchant_order_state", {
   id: model.id().primaryKey(),
   order_id: model.text().unique(),
+  // Values and their order are identical to the previous inline literal, so the
+  // generated schema is unchanged and no migration is required.
   stage: model
-    .enum([
-      "received",
-      "working",
-      "shipping",
-      "shipped",
-      "payment_problem",
-      "cancelled",
-    ])
+    .enum([...MERCHANT_ORDER_STAGES])
     .index()
     .default("received"),
   requires_attention: model.boolean().default(false),

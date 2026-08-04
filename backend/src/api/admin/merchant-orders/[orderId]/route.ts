@@ -1,51 +1,74 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import { getOrderDetailWorkflow } from "@medusajs/medusa/core-flows"
 import { MERCHANT_ORDER_MODULE } from "../../../../modules/merchant-order"
 import MerchantOrderModuleService from "../../../../modules/merchant-order/service"
-import {
-  MerchantOrderStage,
-  transitionMerchantOrderWorkflow,
-} from "../../../../workflows/transition-merchant-order"
+import { isMerchantOrderStage } from "../../../../modules/merchant-order/stages"
+import type { MerchantOrderStage } from "../../../../modules/merchant-order/stages"
+import { shipMerchantOrderWorkflow } from "../../../../workflows/ship-merchant-order"
+import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
+import { toMerchantOrderRow } from "../projection"
 
-const stages = new Set<MerchantOrderStage>([
-  "received",
-  "working",
-  "shipping",
-  "shipped",
-  "payment_problem",
-  "cancelled",
-])
+const ORDER_FIELDS = [
+  "id",
+  "display_id",
+  "status",
+  "created_at",
+  "email",
+  "currency_code",
+  "total",
+  "items.*",
+  "shipping_methods.*",
+  "shipping_address.*",
+  "billing_address.*",
+  "customer.first_name",
+  "customer.last_name",
+  "payment_collections.*",
+  "payment_collections.payments.*",
+  "fulfillments.*",
+]
 
 const load = async (req: MedusaRequest) => {
   const service = req.scope.resolve<MerchantOrderModuleService>(MERCHANT_ORDER_MODULE)
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const states = await service.listMerchantOrderStates({ order_id: req.params.orderId })
-  const { data: orders } = await query.graph({
-    entity: "order",
-    fields: [
-      "*",
-      "items.*",
-      "items.metadata",
-      "shipping_address.*",
-      "billing_address.*",
-      "shipping_methods.*",
-      "payment_collections.*",
-      "payment_collections.payments.*",
-      "fulfillments.*",
-      "production_order.*",
-      "production_order.payment_requests.*",
-    ],
-    filters: { id: req.params.orderId },
+
+  const states = await service.listMerchantOrderStates({
+    order_id: req.params.orderId,
   })
-  return { state: states[0] || null, order: orders[0] || null }
+
+  // `getOrderDetailWorkflow` is the only supported source of `payment_status` and
+  // `fulfillment_status`; they are computed there, not stored on the order.
+  const { result: order } = await getOrderDetailWorkflow(req.scope).run({
+    input: { order_id: req.params.orderId, fields: ORDER_FIELDS },
+  })
+
+  // Read-only links are uni-directional, so the production order has to be the entity
+  // we query from — `order -> production_order` is not a traversable direction.
+  const { data: productionOrders } = await query.graph({
+    entity: "production_order",
+    fields: ["*", "payment_requests.*"],
+    filters: { order_id: req.params.orderId },
+  })
+
+  return {
+    state: states[0] || null,
+    order: order || null,
+    production_order: productionOrders[0] || null,
+  }
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const result = await load(req)
-  if (!result.order) {
+  const { state, order, production_order } = await load(req)
+  if (!order) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
   }
-  res.status(200).json({ order: result })
+  res.status(200).json({
+    merchant_order: state
+      ? toMerchantOrderRow(state, order, production_order)
+      : null,
+    order,
+    production_order,
+  })
 }
 
 export const PATCH = async (
@@ -56,17 +79,31 @@ export const PATCH = async (
   }>,
   res: MedusaResponse
 ) => {
-  if (!stages.has(req.body.stage)) {
+  if (!isMerchantOrderStage(req.body.stage)) {
     throw new MedusaError(MedusaError.Types.INVALID_DATA, "Neplatný stav objednávky.")
   }
+
+  const changedBy = (req as any).auth_context?.actor_id || null
+
+  // "Odesláno" is not a label change — it is the moment goods leave. It therefore runs
+  // the native fulfilment and shipment workflows, and only records the merchant stage
+  // once Medusa has accepted both.
+  if (req.body.stage === "shipped") {
+    const { result } = await shipMerchantOrderWorkflow(req.scope).run({
+      input: { order_id: req.params.orderId, created_by: changedBy },
+    })
+    res.status(200).json({ merchant_order_state: result })
+    return
+  }
+
   const { result } = await transitionMerchantOrderWorkflow(req.scope).run({
     input: {
       order_id: req.params.orderId,
       stage: req.body.stage,
-      changed_by: (req as any).auth_context?.actor_id || null,
+      changed_by: changedBy,
       internal_note: req.body.internal_note,
       attention_reason: req.body.attention_reason,
     },
   })
-  res.status(200).json({ order: result })
+  res.status(200).json({ merchant_order_state: result })
 }

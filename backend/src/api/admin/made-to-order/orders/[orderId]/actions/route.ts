@@ -16,8 +16,8 @@ import {
 import type { IEventBusModuleService } from "@medusajs/framework/types"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
-import { MERCHANT_ORDER_MODULE } from "../../../../../../modules/merchant-order"
-import MerchantOrderModuleService from "../../../../../../modules/merchant-order/service"
+import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
+import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
 
 type ProductionAction =
   | "confirm_specification"
@@ -57,22 +57,29 @@ const requireStage = (stage: string, allowed: string[]) => {
   }
 }
 
+/**
+ * Production milestones move the merchant queue through the same workflow the queue
+ * itself uses, instead of writing `merchant_order_state` directly.
+ *
+ * The previous inline version bypassed the distributed lock, the transition guard and
+ * the compensation handler, so a production action could leave the queue in a stage the
+ * merchant UI considers unreachable. `reconcile: true` is set because these are
+ * consequences of a production step, not merchant stage clicks.
+ */
 const setMerchantStage = async (
-  service: MerchantOrderModuleService,
+  req: MedusaRequest,
   orderId: string,
-  stage: "received" | "working" | "shipping" | "shipped" | "payment_problem" | "cancelled"
+  stage: MerchantOrderStage
 ) => {
-  const states = await service.listMerchantOrderStates({ order_id: orderId })
-  const payload = {
-    stage,
-    stage_changed_at: new Date(),
-    requires_attention: stage === "payment_problem",
-    attention_reason:
-      stage === "payment_problem" ? "Platba vyžaduje kontrolu." : null,
-  }
-  return states[0]
-    ? service.updateMerchantOrderStates({ id: states[0].id, ...payload })
-    : service.createMerchantOrderStates({ order_id: orderId, ...payload })
+  const { result } = await transitionMerchantOrderWorkflow(req.scope).run({
+    input: {
+      order_id: orderId,
+      stage,
+      changed_by: (req as any).auth_context?.actor_id || null,
+      reconcile: true,
+    },
+  })
+  return result
 }
 
 const loadOrder = async (req: MedusaRequest) => {
@@ -221,9 +228,6 @@ export const POST = async (
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE
   )
-  const merchantOrders = req.scope.resolve<MerchantOrderModuleService>(
-    MERCHANT_ORDER_MODULE
-  )
   const eventBus = req.scope.resolve<IEventBusModuleService>(Modules.EVENT_BUS)
   const productionOrders = await madeToOrder.listProductionOrders({
     order_id: req.params.orderId,
@@ -259,7 +263,7 @@ export const POST = async (
         : productionOrder.estimated_completion_at,
       internal_note: body.internal_note?.trim() || productionOrder.internal_note,
     })
-    await setMerchantStage(merchantOrders, req.params.orderId, "working")
+    await setMerchantStage(req, req.params.orderId, "working")
   }
 
   if (body.action === "start_production") {
@@ -269,7 +273,7 @@ export const POST = async (
       stage: "in_production",
       production_started_at: now,
     })
-    await setMerchantStage(merchantOrders, req.params.orderId, "working")
+    await setMerchantStage(req, req.params.orderId, "working")
   }
 
   if (body.action === "complete_production") {
@@ -427,7 +431,7 @@ export const POST = async (
             last_checked_at: now,
           })
           await setMerchantStage(
-            merchantOrders,
+            req,
             req.params.orderId,
             "payment_problem"
           )
@@ -457,7 +461,7 @@ export const POST = async (
         status: "cancelled",
       })
     }
-    await setMerchantStage(merchantOrders, req.params.orderId, "cancelled")
+    await setMerchantStage(req, req.params.orderId, "cancelled")
     await eventBus.emit({
       name: "made-to-order.cancelled",
       data: { order_id: req.params.orderId, production_order_id: productionOrder.id },
