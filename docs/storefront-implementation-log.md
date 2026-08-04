@@ -377,3 +377,78 @@ failure state renders the Czech fallback and the support e-mail.
    restructuring a state that is meant to be temporary.
 
 ---
+
+## A5 — legal content and the reklamační protokol (spec §14 P0 item 0.5, D-S6)
+
+**Files**
+
+- `src/lib/data/merchant.ts` — extended with `website`, `bankAccount`, `iban`, `swift`.
+- `(main)/doprava-a-platba/page.tsx`, `(main)/ochrana-osobnich-udaju/page.tsx`,
+  `(main)/odstoupeni-od-smlouvy/page.tsx` — content corrections, all sourced from the merchant module.
+- `(main)/reklamacni-protokol/` — **new**: `page.tsx`, `download.tsx`, `download.module.scss`.
+- `layout/Footer` — "Reklamační protokol" restored now that the page exists.
+
+**⚠ The most serious finding of Phase A so far: three different bank accounts on one page.**
+`/doprava-a-platba` offered bank transfer with **2500675505/2010**, **7010757121/2010** and
+**2701281289/2010** in three different sections, and paired two of them with an IBAN belonging to
+a *fourth* combination (`CZ55 … 2701281289`). A customer paying by transfer could have sent money
+to an account that is not the merchant's.
+
+Ground truth, cross-checked two ways: `.env.local` holds `CISLO_UCTU=7010757121/2010` and
+`IBAN=CZ34 2010 0000 0070 1075 7121`, and that IBAN's BBAN decodes to exactly 7010757121/2010.
+All three sites now read from `getMerchantIdentity()`, so the page cannot drift again — verified
+rendered: one account, one IBAN, one BIC across the whole page. `[trust]`
+
+**Other content corrections**
+
+| Where | Was | Now |
+|---|---|---|
+| `odstoupeni-od-smlouvy` — seller | "Keramická Zahrada s.r.o." | Lucie Polanská, IČO 03441482 (Matěj, 2026-08-04) |
+| `odstoupeni-od-smlouvy` — sample notice | "prostřednictvím vašeho e­shopu **www.eshop.cheesemafia.cz**" | the merchant's own domain |
+| `ochrana-osobnich-udaju` — rights | "kontaktujte na **gdpr@prochazkagroup.cz**" | the atelier's e-mail |
+| `ochrana-osobnich-udaju` — "Kontakt na DPO" | "**dpo@prochazkagroup.cz**" | "Kontakt na správce údajů" — names the actual controller, seat and IČO, with e-mail and phone |
+| `doprava-a-platba` — delivery time | "Každý **kryt** vytváříme na zakázku … dorazí za 1-3 pracovní dny" | stock pieces handed over within two working days of payment; commissions agreed in advance |
+
+The phone-case sentence was false advertising for hand-made ceramics — the audit is right that it
+is a leftover from another shop. The DPO section was renamed rather than deleted: a sole trader of
+this size does not appoint a data protection officer, but the controller's identity does have to
+be stated, so the section now does that job honestly.
+
+**`/reklamacni-protokol` (D-S6).** New page in the existing `LegalDocument` language: when to
+claim (including the honest note that glaze and dimension variation in hand-made work is a
+property, not a defect), the three-step procedure, the 30-day statutory deadline, and who to
+contact. All merchant data interpolated from the one module.
+
+The official PDF is Matěj's to supply. Rather than a download button that 404s, the page ships a
+clearly-marked block saying the form is being finalised and pointing at e-mail as the equally
+valid route. **To publish it:** drop the PDF into `public/dokumenty/` and set `PROTOCOL_PDF_PATH`
+in `reklamacni-protokol/download.tsx` — the download button then replaces the placeholder
+automatically, nothing else changes.
+
+Also corrected during QA: step 1 originally read "download the protocol below", which contradicted
+the placeholder immediately under it. The steps no longer presuppose the file exists, so the copy
+reads correctly both before and after the PDF lands.
+
+**Gate**
+
+- `pnpm lint` → exit 0. `npx tsc --noEmit` → clean. `pnpm build` → exit 0; the new route builds
+  at 287 B / 157 kB.
+- Visual QA at 1024/1280/1536: the new page matches the legal-document design exactly; the
+  download block sits inside chapter 02. Bank details verified in rendered HTML.
+- Note: the first dev request to the newly created route returned a Next.js dev-server
+  `clientReferenceManifest` 500 — a known first-compile race; every subsequent request, and the
+  production build, are clean.
+- e2e deferred.
+
+**Notes for Matěj**
+
+1. **Confirm the bank account.** The storefront now shows **7010757121/2010** /
+   `CZ34 2010 0000 0070 1075 7121` everywhere, taken from `.env.local` and consistent with the
+   IBAN checksum. If any of the three numbers previously on the page was the live one, say so
+   before this reaches production.
+2. **The reklamační protokol PDF** — see the publishing instructions above.
+3. These legal texts are corrected for *accuracy*, not reviewed for legal sufficiency. The
+   privacy policy still reads like generic boilerplate ("Jsme společnost…", "Společnostmi v rámci
+   naší skupiny") for what is a sole trader. Worth a lawyer's eye before launch; out of scope here.
+
+---

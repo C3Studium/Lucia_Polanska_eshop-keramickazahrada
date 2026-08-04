@@ -1,8 +1,11 @@
 import { Metadata } from "next"
 
+import { getMerchantIdentity } from "@lib/data/merchant"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+const merchant = getMerchantIdentity()
 
 export const metadata: Metadata = {
   title: "Doprava a platba",
@@ -72,7 +75,7 @@ const sections: LegalSectionData[] = [
     id: "dorucovaci-doba",
     title: "Doručovací doba",
     paragraphs: [
-      "Vždy se Vám snažíme zboží doručit co nejdříve. Každý kryt vytváříme na zakázku, jedná se o ruční práci, žádná sériová výroba. Zásilka Vám tedy dorazí za 1-3 pracovní dny od vytvoření objednávky.",
+      "Vždy se Vám snažíme zboží doručit co nejdříve. Objekty, které máme skladem, předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby. U zakázkové výroby se na termínu domluvíme předem — každý kus vzniká ruční prací.",
       "Po zabalení zboží Vám automaticky od nás dorazí e-mail, že je zboží zabaleno a nyní se pouze čeká na předání dopravci",
     ],
   },
@@ -123,9 +126,9 @@ const sections: LegalSectionData[] = [
     title: "Převodem (možnost platby přes QR kód)",
     paragraphs: [
       "Klasický převod na náš bankovní účet, který zadáte v internetovém bankovnictví. Objednávka může být zpracována až po připsání platby na náš účet.",
-      "Číslo účtu: 2500675505/2010",
-      "IBAN: CZ55 2010 0000 0027 0128 1289",
-      "BIC (SWIFT) kód: FIOBCZPP",
+      `Číslo účtu: ${merchant.bankAccount}`,
+      `IBAN: ${merchant.iban}`,
+      `BIC (SWIFT) kód: ${merchant.swift}`,
       "Variabilní symbol: vždy číslo objednávky",
     ],
   },
@@ -145,7 +148,7 @@ const sections: LegalSectionData[] = [
     paragraphs: [
       "I toto se bohužel může stát - klidně nám napište nebo zavolejte a společně dořešíme. Peníze rovněž můžete zaslat přímo na náš bankovní účet.",
       "Jako variabilní symbol vždy uveďte číslo objednávky.",
-      "Číslo účtu: 7010757121/2010",
+      `Číslo účtu: ${merchant.bankAccount}`,
     ],
   },
   {
@@ -204,9 +207,9 @@ const sections: LegalSectionData[] = [
     title: "Převodem (QR, SK)",
     paragraphs: [
       "Klasický převod na náš bankovní účet, který zadáte v internetovém bankovnictví. Objednávka může být zpracována až po připsání platby na náš účet.",
-      "Číslo účtu: 2701281289/2010",
-      "IBAN: CZ55 2010 0000 0027 0128 1289",
-      "BIC (SWIFT) kód: FIOBCZPP",
+      `Číslo účtu: ${merchant.bankAccount}`,
+      `IBAN: ${merchant.iban}`,
+      `BIC (SWIFT) kód: ${merchant.swift}`,
       "Variabilní symbol: vždy číslo objednávky",
     ],
   },

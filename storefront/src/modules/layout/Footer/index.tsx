@@ -33,8 +33,8 @@ const discoverLinks = [
 
 const helpLinks = [
   { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
+  { label: "Reklamační protokol", href: "/reklamacni-protokol" },
   { label: "Doprava a platba", href: "/doprava-a-platba" },
-  { label: "Jak vzniká keramika", href: "/vyroba" },
 ]
 
 const socialLinks = [

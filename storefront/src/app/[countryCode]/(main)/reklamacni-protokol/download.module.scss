@@ -1,0 +1,64 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * Sits inside a LegalDocument chapter, on its cream surface.
+ * Ink #24251f on that surface measures 13.9:1; the eyebrow tone #565845 measures 6.1:1.
+ */
+
+.placeholder,
+.download {
+  display: flex;
+  max-width: 62ch;
+  flex-direction: column;
+  margin-top: clamp(24px, 2.4vw, 36px);
+  padding: clamp(20px, 2vw, 28px);
+  border: 1px solid rgba(36, 37, 31, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.44);
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #565845;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.placeholder p:not(.eyebrow) {
+  margin: 0;
+  color: #24251f;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.placeholder a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  align-self: flex-start;
+  padding: 0 24px;
+  border: 1px solid #24251f;
+  border-radius: 999px;
+  color: #24251f;
+  font-size: 16px;
+  gap: 16px;
+  text-decoration: none;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.button:hover,
+.button:focus-visible {
+  background: #24251f;
+  color: #ffe8d6;
+}

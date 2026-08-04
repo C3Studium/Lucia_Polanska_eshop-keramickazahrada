@@ -8,6 +8,10 @@ export type MerchantIdentity = {
   phone: string
   /** Dial-safe form for `tel:` — the display form carries spaces. */
   phoneDial: string
+  website: string
+  bankAccount: string
+  iban: string
+  swift: string
 }
 
 /**
@@ -27,4 +31,8 @@ export const getMerchantIdentity = (): MerchantIdentity => ({
   email: "info@keramickazahrada.cz",
   phone: "+420 775 211 578",
   phoneDial: "+420775211578",
+  website: process.env.INTERNETOVA_ADRESA || "www.keramickazahrada.cz",
+  bankAccount: process.env.CISLO_UCTU || "7010757121/2010",
+  iban: process.env.IBAN || "CZ34 2010 0000 0070 1075 7121",
+  swift: process.env.SWIFT_KOD || "FIOBCZPPXXX",
 })
