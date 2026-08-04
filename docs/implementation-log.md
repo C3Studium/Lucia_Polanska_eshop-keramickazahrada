@@ -475,3 +475,39 @@ The gate from here on is **typecheck + build + test:unit**.
 **Open items:** P0-1/P0-4 findings still needed (blocks Phase 4 and P6-6). The
 „Drafts" label decision is open. `/prehled` appears in the sidebar payload but
 the page itself lands in P2-3.
+
+---
+
+## P2-1 — feed notification provider   (2026-08-04)
+
+- Files: `backend/medusa-config.js`, `backend/package.json`,
+  `backend/pnpm-lock.yaml`.
+- Native used: `@medusajs/notification` + `@medusajs/notification-local`, which
+  the admin bell already reads (`channel: "feed"`).
+- Custom added: none — this is pure configuration.
+
+### Two things found while doing it
+
+1. **`@medusajs/notification-local` was not a declared dependency.** It resolved
+   only because `.npmrc` carries `public-hoist-pattern[]=*@medusajs/*` and the
+   package arrives transitively through `@medusajs/medusa`. Registering a
+   provider on the strength of a hoisting rule is fragile, so it is now an
+   explicit `"2.18.0"` dependency, matching how `notification-sendgrid` is
+   already declared. `pnpm install` resolved it from the existing lockfile
+   entry — three added lines, no version churn.
+2. **The notification module itself was conditional on e-mail configuration.**
+   It was registered only when Resend or SendGrid env existed, which also took
+   the bell down with it — the bell reads the `feed` channel from this same
+   module. The module is now registered unconditionally with the local provider
+   always present (`channels: ["feed"]`, no configuration needed) and the two
+   e-mail providers still conditional. In-app notifications no longer depend on
+   whether e-mail happens to be set up.
+
+- Deviations: none from the plan; item 2 is a correction the plan implies but
+  does not spell out (§15 assumes registering the provider is enough to make the
+  bell work — it would not have been, on an instance without e-mail env).
+- Gate: typecheck ✓ · build ✓ (config loaded and constructed: „Config object
+  created successfully"; backend 6.78 s, admin 19.15 s) · tests: 25 passed.
+- Notes for Matěj: production has `RESEND_API_KEY`/`RESEND_FROM_EMAIL` set, so
+  the notification module was already live there; this change only adds the feed
+  provider next to Resend. Nothing about e-mail delivery changes.

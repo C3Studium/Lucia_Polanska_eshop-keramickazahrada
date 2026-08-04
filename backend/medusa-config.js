@@ -206,11 +206,25 @@ const medusaConfig = {
         }
       }
     }] : []),
-    ...(SENDGRID_API_KEY && SENDGRID_FROM_EMAIL || RESEND_API_KEY && RESEND_FROM_EMAIL ? [{
+    // The notification module is registered unconditionally.
+    //
+    // It used to be registered only when an e-mail provider was configured, which
+    // also took the admin's bell down with it: the bell reads the `feed` channel
+    // from this same module. `@medusajs/notification-local` handles `feed` and
+    // needs no configuration at all, so in-app notifications now work regardless
+    // of whether e-mail is set up. E-mail providers stay conditional.
+    {
       key: Modules.NOTIFICATION,
       resolve: '@medusajs/notification',
       options: {
         providers: [
+          {
+            resolve: '@medusajs/notification-local',
+            id: 'local',
+            options: {
+              channels: ['feed'],
+            },
+          },
           ...(SENDGRID_API_KEY && SENDGRID_FROM_EMAIL ? [{
             resolve: '@medusajs/notification-sendgrid',
             id: 'sendgrid',
@@ -231,7 +245,7 @@ const medusaConfig = {
           }] : []),
         ]
       }
-    }] : []),
+    },
     // Payment providers (single registration with multiple providers)
     {
       key: Modules.PAYMENT,

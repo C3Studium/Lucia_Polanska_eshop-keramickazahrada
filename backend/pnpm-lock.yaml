@@ -38,6 +38,9 @@ importers:
       '@medusajs/medusa':
         specifier: 2.18.0
         version: 2.18.0(@medusajs/admin-sdk@2.18.0)(@medusajs/cli@2.18.0(@types/node@20.19.9))(@medusajs/dashboard@2.18.0(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(typescript@5.8.3))(@medusajs/framework@2.18.0(@medusajs/cli@2.18.0(@types/node@20.19.9))(@types/node@20.19.9)(ioredis@5.7.0)(vite@5.4.21(@types/node@20.19.9))(zod@4.2.0))(@medusajs/icons@2.18.0(react@18.3.1))(@medusajs/test-utils@2.18.0)(@medusajs/ui@4.2.0(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3))(@swc/core@1.15.47(@swc/helpers@0.5.17))(@types/node@20.19.9)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(awilix@8.0.1)(posthog-node@5.11.0)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.17))(@types/node@20.19.9)(typescript@5.8.3))(typescript@5.8.3)
+      '@medusajs/notification-local':
+        specifier: 2.18.0
+        version: 2.18.0(@medusajs/framework@2.18.0(@medusajs/cli@2.18.0(@types/node@20.19.9))(@types/node@20.19.9)(ioredis@5.7.0)(vite@5.4.21(@types/node@20.19.9))(zod@4.2.0))
       '@medusajs/notification-sendgrid':
         specifier: 2.18.0
         version: 2.18.0(@medusajs/framework@2.18.0(@medusajs/cli@2.18.0(@types/node@20.19.9))(@types/node@20.19.9)(ioredis@5.7.0)(vite@5.4.21(@types/node@20.19.9))(zod@4.2.0))
