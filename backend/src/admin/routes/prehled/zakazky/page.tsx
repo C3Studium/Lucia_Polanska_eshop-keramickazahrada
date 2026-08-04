@@ -1,4 +1,12 @@
-import { Badge, Button, Container, Heading, Skeleton, Text } from "@medusajs/ui";
+import {
+  Badge,
+  Button,
+  Container,
+  Heading,
+  Skeleton,
+  Text,
+  Toaster,
+} from "@medusajs/ui";
 import {
   QueryClient,
   QueryClientProvider,
@@ -6,6 +14,7 @@ import {
 } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
+import { ProductionOrderActions } from "../../../components/production-order-actions";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
@@ -178,7 +187,7 @@ const ZakazkyInner = () => {
                 {rows.map((order) => (
                   <article
                     key={order.id}
-                    className="grid gap-4 px-6 py-5 lg:grid-cols-[150px_minmax(0,1.2fr)_200px_auto] lg:items-center"
+                    className="grid gap-4 px-6 py-5 lg:grid-cols-[140px_minmax(0,1fr)_190px_minmax(320px,auto)] lg:items-start"
                   >
                     <div>
                       <Text size="small" weight="plus">
@@ -207,17 +216,20 @@ const ZakazkyInner = () => {
 
                     <PaymentBar order={order} />
 
-                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                      {order.has_open_balance_request && (
-                        <Badge size="2xsmall" color="orange">
-                          Odkaz odeslán
-                        </Badge>
-                      )}
-                      <Button size="small" variant="secondary" asChild>
-                        <Link to={`/orders/${order.order_id}`}>
-                          Otevřít objednávku
-                        </Link>
-                      </Button>
+                    <div className="flex flex-col items-start gap-2 lg:items-end">
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        {order.has_open_balance_request && (
+                          <Badge size="2xsmall" color="orange">
+                            Odkaz odeslán
+                          </Badge>
+                        )}
+                        <Button size="small" variant="transparent" asChild>
+                          <Link to={`/orders/${order.order_id}`}>
+                            Otevřít objednávku
+                          </Link>
+                        </Button>
+                      </div>
+                      <ProductionOrderActions order={order} />
                     </div>
                   </article>
                 ))}
@@ -225,6 +237,7 @@ const ZakazkyInner = () => {
             </Container>
           );
         })}
+      <Toaster />
     </div>
   );
 };

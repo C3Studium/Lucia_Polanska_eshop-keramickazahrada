@@ -23,6 +23,7 @@ export type WorkTabKey =
   | "prace"
   | "zakazky"
   | "platby"
+  | "slevy"
   | "statistiky"
   | "emaily";
 
@@ -36,6 +37,7 @@ const tabs: Array<{ key: WorkTabKey; label: string; to: string }> = [
   { key: "prace", label: "Denní práce", to: "/prehled/prace" },
   { key: "zakazky", label: "Zakázky", to: "/prehled/zakazky" },
   { key: "platby", label: "Platby", to: "/prehled/platby" },
+  { key: "slevy", label: "Slevy a akce", to: "/prehled/slevy" },
   { key: "emaily", label: "Odeslané e-maily", to: "/prehled/emaily" },
   { key: "statistiky", label: "Statistiky", to: "/prehled/statistiky" },
 ];

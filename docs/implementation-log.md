@@ -1301,3 +1301,77 @@ when the price rises after confirmation).
 
 - Gate: typecheck ✓ · build ✓ (backend 5.49 s, admin 16.59 s) · tests: 149
   passed in 10 suites.
+
+---
+
+## UI-3 — Sklad wired, Slevy overview, Zakázky actions   (2026-08-04)
+
+Three gaps Matěj asked to close before Phase 5. This also completes **P7-1** and
+most of **P6-1** ahead of their phases.
+
+- Files: `src/api/admin/inventory-alerts/route.ts` (new),
+  `src/api/admin/operations/discounts/route.ts` (new),
+  `src/api/admin/merchant-settings/route.ts` (POST added),
+  `src/admin/components/inventory-alert-list.tsx` (new),
+  `src/admin/components/production-order-actions.tsx` (new),
+  `src/admin/routes/prehled/slevy/page.tsx` (new),
+  `src/admin/routes/sklad-{nizky-stav,vyprodano}/page.tsx`,
+  `src/admin/routes/prehled/zakazky/page.tsx`,
+  `src/admin/components/work-tabs.tsx`,
+  `src/admin/routes/prehled/page.tsx`.
+
+### 1. The Sklad contradiction is gone
+
+The Přehled tile counted low stock correctly while the page said „Zásoby jsou v
+pořádku" regardless — the rules existed and were unit-tested, only the page was
+never wired. Both Sklad pages now render real rows from
+`/admin/inventory-alerts`, which shares `lib/inventory-alerts.ts` with the tiles
+and the daily job, so the two can no longer disagree.
+
+Each row shows dostupné / skladem / rezervováno separately, because „6 on the
+shelf, 5 already sold" is a different situation from „1 left" and she needs to
+tell them apart. The shop-wide threshold is editable inline (§22's „Hranice:
+{n} — Změnit") through `POST /admin/merchant-settings`, which validates against
+the A3 allowlist in the accessor — no second schema to keep in sync.
+
+### 2. Slevy a akce — the question that spans four pages
+
+§13 describes four instruments that each live somewhere different. That is fine
+while creating one and useless for „what is discounted right now?", which is the
+question anyone actually asks. `/prehled/slevy` answers it in one list:
+seasonal sales, price lists, discount codes, automatic discounts — with status
+derived from **dates rather than a stored flag**, so a sale whose `ends_at`
+passed reads „Skončilo" even before the archive job catches up.
+
+Two things it deliberately does not do: a price list a seasonal sale owns is
+skipped (it would otherwise appear twice, once as the sale and once as its
+machinery), and **nothing is editable here**. Editing stays where each
+instrument was created, so exactly one place can change a price.
+
+### 3. Zakázky can now be worked, not just read
+
+All five actions already existed on the actions route, guarded by
+`requireStage`; what was missing was the UI. Each card now offers the one next
+step for its stage — potvrdit zadání a cenu, začít výrobu, výroba dokončena,
+požádat o doplatek, zrušit zakázku.
+
+Details that matter:
+
+- **Confirming a price is the only action with a form**, because it is the
+  moment the agreed total is set and it rewrites the native order through an
+  Order Edit chain. It shows what the customer will still owe as you type, and
+  **refuses a price below what has already been paid** — that is a refund
+  conversation, not a confirmation. (The server-side version of this check is
+  P6-2; the client now states the reason.)
+- **The two that move money confirm first.** Requesting a balance creates a real
+  payment collection; the dialog says that clicking again re-sends the same link
+  rather than making a new one, which is what the reuse-if-open behaviour
+  actually does.
+- **Cancel names the money.** If a deposit was paid, the dialog says how much and
+  that refunding it will not happen by itself (D3).
+
+- Deviations: P7-1 and the bulk of P6-1 are done early, out of phase order, at
+  Matěj's request. P6-1's remaining piece is the „Připomenout doplatek" resend
+  and the overdue badge (P6-5).
+- Gate: typecheck ✓ · build ✓ (backend 5.31 s, admin 15.68 s) · tests: 149
+  passed in 10 suites.

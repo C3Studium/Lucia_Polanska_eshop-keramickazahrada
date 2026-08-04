@@ -362,7 +362,7 @@ const shopTiles = (summary: OperationsSummary): Tile[] => {
       label: "Běžící slevy",
       value: String(discountsRunning),
       hint: parts.join(" · "),
-      to: "/sezonni-vybery",
+      to: "/prehled/slevy",
       cta: "Zobrazit",
     });
   }
@@ -378,7 +378,7 @@ const shopTiles = (summary: OperationsSummary): Tile[] => {
           ? ` · a další ${shop.ending_soon.length - 1}`
           : ""
       }`,
-      to: "/sezonni-vybery",
+      to: "/prehled/slevy",
       cta: "Zobrazit",
     });
   }
