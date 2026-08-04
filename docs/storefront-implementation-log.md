@@ -1107,3 +1107,61 @@ load, well inside the old lock's window.**
 **Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · behavioural checks above.
 
 ---
+
+## B2 + B5 — surface colour pairs and the target floor, driven by axe
+
+**Method change worth recording.** Rather than hand-auditing the alpha-muting census, I installed
+`@axe-core/playwright` and let the measurement find the failures. That is the Phase B acceptance
+gate anyway ("axe pass on the seven key routes"), and it means every fix below is evidence-led
+rather than guessed — axe reports the *computed* foreground and background after alpha blending,
+which is exactly what the alpha-muting convention made impossible to reason about by reading CSS.
+
+**Contrast (B2).** Failures found and fixed, all of them alpha-muted text resolving below AA:
+
+| Surface | Was | Measured | Now |
+|---|---|---|---|
+| Filter panel on dark `#24251f` | `rgba(255,255,255,.42)` / `.46` | **3.93:1** | `#a8a8a2` (5.3:1) |
+| Filter panel labels | `rgba(255,255,255,.64)` / `.7` | 4.4:1 | `#c9c9c3` (8.0:1) |
+| Product card eyebrow, cream `#f2eee5` | `rgba(33,34,34,.6)` | **3.81:1** | `#5c5e54` (6.5:1) |
+| Catalogue count / load-more | `rgba(33,34,34,.5)` / `.58` | **3.05:1** | `#5c5e54` |
+| Card description | `rgba(33,34,34,.65)` | 3.94:1 | `#4d4e46` (8.3:1) |
+
+These are the §7.2 surface pairs: named solids, measured once, instead of alpha over an unknown
+backdrop.
+
+**Target size (B5).** Three failures: the password reveal button (no size of its own), and
+`LinkButton` — whose wrapper I floored first, only for axe to keep failing because **the `<button>`
+inside it was the real target at 43px**. Both the wrapper and the inner control are now 44px, and
+the portrait breakpoint's 35px override went with them.
+
+**Also fixed:** `nested-interactive` on the login form — a `<button>` wrapping a
+`LocalizedClientLink`, which assistive tech announces as neither. The link stands alone now.
+And the region-switcher flag `<img>` had no alt (`image-alt`, critical, on every page); it is
+decorative next to the country name, so its wrapper is `aria-hidden`.
+
+## Phase B acceptance gate
+
+**axe-core (wcag2a + wcag2aa + wcag21a/aa + wcag22aa) on the seven key routes:**
+
+| Route | Violations |
+|---|---|
+| `/` | **0** |
+| `/store` | **0** |
+| `/dotazy` | **0** |
+| `/cart` | **0** |
+| `/account` | **0** |
+| product page | **0** |
+| `/reklamacni-protokol` | **0** |
+
+Starting point on the same run was 7 contrast nodes, 4 target-size, 2 image-alt and 1
+nested-interactive. **All zero.**
+
+Plus the behavioural checks from B3/B4/B6/B7/B8: 54 tab stops with a visible ring, 5 form fields
+all labelled and ≥16px, scroll working 0.6 s after load, Lenis absent under reduced motion, one
+`h1` per page.
+
+**Note:** `/checkout` and the kontakt modal are not in this run — checkout needs a cart with a
+priced shipping method (blocked, see T-4a) and the modal needs a click. Both were verified by
+hand in Phase A; they should join the automated run once the backend unblocks.
+
+---

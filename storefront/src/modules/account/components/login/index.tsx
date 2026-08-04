@@ -66,11 +66,10 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
         .
       </span>
       <div className={s.forgotWrap}>
-        <button>
-          <LocalizedClientLink href="/forgot-password" className={s.underline}>
-            Zapomněli jste heslo?
-          </LocalizedClientLink>
-        </button>
+        {/* Was a <button> wrapping a link — two nested controls, announced as neither. */}
+        <LocalizedClientLink href="/forgot-password" className={s.underline}>
+          Zapomněli jste heslo?
+        </LocalizedClientLink>
       </div>
     </div>
   )

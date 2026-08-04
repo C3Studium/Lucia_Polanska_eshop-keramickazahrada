@@ -12,7 +12,7 @@
 }
 
 .title {
-  span { display: block; margin-bottom: 3px; color: rgba(33, 34, 34, .58); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  span { display: block; margin-bottom: 3px; color: #5c5e54; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
   p { margin: 0; font-size: 14px; }
   strong { font-family: "Sentient-Regular", serif; font-size: 26px; font-weight: 400; }
 }
@@ -30,7 +30,7 @@
   &:focus-within { border-color: #7b8069; background: #fff; box-shadow: 0 8px 24px rgba(33,34,34,.07); }
   svg { flex: 0 0 auto; width: 17px; height: 17px; color: #555849; }
   input { width: 100%; padding: 0 11px; border: 0;  background: transparent; color: #212222; font: inherit; font-size: 16px; }
-  input::placeholder { color: rgba(33,34,34,.45); }
+  input::placeholder { color: #5c5e54; }
   input::-webkit-search-cancel-button { cursor: pointer; }
 }
 
@@ -44,7 +44,7 @@
   border-radius: 999px;
   background: rgba(255,255,255,.55);
 
-  span { color: rgba(33,34,34,.58); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  span { color: #5c5e54; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   select { border: 0;  background: transparent; color: #212222; font: inherit; font-size: 16px; cursor: pointer; }
 }
 

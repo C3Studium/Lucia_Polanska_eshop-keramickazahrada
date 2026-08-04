@@ -118,7 +118,7 @@ export default function RegionsSelect({
           transition={{ duration: 0.46, ease }}
           aria-hidden="true"
         />
-        <span className="countryButton__flag">
+        <span className="countryButton__flag" aria-hidden="true">
           <CountryFlag
             svg
             style={{ width: "22px", height: "22px" }}

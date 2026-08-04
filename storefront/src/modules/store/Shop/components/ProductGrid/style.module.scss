@@ -13,7 +13,7 @@
   border-radius: 999px;
   background: rgba(247,243,234,.9);
   box-shadow: 0 12px 28px -20px rgba(33,34,34,.65);
-  color: rgba(33,34,34,.66);
+  color: #4d4e46;
   font-size: 12px;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -23,7 +23,7 @@
 .loadMore { display: flex; flex-direction: column; align-items: center; padding: 65px 0 30px; }
 .progress { width: min(280px, 70%); height: 1px; overflow: hidden; background: rgba(33,34,34,.2); }
 .progress i { display: block; height: 100%; background: #212222; transition: width .5s ease; }
-.loadMore p { margin: 10px 0 19px; color: rgba(33,34,34,.5); font-size: 12px; }
+.loadMore p { margin: 10px 0 19px; color: #5c5e54; font-size: 12px; }
 .loadMore button { display: flex; align-items: center; gap: 22px; padding: 9px 10px 9px 19px; border: 1px solid #212222; border-radius: 999px; background: transparent; color: #212222; font-size: 12px; cursor: pointer; transition: background-color .25s ease, color .25s ease; }
 .loadMore button span { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: #212222; color: #fff; transition: transform .3s ease, background-color .25s ease; }
 .loadMore button:hover { background: #212222; color: #fff; }
@@ -36,7 +36,7 @@
 .empty { display: grid; place-items: center; min-height: 56vh; padding: 60px 20px; border: 1px solid rgba(33,34,34,.14); border-radius: 24px; text-align: center; }
 .empty > span { color: #9a6f65; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
 .empty h2 { margin: 11px 0; font-family: "Sentient-Regular", serif; font-size: clamp(32px, 4vw, 58px); font-weight: 400; }
-.empty p { max-width: 440px; margin: 0 0 25px; color: rgba(33,34,34,.58); font-size: 13px; line-height: 1.5; }
+.empty p { max-width: 440px; margin: 0 0 25px; color: #5c5e54; font-size: 13px; line-height: 1.5; }
 .empty button { display: flex; align-items: center; gap: 16px; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .empty button i { font-style: normal; transition: transform .25s ease; }
 .empty button:hover i { transform: translateX(5px); }
