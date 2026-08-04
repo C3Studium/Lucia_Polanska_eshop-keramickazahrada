@@ -29,6 +29,7 @@ import {
 } from "./admin/merchant-catalog/seasonal-selections/route";
 import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
+import { requireShipGate } from "../lib/require-ship-gate";
 
 // Debug middleware to log incoming requests
 const debugAuthMiddleware = () => {
@@ -50,6 +51,27 @@ const debugAuthMiddleware = () => {
 
 export default defineMiddlewares({
   routes: [
+    // The A2 payment invariant on the *native* fulfilment routes.
+    //
+    // The queue already refuses to dispatch an unpaid order, but it is not the
+    // only door: the native order page creates fulfilments and shipments
+    // directly, and so does anything holding an admin token. Enforcing a money
+    // rule on one screen only means it will eventually be walked around.
+    //
+    // Middleware is the only option — `createOrderFulfillmentWorkflow` exposes
+    // just a post-hoc `fulfillmentCreated` hook, which runs after inventory has
+    // already moved. The rules are the shared ones from `lib/ship-gate`, so
+    // this cannot drift from what the queue enforces.
+    {
+      matcher: "/admin/orders/:id/fulfillments",
+      methods: ["POST"],
+      middlewares: [requireShipGate()],
+    },
+    {
+      matcher: "/admin/orders/:id/fulfillments/:fulfillment_id/shipments",
+      methods: ["POST"],
+      middlewares: [requireShipGate()],
+    },
     {
       matcher: "/admin/bundled-products",
       methods: ["POST"],

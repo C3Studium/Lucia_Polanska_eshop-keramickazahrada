@@ -1035,3 +1035,47 @@ UI-bypass half lands with P4-4's middleware.
 
 **Open items:** unchanged — P0-1/P0-4 findings block Phase 4 and P6-6. **No
 migrations in Phase 3 either.**
+
+---
+
+## P4-4 — the native fulfilment routes are guarded   (2026-08-04)
+
+Pulled forward out of Phase 4 at Matěj's request. It depends only on P3-4, not
+on the P0-1 carrier findings, so nothing about it was actually blocked.
+
+- Files: `backend/src/lib/require-ship-gate.ts` (new),
+  `backend/src/lib/__tests__/require-ship-gate.unit.spec.ts` (new),
+  `backend/src/api/middlewares.ts`.
+- Native used: `query.graph`; the routes themselves are Medusa's.
+- Custom added: one middleware. It reuses the P3-4 rules verbatim, so the two
+  doors cannot enforce different arithmetic.
+
+### Why middleware
+
+`createOrderFulfillmentWorkflow` exposes only `fulfillmentCreated`, which runs
+*after* the fulfilment exists and inventory has moved. There is no `validate`
+hook, so route middleware is the only place a native fulfilment can be refused
+before it happens — which is why the plan carved this out as its own task.
+
+Both native doors are covered:
+
+- `POST /admin/orders/:id/fulfillments`
+- `POST /admin/orders/:id/fulfillments/:fulfillment_id/shipments`
+
+The queue's own path is unaffected: `shipMerchantOrderWorkflow` calls the native
+workflows as **steps**, not over HTTP, so it never passes through this
+middleware and is never gated twice.
+
+The guard **fails closed** — a missing order id or an order that cannot be
+loaded is refused rather than waved through. If the native route ever changes
+shape, the failure mode is a blocked dispatch, not a silent bypass.
+
+- Deviations: the plan lists only the fulfilments route; the shipments route is
+  guarded too. A1 says `shipped` in any form must only ever follow a real
+  shipment on a properly paid order, and leaving the shipment route open would
+  have left exactly that hole.
+- Gate: typecheck ✓ · build ✓ (backend 5.89 s, admin 17.21 s) · tests: **84
+  passed** in 9 suites (6 new).
+
+**AC-3 is now complete on both halves** — the workflow refuses, and the native
+API refuses. Runbook §10c's known gap is closed.
