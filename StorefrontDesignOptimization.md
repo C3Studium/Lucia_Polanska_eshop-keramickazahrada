@@ -13,6 +13,12 @@
 - The tactile interaction language: masked/vertical label swaps, magnetic icons, clip-path reveals, the section-rail scrollbar concept.
 - Per-surface atmosphere shifts (cream catalogue, ink product page, sage footer). This *is* the identity; V2.0 tokenizes it instead of removing it.
 
+**Post-approval amendments (2026-08-04, Matěj) — these supersede any conflicting statement below:**
+
+- **A-1 — Kontakt is a modal, not a page.** The navbar contact modal (currently living in `src/modules/home/Kurzy/CTA/`) stays the contact surface — chosen deliberately for conversion: it keeps the customer in context instead of navigating them away. It receives the full refit: working submit via the backend endpoint, dialog accessibility (focus trap, ESC, labeled ≥13px AA fields, fixed 2.1:1 placeholder), success/failure states, and promotion out of the Kurzy module into `layout/`. The footer "Kontakt" entry triggers the modal (the dead `/kontakt` href is removed, which also resolves that 404); no standalone route is created. Contact details remain permanently visible in the footer identity block, so reaching Lucia never *requires* opening a form.
+- **A-2 — `/reklamacni-protokol` ships with a downloadable PDF.** The page every Czech e-shop must provide: short explanation + a download button for the official reklamační protokol form. The legal PDF itself is supplied by Matěj; the page ships with a clearly marked placeholder link until then.
+- **A-3 — Desktop/laptop-first; the responsive/mobile port is the final phase of the entire project.** The storefront's own SCSS layer system (`src/styles/system/` — h-layer/v-layer landscape+portrait breakpoints) is built for a dedicated, granular responsive pass beyond a normal studio treatment, and that pass comes last. All §10 mobile items — including roadmap row 0.9 (mobile navigation), the PDP bottom buy bar, and bottom-sheet filters — move to that closing phase. Desktop floors and QA apply now; the already-mobile-first express checkout remains the campaign escape hatch for phone traffic in the meantime.
+
 ---
 
 ## 1. Executive Summary
@@ -371,13 +377,13 @@ Effort: S ≤ ½ day · M ≤ 2 days · L ≤ 1 week. Every phase ends releasabl
 |---|---|---|---|
 | 0.1 | `lang="cs"`; Czech metadata sweep (Checkout / Sign in / Medusa Store / Slovak / "You purchase…") | S | trust |
 | 0.2 | Real collections in Produkty menu (un-hardcode `navigationCollections`; remove `hardcodedCollections`) | M | trust, conversion |
-| 0.3 | Footer: identity block from envs; fix `/kontakt` + `/reklamacni-protokol` (create or relink); dedupe terms label; delete 0-byte `smluvni_podminky` route | M | trust |
+| 0.3 | Footer: identity block from envs; Kontakt entry → modal (A-1); create `/reklamacni-protokol` **with downloadable PDF** (A-2); dedupe terms label; delete 0-byte `smluvni_podminky` route | M | trust |
 | 0.4 | Wire or remove contact + newsletter forms (with success/failure states) | M | trust, conversion |
 | 0.5 | Replace wrong-company legal boilerplate (withdrawal, privacy); fix the three inconsistent bank numbers on `/doprava-a-platba`; delete the phone-case sentence | S | trust |
 | 0.6 | Real payment-pending page; `.catch()` on confirm flow; remove payment-path `console.log`s (incl. customer-data logs) | M | trust, conversion |
 | 0.7 | Review step mandatory + terms checkbox before ComGate redirect | M | trust, conversion, legal |
 | 0.8 | Czech error-mapping layer over `medusa-error.ts` + customer.ts strings | M | trust, usability |
-| 0.9 | Mobile navigation mounted (icon bar + drawer); tap equivalents for hover affordances | M–L | usability, conversion |
+| 0.9 | Mobile navigation + tap equivalents — **moved to the final Responsive phase (A-3)** | M–L | usability, conversion |
 | 0.10 | Add-to-cart success/failure feedback (both product + bundle paths) | S | conversion |
 | 0.11 | Cookie-consent decision & implementation for Segment | M | trust, legal |
 

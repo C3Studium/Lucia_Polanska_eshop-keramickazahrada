@@ -151,6 +151,31 @@ const onPaymentCaptured = async (
 }
 
 /**
+ * The order was cancelled — natively, or from the queue's own „Zrušit objednávku".
+ *
+ * `cancelled` is an outcome rather than a queue (`MERCHANT_ORDER_ACTIVE_STAGES`
+ * excludes it), so this is what actually removes an order from the merchant's day.
+ * Without it a cancelled order kept sitting in „Nové" asking to be packed.
+ *
+ * Nothing is reopened: an order that already shipped cannot be un-shipped by a
+ * cancellation event, and re-cancelling is a no-op because the transition step
+ * short-circuits when the stage already matches.
+ */
+const onOrderCanceled = async (
+  container: SubscriberArgs["container"],
+  data: { id?: string }
+) => {
+  if (!data?.id) {
+    return
+  }
+  const stage = await stageFor(container, data.id)
+  if (stage === null || stage === "cancelled" || stage === "shipped") {
+    return
+  }
+  await reconcile(container, data.id, "cancelled")
+}
+
+/**
  * One subscriber for the whole reflection surface. Dispatching on `event.name` keeps the
  * related rules in a single place instead of four near-identical files.
  */
@@ -169,6 +194,8 @@ export default async function reconcileMerchantOrder({
       return onFulfillmentCanceled(container, data)
     case "payment.captured":
       return onPaymentCaptured(container, data)
+    case "order.canceled":
+      return onOrderCanceled(container, data)
     default:
       return
   }
@@ -180,5 +207,6 @@ export const config: SubscriberConfig = {
     "shipment.created",
     "order.fulfillment_canceled",
     "payment.captured",
+    "order.canceled",
   ],
 }
