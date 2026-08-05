@@ -35,14 +35,35 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const { data: orders } = await query.graph({
-    entity: "order",
-    fields: ["id", "display_id", "created_at", "total", "currency_code"],
-    filters: { customer_id: customerId } as never,
-    pagination: { take: 100, skip: 0, order: { created_at: "DESC" } },
-  })
+  // Person-level: guest checkouts mint a record per order, so the Karta
+  // merges orders matched by this record's id AND by the person's e-mail.
+  const [byId, byEmail] = await Promise.all([
+    query.graph({
+      entity: "order",
+      fields: ["id", "display_id", "created_at", "total", "currency_code"],
+      filters: { customer_id: customerId } as never,
+      pagination: { take: 100, skip: 0, order: { created_at: "DESC" } },
+    }),
+    customer.email
+      ? query
+          .graph({
+            entity: "order",
+            fields: ["id", "display_id", "created_at", "total", "currency_code"],
+            filters: { email: customer.email } as never,
+            pagination: { take: 100, skip: 0, order: { created_at: "DESC" } },
+          })
+          .catch(() => ({ data: [] as any[] }))
+      : { data: [] as any[] },
+  ])
+  const merged = new Map<string, any>()
+  for (const row of [...(byId.data as any[]), ...(byEmail.data as any[])]) {
+    merged.set(row.id, row)
+  }
+  const orders = [...merged.values()].sort((a, b) =>
+    a.created_at < b.created_at ? 1 : -1
+  )
 
-  const orderIds = (orders as any[]).map((order) => order.id)
+  const orderIds = orders.map((order) => order.id)
   const [states, productions] = await Promise.all([
     orderIds.length
       ? (merchantOrders.listMerchantOrderStates({
@@ -85,7 +106,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       typeof (customer.metadata as any)?.poznamka === "string"
         ? (customer.metadata as any).poznamka
         : null,
-    orders: (orders as any[]).map((order) => {
+    orders: orders.map((order) => {
       const production = productionByOrder.get(order.id)
       return {
         id: order.id,

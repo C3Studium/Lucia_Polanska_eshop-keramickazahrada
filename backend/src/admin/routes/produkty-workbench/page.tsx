@@ -24,7 +24,7 @@ import { BundleEditor } from "../../components/bundle-editor";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
-import { formatCzk, stageLabels } from "../../lib/workbench";
+import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 
 /**
@@ -318,7 +318,7 @@ const StatsView = () => {
           {Object.entries(data.zakazky.by_stage as Record<string, number>)
             .map(
               ([stage, count]) =>
-                ` · ${stageLabels[stage] ?? stage}: ${count}`
+                ` · ${productionStageLabels[stage] ?? stage}: ${count}`
             )
             .join("")}
           <br />

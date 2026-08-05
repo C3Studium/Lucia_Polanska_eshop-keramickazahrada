@@ -28,7 +28,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     await Promise.all([
       query.graph({
         entity: "customer",
-        fields: ["id", "email", "first_name", "last_name", "created_at"],
+        fields: ["id", "email", "first_name", "last_name", "has_account", "created_at"],
         pagination: { take: 1000, skip: 0 },
       }),
       query.graph({
@@ -76,8 +76,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     date.setMonth(date.getMonth() - index)
     months.push(monthKey(date))
   }
+  // Only real accounts count as registrations — guest checkouts mint a
+  // customer record per order, and counting those made every busy week look
+  // like a signup wave.
   const registrations = new Map(months.map((month) => [month, 0]))
   for (const customer of customers as any[]) {
+    if (!customer.has_account) continue
     const key = monthKey(customer.created_at)
     if (registrations.has(key)) {
       registrations.set(key, (registrations.get(key) ?? 0) + 1)
@@ -93,8 +97,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     newsletterEmails.has(String(customer.email ?? "").toLowerCase())
   ).length
 
+  const personEmails = new Set(
+    (customers as any[])
+      .map((customer) => String(customer.email ?? "").toLowerCase())
+      .filter(Boolean)
+  )
+
   res.status(200).json({
-    customers_total: (customers as any[]).length,
+    // Persons, not records — fifty guest checkouts are one human.
+    customers_total: personEmails.size,
+    accounts_total: (customers as any[]).filter(
+      (customer) => customer.has_account
+    ).length,
     buyers_total: buyers.size,
     repeat_buyers: repeatBuyers.length,
     repeat_rate: buyers.size

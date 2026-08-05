@@ -8,25 +8,24 @@ import { PRODUCT_REVIEW_MODULE } from "../../../../modules/product-review"
 import { WISHLIST_MODULE } from "../../../../modules/wishlist"
 
 /**
- * Zákazníci — the advanced customer workbench (admin-advanced-plan.md).
+ * Zákazníci — the customer workbench, grouped by PERSON, not by record.
  *
- * The native customer list is a phone book. For a shop this size the useful
- * question is „who is this person to the shop?" — how much they have bought,
- * whether they owe a balance, whether they follow the newsletter, what they
- * are waiting for. Each of those lives in a different module; this joins
- * them into one row per customer so „loyal", „owes money" and „waiting for
- * restock" stop being research projects.
+ * ## The bug this rewrite fixes
  *
- * ## Money definitions
+ * Medusa creates a fresh customer record for every guest checkout. Group by
+ * record and a loyal guest appears fifty times, each row claiming their
+ * „first order" — which is exactly what Matěj saw. A person is an e-mail
+ * address here: all records sharing one (case-insensitively) collapse into
+ * one row, their orders, wishlists and reviews pooled. The row keeps every
+ * underlying record id (`record_ids`) so Expert mode can show the fragments
+ * and a future merge tool (feature-ideas 5.3) knows what to fuse.
  *
- * `lifetime_value` sums order totals — money *asked*, not captured; the
- * A2-grade captured number stays on the orders workbench where shipping
- * decisions live. `outstanding` is the commission balance
- * (`outstandingFor`, same as the e-mails). One customer having both a high
- * LTV and an outstanding balance is exactly the row worth noticing.
+ * `lifetime_value` sums order totals — money asked; the captured story
+ * stays on the orders workbench. `outstanding` is the commission balance
+ * (`outstandingFor`, same as the e-mails).
  *
- * Filters: `?q=` (name or e-mail), `?owing=true`, `?newsletter=true`,
- * `?repeat=true` (more than one order).
+ * Filters: `?q=`, `?owing=true`, `?newsletter=true`, `?repeat=true`.
+ * Expert (`?expert=1`): rows carry their underlying records.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -39,14 +38,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const limit = Math.min(Number(req.query.limit) || 50, 200)
   const offset = Math.max(Number(req.query.offset) || 0, 0)
+  const expert = req.query.expert === "1"
   const search =
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
 
-  // Every source individually caught: this page joins six systems, and one
-  // of them being briefly broken (a missing table after a bad deploy, a
-  // module mid-migration) must degrade its own column to empty, not take
-  // the whole customer list down. That failure mode is exactly what
-  // „Zákazníci se nepodařilo načíst" looked like in production.
   const safely = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
     try {
       return await promise
@@ -59,13 +54,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     await Promise.all([
       query.graph({
         entity: "customer",
-        fields: ["id", "email", "first_name", "last_name", "created_at"],
+        fields: [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "has_account",
+          "created_at",
+        ],
         pagination: { take: 1000, skip: 0 },
       }),
       safely(
         query.graph({
-          // `items.id` was projected here only to exist — every order's
-          // items loaded on every page view. Dropped: nothing read it.
           entity: "order",
           fields: ["id", "customer_id", "email", "total", "created_at"],
           pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
@@ -99,13 +99,84 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
   const round = (value: number) => Math.round(value * 100) / 100
 
-  // Commission balances attach to orders; map them back to their customer
-  // through the order rows we already have.
-  const customerByOrder = new Map<string, string>()
-  for (const order of ordersResult.data as any[]) {
-    if (order.customer_id) customerByOrder.set(order.id, order.customer_id)
+  // ── persons: one per e-mail; a record with no e-mail stands alone ──
+  type Person = {
+    key: string
+    email: string | null
+    name: string | null
+    record_ids: string[]
+    records: any[]
+    has_account: boolean
+    registered_at: string
+    orders_count: number
+    lifetime_value: number
+    last_order_at: string | null
+    outstanding: number
+    wishlist_size: number
+    reviews_written: number
+  }
+  const persons = new Map<string, Person>()
+  const personByRecordId = new Map<string, Person>()
+
+  for (const record of customersResult.data as any[]) {
+    const email = record.email ? String(record.email).toLowerCase() : null
+    const key = email ?? `id:${record.id}`
+    let person = persons.get(key)
+    if (!person) {
+      person = {
+        key,
+        email,
+        name: null,
+        record_ids: [],
+        records: [],
+        has_account: false,
+        registered_at: record.created_at,
+        orders_count: 0,
+        lifetime_value: 0,
+        last_order_at: null,
+        outstanding: 0,
+        wishlist_size: 0,
+        reviews_written: 0,
+      }
+      persons.set(key, person)
+    }
+    person.record_ids.push(record.id)
+    if (expert) person.records.push(record)
+    person.has_account = person.has_account || Boolean(record.has_account)
+    if (record.created_at < person.registered_at) {
+      person.registered_at = record.created_at
+    }
+    const name = [record.first_name, record.last_name]
+      .filter(Boolean)
+      .join(" ")
+    if (name && !person.name) person.name = name
+    personByRecordId.set(record.id, person)
   }
 
+  // ── orders → person, e-mail first (guest records differ per order) ──
+  const personForOrder = (order: any): Person | undefined => {
+    const email = order.email ? String(order.email).toLowerCase() : null
+    return (
+      (email ? persons.get(email) : undefined) ??
+      (order.customer_id ? personByRecordId.get(order.customer_id) : undefined)
+    )
+  }
+
+  const personByOrderId = new Map<string, Person>()
+  for (const order of ordersResult.data as any[]) {
+    const person = personForOrder(order)
+    if (!person) continue
+    personByOrderId.set(order.id, person)
+    person.orders_count += 1
+    person.lifetime_value = round(
+      person.lifetime_value + toNumber(order.total)
+    )
+    if (!person.last_order_at || order.created_at > person.last_order_at) {
+      person.last_order_at = order.created_at
+    }
+  }
+
+  // ── commission balances, pooled per person ──
   const productionIds = (productionOrders as any[]).map((p) => p.id)
   const requests = productionIds.length
     ? ((await madeToOrder.listProductionPaymentRequests({
@@ -118,74 +189,26 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     list.push(request)
     requestsByProduction.set(request.production_order_id, list)
   }
-
-  const outstandingByCustomer = new Map<string, number>()
   for (const production of productionOrders as any[]) {
-    const customerId = customerByOrder.get(production.order_id)
-    if (!customerId) continue
+    const person = personByOrderId.get(production.order_id)
+    if (!person) continue
     const owed = outstandingFor(
       production,
       requestsByProduction.get(production.id) ?? []
     )
-    if (owed > 0) {
-      outstandingByCustomer.set(
-        customerId,
-        round((outstandingByCustomer.get(customerId) ?? 0) + owed)
-      )
-    }
+    if (owed > 0) person.outstanding = round(person.outstanding + owed)
   }
 
-  // Orders match their customer by id OR e-mail. A guest checkout creates
-  // an order whose customer link may be absent; matching only by id showed
-  // loyal guests as „zatím bez objednávky", which reads as a broken page.
-  const customerIdByEmail = new Map<string, string>()
-  for (const customer of customersResult.data as any[]) {
-    if (customer.email) {
-      customerIdByEmail.set(String(customer.email).toLowerCase(), customer.id)
-    }
-  }
-
-  const ordersByCustomer = new Map<string, { count: number; total: number; last: string | null }>()
-  for (const order of ordersResult.data as any[]) {
-    const matchedId =
-      order.customer_id ??
-      (order.email
-        ? customerIdByEmail.get(String(order.email).toLowerCase())
-        : undefined)
-    if (!matchedId) continue
-    const entry =
-      ordersByCustomer.get(matchedId) ?? {
-        count: 0,
-        total: 0,
-        last: null,
-      }
-    entry.count += 1
-    entry.total = round(entry.total + toNumber(order.total))
-    if (!entry.last || order.created_at > entry.last) {
-      entry.last = order.created_at
-    }
-    ordersByCustomer.set(matchedId, entry)
-  }
-
-  const wishlistSizeByCustomer = new Map<string, number>()
+  // ── wishlists and reviews, keyed by record id → pooled ──
   for (const list of wishlists as any[]) {
-    if (list.customer_id) {
-      wishlistSizeByCustomer.set(
-        list.customer_id,
-        (wishlistSizeByCustomer.get(list.customer_id) ?? 0) +
-          (list.items?.length ?? 0)
-      )
-    }
+    const person = personByRecordId.get(list.customer_id)
+    if (person) person.wishlist_size += list.items?.length ?? 0
   }
-
-  const reviewsByCustomer = new Map<string, number>()
   for (const review of allReviews as any[]) {
-    if (review.customer_id) {
-      reviewsByCustomer.set(
-        review.customer_id,
-        (reviewsByCustomer.get(review.customer_id) ?? 0) + 1
-      )
-    }
+    const person = review.customer_id
+      ? personByRecordId.get(review.customer_id)
+      : undefined
+    if (person) person.reviews_written += 1
   }
 
   const newsletterEmails = new Set(
@@ -198,28 +221,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const newsletterOnly = req.query.newsletter === "true"
   const repeatOnly = req.query.repeat === "true"
 
-  const rows = (customersResult.data as any[])
-    .map((customer) => {
-      const orders = ordersByCustomer.get(customer.id)
-      return {
-        id: customer.id,
-        email: customer.email,
-        name:
-          [customer.first_name, customer.last_name]
-            .filter(Boolean)
-            .join(" ") || null,
-        registered_at: customer.created_at,
-        orders_count: orders?.count ?? 0,
-        lifetime_value: orders?.total ?? 0,
-        last_order_at: orders?.last ?? null,
-        outstanding: outstandingByCustomer.get(customer.id) ?? 0,
-        wishlist_size: wishlistSizeByCustomer.get(customer.id) ?? 0,
-        reviews_written: reviewsByCustomer.get(customer.id) ?? 0,
-        newsletter: newsletterEmails.has(
-          String(customer.email).toLowerCase()
-        ),
-      }
-    })
+  const rows = [...persons.values()]
+    .map((person) => ({
+      // The primary id is the newest record — the one native detail opens.
+      id: person.record_ids[person.record_ids.length - 1],
+      email: person.email,
+      name: person.name,
+      registered_at: person.registered_at,
+      has_account: person.has_account,
+      records_count: person.record_ids.length,
+      record_ids: person.record_ids,
+      ...(expert ? { records: person.records } : {}),
+      orders_count: person.orders_count,
+      lifetime_value: person.lifetime_value,
+      last_order_at: person.last_order_at,
+      outstanding: person.outstanding,
+      wishlist_size: person.wishlist_size,
+      reviews_written: person.reviews_written,
+      newsletter: person.email ? newsletterEmails.has(person.email) : false,
+    }))
     .filter((row) => {
       if (owingOnly && row.outstanding <= 0) return false
       if (newsletterOnly && !row.newsletter) return false
