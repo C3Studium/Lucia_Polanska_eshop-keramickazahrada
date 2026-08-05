@@ -7,7 +7,14 @@ const Review = model.define("review", {
   rating: model.float(),
   first_name: model.text(),
   last_name: model.text(),
-  status: model.enum(["čeká na schválení", "schváleno", "zamítnuto"]).default("čeká na schválení"),
+  /**
+   * „archivováno" is a fourth state rather than a derived one: a review she has
+   * dealt with and does not want in front of her again is a decision, and
+   * deriving it from age would give her a tab she cannot control.
+   */
+  status: model
+    .enum(["čeká na schválení", "schváleno", "zamítnuto", "archivováno"])
+    .default("čeká na schválení"),
   product_id: model.text().index("IDX_REVIEW_PRODUCT_ID"),
   customer_id: model.text().nullable()
 })

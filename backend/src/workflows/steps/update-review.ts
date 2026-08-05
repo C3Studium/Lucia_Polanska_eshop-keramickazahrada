@@ -7,7 +7,7 @@ import ProductReviewModuleService from "../../modules/product-review/service"
 
 export type UpdateReviewsStepInput = {
   id: string
-  status: "čeká na schválení" | "schváleno" | "zamítnuto"
+  status: "čeká na schválení" | "schváleno" | "zamítnuto" | "archivováno"
 }[]
 
 export const updateReviewsStep = createStep(

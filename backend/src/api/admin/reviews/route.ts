@@ -17,6 +17,7 @@ export const REVIEW_STATUSES = [
   "čeká na schválení",
   "schváleno",
   "zamítnuto",
+  "archivováno",
 ] as const
 
 export const GetAdminReviewsSchema = createFindParams().merge(
