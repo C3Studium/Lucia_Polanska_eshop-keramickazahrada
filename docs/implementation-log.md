@@ -1831,3 +1831,23 @@ full per-customer e-mail history (new GET
 
 Czech-quote-in-string trap hit a third time (production-profile editor);
 reworded. Gate: 274 unit / 61 integration / build clean.
+
+## 2026-08-06 — Admin deepening, phase 3: replacement grade
+
+The bar: native Medusa pages can leave the sidebar. Slevy+ closes the last
+domain — promotions/campaigns/price lists in one workbench
+(GET /admin/workbench/discounts joins them with usage, budgets, windows);
+all writes go through the NATIVE admin APIs (activate/pause/delete
+promotions, campaign create/edit, price-list status) so one system owns
+every code and price. Seasonal sales deliberately stay in Přehled → Slevy.
+
+The OrcaSlicer levels: order Rozbalit now carries the customer block
+(previous orders w/ stages, guest history matched by e-mail), full items
+with thumbnails and the zakázka specification, and the delivery address —
+on top of ledger/timeline/e-maily. Produkty+ gains Rozbalit (per-variant
+price × stock × waiting × wishlist, 6-month sales bars, latest reviews,
+bundle + seasonal-sale membership — so nobody reprices something sitting in
+a running sale unknowingly). Karta gains the order list with stages and
+outstanding sums (new GET /admin/workbench/customers/:id).
+
+Gate: 275 unit / 65 integration / build clean.

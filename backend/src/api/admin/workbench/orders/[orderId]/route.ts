@@ -31,11 +31,21 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "display_id",
           "email",
           "currency_code",
+          "customer.id",
+          "shipping_address.first_name",
+          "shipping_address.last_name",
+          "shipping_address.address_1",
+          "shipping_address.city",
+          "shipping_address.postal_code",
+          "shipping_methods.name",
           "items.id",
           "items.title",
+          "items.thumbnail",
+          "items.variant_title",
           "items.quantity",
           "items.unit_price",
           "items.total",
+          "items.metadata",
           "payment_collections.payments.id",
           "payment_collections.payments.amount",
           "payment_collections.payments.provider_id",
@@ -73,6 +83,46 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const state = (states as any[])[0] ?? null
 
+  // The customer block — Matěj's OrcaSlicer level: the expansion answers
+  // „kdo to je?" before she asks it. Other orders by the same person (by
+  // customer id when there is one, else by e-mail, so guest history counts),
+  // newest first, excluding this order.
+  let customerHistory: any[] = []
+  if (order.customer?.id || order.email) {
+    const { data: others } = await query
+      .graph({
+        entity: "order",
+        fields: ["id", "display_id", "created_at", "total", "customer_id", "email"],
+        filters: (order.customer?.id
+          ? { customer_id: order.customer.id }
+          : { email: order.email }) as never,
+        pagination: { take: 20, skip: 0, order: { created_at: "DESC" } },
+      })
+      .catch(() => ({ data: [] as any[] }))
+
+    const otherIds = (others as any[])
+      .filter((other) => other.id !== order.id)
+      .map((other) => other.id)
+    const otherStates = otherIds.length
+      ? ((await merchantOrders.listMerchantOrderStates({
+          order_id: otherIds,
+        } as never)) as any[])
+      : []
+    const stageByOrder = new Map(
+      otherStates.map((entry) => [entry.order_id, entry.stage])
+    )
+
+    customerHistory = (others as any[])
+      .filter((other) => other.id !== order.id)
+      .map((other) => ({
+        id: other.id,
+        display_id: other.display_id,
+        created_at: other.created_at,
+        total: Number(other.total) || 0,
+        stage: stageByOrder.get(other.id) ?? null,
+      }))
+  }
+
   // The order's e-mails: notifications keyed to the order, plus anything
   // sent straight to the order's address (some sends carry no resource_id).
   let emails = (notifications as any[]) ?? []
@@ -96,11 +146,39 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     id: order.id,
     display_id: order.display_id,
     currency_code: order.currency_code,
+    customer: {
+      id: order.customer?.id ?? null,
+      email: order.email,
+      previous_orders: customerHistory.length,
+      history: customerHistory.slice(0, 5),
+    },
+    shipping: {
+      name:
+        [
+          order.shipping_address?.first_name,
+          order.shipping_address?.last_name,
+        ]
+          .filter(Boolean)
+          .join(" ") || null,
+      address: [
+        order.shipping_address?.address_1,
+        order.shipping_address?.postal_code,
+        order.shipping_address?.city,
+      ]
+        .filter(Boolean)
+        .join(", ") || null,
+      method: (order.shipping_methods ?? [])[0]?.name ?? null,
+    },
     items: (order.items ?? []).map((item: any) => ({
       id: item.id,
       title: item.title,
+      variant_title: item.variant_title ?? null,
+      thumbnail: item.thumbnail ?? null,
       quantity: item.quantity,
+      unit_price: Number(item.unit_price) || 0,
       total: Number(item.total) || 0,
+      specification:
+        (item.metadata as any)?.made_to_order?.specification ?? null,
     })),
     ledger: payments.map((payment: any) => ({
       id: payment.id,

@@ -270,6 +270,8 @@ medusaIntegrationTestRunner({
       // HTML 404 — Medusa returns JSON for a mounted route.
       it.each([
         "/admin/workbench/orders/order_fake",
+        "/admin/workbench/products/prod_fake",
+        "/admin/workbench/customers/cus_fake",
         "/admin/workbench/customers/cus_fake/emails",
       ])("%s answers without breaking", async (route) => {
         const response = await api
@@ -361,6 +363,7 @@ medusaIntegrationTestRunner({
       "/admin/workbench/products",
       "/admin/workbench/inventory",
       "/admin/workbench/customers",
+      "/admin/workbench/discounts",
       "/admin/inventory-alerts",
       "/admin/merchant-settings",
       "/admin/merchant-orders",

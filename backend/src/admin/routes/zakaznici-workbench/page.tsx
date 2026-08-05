@@ -94,6 +94,23 @@ const CustomerDrawer = ({
     enabled: open,
   });
 
+  const { data: full } = useQuery<{
+    orders: {
+      id: string;
+      display_id: number | string;
+      created_at: string;
+      total: number;
+      stage: string | null;
+      made_to_order: boolean;
+      outstanding: number;
+    }[];
+  }>({
+    queryKey: ["workbench-customer-full", customer.id],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/workbench/customers/${customer.id}`),
+    enabled: open,
+  });
+
   useEffect(() => {
     if (open && detail) {
       const stored = detail.customer?.metadata?.poznamka;
@@ -152,6 +169,32 @@ const CustomerDrawer = ({
             >
               Uložit poznámku
             </Button>
+          </div>
+
+          <div>
+            <Text size="small" weight="plus">
+              Objednávky
+            </Text>
+            {(full?.orders ?? []).length === 0 && (
+              <Text size="xsmall" className="text-ui-fg-subtle mt-2">
+                Zatím žádná objednávka.
+              </Text>
+            )}
+            {(full?.orders ?? []).map((order) => (
+              <Text key={order.id} size="xsmall" className="mt-1.5">
+                <Link
+                  to={`/orders/${order.id}`}
+                  className="text-ui-fg-interactive hover:underline"
+                >
+                  #{order.display_id}
+                </Link>{" "}
+                · {formatCzk(order.total)} · {formatDate(order.created_at)}
+                {order.made_to_order ? " · zakázka" : ""}
+                {order.outstanding > 0
+                  ? ` · dluží ${formatCzk(order.outstanding)}`
+                  : ""}
+              </Text>
+            ))}
           </div>
 
           <div>

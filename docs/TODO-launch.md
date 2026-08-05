@@ -44,13 +44,18 @@ the CZ region and a fulfillment set.
 
 ## Matěj — after the workbench deploy (2026-08-06)
 
-- [ ] **Decide the sidebar layout.** Four new advanced pages registered:
-      Objednávky+ (`/objednavky`), Produkty+ (`/produkty-workbench`),
-      Sklad+ (`/sklad-workbench`), Zákazníci+ (`/zakaznici-workbench`).
-      They *add* sidebar items next to the native four. Either re-apply the
-      layout payload to hide the native Orders/Products/Inventory/Customers
-      and rename the + pages to plain names, or keep both speeds visible.
-      The plan (admin-advanced-plan.md) argues for replacing; your call.
+- [ ] **Hide the native pages — the workbenches are replacement-grade now
+      (phase 3).** Five advanced pages registered: Objednávky+
+      (`/objednavky`), Produkty+ (`/produkty-workbench`), Sklad+
+      (`/sklad-workbench`), Zákazníci+ (`/zakaznici-workbench`), Slevy+
+      (`/slevy-workbench`). Re-apply the layout payload to hide native
+      Orders / Products / Inventory / Customers (Promotions, Campaigns and
+      Price lists are already hidden — Slevy+ now covers their management).
+      Native *detail* pages stay reachable from workbench links even when
+      hidden from the sidebar — that is intended; they are the deep editors.
+      Once hidden, say the word and one commit drops the „+" suffixes so the
+      sidebar reads plainly: Přehled · Objednávky · Produkty · Sklad ·
+      Zákazníci · Slevy.
 - [ ] **Production note:** the newsletter migration had silently never run —
       class-name collision with product-review's, so MikroORM skipped it.
       Renamed; the next deploy creates `newsletter_subscriber`. Until then

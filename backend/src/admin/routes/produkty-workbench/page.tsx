@@ -13,7 +13,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
@@ -73,6 +73,141 @@ type WorkbenchProductsResponse = {
   count: number;
 };
 
+type ProductDetail = {
+  variants: {
+    id: string;
+    title: string | null;
+    sku: string | null;
+    price_czk: number | null;
+    available: number | null;
+    reserved: number | null;
+    stock_state: "low" | "out" | "ok" | null;
+    threshold: number | null;
+    waiting_customers: number;
+    wishlist_count: number;
+  }[];
+  sales_by_month: { month: string; sold: number }[];
+  reviews: {
+    count: number;
+    average: number | null;
+    latest: { rating: number; title: string | null; content: string; created_at: string }[];
+  };
+  memberships: {
+    bundles: { id: string; title: string }[];
+    seasonal_selections: { id: string; title: string; status: string }[];
+  };
+};
+
+/**
+ * „Rozbalit" — the level under the row: which variant is the problem, who
+ * waits on it, what the last reviews said, the shape of the last six
+ * months, and where the product is committed (bundles, seasonal sales) —
+ * the last one because repricing something that sits in a running sale is
+ * how two systems end up disagreeing about a price.
+ */
+const ProductExpansion = ({ productId }: { productId: string }) => {
+  const { data, isLoading } = useQuery<ProductDetail>({
+    queryKey: ["workbench-product", productId],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/workbench/products/${productId}`),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="px-6 pb-4">
+        <Skeleton className="h-16 rounded-lg" />
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  const maxSold = Math.max(1, ...data.sales_by_month.map((entry) => entry.sold));
+
+  return (
+    <div className="bg-ui-bg-subtle px-6 py-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div>
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+            Varianty
+          </Text>
+          {data.variants.map((variant) => (
+            <Text key={variant.id} size="xsmall" className="mt-1.5">
+              {variant.title || variant.sku || "—"} ·{" "}
+              {variant.price_czk !== null ? formatCzk(variant.price_czk) : "bez ceny"} ·{" "}
+              {variant.available !== null
+                ? `${variant.available} skladem`
+                : "mimo sklad"}
+              {variant.stock_state === "out" ? " · vyprodáno" : ""}
+              {variant.stock_state === "low" ? " · dochází" : ""}
+              {variant.waiting_customers > 0
+                ? ` · ${variant.waiting_customers} čeká`
+                : ""}
+              {variant.wishlist_count > 0
+                ? ` · ${variant.wishlist_count}× v oblíbených`
+                : ""}
+            </Text>
+          ))}
+
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase mt-4">
+            Prodeje po měsících
+          </Text>
+          <div className="mt-2 flex items-end gap-1.5" aria-hidden="true">
+            {data.sales_by_month.map((entry) => (
+              <div key={entry.month} className="flex flex-col items-center gap-1">
+                <div
+                  className="bg-ui-fg-interactive w-7 rounded-sm"
+                  style={{ height: `${8 + (entry.sold / maxSold) * 40}px`, opacity: entry.sold ? 1 : 0.25 }}
+                  title={`${entry.month}: ${entry.sold}`}
+                />
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  {entry.sold}
+                </Text>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+            Poslední hodnocení
+          </Text>
+          {data.reviews.latest.length === 0 && (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1.5">
+              Zatím bez hodnocení.
+            </Text>
+          )}
+          {data.reviews.latest.map((review, index) => (
+            <Text key={index} size="xsmall" className="text-ui-fg-subtle mt-1.5">
+              {"★".repeat(review.rating)} — {review.content.slice(0, 90)}
+              {review.content.length > 90 ? "…" : ""}
+            </Text>
+          ))}
+
+          {(data.memberships.bundles.length > 0 ||
+            data.memberships.seasonal_selections.length > 0) && (
+            <>
+              <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase mt-4">
+                Kde je zapojený
+              </Text>
+              {data.memberships.bundles.map((bundle) => (
+                <Text key={bundle.id} size="xsmall" className="text-ui-fg-subtle mt-1">
+                  Balíček: {bundle.title}
+                </Text>
+              ))}
+              {data.memberships.seasonal_selections.map((selection) => (
+                <Text key={selection.id} size="xsmall" className="text-ui-fg-subtle mt-1">
+                  Sezónní akce: {selection.title}
+                  {selection.status === "published" ? " (běží)" : ""}
+                </Text>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const stockBadge: Record<
   string,
   { label: string; color: "green" | "orange" | "red" }
@@ -84,6 +219,7 @@ const stockBadge: Record<
 
 const ProductsInner = () => {
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery<WorkbenchProductsResponse>({
     queryKey: ["workbench-products", search],
@@ -163,8 +299,8 @@ const ProductsInner = () => {
               : null;
 
             return (
+              <Fragment key={product.id}>
               <article
-                key={product.id}
                 className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_150px_150px_170px_minmax(0,1fr)_auto] lg:items-center"
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -260,6 +396,15 @@ const ProductsInner = () => {
                 </div>
 
                 <div className="flex justify-start gap-3 lg:justify-end">
+                  <button
+                    type="button"
+                    className="text-ui-fg-interactive txt-small hover:underline"
+                    onClick={() =>
+                      setExpanded(expanded === product.id ? null : product.id)
+                    }
+                  >
+                    {expanded === product.id ? "Skrýt" : "Rozbalit"}
+                  </button>
                   <ProductionProfileEditor
                     productId={product.id}
                     productTitle={product.title}
@@ -280,6 +425,10 @@ const ProductsInner = () => {
                   </Link>
                 </div>
               </article>
+              {expanded === product.id && (
+                <ProductExpansion productId={product.id} />
+              )}
+              </Fragment>
             );
           })}
         </div>

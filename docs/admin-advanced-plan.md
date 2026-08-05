@@ -139,6 +139,37 @@ Still deliberately out: bulk label printing (blocked on the ČP B2B account),
 the deepened promotion/price-list *editors* beyond usage data (native pages
 remain the editing surface), automations (proposed only, per the rule).
 
+## Phase 3 — replacement grade (planned 2026-08-06, Matěj's brief)
+
+The goal that names the bar: **the native Medusa pages leave the sidebar
+entirely.** That works only if the + pages carry all the data she could go
+looking for — Matěj's OrcaSlicer comparison: levels of detail, where the
+first level is the working row and „Rozbalit" is the level that answers the
+follow-up question before it is asked.
+
+1. **Slevy+ (`/slevy-workbench`)** — the missing domain. Sub-tabs Akce a
+   kódy · Kampaně · Ceníky. One joined GET
+   (`/admin/workbench/discounts`): promotions with rules summary, usage,
+   campaign, status; campaigns with budget spent/limit and member counts;
+   price lists with product counts and windows. **All writes go through the
+   native admin APIs** (`/admin/promotions`, `/admin/campaigns`,
+   `/admin/price-lists` — full CRUD verified in the SDK), so exactly one
+   system owns a price or a code: activate/deactivate, dates, budgets,
+   create via the existing editors, delete with confirm.
+2. **Order expansion, level 2 done properly** — the customer block („koupili
+   už 4×, naposledy v květnu, nic nedluží" + links), full items with unit
+   prices, the shipping address and method, production spec. Backend:
+   extend `/admin/workbench/orders/:id`.
+3. **Product expansion (new Rozbalit)** — per-variant stock × price ×
+   waiting customers, latest reviews, monthly sales (6 points), bundle and
+   seasonal-sale membership. New `/admin/workbench/products/:id`.
+4. **Customer Karta, level 2** — the order list with stages and totals
+   inside the drawer. New `/admin/workbench/customers/:id`.
+5. **After Matěj hides the native four + three discount pages** via the
+   layout payload, one follow-up commit drops the „+" suffixes so the
+   sidebar reads plainly: Přehled · Objednávky · Produkty · Sklad ·
+   Zákazníci · Slevy.
+
 ## Implementation order (this session)
 
 1. Slider backend: `production-payment-mode` gains `mode:"custom"` +
