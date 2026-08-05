@@ -36,7 +36,9 @@ Note that **these tests drop and reset the database** after each test run. This 
 - `TEST_POSTGRES_PASSWORD` - password for connecting to the test database, for example `my_secret_password`
 - `TEST_POSTGRES_DATABASE` - name of the test database, must start with the prefix `test*`, for example `test_medusa_db`
 - `TEST_POSTGRES_HOST` - optional - host for the postgres database, defaults to `localhost`
-- `TEST_POSTGREST_PORT` - optional - host for the postgres
+- `TEST_POSTGRES_PORT` - optional - port for the postgres
+  (the old misspelling `TEST_POSTGREST_PORT` is still read, so existing local
+  .env files keep working)
 - `PRODUCTION_POSTGRES_DATABASE` - name of the production database, for example `medusa_db`
 
 in addition, there are environment variables for connecting to the database as a superuser, so we can efficiently reset the database.

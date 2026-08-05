@@ -1,5 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ArrowUturnLeft } from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -23,9 +21,10 @@ import {
 } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "../../components/empty-state";
-import { formatDateTime } from "../../lib/format";
-import { sdk } from "../../lib/sdk";
+import { EmptyState } from "../../../components/empty-state";
+import { WorkTabs } from "../../../components/work-tabs";
+import { formatDateTime } from "../../../lib/format";
+import { sdk } from "../../../lib/sdk";
 
 /**
  * Vrácení — the intake queue for customer return requests.
@@ -235,6 +234,8 @@ const VraceniInner = () => {
 
   return (
     <Container className="divide-y p-0">
+      <WorkTabs active="vraceni" />
+
       <header className="px-6 pb-4 pt-6">
         <Heading>Vrácení</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
@@ -421,10 +422,5 @@ const VraceniPage = () => (
     <VraceniInner />
   </QueryClientProvider>
 );
-
-export const config = defineRouteConfig({
-  label: "Vrácení",
-  icon: ArrowUturnLeft,
-});
 
 export default VraceniPage;

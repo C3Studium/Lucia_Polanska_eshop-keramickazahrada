@@ -91,47 +91,19 @@ export const orderNumber = (order: any): string =>
   `#${order?.display_id ?? ""}`.trim()
 
 /**
- * The storefront's own base URL and country segment.
- *
- * Every storefront route is under `/[countryCode]/…`, so a link without one
- * 404s. `cz` matches `NEXT_PUBLIC_DEFAULT_REGION`; it is overridable in case a
- * second region is ever added.
+ * Storefront links live in `lib/storefront-url.ts` and are re-exported here so
+ * the existing callers keep their import. They moved because React Email
+ * templates cannot import this file — it pulls in the Medusa framework — and
+ * two of them had started building their own URLs as a result.
  */
-export const storefrontBase = (): string => {
-  const base = (
-    process.env.STOREFRONT_PUBLIC_URL ||
-    process.env.MEDUSA_STOREFRONT_URL ||
-    ""
-  ).replace(/\/+$/, "")
-
-  if (!base) {
-    return ""
-  }
-  const country = (process.env.STOREFRONT_COUNTRY || "cz").toLowerCase()
-  return `${base}/${country}`
-}
-
-/**
- * Where a customer goes to look at their order.
- *
- * Path verified against the storefront's actual routes
- * (`app/[countryCode]/(main)/order/[id]/confirmed`). An invented path is worse
- * than no link: the customer clicks, gets a 404, and concludes the shop is
- * broken.
- */
-export const orderLink = (order: any): string => {
-  const base = storefrontBase()
-  return base && order?.id ? `${base}/order/${order.id}/confirmed` : ""
-}
-
-/**
- * A product page. The storefront routes products by **handle**, not id
- * (`products/[handle]`), so passing an id produces a page that does not exist.
- */
-export const productLink = (handle?: string | null): string => {
-  const base = storefrontBase()
-  return base && handle ? `${base}/products/${handle}` : ""
-}
+export {
+  accountOrdersLink,
+  cartRecoverLink,
+  orderLink,
+  productLink,
+  storefrontBase,
+  storeLink,
+} from "./storefront-url"
 
 /**
  * Sends one customer e-mail, or does nothing if there is nobody to send it to.

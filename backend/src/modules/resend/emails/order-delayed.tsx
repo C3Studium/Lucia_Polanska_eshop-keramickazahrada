@@ -114,7 +114,7 @@ const mockOrderDelayed: OrderDelayedEmailProps = {
   originalDeliveryDate: "15. 10. 2026",
   newDeliveryDate: "22. 10. 2026",
   delayReason: "Ruční výroba si vyžádala více času",
-  orderLink: "https://keramickazahrada.cz/objednavka/12345",
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
   supportEmail: "info@keramickazahrada.cz"
 }
 

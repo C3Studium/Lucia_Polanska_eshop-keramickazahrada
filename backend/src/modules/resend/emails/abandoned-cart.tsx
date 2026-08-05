@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { cartRecoverLink } from "../../../lib/storefront-url"
 
 interface AbandonedCartEmailProps {
   customer?: {
@@ -30,7 +31,6 @@ function AbandonedCartEmailComponent({
   cart_id = "sample-cart-id",
   items = []
 }: AbandonedCartEmailProps) {
-  const storefrontUrl = process.env.MEDUSA_STOREFRONT_URL || "https://keramickazahrada.cz";
 
   const formatter = new Intl.NumberFormat("cs-CZ", {
     style: "currency",
@@ -141,7 +141,7 @@ function AbandonedCartEmailComponent({
       </Section>
 
       <ButtonRow>
-        <EmailButton href={`${storefrontUrl}/cart/recover/${cart_id}`}>
+        <EmailButton href={cartRecoverLink(cart_id)}>
           Vrátit se ke košíku
         </EmailButton>
       </ButtonRow>

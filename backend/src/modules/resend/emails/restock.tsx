@@ -12,6 +12,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 /**
  * Ploché props naplněné v send-restock-notification stepu. Dříve šablona
@@ -34,8 +35,6 @@ function RestockEmailComponent({
   thumbnail,
   product_url,
 }: RestockEmailProps) {
-  const storefrontUrl =
-    process.env.MEDUSA_STOREFRONT_URL || "https://keramickazahrada.cz";
 
   return (
     <EmailLayout preview="Objekt, který jste sledovali, je zpět skladem.">
@@ -111,7 +110,7 @@ function RestockEmailComponent({
       <Note tone="olive">Objekt je nyní dostupný k objednání.</Note>
 
       <ButtonRow>
-        <EmailButton href={product_url || `${storefrontUrl}/store`}>
+        <EmailButton href={product_url || storeLink()}>
           Zobrazit objekt
         </EmailButton>
       </ButtonRow>

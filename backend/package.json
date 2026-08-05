@@ -20,7 +20,8 @@
     "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "cd .medusa/server && ../../node_modules/.bin/medusa start",
     "dev": "medusa develop",
-    "dev:email": "email dev --dir ./src/modules/resend/emails"
+    "dev:email": "email dev --dir ./src/modules/resend/emails",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.integration.config.js --runInBand --forceExit"
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.18.0",

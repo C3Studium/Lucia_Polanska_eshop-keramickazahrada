@@ -9,6 +9,7 @@ import {
 } from "@medusajs/framework/http";
 import { PostCustomPriceSchema } from "./store/variants/[id]/price/route";
 import { PostStoreReviewSchema } from "./store/reviews/route";
+import { PostStoreRestockSubscriptionSchema } from "./store/restock-subscriptions/route";
 import { GetStoreReviewsSchema } from "./store/products/[id]/reviews/route";
 import { GetStoreCustomerReviewsSchema } from "./store/customers/me/reviews/route";
 import { GetAdminReviewsSchema } from "./admin/reviews/route";
@@ -240,6 +241,14 @@ export default defineMiddlewares({
       middlewares: [validateAndTransformBody(PostCustomPriceSchema)],
     },
     {
+      // The handler reads `req.validatedBody`, which does not exist until this
+      // runs. Without this entry every request 500s on the first property
+      // access — which is exactly what it did.
+      matcher: "/store/restock-subscriptions",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostStoreRestockSubscriptionSchema)],
+    },
+    {
       matcher: "/store/reviews",
       methods: ["POST"],
       middlewares: [
@@ -323,6 +332,14 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/wishlists/items/:id",
       methods: ["DELETE"],
       middlewares: [debugAuthMiddleware()],
+    },
+    // An order's progress is private to whoever placed it. Custom store routes
+    // are not authenticated by default, so without this the merchant stage and
+    // the outstanding balance of any order id would be readable by anyone.
+    {
+      matcher: "/store/orders/:id/progress",
+      methods: ["GET"],
+      middlewares: [authenticate("customer", ["bearer", "session"])],
     },
     // Customer reviews are explicitly authenticated because this is a custom
     // route and its query contains private, customer-scoped review records.

@@ -65,7 +65,7 @@ const mockPaymentReceived: PaymentReceivedEmailProps = {
   orderNumber: "#12345",
   paymentAmount: "2 450 Kč",
   paymentMethod: "Kreditní karta",
-  orderLink: "https://keramickazahrada.cz/objednavka/12345"
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed"
 }
 
 export default () => <PaymentReceivedEmailComponent {...mockPaymentReceived} />

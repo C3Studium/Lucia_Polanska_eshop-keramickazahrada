@@ -1,4 +1,11 @@
-import { orderLink, productLink, storefrontBase } from "../customer-email"
+import {
+  accountOrdersLink,
+  cartRecoverLink,
+  orderLink,
+  productLink,
+  storefrontBase,
+  storeLink,
+} from "../storefront-url"
 
 /**
  * Every customer e-mail carries at least one link, and a wrong one is invisible
@@ -8,8 +15,13 @@ import { orderLink, productLink, storefrontBase } from "../customer-email"
  * That is exactly what happened. These links pointed at `/objednavka/{id}` and
  * `/produkt/{product_id}`; the storefront routes are
  * `/[countryCode]/order/[id]/confirmed` and `/[countryCode]/products/[handle]`.
- * Three separate mistakes — invented path, missing country segment, id where a
- * handle belongs — and nothing in the repo disagreed with any of them.
+ * Two real mistakes — an invented path, and an id where a handle belongs — and
+ * nothing in the repo disagreed with either.
+ *
+ * A third was suspected and was not real: a missing country segment. The
+ * storefront's middleware 307-redirects any path without one, so that alone
+ * never broke a link. We still emit the segment (see `storefront-url.ts`), and
+ * these tests assert it — but as the canonical form, not as a fix for a bug.
  *
  * So these tests assert the *shape the storefront actually serves*. If someone
  * changes a route over there, this fails here, which is the only place the
@@ -29,7 +41,7 @@ describe("customer e-mail links", () => {
     process.env = env
   })
 
-  it("puts the country segment in, because every storefront route is under one", () => {
+  it("emits the country segment, so the address in the e-mail is where they land", () => {
     expect(storefrontBase()).toBe("https://keramickazahrada.cz/cz")
   })
 
@@ -55,6 +67,20 @@ describe("customer e-mail links", () => {
     )
   })
 
+  it("links an abandoned cart to the recovery page", () => {
+    // Was built inline inside abandoned-cart.tsx off a different env chain.
+    expect(cartRecoverLink("cart_01")).toBe(
+      "https://keramickazahrada.cz/cz/cart/recover/cart_01"
+    )
+  })
+
+  it("links to the shop listing and to account orders", () => {
+    expect(storeLink()).toBe("https://keramickazahrada.cz/cz/store")
+    expect(accountOrdersLink()).toBe(
+      "https://keramickazahrada.cz/cz/account/orders"
+    )
+  })
+
   it("returns nothing rather than a broken link when the id or handle is missing", () => {
     // A half-built URL in an e-mail is worse than no button: the customer
     // clicks it. Callers render the button only when this is non-empty.
@@ -62,6 +88,7 @@ describe("customer e-mail links", () => {
     expect(orderLink(null)).toBe("")
     expect(productLink(null)).toBe("")
     expect(productLink(undefined)).toBe("")
+    expect(cartRecoverLink(null)).toBe("")
   })
 
   it("returns nothing when no storefront is configured", () => {
@@ -69,6 +96,8 @@ describe("customer e-mail links", () => {
     expect(storefrontBase()).toBe("")
     expect(orderLink({ id: "order_01" })).toBe("")
     expect(productLink("miska-modra")).toBe("")
+    expect(cartRecoverLink("cart_01")).toBe("")
+    expect(storeLink()).toBe("")
   })
 
   it("falls back to MEDUSA_STOREFRONT_URL", () => {
