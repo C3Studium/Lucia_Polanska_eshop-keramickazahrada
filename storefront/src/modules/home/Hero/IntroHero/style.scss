@@ -140,23 +140,36 @@
    * overlapping it, and the promise sat in a separate right-hand column on a different
    * baseline — two unrelated things over the busiest part of the image.
    */
+  /*
+   * Asymmetric lockup. Same copy, same button — arranged as two unequal masses instead of one
+   * left-aligned stack: a heavy headline block on the left that steps to the right line by line,
+   * and a light lede + action block dropped low on the right. The eye travels diagonally across
+   * the frame rather than straight down its left edge, and the empty right half stops being dead.
+   */
   .Hero__Intro__Header {
     position: absolute;
-    bottom: clamp(6rem, 12vh, 9rem);
+    right: 5vw;
+    bottom: clamp(5rem, 10vh, 8rem);
     left: 5vw;
     z-index: 5;
-    display: flex;
-    width: min(46rem, 52vw);
-    flex-direction: column;
-    align-items: flex-start;
+    display: grid;
+    align-items: end;
     color: #ffe8d6;
+    column-gap: clamp(2rem, 6vw, 7rem);
+    grid-template-areas:
+      "eyebrow ."
+      "headline ."
+      "signature lede";
+    grid-template-columns: minmax(0, 1.32fr) minmax(min-content, 0.68fr);
     transform-origin: left bottom;
     will-change: transform, opacity;
   }
 
   .Hero__Intro__Eyebrow {
-    margin-bottom: clamp(0.9rem, 1.6vh, 1.4rem);
-    padding-bottom: 0.85rem;
+    grid-area: eyebrow;
+    justify-self: start;
+    margin-bottom: clamp(0.8rem, 1.5vh, 1.3rem);
+    padding-bottom: 0.8rem;
     border-bottom: 1px solid rgba(255, 232, 214, 0.32);
     color: #f1e3d6;
     font-family: "Sansation-Regular", sans-serif;
@@ -171,17 +184,25 @@
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
-    /* Smaller than the old name lockup: three lines of promise need to fit as one block. */
-    font-size: clamp(3.2rem, 6.4vw, 7.2rem);
+    font-size: clamp(3.2rem, 6.6vw, 7.4rem);
     font-weight: 400;
+    grid-area: headline;
     letter-spacing: -0.045em;
-    line-height: 0.94;
+    line-height: 0.92;
     text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
-    text-wrap: balance;
   }
 
   .Hero__Intro__Headline .precise-blended-text {
     display: block;
+  }
+
+  /* The staircase: each line starts further right, so the block reads as a descent. */
+  .Hero__Intro__Headline .precise-blended-text:nth-child(2) {
+    margin-left: clamp(2rem, 5.5vw, 6rem);
+  }
+
+  .Hero__Intro__Headline .precise-blended-text:nth-child(3) {
+    margin-left: clamp(4rem, 11vw, 12rem);
   }
 
   .Hero__Intro__Headline .precise-char {
@@ -189,25 +210,32 @@
     color: inherit;
   }
 
+  /* Hangs off the end of the last headline line rather than under its start. */
   .Hero__Intro__Signature {
-    margin: clamp(0.9rem, 1.8vh, 1.6rem) 0 0;
+    margin: clamp(0.5rem, 1.2vh, 1rem) 0 0;
     color: #cbc69d;
     font-family: "ooohBaby-Regular", cursive;
-    /* A signature, not a second headline — it was 95px competing with the name above it. */
     font-size: clamp(1.9rem, 2.5vw, 2.75rem);
     font-weight: 300;
+    grid-area: signature;
+    justify-self: end;
     line-height: 1;
     transform: rotate(-1.2deg);
-    transform-origin: left center;
+    transform-origin: right center;
   }
 
+  /* The counterweight: dropped low and right, on its own rule. */
   .Hero__Intro__Lede {
     display: flex;
-    max-width: 34rem;
+    max-width: 26rem;
     flex-direction: column;
-    align-items: flex-start;
-    margin-top: clamp(1.4rem, 2.6vh, 2.2rem);
-    gap: clamp(1.1rem, 2vh, 1.7rem);
+    align-items: flex-end;
+    padding-top: clamp(1rem, 2vh, 1.6rem);
+    border-top: 1px solid rgba(255, 232, 214, 0.32);
+    gap: clamp(1rem, 1.8vh, 1.5rem);
+    grid-area: lede;
+    justify-self: end;
+    text-align: right;
     will-change: transform, opacity;
   }
 
@@ -215,7 +243,7 @@
     margin: 0;
     color: #f4ece4;
     font-family: "Sentient-Light", serif;
-    font-size: clamp(1.02rem, 1.05vw, 1.22rem);
+    font-size: clamp(1rem, 1vw, 1.16rem);
     line-height: 1.45;
   }
 

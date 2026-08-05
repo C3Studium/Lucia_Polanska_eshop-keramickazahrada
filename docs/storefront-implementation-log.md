@@ -1378,3 +1378,27 @@ the flag off the dialog shows direct contact details instead. The layout above w
 the flag on.
 
 ---
+
+### Hero lockup — asymmetric arrangement (Matěj, 2026-08-05)
+
+Layout only: same copy, same button proportions, same image, shader and kiln journey. The
+single left-aligned column read as a caption layer over a photograph — polite, and it left the
+right half of the frame empty.
+
+`Hero__Intro__Header` is now a two-column grid across the frame:
+
+- **Headline steps line by line** (0 → ~5.5vw → ~11vw indent), so the block reads as a descent
+  rather than a stack.
+- **The signature hangs off the end** of the last line instead of under its start.
+- **Lede and CTA drop low and right**, on their own hairline, right-aligned — a light
+  counterweight to the heavy headline mass.
+
+The eye now crosses the frame diagonally (eyebrow → staircase → signature → right block) instead
+of running down its left edge, and the empty right half carries weight.
+
+Verified at 1440×820, 1280×720 and 1024×768: the headline never overflows the viewport, the CTA
+clears the fold at all three, and the signature never collides with the button.
+
+**Gate:** `pnpm lint` → 0 · `pnpm build` → 0.
+
+---
