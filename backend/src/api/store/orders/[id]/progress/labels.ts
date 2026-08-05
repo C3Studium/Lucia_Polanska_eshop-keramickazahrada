@@ -7,6 +7,10 @@ export type CustomerOrderProgress = {
   stage_label: string | null
   stage_changed_at: string | Date | null
   made_to_order: boolean
+  /** „Slíbeno do" — the completion date she committed to, when set. */
+  promised_at: string | Date | null
+  /** Diary entries she explicitly shared — the making, newest first. */
+  making: { text: string | null; image_url: string | null; at: string }[]
   balance: {
     outstanding: number
     currency_code: string

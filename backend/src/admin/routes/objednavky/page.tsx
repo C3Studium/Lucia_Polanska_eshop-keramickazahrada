@@ -23,6 +23,7 @@ import {
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
+import { ProductionDiary } from "../../components/production-diary";
 import { SubTabs } from "../../components/work-tabs";
 import {
   formatCzk,
@@ -555,6 +556,20 @@ const OrdersInner = () => {
                   >
                     {expanded === order.id ? "Skrýt" : "Rozbalit"}
                   </button>
+                  {order.made_to_order && (
+                    <ProductionDiary
+                      orderId={order.id}
+                      label={`#${order.display_id}`}
+                      trigger={
+                        <button
+                          type="button"
+                          className="text-ui-fg-interactive txt-small hover:underline"
+                        >
+                          Deník
+                        </button>
+                      }
+                    />
+                  )}
                   <Link
                     to={`/orders/${order.id}`}
                     className="text-ui-fg-interactive txt-small hover:underline"

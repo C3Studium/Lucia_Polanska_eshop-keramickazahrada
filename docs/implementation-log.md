@@ -1882,3 +1882,19 @@ double-counting rule is documented in lib/sale-stats.ts, which is pure and
 unit-tested). Slevy+ gains the Statistiky tab and revenue on rows.
 
 Gate: 284 unit / 67 integration / build clean.
+
+## 2026-08-06 — Deník výroby (feature-ideas 2.1 + 2.2 + promised date)
+
+The zakázka diary: production_note model (text/photo/per-entry
+visible_to_customer flag, migration 20260806150000), routes to list/create
+per order and toggle/delete per entry (body parsed in-route — the actions
+pattern, immune to the restock validatedBody trap), and the drawer with
+phone-camera upload (capture=environment → /admin/uploads → MinIO), hooked
+into Přehled→Zakázky rows and Objednávky+ expansions of made-to-order rows.
+
+Customer side rides the existing progress route: `making` (shared entries,
+newest first, capped at 20) and `promised_at` (estimated_completion_at —
+already settable, shown and watched; it only needed exposing). Storefront
+brief gains §5 for the „Jak vzniká" section.
+
+Gate: 285 unit / 68 integration / build clean.

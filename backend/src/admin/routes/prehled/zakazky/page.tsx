@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
+import { ProductionDiary } from "../../../components/production-diary";
 import { ProductionOrderActions } from "../../../components/production-order-actions";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDate } from "../../../lib/format";
@@ -252,6 +253,15 @@ const ZakazkyInner = () => {
                           </Link>
                         </Button>
                       </div>
+                      <ProductionDiary
+                        orderId={order.order_id}
+                        label={order.display_id ? `#${order.display_id}` : "zakázka"}
+                        trigger={
+                          <Button size="small" variant="secondary">
+                            Deník
+                          </Button>
+                        }
+                      />
                       <ProductionOrderActions order={order} />
                     </div>
                   </article>

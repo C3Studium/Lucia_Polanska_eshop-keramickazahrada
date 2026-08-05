@@ -270,6 +270,7 @@ medusaIntegrationTestRunner({
       // HTML 404 — Medusa returns JSON for a mounted route.
       it.each([
         "/admin/workbench/orders/order_fake",
+        "/admin/made-to-order/orders/order_fake/notes",
         "/admin/workbench/products/prod_fake",
         "/admin/workbench/customers/cus_fake",
         "/admin/workbench/customers/cus_fake/emails",
