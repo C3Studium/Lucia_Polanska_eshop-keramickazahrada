@@ -123,6 +123,12 @@
   transition:
     background-color 0.4s cubic-bezier(0.76, 0, 0.24, 1),
     transform 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* A finger needs 44px; a mouse does not. Sized up only where it is actually tapped, so the
+     desktop composition is untouched. */
+  @include touch {
+    width: 44px;
+  }
 }
 
 .footer__socialLink:hover,
@@ -199,6 +205,23 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 9px;
   align-items: center;
+
+  /* The submit is a premium-action-button whose height comes from its own module; reach into it
+     here rather than raising that button everywhere it is used. Below 400px portrait the two
+     controls no longer fit side by side at 44px, so they stack. */
+  @include touch {
+    button {
+      min-height: 44px;
+    }
+  }
+
+  @include v(xs) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @include v(s) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 
 .newsletter__input {
@@ -206,6 +229,10 @@
   min-width: 0;
   height: 40px;
   padding: 0 15px;
+
+  @include touch {
+    height: 44px;
+  }
   border: 1px solid var(--footer-line);
   border-radius: 999px;
   outline: 0;
@@ -338,6 +365,16 @@ p.newsletter__error {
   align-items: flex-start;
   flex-direction: column;
   gap: 9px;
+
+  /* The link rows render at 21px. Padding rather than min-height, so AnimatedLink keeps its own
+     display mode and its underline animation is unaffected; the gap is absorbed in exchange. */
+  @include touch {
+    gap: 0;
+
+    > * {
+      padding-block: 12px;
+    }
+  }
 }
 
 .footer__animatedLink {
@@ -391,6 +428,11 @@ p.newsletter__error {
   height: 29px;
   padding: 4px 6px;
   place-items: center;
+
+  @include touch {
+    min-width: 60px;
+    height: 44px;
+  }
   border: 1px solid rgba(33, 34, 34, 0.08);
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.84);

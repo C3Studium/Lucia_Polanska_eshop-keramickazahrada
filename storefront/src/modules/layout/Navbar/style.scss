@@ -217,6 +217,14 @@
   .navbar__utility-link,
   .navbar__right > .magnetic {
     height: 36px;
+
+    /* The navbar's utility row is the densest cluster of controls on the site and every one of
+       them sat at 36px. Raised to the 44px floor on touch only, so the desktop bar keeps its
+       proportions. */
+    @include touch {
+      height: 44px;
+      min-width: 44px;
+    }
   }
 
   .regions__select {
