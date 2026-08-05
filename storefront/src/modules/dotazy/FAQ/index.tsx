@@ -5,6 +5,8 @@ import { AnimatePresence, motion, type Easing, type Variants } from "framer-moti
 import Image from "next/image"
 import { useMemo, useState } from "react"
 
+import { easeReveal } from "@lib/motion-tokens"
+
 type Category = "vse" | "zakazka" | "produkty" | "doprava" | "kurzy"
 
 const categories: { id: Category; label: string }[] = [
@@ -107,11 +109,8 @@ export default function FAQBody() {
                 className="faqIntro"
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: true, amount: 0.34 }}
-                variants={{
-                    hidden: {},
-                    show: { transition: { staggerChildren: 0.09 } },
-                }}
+                viewport={sectionViewport}
+                variants={sectionVariants}
             >
                 <motion.div variants={faqRevealItem}>
                     <span className="faqEyebrow">Pomoc při výběru · 02</span>
@@ -127,10 +126,10 @@ export default function FAQBody() {
 
             <motion.div
                 className="faqToolbar"
-                initial={{ opacity: 0, y: 18, clipPath: "inset(0 10% 0 10% round 999px)" }}
-                whileInView={{ opacity: 1, y: 0, clipPath: "inset(0 0% 0 0% round 999px)" }}
-                viewport={{ once: true, amount: 0.55 }}
-                transition={{ duration: 0.72, ease: [0.76, 0, 0.24, 1] }}
+                initial={searchInitial}
+                whileInView={searchInView}
+                viewport={searchViewport}
+                transition={searchTransition}
             >
                 <label className="faqSearch">
                     <span>Hledat v otázkách</span>
@@ -155,7 +154,7 @@ export default function FAQBody() {
                                 <motion.span
                                     className="faqCategoryIndicator"
                                     layoutId="faq-category-indicator"
-                                    transition={{ type: "spring", stiffness: 420, damping: 36, mass: 0.7 }}
+                                    transition={pillTransition}
                                 />
                             )}
                             <span className="faqCategoryLabel">{item.label}</span>
@@ -167,10 +166,10 @@ export default function FAQBody() {
             <div className="faqLayout">
                 <motion.div
                     className="faqList"
-                    initial={{ opacity: 0, y: 24 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.12 }}
-                    transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
+                    initial={listInitial}
+                    whileInView={listInView}
+                    viewport={listViewport}
+                    transition={listTransition}
                 >
                     <AnimatePresence mode="popLayout" initial={false}>
                         {visibleQuestions.map((question, index) => (
@@ -187,7 +186,7 @@ export default function FAQBody() {
                         ))}
                     </AnimatePresence>
                     {!visibleQuestions.length && (
-                        <motion.p className="faqEmpty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <motion.p className="faqEmpty" initial={emptyInitial} animate={emptyAnimate}>
                             Tuto otázku jsme nenašli. Napište nám a rádi vám poradíme osobně.
                         </motion.p>
                     )}
@@ -195,10 +194,10 @@ export default function FAQBody() {
 
                 <motion.aside
                     className="faqContact"
-                    initial={{ opacity: 0, y: 30, clipPath: "inset(0 0 18% 0 round 18px)" }}
-                    whileInView={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0 round 18px)" }}
-                    viewport={{ once: true, amount: 0.35 }}
-                    transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
+                    initial={asideInitial}
+                    whileInView={asideInView}
+                    viewport={asideViewport}
+                    transition={asideTransition}
                 >
                     <div className="faqContactImage">
                         <Image src="/assets/img/faq/FAQ4.png" alt="Ručně balená keramika z ateliéru" fill sizes="32vw" />
@@ -232,14 +231,26 @@ type QuestionProps = {
 function Question({ desc, title, id, number, index, active, setActive }: QuestionProps) {
     const isActive = active === id
 
+    /* The only per-question value is the stagger delay, and it depends solely on the row's
+       position — not on which question happens to be open. */
+    const questionTransition = useMemo(
+        () => ({
+            duration: 0.4,
+            delay: Math.min(index * 0.032, 0.16),
+            ease: easeReveal,
+            layout: questionLayoutTransition,
+        }),
+        [index]
+    )
+
     return (
         <motion.article
             layout
             className={`question ${isActive ? "active" : ""}`}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, delay: Math.min(index * 0.032, 0.16), ease: [0.76, 0, 0.24, 1], layout: { duration: 0.5, ease: [0.76, 0, 0.24, 1] } }}
+            initial={questionInitial}
+            animate={questionAnimate}
+            exit={questionExit}
+            transition={questionTransition}
         >
             <button
                 type="button"
@@ -257,15 +268,15 @@ function Question({ desc, title, id, number, index, active, setActive }: Questio
                     <motion.div
                         id={`answer-${id}`}
                         className="faqAnswer"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.48, ease: [0.76, 0, 0.24, 1] }}
+                        initial={answerInitial}
+                        animate={answerAnimate}
+                        exit={answerInitial}
+                        transition={answerTransition}
                     >
                         <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1, duration: 0.38, ease: [0.76, 0, 0.24, 1] }}
+                            initial={answerCopyInitial}
+                            animate={answerCopyAnimate}
+                            transition={answerCopyTransition}
                         >
                             {desc}
                         </motion.p>
@@ -282,3 +293,37 @@ const faqRevealItem: Variants = {
     hidden: { opacity: 0, y: 24 },
     show: { opacity: 1, y: 0, transition: { duration: 0.72, ease: faqEase } },
 }
+
+/* Hoisted out of render: the FAQ list re-renders on every keystroke in the search field and on
+   every category toggle, so each inline literal was re-allocated per question, per keystroke. */
+const sectionViewport = { once: true, amount: 0.34 } as const
+const sectionVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09 } },
+}
+const searchInitial = { opacity: 0, y: 18, clipPath: "inset(0 10% 0 10% round 999px)" }
+const searchInView = { opacity: 1, y: 0, clipPath: "inset(0 0% 0 0% round 999px)" }
+const searchViewport = { once: true, amount: 0.55 } as const
+const searchTransition = { duration: 0.72, ease: easeReveal }
+const pillTransition = { type: "spring", stiffness: 420, damping: 36, mass: 0.7 } as const
+const listInitial = { opacity: 0, y: 24 }
+const listInView = { opacity: 1, y: 0 }
+const listViewport = { once: true, amount: 0.12 } as const
+const listTransition = { duration: 0.7, ease: easeReveal }
+const emptyInitial = { opacity: 0 }
+const emptyAnimate = { opacity: 1 }
+const asideInitial = { opacity: 0, y: 30, clipPath: "inset(0 0 18% 0 round 18px)" }
+const asideInView = { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0 round 18px)" }
+const asideViewport = { once: true, amount: 0.35 } as const
+const asideTransition = { duration: 0.7, ease: easeReveal }
+
+const questionInitial = { opacity: 0, y: 14 }
+const questionAnimate = { opacity: 1, y: 0 }
+const questionExit = { opacity: 0, y: -10 }
+const answerInitial = { height: 0, opacity: 0 }
+const answerAnimate = { height: "auto", opacity: 1 }
+const answerTransition = { duration: 0.48, ease: easeReveal }
+const answerCopyInitial = { opacity: 0, y: 10 }
+const answerCopyAnimate = { opacity: 1, y: 0 }
+const answerCopyTransition = { delay: 0.1, duration: 0.38, ease: easeReveal }
+const questionLayoutTransition = { duration: 0.5, ease: easeReveal }

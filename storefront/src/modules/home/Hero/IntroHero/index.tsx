@@ -1,10 +1,27 @@
 "use client";
 import { Easing, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+
+import { easeReveal } from "@lib/motion-tokens";
 import { useStateContext } from "@lib/context/StateContext";
 import { urlFor } from "../../../../sanity/lib/image";
 import WebButton from "@modules/common/components/Buttons/webButton";
 import HeroImageShader from "./HeroImageShader";
+
+const maskedHidden = { y: "115%" }
+const maskedRest = { y: "0%" }
+const chromeInitial = { opacity: 0, y: 12 }
+const chromeAnimate = { opacity: 1, y: 0 }
+const signatureOrigin = { transformOrigin: "bottom center" } as const
+const mediaInnerStyle = {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    transformOrigin: "center center",
+} as const
+const ledeInitial = { opacity: 0, y: 28 }
+const ledeAnimate = { opacity: 1, y: 0 }
+const ledeTransition = { duration: 0.9, delay: 0.9, ease: easeReveal }
 
 const DEFAULT_CONTENT =
     "Za každým výrobkem je příběh\nKaždý výrobek tvořím ručně s respektem k materiálu, času i lidem.";
@@ -89,6 +106,33 @@ export default function IntroHero({
     // masses travel at different rates, which is what actually reads as depth.
     const headlineParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-16%"]);
     const ledeParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-6%"]);
+
+    /* framer-motion reads `style` on every render; a fresh object each time forces it to
+       re-bind these motion values. They never change identity, so the wrappers are memoised. */
+    const chromeStyle = useMemo(() => ({ opacity: chromeOpacity }), [chromeOpacity])
+    const nameStyle = useMemo(
+        () => ({ y: nameY, scale: nameScale, opacity: nameOpacity }),
+        [nameY, nameScale, nameOpacity]
+    )
+    const headlineStyle = useMemo(() => ({ y: headlineParallax }), [headlineParallax])
+    const ledeStyle = useMemo(
+        () => ({ opacity: contentOpacity, y: ledeParallax }),
+        [contentOpacity, ledeParallax]
+    )
+    const mediaStyle = useMemo(() => ({ y, scale: imageScale }), [y, imageScale])
+
+    const eyebrowTransition = useMemo(
+        () => ({ duration: 0.65, delay: firstLoad ? 0.15 : 0.85 }),
+        [firstLoad]
+    )
+    const railLateTransition = useMemo(
+        () => ({ duration: 0.65, delay: firstLoad ? 0.35 : 1.2 }),
+        [firstLoad]
+    )
+    const railEarlyTransition = useMemo(
+        () => ({ duration: 0.65, delay: firstLoad ? 0.3 : 1.1 }),
+        [firstLoad]
+    )
 
     // const PreloaderAnimSVG = {
     //     start: {
@@ -204,10 +248,10 @@ export default function IntroHero({
         >
             <motion.div
                 className="Hero__Intro__Topline"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: firstLoad ? 0.15 : 0.85 }}
-                style={{ opacity: chromeOpacity }}
+                initial={chromeInitial}
+                animate={chromeAnimate}
+                transition={eyebrowTransition}
+                style={chromeStyle}
             >
                 <span>Autorská keramika</span>
                 <span className="line" />
@@ -220,7 +264,7 @@ export default function IntroHero({
                     animate="enter"
                     exit="exit"
                     variants={PreloaderAnimImage}
-                    style={{ transformOrigin: "bottom center"}}
+                    style={signatureOrigin}
                 >
                     <Image 
                         src={"/assets/img/11.jpg"}
@@ -232,7 +276,7 @@ export default function IntroHero({
             </div>
             <motion.div
                 className="Hero__Intro__Header"
-                style={{ y: nameY, scale: nameScale, opacity: nameOpacity }}
+                style={nameStyle}
             >
                 <div className="Hero__Intro__Lockup">
                 <span className="Hero__Intro__Eyebrow">Objekty s vlastním příběhem</span>
@@ -240,7 +284,7 @@ export default function IntroHero({
                 {/* One h1, and it carries the promise rather than the name: a visitor arrives
                     looking for ceramics, not for a person. The first line of the Sanity `content`
                     field is the headline, so Lucia still edits it; the rest becomes the lede. */}
-                <motion.h1 className="Hero__Intro__Headline" style={{ y: headlineParallax }}>
+                <motion.h1 className="Hero__Intro__Headline" style={headlineStyle}>
                     {headlineLines.map((line, index) => (
                         <MaskedLine
                             key={line + index}
@@ -250,17 +294,17 @@ export default function IntroHero({
                     ))}
                 </motion.h1>
 
-                <motion.p className="Hero__Intro__Signature" style={{ y: headlineParallax }}>
+                <motion.p className="Hero__Intro__Signature" style={headlineStyle}>
                     <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
                 </motion.p>
                 </div>
 
                 <motion.div
                     className="Hero__Intro__Lede"
-                    style={{ opacity: contentOpacity, y: ledeParallax }}
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.9, delay: 0.9, ease: [0.76, 0, 0.24, 1] as Easing }}
+                    style={ledeStyle}
+                    initial={ledeInitial}
+                    animate={ledeAnimate}
+                    transition={ledeTransition}
                 >
                     {ledeText && <p>{ledeText}</p>}
                     <div className="Hero__Intro__Header__Cta">
@@ -282,7 +326,7 @@ export default function IntroHero({
                     animate="enter"
                     exit="exit"
                     variants={PreloaderAnimImage}
-                    style={{ y, scale: imageScale }}
+                    style={mediaStyle}
                 >
                     <motion.div
                         className="Hero__Intro__Cover__Image"
@@ -290,7 +334,7 @@ export default function IntroHero({
                         animate="enter"
                         exit="exit"
                         variants={PreloaderAnimImage2}
-                        style={{ width: "100%", height: "100%", position: "relative", transformOrigin: "center center" }}
+                        style={mediaInnerStyle}
                     >
                         <HeroImageShader
                             src={heroImage}
@@ -300,7 +344,7 @@ export default function IntroHero({
                     </motion.div>
                 </motion.div>
             </motion.div>
-            <motion.div className="Hero__Intro__FooterRail" style={{ opacity: chromeOpacity }}>
+            <motion.div className="Hero__Intro__FooterRail" style={chromeStyle}>
                 <motion.div
                     className="Hero__Intro__Updates"
                     initial="initial"
@@ -313,18 +357,18 @@ export default function IntroHero({
                 </motion.div>
                 <motion.div
                     className="Hero__Intro__ScrollCue"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.65, delay: firstLoad ? 0.35 : 1.2 }}
+                    initial={chromeInitial}
+                    animate={chromeAnimate}
+                    transition={railLateTransition}
                 >
                     <span>Pokračovat</span>
                     <i aria-hidden="true" />
                 </motion.div>
                 <motion.div
                     className="Hero__Intro__ObjectCount"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.65, delay: firstLoad ? 0.3 : 1.1 }}
+                    initial={chromeInitial}
+                    animate={chromeAnimate}
+                    transition={railEarlyTransition}
                 >
                     <span>01</span>
                     <span>Ručně · pomalu · v malém počtu</span>
@@ -352,17 +396,22 @@ function MaskedLine({
 }) {
     const reduceMotion = useReducedMotion()
 
+    const transition = useMemo(
+        () => ({
+            duration: reduceMotion ? 0 : 1.05,
+            delay: reduceMotion ? 0 : delay,
+            ease: easeReveal,
+        }),
+        [reduceMotion, delay]
+    )
+
     return (
         <span className={`maskedLine ${className ?? ""}`}>
             <motion.span
                 className="maskedLineInner"
-                initial={reduceMotion ? { y: "0%" } : { y: "115%" }}
-                animate={{ y: "0%" }}
-                transition={{
-                    duration: reduceMotion ? 0 : 1.05,
-                    delay: reduceMotion ? 0 : delay,
-                    ease: [0.76, 0, 0.24, 1] as Easing,
-                }}
+                initial={reduceMotion ? maskedRest : maskedHidden}
+                animate={maskedRest}
+                transition={transition}
             >
                 {text}
             </motion.span>
@@ -370,33 +419,47 @@ function MaskedLine({
     );
 }
 
+/* One `style` object and one variants object per *word* used to be allocated on every render of
+   the hero. Both are now built once; only the per-word `custom` index still varies, which is a
+   number and costs nothing. Timings are unchanged. */
+const wordStyle = { display: "inline-block", whiteSpace: "pre", marginRight: "0.25rem" } as const
+const breakWordStyle = { display: "inline-block", whiteSpace: "pre" } as const
+const lineStyle = { display: "flex", flexWrap: "wrap" } as const
 
+const buildWordVariants = (firstLoad: boolean) => ({
+    start: { opacity: 0, y: 20 },
+    enter: (i: number) => ({
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.5,
+            delay: !firstLoad ? 1.05 + i * 0.018 : 0.5 + i * 0.01,
+            ease: easeReveal,
+        },
+    }),
+})
+
+/* Only two possible variant objects exist, so they are built once rather than per call. */
+const wordVariants = {
+    first: buildWordVariants(true),
+    repeat: buildWordVariants(false),
+} as const
+
+const variantsFor = (firstLoad: boolean) =>
+    firstLoad ? wordVariants.first : wordVariants.repeat
 
 const wordSplit = (text: string, firstLoad: boolean) => {
-    const PreloaderAnimText = {
-        start: {
-            opacity: 0,
-            y: 20,
-        },
-        enter: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5,
-                delay: !firstLoad ? 1.05 + (i * 0.018) : 0.5 + (i * 0.01),
-                ease: [0.76, 0, 0.24, 1] as Easing,
-            }
-        })
-    }
+    const variants = variantsFor(firstLoad)
+
     return text.split(' ').map((word, index) => (
-        <motion.span 
+        <motion.span
             key={index}
             initial="start"
             animate="enter"
             exit="exit"
-            variants={PreloaderAnimText}
+            variants={variants}
             custom={index}
-            style={{ display: "inline-block", whiteSpace: "pre", marginRight: "0.25rem" }}
+            style={wordStyle}
         >
             {word}
         </motion.span>
@@ -404,42 +467,26 @@ const wordSplit = (text: string, firstLoad: boolean) => {
 }
 
 const textWithBreaks = (text: string, firstLoad: boolean) => {
-    const PreloaderAnimText = {
-        start: {
-            opacity: 0,
-            y: 20,
-        },
-        enter: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5,
-                delay: !firstLoad ? 1.05 + (i * 0.018) : 0.5 + (i * 0.01),
-                ease: [0.76, 0, 0.24, 1] as Easing,
-            }
-        })
-    }
+    const variants = variantsFor(firstLoad)
+    // Split once: this was re-split for every line to test for the last one.
+    const lines = text.split('\n')
 
-    // Split by line breaks first, then by spaces
-    return text.split('\n').map((line, lineIndex) => (
-        <span key={lineIndex} style={{ display: "flex", flexWrap: "wrap" }}>
-            {line.split(' ').map((word, wordIndex) => {
-                const globalIndex = lineIndex * 100 + wordIndex; // Simple way to create unique indices
-                return (
-                    <motion.span
-                        key={wordIndex}
-                        initial="start"
-                        animate="enter"
-                        exit="exit"
-                        variants={PreloaderAnimText}
-                        custom={globalIndex}
-                        style={{ display: "inline-block", whiteSpace: "pre" }}
-                    >
-                        {word + " "}
-                    </motion.span>
-                );
-            })}
-            {lineIndex < text.split('\n').length - 1 && <br />}
+    return lines.map((line, lineIndex) => (
+        <span key={lineIndex} style={lineStyle}>
+            {line.split(' ').map((word, wordIndex) => (
+                <motion.span
+                    key={wordIndex}
+                    initial="start"
+                    animate="enter"
+                    exit="exit"
+                    variants={variants}
+                    custom={lineIndex * 100 + wordIndex}
+                    style={breakWordStyle}
+                >
+                    {word + " "}
+                </motion.span>
+            ))}
+            {lineIndex < lines.length - 1 && <br />}
         </span>
     ));
 }

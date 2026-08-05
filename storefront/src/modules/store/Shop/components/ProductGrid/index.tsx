@@ -5,6 +5,14 @@ import { AnimatePresence, motion } from "framer-motion"
 import ProductCard from "../ProductCard"
 import styles from "./style.module.scss"
 
+/* Stable references: these are re-read by framer-motion on every grid render, and the grid
+   re-renders on each filter change, refresh tick and load-more. */
+const fadeIn = { opacity: 0 }
+const fadeTo = { opacity: 1 }
+const gridTransition = { duration: 0.25 }
+const dimmed = { opacity: 0.46 }
+const undimmed = { opacity: 1 }
+
 type ProductGridProps = {
   products: HttpTypes.StoreProduct[]
   loading: boolean
@@ -25,7 +33,7 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
 
   if (loadError && !products.length) {
     return (
-      <motion.div className={styles.empty} initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert">
+      <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo} role="alert">
         <span>Ateliér je na chvíli nedostupný</span>
         <h2>Katalog se nepodařilo otevřít.</h2>
         <p>Vaše volba zůstala zachovaná. Zkuste spojení obnovit, nebo se vraťte k celému výběru.</p>
@@ -39,7 +47,7 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
 
   if (!products.length && !loading && !refreshing) {
     return (
-      <motion.div className={styles.empty} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo}>
         <span>Nic jsme nenašli</span>
         <h2>Zkuste výběr trochu otevřít.</h2>
         <p>Každý objekt se nevejde do každé škatulky. Zrušte filtry a objevte celou kolekci.</p>
@@ -52,13 +60,13 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
     <div className={styles.results} aria-busy={refreshing || loading}>
       <AnimatePresence>
         {refreshing && (
-          <motion.div className={styles.refreshing} role="status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div className={styles.refreshing} role="status" initial={fadeIn} animate={fadeTo} exit={fadeIn}>
             Aktualizuji ateliérový výběr
           </motion.div>
         )}
       </AnimatePresence>
 
-      <motion.div layout className={styles.grid} animate={{ opacity: refreshing ? 0.46 : 1 }} transition={{ duration: 0.25 }}>
+      <motion.div layout className={styles.grid} animate={refreshing ? dimmed : undimmed} transition={gridTransition}>
         <AnimatePresence mode="popLayout">
           {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
         </AnimatePresence>

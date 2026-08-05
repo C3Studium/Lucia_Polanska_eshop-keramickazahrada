@@ -4,7 +4,7 @@ import { listStoreCatalogue } from "@lib/data/products"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
 import styles from "./style.module.scss"
 
@@ -151,29 +151,86 @@ const getProductSearchValue = (hit: NavbarProductHit) =>
       .join(" ")
   )
 
-export function ProductQuarry({ hit }: { hit: NavbarProductHit }) {
-  const category = getCategoryNames(hit)[0]
-  const collection = getCollectionName(hit)
-  const href = hit.handle ? `/products/${hit.handle}` : "/store"
+/* One quarry card exists per search hit (up to a full catalogue page), and the panel re-renders
+   on every keystroke. These were inline literals: seven fresh objects per card, per keystroke. */
+const quarryVariants: Variants = {
+  rest: { y: 0, color: "#20211c" },
+  hover: { y: -4, color: "#20211c" },
+}
+const quarryTransition = {
+  y: { duration: 0.5, ease },
+  color: { duration: 0.24, ease },
+}
+const surfaceVariants: Variants = {
+  rest: { scaleX: 0, opacity: 0 },
+  hover: { scaleX: 1, opacity: 1 },
+}
+const surfaceTransition = { duration: 0.62, ease: revealEase }
+const surfaceStyle = { originX: 0 }
+const thumbVariants: Variants = {
+  rest: { scale: 1 },
+  hover: { scale: 1.035 },
+}
+const thumbTransition = { duration: 0.72, ease }
+const arrowVariants: Variants = {
+  rest: {
+    x: 0,
+    rotate: 0,
+    color: "#20211c",
+    backgroundColor: "rgba(32, 33, 28, 0)",
+  },
+  hover: {
+    x: 3,
+    rotate: 45,
+    color: "#fff1e7",
+    backgroundColor: "#20211c",
+  },
+}
+const arrowTransition = { duration: 0.44, ease }
+
+const chipInitial = { opacity: 0, x: -14 }
+const chipVariants: Variants = {
+  rest: { opacity: 1, x: 0, color: "#20211c" },
+  hover: { opacity: 1, x: 0, color: "#fff8ee" },
+}
+const chipFillVariants: Variants = { hover: { scaleX: 1 } }
+const chipFillInitial = { scaleX: 0 }
+const chipFillStyle = { originX: 0 }
+const chipFillTransition = { duration: 0.5, ease: revealEase }
+
+const fadeOnly = { opacity: 0 }
+const fadeIn = { opacity: 1 }
+const riseFrom = { opacity: 0, y: 12 }
+const riseTo = { opacity: 1, y: 0 }
+const backdropTransition = { duration: 0.38, ease }
+const panelTransition = { duration: 0.7, ease: revealEase }
+
+function ProductQuarryBase({ hit }: { hit: NavbarProductHit }) {
   const [isActive, setIsActive] = useState(false)
+
+  const { category, collection, href } = useMemo(
+    () => ({
+      category: getCategoryNames(hit)[0],
+      collection: getCollectionName(hit),
+      href: hit.handle ? `/products/${hit.handle}` : "/store",
+    }),
+    [hit]
+  )
+
+  const activate = useCallback(() => setIsActive(true), [])
+  const deactivate = useCallback(() => setIsActive(false), [])
 
   return (
     <motion.div
       className={styles.productMotion}
       initial="rest"
       animate={isActive ? "hover" : "rest"}
-      onMouseEnter={() => setIsActive(true)}
-      onMouseLeave={() => setIsActive(false)}
-      onFocusCapture={() => setIsActive(true)}
-      onBlurCapture={() => setIsActive(false)}
-      variants={{
-        rest: { y: 0, color: "#20211c" },
-        hover: { y: -4, color: "#20211c" },
-      }}
-      transition={{
-        y: { duration: 0.5, ease },
-        color: { duration: 0.24, ease },
-      }}
+      onMouseEnter={activate}
+      onMouseLeave={deactivate}
+      onFocusCapture={activate}
+      onBlurCapture={deactivate}
+      variants={quarryVariants}
+      transition={quarryTransition}
     >
       <LocalizedClientLink
         href={href}
@@ -182,22 +239,16 @@ export function ProductQuarry({ hit }: { hit: NavbarProductHit }) {
       >
         <motion.span
           className={styles.productSurface}
-          variants={{
-            rest: { scaleX: 0, opacity: 0 },
-            hover: { scaleX: 1, opacity: 1 },
-          }}
-          style={{ originX: 0 }}
-          transition={{ duration: 0.62, ease: revealEase }}
+          variants={surfaceVariants}
+          style={surfaceStyle}
+          transition={surfaceTransition}
           aria-hidden="true"
         />
         <div className={styles.thumbnailWrap}>
           <motion.div
             className={styles.thumbnailMotion}
-            variants={{
-              rest: { scale: 1 },
-              hover: { scale: 1.035 },
-            }}
-            transition={{ duration: 0.72, ease }}
+            variants={thumbVariants}
+            transition={thumbTransition}
           >
             <Thumbnail
               thumbnail={hit.thumbnail ?? null}
@@ -217,21 +268,8 @@ export function ProductQuarry({ hit }: { hit: NavbarProductHit }) {
           <span className={styles.productFooter}>
             <span>{category && collection ? collection : "Z ateliéru"}</span>
             <motion.i
-              variants={{
-                rest: {
-                  x: 0,
-                  rotate: 0,
-                  color: "#20211c",
-                  backgroundColor: "rgba(32, 33, 28, 0)",
-                },
-                hover: {
-                  x: 3,
-                  rotate: 45,
-                  color: "#fff1e7",
-                  backgroundColor: "#20211c",
-                },
-              }}
-              transition={{ duration: 0.44, ease }}
+              variants={arrowVariants}
+              transition={arrowTransition}
               aria-hidden="true"
             >
               ↗
@@ -242,6 +280,10 @@ export function ProductQuarry({ hit }: { hit: NavbarProductHit }) {
     </motion.div>
   )
 }
+
+/* Filtering happens upstream; when a hit survives a keystroke its object identity is unchanged,
+   so the card can skip re-rendering entirely. */
+export const ProductQuarry = memo(ProductQuarryBase)
 
 type SearchContentProps = Pick<
   NavbarSearchProps,
@@ -328,6 +370,22 @@ function SearchContent({
     return Array.from(suggestions.values()).slice(0, 6)
   }, [catalogueProducts])
 
+  /* The stagger delay is the only per-chip value, and it depends on nothing that changes while
+     the customer types — so the table is built once per chip count instead of per render. */
+  const chipTransitions = useMemo(
+    () =>
+      helpers.map((_, index) => {
+        const delay = entranceComplete ? index * 0.035 : index * 0.06
+
+        return {
+          opacity: { duration: 0.48, delay, ease },
+          x: { duration: 0.48, delay, ease },
+          color: { duration: 0.22, delay: 0.16, ease },
+        }
+      }),
+    [helpers, entranceComplete]
+  )
+
   const resultLabel = normalizedQuery
     ? products.length > 0
       ? `${products.length} ${
@@ -365,43 +423,18 @@ function SearchContent({
                   onClick={() =>
                     onQueryChange(query === helper.label ? "" : helper.label)
                   }
-                  initial={{ opacity: 0, x: -14 }}
+                  initial={chipInitial}
                   animate="rest"
                   whileHover="hover"
                   whileFocus="hover"
-                  variants={{
-                    rest: {
-                      opacity: 1,
-                      x: 0,
-                      color: "#20211c",
-                    },
-                    hover: {
-                      opacity: 1,
-                      x: 0,
-                      color: "#fff8ee",
-                    },
-                  }}
-                  transition={{
-                    opacity: {
-                      duration: 0.48,
-                      delay: entranceComplete ? index * 0.035 : index * 0.06,
-                      ease,
-                    },
-                    x: {
-                      duration: 0.48,
-                      delay: entranceComplete ? index * 0.035 : index * 0.06,
-                      ease,
-                    },
-                    color: { duration: 0.22, delay: 0.16, ease },
-                  }}
+                  variants={chipVariants}
+                  transition={chipTransitions[index]}
                 >
                   <motion.i
-                    variants={{
-                      hover: { scaleX: 1 },
-                    }}
-                    initial={{ scaleX: 0 }}
-                    style={{ originX: 0 }}
-                    transition={{ duration: 0.5, ease: revealEase }}
+                    variants={chipFillVariants}
+                    initial={chipFillInitial}
+                    style={chipFillStyle}
+                    transition={chipFillTransition}
                     aria-hidden="true"
                   />
                   <small>{helper.type}</small>
@@ -458,9 +491,9 @@ function SearchContent({
             <motion.div
               key="loading"
               className={styles.skeletonTrack}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={fadeOnly}
+              animate={fadeIn}
+              exit={fadeOnly}
             >
               {Array.from({ length: 5 }, (_, index) => (
                 <div className={styles.skeleton} key={index}>
@@ -473,9 +506,9 @@ function SearchContent({
             <motion.div
               key="error"
               className={styles.empty}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={riseFrom}
+              animate={riseTo}
+              exit={fadeOnly}
               role="alert"
             >
               <span>Ateliér je na chvíli nedostupný.</span>
@@ -510,9 +543,9 @@ function SearchContent({
             <motion.div
               key="empty"
               className={styles.empty}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={riseFrom}
+              animate={riseTo}
+              exit={fadeOnly}
             >
               <span>Zkuste jiný název, kategorii nebo kolekci.</span>
               <button type="button" onClick={() => onQueryChange("")}>
@@ -636,10 +669,10 @@ export default function NavbarSearch({
         <motion.aside
           id="navbar-search"
           className={styles.root}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.38, ease }}
+          initial={fadeOnly}
+          animate={fadeIn}
+          exit={fadeOnly}
+          transition={backdropTransition}
           aria-label="Vyhledávání produktů"
         >
           <button
@@ -665,7 +698,7 @@ export default function NavbarSearch({
               y: -8,
               clipPath: "inset(0 0 100% 0 round 30px)",
             }}
-            transition={{ duration: 0.7, ease: revealEase }}
+            transition={panelTransition}
           >
             <SearchContent
               entranceComplete={entranceComplete}

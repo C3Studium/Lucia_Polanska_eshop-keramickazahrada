@@ -5,14 +5,29 @@ import type { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, type Variants } from "framer-motion"
 import Image from "next/image"
-import { useState } from "react"
+import { memo, useCallback, useMemo, useState } from "react"
 import styles from "./style.module.scss"
 import { availabilityLabel, productAvailability } from "@lib/util/availability"
+import { easeReveal } from "@lib/motion-tokens"
 
 type ProductCardProps = {
   product: HttpTypes.StoreProduct
   priority?: boolean
 }
+
+/** A card is rendered once per product in the grid, so every object here is hoisted: an inline
+    literal would allocate — and make framer-motion re-diff the animation — once per card, per
+    render of the grid. Identical values to before; only their lifetime changed. */
+const cardInitial = { opacity: 0, y: 24 }
+const cardInView = { opacity: 1, y: 0 }
+const cardViewport = { once: true, margin: "-8%" } as const
+const cardTransition = { duration: 0.6, ease: easeReveal }
+const cardExit = { opacity: 0, scale: 0.985, transition: { duration: 0.25 } }
+
+const NEW_FOR_MS = 30 * 86400000
+
+const IMAGE_SIZES =
+  "(min-width: 1520px) 20vw, (min-width: 1101px) 28vw, (min-width: 701px) 46vw, 94vw"
 
 const imageAnim: Variants = {
   initial: {
@@ -62,16 +77,43 @@ const buttonAnim: Variants = {
   },
 }
 
-export default function ProductCard({ product, priority = false }: ProductCardProps) {
+function ProductCard({ product, priority = false }: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
-  const { cheapestPrice } = getProductPrice({ product })
-  const primaryImage = product.thumbnail || product.images?.[0]?.url || "/assets/img/horizontal_prop.png"
-  const secondaryImage = product.images?.find(
-    (image) => image.url && image.url !== primaryImage
-  )?.url
-  const isNew = Boolean(product.created_at && new Date(product.created_at).getTime() > Date.now() - 30 * 86400000)
-  const hasSale = Boolean(cheapestPrice?.price_type === "sale" && cheapestPrice.percentage_diff)
-  const availability = productAvailability(product)
+
+  /* Hovering flips `isInteracting`, which re-renders the card. Deriving price, availability and
+     the image pair cost that work again on every pointer in/out; they depend only on the product,
+     so they are computed once instead. */
+  const { cheapestPrice, primaryImage, secondaryImage, isNew, hasSale, availability } =
+    useMemo(() => {
+      const { cheapestPrice } = getProductPrice({ product })
+      const primaryImage =
+        product.thumbnail || product.images?.[0]?.url || "/assets/img/horizontal_prop.png"
+
+      return {
+        cheapestPrice,
+        primaryImage,
+        secondaryImage: product.images?.find(
+          (image) => image.url && image.url !== primaryImage
+        )?.url,
+        isNew: Boolean(
+          product.created_at &&
+            new Date(product.created_at).getTime() > Date.now() - NEW_FOR_MS
+        ),
+        hasSale: Boolean(
+          cheapestPrice?.price_type === "sale" && cheapestPrice.percentage_diff
+        ),
+        availability: productAvailability(product),
+      }
+    }, [product])
+
+  const startInteracting = useCallback(() => setIsInteracting(true), [])
+  const stopInteracting = useCallback(() => setIsInteracting(false), [])
+  const handleBlurCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsInteracting(false)
+    }
+  }, [])
+
   const interactionState = isInteracting ? "hover" : "initial"
 
   return (
@@ -79,19 +121,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       className={styles.root}
       layout="position"
       data-interacting={isInteracting || undefined}
-      onMouseEnter={() => setIsInteracting(true)}
-      onMouseLeave={() => setIsInteracting(false)}
-      onFocusCapture={() => setIsInteracting(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          setIsInteracting(false)
-        }
-      }}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-8%" }}
-      transition={{ duration: .6, ease: [0.76, 0, 0.24, 1] }}
-      exit={{ opacity: 0, scale: 0.985, transition: { duration: 0.25 } }}
+      onMouseEnter={startInteracting}
+      onMouseLeave={stopInteracting}
+      onFocusCapture={startInteracting}
+      onBlurCapture={handleBlurCapture}
+      initial={cardInitial}
+      whileInView={cardInView}
+      viewport={cardViewport}
+      transition={cardTransition}
+      exit={cardExit}
     >
       <LocalizedClientLink
         href={`/products/${product.handle}`}
@@ -105,7 +143,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               fill
               priority={priority}
               quality={80}
-              sizes="(min-width: 1520px) 20vw, (min-width: 1101px) 28vw, (min-width: 701px) 46vw, 94vw"
+              sizes={IMAGE_SIZES}
             />
           </div>
           {secondaryImage && (
@@ -122,7 +160,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                   fill
                   loading="lazy"
                   quality={74}
-                  sizes="(min-width: 1520px) 20vw, (min-width: 1101px) 28vw, (min-width: 701px) 46vw, 94vw"
+                  sizes={IMAGE_SIZES}
                 />
               </motion.div>
           )}
@@ -171,3 +209,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     </motion.article>
   )
 }
+
+/* The grid re-renders on every filter change, load-more and refresh tick. Without this, each of
+   those re-rendered all N cards even though their props were unchanged. */
+export default memo(ProductCard)

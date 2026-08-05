@@ -45,6 +45,34 @@ type CollectionListProps = {
 
 const ease = [0.76, 0, 0.24, 1] as Easing
 
+/* Hoisted so the menu — which re-renders on every hover of a collection card — stops
+   allocating a fresh object per motion prop, per card, per render. Values unchanged. */
+const menuFadeFrom = { opacity: 0 }
+const menuFadeTo = { opacity: 1 }
+const menuFadeTransition = { duration: 0.35, ease }
+const panelInitial = { opacity: 0, y: -10, clipPath: "inset(0 0 100% 0 round 18px)" }
+const panelAnimate = { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0 round 18px)" }
+const panelExit = { opacity: 0, y: -8, clipPath: "inset(0 0 100% 0 round 18px)" }
+const panelTransition = { duration: 0.65, ease }
+const crumbInitial = { opacity: 0, y: -8 }
+const crumbAnimate = { opacity: 1, y: 0 }
+const crumbTransition = { delay: 0.18, duration: 0.35, ease }
+const titleTransition = { duration: 0.2, delay: 0.12 }
+const cardContentVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { delay: 0.1, delayChildren: 0.18, staggerChildren: 0.055 },
+  },
+}
+const flexGrowLead = { flexGrow: 4 }
+const flexGrowRest = { flexGrow: 1 }
+const thumbDown = { y: "105%" }
+const thumbUp = { y: "0%" }
+const arrowTilted = { rotate: -45 }
+const arrowFlat = { rotate: 0 }
+
+
 const footerLinks = [
   { label: "Smluvní podmínky", href: "/smluvni-podminky" },
   { label: "Cookies", href: "/cookies" },
@@ -100,15 +128,15 @@ function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
       <motion.span
         className={styles.buttonBackdrop}
         initial={false}
-        animate={{ y: highlighted ? "0%" : "105%" }}
-        transition={{ duration: 0.35, ease }}
+        animate={highlighted ? thumbUp : thumbDown}
+        transition={menuFadeTransition}
       >
         <Image src="/assets/links/home_img.png" alt="" fill sizes="110px" />
         <span />
       </motion.span>
       <span className={styles.buttonLabel}>
         Produkty
-        <motion.span animate={{ rotate: highlighted ? -45 : 0 }} transition={{ duration: 0.35, ease }}>
+        <motion.span animate={highlighted ? arrowTilted : arrowFlat} transition={menuFadeTransition}>
           {highlighted ? <ArrowRight size={12} color="white" /> : <Arrow size={12} />}
         </motion.span>
       </span>
@@ -152,10 +180,10 @@ export function CollectionList({
         <motion.div
           id="collection-navigation"
           className={styles.collectionList}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease }}
+          initial={menuFadeFrom}
+          animate={menuFadeTo}
+          exit={menuFadeFrom}
+          transition={menuFadeTransition}
           onMouseLeave={() => setActive(false)}
         >
           <button
@@ -167,10 +195,10 @@ export function CollectionList({
           />
           <motion.div
             className={styles.menuPanel}
-            initial={{ opacity: 0, y: -10, clipPath: "inset(0 0 100% 0 round 18px)" }}
-            animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0 round 18px)" }}
-            exit={{ opacity: 0, y: -8, clipPath: "inset(0 0 100% 0 round 18px)" }}
-            transition={{ duration: 0.65, ease }}
+            initial={panelInitial}
+            animate={panelAnimate}
+            exit={panelExit}
+            transition={panelTransition}
             role="dialog"
             aria-label="Výběr produktových kolekcí"
           >
@@ -188,9 +216,9 @@ export function CollectionList({
             {currentCollection && (
               <motion.div
                 className={styles.contextBar}
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.35, ease }}
+                initial={crumbInitial}
+                animate={crumbAnimate}
+                transition={crumbTransition}
               >
                 <button type="button" onClick={() => router.back()}>
                   <Arrow size={14} />
@@ -265,7 +293,7 @@ function CollectionCard({
     <motion.article
       className={styles.collectionCard}
       data-collection-index={index}
-      style={{ flexGrow: index === 0 ? 4 : 1 }}
+      style={index === 0 ? flexGrowLead : flexGrowRest}
       onMouseEnter={() => {
         if (!isActive) onActivate()
       }}
@@ -296,10 +324,10 @@ function CollectionCard({
           <motion.h3
             key="vertical-title"
             className={styles.verticalTitle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, delay: 0.12 }}
+            initial={menuFadeFrom}
+            animate={menuFadeTo}
+            exit={menuFadeFrom}
+            transition={titleTransition}
           >
             {collection.title}
           </motion.h3>
@@ -310,10 +338,7 @@ function CollectionCard({
             initial="hidden"
             animate="show"
             exit="hidden"
-            variants={{
-              hidden: { opacity: 0 },
-              show: { opacity: 1, transition: { delay: 0.1, delayChildren: 0.18, staggerChildren: 0.055 } },
-            }}
+            variants={cardContentVariants}
           >
             <motion.span className={styles.cardEyebrow} variants={contentItemVariants}>
               {String(index + 1).padStart(2, "0")}
