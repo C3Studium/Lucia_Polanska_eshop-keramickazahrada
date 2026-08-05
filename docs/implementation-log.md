@@ -1851,3 +1851,34 @@ a running sale unknowingly). Karta gains the order list with stages and
 outstanding sums (new GET /admin/workbench/customers/:id).
 
 Gate: 275 unit / 65 integration / build clean.
+
+## 2026-08-06 — Phase 3 follow-up: kinds, statistics, and the Zákazníci+ fix
+
+Matěj's review: Zákazníci+ failed to load on the deployed instance, and the
++ pages needed per-kind tabs with their own controls plus statistics.
+
+Zákazníci+: every joined source is now individually caught (one broken
+module degrades its column, not the page), the pointless items projection on
+the order scan is gone, and orders match customers by id OR e-mail so
+guest-heavy history stops reading as „zatím bez objednávky".
+
+Produkty+ rebuilt around six tabs — Produkty · Zakázky · Balíčky · Poškozené
+· Oblíbené · Statistiky — with per-kind actions only where they belong: the
+deposit editor lives on Zakázky (plus „Nastavit jako zakázku" as the doorway
+from Produkty), bundles get a real editor (composition, quantity, pricing
+mode, discount — through the existing bundled-products routes), damaged
+pieces are marked/unmarked in place and show their one-off sale framing.
+Classification is server-side (kind = zakazka | balicek | poskozene | bezne)
+with counts.
+
+Statistics, both domains: /admin/workbench/products/statistics (kind counts,
+stock buckets, top sellers 30d/365d by qty and revenue, zakázky by stage
+with deposits paid and outstanding, bundles sold via the line-item
+bundle_id marker, wishlist top, clearance, reviews) and the discounts
+endpoint now answers „kolik to přineslo" — per code (basket revenue +
+discount given), per campaign (roll-up), per seasonal sale (member-product
+line revenue inside the window, deliberately not basket totals — the
+double-counting rule is documented in lib/sale-stats.ts, which is pure and
+unit-tested). Slevy+ gains the Statistiky tab and revenue on rows.
+
+Gate: 284 unit / 67 integration / build clean.

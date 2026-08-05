@@ -364,6 +364,7 @@ medusaIntegrationTestRunner({
       "/admin/workbench/inventory",
       "/admin/workbench/customers",
       "/admin/workbench/discounts",
+      "/admin/workbench/products/statistics",
       "/admin/inventory-alerts",
       "/admin/merchant-settings",
       "/admin/merchant-orders",
