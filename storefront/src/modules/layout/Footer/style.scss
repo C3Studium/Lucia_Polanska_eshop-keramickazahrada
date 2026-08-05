@@ -86,14 +86,14 @@
   text-transform: uppercase;
 }
 
-.footer__wordmark {
+.footer__brand > .footer__wordmark {
   margin: 0;
   font: 400 clamp(48px, 4.25vw, 78px)/0.92 "Sentient-Regular", serif;
   letter-spacing: -0.058em;
   white-space: nowrap;
 }
 
-.footer__wordmark em {
+.footer__brand > .footer__wordmark em {
   color: var(--footer-muted);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
@@ -166,7 +166,7 @@
   border-bottom: 1px solid var(--footer-line);
 }
 
-.footer__newsletterTitle {
+.footer__newsletterCopy > .footer__newsletterTitle {
   max-width: 430px;
   margin: 14px 0 10px;
   font: 400 clamp(27px, 2.25vw, 40px)/0.98 "Sentient-Regular", serif;
@@ -325,7 +325,7 @@ p.newsletter__error {
   padding-top: clamp(28px, 2.8vw, 48px);
 }
 
-.footer__groupTitle {
+.footer__linkGroup > .footer__groupTitle {
   margin: 0 0 18px;
   color: var(--footer-muted);
   font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
