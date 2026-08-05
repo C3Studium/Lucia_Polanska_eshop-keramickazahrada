@@ -42,6 +42,20 @@ the CZ region and a fulfillment set.
       `ceska-posta-fulfillment_*` options configured. If Packeta should be
       offered, its option needs creating too (`packeta_packeta`).
 
+## Matěj — after the workbench deploy (2026-08-06)
+
+- [ ] **Decide the sidebar layout.** Four new advanced pages registered:
+      Objednávky+ (`/objednavky`), Produkty+ (`/produkty-workbench`),
+      Sklad+ (`/sklad-workbench`), Zákazníci+ (`/zakaznici-workbench`).
+      They *add* sidebar items next to the native four. Either re-apply the
+      layout payload to hide the native Orders/Products/Inventory/Customers
+      and rename the + pages to plain names, or keep both speeds visible.
+      The plan (admin-advanced-plan.md) argues for replacing; your call.
+- [ ] **Production note:** the newsletter migration had silently never run —
+      class-name collision with product-review's, so MikroORM skipped it.
+      Renamed; the next deploy creates `newsletter_subscriber`. Until then
+      newsletter signup 500s in production.
+
 ## Storefront model — unblocked by the latest deploy
 
 Was blocked, is not any more. Re-point the model at the brief.

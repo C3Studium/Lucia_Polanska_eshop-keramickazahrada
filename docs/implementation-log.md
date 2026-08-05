@@ -1778,3 +1778,32 @@ scrolling a few hundred pieces to find „Hrnek modrý" is slower than typing it
 
 - Gate: typecheck ✓ · build ✓ · tests: **241 passed** in 15 suites.
 - Migrations: one — `archivováno` added to the review status constraint.
+
+## 2026-08-06 — Admin deepening, phase 1 (plan: admin-advanced-plan.md)
+
+**Slider.** `production-payment-mode` gains `mode:"custom"` + amount;
+`custom:{minimum,maximum,amount}` in GET; 400 outside bounds at checkout,
+clamp at payment prep (cart may have changed since the choice). Distribution
+across lines is `lib/deposit-split.ts`, shared by both callers so shown and
+charged cannot drift; proportional to headroom; no-full-prepayment lines get
+zero headroom; last line absorbs rounding. 10 unit tests incl. a seeded
+property test.
+
+**Workbenches.** `/admin/workbench/{orders,products,inventory,customers}` +
+four sidebar pages (`objednavky`, `produkty-workbench`, `sklad-workbench`,
+`zakaznici-workbench`). Orders: stage+captured−refunded+outstanding in one
+row. Products: stock/wishlist/reviews/30d sales + deposit floor visible.
+Inventory: restock-waiting + wishlist counts, sorted by demand. Customers:
+LTV, outstanding, newsletter, filters for owes/repeat/newsletter. Slevy rows
+show code usage counts.
+
+**Found by the integration suite, fixed:** newsletter migration never ran
+anywhere — class-name collision (two `Migration20260805090000`), MikroORM
+skips by name. Renamed to `…090001` (idempotent, safe rerun) + a guard spec
+that fails the build on any future collision. Restock „waiting" filter used a
+non-existent column; rows are deleted after notify, so existence = waiting.
+
+**Docs:** `storefront-advanced-prompt.md` (slider brief; supersedes first
+brief §4.3), automation ideas proposed-not-implemented in the plan doc.
+
+Gate: 269 unit / 58 integration / build clean.
