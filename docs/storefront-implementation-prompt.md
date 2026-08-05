@@ -150,9 +150,9 @@ An order with an unpaid balance shows **„Doplatit {částka}"**, linking to th
 signed URL the customer was e-mailed. The e-mail already carries it; the account
 page should not be a worse place to find it.
 
-The link is **signed and built by the backend** — you cannot construct it. If
-the order payload does not expose it, that is a backend gap: write it down, do
-not guess the signature.
+Both the amount and the link come from `GET /store/orders/:id/progress` (§8) —
+`balance.outstanding` and `balance.payment_url`. The link is signed by the
+backend and cannot be constructed client-side, so read it; never build one.
 
 ### 4.6 Handle the payment outcome
 
@@ -273,21 +273,47 @@ an object also means hearing about a price drop. Copy only.
 
 ## 8. TODO — order status in the account
 
-Native store orders expose `fulfillment_status` and `payment_status`. Map them
-to plain Czech on the account order page and in the list:
+`GET /store/orders/:id/progress` — **customer-authenticated** (session or
+bearer). Returns 404, not 403, for an order that is not the caller's, so do not
+distinguish those in the UI. Guest orders have no access; the e-mail carries a
+signed link for the one action a guest can take.
+
+```jsonc
+{
+  "stage": "working",                 // null on older orders — see below
+  "stage_label": "Připravujeme",      // Czech, ready to display
+  "stage_changed_at": "2026-08-05T…",
+  "made_to_order": true,
+  "balance": {                        // null when nothing is owed
+    "outstanding": 4500,
+    "currency_code": "czk",
+    "payment_url": "https://…"        // signed; this is the §4.5 button
+  }
+}
+```
+
+**Display `stage_label` verbatim.** It is not a translation of the internal
+stage name — the backend deliberately says „Chystáme k odeslání" for a packed
+order rather than anything that reads as *already sent*, and „Čeká na platbu"
+rather than „Problém s platbou". Re-wording these in the storefront undoes that.
+
+`stage` is `null` for orders placed before the merchant workflow existed, and
+for any order it has not picked up yet. That is normal, not an error. Fall back
+to Medusa's own status:
 
 | Backend state | Customer sees |
 | --- | --- |
-| not fulfilled, paid | „Přijato — chystáme" |
+| not fulfilled, paid | „Přijato" |
 | fulfilled, not shipped | „Zabaleno" |
 | shipped | „Odesláno" |
 | delivered | „Doručeno" |
 | canceled | „Zrušeno" |
 
+`balance` is where §4.5's „Doplatit {částka}" gets its amount and its URL. The
+link is signed by the backend and cannot be constructed client-side.
+
 Refresh on focus, not on a timer. These states change a few times over days; a
 request every few seconds for that is waste.
-
-See §10 for what you cannot show.
 
 ## 9. Routes the e-mails link to — do not move these
 
@@ -309,17 +335,16 @@ A path without the country segment is *not* broken — `src/middleware.ts`
 and no redirect rescues it. If you have a good reason to rename one of these,
 say so: the backend link and its test change in the same commit.
 
-## 10. Known backend gaps — do not paper over these
+## 10. Known backend gaps
 
-**Order stage.** The admin tracks `Nové · Připravujeme · K odeslání · Odesláno`,
-which is richer than `fulfillment_status`. **No store route exposes it**, so
-„Připravujeme" cannot reach the customer. Use the §8 mapping and leave it there;
-making it precise needs a new backend route.
+**None blocking this work.** The two that existed when this brief was first
+drafted — no store route for the merchant stage, and no way to reach the signed
+balance link outside an e-mail — are both closed by `/store/orders/:id/progress`
+(§8).
 
-**Balance payment link.** Signed by the backend (§4.5). If it is not in the
-order payload, it needs a backend change — do not attempt to sign one.
-
-If you find a third gap, add it to your log rather than working around it.
+If you find a new one, write it in your log and say so in your report rather
+than working around it. A workaround that writes state the backend cannot read
+is worse than the gap.
 
 ## 11. Start here
 

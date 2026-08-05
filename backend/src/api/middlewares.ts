@@ -324,6 +324,14 @@ export default defineMiddlewares({
       methods: ["DELETE"],
       middlewares: [debugAuthMiddleware()],
     },
+    // An order's progress is private to whoever placed it. Custom store routes
+    // are not authenticated by default, so without this the merchant stage and
+    // the outstanding balance of any order id would be readable by anyone.
+    {
+      matcher: "/store/orders/:id/progress",
+      methods: ["GET"],
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
     // Customer reviews are explicitly authenticated because this is a custom
     // route and its query contains private, customer-scoped review records.
     {
