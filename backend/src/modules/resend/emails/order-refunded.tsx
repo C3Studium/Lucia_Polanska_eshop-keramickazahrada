@@ -1,15 +1,16 @@
 import {
-  Text,
-  Container,
-  Heading,
-  Html,
-  Section,
-  Tailwind,
-  Head,
-  Preview,
-  Body,
-  Button,
-} from "@react-email/components";
+  ButtonRow,
+  EmailButton,
+  EmailH1,
+  EmailLayout,
+  Eyebrow,
+  Greeting,
+  LedgerEnd,
+  LedgerRow,
+  Note,
+  P,
+  Signature,
+} from "../components/email-ui"
 
 interface OrderRefundedEmailProps {
   customerName?: string;
@@ -24,99 +25,38 @@ function OrderRefundedEmailComponent({
   orderNumber = "#12345",
   refundAmount = "1 250 Kč",
   refundReason = "Požadavek zákazníka",
-  orderLink = "https://yourstore.com/orders/12345"
+  orderLink = "https://keramickazahrada.cz/orders/12345"
 }: OrderRefundedEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Vrácení peněz za objednávku {orderNumber}</Preview>
-      <Tailwind>
-        <Body className="bg-[#87986A] my-auto mx-auto font-sans">
-            {/* Header */}
-            <Section className="border-b border-solid border-[#212222]">
-              <div className="bg-[#ffff] text-white py-3 flex align-center justify-center">
-                <img style={{ width: "80px", height: "80px", margin: "6px 0" }} src="https://c3studium.com/assets/icons/logo.svg" alt="Logo" className="w-[40px] h-[40px]" />
-                <Heading className="text-[#212222] text-[26px] font-normal text-center p-0 my-[30px] mx-0">
-                  Keramická Zahrada
-                </Heading>
-              </div>
-            </Section>
+    <EmailLayout preview={`Vrácení peněz za objednávku ${orderNumber} je zpracováno.`}>
+      <Eyebrow>Objednávka</Eyebrow>
+      <EmailH1 accent="na cestě zpět.">Peníze</EmailH1>
 
-          <Container className="border border-solid border-[#212222] rounded-3xl my-[40px] mx-auto p-[20px] max-w-[600px] bg-white">
-            <Section className="border-b border-solid border-[#212222] mt-10">
-              <Heading className="text-[#212222] text-[36px] font-normal text-left p-0 my-[10px] mx-2">
-                Vrácení peněz za objednávku
-              </Heading>
-              <Text className="text-[#212222] text-[20px] leading-[24px] font-medium m-2 mt-10">
-                Vážený {customerName},
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[24px] m-2">
-                Informujeme vás, že byla zpracována žádost o vrácení peněz za vaši objednávku {orderNumber}.
-              </Text>
-            </Section>
+      <Greeting name={customerName} />
+      <P>
+        žádost o vrácení peněz za vaši objednávku jsme zpracovali. Částka se
+        k vám vrací stejnou cestou, jakou k nám přišla.
+      </P>
 
-            <Section className="my-[32px] bg-gray-50 border border-solid border-gray-200 rounded-lg p-[20px]">
-              <Text className="text-[#212222] text-[20px] font-semibold leading-[24px] mb-[16px]">
-                Detaily vrácení:
-              </Text>
+      <LedgerRow label="Objednávka" value={orderNumber} />
+      <LedgerRow label="Důvod vrácení" value={refundReason} />
+      <LedgerRow label="Částka" value={refundAmount} strong tone="olive" />
+      <LedgerEnd />
 
-              <div className="space-y-[12px] gap-4">
-                <div className="mb-2"> 
-                  <Text className="text-[#87986A] text-[14px] font-semibold leading-[20px] uppercase m-0 mb-[4px]">
-                    Částka k vrácení:
-                  </Text>
-                  <Text className="text-green-600 text-[20px] font-bold leading-[28px] m-0">
-                    {refundAmount}
-                  </Text>
-                </div>
+      <Note tone="olive">
+        Peníze se na vašem účtu objeví zpravidla do 3–5 pracovních dnů.
+      </Note>
 
-                <div>
-                  <Text className="text-[#87986A] text-[14px] font-semibold leading-[20px] uppercase m-0 mb-[4px]">
-                    Důvod vrácení:
-                  </Text>
-                  <Text className="text-[#212222] text-[16px] leading-[24px] m-0">
-                    {refundReason}
-                  </Text>
-                </div>
-              </div>
-            </Section>
+      <ButtonRow>
+        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
+      </ButtonRow>
 
-            <Section className="my-[32px] border-b border-solid border-[#212222]">
-              <Text className="text-[#212222] text-[16px] leading-[24px]">
-                Peníze budou připsány na váš účet do 3-5 pracovních dnů, v závislosti na vaší bance.
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[24px] mt-2">
-                Pokud máte jakékoliv otázky ohledně vrácení peněz, neváhejte nás kontaktovat.
-              </Text>
-            </Section>
-
-            <Section className="text-center mt-[32px] mb-[32px]">
-              <Button
-                className="bg-[#87986A] rounded-3xl text-white text-[16px] font-semibold no-underline text-center px-5 py-3 hover:bg-[#212222] transition-colors"
-                href={orderLink}
-              >
-                Zobrazit objednávku
-              </Button>
-            </Section>
-
-            <Section className="mt-[32px] pt-[20px]">
-                <Text className="text-[#212222] text-[14px] leading-[24px]">
-                    S pozdravem,<br />
-                    Keramická Zahrada, Lucie Polanská
-                </Text>
-            </Section>
-            <Section className="border-t border-solid border-[#87986A]">
-                <Text className="text-[#212222] text-[14px] leading-[20px] text-center">
-                    Potřebujete pomoc? <a href="mailto:luciepolanska@gmail.com" className="text-[#87986A] no-underline hover:text-[#212222] transition-colors">Kontaktujte nás</a>
-                </Text>
-                <Text className="text-[#87986A] text-[12px] leading-[18px] text-center mt-4">
-                    © {new Date().getFullYear()} Keramická Zahrada, Lucie Polanská. Všechna práva vyhrazena.
-                </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+      <P small>
+        Přesná doba připsání závisí na vaší bance. Máte-li jakýkoli dotaz,
+        stačí odpovědět na tento e-mail.
+      </P>
+      <Signature />
+    </EmailLayout>
   )
 }
 
@@ -130,7 +70,7 @@ const mockOrderRefunded: OrderRefundedEmailProps = {
   orderNumber: "#12345",
   refundAmount: "1 250 Kč",
   refundReason: "Požadavek zákazníka",
-  orderLink: "https://yourstore.com/orders/12345"
+  orderLink: "https://keramickazahrada.cz/orders/12345"
 }
 
 export default () => <OrderRefundedEmailComponent {...mockOrderRefunded} />

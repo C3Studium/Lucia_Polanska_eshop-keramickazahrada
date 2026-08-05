@@ -1,16 +1,17 @@
-import { 
-  Text, 
-  Container, 
-  Heading, 
-  Html, 
-  Section, 
-  Tailwind, 
-  Head, 
-  Preview, 
-  Body, 
-  Link,
-  Button, 
-} from "@react-email/components"
+import { Link } from "@react-email/components"
+import {
+  brand,
+  ButtonRow,
+  EmailButton,
+  EmailH1,
+  EmailLayout,
+  Eyebrow,
+  Greeting,
+  LedgerEnd,
+  LedgerRow,
+  P,
+  Signature,
+} from "../components/email-ui"
 
 type PasswordResetEmailProps = {
   reset_url: string
@@ -19,88 +20,49 @@ type PasswordResetEmailProps = {
 
 function PasswordResetEmailComponent({ reset_url, email }: PasswordResetEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Zresetujte své heslo</Preview>
-      <Tailwind>
-        <Body className="bg-[#87986A] my-auto mx-auto font-sans">
-            {/* Header */}
-            <Section className="border-b border-solid border-[#212222]">
-              <div className="bg-[#ffff] text-white py-3 flex align-center justify-center">
-                <img style={{ width: "80px", height: "80px", margin: "6px 0" }} src="https://c3studium.com/assets/icons/logo.svg" alt="Logo" className="w-[40px] h-[40px]" />
-                <Heading className="text-[#212222] text-[26px] font-normal text-center p-0 my-[30px] mx-0">
-                  Keramická Zahrada
-                </Heading>
-              </div>
-            </Section>
+    <EmailLayout preview="Nastavte si nové heslo jedním kliknutím.">
+      <Eyebrow>Váš účet</Eyebrow>
+      <EmailH1 accent="hesla.">Obnovení</EmailH1>
 
-          <Container className="border border-solid border-[#212222] rounded-3xl my-[40px] mx-auto p-[20px] max-w-[600px] bg-white">
-            <Section className="border-b border-solid border-[#212222] mt-10">
-              <Heading className="text-[#212222] text-[36px] font-normal text-left p-0 my-[10px] mx-2">
-                Zresetujte své heslo
-              </Heading>
+      <Greeting />
+      <P>
+        obdrželi jsme žádost o obnovení hesla k vašemu účtu. Nové heslo si
+        nastavíte tlačítkem níže.
+      </P>
 
-              <Text className="text-[#212222] text-[20px] leading-[24px] font-medium m-2 mt-10">
-                Dobrý den,{email ? ` ${email}` : ""},
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[24px] m-2">
-                Obdrželi jsme žádost o resetování vašeho hesla. Klikněte na tlačítko níže a vytvořte si nové heslo pro svůj účet.
-              </Text>
-            </Section>
+      {email ? (
+        <>
+          <LedgerRow label="Účet" value={email} />
+          <LedgerEnd />
+        </>
+      ) : null}
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-              <Button
-                className="bg-[#87986A] rounded-3xl text-white text-[16px] font-semibold no-underline text-center px-5 py-3 hover:bg-[#212222] transition-colors"
-                href={reset_url}
-              >
-                Zresetujte heslo
-              </Button>
-            </Section>
+      <ButtonRow>
+        <EmailButton href={reset_url}>Nastavit nové heslo</EmailButton>
+      </ButtonRow>
 
-            <Section className="my-[32px]">
-              <Text className="text-[#212222] text-[16px] leading-[24px]">
-                Nebo zkopírujte a vložte tuto adresu URL do svého prohlížeče:
-              </Text>
-              <Link
-                href={reset_url}
-                className="text-[#87986A] no-underline text-[14px] leading-[24px] break-all hover:text-[#212222] transition-colors"
-              >
-                {reset_url}
-              </Link>
-            </Section>
+      <P small>
+        Pokud tlačítko nefunguje, zkopírujte do prohlížeče tuto adresu:
+        <br />
+        <Link
+          href={reset_url}
+          style={{
+            color: brand.olive,
+            textDecoration: "underline",
+            wordBreak: "break-all",
+          }}
+        >
+          {reset_url}
+        </Link>
+      </P>
 
-            <Section className="my-[32px]">
-              <Text className="text-[#212222] text-[16px] leading-[24px] underline-offset-4 underline">
-                Tento odkaz pro resetování hesla brzy vyprší z bezpečnostních důvodů.
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[24px] mt-2">
-                Pokud jste o resetování hesla nežádali, můžete tento e-mail bezpečně ignorovat. Vaše heslo zůstane nezměněno.
-              </Text>
-            </Section>
-
-            <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
-              <Text className="text-[#212222] text-[14px] leading-[24px]">
-                Z bezpečnostních důvodů nikdy nesdílejte tento odkaz na resetování s nikým. Pokud máte potíže s tlačítkem výše, zkopírujte a vložte adresu URL do svého webového prohlížeče.
-              </Text>
-            </Section>
-            <Section className="mt-[32px] pt-[20px]">
-                <Text className="text-[#212222] text-[14px] leading-[24px]">
-                    S pozdravem,<br />
-                    Keramická Zahrada, Lucie Polanská
-                </Text>
-            </Section>
-            <Section className="border-t border-solid border-[#87986A]">
-                <Text className="text-[#212222] text-[14px] leading-[20px] text-center">
-                    Potřebujete pomoc? <a href="mailto:luciepolanska@gmail.com" className="text-[#87986A] no-underline hover:text-[#212222] transition-colors">Kontaktujte nás</a>
-                </Text>
-                <Text className="text-[#87986A] text-[12px] leading-[18px] text-center mt-4">
-                    © {new Date().getFullYear()} Keramická Zahrada, Lucie Polanská. Všechna práva vyhrazena.
-                </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+      <P small>
+        Odkaz z bezpečnostních důvodů brzy vyprší a je určen jen vám — nikomu
+        jej prosím nepředávejte. Pokud jste o obnovení hesla nežádali, můžete
+        tento e-mail v klidu ignorovat; vaše heslo zůstane beze změny.
+      </P>
+      <Signature />
+    </EmailLayout>
   )
 }
 
@@ -110,8 +72,8 @@ export const passwordResetEmail = (props: PasswordResetEmailProps) => (
 
 // Mock data for preview/development
 const mockPasswordReset: PasswordResetEmailProps = {
-  reset_url: "https://your-app.com/reset-password?token=sample-reset-token-123",
-  email: "user@example.com",
+  reset_url: "https://keramickazahrada.cz/reset-password?token=sample-reset-token-123",
+  email: "jana.novakova@example.cz",
 }
 
 export default () => <PasswordResetEmailComponent {...mockPasswordReset} />

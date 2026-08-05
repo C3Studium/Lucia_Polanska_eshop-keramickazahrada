@@ -1,20 +1,18 @@
-import {
-  Text,
-  Column,
-  Container,
-  Heading,
-  Html,
-  Img,
-  Row,
-  Section,
-  Tailwind,
-  Head,
-  Preview,
-  Body,
-  Link,
-  Button
-} from "@react-email/components"
+import { Column, Img, Row, Section, Text } from "@react-email/components"
 import { BigNumberValue, CustomerDTO, OrderDTO } from "@medusajs/framework/types"
+import {
+  brand,
+  ButtonRow,
+  EmailButton,
+  EmailH1,
+  EmailLayout,
+  Eyebrow,
+  LedgerEnd,
+  LedgerRow,
+  Note,
+  P,
+  Signature,
+} from "../components/email-ui"
 
 type OrderPlacedEmailProps = {
   order: OrderDTO & {
@@ -48,7 +46,7 @@ function OrderPlacedEmailComponent({
     : null
   const shouldDisplayBanner = email_banner && "title" in email_banner
 
-  const formatter = new Intl.NumberFormat([], {
+  const formatter = new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currencyDisplay: "narrowSymbol",
     currency: order.currency_code,
@@ -66,193 +64,185 @@ function OrderPlacedEmailComponent({
     return price?.toString() || ""
   }
 
+  const greetingName =
+    order.customer?.first_name || order.shipping_address?.first_name
+
   return (
-    <Html>
-      <Head />
-      <Preview>Děkujeme za vaši objednávku z Keramické Zahrady</Preview>
-      <Tailwind>
-        <Body className="bg-[#87986A] my-auto mx-auto font-sans">
-            {/* Header */}
-            <Section className="border-b border-solid border-[#212222]">
-              <div className="bg-[#ffff] text-white py-3 flex align-center justify-center">
-                <img style={{ width: "80px", height: "80px", margin: "6px 0" }} src="https://c3studium.com/assets/icons/logo.svg" alt="Logo" className="w-[40px] h-[40px]" />
-                <Heading className="text-[#212222] text-[26px] font-normal text-center p-0 my-[30px] mx-0">
-                  Keramická Zahrada
-                </Heading>
-              </div>
-            </Section>
+    <EmailLayout preview="Objednávku jsme zaznamenali — děkujeme.">
+      <Eyebrow index="01">Objednávka {`#${order.display_id}`}</Eyebrow>
+      <EmailH1 accent="zaznamenali.">Objednávku jsme</EmailH1>
 
-          <Container className="border border-solid border-[#212222] rounded-3xl my-[40px] mx-auto p-[20px] max-w-[600px] bg-white">
-            {/* Header */}
-            {/* Thank You Message */}
-            <Section className="border-b border-solid border-[#212222] mt-10">
-              <Heading className="text-[#212222] text-[36px] font-normal text-left p-0 my-[10px] mx-2">
-                Děkujeme za vaši objednávku
-              </Heading>
-              <Text className="text-[#212222] text-[20px] leading-[24px] font-medium m-2 mt-10">
-                {order.customer?.first_name || order.shipping_address?.first_name},
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[24px] text-left m-2">
-                Vaši objednávku zpracováváme a budeme vás informovat, jakmile bude odeslána.
-              </Text>
-            </Section>
+      <P>{greetingName ? `Dobrý den, ${greetingName},` : "Dobrý den,"}</P>
+      <P>
+        děkujeme za vaši objednávku. Každý kus teď zkontrolujeme a pečlivě
+        zabalíme — jakmile objednávku předáme dopravci, pošleme další zprávu.
+      </P>
 
-            {/* Promotional Banner */}
-            {shouldDisplayBanner && (
-              <Section className="my-[32px] bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-[20px] text-center">
-                <Heading className="text-white text-[18px] font-semibold mb-[8px]">
-                  {email_banner.title}
-                </Heading>
-                <Text className="text-white text-[16px] leading-[24px] mb-[16px]">
-                  {email_banner.body}
-                </Text>
-                <Button
-                  className="bg-[#87986A] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3 hover:bg-[#212222] transition-colors"
-                  href={email_banner.url}
+      {/* Objekty */}
+      <Section style={{ margin: "32px 0 0" }}>
+        <Eyebrow index="02">Objekty</Eyebrow>
+        {order.items?.map((item, i) => (
+          <Row key={item.id} style={{ borderTop: `1px solid ${brand.line}` }}>
+            <Column
+              style={{ width: "68px", padding: "14px 14px 14px 0", verticalAlign: "top" }}
+            >
+              {item.thumbnail ? (
+                <Img
+                  src={item.thumbnail}
+                  alt={item.product_title ?? ""}
+                  width="56"
+                  height="66"
+                  style={{
+                    borderRadius: "10px",
+                    objectFit: "cover",
+                    backgroundColor: brand.stone,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "56px",
+                    height: "66px",
+                    borderRadius: "10px",
+                    backgroundColor: brand.stone,
+                  }}
+                />
+              )}
+            </Column>
+            <Column style={{ padding: "14px 0", verticalAlign: "top" }}>
+              <Text
+                style={{
+                  fontFamily: brand.sans,
+                  fontSize: "10px",
+                  lineHeight: "14px",
+                  letterSpacing: "1.8px",
+                  color: brand.faint,
+                  margin: "0 0 4px",
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "17px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {item.product_title}
+              </Text>
+              {item.variant_title ? (
+                <Text
+                  style={{
+                    fontFamily: brand.sans,
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    color: brand.muted,
+                    margin: "2px 0 0",
+                  }}
                 >
-                  Nakupujte nyní
-                </Button>
-              </Section>
-            )}
-
-            {/* Order Items */}
-            <Section className="my-[32px]">
-              <Heading className="text-[#212222] text-[24px] font-semibold mb-[20px]">
-                Vaše položky
-              </Heading>
-              <Text className="text-[#212222] text-[18px] leading-[20px] mb-[16px]">
-                ID objednávky: #{order.display_id}
+                  {item.variant_title}
+                  {item.quantity > 1 ? ` · ${item.quantity} ks` : ""}
+                </Text>
+              ) : null}
+            </Column>
+            <Column
+              align="right"
+              style={{ padding: "14px 0", verticalAlign: "top", width: "110px" }}
+            >
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "16px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {formatPrice(item.total)}
               </Text>
+            </Column>
+          </Row>
+        ))}
+        <LedgerEnd />
+      </Section>
 
-              {order.items?.map((item) => (
-                <Section key={item.id} className="border-b border-solid border-[#87986A] py-[16px]">
-                  <Row>
-                    <Column className="w-1/3">
-                      <Img
-                        src={item.thumbnail ?? ''}
-                        alt={item.product_title ?? ''}
-                        className="rounded-lg w-full"
-                      />
-                    </Column>
-                    <Column className="w-2/3 pl-4">
-                      <Text className="text-[#212222] text-[18px] font-semibold leading-[24px] m-0">
-                        {item.product_title}
-                      </Text>
-                      <Text className="text-[#87986A] text-[18px] leading-[24px] m-0">
-                        {item.variant_title}
-                      </Text>
-                      <Text className="text-[#212222] text-[18px] font-bold leading-[24px] mt-2">
-                        {formatPrice(item.total)}
-                      </Text>
-                    </Column>
-                  </Row>
-                </Section>
-              ))}
-            </Section>
+      {/* Souhrn */}
+      <Section style={{ margin: "32px 0 0" }}>
+        <Eyebrow index="03">Souhrn</Eyebrow>
+        <LedgerRow label="Mezisoučet" value={formatPrice(order.item_total)} />
+        {order.shipping_methods?.map((method) => (
+          <LedgerRow
+            key={method.id}
+            label={method.name}
+            value={formatPrice(method.total)}
+          />
+        ))}
+        <LedgerRow label="Daň" value={formatPrice(order.tax_total || 0)} />
+        <LedgerRow label="Celkem" value={formatPrice(order.total)} strong />
+        <LedgerEnd />
+      </Section>
 
-            {/* Order Summary */}
-            <Section className="my-[32px]">
-              <Heading className="text-[#212222] text-[24px] font-semibold mb-[20px]">
-                Shrnutí objednávky
-              </Heading>
+      {/*
+        Outstanding balance on a commission. Shown only when something is
+        genuinely owed — a piece paid in full at checkout must never be
+        asked for more, and an ordinary order never reaches this at all.
+      */}
+      {owes && (
+        <Section style={{ margin: "32px 0 0" }}>
+          <Note tone="clay">Zbývá doplatit {balanceText}.</Note>
+          <P>
+            Váš kousek se vyrábí na míru. Doplatek můžete zaplatit hned, nebo
+            počkat, až vám napíšeme, že je hotovo — jak je vám milejší.
+          </P>
+          {balance_payment_url && (
+            <ButtonRow>
+              <EmailButton href={balance_payment_url}>
+                Doplatit {balanceText}
+              </EmailButton>
+            </ButtonRow>
+          )}
+        </Section>
+      )}
 
-              <div className="space-y-[8px]">
-                <Row>
-                  <Column className="w-1/2">
-                    <Text className="text-[#87986A] text-[14px] leading-[20px] m-0">Mezisoučet</Text>
-                  </Column>
-                  <Column className="w-1/2 text-right">
-                    <Text className="text-[#212222] text-[16px] leading-[24px] m-0">
-                      {formatPrice(order.item_total)}
-                    </Text>
-                  </Column>
-                </Row>
+      {/* Volitelný promo blok */}
+      {shouldDisplayBanner && (
+        <Section
+          style={{
+            margin: "32px 0 0",
+            borderTop: `1px solid ${brand.line}`,
+            paddingTop: "24px",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: brand.serif,
+              fontSize: "19px",
+              lineHeight: "26px",
+              color: brand.ink,
+              margin: "0 0 8px",
+            }}
+          >
+            {email_banner.title}
+          </Text>
+          <P>{email_banner.body}</P>
+          <EmailButton href={email_banner.url} variant="ghost">
+            Prohlédnout
+          </EmailButton>
+        </Section>
+      )}
 
-                {order.shipping_methods?.map((method) => (
-                  <Row key={method.id}>
-                    <Column className="w-1/2">
-                      <Text className="text-[#87986A] text-[14px] leading-[20px] m-0">{method.name}</Text>
-                    </Column>
-                    <Column className="w-1/2 text-right">
-                      <Text className="text-[#212222] text-[16px] leading-[24px] m-0">{formatPrice(method.total)}</Text>
-                    </Column>
-                  </Row>
-                ))}
+      <P style={{ margin: "32px 0 0" }}>
+        Máte-li jakýkoli dotaz, stačí odpovědět na tento e-mail.
+      </P>
+      <Signature />
 
-                <Row>
-                  <Column className="w-1/2">
-                    <Text className="text-[#87986A] text-[14px] leading-[20px] m-0">Daň</Text>
-                  </Column>
-                  <Column className="w-1/2 text-right">
-                    <Text className="text-[#212222] text-[16px] leading-[24px] m-0">{formatPrice(order.tax_total || 0)}</Text>
-                  </Column>
-                </Row>
-
-                <Row className="border-t border-solid border-[#87986A] mt-[16px] pt-[16px]">
-                  <Column className="w-1/2">
-                    <Text className="text-[#212222] text-[18px] font-bold leading-[24px] m-0">Celkem</Text>
-                  </Column>
-                  <Column className="w-1/2 text-right">
-                    <Text className="text-[#212222] text-[18px] font-bold leading-[24px] m-0">{formatPrice(order.total)}</Text>
-                  </Column>
-                </Row>
-              </div>
-            </Section>
-
-            {/*
-              Outstanding balance on a commission. Shown only when something is
-              genuinely owed — a piece paid in full at checkout must never be
-              asked for more, and an ordinary order never reaches this at all.
-            */}
-            {owes && (
-              <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
-                <Heading className="text-[#212222] text-[20px] font-normal m-0">
-                  Zbývá doplatit {balanceText}
-                </Heading>
-                <Text className="text-[#212222] text-[16px] leading-[24px] mt-2">
-                  Váš kousek se vyrábí na míru. Doplatek můžete zaplatit hned,
-                  nebo počkat, až vám napíšeme, že je hotovo — jak je vám milejší.
-                </Text>
-                {balance_payment_url && (
-                  <Section className="mt-4">
-                    <a
-                      href={balance_payment_url}
-                      className="bg-[#212222] text-white rounded-full px-6 py-3 text-[16px] no-underline inline-block"
-                    >
-                      Doplatit {balanceText}
-                    </a>
-                  </Section>
-                )}
-              </Section>
-            )}
-
-            {/* Footer */}
-            <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
-              <Text className="text-[#212222] text-[16px] leading-[20px] text-center">
-                Jestli máte nějaké dotazy, odpovězte na tento e-mail nebo kontaktujte náš tým podpory na adrese support@medusajs.com.
-              </Text>
-              <Text className="text-[#212222] text-[16px] leading-[20px] text-center mt-2">
-                ID objednávky: {order.id}
-              </Text>
-              <Section className="mt-[32px] pt-[20px]">
-                <Text className="text-[#212222] text-[14px] leading-[24px]">
-                    S pozdravem,<br />
-                    Keramická Zahrada, Lucie Polanská
-                </Text>
-              </Section>
-              <Section className="border-t border-solid border-[#87986A]">
-                <Text className="text-[#212222] text-[14px] leading-[20px] text-center">
-                    Potřebujete pomoc? <a href="mailto:luciepolanska@gmail.com" className="text-[#87986A] no-underline hover:text-[#212222] transition-colors">Kontaktujte nás</a>
-                </Text>
-                <Text className="text-[#87986A] text-[12px] leading-[18px] text-center mt-4">
-                    © {new Date().getFullYear()} Keramická Zahrada, Lucie Polanská. Všechna práva vyhrazena.
-                </Text>
-              </Section>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+      <P small style={{ margin: "28px 0 0", color: brand.faint }}>
+        Číslo objednávky pro případnou komunikaci: {order.id}
+      </P>
+    </EmailLayout>
   )
 }
 
@@ -264,36 +254,36 @@ export const orderPlacedEmail = (props: OrderPlacedEmailProps) => (
 const mockOrder = {
   "order": {
     "id": "order_01JSNXDH9BPJWWKVW03B9E9KW8",
-    "display_id": 1,
-    "email": "shahednasser@gmail.com",
-    "currency_code": "eur",
-    "total": 20,
-    "subtotal": 20,
+    "display_id": 42,
+    "email": "jana.novakova@example.cz",
+    "currency_code": "czk",
+    "total": 1579,
+    "subtotal": 1579,
     "discount_total": 0,
-    "shipping_total": 10,
+    "shipping_total": 129,
     "tax_total": 0,
-    "item_subtotal": 10,
-    "item_total": 10,
+    "item_subtotal": 1450,
+    "item_total": 1450,
     "item_tax_total": 0,
     "customer_id": "cus_01JSNXD6VQC1YH56E4TGC81NWX",
     "items": [
       {
         "id": "ordli_01JSNXDH9C47KZ43WQ3TBFXZA9",
-        "title": "L",
-        "subtitle": "Medusa Sweatshirt",
+        "title": "Ø 32 cm",
+        "subtitle": "Zahradní mísa z pálené hlíny",
         "thumbnail": "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
         "variant_id": "variant_01JSNXAQCZ5X81A3NRSVFJ3ZHQ",
         "product_id": "prod_01JSNXAQBQ6MFV5VHKN420NXQW",
-        "product_title": "Medusa Sweatshirt",
-        "product_description": "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
+        "product_title": "Zahradní mísa z pálené hlíny",
+        "product_description": "Ručně točená mísa z písecké hlíny, pálená v peci ateliéru.",
         "product_subtitle": null,
         "product_type": null,
         "product_type_id": null,
         "product_collection": null,
-        "product_handle": "sweatshirt",
-        "variant_sku": "SWEATSHIRT-L",
+        "product_handle": "zahradni-misa",
+        "variant_sku": "MISA-32",
         "variant_barcode": null,
-        "variant_title": "L",
+        "variant_title": "Ø 32 cm",
         "variant_option_values": null,
         "requires_shipping": true,
         "is_giftcard": false,
@@ -303,7 +293,7 @@ const mockOrder = {
         "metadata": {},
         "raw_compare_at_unit_price": null,
         "raw_unit_price": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "created_at": new Date(),
@@ -312,7 +302,7 @@ const mockOrder = {
         "tax_lines": [],
         "adjustments": [],
         "compare_at_unit_price": null,
-        "unit_price": 10,
+        "unit_price": 1450,
         "quantity": 1,
         "raw_quantity": {
           "value": "1",
@@ -372,16 +362,16 @@ const mockOrder = {
           "return_dismissed_quantity": 0,
           "written_off_quantity": 0
         },
-        "subtotal": 10,
-        "total": 10,
-        "original_total": 10,
+        "subtotal": 1450,
+        "total": 1450,
+        "original_total": 1450,
         "discount_total": 0,
         "discount_subtotal": 0,
         "discount_tax_total": 0,
         "tax_total": 0,
         "original_tax_total": 0,
-        "refundable_total_per_unit": 10,
-        "refundable_total": 10,
+        "refundable_total_per_unit": 1450,
+        "refundable_total": 1450,
         "fulfilled_total": 0,
         "shipped_total": 0,
         "return_requested_total": 0,
@@ -389,15 +379,15 @@ const mockOrder = {
         "return_dismissed_total": 0,
         "write_off_total": 0,
         "raw_subtotal": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "raw_total": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "raw_original_total": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "raw_discount_total": {
@@ -421,11 +411,11 @@ const mockOrder = {
           "precision": 20
         },
         "raw_refundable_total_per_unit": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "raw_refundable_total": {
-          "value": "10",
+          "value": "1450",
           "precision": 20
         },
         "raw_fulfilled_total": {
@@ -458,14 +448,14 @@ const mockOrder = {
       "id": "caaddr_01JSNXD6W0TGPH2JQD18K97B25",
       "customer_id": null,
       "company": "",
-      "first_name": "shahed",
-      "last_name": "nasser",
-      "address_1": "asfasf",
+      "first_name": "Jana",
+      "last_name": "Nováková",
+      "address_1": "Putim 229",
       "address_2": "",
-      "city": "asfasf",
-      "country_code": "dk",
+      "city": "Písek",
+      "country_code": "cz",
       "province": "",
-      "postal_code": "asfasf",
+      "postal_code": "397 01",
       "phone": "",
       "metadata": null,
       "created_at": "2025-04-25T07:25:48.801Z",
@@ -476,14 +466,14 @@ const mockOrder = {
       "id": "caaddr_01JSNXD6W0V7RNZH63CPG26K5W",
       "customer_id": null,
       "company": "",
-      "first_name": "shahed",
-      "last_name": "nasser",
-      "address_1": "asfasf",
+      "first_name": "Jana",
+      "last_name": "Nováková",
+      "address_1": "Putim 229",
       "address_2": "",
-      "city": "asfasf",
-      "country_code": "dk",
+      "city": "Písek",
+      "country_code": "cz",
       "province": "",
-      "postal_code": "asfasf",
+      "postal_code": "397 01",
       "phone": "",
       "metadata": null,
       "created_at": "2025-04-25T07:25:48.801Z",
@@ -493,7 +483,7 @@ const mockOrder = {
     "shipping_methods": [
       {
         "id": "ordsm_01JSNXDH9B9DDRQXJT5J5AE5V1",
-        "name": "Standard Shipping",
+        "name": "Zásilkovna",
         "description": null,
         "is_tax_inclusive": false,
         "is_custom_amount": false,
@@ -501,7 +491,7 @@ const mockOrder = {
         "data": {},
         "metadata": null,
         "raw_amount": {
-          "value": "10",
+          "value": "129",
           "precision": 20
         },
         "created_at": new Date(),
@@ -509,7 +499,7 @@ const mockOrder = {
         "deleted_at": null,
         "tax_lines": [],
         "adjustments": [],
-        "amount": 10,
+        "amount": 129,
         "order_id": "order_01JSNXDH9BPJWWKVW03B9E9KW8",
         "detail": {
           "id": "ordspmv_01JSNXDH9B5RAF4FH3M1HH3TEA",
@@ -523,24 +513,24 @@ const mockOrder = {
           "deleted_at": null,
           "shipping_method_id": "ordsm_01JSNXDH9B9DDRQXJT5J5AE5V1"
         },
-        "subtotal": 10,
-        "total": 10,
-        "original_total": 10,
+        "subtotal": 129,
+        "total": 129,
+        "original_total": 129,
         "discount_total": 0,
         "discount_subtotal": 0,
         "discount_tax_total": 0,
         "tax_total": 0,
         "original_tax_total": 0,
         "raw_subtotal": {
-          "value": "10",
+          "value": "129",
           "precision": 20
         },
         "raw_total": {
-          "value": "10",
+          "value": "129",
           "precision": 20
         },
         "raw_original_total": {
-          "value": "10",
+          "value": "129",
           "precision": 20
         },
         "raw_discount_total": {
@@ -568,9 +558,9 @@ const mockOrder = {
     "customer": {
       "id": "cus_01JSNXD6VQC1YH56E4TGC81NWX",
       "company_name": null,
-      "first_name": null,
-      "last_name": null,
-      "email": "afsaf@gmail.com",
+      "first_name": "Jana",
+      "last_name": "Nováková",
+      "email": "jana.novakova@example.cz",
       "phone": null,
       "has_account": false,
       "metadata": null,
