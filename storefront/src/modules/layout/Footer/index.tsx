@@ -3,6 +3,8 @@
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
 import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { MerchantIdentity } from "@lib/data/merchant"
+import { subscribeToNewsletter } from "@lib/data/newsletter"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
 import Image from "next/image"
@@ -211,7 +213,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
                 <p id="newsletter-title" className="footer__newsletterTitle">Zůstaňte blízko ateliéru.</p>
                 <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
               </div>
-              <Newsletter email={merchant.email} />
+              <Newsletter />
             </section>
 
             <nav className="footer__navigation" aria-label="Navigace v patičce">
@@ -332,22 +334,59 @@ function FooterIcon({
 }
 
 /**
- * Until a newsletter platform is chosen, this is a line and a mailto — not a form.
- * The previous input and "Odebírat" button accepted an address and discarded it silently,
- * which is the one failure a made-to-order atelier cannot afford. An absent form is honest.
+ * A real form again: it posts to the backend's newsletter list
+ * (`POST /store/newsletter` via the `subscribeToNewsletter` server action),
+ * which stores the address and sends the welcome e-mail. The mailto interlude
+ * existed because the old form discarded addresses silently — the one failure
+ * a made-to-order atelier cannot afford. This one reports what happened.
  */
-function Newsletter({ email }: { email: string }) {
+function Newsletter() {
+  const [status, setStatus] = useState<"idle" | "done" | "error">("idle")
+
+  const submit = async (formData: FormData) => {
+    const email = String(formData.get("email") ?? "").trim()
+    if (!email) {
+      return
+    }
+    const result = await subscribeToNewsletter({ email })
+    setStatus(result.ok ? "done" : "error")
+  }
+
+  if (status === "done") {
+    return (
+      <p className="newsletter__success" role="status">
+        Děkujeme — jste blízko ateliéru.
+      </p>
+    )
+  }
+
   return (
-    <p className="newsletter__invitation">
-      Napište nám na{" "}
-      <a
-        href={`mailto:${email}?subject=${encodeURIComponent("Novinky z ateliéru")}`}
-        className="newsletter__mailto"
-      >
-        {email}
-      </a>{" "}
-      a zařadíme vás mezi odběratele novinek.
-    </p>
+    <form className="newsletter__container" action={submit}>
+      <label htmlFor="footer-newsletter-email">Váš e-mail</label>
+      <div className="newsletter__controls">
+        <input
+          id="footer-newsletter-email"
+          name="email"
+          type="email"
+          placeholder="vas@email.cz"
+          className="newsletter__input"
+          autoComplete="email"
+          required
+        />
+        <PremiumActionButton
+          type="submit"
+          text="Odebírat"
+          compact
+          className="newsletter__button"
+        />
+      </div>
+      {status === "error" ? (
+        <p className="newsletter__error" role="alert">
+          Uložení se nepodařilo, zkuste to prosím znovu.
+        </p>
+      ) : null}
+      <p>Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.</p>
+    </form>
   )
 }
 

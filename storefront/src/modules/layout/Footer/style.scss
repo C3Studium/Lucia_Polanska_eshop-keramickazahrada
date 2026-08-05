@@ -180,23 +180,96 @@
   font: 300 clamp(15px, 0.94vw, 17px)/1.45 "Sansation-Light", sans-serif;
 }
 
-.newsletter__invitation {
+.newsletter__container {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.newsletter__container > label {
+  margin-bottom: 9px;
+  color: var(--footer-muted);
+  font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.newsletter__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.newsletter__input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid var(--footer-line);
+  border-radius: 999px;
+  outline: 0;
+  color: var(--footer-ink);
+  background: var(--footer-soft);
+  box-shadow: none;
+  font: 300 16px/1 "Sansation-Light", sans-serif;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.newsletter__input:hover,
+.newsletter__input:focus,
+.newsletter__input:focus-visible {
+  border-color: var(--footer-ink);
+  outline: 0;
+  background: var(--footer-soft);
+  box-shadow: none;
+}
+
+.newsletter__input::placeholder {
+  color: var(--footer-muted);
+  opacity: 0.72;
+}
+
+.newsletter__input:-webkit-autofill,
+.newsletter__input:-webkit-autofill:hover,
+.newsletter__input:-webkit-autofill:focus {
+  border-color: var(--footer-line);
+  -webkit-text-fill-color: var(--footer-ink);
+  caret-color: var(--footer-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--footer-surface) inset;
+  box-shadow: 0 0 0 1000px var(--footer-surface) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.newsletter__button {
+  --premium-button-ink: var(--footer-ink);
+  --premium-button-surface: transparent;
+  --premium-button-fill: var(--footer-ink);
+  --premium-button-active-ink: var(--footer-button-ink);
+}
+
+/* The legal line under the form. */
+.newsletter__container > p {
+  margin: 8px 0 0;
+  color: var(--footer-muted);
+  font: 300 clamp(12px, 0.66vw, 13px)/1.42 "Sansation-Light", sans-serif;
+}
+
+/* The error is set in ink, not a red the footer palette does not have —
+   the quiet voice extends to failure. */
+p.newsletter__error {
+  color: var(--footer-ink);
+}
+
+.newsletter__success {
   min-width: 0;
   margin: 0;
   color: var(--footer-ink);
   font: 300 clamp(15px, 0.94vw, 17px)/1.5 "Sansation-Light", sans-serif;
-}
-
-.newsletter__mailto {
-  color: var(--footer-ink);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.newsletter__mailto:hover {
-  opacity: 0.66;
 }
 
 .footer__identity {
@@ -468,6 +541,18 @@
   .footer__newsletter {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+
+  .newsletter__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter__button {
+    width: 100%;
+  }
+
+  .newsletter__button > button {
+    min-width: 100%;
   }
 
   .footer__navigation {

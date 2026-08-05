@@ -30,7 +30,16 @@ export const sendRestockNotificationsWorkflow = createWorkflow(
 
     const { data: restockedSubscriptionsWithEmails } = useQueryGraphStep({
       entity: "restock_subscription",
-      fields: ["*", "product_variant.*"],
+      // The e-mail links and describes the *product* — title, handle,
+      // thumbnail and description all live there, not on the variant.
+      fields: [
+        "*",
+        "product_variant.*",
+        "product_variant.product.title",
+        "product_variant.product.handle",
+        "product_variant.product.thumbnail",
+        "product_variant.product.description",
+      ],
       filters: {
         variant_id: variant_ids,
         sales_channel_id: sales_channel_ids

@@ -60,6 +60,11 @@ export const verifyBalanceToken = (
  * Points at the backend rather than the storefront on purpose: the backend is
  * what can create the payment session, and routing it through a storefront page
  * would mean the button is broken until that page exists.
+ *
+ * Top-level path, not `/store/...`: the store namespace demands a publishable
+ * API key on every request and a click from a mail client sends no headers,
+ * so the store variant of this route can never open from an e-mail. The
+ * top-level alias (`src/api/made-to-order/.../pay-balance`) has no such guard.
  */
 export const balancePaymentUrl = (orderId: string): string | null => {
   const base = (
@@ -72,7 +77,7 @@ export const balancePaymentUrl = (orderId: string): string | null => {
     return null
   }
 
-  return `${base}/store/made-to-order/${orderId}/pay-balance?token=${signBalanceToken(
+  return `${base}/made-to-order/${orderId}/pay-balance?token=${signBalanceToken(
     orderId
   )}`
 }

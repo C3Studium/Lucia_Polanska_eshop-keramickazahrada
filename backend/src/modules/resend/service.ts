@@ -35,6 +35,13 @@ import { OrderDelayedEmail } from "./emails/order-delayed";
 import { WelcomeEmail } from "./emails/welcome";
 import { AccountDeletedEmail } from "./emails/account-deleted";
 import { ReturnApprovedEmail } from "./emails/return-approved";
+import { NewsletterSignupEmail } from "./emails/newsletter-signup";
+import { NewsletterUnsubscribeEmail } from "./emails/newsletter-unsubscribe";
+import { PromotionalEmail } from "./emails/promotional";
+import { bundlePublishedEmail } from "./emails/bundle-published";
+import { RefundRequestEmail } from "./emails/refund-request";
+import { ReturnRejectedEmail } from "./emails/return-rejected";
+import { PriceDropEmail } from "./emails/price-drop";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -66,23 +73,23 @@ enum Templates {
   WELCOME = "welcome",
   ACCOUNT_DELETED = "account-deleted",
   RETURN_APPROVED = "return-approved",
+  NEWSLETTER_SIGNUP = "newsletter-signup",
+  NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  PROMOTIONAL = "promotional",
+  BUNDLE_PUBLISHED = "bundle-published",
+  REFUND_REQUEST = "refund-request",
+  RETURN_REJECTED = "return-rejected",
+  PRICE_DROP = "price-drop",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
   //
-  // - newsletter-signup / newsletter-unsubscribe / promotional /
-  //   bundle-published — need a newsletter/audience feature; the backend has
-  //   no subscriber list to send to (the storefront footer form has no
-  //   backend endpoint).
-  // - price-drop — needs price-change detection plus an audience (wishlist
-  //   subscriptions), neither exists server-side.
-  // - delivery-failed — needs carrier tracking-status polling (Balíkovna API
-  //   is configured, but nothing watches shipment states).
-  // - return-rejected / refund-request — need a customer-facing returns
-  //   intake; today returns are agreed over e-mail and she creates them in
-  //   the admin (order.return_requested → return-approved covers that).
+  // - delivery-failed — needs carrier tracking-status polling. The Zásilkovna
+  //   and Balíkovna fulfillment providers create shipments but expose no
+  //   status lookup; each carrier's tracking API would be its own client.
   // - password-changed / email-change / sign-in-notification — Medusa's auth
-  //   module emits no events for these moments.
+  //   module emits no events for these moments; wiring them would mean
+  //   intercepting core auth routes.
   // - account-change — customer.updated exists but fires on every edit with
   //   only an id, so it cannot tell a meaningful change from noise.
   // - address-added — deliberately NOT wired: checkout creates addresses, so
@@ -123,6 +130,13 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.WELCOME]: WelcomeEmail,
   [Templates.ACCOUNT_DELETED]: AccountDeletedEmail,
   [Templates.RETURN_APPROVED]: ReturnApprovedEmail,
+  [Templates.NEWSLETTER_SIGNUP]: NewsletterSignupEmail,
+  [Templates.NEWSLETTER_UNSUBSCRIBE]: NewsletterUnsubscribeEmail,
+  [Templates.PROMOTIONAL]: PromotionalEmail,
+  [Templates.BUNDLE_PUBLISHED]: bundlePublishedEmail,
+  [Templates.REFUND_REQUEST]: RefundRequestEmail,
+  [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
+  [Templates.PRICE_DROP]: PriceDropEmail,
 }
 
 export enum EmailTemplates {
@@ -152,6 +166,13 @@ export enum EmailTemplates {
   WELCOME = "welcome",
   ACCOUNT_DELETED = "account-deleted",
   RETURN_APPROVED = "return-approved",
+  NEWSLETTER_SIGNUP = "newsletter-signup",
+  NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  PROMOTIONAL = "promotional",
+  BUNDLE_PUBLISHED = "bundle-published",
+  REFUND_REQUEST = "refund-request",
+  RETURN_REJECTED = "return-rejected",
+  PRICE_DROP = "price-drop",
 }
 
 /**
@@ -301,6 +322,20 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Váš účet byl smazán"
       case Templates.RETURN_APPROVED:
         return "Vrácení schváleno"
+      case Templates.NEWSLETTER_SIGNUP:
+        return "Vítejte v okruhu ateliéru"
+      case Templates.NEWSLETTER_UNSUBSCRIBE:
+        return "Odhlášení potvrzeno"
+      case Templates.PROMOTIONAL:
+        return "Z ateliéru — objekty za příznivější cenu"
+      case Templates.BUNDLE_PUBLISHED:
+        return "Nový balíček z ateliéru je k nahlédnutí"
+      case Templates.REFUND_REQUEST:
+        return "Žádost o vrácení jsme přijali"
+      case Templates.RETURN_REJECTED:
+        return "Žádost o vrácení nemůžeme přijmout"
+      case Templates.PRICE_DROP:
+        return "Objekt změnil cenu"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"
