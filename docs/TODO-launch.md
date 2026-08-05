@@ -18,7 +18,7 @@ the CZ region and a fulfillment set.
       whole chain is proven end to end by the integration suite („personal
       pickup can actually be configured"); the order matters because of step 1:
 
-      1. **Nastavení → Lokace → (dílna) → Poskytovatelé fulfillmentu →
+      1. **Nastavení → Místa a doprava → (dílna) → Poskytovatelé fulfillmentu →
          Přidat → „Osobni Odber".** This is the step that was missing: the
          create-shipping-option dialog lists only providers *added to the
          location* (`?stock_location_id=…`), so before this link the dropdown
