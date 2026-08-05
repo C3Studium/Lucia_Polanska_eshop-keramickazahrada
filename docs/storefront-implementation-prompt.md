@@ -196,7 +196,7 @@ by the **shipping option's provider id**:
 | Thing | Exact id |
 | --- | --- |
 | Fulfillment provider (Osobní odběr) | `pickup_osobni-odber` |
-| Payment provider (pay on arrival) | `pp_pickup_pickup` |
+| Payment provider (pay on arrival) | `pp_osobni-odber_pickup` |
 | Balíkovna / Česká pošta | `ceska-posta-fulfillment_balikovna` |
 | Zásilkovna / Packeta | `packeta_packeta` |
 
@@ -211,7 +211,7 @@ and that delivery costs nothing.
 is Osobní odběr.** For every other shipping option it must not appear, and
 switching away from Osobní odběr must clear it.
 
-Add `pp_pickup_pickup` to `paymentInfoMap` in `src/lib/constants.tsx` — an
+Add `pp_osobni-odber_pickup` to `paymentInfoMap` in `src/lib/constants.tsx` — an
 unmapped provider will not render. Title it „Zaplatíte při vyzvednutí". Never
 „na dobírku".
 
