@@ -27,6 +27,6 @@
   outline-offset: 3px;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .root { gap: 0; padding: 0; }
 }

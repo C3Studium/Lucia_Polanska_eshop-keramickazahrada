@@ -924,7 +924,7 @@
   }
 }
 
-@media (max-width: 1180px) {
+@include below-px(1180px) {
   .cartGrid,
   .checkoutContainer,
   .orderInformation {
@@ -973,7 +973,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .cartContainer,
   .checkoutContainer,
   .orderContainer,

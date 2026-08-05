@@ -191,7 +191,7 @@
     }
 }
 
-@media (max-width: 980px) {
+@include below-px(980px) {
     .vyrobaCta {
         height: clamp(580px, 66svh, 720px);
 
@@ -210,7 +210,7 @@
     }
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
     .vyrobaCta {
         height: min(72svh, 720px);
         min-height: 590px;

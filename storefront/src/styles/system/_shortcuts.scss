@@ -9,6 +9,12 @@
 @mixin hb($map)    { @include sys.h-block($map); }
 @mixin vb($map)    { @include sys.v-block($map); }
 
+// max-width off the same stops, for migrating existing rules — see _mixins.scss
+@mixin below($bp)   { @include sys.below($bp)   { @content; } }
+@mixin below-px($w) { @include sys.below-px($w) { @content; } }
+@mixin from-px($w)  { @include sys.from-px($w)  { @content; } }
+@mixin between-px($a, $b) { @include sys.between-px($a, $b) { @content; } }
+
 // device capability helpers — orthogonal to size, see _mixins.scss
 @mixin touch          { @include sys.touch          { @content; } }
 @mixin fine-pointer   { @include sys.fine-pointer   { @content; } }

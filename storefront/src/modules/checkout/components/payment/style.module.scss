@@ -209,7 +209,7 @@
   opacity: .48;
 }
 
-@media (max-width: 640px) {
+@include below-px(640px) {
   .root { padding: 28px 0 32px 36px; }
   .root::before { top: 40px; }
   .root .methodIntro {

@@ -59,7 +59,7 @@
   background: rgba(32, 33, 29, .2);
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .header {
     grid-template-columns: 1fr;
   }

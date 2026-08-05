@@ -61,7 +61,7 @@
   font: 300 .72rem/1.4 "Sansation-Light", sans-serif;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .actions {
     align-items: stretch;
     flex-direction: column;

@@ -329,7 +329,7 @@
     }
   }
 
-  @media (max-width: 900px) {
+  @include below-px(900px) {
     &__photo--main {
       left: 22%;
       width: 69vw;
@@ -352,7 +352,7 @@
     }
   }
 
-  @media (max-width: 680px) {
+  @include below-px(680px) {
     &__meta {
       top: 72px;
 
@@ -398,7 +398,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .main__vyroba {
     z-index: auto;
   }

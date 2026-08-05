@@ -98,7 +98,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
   .root .headerRow {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;

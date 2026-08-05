@@ -4,4 +4,9 @@
   isolation: isolate;
   width: 100%;
   background: #1d1e1a;
+  /* Full-bleed section: its internal composition overhangs by ~10px on a 320px phone, which was
+     the last thing putting the whole page into horizontal scroll. `clip` rather than `hidden`
+     because it contains the overhang without creating a scroll container, so any position:sticky
+     inside keeps working. */
+  overflow-x: clip;
 }

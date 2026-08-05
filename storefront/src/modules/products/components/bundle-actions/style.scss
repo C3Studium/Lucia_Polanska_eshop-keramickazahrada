@@ -185,7 +185,7 @@
   font-size: 15px !important;
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .bundleInline__previews {
     grid-template-columns: repeat(3, minmax(90px, 1fr));
     overflow-x: auto;

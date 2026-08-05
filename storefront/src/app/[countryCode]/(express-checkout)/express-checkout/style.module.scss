@@ -84,7 +84,7 @@
   box-shadow: none;
 }
 
-@media (max-width: 420px) {
+@include below-px(420px) {
   .shell { padding: 0; }
   .frame { min-height: 100svh; border: 0; border-radius: 0; }
   .brandHeader { min-height: 68px; }

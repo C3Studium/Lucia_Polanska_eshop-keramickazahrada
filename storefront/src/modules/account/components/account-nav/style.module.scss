@@ -157,7 +157,7 @@
   --premium-button-fill: #df8b75;
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .root {
     position: static;
     display: block;

@@ -375,7 +375,7 @@
         }
     }
 
-    @media (max-width: 900px){
+    @include below-px(900px) {
         height: 94svh;
         min-height: 780px;
 
@@ -437,7 +437,7 @@
         }
     }
 
-    @media (max-width: 560px){
+    @include below-px(560px) {
         height: 860px;
         min-height: 860px;
 

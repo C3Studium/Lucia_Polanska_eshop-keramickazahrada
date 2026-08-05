@@ -476,7 +476,7 @@
   border-radius: 50%;
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .groups,
   .methodGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -507,7 +507,7 @@
   }
 }
 
-@media (max-width: 430px) {
+@include below-px(430px) {
   .search {
     grid-template-columns: 1fr auto;
   }

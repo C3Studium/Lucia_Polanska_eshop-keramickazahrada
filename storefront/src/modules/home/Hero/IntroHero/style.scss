@@ -2,8 +2,23 @@
 .Hero__Intro__Journey {
   position: relative;
   width: 100%;
-  height: 148svh;
+  /* Mobile-first: the compact composition is the base, the wide one is applied upward. */
+  height: 142svh;
   background: #212222;
+
+  @include h(sm) {
+    height: 148svh;
+  }
+
+  @include v(lg) {
+    height: 148svh;
+  }
+
+  /* A phone held sideways is ~430px tall; the tall journey would leave the hero scrolling
+     for three screens. Overrides h(sm), which it also matches on width. */
+  @include phl-h {
+    height: 128svh;
+  }
 }
 
 .Hero__Intro {
@@ -12,19 +27,44 @@
   z-index: 1;
   width: 100%;
   height: 100svh;
-  min-height: 43rem;
+  min-height: 42rem;
   overflow: hidden;
   color: #ffe8d6;
   background: #212222;
   isolation: isolate;
 
+  @include h(sm) {
+    min-height: 43rem;
+  }
+
+  @include v(lg) {
+    min-height: 43rem;
+  }
+
+  /* No 42rem minimum on a 430px-tall viewport — it would force the hero to scroll. */
+  @include phl-h {
+    min-height: 0;
+  }
+
   .Hero__Intro__Image__wrapper {
     position: absolute;
-    inset: clamp(5.8rem, 10vh, 7.5rem) 1.4vw clamp(3.9rem, 6.5vh, 5.5rem);
+    inset: 4.7rem 0.7rem 3.8rem;
     z-index: 0;
     overflow: hidden;
     border-radius: 0.45rem;
     background: #161715;
+
+    @include h(sm) {
+      inset: clamp(5.8rem, 10vh, 7.5rem) 1.4vw clamp(3.9rem, 6.5vh, 5.5rem);
+    }
+
+    @include v(lg) {
+      inset: clamp(5.8rem, 10vh, 7.5rem) 1.4vw clamp(3.9rem, 6.5vh, 5.5rem);
+    }
+
+    @include phl-h {
+      inset: 3.4rem 0.7rem 2.6rem;
+    }
 
     &::before,
     &::after {
@@ -36,9 +76,23 @@
     }
 
     &::before {
+      /* Narrow: the copy sits over the bottom of the image, so the scrim runs bottom-up.
+         Wide: the copy sits left, so it runs left-to-right. */
       background:
-        linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
-        linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
+        linear-gradient(0deg, rgba(12, 13, 12, 0.72) 0%, rgba(12, 13, 12, 0.06) 68%),
+        linear-gradient(90deg, rgba(12, 13, 12, 0.32), transparent 72%);
+
+      @include h(sm) {
+        background:
+          linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
+          linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
+      }
+
+      @include v(lg) {
+        background:
+          linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
+          linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
+      }
     }
 
     &::after {
@@ -113,9 +167,10 @@
 
   .Hero__Intro__Topline {
     position: absolute;
-    top: clamp(4.5rem, 7.6vh, 5.6rem);
-    left: 4.7vw;
-    right: 4.7vw;
+    top: 5.2rem;
+    left: 1.3rem;
+    right: 1.3rem;
+
     z-index: 5;
     display: grid;
     grid-template-columns: max-content 1fr max-content;
@@ -126,6 +181,40 @@
     font-size: clamp(0.75rem, 0.64vw, 0.75rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+
+    @include h(sm) {
+      top: clamp(4.5rem, 7.6vh, 5.6rem);
+      left: 4.7vw;
+      right: 4.7vw;
+    }
+
+    @include v(lg) {
+      top: clamp(4.5rem, 7.6vh, 5.6rem);
+      left: 4.7vw;
+      right: 4.7vw;
+    }
+
+    @include phl-h {
+      top: 3.4rem;
+    }
+
+    /* The third topline item has no room beside the other two until the bar is wide. */
+    span:last-child {
+      display: none;
+
+      @include h(sm) {
+        display: revert;
+      }
+
+      @include v(lg) {
+        display: revert;
+      }
+
+      /* 430px of height is too little to spend on a secondary label. */
+      @include phl-h {
+        display: none;
+      }
+    }
 
     .line {
       height: 1px;
@@ -153,11 +242,29 @@
    */
   .Hero__Intro__Header {
     position: absolute;
-    inset: 0 5vw;
+    right: 1.3rem;
+    bottom: 7.4rem;
+    left: 1.3rem;
+    width: auto;
     z-index: 5;
+
     color: #ffe8d6;
     pointer-events: none;
     will-change: transform, opacity;
+
+    @include h(sm) {
+      inset: 0 5vw;
+      width: revert;
+    }
+
+    @include v(lg) {
+      inset: 0 5vw;
+      width: revert;
+    }
+
+    @include phl-h {
+      bottom: 4.2rem;
+    }
 
     > * {
       pointer-events: auto;
@@ -193,11 +300,24 @@
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(3.2rem, 6.6vw, 7.4rem);
+    font-size: clamp(2.6rem, 11vw, 4.4rem);
     font-weight: 400;
     letter-spacing: -0.045em;
     line-height: 0.92;
     text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+
+    @include h(sm) {
+      font-size: clamp(3.2rem, 6.6vw, 7.4rem);
+    }
+
+    @include v(lg) {
+      font-size: clamp(3.2rem, 6.6vw, 7.4rem);
+    }
+
+    /* Sideways on a phone the headline competes with the image for 430px of height. */
+    @include phl-h {
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+    }
   }
 
   .Hero__Intro__Headline .precise-blended-text {
@@ -225,11 +345,19 @@
     margin-left: clamp(4rem, 11vw, 12rem);
     color: #cbc69d;
     font-family: "ooohBaby-Regular", cursive;
-    font-size: clamp(1.9rem, 2.5vw, 2.75rem);
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
     font-weight: 300;
     line-height: 1;
     transform: rotate(-1.2deg);
     transform-origin: left center;
+
+    @include h(sm) {
+      font-size: clamp(1.9rem, 2.5vw, 2.75rem);
+    }
+
+    @include v(lg) {
+      font-size: clamp(1.9rem, 2.5vw, 2.75rem);
+    }
   }
 
   /* The counterweight: dropped low and right, on its own rule. */
@@ -252,8 +380,19 @@
     margin: 0;
     color: #f4ece4;
     font-family: "Sentient-Light", serif;
-    font-size: clamp(1rem, 1vw, 1.16rem);
+    max-width: 28rem;
+    font-size: 1rem;
     line-height: 1.45;
+
+    @include h(sm) {
+      max-width: none;
+      font-size: clamp(1rem, 1vw, 1.16rem);
+    }
+
+    @include v(lg) {
+      max-width: none;
+      font-size: clamp(1rem, 1vw, 1.16rem);
+    }
   }
 
   .Hero__Intro__Header__Cta {
@@ -272,12 +411,12 @@
 
   .Hero__Intro__FooterRail {
     position: absolute;
-    right: 4.7vw;
-    bottom: 1.35rem;
-    left: 4.7vw;
+    right: 1.3rem;
+    bottom: 1.2rem;
+    left: 1.3rem;
     z-index: 5;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 2rem;
     color: rgba(255, 232, 214, 0.62);
@@ -286,6 +425,29 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     will-change: opacity;
+
+    @include h(sm) {
+      right: 4.7vw;
+      bottom: 1.35rem;
+      left: 4.7vw;
+      grid-template-columns: 1fr auto 1fr;
+    }
+
+    @include v(lg) {
+      right: 4.7vw;
+      bottom: 1.35rem;
+      left: 4.7vw;
+      grid-template-columns: 1fr auto 1fr;
+    }
+
+    /* The rail is a three-up on desktop; narrow keeps only the two that carry meaning. */
+    .Hero__Intro__Updates {
+      display: none;
+
+      @include h(sm) { display: revert; }
+      @include v(lg) { display: revert; }
+      @include phl-h { display: none; }
+    }
   }
 
   .Hero__Intro__Updates {
@@ -329,6 +491,14 @@
     justify-self: end;
     gap: 0.85rem;
 
+    span:last-child {
+      display: none;
+
+      @include h(sm) { display: revert; }
+      @include v(lg) { display: revert; }
+      @include phl-h { display: none; }
+    }
+
     span:first-child {
       display: grid;
       width: 1.9rem;
@@ -353,73 +523,6 @@
   58%,
   100% {
     transform: translateX(100%);
-  }
-}
-
-@media (max-width: 900px) {
-  .Hero__Intro__Journey {
-    height: 142svh;
-  }
-
-  .Hero__Intro {
-    min-height: 42rem;
-
-    .Hero__Intro__Image__wrapper {
-      inset: 4.7rem 0.7rem 3.8rem;
-
-      &::before {
-        background:
-          linear-gradient(0deg, rgba(12, 13, 12, 0.72) 0%, rgba(12, 13, 12, 0.06) 68%),
-          linear-gradient(90deg, rgba(12, 13, 12, 0.32), transparent 72%);
-      }
-    }
-
-    .Hero__Intro__Topline {
-      top: 5.2rem;
-      right: 1.3rem;
-      left: 1.3rem;
-
-      span:last-child {
-        display: none;
-      }
-    }
-
-    /* Small-viewport lockup. The dedicated responsive pass is Phase F; this keeps the new
-       single-column composition sane in the meantime rather than leaving stale selectors. */
-    .Hero__Intro__Header {
-      right: 1.3rem;
-      bottom: 7.4rem;
-      left: 1.3rem;
-      width: auto;
-    }
-
-    .Hero__Intro__Headline {
-      font-size: clamp(2.6rem, 11vw, 4.4rem);
-    }
-
-    .Hero__Intro__Signature {
-      font-size: clamp(1.6rem, 6vw, 2.2rem);
-    }
-
-    .Hero__Intro__Lede p {
-      max-width: 28rem;
-      font-size: 1rem;
-    }
-
-    .Hero__Intro__FooterRail {
-      right: 1.3rem;
-      bottom: 1.2rem;
-      left: 1.3rem;
-      grid-template-columns: 1fr auto;
-
-      .Hero__Intro__Updates {
-        display: none;
-      }
-    }
-
-    .Hero__Intro__ObjectCount span:last-child {
-      display: none;
-    }
   }
 }
 

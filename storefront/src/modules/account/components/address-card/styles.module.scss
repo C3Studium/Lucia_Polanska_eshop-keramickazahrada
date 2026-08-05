@@ -261,7 +261,7 @@
   margin-top: 28px;
 }
 
-@media (max-width: 560px) {
+@include below-px(560px) {
   .rowTwo,
   .rowPostal {
     grid-template-columns: 1fr;

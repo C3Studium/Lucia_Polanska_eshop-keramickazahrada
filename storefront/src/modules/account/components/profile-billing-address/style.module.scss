@@ -76,7 +76,7 @@
   }
 }
 
-@media (max-width: 980px) {
+@include below-px(980px) {
   .root .currentInfo {
     grid-template-columns: 1fr;
   }

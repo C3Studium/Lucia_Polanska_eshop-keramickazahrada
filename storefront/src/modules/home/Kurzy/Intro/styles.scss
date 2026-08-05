@@ -756,7 +756,7 @@
   }
 }
 
-@media (max-width: 980px) {
+@include below-px(980px) {
   .kurzyHero__titleRow {
     font-size: clamp(7rem, 16vw, 11rem);
   }
@@ -777,7 +777,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
   .kurzyTimeline {
     height: 600svh;
 

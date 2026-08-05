@@ -4,6 +4,8 @@
 @use "./system/helpers";
 @use "./generated-styles";
 // STYLE-SYSTEM ENTRY END
+// Outside the managed block above, which sync-styles.js regenerates on every build.
+@use "./system/shortcuts" as *;
 @use "tailwindcss/base" as *;
 @use "tailwindcss/components" as *;
 @use "tailwindcss/utilities" as *;
@@ -241,7 +243,7 @@ body::-webkit-scrollbar {
  * This layer kills the 19 infinite keyframe animations and collapses transitions, without
  * removing any content: reduced-motion visitors get the same composed pages, settled.
  */
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   *,
   *::before,
   *::after {

@@ -256,7 +256,7 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 850px) {
+@include below-px(850px) {
   .soldProducts__intro {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -267,7 +267,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .soldProducts {
     --sold-edge: 18px;
     min-height: auto;

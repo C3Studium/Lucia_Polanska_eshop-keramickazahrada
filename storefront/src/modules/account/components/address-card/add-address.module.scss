@@ -68,7 +68,7 @@
   margin-top: 24px;
 }
 
-@media (max-width: 560px) {
+@include below-px(560px) {
   .addButton,
   .actions {
     align-items: stretch;

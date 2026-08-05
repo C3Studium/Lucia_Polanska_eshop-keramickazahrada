@@ -383,13 +383,13 @@
   font: 400 14px/1 "Sansation-Regular", sans-serif;
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .container {
     max-width: 680px;
   }
 }
 
-@media (max-width: 560px) {
+@include below-px(560px) {
   .invitation {
     grid-template-columns: 1fr 76px;
   }

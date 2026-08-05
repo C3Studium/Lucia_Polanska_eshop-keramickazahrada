@@ -127,6 +127,60 @@ $layer-v: (
   }
 }
 
+// The other direction, off the same stops.
+//
+// The site's existing responsive rules were written as `@media (max-width: N)` — "below this
+// width" — because that is how the design was conceived. Re-deriving every one of them as a
+// mobile-first base plus upward overrides means recomputing which value is the default for
+// several hundred declarations, and each one is a chance to change the desktop rendering by
+// accident. `below()` expresses the same intent against the same breakpoint table, so those
+// rules move into the system exactly as written and stay orientation-agnostic, like the raw
+// queries they replace.
+//
+// Prefer h()/v() when writing new responsive design — they are orientation-aware and that is
+// what the device work needs. Use below() to bring an existing max-width rule into the system.
+@mixin below($key) {
+  $w: map.get(bp.$h, $key);
+
+  @if $w == null {
+    $w: map.get(bp.$v, $key);
+  }
+
+  @if $w == null {
+    @warn "Unknown breakpoint for below(): #{$key}";
+  } @else {
+    @media (max-width: #{$w - 0.02px}) {
+      @content;
+    }
+  }
+}
+
+/// below() for an explicit pixel width — the ad-hoc values the codebase already uses
+/// (620, 760, 980 …) that do not sit on a named stop.
+///
+/// Unlike below(), this is inclusive of $w, because it exists to carry an existing
+/// `@media (max-width: N)` across unchanged. below(sm) means "narrower than the sm stop";
+/// below-px(900) means "900px or narrower", exactly as the original rule read.
+@mixin below-px($w) {
+  @media (max-width: #{$w}) {
+    @content;
+  }
+}
+
+/// Orientation-agnostic min-width, for existing rules whose width does not sit on a stop.
+@mixin from-px($w) {
+  @media (min-width: #{$w}) {
+    @content;
+  }
+}
+
+/// A closed width range.
+@mixin between-px($from, $to) {
+  @media (min-width: #{$from}) and (max-width: #{$to}) {
+    @content;
+  }
+}
+
 // Device capability queries. These are not breakpoints: a 1024px-wide viewport can be a touch
 // tablet or a desktop with a mouse, and only these can tell them apart. Unlayered, like the
 // breakpoints — place them after any size rule they need to beat.

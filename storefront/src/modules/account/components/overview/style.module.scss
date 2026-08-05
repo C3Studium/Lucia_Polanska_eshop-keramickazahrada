@@ -165,7 +165,7 @@
   font: 400 clamp(1.8rem, 3vw, 3.2rem)/1 "Sentient-Regular", serif;
 }
 
-@media (max-width: 780px) {
+@include below-px(780px) {
   .accountOverviewHeading,
   .accountOverviewStats {
     grid-template-columns: 1fr;

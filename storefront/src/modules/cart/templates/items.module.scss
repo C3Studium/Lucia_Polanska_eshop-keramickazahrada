@@ -45,7 +45,7 @@
   padding-top: 16px;
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .headerRow { align-items: flex-start; flex-direction: column; padding-bottom: 18px; }
   .title { font-size: clamp(2.6rem, 13vw, 3.6rem); }
 }

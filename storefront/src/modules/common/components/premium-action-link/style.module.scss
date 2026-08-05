@@ -63,7 +63,7 @@
   will-change: transform;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .root {
     width: 100%;
     min-width: 0;

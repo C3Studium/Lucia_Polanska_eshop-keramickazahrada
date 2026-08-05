@@ -102,7 +102,7 @@
   i { width: 42px; height: 1px; background: currentColor; }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .root { min-height: 84svh; margin: 0 8px; border-radius: 0 0 22px 22px; }
   .image img { object-position: 62% center; }
   .veil { background: linear-gradient(0deg, rgba(20,21,17,.82), rgba(20,21,17,.12) 85%); }

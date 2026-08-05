@@ -46,6 +46,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .root { grid-template-columns: 28px 30px 28px; height: 34px; }
 }

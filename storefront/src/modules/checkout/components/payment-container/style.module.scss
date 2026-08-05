@@ -163,7 +163,7 @@
     appearance: none;
   }
 
-  @media (max-width: 640px) {
+  @include below-px(640px) {
     .option {
       min-height: 84px;
       padding: 1rem 0.1rem;

@@ -189,7 +189,7 @@
         }
     }
 
-    @media (max-width: 980px) {
+    @include below-px(980px) {
         height: clamp(540px, 62svh, 680px);
 
         &__composition {
@@ -211,7 +211,7 @@
         }
     }
 
-    @media (max-width: 720px) {
+    @include below-px(720px) {
         height: min(68svh, 680px);
         min-height: 540px;
         padding: 28px 20px;

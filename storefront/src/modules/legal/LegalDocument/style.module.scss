@@ -348,7 +348,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@include below-px(1024px) {
   .hero {
     min-height: 820px;
   }
@@ -373,7 +373,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
   .hero,
   .document {
     width: calc(100% - 36px);

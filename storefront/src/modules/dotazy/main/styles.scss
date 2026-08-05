@@ -272,7 +272,7 @@
     48%, 100% { transform: translateX(105%); }
 }
 
-@media (max-width: 640px) {
+@include below-px(640px) {
     .DotazyMain { min-height: 820px; }
 
     .faqHeroMeta span:last-child { display: none; }

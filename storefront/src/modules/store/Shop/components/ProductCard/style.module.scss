@@ -100,7 +100,7 @@
 .price del { color: #985f56; font-size: 12px; }
 .price strong { font-family: "Sentient-Regular", serif; font-size: 20px; font-weight: 400; }
 
-@media (hover: hover) and (pointer: fine) {
+@include fine-pointer {
   .link:hover .primary,
   .link:hover .secondary,
   .link:hover .discover,
@@ -108,7 +108,7 @@
   .link:focus-visible .secondary,
   .link:focus-visible .discover { will-change: transform, opacity, clip-path; }
 }
-@media (max-width: 700px) {
+@include below-px(700px) {
   .visual { border-radius: 17px; }
   .meta { padding-bottom: 34px; }
   .heading h3 { font-size: 24px; }

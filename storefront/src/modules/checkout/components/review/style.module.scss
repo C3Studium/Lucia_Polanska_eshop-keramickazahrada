@@ -272,7 +272,7 @@
   font: 400 15px/1.5 "Sansation-Regular", sans-serif;
 }
 
-@media (max-width: 640px) {
+@include below-px(640px) {
   .root {
     padding: 28px 0 4px 36px;
   }

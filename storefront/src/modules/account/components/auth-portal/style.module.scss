@@ -252,7 +252,7 @@
   background: currentColor;
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .composition {
     grid-template-rows: 42svh auto;
     padding-inline: 0;
@@ -281,14 +281,14 @@
   }
 }
 
-@media (min-width: 901px) and (max-width: 1180px) {
+@include between-px(901px, 1180px) {
   .portal[data-auth-mode="recovery"] .ledger,
   .portal[data-auth-mode="verification"] .ledger {
     grid-column: 6 / 13;
   }
 }
 
-@media (max-width: 560px) {
+@include below-px(560px) {
   .meta {
     grid-template-columns: 1fr auto;
     padding-inline: 4px;

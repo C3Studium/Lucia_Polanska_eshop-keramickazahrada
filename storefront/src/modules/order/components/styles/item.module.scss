@@ -81,7 +81,7 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 560px) {
+@include below-px(560px) {
   .cellThumb {
     width: 82px;
   }

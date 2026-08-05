@@ -159,6 +159,18 @@
     gap: 3px;
     padding: 5px;
 
+    /* 320px-class phones cannot hold the logo plus four utility controls. The region selector
+       goes first: it is the only one that is not navigation, and the locale is already in the
+       URL. Everything above this width is untouched. */
+    @include below-px(374px) {
+      gap: 0;
+      padding: 3px;
+
+      .regions__select {
+        display: none;
+      }
+    }
+
     > * {
       position: relative;
       display: flex;

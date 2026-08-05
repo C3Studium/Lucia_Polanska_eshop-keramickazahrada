@@ -79,13 +79,13 @@
   span { font-size: 14px; line-height: .7; }
 }
 
-@media (max-width: 1100px) {
+@include below-px(1100px) {
   .topline { grid-template-columns: auto minmax(220px, 1fr) auto; }
   .filterButton { display: flex; }
   .sort span { display: none; }
 }
 
-@media (max-width: 700px) {
+@include below-px(700px) {
   .topline { grid-template-columns: 1fr auto; }
   .title { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; }
   .search { min-width: 0; }

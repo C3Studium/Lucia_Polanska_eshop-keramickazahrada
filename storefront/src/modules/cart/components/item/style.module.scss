@@ -299,7 +299,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 920px) {
+@include below-px(920px) {
   .row:not(.previewRow) {
     grid-template-columns: 185px minmax(210px, 1fr) 205px;
   }
@@ -307,7 +307,7 @@
   .title { font-size: clamp(2rem, 4vw, 2.8rem); }
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .row:not(.previewRow) {
     grid-template-columns: 124px minmax(0, 1fr);
     grid-template-rows: minmax(184px, auto);

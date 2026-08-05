@@ -55,7 +55,7 @@
   display: none;
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .row {
     grid-template-columns: 1fr;
   }

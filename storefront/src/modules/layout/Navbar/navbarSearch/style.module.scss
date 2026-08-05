@@ -407,7 +407,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
   .panel {
     top: 68px;
     max-height: calc(100dvh - 84px);

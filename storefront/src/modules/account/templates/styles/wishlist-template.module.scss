@@ -217,13 +217,13 @@
   --premium-link-fill: #20211d;
 }
 
-@media (max-width: 1050px) {
+@include below-px(1050px) {
   .accountWishlistGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .accountWishlistHeading,
   .accountWishlistIntro,
   .accountPreviewNotice,

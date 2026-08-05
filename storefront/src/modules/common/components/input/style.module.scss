@@ -178,7 +178,7 @@
   padding: .5rem;
 }
 
-@media (max-width: 720px) {
+@include below-px(720px) {
   .topLabel,
   .inputWrapper {
     font-size: .9rem;

@@ -43,7 +43,7 @@
   --premium-link-fill: #20211d;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .empty {
     grid-template-columns: 1fr;
   }

@@ -683,7 +683,7 @@
   border-left: 1px solid rgba(32, 33, 28, .15);
 }
 
-@media (max-width: 390px) {
+@include below-px(390px) {
   .intro p {
     font-size: 16px;
   }

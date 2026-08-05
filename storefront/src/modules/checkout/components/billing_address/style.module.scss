@@ -35,7 +35,7 @@
 		}
 	}
 
-	@media (max-width: 620px) {
+	@include below-px(620px) {
 		.formGrid { grid-template-columns: 1fr; }
 	}
 }

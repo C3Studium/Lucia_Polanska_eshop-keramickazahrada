@@ -329,7 +329,7 @@
   font-size: 13px;
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .collectionCards {
     height: 80vh;
     min-height: 480px;

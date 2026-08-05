@@ -661,7 +661,7 @@
   transform: translate(2px, -2px);
 }
 
-@media (max-width: 1050px) {
+@include below-px(1050px) {
   .panel {
     width: calc(100vw - 28px);
     height: calc(100svh - 28px);
@@ -688,7 +688,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .overlay {
     padding: 8px;
   }
@@ -748,7 +748,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .formPanel,
   .formPanel::before {
     animation: none;

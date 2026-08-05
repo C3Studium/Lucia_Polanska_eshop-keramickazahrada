@@ -323,7 +323,7 @@
         }
     }
 
-    @media (max-width: 980px){
+    @include below-px(980px) {
         --about-overlap: 10vh;
 
         .text__container .first__text{
@@ -340,7 +340,7 @@
         }
     }
 
-    @media (max-width: 720px){
+    @include below-px(720px) {
         --about-overlap: 5vh;
         min-height: auto;
         padding: 58px 20px 92px;

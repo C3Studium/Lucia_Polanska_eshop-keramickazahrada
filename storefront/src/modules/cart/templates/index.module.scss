@@ -205,7 +205,7 @@
   to { transform: rotate(7deg) translateY(5px); }
 }
 
-@media (max-width: 1100px) {
+@include below-px(1100px) {
   .intro { grid-template-columns: 1fr 1fr; }
   .objectMark { display: none; }
   .introCopy { grid-column: 2; }
@@ -214,7 +214,7 @@
   .sticky { position: relative; top: 0; }
 }
 
-@media (max-width: 700px) {
+@include below-px(700px) {
   .root { padding: 78px 0 90px; }
   .container { width: calc(100% - 32px); }
   .intro {

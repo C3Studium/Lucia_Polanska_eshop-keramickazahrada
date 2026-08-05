@@ -140,7 +140,7 @@
   color: #e6a493;
 }
 
-@media (max-width: 520px) {
+@include below-px(520px) {
   .control {
     grid-template-columns: 1fr;
   }

@@ -110,7 +110,7 @@
   outline-offset: 3px;
 }
 
-@media (max-width: 1180px) {
+@include below-px(1180px) {
   .verifiedGrid {
     grid-template-columns: 280px minmax(0, 1fr);
   }
@@ -124,7 +124,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .section {
     padding: 82px 10px 28px;
   }

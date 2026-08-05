@@ -225,7 +225,7 @@
   --premium-link-fill: #20211d;
 }
 
-@media (max-width: 960px) {
+@include below-px(960px) {
   .accountReviewsList {
     grid-template-columns: 1fr;
   }
@@ -245,7 +245,7 @@
   }
 }
 
-@media (max-width: 680px) {
+@include below-px(680px) {
   .accountReviewsHeading,
   .accountPreviewNotice {
     grid-template-columns: 1fr;

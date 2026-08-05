@@ -97,7 +97,7 @@
   padding: 8px 0 28px;
 }
 
-@media (max-width: 390px) {
+@include below-px(390px) {
   .card,
   .active {
     padding-inline: 14px;

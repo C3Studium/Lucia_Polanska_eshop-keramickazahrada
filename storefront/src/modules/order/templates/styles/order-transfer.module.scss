@@ -376,7 +376,7 @@
   86% { opacity: .9; transform: scale(1.035); }
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .hero { grid-template-columns: 1fr; }
   .mark { width: 11rem; justify-self: start; }
   .facts { grid-template-columns: 1fr 1fr; }
@@ -391,7 +391,7 @@
   .errorDetail { grid-column: 1; }
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .root { padding: 5.4rem 1rem 2.5rem; }
   .container { width: 100%; }
   .masthead { grid-template-columns: 1fr; }

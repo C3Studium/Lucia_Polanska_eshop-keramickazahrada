@@ -60,7 +60,7 @@
   outline-offset: 3px;
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .root {
     right: clamp(16px, 2vw, 28px);
     flex-direction: column;

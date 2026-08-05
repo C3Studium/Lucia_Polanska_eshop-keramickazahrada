@@ -60,7 +60,7 @@
   }
 }
 
-@media (max-width: 520px) {
+@include below-px(520px) {
   .root { align-items: flex-start; gap: 18px; flex-direction: column; }
 }
 

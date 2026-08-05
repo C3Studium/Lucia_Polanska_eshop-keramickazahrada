@@ -373,7 +373,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .courses__section {
     height: 300vh;
 

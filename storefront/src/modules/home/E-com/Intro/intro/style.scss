@@ -15,14 +15,17 @@
 
   .home__introChapter__Gallery {
     z-index: 2;
-    margin-top: 0;
+    margin-top: -2vh;
     transform-origin: center top;
+
+    @include h(sm) { margin-top: 0; }
+    @include v(lg) { margin-top: 0; }
 
     &::before {
       content: "";
       position: absolute;
       top: 1rem;
-      left: 5vw;
+      left: 1.25rem;
       z-index: 3;
       width: clamp(3rem, 6vw, 7rem);
       height: 1px;
@@ -35,13 +38,29 @@
 .ECom__Intro {
   position: relative;
   width: 100%;
-  min-height: 100svh;
-  padding: clamp(9rem, 17vh, 14rem) 5vw clamp(6rem, 12vh, 10rem);
+  min-height: 85svh;
+  padding: clamp(9rem, 17vh, 14rem) 1.25rem clamp(6rem, 12vh, 10rem);
   color: var(--blackText);
+
+  @include h(sm) {
+    min-height: 100svh;
+    padding-right: 5vw;
+    padding-left: 5vw;
+  }
+
+  @include v(lg) {
+    min-height: 100svh;
+    padding-right: 5vw;
+    padding-left: 5vw;
+  }
+
+  /* Sideways on a phone there is no room for a full-height chapter. */
+  @include phl-h { min-height: 0; }
 
   .ECom__Intro__Rail {
     display: grid;
-    grid-template-columns: max-content 1fr max-content;
+    /* Two-up narrow: the trailing label has nowhere to sit beside the rule. */
+    grid-template-columns: max-content 1fr;
     align-items: center;
     gap: 1rem;
     margin-bottom: clamp(5rem, 10vh, 8rem);
@@ -50,6 +69,16 @@
     font-size: clamp(0.75rem, 0.68vw, 0.76rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+
+    @include h(sm) { grid-template-columns: max-content 1fr max-content; }
+    @include v(lg) { grid-template-columns: max-content 1fr max-content; }
+
+    span:last-child {
+      display: none;
+
+      @include h(sm) { display: revert; }
+      @include v(lg) { display: revert; }
+    }
 
     .rail__line {
       height: 1px;
@@ -66,14 +95,20 @@
       margin: 0;
       color: var(--blackText);
       font-family: "Sentient-Regular";
-      font-size: clamp(4.8rem, 9vw, 10rem);
+      font-size: clamp(3.4rem, 15vw, 6rem);
       font-weight: 400;
       line-height: 0.82;
       letter-spacing: -0.055em;
 
+      @include h(sm) { font-size: clamp(4.8rem, 9vw, 10rem); }
+      @include v(lg) { font-size: clamp(4.8rem, 9vw, 10rem); }
+
       &:last-child {
         align-self: flex-end;
-        padding-right: 7vw;
+        padding-right: 0;
+
+        @include h(sm) { padding-right: 7vw; }
+        @include v(lg) { padding-right: 7vw; }
       }
 
       .precise__char {
@@ -88,7 +123,19 @@
       display: flex;
       align-items: center;
       gap: clamp(1rem, 2.5vw, 3rem);
-      margin: 0.8rem 0 1rem 10vw;
+      margin: 0.8rem 0 1rem 0;
+
+      @include h(sm) { margin-left: 10vw; }
+      @include v(lg) { margin-left: 10vw; }
+
+      /* The inline image beside the title has no room until the wide composition. */
+      .Hero__Intro__Img_Wrapper,
+      .Hero__Intro__Img__Container {
+        display: none;
+
+        @include h(sm) { display: revert; }
+        @include v(lg) { display: revert; }
+      }
 
       h2 {
         color: #747e62;
@@ -121,10 +168,22 @@
 
   .ECom__Intro__Content {
     display: grid;
-    grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
+    grid-template-columns: 1fr;
     justify-content: space-between;
-    gap: 4rem;
-    margin-top: clamp(5rem, 11vh, 9rem);
+    gap: 2.5rem;
+    margin-top: 4rem;
+
+    @include h(sm) {
+      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
+      gap: 4rem;
+      margin-top: clamp(5rem, 11vh, 9rem);
+    }
+
+    @include v(lg) {
+      grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
+      gap: 4rem;
+      margin-top: clamp(5rem, 11vh, 9rem);
+    }
 
     p {
       display: flex;
@@ -154,56 +213,3 @@
   }
 }
 
-@media (max-width: 900px) {
-  .home__introChapter .home__introChapter__Gallery {
-    margin-top: -2vh;
-
-    &::before {
-      left: 1.25rem;
-    }
-  }
-
-  .ECom__Intro {
-    min-height: 85svh;
-    padding-right: 1.25rem;
-    padding-left: 1.25rem;
-
-    .ECom__Intro__Rail {
-      grid-template-columns: max-content 1fr;
-
-      span:last-child {
-        display: none;
-      }
-    }
-
-    .ECom__Intro__Title {
-      h2,
-      .Hero__Intro__Container h2 {
-        font-size: clamp(3.4rem, 15vw, 6rem);
-      }
-
-      h2:last-child {
-        padding-right: 0;
-      }
-
-      .Hero__Intro__Container {
-        margin-left: 0;
-
-        .Hero__Intro__Img_Wrapper,
-        .Hero__Intro__Img__Container {
-          display: none;
-        }
-      }
-    }
-
-    .ECom__Intro__Content {
-      grid-template-columns: 1fr;
-      gap: 2.5rem;
-      margin-top: 4rem;
-
-      p {
-        max-width: 34rem;
-      }
-    }
-  }
-}

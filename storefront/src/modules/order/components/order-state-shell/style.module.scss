@@ -178,7 +178,7 @@
   88% { transform: scale(1.035); opacity: .9; }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .root {
     padding-inline: 1rem;
   }

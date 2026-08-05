@@ -6,21 +6,35 @@
 
 .Intro__Carousel {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
+  display: flex;
+  flex-direction: column;
   gap: clamp(2rem, 3.5vw, 5rem);
   width: 100%;
-  min-height: 116svh;
-  padding: clamp(8rem, 14vh, 11rem) 5vw clamp(7rem, 13vh, 11rem);
+  min-height: auto;
+  padding: 8rem 1.25rem 6rem;
   background: transparent;
+
+  @include h(sm) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
+    min-height: 116svh;
+    padding: clamp(8rem, 14vh, 11rem) 5vw clamp(7rem, 13vh, 11rem);
+  }
+
+  @include v(lg) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
+    min-height: 116svh;
+    padding: clamp(8rem, 14vh, 11rem) 5vw clamp(7rem, 13vh, 11rem);
+  }
 
   .Intro__Carousel__Rail {
     position: absolute;
     top: 3rem;
-    left: 5vw;
-    right: 5vw;
+    left: 1.25rem;
+    right: 1.25rem;
     display: grid;
-    grid-template-columns: max-content 1fr max-content;
+    grid-template-columns: max-content 1fr;
     align-items: center;
     gap: 1rem;
     color: rgba(33, 34, 34, 0.54);
@@ -28,6 +42,25 @@
     font-size: clamp(0.75rem, 0.68vw, 0.76rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+
+    @include h(sm) {
+      grid-template-columns: max-content 1fr max-content;
+      left: 5vw;
+      right: 5vw;
+    }
+
+    @include v(lg) {
+      grid-template-columns: max-content 1fr max-content;
+      left: 5vw;
+      right: 5vw;
+    }
+
+    span:last-child {
+      display: none;
+
+      @include h(sm) { display: revert; }
+      @include v(lg) { display: revert; }
+    }
 
     .rail__line {
       height: 1px;
@@ -45,7 +78,18 @@
 
   .Left__section {
     justify-content: flex-start;
-    padding-top: 2vh;
+    padding-top: 0;
+
+    @include h(sm) { padding-top: 2vh; }
+    @include v(lg) { padding-top: 2vh; }
+
+    /* The mouse hint is meaningless without a mouse. */
+    .Content .right__content .mouse__anim {
+      display: none;
+
+      @include h(sm) { display: revert; }
+      @include v(lg) { display: revert; }
+    }
 
     .Content {
       display: flex;
@@ -120,12 +164,21 @@
     .Images .ImageCarousel {
       position: relative;
       width: 100%;
-      height: min(70vh, 52rem);
-      min-height: 34rem;
+      height: 62svh;
+      min-height: 26rem;
       overflow: hidden;
       border-radius: 0.35rem;
       perspective: 1200px;
-    }
+
+      @include h(sm) {
+        height: min(70vh, 52rem);
+        min-height: 34rem;
+      }
+
+      @include v(lg) {
+        height: min(70vh, 52rem);
+        min-height: 34rem;
+      }}
   }
 
   .Right__section {
@@ -135,16 +188,26 @@
     .Images .ImageCarousel {
       position: relative;
       width: 100%;
-      height: min(57vh, 43rem);
-      min-height: 30rem;
+      height: 72svh;
+      min-height: 32rem;
       overflow: hidden;
       border-radius: 0.35rem;
       perspective: 1200px;
-    }
+
+      @include h(sm) {
+        height: min(57vh, 43rem);
+        min-height: 30rem;
+      }
+
+      @include v(lg) {
+        height: min(57vh, 43rem);
+        min-height: 30rem;
+      }}
 
     .Custom__orders {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      flex-direction: column;
       justify-content: space-between;
       gap: 1rem;
       min-height: 8rem;
@@ -153,6 +216,16 @@
       padding-top: 1.5rem;
       border-top: 1px solid rgba(33, 34, 34, 0.2);
 
+      @include h(sm) {
+        align-items: center;
+        flex-direction: row;
+      }
+
+      @include v(lg) {
+        align-items: center;
+        flex-direction: row;
+      }
+
       > p {
         max-width: 15rem;
         margin: 0;
@@ -160,8 +233,7 @@
         font-family: "Sansation-Light";
         font-size: 0.9rem;
         line-height: 1.35;
-      }
-    }
+      }}
   }
 
   .ImageCarousel__slide,
@@ -181,49 +253,3 @@
   }
 }
 
-@media (max-width: 900px) {
-  .Intro__Carousel {
-    display: flex;
-    min-height: auto;
-    flex-direction: column;
-    padding: 8rem 1.25rem 6rem;
-
-    .Intro__Carousel__Rail {
-      top: 3rem;
-      left: 1.25rem;
-      right: 1.25rem;
-      grid-template-columns: max-content 1fr;
-
-      span:last-child {
-        display: none;
-      }
-    }
-
-    .Left__section {
-      padding-top: 0;
-
-      .Content {
-        .right__content .mouse__anim {
-          display: none;
-        }
-      }
-
-      .Images .ImageCarousel {
-        height: 62svh;
-        min-height: 26rem;
-      }
-    }
-
-    .Right__section {
-      .Images .ImageCarousel {
-        height: 72svh;
-        min-height: 32rem;
-      }
-
-      .Custom__orders {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-    }
-  }
-}

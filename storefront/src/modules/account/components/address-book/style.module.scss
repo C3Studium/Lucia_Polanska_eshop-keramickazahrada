@@ -12,7 +12,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@include below-px(760px) {
   .root .grid {
     grid-template-columns: 1fr;
   }

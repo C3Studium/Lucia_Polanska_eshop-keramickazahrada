@@ -81,7 +81,7 @@
 .compact .label { font-size: 13px; }
 .compact .arrow { width: 24px; height: 24px; font-size: 13px; }
 
-@media (max-width: 520px) {
+@include below-px(520px) {
   .button { min-width: min(100%, 220px); }
 }
 

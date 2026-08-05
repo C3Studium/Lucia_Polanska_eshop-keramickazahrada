@@ -186,7 +186,7 @@
         }
       }
 
-      @media (max-width: 639px) {
+      @include below-px(639px) {
         position: fixed;
         top: 72px;
         right: 12px !important;

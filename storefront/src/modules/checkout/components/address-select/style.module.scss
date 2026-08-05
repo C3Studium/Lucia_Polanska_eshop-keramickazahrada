@@ -167,7 +167,7 @@
   color: #6d755d;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .accountAddressSelectButton {
     min-height: 96px;
     padding: 16px;

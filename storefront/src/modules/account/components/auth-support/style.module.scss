@@ -305,7 +305,7 @@
     "Sentient-Regular", serif;
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .panel {
     gap: 25px;
   }

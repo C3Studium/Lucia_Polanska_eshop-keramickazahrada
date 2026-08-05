@@ -90,7 +90,25 @@
   margin: 0;
   font: 400 clamp(48px, 4.25vw, 78px)/0.92 "Sentient-Regular", serif;
   letter-spacing: -0.058em;
-  white-space: nowrap;
+  /* The wordmark is set on one line by design, but at 48px it is ~180px wider than a 320px
+     phone, which pushed the whole page into horizontal scroll. Below the smallest portrait stop
+     it wraps and steps down instead — the lockup survives, the page stops scrolling sideways. */
+  white-space: normal;
+
+  @include v(s) {
+    white-space: nowrap;
+  }
+
+  @include h(xs) {
+    white-space: nowrap;
+  }
+}
+
+/* 320px-class phones: the display size has to come down or nothing fits. */
+@include below-px(374px) {
+  .footer__brand > .footer__wordmark {
+    font-size: 38px;
+  }
 }
 
 .footer__brand > .footer__wordmark em {
@@ -304,6 +322,16 @@ p.newsletter__error {
   margin: clamp(22px, 2vw, 32px) 0 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(14px, 1.2vw, 20px) clamp(18px, 1.6vw, 30px);
+
+  /* The e-mail address is one unbreakable 187px token; in a 160px column on a 320px phone it
+     pushed the page into horizontal scroll. One column, and let it break where it must. */
+  @include below-px(374px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  a {
+    overflow-wrap: anywhere;
+  }
 }
 
 /* Sídlo is the longest value; it takes the full width rather than wrapping awkwardly. */
@@ -492,7 +520,7 @@ p.newsletter__error {
   transform: scaleX(1);
 }
 
-@media (max-width: 1180px) {
+@include below-px(1180px) {
   .footer__main {
     grid-template-columns: minmax(310px, 0.62fr) minmax(570px, 1.38fr);
   }
@@ -507,7 +535,7 @@ p.newsletter__error {
   }
 }
 
-@media (max-width: 900px) {
+@include below-px(900px) {
   .footer__main {
     grid-template-columns: 1fr;
   }
@@ -548,7 +576,7 @@ p.newsletter__error {
   }
 }
 
-@media (max-width: 620px) {
+@include below-px(620px) {
   .footer__frame {
     width: 90vw;
   }

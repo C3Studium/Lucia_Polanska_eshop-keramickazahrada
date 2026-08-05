@@ -161,7 +161,7 @@
   --premium-link-fill: #bbb788;
 }
 
-@media (max-width: 520px) {
+@include below-px(520px) {
   .popupRoot {
     right: 14px;
     bottom: 14px;
