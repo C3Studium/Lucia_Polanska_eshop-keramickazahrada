@@ -13,6 +13,9 @@ import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import PaymentButton from "../payment-button"
+import ProductionPaymentModeChoice from "../production-payment-mode"
+import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import OrderRecap from "./recap"
 import { contentVariants, errorVariants, headingTransition, rowVariants } from "./motion"
 import styles from "./style.module.scss"
@@ -20,7 +23,15 @@ import styles from "./style.module.scss"
 /** Bumped whenever the terms change, so a recorded consent can be traced to a wording. */
 const TERMS_VERSION = "2026-08"
 
-const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
+const Review = ({
+  cart,
+  countryCode,
+  productionMode,
+}: {
+  cart: any
+  countryCode: string
+  productionMode?: ProductionPaymentMode | null
+}) => {
   const searchParams = useSearchParams()
   const [accepted, setAccepted] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
@@ -120,6 +131,17 @@ const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
               <OrderRecap cart={cart} />
             </motion.div>
+
+            {/* Commissioned pieces: pay a deposit now or the whole amount. Rendered only when
+                the cart actually contains one — the API says so, we do not infer it. */}
+            {productionMode?.has_made_to_order && (
+              <motion.div variants={rowVariants} initial="hidden" animate="visible">
+                <ProductionPaymentModeChoice
+                  initial={productionMode}
+                  onSelect={(mode) => selectProductionPaymentMode(cart.id, mode)}
+                />
+              </motion.div>
+            )}
 
             <motion.div
               className={styles.consent}

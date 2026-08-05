@@ -1,23 +1,55 @@
 import { retrieveOrder } from "@lib/data/orders"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
+import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
+import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 type Props = {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ platba?: string }>
 }
+
 export const metadata: Metadata = {
   title: "Objednávka potvrzena",
   description: "Vaše objednávka byla úspěšně dokončena",
 }
 
 export default async function OrderConfirmedPage(props: Props) {
-  const params = await props.params
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams])
   const order = await retrieveOrder(params.id).catch(() => null)
+  const outcome = searchParams.platba
 
+  /*
+   * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
+   * often opened by a guest or in a browser with no session — and then the order cannot be
+   * loaded. Showing a 404 to someone who has just paid reads as "it did not work", and the
+   * usual response to that is paying twice. The acknowledgement comes first; the order detail
+   * is a bonus when we can load it.
+   */
   if (!order) {
+    if (outcome) {
+      return (
+        <OrderStateShell
+          eyebrow="Platba · doplatek"
+          title="Máme to."
+          accent="Objednávka je v pořádku."
+          description="Podrobnosti objednávky se nám tu nepodařilo načíst — otevřete je prosím z e-mailu s potvrzením, nebo ve svém účtu."
+          status={outcome === "paid" ? "success" : "pending"}
+          primary={{ href: "/account/orders", label: "Moje objednávky" }}
+        >
+          <BalancePaymentNotice outcome={outcome} inline />
+        </OrderStateShell>
+      )
+    }
+
     return notFound()
   }
 
-  return <OrderCompletedTemplate order={order} />
+  return (
+    <>
+      <BalancePaymentNotice outcome={outcome} />
+      <OrderCompletedTemplate order={order} />
+    </>
+  )
 }

@@ -9,6 +9,7 @@ import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
+import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import styles from "./style.module.scss"
 
 export default async function CheckoutForm({
@@ -26,6 +27,7 @@ export default async function CheckoutForm({
 
   const regionID = cart.region?.id ?? ""
 
+  const productionMode = await getProductionPaymentMode(cart.id)
   const shippingMethods = await listCartShippingMethods(cart.id)
   const paymentMethods = await listCartPaymentMethods(regionID)
 
@@ -57,7 +59,11 @@ export default async function CheckoutForm({
         availablePaymentMethods={paymentMethods}
         comgateMethods={comgateMethods}
       />
-      <Review cart={cart} countryCode={countryCode} />
+      <Review
+        cart={cart}
+        countryCode={countryCode}
+        productionMode={productionMode}
+      />
     </div>
   )
 }

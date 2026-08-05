@@ -13,6 +13,7 @@ import SoldProducts from "@modules/products/ProductPage/Sold"
 import { listCategories } from "@lib/data/categories"
 import ProductReviews from "@modules/products/components/product-reviews"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
+import { getProductionProfile } from "@lib/data/made-to-order"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -211,6 +212,9 @@ export default async function ProductPage(props: Props) {
   // Fetch customer wishlist items
   const wishlistItems = await getCustomerWishlistItems()
 
+  // null for an ordinary product; the panel renders nothing in that case.
+  const productionProfile = await getProductionProfile(pricedProduct.id)
+
   return (
     <main>
       <Product
@@ -222,6 +226,7 @@ export default async function ProductPage(props: Props) {
         categories={productCategories}
         wishlistItems={wishlistItems}
         isAuthenticated={isAuthenticated}
+        productionProfile={productionProfile}
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}
       />

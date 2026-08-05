@@ -1,0 +1,55 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/* Checkout cream surface. Ink #20211c measures 15.2:1; the label tone #4f5147 measures 7.3:1. */
+
+.root {
+  display: flex;
+  margin: 0 0 1.6rem;
+  padding: 0;
+  border: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend {
+  margin-bottom: 12px;
+  padding: 0;
+  color: #4f5147;
+  font: 500 13px/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.option,
+.optionActive {
+  display: flex;
+  min-height: 44px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid rgba(32, 33, 28, 0.2);
+  border-radius: 12px;
+  color: #20211c;
+  cursor: pointer;
+  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+  gap: 12px;
+  transition:
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.optionActive {
+  border-color: #20211c;
+  background: rgba(32, 33, 28, 0.05);
+}
+
+.option input,
+.optionActive input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin: 2px 0 0;
+  accent-color: #555d48;
+}
+
+.root:disabled {
+  opacity: 0.6;
+}

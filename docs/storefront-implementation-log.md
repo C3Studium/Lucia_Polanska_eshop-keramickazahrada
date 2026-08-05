@@ -1447,3 +1447,83 @@ eyebrow's rule is counted), the lede and button anchored low-right. Headline top
 **Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
 
 ---
+
+# Backend integration — §4 made-to-order (2026-08-05)
+
+## Reconnaissance first: what the running backend actually serves
+
+Every route in the brief was probed against `MEDUSA_BACKEND_URL` before any code was written.
+Three findings do not match the brief and are recorded as gaps below.
+
+| Route | Brief | Reality |
+|---|---|---|
+| `GET /store/products/:id/production-profile` | live | ✅ live — returns `{production_profile: null}` for **all 60 products**, including all 9 in "Zakázková Výroba". Nothing is configured as made-to-order yet. |
+| `GET/POST /store/carts/:id/production-payment-mode` | live | ✅ live — verified on a real cart, returns exactly the documented shape plus `cart_id` and `currency_code`. |
+| `POST /store/return-requests` | live | ✅ live — proper Czech validation error. |
+| `GET /store/orders/:id/progress` | live, closes both gaps (§10) | ❌ **not registered** |
+| `POST /store/restock-subscriptions` | live | ❌ **500s on every payload**, including a real variant id |
+| Osobní odběr | `pickup_osobni-odber` / `pp_pickup_pickup` | ❌ neither exists in the CZ region |
+
+## G-1 — `/store/orders/:id/progress` does not exist ⛔ blocks §4.5 and §8
+
+```
+GET /store/orders/order_01ABC/progress  → 404, raw Express "Cannot GET" HTML
+GET /store/orders/order_01ABC           → 404, Medusa JSON {"type":"not_found",…}
+```
+
+The control returning Medusa JSON while `/progress` returns Express's default HTML is conclusive:
+the route is not registered on the deployed backend. §10 states this route closes the two known
+gaps; it is itself the gap.
+
+**Consequence:** §4.5 (*„Doplatit {částka}"* in the account) and §8 (order status) cannot be
+built. Both need `balance.outstanding`, `balance.payment_url` and `stage_label`, and the brief is
+explicit that the payment URL is signed and must never be constructed client-side. Per §3.1 and
+§10 I have written nothing that guesses this state.
+
+## G-2 — `POST /store/restock-subscriptions` returns 500 ⛔ blocks §7.1 verification
+
+Registered (Medusa JSON, not Express HTML) but fails with `unknown_error` on every payload tried,
+including `{variant_id: <real id>, email}`, `{variant_id, customer_email}` and `{email}` alone.
+§7.1 asks me to *verify* restock end to end; it cannot succeed while the route 500s.
+
+## G-3 — Osobní odběr is not configured ⚠ §5 cannot be exercised
+
+Payment providers in the CZ region are `pp_comgate_comgate` and `pp_system_default` only — no
+`pp_pickup_pickup`. Shipping options are three `ceska-posta-fulfillment_*` entries, all
+`type: shipping` — no `pickup_osobni-odber`, and no `packeta_packeta` either. The §5 code can be
+written so it activates when the provider is enabled, but nothing can be verified today.
+
+## Built (§4.1, 4.2, 4.3, 4.6)
+
+**Files:** `lib/util/made-to-order.ts` (types + pure helpers), `lib/data/made-to-order.ts`
+(fetchers), `lib/data/made-to-order-actions.ts` (server action),
+`modules/products/components/made-to-order/`, `modules/checkout/components/production-payment-mode/`,
+`modules/order/components/balance-payment-notice/`, plus the product page, `Product`, `details.tsx`,
+`checkout-form`, `review` and the order-confirmed route.
+
+- **§4.1** — panel above add-to-cart: „Vyrábí se na zakázku", the lead time from
+  `production_time_min/max_days`, and the deposit line. A variant's
+  `deposit_percentage_override` beats the product default (`depositPercentageFor`).
+- **§4.2** — required textarea labelled with `specification_prompt`; add-to-cart is blocked while
+  it is empty and the item carries `metadata.made_to_order.specification`. The client check is a
+  courtesy — the comment says so — the backend remains the guard.
+- **§4.3** — deposit/full radios in the Review step, deposit default, second option only when
+  `can_pay_full`. **Every figure is the API's**; the checkout does no arithmetic. The choice
+  POSTs back and the component re-reads whatever the backend returns.
+- **§4.6** — `?platba=paid|chyba|neplatny-odkaz` renders the three Czech messages.
+
+**One design decision worth flagging.** That redirect target is an *e-mailed* link, so it is often
+opened by a guest or in a browser with no session, and `retrieveOrder` then fails. The original
+page would have shown a 404 to someone who had just paid — which reads as *it did not work*, the
+exact failure §4.6 exists to prevent. When `platba` is present and the order cannot be loaded, the
+page now shows the acknowledgement plus a route to the order rather than a 404.
+
+**Verified:** all three `platba` values render their message on an unloadable order.
+Product pages are unaffected while no profile is configured (panel absent, page 200).
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
+
+**Not yet built:** §4.4 (express checkout), §5, §6, §7.2 — next up. §4.5, §8 and §7.1 blocked by
+G-1 and G-2.
+
+---
