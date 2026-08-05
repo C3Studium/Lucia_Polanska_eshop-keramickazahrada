@@ -23,6 +23,8 @@ import {
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
+import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
+import { ProductionDiary } from "../../components/production-diary";
 import { SubTabs } from "../../components/work-tabs";
 import {
   formatCzk,
@@ -49,6 +51,7 @@ import { sdk } from "../../lib/sdk";
  */
 
 type WorkbenchOrder = {
+  raw?: unknown;
   id: string;
   display_id: number | string;
   created_at: string;
@@ -82,7 +85,74 @@ const filterTabs = [
   { key: "shipping", label: "K odeslání" },
   { key: "payment_problem", label: "Problém s platbou" },
   { key: "dluzi", label: "Čeká na doplatek" },
+  { key: "statistiky", label: "Statistiky" },
 ];
+
+/** Objednávky+ → Statistiky: 12 months, AOV, providers, lead time, refunds. */
+const OrderStats = () => {
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ["workbench-order-statistics"],
+    queryFn: () => sdk.client.fetch("/admin/workbench/orders/statistics"),
+    refetchOnWindowFocus: true,
+  });
+  if (isLoading || !data) {
+    return (
+      <div className="px-6 py-5">
+        <Skeleton className="h-24 rounded-lg" />
+      </div>
+    );
+  }
+  const maxRevenue = Math.max(1, ...data.months.map((m: any) => m.revenue));
+  return (
+    <div className="flex flex-col gap-y-5 px-6 py-5">
+      <div>
+        <Text size="small" weight="plus">
+          Posledních 12 měsíců: {data.orders_365d} objednávek ·{" "}
+          {formatCzk(data.revenue_365d)}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+          Průměrná objednávka {formatCzk(data.average_order ?? 0)}
+          {data.pickup_share !== null
+            ? ` · osobní odběr ${data.pickup_share} %`
+            : ""}
+          {data.lead_time_days_median !== null
+            ? ` · od přijetí k odeslání obvykle ${data.lead_time_days_median} dní (z ${data.lead_times_measured} měřených)`
+            : ""}
+          {data.refunded_365d > 0
+            ? ` · vráceno ${formatCzk(data.refunded_365d)}`
+            : ""}
+        </Text>
+      </div>
+      <div className="flex items-end gap-1.5" aria-hidden="true">
+        {data.months.map((entry: any) => (
+          <div key={entry.month} className="flex flex-col items-center gap-1">
+            <div
+              className="bg-ui-fg-interactive w-6 rounded-sm"
+              style={{
+                height: `${8 + (entry.revenue / maxRevenue) * 56}px`,
+                opacity: entry.revenue ? 1 : 0.25,
+              }}
+              title={`${entry.month}: ${entry.orders} obj., ${entry.revenue}`}
+            />
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {entry.orders}
+            </Text>
+          </div>
+        ))}
+      </div>
+      <div>
+        <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+          Jak zákazníci platí
+        </Text>
+        {data.payment_providers.map((provider: any) => (
+          <Text key={provider.provider} size="small" className="mt-1">
+            {provider.count}× {provider.provider}
+          </Text>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 /**
  * The legal batch moves. `cancelled` is deliberately not offered in bulk —
@@ -295,6 +365,7 @@ const OrderExpansion = ({ orderId }: { orderId: string }) => {
         ))}
       </div>
       </div>
+      <RawData data={data} />
     </div>
   );
 };
@@ -302,6 +373,7 @@ const OrderExpansion = ({ orderId }: { orderId: string }) => {
 const OrdersInner = () => {
   const [active, setActive] = useState("vse");
   const [search, setSearch] = useState("");
+  const expert = useExpertMode();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [batchStage, setBatchStage] = useState<string>("");
@@ -347,9 +419,13 @@ const OrdersInner = () => {
   if (search.trim()) {
     params.set("q", search.trim());
   }
+  if (expert) {
+    params.set("expert", "1");
+  }
 
   const { data, isLoading, isError } = useQuery<WorkbenchOrdersResponse>({
-    queryKey: ["workbench-orders", active, search],
+    queryKey: ["workbench-orders", active, search, expert],
+    enabled: active !== "statistiky",
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/orders?${params.toString()}`),
     refetchOnWindowFocus: true,
@@ -369,6 +445,8 @@ const OrdersInner = () => {
             je potřeba vidět všechno najednou.
           </Text>
         </div>
+        <div className="flex items-center gap-4">
+        <ExpertToggle />
         <Input
           size="small"
           type="search"
@@ -377,9 +455,12 @@ const OrdersInner = () => {
           onChange={(event) => setSearch(event.target.value)}
           className="w-64"
         />
+        </div>
       </header>
 
       <SubTabs tabs={filterTabs} active={active} onSelect={setActive} />
+
+      {active === "statistiky" && <OrderStats />}
 
       {isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
@@ -396,7 +477,7 @@ const OrdersInner = () => {
         />
       )}
 
-      {!isLoading && !isError && rows.length === 0 && (
+      {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
         <EmptyState
           title="Nic tu není"
           description="Žádná objednávka neodpovídá zvolenému filtru."
@@ -442,7 +523,7 @@ const OrdersInner = () => {
         </div>
       )}
 
-      {!isLoading && !isError && rows.length > 0 && (
+      {active !== "statistiky" && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
           {rows.map((order) => {
             const unpaid = order.total - order.paid > 0.009;
@@ -472,6 +553,7 @@ const OrdersInner = () => {
                     <Text size="xsmall" className="text-ui-fg-subtle mt-1">
                       {formatDateTime(order.created_at)}
                     </Text>
+                    {expert && <CopyId value={order.id} />}
                   </div>
                 </div>
 
@@ -555,6 +637,20 @@ const OrdersInner = () => {
                   >
                     {expanded === order.id ? "Skrýt" : "Rozbalit"}
                   </button>
+                  {order.made_to_order && (
+                    <ProductionDiary
+                      orderId={order.id}
+                      label={`#${order.display_id}`}
+                      trigger={
+                        <button
+                          type="button"
+                          className="text-ui-fg-interactive txt-small hover:underline"
+                        >
+                          Deník
+                        </button>
+                      }
+                    />
+                  )}
                   <Link
                     to={`/orders/${order.id}`}
                     className="text-ui-fg-interactive txt-small hover:underline"

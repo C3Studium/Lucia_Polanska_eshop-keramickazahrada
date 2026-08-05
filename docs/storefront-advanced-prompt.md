@@ -92,7 +92,32 @@ as presets, so a gradual swap is safe. The specification field (§4.2), the
 `?platba=` outcome handling (§4.6) and the account balance button (§4.5/§8)
 are untouched.
 
-## 5. Not in scope
+## 5. The making-of on the order page (new, small)
+
+`GET /store/orders/:id/progress` gained two fields:
+
+```jsonc
+{
+  "promised_at": "2026-09-15T…",   // „slíbeno do" — null until she sets it
+  "making": [                       // photos/notes she chose to share, newest first
+    { "text": "Glazura nanesena.", "image_url": "https://…", "at": "…" }
+  ]
+}
+```
+
+On the order page, when `making` is non-empty, render a small „Jak vzniká"
+section — photos with their dates, text under each where present. When
+`promised_at` is set, show „Hotové nejpozději {datum}". Both are per-order
+trust builders; keep them quiet and unstyled-luxury, not a gallery feature.
+No writes, no new endpoints, nothing to build if the array is empty.
+
+One optional write exists: `POST /store/orders/:id/request-tweak` with
+`{ "message": "…" }` (customer-authenticated, own order only) — „Prosím o
+úpravu" under the making-of section when a balance is outstanding. 201 with a
+Czech confirmation; repeated sends within a day return 200 with a polite
+„už to máme". Do not build any other feedback channel.
+
+## 6. Not in scope
 
 - **No pay-later, ever** — not as UI, not as copy, not as a zero-minimum
   edge case. The backend never returns `minimum: 0`; if you ever see one,
@@ -103,7 +128,7 @@ are untouched.
 - Admin workbenches (`/admin/workbench/*`) are internal; nothing for the
   storefront there.
 
-## 6. Reporting
+## 7. Reporting
 
 As in the first brief: what you completed, what you could not and why, and
 anything here that turned out wrong about the storefront as it stands.

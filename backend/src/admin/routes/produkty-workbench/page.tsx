@@ -22,6 +22,7 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { EmptyState } from "../../components/empty-state";
+import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, stageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
@@ -58,6 +59,7 @@ type WorkbenchVariant = {
 };
 
 type WorkbenchProduct = {
+  raw?: unknown;
   id: string;
   title: string;
   handle: string;
@@ -223,6 +225,7 @@ const ProductExpansion = ({ productId }: { productId: string }) => {
           )}
         </div>
       </div>
+      <RawData data={data} />
     </div>
   );
 };
@@ -439,12 +442,16 @@ const ProductsInner = () => {
   const [active, setActive] = useState("produkty");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const expert = useExpertMode();
 
   const { data, isLoading, isError } = useQuery<WorkbenchProductsResponse>({
-    queryKey: ["workbench-products", search],
+    queryKey: ["workbench-products", search, expert],
     queryFn: () =>
       sdk.client.fetch(
-        `/admin/workbench/products${search.trim() ? `?q=${encodeURIComponent(search.trim())}` : ""}`
+        `/admin/workbench/products?${new URLSearchParams({
+          ...(search.trim() ? { q: search.trim() } : {}),
+          ...(expert ? { expert: "1" } : {}),
+        }).toString()}`
       ),
     refetchOnWindowFocus: true,
   });
@@ -510,6 +517,7 @@ const ProductsInner = () => {
                   .filter(Boolean)
                   .join(" · ") || "bez zařazení"}
               </Text>
+              {expert && <CopyId value={product.id} />}
             </div>
           </div>
 
@@ -677,7 +685,8 @@ const ProductsInner = () => {
             všechno dohromady.
           </Text>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-4">
+          <ExpertToggle />
           {active === "balicky" && (
             <BundleEditor
               trigger={

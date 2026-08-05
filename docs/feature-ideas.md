@@ -35,7 +35,7 @@ zvážit · zabalit · štítek"), editable in Nastavení. Not a tracked checkli
 
 ## 2. Výroba — while her hands are in clay
 
-**2.1 Photos + notes on the zakázka — S/M** *(previously A1)*
+**2.1 Photos + notes on the zakázka — S/M** *(previously A1)* ✅ built 2026-08-06
 *The moment:* glaze recipes and progress live in a paper notebook that
 doesn't know which order it belongs to.
 *The change:* a drawer on the production order — photo + note, timestamped.
@@ -43,13 +43,13 @@ doesn't know which order it belongs to.
 *Workflow condition:* upload must work straight from the phone camera —
 she photographs at the wheel, not at a desk.
 
-**2.2 The customer watches — S, after 2.1** *(previously A2)*
+**2.2 The customer watches — S, after 2.1** *(previously A2)* ✅ built 2026-08-06
 *The moment:* „jak to vypadá?" e-mails interrupt her work.
 *The change:* a per-photo „ukázat zákazníkovi" flag; flipped photos appear
 on the customer's order page. The question answers itself before it is
 asked. (This is customer-facing, but the work it removes is *hers*.)
 
-**2.3 „Hotovo — podívejte se" with approve = pay — M** *(previously A3)*
+**2.3 „Hotovo — podívejte se" with approve = pay — M** *(previously A3)* ✅ built 2026-08-06 (photo rides the balance e-mail; tweak requests land in the diary)
 *The moment:* finishing a zakázka starts a correspondence: is it right, will
 you pay the rest, can I ship it.
 *The change:* one send. The customer sees the photo; approving **is** the
@@ -61,7 +61,7 @@ production order instead of an e-mail thread in her head.
 *The change:* the customer attaches inspiration photos with their
 specification; she sees them in Zakázky next to the text.
 
-**2.5 Promised date — S** *(previously A5)*
+**2.5 Promised date — S** *(previously A5)* ✅ exposed to customers 2026-08-06 (admin side already existed)
 *The moment:* deadlines live in her memory; the existing deadline-watch job
 can only warn about dates that were recorded.
 *The change:* „slíbeno do" on the production order, shown to the customer,

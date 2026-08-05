@@ -24,6 +24,7 @@ import {
 import { useState } from "react";
 import { DiscountEditor } from "../../components/discount-editor";
 import { EmptyState } from "../../components/empty-state";
+import { ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
@@ -436,7 +437,8 @@ const SlevyInner = () => {
             domov v Přehledu → Slevy a akce.
           </Text>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-4">
+          <ExpertToggle />
           <CampaignEditor
             trigger={
               <Button size="small" variant="secondary">
@@ -566,6 +568,7 @@ const SlevyInner = () => {
 
       {!isLoading && !isError && active === "statistiky" && (
         <div className="flex flex-col gap-y-5 px-6 py-5">
+          <RawData data={data} />
           <div>
             <Text size="small" weight="plus">
               Co která akce přinesla

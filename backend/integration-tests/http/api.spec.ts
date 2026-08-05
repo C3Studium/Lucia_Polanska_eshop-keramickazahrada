@@ -270,6 +270,7 @@ medusaIntegrationTestRunner({
       // HTML 404 — Medusa returns JSON for a mounted route.
       it.each([
         "/admin/workbench/orders/order_fake",
+        "/admin/made-to-order/orders/order_fake/notes",
         "/admin/workbench/products/prod_fake",
         "/admin/workbench/customers/cus_fake",
         "/admin/workbench/customers/cus_fake/emails",
@@ -297,6 +298,7 @@ medusaIntegrationTestRunner({
        */
       const POST_ROUTES = [
         "/admin/workbench/orders/batch-stage",
+        "/store/orders/order_fake/request-tweak",
         "/store/restock-subscriptions",
         "/store/reviews",
         "/store/return-requests",
@@ -365,6 +367,9 @@ medusaIntegrationTestRunner({
       "/admin/workbench/customers",
       "/admin/workbench/discounts",
       "/admin/workbench/products/statistics",
+      "/admin/workbench/orders/statistics",
+      "/admin/workbench/customers/statistics",
+      "/admin/workbench/inventory/statistics",
       "/admin/inventory-alerts",
       "/admin/merchant-settings",
       "/admin/merchant-orders",

@@ -170,6 +170,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       )
 
       return {
+        // Expert mode (?expert=1): the whole graph row rides along, so the
+        // UI's „Surová data" shows exactly what the backend saw — metadata,
+        // provider ids, every payment — with no second request.
+        ...(req.query.expert === "1" ? { raw: order } : {}),
         id: order.id,
         display_id: order.display_id,
         created_at: order.created_at,
