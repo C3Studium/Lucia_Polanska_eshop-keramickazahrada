@@ -1,6 +1,6 @@
-# Storefront brief — finish what the backend already exposes
+# Storefront brief — connect the storefront to the backend's new features
 
-Read this whole brief before touching anything. Then start at §9.
+Read this whole brief before touching anything. Then start at §11.
 
 ## 1. Mission
 
@@ -8,12 +8,14 @@ You are the implementing engineer for the **storefront** of *Keramická zahrada*
 — a handmade-ceramics e-shop. Next.js in `storefront/`, Medusa 2.18 backend in
 `backend/`, both on Railway.
 
-The backend admin has been rebuilt over the last two days. Several features are
-**complete and live on the server but have no storefront counterpart**, so the
-customer never sees them — and in one case a customer cannot complete a purchase
-at all. Your job is to close that gap. You are not designing new backend
-behaviour; every endpoint you need already exists and is listed below with its
-exact shape.
+The backend has been rebuilt over the last week. A set of features is **finished
+and live on the server with no storefront counterpart**, so the customer never
+sees them — and in one case a customer cannot complete a purchase at all. Your
+job is to close exactly that gap: the storefront side of backend features that
+already exist.
+
+You are not designing backend behaviour. Every endpoint, provider id and payload
+below was read out of the running backend and is quoted exactly.
 
 The shop's owner is a ~50-year-old Czech-speaking ceramicist. **All
 customer-facing copy is Czech.** Code and comments in English.
@@ -25,46 +27,48 @@ credential and all deploy rights.
 
 **Made-to-order products cannot currently be bought.**
 
-The backend requires a specification (the customer's description of what they
-want) on any made-to-order line item, at
+The backend requires a specification — the customer's description of what they
+want — on every made-to-order line item, at
 `cart.items[].metadata.made_to_order.specification`. The storefront never sets
-it — there are zero references to `made_to_order` anywhere in `storefront/src`.
+it: there are **zero** references to `made_to_order` anywhere in
+`storefront/src`.
 
 So `prepare-made-to-order-payment` throws:
 
 > „Doplňte prosím krátký popis požadovaného provedení."
 
-Everything in §4 below is the fix. **Do this first.** The rest of the list is
-value; this is a broken checkout.
+§4 is the fix. **Do it first.** Everything after it is value; this is a broken
+checkout.
 
 ## 3. Ground rules
 
-1. **Never invent an endpoint.** Every route you need is in §4–§7 with its
-   method, path and payload. If something seems missing, it is either
-   deliberately out of scope or a genuine backend gap — say so, do not build a
-   workaround that writes state the backend does not know about.
+1. **Never invent an endpoint.** Every route you need is below with its method,
+   path and payload. If something seems missing it is either out of scope or a
+   real backend gap (§10) — say so; do not write state the backend cannot read.
 2. **Czech, and specific.** „Záloha 25 %" not „Deposit". Use the strings quoted
-   here — they match what the admin and the e-mails already say, and a customer
-   who reads three different words for one thing assumes three things.
-3. **Never show a price you did not get from the server.** Deposit and total are
-   returned by the API precisely so the checkout does not do its own arithmetic.
-   Two implementations drift, and the number the customer reads must be the
-   number they are charged.
+   here — they match the admin and the e-mails, and a customer who meets three
+   words for one thing assumes three things.
+3. **Never show a price you calculated.** Deposit, total and balance are
+   returned by the API precisely so the checkout does no arithmetic. Two
+   implementations drift, and the number the customer reads must be the number
+   they are charged.
 4. **No dobírka.** Cash on delivery does not exist in this shop and must never
-   appear as an option for a *carrier* shipment. The single exception is
-   personal collection — see §5.
-5. **Do not touch `backend/`.** If you believe a backend change is required,
-   stop and write it down for Matěj.
-6. Match the existing storefront's conventions — its data-fetching layer lives
-   in `src/lib/data/`, and its components in `src/modules/`. Follow what is
-   there rather than introducing a new pattern.
-7. **E-mail templates are not yours.** Another model is wiring every transactional
-   e-mail to its workflow, in `backend/src/modules/resend/`. Do not edit a
-   template, a subscriber or a send. Your only overlap with e-mail is §8 — the
-   storefront pages those e-mails link *to*.
-8. **Do not change a URL an e-mail depends on.** §8 lists the routes the backend
-   now links customers to. Renaming or moving one silently breaks a live e-mail:
-   the send still succeeds, and the customer gets a 404.
+   appear for a *carrier* shipment. Personal collection (§5) is a different
+   thing and must never be labelled dobírka either.
+5. **Do not touch `backend/`.** If you believe a backend change is needed, stop
+   and write it down for Matěj.
+6. **E-mail templates are not yours.** They live in
+   `backend/src/modules/resend/` and are finished. Your only overlap is §9 —
+   the storefront pages those e-mails link *to*.
+7. **Do not rename the routes in §9.** The backend builds e-mail links against
+   them and has tests pinning the shapes. Renaming one breaks a live e-mail:
+   the send still succeeds and the customer gets a 404.
+8. **No new environment variables are needed.** The storefront's `.env.local`
+   already has everything (`NEXT_PUBLIC_MEDUSA_BACKEND_URL`,
+   `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY`, `NEXT_PUBLIC_DEFAULT_REGION=cz`, the
+   Packeta keys). If you think you need another, you have misread something.
+9. Match the storefront's conventions — data fetching in `src/lib/data/`,
+   components in `src/modules/`. Follow what is there.
 
 ## 4. TODO — made-to-order (highest priority)
 
@@ -86,19 +90,20 @@ value; this is a broken checkout.
 } }
 ```
 
-Render, above the add-to-cart button:
+Above the add-to-cart button, render:
 
-- **„Vyrábí se na zakázku"** with the lead time: „Hotové za 14–42 dní".
-- The deposit: „Nyní zaplatíte zálohu 25 % — {částka} Kč. Zbytek doplatíte, až
+- **„Vyrábí se na zakázku"** with the lead time — „Hotové za 14–42 dní".
+- The deposit — „Nyní zaplatíte zálohu 25 % — {částka}. Zbytek doplatíte, až
   bude hotovo."
-- The variant override wins over the product default when a variant is selected.
+- A variant's `deposit_percentage_override` beats the product default when that
+  variant is selected.
 
 ### 4.2 Product page: collect the specification
 
 When `specification_required` is true, show a required textarea labelled with
-`specification_prompt`, and **block add-to-cart until it has content**. The
-backend rejects an empty one, so a client-side check only saves the customer a
-round trip — it is not the guard.
+`specification_prompt` and **block add-to-cart until it has content**. The
+backend rejects an empty one, so your check saves the customer a round trip — it
+is not the guard.
 
 Send it as line-item metadata:
 
@@ -112,51 +117,52 @@ metadata: { made_to_order: { specification: "…" } }
 
 ```jsonc
 {
-  "has_made_to_order": true,   // false → render nothing, this is an ordinary cart
-  "can_pay_full": true,        // false → offer deposit only
+  "has_made_to_order": true,   // false → render nothing, ordinary cart
+  "can_pay_full": true,        // false → deposit only
   "mode": "deposit",           // current choice
-  "deposit_amount": 1500,      // charged now if she picks deposit
-  "full_amount": 6000,         // charged now if she picks full
-  "balance_later": 4500        // owed later under the deposit option
+  "deposit_amount": 1500,      // charged now if deposit
+  "full_amount": 6000,         // charged now if full
+  "balance_later": 4500        // owed later under deposit
 }
 ```
 
 `POST` the same path with `{ "mode": "deposit" | "full" }`.
 
-Render two radio options, **deposit selected by default**:
+Two radio options, **deposit selected by default**:
 
 - „Zaplatit zálohu {deposit_amount} — zbytek {balance_later} doplatíte, až bude
   hotovo."
 - „Zaplatit rovnou celou částku {full_amount} — pak už nic neřešíte."
 
-Only when `has_made_to_order` is true. Only offer the second when
-`can_pay_full` is true. **Use the amounts as returned.**
+Render only when `has_made_to_order`; offer the second only when `can_pay_full`.
+**Use the amounts as returned.**
 
 ### 4.4 Express checkout: the same choice
 
 `src/app/[countryCode]/(express-checkout)/express-checkout/[handle]/page.tsx`
-buys a single product directly. If that product is made to order it needs the
-specification field (§4.2) **and** the payment choice (§4.3), or express
-checkout becomes a second way to hit the same broken path.
+buys one product directly. If that product is made to order it needs the
+specification field (§4.2) **and** the payment choice (§4.3) — otherwise express
+checkout is a second route into the same broken path.
 
 ### 4.5 Account: pay an outstanding balance
 
-An order with an unpaid balance shows a **„Doplatit {částka}"** button linking
-to the signed URL the customer was e-mailed. The e-mail already carries it; the
-account page should not be a worse place to find it.
+An order with an unpaid balance shows **„Doplatit {částka}"**, linking to the
+signed URL the customer was e-mailed. The e-mail already carries it; the account
+page should not be a worse place to find it.
 
-If you need to generate it storefront-side rather than reading it from the
-order, that is a **backend gap** — write it down, do not guess the signature.
+The link is **signed and built by the backend** — you cannot construct it. If
+the order payload does not expose it, that is a backend gap: write it down, do
+not guess the signature.
 
-### 4.6 Handle the payment outcome on the order page
+### 4.6 Handle the payment outcome
 
-After paying a balance, the backend redirects the customer to
+After a balance payment the backend redirects to:
 
 ```
 /{countryCode}/order/{id}/confirmed?platba=paid|chyba|neplatny-odkaz
 ```
 
-Read `platba` and show a short Czech message. Nothing else is needed — the
+Read `platba` and show a short Czech message. Nothing else is required — the
 payment is already recorded server-side; this is only how the customer finds out.
 
 | `platba` | Message |
@@ -165,60 +171,110 @@ payment is already recorded server-side; this is only how the customer finds out
 | `chyba` | „Platbu se nepodařilo otevřít. Napište nám prosím." |
 | `neplatny-odkaz` | „Odkaz na platbu už neplatí. Napište nám prosím." |
 
-Without this the customer completes a payment and lands on an ordinary order
-page with no acknowledgement, which reads as *it did not work* — and the usual
+Without this, a customer completes a payment and lands on an ordinary order page
+with no acknowledgement — which reads as *it did not work*, and the usual
 response to that is paying twice.
 
-## 5. TODO — personal collection and paying on arrival
+## 5. TODO — personal collection, paid on arrival
 
-The backend now has an **„Osobní odběr"** fulfilment provider and a **`pickup`
-payment provider**.
+### 5.1 Read this before you write any code
 
-### 5.1 Shipping step
+**The storefront already uses the word „pickup" for something else.**
+`modules/checkout/components/shipping/index.tsx` splits shipping options with
+`getFulfillmentType(option) === "pickup"`, which reads
+`service_zone.fulfillment_set.type`. That split is for **Zásilkovna/Packeta
+pickup points** — a carrier's parcel shop, with a map picker.
 
-„Osobní odběr" appears as a normal shipping option. Show the workshop address
-and that there is nothing to pay for delivery.
+**Osobní odběr is not that.** The customer drives to the workshop and collects
+from the owner, and may pay her there in cash. No carrier, no map, no parcel
+shop, no dobírka.
 
-### 5.2 Payment step — the rule that matters
+Do not reuse the Packeta pickup-point picker, its metadata
+(`packeta_pickup_point`), or its branch of that component. Identify Osobní odběr
+by the **shipping option's provider id**:
 
-**„Zaplatím při vyzvednutí" is offered only when the chosen shipping option is
-Osobní odběr.** For every other shipping option it must not be selectable, and
-switching away from personal collection must clear it.
+| Thing | Exact id |
+| --- | --- |
+| Fulfillment provider (Osobní odběr) | `pickup_osobni-odber` |
+| Payment provider (pay on arrival) | `pp_pickup_pickup` |
+| Balíkovna / Česká pošta | `ceska-posta-fulfillment_balikovna` |
+| Zásilkovna / Packeta | `packeta_packeta` |
 
-This is not dobírka. No carrier is ever involved, no money is collected by
-anyone but the owner, in her workshop. Copy should say so: „Zaplatíte na místě
-při vyzvednutí." Never „na dobírku".
+### 5.2 Shipping step
 
-The provider authorizes and never captures, so the order is placed and the
-money is recorded when she hands the piece over. **Do not present it as paid.**
+Osobní odběr arrives as an ordinary shipping option. Show the workshop address
+and that delivery costs nothing.
 
-## 6. TODO — notifications customers can ask for
+### 5.3 Payment step — the rule that matters
 
-### 6.1 Restock — partially done, verify
+**„Zaplatím při vyzvednutí" is selectable only when the chosen shipping option
+is Osobní odběr.** For every other shipping option it must not appear, and
+switching away from Osobní odběr must clear it.
 
-`POST /store/restock-subscriptions` exists and the storefront references restock
-in `src/lib/data/products.ts` and the product details component. **Verify it
-works end to end** on a sold-out variant, and that the customer gets confirmation
-that they will be told. If it is half-wired, finish it.
+Add `pp_pickup_pickup` to `paymentInfoMap` in `src/lib/constants.tsx` — an
+unmapped provider will not render. Title it „Zaplatíte při vyzvednutí". Never
+„na dobírku".
 
-### 6.2 Sold-out state
+The provider **authorizes and never captures**: the order is placed, and the
+money is recorded when she hands the piece over. **Do not present the order as
+paid.** Say „Zaplatíte na místě při vyzvednutí."
 
-A variant with no availability must say **„Vyprodáno"** and offer the restock
-sign-up instead of add-to-cart. Availability logic already exists in
+## 6. TODO — returns and complaints
+
+The backend has a complete returns flow with **no storefront surface at all**
+(zero references to `return-requests` in `storefront/src`). Today a customer has
+no way to start one.
+
+`POST /store/return-requests`
+
+```jsonc
+{
+  "order_id": "order_…",
+  "email": "…",
+  "reason": "…",              // required, free text
+  "customer_name": "…",       // optional
+  "items": [ … ]              // optional
+}
+```
+
+On submit the backend e-mails the customer a confirmation (`refund-request`) and
+notifies the owner. When she decides, it sends `return-approved` or
+`return-rejected` automatically — **you do not send anything.**
+
+Add, on an order in the account: **„Vrátit zboží"** → a short form (reason
+required) → a confirmation that she will be in touch. Status lives on the
+request (`pending` / `approved` / `rejected`); surface it on the order if the
+API exposes it, and if it does not, say so rather than inventing it.
+
+## 7. TODO — notifications the customer can ask for
+
+### 7.1 Restock — verify, do not rebuild
+
+`POST /store/restock-subscriptions` exists and the storefront already references
+restock in three files. **Verify it end to end** on a sold-out variant: the
+sign-up succeeds and the customer is told they will hear. Finish it if it is
+half-wired.
+
+A variant with no availability must read **„Vyprodáno"** and offer the sign-up
+instead of add-to-cart. Availability logic already exists in
 `src/lib/util/availability.ts` — use it rather than writing a second rule.
 
-### 6.3 Price drop — **backend gap, do not build**
+### 7.2 Price drop — **no new UI; the wishlist is the subscription**
 
-`price-drop.tsx` exists as an e-mail template with **nothing that sends it**:
-there is no subscription table, no job, no trigger. A storefront sign-up button
-would write to nothing.
+The backend watches prices daily (07:30) and e-mails anyone who has the product
+in their **wishlist** when it drops. The wishlist is already fully integrated,
+so this works today with no storefront change.
 
-Write it down for Matěj as a backend feature. Do not build a UI for it.
+Do **not** add a separate „watch this price" control — it would be a second
+subscription concept over the same mechanism.
 
-## 7. TODO — order status in the account
+The only thing worth doing: where the wishlist is explained, mention that saving
+an object also means hearing about a price drop. Copy only.
+
+## 8. TODO — order status in the account
 
 Native store orders expose `fulfillment_status` and `payment_status`. Map them
-to plain Czech on the account order page and in the order list:
+to plain Czech on the account order page and in the list:
 
 | Backend state | Customer sees |
 | --- | --- |
@@ -228,71 +284,69 @@ to plain Czech on the account order page and in the order list:
 | delivered | „Doručeno" |
 | canceled | „Zrušeno" |
 
-**Backend gap worth naming:** the admin's own stage (`Nové · Připravujeme ·
-K odeslání · Odesláno`) is richer than what the store API exposes, and there is
-no store route for it. „Připravujeme" is therefore not available to the
-customer. If Matěj wants that precision, it needs a small backend route — write
-it down rather than approximating with fulfillment status.
+Refresh on focus, not on a timer. These states change a few times over days; a
+request every few seconds for that is waste.
 
-Refresh on focus rather than polling on a timer. These states change a few times
-over days, and a request every few seconds for that is waste.
+See §10 for what you cannot show.
 
-## 8. Routes the e-mails link to — do not move these
+## 9. Routes the e-mails link to — do not move these
 
-Another model is wiring every transactional e-mail. Those e-mails link into the
-storefront, and the backend now builds each link against the routes below. **Two
-of them do not exist yet.**
+The backend builds customer e-mail links against the routes below and has tests
+pinning the shapes.
 
-| Purpose | URL the backend sends | Exists? |
+| Purpose | URL the backend sends | Status |
 | --- | --- | --- |
-| „Vaše objednávka" | `/{cc}/order/{id}/confirmed` | ✅ |
-| Product / review request | `/{cc}/products/{handle}` | ✅ |
-| Balance payment outcome | `/{cc}/order/{id}/confirmed?platba=…` | ⚠️ route exists, param ignored — §4.6 |
-| Fallback after payment | `/{cc}/account/orders?platba=…` | ⚠️ route exists, param ignored — §4.6 |
+| Order / „Vaše objednávka" | `/{cc}/order/{id}/confirmed` | exists |
+| Product, review request, price drop | `/{cc}/products/{handle}` | exists — **by handle, not id** |
+| Abandoned cart | `/{cc}/cart/recover/{cart_id}` | exists |
+| Restock fallback | `/{cc}/store` | exists |
+| Balance payment outcome | `/{cc}/order/{id}/confirmed?platba=…` | route exists, **param ignored — §4.6** |
 
 `{cc}` is the country segment (`cz`, from `NEXT_PUBLIC_DEFAULT_REGION`).
 
-**These were wrong until just now.** The backend was linking to `/objednavka/{id}`
-and `/produkt/{product_id}` — an invented path, a missing country segment, and a
-product id where the storefront routes by handle. Every link in every customer
-e-mail was a 404. It is fixed on the backend side and covered by tests
-(`src/lib/__tests__/customer-email-links.unit.spec.ts`), which is why rule 8
-exists: those tests encode *your* route names, so moving one fails the backend
-build rather than quietly breaking a live e-mail.
+A path without the country segment is *not* broken — `src/middleware.ts`
+307-redirects and preserves the query string. A wrong **route name** is broken,
+and no redirect rescues it. If you have a good reason to rename one of these,
+say so: the backend link and its test change in the same commit.
 
-If you have a good reason to rename one of these routes, say so — the backend
-link and its test get updated together, in the same change.
+## 10. Known backend gaps — do not paper over these
 
-## 9. Start here
+**Order stage.** The admin tracks `Nové · Připravujeme · K odeslání · Odesláno`,
+which is richer than `fulfillment_status`. **No store route exposes it**, so
+„Připravujeme" cannot reach the customer. Use the §8 mapping and leave it there;
+making it precise needs a new backend route.
 
-1. Read this brief, then look at how `src/lib/data/` and `src/modules/` are
-   organised — match them.
-2. Confirm the storefront builds clean before you change anything, so later
+**Balance payment link.** Signed by the backend (§4.5). If it is not in the
+order payload, it needs a backend change — do not attempt to sign one.
+
+If you find a third gap, add it to your log rather than working around it.
+
+## 11. Start here
+
+1. Read this brief, then read `src/lib/data/` and `src/modules/` and match them.
+2. Confirm the storefront builds clean before changing anything, so later
    breakage is attributable.
-3. Work **§4 first, in order**. It is a broken purchase path; everything else is
-   an improvement.
-4. Then §4.6 (a few lines, and it stops customers paying twice), then §5, §6, §7.
-5. Keep a short log of what you did and anything you found that contradicts this
-   brief. Two things in here are marked as backend gaps (§6.3, §7) — if you find
-   a third, add it rather than working around it.
+3. **§4 first, in order** — it is a broken purchase path.
+4. Then §5 (read §5.1 before writing code), §6, §7, §8.
+5. Keep a short log: what you did, what you could not, and anything here that
+   turned out to be wrong about the current storefront.
 
-## 10. What is already done — do not rebuild
+## 12. Already done — do not rebuild
 
-- **Wishlist** — integrated across ~20 files.
-- **Reviews** — integrated across ~15 files, including submission. The backend
-  now rejects a second review of the same product by the same customer, and more
-  than three a day from one name; both return Czech messages meant to be shown
-  verbatim.
-- **ComGate payment** — working. Note it is in **test mode**
-  (`COMGATE_TEST`), so payments are not real yet.
-- **Abandoned cart e-mails** — a backend job, no storefront work needed.
-- **Every transactional e-mail** — another model is wiring these right now. Do
-  not touch `backend/src/modules/resend/`. Your only concern is that the routes
-  in §8 keep existing.
+- **Wishlist** — integrated (~20 files). Also the price-drop mechanism (§7.2).
+- **Reviews** — integrated (~15 files) including submission. The backend rejects
+  a second review of the same product by the same customer, and more than three
+  a day from one name; both return Czech messages meant to be shown verbatim.
+- **Newsletter sign-up** — integrated. Unsubscribe is handled by the backend
+  from a link in the e-mail; no storefront page needed.
+- **ComGate payment** — working, in **test mode** (`COMGATE_TEST`), so payments
+  are not real yet.
+- **Zásilkovna / Balíkovna shipping** — working. Do not touch while adding §5.
+- **Abandoned-cart e-mails** — a backend job; the recovery page already exists.
+- **All transactional e-mails** — finished and wired. Not yours.
 
-## 11. Reporting
+## 13. Reporting
 
-When you finish, state: what you completed, what you could not and why, any
-backend gap you found, and anything in this brief that turned out to be wrong
-about the current storefront. Do not report something as working that you have
-not run.
+When you finish, state: what you completed; what you could not and why; any
+backend gap you found; and anything in this brief that turned out to be wrong.
+Do not report something as working that you have not run.
