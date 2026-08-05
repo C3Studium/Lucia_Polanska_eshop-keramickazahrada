@@ -125,6 +125,20 @@ showing counts publicly.
 
 Each is a switch in Nastavení when built — none ships now.
 
+## Status (updated 2026-08-06, phase 2)
+
+Read layer (level 1): **done** across all six domains. Write layer: **done** —
+production-profile editor (slider floor) on Produkty+; batch stage moves,
+row expansion with ledger + stage timeline + per-order e-mails on
+Objednávky+; additive restock + inline threshold editing on Sklad+; customer
+karta with private note + full e-mail history on Zákazníci+; code usage
+counts on Slevy. History (level 4): stage_history appended by every
+transition (new idempotent migration `merchant-order/20260806120000`).
+
+Still deliberately out: bulk label printing (blocked on the ČP B2B account),
+the deepened promotion/price-list *editors* beyond usage data (native pages
+remain the editing surface), automations (proposed only, per the rule).
+
 ## Implementation order (this session)
 
 1. Slider backend: `production-payment-mode` gains `mode:"custom"` +

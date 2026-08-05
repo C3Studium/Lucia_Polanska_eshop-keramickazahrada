@@ -1807,3 +1807,27 @@ non-existent column; rows are deleted after notify, so existence = waiting.
 brief §4.3), automation ideas proposed-not-implemented in the plan doc.
 
 Gate: 269 unit / 58 integration / build clean.
+
+## 2026-08-06 — Admin deepening, phase 2: the write layer
+
+Objednávky+: checkbox selection + batch stage moves (new
+POST /admin/workbench/orders/batch-stage — per-order results, sequential on
+purpose, cancelled deliberately absent from bulk) and row expansion (new
+GET /admin/workbench/orders/:id — payment ledger, stage timeline, e-mails).
+Stage timeline is real history now: stage_history jsonb appended by
+transition-merchant-order (migration 20260806120000, idempotent).
+
+Produkty+: ProductionProfileEditor drawer — the slider floor, lead times,
+specification prompt, full-prepayment toggle; PATCHes the existing
+made-to-order route. P8-3 closed.
+
+Sklad+: additive restock inline (kiln math done for her) + per-variant alert
+threshold edited in place, stored on inventory-item metadata where
+inventory-alerts reads it.
+
+Zákazníci+: Karta drawer — private note (customer metadata, canonical) +
+full per-customer e-mail history (new GET
+/admin/workbench/customers/:id/emails, failures shown deliberately).
+
+Czech-quote-in-string trap hit a third time (production-profile editor);
+reworded. Gate: 274 unit / 61 integration / build clean.

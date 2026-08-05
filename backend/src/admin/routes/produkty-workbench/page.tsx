@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
+import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 
@@ -258,7 +259,19 @@ const ProductsInner = () => {
                   )}
                 </div>
 
-                <div className="flex justify-start lg:justify-end">
+                <div className="flex justify-start gap-3 lg:justify-end">
+                  <ProductionProfileEditor
+                    productId={product.id}
+                    productTitle={product.title}
+                    trigger={
+                      <button
+                        type="button"
+                        className="text-ui-fg-interactive txt-small hover:underline"
+                      >
+                        Zakázka
+                      </button>
+                    }
+                  />
                   <Link
                     to={`/products/${product.id}`}
                     className="text-ui-fg-interactive txt-small hover:underline"

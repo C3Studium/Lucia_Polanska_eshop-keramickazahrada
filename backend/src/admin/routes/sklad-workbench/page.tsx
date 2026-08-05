@@ -2,18 +2,23 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { CubeSolid } from "@medusajs/icons";
 import {
   Badge,
+  Button,
   Container,
   Heading,
+  Input,
   Skeleton,
   Text,
+  Toaster,
+  toast,
 } from "@medusajs/ui";
 import {
   QueryClient,
   QueryClientProvider,
+  useMutation,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCount } from "../../lib/workbench";
@@ -28,8 +33,11 @@ import { sdk } from "../../lib/sdk";
  * customers waiting on a restock e-mail, and wishlist saves — and sorts by
  * them, so the kiln queue starts with what sells itself.
  *
- * Adding stock stays in Přehled → Zásoby (the additive field); thresholds
- * stay on the inventory item. This page decides *what*; those decide *how*.
+ * Both writes live here too: the additive restock field (same contract as
+ * Přehled → Zásoby — she types what came out of the kiln, the absolute total
+ * is our arithmetic) and the alert threshold, edited inline where its effect
+ * is seen but stored on the inventory item, the one place
+ * `inventory-alerts.ts` reads.
  */
 
 type DemandRow = {
@@ -38,12 +46,176 @@ type DemandRow = {
   product_id: string | null;
   product_title: string | null;
   sku: string | null;
+  inventory_item_id: string | null;
+  location_id: string | null;
   stocked: number;
   reserved: number;
   available: number;
   threshold: number;
+  has_custom_threshold: boolean;
   waiting_customers: number;
   wishlist_count: number;
+};
+
+/**
+ * Additive restock, same contract as Přehled → Zásoby: she types how many
+ * came out of the kiln, the absolute total is our arithmetic. The native API
+ * takes an absolute number, which is exactly the number she should never
+ * have to compute.
+ */
+const AddStock = ({ row }: { row: DemandRow }) => {
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState("");
+
+  const add = useMutation({
+    mutationFn: (added: number) =>
+      sdk.client.fetch(
+        `/admin/inventory-items/${row.inventory_item_id}/location-levels/${row.location_id}`,
+        { method: "POST", body: { stocked_quantity: row.stocked + added } }
+      ),
+    onSuccess: async (_result, added) => {
+      setAmount("");
+      await queryClient.invalidateQueries({
+        queryKey: ["workbench-inventory"],
+      });
+      toast.success(
+        `Přidáno ${added} ks — ${row.product_title ?? "produkt"}${
+          row.waiting_customers > 0
+            ? `. Čekajícím zákazníkům odejde e-mail při ranní kontrole.`
+            : ""
+        }`
+      );
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Zásoby se nepodařilo upravit"
+      ),
+  });
+
+  if (!row.inventory_item_id || !row.location_id) {
+    return (
+      <Text size="xsmall" className="text-ui-fg-muted">
+        Upravit lze ve skladu
+      </Text>
+    );
+  }
+
+  return (
+    <form
+      className="flex items-center gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const added = Number(amount);
+        if (Number.isInteger(added) && added > 0) {
+          add.mutate(added);
+        }
+      }}
+    >
+      <Input
+        size="small"
+        type="number"
+        min={1}
+        placeholder="+ ks"
+        value={amount}
+        onChange={(event) => setAmount(event.target.value)}
+        className="w-20"
+      />
+      <Button
+        size="small"
+        variant="secondary"
+        type="submit"
+        isLoading={add.isPending}
+        disabled={!amount}
+      >
+        Přidat
+      </Button>
+    </form>
+  );
+};
+
+/**
+ * The per-variant alert threshold, edited where its effect is seen. Stored
+ * on the inventory item's metadata — the single place `inventory-alerts.ts`
+ * reads — so this page, the tiles and the morning job keep one definition
+ * of „dochází".
+ */
+const ThresholdEditor = ({ row }: { row: DemandRow }) => {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(row.threshold));
+
+  const save = useMutation({
+    mutationFn: (threshold: number) =>
+      sdk.client.fetch(`/admin/inventory-items/${row.inventory_item_id}`, {
+        method: "POST",
+        body: { metadata: { low_stock_threshold: threshold } },
+      }),
+    onSuccess: async () => {
+      setEditing(false);
+      await queryClient.invalidateQueries({
+        queryKey: ["workbench-inventory"],
+      });
+      toast.success("Hranice upozornění uložena.");
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Hranici se nepodařilo uložit"
+      ),
+  });
+
+  if (!row.inventory_item_id) {
+    return null;
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="text-ui-fg-subtle txt-xsmall hover:text-ui-fg-base text-left"
+        onClick={() => {
+          setValue(String(row.threshold));
+          setEditing(true);
+        }}
+      >
+        hlásí se při {row.threshold} a méně
+        {row.has_custom_threshold ? " (vlastní)" : ""} ✎
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="flex items-center gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const threshold = Number(value);
+        if (Number.isInteger(threshold) && threshold >= 0) {
+          save.mutate(threshold);
+        }
+      }}
+    >
+      <Input
+        size="small"
+        type="number"
+        min={0}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        className="w-20"
+        autoFocus
+      />
+      <Button size="small" variant="secondary" type="submit" isLoading={save.isPending}>
+        Uložit
+      </Button>
+      <Button
+        size="small"
+        variant="transparent"
+        type="button"
+        onClick={() => setEditing(false)}
+      >
+        Zrušit
+      </Button>
+    </form>
+  );
 };
 
 type WorkbenchInventoryResponse = {
@@ -73,6 +245,7 @@ const SkladInner = () => {
 
   return (
     <Container className="divide-y p-0">
+      <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <div className="flex flex-wrap items-center gap-x-2">
@@ -158,9 +331,9 @@ const SkladInner = () => {
                   {row.available} skladem
                   {row.reserved > 0 ? ` · ${row.reserved} rezervováno` : ""}
                 </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                  hlásí se při {row.threshold} a méně
-                </Text>
+                <div className="mt-1">
+                  <ThresholdEditor row={row} />
+                </div>
               </div>
 
               <div>
@@ -186,12 +359,7 @@ const SkladInner = () => {
               </div>
 
               <div className="flex justify-start lg:justify-end">
-                <Link
-                  to={`/prehled/zasoby?zalozka=${active === "out" ? "vyprodano" : active === "low" ? "dochazi" : "naskladnene"}`}
-                  className="text-ui-fg-interactive txt-small hover:underline"
-                >
-                  Doplnit kusy
-                </Link>
+                <AddStock row={row} />
               </div>
             </article>
           ))}
