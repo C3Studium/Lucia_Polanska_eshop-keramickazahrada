@@ -14,9 +14,23 @@ the CZ region and a fulfillment set.
       Nastavení → Regiony → CZ → Poskytovatelé plateb. The provider id is
       `pp_osobni-odber_pickup`. It used to render as „Pickup (PICKUP)" — that
       is why it looked missing; renamed 2026-08-05, deploy first.
-- [ ] **Create the Osobní odběr shipping option** on the workshop's stock
-      location: fulfillment provider `pickup_osobni-odber`, price 0 Kč.
-      Without it the storefront's §5 has nothing to render.
+- [ ] **Create the Osobní odběr shipping option — in this exact order.** The
+      whole chain is proven end to end by the integration suite („personal
+      pickup can actually be configured"); the order matters because of step 1:
+
+      1. **Nastavení → Lokace → (dílna) → Poskytovatelé fulfillmentu →
+         Přidat → „Osobni Odber".** This is the step that was missing: the
+         create-shipping-option dialog lists only providers *added to the
+         location* (`?stock_location_id=…`), so before this link the dropdown
+         is empty — the provider is loaded and invisible. Nothing in the UI
+         says so.
+      2. On the same location enable the **Pickup** fulfillment set (Osobní
+         odběr) and give it a service zone covering **Česko**.
+      3. Now create the shipping option: provider „Osobni Odber", fulfillment
+         option „Osobní odběr v dílně", **0 Kč**.
+
+      If the provider still does not appear after step 1, the deploy predates
+      the 2026-08-05 commits — check that first, not the config.
 - [ ] **Verify shipping option prices** after the recent cost changes — each
       Balíkovna/Zásilkovna option carries its real price, and Osobní odběr
       stays 0.
