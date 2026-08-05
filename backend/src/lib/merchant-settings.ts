@@ -73,6 +73,20 @@ const KEY_SCHEMAS = {
   daily_digest_enabled: z.boolean(),
   /** Dismissed first-use helper cards, keyed by page (§19). Shop-global. */
   onboarding_dismissals: z.record(z.string(), z.boolean()),
+  /**
+   * Dovolená — the shop says so instead of going silent. The storefront
+   * shows the banner; the backend REFUSES new commission payments while on
+   * (prepare-made-to-order-payment), because a pause the server does not
+   * enforce is a pause that ends the first time a browser misbehaves.
+   */
+  vacation_enabled: z.boolean(),
+  /** ISO date (yyyy-mm-dd) she expects to be back; shown to customers. */
+  vacation_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")),
+  /** Her own words for the banner; empty falls back to a sensible default. */
+  vacation_message: z.string().max(300),
+  /** Oznámení — an event banner atop the storefront („v sobotu na trhu…"). */
+  announcement_enabled: z.boolean(),
+  announcement_text: z.string().max(300),
 } as const
 
 /** Full settings object — every key present, defaults filled in. */
@@ -88,6 +102,11 @@ export type MerchantSettingsPatch = Partial<MerchantSettings>
 export const MERCHANT_SETTING_KEYS = Object.keys(KEY_SCHEMAS) as MerchantSettingKey[]
 
 export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
+  vacation_enabled: false,
+  vacation_until: "",
+  vacation_message: "",
+  announcement_enabled: false,
+  announcement_text: "",
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
   review_request_days: 10,

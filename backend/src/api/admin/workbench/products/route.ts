@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isClearanceProduct } from "../../../../lib/clearance"
+import { productLink } from "../../../../lib/storefront-url"
 import { getInventoryAlerts } from "../../../../lib/inventory-alerts"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
@@ -196,6 +197,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         kind,
         bundle,
         clearance,
+        // The handshake: what she edits, seen as the customer sees it.
+        store_url: product.status === "published" ? productLink(product.handle) : null,
         thumbnail: product.thumbnail,
         collection: product.collection?.title ?? null,
         categories: (product.categories ?? []).map(

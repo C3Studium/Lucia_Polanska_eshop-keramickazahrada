@@ -8,14 +8,19 @@ import {
 } from "../merchant-settings"
 
 describe("merchant settings allowlist", () => {
-  it("exposes exactly the six keys A3 permits", () => {
+  it("exposes exactly the keys A3 permits — the list is closed", () => {
     expect([...MERCHANT_SETTING_KEYS].sort()).toEqual([
+      "announcement_enabled",
+      "announcement_text",
       "daily_digest_enabled",
       "default_parcel_weight_kg",
       "low_stock_default_threshold",
       "onboarding_dismissals",
       "production_started_email_enabled",
       "review_request_days",
+      "vacation_enabled",
+      "vacation_message",
+      "vacation_until",
     ])
   })
 

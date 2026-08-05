@@ -60,6 +60,7 @@ type WorkbenchVariant = {
 
 type WorkbenchProduct = {
   raw?: unknown;
+  store_url?: string | null;
   id: string;
   title: string;
   handle: string;
@@ -660,6 +661,16 @@ const ProductsInner = () => {
               <ClearanceToggle product={product} makeClearance={true} />
             )}
 
+            {product.store_url && (
+              <a
+                href={product.store_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-ui-fg-interactive txt-small hover:underline"
+              >
+                V obchodě ↗
+              </a>
+            )}
             <Link
               to={`/products/${product.id}`}
               className="text-ui-fg-interactive txt-small hover:underline"

@@ -117,7 +117,26 @@ One optional write exists: `POST /store/orders/:id/request-tweak` with
 Czech confirmation; repeated sends within a day return 200 with a polite
 „už to máme". Do not build any other feedback channel.
 
-## 6. Not in scope
+## 6. The shop's voice — banner card at the top (new)
+
+`GET /store/shop-status` (public, no auth):
+
+```jsonc
+{
+  "vacation": { "until": "2026-08-15", "message": "…" },  // or null
+  "announcement": { "message": "V sobotu na trhu!" },      // or null
+  "commissions_paused": true
+}
+```
+
+Render as a **card/banner at the top of every page** when either field is
+non-null — vacation first if both. Vacation copy: the message, plus
+„Zakázky přijímáme znovu po {until}" when the date exists. While
+`commissions_paused` is true the checkout will REFUSE commission payments
+server-side with a Czech message — show it verbatim; stock products sell
+normally. One fetch per page load, cache freely for minutes.
+
+## 7. Not in scope
 
 - **No pay-later, ever** — not as UI, not as copy, not as a zero-minimum
   edge case. The backend never returns `minimum: 0`; if you ever see one,
@@ -128,7 +147,7 @@ Czech confirmation; repeated sends within a day return 200 with a polite
 - Admin workbenches (`/admin/workbench/*`) are internal; nothing for the
   storefront there.
 
-## 7. Reporting
+## 8. Reporting
 
 As in the first brief: what you completed, what you could not and why, and
 anything here that turned out wrong about the storefront as it stands.

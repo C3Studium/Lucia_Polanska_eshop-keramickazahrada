@@ -13,6 +13,7 @@ import {
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
 import { splitCustomPayment } from "../lib/deposit-split"
+import { getMerchantSettings } from "../lib/merchant-settings"
 import {
   MADE_TO_ORDER_MODULE,
 } from "../modules/made-to-order"
@@ -193,6 +194,25 @@ const calculateMadeToOrderPaymentStep = createStep(
         ),
         specification,
       })
+    }
+
+    // Dovolená: while the shop is closed, NEW commissions are refused here —
+    // at the money step, server-side — with the return date in the message.
+    // Stock items still sell; only work she cannot start is paused.
+    if (productionLines.length) {
+      const settings = await getMerchantSettings(container).catch(() => null)
+      if (settings?.vacation_enabled) {
+        const until = settings.vacation_until
+          ? ` Zakázky přijímáme znovu po ${settings.vacation_until
+              .split("-")
+              .reverse()
+              .join(". ")}.`
+          : ""
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          `Výroba na zakázku má právě přestávku.${until}`
+        )
+      }
     }
 
     const originalTotal = toNumber(cart.total)
