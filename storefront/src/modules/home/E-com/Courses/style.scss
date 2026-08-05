@@ -485,3 +485,62 @@
     }
   }
 }
+
+/*
+ * Phones. The stage is a scroll-story with a sticky CTA whose window is a masked radial reveal
+ * positioned at left: 62%, width: 28vw — proportions that assume a wide screen. Shortened rather
+ * than removed, and the window widened to the full column so the reveal has somewhere to happen.
+ * See questions-about-responsive-design.md #2, where collapsing it to a static section is the
+ * alternative.
+ */
+@include below-px(760px) {
+  .courses__section {
+    height: 220vh;
+
+    .Courses__footerCurtain {
+      .Courses__ctaWindow {
+        top: 14%;
+        left: 8%;
+        width: 84vw;
+        height: 30vh;
+      }
+
+      .Courses__cta {
+        top: auto;
+        left: 1.25rem;
+        width: auto;
+      }
+    }
+  }
+}
+
+/*
+ * Sideways on a phone the sticky stage has ~430px of height in total. The scroll distance comes
+ * right down and the reveal window is sized off the height rather than the width, which is the
+ * scarce axis here.
+ */
+@include phs-h {
+  .courses__section {
+    height: 170vh;
+
+    .Courses__footerCurtain {
+      .Courses__ctaWindow {
+        top: 10%;
+        left: 6%;
+        width: 60vw;
+        height: 46vh;
+      }
+
+      .Courses__cta {
+        bottom: 2.5rem;
+      }
+
+      /* The kicker and the trailing paragraph are the first things to go when there is no room;
+         the heading and the action are what the section is for. */
+      .Courses__ctaKicker,
+      .Courses__ctaFooter > p {
+        display: none;
+      }
+    }
+  }
+}

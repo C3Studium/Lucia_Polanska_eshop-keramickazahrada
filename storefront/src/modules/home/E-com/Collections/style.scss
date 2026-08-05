@@ -319,3 +319,66 @@
     }
   }
 }
+
+/*
+ * Phones. The rail is ~1400px of cards inside a position:sticky panel, so it cannot be clipped
+ * away (that would break the sticky) and it cannot fit. Kept horizontal and made swipeable, with
+ * the heading lifted out of the flow and placed over the panel so it costs no vertical room —
+ * see questions-about-responsive-design.md #1, where stacking is the alternative.
+ */
+@include below-px(760px) {
+  .Collections {
+    /* Two screens of scroll rather than three; the story still plays. */
+    height: 150vh;
+
+    .sticky {
+      .header {
+        position: absolute;
+        top: 0;
+        right: 1.25rem;
+        left: 1.25rem;
+        z-index: 2;
+        min-height: 0;
+        padding-top: 5.5rem;
+        pointer-events: none;
+
+        h2 {
+          font-size: clamp(2.4rem, 11vw, 4rem);
+        }
+      }
+
+      .Collecion__wrapper {
+        height: 72%;
+        margin-top: auto;
+        /* One row of cards you can push through with a thumb, instead of two rows that only
+           work if the whole rail fits. */
+        grid-template-columns: repeat(4, minmax(15rem, 78vw));
+        grid-template-rows: minmax(0, 1fr);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+
+        > * {
+          scroll-snap-align: center;
+        }
+      }
+    }
+  }
+}
+
+/* Sideways on a phone there is no height for a full scroll-story stage. */
+@include phs-h {
+  .Collections {
+    height: 130vh;
+
+    .sticky .header {
+      padding-top: 4rem;
+    }
+
+    .sticky .Collecion__wrapper {
+      height: 66%;
+      grid-template-columns: repeat(4, minmax(13rem, 42vw));
+    }
+  }
+}

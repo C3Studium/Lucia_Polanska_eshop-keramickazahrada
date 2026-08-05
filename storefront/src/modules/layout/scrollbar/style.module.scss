@@ -1,5 +1,12 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .sidebar {
+  /* A hover-revealed rail of 12px marks. On touch the labels can never appear, the marks are far
+     under the target floor, and the rail sits over the content on a narrow screen. It is a
+     pointer affordance, so it belongs to pointer devices. */
+  @include touch {
+    display: none;
+  }
+
   position: fixed;
   z-index: 20000;
   top: 50%;

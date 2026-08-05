@@ -652,3 +652,16 @@ p.newsletter__error {
     border-top: 1px solid var(--footer-line);
   }
 }
+
+@include touch {
+  .footer__dialogLink {
+    min-height: 44px;
+  }
+
+  /* The identity list renders at 17px; padding rather than min-height keeps the dl rhythm. */
+  .footer__identity a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
+}

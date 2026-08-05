@@ -259,3 +259,20 @@ body::-webkit-scrollbar {
     animation: none !important;
   }
 }
+
+/*
+ * The target floor for controls, applied where it matters: a finger. Scoped to real buttons so
+ * inline text links keep their natural line box. The navbar and footer set their own sizes; this
+ * catches page-level controls, which were landing at 36-40px.
+ */
+@include touch {
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    /* !important because a component's own module class (0,1,0) outranks this element selector
+       (0,0,1), and several set height: 36px. This is the target floor, not a style preference —
+       it is the one thing a component should not be able to opt out of on a touch device. */
+    min-height: 44px !important;
+  }
+}
