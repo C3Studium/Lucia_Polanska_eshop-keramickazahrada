@@ -21,14 +21,6 @@
   }
 }
 
-@include phs-h {
-  .copy { bottom: 54px; }
-  .copy h1 { margin: 6px 0 12px; font-size: clamp(34px, 7vw, 52px); }
-  .copy button { margin-top: 14px; }
-  .facts { bottom: 16px; }
-  .facts span:nth-child(2) { display: none; }
-}
-
 .image {
   position: absolute;
   inset: -8% 0;
@@ -127,9 +119,39 @@
   .image img { object-position: 62% center; }
   .veil { background: linear-gradient(0deg, rgba(20,21,17,.82), rgba(20,21,17,.12) 85%); }
   .copy { bottom: 110px; width: calc(100% - 48px); }
-  .copy h1 { font-size: clamp(50px, 17vw, 82px); }
+  /* 17vw set the longest Czech word wider than the screen and it was clipped at the right
+     edge. Sized off the longest word rather than the viewport, and allowed to break. */
+  .copy h1 {
+    font-size: clamp(38px, 12.5vw, 82px);
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
   .facts { left: 24px; right: 24px; bottom: 28px; justify-content: space-between; }
   .facts span:nth-child(2) { display: none; }
   .scrollCue { display: none; }
 }
 
+/* Placed last: these override the base .copy/.facts rules above, which the earlier
+   position (before those rules were even declared) could never do. */
+@include phs-h {
+  .copy {
+    bottom: 40px;
+    /* Anchored below the navbar as well as above the facts row, so a heading that grows can
+       never run up behind the bar the way it did at 430px. */
+    top: 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    width: min(620px, calc(100% - 56px));
+  }
+
+  .copy h1 {
+    margin: 4px 0 10px;
+    font-size: clamp(28px, 5.4vw, 42px);
+    overflow-wrap: break-word;
+  }
+  .copy button { margin-top: 14px; }
+  .facts { bottom: 16px; }
+  .facts span:nth-child(2) { display: none; }
+}
