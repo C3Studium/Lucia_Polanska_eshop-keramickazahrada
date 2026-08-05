@@ -1,6 +1,8 @@
 import { Client } from "pg"
 
 async function getDatabaseClient() {
+  // Synchronous by design — see below. This function drops a database a few
+  // lines later, so the check must be able to stop it.
   testEnvChecks()
   const env = getEnv()
   const client = new Client(env.superuser)
@@ -11,9 +13,13 @@ async function getDatabaseClient() {
 function getEnv() {
   return {
     host: process.env.TEST_POSTGRES_HOST || "localhost",
-    port: process.env.TEST_POSTGRES_HOST
-      ? Number(process.env.TEST_POSTGRES_HOST)
-      : 5432,
+    // Was reading TEST_POSTGRES_HOST here, so a configured host produced
+    // Number("localhost") === NaN as the port. The variable in .env.example is
+    // misspelled TEST_POSTGREST_PORT; both spellings are accepted rather than
+    // silently ignoring whichever one somebody used.
+    port: Number(
+      process.env.TEST_POSTGRES_PORT || process.env.TEST_POSTGREST_PORT || 5432
+    ),
     user: process.env.TEST_POSTGRES_USER || "test_medusa_user",
     testDatabase: process.env.TEST_POSTGRES_DATABASE || "test_medusa_db",
     testDatabaseTemplate:
@@ -29,7 +35,18 @@ function getEnv() {
   }
 }
 
-async function testEnvChecks() {
+/**
+ * The only thing standing between `pnpm test-e2e` and a dropped database.
+ *
+ * This was `async` and called without `await`. A rejected promise is not a
+ * thrown error: both checks below would "fail" into an unhandled rejection
+ * while execution carried on to `createTestDatabase`, which issues
+ * `DROP DATABASE`. The guard ran, printed, and stopped nothing.
+ *
+ * Kept synchronous — it awaits nothing — so it cannot be reintroduced by
+ * dropping an `await`.
+ */
+function testEnvChecks() {
   const env = getEnv()
   if (!env.testDatabase.startsWith("test_")) {
     const msg =
