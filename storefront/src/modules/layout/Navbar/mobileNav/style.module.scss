@@ -1,0 +1,136 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Shown only where the bar cannot hold the links: portrait below the tablet-landscape stop, and
+ * phones held sideways (which are wide enough to match `sm` on width alone, but only 430px tall).
+ * Everything wider keeps the full horizontal bar.
+ */
+.toggle {
+  display: none;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+
+  span {
+    position: absolute;
+    left: 50%;
+    width: 19px;
+    height: 1.5px;
+    background: currentColor;
+    border-radius: 2px;
+    transform-origin: center;
+    transition:
+      transform 0.34s cubic-bezier(0.76, 0, 0.24, 1),
+      opacity 0.2s ease;
+  }
+
+  span:first-child {
+    transform: translate(-50%, -4px);
+  }
+
+  span:last-child {
+    transform: translate(-50%, 4px);
+  }
+
+  &[data-open] span:first-child {
+    transform: translate(-50%, 0) rotate(45deg);
+  }
+
+  &[data-open] span:last-child {
+    transform: translate(-50%, 0) rotate(-45deg);
+  }
+
+  @include below-px(900px) {
+    display: block;
+  }
+
+  @include phs-h {
+    display: block;
+  }
+}
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 995;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(24, 27, 19, 0.42);
+  backdrop-filter: blur(6px);
+  cursor: default;
+}
+
+.panel {
+  position: absolute;
+  top: 74px;
+  right: 12px;
+  left: 12px;
+  max-height: calc(100dvh - 90px);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid rgba(43, 48, 35, 0.16);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--bgWhite) 96%, transparent);
+  box-shadow: 0 24px 70px rgba(20, 23, 16, 0.22);
+
+  /* Sideways on a phone the bar sits higher and there is far less room beneath it. */
+  @include phs-h {
+    top: 62px;
+    max-height: calc(100dvh - 74px);
+  }
+}
+
+.list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  list-style: none;
+
+  li {
+    border-bottom: 1px solid rgba(43, 48, 35, 0.1);
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+
+  a,
+  button {
+    display: flex;
+    width: 100%;
+    /* Comfortably past the 44px floor: this is the primary navigation on a phone. */
+    min-height: 56px;
+    align-items: center;
+    padding: 0 14px;
+    border: 0;
+    background: transparent;
+    color: var(--bgBlack);
+    font: 400 clamp(1.35rem, 6vw, 1.75rem) / 1 "Sentient-Regular", serif;
+    letter-spacing: -0.02em;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* Two rows fewer to scroll through when the window is 430px tall. */
+  @include phs-h {
+    a,
+    button {
+      min-height: 46px;
+      font-size: clamp(1.1rem, 3.4vw, 1.35rem);
+    }
+  }
+}

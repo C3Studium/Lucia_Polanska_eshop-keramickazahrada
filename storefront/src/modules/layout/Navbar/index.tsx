@@ -13,6 +13,7 @@ import { useStateContext } from "@lib/context/StateContext"
 import { useParams, usePathname } from "next/navigation"
 import Button from "../../common/components/Buttons/button"
 import SearchButton from "./searchButton"
+import MobileNav from "./mobileNav"
 import {
   CollectionList,
   NavigationCollection,
@@ -174,6 +175,9 @@ export default function Navbar({
               setIsSearchOpen((open) => !open)
             }}
           />
+          {/* Carries the links only, and only where the bar cannot hold them. Search above and
+              the Produkty menu keep their own buttons. */}
+          <MobileNav />
         </div>
         <div className="navbar__center">
           <div className="navbar__center-side navbar__center-side--left">

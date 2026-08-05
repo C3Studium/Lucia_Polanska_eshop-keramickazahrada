@@ -554,3 +554,170 @@
     padding-inline: 10px;
   }
 }
+
+/*
+ * Mobile bar: the links move into the MobileNav overlay, so the horizontal groups come out.
+ * What stays is the shop's own controls — logo, search, Produkty, cart, account — plus the
+ * hamburger. Applies to portrait below the tablet-landscape stop, and to phones held sideways,
+ * which are wide enough to match `sm` on width alone but only ~430px tall.
+ */
+@mixin navbar-compact {
+  .navbar {
+    /* Matches the base rule's depth (.navbar .navbar__center .navbar__center-side); written
+       shallower it loses on specificity and the links stay visible behind the hamburger. */
+    .navbar__center .navbar__center-side,
+    .navbar__left > .navbar__nav-link {
+      display: none;
+    }
+
+    /* Freed of the side groups, the centre holds only the Produkty button. It has to stop being
+       a three-column grid as well: with the side tracks hidden the container collapsed to 19px
+       while the 102px button kept its track, so the button overhung the logo pill. */
+    .navbar__center {
+      position: static;
+      display: flex;
+      /* A flex item by default shrinks; without this the Produkty button was compressed to 8px
+         between the two pills instead of holding its own width. */
+      flex: 0 0 auto;
+      width: auto;
+      max-width: none;
+      grid-template-columns: none;
+      column-gap: 0;
+      align-items: center;
+      transform: none;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      border: 0;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+
+      &::after {
+        display: none;
+      }
+    }
+
+    .navbar__inner,
+    .navbar__row {
+      gap: 6px;
+    }
+  }
+}
+
+/*
+ * Portrait phones only. Even compacted the bar wants 449px of content in 366px of room:
+ * logo+search+menu (156) + Produkty (102) + four utility icons (191). The region selector goes
+ * (the locale is in the URL) and so does the wishlist (it lives in the account area), leaving
+ * cart and account — the two a shopper needs from any page.
+ */
+@include below-px(760px) {
+  .navbar {
+    .regions__select,
+    .navbar__utility-link:not(.Navbar__Icons__User) {
+      display: none;
+    }
+
+    .navbar__right {
+      gap: 2px;
+      padding: 4px;
+    }
+
+    /* Icon-only. The label sits several levels down inside the button's own module, so it is
+       clipped by the button box rather than chased with a selector that would break the moment
+       that markup changes. */
+    .navbar__center > button {
+      display: grid;
+      width: 44px;
+      min-width: 44px;
+      padding-inline: 0;
+      overflow: hidden;
+      place-items: center;
+    }
+
+    /* The word is a bare text node in the same span that holds the arrow, so it cannot be
+       hidden with display without taking the arrow with it. Zeroing the font drops the text and
+       leaves the icon, which carries its own dimensions. */
+    .navbar__center > button span {
+      font-size: 0;
+      padding-inline: 0;
+    }
+
+    .navbar__center > button svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+/*
+ * 320px-class phones. Six controls at the 44px floor plus the wordmark is more than 296px of
+ * usable bar, so the Produkty button drops its label and keeps its mark — it stays a button of
+ * its own, as intended, just without room for the word.
+ */
+@include below-px(374px) {
+  .navbar {
+    /* The bar's own gutters are worth 16px here, which is the difference between fitting and
+       pushing the account icon off the screen. */
+    left: 6px;
+    width: calc(100vw - 12px);
+
+    .navbar__brand {
+      width: 44px;
+    }
+
+    .navbar__center > button {
+      width: 44px;
+      min-width: 44px;
+      padding-inline: 0;
+    }
+
+    .navbar__center > button p {
+      display: none;
+    }
+
+    .navbar__center > button svg {
+      margin: 0;
+    }
+
+    .navbar__right {
+      gap: 0;
+      padding: 2px;
+    }
+
+    /* The hairline separators cost 2px each and read as clutter at this size. */
+    .navbar__right > * + *::before {
+      display: none;
+    }
+  }
+}
+
+/*
+ * The rest of the bar's controls at the touch floor. The earlier pass covered the right-hand
+ * utilities only; the wordmark, search, Produkty and the cart were still 35-38px tall — the
+ * ones a thumb reaches for most.
+ */
+@include touch {
+  .navbar {
+    --nav-height: 56px;
+
+    .navbar__brand,
+    .navbar__left button,
+    .navbar__left > a,
+    .navbar__center > button,
+    .navbar__cart,
+    .navbar__cart *[class*="popoverButton"],
+    .navbar__cart a,
+    .navbar__cart button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+}
+
+@include below-px(900px) {
+  @include navbar-compact;
+}
+
+@include phs-h {
+  @include navbar-compact;
+}
