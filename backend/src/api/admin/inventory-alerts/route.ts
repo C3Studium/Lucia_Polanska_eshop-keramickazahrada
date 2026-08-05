@@ -12,13 +12,16 @@ import { getInventoryAlerts } from "../../../lib/inventory-alerts"
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const alerts = await getInventoryAlerts(req.scope)
 
-  const type = req.query.type === "out" ? "out" : "low"
+  const type =
+    req.query.type === "out" ? "out" : req.query.type === "ok" ? "ok" : "low"
 
   res.status(200).json({
     type,
-    items: type === "out" ? alerts.out : alerts.low,
+    items:
+      type === "out" ? alerts.out : type === "ok" ? alerts.ok : alerts.low,
     low_count: alerts.low.length,
     out_count: alerts.out.length,
+    ok_count: alerts.ok.length,
     default_threshold: alerts.default_threshold,
   })
 }
