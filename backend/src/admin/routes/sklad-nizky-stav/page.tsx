@@ -1,31 +1,11 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ExclamationCircle } from "@medusajs/icons";
-import { InventoryAlertList } from "../../components/inventory-alert-list";
+import { Navigate } from "react-router-dom";
 
 /**
- * Nízký stav (§10, §22).
+ * Compatibility redirect. This list moved into Přehled → Zásoby, which shows
+ * the same rows plus the ones that are fine, and can restock them.
  *
- * Availability is `stocked − reserved`: pieces reserved for orders already paid
- * for are not sellable, and counting them is how a shop oversells. The
- * threshold is the shop-wide setting unless an item overrides it, and
- * made-to-order variants never appear — a commissioned piece is made after it
- * is ordered, so „0 available" is its normal state.
+ * No `config` export, so it never appears in the sidebar.
  */
-const NizkyStavPage = () => (
-  <InventoryAlertList
-    type="low"
-    title="Nízký stav"
-    description="Kousky, kterých už zbývá málo — ať stihnete dopéct dřív, než dojdou úplně. Počítáme jen to, co je opravdu k prodeji: rezervované kusy už patří někomu jinému."
-    emptyTitle="Zásoby jsou v pořádku"
-    emptyDescription="Jakmile něčeho začne ubývat, objeví se to tady."
-  />
-);
+const Redirect = () => <Navigate to="/prehled/zasoby" replace />;
 
-export const config = defineRouteConfig({
-  label: "Nízký stav",
-  icon: ExclamationCircle,
-  nested: "/inventory",
-  rank: 10,
-});
-
-export default NizkyStavPage;
+export default Redirect;

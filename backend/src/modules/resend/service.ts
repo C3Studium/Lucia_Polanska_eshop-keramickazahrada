@@ -19,6 +19,7 @@ import { variantRestockEmail } from "./emails/restock";
 import { abandonedCartEmail } from "./emails/abandoned-cart";
 import { merchantNotificationEmail } from "./emails/merchant-notification";
 import { merchantDailySummaryEmail } from "./emails/merchant-daily-summary";
+import { merchantWeeklySummaryEmail } from "./emails/merchant-weekly-summary";
 import { PaymentReceivedEmail } from "./emails/payment-received";
 import { PaymentFailedEmail } from "./emails/payment-failed";
 import { PaymentPendingEmail } from "./emails/payment-pending";
@@ -44,6 +45,7 @@ enum Templates {
   // `data.subject` so each e-mail is distinguishable.
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  MERCHANT_WEEKLY_SUMMARY = "merchant-weekly-summary",
   // The lifecycle templates (§16). All 12 existed as files and none were ever
   // sent, because the provider only maps what it lists here.
   PAYMENT_RECEIVED = "payment-received",
@@ -77,6 +79,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ABANDONED_CART]: abandonedCartEmail,
   [Templates.MERCHANT_NOTIFICATION]: merchantNotificationEmail,
   [Templates.MERCHANT_DAILY_SUMMARY]: merchantDailySummaryEmail,
+  [Templates.MERCHANT_WEEKLY_SUMMARY]: merchantWeeklySummaryEmail,
   [Templates.PAYMENT_RECEIVED]: PaymentReceivedEmail,
   [Templates.PAYMENT_FAILED]: PaymentFailedEmail,
   [Templates.PAYMENT_PENDING]: PaymentPendingEmail,
@@ -100,6 +103,7 @@ export enum EmailTemplates {
   ABANDONED_CART = "abandoned-cart",
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  MERCHANT_WEEKLY_SUMMARY = "merchant-weekly-summary",
   // The lifecycle templates (§16). All 12 existed as files and none were ever
   // sent, because the provider only maps what it lists here.
   PAYMENT_RECEIVED = "payment-received",
@@ -230,6 +234,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Upozornění z e-shopu"
       case Templates.MERCHANT_DAILY_SUMMARY:
         return "Denní souhrn"
+      case Templates.MERCHANT_WEEKLY_SUMMARY:
+        return "Týdenní souhrn"
       // §16 subjects, verbatim.
       case Templates.PAYMENT_RECEIVED:
         return "Platba přijata — děkujeme"

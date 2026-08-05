@@ -5,7 +5,9 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { DiscountEditor } from "../../../components/discount-editor";
 import { EmptyState } from "../../../components/empty-state";
+import { SeasonalSaleEditor } from "../../../components/seasonal-sale-editor";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
@@ -80,9 +82,22 @@ const SlevyInner = () => {
           místo.
         </Text>
         </div>
-        <Button size="small" variant="secondary" asChild>
-          <Link to="/sezonni-vybery">Spravovat sezónní akce</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <SeasonalSaleEditor
+            trigger={
+              <Button size="small" variant="secondary">
+                Nová sezónní akce
+              </Button>
+            }
+          />
+          <DiscountEditor
+            trigger={
+              <Button size="small" variant="secondary">
+                Nová sleva
+              </Button>
+            }
+          />
+        </div>
       </header>
 
       {isLoading && (
@@ -102,12 +117,7 @@ const SlevyInner = () => {
       {!isLoading && !isError && rows.length === 0 && (
         <EmptyState
           title="Nic není zlevněné"
-          description="Sezónní akci vytvoříte v Sezónních akcích, slevový kód v Propagaci."
-          action={
-            <Button size="small" variant="secondary" asChild>
-              <Link to="/sezonni-vybery">Sezónní akce</Link>
-            </Button>
-          }
+          description="Sezónní akci nebo slevový kód vytvoříte tlačítky nahoře."
         />
       )}
 

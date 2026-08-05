@@ -27,15 +27,20 @@ interface OrderDelayedEmailProps {
   supportEmail?: string;
 }
 
+/**
+ * Původní termín, kompenzace a sledovací odkaz se vykreslí jen s reálnými
+ * daty — výchozí hodnota, která slibuje kupón nebo termín, jenž nikdy nebyl
+ * domluvený, by byla slibem, který nikdo nedal.
+ */
 function OrderDelayedEmailComponent({
   customerName = "Vážený zákazník",
   orderNumber = "#12345",
-  originalDeliveryDate = "15. října 2025",
-  newDeliveryDate = "22. října 2025",
+  originalDeliveryDate,
+  newDeliveryDate = "co nevidět",
   delayReason = "Ruční výroba si vyžádala více času",
-  compensationOffer = "Slevový kupón ve výši 10 % na další nákup",
-  trackingLink = "https://keramickazahrada.cz/orders/12345/track",
-  orderLink = "https://keramickazahrada.cz/orders/12345",
+  compensationOffer,
+  trackingLink,
+  orderLink = "https://keramickazahrada.cz",
   supportEmail = CONTACT_EMAIL
 }: OrderDelayedEmailProps) {
   return (

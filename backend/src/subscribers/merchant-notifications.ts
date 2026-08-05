@@ -122,6 +122,9 @@ const onOrderPlaced = async ({
       title: `Nová zakázka #${order.display_id} — přečtěte si zadání`,
       description: `${customerName(order)} si objednal(a) výrobu na míru. Zadání najdete v Zakázkách.`,
       audience: "owner",
+      // D7 again: a commission is a "must read soon" item and she works from
+      // her inbox, so it goes to e-mail exactly like a new paid order does.
+      email: true,
       resource: { id: order.id, type: "order" },
     })
   }

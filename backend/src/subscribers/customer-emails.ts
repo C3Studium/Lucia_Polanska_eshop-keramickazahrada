@@ -199,22 +199,16 @@ const onBalancePaid = async ({
   })
 }
 
-/**
- * #11 „Objednávka odeslána".
- *
- * The tracking CTA is included **only when a tracking number exists**. §16 is
- * explicit: no tracking means the e-mail goes without the button, never with a
- * link that goes nowhere. In record-only carrier mode there is never one.
- */
-const onShipmentCreated = async ({
-  event: { data },
-  container,
-}: SubscriberArgs<{ id: string }>) => {
-  if (!data?.id) {
-    return
-  }
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+const isPickupOrder = (order: any): boolean =>
+  (order.shipping_methods || []).some(
+    (method: any) => method?.data?.personal_pickup === true
+  )
 
+const loadFulfillmentOrder = async (
+  container: SubscriberArgs["container"],
+  fulfillmentId: string
+) => {
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data: fulfillments } = await query.graph({
     entity: "fulfillment",
     fields: [
@@ -224,26 +218,59 @@ const onShipmentCreated = async ({
       "labels.tracking_number",
       "labels.tracking_url",
     ],
-    filters: { id: data.id },
+    filters: { id: fulfillmentId },
   })
   const fulfillment = fulfillments[0] as any
   const orderId = fulfillment?.order?.id
   if (!orderId) {
+    return { fulfillment: null, order: null }
+  }
+  return { fulfillment, order: await loadOrder(container, orderId) }
+}
+
+/**
+ * #11 „Objednávka odeslána" — and for personal pickup „Připraveno k vyzvednutí".
+ *
+ * The tracking CTA is included **only when a tracking number exists**. §16 is
+ * explicit: no tracking means the e-mail goes without the button, never with a
+ * link that goes nowhere. In record-only carrier mode there is never one.
+ *
+ * A pickup order's shipment being created means she has packed it — the goods
+ * are *ready*, not handed over, so the customer is invited to collect. The
+ * handover itself is `delivery.created` below.
+ */
+const onShipmentCreated = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ id: string }>) => {
+  if (!data?.id) {
+    return
+  }
+  const { fulfillment, order } = await loadFulfillmentOrder(container, data.id)
+  if (!fulfillment || !order) {
     return
   }
 
-  const order = await loadOrder(container, orderId)
-  if (!order) {
+  if (isPickupOrder(order)) {
+    await sendCustomerEmail(container, {
+      template: "order-ready-pickup",
+      to: order.email,
+      key: `ship:${fulfillment.id}`,
+      orderId: order.id,
+      data: {
+        ...common(order),
+        pickupLocation: "Ateliér Keramická zahrada",
+        pickupAddress: "Putim 229, 397 01 Písek",
+        readyDate: new Date().toLocaleDateString("cs-CZ"),
+      },
+    })
     return
   }
 
   const label = (fulfillment.labels || [])[0]
-  const isPickup = (order.shipping_methods || []).some(
-    (method: any) => method?.data?.personal_pickup === true
-  )
 
   await sendCustomerEmail(container, {
-    template: isPickup ? "order-delivered" : "order-shipment",
+    template: "order-shipment",
     to: order.email,
     key: `ship:${fulfillment.id}`,
     orderId: order.id,
@@ -253,6 +280,33 @@ const onShipmentCreated = async ({
       trackingNumber: label?.tracking_number ?? "",
       trackingLink: label?.tracking_url ?? "",
     },
+  })
+}
+
+/**
+ * „Objekty jsou u vás" — sent when the fulfillment is marked as delivered,
+ * which for a pickup order is the actual handover. Only pickup orders: a
+ * courier delivery is announced by the carrier, and a second mail from us
+ * claiming the same thing would be noise (§16).
+ */
+const onDeliveryCreated = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ id: string }>) => {
+  if (!data?.id) {
+    return
+  }
+  const { fulfillment, order } = await loadFulfillmentOrder(container, data.id)
+  if (!fulfillment || !order || !isPickupOrder(order)) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "order-delivered",
+    to: order.email,
+    key: `deliver:${fulfillment.id}`,
+    orderId: order.id,
+    data: { ...common(order) },
   })
 }
 
@@ -368,6 +422,7 @@ const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
   "shipment.created": onShipmentCreated,
+  "delivery.created": onDeliveryCreated,
   "order.canceled": onOrderCanceled,
   "payment.refunded": onPaymentRefunded,
 }
@@ -386,6 +441,7 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
     "shipment.created",
+    "delivery.created",
     "order.canceled",
     "payment.refunded",
   ],

@@ -28,6 +28,7 @@ import {
   PostSeasonalSelectionSchema,
 } from "./admin/merchant-catalog/seasonal-selections/route";
 import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
+import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/discount/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { PostProductionPaymentModeSchema } from "./store/carts/[id]/production-payment-mode/route";
@@ -173,6 +174,11 @@ export default defineMiddlewares({
         authenticate("user", ["bearer", "session"]),
         validateAndTransformBody(PatchSeasonalSelectionSchema),
       ],
+    },
+    {
+      matcher: "/admin/merchant-catalog/seasonal-selections/:id/discount",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostSeasonalDiscountSchema)],
     },
     {
       matcher: "/store/merchant-catalog",

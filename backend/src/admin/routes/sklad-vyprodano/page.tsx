@@ -1,29 +1,11 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { XCircle } from "@medusajs/icons";
-import { InventoryAlertList } from "../../components/inventory-alert-list";
+import { Navigate } from "react-router-dom";
 
 /**
- * Vyprodáno (§10, §22).
+ * Compatibility redirect. This list moved into Přehled → Zásoby, which shows
+ * the same rows plus the ones that are fine, and can restock them.
  *
- * „Sold out" means nothing left to sell, which includes stock that exists but
- * is entirely reserved for paid orders. Variants that do not track stock and
- * made-to-order pieces are excluded — neither can run out.
+ * No `config` export, so it never appears in the sidebar.
  */
-const VyprodanoPage = () => (
-  <InventoryAlertList
-    type="out"
-    title="Vyprodáno"
-    description="Kousky, které došly úplně. Zákazníci si je nemohou objednat, dokud nepřidáte nové."
-    emptyTitle="Nic není vyprodané"
-    emptyDescription="Jakmile něčeho zbude nula kusů, objeví se to tady."
-  />
-);
+const Redirect = () => <Navigate to="/prehled/zasoby?stav=vyprodano" replace />;
 
-export const config = defineRouteConfig({
-  label: "Vyprodáno",
-  icon: XCircle,
-  nested: "/inventory",
-  rank: 20,
-});
-
-export default VyprodanoPage;
+export default Redirect;

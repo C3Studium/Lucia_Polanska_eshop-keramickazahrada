@@ -1,4 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { CubeSolid } from "@medusajs/icons";
 import {
   Badge,
@@ -260,11 +259,10 @@ const BundledProductsPage = () => (
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Balíčky",
-  icon: CubeSolid,
-  nested: "/products",
-  rank: 30,
-});
+/**
+ * **No sidebar entry.** Reached from Přehled → Produkty. The sidebar is down
+ * to the five places she navigates *to*; everything she works *in* lives
+ * under Přehled.
+ */
 
 export default BundledProductsPage;

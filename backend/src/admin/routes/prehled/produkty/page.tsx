@@ -60,11 +60,27 @@ type ProductsResponse = {
   counts: Record<string, number>;
 };
 
+/**
+ * The first four filter the catalogue; the last two are management screens that
+ * used to be their own sidebar entries. They sit here because they answer
+ * questions about the same thing — what am I selling, and how is it arranged —
+ * and a separate sidebar item for each made them look like separate jobs.
+ *
+ * „Na zakázku" is the *product setting*, not the commissions queue. That lives
+ * on the Zakázky tab, and the two are deliberately named differently.
+ */
 const tabs = [
   { key: "standard", label: "Produkty", empty: "Zatím žádné produkty" },
-  { key: "made-to-order", label: "Zakázky", empty: "Žádný produkt na zakázku" },
-  { key: "bundle", label: "Balíky", empty: "Žádné balíčky" },
+  { key: "made-to-order", label: "Na zakázku", empty: "Žádný produkt na zakázku" },
+  { key: "bundle", label: "Balíčky", empty: "Žádné balíčky" },
   { key: "clearance", label: "Poškozené", empty: "Nic ve výprodeji" },
+];
+
+/** Reached from the sub-bar but rendered as their own screens. */
+const managedTabs = [
+  { key: "balicky", label: "Spravovat balíčky", to: "/bundled-products" },
+  { key: "kolekce", label: "Kolekce a kategorie", to: "/merchant-catalog" },
+  { key: "profily", label: "Nastavení zakázkové výroby", to: "/zakazkova-vyroba" },
 ];
 
 const emptyWhy: Record<string, string> = {
@@ -166,6 +182,14 @@ const ProduktyInner = () => {
           count: data?.counts?.[tab.key],
         }))}
       />
+
+      <div className="flex flex-wrap items-center gap-2 px-6 pb-2">
+        {managedTabs.map((tab) => (
+          <Button key={tab.key} size="small" variant="transparent" asChild>
+            <Link to={tab.to}>{tab.label}</Link>
+          </Button>
+        ))}
+      </div>
 
       <div className="px-6 pb-4">
         <Input
