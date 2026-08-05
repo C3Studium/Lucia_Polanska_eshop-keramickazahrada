@@ -1430,3 +1430,20 @@ a 400px scroll: **headline 65px, lede 17px.**
 signature sits under the headline, lede right-aligned low, parallax differential confirmed.
 
 ---
+
+### Hero lockup — centred, parallax dialled back (Matěj, 2026-08-05)
+
+**Parallax reduced to a detail.** −62%/−18% → **−16%/−6%**. Measured over the same 400px scroll:
+headline 65px → **25px**, lede 17px → **14px**. The differential still reads as depth; it no
+longer announces itself.
+
+**The lockup is optically centred.** The header was one grid whose rows coupled the left column's
+vertical position to the right block's. Eyebrow, headline and signature are now wrapped in
+`.Hero__Intro__Lockup`, and the two masses are placed independently inside the frame: the lockup
+at `top: 50%` with `translateY(-54%)` (just above true centre, which reads as centred once the
+eyebrow's rule is counted), the lede and button anchored low-right. Headline top moved 315px →
+259px in an 820px frame.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
+
+---

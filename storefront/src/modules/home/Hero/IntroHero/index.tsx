@@ -87,8 +87,8 @@ export default function IntroHero({
     // Parallax is driven by the hero's own scroll: over the first screenful the page-wide kiln
     // journey barely advances, so tying text depth to it made the effect invisible. The two
     // masses travel at different rates, which is what actually reads as depth.
-    const headlineParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-62%"]);
-    const ledeParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-18%"]);
+    const headlineParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-16%"]);
+    const ledeParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-6%"]);
 
     // const PreloaderAnimSVG = {
     //     start: {
@@ -234,6 +234,7 @@ export default function IntroHero({
                 className="Hero__Intro__Header"
                 style={{ y: nameY, scale: nameScale, opacity: nameOpacity }}
             >
+                <div className="Hero__Intro__Lockup">
                 <span className="Hero__Intro__Eyebrow">Objekty s vlastním příběhem</span>
 
                 {/* One h1, and it carries the promise rather than the name: a visitor arrives
@@ -252,6 +253,7 @@ export default function IntroHero({
                 <motion.p className="Hero__Intro__Signature" style={{ y: headlineParallax }}>
                     <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
                 </motion.p>
+                </div>
 
                 <motion.div
                     className="Hero__Intro__Lede"

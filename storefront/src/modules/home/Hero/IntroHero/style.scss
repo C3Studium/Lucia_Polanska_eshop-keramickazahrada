@@ -146,29 +146,37 @@
    * and a light lede + action block dropped low on the right. The eye travels diagonally across
    * the frame rather than straight down its left edge, and the empty right half stops being dead.
    */
+  /*
+   * Two independently placed masses: the lockup sits near the vertical centre of the frame,
+   * the lede and action stay low on the right. Placing them separately rather than as rows of
+   * one grid is what lets each sit where it belongs.
+   */
   .Hero__Intro__Header {
     position: absolute;
-    right: 5vw;
-    bottom: clamp(5rem, 10vh, 8rem);
-    left: 5vw;
+    inset: 0 5vw;
     z-index: 5;
-    display: grid;
-    align-items: start;
     color: #ffe8d6;
-    column-gap: clamp(2rem, 6vw, 7rem);
-    grid-template-areas:
-      "eyebrow ."
-      "headline ."
-      "signature lede";
-    grid-template-columns: minmax(0, 1.3fr) minmax(min-content, 0.7fr);
-    row-gap: clamp(0.5rem, 1.4vh, 1.1rem);
-    transform-origin: left bottom;
+    pointer-events: none;
     will-change: transform, opacity;
+
+    > * {
+      pointer-events: auto;
+    }
+  }
+
+  .Hero__Intro__Lockup {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: flex;
+    max-width: min(64rem, 72%);
+    flex-direction: column;
+    align-items: flex-start;
+    /* Slightly above true centre — optically centred once the eyebrow's rule is counted. */
+    transform: translateY(-54%);
   }
 
   .Hero__Intro__Eyebrow {
-    grid-area: eyebrow;
-    justify-self: start;
     margin-bottom: clamp(0.8rem, 1.5vh, 1.3rem);
     padding-bottom: 0.8rem;
     border-bottom: 1px solid rgba(255, 232, 214, 0.32);
@@ -187,7 +195,6 @@
     font-family: "Sentient-Regular", serif;
     font-size: clamp(3.2rem, 6.6vw, 7.4rem);
     font-weight: 400;
-    grid-area: headline;
     letter-spacing: -0.045em;
     line-height: 0.92;
     text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
@@ -220,8 +227,6 @@
     font-family: "ooohBaby-Regular", cursive;
     font-size: clamp(1.9rem, 2.5vw, 2.75rem);
     font-weight: 300;
-    grid-area: signature;
-    justify-self: start;
     line-height: 1;
     transform: rotate(-1.2deg);
     transform-origin: left center;
@@ -229,6 +234,9 @@
 
   /* The counterweight: dropped low and right, on its own rule. */
   .Hero__Intro__Lede {
+    position: absolute;
+    right: 0;
+    bottom: clamp(3.5rem, 8vh, 6.5rem);
     display: flex;
     max-width: 26rem;
     flex-direction: column;
@@ -236,9 +244,6 @@
     padding-top: clamp(1rem, 2vh, 1.6rem);
     border-top: 1px solid rgba(255, 232, 214, 0.32);
     gap: clamp(1rem, 1.8vh, 1.5rem);
-    grid-area: lede;
-    align-self: end;
-    justify-self: end;
     text-align: right;
     will-change: transform, opacity;
   }
