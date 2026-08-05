@@ -122,6 +122,40 @@ medusaIntegrationTestRunner({
       })
     })
 
+    describe("providers she has to be able to find", () => {
+      /**
+       * `pp_pickup_pickup` was registered, enabled, and reported missing —
+       * because the admin renders provider ids through
+       * `formatProvider(id.split("_"))`, which showed it as „Pickup (PICKUP)"
+       * to someone looking for osobní odběr. Present but unrecognisable is
+       * operationally identical to absent.
+       *
+       * So this asserts the exact ids, which pin both halves: that the
+       * providers load (a provider whose module fails to resolve is simply
+       * not in this list — no error), and that their identifiers stay ones
+       * that render as recognisable Czech-ish labels.
+       */
+      it("registers the payment providers under recognisable ids", async () => {
+        const payment: any = getContainer().resolve("payment")
+        const providers = await payment.listPaymentProviders({})
+        const ids = providers.map((provider: any) => provider.id)
+
+        expect(ids).toContain("pp_comgate_comgate")
+        expect(ids).toContain("pp_osobni-odber_pickup")
+        expect(ids).not.toContain("pp_pickup_pickup")
+      })
+
+      it("registers the fulfillment providers", async () => {
+        const fulfillment: any = getContainer().resolve("fulfillment")
+        const providers = await fulfillment.listFulfillmentProviders({})
+        const ids = providers.map((provider: any) => provider.id)
+
+        expect(ids).toContain("pickup_osobni-odber")
+        expect(ids).toContain("ceska-posta-fulfillment_balikovna")
+        expect(ids).toContain("packeta_packeta")
+      })
+    })
+
     describe("POST routes — validated bodies", () => {
       /**
        * Every route here reads `req.validatedBody`, which only exists once a
