@@ -1,6 +1,6 @@
 # Storefront brief — finish what the backend already exposes
 
-Read this whole brief before touching anything. Then start at §8.
+Read this whole brief before touching anything. Then start at §9.
 
 ## 1. Mission
 
@@ -58,6 +58,13 @@ value; this is a broken checkout.
 6. Match the existing storefront's conventions — its data-fetching layer lives
    in `src/lib/data/`, and its components in `src/modules/`. Follow what is
    there rather than introducing a new pattern.
+7. **E-mail templates are not yours.** Another model is wiring every transactional
+   e-mail to its workflow, in `backend/src/modules/resend/`. Do not edit a
+   template, a subscriber or a send. Your only overlap with e-mail is §8 — the
+   storefront pages those e-mails link *to*.
+8. **Do not change a URL an e-mail depends on.** §8 lists the routes the backend
+   now links customers to. Renaming or moving one silently breaks a live e-mail:
+   the send still succeeds, and the customer gets a 404.
 
 ## 4. TODO — made-to-order (highest priority)
 
@@ -141,6 +148,27 @@ account page should not be a worse place to find it.
 If you need to generate it storefront-side rather than reading it from the
 order, that is a **backend gap** — write it down, do not guess the signature.
 
+### 4.6 Handle the payment outcome on the order page
+
+After paying a balance, the backend redirects the customer to
+
+```
+/{countryCode}/order/{id}/confirmed?platba=paid|chyba|neplatny-odkaz
+```
+
+Read `platba` and show a short Czech message. Nothing else is needed — the
+payment is already recorded server-side; this is only how the customer finds out.
+
+| `platba` | Message |
+| --- | --- |
+| `paid` | „Doplatek je zaplacený. Děkujeme!" |
+| `chyba` | „Platbu se nepodařilo otevřít. Napište nám prosím." |
+| `neplatny-odkaz` | „Odkaz na platbu už neplatí. Napište nám prosím." |
+
+Without this the customer completes a payment and lands on an ordinary order
+page with no acknowledgement, which reads as *it did not work* — and the usual
+response to that is paying twice.
+
 ## 5. TODO — personal collection and paying on arrival
 
 The backend now has an **„Osobní odběr"** fulfilment provider and a **`pickup`
@@ -209,7 +237,33 @@ it down rather than approximating with fulfillment status.
 Refresh on focus rather than polling on a timer. These states change a few times
 over days, and a request every few seconds for that is waste.
 
-## 8. Start here
+## 8. Routes the e-mails link to — do not move these
+
+Another model is wiring every transactional e-mail. Those e-mails link into the
+storefront, and the backend now builds each link against the routes below. **Two
+of them do not exist yet.**
+
+| Purpose | URL the backend sends | Exists? |
+| --- | --- | --- |
+| „Vaše objednávka" | `/{cc}/order/{id}/confirmed` | ✅ |
+| Product / review request | `/{cc}/products/{handle}` | ✅ |
+| Balance payment outcome | `/{cc}/order/{id}/confirmed?platba=…` | ⚠️ route exists, param ignored — §4.6 |
+| Fallback after payment | `/{cc}/account/orders?platba=…` | ⚠️ route exists, param ignored — §4.6 |
+
+`{cc}` is the country segment (`cz`, from `NEXT_PUBLIC_DEFAULT_REGION`).
+
+**These were wrong until just now.** The backend was linking to `/objednavka/{id}`
+and `/produkt/{product_id}` — an invented path, a missing country segment, and a
+product id where the storefront routes by handle. Every link in every customer
+e-mail was a 404. It is fixed on the backend side and covered by tests
+(`src/lib/__tests__/customer-email-links.unit.spec.ts`), which is why rule 8
+exists: those tests encode *your* route names, so moving one fails the backend
+build rather than quietly breaking a live e-mail.
+
+If you have a good reason to rename one of these routes, say so — the backend
+link and its test get updated together, in the same change.
+
+## 9. Start here
 
 1. Read this brief, then look at how `src/lib/data/` and `src/modules/` are
    organised — match them.
@@ -217,12 +271,12 @@ over days, and a request every few seconds for that is waste.
    breakage is attributable.
 3. Work **§4 first, in order**. It is a broken purchase path; everything else is
    an improvement.
-4. Then §5, §6, §7.
+4. Then §4.6 (a few lines, and it stops customers paying twice), then §5, §6, §7.
 5. Keep a short log of what you did and anything you found that contradicts this
    brief. Two things in here are marked as backend gaps (§6.3, §7) — if you find
    a third, add it rather than working around it.
 
-## 9. What is already done — do not rebuild
+## 10. What is already done — do not rebuild
 
 - **Wishlist** — integrated across ~20 files.
 - **Reviews** — integrated across ~15 files, including submission. The backend
@@ -232,8 +286,11 @@ over days, and a request every few seconds for that is waste.
 - **ComGate payment** — working. Note it is in **test mode**
   (`COMGATE_TEST`), so payments are not real yet.
 - **Abandoned cart e-mails** — a backend job, no storefront work needed.
+- **Every transactional e-mail** — another model is wiring these right now. Do
+  not touch `backend/src/modules/resend/`. Your only concern is that the routes
+  in §8 keep existing.
 
-## 10. Reporting
+## 11. Reporting
 
 When you finish, state: what you completed, what you could not and why, any
 backend gap you found, and anything in this brief that turned out to be wrong

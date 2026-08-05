@@ -90,15 +90,47 @@ export const customerName = (order: any): string => {
 export const orderNumber = (order: any): string =>
   `#${order?.display_id ?? ""}`.trim()
 
-/** Where a customer goes to look at their order. */
-export const orderLink = (order: any): string => {
+/**
+ * The storefront's own base URL and country segment.
+ *
+ * Every storefront route is under `/[countryCode]/…`, so a link without one
+ * 404s. `cz` matches `NEXT_PUBLIC_DEFAULT_REGION`; it is overridable in case a
+ * second region is ever added.
+ */
+export const storefrontBase = (): string => {
   const base = (
     process.env.STOREFRONT_PUBLIC_URL ||
     process.env.MEDUSA_STOREFRONT_URL ||
     ""
   ).replace(/\/+$/, "")
 
-  return base ? `${base}/objednavka/${order?.id ?? ""}` : ""
+  if (!base) {
+    return ""
+  }
+  const country = (process.env.STOREFRONT_COUNTRY || "cz").toLowerCase()
+  return `${base}/${country}`
+}
+
+/**
+ * Where a customer goes to look at their order.
+ *
+ * Path verified against the storefront's actual routes
+ * (`app/[countryCode]/(main)/order/[id]/confirmed`). An invented path is worse
+ * than no link: the customer clicks, gets a 404, and concludes the shop is
+ * broken.
+ */
+export const orderLink = (order: any): string => {
+  const base = storefrontBase()
+  return base && order?.id ? `${base}/order/${order.id}/confirmed` : ""
+}
+
+/**
+ * A product page. The storefront routes products by **handle**, not id
+ * (`products/[handle]`), so passing an id produces a page that does not exist.
+ */
+export const productLink = (handle?: string | null): string => {
+  const base = storefrontBase()
+  return base && handle ? `${base}/products/${handle}` : ""
 }
 
 /**

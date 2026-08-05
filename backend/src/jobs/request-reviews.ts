@@ -4,6 +4,7 @@ import {
   customerName,
   orderLink,
   orderNumber,
+  productLink,
   sendCustomerEmail,
 } from "../lib/customer-email"
 import { getMerchantSettings } from "../lib/merchant-settings"
@@ -61,6 +62,7 @@ export default async function requestReviews(container: MedusaContainer) {
       "order.items.title",
       "order.items.thumbnail",
       "order.items.product_id",
+      "order.items.variant.product.handle",
     ],
     filters: {
       shipped_at: { $gte: shippedAfter, $lte: shippedBefore },
@@ -79,11 +81,9 @@ export default async function requestReviews(container: MedusaContainer) {
     }
 
     const item = (order.items || [])[0]
-    const storefront = (
-      process.env.STOREFRONT_PUBLIC_URL ||
-      process.env.MEDUSA_STOREFRONT_URL ||
-      ""
-    ).replace(/\/+$/, "")
+    // Handle, not id — the storefront routes products by handle.
+    const handle = item?.variant?.product?.handle ?? null
+    const link = productLink(handle)
 
     const ok = await sendCustomerEmail(container, {
       template: "order-review",
@@ -97,14 +97,8 @@ export default async function requestReviews(container: MedusaContainer) {
         orderLink: orderLink(order),
         productName: item?.title ?? "váš kousek",
         productImage: item?.thumbnail ?? "",
-        productLink:
-          storefront && item?.product_id
-            ? `${storefront}/produkt/${item.product_id}`
-            : "",
-        reviewLink:
-          storefront && item?.product_id
-            ? `${storefront}/produkt/${item.product_id}#hodnoceni`
-            : "",
+        productLink: link,
+        reviewLink: link ? `${link}#hodnoceni` : "",
       },
     })
 
