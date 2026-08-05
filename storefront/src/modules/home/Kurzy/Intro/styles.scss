@@ -22,6 +22,10 @@
     overflow: hidden;
     isolation: isolate;
     will-change: background-color;
+
+    /* 700px cannot be honoured in a 430px or 660px window; 100svh already carries the intent. */
+    @include phs-h { min-height: 0; }
+    @include lt-h  { min-height: 0; }
   }
 
   &__ambient {

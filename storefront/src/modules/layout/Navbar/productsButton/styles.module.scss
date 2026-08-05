@@ -167,6 +167,12 @@
   width: 100%;
   height: min(80vh, calc(100dvh - 182px));
   min-height: 520px;
+
+  /* A 520px floor inside a 430px window leaves the menu unscrollable and unclosable. */
+  @include phs-h {
+    height: calc(100dvh - 96px);
+    min-height: 0;
+  }
 }
 
 .collectionCard {
