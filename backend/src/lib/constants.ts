@@ -23,9 +23,14 @@ export const IS_DEV = process.env.NODE_ENV === 'development'
  */
 export const BACKEND_URL = process.env.BACKEND_PUBLIC_URL ?? process.env.RAILWAY_PUBLIC_DOMAIN_VALUE ?? 'http://localhost:9000'
 /**
- * Public URL for the storefront
- */
-export const STOREFRONT_URL = process.env.STOREFRONT_PUBLIC_URL ?? process.env.RAILWAY_PUBLIC_DOMAIN_VALUE ?? 'http://localhost:3000'
+ * Storefront URLs come from `lib/storefront-url.ts`, not from here.
+ *
+ * There was a `STOREFRONT_URL` const at this spot with nothing using it and
+ * two things wrong with it: it fell back to `RAILWAY_PUBLIC_DOMAIN_VALUE`,
+ * which is the *backend* domain, and then to `localhost:3000`. Either would
+ * have produced a plausible-looking link to the wrong place, in an e-mail,
+ * where nobody would notice until a customer did. Removed rather than fixed,
+ * so there stays exactly one way to build a customer-facing URL.
 
 
 /**

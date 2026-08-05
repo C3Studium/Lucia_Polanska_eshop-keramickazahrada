@@ -93,7 +93,7 @@ const mockOrderReadyPickup: OrderReadyPickupEmailProps = {
   pickupLocation: "Ateliér Keramická zahrada",
   pickupAddress: "Putim 229, 397 01 Písek",
   readyDate: new Date().toLocaleDateString('cs-CZ'),
-  orderLink: "https://keramickazahrada.cz/objednavka/12345",
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed",
 }
 
 export default () => <OrderReadyPickupEmailComponent {...mockOrderReadyPickup} />
