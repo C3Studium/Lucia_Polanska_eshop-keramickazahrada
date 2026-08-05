@@ -1307,3 +1307,74 @@ to see it after paying.
 Committed so far: **C1, C2, C3, C4, C7, C9**. The remaining P2 items are **not started** and are
 listed in the TODO section as T-8.
 
+
+## Hero recomposition + navbar/search/contact polish (Matěj, 2026-08-05)
+
+Direct requests from Matěj while inspecting locally, outside the numbered roadmap.
+
+### Hero — proposition as headline (option B of three offered)
+
+`home/Hero/IntroHero/`. The name was the display type at 131px with the Oooh Baby script at 95px
+overlapping it, while the actual promise sat in a separate right-hand column on a different
+baseline, over the busiest part of the image. Now one left column on one grid: eyebrow → promise
+(Sentient, ~82px) → "— Lucie Polanská" as a real signature (~40px) → lede → CTA.
+
+The headline stays editable: it is the **first line of the Sanity `content` field**, with the
+remainder becoming the lede. No new CMS field, and the fallback carries the existing copy.
+
+Three defects fixed on the way:
+
+- **The homepage rendered two `<h1>`s** — `PreciseBlendedText` emitted one per name part. It now
+  renders a line and the hero owns a single `h1`.
+- **Per-character animation collapsed spaces.** Each character is an `inline-block` span and an
+  inline-block space has zero width, so the multi-word headline read *"Zakaždým mýmvýrobkem
+  jepříběh"*. Spaces render as ` `. Latent before, because the old headline was single words.
+- **`text-transform: capitalize` on `webButton`** turned "Prohlédnout objekty" into English title
+  case. Removed site-wide.
+
+The CTA now clears the fold at 1280×720 and 1536×864.
+
+### Produkty mega-menu
+
+- **The "Otevřít" pill was a bare `<span>` at `z-index: 3`, above the card's link at `z-index: 1`
+  — so it swallowed the click and did nothing.** It now lives *inside* the anchor.
+- **"Zobrazit vše" is gone.** Matěj asked for it only when an entry genuinely has no categories —
+  which is every card today, since the catalogue has no collections and categories have no
+  children, so it appeared everywhere and said nothing. Cards with sub-categories list them;
+  cards without now show **how many objects are inside** ("28 objektů", three-form plural).
+  *Answering the question directly: the category links that were there before were the fake
+  "kategorie" placeholders, six per card, every one pointing at an unfiltered `/store`. The real
+  categories are now the cards themselves.*
+
+### Navbar search overlay
+
+- **`useDragScroll`** — the rail is dragged with pointer capture and settles through a framer
+  `useSpring`, and a vertical wheel now scrolls it horizontally. Both were absent: the only way
+  to move the rail was to grab the scrollbar. A drag can start on a product card (which is most
+  of the rail) and the resulting click is suppressed once the pointer has travelled 4px, so
+  dragging never opens a product by accident. Under `prefers-reduced-motion` the spring is
+  bypassed and the rail jumps.
+- **Scrollbar restyled** to the site's language — olive thumb on a hairline track, 6px, with a
+  `grab`/`grabbing` cursor.
+- **"Procházet podle" chips toggle**: clicking the active chip clears the search input.
+- **"Vymazat filtry"** — text-only, right-aligned, shown only when something is filtered.
+- **Facet pills** below the chips, mirroring the store toolbar (Ve slevě, Novinky, and the four
+  price bands), filtering on top of the text query. 44px targets.
+
+### Contact dialog
+
+- **Name and e-mail share one row**; phone and message run full width beneath, with the topic
+  pills above them as before.
+- **The dialog closes on route change.** Its own FAQ and legal links navigate the page behind it,
+  and it used to stay open over the new route. Verified: open on `/store` → follow the FAQ link →
+  URL becomes `/cz/dotazy` and the dialog is gone.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0. Verified in the
+browser: wheel 0→700px, drag 700→1072px, six facet pills, form row geometry (name/e-mail 259px
+each on one row, message 547px), and close-on-navigation.
+
+**Note:** the contact form is still behind `NEXT_PUBLIC_CONTACT_FORM_ENABLED` (D-S1, O-6) — with
+the flag off the dialog shows direct contact details instead. The layout above was verified with
+the flag on.
+
+---

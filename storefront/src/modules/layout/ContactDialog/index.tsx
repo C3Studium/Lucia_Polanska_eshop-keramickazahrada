@@ -1,10 +1,12 @@
 "use client"
 
 import { AnimatePresence } from "framer-motion"
+import { usePathname } from "next/navigation"
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -37,6 +39,7 @@ export function ContactDialogProvider({
   children: ReactNode
 }) {
   const [topic, setTopic] = useState<Inquiry | null>(null)
+  const pathname = usePathname()
   // Whatever the customer was on when they opened the dialog gets focus back on close.
   const triggerRef = useRef<HTMLElement | null>(null)
 
@@ -50,6 +53,12 @@ export function ContactDialogProvider({
     setTopic(null)
     triggerRef.current?.focus()
   }, [])
+
+  // Following a link inside the dialog (FAQ, terms) navigates the page behind it; the dialog
+  // must not stay open over the new route.
+  useEffect(() => {
+    setTopic(null)
+  }, [pathname])
 
   const value = useMemo(
     () => ({ open, close, isOpen: topic !== null }),

@@ -223,7 +223,7 @@
 }
 
 .imageShadeActive { opacity: 0.18; }
-.cardHitArea { z-index: 1; }
+.cardHitArea { z-index: 2; }
 
 .verticalTitle {
   position: absolute;
@@ -283,7 +283,6 @@
   position: absolute;
   right: 14px;
   bottom: 12px;
-  z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -346,4 +345,12 @@
 
     .footerLink { flex: 0 0 auto; }
   }
+}
+
+/* Shown instead of sub-category links when an entry has none: how much is inside. */
+.cardCount {
+  color: rgba(255, 244, 235, 0.86);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.02em;
 }

@@ -61,6 +61,7 @@ function toCollectionCards(
       title: collection.title,
       href: catalogueHref("collection", collection.handle),
       image: imageFor(collection.metadata, collection.products),
+      productCount: collection.products?.length ?? 0,
       categories: categories
         .filter((category) =>
           category.products?.some(({ id }) => productIds.has(id))
@@ -85,6 +86,7 @@ function toCategoryCards(
       title: category.name,
       href: catalogueHref("category", category.handle),
       image: imageFor(category.metadata, category.products),
+      productCount: category.products?.length ?? 0,
       categories: (category.category_children ?? [])
         .slice(0, CATEGORY_LINK_LIMIT)
         .map(toNavigationCategory),

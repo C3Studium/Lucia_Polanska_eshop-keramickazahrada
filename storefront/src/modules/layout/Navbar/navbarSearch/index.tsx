@@ -5,6 +5,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Thumbnail from "@modules/products/components/thumbnail"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useDragScroll } from "./useDragScroll"
 import styles from "./style.module.scss"
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -89,6 +90,38 @@ const itemVariants: Variants = {
     scale: 1,
     transition: { duration: 0.5, ease },
   },
+}
+
+/** Facet predicates, kept beside the facet list so the two cannot drift apart. */
+function matchesFacets(product: any, facets: string[]) {
+  const variant = product?.variants?.[0]
+  const amount = Number(
+    variant?.calculated_price?.calculated_amount ?? product?.price ?? NaN
+  )
+  const isSale =
+    variant?.calculated_price?.calculated_price?.price_list_type === "sale"
+  const isNew =
+    product?.created_at &&
+    new Date(product.created_at).getTime() > Date.now() - 30 * 86400000
+
+  return facets.every((facet) => {
+    switch (facet) {
+      case "sale":
+        return Boolean(isSale)
+      case "new":
+        return Boolean(isNew)
+      case "under-500":
+        return Number.isFinite(amount) && amount < 500
+      case "500-1000":
+        return Number.isFinite(amount) && amount >= 500 && amount < 1000
+      case "1000-2500":
+        return Number.isFinite(amount) && amount >= 1000 && amount < 2500
+      case "over-2500":
+        return Number.isFinite(amount) && amount >= 2500
+      default:
+        return true
+    }
+  })
 }
 
 const normalizeSearchValue = (value: string) =>
@@ -232,14 +265,42 @@ function SearchContent({
   entranceComplete,
 }: SearchContentProps) {
   const normalizedQuery = normalizeSearchValue(query)
+  const railRef = useDragScroll<HTMLDivElement>()
+  const [activeFacets, setActiveFacets] = useState<string[]>([])
+
+  const toggleFacet = (id: string) =>
+    setActiveFacets((current) =>
+      current.includes(id) ? current.filter((facet) => facet !== id) : [...current, id]
+    )
+
+  const clearAll = () => {
+    setActiveFacets([])
+    onQueryChange("")
+  }
+
+  const hasFilters = activeFacets.length > 0 || Boolean(query)
 
   const products = useMemo(() => {
-    if (!normalizedQuery) return catalogueProducts
+    const byQuery = !normalizedQuery
+      ? catalogueProducts
+      : catalogueProducts.filter((product) =>
+          getProductSearchValue(product).includes(normalizedQuery)
+        )
 
-    return catalogueProducts.filter((product) =>
-      getProductSearchValue(product).includes(normalizedQuery)
-    )
-  }, [catalogueProducts, normalizedQuery])
+    if (!activeFacets.length) return byQuery
+
+    return byQuery.filter((product) => matchesFacets(product, activeFacets))
+  }, [catalogueProducts, normalizedQuery, activeFacets])
+
+  // The same facets the store page offers, so the overlay is not a weaker second search.
+  const FACETS = [
+    { id: "sale", label: "Ve slevě" },
+    { id: "new", label: "Novinky" },
+    { id: "under-500", label: "Do 500 Kč" },
+    { id: "500-1000", label: "500–1 000 Kč" },
+    { id: "1000-2500", label: "1 000–2 500 Kč" },
+    { id: "over-2500", label: "Nad 2 500 Kč" },
+  ] as const
 
   const helpers = useMemo(() => {
     const suggestions = new Map<
@@ -279,6 +340,7 @@ function SearchContent({
           : "objektů v katalogu"
       }`
 
+
   return (
     <motion.div
       className={styles.content}
@@ -299,7 +361,10 @@ function SearchContent({
                 <motion.button
                   key={`${helper.type}-${helper.label}`}
                   type="button"
-                  onClick={() => onQueryChange(helper.label)}
+                  aria-pressed={query === helper.label}
+                  onClick={() =>
+                    onQueryChange(query === helper.label ? "" : helper.label)
+                  }
                   initial={{ opacity: 0, x: -14 }}
                   animate="rest"
                   whileHover="hover"
@@ -344,6 +409,32 @@ function SearchContent({
                 </motion.button>
               ))}
             </motion.div>
+
+            <motion.div className={styles.facets}>
+              {FACETS.map((facet) => (
+                <button
+                  key={facet.id}
+                  type="button"
+                  className={
+                    activeFacets.includes(facet.id) ? styles.facetActive : undefined
+                  }
+                  aria-pressed={activeFacets.includes(facet.id)}
+                  onClick={() => toggleFacet(facet.id)}
+                >
+                  {facet.label}
+                </button>
+              ))}
+
+              {hasFilters && (
+                <button
+                  type="button"
+                  className={styles.clearFilters}
+                  onClick={clearAll}
+                >
+                  Vymazat filtry
+                </button>
+              )}
+            </motion.div>
           </>
         )}
       </motion.div>
@@ -357,7 +448,11 @@ function SearchContent({
         </button>
       </motion.div>
 
-      <motion.div className={styles.quarryViewport} variants={sectionVariants}>
+      <motion.div
+        ref={railRef}
+        className={styles.quarryViewport}
+        variants={sectionVariants}
+      >
         <AnimatePresence mode="wait" initial={false}>
           {isLoading ? (
             <motion.div

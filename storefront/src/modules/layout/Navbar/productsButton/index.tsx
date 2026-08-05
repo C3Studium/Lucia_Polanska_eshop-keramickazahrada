@@ -8,6 +8,7 @@ import CollectionCategoryLink from "./CategoryLink"
 import { AnimatePresence, Easing, motion, useAnimate, type AnimationSequence } from "framer-motion"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
+import { withCount } from "@lib/util/plurals"
 import styles from "./styles.module.scss"
 
 export type NavigationCategory = {
@@ -23,6 +24,8 @@ export type NavigationCollection = {
   href: string
   image: string
   categories: NavigationCategory[]
+  /** Shown when the entry has no sub-categories to list. */
+  productCount: number
 }
 
 type ProductButtonProps = {
@@ -249,21 +252,14 @@ function CollectionCard({
   onActivate,
   onNavigate,
 }: CollectionCardProps) {
-  // Without sub-categories the card still needs one link, and it should keep the
-  // customer's context rather than dropping them on the unfiltered catalogue.
-  const links = collection.categories.length
-    ? collection.categories.map((category) => ({
-        id: category.id,
-        label: category.name,
-        href: category.href,
-      }))
-    : [
-        {
-          id: `${collection.id}-all`,
-          label: "Zobrazit vše",
-          href: collection.href,
-        },
-      ]
+  // Sub-categories when the entry has them. When it does not — which is every card while the
+  // catalogue has no collections — say how many objects are inside rather than offering a
+  // "Zobrazit vše" link that just repeats the card itself.
+  const links = collection.categories.map((category) => ({
+    id: category.id,
+    label: category.name,
+    href: category.href,
+  }))
 
   return (
     <motion.article
@@ -280,12 +276,20 @@ function CollectionCard({
         <div className={`${styles.imageShade} ${isActive ? styles.imageShadeActive : ""}`} />
       </div>
 
+      {/* The whole card is the link, and the visible "Otevřít" pill lives inside it. It used
+          to be a bare <span> stacked above this anchor, so clicking it did nothing. */}
       <LocalizedClientLink
         href={collection.href}
         className={styles.cardHitArea}
-        aria-label={`Otevřít kolekci ${collection.title}`}
+        aria-label={`Otevřít ${collection.title}`}
         onClick={onNavigate}
-      />
+      >
+        {isActive && (
+          <span className={styles.openLabel}>
+            Otevřít <ArrowRight size={12} color="white" />
+          </span>
+        )}
+      </LocalizedClientLink>
 
       <AnimatePresence mode="sync" initial={false}>
         {!isActive ? (
@@ -316,20 +320,25 @@ function CollectionCard({
             </motion.span>
             <motion.h3 variants={contentItemVariants}>{collection.title}</motion.h3>
             <motion.div className={styles.categoryLinks} variants={contentItemVariants}>
-              {links.map((link) => (
-                <motion.div key={link.id} variants={categoryVariants}>
-                  <CollectionCategoryLink
-                    href={link.href}
-                    onClick={onNavigate}
-                    label={link.label}
-                  />
-                </motion.div>
-              ))}
+              {links.length > 0 ? (
+                links.map((link) => (
+                  <motion.div key={link.id} variants={categoryVariants}>
+                    <CollectionCategoryLink
+                      href={link.href}
+                      onClick={onNavigate}
+                      label={link.label}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <motion.span className={styles.cardCount} variants={categoryVariants}>
+                  {withCount(collection.productCount, "objekt", "objekty", "objektů")}
+                </motion.span>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      {isActive && <span className={styles.openLabel}>Otevřít <ArrowRight size={12} color="white" /></span>}
     </motion.article>
   )
 }

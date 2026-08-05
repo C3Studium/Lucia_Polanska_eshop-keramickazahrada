@@ -134,104 +134,104 @@
     }
   }
 
+  /*
+   * Hero lockup, V2 (Option B). One left column on one grid: eyebrow → promise → signature →
+   * lede → CTA. Previously the name was the display type at 131px with the script at 95px
+   * overlapping it, and the promise sat in a separate right-hand column on a different
+   * baseline — two unrelated things over the busiest part of the image.
+   */
   .Hero__Intro__Header {
     position: absolute;
-    bottom: clamp(10rem, 17vh, 13.5rem);
+    bottom: clamp(6rem, 12vh, 9rem);
     left: 5vw;
     z-index: 5;
     display: flex;
-    width: min(68rem, 62vw);
+    width: min(46rem, 52vw);
     flex-direction: column;
     align-items: flex-start;
     color: #ffe8d6;
-    pointer-events: none;
     transform-origin: left bottom;
     will-change: transform, opacity;
-
-    h1 {
-      margin: 0;
-      color: inherit;
-      text-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
-    }
-
-    .Hero__Intro__Header__Title h1 {
-      font-family: "Sentient-Regular";
-      font-size: clamp(6rem, 10.2vw, 12rem);
-      font-weight: 400;
-      line-height: 0.73;
-      letter-spacing: -0.06em;
-    }
-
-    .Hero__Intro__Header__Subtitle {
-      margin-top: clamp(0.25rem, 0.8vh, 0.7rem);
-      margin-left: clamp(8rem, 14vw, 17rem);
-      transform: rotate(-1.2deg);
-      transform-origin: left center;
-
-      h1 {
-        color: #cbc69d;
-        font-family: "ooohBaby-Regular";
-        font-size: clamp(4.8rem, 7.4vw, 8.8rem);
-        font-weight: 300;
-        line-height: 0.76;
-        letter-spacing: -0.035em;
-      }
-    }
-
-    .precise-char {
-      display: inline-block;
-      color: inherit;
-    }
   }
 
-  .Hero__Intro__Content {
-    position: absolute;
-    right: 5vw;
-    bottom: clamp(9.8rem, 15.5vh, 12rem);
-    z-index: 5;
-    width: clamp(20rem, 24vw, 27rem);
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 232, 214, 0.32);
+  .Hero__Intro__Eyebrow {
+    margin-bottom: clamp(0.9rem, 1.6vh, 1.4rem);
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255, 232, 214, 0.32);
+    color: #f1e3d6;
+    font-family: "Sansation-Regular", sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .Hero__Intro__Headline {
+    display: flex;
+    margin: 0;
+    flex-direction: column;
+    color: inherit;
+    font-family: "Sentient-Regular", serif;
+    /* Smaller than the old name lockup: three lines of promise need to fit as one block. */
+    font-size: clamp(3.2rem, 6.4vw, 7.2rem);
+    font-weight: 400;
+    letter-spacing: -0.045em;
+    line-height: 0.94;
+    text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+    text-wrap: balance;
+  }
+
+  .Hero__Intro__Headline .precise-blended-text {
+    display: block;
+  }
+
+  .Hero__Intro__Headline .precise-char {
+    display: inline-block;
+    color: inherit;
+  }
+
+  .Hero__Intro__Signature {
+    margin: clamp(0.9rem, 1.8vh, 1.6rem) 0 0;
+    color: #cbc69d;
+    font-family: "ooohBaby-Regular", cursive;
+    /* A signature, not a second headline — it was 95px competing with the name above it. */
+    font-size: clamp(1.9rem, 2.5vw, 2.75rem);
+    font-weight: 300;
+    line-height: 1;
+    transform: rotate(-1.2deg);
+    transform-origin: left center;
+  }
+
+  .Hero__Intro__Lede {
+    display: flex;
+    max-width: 34rem;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: clamp(1.4rem, 2.6vh, 2.2rem);
+    gap: clamp(1.1rem, 2vh, 1.7rem);
     will-change: transform, opacity;
+  }
 
-    &::before {
-      content: "Objekty s vlastním příběhem";
-      display: block;
-      margin-bottom: 0.85rem;
-      color: rgba(255, 232, 214, 0.68);
-      font-family: "Sansation-Regular";
-      font-size: clamp(0.75rem, 0.62vw, 0.75rem);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
+  .Hero__Intro__Lede p {
+    margin: 0;
+    color: #f4ece4;
+    font-family: "Sentient-Light", serif;
+    font-size: clamp(1.02rem, 1.05vw, 1.22rem);
+    line-height: 1.45;
+  }
 
-    .Hero__Intro__Content__Text p {
-      display: flex;
-      flex-wrap: wrap;
-      margin: 0 0 1.45rem;
-      color: rgba(255, 244, 235, 0.88);
-      font-family: "Sentient-Light";
-      font-size: clamp(1.02rem, 1.05vw, 1.22rem);
-      line-height: 1.38;
-    }
+  .Hero__Intro__Header__Cta {
+    display: flex;
+    min-height: 3.25rem;
+    justify-content: flex-start;
 
-    .Hero__Intro__Content__Text span {
-      font-size: inherit;
-      line-height: inherit;
-    }
-
-    .Hero__Intro__Content__Button {
-      display: flex;
-      min-height: 3.25rem;
-      justify-content: flex-start;
-
-      > a,
-      > button {
-        min-width: 10.5rem;
-        min-height: 3.1rem;
-      }
+    > a,
+    > button {
+      min-width: 11rem;
+      min-height: 3.1rem;
     }
   }
+
+
 
   .Hero__Intro__FooterRail {
     position: absolute;
@@ -347,35 +347,26 @@
       }
     }
 
+    /* Small-viewport lockup. The dedicated responsive pass is Phase F; this keeps the new
+       single-column composition sane in the meantime rather than leaving stale selectors. */
     .Hero__Intro__Header {
       right: 1.3rem;
-      bottom: 18.5rem;
+      bottom: 7.4rem;
       left: 1.3rem;
       width: auto;
-
-      .Hero__Intro__Header__Title h1 {
-        font-size: clamp(4.8rem, 21vw, 7.6rem);
-      }
-
-      .Hero__Intro__Header__Subtitle {
-        margin-left: clamp(2.5rem, 14vw, 5.5rem);
-
-        h1 {
-          font-size: clamp(3.8rem, 17vw, 6.2rem);
-        }
-      }
     }
 
-    .Hero__Intro__Content {
-      right: 1.3rem;
-      bottom: 7.1rem;
-      left: 1.3rem;
-      width: auto;
+    .Hero__Intro__Headline {
+      font-size: clamp(2.6rem, 11vw, 4.4rem);
+    }
 
-      .Hero__Intro__Content__Text p {
-        max-width: 28rem;
-        font-size: 1rem;
-      }
+    .Hero__Intro__Signature {
+      font-size: clamp(1.6rem, 6vw, 2.2rem);
+    }
+
+    .Hero__Intro__Lede p {
+      max-width: 28rem;
+      font-size: 1rem;
     }
 
     .Hero__Intro__FooterRail {
