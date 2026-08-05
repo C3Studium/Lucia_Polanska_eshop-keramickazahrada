@@ -183,7 +183,7 @@
                 md: (font-size: 1rem),
                 sm: (font-size: 1rem),
                 xs: (font-size: 0.9rem),
-                xxs: (font-size: 0.8rem, line-height: 1.4),
+                xxs: (font-size: 0.8125rem, line-height: 1.4),
             ));
 
             // --- Vertical (portrait) responsiveness ---
@@ -351,8 +351,8 @@
 .eyebrow {
   margin: 0 0 .25rem;
   color: rgba(33, 34, 34, .5);
-  font-size: .7rem;
-  letter-spacing: .16em;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

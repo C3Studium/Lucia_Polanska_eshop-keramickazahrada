@@ -52,3 +52,61 @@ export const extractComgateRedirectUrl = (payload: any): string | null => {
     ? candidate
     : null
 }
+
+const legacyComgateOptions: Record<string, string> = {
+  pp_comgate_card: "CARD_ALL",
+  pp_comgate_applepay: "APPLEPAY_REDIRECT",
+  pp_comgate_googlepay: "GOOGLEPAY_REDIRECT",
+  pp_comgate_bank: "BANK_ALL",
+}
+
+export const comgateMethodForOption = (optionId: string) =>
+  fromComgateOptionId(optionId) || legacyComgateOptions[optionId] || "ALL"
+
+export const legacyComgateOptionForMethod = (method: string) => {
+  if (method === "BANK_ALL") return "pp_comgate_bank"
+  if (method === "APPLEPAY_REDIRECT" || method === "APPLEPAY") {
+    return "pp_comgate_applepay"
+  }
+  if (method === "GOOGLEPAY_REDIRECT" || method === "GOOGLEPAY") {
+    return "pp_comgate_googlepay"
+  }
+  return "pp_comgate_card"
+}
+
+/**
+ * Shapes the payload ComGate needs from a cart. Kept pure and in one place: the payment step
+ * offers the methods, but the session is only created from the Review step, after consent.
+ */
+export const buildComgateSessionPayload = (cart: any, optionId: string) => {
+  const shippingAddress = cart?.shipping_address
+  const billingAddress = cart?.billing_address || shippingAddress
+  const shippingName = String(
+    cart?.shipping_methods?.at(-1)?.name || ""
+  ).toLowerCase()
+  const isPickup = ["zásil", "zasil", "packeta", "výdej"].some((token) =>
+    shippingName.includes(token)
+  )
+
+  return {
+    provider_id: "pp_comgate_comgate",
+    data: {
+      cart_id: cart.id,
+      method: comgateMethodForOption(optionId),
+      email: cart?.email || null,
+      first_name:
+        billingAddress?.first_name || shippingAddress?.first_name || null,
+      last_name: billingAddress?.last_name || shippingAddress?.last_name || null,
+      country_code:
+        shippingAddress?.country_code || billingAddress?.country_code || "cz",
+      billing_city: billingAddress?.city,
+      billing_street: billingAddress?.address_1,
+      billing_postal_code: billingAddress?.postal_code,
+      shipping_city: shippingAddress?.city,
+      shipping_street: shippingAddress?.address_1,
+      shipping_postal_code: shippingAddress?.postal_code,
+      delivery: isPickup ? "PICKUP" : "HOME_DELIVERY",
+      lang: "cs",
+    },
+  }
+}

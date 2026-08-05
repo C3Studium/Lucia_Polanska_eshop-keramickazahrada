@@ -9,7 +9,7 @@ import HomeExperience from "@modules/home/HomeExperience"
 import { client } from "../../../sanity/lib/client"
 
 export const metadata: Metadata = {
-  title: "Keramická zahrada | Autorská keramika Lucie Polanské",
+  title: { absolute: "Keramická zahrada | Autorská keramika Lucie Polanské" },
   description:
     "Ručně tvořená autorská keramika pro zahradu i domov. Objevte originální objekty, zakázkovou tvorbu a keramické kurzy Lucie Polanské.",
 }

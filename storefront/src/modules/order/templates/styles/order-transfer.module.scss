@@ -47,7 +47,7 @@
   padding-block: .85rem;
   border-block: 1px solid var(--line);
   font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: .17em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   animation: transferReveal .72s cubic-bezier(.22, 1, .36, 1) both;
 }
@@ -78,7 +78,7 @@
   margin: 0 0 1.25rem;
   color: rgba(32, 33, 28, .52);
   font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: .17em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -176,7 +176,7 @@
   margin-bottom: .75rem;
   color: rgba(32, 33, 28, .44);
   font: 600 .68rem/1.1 "Sansation-Regular", sans-serif;
-  letter-spacing: .15em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -317,7 +317,7 @@
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 232, 214, .18);
   color: rgba(255, 232, 214, .48) !important;
-  font-size: .76rem !important;
+  font-size: 0.8125rem !important;
 }
 
 .resultActions {

@@ -7,7 +7,7 @@ import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import AboutPageExperience from "@modules/omne/page"
 
 export const metadata: Metadata = {
-  title: "O mně | Lucie Polanská",
+  title: "O mně — Lucie Polanská",
   description:
     "Poznejte Lucii Polanskou, její cestu ke keramice, rukopis a inspiraci za objekty z Keramické zahrady.",
 }

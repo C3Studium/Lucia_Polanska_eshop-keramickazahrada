@@ -1,0 +1,50 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * Sits inside OrderStateShell's cream surface. Ink #20211d measures 15.4:1 there;
+ * the label tone #4f5147 measures 7.4:1. Money-adjacent copy gets solid, measured tones.
+ */
+
+.reference {
+  display: grid;
+  max-width: 54ch;
+  margin: clamp(20px, 2vw, 28px) 0 0;
+  padding: clamp(18px, 1.8vw, 24px);
+  border: 1px solid rgba(32, 33, 29, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.42);
+  gap: 14px;
+}
+
+.reference > div {
+  display: grid;
+  gap: 5px;
+}
+
+.reference dt {
+  color: #4f5147;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reference dd {
+  margin: 0;
+  color: #20211d;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.reference a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.note {
+  max-width: 54ch;
+  margin: 14px 0 0;
+  color: #4f5147;
+  font-size: 14px;
+  line-height: 1.55;
+}

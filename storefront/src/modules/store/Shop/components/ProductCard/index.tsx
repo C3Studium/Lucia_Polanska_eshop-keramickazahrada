@@ -7,6 +7,7 @@ import { motion, type Variants } from "framer-motion"
 import Image from "next/image"
 import { useState } from "react"
 import styles from "./style.module.scss"
+import { availabilityLabel, productAvailability } from "@lib/util/availability"
 
 type ProductCardProps = {
   product: HttpTypes.StoreProduct
@@ -70,6 +71,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   )?.url
   const isNew = Boolean(product.created_at && new Date(product.created_at).getTime() > Date.now() - 30 * 86400000)
   const hasSale = Boolean(cheapestPrice?.price_type === "sale" && cheapestPrice.percentage_diff)
+  const availability = productAvailability(product)
   const interactionState = isInteracting ? "hover" : "initial"
 
   return (
@@ -125,6 +127,13 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               </motion.div>
           )}
           <div className={styles.badges}>
+            {/* A customer could fall in love with a sold piece and only learn at the PDP. */}
+            {availability === "sold-out" && (
+              <span className={styles.badgeSold}>{availabilityLabel["sold-out"]}</span>
+            )}
+            {availability === "last-one" && (
+              <span className={styles.badgeLast}>{availabilityLabel["last-one"]}</span>
+            )}
             {isNew && <span>Novinka</span>}
             {hasSale && <span>−{Math.round(Number(cheapestPrice!.percentage_diff))} %</span>}
           </div>

@@ -36,7 +36,7 @@
   padding-block: .8rem;
   border-block: 1px solid rgba(32, 33, 29, .22);
   font: .7rem/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: .16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -93,7 +93,7 @@
 .kicker {
   margin: 0 0 clamp(1rem, 2.5vh, 1.8rem);
   font: .72rem/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: .17em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(32, 33, 29, .58);
 }

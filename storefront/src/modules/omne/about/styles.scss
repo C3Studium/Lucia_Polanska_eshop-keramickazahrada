@@ -98,8 +98,8 @@
             right: 0;
             margin: 0;
             color: rgba(33, 34, 34, .54);
-            font-size: clamp(.65rem, .7vw, .76rem);
-            letter-spacing: .16em;
+            font-size: clamp(0.75rem, .7vw, .76rem);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
@@ -264,7 +264,6 @@
             overflow: hidden;
             border: 0;
             border-radius: 0;
-            outline: 0;
 
             &::after{
                 content: "";
@@ -306,7 +305,7 @@
                     color: rgba(255, 255, 255, .68);
                     font-family: inherit;
                     font-size: .54em;
-                    letter-spacing: .16em;
+                    letter-spacing: 0.12em;
                     text-transform: uppercase;
                 }
             }

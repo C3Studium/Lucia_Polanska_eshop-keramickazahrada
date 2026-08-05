@@ -1,12 +1,13 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import PaymentConfirmed from "@modules/cart/components/payment-confirmed"
+import { getMerchantIdentity } from "@lib/data/merchant"
 type Props = {
   params: Promise<{ id: string }>
 }
 export const metadata: Metadata = {
-  title: "Order Confirmed",
-  description: "You purchase was successful",
+  title: "Objednávka potvrzena",
+  description: "Vaše objednávka byla úspěšně dokončena.",
 }
 
 export default async function OrderConfirmedPage(props: Props) {
@@ -14,5 +15,14 @@ export default async function OrderConfirmedPage(props: Props) {
   if (!params.id) {
     return notFound()
   }
-  return <PaymentConfirmed id={params.id} />
+
+  const merchant = getMerchantIdentity()
+
+  return (
+    <PaymentConfirmed
+      id={params.id}
+      supportEmail={merchant.email}
+      supportPhone={merchant.phone}
+    />
+  )
 }

@@ -3,8 +3,8 @@ import styles from "./styles/notfound.module.scss"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "404",
-  description: "Something went wrong",
+  title: "Stránka nenalezena",
+  description: "Stránka, kterou jste se pokusili otevřít, neexistuje.",
 }
 
 export default async function NotFound() {

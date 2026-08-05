@@ -84,8 +84,8 @@
   top: clamp(22px, 3vw, 44px);
   right: clamp(26px, 4vw, 66px);
   color: rgba(33, 34, 34, .42);
-  font: 10px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .18em;
+  font: 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   content: "Keramická zahrada · soukromý archiv";
 }
@@ -106,7 +106,7 @@
 .section :global(input:focus-visible),
 .section :global(select:focus-visible),
 .section :global(textarea:focus-visible) {
-  outline: 2px solid #9a6f65;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -145,7 +145,7 @@
   .children::before {
     top: 24px;
     right: 18px;
-    font-size: 8px;
+    font-size: 13px;
   }
 
   .center,

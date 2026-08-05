@@ -28,5 +28,5 @@
 		color: rgba(33,34,34,.62);
 	}
 
-	a:focus-visible { outline: 2px solid #9a6f65; outline-offset: 4px; }
+	a:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 }

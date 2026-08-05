@@ -1,6 +1,14 @@
 "use client"
 
+import ProductOptions from "./Options/ProductOptions"
+import {
+  isPurchasable,
+  maxPurchasableQuantity,
+  variantAvailability,
+} from "@lib/util/availability"
 import { addToCart } from "@lib/data/cart"
+import { toCzechErrorMessage } from "@lib/util/error-messages"
+import type { AddToCartState } from "./Cta/Add"
 import { BundleProduct } from "@lib/data/products"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { HttpTypes } from "@medusajs/types"
@@ -9,12 +17,10 @@ import RestockForm from "@modules/products/ProductPage/restock"
 import BundleActions from "@modules/products/components/bundle-actions"
 import { isEqual } from "lodash"
 import { motion } from "framer-motion"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Gallery from "../Gallery/gallery"
 import CTA from "./Cta/Add"
 import ProductPrice from "./Cta/Price"
-import Colors from "./Options/Colors"
-import Sizes from "./Options/Sizes"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -50,7 +56,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   isBundlePreview = false,
 }) => {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
-  const [isAdding, setIsAdding] = useState(false)
+  const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
+  const [quantity, setQuantity] = useState(1)
+  const resetTimer = useRef<number | undefined>(undefined)
+  const isAdding = addState.kind === "adding"
+
+  // The confirmation is temporary; clear it if the customer leaves the page first.
+  useEffect(() => () => window.clearTimeout(resetTimer.current), [])
 
   useEffect(() => {
     const firstVariant = product.variants?.[0]
@@ -71,33 +83,54 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     [product.variants, options]
   )
 
-  const inStock = useMemo(() => {
-    if (!selectedVariant) return false
-    if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
-      return true
-    }
-    return (selectedVariant.inventory_quantity || 0) > 0
-  }, [selectedVariant])
+  const availability = useMemo(
+    () => variantAvailability(selectedVariant),
+    [selectedVariant]
+  )
+  const inStock = isPurchasable(availability)
+  const maxQuantity = useMemo(
+    () => maxPurchasableQuantity(selectedVariant),
+    [selectedVariant]
+  )
+
+  // Never leave a quantity above what the customer can actually buy.
+  useEffect(() => {
+    setQuantity((current) => Math.min(Math.max(1, current), Math.max(1, maxQuantity)))
+  }, [maxQuantity])
 
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((previous) => ({ ...previous, [optionId]: value }))
   }
 
   const handleAddToCart = async () => {
-    if (!selectedVariant?.id) return
-    setIsAdding(true)
+    if (!selectedVariant?.id || isAdding) return
+
+    window.clearTimeout(resetTimer.current)
+    setAddState({ kind: "adding" })
+
     try {
       const result = await addToCart({
         variantId: selectedVariant.id,
-        quantity: 1,
+        quantity,
         countryCode,
       })
-      if (!result?.success)
-        console.error("Failed to add to cart:", result?.message)
+
+      if (!result?.success) {
+        throw new Error(result?.message)
+      }
+
+      // The header dropdown opens too, but it is off-viewport at the moment of the click —
+      // the button itself has to say what happened.
+      setAddState({ kind: "added" })
+      resetTimer.current = window.setTimeout(
+        () => setAddState({ kind: "idle" }),
+        4000
+      )
     } catch (error: any) {
-      console.error("Failed to add to cart:", error?.message || error)
-    } finally {
-      setIsAdding(false)
+      setAddState({
+        kind: "error",
+        message: toCzechErrorMessage(error?.message),
+      })
     }
   }
 
@@ -250,16 +283,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             ) : (
               <>
                 <div className="product__optionPanel">
-                  <Colors
+                  <ProductOptions
                     product={product}
-                    region={region}
-                    isAdding={isAdding}
-                    options={options}
-                    setOptionValue={setOptionValue}
-                  />
-                  <Sizes
-                    product={product}
-                    region={region}
                     isAdding={isAdding}
                     options={options}
                     setOptionValue={setOptionValue}
@@ -276,6 +301,11 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     inStock={inStock}
                     selectedVariant={selectedVariant}
                     isAdding={isAdding}
+                    addState={addState}
+                    availability={availability}
+                    quantity={quantity}
+                    maxQuantity={maxQuantity}
+                    onQuantityChange={setQuantity}
                     isValidVariant={isValidVariant}
                     handleAddToCart={handleAddToCart}
                     options={options}

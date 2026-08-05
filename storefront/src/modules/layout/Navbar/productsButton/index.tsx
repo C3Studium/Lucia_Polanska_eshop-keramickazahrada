@@ -7,27 +7,32 @@ import LinkCat from "./Link"
 import CollectionCategoryLink from "./CategoryLink"
 import { AnimatePresence, Easing, motion, useAnimate, type AnimationSequence } from "framer-motion"
 import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import { withCount } from "@lib/util/plurals"
 import styles from "./styles.module.scss"
 
 export type NavigationCategory = {
   id: string
   name: string
-  handle: string | null
+  /** Catalogue URL for this entry — built by the data layer, which knows what it is. */
+  href: string
 }
 
 export type NavigationCollection = {
   id: string
   title: string
-  handle: string | null
+  href: string
   image: string
   categories: NavigationCategory[]
+  /** Shown when the entry has no sub-categories to list. */
+  productCount: number
 }
 
 type ProductButtonProps = {
   onClickAction: (next: boolean) => void
   isActive: boolean
+  /** False when the catalogue returned nothing to put in the menu. */
+  hasMenu?: boolean
 }
 
 type CollectionListProps = {
@@ -40,18 +45,6 @@ type CollectionListProps = {
 
 const ease = [0.76, 0, 0.24, 1] as Easing
 
-const hardcodedCollections: NavigationCollection[] = Array.from({ length: 6 }, (_, collectionIndex) => ({
-  id: `collection-${collectionIndex + 1}`,
-  title: `Kolekce ${collectionIndex + 1}`,
-  handle: null,
-  image: "/assets/img/img/home_image.png",
-  categories: Array.from({ length: 6 }, (_, categoryIndex) => ({
-    id: `collection-${collectionIndex + 1}-category-${categoryIndex + 1}`,
-    name: "kategorie",
-    handle: null,
-  })),
-}))
-
 const footerLinks = [
   { label: "Smluvní podmínky", href: "/smluvni-podminky" },
   { label: "Cookies", href: "/cookies" },
@@ -60,19 +53,28 @@ const footerLinks = [
   { label: "Doprava a platba", href: "/doprava-a-platba" },
 ]
 
-const getCollectionHref = (collection: NavigationCollection) =>
-  collection.handle
-    ? `/store?collection=${encodeURIComponent(collection.handle)}`
-    : "/store"
-
-const getCategoryHref = (category: NavigationCategory) =>
-  category.handle
-    ? `/store?category=${encodeURIComponent(category.handle)}`
-    : "/store"
-
-export function ProductButton({ onClickAction, isActive }: ProductButtonProps) {
+export function ProductButton({
+  onClickAction,
+  isActive,
+  hasMenu = true,
+}: ProductButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const highlighted = isActive || isHovered
+
+  // With nothing to put in the menu, the label still has to lead somewhere: the
+  // catalogue itself. A control that opens an empty panel is worse than a link.
+  if (!hasMenu) {
+    return (
+      <LocalizedClientLink
+        href="/store"
+        className={styles.button}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <ProductButtonFace highlighted={isHovered} />
+      </LocalizedClientLink>
+    )
+  }
 
   return (
     <button
@@ -87,6 +89,14 @@ export function ProductButton({ onClickAction, isActive }: ProductButtonProps) {
       }}
       onMouseLeave={() => setIsHovered(false)}
     >
+      <ProductButtonFace highlighted={highlighted} />
+    </button>
+  )
+}
+
+function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
+  return (
+    <>
       <motion.span
         className={styles.buttonBackdrop}
         initial={false}
@@ -102,7 +112,7 @@ export function ProductButton({ onClickAction, isActive }: ProductButtonProps) {
           {highlighted ? <ArrowRight size={12} color="white" /> : <Arrow size={12} />}
         </motion.span>
       </span>
-    </button>
+    </>
   )
 }
 
@@ -113,9 +123,7 @@ export function CollectionList({
   activeIndex,
   onActiveIndexChange,
 }: CollectionListProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const items = collections.length ? collections : hardcodedCollections
+  const items = collections
   const safeActiveIndex = Math.min(activeIndex, items.length - 1)
   const [cardsScope, animateCards] = useAnimate<HTMLDivElement>()
   const previousIndex = useRef(0)
@@ -138,14 +146,9 @@ export function CollectionList({
     if (!active) previousIndex.current = 0
   }, [active])
 
-  const collectionMatch = pathname.match(/\/collections\/([^/?#]+)/)
-  const currentCollection = collectionMatch
-    ? items.find((collection) => collection.handle === decodeURIComponent(collectionMatch[1])) ?? null
-    : null
-
   return (
     <AnimatePresence initial={false}>
-      {active && (
+      {active && items.length > 0 && (
         <motion.div
           id="collection-navigation"
           className={styles.collectionList}
@@ -249,9 +252,14 @@ function CollectionCard({
   onActivate,
   onNavigate,
 }: CollectionCardProps) {
-  const categories = collection.categories.length
-    ? collection.categories.slice(0, 6)
-    : [{ id: `${collection.id}-fallback`, name: "Všechny produkty", handle: null }]
+  // Sub-categories when the entry has them. When it does not — which is every card while the
+  // catalogue has no collections — say how many objects are inside rather than offering a
+  // "Zobrazit vše" link that just repeats the card itself.
+  const links = collection.categories.map((category) => ({
+    id: category.id,
+    label: category.name,
+    href: category.href,
+  }))
 
   return (
     <motion.article
@@ -268,12 +276,20 @@ function CollectionCard({
         <div className={`${styles.imageShade} ${isActive ? styles.imageShadeActive : ""}`} />
       </div>
 
+      {/* The whole card is the link, and the visible "Otevřít" pill lives inside it. It used
+          to be a bare <span> stacked above this anchor, so clicking it did nothing. */}
       <LocalizedClientLink
-        href={getCollectionHref(collection)}
+        href={collection.href}
         className={styles.cardHitArea}
-        aria-label={`Otevřít kolekci ${collection.title}`}
+        aria-label={`Otevřít ${collection.title}`}
         onClick={onNavigate}
-      />
+      >
+        {isActive && (
+          <span className={styles.openLabel}>
+            Otevřít <ArrowRight size={12} color="white" />
+          </span>
+        )}
+      </LocalizedClientLink>
 
       <AnimatePresence mode="sync" initial={false}>
         {!isActive ? (
@@ -300,24 +316,29 @@ function CollectionCard({
             }}
           >
             <motion.span className={styles.cardEyebrow} variants={contentItemVariants}>
-              Kolekce {String(index + 1).padStart(2, "0")}
+              {String(index + 1).padStart(2, "0")}
             </motion.span>
             <motion.h3 variants={contentItemVariants}>{collection.title}</motion.h3>
             <motion.div className={styles.categoryLinks} variants={contentItemVariants}>
-              {categories.map((category) => (
-                <motion.div key={category.id} variants={categoryVariants}>
-                  <CollectionCategoryLink
-                    href={getCategoryHref(category)}
-                    onClick={onNavigate}
-                    label={category.name}
-                  />
-                </motion.div>
-              ))}
+              {links.length > 0 ? (
+                links.map((link) => (
+                  <motion.div key={link.id} variants={categoryVariants}>
+                    <CollectionCategoryLink
+                      href={link.href}
+                      onClick={onNavigate}
+                      label={link.label}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <motion.span className={styles.cardCount} variants={categoryVariants}>
+                  {withCount(collection.productCount, "objekt", "objekty", "objektů")}
+                </motion.span>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      {isActive && <span className={styles.openLabel}>Otevřít <ArrowRight size={12} color="white" /></span>}
     </motion.article>
   )
 }

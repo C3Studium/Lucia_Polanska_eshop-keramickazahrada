@@ -251,3 +251,15 @@
 }
 
 .root .divider { border-color: currentColor; opacity: .16; }
+
+/* "včetně DPH" sits beside the headline figure, quiet but legible (13px, AA on the surface). */
+.vatNote {
+  display: block;
+  margin-top: 2px;
+  color: #5c5e54;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}

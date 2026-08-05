@@ -1,6 +1,6 @@
 import { Container } from "@medusajs/ui"
 
-import { isStripe, paymentInfoMap } from "@lib/constants"
+import { paymentInfoMap } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
@@ -49,9 +49,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
                   {paymentInfoMap[payment.provider_id].icon}
                 </Container>
                 <p className={styles.value} data-testid="payment-amount">
-                  {isStripe(payment.provider_id) && payment.data?.card_last4
-                    ? `**** **** **** ${payment.data.card_last4}`
-                    : `${translateStatus(
+                  {`${translateStatus(
                         order.payment_status,
                         "payment",
                         "cs"

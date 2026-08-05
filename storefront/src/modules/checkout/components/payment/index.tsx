@@ -1,15 +1,10 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import {
-  isComgate,
-  isStripe as isStripeFunc,
-  paymentInfoMap,
-} from "@lib/constants"
+import { isComgate, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
-  extractComgateRedirectUrl,
-  fromComgateOptionId,
+  legacyComgateOptionForMethod,
   toComgateOptionId,
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
@@ -17,37 +12,12 @@ import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Text, clx } from "@medusajs/ui"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import PaymentContainer, {
-  StripeCardContainer,
-} from "@modules/checkout/components/payment-container"
+import PaymentContainer from "@modules/checkout/components/payment-container"
 import ComgatePaymentSelector from "@modules/common/components/comgate-payment-selector"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import styles from "./style.module.scss"
-
-const legacyComgateOptions = [
-  { id: "pp_comgate_card", method: "CARD_ALL" },
-  { id: "pp_comgate_applepay", method: "APPLEPAY_REDIRECT" },
-  { id: "pp_comgate_googlepay", method: "GOOGLEPAY_REDIRECT" },
-  { id: "pp_comgate_bank", method: "BANK_ALL" },
-]
-
-const legacyOptionForMethod = (method: string) => {
-  if (method === "BANK_ALL") return "pp_comgate_bank"
-  if (method === "APPLEPAY_REDIRECT" || method === "APPLEPAY") {
-    return "pp_comgate_applepay"
-  }
-  if (method === "GOOGLEPAY_REDIRECT" || method === "GOOGLEPAY") {
-    return "pp_comgate_googlepay"
-  }
-  return "pp_comgate_card"
-}
-
-const methodForOption = (optionId: string) =>
-  fromComgateOptionId(optionId) ||
-  legacyComgateOptions.find((option) => option.id === optionId)?.method ||
-  "ALL"
 
 const Payment = ({
   cart,
@@ -65,13 +35,11 @@ const Payment = ({
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cardBrand, setCardBrand] = useState<string | null>(null)
-  const [cardComplete, setCardComplete] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(() => {
     if (isComgate(activeSession?.provider_id)) {
       return comgateMethods.some((method) => method.id === activeComgateMethod)
         ? toComgateOptionId(activeComgateMethod)
-        : legacyOptionForMethod(activeComgateMethod)
+        : legacyComgateOptionForMethod(activeComgateMethod)
     }
     return activeSession?.provider_id ?? ""
   })
@@ -85,7 +53,6 @@ const Payment = ({
   const router = useRouter()
   const pathname = usePathname()
   const isOpen = searchParams.get("step") === "payment"
-  const isStripe = isStripeFunc(selectedPaymentMethod)
   const hasComgate = availablePaymentMethods.some((method) =>
     isComgate(method.id)
   )
@@ -110,71 +77,21 @@ const Payment = ({
     })
   }
 
-  const openComgate = async (optionId: string) => {
-    if (isLoading) return
+  /**
+   * Picking a ComGate method no longer goes to the bank. It carries the choice to the Review
+   * step, where the customer sees the recap and gives consent; the payment session is created
+   * there, from the final action. Consent has to exist before the payment does.
+   */
+  const continueToReview = (optionId: string) => {
+    if (isLoading || !optionId) return
 
     setSelectedPaymentMethod(optionId)
-    setIsLoading(true)
     setError(null)
 
-    const shippingAddress = cart?.shipping_address
-    const billingAddress = cart?.billing_address || shippingAddress
-    const shippingName = String(
-      cart?.shipping_methods?.at(-1)?.name || ""
-    ).toLowerCase()
-
-    try {
-      const result = await initiatePaymentSession(cart, {
-        provider_id: "pp_comgate_comgate",
-        data: {
-          cart_id: cart.id,
-          method: methodForOption(optionId),
-          email: cart?.email || null,
-          first_name:
-            billingAddress?.first_name || shippingAddress?.first_name || null,
-          last_name:
-            billingAddress?.last_name || shippingAddress?.last_name || null,
-          country_code:
-            shippingAddress?.country_code ||
-            billingAddress?.country_code ||
-            "cz",
-          billing_city: billingAddress?.city,
-          billing_street: billingAddress?.address_1,
-          billing_postal_code: billingAddress?.postal_code,
-          shipping_city: shippingAddress?.city,
-          shipping_street: shippingAddress?.address_1,
-          shipping_postal_code: shippingAddress?.postal_code,
-          delivery:
-            shippingName.includes("zásil") ||
-            shippingName.includes("zasil") ||
-            shippingName.includes("packeta") ||
-            shippingName.includes("výdej")
-              ? "PICKUP"
-              : "HOME_DELIVERY",
-          lang: "cs",
-        } as any,
-      })
-
-      if (!result.success) {
-        throw new Error(
-          result.message || "Platební bránu se nepodařilo připravit."
-        )
-      }
-
-      const redirectUrl = extractComgateRedirectUrl(result.data)
-      if (!redirectUrl) {
-        throw new Error("Platební brána nevrátila adresu pro pokračování.")
-      }
-
-      window.location.assign(redirectUrl)
-    } catch (paymentError) {
-      setError(
-        paymentError instanceof Error
-          ? paymentError.message
-          : "Platební bránu se nepodařilo otevřít."
-      )
-      setIsLoading(false)
-    }
+    const params = new URLSearchParams(searchParams)
+    params.set("step", "review")
+    params.set("method", optionId)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const selectComgate = (optionId: string) => {
@@ -188,17 +105,14 @@ const Payment = ({
     setSelectedPaymentMethod(method)
 
     if (isComgate(method)) {
-      await openComgate(method)
+      continueToReview(method)
       return
     }
 
-    if (isStripeFunc(method)) {
-      const result = await initiatePaymentSession(cart, {
-        provider_id: method,
-      })
-      if (!result.success) {
-        setError(result.message || "Platební metodu se nepodařilo připravit.")
-      }
+    const result = await initiatePaymentSession(cart, { provider_id: method })
+
+    if (!result.success) {
+      setError(result.message || "Platební metodu se nepodařilo připravit.")
     }
   }
 
@@ -214,8 +128,6 @@ const Payment = ({
 
     setIsLoading(true)
     try {
-      const shouldInputCard =
-        isStripeFunc(selectedPaymentMethod) && !activeSession
       const hasSelectedSession =
         activeSession?.provider_id === selectedPaymentMethod
 
@@ -228,11 +140,9 @@ const Payment = ({
         }
       }
 
-      if (!shouldInputCard) {
-        router.push(pathname + "?" + createQueryString("step", "review"), {
-          scroll: false,
-        })
-      }
+      router.push(pathname + "?" + createQueryString("step", "review"), {
+        scroll: false,
+      })
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -281,7 +191,7 @@ const Payment = ({
                 <span>Vyberte způsob úhrady</span>
                 <p>
                   {hasComgate
-                    ? "Vyberte metodu. Objednávku potvrdíte tlačítkem a přejdete k bezpečné platbě."
+                    ? "Vyberte metodu. V dalším kroku uvidíte celou objednávku a teprve pak přejdete k platbě."
                     : "Platbu dokončíte bezpečně v následujícím kroku."}
                 </p>
               </div>
@@ -290,7 +200,7 @@ const Payment = ({
                   methods={comgateMethods}
                   selectedOptionId={selectedPaymentMethod}
                   onSelect={selectComgate}
-                  onConfirm={() => openComgate(selectedPaymentMethod)}
+                  onConfirm={() => continueToReview(selectedPaymentMethod)}
                   disabled={isLoading}
                   isSubmitting={isLoading}
                 />
@@ -303,27 +213,15 @@ const Payment = ({
                   onChange={(value: string) => void setPaymentMethod(value)}
                   aria-label="Další způsoby platby"
                 >
-                  {nonComgatePaymentMethods.map((paymentMethod) =>
-                    isStripeFunc(paymentMethod.id) ? (
-                      <StripeCardContainer
-                        key={paymentMethod.id}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={paymentInfoMap}
-                        setCardBrand={setCardBrand}
-                        setError={setError}
-                        setCardComplete={setCardComplete}
-                      />
-                    ) : (
-                      <PaymentContainer
-                        key={paymentMethod.id}
-                        paymentInfoMap={paymentInfoMap}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        disabled={isLoading}
-                      />
-                    )
-                  )}
+                  {nonComgatePaymentMethods.map((paymentMethod) => (
+                    <PaymentContainer
+                      key={paymentMethod.id}
+                      paymentInfoMap={paymentInfoMap}
+                      paymentProviderId={paymentMethod.id}
+                      selectedPaymentOptionId={selectedPaymentMethod}
+                      disabled={isLoading}
+                    />
+                  ))}
                 </RadioGroup>
               )}
             </>
@@ -352,18 +250,12 @@ const Payment = ({
             (selectedPaymentMethod && !isComgate(selectedPaymentMethod))) && (
             <div className={styles.buttonRow}>
               <PremiumActionButton
-                text={
-                  !activeSession && isStripeFunc(selectedPaymentMethod)
-                    ? "Zadat údaje o kartě"
-                    : "Pokračovat k přehledu"
-                }
+                text="Pokračovat k přehledu"
                 onClickAction={handleSubmit}
                 className={styles.submitBtn}
                 data-testid="submit-payment-button"
                 disabled={
-                  (isStripe && !cardComplete) ||
-                  (!selectedPaymentMethod && !paidByGiftcard) ||
-                  isLoading
+                  (!selectedPaymentMethod && !paidByGiftcard) || isLoading
                 }
               />
             </div>
@@ -391,9 +283,7 @@ const Payment = ({
                     )}
                   </Container>
                   <Text className={styles.sectionText}>
-                    {isStripeFunc(selectedPaymentMethod) && cardBrand
-                      ? cardBrand
-                      : "Připraveno k dokončení"}
+                    Připraveno k dokončení
                   </Text>
                 </div>
               </div>

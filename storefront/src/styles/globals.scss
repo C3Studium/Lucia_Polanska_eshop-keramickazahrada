@@ -148,8 +148,53 @@
 }
 
 
+/*
+ * V2.0 type scale (spec §5.2). The voice is unchanged — Sentient for display, Sansation for
+ * UI and body, the archival uppercase label kept. Only the floors move.
+ *
+ * The rule these encode: nothing below 12px reaches a customer, and 12px is reserved for the
+ * uppercase archival eyebrow. Anything a customer must read to decide — prices, availability,
+ * form labels, shipping terms — sits at --type-caption or larger.
+ */
+:root {
+  --type-eyebrow: 0.75rem; /* 12px — uppercase archival label, absolute minimum */
+  --type-caption: 0.8125rem; /* 13px — smallest customer-facing text */
+  --type-ui: 0.9375rem; /* 15px — buttons, nav, compact controls */
+  --type-body: 1rem; /* 16px — paragraph floor; inputs never below this */
+  --type-body-editorial: 1.125rem; /* 18px — long-form prose on solid surfaces */
+
+  /* Tracking above this makes uppercase word-shapes fall apart at small sizes. */
+  --type-tracking-eyebrow: 0.12em;
+
+  --type-leading-tight: 1.4;
+  --type-leading-body: 1.55;
+
+  /*
+   * One focus ring for the whole site (spec §7.2). Clay is already the dominant treatment in
+   * the codebase, so this promotes the site's own best pattern to law rather than inventing one.
+   * It clears 3:1 non-text contrast on both signature surfaces — 3.75:1 on cream #f2eee5 and
+   * 3.7:1 on the ink product stage #20211c — so no per-surface variant is needed. A surface that
+   * genuinely needs a different ring overrides --focus-ring locally.
+   */
+  --focus-ring: #9a6f65;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+}
+
+/*
+ * The only focus rule on the site. Every `outline: none` was deleted in favour of it (34 of
+ * them, nine of which offered no replacement at all — the site-wide select, the review and
+ * restock forms, both password flows, express checkout and the FAQ).
+ *
+ * `:focus-visible` means pointer users never see it and keyboard users always do.
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 body {
-  font-family: "Poppins-Regular", sans-serif;
+  font-family: "Sansation-Regular", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: fit-content;
@@ -183,4 +228,32 @@ body::-webkit-scrollbar {
 
 [data-scroll-section] {
   scroll-margin-top: clamp(72px, 9vh, 112px);
+}
+
+
+/*
+ * Reduced motion, layer 1 of 3 (spec §8.5).
+ *
+ * Layer 2 is `useReducedMotion` inside the motion-heavy components; layer 3 is LenisProvider,
+ * which does not initialise at all under this preference so the browser's native scrolling
+ * takes over.
+ *
+ * This layer kills the 19 infinite keyframe animations and collapses transitions, without
+ * removing any content: reduced-motion visitors get the same composed pages, settled.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.15s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Perpetual ambience has no settled state worth animating to — stop it where it stands. */
+  [data-marquee],
+  [data-ambient] {
+    animation: none !important;
+  }
 }

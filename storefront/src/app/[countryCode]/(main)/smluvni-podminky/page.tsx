@@ -1,7 +1,13 @@
-"use client"
+import { Metadata } from "next"
 
 import LegalDocument from "@modules/legal/LegalDocument"
 import { sections } from "./data"
+
+export const metadata: Metadata = {
+  title: "Obchodní podmínky",
+  description:
+    "Pravidla nákupu mezi vámi a ateliérem Lucie Polanské — uzavření smlouvy, cena a platba, doprava, odstoupení od smlouvy a reklamace.",
+}
 
 const supplements = {
   "cena-a-platba": (

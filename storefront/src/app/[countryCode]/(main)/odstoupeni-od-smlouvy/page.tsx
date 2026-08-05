@@ -1,8 +1,17 @@
-"use client"
+import { Metadata } from "next"
 
+import { getMerchantIdentity } from "@lib/data/merchant"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+const merchant = getMerchantIdentity()
+
+export const metadata: Metadata = {
+  title: "Odstoupení od smlouvy",
+  description:
+    "Jak vrátit zboží do 14 dnů od převzetí — postup, lhůty a vzorové oznámení o odstoupení od kupní smlouvy.",
+}
 
 const sections: LegalSectionData[] = [
   {
@@ -24,8 +33,8 @@ const sections: LegalSectionData[] = [
     id: "prodavajici",
     title: "Prodávající",
     paragraphs: [
-      "Keramická Zahrada s.r.o., se sídlem Putim 229, 397 01 Písek",
-      "identifikační číslo: 03441482",
+      `${merchant.name}, se sídlem ${merchant.address}`,
+      `identifikační číslo: ${merchant.registrationNumber}`,
     ],
   },
   {
@@ -33,7 +42,7 @@ const sections: LegalSectionData[] = [
     title: "Text oznámení",
     paragraphs: [
       "Vážení,",
-      "dne …………………….… jsem prostřednictvím vašeho e­shopu www.eshop.cheesemafia.cz s vámi uzavřel(a) kupní smlouvu: číslo daňového dokladu (faktury) ………………………, na základě které jsem převzal dne ……………… zboží:",
+      `dne …………………….… jsem prostřednictvím vašeho e­shopu ${merchant.website} s vámi uzavřel(a) kupní smlouvu: číslo daňového dokladu (faktury) ………………………, na základě které jsem převzal dne ……………… zboží:`,
       "Vzhledem k tomu, že smlouva byla uzavřena pomocí internetu, tj. typického prostředku komunikace na dálku, rozhodl(a) jsem se využít svého práva podle ustanovení § 1829 odst. 1 ve spojení s § 1818 zákona č. 89/2012 Sb., občanského zákoníku, a tímto oznamuji, že od výše uvedené kupní smlouvy odstupuji.",
     ],
   },

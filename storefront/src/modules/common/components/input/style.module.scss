@@ -29,7 +29,6 @@
   border: 1px solid rgba(33, 34, 34, .2);
   border-radius: 12px;
   appearance: none;
-  outline: none;
   background: rgba(255, 248, 238, .42);
   box-shadow: none;
   transition: border-color .2s ease, box-shadow .2s ease;
@@ -62,16 +61,20 @@
 .inputWrapper input:focus + label,
 .inputWrapper input:not(:placeholder-shown) + label {
   top: .28rem;
-  font-size: .68rem;
+  font-size: 0.8125rem;
 }
 
 .passwordBtn {
   position: absolute;
   top: .75rem;
   right: 0;
+  display: flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
   padding-inline: 1rem;
   border: 0;
-  outline: none;
   background: transparent;
   color: #6b7280;
 }
@@ -109,7 +112,7 @@
   background: transparent;
   color: #282a22;
   font-family: inherit;
-  font-size: clamp(.95rem, 1vw, 1.08rem);
+  font-size: clamp(1rem, 1vw, 1.08rem);
   font-weight: 300;
   line-height: 1.35;
   cursor: text;
@@ -119,7 +122,6 @@
 .contact .inputWrapper input:focus,
 .contact .inputWrapper input:active {
   border: 0;
-  outline: 0;
   background: transparent;
   box-shadow: none;
 }
@@ -156,7 +158,7 @@
   margin: 0;
   padding: 0;
   color: rgba(38, 40, 32, .56);
-  font-size: .64rem;
+  font-size: 0.75rem;
   font-weight: 400;
   line-height: 1;
   letter-spacing: .09em;
@@ -167,7 +169,7 @@
 .contact .inputWrapper input:focus + label,
 .contact .inputWrapper input:not(:placeholder-shown) + label {
   top: .36rem;
-  font-size: .64rem;
+  font-size: 0.8125rem;
 }
 
 .contact .passwordBtn {
@@ -181,4 +183,11 @@
   .inputWrapper {
     font-size: .9rem;
   }
+}
+
+/* Requirement stated in words beside the label, not by a colour-only asterisk (SC 1.4.1). */
+.requiredHint {
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  opacity: 0.82;
 }

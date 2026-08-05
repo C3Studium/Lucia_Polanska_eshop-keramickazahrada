@@ -71,7 +71,7 @@
   align-self: start;
   padding-top: 2px;
   color: rgba(32, 33, 28, 0.48);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.12em;
   transition: color 0.28s ease 0.16s;
 }
@@ -92,7 +92,7 @@
 .groupCopy small {
   color: rgba(32, 33, 28, 0.55);
   font-family: "Sansation-Light", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.32;
   transition: color 0.28s ease 0.16s;
 }
@@ -141,7 +141,7 @@
 .logoStack span span,
 .selectedLogo > span,
 .methodLogo > span {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .groupArrow {
@@ -158,7 +158,6 @@
 .group:focus-visible,
 .group[data-active="true"] {
   color: #f8e2d0;
-  outline: none;
 }
 
 .group:hover .groupIndex,
@@ -184,15 +183,15 @@
 .pickerHeader span,
 .search > span {
   color: rgba(32, 33, 28, 0.55);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .pickerHeader small {
   color: rgba(32, 33, 28, 0.48);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .search {
@@ -211,10 +210,9 @@
   min-width: 0;
   height: 45px;
   border: 0;
-  outline: 0;
   color: #20211c;
   background: transparent;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 16px/1 "Sansation-Regular", sans-serif;
 }
 
 .search input::placeholder {
@@ -283,7 +281,6 @@
 .method:hover,
 .method:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .method:hover::before,
@@ -332,7 +329,6 @@
 .otherBank:hover,
 .otherBank:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .otherBank:hover::before,
@@ -358,7 +354,7 @@
 
 .otherBank small {
   color: rgba(32, 33, 28, 0.54);
-  font: 400 12px/1.3 "Sansation-Light", sans-serif;
+  font: 400 13px/1.3 "Sansation-Light", sans-serif;
 }
 
 .noResults {
@@ -408,9 +404,9 @@
 
 .selectedCopy small {
   color: rgba(32, 33, 28, 0.48);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -427,7 +423,7 @@
   overflow: hidden;
   color: rgba(32, 33, 28, 0.56);
   font-family: "Sansation-Light", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -444,7 +440,7 @@
   border-radius: 999px;
   color: #20211c;
   background: transparent;
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   cursor: pointer;
   overflow: hidden;
   transition: color 0.24s ease 0.12s;
@@ -464,7 +460,6 @@
 .change:hover,
 .change:focus-visible {
   color: #f8e2d0;
-  outline: none;
 }
 
 .change:hover::before,
@@ -508,7 +503,7 @@
   }
 
   .groupCopy small {
-    font-size: 11px;
+    font-size: 13px;
   }
 }
 

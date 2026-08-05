@@ -113,10 +113,12 @@ export default function DotazyMain () {
                         transition={{ delay: 0.48, duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
                     >
                         <span className="faqHeroKicker">Nejčastější otázky · 01</span>
-                        <h2>
+                        {/* The page started its outline at h2 — screen-reader users navigating
+                            by heading landed nowhere. This is the page's h1. */}
+                        <h1>
                             Než si keramika
                             <em> najde místo u vás.</em>
-                        </h2>
+                        </h1>
                         <p>Vše podstatné o objednávkách, péči o keramiku a zakázkové práci našeho ateliéru.</p>
                         <a href="#faq-section-title" onClick={scrollToAnswers}>
                             Procházet odpovědi
@@ -137,7 +139,10 @@ export default function DotazyMain () {
                 </motion.div>
             </motion.div>
 
-            <motion.h1
+            {/* Decorative scroll-driven wordmark, not the page's heading — it was an h1,
+                which is why the caption below had to start at h2. */}
+            <motion.p
+                aria-hidden="true"
                 className="travellingFAQ"
                 initial={{ clipPath: "inset(0 100% 0 0)" }}
                 animate={{ clipPath: "inset(0 0% 0 0)" }}
@@ -145,7 +150,7 @@ export default function DotazyMain () {
                 style={{ x: faqComposedX, y: faqComposedY, scale: faqScale, rotate: faqRotate, opacity: faqOpacity, letterSpacing: faqTracking }}
             >
                 FAQ
-            </motion.h1>
+            </motion.p>
 
             <FAQBody />
         </section>

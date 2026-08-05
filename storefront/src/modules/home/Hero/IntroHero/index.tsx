@@ -6,6 +6,28 @@ import { urlFor } from "../../../../sanity/lib/image";
 import WebButton from "@modules/common/components/Buttons/webButton";
 import HeroImageShader from "./HeroImageShader";
 
+const DEFAULT_CONTENT =
+    "Za každým výrobkem je příběh\nKaždý výrobek tvořím ručně s respektem k materiálu, času i lidem.";
+
+/**
+ * Breaks the headline into two or three display lines at word boundaries, so the lockup stays
+ * a tight block instead of one long line that shrinks to fit.
+ */
+function splitIntoLines(text: string) {
+    const words = text.split(/\s+/).filter(Boolean);
+
+    if (words.length <= 2) {
+        return [text];
+    }
+
+    const lineCount = words.length >= 6 ? 3 : 2;
+    const perLine = Math.ceil(words.length / lineCount);
+
+    return Array.from({ length: lineCount }, (_, index) =>
+        words.slice(index * perLine, (index + 1) * perLine).join(" ")
+    ).filter(Boolean);
+}
+
 export default function IntroHero({
     data,
     newsText = "Dovolená | Novinky",
@@ -34,6 +56,26 @@ export default function IntroHero({
         restDelta: 0.0005,
     });
     const journeyProgress = localJourneyProgress;
+    // The `content` field is authored with line breaks. Its first line is the promise, so it
+    // becomes the display headline; whatever follows stays as the quiet lede. This keeps the
+    // headline editable in Sanity without adding a field the CMS does not have yet.
+    const contentLines = (data?.content ?? DEFAULT_CONTENT)
+        .split("\n")
+        .map((line: string) => line.trim())
+        .filter(Boolean);
+    const headlineSource = contentLines[0] ?? DEFAULT_CONTENT.split("\n")[0];
+    // Authors write the promise as "..za každým mým výrobkem je příběh.." — the leading and
+    // trailing ellipses are a body-copy mannerism that reads as a typo at display size.
+    const headlineStripped = headlineSource.replace(/^[.\u2026\s]+|[.\u2026\s]+$/g, "");
+    // Stripping the leading ellipsis leaves a lowercase first letter at display size.
+    const headlineText =
+        headlineStripped.charAt(0).toLocaleUpperCase("cs") + headlineStripped.slice(1);
+    const headlineLines = splitIntoLines(headlineText);
+    const ledeText = contentLines.slice(1).join(" ");
+    const signature = [data?.title1 ?? "Lucie", data?.title2 ?? "Polanská"]
+        .filter(Boolean)
+        .join(" ");
+
     const y = useTransform(journeyProgress, [0, 1], ["-1.5%", "2.5%"]);
     const imageScale = useTransform(journeyProgress, [0, 1], [1.035, 1.09]);
     const nameY = useTransform(journeyProgress, [0, 0.7, 1], [0, -8, -34]);
@@ -187,40 +229,40 @@ export default function IntroHero({
                 className="Hero__Intro__Header"
                 style={{ y: nameY, scale: nameScale, opacity: nameOpacity }}
             >
-                <div className="Hero__Intro__Header__Title">
-                    <PreciseBlendedText i={4} text={data?.title1 || "Lucie"} delay={0} />
-                </div>
-                <div className="Hero__Intro__Header__Subtitle">
-                    <PreciseBlendedText i={0} text={data?.title2 || "Polanská"} delay={0.5} />
-                </div>
-            </motion.div>
-            <motion.div
-                className="Hero__Intro__Content"
-                style={{ opacity: contentOpacity, y: contentY }}
-            >
-                <div className="Hero__Intro__Content__Text">
-                    {data?.content ? (
-                        // Sanity data loaded - use textWithBreaks for \n line breaks
-                        <p>
-                            {textWithBreaks(data.content, firstLoad)}
-                        </p>
-                    ) : (
-                        // Fallback - use wordSplit with manual <br /> breaks
-                        <p>
-                            {wordSplit("..za každým mým výrobkem je příběh..", firstLoad)}<br /><br />
-                            {wordSplit("Každý výrobek tvořím ručně s respektem k materiálu, času i lidem.", firstLoad)}
-                        </p>
-                    )}
-                </div>
-                <motion.div 
-                    className="Hero__Intro__Content__Button"
-                    initial="initial"
-                    animate="enter"
-                    exit="exit"
-                    variants={PreloaderAnimButton}
-                    custom={3}
+                <span className="Hero__Intro__Eyebrow">Objekty s vlastním příběhem</span>
+
+                {/* One h1, and it carries the promise rather than the name: a visitor arrives
+                    looking for ceramics, not for a person. The first line of the Sanity `content`
+                    field is the headline, so Lucia still edits it; the rest becomes the lede. */}
+                <h1 className="Hero__Intro__Headline">
+                    {headlineLines.map((line, index) => (
+                        <PreciseBlendedText
+                            key={line + index}
+                            i={-1}
+                            text={line}
+                            delay={index * 0.12}
+                        />
+                    ))}
+                </h1>
+
+                <p className="Hero__Intro__Signature">
+                    <span aria-hidden="true">—&nbsp;</span>
+                    {signature}
+                </p>
+
+                <motion.div
+                    className="Hero__Intro__Lede"
+                    style={{ opacity: contentOpacity, y: contentY }}
                 >
-                    <WebButton href="/store" title="Prohlédnout objekty" Kind="Link" tone="dark"/>
+                    {ledeText && <p>{ledeText}</p>}
+                    <div className="Hero__Intro__Header__Cta">
+                        <WebButton
+                            href="/store"
+                            title="Prohlédnout objekty"
+                            Kind="Link"
+                            tone="dark"
+                        />
+                    </div>
                 </motion.div>
             </motion.div>
             <motion.div
@@ -307,7 +349,7 @@ function PreciseBlendedText({ text, i, delay }: { text: string, i: number, delay
         })
     }
     return (
-        <h1 className="precise-blended-text">
+        <span className="precise-blended-text">
             {text.split('').map((char, index) => {
                 // Determine if this character overlaps the dark image
                 const isOverDarkArea = i === index ? true : false; 
@@ -322,11 +364,11 @@ function PreciseBlendedText({ text, i, delay }: { text: string, i: number, delay
                         key={index}
                         className={`precise-char ${isOverDarkArea ? 'over-dark' : 'over-light'}`}
                     >
-                        {char}
+                        {char === " " ? "\u00A0" : char}
                     </motion.span>
                 );
             })}
-        </h1>
+        </span>
     );
 }
 

@@ -1,8 +1,14 @@
-"use client"
+import { Metadata } from "next"
 
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+export const metadata: Metadata = {
+  title: "Používání cookies",
+  description:
+    "Co soubory cookies znamenají, k čemu je v Keramické zahradě používáme a jak jejich ukládání ovládáte ve svém prohlížeči.",
+}
 
 const sections: LegalSectionData[] = [
   {

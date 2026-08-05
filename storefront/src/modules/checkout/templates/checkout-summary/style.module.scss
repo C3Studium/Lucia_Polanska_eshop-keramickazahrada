@@ -20,9 +20,9 @@
   margin: 0 0 18px;
   padding: 11px 0;
   border-bottom: 1px solid rgba(255,232,214,.2);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: .16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: .56;
 }
@@ -53,7 +53,7 @@
 .root :global(button:focus-visible),
 .root :global(a:focus-visible),
 .root :global(input:focus-visible) {
-  outline: 2px solid #9a6f65;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
