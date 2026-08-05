@@ -293,7 +293,7 @@ export const Shipping = ({
                   setShippingMethodId(method.id)
                   if (method.id === packetaShippingMethodId) openPacketa()
                 }}
-                whileTap={{ scale: .99 }}
+                whileTap={whileTap}
               >
                 <span className={styles.methodFill} aria-hidden="true" />
                 <span className={styles.radioMark}>
@@ -348,9 +348,9 @@ export const Shipping = ({
           <motion.p
             className={styles.error}
             role="alert"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            initial={initial}
+            animate={animate}
+            exit={exit}
           >
             {error}
           </motion.p>
@@ -389,3 +389,11 @@ const Field = ({
     />
   </label>
 )
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const whileTap = { scale: .99 }
+const initial = { opacity: 0, y: -4 }
+const animate = { opacity: 1, y: 0 }
+const exit = { opacity: 0 }

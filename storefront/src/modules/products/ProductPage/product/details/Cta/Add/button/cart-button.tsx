@@ -43,8 +43,8 @@ export default function CartButton({
                 <motion.span
                     className={styles.indicator}
                     variants={fillVariants}
-                    style={{ originX: 0 }}
-                    transition={{ duration: 0.48, ease: [0.76, 0, 0.24, 1] }}
+                    style={styleObj}
+                    transition={transition}
                 />
                 <span className={styles.label}>
                     {isLoading ? "Načítání..." : children}
@@ -53,3 +53,9 @@ export default function CartButton({
         </div>
     );
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { originX: 0 }
+const transition = { duration: 0.48, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

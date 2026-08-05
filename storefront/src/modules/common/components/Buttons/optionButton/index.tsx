@@ -49,9 +49,14 @@ export default function OptionButton({
                 initial={false}
                 animate={{ scaleX: isHighlighted ? 1 : 0 }}
                 style={{ originX: direction === 1 ? 0 : 1 }}
-                transition={{ duration: 0.42, ease: [0.76, 0, 0.24, 1] }}
+                transition={transition}
             />
             <span className="productOptionButton__label">{text}</span>
         </button>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.42, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

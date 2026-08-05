@@ -92,46 +92,22 @@ export const Router = ({
         className={styles.intro}
         initial="hidden"
         animate="visible"
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.09 } },
-        }}
+        variants={variants}
       >
         <motion.div
           className={styles.introLine}
-          variants={{
-            hidden: { opacity: 0, y: 8 },
-            visible: {
-              opacity: 1,
-              y: 0,
-              transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
+          variants={variants2}
         >
           Rychlý nákup · {countryCode.toUpperCase()}
         </motion.div>
         <motion.h1
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: {
-              opacity: 1,
-              y: 0,
-              transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
+          variants={variants3}
         >
           Váš výběr.
           <em>Bez zdržení.</em>
         </motion.h1>
         <motion.p
-          variants={{
-            hidden: { opacity: 0, y: 10 },
-            visible: {
-              opacity: 1,
-              y: 0,
-              transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
+          variants={variants4}
         >
           Navrženo pro nákup ze sociálních sítí. Vyberete provedení, doručení a
           bezpečně zaplatíte — bez opakovaného vyplňování.
@@ -217,3 +193,35 @@ export const Router = ({
     </>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const variants = {
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.09 } },
+        }
+const variants2 = {
+            hidden: { opacity: 0, y: 8 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+            },
+          }
+const variants3 = {
+            hidden: { opacity: 0, y: 20 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+            },
+          }
+const variants4 = {
+            hidden: { opacity: 0, y: 10 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+            },
+          }

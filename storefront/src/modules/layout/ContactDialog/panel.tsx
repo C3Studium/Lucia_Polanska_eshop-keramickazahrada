@@ -211,7 +211,7 @@ export default function ContactDialogPanel({
               width: closeHovered ? closeButtonWidth.hovered : closeButtonWidth.rest,
             }}
             transition={closeTransition}
-            style={{ transformOrigin: "right center" }}
+            style={styleObj}
           >
             <AnimatePresence initial={false}>
               {closeHovered && (
@@ -276,12 +276,7 @@ export default function ContactDialogPanel({
                             <motion.span
                               className={styles.topicIndicator}
                               layoutId="contact-topic-indicator"
-                              transition={{
-                                type: "spring",
-                                stiffness: 420,
-                                damping: 36,
-                                mass: 0.7,
-                              }}
+                              transition={transition}
                             />
                           )}
                           <span className={styles.topicLabel}>{option}</span>
@@ -513,3 +508,14 @@ function failureMessage(status: number) {
 
   return "Zprávu se nepodařilo odeslat. Zkuste to prosím znovu, nebo nám napište přímo na"
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { transformOrigin: "right center" as const }
+const transition = {
+                                type: "spring" as const,
+                                stiffness: 420,
+                                damping: 36,
+                                mass: 0.7,
+                              }

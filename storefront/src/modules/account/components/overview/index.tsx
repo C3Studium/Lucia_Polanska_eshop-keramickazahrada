@@ -64,9 +64,9 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           </div>
           <div className={s.accountOverviewProgress} aria-hidden="true">
             <motion.i
-              initial={{ scaleX: 0 }}
+              initial={initial}
               animate={{ scaleX: percentage / 100 }}
-              transition={{ duration: 1.1, delay: 0.42, ease: [0.76, 0, 0.24, 1] }}
+              transition={transition}
             />
           </div>
           {incompleteSteps.length > 0 ? (
@@ -182,3 +182,9 @@ const getProfileCompletion = (customer: HttpTypes.StoreCustomer | null) => {
 }
 
 export default Overview
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { scaleX: 0 }
+const transition = { duration: 1.1, delay: 0.42, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

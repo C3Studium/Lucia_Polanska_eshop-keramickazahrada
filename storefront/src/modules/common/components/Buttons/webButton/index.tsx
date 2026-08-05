@@ -170,7 +170,7 @@ export default function WebButton({
           <SolidBackground active={isActive} />
           <motion.div
             className={styles.el}
-            style={{ perspective: 800 }}
+            style={styleObj}
             variants={foregroundVariants}
             custom={foregroundVariantCustom}
             initial={false}
@@ -188,7 +188,7 @@ export default function WebButton({
       <SolidBackground active={isActive} />
       <motion.div
         className={styles.el}
-        style={{ perspective: 800 }}
+        style={styleObj}
         variants={foregroundVariants}
         custom={foregroundVariantCustom}
         initial={false}
@@ -264,7 +264,7 @@ function PerspectiveText({
   active: boolean
 }) {
   return (
-    <div className={styles.perspectiveText} style={{ transformStyle: "preserve-3d" }}>
+    <div className={styles.perspectiveText} style={styleObj2}>
       <p>
         {label}
         <motion.span
@@ -295,10 +295,16 @@ function PerspectiveIcon({
   alt: string
 }) {
   return (
-    <div className={styles.PerspectiveIcon} style={{ transformStyle: "preserve-3d" }}>
+    <div className={styles.PerspectiveIcon} style={styleObj2}>
       <div className={styles.image__wrapper}>
         <Image src={icon1 ?? "/assets/icons/logo.svg"} alt={alt} width={50} height={25} />
       </div>
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { perspective: 800 }
+const styleObj2 = { transformStyle: "preserve-3d" as const }

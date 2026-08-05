@@ -36,8 +36,8 @@ export default function SearchButton({
       className={`${styles.searchControl} ${isActive ? styles.active : ""}`}
       initial={false}
       animate={{ width: isActive ? 420 : 36 }}
-      transition={{ duration: 0.6, ease }}
-      style={{ transformOrigin: "left center" }}
+      transition={transition}
+      style={styleObj}
     >
       <button
         type="button"
@@ -61,13 +61,22 @@ export default function SearchButton({
             aria-label="Vyhledat produkty"
             autoComplete="off"
             onChange={handleChange}
-            initial={{ opacity: 0, x: -14 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -14 }}
-            transition={{ duration: 0.25, delay: 0.12, ease }}
+            initial={initial}
+            animate={animate}
+            exit={initial}
+            transition={transition2}
           />
         )}
       </AnimatePresence>
     </motion.div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.6, ease }
+const styleObj = { transformOrigin: "left center" as const }
+const initial = { opacity: 0, x: -14 }
+const animate = { opacity: 1, x: 0 }
+const transition2 = { duration: 0.25, delay: 0.12, ease }

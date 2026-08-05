@@ -76,12 +76,12 @@ function LinkButton({ text, href, className, buttonClassName, dataTestId } : Lin
         animate={PREMIUM_BUTTON_REST}
         whileHover={PREMIUM_BUTTON_ACTIVE}
         whileFocus={PREMIUM_BUTTON_ACTIVE}
-        whileTap={{ scale: .985 }}
+        whileTap={whileTap}
       >
         <motion.span
           className={s.indicator}
           variants={premiumButtonFillVariants}
-          style={{ originX: 0 }}
+          style={styleObj}
           transition={premiumButtonFillTransition}
         />
         <span className={s.label}>{text}</span>
@@ -89,3 +89,9 @@ function LinkButton({ text, href, className, buttonClassName, dataTestId } : Lin
     </LocalizedClientLink>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const whileTap = { scale: .985 }
+const styleObj = { originX: 0 }

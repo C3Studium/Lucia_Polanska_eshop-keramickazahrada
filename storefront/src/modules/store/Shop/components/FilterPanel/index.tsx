@@ -48,9 +48,9 @@ export default function FilterPanel({
             className={styles.mobileBackdrop}
             aria-label="Zavřít filtry"
             onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={initial}
+            animate={animate}
+            exit={initial}
           />
         )}
       </AnimatePresence>
@@ -137,3 +137,9 @@ function Toggle({ active, label, onClick }: { active: boolean; label: string; on
     </button>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0 }
+const animate = { opacity: 1 }

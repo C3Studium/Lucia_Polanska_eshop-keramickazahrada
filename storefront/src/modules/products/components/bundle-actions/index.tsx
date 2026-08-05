@@ -153,13 +153,9 @@ export default function BundleActions({
               initial={false}
               animate={isActive ? "active" : "idle"}
               whileHover="hover"
-              whileTap={{ scale: 0.985 }}
-              variants={{
-                idle: { opacity: 0.62, y: 0 },
-                hover: { opacity: 1, y: -2 },
-                active: { opacity: 1, y: -2 },
-              }}
-              transition={{ duration: 0.48, ease }}
+              whileTap={whileTap}
+              variants={variants}
+              transition={transition}
             >
               <span className="bundleInline__previewMedia">
                 <Thumbnail
@@ -172,7 +168,7 @@ export default function BundleActions({
                   <motion.i
                     className="bundleInline__previewFrame"
                     layoutId="bundle-active-object"
-                    transition={{ duration: 0.55, ease }}
+                    transition={transition2}
                     aria-hidden="true"
                   />
                 )}
@@ -192,7 +188,7 @@ export default function BundleActions({
             initial={{ opacity: 0, y: 14, clipPath: "inset(0 0 20% 0)" }}
             animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, y: -8, clipPath: "inset(100% 0 0 0)" }}
-            transition={{ duration: 0.52, ease }}
+            transition={transition3}
           >
             <div className="bundleInline__activeTitle">
               <small>Upravujete</small>
@@ -257,3 +253,16 @@ export default function BundleActions({
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const whileTap = { scale: 0.985 }
+const variants = {
+                idle: { opacity: 0.62, y: 0 },
+                hover: { opacity: 1, y: -2 },
+                active: { opacity: 1, y: -2 },
+              }
+const transition = { duration: 0.48, ease }
+const transition2 = { duration: 0.55, ease }
+const transition3 = { duration: 0.52, ease }

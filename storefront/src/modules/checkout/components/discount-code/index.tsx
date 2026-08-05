@@ -77,14 +77,10 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
             {isOpen && (
               <motion.div
                 className={styles.promoReveal}
-                initial={{ height: 0, opacity: 0, y: -8 }}
-                animate={{ height: "auto", opacity: 1, y: 0 }}
-                exit={{ height: 0, opacity: 0, y: -6 }}
-                transition={{
-                  height: { duration: 0.48, ease: [0.76, 0, 0.24, 1] },
-                  opacity: { duration: 0.24, delay: 0.08 },
-                  y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
-                }}
+                initial={initial}
+                animate={animate}
+                exit={exit}
+                transition={transition}
               >
                 <div className={styles.row}>
                   <Input
@@ -191,3 +187,15 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
 }
 
 export default DiscountCode
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { height: 0, opacity: 0, y: -8 }
+const animate = { height: "auto" as const, opacity: 1, y: 0 }
+const exit = { height: 0, opacity: 0, y: -6 }
+const transition = {
+                  height: { duration: 0.48, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] },
+                  opacity: { duration: 0.24, delay: 0.08 },
+                  y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                }

@@ -34,9 +34,9 @@ export default function AboutMe () {
         >
             <motion.div
                 className="aboutHeroShaderStage"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: .7, delay: .55, ease: [.22, 1, .36, 1] }}
+                initial={initial}
+                animate={animate}
+                transition={transition}
             >
                 <AboutHeroShader
                     pointerX={pointerX}
@@ -52,7 +52,7 @@ export default function AboutMe () {
                         className="image__wrapper"
                         initial={{ clipPath: "inset(0 100% 0 0 round 20px)" }}
                         animate={{ clipPath: "inset(0 0% 0 0 round 20px)" }}
-                        transition={{ duration: 1.15, ease: [.76, 0, .24, 1] }}
+                        transition={transition2}
                     />
                     <div className="about__imageMeta" aria-hidden="true">
                         <span>Ručně tvořeno</span>
@@ -71,8 +71,8 @@ export default function AboutMe () {
                 <div className="greetings">
                     <span className="greetings__icon" aria-hidden="true">
                         <motion.span
-                            animate={{ rotate: [0, 7, -3, 6, 0] }}
-                            transition={{ duration: 1.65, repeat: Infinity, repeatDelay: 4.2, ease: "easeInOut" }}
+                            animate={animate2}
+                            transition={transition3}
                         >
                             <Image src="/assets/icons/wawing_hand.png" alt="" width={78} height={78}/>
                         </motion.span>
@@ -87,7 +87,7 @@ export default function AboutMe () {
                 className="Images__content"
                 initial={{ clipPath: "inset(100% 0 0 0 round 20px)" }}
                 animate={{ clipPath: "inset(0% 0 0 0 round 20px)" }}
-                transition={{ duration: 1, delay: .45, ease: [.76, 0, .24, 1] }}
+                transition={transition4}
             />
             <span className="portrait__caption">
                 Ateliér · Písek
@@ -100,3 +100,14 @@ export default function AboutMe () {
         </section>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0 }
+const animate = { opacity: 1 }
+const transition = { duration: .7, delay: .55, ease: [.22, 1, .36, 1] as [number, number, number, number] }
+const transition2 = { duration: 1.15, ease: [.76, 0, .24, 1] as [number, number, number, number] }
+const animate2 = { rotate: [0, 7, -3, 6, 0] }
+const transition3 = { duration: 1.65, repeat: Infinity, repeatDelay: 4.2, ease: "easeInOut" as const }
+const transition4 = { duration: 1, delay: .45, ease: [.76, 0, .24, 1] as [number, number, number, number] }

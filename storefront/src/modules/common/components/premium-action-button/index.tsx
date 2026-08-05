@@ -84,7 +84,7 @@ const PremiumActionButton = ({
         <motion.span
           className={styles.indicator}
           variants={premiumButtonFillVariants}
-          style={{ originX: 0 }}
+          style={styleObj}
           transition={premiumButtonFillTransition}
         />
         <span className={styles.label}>
@@ -103,3 +103,8 @@ const PremiumActionButton = ({
 }
 
 export default PremiumActionButton
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { originX: 0 }

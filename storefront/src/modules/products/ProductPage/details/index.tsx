@@ -116,7 +116,7 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
                                 <motion.span
                                     className="details__content__list__item__main__button"
                                     variants={disclosureIconVariants}
-                                    transition={{ duration: .52, ease: [0.76, 0, 0.24, 1] }}
+                                    transition={transition}
                                     aria-hidden="true"
                                 >
                                     <i />
@@ -132,10 +132,7 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
                                         initial="closed"
                                         animate="open"
                                         exit="closed"
-                                        transition={{
-                                            duration: 0.62,
-                                            ease: [0.76, 0, 0.24, 1],
-                                        }}
+                                        transition={transition2}
                                     >
                                         {detail.component}
                                     </motion.div>
@@ -148,3 +145,12 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
         </section>
     );
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: .52, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const transition2 = {
+                                            duration: 0.62,
+                                            ease: [0.76, 0, 0.24, 1] as [number, number, number, number],
+                                        }

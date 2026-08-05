@@ -24,11 +24,11 @@ const LoginTemplate = ({ redirectTo }: LoginTemplateProps) => {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={currentView}
-          initial={{ opacity: 0, x: 18 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -18 }}
-          transition={{ duration: .42, ease: [0.76, 0, 0.24, 1] }}
-          style={{ width: "100%" }}
+          initial={initial}
+          animate={animate}
+          exit={exit}
+          transition={transition}
+          style={styleObj}
         >
           {isSignIn ? (
             <Login setCurrentView={setCurrentView} redirectTo={redirectTo} />
@@ -42,3 +42,12 @@ const LoginTemplate = ({ redirectTo }: LoginTemplateProps) => {
 }
 
 export default LoginTemplate
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, x: 18 }
+const animate = { opacity: 1, x: 0 }
+const exit = { opacity: 0, x: -18 }
+const transition = { duration: .42, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const styleObj = { width: "100%" as const }

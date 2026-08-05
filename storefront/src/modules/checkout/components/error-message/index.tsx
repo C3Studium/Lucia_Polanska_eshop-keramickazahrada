@@ -32,13 +32,13 @@ const ErrorMessage = ({ error, 'data-testid': dataTestid }: { error?: string | n
       variants={errorVariants}
       initial="hidden"
       animate="visible"
-      transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+      transition={transition}
     >
       <motion.i
         className={styles.marker}
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.58, ease: [0.76, 0, 0.24, 1] }}
+        initial={initial}
+        animate={animate}
+        transition={transition2}
         aria-hidden="true"
       />
       <span>{error}</span>
@@ -47,3 +47,11 @@ const ErrorMessage = ({ error, 'data-testid': dataTestid }: { error?: string | n
 }
 
 export default ErrorMessage
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.52, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const initial = { scaleX: 0 }
+const animate = { scaleX: 1 }
+const transition2 = { duration: 0.58, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

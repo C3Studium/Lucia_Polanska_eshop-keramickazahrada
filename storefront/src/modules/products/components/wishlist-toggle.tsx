@@ -186,9 +186,9 @@ export default function WishlistToggle({
         title="Přihlásit se a uložit objekt"
       >
         <motion.span
-          whileHover={{ scale: 1.08, rotate: -4 }}
-          whileTap={{ scale: 0.94 }}
-          transition={{ duration: 0.42, ease }}
+          whileHover={whileHover}
+          whileTap={whileTap}
+          transition={transition}
         >
           {icon}
         </motion.span>
@@ -218,31 +218,23 @@ export default function WishlistToggle({
       animate={inWishlist ? "saved" : "idle"}
       whileHover={isPending ? undefined : "hover"}
       whileTap={isPending ? undefined : { scale: 0.94 }}
-      variants={{
-        idle: { scale: 1 },
-        hover: { scale: 1.06 },
-        saved: { scale: [1, 1.12, 1] },
-      }}
-      transition={{ duration: 0.52, ease }}
+      variants={variants}
+      transition={transition2}
     >
       <motion.span
         className={s.surface}
-        variants={{
-          idle: { scale: 0.2, opacity: 0 },
-          hover: { scale: 0.68, opacity: 0.45 },
-          saved: { scale: 1, opacity: 1 },
-        }}
-        transition={{ duration: 0.55, ease }}
+        variants={variants2}
+        transition={transition3}
         aria-hidden="true"
       />
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           className={s.icon}
           key={inWishlist ? "saved" : "idle"}
-          initial={{ opacity: 0, scale: 0.65, rotate: -12 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          exit={{ opacity: 0, scale: 0.68, rotate: 10 }}
-          transition={{ duration: 0.38, ease }}
+          initial={initial}
+          animate={animate}
+          exit={exit}
+          transition={transition4}
         >
           {icon}
         </motion.span>
@@ -250,11 +242,36 @@ export default function WishlistToggle({
       {isPending && (
         <motion.span
           className={s.pending}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+          animate={animate2}
+          transition={transition5}
           aria-hidden="true"
         />
       )}
     </motion.button>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const whileHover = { scale: 1.08, rotate: -4 }
+const whileTap = { scale: 0.94 }
+const transition = { duration: 0.42, ease }
+const variants = {
+        idle: { scale: 1 },
+        hover: { scale: 1.06 },
+        saved: { scale: [1, 1.12, 1] },
+      }
+const transition2 = { duration: 0.52, ease }
+const variants2 = {
+          idle: { scale: 0.2, opacity: 0 },
+          hover: { scale: 0.68, opacity: 0.45 },
+          saved: { scale: 1, opacity: 1 },
+        }
+const transition3 = { duration: 0.55, ease }
+const initial = { opacity: 0, scale: 0.65, rotate: -12 }
+const animate = { opacity: 1, scale: 1, rotate: 0 }
+const exit = { opacity: 0, scale: 0.68, rotate: 10 }
+const transition4 = { duration: 0.38, ease }
+const animate2 = { rotate: 360 }
+const transition5 = { duration: 0.9, repeat: Infinity, ease: "linear" as const }

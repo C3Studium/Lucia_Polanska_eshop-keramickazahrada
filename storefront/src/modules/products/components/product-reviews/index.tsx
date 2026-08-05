@@ -226,9 +226,9 @@ export default function ProductReviews({
     return (
       <motion.article
         className={styles.review}
-        initial={{ opacity: 0, y: 18 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.45 }}
+        initial={initial}
+        whileInView={whileInView}
+        viewport={viewport}
         transition={{
           duration: 0.7,
           delay: index * 0.08,
@@ -342,3 +342,10 @@ export default function ProductReviews({
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: 18 }
+const whileInView = { opacity: 1, y: 0 }
+const viewport = { once: true, amount: 0.45 }

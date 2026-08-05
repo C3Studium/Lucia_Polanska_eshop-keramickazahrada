@@ -46,17 +46,14 @@ const Radio = ({
             scale: 0.94,
           },
         }}
-        transition={{ duration: 0.38, ease }}
+        transition={transition}
       >
         <motion.span
           className={s.inner}
           initial={false}
           animate={checked && !disabled ? "checked" : "unchecked"}
-          variants={{
-            unchecked: { scale: 0, opacity: 0 },
-            checked: { scale: 1, opacity: 1 },
-          }}
-          transition={{ duration: 0.36, ease }}
+          variants={variants}
+          transition={transition2}
         />
       </motion.span>
     </span>
@@ -64,3 +61,13 @@ const Radio = ({
 }
 
 export default Radio
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.38, ease }
+const variants = {
+            unchecked: { scale: 0, opacity: 0 },
+            checked: { scale: 1, opacity: 1 },
+          }
+const transition2 = { duration: 0.36, ease }

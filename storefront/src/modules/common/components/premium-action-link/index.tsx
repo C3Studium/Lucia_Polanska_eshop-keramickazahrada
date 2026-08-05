@@ -72,8 +72,8 @@ export default function PremiumActionLink({
         variants={fillVariants}
         initial="rest"
         animate={visualState}
-        style={{ originX: 0 }}
-        transition={{ duration: 0.72, ease: [0.76, 0, 0.24, 1] }}
+        style={styleObj}
+        transition={transition}
         aria-hidden="true"
       />
       <motion.span
@@ -102,3 +102,9 @@ export default function PremiumActionLink({
     </LocalizedClientLink>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { originX: 0 }
+const transition = { duration: 0.72, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

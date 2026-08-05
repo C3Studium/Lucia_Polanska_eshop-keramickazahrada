@@ -113,10 +113,10 @@ export default function ProductReviewsForm({
   return (
     <motion.aside
       className={styles.container}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.35 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      initial={initial}
+      whileInView={whileInView}
+      viewport={viewport}
+      transition={transition}
     >
       <div className={styles.rail}>
         <span>Váš objekt · váš příběh</span>
@@ -183,9 +183,9 @@ export default function ProductReviewsForm({
       ) : (
         <motion.div
           className={styles.formSection}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          initial={initial2}
+          animate={whileInView}
+          transition={transition2}
         >
           <div className={styles.formHeader}>
             <span>Vaše recenze</span>
@@ -297,7 +297,7 @@ function ClickButton({
         <motion.span
           className={styles.slider}
           animate={{ y: isActive ? "-50%" : "0%" }}
-          transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
+          transition={transition3}
         >
           <span className={styles.el}>
             <PerspectiveText label={text} />
@@ -318,3 +318,14 @@ function PerspectiveText({ label }: { label: string }) {
     </span>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: 20 }
+const whileInView = { opacity: 1, y: 0 }
+const viewport = { once: true, amount: 0.35 }
+const transition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const initial2 = { opacity: 0, y: 16 }
+const transition2 = { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const transition3 = { duration: 0.5, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

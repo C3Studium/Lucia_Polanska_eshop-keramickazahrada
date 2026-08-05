@@ -103,7 +103,7 @@ export default function CarouselButton({
         variants={expandAnim}
         initial="rest"
         animate={isHovered ? "hover" : "rest"}
-        style={{ transformOrigin: "right center" }}
+        style={styleObj}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
     >
@@ -146,3 +146,8 @@ export default function CarouselButton({
     </motion.div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { transformOrigin: "right center" as const }

@@ -85,9 +85,9 @@ export default function DotazyMain () {
                 >
                     <motion.div
                         className="faqHeroMetaInner"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.12, duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
+                        initial={initial}
+                        animate={animate}
+                        transition={transition}
                     >
                         <span>Pomoc &amp; informace</span>
                         <span>Ateliér Lucie Polanské · 01</span>
@@ -97,7 +97,7 @@ export default function DotazyMain () {
                     className="faqShaderStage"
                     initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
                     animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
-                    transition={{ delay: 0.14, duration: 1.05, ease: [0.76, 0, 0.24, 1] }}
+                    transition={transition2}
                     style={{ opacity: heroChromeOpacity, y: heroChromeY }}
                 >
                     <FAQImageShader pointerX={pointerX} pointerY={pointerY} />
@@ -108,9 +108,9 @@ export default function DotazyMain () {
                 >
                     <motion.div
                         className="faqHeroCaptionInner"
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.48, duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
+                        initial={initial2}
+                        animate={animate}
+                        transition={transition3}
                     >
                         <span className="faqHeroKicker">Nejčastější otázky · 01</span>
                         {/* The page started its outline at h2 — screen-reader users navigating
@@ -129,9 +129,9 @@ export default function DotazyMain () {
                 <motion.div
                     className="faqHeroScrollCue"
                     style={{ opacity: heroChromeOpacity }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.85, duration: 0.7 }}
+                    initial={initial3}
+                    animate={animate2}
+                    transition={transition4}
                     aria-hidden="true"
                 >
                     <span>Pokračovat</span>
@@ -146,7 +146,7 @@ export default function DotazyMain () {
                 className="travellingFAQ"
                 initial={{ clipPath: "inset(0 100% 0 0)" }}
                 animate={{ clipPath: "inset(0 0% 0 0)" }}
-                transition={{ delay: 0.28, duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
+                transition={transition5}
                 style={{ x: faqComposedX, y: faqComposedY, scale: faqScale, rotate: faqRotate, opacity: faqOpacity, letterSpacing: faqTracking }}
             >
                 FAQ
@@ -156,3 +156,17 @@ export default function DotazyMain () {
         </section>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: -10 }
+const animate = { opacity: 1, y: 0 }
+const transition = { delay: 0.12, duration: 0.65, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const transition2 = { delay: 0.14, duration: 1.05, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const initial2 = { opacity: 0, y: 14 }
+const transition3 = { delay: 0.48, duration: 0.7, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const initial3 = { opacity: 0 }
+const animate2 = { opacity: 1 }
+const transition4 = { delay: 0.85, duration: 0.7 }
+const transition5 = { delay: 0.28, duration: 0.9, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

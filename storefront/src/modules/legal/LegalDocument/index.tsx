@@ -49,13 +49,13 @@ function Chapter({
           ? { opacity: 1, y: 0 }
           : { opacity: 0.28, y: 24 }
       }
-      transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+      transition={transition}
     >
       <div className={styles.chapterRule} aria-hidden="true">
         <motion.span
           initial={false}
           animate={{ scaleX: isInView ? 1 : 0.08 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          transition={transition2}
         />
       </div>
 
@@ -220,3 +220,9 @@ export default function LegalDocument({
     </main>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const transition2 = { duration: 0.9, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

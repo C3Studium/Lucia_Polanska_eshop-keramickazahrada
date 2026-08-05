@@ -105,7 +105,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
               color: "#20211c",
             },
           }}
-          transition={{ duration: 0.4, ease }}
+          transition={transition}
           data-invalid={invalid || undefined}
         >
           <select
@@ -128,7 +128,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
             className={s.icon}
             initial={false}
             animate={{ rotate: isFocused ? 180 : 0 }}
-            transition={{ duration: 0.46, ease }}
+            transition={transition2}
             aria-hidden="true"
           >
             <ChevronUpDown />
@@ -138,7 +138,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
             initial={false}
             animate={{ scaleX: isFocused || invalid ? 1 : 0 }}
             style={{ originX: invalid ? 0.5 : 0 }}
-            transition={{ duration: 0.52, ease: [0.76, 0, 0.24, 1] }}
+            transition={transition3}
             data-invalid={invalid || undefined}
             aria-hidden="true"
           />
@@ -151,3 +151,10 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
 NativeSelect.displayName = "NativeSelect"
 
 export default NativeSelect
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.4, ease }
+const transition2 = { duration: 0.46, ease }
+const transition3 = { duration: 0.52, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

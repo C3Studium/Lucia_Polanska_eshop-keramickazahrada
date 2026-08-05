@@ -41,13 +41,18 @@ export default function VerticalImageCarousel({
         images={images}
         scrollProgress={scrollProgress}
         className="CoursesCarousel__liquidEther"
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-        }}
+        style={styleObj}
       />
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = {
+          position: "absolute" as const,
+          inset: 0,
+          width: "100%" as const,
+          height: "100%" as const,
+        }

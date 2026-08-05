@@ -27,7 +27,7 @@ export const Card = ({
         !isActive ? styles.clickable : ""
       }`}
       layout="position"
-      transition={{ layout: { duration: .55, ease: [0.22, 1, 0.36, 1] } }}
+      transition={transition}
     >
       <button
         type="button"
@@ -50,16 +50,16 @@ export const Card = ({
         {isActive && (
           <motion.div
             className={styles.content}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: .58, ease: [0.76, 0, 0.24, 1] }}
+            initial={initial}
+            animate={animate}
+            exit={initial}
+            transition={transition2}
           >
             <motion.div
-              initial={{ y: 18 }}
-              animate={{ y: 0 }}
-              exit={{ y: 10 }}
-              transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}
+              initial={initial2}
+              animate={animate2}
+              exit={exit}
+              transition={transition3}
             >
               {children}
             </motion.div>
@@ -69,3 +69,15 @@ export const Card = ({
     </motion.section>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { layout: { duration: .55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
+const initial = { height: 0, opacity: 0 }
+const animate = { height: "auto" as const, opacity: 1 }
+const transition2 = { duration: .58, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const initial2 = { y: 18 }
+const animate2 = { y: 0 }
+const exit = { y: 10 }
+const transition3 = { duration: .55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

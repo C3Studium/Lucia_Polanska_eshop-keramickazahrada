@@ -111,13 +111,13 @@ function Progress({
           scaleX: reached ? 1 : percentage / 100,
           backgroundColor: reached ? "#bbb788" : "#747e62",
         }}
-        style={{ originX: 0 }}
-        transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+        style={styleObj}
+        transition={transition}
       />
       <motion.i
         initial={false}
         animate={{ left: `${reached ? 100 : percentage}%` }}
-        transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+        transition={transition}
       />
     </div>
   )
@@ -133,9 +133,9 @@ function FreeShippingInline({
   return (
     <motion.aside
       className={styles.root}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease }}
+      initial={initial}
+      animate={animate}
+      transition={transition2}
       aria-live="polite"
     >
       <div className={styles.inlineHeader}>
@@ -181,8 +181,8 @@ function FreeShippingPopup({
       {!isClosed && (
         <motion.aside
           className={styles.popupRoot}
-          initial={{ opacity: 0, x: 32, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+          initial={initial2}
+          animate={animate2}
           exit={{
             opacity: 0,
             x: 24,
@@ -190,7 +190,7 @@ function FreeShippingPopup({
             scale: 0.96,
             clipPath: "inset(0 0 0 100%)",
           }}
-          transition={{ duration: 0.62, ease }}
+          transition={transition3}
           aria-live="polite"
         >
           <div className={styles.popupTop}>
@@ -200,9 +200,9 @@ function FreeShippingPopup({
               className={styles.close}
               onClick={() => setIsClosed(true)}
               aria-label="Zavřít informaci o dopravě zdarma"
-              whileHover={{ rotate: 90, scale: 1.06 }}
-              whileTap={{ scale: 0.92 }}
-              transition={{ duration: 0.4, ease }}
+              whileHover={whileHover}
+              whileTap={whileTap}
+              transition={transition4}
             >
               ×
             </motion.button>
@@ -216,7 +216,7 @@ function FreeShippingPopup({
                   ? { scale: [1, 1.3, 1], opacity: [1, 0.65, 1] }
                   : { scale: 1, opacity: 1 }
               }
-              transition={{ duration: 0.8, ease }}
+              transition={transition5}
               aria-hidden="true"
             />
             <div>
@@ -263,3 +263,19 @@ function FreeShippingPopup({
     </AnimatePresence>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { originX: 0 }
+const transition = { duration: 0.8, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const initial = { opacity: 0, y: 10 }
+const animate = { opacity: 1, y: 0 }
+const transition2 = { duration: 0.55, ease }
+const initial2 = { opacity: 0, x: 32, y: 16, scale: 0.96 }
+const animate2 = { opacity: 1, x: 0, y: 0, scale: 1 }
+const transition3 = { duration: 0.62, ease }
+const whileHover = { rotate: 90, scale: 1.06 }
+const whileTap = { scale: 0.92 }
+const transition4 = { duration: 0.4, ease }
+const transition5 = { duration: 0.8, ease }

@@ -107,31 +107,25 @@ export default function RegionsSelect({
         onClick={() => setIsOpen((open) => !open)}
         initial={false}
         animate={isOpen ? "open" : "closed"}
-        whileTap={{ scale: 0.96 }}
+        whileTap={whileTap}
       >
         <motion.span
           className="countryButton__surface"
-          variants={{
-            closed: { scale: 0.55, opacity: 0 },
-            open: { scale: 1, opacity: 1 },
-          }}
-          transition={{ duration: 0.46, ease }}
+          variants={variants}
+          transition={transition}
           aria-hidden="true"
         />
         <span className="countryButton__flag" aria-hidden="true">
           <CountryFlag
             svg
-            style={{ width: "22px", height: "22px" }}
+            style={styleObj}
             countryCode={current.country}
           />
         </span>
         <motion.span
           className="regionArrow"
-          variants={{
-            closed: { rotate: 180, x: 0 },
-            open: { rotate: 90, x: 1 },
-          }}
-          transition={{ duration: 0.5, ease }}
+          variants={variants2}
+          transition={transition2}
           aria-hidden="true"
         >
           ↗
@@ -148,7 +142,7 @@ export default function RegionsSelect({
             initial="closed"
             animate="open"
             exit="closed"
-            transition={{ duration: 0.46, ease }}
+            transition={transition}
           >
             <div className="countryOptions__label" role="presentation">
               <span>Země obchodu</span>
@@ -166,22 +160,22 @@ export default function RegionsSelect({
                   aria-selected={selected}
                   data-selected={selected}
                   onClick={() => handleChange(option)}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={initial}
+                  animate={animate}
                   transition={{
                     duration: 0.35,
                     delay: index * 0.035,
                     ease,
                   }}
-                  whileHover={{ x: 3 }}
-                  whileFocus={{ x: 3 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={whileHover}
+                  whileFocus={whileHover}
+                  whileTap={whileTap2}
                   title={option.label}
                 >
                   <CountryFlag
                     svg
                     className="countryOption__flag"
-                    style={{ width: "20px", height: "20px" }}
+                    style={styleObj2}
                     countryCode={option.country}
                   />
                   <span>{option.label}</span>
@@ -195,3 +189,24 @@ export default function RegionsSelect({
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const whileTap = { scale: 0.96 }
+const variants = {
+            closed: { scale: 0.55, opacity: 0 },
+            open: { scale: 1, opacity: 1 },
+          }
+const transition = { duration: 0.46, ease }
+const styleObj = { width: "22px" as const, height: "22px" as const }
+const variants2 = {
+            closed: { rotate: 180, x: 0 },
+            open: { rotate: 90, x: 1 },
+          }
+const transition2 = { duration: 0.5, ease }
+const initial = { opacity: 0, y: -5 }
+const animate = { opacity: 1, y: 0 }
+const whileHover = { x: 3 }
+const whileTap2 = { scale: 0.98 }
+const styleObj2 = { width: "20px" as const, height: "20px" as const }

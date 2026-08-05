@@ -40,7 +40,7 @@ function CartMismatchBanner({
       initial={{ opacity: 0, y: -18, clipPath: "inset(0 0 100% 0)" }}
       animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
       exit={{ opacity: 0, y: -12, clipPath: "inset(0 0 100% 0)" }}
-      transition={{ duration: 0.62, ease }}
+      transition={transition}
       aria-live="polite"
     >
       <div className={styles.content}>
@@ -57,10 +57,10 @@ function CartMismatchBanner({
             {state === "error" && (
               <motion.small
                 key="error"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.35, ease }}
+                initial={initial}
+                animate={animate}
+                exit={exit}
+                transition={transition2}
                 role="alert"
               >
                 Propojení se nepodařilo. Zkuste to prosím znovu.
@@ -80,12 +80,8 @@ function CartMismatchBanner({
         >
           <motion.span
             className={styles.actionFill}
-            variants={{
-              rest: { scaleX: 0 },
-              hover: { scaleX: 1 },
-              pending: { scaleX: 1 },
-            }}
-            transition={{ duration: 0.58, ease: [0.76, 0, 0.24, 1] }}
+            variants={variants}
+            transition={transition3}
             aria-hidden="true"
           />
           <span>{state === "pending" ? "Propojujeme…" : "Propojit košík"}</span>
@@ -107,3 +103,18 @@ function CartMismatchBanner({
 }
 
 export default CartMismatchBanner
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.62, ease }
+const initial = { opacity: 0, y: 6 }
+const animate = { opacity: 1, y: 0 }
+const exit = { opacity: 0, y: -4 }
+const transition2 = { duration: 0.35, ease }
+const variants = {
+              rest: { scaleX: 0 },
+              hover: { scaleX: 1 },
+              pending: { scaleX: 1 },
+            }
+const transition3 = { duration: 0.58, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

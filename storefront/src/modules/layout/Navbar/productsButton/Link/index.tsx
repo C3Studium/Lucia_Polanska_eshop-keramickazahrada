@@ -55,7 +55,7 @@ export default function LinkCat({ text, href, className, index, onClickAction } 
                 <motion.span
                     className={styles.textTrack}
                     animate={{ y: isActive ? "-50%" : "0%" }}
-                    transition={{ duration: 0.48, ease: [0.76, 0, 0.24, 1] }}
+                    transition={transition}
                 >
                     <LinkFace label={text} />
                     <LinkFace label={text} />
@@ -80,3 +80,8 @@ function LinkFace({ label }: { label: string }) {
         </span>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.48, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

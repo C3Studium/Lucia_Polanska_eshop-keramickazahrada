@@ -111,7 +111,7 @@ export default function VyrobaCta() {
             aria-labelledby="vyroba-cta-title"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: .24 }}
+            viewport={viewport}
             onPointerMove={handlePointerMove}
             onPointerLeave={resetPointer}
         >
@@ -211,3 +211,8 @@ export default function VyrobaCta() {
         </motion.section>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const viewport = { once: true, amount: .24 }

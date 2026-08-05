@@ -64,8 +64,8 @@ const DeleteButton = ({
         <motion.span
           className={styles.fill}
           variants={fillVariants}
-          transition={{ duration: .48, ease: [0.76, 0, 0.24, 1] }}
-          style={{ originX: 0 }}
+          transition={transition}
+          style={styleObj}
           aria-hidden="true"
         />
         <span className={styles.icon} aria-hidden="true">
@@ -73,24 +73,20 @@ const DeleteButton = ({
             {isDeleting ? (
               <motion.span
                 key="pending"
-                initial={{ opacity: 0, scale: .75 }}
-                animate={{ opacity: 1, scale: 1, rotate: 360 }}
-                exit={{ opacity: 0, scale: .75 }}
-                transition={{
-                  opacity: { duration: .2 },
-                  scale: { duration: .3, ease: [0.22, 1, 0.36, 1] },
-                  rotate: { duration: .9, repeat: Infinity, ease: "linear" },
-                }}
+                initial={initial}
+                animate={animate}
+                exit={initial}
+                transition={transition2}
               >
                 <Spinner />
               </motion.span>
             ) : (
               <motion.span
                 key="idle"
-                initial={{ opacity: 0, scale: .75 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: .75 }}
-                transition={{ duration: .28, ease: [0.22, 1, 0.36, 1] }}
+                initial={initial}
+                animate={animate2}
+                exit={initial}
+                transition={transition3}
               >
                 <Trash />
               </motion.span>
@@ -104,3 +100,18 @@ const DeleteButton = ({
 }
 
 export default DeleteButton
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: .48, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const styleObj = { originX: 0 }
+const initial = { opacity: 0, scale: .75 }
+const animate = { opacity: 1, scale: 1, rotate: 360 }
+const transition2 = {
+                  opacity: { duration: .2 },
+                  scale: { duration: .3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                  rotate: { duration: .9, repeat: Infinity, ease: "linear" as const },
+                }
+const animate2 = { opacity: 1, scale: 1 }
+const transition3 = { duration: .28, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

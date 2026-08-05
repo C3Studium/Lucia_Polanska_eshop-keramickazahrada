@@ -303,10 +303,10 @@ export default function ComgatePaymentSelector({
           <motion.div
             className={styles.selectedState}
             key="selected"
-            initial={{ opacity: 0, y: 7 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.42, ease }}
+            initial={initial}
+            animate={animate}
+            exit={exit}
+            transition={transition}
           >
             <div className={styles.selected}>
               <span className={styles.selectedLogo}>
@@ -501,3 +501,11 @@ export default function ComgatePaymentSelector({
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: 7 }
+const animate = { opacity: 1, y: 0 }
+const exit = { opacity: 0, y: -5 }
+const transition = { duration: 0.42, ease }

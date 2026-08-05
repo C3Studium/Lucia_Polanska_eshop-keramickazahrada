@@ -110,8 +110,13 @@ export default function GlobalLiquidEther() {
         takeoverDuration={preset.interactive ? 0.25 : 0}
         autoResumeDelay={preset.interactive ? 1400 : 0}
         autoRampDuration={preset.interactive ? 0.6 : 1.8}
-        style={{ width: "100%", height: "100%" }}
+        style={styleObj}
       />
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { width: "100%" as const, height: "100%" as const }

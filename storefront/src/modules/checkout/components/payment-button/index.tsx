@@ -73,7 +73,7 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   }
 
   return (
-    <div className={styles.root} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
+    <div className={styles.root} style={styleObj}>
       <ClickButton
         className={styles.button}
         text="Potvrdit objednávku"
@@ -138,7 +138,7 @@ const ComgatePaymentButton = ({
   }
 
   return (
-    <div className={styles.root} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
+    <div className={styles.root} style={styleObj}>
       <ClickButton
         className={`${styles.button} ${styles.comgate}`}
         text="Zaplatit přes Comgate"
@@ -200,11 +200,18 @@ function ClickButton({ onClickAction, ClickAction, disabled = false, text, type 
               <motion.span
                 className={styles.indicator}
                 variants={fillVariants}
-                style={{ originX: 0 }}
-                transition={{ duration: .48, ease: [.76, 0, .24, 1] }}
+                style={styleObj2}
+                transition={transition}
               />
               <span className={styles.label}>{text}</span>
           </motion.button>
       </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { width: "100%" as const, display: "flex" as const, flexDirection: "column" as const, alignItems: "flex-start" as const, justifyContent: "center" as const }
+const styleObj2 = { originX: 0 }
+const transition = { duration: .48, ease: [.76, 0, .24, 1] as [number, number, number, number] }

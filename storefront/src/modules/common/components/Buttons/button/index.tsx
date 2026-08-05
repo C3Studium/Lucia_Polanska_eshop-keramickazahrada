@@ -96,10 +96,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
                     >
                         <PerspectiveImage img={img} alt={"bg__img"}/>
                     </motion.div>
-                    <motion.div className={styles.el} style={{ perspective: 800 }}>
+                    <motion.div className={styles.el} style={styleObj}>
                         <PerspectiveIcon icon1={icon1} icon2={icon2} alt={alt} />
                     </motion.div>
-                    <motion.div className={styles.el} style={{ perspective: 800 }}>
+                    <motion.div className={styles.el} style={styleObj}>
                         <PerspectiveIcon icon1={icon1} icon2={icon2} alt={alt} />
                     </motion.div>
                 </motion.div>
@@ -123,10 +123,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
                 >
                     <PerspectiveImage img={img} alt={"bg__img"}/>
                 </motion.div>
-                <motion.div className={styles.el} style={{ perspective: 800 }}>
+                <motion.div className={styles.el} style={styleObj}>
                     <PerspectiveText label={title} color="var(--blackText)" />
                 </motion.div>
-                <motion.div className={styles.el} style={{ perspective: 800 }}>
+                <motion.div className={styles.el} style={styleObj}>
                     <PerspectiveText label={title} color="var(--whiteText)" />
                 </motion.div>
             </motion.div>
@@ -147,10 +147,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
                 >
                     <PerspectiveImage img={img} alt={"bg__img"}/>
                 </motion.div>
-                <motion.div className={styles.el} style={{ perspective: 800 }}>
+                <motion.div className={styles.el} style={styleObj}>
                     <PerspectiveText label={title} color="var(--blackText)" />
                 </motion.div>
-                <motion.div className={styles.el} style={{ perspective: 800 }}>
+                <motion.div className={styles.el} style={styleObj}>
                 <PerspectiveText label={title} color="var(--whiteText)" />
                 </motion.div>
             </motion.div>
@@ -171,7 +171,7 @@ function PerspectiveText({
     <motion.div
       className={styles.perspectiveText}
       variants={textWrap}
-      style={{ transformStyle: "preserve-3d" }}
+      style={styleObj2}
     >
       <motion.p variants={frontText} style={{ color }}>
         {label}
@@ -211,7 +211,7 @@ function PerspectiveIcon({
     <motion.div
       className={styles.PerspectiveIcon}
       variants={textWrap}
-      style={{ transformStyle: "preserve-3d" }}
+      style={styleObj2}
     >
       <motion.div variants={frontText} className={styles.image__wrapper}>
         <Image src={icon1} alt={alt} width={50} height={25} />
@@ -234,9 +234,16 @@ function PerspectiveImage({img, alt}: {img: string, alt: string}) {
     return (
         <div className={styles.perspectiveImage}>
             <div className={styles.img__wrapper}>
-                <Image src={img} alt={alt} fill style={{objectFit: 'cover'}}/>
+                <Image src={img} alt={alt} fill style={styleObj3}/>
                 <div className={styles.overlay}/>
             </div>
         </div>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { perspective: 800 }
+const styleObj2 = { transformStyle: "preserve-3d" as const }
+const styleObj3 = {objectFit: 'cover' as const}

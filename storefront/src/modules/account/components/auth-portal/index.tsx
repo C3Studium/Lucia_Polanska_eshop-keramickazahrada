@@ -56,9 +56,9 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
       <motion.p
         className={s.ghostWord}
         aria-hidden="true"
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        initial={initial}
+        animate={animate}
+        transition={transition}
       >
         {content.word}
       </motion.p>
@@ -67,9 +67,9 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
         <span>{content.index} · {content.eyebrow}</span>
         <motion.span
           className={s.metaLine}
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 1.1, delay: .12, ease: [0.76, 0, 0.24, 1] }}
+          initial={initial2}
+          animate={animate2}
+          transition={transition2}
         />
         <span>Keramická zahrada · Písek</span>
       </header>
@@ -79,7 +79,7 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
           className={s.visual}
           initial={{ clipPath: "inset(18% 0 82% 0)" }}
           animate={{ clipPath: "inset(0% 0 0% 0)" }}
-          transition={{ duration: 1.25, delay: .08, ease: [0.76, 0, 0.24, 1] }}
+          transition={transition3}
         >
           <Image
             src="/assets/img/img/1.jpg"
@@ -99,9 +99,9 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
 
         <motion.div
           className={s.heroCopy}
-          initial={{ opacity: 0, y: 42 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: .85, delay: .38, ease: [0.22, 1, 0.36, 1] }}
+          initial={initial3}
+          animate={animate3}
+          transition={transition4}
         >
           <span className={s.visualLabel}>Přístup k vašemu výběru</span>
           <h1>
@@ -112,9 +112,9 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
 
         <motion.aside
           className={s.ledger}
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: .72, delay: .55, ease: [0.22, 1, 0.36, 1] }}
+          initial={initial4}
+          animate={animate3}
+          transition={transition5}
         >
           <div className={s.ledgerTop}>
             <span>{content.index}</span>
@@ -136,3 +136,19 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
     </section>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, x: 40 }
+const animate = { opacity: 1, x: 0 }
+const transition = { duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const initial2 = { scaleX: 0 }
+const animate2 = { scaleX: 1 }
+const transition2 = { duration: 1.1, delay: .12, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const transition3 = { duration: 1.25, delay: .08, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const initial3 = { opacity: 0, y: 42 }
+const animate3 = { opacity: 1, y: 0 }
+const transition4 = { duration: .85, delay: .38, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const initial4 = { opacity: 0, y: 24 }
+const transition5 = { duration: .72, delay: .55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

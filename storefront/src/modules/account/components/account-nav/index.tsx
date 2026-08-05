@@ -85,20 +85,14 @@ const AccountNavigationLink = ({
         className={styles.linkLine}
         initial="rest"
         animate={visualState}
-        variants={{
-          rest: { scaleX: 0.12, opacity: 0.35 },
-          active: { scaleX: 1, opacity: 0.68 },
-        }}
-        transition={{ duration: 0.55, ease: [0.76, 0, 0.24, 1] }}
+        variants={variants}
+        transition={transition}
       />
       <motion.span
         className={styles.linkArrow}
         initial="rest"
         animate={visualState}
-        variants={{
-          rest: { opacity: 0, x: -6, rotate: 0 },
-          active: { opacity: 1, x: 0, rotate: 8 },
-        }}
+        variants={variants2}
         transition={{ duration: 0.38, ease: accountEase }}
       >
         ↗
@@ -148,10 +142,10 @@ const AccountNav = ({
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={activeItem.href}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              initial={initial}
+              animate={animate}
+              exit={exit}
+              transition={transition2}
             >
               <span>{activeItem.index}</span>
               <strong>{activeItem.title}</strong>
@@ -209,3 +203,20 @@ const AccountNav = ({
 }
 
 export default AccountNav
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const variants = {
+          rest: { scaleX: 0.12, opacity: 0.35 },
+          active: { scaleX: 1, opacity: 0.68 },
+        }
+const transition = { duration: 0.55, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const variants2 = {
+          rest: { opacity: 0, x: -6, rotate: 0 },
+          active: { opacity: 1, x: 0, rotate: 8 },
+        }
+const initial = { opacity: 0, y: 18 }
+const animate = { opacity: 1, y: 0 }
+const exit = { opacity: 0, y: -12 }
+const transition2 = { duration: 0.42, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

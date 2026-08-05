@@ -109,13 +109,13 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
           initial={false}
           animate={visualState}
           whileHover={disabled ? "disabled" : selected ? "selected" : "hover"}
-          transition={{ duration: 0.4, ease }}
+          transition={transition}
         >
           <motion.span
             className={styles.optionSurface}
             variants={surfaceVariants}
-            style={{ originX: 1 }}
-            transition={{ duration: 0.62, ease: [0.76, 0, 0.24, 1] }}
+            style={styleObj}
+            transition={transition2}
             aria-hidden="true"
           />
           <div className={styles.row}>
@@ -134,7 +134,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                     backgroundColor: "rgba(187, 183, 136, .2)",
                   },
                 }}
-                transition={{ duration: 0.38, ease }}
+                transition={transition3}
                 aria-hidden="true"
               >
                 <motion.span
@@ -144,7 +144,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                       ? { scale: 1, opacity: 1 }
                       : { scale: 0, opacity: 0 }
                   }
-                  transition={{ duration: 0.38, ease }}
+                  transition={transition3}
                 />
               </motion.span>
               <div className={styles.copy}>
@@ -175,7 +175,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                         backgroundColor: "rgba(255, 232, 214, 0)",
                       }
                 }
-                transition={{ duration: 0.42, ease }}
+                transition={transition4}
               >
                 {paymentMethodInfo?.logo ? (
                   <img
@@ -192,8 +192,8 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                 className={styles.direction}
                 initial={false}
                 animate={{ rotate: selected ? 45 : 0 }}
-                variants={{ hover: { rotate: 45 } }}
-                transition={{ duration: 0.42, ease }}
+                variants={variants}
+                transition={transition4}
                 aria-hidden="true"
               >
                 ↗
@@ -208,3 +208,13 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
 }
 
 export default PaymentContainer
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.4, ease }
+const styleObj = { originX: 1 }
+const transition2 = { duration: 0.62, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const transition3 = { duration: 0.38, ease }
+const transition4 = { duration: 0.42, ease }
+const variants = { hover: { rotate: 45 } }

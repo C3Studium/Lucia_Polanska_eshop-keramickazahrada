@@ -197,9 +197,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         <aside className="product__identity" aria-label="Informace o produktu">
           <motion.div
             className="product__identityInner"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            initial={initial}
+            animate={animate}
+            transition={transition}
           >
             <div className="product__eyebrow">
               <span>01 · {category || "Autorská keramika"}</span>
@@ -265,13 +265,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         >
           <motion.div
             className="product__purchaseInner"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.8,
-              delay: 0.12,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+            initial={initial}
+            animate={animate}
+            transition={transition2}
           >
             <div className="product__purchaseHeader">
               <span>Volba objektu</span>
@@ -381,3 +377,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
 }
 
 export default ProductDetails
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: 24 }
+const animate = { opacity: 1, y: 0 }
+const transition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const transition2 = {
+              duration: 0.8,
+              delay: 0.12,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            }

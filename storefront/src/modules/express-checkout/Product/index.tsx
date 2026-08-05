@@ -142,7 +142,7 @@ export const Product = ({
         className={styles.productPortrait}
         initial={{ clipPath: "inset(0 0 100% 0)" }}
         animate={{ clipPath: "inset(0 0 0% 0)" }}
-        transition={{ duration: .8, ease: [0.76, 0, 0.24, 1] }}
+        transition={transition}
       >
         <Image
           src={
@@ -207,10 +207,10 @@ export const Product = ({
               <motion.div
                 className={styles.bundleItem}
                 key={activeItem.id}
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}
+                initial={bundleItemInitial}
+                animate={animate}
+                exit={exit}
+                transition={transition2}
               >
                 <span className={styles.eyebrow}>Upravujete</span>
                 <h3>{activeItem.product.title}</h3>
@@ -281,9 +281,9 @@ export const Product = ({
           <motion.p
             className={styles.error}
             role="alert"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            initial={initial2}
+            animate={animate2}
+            exit={exit2}
           >
             {error}
           </motion.p>
@@ -316,7 +316,7 @@ const OptionGroups = ({
                 data-active={active}
                 aria-pressed={active}
                 onClick={() => onChangeAction(option.id!, value.value!)}
-                whileTap={{ scale: .97 }}
+                whileTap={whileTap}
               >
                 <span aria-hidden="true" />
                 {value.value}
@@ -328,3 +328,16 @@ const OptionGroups = ({
     ))}
   </div>
 )
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: .8, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const bundleItemInitial = { opacity: 0, x: 14 }
+const animate = { opacity: 1, x: 0 }
+const exit = { opacity: 0, x: -10 }
+const transition2 = { duration: .35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+const initial2 = { opacity: 0, y: -4 }
+const animate2 = { opacity: 1, y: 0 }
+const exit2 = { opacity: 0 }
+const whileTap = { scale: .97 }

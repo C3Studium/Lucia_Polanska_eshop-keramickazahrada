@@ -152,7 +152,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
         className="footer__frame"
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.08 }}
+        viewport={viewport}
         variants={reveal}
       >
         <div className="footer__topline">
@@ -581,3 +581,8 @@ function toOpaqueColor(
 
   return `rgb(${blend(color.red, parsedBackdrop.red)}, ${blend(color.green, parsedBackdrop.green)}, ${blend(color.blue, parsedBackdrop.blue)})`
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const viewport = { once: true, amount: 0.08 }

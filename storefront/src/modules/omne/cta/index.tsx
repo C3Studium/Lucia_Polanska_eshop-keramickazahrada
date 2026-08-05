@@ -153,7 +153,7 @@ export default function AboutCta() {
             onPointerLeave={resetPointer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: .22 }}
+            viewport={viewport}
         >
             <header className="aboutCta__meta">
                 <span>04 · Pokračování</span>
@@ -258,3 +258,8 @@ export default function AboutCta() {
         </motion.section>
     )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const viewport = { once: true, amount: .22 }

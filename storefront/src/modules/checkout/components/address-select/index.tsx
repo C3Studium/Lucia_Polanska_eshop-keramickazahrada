@@ -102,14 +102,8 @@ const AddressSelect = ({
             <motion.span
               className={s.accountAddressSelectControl}
               animate={open ? "open" : "closed"}
-              variants={{
-                closed: { rotate: 0 },
-                open: { rotate: 180 },
-              }}
-              transition={{
-                duration: 0.42,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              variants={variants}
+              transition={transition}
               aria-hidden="true"
             >
               <ChevronUpDown />
@@ -146,10 +140,7 @@ const AddressSelect = ({
                             className={s.accountAddressOptionHighlight}
                             initial={false}
                             animate={{ scaleX: active || selected ? 1 : 0 }}
-                            transition={{
-                              duration: 0.42,
-                              ease: [0.76, 0, 0.24, 1],
-                            }}
+                            transition={transition2}
                             aria-hidden="true"
                           />
                           <span className={s.accountAddressOptionIndex}>
@@ -198,3 +189,19 @@ const AddressSelect = ({
 }
 
 export default AddressSelect
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const variants = {
+                closed: { rotate: 0 },
+                open: { rotate: 180 },
+              }
+const transition = {
+                duration: 0.42,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              }
+const transition2 = {
+                              duration: 0.42,
+                              ease: [0.76, 0, 0.24, 1] as [number, number, number, number],
+                            }

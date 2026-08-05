@@ -47,7 +47,7 @@ export default function Intro ({
                 <div className="Hero__Intro__Container">
                     <motion.div 
                         className="Hero__Intro__Img_Wrapper"
-                        style={{ transformOrigin: "left center", overflow: "hidden" }}
+                        style={styleObj}
                         animate={isInView ? "enter" : "start"}
                         variants={imageAnim}
                     >
@@ -108,7 +108,7 @@ const wordSplit = (text: string, isInView: boolean) => {
             animate={isInView ? "enter" : "start"}
             variants={PreloaderAnimText}
             custom={index}
-            style={{ display: "inline-block", whiteSpace: "pre", marginRight: "0.25em" }}
+            style={styleObj2}
         >
             {word}
         </motion.span>
@@ -134,7 +134,7 @@ const textWithBreaks = (text: string, isInView: boolean) => {
 
     // Split by line breaks first, then by spaces
     return text.split('\n').map((line, lineIndex) => (
-        <span key={lineIndex} style={{ display: "inline" }}>
+        <span key={lineIndex} style={styleObj3}>
             {line.split(' ').map((word, wordIndex) => {
                 const globalIndex = lineIndex * 100 + wordIndex; // Simple way to create unique indices
                 return (
@@ -143,7 +143,7 @@ const textWithBreaks = (text: string, isInView: boolean) => {
                         animate={isInView ? "enter" : "start"}
                         variants={PreloaderAnimText}
                         custom={globalIndex}
-                        style={{ display: "inline-block", whiteSpace: "pre",}}
+                        style={styleObj4}
                     >
                         {word + " "}
                     </motion.span>
@@ -183,3 +183,11 @@ const charSplit = (text: string, isInView: boolean) => {
         </motion.span>
     ));
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { transformOrigin: "left center" as const, overflow: "hidden" as const }
+const styleObj2 = { display: "inline-block" as const, whiteSpace: "pre" as const, marginRight: "0.25em" as const }
+const styleObj3 = { display: "inline" as const }
+const styleObj4 = { display: "inline-block" as const, whiteSpace: "pre" as const,}

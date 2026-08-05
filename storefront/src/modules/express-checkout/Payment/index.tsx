@@ -227,9 +227,9 @@ export const Payment = ({
           <motion.p
             className={styles.error}
             role="alert"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            initial={initial}
+            animate={animate}
+            exit={exit}
           >
             {error}
           </motion.p>
@@ -238,3 +238,10 @@ export const Payment = ({
     </div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const initial = { opacity: 0, y: -4 }
+const animate = { opacity: 1, y: 0 }
+const exit = { opacity: 0 }

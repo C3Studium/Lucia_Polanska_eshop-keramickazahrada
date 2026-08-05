@@ -59,7 +59,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
       variants={formVariants}
       initial="idle"
       animate={state}
-      transition={{ duration: 0.55, ease }}
+      transition={transition}
       aria-labelledby={`${emailId}-title`}
     >
       <div className={s.heading}>
@@ -97,12 +97,8 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
           >
             <motion.span
               className={s.buttonFill}
-              variants={{
-                rest: { scaleX: 0 },
-                hover: { scaleX: 1 },
-                loading: { scaleX: 1 },
-              }}
-              transition={{ duration: 0.58, ease: [0.76, 0, 0.24, 1] }}
+              variants={variants}
+              transition={transition2}
               aria-hidden="true"
             />
             <span>{isLoading ? "Ukládáme…" : "Upozornit mě"}</span>
@@ -130,7 +126,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.48, ease }}
+            transition={transition3}
             role="status"
           >
             Hotovo. Jakmile bude objekt dostupný, ozveme se.
@@ -144,7 +140,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.48, ease }}
+            transition={transition3}
             role="alert"
           >
             Uložení se nepodařilo. Zkontrolujte e-mail a zkuste to znovu.
@@ -156,3 +152,15 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
 }
 
 export default RestockForm
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const transition = { duration: 0.55, ease }
+const variants = {
+                rest: { scaleX: 0 },
+                hover: { scaleX: 1 },
+                loading: { scaleX: 1 },
+              }
+const transition2 = { duration: 0.58, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
+const transition3 = { duration: 0.48, ease }

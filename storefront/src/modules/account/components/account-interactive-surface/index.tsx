@@ -43,7 +43,7 @@ export default function AccountInteractiveSurface({
       <motion.span
         className={styles.surface}
         variants={accountListSurfaceVariants}
-        style={{ originX: 0 }}
+        style={styleObj}
         aria-hidden="true"
       />
       <motion.div
@@ -55,3 +55,8 @@ export default function AccountInteractiveSurface({
     </motion.div>
   )
 }
+
+
+/* Hoisted from JSX: these motion objects are static, so allocating them per
+   render only gave framer-motion new references to re-diff. Values are unchanged. */
+const styleObj = { originX: 0 }
