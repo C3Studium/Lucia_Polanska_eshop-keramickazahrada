@@ -122,6 +122,73 @@ medusaIntegrationTestRunner({
       })
     })
 
+    describe("providers she has to be able to find", () => {
+      /**
+       * `pp_pickup_pickup` was registered, enabled, and reported missing —
+       * because the admin renders provider ids through
+       * `formatProvider(id.split("_"))`, which showed it as „Pickup (PICKUP)"
+       * to someone looking for osobní odběr. Present but unrecognisable is
+       * operationally identical to absent.
+       *
+       * So this asserts the exact ids, which pin both halves: that the
+       * providers load (a provider whose module fails to resolve is simply
+       * not in this list — no error), and that their identifiers stay ones
+       * that render as recognisable Czech-ish labels.
+       */
+      it("registers the payment providers under recognisable ids", async () => {
+        const payment: any = getContainer().resolve("payment")
+        const providers = await payment.listPaymentProviders({})
+        const ids = providers.map((provider: any) => provider.id)
+
+        expect(ids).toContain("pp_comgate_comgate")
+        expect(ids).toContain("pp_osobni-odber_pickup")
+        expect(ids).not.toContain("pp_pickup_pickup")
+      })
+
+      it("registers the fulfillment providers", async () => {
+        const fulfillment: any = getContainer().resolve("fulfillment")
+        const providers = await fulfillment.listFulfillmentProviders({})
+        const ids = providers.map((provider: any) => provider.id)
+
+        expect(ids).toContain("pickup_osobni-odber")
+        expect(ids).toContain("ceska-posta-fulfillment_balikovna")
+        expect(ids).toContain("packeta_packeta")
+      })
+    })
+
+    describe("POST routes — validated bodies", () => {
+      /**
+       * Every route here reads `req.validatedBody`, which only exists once a
+       * validator middleware has run. Forget to register one and the handler
+       * throws on its first property access: a 500 with `unknown_error` and no
+       * indication that the cause is a missing line in `middlewares.ts`.
+       *
+       * That is not hypothetical — `/store/restock-subscriptions` shipped that
+       * way and 500d on every payload until the storefront tried to use it.
+       * The suite missed it because it only ever issued GETs.
+       *
+       * A 400 is the pass condition: it means the validator ran and rejected
+       * the empty body, which is the thing that was missing.
+       */
+      const POST_ROUTES = [
+        "/store/restock-subscriptions",
+        "/store/reviews",
+        "/store/return-requests",
+        "/store/newsletter",
+      ]
+
+      it.each(POST_ROUTES)("%s validates instead of throwing", async (route) => {
+        const response = await api
+          .post(route, {}, { validateStatus: () => true })
+          .catch((error: any) => error.response)
+
+        expect(response).toBeDefined()
+        expect(response.status).not.toBe(404)
+        // 500 means the handler ran without a validator and blew up.
+        expect(response.status).toBeLessThan(500)
+      })
+    })
+
     describe("routes reached from an e-mail, which carry no headers", () => {
       it("does not require a publishable key to pay a balance", async () => {
         // A mail client sends a bare GET. If this route ever moves back under

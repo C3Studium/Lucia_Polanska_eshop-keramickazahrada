@@ -9,6 +9,7 @@ import {
 } from "@medusajs/framework/http";
 import { PostCustomPriceSchema } from "./store/variants/[id]/price/route";
 import { PostStoreReviewSchema } from "./store/reviews/route";
+import { PostStoreRestockSubscriptionSchema } from "./store/restock-subscriptions/route";
 import { GetStoreReviewsSchema } from "./store/products/[id]/reviews/route";
 import { GetStoreCustomerReviewsSchema } from "./store/customers/me/reviews/route";
 import { GetAdminReviewsSchema } from "./admin/reviews/route";
@@ -238,6 +239,14 @@ export default defineMiddlewares({
       matcher: "/store/variants/:id/price",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostCustomPriceSchema)],
+    },
+    {
+      // The handler reads `req.validatedBody`, which does not exist until this
+      // runs. Without this entry every request 500s on the first property
+      // access — which is exactly what it did.
+      matcher: "/store/restock-subscriptions",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostStoreRestockSubscriptionSchema)],
     },
     {
       matcher: "/store/reviews",

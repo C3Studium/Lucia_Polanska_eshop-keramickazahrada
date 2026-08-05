@@ -56,7 +56,28 @@ import type {
  * card to charge.
  */
 class PickupPaymentService extends AbstractPaymentProvider {
-  static identifier = "pickup"
+  /**
+   * This string is what she reads in the admin, not just a key.
+   *
+   * Medusa builds the provider id as `pp_<identifier>_<registrationId>`, and
+   * the dashboard renders it with
+   * `const [_, name, type] = id.split("_")` → `Name (TYPE)`. As `"pickup"`
+   * that produced **„Pickup (PICKUP)"** in the region's payment-provider list:
+   * present, enabled, and impossible to recognise for someone looking for
+   * osobní odběr. It was reported as the provider being missing, which is the
+   * correct conclusion to draw from that screen.
+   *
+   * `"osobni-odber"` renders as „Osobni Odber (PICKUP)". ASCII on purpose —
+   * this is an identifier that ends up in a provider id, a URL and a database
+   * column, and diacritics there buy a nicer label at the cost of encoding
+   * surprises in all three.
+   *
+   * Changing an identifier changes the provider id, which would be a breaking
+   * change once anything referenced it. Nothing does yet: it has never been
+   * added to a region and has never taken a payment, so this is the last
+   * moment it is free.
+   */
+  static identifier = "osobni-odber"
 
   protected readonly logger_: Logger
 
