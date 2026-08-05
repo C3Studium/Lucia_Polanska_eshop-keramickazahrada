@@ -122,6 +122,39 @@ medusaIntegrationTestRunner({
       })
     })
 
+    describe("POST routes — validated bodies", () => {
+      /**
+       * Every route here reads `req.validatedBody`, which only exists once a
+       * validator middleware has run. Forget to register one and the handler
+       * throws on its first property access: a 500 with `unknown_error` and no
+       * indication that the cause is a missing line in `middlewares.ts`.
+       *
+       * That is not hypothetical — `/store/restock-subscriptions` shipped that
+       * way and 500d on every payload until the storefront tried to use it.
+       * The suite missed it because it only ever issued GETs.
+       *
+       * A 400 is the pass condition: it means the validator ran and rejected
+       * the empty body, which is the thing that was missing.
+       */
+      const POST_ROUTES = [
+        "/store/restock-subscriptions",
+        "/store/reviews",
+        "/store/return-requests",
+        "/store/newsletter",
+      ]
+
+      it.each(POST_ROUTES)("%s validates instead of throwing", async (route) => {
+        const response = await api
+          .post(route, {}, { validateStatus: () => true })
+          .catch((error: any) => error.response)
+
+        expect(response).toBeDefined()
+        expect(response.status).not.toBe(404)
+        // 500 means the handler ran without a validator and blew up.
+        expect(response.status).toBeLessThan(500)
+      })
+    })
+
     describe("routes reached from an e-mail, which carry no headers", () => {
       it("does not require a publishable key to pay a balance", async () => {
         // A mail client sends a bare GET. If this route ever moves back under
