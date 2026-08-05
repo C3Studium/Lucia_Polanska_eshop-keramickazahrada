@@ -1,7 +1,12 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { isComgate, paymentInfoMap } from "@lib/constants"
+import {
+  isComgate,
+  isPickupFulfillment,
+  isPickupPayment,
+  paymentInfoMap,
+} from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
   legacyComgateOptionForMethod,
@@ -44,10 +49,36 @@ const Payment = ({
     return activeSession?.provider_id ?? ""
   })
 
-  const nonComgatePaymentMethods = useMemo(
-    () => availablePaymentMethods.filter((provider) => !isComgate(provider.id)),
-    [availablePaymentMethods]
+  /*
+   * "Zaplatím při vyzvednutí" exists only for Osobní odběr — the customer collects from the
+   * workshop and pays there. It is not dobírka and must never be offered for a carrier
+   * shipment, so it is filtered out unless the chosen shipping option uses the pickup
+   * fulfilment provider.
+   */
+  const hasPickupShipping = Boolean(
+    cart?.shipping_methods?.some((method: any) =>
+      isPickupFulfillment(
+        method?.shipping_option?.provider_id ?? method?.provider_id
+      )
+    )
   )
+
+  const nonComgatePaymentMethods = useMemo(
+    () =>
+      availablePaymentMethods.filter(
+        (provider) =>
+          !isComgate(provider.id) &&
+          (hasPickupShipping || !isPickupPayment(provider.id))
+      ),
+    [availablePaymentMethods, hasPickupShipping]
+  )
+
+  // Switching away from Osobní odběr must clear a pickup payment already chosen.
+  useEffect(() => {
+    if (!hasPickupShipping && isPickupPayment(selectedPaymentMethod)) {
+      setSelectedPaymentMethod("")
+    }
+  }, [hasPickupShipping, selectedPaymentMethod])
 
   const searchParams = useSearchParams()
   const router = useRouter()

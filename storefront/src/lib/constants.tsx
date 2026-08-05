@@ -8,10 +8,28 @@ import Ideal from "@modules/common/icons/ideal"
 import Bancontact from "@modules/common/icons/bancontact"
 
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
+/**
+ * Osobní odběr — pay when you collect. Not dobírka: no carrier is involved and nothing is
+ * collected on delivery. The provider authorizes and never captures, so the order must never be
+ * presented as paid (§5.3).
+ */
+export const PICKUP_PAYMENT_PROVIDER = "pp_pickup_pickup"
+export const PICKUP_FULFILLMENT_PROVIDER = "pickup_osobni-odber"
+
+export const isPickupPayment = (providerId?: string) =>
+  providerId === PICKUP_PAYMENT_PROVIDER
+
+export const isPickupFulfillment = (providerId?: string) =>
+  providerId === PICKUP_FULFILLMENT_PROVIDER
+
 export const paymentInfoMap: Record<
   string,
   { title: string; icon: React.JSX.Element }
 > = {
+  [PICKUP_PAYMENT_PROVIDER]: {
+    title: "Zaplatíte při vyzvednutí",
+    icon: <CreditCard />,
+  },
   pp_system_default: {
     title: "Testovací platba",
     icon: <CreditCard />,

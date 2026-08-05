@@ -5,6 +5,7 @@ import React from "react"
 
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Help from "@modules/order/components/help"
+import ReturnRequest from "@modules/order/components/return-request"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
@@ -74,6 +75,23 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
           <span>04 · souhrn</span>
           <OrderSummary order={order} />
         </aside>
+      </AccountSectionReveal>
+
+      <AccountSectionReveal>
+        {/* The backend has a complete returns flow that had no storefront surface at all —
+            a customer had no way to start one. */}
+        <section className={s.accountOrderDetailsSection}>
+          <span>05 · vrácení</span>
+          <ReturnRequest
+            orderId={order.id}
+            email={order.email ?? ""}
+            customerName={
+              [order.shipping_address?.first_name, order.shipping_address?.last_name]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+          />
+        </section>
       </AccountSectionReveal>
 
       <AccountSectionReveal>

@@ -1,4 +1,5 @@
 import { retrieveOrder } from "@lib/data/orders"
+import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -19,6 +20,8 @@ export default async function OrderConfirmedPage(props: Props) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams])
   const order = await retrieveOrder(params.id).catch(() => null)
   const outcome = searchParams.platba
+  // Null for a guest, for someone else's order, or while the merchant workflow has no stage.
+  const progress = order ? await getOrderProgress(params.id) : null
 
   /*
    * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
@@ -49,7 +52,11 @@ export default async function OrderConfirmedPage(props: Props) {
   return (
     <>
       <BalancePaymentNotice outcome={outcome} />
-      <OrderCompletedTemplate order={order} />
+      <OrderCompletedTemplate
+        order={order}
+        progress={progress}
+        progressFallback={fallbackStageLabel(order)}
+      />
     </>
   )
 }

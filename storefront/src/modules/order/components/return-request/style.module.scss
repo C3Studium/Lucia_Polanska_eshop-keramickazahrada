@@ -1,0 +1,82 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/* Cream order surface: ink #20211c 15.2:1, label tone #4f5147 7.3:1. */
+
+.root {
+  display: grid;
+  max-width: 46rem;
+  margin-top: 16px;
+  gap: 10px;
+}
+
+.trigger,
+.cancel {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid rgba(32, 33, 28, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: #20211c;
+  cursor: pointer;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+}
+
+.trigger:hover,
+.cancel:hover {
+  border-color: #20211c;
+}
+
+.label {
+  color: #4f5147;
+  font: 400 13px/1.4 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.06em;
+}
+
+.label i {
+  font-style: normal;
+  opacity: 0.82;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(32, 33, 28, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #20211c;
+  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.submit {
+  min-height: 44px;
+  padding: 0 24px;
+  border: 1px solid #20211c;
+  border-radius: 999px;
+  background: #20211c;
+  color: #ffe8d6;
+  cursor: pointer;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+}
+
+.submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sent {
+  margin: 16px 0 0;
+  color: #2f5233;
+  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+}
+
+.error {
+  margin: 0;
+  color: #8c3e30;
+  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+}

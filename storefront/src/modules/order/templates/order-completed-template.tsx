@@ -1,6 +1,8 @@
 import { paymentInfoMap } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import { convertToLocale } from "@lib/util/money"
+import OrderProgressPanel from "@modules/order/components/order-progress"
+import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -10,6 +12,9 @@ import s from "./styles/oder-complete.module.scss"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
+  progress?: OrderProgress | null
+  /** Used when the merchant workflow has no stage for this order yet. */
+  progressFallback?: string
 }
 
 const formatDate = (date: string | Date) =>
@@ -23,6 +28,8 @@ const formatDate = (date: string | Date) =>
 
 export default async function OrderCompletedTemplate({
   order,
+  progress = null,
+  progressFallback = "Přijato",
 }: OrderCompletedTemplateProps) {
   const money = (amount?: number | null) =>
     convertToLocale({
@@ -93,6 +100,8 @@ export default async function OrderCompletedTemplate({
         {/* A three-step progress rail that never moved was a trust liability: it implied
             tracking the shop cannot yet provide (spec §4). It returns when the backend exposes
             a real fulfillment timeline — until then the confirmation states only what is true. */}
+
+        <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
 
         {/* BACKEND-HOOKED: These values come from the retrieved StoreOrder response. */}
         <section className={s.orderMeta} aria-label="Údaje objednávky">

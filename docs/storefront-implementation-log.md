@@ -1527,3 +1527,59 @@ Product pages are unaffected while no profile is configured (panel absent, page 
 G-1 and G-2.
 
 ---
+
+## Backend integration — §5, §6, §8 and §4.5 (2026-08-05, second pass)
+
+**Re-probed the deployed backend first.** All three gaps are **unchanged on Railway**: `/progress`
+still returns Express HTML, `restock-subscriptions` still 500s, and the CZ region still offers
+only `pp_comgate_comgate` / `pp_system_default` with three `ceska-posta-fulfillment_*` shipping
+options. The code for `/progress` **is** in `main` — it simply has not been deployed.
+
+That turned out to be an advantage: rather than trusting the brief I read
+`backend/src/api/store/orders/[id]/progress/route.ts` (read-only) and built against the real
+implementation. Its response shape matches the brief exactly, and the route additionally **401s**
+when unauthenticated, which the brief does not mention.
+
+### §8 + §4.5 — order progress and the outstanding balance
+
+`lib/data/order-progress.ts` + `modules/order/components/order-progress/`, rendered by
+`order-completed-template` and passed from the confirmed page.
+
+- `stage_label` is displayed **verbatim** — the backend deliberately says „Chystáme k odeslání"
+  rather than anything reading as *already sent*, and re-wording it here would undo that.
+- `stage: null` (older orders, or the workflow has not picked the order up) falls back to
+  Medusa's own status via `fallbackStageLabel`, per the brief's table.
+- When `balance.outstanding > 0`, **„Doplatit {částka}"** links to `balance.payment_url`. That
+  URL is **read, never constructed** — it is signed by the backend.
+- The fetcher returns `null` on any failure, so a guest, a stranger's order and an un-deployed
+  route all degrade to the fallback label rather than an error.
+
+### §6 — returns
+
+`lib/data/return-requests.ts` + `modules/order/components/return-request/`, mounted on the
+account order detail as **„Vrátit zboží"**. The form asks only for the reason; everything else
+the backend already knows from the order. On success the customer is told she will be in touch —
+the backend sends the confirmation and, later, the approval or rejection. **The storefront sends
+nothing.**
+
+Status is not surfaced: the request status lives on the return request, and there is no store
+route to read it back. Saying so rather than inventing it, per §6.
+
+### §5 — Osobní odběr
+
+`pp_pickup_pickup` added to `paymentInfoMap` titled **„Zaplatíte při vyzvednutí"** (never
+„na dobírku"), with `isPickupPayment` / `isPickupFulfillment` helpers so the two ids are matched
+in one place. The payment option is filtered out unless the chosen shipping method uses
+`pickup_osobni-odber`, and switching away from Osobní odběr clears it.
+
+Deliberately **not** reused: the Packeta pickup-point branch of the shipping component or its
+`packeta_pickup_point` metadata — that is a carrier parcel shop, a different thing (§5.1).
+
+**Unverifiable today (G-3):** neither provider exists in the CZ region, so this code has never
+rendered. It activates when the providers are enabled.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
+
+**Still open:** §4.4 (express checkout), §7.1 (blocked by G-2), §7.2 (copy only).
+
+---
