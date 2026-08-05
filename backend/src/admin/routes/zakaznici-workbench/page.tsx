@@ -23,6 +23,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
+import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
@@ -219,6 +220,8 @@ const CustomerDrawer = ({
               </Text>
             ))}
           </div>
+
+          <RawData data={{ customer, detail, orders: full?.orders }} />
         </Drawer.Body>
       </Drawer.Content>
     </Drawer>
@@ -230,11 +233,84 @@ const filterTabs = [
   { key: "dluzi", label: "Čeká na doplatek" },
   { key: "vraci", label: "Vrací se" },
   { key: "newsletter", label: "Newsletter" },
+  { key: "statistiky", label: "Statistiky" },
 ];
+
+/** Zákazníci+ → Statistiky: repeat rate, top customers, registrations. */
+const CustomerStats = () => {
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ["workbench-customer-statistics"],
+    queryFn: () => sdk.client.fetch("/admin/workbench/customers/statistics"),
+    refetchOnWindowFocus: true,
+  });
+  if (isLoading || !data) {
+    return (
+      <div className="px-6 py-5">
+        <Skeleton className="h-24 rounded-lg" />
+      </div>
+    );
+  }
+  const maxRegistrations = Math.max(
+    1,
+    ...data.registrations_by_month.map((entry: any) => entry.count)
+  );
+  return (
+    <div className="flex flex-col gap-y-5 px-6 py-5">
+      <div>
+        <Text size="small" weight="plus">
+          {data.buyers_total} nakupujících · {data.repeat_buyers} se vrací
+          {data.repeat_rate !== null ? ` (${data.repeat_rate} %)` : ""}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+          {data.customers_total} registrovaných · newsletter odebírá{" "}
+          {data.newsletter_subscribers} lidí ({data.customers_on_newsletter} z
+          registrovaných)
+        </Text>
+      </div>
+
+      <div>
+        <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+          Registrace po měsících
+        </Text>
+        <div className="mt-2 flex items-end gap-1.5" aria-hidden="true">
+          {data.registrations_by_month.map((entry: any) => (
+            <div key={entry.month} className="flex flex-col items-center gap-1">
+              <div
+                className="bg-ui-fg-interactive w-6 rounded-sm"
+                style={{
+                  height: `${8 + (entry.count / maxRegistrations) * 44}px`,
+                  opacity: entry.count ? 1 : 0.25,
+                }}
+                title={`${entry.month}: ${entry.count}`}
+              />
+              <Text size="xsmall" className="text-ui-fg-muted">
+                {entry.count}
+              </Text>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+          Nejvěrnější zákazníci
+        </Text>
+        {data.top_customers.map((customer: any) => (
+          <Text key={customer.email} size="small" className="mt-1">
+            {customer.name || customer.email} — {formatCzk(customer.total)} ·{" "}
+            {customer.orders}{" "}
+            {customer.orders === 1 ? "objednávka" : "objednávek"}
+          </Text>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ZakazniciInner = () => {
   const [active, setActive] = useState("vse");
   const [search, setSearch] = useState("");
+  const expert = useExpertMode();
 
   const params = new URLSearchParams();
   if (active === "dluzi") params.set("owing", "true");
@@ -244,6 +320,7 @@ const ZakazniciInner = () => {
 
   const { data, isLoading, isError } = useQuery<WorkbenchCustomersResponse>({
     queryKey: ["workbench-customers", active, search],
+    enabled: active !== "statistiky",
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/customers?${params.toString()}`),
     refetchOnWindowFocus: true,
@@ -262,6 +339,8 @@ const ZakazniciInner = () => {
             Seřazeno podle toho, kolik u vás kdo utratil.
           </Text>
         </div>
+        <div className="flex items-center gap-4">
+        <ExpertToggle />
         <Input
           size="small"
           type="search"
@@ -270,9 +349,12 @@ const ZakazniciInner = () => {
           onChange={(event) => setSearch(event.target.value)}
           className="w-64"
         />
+        </div>
       </header>
 
       <SubTabs tabs={filterTabs} active={active} onSelect={setActive} />
+
+      {active === "statistiky" && <CustomerStats />}
 
       {isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
@@ -288,7 +370,7 @@ const ZakazniciInner = () => {
         />
       )}
 
-      {!isLoading && !isError && rows.length === 0 && (
+      {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
         <EmptyState
           title="Nikdo tu není"
           description="Žádný zákazník neodpovídá zvolenému filtru."
@@ -310,6 +392,7 @@ const ZakazniciInner = () => {
                   {customer.name ? customer.email : ""}
                   {customer.newsletter ? " · odebírá newsletter" : ""}
                 </Text>
+                {expert && <CopyId value={customer.id} />}
               </div>
 
               <div>

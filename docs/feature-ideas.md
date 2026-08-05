@@ -49,7 +49,7 @@ she photographs at the wheel, not at a desk.
 on the customer's order page. The question answers itself before it is
 asked. (This is customer-facing, but the work it removes is *hers*.)
 
-**2.3 „Hotovo — podívejte se" with approve = pay — M** *(previously A3)*
+**2.3 „Hotovo — podívejte se" with approve = pay — M** *(previously A3)* ✅ built 2026-08-06 (photo rides the balance e-mail; tweak requests land in the diary)
 *The moment:* finishing a zakázka starts a correspondence: is it right, will
 you pay the rest, can I ship it.
 *The change:* one send. The customer sees the photo; approving **is** the

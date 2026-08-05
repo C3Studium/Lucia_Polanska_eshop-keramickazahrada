@@ -1,0 +1,120 @@
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { NEWSLETTER_MODULE } from "../../../../../modules/newsletter"
+
+/**
+ * Zákazníci+ → Statistiky — who buys, who returns, who reads.
+ *
+ * Repeat rate is the number that matters for a handmade shop: pieces are
+ * bought again by people, not by markets. Guest orders are matched by
+ * e-mail, same rule as the customer list, so the rate is about people
+ * rather than login states.
+ */
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const newsletter = req.scope.resolve<any>(NEWSLETTER_MODULE)
+
+  const round = (value: number) => Math.round(value * 100) / 100
+  const toNumber = (value: unknown): number => {
+    const parsed = Number(
+      typeof value === "object" && value !== null
+        ? ((value as any).value ?? (value as any).numeric_ ?? 0)
+        : value
+    )
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+
+  const [{ data: customers }, { data: orders }, subscribers] =
+    await Promise.all([
+      query.graph({
+        entity: "customer",
+        fields: ["id", "email", "first_name", "last_name", "created_at"],
+        pagination: { take: 1000, skip: 0 },
+      }),
+      query.graph({
+        entity: "order",
+        fields: ["id", "email", "customer_id", "total", "created_at"],
+        pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
+      }),
+      newsletter
+        .listNewsletterSubscribers({ unsubscribed_at: null } as never)
+        .catch(() => []) as Promise<any[]>,
+    ])
+
+  // Buyers keyed by person — e-mail first, id as fallback.
+  const buyers = new Map<string, { orders: number; total: number; name: string | null }>()
+  for (const order of orders as any[]) {
+    const key = String(order.email ?? order.customer_id ?? "").toLowerCase()
+    if (!key) continue
+    const entry = buyers.get(key) ?? { orders: 0, total: 0, name: null }
+    entry.orders += 1
+    entry.total = round(entry.total + toNumber(order.total))
+    buyers.set(key, entry)
+  }
+  for (const customer of customers as any[]) {
+    const key = String(customer.email ?? "").toLowerCase()
+    const entry = buyers.get(key)
+    if (entry) {
+      entry.name =
+        [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
+        null
+    }
+  }
+
+  const repeatBuyers = [...buyers.values()].filter(
+    (buyer) => buyer.orders >= 2
+  )
+
+  // Registrations per month, last 12.
+  const monthKey = (value: string | Date) => {
+    const date = new Date(value)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+  }
+  const months: string[] = []
+  for (let index = 11; index >= 0; index--) {
+    const date = new Date()
+    date.setMonth(date.getMonth() - index)
+    months.push(monthKey(date))
+  }
+  const registrations = new Map(months.map((month) => [month, 0]))
+  for (const customer of customers as any[]) {
+    const key = monthKey(customer.created_at)
+    if (registrations.has(key)) {
+      registrations.set(key, (registrations.get(key) ?? 0) + 1)
+    }
+  }
+
+  const newsletterEmails = new Set(
+    (subscribers as any[]).map((subscriber) =>
+      String(subscriber.email).toLowerCase()
+    )
+  )
+  const customersOnNewsletter = (customers as any[]).filter((customer) =>
+    newsletterEmails.has(String(customer.email ?? "").toLowerCase())
+  ).length
+
+  res.status(200).json({
+    customers_total: (customers as any[]).length,
+    buyers_total: buyers.size,
+    repeat_buyers: repeatBuyers.length,
+    repeat_rate: buyers.size
+      ? Math.round((repeatBuyers.length / buyers.size) * 100)
+      : null,
+    top_customers: [...buyers.entries()]
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 10)
+      .map(([email, buyer]) => ({
+        email,
+        name: buyer.name,
+        orders: buyer.orders,
+        total: buyer.total,
+      })),
+    registrations_by_month: months.map((month) => ({
+      month,
+      count: registrations.get(month) ?? 0,
+    })),
+    newsletter_subscribers: (subscribers as any[]).length,
+    customers_on_newsletter: customersOnNewsletter,
+    orders_scanned: (orders as any[]).length,
+  })
+}

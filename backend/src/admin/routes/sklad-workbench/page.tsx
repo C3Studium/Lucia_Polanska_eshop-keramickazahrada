@@ -20,6 +20,7 @@ import {
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { EmptyState } from "../../components/empty-state";
+import { CopyId, ExpertToggle, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCount } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
@@ -230,10 +231,52 @@ const tabs = [
   { key: "out", label: "Vyprodáno" },
   { key: "low", label: "Dochází" },
   { key: "ok", label: "Naskladněné" },
+  { key: "statistiky", label: "Statistiky" },
 ];
 
+/** Sklad+ → Statistiky: pieces, value in CZK, demand totals. */
+const SkladStats = () => {
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ["workbench-inventory-statistics"],
+    queryFn: () => sdk.client.fetch("/admin/workbench/inventory/statistics"),
+    refetchOnWindowFocus: true,
+  });
+  if (isLoading || !data) {
+    return (
+      <div className="px-6 py-5">
+        <Skeleton className="h-20 rounded-lg" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-y-2 px-6 py-5">
+      <Text size="small" weight="plus">
+        {data.pieces_in_stock} kusů na skladě · hodnota{" "}
+        {new Intl.NumberFormat("cs-CZ", {
+          style: "currency",
+          currency: "CZK",
+          maximumFractionDigits: 0,
+        }).format(data.stock_value_czk)}
+      </Text>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        {data.variants.out} variant vyprodáno · {data.variants.low} dochází ·{" "}
+        {data.variants.ok} v pořádku
+        {data.unpriced_variants > 0
+          ? ` · ${data.unpriced_variants} bez ceny (do hodnoty nepočítáno)`
+          : ""}
+      </Text>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Poptávka: {data.demand.waiting_customers} zákazníků čeká na
+        naskladnění · {data.demand.wishlist_saves} uložení v oblíbených ·
+        hlásí se při {data.default_threshold} a méně
+      </Text>
+    </div>
+  );
+};
+
 const SkladInner = () => {
-  const [active, setActive] = useState<"out" | "low" | "ok">("out");
+  const [active, setActive] = useState<"out" | "low" | "ok" | "statistiky">("out");
+  const expert = useExpertMode();
 
   const { data, isLoading, isError } = useQuery<WorkbenchInventoryResponse>({
     queryKey: ["workbench-inventory"],
@@ -241,7 +284,7 @@ const SkladInner = () => {
     refetchOnWindowFocus: true,
   });
 
-  const rows = data?.[active] ?? [];
+  const rows = active === "statistiky" ? [] : (data?.[active] ?? []);
 
   return (
     <Container className="divide-y p-0">
@@ -266,6 +309,7 @@ const SkladInner = () => {
             mají v oblíbených. Doplnit kusy jde v Přehledu → Zásoby.
           </Text>
         </div>
+        <ExpertToggle />
       </header>
 
       <SubTabs
@@ -282,6 +326,8 @@ const SkladInner = () => {
         onSelect={(key) => setActive(key as typeof active)}
       />
 
+      {active === "statistiky" && <SkladStats />}
+
       {isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
@@ -296,7 +342,7 @@ const SkladInner = () => {
         />
       )}
 
-      {!isLoading && !isError && rows.length === 0 && (
+      {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
         <EmptyState
           title={
             active === "out"
@@ -324,6 +370,7 @@ const SkladInner = () => {
                   {[row.variant_title, row.sku].filter(Boolean).join(" · ") ||
                     "bez varianty"}
                 </Text>
+                {expert && <CopyId value={row.variant_id} />}
               </div>
 
               <div>

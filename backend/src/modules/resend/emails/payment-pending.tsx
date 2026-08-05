@@ -13,6 +13,8 @@ import {
 } from "../components/email-ui"
 
 interface PaymentPendingEmailProps {
+  /** The newest shared making-of photo — turns the payment ask into „hotovo, podívejte se". */
+  makingPhotoUrl?: string | null
   customerName?: string;
   orderNumber?: string;
   paymentAmount?: string;
@@ -27,8 +29,9 @@ function PaymentPendingEmailComponent({
   paymentAmount = "2 450 Kč",
   paymentMethod = "Bankovní převod",
   orderLink = "https://keramickazahrada.cz/orders/12345",
-  estimatedConfirmationTime = "1-2 pracovní dny"
-}: PaymentPendingEmailProps) {
+  estimatedConfirmationTime = "1-2 pracovní dny",
+  makingPhotoUrl,
+}: PaymentPendingEmailProps & { makingPhotoUrl?: string | null }) {
   return (
     <EmailLayout preview={`Platbu za objednávku ${orderNumber} právě zpracováváme.`}>
       <Eyebrow>Platba</Eyebrow>
@@ -49,6 +52,23 @@ function PaymentPendingEmailComponent({
       <Note tone="clay">
         Není třeba nic dělat — jakmile bude platba potvrzena, dáme vám vědět.
       </Note>
+
+      {makingPhotoUrl && (
+        <>
+          <P small>Takhle vaše zakázka právě vypadá:</P>
+          <img
+            src={makingPhotoUrl}
+            alt="Hotová zakázka"
+            width="100%"
+            style={{
+              borderRadius: "8px",
+              display: "block",
+              marginBottom: "16px",
+              maxWidth: "520px",
+            }}
+          />
+        </>
+      )}
 
       <ButtonRow>
         <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>

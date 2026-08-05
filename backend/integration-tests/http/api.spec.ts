@@ -298,6 +298,7 @@ medusaIntegrationTestRunner({
        */
       const POST_ROUTES = [
         "/admin/workbench/orders/batch-stage",
+        "/store/orders/order_fake/request-tweak",
         "/store/restock-subscriptions",
         "/store/reviews",
         "/store/return-requests",
@@ -366,6 +367,9 @@ medusaIntegrationTestRunner({
       "/admin/workbench/customers",
       "/admin/workbench/discounts",
       "/admin/workbench/products/statistics",
+      "/admin/workbench/orders/statistics",
+      "/admin/workbench/customers/statistics",
+      "/admin/workbench/inventory/statistics",
       "/admin/inventory-alerts",
       "/admin/merchant-settings",
       "/admin/merchant-orders",

@@ -111,6 +111,12 @@ section — photos with their dates, text under each where present. When
 trust builders; keep them quiet and unstyled-luxury, not a gallery feature.
 No writes, no new endpoints, nothing to build if the array is empty.
 
+One optional write exists: `POST /store/orders/:id/request-tweak` with
+`{ "message": "…" }` (customer-authenticated, own order only) — „Prosím o
+úpravu" under the making-of section when a balance is outstanding. 201 with a
+Czech confirmation; repeated sends within a day return 200 with a polite
+„už to máme". Do not build any other feedback channel.
+
 ## 6. Not in scope
 
 - **No pay-later, ever** — not as UI, not as copy, not as a zero-minimum

@@ -186,6 +186,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       )
 
       return {
+        ...(req.query.expert === "1"
+          ? { raw: { ...product, profile: profile ?? null } }
+          : {}),
         id: product.id,
         title: product.title,
         handle: product.handle,

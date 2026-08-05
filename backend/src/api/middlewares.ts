@@ -348,6 +348,11 @@ export default defineMiddlewares({
     // are not authenticated by default, so without this the merchant stage and
     // the outstanding balance of any order id would be readable by anyone.
     {
+      matcher: "/store/orders/:id/request-tweak",
+      methods: ["POST"],
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    {
       matcher: "/store/orders/:id/progress",
       methods: ["GET"],
       middlewares: [authenticate("customer", ["bearer", "session"])],

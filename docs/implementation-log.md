@@ -1898,3 +1898,31 @@ already settable, shown and watched; it only needed exposing). Storefront
 brief gains §5 for the „Jak vzniká" section.
 
 Gate: 285 unit / 68 integration / build clean.
+
+## 2026-08-06 — Approval step, Expertní režim, statistics everywhere
+
+**2.3 „Hotovo — podívejte se".** The balance-request e-mail now carries the
+newest customer-visible diary photo (subscriber fetches it, payment-pending
+template renders it above the pay button) — approving IS paying. The
+customer's other half: POST /store/orders/:id/request-tweak (auth, own order,
+404 otherwise) writes the request into the zakázka's diary as
+created_by=customer and rings the merchant bell once; repeated requests
+within 24 h are absorbed politely. Feature-ideas 2.3 done in its minimal
+honest form (no new states — the diary is the record, requires_attention the
+signal).
+
+**Expertní režim.** lib/expert-mode.tsx: external store + localStorage, one
+toggle mounted on all five workbenches. On: copyable ids on rows, „Surová
+data" (full pretty-printed payloads) in order/product expansions, the Karta
+and Slevy+ statistics, and ?expert=1 on orders/products lists returning the
+untrimmed graph rows. Read-only amplification by design — no extra writes.
+
+**Statistics.** Three new endpoints + tabs: orders (12-month bars, AOV,
+payment-provider split, pickup share, median lead time measured from
+stage_history — the only honest source, refunds), customers (repeat rate
+matched by e-mail so guests count, top customers, registrations by month,
+newsletter overlap), inventory (pieces on shelves, stock value in CZK asked
+prices with unpriced variants reported, demand totals). Every statistic
+reports its scan basis; nothing silently truncates.
+
+Gate: 286 unit / 75 integration / build clean.
