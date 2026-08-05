@@ -95,6 +95,33 @@ const batchTargets = [
 ] as const;
 
 type OrderDetail = {
+  customer: {
+    id: string | null;
+    email: string | null;
+    previous_orders: number;
+    history: {
+      id: string;
+      display_id: number | string;
+      created_at: string;
+      total: number;
+      stage: string | null;
+    }[];
+  };
+  shipping: {
+    name: string | null;
+    address: string | null;
+    method: string | null;
+  };
+  items: {
+    id: string;
+    title: string;
+    variant_title: string | null;
+    thumbnail: string | null;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    specification: string | null;
+  }[];
   ledger: {
     id: string;
     provider_id: string;
@@ -132,7 +159,73 @@ const OrderExpansion = ({ orderId }: { orderId: string }) => {
   if (!data) return null;
 
   return (
-    <div className="bg-ui-bg-subtle grid gap-4 px-6 py-4 lg:grid-cols-3">
+    <div className="bg-ui-bg-subtle px-6 py-4">
+      {/* Level 2a — what was ordered and where it goes */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div>
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+            Položky
+          </Text>
+          {data.items.map((item) => (
+            <div key={item.id} className="mt-1.5 flex items-start gap-2">
+              {item.thumbnail ? (
+                <img
+                  src={item.thumbnail}
+                  alt=""
+                  className="mt-0.5 h-7 w-7 rounded object-cover"
+                />
+              ) : (
+                <div className="bg-ui-bg-component mt-0.5 h-7 w-7 rounded" />
+              )}
+              <div className="min-w-0">
+                <Text size="xsmall">
+                  {item.quantity}× {item.title}
+                  {item.variant_title ? ` — ${item.variant_title}` : ""}{" "}
+                  <span className="text-ui-fg-muted">
+                    {formatCzk(item.total)}
+                  </span>
+                </Text>
+                {item.specification && (
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Zadání: {item.specification}
+                  </Text>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+            Zákazník
+          </Text>
+          <Text size="xsmall" className="mt-1.5">
+            {data.customer.previous_orders === 0
+              ? "První objednávka u vás."
+              : data.customer.previous_orders === 1
+                ? "Už u vás jednou nakoupili."
+                : `Nakoupili u vás už ${data.customer.previous_orders}×.`}
+          </Text>
+          {data.customer.history.map((previous) => (
+            <Text key={previous.id} size="xsmall" className="text-ui-fg-subtle mt-1">
+              #{previous.display_id} · {formatCzk(previous.total)} ·{" "}
+              {formatDateTime(previous.created_at)}
+              {previous.stage
+                ? ` · ${stageLabels[previous.stage] ?? previous.stage}`
+                : ""}
+            </Text>
+          ))}
+          {data.shipping.address && (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-2">
+              Doručení: {data.shipping.name} — {data.shipping.address}
+              {data.shipping.method ? ` (${data.shipping.method})` : ""}
+            </Text>
+          )}
+        </div>
+      </div>
+
+      {/* Level 2b — money, movement, mail */}
+      <div className="border-ui-border-base mt-4 grid gap-4 border-t pt-4 lg:grid-cols-3">
       <div>
         <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
           Platby
@@ -200,6 +293,7 @@ const OrderExpansion = ({ orderId }: { orderId: string }) => {
             </span>
           </Text>
         ))}
+      </div>
       </div>
     </div>
   );
