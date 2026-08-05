@@ -614,6 +614,60 @@
   color: #f3b3a4;
 }
 
+/* Quantity stepper. 44px targets on the ink stage; cream text is 13.7:1 there. */
+.product__details__cta__quantity {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.product__details__cta__quantity > span {
+  color: var(--pdp-cream, #ffe8d6);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.product__details__cta__quantity > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255, 232, 214, 0.58);
+  border-radius: 999px;
+}
+
+.product__details__cta__quantity button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pdp-cream, #ffe8d6);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 320ms ease;
+}
+
+.product__details__cta__quantity button:hover:not(:disabled) {
+  background: rgba(255, 232, 214, 0.13);
+}
+
+.product__details__cta__quantity button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.product__details__cta__quantity output {
+  min-width: 2ch;
+  color: var(--pdp-cream, #ffe8d6);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 16px;
+  text-align: center;
+}
+
 .product__details__cta__buy__buttons {
   display: flex;
   align-items: center;

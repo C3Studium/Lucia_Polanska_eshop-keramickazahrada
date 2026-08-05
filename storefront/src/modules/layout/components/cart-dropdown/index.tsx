@@ -40,7 +40,7 @@ const CartDropdown = ({
       return acc + item.quantity
     }, 0) || 0
 
-  const subtotal = cartState?.subtotal ?? 0
+  const cartTotal = cartState?.total ?? 0
   const itemRef = useRef<number>(totalItems || 0)
   const itemsRef = useRef<HTMLDivElement | null>(null)
 
@@ -221,15 +221,15 @@ const CartDropdown = ({
                   <div className={styles.subtotalRow}>
                     <span className={styles.subtotalLabel}>
                       Celkem{" "}
-                      <span className={styles.normal}>(bez DPH)</span>
+                      <span className={styles.normal}>včetně DPH</span>
                     </span>
                     <span
                       className={styles.subtotalValue}
                       data-testid="cart-subtotal"
-                      data-value={subtotal}
+                      data-value={cartTotal}
                     >
                       {convertToLocale({
-                        amount: subtotal,
+                        amount: cartTotal,
                         currency_code: cartState.currency_code,
                       })}
                     </span>

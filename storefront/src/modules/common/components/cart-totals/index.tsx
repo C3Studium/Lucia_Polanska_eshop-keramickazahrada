@@ -35,7 +35,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
       <div className={styles.totalsList}>
         <div className={styles.row}>
           <span className={styles.label}>
-            Dohromady (bez DPH)
+            Mezisoučet
           </span>
           <span className={styles.subtotal} data-testid="cart-subtotal" data-value={item_total || 0}>
             {convertToLocale({ amount: item_total ?? 0, currency_code })}
@@ -83,7 +83,9 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
       </div>
       <div className={styles.divider} />
       <div className={styles.totalRow}>
-        <span className={styles.total}>Celkem</span>
+        <span className={styles.total}>
+          Celkem <em className={styles.vatNote}>včetně DPH</em>
+        </span>
         <span
           className={styles.totalValue}
           data-testid="cart-total"

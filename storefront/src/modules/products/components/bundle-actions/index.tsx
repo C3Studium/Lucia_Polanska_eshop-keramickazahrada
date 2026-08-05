@@ -6,8 +6,7 @@ import type { AddToCartState } from "@modules/products/ProductPage/product/detai
 import { BundleProduct } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
 import CartButton from "@modules/products/ProductPage/product/details/Cta/Add/button/cart-button"
-import Colors from "@modules/products/ProductPage/product/details/Options/Colors"
-import Sizes from "@modules/products/ProductPage/product/details/Options/Sizes"
+import ProductOptions from "@modules/products/ProductPage/product/details/Options/ProductOptions"
 import Thumbnail from "@modules/products/components/thumbnail"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
 import { AnimatePresence, motion } from "framer-motion"
@@ -199,18 +198,8 @@ export default function BundleActions({
               <small>Upravujete</small>
               <span>{activeItem.product.title}</span>
             </div>
-            <Colors
+            <ProductOptions
               product={activeItem.product}
-              region={region}
-              isAdding={isAdding}
-              options={activeOptions}
-              setOptionValue={(optionId, value) =>
-                setOptionValue(activeItem.product.id, optionId, value)
-              }
-            />
-            <Sizes
-              product={activeItem.product}
-              region={region}
               isAdding={isAdding}
               options={activeOptions}
               setOptionValue={(optionId, value) =>

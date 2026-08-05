@@ -1,6 +1,11 @@
 import { HttpTypes } from "@medusajs/types"
 import CartButton from "./button/cart-button"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
+import {
+  availabilityLabel,
+  isPurchasable,
+  type Availability,
+} from "@lib/util/availability"
 
 /** Add-to-cart is the moment the sale is made or lost; each state has to be visible. */
 export type AddToCartState =
@@ -18,6 +23,10 @@ type CTAProps = {
   isAdding: boolean
   addState?: AddToCartState
   isValidVariant: boolean
+  availability?: Availability
+  quantity?: number
+  maxQuantity?: number
+  onQuantityChange?: (next: number) => void
   handleAddToCart: () => void
   options?: Record<string, string | undefined>
   wishlistItems?: any[]
@@ -30,14 +39,20 @@ export default function CTA({
   isAdding,
   addState = { kind: "idle" },
   isValidVariant,
+  availability = "made-to-order",
+  quantity = 1,
+  maxQuantity = 0,
+  onQuantityChange,
   handleAddToCart,
   wishlistItems,
   isAuthenticated,
 }: CTAProps) {
+  // A stepper only makes sense where more than one can be bought.
+  const showStepper = Boolean(onQuantityChange) && isPurchasable(availability) && maxQuantity > 1
   const label = !selectedVariant
     ? "Vyberte variantu"
     : !inStock || !isValidVariant
-      ? "Není skladem"
+      ? availabilityLabel["sold-out"]
       : addState.kind === "added"
         ? "Přidáno ✓"
         : addState.kind === "adding"
@@ -46,6 +61,31 @@ export default function CTA({
 
   return (
     <div className="product__details__cta__buy">
+      {showStepper && (
+        <div className="product__details__cta__quantity">
+          <span id="qty-label">Počet kusů</span>
+          <div role="group" aria-labelledby="qty-label">
+            <button
+              type="button"
+              onClick={() => onQuantityChange?.(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              aria-label="Snížit počet kusů"
+            >
+              −
+            </button>
+            <output aria-live="polite">{quantity}</output>
+            <button
+              type="button"
+              onClick={() => onQuantityChange?.(Math.min(maxQuantity, quantity + 1))}
+              disabled={quantity >= maxQuantity}
+              aria-label="Zvýšit počet kusů"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="product__details__cta__buy__buttons">
         <div className="product__details__cta__buy__button__add">
           <WishlistToggle
@@ -76,17 +116,9 @@ export default function CTA({
         </p>
       )}
 
-      {/* Availability note: previously said "Není skladem" for every variant without managed
-          inventory, contradicting the button beside it. It follows the same `inStock` the
-          button uses; the full vocabulary (Skladem / Poslední kus / Prodáno / Na objednávku)
-          lands with Phase C. */}
-      <p>
-        {!inStock
-          ? "Není skladem"
-          : selectedVariant?.manage_inventory && selectedVariant?.inventory_quantity
-            ? `${selectedVariant.inventory_quantity} skladem`
-            : "Skladem"}
-      </p>
+      {/* One vocabulary, shared with the cards and the badge: Skladem / Poslední kus /
+          Prodáno / Na objednávku (spec §12). */}
+      <p>{availabilityLabel[availability]}</p>
     </div>
   )
 }

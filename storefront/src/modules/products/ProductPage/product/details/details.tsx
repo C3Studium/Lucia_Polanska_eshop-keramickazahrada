@@ -1,5 +1,11 @@
 "use client"
 
+import ProductOptions from "./Options/ProductOptions"
+import {
+  isPurchasable,
+  maxPurchasableQuantity,
+  variantAvailability,
+} from "@lib/util/availability"
 import { addToCart } from "@lib/data/cart"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import type { AddToCartState } from "./Cta/Add"
@@ -15,8 +21,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Gallery from "../Gallery/gallery"
 import CTA from "./Cta/Add"
 import ProductPrice from "./Cta/Price"
-import Colors from "./Options/Colors"
-import Sizes from "./Options/Sizes"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -53,6 +57,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
 }) => {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
+  const [quantity, setQuantity] = useState(1)
   const resetTimer = useRef<number | undefined>(undefined)
   const isAdding = addState.kind === "adding"
 
@@ -78,13 +83,20 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     [product.variants, options]
   )
 
-  const inStock = useMemo(() => {
-    if (!selectedVariant) return false
-    if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
-      return true
-    }
-    return (selectedVariant.inventory_quantity || 0) > 0
-  }, [selectedVariant])
+  const availability = useMemo(
+    () => variantAvailability(selectedVariant),
+    [selectedVariant]
+  )
+  const inStock = isPurchasable(availability)
+  const maxQuantity = useMemo(
+    () => maxPurchasableQuantity(selectedVariant),
+    [selectedVariant]
+  )
+
+  // Never leave a quantity above what the customer can actually buy.
+  useEffect(() => {
+    setQuantity((current) => Math.min(Math.max(1, current), Math.max(1, maxQuantity)))
+  }, [maxQuantity])
 
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((previous) => ({ ...previous, [optionId]: value }))
@@ -99,7 +111,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     try {
       const result = await addToCart({
         variantId: selectedVariant.id,
-        quantity: 1,
+        quantity,
         countryCode,
       })
 
@@ -271,16 +283,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             ) : (
               <>
                 <div className="product__optionPanel">
-                  <Colors
+                  <ProductOptions
                     product={product}
-                    region={region}
-                    isAdding={isAdding}
-                    options={options}
-                    setOptionValue={setOptionValue}
-                  />
-                  <Sizes
-                    product={product}
-                    region={region}
                     isAdding={isAdding}
                     options={options}
                     setOptionValue={setOptionValue}
@@ -298,6 +302,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     selectedVariant={selectedVariant}
                     isAdding={isAdding}
                     addState={addState}
+                    availability={availability}
+                    quantity={quantity}
+                    maxQuantity={maxQuantity}
+                    onQuantityChange={setQuantity}
                     isValidVariant={isValidVariant}
                     handleAddToCart={handleAddToCart}
                     options={options}

@@ -113,3 +113,15 @@
   .meta { padding-bottom: 34px; }
   .heading h3 { font-size: 24px; }
 }
+
+/* Availability chips: same shape as "Novinka", different tone. Never colour alone — each
+   carries its own word, so a colour-blind customer reads the same information. */
+.badgeSold {
+  background: #3a3b34 !important;
+  color: #ffe8d6 !important;
+}
+
+.badgeLast {
+  background: #9a6f65 !important;
+  color: #fff8f1 !important;
+}

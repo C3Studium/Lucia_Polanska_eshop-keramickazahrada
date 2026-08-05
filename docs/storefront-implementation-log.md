@@ -1195,3 +1195,59 @@ The "V2 look" the spec says emerges in P1 is now in place: the archival idiom ke
 12–13px with capped tracking and measured colour pairs instead of alpha over an unknown backdrop.
 
 ---
+
+# Phase C — conversion mechanics
+
+## C1–C4 — options, availability, quantity, VAT (spec §14 P2 items 2.1–2.4)
+
+**Files:** new `Options/ProductOptions/` and `src/lib/util/availability.ts`; PDP `details.tsx`
+and `Cta/Add/`; `bundle-actions`; `ProductCard`; `cart/components/item`; `cart-totals`;
+`cart-dropdown`; two stylesheets. **Deleted:** `Options/Colors/index.tsx`, `Options/Sizes/index.tsx`.
+
+### C3 — generic option rendering (trap 4, the one that made products unbuyable)
+
+Only options literally titled `barva`/`color`/`velikost`/`size` rendered a picker. Any other
+title — "Glazura", "Průměr" — rendered **nothing**: the variant could never be selected and the
+CTA sat dead on "Vyberte variantu" forever. For a studio whose pieces differ by glaze and
+diameter, that is a product nobody can buy.
+
+`ProductOptions` renders every `product.option`. Naming is now only a presentation hint (which of
+the two existing selects to use, and whether to keep the familiar "Barvy"/"Velikosti" label);
+it never decides whether an option appears. **Verified: a two-option product renders both groups
+labelled "VELIKOSTI |" and "BARVY |" — visually unchanged, as trap 4 requires.**
+
+### C1 — one availability vocabulary (spec §12)
+
+`src/lib/util/availability.ts` is the single source: **Skladem / Poslední kus / Prodáno /
+Na objednávku**, derived from `manage_inventory`, `allow_backorder` and `inventory_quantity`.
+Untracked inventory now means *made-to-order*, not "out of stock" — which is what a commissioning
+atelier actually means by it, and what made the old note contradict the button beside it.
+
+Used by the PDP note, the add-to-cart button and — new — **card badges**: "Prodáno" and
+"Poslední kus" chips in the existing badge language, each carrying its own word so the
+information does not depend on colour. **Verified: the catalogue now shows PRODÁNO on sold
+pieces**, where before a customer could fall in love with one and only learn at the PDP.
+
+### C2 — quantity stepper and a real cap
+
+The PDP hardcoded `quantity: 1`. There is now a stepper (44px targets, `aria-live` count,
+`aria-label`led controls) shown only where more than one can actually be bought, and the
+quantity is clamped whenever the variant changes.
+
+The cart capped at a literal `10` **on both branches**, so a one-of-a-kind piece could be set to
+10 and only failed at the backend — the worst possible place to learn it. Both now use
+`maxPurchasableQuantity()`.
+
+### C4 — the incl.-VAT headline (T-3c closed)
+
+The mini-cart headlined **"Celkem (bez DPH)"** over `cart.subtotal`. Czech customers read
+"Celkem" as the final price, and it then grows at checkout — the classic abandonment trigger.
+It now shows `cart.total` labelled "Celkem *včetně DPH*". In the cart summary, the first row's
+misleading "Dohromady (bez DPH)" becomes "Mezisoučet", and the headline "Celkem" carries a quiet
+"včetně DPH".
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · verified in the
+browser on a single-variant product (stepper increments, note reads "Na objednávku"), a
+two-option product (both groups render), and the catalogue (PRODÁNO badges).
+
+---
