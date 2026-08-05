@@ -18,16 +18,20 @@ the CZ region and a fulfillment set.
       whole chain is proven end to end by the integration suite („personal
       pickup can actually be configured"); the order matters because of step 1:
 
-      1. **Nastavení → Místa a doprava → (dílna) → Poskytovatelé fulfillmentu →
-         Přidat → „Osobni Odber".** This is the step that was missing: the
-         create-shipping-option dialog lists only providers *added to the
-         location* (`?stock_location_id=…`), so before this link the dropdown
-         is empty — the provider is loaded and invisible. Nothing in the UI
-         says so.
-      2. On the same location enable the **Pickup** fulfillment set (Osobní
-         odběr) and give it a service zone covering **Česko**.
-      3. Now create the shipping option: provider „Osobni Odber", fulfillment
-         option „Osobní odběr v dílně", **0 Kč**.
+      1. **Nastavení → Místa a doprava → click the row „Keramická Zahrada"**
+         — the location *detail*, not the list. The side cards (Profily
+         dopravy, Typy možností dopravy) are not involved; nothing needs
+         creating there, the option uses „Default Shipping Profile".
+      2. On the detail page, bottom section **„Poskytovatelé fulfillmentu"**
+         → ⋯ → Upravit → tick **„Osobni Odber"**. This is the load-bearing
+         step: the create-option dialog lists only providers *added to the
+         location* (`?stock_location_id=…`), so before this the dropdown is
+         empty — the provider is loaded and invisible, and nothing in the UI
+         says why.
+      3. In the **„Osobní odběr"** card (already „Aktivní" per the 2026-08-05
+         screenshot): add a service zone **Česko** if missing, then
+         **Přidat možnost** → provider „Osobni Odber", fulfillment option
+         „Osobní odběr v dílně", **0 Kč**.
 
       If the provider still does not appear after step 1, the deploy predates
       the 2026-08-05 commits — check that first, not the config.
