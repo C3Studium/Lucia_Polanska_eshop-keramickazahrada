@@ -156,6 +156,114 @@ medusaIntegrationTestRunner({
       })
     })
 
+    describe("personal pickup can actually be configured", () => {
+      /**
+       * Reported as „there is no provider in the create shipping option".
+       * True observation, wrong conclusion — and this test is the receipt.
+       *
+       * The shipping-option dialog lists providers from
+       * `GET /admin/fulfillment-providers?stock_location_id=…`, which returns
+       * only providers **added to that stock location**. Run against a fresh
+       * location it returns `[]` — the provider is registered, loaded, and
+       * invisible, because linking it to the location is a separate step that
+       * nothing in the UI points at.
+       *
+       * So this walks the exact chain the admin has to click, in order:
+       * location → add provider to location → pickup fulfillment set →
+       * service zone → 0 Kč shipping option. If any step regresses, the
+       * failure names the step instead of presenting an empty dropdown.
+       */
+      it("location → provider link → set → zone → 0 Kč option", async () => {
+        const location = await api.post(
+          "/admin/stock-locations",
+          { name: "Dílna (test)" },
+          { headers: headers!, validateStatus: () => true }
+        )
+        const locationId = location.data?.stock_location?.id
+        expect(locationId).toBeTruthy()
+
+        // The dialog's own query, before the link: empty. This emptiness is
+        // the entire mystery.
+        const before = await api.get(
+          `/admin/fulfillment-providers?stock_location_id=${locationId}`,
+          { headers: headers!, validateStatus: () => true }
+        )
+        expect(before.data.fulfillment_providers).toEqual([])
+
+        const linked = await api.post(
+          `/admin/stock-locations/${locationId}/fulfillment-providers`,
+          { add: ["pickup_osobni-odber"] },
+          { headers: headers!, validateStatus: () => true }
+        )
+        expect(linked.status).toBe(200)
+
+        const after = await api.get(
+          `/admin/fulfillment-providers?stock_location_id=${locationId}`,
+          { headers: headers!, validateStatus: () => true }
+        )
+        expect(
+          after.data.fulfillment_providers.map((provider: any) => provider.id)
+        ).toContain("pickup_osobni-odber")
+
+        const set = await api.post(
+          `/admin/stock-locations/${locationId}/fulfillment-sets?fields=*fulfillment_sets`,
+          { name: "Osobní odběr (test)", type: "pickup" },
+          { headers: headers!, validateStatus: () => true }
+        )
+        const setId = set.data?.stock_location?.fulfillment_sets?.[0]?.id
+        expect(setId).toBeTruthy()
+
+        const zone = await api.post(
+          `/admin/fulfillment-sets/${setId}/service-zones`,
+          {
+            name: "Česko (test)",
+            geo_zones: [{ type: "country", country_code: "cz" }],
+          },
+          { headers: headers!, validateStatus: () => true }
+        )
+        const zoneId = zone.data?.fulfillment_set?.service_zones?.[0]?.id
+        expect(zoneId).toBeTruthy()
+
+        const profiles = await api.get("/admin/shipping-profiles", {
+          headers: headers!,
+          validateStatus: () => true,
+        })
+        let profileId = profiles.data?.shipping_profiles?.[0]?.id
+        if (!profileId) {
+          const profile = await api.post(
+            "/admin/shipping-profiles",
+            { name: "Výchozí (test)", type: "default" },
+            { headers: headers!, validateStatus: () => true }
+          )
+          profileId = profile.data?.shipping_profile?.id
+        }
+        expect(profileId).toBeTruthy()
+
+        const option = await api.post(
+          "/admin/shipping-options",
+          {
+            name: "Osobní odběr v dílně",
+            service_zone_id: zoneId,
+            shipping_profile_id: profileId,
+            provider_id: "pickup_osobni-odber",
+            price_type: "flat",
+            type: {
+              label: "Osobní odběr",
+              description: "Vyzvednutí přímo v dílně",
+              code: "personal-pickup",
+            },
+            prices: [{ currency_code: "czk", amount: 0 }],
+            rules: [],
+          },
+          { headers: headers!, validateStatus: () => true }
+        )
+        expect(option.status).toBe(200)
+        expect(option.data.shipping_option.provider_id).toBe(
+          "pickup_osobni-odber"
+        )
+      })
+    })
+
     describe("POST routes — validated bodies", () => {
       /**
        * Every route here reads `req.validatedBody`, which only exists once a
