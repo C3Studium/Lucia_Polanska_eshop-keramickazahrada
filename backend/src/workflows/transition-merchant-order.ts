@@ -65,10 +65,25 @@ const updateMerchantOrderStateStep = createStep(
       }
     }
 
+    // Appended, never rewritten. The reconcile flag is recorded so the
+    // timeline can distinguish "she moved it" from "reality moved it".
+    const history = [
+      ...(Array.isArray(current?.stage_history) ? current.stage_history : []),
+      {
+        from: current ? previousStage : null,
+        to: input.stage,
+        at: new Date().toISOString(),
+        by: input.changed_by || null,
+        note: input.internal_note || null,
+        reconciled: Boolean(input.reconcile),
+      },
+    ]
+
     const payload = {
       stage: input.stage,
       stage_changed_at: new Date(),
       stage_changed_by: input.changed_by || null,
+      stage_history: history,
       internal_note: input.internal_note ?? current?.internal_note ?? null,
       requires_attention: input.stage === "payment_problem",
       attention_reason:
@@ -77,11 +92,14 @@ const updateMerchantOrderStateStep = createStep(
           : null,
     }
     const updated = current
-      ? await service.updateMerchantOrderStates({ id: current.id, ...payload })
+      ? await service.updateMerchantOrderStates({
+          id: current.id,
+          ...payload,
+        } as never)
       : await service.createMerchantOrderStates({
           order_id: input.order_id,
           ...payload,
-        })
+        } as never)
 
     return new StepResponse(updated, current || null)
   },
