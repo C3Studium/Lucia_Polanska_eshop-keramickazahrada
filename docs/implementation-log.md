@@ -1705,3 +1705,76 @@ work requested mid-session.
 the A1 dispatch invariant, which had been shipped with no coverage of the branch
 the whole invariant rests on. §17's banlist is now a test rather than a one-off
 grep.
+
+---
+
+## UX overhaul — Přehled becomes the admin   (2026-08-05)
+
+Branch `feat/admin-ux-overhaul`. Requested by Matěj as a full UI/UX pass.
+
+Ten tabs now live under one sidebar item: Přehled · Denní práce · Zakázky ·
+Platby · Produkty · Zásoby · Slevy a akce · Recenze · Odeslané e-maily ·
+Statistiky. **Recenze and Sezónní akce left the sidebar entirely.**
+
+### The tab bar is grouped, not flat
+
+Ten flat tabs is a navigation problem of its own — it wraps, and nothing says
+which belong together, so every visit is a scan of ten words. They are grouped
+by the three questions she has (*what needs doing today · what am I selling ·
+how did it go*), separated by rules rather than captions, because three headings
+inside a bar are louder than the tabs. The dashboard stays first and alone.
+
+A shared `SubTabs` component now backs every secondary bar, so Denní práce's
+stages, Recenze's statuses and Zásoby's levels all behave identically. That
+sameness is most of what makes a tabbed admin feel like one product.
+
+### Recenze — four states, and actions that differ per state
+
+„archivováno" is a **new status** (migration): a review she has dealt with and
+does not want in front of her again is a decision, and deriving it from age
+would be a tab she cannot control. The status union was repeated in four files,
+which is why the fourth value had to be added in four places — worth
+consolidating if it grows again.
+
+Actions depend on where the review already is. No „Povolit" on something already
+approved: a button that does nothing teaches her to distrust the others.
+
+### Zásoby — restocking where the counting happens
+
+Native inventory is three clicks deep and asks for an **absolute** number. After
+a firing she is holding six new mugs and thinking „six more", not „the total is
+now fourteen" — and the arithmetic in between is where mistakes live. The field
+here **adds**; the absolute number stays on the native page for when a count is
+genuinely wrong.
+
+Rows now carry their `location_id`, because the native level update is keyed by
+item *and* location — a row that cannot name its location is one she can only
+read. Where either is missing, the control is replaced by a pointer to the
+native page rather than a button that fails on click.
+
+A third bucket was added: `ok`. „What do I actually have?" is asked as often as
+„what is running out?". The existing test caught the contract change and was
+updated to assert the new behaviour rather than weakened.
+
+### Produkty — a list, deliberately not a second editor
+
+Search, the four kinds she distinguishes, and the two facts otherwise two clicks
+deep: collection and categories. **Editing opens the native editor** — it
+handles variants, options, prices and media properly, and a worse copy would be
+weeks of work that makes the admin *less* capable. Creating goes through the
+launcher; deleting lives here because it is a list operation.
+
+Classification takes the most specific answer when a product is several things
+at once (a clearance piece inside a bundle), because that is the one that
+changes how she treats it.
+
+### Slevy — create and edit, with the products visible
+
+A **drawer, not §13's five-step wizard**. A wizard earns its place when steps
+depend on each other and the flow is unfamiliar; she will make perhaps six sales
+a year, and by the third the ceremony is in the way. One surface also *edits*,
+which a wizard cannot. The product picker is a search rather than a list —
+scrolling a few hundred pieces to find „Hrnek modrý" is slower than typing it.
+
+- Gate: typecheck ✓ · build ✓ · tests: **241 passed** in 15 suites.
+- Migrations: one — `archivováno` added to the review status constraint.
