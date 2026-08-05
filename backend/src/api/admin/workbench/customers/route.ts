@@ -42,6 +42,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const search =
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
 
+  // Every source individually caught: this page joins six systems, and one
+  // of them being briefly broken (a missing table after a bad deploy, a
+  // module mid-migration) must degrade its own column to empty, not take
+  // the whole customer list down. That failure mode is exactly what
+  // „Zákazníci se nepodařilo načíst" looked like in production.
+  const safely = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await promise
+    } catch {
+      return fallback
+    }
+  }
+
   const [customersResult, ordersResult, productionOrders, wishlists, allReviews, subscribers] =
     await Promise.all([
       query.graph({
@@ -49,17 +62,31 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         fields: ["id", "email", "first_name", "last_name", "created_at"],
         pagination: { take: 1000, skip: 0 },
       }),
-      query.graph({
-        entity: "order",
-        fields: ["id", "customer_id", "email", "total", "created_at", "items.id"],
-        pagination: { take: 1000, skip: 0 },
-      }),
-      madeToOrder.listProductionOrders({} as never) as Promise<any[]>,
-      wishlist.listWishlists({}, { relations: ["items"] }) as Promise<any[]>,
-      reviews.listReviews({} as never) as Promise<any[]>,
-      newsletter.listNewsletterSubscribers({
-        unsubscribed_at: null,
-      } as never) as Promise<any[]>,
+      safely(
+        query.graph({
+          // `items.id` was projected here only to exist — every order's
+          // items loaded on every page view. Dropped: nothing read it.
+          entity: "order",
+          fields: ["id", "customer_id", "email", "total", "created_at"],
+          pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
+        }),
+        { data: [] as any[] } as never
+      ),
+      safely(
+        madeToOrder.listProductionOrders({} as never) as Promise<any[]>,
+        []
+      ),
+      safely(
+        wishlist.listWishlists({}, { relations: ["items"] }) as Promise<any[]>,
+        []
+      ),
+      safely(reviews.listReviews({} as never) as Promise<any[]>, []),
+      safely(
+        newsletter.listNewsletterSubscribers({
+          unsubscribed_at: null,
+        } as never) as Promise<any[]>,
+        []
+      ),
     ])
 
   const toNumber = (value: unknown): number => {
@@ -108,11 +135,26 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     }
   }
 
+  // Orders match their customer by id OR e-mail. A guest checkout creates
+  // an order whose customer link may be absent; matching only by id showed
+  // loyal guests as „zatím bez objednávky", which reads as a broken page.
+  const customerIdByEmail = new Map<string, string>()
+  for (const customer of customersResult.data as any[]) {
+    if (customer.email) {
+      customerIdByEmail.set(String(customer.email).toLowerCase(), customer.id)
+    }
+  }
+
   const ordersByCustomer = new Map<string, { count: number; total: number; last: string | null }>()
   for (const order of ordersResult.data as any[]) {
-    if (!order.customer_id) continue
+    const matchedId =
+      order.customer_id ??
+      (order.email
+        ? customerIdByEmail.get(String(order.email).toLowerCase())
+        : undefined)
+    if (!matchedId) continue
     const entry =
-      ordersByCustomer.get(order.customer_id) ?? {
+      ordersByCustomer.get(matchedId) ?? {
         count: 0,
         total: 0,
         last: null,
@@ -122,7 +164,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     if (!entry.last || order.created_at > entry.last) {
       entry.last = order.created_at
     }
-    ordersByCustomer.set(order.customer_id, entry)
+    ordersByCustomer.set(matchedId, entry)
   }
 
   const wishlistSizeByCustomer = new Map<string, number>()

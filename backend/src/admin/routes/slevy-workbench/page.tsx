@@ -51,6 +51,8 @@ type WorkbenchPromotion = {
   effect: string | null;
   campaign: { id: string; name: string } | null;
   used_count: number | null;
+  revenue: number | null;
+  discount_given: number | null;
   created_at: string;
 };
 
@@ -62,6 +64,9 @@ type WorkbenchCampaign = {
   ends_at: string | null;
   budget: { type: string; limit: number | null; used: number | null } | null;
   promotions_count: number;
+  used_orders: number;
+  revenue: number;
+  discount_given: number;
 };
 
 type WorkbenchPriceList = {
@@ -74,16 +79,30 @@ type WorkbenchPriceList = {
   prices_count: number;
 };
 
+type WorkbenchSeasonal = {
+  id: string;
+  title: string;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  products_count: number;
+  orders: number;
+  revenue: number;
+};
+
 type DiscountsResponse = {
   promotions: WorkbenchPromotion[];
   campaigns: WorkbenchCampaign[];
   price_lists: WorkbenchPriceList[];
+  seasonal_selections: WorkbenchSeasonal[];
+  orders_scanned: number;
 };
 
 const tabs = [
   { key: "akce", label: "Akce a kódy" },
   { key: "kampane", label: "Kampaně" },
   { key: "ceniky", label: "Ceníky" },
+  { key: "statistiky", label: "Statistiky" },
 ];
 
 /** Toggle a promotion between active and draft through the native API. */
@@ -163,7 +182,16 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
         )}
       </div>
 
-      <div />
+      <div>
+        {typeof promotion.revenue === "number" && promotion.revenue > 0 && (
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            přineslo {formatCzk(promotion.revenue)}
+            {promotion.discount_given
+              ? ` · sleva ${formatCzk(promotion.discount_given)}`
+              : ""}
+          </Text>
+        )}
+      </div>
 
       <div className="flex justify-start gap-2 lg:justify-end">
         <Button
@@ -512,7 +540,15 @@ const SlevyInner = () => {
                   </Text>
                 )}
               </div>
-              <div />
+              <div>
+                {campaign.revenue > 0 && (
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    přineslo {formatCzk(campaign.revenue)} ·{" "}
+                    {campaign.used_orders}{" "}
+                    {campaign.used_orders === 1 ? "objednávka" : "objednávek"}
+                  </Text>
+                )}
+              </div>
               <div className="flex justify-start lg:justify-end">
                 <CampaignEditor
                   campaign={campaign}
@@ -525,6 +561,89 @@ const SlevyInner = () => {
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && active === "statistiky" && (
+        <div className="flex flex-col gap-y-5 px-6 py-5">
+          <div>
+            <Text size="small" weight="plus">
+              Co která akce přinesla
+            </Text>
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              Tržba je součet objednávek, ve kterých sleva zazněla; u sezónních
+              akcí tržba prodaných kusů z akce v jejím období. Počítáno
+              z posledních {data?.orders_scanned ?? 0} objednávek.
+            </Text>
+          </div>
+
+          <div>
+            <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+              Slevové kódy
+            </Text>
+            {(data?.promotions ?? [])
+              .filter((promotion) => (promotion.used_count ?? 0) > 0)
+              .sort((a, b) => (b.revenue ?? 0) - (a.revenue ?? 0))
+              .map((promotion) => (
+                <Text key={promotion.id} size="small" className="mt-1.5">
+                  {promotion.code ?? "Automatická"} — přineslo{" "}
+                  {formatCzk(promotion.revenue ?? 0)} · sleva{" "}
+                  {formatCzk(promotion.discount_given ?? 0)} · použito{" "}
+                  {promotion.used_count}×
+                </Text>
+              ))}
+            {(data?.promotions ?? []).every(
+              (promotion) => (promotion.used_count ?? 0) === 0
+            ) && (
+              <Text size="small" className="text-ui-fg-subtle mt-1.5">
+                Žádný kód zatím nikdo nepoužil.
+              </Text>
+            )}
+          </div>
+
+          <div>
+            <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+              Kampaně
+            </Text>
+            {(data?.campaigns ?? [])
+              .filter((campaign) => campaign.used_orders > 0)
+              .map((campaign) => (
+                <Text key={campaign.id} size="small" className="mt-1.5">
+                  {campaign.name} — přineslo {formatCzk(campaign.revenue)} ·
+                  sleva {formatCzk(campaign.discount_given)} ·{" "}
+                  {campaign.used_orders}{" "}
+                  {campaign.used_orders === 1 ? "objednávka" : "objednávek"}
+                </Text>
+              ))}
+            {(data?.campaigns ?? []).every(
+              (campaign) => campaign.used_orders === 0
+            ) && (
+              <Text size="small" className="text-ui-fg-subtle mt-1.5">
+                Kampaně zatím nic nepřinesly.
+              </Text>
+            )}
+          </div>
+
+          <div>
+            <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
+              Sezónní akce
+            </Text>
+            {(data?.seasonal_selections ?? []).map((selection) => (
+              <Text key={selection.id} size="small" className="mt-1.5">
+                {selection.title}
+                {selection.status === "published" ? " (běží)" : ""} — přineslo{" "}
+                {formatCzk(selection.revenue)} · {selection.orders}{" "}
+                {selection.orders === 1 ? "objednávka" : "objednávek"} ·{" "}
+                {selection.products_count}{" "}
+                {selection.products_count === 1 ? "produkt" : "produktů"}
+              </Text>
+            ))}
+            {(data?.seasonal_selections ?? []).length === 0 && (
+              <Text size="small" className="text-ui-fg-subtle mt-1.5">
+                Žádná sezónní akce zatím neproběhla.
+              </Text>
+            )}
+          </div>
         </div>
       )}
 

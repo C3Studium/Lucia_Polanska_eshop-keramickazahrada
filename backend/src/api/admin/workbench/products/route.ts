@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { isClearanceProduct } from "../../../../lib/clearance"
 import { getInventoryAlerts } from "../../../../lib/inventory-alerts"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
@@ -46,7 +47,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const since = new Date()
   since.setDate(since.getDate() - 30)
 
-  const [productsResult, alerts, profiles, wishlistItems, approvedReviews, recentOrders] =
+  const [productsResult, alerts, profiles, wishlistItems, approvedReviews, recentOrders, bundlesResult] =
     await Promise.all([
       query.graph({
         entity: "product",
@@ -57,6 +58,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "status",
           "thumbnail",
           "created_at",
+          "metadata",
           "collection.title",
           "categories.name",
           "variants.id",
@@ -77,7 +79,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         filters: { created_at: { $gte: since.toISOString() } } as never,
         pagination: { take: 1000, skip: 0 },
       }),
+      query
+        .graph({ entity: "bundle", fields: ["id", "title", "product.id"] })
+        .catch(() => ({ data: [] as any[] })),
     ])
+
+  // A product IS a bundle when it is some bundle's composite product —
+  // that is the thing the customer buys, so that is the thing the Balíčky
+  // tab lists.
+  const bundleByProduct = new Map<string, { id: string; title: string }>()
+  for (const bundle of (bundlesResult.data ?? []) as any[]) {
+    const linked = Array.isArray(bundle.product)
+      ? bundle.product
+      : [bundle.product]
+    for (const product of linked) {
+      if (product?.id) {
+        bundleByProduct.set(product.id, { id: bundle.id, title: bundle.title })
+      }
+    }
+  }
 
   const products = productsResult.data as any[]
 
@@ -150,6 +170,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
       const profile = profileByProduct.get(product.id)
       const stats = reviewStats.get(product.id)
+      const bundle = bundleByProduct.get(product.id) ?? null
+      const clearance = isClearanceProduct(product)
+      const kind: "zakazka" | "balicek" | "poskozene" | "bezne" =
+        profile?.enabled
+          ? "zakazka"
+          : bundle
+            ? "balicek"
+            : clearance
+              ? "poskozene"
+              : "bezne"
       const totalWishlist = variants.reduce(
         (sum: number, variant: any) => sum + variant.wishlist_count,
         0
@@ -160,6 +190,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         title: product.title,
         handle: product.handle,
         status: product.status,
+        kind,
+        bundle,
+        clearance,
         thumbnail: product.thumbnail,
         collection: product.collection?.title ?? null,
         categories: (product.categories ?? []).map(
@@ -185,9 +218,21 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }
     })
 
+  const kindFilter =
+    typeof req.query.kind === "string" ? req.query.kind : null
+  const filtered = kindFilter
+    ? rows.filter((row) => row.kind === kindFilter)
+    : rows
+
   res.status(200).json({
-    products: rows.slice(offset, offset + limit),
-    count: rows.length,
+    products: filtered.slice(offset, offset + limit),
+    count: filtered.length,
+    kinds: {
+      bezne: rows.filter((row) => row.kind === "bezne").length,
+      zakazka: rows.filter((row) => row.kind === "zakazka").length,
+      balicek: rows.filter((row) => row.kind === "balicek").length,
+      poskozene: rows.filter((row) => row.kind === "poskozene").length,
+    },
     limit,
     offset,
   })
