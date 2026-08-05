@@ -95,9 +95,27 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 102px minmax(0, 1fr);
     column-gap: 6px;
-    width: clamp(500px, 28vw, 560px);
+    /* Mobile-first: the floor used to be a hard 500px, which overflowed every phone — a 320px
+       viewport was rendering a 500px bar. Fluid here, fixed only once there is room for it. */
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: 5px 10px;
     transform: translateX(-50%);
+
+    @include v(md) {
+      width: 500px;
+      max-width: none;
+    }
+
+    @include h(sm) {
+      width: 500px;
+      max-width: none;
+    }
+
+    @include h(md) {
+      width: clamp(500px, 28vw, 560px);
+    }
 
     > button {
       width: 102px;
@@ -508,19 +526,19 @@
   }
 }
 
-@media (max-width: 1240px) {
-  .navbar {
-    .navbar__left {
-      min-width: 0;
-    }
-    .navbar__center {
-      width: 500px;
-    }
-    .navbar__right {
-      width: max-content;
-    }
-    .navbar__nav-link > div {
-      padding-inline: 10px;
-    }
+/* Was a raw `@media (max-width: 1240px)`, which pinned .navbar__center to 500px at every width
+   below 1240 — phones included. Re-expressed in the system: these are the defaults now, and the
+   wide-viewport values are applied upward from .navbar__center above. */
+.navbar {
+  .navbar__left {
+    min-width: 0;
+  }
+
+  .navbar__right {
+    width: max-content;
+  }
+
+  .navbar__nav-link > div {
+    padding-inline: 10px;
   }
 }
