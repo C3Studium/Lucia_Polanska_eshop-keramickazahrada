@@ -1402,3 +1402,31 @@ clears the fold at all three, and the signature never collides with the button.
 **Gate:** `pnpm lint` → 0 · `pnpm build` → 0.
 
 ---
+
+### Hero lockup — final arrangement and new motion (Matěj, 2026-08-05)
+
+**Arrangement.** The headline block moves up and the signature sits **directly beneath it**,
+indented to the last line's start, rather than hanging off its end. The right column carries only
+the lede and the button, dropped low on their own rule. Two clean masses instead of three
+scattered ones.
+
+**Entry animation replaced.** The per-character reveal is gone. Characters were `inline-block`
+spans that faded in sequence — it read as a shimmer, and it was what collapsed the spaces in a
+multi-word headline. Each line now rises out from behind its own mask (`overflow: hidden` +
+`y: 115% → 0%`, `easeReveal`, staggered 0.14s), which is the site's own clip-reveal language and
+arrives as one considered movement. The signature reveals last; the lede and button follow.
+
+**Parallax.** The headline and signature travel at **−62%** of their height across the hero's
+scroll, the lede/action block at **−18%** — different rates are what read as depth.
+
+The driver matters and was wrong first time: parallax was tied to the page-wide kiln journey,
+which barely advances across the first screenful, so the headline moved 8px while the lede moved
+16px — inverted and invisible. It now uses the hero's **own** `useScroll` progress. Measured over
+a 400px scroll: **headline 65px, lede 17px.**
+
+`useReducedMotion` short-circuits both the mask reveal and the entry offsets.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · verified at 1440×820:
+signature sits under the headline, lede right-aligned low, parallax differential confirmed.
+
+---
