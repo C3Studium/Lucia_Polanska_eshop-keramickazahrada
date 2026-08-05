@@ -2,6 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   customerName,
+  formatDate,
   formatMoney,
   orderLink,
   orderNumber,
@@ -416,14 +417,120 @@ const onSpecificationConfirmed = async ({
   })
 }
 
+/**
+ * „Výroba se protáhne" — only ever her click on „Oznámit zpoždění" (the
+ * announce_delay admin action). D4 holds: the system never decides a delay
+ * on its own, it only delivers the one she announced.
+ */
+const onDelayAnnounced = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{
+  order_id: string
+  production_order_id: string
+  original_completion_at?: string | null
+  new_completion_at: string
+  reason?: string | null
+}>) => {
+  if (!data?.order_id || !data?.new_completion_at) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "order-delayed",
+    to: order.email,
+    // Keyed on the new date: announcing the same slip twice sends once, a
+    // second slip to a *different* date is genuinely new information.
+    key: `delay:${data.production_order_id}:${data.new_completion_at.slice(0, 10)}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      ...(data.original_completion_at
+        ? { originalDeliveryDate: formatDate(data.original_completion_at) }
+        : {}),
+      newDeliveryDate: formatDate(data.new_completion_at),
+      ...(data.reason ? { delayReason: data.reason } : {}),
+    },
+  })
+}
+
+/**
+ * „Vrácení schváleno" — hangs off the native return being created. Customers
+ * have no self-service returns here; a return exists because she agreed to
+ * one with the customer, so its creation *is* the approval, and the e-mail
+ * carries the address the objects should travel to.
+ */
+const onReturnRequested = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ order_id: string; return_id: string }>) => {
+  if (!data?.order_id || !data?.return_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  // Which objects are coming back, by name — return items point at order line
+  // items. Best-effort: a return with no resolvable items just omits the row.
+  let approvedItems = ""
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: returns } = await query.graph({
+      entity: "return",
+      fields: ["id", "display_id", "items.item_id", "items.quantity"],
+      filters: { id: data.return_id },
+    })
+    const returnRow = returns[0] as any
+    const byId = new Map(
+      (order.items || []).map((item: any) => [item.id, item])
+    )
+    approvedItems = (returnRow?.items || [])
+      .map((returnItem: any) => {
+        const item = byId.get(returnItem.item_id) as any
+        if (!item) {
+          return null
+        }
+        const quantity = Number(returnItem.quantity)
+        return quantity > 1
+          ? `${item.product_title ?? item.title} (${quantity} ks)`
+          : item.product_title ?? item.title
+      })
+      .filter(Boolean)
+      .join(", ")
+  } catch {
+    // The e-mail is still worth sending without the item list.
+  }
+
+  await sendCustomerEmail(container, {
+    template: "return-approved",
+    to: order.email,
+    key: `return-approved:${data.return_id}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      ...(approvedItems ? { approvedItems } : {}),
+      returnMethod: "Zásilka na adresu ateliéru",
+      returnAddress: "Keramická zahrada, Putim 229, 397 01 Písek",
+    },
+  })
+}
+
 const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "payment.captured": onPaymentCaptured,
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
+  "made-to-order.delay-announced": onDelayAnnounced,
   "shipment.created": onShipmentCreated,
   "delivery.created": onDeliveryCreated,
   "order.canceled": onOrderCanceled,
+  "order.return_requested": onReturnRequested,
   "payment.refunded": onPaymentRefunded,
 }
 
@@ -440,9 +547,11 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
+    "made-to-order.delay-announced",
     "shipment.created",
     "delivery.created",
     "order.canceled",
+    "order.return_requested",
     "payment.refunded",
   ],
 }

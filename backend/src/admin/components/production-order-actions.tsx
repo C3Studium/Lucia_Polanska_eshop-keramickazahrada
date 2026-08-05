@@ -43,6 +43,7 @@ type Action =
   | "complete_production"
   | "request_balance"
   | "remind_balance"
+  | "announce_delay"
   | "cancel";
 
 const useAction = (orderId: string) => {
@@ -207,6 +208,103 @@ const ConfirmSpecification = ({
   );
 };
 
+/**
+ * „Oznámit zpoždění" — posune termín dokončení a pošle zákazníkovi e-mail
+ * „Výroba se protáhne". Vědomě formulář, ne jen potvrzení: nový termín je
+ * povinný a důvod (pokud ho vyplní) zákazník uvidí doslova.
+ */
+const AnnounceDelay = ({ order }: { order: ProductionOrderSummary }) => {
+  const [open, setOpen] = useState(false);
+  const [deadline, setDeadline] = useState("");
+  const [reason, setReason] = useState("");
+  const action = useAction(order.order_id);
+
+  if (!open) {
+    return (
+      <Button size="small" variant="secondary" onClick={() => setOpen(true)}>
+        Oznámit zpoždění
+      </Button>
+    );
+  }
+
+  return (
+    <form
+      className="flex w-full flex-col gap-y-3 rounded-lg border p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!deadline) {
+          return;
+        }
+        action.mutate(
+          {
+            action: "announce_delay",
+            estimated_completion_at: deadline,
+            delay_reason: reason || undefined,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Zákazník dostal e-mail s novým termínem");
+              setOpen(false);
+              setReason("");
+            },
+          }
+        );
+      }}
+    >
+      <div className="flex flex-col gap-y-1">
+        <Label size="xsmall" htmlFor={`delay-date-${order.id}`}>
+          Nový termín dokončení
+        </Label>
+        <Input
+          id={`delay-date-${order.id}`}
+          type="date"
+          className="w-44"
+          value={deadline}
+          onChange={(event) => setDeadline(event.target.value)}
+          required
+        />
+      </div>
+
+      <div className="flex flex-col gap-y-1">
+        <Label size="xsmall" htmlFor={`delay-reason-${order.id}`}>
+          Důvod (zákazník ho uvidí — nepovinné)
+        </Label>
+        <Textarea
+          id={`delay-reason-${order.id}`}
+          rows={2}
+          placeholder="Ruční výroba si vyžádala více času"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </div>
+
+      <Text size="small" className="text-ui-fg-subtle">
+        Zákazníkovi odejde e-mail s novým termínem. Stejné datum se podruhé
+        neposílá; další posun na jiné datum ano.
+      </Text>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="small"
+          type="submit"
+          isLoading={action.isPending}
+          disabled={!deadline}
+        >
+          Oznámit
+        </Button>
+        <Button
+          size="small"
+          variant="secondary"
+          type="button"
+          onClick={() => setOpen(false)}
+        >
+          Zpět
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 /** Actions that need a confirmation because they move money or are visible. */
 const ConfirmedAction = ({
   order,
@@ -352,6 +450,10 @@ export const ProductionOrderActions = ({
           successMessage="Žádost o doplatek byla vytvořena"
         />
       )}
+
+      {["confirmed", "in_production", "awaiting_balance"].includes(
+        order.stage
+      ) && <AnnounceDelay order={order} />}
 
       {["specification_pending", "confirmed", "in_production", "awaiting_balance"].includes(
         order.stage

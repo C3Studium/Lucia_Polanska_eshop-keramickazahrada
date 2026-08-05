@@ -32,6 +32,9 @@ import { OrderReviewEmail } from "./emails/order-review";
 import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
 import { OrderDeliveredEmail } from "./emails/order-delivered";
 import { OrderDelayedEmail } from "./emails/order-delayed";
+import { WelcomeEmail } from "./emails/welcome";
+import { AccountDeletedEmail } from "./emails/account-deleted";
+import { ReturnApprovedEmail } from "./emails/return-approved";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -60,10 +63,35 @@ enum Templates {
   ORDER_READY_PICKUP = "order-ready-pickup",
   ORDER_DELIVERED = "order-delivered",
   ORDER_DELAYED = "order-delayed",
-  //WIP add in more templates and triggers
-  // Add in Order Status
-  // Add in payment status
-  // Add in other relevant templates
+  WELCOME = "welcome",
+  ACCOUNT_DELETED = "account-deleted",
+  RETURN_APPROVED = "return-approved",
+  // TODO(emails): the remaining templates in ./emails/ are designed but have
+  // no trigger to hang off yet. Register them here (both enums + the map +
+  // a subject) once the underlying feature exists:
+  //
+  // - newsletter-signup / newsletter-unsubscribe / promotional /
+  //   bundle-published — need a newsletter/audience feature; the backend has
+  //   no subscriber list to send to (the storefront footer form has no
+  //   backend endpoint).
+  // - price-drop — needs price-change detection plus an audience (wishlist
+  //   subscriptions), neither exists server-side.
+  // - delivery-failed — needs carrier tracking-status polling (Balíkovna API
+  //   is configured, but nothing watches shipment states).
+  // - return-rejected / refund-request — need a customer-facing returns
+  //   intake; today returns are agreed over e-mail and she creates them in
+  //   the admin (order.return_requested → return-approved covers that).
+  // - password-changed / email-change / sign-in-notification — Medusa's auth
+  //   module emits no events for these moments.
+  // - account-change — customer.updated exists but fires on every edit with
+  //   only an id, so it cannot tell a meaningful change from noise.
+  // - address-added — deliberately NOT wired: checkout creates addresses, so
+  //   every first purchase would trigger a confusing "address added" mail.
+  // - payment-cancelled — deliberately NOT wired: a cancelled checkout
+  //   payment never completes the cart (no order exists; abandoned-cart
+  //   covers it) and failed balance payments already send payment-failed.
+  // - order-refunded — deliberately NOT wired: payment-refunded covers the
+  //   whole refund story (a ComGate refund is a single step).
 }
 
 // WIP: Create a type for the templates - for all needed emails that will be send to customers
@@ -92,6 +120,9 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
   [Templates.ORDER_DELIVERED]: OrderDeliveredEmail,
   [Templates.ORDER_DELAYED]: OrderDelayedEmail,
+  [Templates.WELCOME]: WelcomeEmail,
+  [Templates.ACCOUNT_DELETED]: AccountDeletedEmail,
+  [Templates.RETURN_APPROVED]: ReturnApprovedEmail,
 }
 
 export enum EmailTemplates {
@@ -118,6 +149,9 @@ export enum EmailTemplates {
   ORDER_READY_PICKUP = "order-ready-pickup",
   ORDER_DELIVERED = "order-delivered",
   ORDER_DELAYED = "order-delayed",
+  WELCOME = "welcome",
+  ACCOUNT_DELETED = "account-deleted",
+  RETURN_APPROVED = "return-approved",
 }
 
 /**
@@ -261,6 +295,12 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Zásilka doručena"
       case Templates.ORDER_DELAYED:
         return "Výroba se protáhne"
+      case Templates.WELCOME:
+        return "Vítejte v Keramické zahradě"
+      case Templates.ACCOUNT_DELETED:
+        return "Váš účet byl smazán"
+      case Templates.RETURN_APPROVED:
+        return "Vrácení schváleno"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"
