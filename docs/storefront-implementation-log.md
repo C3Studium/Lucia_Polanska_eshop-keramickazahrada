@@ -1378,3 +1378,152 @@ the flag off the dialog shows direct contact details instead. The layout above w
 the flag on.
 
 ---
+
+### Hero lockup — asymmetric arrangement (Matěj, 2026-08-05)
+
+Layout only: same copy, same button proportions, same image, shader and kiln journey. The
+single left-aligned column read as a caption layer over a photograph — polite, and it left the
+right half of the frame empty.
+
+`Hero__Intro__Header` is now a two-column grid across the frame:
+
+- **Headline steps line by line** (0 → ~5.5vw → ~11vw indent), so the block reads as a descent
+  rather than a stack.
+- **The signature hangs off the end** of the last line instead of under its start.
+- **Lede and CTA drop low and right**, on their own hairline, right-aligned — a light
+  counterweight to the heavy headline mass.
+
+The eye now crosses the frame diagonally (eyebrow → staircase → signature → right block) instead
+of running down its left edge, and the empty right half carries weight.
+
+Verified at 1440×820, 1280×720 and 1024×768: the headline never overflows the viewport, the CTA
+clears the fold at all three, and the signature never collides with the button.
+
+**Gate:** `pnpm lint` → 0 · `pnpm build` → 0.
+
+---
+
+### Hero lockup — final arrangement and new motion (Matěj, 2026-08-05)
+
+**Arrangement.** The headline block moves up and the signature sits **directly beneath it**,
+indented to the last line's start, rather than hanging off its end. The right column carries only
+the lede and the button, dropped low on their own rule. Two clean masses instead of three
+scattered ones.
+
+**Entry animation replaced.** The per-character reveal is gone. Characters were `inline-block`
+spans that faded in sequence — it read as a shimmer, and it was what collapsed the spaces in a
+multi-word headline. Each line now rises out from behind its own mask (`overflow: hidden` +
+`y: 115% → 0%`, `easeReveal`, staggered 0.14s), which is the site's own clip-reveal language and
+arrives as one considered movement. The signature reveals last; the lede and button follow.
+
+**Parallax.** The headline and signature travel at **−62%** of their height across the hero's
+scroll, the lede/action block at **−18%** — different rates are what read as depth.
+
+The driver matters and was wrong first time: parallax was tied to the page-wide kiln journey,
+which barely advances across the first screenful, so the headline moved 8px while the lede moved
+16px — inverted and invisible. It now uses the hero's **own** `useScroll` progress. Measured over
+a 400px scroll: **headline 65px, lede 17px.**
+
+`useReducedMotion` short-circuits both the mask reveal and the entry offsets.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · verified at 1440×820:
+signature sits under the headline, lede right-aligned low, parallax differential confirmed.
+
+---
+
+### Hero lockup — centred, parallax dialled back (Matěj, 2026-08-05)
+
+**Parallax reduced to a detail.** −62%/−18% → **−16%/−6%**. Measured over the same 400px scroll:
+headline 65px → **25px**, lede 17px → **14px**. The differential still reads as depth; it no
+longer announces itself.
+
+**The lockup is optically centred.** The header was one grid whose rows coupled the left column's
+vertical position to the right block's. Eyebrow, headline and signature are now wrapped in
+`.Hero__Intro__Lockup`, and the two masses are placed independently inside the frame: the lockup
+at `top: 50%` with `translateY(-54%)` (just above true centre, which reads as centred once the
+eyebrow's rule is counted), the lede and button anchored low-right. Headline top moved 315px →
+259px in an 820px frame.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
+
+---
+
+# Backend integration — §4 made-to-order (2026-08-05)
+
+## Reconnaissance first: what the running backend actually serves
+
+Every route in the brief was probed against `MEDUSA_BACKEND_URL` before any code was written.
+Three findings do not match the brief and are recorded as gaps below.
+
+| Route | Brief | Reality |
+|---|---|---|
+| `GET /store/products/:id/production-profile` | live | ✅ live — returns `{production_profile: null}` for **all 60 products**, including all 9 in "Zakázková Výroba". Nothing is configured as made-to-order yet. |
+| `GET/POST /store/carts/:id/production-payment-mode` | live | ✅ live — verified on a real cart, returns exactly the documented shape plus `cart_id` and `currency_code`. |
+| `POST /store/return-requests` | live | ✅ live — proper Czech validation error. |
+| `GET /store/orders/:id/progress` | live, closes both gaps (§10) | ❌ **not registered** |
+| `POST /store/restock-subscriptions` | live | ❌ **500s on every payload**, including a real variant id |
+| Osobní odběr | `pickup_osobni-odber` / `pp_pickup_pickup` | ❌ neither exists in the CZ region |
+
+## G-1 — `/store/orders/:id/progress` does not exist ⛔ blocks §4.5 and §8
+
+```
+GET /store/orders/order_01ABC/progress  → 404, raw Express "Cannot GET" HTML
+GET /store/orders/order_01ABC           → 404, Medusa JSON {"type":"not_found",…}
+```
+
+The control returning Medusa JSON while `/progress` returns Express's default HTML is conclusive:
+the route is not registered on the deployed backend. §10 states this route closes the two known
+gaps; it is itself the gap.
+
+**Consequence:** §4.5 (*„Doplatit {částka}"* in the account) and §8 (order status) cannot be
+built. Both need `balance.outstanding`, `balance.payment_url` and `stage_label`, and the brief is
+explicit that the payment URL is signed and must never be constructed client-side. Per §3.1 and
+§10 I have written nothing that guesses this state.
+
+## G-2 — `POST /store/restock-subscriptions` returns 500 ⛔ blocks §7.1 verification
+
+Registered (Medusa JSON, not Express HTML) but fails with `unknown_error` on every payload tried,
+including `{variant_id: <real id>, email}`, `{variant_id, customer_email}` and `{email}` alone.
+§7.1 asks me to *verify* restock end to end; it cannot succeed while the route 500s.
+
+## G-3 — Osobní odběr is not configured ⚠ §5 cannot be exercised
+
+Payment providers in the CZ region are `pp_comgate_comgate` and `pp_system_default` only — no
+`pp_pickup_pickup`. Shipping options are three `ceska-posta-fulfillment_*` entries, all
+`type: shipping` — no `pickup_osobni-odber`, and no `packeta_packeta` either. The §5 code can be
+written so it activates when the provider is enabled, but nothing can be verified today.
+
+## Built (§4.1, 4.2, 4.3, 4.6)
+
+**Files:** `lib/util/made-to-order.ts` (types + pure helpers), `lib/data/made-to-order.ts`
+(fetchers), `lib/data/made-to-order-actions.ts` (server action),
+`modules/products/components/made-to-order/`, `modules/checkout/components/production-payment-mode/`,
+`modules/order/components/balance-payment-notice/`, plus the product page, `Product`, `details.tsx`,
+`checkout-form`, `review` and the order-confirmed route.
+
+- **§4.1** — panel above add-to-cart: „Vyrábí se na zakázku", the lead time from
+  `production_time_min/max_days`, and the deposit line. A variant's
+  `deposit_percentage_override` beats the product default (`depositPercentageFor`).
+- **§4.2** — required textarea labelled with `specification_prompt`; add-to-cart is blocked while
+  it is empty and the item carries `metadata.made_to_order.specification`. The client check is a
+  courtesy — the comment says so — the backend remains the guard.
+- **§4.3** — deposit/full radios in the Review step, deposit default, second option only when
+  `can_pay_full`. **Every figure is the API's**; the checkout does no arithmetic. The choice
+  POSTs back and the component re-reads whatever the backend returns.
+- **§4.6** — `?platba=paid|chyba|neplatny-odkaz` renders the three Czech messages.
+
+**One design decision worth flagging.** That redirect target is an *e-mailed* link, so it is often
+opened by a guest or in a browser with no session, and `retrieveOrder` then fails. The original
+page would have shown a 404 to someone who had just paid — which reads as *it did not work*, the
+exact failure §4.6 exists to prevent. When `platba` is present and the order cannot be loaded, the
+page now shows the acknowledgement plus a route to the order rather than a 404.
+
+**Verified:** all three `platba` values render their message on an unloadable order.
+Product pages are unaffected while no profile is configured (panel absent, page 200).
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0.
+
+**Not yet built:** §4.4 (express checkout), §5, §6, §7.2 — next up. §4.5, §8 and §7.1 blocked by
+G-1 and G-2.
+
+---

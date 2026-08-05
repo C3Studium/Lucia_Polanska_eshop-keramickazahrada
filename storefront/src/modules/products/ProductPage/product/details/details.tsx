@@ -1,6 +1,11 @@
 "use client"
 
 import ProductOptions from "./Options/ProductOptions"
+import MadeToOrderPanel from "@modules/products/components/made-to-order"
+import {
+  madeToOrderMetadata,
+  type ProductionProfile,
+} from "@lib/util/made-to-order"
 import {
   isPurchasable,
   maxPurchasableQuantity,
@@ -33,6 +38,7 @@ type ProductTemplateProps = {
   initialCount?: number
   bundle?: BundleProduct
   isBundlePreview?: boolean
+  productionProfile?: ProductionProfile | null
 }
 
 const optionsAsKeymap = (
@@ -54,10 +60,19 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   initialCount = 0,
   bundle,
   isBundlePreview = false,
+  productionProfile,
 }) => {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
+  const [specification, setSpecification] = useState("")
+  const [specificationTouched, setSpecificationTouched] = useState(false)
+
+  const isMadeToOrder = Boolean(productionProfile?.enabled)
+  const needsSpecification = Boolean(
+    isMadeToOrder && productionProfile?.specification_required
+  )
+  const specificationMissing = needsSpecification && !specification.trim()
   const resetTimer = useRef<number | undefined>(undefined)
   const isAdding = addState.kind === "adding"
 
@@ -105,6 +120,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || isAdding) return
 
+    // The backend rejects an empty specification on a made-to-order item; stopping here saves
+    // the customer a round trip. It is not the guard — the backend is.
+    if (specificationMissing) {
+      setSpecificationTouched(true)
+      return
+    }
+
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
 
@@ -113,6 +135,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         variantId: selectedVariant.id,
         quantity,
         countryCode,
+        ...(needsSpecification
+          ? { metadata: madeToOrderMetadata(specification) }
+          : {}),
       })
 
       if (!result?.success) {
@@ -292,6 +317,22 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                 </div>
 
                 <div className="product__buyBlock">
+                  {isMadeToOrder && productionProfile && (
+                    <MadeToOrderPanel
+                      profile={productionProfile}
+                      variantId={selectedVariant?.id}
+                      unitAmount={
+                        selectedVariant?.calculated_price?.calculated_amount ?? null
+                      }
+                      currencyCode={region?.currency_code ?? "czk"}
+                      specification={specification}
+                      onSpecificationChange={(value) => {
+                        setSpecification(value)
+                        if (value.trim()) setSpecificationTouched(false)
+                      }}
+                      showRequiredError={specificationTouched}
+                    />
+                  )}
                   <ProductPrice
                     product={product}
                     variant={selectedVariant}

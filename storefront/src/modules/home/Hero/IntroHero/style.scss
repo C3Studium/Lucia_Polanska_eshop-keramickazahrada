@@ -140,23 +140,45 @@
    * overlapping it, and the promise sat in a separate right-hand column on a different
    * baseline — two unrelated things over the busiest part of the image.
    */
+  /*
+   * Asymmetric lockup. Same copy, same button — arranged as two unequal masses instead of one
+   * left-aligned stack: a heavy headline block on the left that steps to the right line by line,
+   * and a light lede + action block dropped low on the right. The eye travels diagonally across
+   * the frame rather than straight down its left edge, and the empty right half stops being dead.
+   */
+  /*
+   * Two independently placed masses: the lockup sits near the vertical centre of the frame,
+   * the lede and action stay low on the right. Placing them separately rather than as rows of
+   * one grid is what lets each sit where it belongs.
+   */
   .Hero__Intro__Header {
     position: absolute;
-    bottom: clamp(6rem, 12vh, 9rem);
-    left: 5vw;
+    inset: 0 5vw;
     z-index: 5;
+    color: #ffe8d6;
+    pointer-events: none;
+    will-change: transform, opacity;
+
+    > * {
+      pointer-events: auto;
+    }
+  }
+
+  .Hero__Intro__Lockup {
+    position: absolute;
+    top: 50%;
+    left: 0;
     display: flex;
-    width: min(46rem, 52vw);
+    max-width: min(64rem, 72%);
     flex-direction: column;
     align-items: flex-start;
-    color: #ffe8d6;
-    transform-origin: left bottom;
-    will-change: transform, opacity;
+    /* Slightly above true centre — optically centred once the eyebrow's rule is counted. */
+    transform: translateY(-54%);
   }
 
   .Hero__Intro__Eyebrow {
-    margin-bottom: clamp(0.9rem, 1.6vh, 1.4rem);
-    padding-bottom: 0.85rem;
+    margin-bottom: clamp(0.8rem, 1.5vh, 1.3rem);
+    padding-bottom: 0.8rem;
     border-bottom: 1px solid rgba(255, 232, 214, 0.32);
     color: #f1e3d6;
     font-family: "Sansation-Regular", sans-serif;
@@ -171,17 +193,24 @@
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
-    /* Smaller than the old name lockup: three lines of promise need to fit as one block. */
-    font-size: clamp(3.2rem, 6.4vw, 7.2rem);
+    font-size: clamp(3.2rem, 6.6vw, 7.4rem);
     font-weight: 400;
     letter-spacing: -0.045em;
-    line-height: 0.94;
+    line-height: 0.92;
     text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
-    text-wrap: balance;
   }
 
   .Hero__Intro__Headline .precise-blended-text {
     display: block;
+  }
+
+  /* The staircase: each line starts further right, so the block reads as a descent. */
+  .Hero__Intro__Headline .precise-blended-text:nth-child(2) {
+    margin-left: clamp(2rem, 5.5vw, 6rem);
+  }
+
+  .Hero__Intro__Headline .precise-blended-text:nth-child(3) {
+    margin-left: clamp(4rem, 11vw, 12rem);
   }
 
   .Hero__Intro__Headline .precise-char {
@@ -189,11 +218,13 @@
     color: inherit;
   }
 
+  /* Hangs off the end of the last headline line rather than under its start. */
+  /* Directly under the headline it signs, indented to the last line's start. */
   .Hero__Intro__Signature {
-    margin: clamp(0.9rem, 1.8vh, 1.6rem) 0 0;
+    margin: 0;
+    margin-left: clamp(4rem, 11vw, 12rem);
     color: #cbc69d;
     font-family: "ooohBaby-Regular", cursive;
-    /* A signature, not a second headline — it was 95px competing with the name above it. */
     font-size: clamp(1.9rem, 2.5vw, 2.75rem);
     font-weight: 300;
     line-height: 1;
@@ -201,13 +232,19 @@
     transform-origin: left center;
   }
 
+  /* The counterweight: dropped low and right, on its own rule. */
   .Hero__Intro__Lede {
+    position: absolute;
+    right: 0;
+    bottom: clamp(3.5rem, 8vh, 6.5rem);
     display: flex;
-    max-width: 34rem;
+    max-width: 26rem;
     flex-direction: column;
-    align-items: flex-start;
-    margin-top: clamp(1.4rem, 2.6vh, 2.2rem);
-    gap: clamp(1.1rem, 2vh, 1.7rem);
+    align-items: flex-end;
+    padding-top: clamp(1rem, 2vh, 1.6rem);
+    border-top: 1px solid rgba(255, 232, 214, 0.32);
+    gap: clamp(1rem, 1.8vh, 1.5rem);
+    text-align: right;
     will-change: transform, opacity;
   }
 
@@ -215,7 +252,7 @@
     margin: 0;
     color: #f4ece4;
     font-family: "Sentient-Light", serif;
-    font-size: clamp(1.02rem, 1.05vw, 1.22rem);
+    font-size: clamp(1rem, 1vw, 1.16rem);
     line-height: 1.45;
   }
 
@@ -385,3 +422,15 @@
     }
   }
 }
+
+  /* Masked line reveal — the inner span rises out from behind its own overflow. */
+  .maskedLine {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.06em;
+  }
+
+  .maskedLineInner {
+    display: block;
+    will-change: transform;
+  }

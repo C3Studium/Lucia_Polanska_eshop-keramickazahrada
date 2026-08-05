@@ -1,0 +1,29 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+/* Sits above the order template on its cream surface; both tones measured against it. */
+
+.notice {
+  width: min(1840px, calc(100% - clamp(36px, 7vw, 140px)));
+  margin: clamp(90px, 12vh, 130px) auto 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+}
+
+/* #2f5233 on #e8f0e4 — 7.4:1 */
+.ok {
+  border: 1px solid rgba(47, 82, 51, 0.3);
+  background: #e8f0e4;
+  color: #2f5233;
+}
+
+/* #8c3e30 on #ffece4 — 6.9:1 */
+.warn {
+  border: 1px solid rgba(140, 62, 48, 0.34);
+  background: #ffece4;
+  color: #8c3e30;
+}
+
+.inline {
+  width: 100%;
+  margin: 0;
+}

@@ -1,5 +1,5 @@
 "use client";
-import { Easing, motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { Easing, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { useStateContext } from "@lib/context/StateContext";
 import { urlFor } from "../../../../sanity/lib/image";
@@ -84,6 +84,11 @@ export default function IntroHero({
     const contentOpacity = useTransform(journeyProgress, [0, 0.78, 1], [1, 1, 0]);
     const contentY = useTransform(journeyProgress, [0, 0.78, 1], [0, -4, -22]);
     const chromeOpacity = useTransform(journeyProgress, [0, 0.84, 1], [1, 1, 0]);
+    // Parallax is driven by the hero's own scroll: over the first screenful the page-wide kiln
+    // journey barely advances, so tying text depth to it made the effect invisible. The two
+    // masses travel at different rates, which is what actually reads as depth.
+    const headlineParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-16%"]);
+    const ledeParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-6%"]);
 
     // const PreloaderAnimSVG = {
     //     start: {
@@ -229,30 +234,33 @@ export default function IntroHero({
                 className="Hero__Intro__Header"
                 style={{ y: nameY, scale: nameScale, opacity: nameOpacity }}
             >
+                <div className="Hero__Intro__Lockup">
                 <span className="Hero__Intro__Eyebrow">Objekty s vlastním příběhem</span>
 
                 {/* One h1, and it carries the promise rather than the name: a visitor arrives
                     looking for ceramics, not for a person. The first line of the Sanity `content`
                     field is the headline, so Lucia still edits it; the rest becomes the lede. */}
-                <h1 className="Hero__Intro__Headline">
+                <motion.h1 className="Hero__Intro__Headline" style={{ y: headlineParallax }}>
                     {headlineLines.map((line, index) => (
-                        <PreciseBlendedText
+                        <MaskedLine
                             key={line + index}
-                            i={-1}
                             text={line}
-                            delay={index * 0.12}
+                            delay={0.35 + index * 0.14}
                         />
                     ))}
-                </h1>
+                </motion.h1>
 
-                <p className="Hero__Intro__Signature">
-                    <span aria-hidden="true">—&nbsp;</span>
-                    {signature}
-                </p>
+                <motion.p className="Hero__Intro__Signature" style={{ y: headlineParallax }}>
+                    <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
+                </motion.p>
+                </div>
 
                 <motion.div
                     className="Hero__Intro__Lede"
-                    style={{ opacity: contentOpacity, y: contentY }}
+                    style={{ opacity: contentOpacity, y: ledeParallax }}
+                    initial={{ opacity: 0, y: 28 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.9, delay: 0.9, ease: [0.76, 0, 0.24, 1] as Easing }}
                 >
                     {ledeText && <p>{ledeText}</p>}
                     <div className="Hero__Intro__Header__Cta">
@@ -328,49 +336,40 @@ export default function IntroHero({
 }
 
 
-function PreciseBlendedText({ text, i, delay }: { text: string, i: number, delay: number }) {
-    const PreloaderAnimText = {
-        initial: {
-            opacity: 0,
-            y: 20,
-        },
-        start: {
-            opacity: 0,
-            y: 20,
-        },
-        enter: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5,
-                delay: 0.5 + (i * 0.1) + delay,
-                ease: [0.76, 0, 0.24, 1] as Easing,
-            }
-        })
-    }
+/**
+ * One headline line, revealed from behind a mask. Replaces the per-character fade: characters
+ * were inline-block spans, which collapsed spaces and read as a shimmer rather than a reveal.
+ * A masked line is the site's own clip-reveal language and arrives as one considered movement.
+ */
+function MaskedLine({
+    text,
+    delay = 0,
+    className,
+}: {
+    text: string
+    delay?: number
+    className?: string
+}) {
+    const reduceMotion = useReducedMotion()
+
     return (
-        <span className="precise-blended-text">
-            {text.split('').map((char, index) => {
-                // Determine if this character overlaps the dark image
-                const isOverDarkArea = i === index ? true : false; 
-                
-                return (
-                    <motion.span
-                        initial="start"
-                        animate="enter"
-                        exit="exit"
-                        variants={PreloaderAnimText}
-                        custom={index}
-                        key={index}
-                        className={`precise-char ${isOverDarkArea ? 'over-dark' : 'over-light'}`}
-                    >
-                        {char === " " ? "\u00A0" : char}
-                    </motion.span>
-                );
-            })}
+        <span className={`maskedLine ${className ?? ""}`}>
+            <motion.span
+                className="maskedLineInner"
+                initial={reduceMotion ? { y: "0%" } : { y: "115%" }}
+                animate={{ y: "0%" }}
+                transition={{
+                    duration: reduceMotion ? 0 : 1.05,
+                    delay: reduceMotion ? 0 : delay,
+                    ease: [0.76, 0, 0.24, 1] as Easing,
+                }}
+            >
+                {text}
+            </motion.span>
         </span>
     );
 }
+
 
 
 const wordSplit = (text: string, firstLoad: boolean) => {
