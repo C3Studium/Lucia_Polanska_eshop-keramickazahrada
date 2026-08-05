@@ -669,6 +669,10 @@ export default function NavbarSearch({
         <motion.aside
           id="navbar-search"
           className={styles.root}
+          /* Lenis handles the wheel on a document-level listener and scrolls programmatically,
+             so preventDefault() in the rail cannot stop it and the page drifts behind the open
+             overlay. This attribute is the only thing Lenis honours as an opt-out. */
+          data-lenis-prevent
           initial={fadeOnly}
           animate={fadeIn}
           exit={fadeOnly}

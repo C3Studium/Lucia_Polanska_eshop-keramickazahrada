@@ -164,6 +164,9 @@ export default function ContactDialogPanel({
   return (
     <motion.div
       className={styles.overlay}
+      /* body{overflow:hidden} below only blocks *user* scrolling; Lenis scrolls programmatically
+         and ignored it, so the page moved behind the dialog. */
+      data-lenis-prevent
       variants={overlayVariants}
       initial="hidden"
       animate="visible"
