@@ -15,7 +15,7 @@ type CreateReviewInput = {
   customer_id?: string
   first_name: string
   last_name: string
-  status?: "čeká na schválení" | "schváleno" | "zamítnuto"
+  status?: "čeká na schválení" | "schváleno" | "zamítnuto" | "archivováno"
 }
 
 export const createReviewWorkflow = createWorkflow(

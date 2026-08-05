@@ -215,17 +215,17 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     }
     switch(template) {
       case Templates.ORDER_PLACED:
-        return "Order Confirmation"
+        return "Objednávka přijata — děkujeme"
       case Templates.USER_INVITED:
-        return "You've been invited to join"
+        return "Pozvánka do administrace Keramické zahrady"
       case Templates.PASSWORD_RESET:
-        return "Reset Your Password"
+        return "Obnovení hesla"
       case Templates.EMAIL_VERIFICATION:
-        return "Verify Your Email Address"
+        return "Potvrďte svou e-mailovou adresu"
       case Templates.VARIANT_RESTOCK:
-        return "Product Back in Stock"
+        return "Objekt je zpět skladem"
       case Templates.ABANDONED_CART:
-        return "Don't forget your items"
+        return "Váš košík na vás čeká"
       case Templates.MERCHANT_NOTIFICATION:
         return "Upozornění z e-shopu"
       case Templates.MERCHANT_DAILY_SUMMARY:
@@ -240,7 +240,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.PAYMENT_REFUNDED:
         return "Vracíme peníze"
       case Templates.ORDER_SHIPMENT:
-        return "Objednávka odeslána 📦"
+        return "Objednávka odeslána"
       case Templates.ORDER_CANCELLED:
         return "Objednávka zrušena"
       case Templates.ORDER_PROCESSING:
@@ -257,7 +257,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Výroba se protáhne"
       // WIP: Add more cases for other templates as needed
       default:
-        return "New Email"
+        return "Zpráva z Keramické zahrady"
     }
     
   }

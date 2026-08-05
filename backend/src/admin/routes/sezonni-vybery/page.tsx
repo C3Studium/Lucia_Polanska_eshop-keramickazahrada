@@ -1,7 +1,6 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { Calendar } from "@medusajs/icons";
 import {
   Badge,
+  Button,
   Container,
   Heading,
   Select,
@@ -19,6 +18,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { EmptyState } from "../../components/empty-state";
+import { SeasonalSaleEditor } from "../../components/seasonal-sale-editor";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
@@ -177,12 +177,21 @@ const SezonniVyberyInner = () => {
 
   return (
     <Container className="divide-y p-0">
-      <header className="px-6 py-5">
-        <Heading>Sezónní akce</Heading>
+      <header className="flex flex-wrap items-start justify-between gap-3 px-6 py-5">
+        <div>
+          <Heading>Sezónní akce</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Vánoční nebo jarní kolekce na úvodní stránce. Volitelně se slevou po
-          dobu akce.
-        </Text>
+            dobu akce.
+          </Text>
+        </div>
+        <SeasonalSaleEditor
+          trigger={
+            <Button size="small" variant="secondary">
+              Nová akce
+            </Button>
+          }
+        />
       </header>
 
       <Tabs value={group} onValueChange={(value) => setGroup(value as GroupKey)}>
@@ -279,7 +288,17 @@ const SezonniVyberyInner = () => {
                   </Text>
                 )}
 
-                <OnEndControl selection={selection} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <OnEndControl selection={selection} />
+                  <SeasonalSaleEditor
+                    sale={selection}
+                    trigger={
+                      <Button size="small" variant="secondary">
+                        Upravit
+                      </Button>
+                    }
+                  />
+                </div>
               </article>
             );
           })}
@@ -306,10 +325,11 @@ const SezonniVyberyPage = () => (
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Sezónní akce",
-  icon: Calendar,
-  rank: 40,
-});
+/**
+ * **No sidebar entry.** Sezónní akce is reached from Přehled → Slevy a akce,
+ * which is the screen that answers „what is discounted right now?" across all
+ * four instruments. A second door to one of them, sitting in the sidebar, made
+ * the other three look like different kinds of thing.
+ */
 
 export default SezonniVyberyPage;

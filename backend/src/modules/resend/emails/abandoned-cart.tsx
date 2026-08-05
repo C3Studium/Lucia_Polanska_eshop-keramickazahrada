@@ -1,17 +1,16 @@
-
+import { Column, Img, Row, Section, Text } from "@react-email/components"
 import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Img,
-  Preview,
-  Section,
-  Text,
-  Tailwind,
-} from "@react-email/components";
+  brand,
+  ButtonRow,
+  EmailButton,
+  EmailH1,
+  EmailLayout,
+  Eyebrow,
+  Greeting,
+  LedgerEnd,
+  P,
+  Signature,
+} from "../components/email-ui"
 
 interface AbandonedCartEmailProps {
   customer?: {
@@ -31,101 +30,128 @@ function AbandonedCartEmailComponent({
   cart_id = "sample-cart-id",
   items = []
 }: AbandonedCartEmailProps) {
-  const storefrontUrl = process.env.MEDUSA_STOREFRONT_URL || "https://yourstore.com";
+  const storefrontUrl = process.env.MEDUSA_STOREFRONT_URL || "https://keramickazahrada.cz";
+
+  const formatter = new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currencyDisplay: "narrowSymbol",
+    currency: "CZK",
+  })
 
   return (
-    <Html>
-      <Head />
-      <Preview>Dobrý den, {customer?.first_name || "zákazník"}, Váš košík čeká! </Preview>
-      <Tailwind>
-        <Body className="bg-[#87986A] my-auto mx-auto font-sans">
-          {/* Header */}
-          <Section className="border-b border-solid border-[#212222]">
-            <div className="bg-[#ffff] text-white py-3 flex align-center justify-center">
-              <img style={{ width: "80px", height: "80px", margin: "6px 0" }} src="https://c3studium.com/assets/icons/logo.svg" alt="Logo" className="w-[40px] h-[40px]" />
-              <Heading className="text-[#212222] text-[26px] font-normal text-center p-0 my-[30px] mx-2">
-                Keramická Zahrada
-              </Heading>
-            </div>
-          </Section>
+    <EmailLayout preview="Váš košík na vás počká. Objekty v něm zůstávají odložené.">
+      <Eyebrow>Váš košík</Eyebrow>
+      <EmailH1 accent="počká.">Váš košík na vás</EmailH1>
 
-          <Container className="border border-solid border-[#212222] rounded-3xl my-[40px] mx-auto p-[20px] max-w-[600px] bg-white">
+      <Greeting name={customer?.first_name} />
+      <P>
+        při poslední návštěvě jste si do košíku odložili několik kousků z
+        ateliéru. Nikam nespěchají — najdete je přesně tam, kde jste je
+        nechali.
+      </P>
 
-            {/* Main Message */}
-            <Section className="border-b border-solid border-[#212222] mt-10">
-              <Heading className="text-[#212222] text-[36px] font-normal text-left p-0 my-[0px] mx-2">
-                Dobrý den, {customer?.first_name || "zákazník"},
-              </Heading>
-              <Heading className="text-[#212222] text-[36px] font-normal text-left p-0 my-[0px] mx-2">
-                 váš košík čeká! 🛍️
-              </Heading>
-              <Text className="text-[#212222] text-[20px] leading-[24px] text-left m-0 my-5 mx-2">
-                Nechali jste si v košíku skvělé položky. Dokončete svůj nákup, než budou pryč!
-              </Text>
-            </Section>
-
-            {/* Cart Items */}
-            <Section className="my-[32px]">
-              <Heading style={{ borderBottom: "1px solid #212222" }} className="text-[#212222] text-[24px] font-semibold mb-[0px] w-full pb-4">
-                Položky ve vašem košíku
-              </Heading>
-
-              {items?.map((item, idx) => (
-                <Section key={idx} className="border-b border-solid border-[#87986A] py-[16px]">
-                  <div className="flex items-center">
-                    {item.thumbnail && (
-                      <Img
-                        src={item.thumbnail}
-                        alt={item.product_title}
-                        className="w-[80px] h-[80px] mr-4 rounded-lg object-cover"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <Text className="text-[#212222] text-[18px] font-semibold leading-[24px] m-0 mt-2">
-                        {item.product_title}
-                      </Text>
-                      <Text className="text-[#87986A] text-[14px] leading-[20px] m-0 mt-1">
-                        Množství: <span className="font-semibold">{item.quantity}</span>
-                      </Text>
-                      <Text className="text-[#212222] text-[16px] font-bold leading-[24px] m-0 mt-1">
-                        {(item.unit_price || 0) / 100} Kč
-                      </Text>
-                    </div>
-                  </div>
-                </Section>
-              ))}
-            </Section>
-
-            {/* Call to Action */}
-            <Section className="text-center mt-[32px] mb-[32px]">
-              <Button
-                className="bg-[#87986A] rounded-3xl text-white text-[14px] font-semibold no-underline text-center px-5 py-3 hover:bg-[#212222] transition-colors"
-                href={`${storefrontUrl}/cart/recover/${cart_id}`}
+      {/* Odložené objekty */}
+      <Section style={{ margin: "28px 0 0" }}>
+        <Eyebrow>Odložené objekty</Eyebrow>
+        {items?.map((item, idx) => (
+          <Row key={idx} style={{ borderTop: `1px solid ${brand.line}` }}>
+            <Column
+              style={{ width: "68px", padding: "14px 14px 14px 0", verticalAlign: "top" }}
+            >
+              {item.thumbnail ? (
+                <Img
+                  src={item.thumbnail}
+                  alt={item.product_title ?? ""}
+                  width="56"
+                  height="66"
+                  style={{
+                    borderRadius: "10px",
+                    objectFit: "cover",
+                    backgroundColor: brand.stone,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "56px",
+                    height: "66px",
+                    borderRadius: "10px",
+                    backgroundColor: brand.stone,
+                  }}
+                />
+              )}
+            </Column>
+            <Column style={{ padding: "14px 0", verticalAlign: "top" }}>
+              <Text
+                style={{
+                  fontFamily: brand.sans,
+                  fontSize: "10px",
+                  lineHeight: "14px",
+                  letterSpacing: "1.8px",
+                  color: brand.faint,
+                  margin: "0 0 4px",
+                }}
               >
-                Vrátit se do košíku
-              </Button>
-            </Section>
-
-            <Section className="mt-[32px] pt-[20px]">
-                <Text className="text-[#212222] text-[14px] leading-[24px]">
-                    S pozdravem,<br />
-                    Keramická Zahrada, Lucie Polanská
+                {String(idx + 1).padStart(2, "0")}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "17px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {item.product_title}
+              </Text>
+              {(item.quantity ?? 0) > 1 ? (
+                <Text
+                  style={{
+                    fontFamily: brand.sans,
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    color: brand.muted,
+                    margin: "2px 0 0",
+                  }}
+                >
+                  {item.quantity} ks
                 </Text>
-            </Section>
+              ) : null}
+            </Column>
+            <Column
+              align="right"
+              style={{ padding: "14px 0", verticalAlign: "top", width: "110px" }}
+            >
+              <Text
+                style={{
+                  fontFamily: brand.serif,
+                  fontSize: "16px",
+                  lineHeight: "22px",
+                  color: brand.ink,
+                  margin: 0,
+                }}
+              >
+                {formatter.format((item.unit_price || 0) / 100)}
+              </Text>
+            </Column>
+          </Row>
+        ))}
+        <LedgerEnd />
+      </Section>
 
-            {/* Footer */}
-            <Section className="mt-[32px] pt-[20px] border-t border-solid border-[#87986A]">
-              <Text className="text-[#212222] text-[14px] leading-[20px] text-center">
-                Potřebujete pomoc? <a href="mailto:luciepolanska@gmail.com" className="text-[#87986A] no-underline hover:text-[#212222] transition-colors">Kontaktujte nás</a>
-              </Text>
-              <Text className="text-[#87986A] text-[12px] leading-[18px] text-center mt-4">
-                © {new Date().getFullYear()} Keramická Zahrada, Lucie Polanská. Všechna práva vyhrazena.
-              </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+      <ButtonRow>
+        <EmailButton href={`${storefrontUrl}/cart/recover/${cart_id}`}>
+          Vrátit se ke košíku
+        </EmailButton>
+      </ButtonRow>
+
+      <P small>
+        Pokud jste nákup dokončit nechtěli, tento e-mail můžete v klidu
+        přehlédnout.
+      </P>
+      <Signature />
+    </EmailLayout>
   );
 }
 

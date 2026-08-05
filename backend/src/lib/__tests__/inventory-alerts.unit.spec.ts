@@ -76,9 +76,31 @@ describe("classifyVariant", () => {
     expect(result?.row.reserved).toBe(5)
   })
 
-  it("treats the threshold as inclusive and leaves healthy stock alone", () => {
+  it("treats the threshold as inclusive and calls healthy stock healthy", () => {
     expect(classifyVariant(withStock(3), 3, none)?.bucket).toBe("low")
-    expect(classifyVariant(withStock(4), 3, none)).toBeNull()
+    // Above the threshold is not an alert, but it is still stock she owns —
+    // „what do I actually have?" is asked as often as „what is running out?".
+    expect(classifyVariant(withStock(4), 3, none)?.bucket).toBe("ok")
+  })
+
+  it("carries the location, so the row can be restocked and not only read", () => {
+    const located = variant({
+      inventory: [
+        {
+          id: "iitem_1",
+          metadata: null,
+          location_levels: [
+            {
+              location_id: "sloc_1",
+              stocked_quantity: 4,
+              reserved_quantity: 0,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(classifyVariant(located, 3, none)?.row.location_id).toBe("sloc_1")
   })
 
   it("reports sold out separately from low", () => {

@@ -36,11 +36,20 @@ export type InventoryAlertRow = {
   threshold: number
   /** True when the threshold came from the item rather than the shop default. */
   has_custom_threshold: boolean
+  /**
+   * Where the stock sits. Needed to *change* it: the native level update is
+   * keyed by item **and** location, so a row that cannot name its location is a
+   * row she can only look at.
+   */
+  location_id: string | null
 }
 
 export type InventoryAlerts = {
   low: InventoryAlertRow[]
   out: InventoryAlertRow[]
+  /** Healthy stock. Not an alert, but „what do I actually have?" is a question
+   * she asks just as often as „what is running out?". */
+  ok: InventoryAlertRow[]
   default_threshold: number
 }
 
@@ -99,7 +108,7 @@ export const classifyVariant = (
   variant: any,
   defaultThreshold: number,
   excludedVariantIds: Set<string>
-): { bucket: "low" | "out"; row: InventoryAlertRow } | null => {
+): { bucket: "low" | "out" | "ok"; row: InventoryAlertRow } | null => {
   // A variant that does not track stock cannot run out of it.
   if (!variant?.manage_inventory) {
     return null
@@ -129,6 +138,7 @@ export const classifyVariant = (
     available,
     threshold,
     has_custom_threshold: custom,
+    location_id: (inventoryItem.location_levels || [])[0]?.location_id ?? null,
   }
 
   if (available <= 0) {
@@ -137,7 +147,7 @@ export const classifyVariant = (
   if (available <= threshold) {
     return { bucket: "low", row }
   }
-  return null
+  return { bucket: "ok", row }
 }
 
 /**
@@ -212,6 +222,7 @@ export const getInventoryAlerts = async (
         "product.status",
         "inventory.id",
         "inventory.metadata",
+        "inventory.location_levels.location_id",
         "inventory.location_levels.stocked_quantity",
         "inventory.location_levels.reserved_quantity",
       ],
@@ -220,6 +231,7 @@ export const getInventoryAlerts = async (
 
   const low: InventoryAlertRow[] = []
   const out: InventoryAlertRow[] = []
+  const ok: InventoryAlertRow[] = []
 
   for (const variant of variants as any[]) {
     const classified = classifyVariant(
@@ -230,7 +242,9 @@ export const getInventoryAlerts = async (
     if (!classified) {
       continue
     }
-    ;(classified.bucket === "out" ? out : low).push(classified.row)
+    const bucket =
+      classified.bucket === "out" ? out : classified.bucket === "low" ? low : ok
+    bucket.push(classified.row)
   }
 
   // Fewest pieces first — that is the order she would act in.
@@ -239,5 +253,9 @@ export const getInventoryAlerts = async (
     (a.product_title ?? "").localeCompare(b.product_title ?? "", "cs")
   )
 
-  return { low, out, default_threshold: defaultThreshold }
+  ok.sort((a, b) =>
+    (a.product_title ?? "").localeCompare(b.product_title ?? "", "cs")
+  )
+
+  return { low, out, ok, default_threshold: defaultThreshold }
 }

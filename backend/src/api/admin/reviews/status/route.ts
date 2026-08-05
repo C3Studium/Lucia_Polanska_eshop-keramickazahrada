@@ -7,7 +7,7 @@ import { z } from "@medusajs/framework/zod"
 
 export const PostAdminUpdateReviewsStatusSchema = z.object({
   ids: z.array(z.string()),
-  status: z.enum(["čeká na schválení", "schváleno", "zamítnuto"]),
+  status: z.enum(["čeká na schválení", "schváleno", "zamítnuto", "archivováno"]),
 })
 
 export async function POST(

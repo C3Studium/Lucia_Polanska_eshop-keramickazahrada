@@ -64,7 +64,8 @@ const SlevyInner = () => {
     <Container className="divide-y p-0">
       <WorkTabs active="slevy" />
 
-      <header className="px-6 pb-4 pt-6">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
+        <div>
         <div className="flex flex-wrap items-center gap-x-2">
           <Heading>Slevy a akce</Heading>
           {data?.running ? (
@@ -78,6 +79,10 @@ const SlevyInner = () => {
           každá sleva chodí tam, kde vznikla, aby cenu měnilo vždy jen jedno
           místo.
         </Text>
+        </div>
+        <Button size="small" variant="secondary" asChild>
+          <Link to="/sezonni-vybery">Spravovat sezónní akce</Link>
+        </Button>
       </header>
 
       {isLoading && (
