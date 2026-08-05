@@ -9,6 +9,11 @@
 @mixin hb($map)    { @include sys.h-block($map); }
 @mixin vb($map)    { @include sys.v-block($map); }
 
+// device capability helpers — orthogonal to size, see _mixins.scss
+@mixin touch          { @include sys.touch          { @content; } }
+@mixin fine-pointer   { @include sys.fine-pointer   { @content; } }
+@mixin reduced-motion { @include sys.reduced-motion { @content; } }
+
 // Horizontal per-breakpoint helpers (compact)
 @mixin xxs-h  { @include h(xxs)  { @content; } }
 @mixin xs-h   { @include h(xs)   { @content; } }
@@ -19,6 +24,11 @@
 @mixin lg-h   { @include h(lg)   { @content; } }
 @mixin xl-h   { @include h(xl)   { @content; } }
 @mixin huge-h { @include h(huge) { @content; } }
+
+// Device-qualified landscape stops (height-constrained; see _breakpoints.scss)
+@mixin phs-h  { @include h(phs)  { @content; } }  // phone landscape, from 568×320
+@mixin phl-h  { @include h(phl)  { @content; } }  // phone landscape, from 844×390
+@mixin lt-h   { @include h(lt)   { @content; } }  // short laptop, 1280×720 / 1220×660
 
 // Vertical per-breakpoint helpers (compact)
 @mixin xs-v { @include v(xs) { @content; } }

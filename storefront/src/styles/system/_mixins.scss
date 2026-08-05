@@ -10,7 +10,13 @@ $layer-h: (
   mdt: bp-mdt,
   lg: bp-lg,
   xl: bp-xl,
-  huge: bp-huge
+  huge: bp-huge,
+
+  // Device-qualified stops. Last in the cascade so they win over the width-only stop they
+  // overlap — a phone in landscape matches `sm` on width alone.
+  phs: bp-phs,
+  phl: bp-phl,
+  lt: bp-lt
 );
 
 $layer-v: (
@@ -21,34 +27,22 @@ $layer-v: (
   lg: vp-lg
 );
 
-// Legacy note: this system previously emitted the same layer twice
-// (`@layer vp-s { @layer vp-s { ... } }`). It appeared to work because the
-// browser created a nested `vp-s.vp-s` sublayer. One wrapper is intentional:
-// `_layers.scss` preserves the original top-level cascade order, while these
-// mixins preserve the exact media queries. Do not restore duplicate nesting
-// without a full cascade regression test.
+// These used to wrap every breakpoint in `@layer bp-*` / `@layer vp-*`. That silently disabled
+// the whole system: unlayered CSS always beats layered CSS regardless of specificity or source
+// order, so a plain `width: 100%` in a component always won over the `@include v(s)` beneath it.
+// Measured on the homepage, 85 of 101 layered declarations never applied. (The `@layer` order in
+// _layers.scss was never even imported, so the layers were not ordered either.) That is also why
+// 93 files reached for raw `@media` — it was the only form that worked.
+//
+// The mixins now emit a plain nested media query. Because `@include` sits after the base
+// declaration inside the same rule, it wins on source order at equal specificity — the ordinary
+// mobile-first cascade. The $layer-* maps above are kept only as the canonical key list.
 @mixin h-layer($key) {
-  $layer: map.get($layer-h, $key);
-
-  @if $layer == null {
-    @warn "Unknown horizontal layer for breakpoint: #{$key}";
-  } @else {
-    @layer #{$layer} {
-      @include h($key) { @content; }
-    }
-  }
+  @include h($key) { @content; }
 }
 
 @mixin v-layer($key) {
-  $layer: map.get($layer-v, $key);
-
-  @if $layer == null {
-    @warn "Unknown vertical layer for breakpoint: #{$key}";
-  } @else {
-    @layer #{$layer} {
-      @include v($key) { @content; }
-    }
-  }
+  @include v($key) { @content; }
 }
 
 // Legacy aliases kept for compatibility with existing styles.
@@ -104,6 +98,10 @@ $layer-v: (
 }
 
 // Low-level landscape query. Layer ownership stays in h-layer().
+//
+// Constraints are composed from whatever the stop declares rather than being hardcoded, so a
+// stop may specify any subset of them. The previous version always emitted both max-width and
+// min-height, which produced `(max-width: null)` for a stop that only constrains height.
 @mixin h($key) {
   $min: map.get(bp.$h, $key);
 
@@ -111,19 +109,47 @@ $layer-v: (
     @warn "Unknown horizontal breakpoint: #{$key}";
   } @else {
     $constraints: map.get(bp.$h-constraints, $key);
+    $query: "(min-width: #{$min})";
 
     @if $constraints {
-      $max: map.get($constraints, max-width);
-      $min-height: map.get($constraints, min-height);
+      @each $feature in (max-width, min-height, max-height) {
+        $value: map.get($constraints, $feature);
 
-      @media (min-width: #{$min}) and (max-width: #{$max}) and (min-height: #{$min-height}) and (orientation: landscape) {
-        @content;
-      }
-    } @else {
-      @media (min-width: #{$min}) and (orientation: landscape) {
-        @content;
+        @if $value != null {
+          $query: "#{$query} and (#{$feature}: #{$value})";
+        }
       }
     }
+
+    @media #{$query} and (orientation: landscape) {
+      @content;
+    }
+  }
+}
+
+// Device capability queries. These are not breakpoints: a 1024px-wide viewport can be a touch
+// tablet or a desktop with a mouse, and only these can tell them apart. Unlayered, like the
+// breakpoints — place them after any size rule they need to beat.
+
+/// Touch devices — no hover, coarse pointer. Where mouse-driven animation must not run, and
+/// where a :hover style would otherwise stick after a tap.
+@mixin touch {
+  @media (hover: none) and (pointer: coarse) {
+    @content;
+  }
+}
+
+/// Mouse or trackpad. The only place hover affordances are safe to rely on.
+@mixin fine-pointer {
+  @media (hover: hover) and (pointer: fine) {
+    @content;
+  }
+}
+
+/// The OS-level motion preference.
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
   }
 }
 

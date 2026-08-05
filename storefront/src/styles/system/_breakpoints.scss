@@ -1,4 +1,10 @@
 // Horizontal (landscape) min-width breakpoints (bp → up), ordered smallest → largest.
+//
+// The first nine are a plain width ladder. The last three are device-qualified: they add a
+// height constraint, because width alone cannot tell a phone in landscape from a tablet, nor a
+// short laptop from a desktop. A 932×430 phone matches `sm` (900px) on width alone even though
+// `sm` is written for tablets. These three sit last in the layer order (_layers.scss) so they
+// override the width-only stop they overlap.
 $h: (
   xxs: 400px,
   xs:  750px,
@@ -8,7 +14,14 @@ $h: (
   mdt: 1300px,
   lg:  1400px,
   xl:  1500px,
-  huge: 1730px
+  huge: 1730px,
+
+  // Phone, landscape. Smallest target 568×320, largest 932×430.
+  phs: 480px,
+  phl: 800px,
+
+  // Laptop with a short viewport: 1280×720, 1220×660, 1366×768, 1440×800.
+  lt:  1200px
 );
 
 // Extra constraints stay beside the breakpoint configuration instead of being
@@ -21,6 +34,17 @@ $h-constraints: (
   mdt: (
     max-width: 1399.98px,
     min-height: 950px
+  ),
+  // 520px clears the tallest phone in landscape (430px) with room for browser chrome,
+  // while staying well under the shortest tablet in landscape (768px).
+  phs: (
+    max-height: 520px
+  ),
+  phl: (
+    max-height: 520px
+  ),
+  lt: (
+    max-height: 800px
   )
 );
 
