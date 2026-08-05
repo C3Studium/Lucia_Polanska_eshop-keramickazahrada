@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "bcryptjs": "^3.0.2"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "axe-core": "^4.12.1"
   }
 }

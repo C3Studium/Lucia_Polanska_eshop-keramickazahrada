@@ -22,6 +22,9 @@ type NavButton = {
   onTagAction?: (payload: { input: string; state: boolean }) => void
   className?: string
   tone?: "light" | "dark"
+  /** So the primary button can actually submit a form rather than only handle clicks. */
+  type?: "button" | "submit"
+  disabled?: boolean
 }
 
 type ButtonTone = NonNullable<NavButton["tone"]>
@@ -135,6 +138,8 @@ export default function WebButton({
   onClickAction,
   className,
   tone = "light",
+  type = "button",
+  disabled = false,
 }: NavButton) {
   const [isHovered, setIsHovered] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
@@ -223,7 +228,8 @@ export default function WebButton({
     <button
       className={buttonClassName}
       onClick={handleButtonClick}
-      type="button"
+      type={type}
+      disabled={disabled}
       {...interactionProps}
     >
       {content}

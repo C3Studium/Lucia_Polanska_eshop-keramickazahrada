@@ -27,15 +27,20 @@ interface OrderDelayedEmailProps {
   supportEmail?: string;
 }
 
+/**
+ * Původní termín, kompenzace a sledovací odkaz se vykreslí jen s reálnými
+ * daty — výchozí hodnota, která slibuje kupón nebo termín, jenž nikdy nebyl
+ * domluvený, by byla slibem, který nikdo nedal.
+ */
 function OrderDelayedEmailComponent({
   customerName = "Vážený zákazník",
   orderNumber = "#12345",
-  originalDeliveryDate = "15. října 2025",
-  newDeliveryDate = "22. října 2025",
+  originalDeliveryDate,
+  newDeliveryDate = "co nevidět",
   delayReason = "Ruční výroba si vyžádala více času",
-  compensationOffer = "Slevový kupón ve výši 10 % na další nákup",
-  trackingLink = "https://keramickazahrada.cz/orders/12345/track",
-  orderLink = "https://keramickazahrada.cz/orders/12345",
+  compensationOffer,
+  trackingLink,
+  orderLink = "https://keramickazahrada.cz",
   supportEmail = CONTACT_EMAIL
 }: OrderDelayedEmailProps) {
   return (
@@ -53,27 +58,34 @@ function OrderDelayedEmailComponent({
       </P>
 
       <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Původní termín" value={originalDeliveryDate} />
+      {originalDeliveryDate ? (
+        <LedgerRow label="Původní termín" value={originalDeliveryDate} />
+      ) : null}
       <LedgerRow label="Nový termín" value={newDeliveryDate} strong />
       <LedgerRow label="Důvod" value={delayReason} />
       <LedgerEnd />
 
       <Note tone="clay">Za zdržení se vám omlouváme.</Note>
 
-      <P>
-        Jako poděkování za trpělivost jsme pro vás připravili:{" "}
-        {compensationOffer}.
-      </P>
-      <P small>
-        Kupón vám po doručení objednávky automaticky přidáme do účtu.
-      </P>
+      {compensationOffer ? (
+        <P>
+          Jako poděkování za trpělivost jsme pro vás připravili:{" "}
+          {compensationOffer}.
+        </P>
+      ) : null}
 
       <ButtonRow>
-        <EmailButton href={trackingLink}>Sledovat objednávku</EmailButton>
-        <span style={{ display: "inline-block", width: "12px" }} />
-        <EmailButton href={orderLink} variant="ghost">
-          Zobrazit objednávku
-        </EmailButton>
+        {trackingLink ? (
+          <>
+            <EmailButton href={trackingLink}>Sledovat objednávku</EmailButton>
+            <span style={{ display: "inline-block", width: "12px" }} />
+            <EmailButton href={orderLink} variant="ghost">
+              Zobrazit objednávku
+            </EmailButton>
+          </>
+        ) : (
+          <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
+        )}
       </ButtonRow>
 
       <P small>
@@ -99,12 +111,10 @@ export const OrderDelayedEmail = (props: OrderDelayedEmailProps) => (
 const mockOrderDelayed: OrderDelayedEmailProps = {
   customerName: "Marie Svobodová",
   orderNumber: "#12345",
-  originalDeliveryDate: "15. října 2025",
-  newDeliveryDate: "22. října 2025",
+  originalDeliveryDate: "15. 10. 2026",
+  newDeliveryDate: "22. 10. 2026",
   delayReason: "Ruční výroba si vyžádala více času",
-  compensationOffer: "Slevový kupón ve výši 10 % na další nákup",
-  trackingLink: "https://keramickazahrada.cz/orders/12345/track",
-  orderLink: "https://keramickazahrada.cz/orders/12345",
+  orderLink: "https://keramickazahrada.cz/objednavka/12345",
   supportEmail: "info@keramickazahrada.cz"
 }
 

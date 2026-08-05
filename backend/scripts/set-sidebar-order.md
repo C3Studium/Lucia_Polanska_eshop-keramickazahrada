@@ -101,15 +101,12 @@ curl -X POST "$BACKEND_URL/admin/layouts/sidebar/configuration" \
         "core:nav:/orders":               { "order": 2 },
         "core:nav:/inventory":            { "order": 3 },
         "core:nav:/products":             { "order": 4 },
-        "core:nav:/reviews":              { "order": 5 },
-        "core:nav:/sezonni-vybery":       { "order": 6 },
-        "core:nav:/zakazkova-vyroba":     { "order": 7 },
-        "core:nav:/promotions":           { "order": 8 },
-        "core:nav:/customers":            { "order": 9 },
+        "core:nav:/customers":            { "order": 5 },
 
-        "core:nav:/price-lists":          { "order": 10, "hidden": true },
-        "core:nav:/sanity":               { "order": 11, "hidden": true },
-        "core:nav:/segment":              { "order": 12, "hidden": true },
+        "core:nav:/promotions":           { "order": 6, "hidden": true },
+        "core:nav:/price-lists":          { "order": 7, "hidden": true },
+        "core:nav:/sanity":               { "order": 8, "hidden": true },
+        "core:nav:/segment":              { "order": 9, "hidden": true },
 
         "nav-child:/orders:/draft-orders":                        { "order": 0 },
 

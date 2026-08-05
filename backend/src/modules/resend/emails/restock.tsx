@@ -13,24 +13,29 @@ import {
   Signature,
 } from "../components/email-ui"
 
+/**
+ * Ploché props naplněné v send-restock-notification stepu. Dříve šablona
+ * hledala `variant.product_variant.images` — nic z toho na variantě
+ * neexistuje, takže e-mail odcházel beze jména, bez fotky a s odkazem
+ * na /products/{variant_id}, který storefront neumí (routuje handle).
+ */
 interface RestockEmailProps {
-  variant?: {
-    product_variant?: {
-      id?: string;
-      title?: string;
-      description?: string;
-      images?: Array<{ url: string }>;
-    };
-  };
+  product_title?: string;
+  variant_title?: string;
+  description?: string;
+  thumbnail?: string;
+  product_url?: string;
 }
 
 function RestockEmailComponent({
-  variant
+  product_title,
+  variant_title,
+  description,
+  thumbnail,
+  product_url,
 }: RestockEmailProps) {
-  const images = variant?.product_variant?.images || [];
-  const storefrontUrl = process.env.MEDUSA_STOREFRONT_URL || "https://keramickazahrada.cz";
-  const title = variant?.product_variant?.title;
-  const description = variant?.product_variant?.description;
+  const storefrontUrl =
+    process.env.MEDUSA_STOREFRONT_URL || "https://keramickazahrada.cz";
 
   return (
     <EmailLayout preview="Objekt, který jste sledovali, je zpět skladem.">
@@ -49,10 +54,10 @@ function RestockEmailComponent({
           <Column
             style={{ width: "68px", padding: "14px 14px 14px 0", verticalAlign: "top" }}
           >
-            {images.length > 0 ? (
+            {thumbnail ? (
               <Img
-                src={images[0].url}
-                alt={title ?? ""}
+                src={thumbnail}
+                alt={product_title ?? ""}
                 width="56"
                 height="66"
                 style={{
@@ -82,7 +87,8 @@ function RestockEmailComponent({
                 margin: 0,
               }}
             >
-              {title}
+              {product_title}
+              {variant_title ? ` — ${variant_title}` : ""}
             </Text>
             {description ? (
               <Text
@@ -105,7 +111,7 @@ function RestockEmailComponent({
       <Note tone="olive">Objekt je nyní dostupný k objednání.</Note>
 
       <ButtonRow>
-        <EmailButton href={`${storefrontUrl}/products/${variant?.product_variant?.id}`}>
+        <EmailButton href={product_url || `${storefrontUrl}/store`}>
           Zobrazit objekt
         </EmailButton>
       </ButtonRow>
@@ -124,15 +130,14 @@ export const variantRestockEmail = (props: RestockEmailProps) => (
 )
 
 // Mock data for preview/development
-const mockVariant = {
-  product_variant: {
-    id: "variant-123",
-    title: "Keramický hrnek - modrý",
-    description: "Ručně malovaný keramický hrnek v krásné modré barvě. Ideální pro ranní kávu nebo čaj.",
-    images: [
-      { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" }
-    ]
-  }
+const mockRestock: RestockEmailProps = {
+  product_title: "Keramický hrnek",
+  variant_title: "modrý",
+  description:
+    "Ručně malovaný keramický hrnek v krásné modré barvě. Ideální pro ranní kávu nebo čaj.",
+  thumbnail:
+    "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
+  product_url: "https://keramickazahrada.cz/products/keramicky-hrnek",
 }
 
-export default () => <RestockEmailComponent variant={mockVariant} />
+export default () => <RestockEmailComponent {...mockRestock} />

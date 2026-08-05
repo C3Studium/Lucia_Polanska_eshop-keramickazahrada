@@ -38,7 +38,7 @@
 
 .faqEyebrow {
     color: rgba(38, 40, 32, 0.58);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -78,10 +78,9 @@
     input {
         width: 100%;
         border: 0;
-        outline: 0;
         background: transparent;
         color: var(--blackText);
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 300;
 
         &::placeholder { color: rgba(38, 40, 32, 0.48); }
@@ -199,7 +198,7 @@
 
 .questionNumber {
     color: rgba(38, 40, 32, 0.48);
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.08em;
 }
 

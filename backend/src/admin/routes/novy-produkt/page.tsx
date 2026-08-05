@@ -1,4 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { SquaresPlus } from "@medusajs/icons";
 import { Container, Heading, Text, Toaster, toast } from "@medusajs/ui";
 import {
@@ -178,11 +177,10 @@ const NovyProduktPage = () => (
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Nový produkt",
-  icon: SquaresPlus,
-  nested: "/products",
-  rank: 5,
-});
+/**
+ * **No sidebar entry.** Reached from Přehled → Produkty. The sidebar is down
+ * to the five places she navigates *to*; everything she works *in* lives
+ * under Přehled.
+ */
 
 export default NovyProduktPage;

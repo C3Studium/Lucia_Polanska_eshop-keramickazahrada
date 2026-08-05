@@ -1,18 +1,15 @@
 "use client"
 
-import PremiumActionButton from "@modules/common/components/premium-action-button"
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
+import { useContactDialog } from "@modules/layout/ContactDialog"
+import type { MerchantIdentity } from "@lib/data/merchant"
+import { subscribeToNewsletter } from "@lib/data/newsletter"
+import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import {
-  FormEvent,
-  type CSSProperties,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
 
 type FooterTone = "light" | "dark"
 
@@ -20,22 +17,26 @@ const DEFAULT_SURFACE = "#bbb788"
 
 const currentYear = new Date().getFullYear()
 
+// One label per destination: "Smluvní podmínky" and "Obchodní podmínky" both pointed here,
+// under two names, for a page that calls itself Obchodní podmínky.
 const importantLinks = [
-  { label: "Smluvní podmínky", href: "/smluvni-podminky" },
-  { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
   { label: "Obchodní podmínky", href: "/smluvni-podminky" },
+  { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
+  { label: "Používání cookies", href: "/cookies" },
 ]
 
 const discoverLinks = [
-  { label: "Kontakt", href: "/kontakt" },
+  { label: "Obchod", href: "/store" },
   { label: "Dotazy", href: "/dotazy" },
   { label: "Kurzy", href: "/kurzy" },
+  // Kontakt is a dialog, not a page (D-S5) — rendered as a button by FooterLinkGroup.
+  { label: "Kontakt", action: "contact" as const },
 ]
 
 const helpLinks = [
   { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
-  { label: "Doprava a platba", href: "/doprava-a-platba" },
   { label: "Reklamační protokol", href: "/reklamacni-protokol" },
+  { label: "Doprava a platba", href: "/doprava-a-platba" },
 ]
 
 const socialLinks = [
@@ -63,7 +64,7 @@ const reveal = {
   },
 }
 
-export default function Footer() {
+export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
   const pathname = usePathname()
   const footerRef = useRef<HTMLElement>(null)
   const [surface, setSurface] = useState(DEFAULT_SURFACE)
@@ -176,14 +177,18 @@ export default function Footer() {
               <span>00 · PATIČKA</span>
             </div>
 
-            <h2>
+            {/* Styled as a heading, but not one: the footer repeats on every page and used
+                to inject an h2 + two h3s into each page's outline (spec §6). */}
+            <p className="footer__wordmark">
               Keramická <em>zahrada.</em>
-            </h2>
+            </p>
 
             <p className="footer__statement">
               Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
               v píseckém ateliéru.
             </p>
+
+            <MerchantBlock merchant={merchant} />
 
             <div className="footer__socials" aria-label="Sociální sítě">
               {socialLinks.map((link) => (
@@ -205,7 +210,7 @@ export default function Footer() {
             >
               <div className="footer__newsletterCopy">
                 <span>Novinky · 01</span>
-                <h3 id="newsletter-title">Zůstaňte blízko ateliéru.</h3>
+                <p id="newsletter-title" className="footer__newsletterTitle">Zůstaňte blízko ateliéru.</p>
                 <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
               </div>
               <Newsletter />
@@ -255,20 +260,37 @@ export default function Footer() {
   )
 }
 
+type FooterEntry =
+  | { label: string; href: string; action?: never }
+  | { label: string; action: "contact"; href?: never }
+
 function FooterLinkGroup({
   title,
   links,
 }: {
   title: string
-  links: { label: string; href: string }[]
+  links: readonly FooterEntry[]
 }) {
+  const { open } = useContactDialog()
+
   return (
     <div className="footer__linkGroup">
-      <h3>{title}</h3>
+      <p className="footer__groupTitle">{title}</p>
       <div>
-        {links.map((link) => (
-          <FooterLink key={link.label} href={link.href} label={link.label} />
-        ))}
+        {links.map((link) =>
+          link.action === "contact" ? (
+            <button
+              key={link.label}
+              type="button"
+              className="footer__dialogLink"
+              onClick={() => open()}
+            >
+              {link.label}
+            </button>
+          ) : (
+            <FooterLink key={link.label} href={link.href} label={link.label} />
+          )
+        )}
       </div>
     </div>
   )
@@ -311,21 +333,40 @@ function FooterIcon({
   )
 }
 
+/**
+ * A real form again: it posts to the backend's newsletter list
+ * (`POST /store/newsletter` via the `subscribeToNewsletter` server action),
+ * which stores the address and sends the welcome e-mail. The mailto interlude
+ * existed because the old form discarded addresses silently — the one failure
+ * a made-to-order atelier cannot afford. This one reports what happened.
+ */
 function Newsletter() {
-  const handleNewsletterSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    // TODO(newsletter): connect this form to the backend newsletter subscription flow.
+  const [status, setStatus] = useState<"idle" | "done" | "error">("idle")
+
+  const submit = async (formData: FormData) => {
+    const email = String(formData.get("email") ?? "").trim()
+    if (!email) {
+      return
+    }
+    const result = await subscribeToNewsletter({ email })
+    setStatus(result.ok ? "done" : "error")
+  }
+
+  if (status === "done") {
+    return (
+      <p className="newsletter__success" role="status">
+        Děkujeme — jste blízko ateliéru.
+      </p>
+    )
   }
 
   return (
-    <form
-      className="newsletter__container"
-      onSubmit={handleNewsletterSubmit}
-    >
+    <form className="newsletter__container" action={submit}>
       <label htmlFor="footer-newsletter-email">Váš e-mail</label>
       <div className="newsletter__controls">
         <input
           id="footer-newsletter-email"
+          name="email"
           type="email"
           placeholder="vas@email.cz"
           className="newsletter__input"
@@ -339,10 +380,49 @@ function Newsletter() {
           className="newsletter__button"
         />
       </div>
-      <p>
-        Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.
-      </p>
+      {status === "error" ? (
+        <p className="newsletter__error" role="alert">
+          Uložení se nepodařilo, zkuste to prosím znovu.
+        </p>
+      ) : null}
+      <p>Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.</p>
     </form>
+  )
+}
+
+/**
+ * The seller's identity: the block a cautious Czech buyer looks for before paying.
+ * Ink on the footer surface (7.8:1 on sage) rather than the muted token — this is
+ * information to be read, not atmosphere.
+ */
+function MerchantBlock({ merchant }: { merchant: MerchantIdentity }) {
+  return (
+    <dl className="footer__identity">
+      <div>
+        <dt>Prodávající</dt>
+        <dd>{merchant.name}</dd>
+      </div>
+      <div>
+        <dt>Sídlo</dt>
+        <dd>{merchant.address}</dd>
+      </div>
+      <div>
+        <dt>IČO</dt>
+        <dd>{merchant.registrationNumber}</dd>
+      </div>
+      <div>
+        <dt>E-mail</dt>
+        <dd>
+          <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>Telefon</dt>
+        <dd>
+          <a href={`tel:${merchant.phoneDial}`}>{merchant.phone}</a>
+        </dd>
+      </div>
+    </dl>
   )
 }
 

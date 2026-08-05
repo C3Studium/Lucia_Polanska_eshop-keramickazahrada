@@ -19,6 +19,7 @@ import { variantRestockEmail } from "./emails/restock";
 import { abandonedCartEmail } from "./emails/abandoned-cart";
 import { merchantNotificationEmail } from "./emails/merchant-notification";
 import { merchantDailySummaryEmail } from "./emails/merchant-daily-summary";
+import { merchantWeeklySummaryEmail } from "./emails/merchant-weekly-summary";
 import { PaymentReceivedEmail } from "./emails/payment-received";
 import { PaymentFailedEmail } from "./emails/payment-failed";
 import { PaymentPendingEmail } from "./emails/payment-pending";
@@ -31,6 +32,16 @@ import { OrderReviewEmail } from "./emails/order-review";
 import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
 import { OrderDeliveredEmail } from "./emails/order-delivered";
 import { OrderDelayedEmail } from "./emails/order-delayed";
+import { WelcomeEmail } from "./emails/welcome";
+import { AccountDeletedEmail } from "./emails/account-deleted";
+import { ReturnApprovedEmail } from "./emails/return-approved";
+import { NewsletterSignupEmail } from "./emails/newsletter-signup";
+import { NewsletterUnsubscribeEmail } from "./emails/newsletter-unsubscribe";
+import { PromotionalEmail } from "./emails/promotional";
+import { bundlePublishedEmail } from "./emails/bundle-published";
+import { RefundRequestEmail } from "./emails/refund-request";
+import { ReturnRejectedEmail } from "./emails/return-rejected";
+import { PriceDropEmail } from "./emails/price-drop";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -44,6 +55,7 @@ enum Templates {
   // `data.subject` so each e-mail is distinguishable.
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  MERCHANT_WEEKLY_SUMMARY = "merchant-weekly-summary",
   // The lifecycle templates (§16). All 12 existed as files and none were ever
   // sent, because the provider only maps what it lists here.
   PAYMENT_RECEIVED = "payment-received",
@@ -58,10 +70,35 @@ enum Templates {
   ORDER_READY_PICKUP = "order-ready-pickup",
   ORDER_DELIVERED = "order-delivered",
   ORDER_DELAYED = "order-delayed",
-  //WIP add in more templates and triggers
-  // Add in Order Status
-  // Add in payment status
-  // Add in other relevant templates
+  WELCOME = "welcome",
+  ACCOUNT_DELETED = "account-deleted",
+  RETURN_APPROVED = "return-approved",
+  NEWSLETTER_SIGNUP = "newsletter-signup",
+  NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  PROMOTIONAL = "promotional",
+  BUNDLE_PUBLISHED = "bundle-published",
+  REFUND_REQUEST = "refund-request",
+  RETURN_REJECTED = "return-rejected",
+  PRICE_DROP = "price-drop",
+  // TODO(emails): the remaining templates in ./emails/ are designed but have
+  // no trigger to hang off yet. Register them here (both enums + the map +
+  // a subject) once the underlying feature exists:
+  //
+  // - delivery-failed — needs carrier tracking-status polling. The Zásilkovna
+  //   and Balíkovna fulfillment providers create shipments but expose no
+  //   status lookup; each carrier's tracking API would be its own client.
+  // - password-changed / email-change / sign-in-notification — Medusa's auth
+  //   module emits no events for these moments; wiring them would mean
+  //   intercepting core auth routes.
+  // - account-change — customer.updated exists but fires on every edit with
+  //   only an id, so it cannot tell a meaningful change from noise.
+  // - address-added — deliberately NOT wired: checkout creates addresses, so
+  //   every first purchase would trigger a confusing "address added" mail.
+  // - payment-cancelled — deliberately NOT wired: a cancelled checkout
+  //   payment never completes the cart (no order exists; abandoned-cart
+  //   covers it) and failed balance payments already send payment-failed.
+  // - order-refunded — deliberately NOT wired: payment-refunded covers the
+  //   whole refund story (a ComGate refund is a single step).
 }
 
 // WIP: Create a type for the templates - for all needed emails that will be send to customers
@@ -77,6 +114,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ABANDONED_CART]: abandonedCartEmail,
   [Templates.MERCHANT_NOTIFICATION]: merchantNotificationEmail,
   [Templates.MERCHANT_DAILY_SUMMARY]: merchantDailySummaryEmail,
+  [Templates.MERCHANT_WEEKLY_SUMMARY]: merchantWeeklySummaryEmail,
   [Templates.PAYMENT_RECEIVED]: PaymentReceivedEmail,
   [Templates.PAYMENT_FAILED]: PaymentFailedEmail,
   [Templates.PAYMENT_PENDING]: PaymentPendingEmail,
@@ -89,6 +127,16 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
   [Templates.ORDER_DELIVERED]: OrderDeliveredEmail,
   [Templates.ORDER_DELAYED]: OrderDelayedEmail,
+  [Templates.WELCOME]: WelcomeEmail,
+  [Templates.ACCOUNT_DELETED]: AccountDeletedEmail,
+  [Templates.RETURN_APPROVED]: ReturnApprovedEmail,
+  [Templates.NEWSLETTER_SIGNUP]: NewsletterSignupEmail,
+  [Templates.NEWSLETTER_UNSUBSCRIBE]: NewsletterUnsubscribeEmail,
+  [Templates.PROMOTIONAL]: PromotionalEmail,
+  [Templates.BUNDLE_PUBLISHED]: bundlePublishedEmail,
+  [Templates.REFUND_REQUEST]: RefundRequestEmail,
+  [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
+  [Templates.PRICE_DROP]: PriceDropEmail,
 }
 
 export enum EmailTemplates {
@@ -100,6 +148,7 @@ export enum EmailTemplates {
   ABANDONED_CART = "abandoned-cart",
   MERCHANT_NOTIFICATION = "merchant-notification",
   MERCHANT_DAILY_SUMMARY = "merchant-daily-summary",
+  MERCHANT_WEEKLY_SUMMARY = "merchant-weekly-summary",
   // The lifecycle templates (§16). All 12 existed as files and none were ever
   // sent, because the provider only maps what it lists here.
   PAYMENT_RECEIVED = "payment-received",
@@ -114,6 +163,16 @@ export enum EmailTemplates {
   ORDER_READY_PICKUP = "order-ready-pickup",
   ORDER_DELIVERED = "order-delivered",
   ORDER_DELAYED = "order-delayed",
+  WELCOME = "welcome",
+  ACCOUNT_DELETED = "account-deleted",
+  RETURN_APPROVED = "return-approved",
+  NEWSLETTER_SIGNUP = "newsletter-signup",
+  NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  PROMOTIONAL = "promotional",
+  BUNDLE_PUBLISHED = "bundle-published",
+  REFUND_REQUEST = "refund-request",
+  RETURN_REJECTED = "return-rejected",
+  PRICE_DROP = "price-drop",
 }
 
 /**
@@ -230,6 +289,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Upozornění z e-shopu"
       case Templates.MERCHANT_DAILY_SUMMARY:
         return "Denní souhrn"
+      case Templates.MERCHANT_WEEKLY_SUMMARY:
+        return "Týdenní souhrn"
       // §16 subjects, verbatim.
       case Templates.PAYMENT_RECEIVED:
         return "Platba přijata — děkujeme"
@@ -255,6 +316,26 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Zásilka doručena"
       case Templates.ORDER_DELAYED:
         return "Výroba se protáhne"
+      case Templates.WELCOME:
+        return "Vítejte v Keramické zahradě"
+      case Templates.ACCOUNT_DELETED:
+        return "Váš účet byl smazán"
+      case Templates.RETURN_APPROVED:
+        return "Vrácení schváleno"
+      case Templates.NEWSLETTER_SIGNUP:
+        return "Vítejte v okruhu ateliéru"
+      case Templates.NEWSLETTER_UNSUBSCRIBE:
+        return "Odhlášení potvrzeno"
+      case Templates.PROMOTIONAL:
+        return "Z ateliéru — objekty za příznivější cenu"
+      case Templates.BUNDLE_PUBLISHED:
+        return "Nový balíček z ateliéru je k nahlédnutí"
+      case Templates.REFUND_REQUEST:
+        return "Žádost o vrácení jsme přijali"
+      case Templates.RETURN_REJECTED:
+        return "Žádost o vrácení nemůžeme přijmout"
+      case Templates.PRICE_DROP:
+        return "Objekt změnil cenu"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"

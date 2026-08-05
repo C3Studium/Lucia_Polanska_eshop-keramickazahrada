@@ -1,5 +1,5 @@
 import { Label } from "@medusajs/ui"
-import React, { useEffect, useImperativeHandle, useState } from "react"
+import React, { useEffect, useId, useImperativeHandle, useState } from "react"
 import Eye from "@modules/common/icons/eye"
 import EyeOff from "@modules/common/icons/eye-off"
 import styles from "./style.module.scss"
@@ -35,6 +35,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputRef = React.useRef<HTMLInputElement>(null)
     const [showPassword, setShowPassword] = useState(false)
     const [inputType, setInputType] = useState(type)
+    // The label used to point `htmlFor` at `name`, which is not an id — so no checkout, login
+    // or address field had a programmatic label. `useId` also survives two inputs sharing a name.
+    const generatedId = useId()
+    const inputId = props.id ?? `${name}-${generatedId}`
 
     useEffect(() => {
       if (type === "password" && showPassword) {
@@ -65,21 +69,20 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             required={required}
             className=""
             {...props}
+            id={inputId}
             ref={inputRef}
           />
-          <label
-            htmlFor={name}
-            onClick={() => inputRef.current?.focus()}
-            className=""
-          >
+          <label htmlFor={inputId} className="">
             {label}
-            {required && <span style={{ color: '#f43f5e' }}>*</span>}
+            {/* Requirement stated in words, not by a colour-only asterisk (SC 1.4.1). */}
+            {required && <span className={styles.requiredHint}> (povinné)</span>}
           </label>
           {type === "password" && (
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className={styles.passwordBtn}
+              aria-label={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
             >
               {showPassword ? <Eye /> : <EyeOff />}
             </button>

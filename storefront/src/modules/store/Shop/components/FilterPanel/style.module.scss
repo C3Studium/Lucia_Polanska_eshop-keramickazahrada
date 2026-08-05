@@ -21,19 +21,19 @@
   padding: 25px 22px 20px;
   border-bottom: 1px solid rgba(255,255,255,.16);
 
-  span { color: #ffe8d6; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+  span { color: #ffe8d6; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
   h2 { margin: 5px 0 0; font-family: "Sentient-Regular", serif; font-size: 29px; font-weight: 400; }
 }
 
 .close { display: none; border: 0; background: transparent; color: inherit; font-size: 28px; cursor: pointer; }
-.root button:focus-visible { outline: 2px solid #ffe8d6; outline-offset: 3px; }
+.root button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }
 
 .group {
   padding: 20px 22px;
   border-bottom: 1px solid rgba(255,255,255,.16);
 
   header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
-  small { color: rgba(255,255,255,.42); font-size: 9px; }
+  small { color: #a8a8a2; font-size: 12px; }
   h3 { margin: 0; font-size: 14px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
 }
 
@@ -48,7 +48,7 @@
     padding: 8px 0;
     border: 0;
     background: transparent;
-    color: rgba(255,255,255,.64);
+    color: #c9c9c3;
     font-size: 16px;
     text-align: left;
     cursor: pointer;
@@ -74,8 +74,8 @@
     border: 1px solid rgba(255,255,255,.2);
     border-radius: 999px;
     background: transparent;
-    color: rgba(255,255,255,.64);
-    font-size: 12px;
+    color: #c9c9c3;
+    font-size: 13px;
     cursor: pointer;
     transition: border-color .25s ease, background-color .25s ease, color .25s ease;
 
@@ -93,7 +93,7 @@
   padding: 8px 0;
   border: 0;
   background: transparent;
-  color: rgba(255,255,255,.7);
+  color: #c9c9c3;
   cursor: pointer;
 
   > span {
@@ -123,8 +123,8 @@
   display: flex;
   justify-content: space-between;
   padding: 17px 22px 20px;
-  color: rgba(255,255,255,.46);
-  font-size: 10px;
+  color: #a8a8a2;
+  font-size: 13px;
 
   button { border: 0; background: transparent; color: #ffe8d6; text-decoration: underline; cursor: pointer; }
   button:disabled { opacity: .3; cursor: default; }

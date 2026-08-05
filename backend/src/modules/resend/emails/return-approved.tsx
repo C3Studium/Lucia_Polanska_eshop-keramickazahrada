@@ -25,17 +25,21 @@ interface ReturnApprovedEmailProps {
   orderLink?: string;
 }
 
+/**
+ * Číslo vrácení a seznam objektů se vykreslí jen s reálnými daty — vymyšlená
+ * výchozí hodnota by v ostrém e-mailu tvrdila, že se vrací něco jiného.
+ */
 function ReturnApprovedEmailComponent({
   customerName = "Vážený zákazník",
   orderNumber = "#12345",
-  returnNumber = "RTN12345",
-  approvedItems = "Keramický hrnek — modrý, Keramický talíř — bílý",
+  returnNumber,
+  approvedItems,
   returnReason = "Požadavek zákazníka",
   returnMethod = "Zásilka na adresu ateliéru",
   returnDeadline = "30 dní od schválení",
   returnAddress = "Ateliér Keramická zahrada, Písek",
   returnInstructions = "Přiložte prosím doklad o nákupu a objekty vraťte v původním balení",
-  orderLink = "https://keramickazahrada.cz/orders/12345",
+  orderLink = "https://keramickazahrada.cz",
 }: ReturnApprovedEmailProps) {
   return (
     <EmailLayout
@@ -51,8 +55,8 @@ function ReturnApprovedEmailComponent({
       </P>
 
       <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Vrácení" value={returnNumber} />
-      <LedgerRow label="Objekty" value={approvedItems} />
+      {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
+      {approvedItems ? <LedgerRow label="Objekty" value={approvedItems} /> : null}
       <LedgerRow label="Důvod" value={returnReason} />
       <LedgerRow label="Způsob vrácení" value={returnMethod} />
       <LedgerRow label="Adresa" value={returnAddress} />

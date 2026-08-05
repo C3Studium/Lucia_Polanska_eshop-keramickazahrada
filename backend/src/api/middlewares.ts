@@ -28,9 +28,13 @@ import {
   PostSeasonalSelectionSchema,
 } from "./admin/merchant-catalog/seasonal-selections/route";
 import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
+import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/discount/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { PostProductionPaymentModeSchema } from "./store/carts/[id]/production-payment-mode/route";
+import { PostStoreNewsletterSchema } from "./store/newsletter/validators";
+import { PostNewsletterCampaignSchema } from "./admin/newsletter/campaigns/route";
+import { PostAnnounceBundleSchema } from "./admin/newsletter/announce-bundle/route";
 
 // Debug middleware to log incoming requests
 const debugAuthMiddleware = () => {
@@ -175,6 +179,11 @@ export default defineMiddlewares({
       ],
     },
     {
+      matcher: "/admin/merchant-catalog/seasonal-selections/:id/discount",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostSeasonalDiscountSchema)],
+    },
+    {
       matcher: "/store/merchant-catalog",
       methods: ["GET"],
       middlewares: [
@@ -188,6 +197,37 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/production-payment-mode",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostProductionPaymentModeSchema)],
+    },
+    // Newsletter. Note that the unsubscribe link in e-mails points at the
+    // top-level GET /newsletter/unsubscribe, *not* /store/... — the framework
+    // demands a publishable key on the whole /store namespace with no
+    // per-route exemption, and a mail client sends no headers. That route
+    // needs no entry here: it is token-gated in the handler itself.
+    {
+      matcher: "/store/newsletter",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostStoreNewsletterSchema)],
+    },
+    {
+      matcher: "/admin/newsletter/campaigns",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostNewsletterCampaignSchema),
+      ],
+    },
+    {
+      matcher: "/admin/newsletter/announce-bundle",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostAnnounceBundleSchema),
+      ],
+    },
+    {
+      matcher: "/admin/newsletter/subscribers",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
     },
     {
       matcher: "/store/carts/:id/line-item-bundles",

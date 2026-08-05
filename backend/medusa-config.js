@@ -205,6 +205,15 @@ const medusaConfig = {
       resolve: "./src/modules/restock"
     },
     {
+      resolve: "./src/modules/newsletter",
+    },
+    {
+      resolve: "./src/modules/return-request",
+    },
+    {
+      resolve: "./src/modules/price-watch",
+    },
+    {
       resolve: "./src/modules/bundled-product",
     },
     {

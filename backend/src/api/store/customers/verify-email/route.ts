@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
+import { sendCustomerEmail } from "../../../../lib/customer-email"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const { token, email } = req.body as { token: string; email: string }
@@ -65,6 +66,22 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     console.log("[VERIFY EMAIL] Error updating customer:", err)
     res.status(500).json({ message: "Failed to update customer." })
     return
+  }
+
+  // The welcome mail belongs to the moment the address is proven, not to
+  // account creation — creation already sends the verification mail, and two
+  // mails in one minute read like a system with a stutter. Keyed per customer,
+  // so a re-verification can never send a second welcome. Best-effort: a mail
+  // problem must not fail the verification that just succeeded.
+  try {
+    await sendCustomerEmail(req.scope, {
+      template: "welcome",
+      to: customer.email,
+      key: `welcome:${customer.id}`,
+      data: { customerName: customer.first_name || "" },
+    })
+  } catch (err) {
+    console.log("[VERIFY EMAIL] Failed to queue the welcome e-mail:", err)
   }
 
   // retrieve updated customer to return to client

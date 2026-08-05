@@ -57,7 +57,7 @@
     }
 
     &:focus-visible {
-        outline: 2px solid var(--darkOlive);
+        outline: var(--focus-ring-width) solid var(--focus-ring);
         outline-offset: 3px;
     }
 
@@ -83,10 +83,9 @@
     height: 100%;
     padding: 0 20px 0 10px;
     border: 0;
-    outline: 0;
     background: transparent;
     color: var(--bgBlack);
-    font-size: clamp(15px, 1vw, 18px);
+    font-size: clamp(16px, 1vw, 18px);
     font-weight: 300;
 
     &::placeholder {

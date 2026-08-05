@@ -1,17 +1,34 @@
 "use client"
 
+import { AnimatePresence, motion } from "framer-motion"
+import { useSearchParams } from "next/navigation"
+import { useId, useState } from "react"
+
+import { initiatePaymentSession, updateCart } from "@lib/data/cart"
+import {
+  buildComgateSessionPayload,
+  extractComgateRedirectUrl,
+} from "@lib/util/comgate"
+import { convertToLocale } from "@lib/util/money"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
+import PaymentButton from "../payment-button"
+import OrderRecap from "./recap"
+import { contentVariants, errorVariants, headingTransition, rowVariants } from "./motion"
 import styles from "./style.module.scss"
 
-import { AnimatePresence, motion } from "framer-motion"
-import PaymentButton from "../payment-button"
-import { useSearchParams } from "next/navigation"
-
-const ease = [0.22, 1, 0.36, 1] as const
+/** Bumped whenever the terms change, so a recorded consent can be traced to a wording. */
+const TERMS_VERSION = "2026-08"
 
 const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
   const searchParams = useSearchParams()
+  const [accepted, setAccepted] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const consentId = useId()
 
   const isOpen = searchParams.get("step") === "review"
+  const comgateMethod = searchParams.get("method")
 
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
@@ -19,7 +36,64 @@ const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
   const previousStepsCompleted =
     cart.shipping_address &&
     cart.shipping_methods.length > 0 &&
-    (cart.payment_collection || paidByGiftcard)
+    (cart.payment_collection || paidByGiftcard || comgateMethod)
+
+  const payLabel = `Zaplatit ${convertToLocale({
+    amount: cart?.total ?? 0,
+    currency_code: cart?.currency_code ?? "czk",
+  })}`
+
+  /**
+   * Consent is written to the cart *before* the payment session is created — so the record
+   * exists no matter what happens at the gateway, and so updating the cart can never invalidate
+   * a session that is already in flight.
+   */
+  const recordConsent = async () => {
+    await updateCart({
+      metadata: {
+        ...(cart?.metadata ?? {}),
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: TERMS_VERSION,
+      },
+    })
+  }
+
+  const payWithComgate = async () => {
+    if (isPaying || !accepted || !comgateMethod) {
+      return
+    }
+
+    setIsPaying(true)
+    setError(null)
+
+    try {
+      await recordConsent()
+
+      const result = await initiatePaymentSession(
+        cart,
+        buildComgateSessionPayload(cart, comgateMethod) as any
+      )
+
+      if (!result.success) {
+        throw new Error(result.message)
+      }
+
+      const redirectUrl = extractComgateRedirectUrl(result.data)
+
+      if (!redirectUrl) {
+        throw new Error("Platební brána nevrátila adresu pro pokračování.")
+      }
+
+      window.location.assign(redirectUrl)
+    } catch (paymentError) {
+      setError(
+        paymentError instanceof Error
+          ? paymentError.message
+          : "Platbu se nepodařilo zahájit. Zkuste to prosím znovu."
+      )
+      setIsPaying(false)
+    }
+  }
 
   return (
     <div className={styles.root}>
@@ -27,11 +101,8 @@ const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
         <motion.h2
           className={styles.heading}
           initial={false}
-          animate={{
-            opacity: isOpen ? 1 : 0.42,
-            x: isOpen ? 0 : -4,
-          }}
-          transition={{ duration: 0.46, ease }}
+          animate={{ opacity: isOpen ? 1 : 0.42, x: isOpen ? 0 : -4 }}
+          transition={headingTransition}
         >
           Přehled
         </motion.h2>
@@ -41,49 +112,94 @@ const Review = ({ cart, countryCode }: { cart: any; countryCode: string }) => {
           <motion.div
             className={styles.content}
             key="review-content"
-            initial={{
-              opacity: 0,
-              height: 0,
-              y: 12,
-              clipPath: "inset(0 0 100% 0)",
-            }}
-            animate={{
-              opacity: 1,
-              height: "auto",
-              y: 0,
-              clipPath: "inset(0 0 0% 0)",
-            }}
-            exit={{
-              opacity: 0,
-              height: 0,
-              y: -8,
-              clipPath: "inset(100% 0 0 0)",
-            }}
-            transition={{ duration: 0.58, ease }}
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
-            <motion.div
-              className={styles.reviewRow}
-              initial={{ opacity: 0, x: -14 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.12, ease }}
-            >
-              <span className={styles.confirmationMark}>Souhlas</span>
-              <p className={styles.reviewText}>
-                Odesláním objednávky potvrzujete souhlas s obchodními
-                podmínkami, reklamačním řádem a zpracováním osobních údajů
-                obchodu Keramická zahrada.
-              </p>
+            <motion.div variants={rowVariants} initial="hidden" animate="visible">
+              <OrderRecap cart={cart} />
             </motion.div>
+
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.48, delay: 0.2, ease }}
+              className={styles.consent}
+              variants={rowVariants}
+              initial="hidden"
+              animate="visible"
             >
-              <PaymentButton
-                cart={cart}
-                data-testid="submit-order-button"
-                countryCode={countryCode}
-              />
+              {/* The input is wrapped so it is not a *sibling* of the label: a global
+                  `input ~ label` floating-label utility in globals.scss otherwise shrinks
+                  this label to 10px — and this sentence is the consent record. */}
+              <span className={styles.consentBoxWrap}>
+                <input
+                  id={consentId}
+                  type="checkbox"
+                  className={styles.consentBox}
+                  checked={accepted}
+                  onChange={(event) => {
+                    setAccepted(event.target.checked)
+                    setError(null)
+                  }}
+                  data-testid="terms-checkbox"
+                />
+              </span>
+              <label htmlFor={consentId} className={styles.consentLabel}>
+                Souhlasím s{" "}
+                <LocalizedClientLink href="/smluvni-podminky">
+                  obchodními podmínkami
+                </LocalizedClientLink>{" "}
+                a beru na vědomí{" "}
+                <LocalizedClientLink href="/ochrana-osobnich-udaju">
+                  zpracování osobních údajů
+                </LocalizedClientLink>
+                .
+              </label>
+            </motion.div>
+
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  className={styles.error}
+                  role="alert"
+                  variants={errorVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            <motion.div variants={rowVariants} initial="hidden" animate="visible">
+              {comgateMethod ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.payButton}
+                    onClick={payWithComgate}
+                    disabled={!accepted || isPaying}
+                    data-testid="submit-order-button"
+                  >
+                    {isPaying ? "Přesměrováváme k platbě…" : payLabel}
+                  </button>
+                  {!accepted && (
+                    <p className={styles.gateHint}>
+                      K pokračování prosím potvrďte souhlas s podmínkami.
+                    </p>
+                  )}
+                </>
+              ) : accepted ? (
+                <PaymentButton
+                  cart={cart}
+                  data-testid="submit-order-button"
+                  countryCode={countryCode}
+                />
+              ) : (
+                <p className={styles.gateHint}>
+                  K pokračování prosím potvrďte souhlas s podmínkami.
+                </p>
+              )}
             </motion.div>
           </motion.div>
         )}

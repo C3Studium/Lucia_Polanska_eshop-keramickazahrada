@@ -100,8 +100,8 @@
       gap: 1rem;
       color: rgba(255, 232, 214, 0.62);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.62rem, 0.68vw, 0.76rem);
-      letter-spacing: 0.14em;
+      font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       .meta__line {
@@ -213,8 +213,8 @@
       gap: 1rem;
       color: rgba(33, 34, 34, 0.56);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.62rem, 0.68vw, 0.76rem);
-      letter-spacing: 0.14em;
+      font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       .line {
@@ -238,8 +238,8 @@
       border-radius: 50%;
       color: rgba(255, 232, 214, 0.78);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.58rem, 0.62vw, 0.7rem);
-      letter-spacing: 0.16em;
+      font-size: clamp(0.75rem, 0.62vw, 0.75rem);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       box-shadow: 0 1.5rem 4rem rgba(33, 34, 34, 0.16),
         inset 0 0 0 0.35rem rgba(255, 232, 214, 0.04);
@@ -263,8 +263,8 @@
         margin-bottom: clamp(1rem, 2vh, 1.75rem);
         color: rgba(33, 34, 34, 0.58);
         font-family: "Sansation-Regular";
-        font-size: clamp(0.62rem, 0.68vw, 0.76rem);
-        letter-spacing: 0.16em;
+        font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
@@ -323,7 +323,7 @@
           position: relative;
           color: rgba(33, 34, 34, 0.7);
           font-family: "Sansation-Regular";
-          font-size: clamp(0.78rem, 0.82vw, 0.94rem);
+          font-size: clamp(0.8125rem, 0.82vw, 0.94rem);
           text-decoration: none;
 
           &::after {
@@ -357,8 +357,8 @@
       gap: 0.9rem;
       color: rgba(33, 34, 34, 0.55);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.6rem, 0.64vw, 0.72rem);
-      letter-spacing: 0.14em;
+      font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
 
       span:first-child {

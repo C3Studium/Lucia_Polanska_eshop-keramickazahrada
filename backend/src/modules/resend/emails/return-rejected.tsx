@@ -24,11 +24,15 @@ interface ReturnRejectedEmailProps {
   supportEmail?: string;
 }
 
+/**
+ * Číslo vrácení a seznam objektů se vykreslí jen s reálnými daty — vymyšlená
+ * výchozí hodnota by v ostrém e-mailu tvrdila, že se zamítá něco jiného.
+ */
 function ReturnRejectedEmailComponent({
   customerName = "Vážený zákazník",
   orderNumber = "#12345",
-  returnNumber = "RTN12345",
-  rejectedItems = "Keramický hrnek — modrý",
+  returnNumber,
+  rejectedItems,
   rejectionReason = "Objekt nese stopy používání",
   appealInstructions = "Ozvat se nám můžete do 14 dní od obdržení tohoto e-mailu",
   orderLink = "https://keramickazahrada.cz/orders/12345",
@@ -48,8 +52,8 @@ function ReturnRejectedEmailComponent({
       </P>
 
       <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Vrácení" value={returnNumber} />
-      <LedgerRow label="Objekty" value={rejectedItems} />
+      {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
+      {rejectedItems ? <LedgerRow label="Objekty" value={rejectedItems} /> : null}
       <LedgerRow label="Důvod zamítnutí" value={rejectionReason} tone="danger" />
       <LedgerEnd />
 

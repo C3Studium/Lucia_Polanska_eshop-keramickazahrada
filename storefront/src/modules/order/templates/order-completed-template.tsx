@@ -38,6 +38,11 @@ export default async function OrderCompletedTemplate({
     | (HttpTypes.StoreOrderShippingMethod & { amount?: number })
     | undefined
   const orderNumber = String(order.display_id).padStart(4, "0")
+  // Persisted at checkout by the shipping step; the confirmation never showed it (spec §4).
+  const pickupPoint = String(
+    (order.metadata as Record<string, unknown> | undefined)
+      ?.packeta_pickup_point_label ?? ""
+  )
   const fulfillmentStatus = translateStatus(
     order.fulfillment_status,
     "fulfillment",
@@ -85,35 +90,18 @@ export default async function OrderCompletedTemplate({
           </div>
         </section>
 
-        {/* TODO(BACKEND): This three-step timeline is currently presentational only.
-            Map the active/completed steps to fulfillment_status and shipment/tracking events
-            once the backend exposes the complete order timeline. */}
-        <section className={s.statusRail} aria-label="Průběh objednávky">
-          <article className={s.activeStep}>
-            <span>01</span>
-            <div>
-              <strong>Přijato</strong>
-              <p>Objednávku jsme zaznamenali.</p>
-            </div>
-          </article>
-          <article>
-            <span>02</span>
-            <div>
-              <strong>Ateliér</strong>
-              <p>Každý kus zkontrolujeme a připravíme.</p>
-            </div>
-          </article>
-          <article>
-            <span>03</span>
-            <div>
-              <strong>Na cestě</strong>
-              <p>Po předání dopravci pošleme další zprávu.</p>
-            </div>
-          </article>
-        </section>
+        {/* A three-step progress rail that never moved was a trust liability: it implied
+            tracking the shop cannot yet provide (spec §4). It returns when the backend exposes
+            a real fulfillment timeline — until then the confirmation states only what is true. */}
 
         {/* BACKEND-HOOKED: These values come from the retrieved StoreOrder response. */}
         <section className={s.orderMeta} aria-label="Údaje objednávky">
+          {pickupPoint && (
+            <div>
+              <span>Výdejní místo</span>
+              <strong data-testid="order-pickup-point">{pickupPoint}</strong>
+            </div>
+          )}
           <div>
             <span>Vytvořeno</span>
             <strong data-testid="order-date">

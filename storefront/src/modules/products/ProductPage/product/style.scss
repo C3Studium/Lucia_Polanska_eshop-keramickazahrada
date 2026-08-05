@@ -130,8 +130,8 @@
   padding-bottom: 10px;
   border-bottom: 1px solid var(--pdp-line-dark);
   color: rgba(255, 232, 214, 0.5);
-  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.16em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -174,7 +174,7 @@
 }
 
 .product__leadMore:focus-visible {
-  outline: 1px solid var(--pdp-cream);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -184,7 +184,7 @@
   align-items: center;
   gap: 11px;
   margin-top: clamp(32px, 6vh, 64px);
-  font: 400 10px/1 "Sansation-Regular", sans-serif;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.11em;
   text-transform: uppercase;
 }
@@ -301,7 +301,7 @@
   right: 10px;
   bottom: 8px;
   color: rgba(32, 33, 28, 0.54);
-  font: 400 8px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
 }
 
@@ -326,8 +326,8 @@
   padding-top: 9px;
   border-top: 1px solid rgba(255, 255, 255, 0.42);
   color: rgba(255, 255, 255, 0.82);
-  font: 400 8px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.15em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
@@ -345,8 +345,8 @@
 
 .product__galleryOutro span {
   color: rgba(255, 232, 214, 0.46);
-  font: 400 9px/1.3 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -368,8 +368,8 @@
   align-items: center;
   gap: clamp(10px, 1.1vw, 18px);
   color: rgba(255, 232, 214, 0.38);
-  font: 400 8px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.16em;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -440,7 +440,7 @@
 }
 
 .product__purchase[data-bundle="true"] .product__purchaseHeader {
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .product__purchase[data-bundle="true"] .product__selection {
@@ -448,7 +448,7 @@
 }
 
 .product__purchase[data-bundle="true"] .product__selection small {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .product__purchase[data-bundle="true"] .product__selection span {
@@ -459,7 +459,7 @@
 .product__purchase[data-bundle="true"] .product__serviceNotes {
   margin-top: 28px;
   padding: 18px 0;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .product__selection {
@@ -470,8 +470,8 @@
 .product__selection small {
   display: block;
   color: rgba(255, 232, 214, 0.45);
-  font: 400 11px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -567,7 +567,7 @@
 .product__details__cta__price__main > p {
   margin: 0;
   color: rgba(255, 232, 214, .62);
-  font: 300 12px/1.35 "Sansation-Light", sans-serif;
+  font: 300 13px/1.35 "Sansation-Light", sans-serif;
 }
 
 .product__priceOriginalLabel {
@@ -581,7 +581,7 @@
 }
 
 .product__priceDiscount {
-  font: 400 11px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
 }
 
@@ -590,6 +590,82 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 9px;
+}
+
+/*
+ * Add-to-cart feedback. The PDP stage is ink (--pdp-ink ≈ #20211c) with cream text, so both
+ * states are set on cream tones measured against it: confirm #bcd0a8 ≈ 9.6:1, error #f3b3a4 ≈ 7.9:1.
+ */
+.product__details__cta__confirm,
+.product__details__cta__error {
+  width: 100%;
+  margin: 0;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.product__details__cta__confirm {
+  color: #bcd0a8;
+}
+
+.product__details__cta__error {
+  color: #f3b3a4;
+}
+
+/* Quantity stepper. 44px targets on the ink stage; cream text is 13.7:1 there. */
+.product__details__cta__quantity {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.product__details__cta__quantity > span {
+  color: var(--pdp-cream, #ffe8d6);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.product__details__cta__quantity > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255, 232, 214, 0.58);
+  border-radius: 999px;
+}
+
+.product__details__cta__quantity button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pdp-cream, #ffe8d6);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 320ms ease;
+}
+
+.product__details__cta__quantity button:hover:not(:disabled) {
+  background: rgba(255, 232, 214, 0.13);
+}
+
+.product__details__cta__quantity button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.product__details__cta__quantity output {
+  min-width: 2ch;
+  color: var(--pdp-cream, #ffe8d6);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 16px;
+  text-align: center;
 }
 
 .product__details__cta__buy__buttons {
@@ -646,7 +722,7 @@
   padding: 15px 0;
   border-top: 1px solid var(--pdp-line-dark);
   color: rgba(255, 232, 214, 0.4);
-  font: 400 10px/1.35 "Sansation-Regular", sans-serif;
+  font: 400 12px/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -713,8 +789,8 @@
   gap: 14px;
   margin-bottom: 14px;
   color: rgba(32, 33, 28, 0.52);
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -768,8 +844,8 @@
   position: absolute;
   z-index: 2;
   color: rgba(255, 232, 214, 0.82);
-  font: 400 8px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

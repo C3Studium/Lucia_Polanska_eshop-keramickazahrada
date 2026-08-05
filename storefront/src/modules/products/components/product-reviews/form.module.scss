@@ -13,8 +13,8 @@
   gap: 14px;
   margin-bottom: clamp(34px, 5vh, 58px);
   color: rgba(32, 33, 28, 0.48);
-  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -38,8 +38,8 @@
   display: block;
   margin-bottom: 14px;
   color: rgba(32, 33, 28, 0.5);
-  font: 400 9px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -116,7 +116,7 @@
 .reviewSeal small {
   position: absolute;
   bottom: 22%;
-  font: 400 7px/1 "Sansation-Regular", sans-serif;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -208,7 +208,7 @@
   align-items: center;
   gap: 12px;
   color: rgba(32, 33, 28, 0.48);
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -260,7 +260,7 @@
   border: 0;
   border-bottom: 1px solid currentColor;
   color: rgba(32, 33, 28, 0.6);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   background: transparent;
   cursor: pointer;
 }
@@ -275,8 +275,8 @@
 
 .label {
   color: rgba(32, 33, 28, 0.56) !important;
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif !important;
-  letter-spacing: 0.13em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif !important;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -302,7 +302,6 @@
 .field input:focus,
 .field textarea:focus {
   border-bottom-color: #20211c !important;
-  outline: none !important;
 }
 
 .starsRow {

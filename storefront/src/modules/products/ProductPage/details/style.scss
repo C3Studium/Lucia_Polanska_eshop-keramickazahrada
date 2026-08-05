@@ -22,8 +22,8 @@
 
 .details__title h2 {
   margin: 0;
-  font: 400 10px/1.2 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.16em;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -48,11 +48,10 @@
   color: inherit;
   background: transparent;
   cursor: pointer;
-  outline: none;
 }
 
 .details__content__list__item__main:focus-visible {
-  outline: 1px solid rgba(187, 183, 136, .72);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 5px;
 }
 

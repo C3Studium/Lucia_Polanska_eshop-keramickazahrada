@@ -1,4 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { ListTree } from "@medusajs/icons";
 import {
   Badge,
@@ -621,11 +620,10 @@ const CatalogPage = () => (
   </QueryClientProvider>
 );
 
-export const config = defineRouteConfig({
-  label: "Kolekce a kategorie",
-  icon: ListTree,
-  nested: "/products",
-  rank: 10,
-});
+/**
+ * **No sidebar entry.** Reached from Přehled → Produkty. The sidebar is down
+ * to the five places she navigates *to*; everything she works *in* lives
+ * under Přehled.
+ */
 
 export default CatalogPage;

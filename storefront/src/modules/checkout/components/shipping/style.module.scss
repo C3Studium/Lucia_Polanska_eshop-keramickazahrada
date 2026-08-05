@@ -102,16 +102,16 @@
             md: (font-size: 0.85rem),
             mdt: (font-size: 0.85rem),
             sm: (font-size: 0.85rem),
-            xs: (font-size: 0.8rem, font-weight: 300),
-            xxs: (font-size: 0.8rem, font-weight: 300),
+            xs: (font-size: 0.8125rem, font-weight: 300),
+            xxs: (font-size: 0.8125rem, font-weight: 300),
         ));
 
         @include vb((
             lg: (font-size: 0.85rem),
             md: (font-size: 0.85rem),
-            s: (font-size: 0.8rem, font-weight: 300),
-            sm: (font-size: 0.8rem, font-weight: 300),
-            xs: (font-size: 0.8rem, font-weight: 300),
+            s: (font-size: 0.8125rem, font-weight: 300),
+            sm: (font-size: 0.8125rem, font-weight: 300),
+            xs: (font-size: 0.8125rem, font-weight: 300),
         ));
       }
     }
@@ -166,15 +166,15 @@
             md: (font-size: 0.9rem),
             mdt: (font-size: 0.9rem),
             sm: (white-space: nowrap, font-size: 0.9rem),
-            xs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
-            xxs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+            xs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
+            xxs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
         ));
         @include vb((
             lg: (font-size: 0.9rem),
             md: (white-space: nowrap, font-size: 0.9rem),
-            s: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
-            sm: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
-            xs: (white-space: nowrap, font-size: 0.8rem, font-weight: 300),
+            s: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
+            sm: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
+            xs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
         ));
       }
 
@@ -189,16 +189,16 @@
             md: (font-size: 0.9rem),
             mdt: (font-size: 0.9rem),
             sm: (font-size: 0.9rem),
-            xs: (font-size: 0.8rem, font-weight: 300),
-            xxs: (font-size: 0.8rem, font-weight: 300),
+            xs: (font-size: 0.8125rem, font-weight: 300),
+            xxs: (font-size: 0.8125rem, font-weight: 300),
         ));
 
         @include vb((
             lg: (font-size: 0.9rem),
             md: (font-size: 0.9rem),
-            s: (font-size: 0.8rem, font-weight: 300),
-            sm: (font-size: 0.8rem, font-weight: 300),
-            xs: (font-size: 0.8rem, font-weight: 300),
+            s: (font-size: 0.8125rem, font-weight: 300),
+            sm: (font-size: 0.8125rem, font-weight: 300),
+            xs: (font-size: 0.8125rem, font-weight: 300),
         ));
       }
     }
@@ -243,16 +243,16 @@
           md: (font-size: 0.9rem),
           mdt: (font-size: 0.9rem),
           sm: (font-size: 0.9rem),
-          xs: (font-size: 0.8rem, font-weight: 300),
-          xxs: (font-size: 0.8rem, font-weight: 300),
+          xs: (font-size: 0.8125rem, font-weight: 300),
+          xxs: (font-size: 0.8125rem, font-weight: 300),
       ));
 
       @include vb((
           lg: (font-size: 0.9rem),
           md: (font-size: 0.9rem),
-          s: (font-size: 0.8rem, font-weight: 300),
-          sm: (font-size: 0.8rem, font-weight: 300),
-          xs: (font-size: 0.8rem, font-weight: 300),
+          s: (font-size: 0.8125rem, font-weight: 300),
+          sm: (font-size: 0.8125rem, font-weight: 300),
+          xs: (font-size: 0.8125rem, font-weight: 300),
       ));
     }
 
@@ -267,16 +267,16 @@
           md: (font-size: 0.9rem),
           mdt: (font-size: 0.9rem),
           sm: (font-size: 0.9rem),
-          xs: (font-size: 0.8rem, font-weight: 300),
-          xxs: (font-size: 0.8rem, font-weight: 300),
+          xs: (font-size: 0.8125rem, font-weight: 300),
+          xxs: (font-size: 0.8125rem, font-weight: 300),
       ));
 
       @include vb((
           lg: (font-size: 0.9rem),
           md: (font-size: 0.9rem),
-          s: (font-size: 0.8rem, font-weight: 300),
-          sm: (font-size: 0.8rem, font-weight: 300),
-          xs: (font-size: 0.8rem, font-weight: 300),
+          s: (font-size: 0.8125rem, font-weight: 300),
+          sm: (font-size: 0.8125rem, font-weight: 300),
+          xs: (font-size: 0.8125rem, font-weight: 300),
       ));
     }
   }
@@ -306,7 +306,7 @@
       padding-top: .2rem;
       color: rgba(32, 33, 28, .52);
       font: 600 .64rem/1 "Sansation-Regular", sans-serif;
-      letter-spacing: .14em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 

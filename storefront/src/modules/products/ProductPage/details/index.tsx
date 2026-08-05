@@ -65,24 +65,23 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
         }
     ];
 
+    // "Výroba" used to render product.description verbatim — identical to "Popisek" — and
+    // sections rendered a literal "N/A" when their data was unset (spec §3.3). A panel is now
+    // only offered when it has something to say.
     const details = [
-        {
+        product.description && {
             title: "Popisek",
-            component: <InfoDesc description={product.description || "N/A"} />
+            component: <InfoDesc description={product.description} />
         },
-        {
-            title: "O Výrobku",
+        descriptions.length > 0 && {
+            title: "Rozměry a materiál",
             component: <Desc details={descriptions} />
         },
         {
-            title: "Doprava",
+            title: "Doprava a vrácení",
             component: <Shipment shipping={shipping} />
         },
-        {
-            title: "Výroba",
-            component: <InfoDesc description={product.description || "N/A"} />
-        }
-    ];
+    ].filter(Boolean) as { title: string; component: React.ReactNode }[];
 
     useEffect(() => {
         const handleOpenDescription = () => {

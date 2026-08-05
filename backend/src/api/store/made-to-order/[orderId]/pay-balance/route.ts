@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { ensureBalancePaymentLink } from "../../../../../lib/balance-payment"
 import { verifyBalanceToken } from "../../../../../lib/balance-payment-link"
+import { storefrontBase } from "../../../../../lib/customer-email"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
@@ -23,12 +24,11 @@ import type MadeToOrderModuleService from "../../../../../modules/made-to-order/
  * API error at somebody who was just trying to pay.
  */
 
-const storefront = (): string =>
-  (process.env.STOREFRONT_PUBLIC_URL || process.env.MEDUSA_STOREFRONT_URL || "")
-    .replace(/\/+$/, "")
-
-const bounce = (res: MedusaResponse, status: string) => {
-  const base = storefront()
+const bounce = (res: MedusaResponse, status: string, orderId?: string) => {
+  // Lands on the order the customer already knows about, with the outcome in a
+  // query param. An invented /doplatek page would 404 — and a customer who
+  // clicked „zaplatit" and got a 404 assumes their money went somewhere.
+  const base = storefrontBase()
   if (!base) {
     // No storefront configured — say it in the customer's language rather than
     // leaving a blank page.
@@ -39,7 +39,12 @@ const bounce = (res: MedusaResponse, status: string) => {
     )
     return
   }
-  res.redirect(302, `${base}/doplatek?stav=${status}`)
+  res.redirect(
+    302,
+    orderId
+      ? `${base}/order/${orderId}/confirmed?platba=${status}`
+      : `${base}/account/orders?platba=${status}`
+  )
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -47,7 +52,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   if (!verifyBalanceToken(orderId, req.query.token)) {
     // Deliberately vague: a precise message would help someone probing tokens.
-    bounce(res, "neplatny-odkaz")
+    bounce(res, "neplatny-odkaz", orderId)
     return
   }
 
@@ -61,7 +66,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   } as never)) as any[]
 
   if (!productionOrder || ["cancelled"].includes(productionOrder.stage)) {
-    bounce(res, "neplatny-odkaz")
+    bounce(res, "neplatny-odkaz", orderId)
     return
   }
 
@@ -81,7 +86,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const order = orders[0] as any
 
   if (!order) {
-    bounce(res, "neplatny-odkaz")
+    bounce(res, "neplatny-odkaz", orderId)
     return
   }
 
@@ -92,7 +97,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     })
 
     if (!link.payment_url) {
-      bounce(res, "paid")
+      bounce(res, "paid", orderId)
       return
     }
 
@@ -105,6 +110,6 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           error instanceof Error ? error.message : "neznámá chyba"
         }`
       )
-    bounce(res, "chyba")
+    bounce(res, "chyba", orderId)
   }
 }

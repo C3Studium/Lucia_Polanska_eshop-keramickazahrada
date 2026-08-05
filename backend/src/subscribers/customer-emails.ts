@@ -2,6 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   customerName,
+  formatDate,
   formatMoney,
   orderLink,
   orderNumber,
@@ -199,22 +200,16 @@ const onBalancePaid = async ({
   })
 }
 
-/**
- * #11 „Objednávka odeslána".
- *
- * The tracking CTA is included **only when a tracking number exists**. §16 is
- * explicit: no tracking means the e-mail goes without the button, never with a
- * link that goes nowhere. In record-only carrier mode there is never one.
- */
-const onShipmentCreated = async ({
-  event: { data },
-  container,
-}: SubscriberArgs<{ id: string }>) => {
-  if (!data?.id) {
-    return
-  }
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+const isPickupOrder = (order: any): boolean =>
+  (order.shipping_methods || []).some(
+    (method: any) => method?.data?.personal_pickup === true
+  )
 
+const loadFulfillmentOrder = async (
+  container: SubscriberArgs["container"],
+  fulfillmentId: string
+) => {
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data: fulfillments } = await query.graph({
     entity: "fulfillment",
     fields: [
@@ -224,26 +219,59 @@ const onShipmentCreated = async ({
       "labels.tracking_number",
       "labels.tracking_url",
     ],
-    filters: { id: data.id },
+    filters: { id: fulfillmentId },
   })
   const fulfillment = fulfillments[0] as any
   const orderId = fulfillment?.order?.id
   if (!orderId) {
+    return { fulfillment: null, order: null }
+  }
+  return { fulfillment, order: await loadOrder(container, orderId) }
+}
+
+/**
+ * #11 „Objednávka odeslána" — and for personal pickup „Připraveno k vyzvednutí".
+ *
+ * The tracking CTA is included **only when a tracking number exists**. §16 is
+ * explicit: no tracking means the e-mail goes without the button, never with a
+ * link that goes nowhere. In record-only carrier mode there is never one.
+ *
+ * A pickup order's shipment being created means she has packed it — the goods
+ * are *ready*, not handed over, so the customer is invited to collect. The
+ * handover itself is `delivery.created` below.
+ */
+const onShipmentCreated = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ id: string }>) => {
+  if (!data?.id) {
+    return
+  }
+  const { fulfillment, order } = await loadFulfillmentOrder(container, data.id)
+  if (!fulfillment || !order) {
     return
   }
 
-  const order = await loadOrder(container, orderId)
-  if (!order) {
+  if (isPickupOrder(order)) {
+    await sendCustomerEmail(container, {
+      template: "order-ready-pickup",
+      to: order.email,
+      key: `ship:${fulfillment.id}`,
+      orderId: order.id,
+      data: {
+        ...common(order),
+        pickupLocation: "Ateliér Keramická zahrada",
+        pickupAddress: "Putim 229, 397 01 Písek",
+        readyDate: new Date().toLocaleDateString("cs-CZ"),
+      },
+    })
     return
   }
 
   const label = (fulfillment.labels || [])[0]
-  const isPickup = (order.shipping_methods || []).some(
-    (method: any) => method?.data?.personal_pickup === true
-  )
 
   await sendCustomerEmail(container, {
-    template: isPickup ? "order-delivered" : "order-shipment",
+    template: "order-shipment",
     to: order.email,
     key: `ship:${fulfillment.id}`,
     orderId: order.id,
@@ -253,6 +281,33 @@ const onShipmentCreated = async ({
       trackingNumber: label?.tracking_number ?? "",
       trackingLink: label?.tracking_url ?? "",
     },
+  })
+}
+
+/**
+ * „Objekty jsou u vás" — sent when the fulfillment is marked as delivered,
+ * which for a pickup order is the actual handover. Only pickup orders: a
+ * courier delivery is announced by the carrier, and a second mail from us
+ * claiming the same thing would be noise (§16).
+ */
+const onDeliveryCreated = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ id: string }>) => {
+  if (!data?.id) {
+    return
+  }
+  const { fulfillment, order } = await loadFulfillmentOrder(container, data.id)
+  if (!fulfillment || !order || !isPickupOrder(order)) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "order-delivered",
+    to: order.email,
+    key: `deliver:${fulfillment.id}`,
+    orderId: order.id,
+    data: { ...common(order) },
   })
 }
 
@@ -362,13 +417,120 @@ const onSpecificationConfirmed = async ({
   })
 }
 
+/**
+ * „Výroba se protáhne" — only ever her click on „Oznámit zpoždění" (the
+ * announce_delay admin action). D4 holds: the system never decides a delay
+ * on its own, it only delivers the one she announced.
+ */
+const onDelayAnnounced = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{
+  order_id: string
+  production_order_id: string
+  original_completion_at?: string | null
+  new_completion_at: string
+  reason?: string | null
+}>) => {
+  if (!data?.order_id || !data?.new_completion_at) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "order-delayed",
+    to: order.email,
+    // Keyed on the new date: announcing the same slip twice sends once, a
+    // second slip to a *different* date is genuinely new information.
+    key: `delay:${data.production_order_id}:${data.new_completion_at.slice(0, 10)}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      ...(data.original_completion_at
+        ? { originalDeliveryDate: formatDate(data.original_completion_at) }
+        : {}),
+      newDeliveryDate: formatDate(data.new_completion_at),
+      ...(data.reason ? { delayReason: data.reason } : {}),
+    },
+  })
+}
+
+/**
+ * „Vrácení schváleno" — hangs off the native return being created. Customers
+ * have no self-service returns here; a return exists because she agreed to
+ * one with the customer, so its creation *is* the approval, and the e-mail
+ * carries the address the objects should travel to.
+ */
+const onReturnRequested = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ order_id: string; return_id: string }>) => {
+  if (!data?.order_id || !data?.return_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  // Which objects are coming back, by name — return items point at order line
+  // items. Best-effort: a return with no resolvable items just omits the row.
+  let approvedItems = ""
+  try {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: returns } = await query.graph({
+      entity: "return",
+      fields: ["id", "display_id", "items.item_id", "items.quantity"],
+      filters: { id: data.return_id },
+    })
+    const returnRow = returns[0] as any
+    const byId = new Map(
+      (order.items || []).map((item: any) => [item.id, item])
+    )
+    approvedItems = (returnRow?.items || [])
+      .map((returnItem: any) => {
+        const item = byId.get(returnItem.item_id) as any
+        if (!item) {
+          return null
+        }
+        const quantity = Number(returnItem.quantity)
+        return quantity > 1
+          ? `${item.product_title ?? item.title} (${quantity} ks)`
+          : item.product_title ?? item.title
+      })
+      .filter(Boolean)
+      .join(", ")
+  } catch {
+    // The e-mail is still worth sending without the item list.
+  }
+
+  await sendCustomerEmail(container, {
+    template: "return-approved",
+    to: order.email,
+    key: `return-approved:${data.return_id}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      ...(approvedItems ? { approvedItems } : {}),
+      returnMethod: "Zásilka na adresu ateliéru",
+      returnAddress: "Keramická zahrada, Putim 229, 397 01 Písek",
+    },
+  })
+}
+
 const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "payment.captured": onPaymentCaptured,
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
+  "made-to-order.delay-announced": onDelayAnnounced,
   "shipment.created": onShipmentCreated,
+  "delivery.created": onDeliveryCreated,
   "order.canceled": onOrderCanceled,
+  "order.return_requested": onReturnRequested,
   "payment.refunded": onPaymentRefunded,
 }
 
@@ -385,8 +547,11 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
+    "made-to-order.delay-announced",
     "shipment.created",
+    "delivery.created",
     "order.canceled",
+    "order.return_requested",
     "payment.refunded",
   ],
 }

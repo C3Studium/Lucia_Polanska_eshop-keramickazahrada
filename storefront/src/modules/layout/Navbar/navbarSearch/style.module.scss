@@ -62,8 +62,8 @@
   display: block;
   margin-bottom: 10px;
   color: rgba(43, 48, 35, 0.65);
-  font: 500 11px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 500 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -107,7 +107,7 @@
 
     small {
       color: rgba(43, 48, 35, 0.58);
-      font-size: 9px;
+      font-size: 12px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -142,21 +142,37 @@
   min-height: 360px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 12px;
-  scrollbar-color: rgba(43, 48, 35, 0.35) transparent;
+  padding-bottom: 18px;
+  /* The rail is draggable; grabbing it should look possible. */
+  cursor: grab;
+  /* Wheel and drag are handled in JS, so the browser must not claim the gesture first. */
+  touch-action: pan-y;
+  scrollbar-color: rgba(116, 126, 98, 0.55) rgba(43, 48, 35, 0.09);
   scrollbar-width: thin;
 
+  &[data-dragging] {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  /* A rail, not a browser scrollbar: olive thumb on a hairline track, in the site's language. */
   &::-webkit-scrollbar {
-    height: 5px;
+    height: 6px;
   }
 
   &::-webkit-scrollbar-track {
-    background: transparent;
+    border-radius: 999px;
+    background: rgba(43, 48, 35, 0.09);
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(43, 48, 35, 0.35);
+    background: rgba(116, 126, 98, 0.55);
+    transition: background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background: rgba(116, 126, 98, 0.82);
   }
 }
 
@@ -192,11 +208,6 @@
   color: inherit;
   box-shadow: 0 6px 22px rgba(31, 35, 25, 0.07);
   user-select: none;
-
-  &:hover,
-  &:focus-visible {
-    outline: none;
-  }
 }
 
 .productSurface {
@@ -242,8 +253,8 @@
   border-radius: 999px;
   background: rgba(255, 248, 238, 0.86);
   color: rgba(32, 33, 28, 0.7);
-  font: 500 8px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: 0.14em;
+  font: 500 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -268,7 +279,7 @@
   overflow: hidden;
   color: currentColor;
   opacity: 0.58;
-  font: 500 9px/1 "Sansation-Regular", sans-serif;
+  font: 500 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -282,7 +293,7 @@
   padding-top: 12px;
   border-top: 1px solid currentColor;
   color: currentColor;
-  font-size: 12px;
+  font-size: 13px;
   opacity: 0.72;
 
   i {
@@ -426,4 +437,54 @@
       width: 100%;
     }
   }
+}
+
+/* Facet pills, mirroring the store toolbar so the overlay is not a weaker second search.
+   Sit under the category chips; 44px targets, ink on cream at AA. */
+.facets {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid rgba(43, 48, 35, 0.2);
+    border-radius: 999px;
+    background: transparent;
+    color: #20211c;
+    cursor: pointer;
+    font: 400 14px/1 "Sansation-Regular", sans-serif;
+    transition:
+      background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  button:hover {
+    border-color: rgba(43, 48, 35, 0.45);
+  }
+}
+
+.facetActive {
+  border-color: #20211c !important;
+  background: #20211c !important;
+  color: #fff8ee !important;
+}
+
+/* Text-only, so it never competes with the pills it clears. */
+.clearFilters {
+  margin-left: auto;
+  padding: 0 6px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #4d4e46 !important;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.clearFilters:hover {
+  color: #20211c !important;
 }

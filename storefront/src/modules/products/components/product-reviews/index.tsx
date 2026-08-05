@@ -9,6 +9,7 @@ import ProductReviewsForm from "./form"
 import styles from "./style.module.scss"
 
 import { motion } from "framer-motion"
+import { withCount } from "@lib/util/plurals"
 
 type ProductReviewsProps = {
   productId: string
@@ -263,6 +264,13 @@ export default function ProductReviews({
     )
   }
 
+  // "0 recenzí" plus five empty stars on every new product undermines a shop where most pieces
+  // are new (spec §4). The section appears once it has something to show; customers who want to
+  // write the first one still reach the form from their account after ordering.
+  if (!displayedCount && !isLoadingMore && !error) {
+    return null
+  }
+
   return (
     <div
       id="product-reviews"
@@ -294,7 +302,7 @@ export default function ProductReviews({
               ))}
             </div>
             <span className={styles.count}>
-              {displayedCount} {displayedCount === 1 ? "recenze" : "recenzí"}
+              {withCount(displayedCount, "recenze", "recenze", "recenzí")}
             </span>
           </div>
         </div>
@@ -317,7 +325,7 @@ export default function ProductReviews({
                 }}
               />
             </div>
-            <p>{`Zobrazeno ${visibleReviews.length} z ${displayedCount} recenzí`}</p>
+            <p>{`Zobrazeno ${visibleReviews.length} z ${withCount(displayedCount, "recenze", "recenze", "recenzí")}`}</p>
             <button
               type="button"
               onClick={showMoreReviews}

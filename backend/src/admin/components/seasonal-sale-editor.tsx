@@ -71,6 +71,7 @@ export const SeasonalSaleEditor = ({
     (sale?.items ?? []).map((item) => item.product_id)
   );
   const [search, setSearch] = useState("");
+  const [discount, setDiscount] = useState("");
 
   const { data: catalogue } = useQuery<{
     products: Array<{ id: string; title: string; thumbnail: string | null }>;
@@ -105,7 +106,30 @@ export const SeasonalSaleEditor = ({
             body: { ...body, publication_status: "draft" },
           });
     },
-    onSuccess: async () => {
+    onSuccess: async (result: any) => {
+      const id = sale?.id ?? result?.seasonal_selection?.id;
+      const percentage = Number(discount);
+
+      // The discount is a second call on purpose: a new sale has no id until it
+      // exists, and its price list is computed from the products it ended up
+      // with rather than the ones that were ticked.
+      if (id && Number.isFinite(percentage) && percentage > 0) {
+        try {
+          await sdk.client.fetch(
+            `/admin/merchant-catalog/seasonal-selections/${id}/discount`,
+            { method: "POST", body: { percentage } }
+          );
+        } catch (error) {
+          // The sale itself saved — say what did and did not happen rather than
+          // reporting a blanket failure.
+          toast.error(
+            `Akce je uložená, ale slevu se nepodařilo nastavit: ${
+              error instanceof Error ? error.message : "neznámá chyba"
+            }`
+          );
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["seasonal-selections"] });
       await queryClient.invalidateQueries({ queryKey: ["operations-discounts"] });
       toast.success(sale?.id ? "Akce byla upravena" : "Akce byla založena");
@@ -255,9 +279,25 @@ export const SeasonalSaleEditor = ({
                 );
               })}
             </div>
+          </div>
+
+          <div className="flex flex-col gap-y-1">
+            <Label size="xsmall" htmlFor="sale-discount">
+              Sleva na vybrané produkty (%)
+            </Label>
+            <Input
+              id="sale-discount"
+              type="number"
+              min={1}
+              max={90}
+              className="w-32"
+              placeholder="např. 20"
+              value={discount}
+              onChange={(event) => setDiscount(event.target.value)}
+            />
             <Text size="xsmall" className="text-ui-fg-muted">
-              Slevu na vybrané produkty nastavíte v ceníku, který je k akci
-              připojený.
+              Nechte prázdné, pokud má jít jen o výběr na úvodní stránce bez
+              slevy. Sleva platí po dobu akce a skončí s ní.
             </Text>
           </div>
         </Drawer.Body>

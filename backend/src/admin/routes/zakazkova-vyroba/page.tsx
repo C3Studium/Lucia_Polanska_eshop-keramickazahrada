@@ -1,4 +1,3 @@
-import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Tools } from "@medusajs/icons";
 import MadeToOrderPage from "./produkty/page";
 
@@ -19,10 +18,10 @@ import MadeToOrderPage from "./produkty/page";
  */
 const ProduktyNaZakazkuPage = () => <MadeToOrderPage />;
 
-export const config = defineRouteConfig({
-  label: "Produkty na zakázku",
-  icon: Tools,
-  rank: 50,
-});
+/**
+ * **No sidebar entry.** Reached from Přehled → Produkty. The sidebar is down
+ * to the five places she navigates *to*; everything she works *in* lives
+ * under Přehled.
+ */
 
 export default ProduktyNaZakazkuPage;

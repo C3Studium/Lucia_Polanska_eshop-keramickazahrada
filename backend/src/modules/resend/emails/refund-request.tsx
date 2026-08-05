@@ -21,10 +21,15 @@ interface RefundRequestEmailProps {
   estimatedProcessingTime?: string;
 }
 
+/**
+ * Částka se vykreslí jen s reálnou hodnotou — při přijetí žádosti ještě žádná
+ * rozhodnutá není a vymyšlená výchozí částka by v ostrém e-mailu slibovala
+ * konkrétní peníze.
+ */
 function RefundRequestEmailComponent({
   customerName = "Vážený zákazník",
   orderNumber = "#12345",
-  refundAmount = "1 250 Kč",
+  refundAmount,
   refundReason = "Požadavek zákazníka",
   orderLink = "https://keramickazahrada.cz/orders/12345",
   estimatedProcessingTime = "3–5 pracovních dnů",
@@ -45,7 +50,9 @@ function RefundRequestEmailComponent({
       <LedgerRow label="Objednávka" value={orderNumber} />
       <LedgerRow label="Důvod" value={refundReason} />
       <LedgerRow label="Doba vyřízení" value={estimatedProcessingTime} />
-      <LedgerRow label="Částka k vrácení" value={refundAmount} strong tone="olive" />
+      {refundAmount ? (
+        <LedgerRow label="Částka k vrácení" value={refundAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
       <Note tone="olive">

@@ -19,7 +19,7 @@
     cursor: pointer;
 
     &:focus-visible {
-      outline: 2px solid rgba(154, 111, 101, 0.72);
+      outline: var(--focus-ring-width) solid var(--focus-ring);
       outline-offset: -2px;
     }
 
@@ -89,8 +89,8 @@
   .category {
     margin: 0 0 0.28rem;
     color: rgba(32, 33, 28, 0.48);
-    font: 600 0.62rem/1 "Sansation-Regular", sans-serif;
-    letter-spacing: 0.15em;
+    font: 600 0.75rem/1 "Sansation-Regular", sans-serif;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -148,27 +148,8 @@
     margin-top: 0.45rem;
   }
 
-  .stripeWrap {
-    display: grid;
-    grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 1rem;
-    margin: 1.1rem 0 0 2.35rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(32, 33, 28, 0.16);
-  }
 
-  .stripeMotion {
-    overflow: hidden;
-  }
 
-  .stripeLabel {
-    margin: 0;
-    color: rgba(32, 33, 28, 0.52);
-    font: 600 0.62rem/1.2 "Sansation-Regular", sans-serif;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-  }
 
   .cardBase {
     display: block;
@@ -180,7 +161,6 @@
     border-radius: 0;
     background: transparent;
     appearance: none;
-    outline: none;
   }
 
   @media (max-width: 640px) {
@@ -200,7 +180,7 @@
     }
     .detail {
       max-width: 230px;
-      font-size: 0.76rem;
+      font-size: 0.8125rem;
     }
     .aside {
       gap: 0.45rem;
@@ -211,10 +191,6 @@
     }
     .direction {
       display: none;
-    }
-    .stripeWrap {
-      grid-template-columns: 1fr;
-      margin-left: 1.85rem;
     }
   }
 }

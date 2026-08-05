@@ -1,8 +1,17 @@
-"use client"
+import { Metadata } from "next"
 
+import { getMerchantIdentity } from "@lib/data/merchant"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
+
+const merchant = getMerchantIdentity()
+
+export const metadata: Metadata = {
+  title: "Ochrana osobních údajů",
+  description:
+    "Jaké osobní údaje o vás zpracováváme, proč je potřebujeme, jak dlouho je uchováváme a jaká práva k nim máte.",
+}
 
 const sections: LegalSectionData[] = [
   {
@@ -78,7 +87,7 @@ const sections: LegalSectionData[] = [
       "Přenositelnost údajů",
       "Vznesení námitky",
       "Odvolání souhlasu",
-      "Pro uplatnění těchto práv nás kontaktujte na gdpr@prochazkagroup.cz.",
+      `Pro uplatnění těchto práv nás kontaktujte na ${merchant.email}.`,
     ],
   },
   {
@@ -89,10 +98,11 @@ const sections: LegalSectionData[] = [
     ],
   },
   {
-    id: "kontakt-dpo",
-    title: "Kontakt na DPO",
+    id: "kontakt-spravce",
+    title: "Kontakt na správce údajů",
     paragraphs: [
-      "Máte-li jakékoliv dotazy týkající se zpracování vašich osobních údajů, můžete kontaktovat našeho pověřence pro ochranu osobních údajů (DPO) na email: dpo@prochazkagroup.cz",
+      `Správcem vašich osobních údajů je ${merchant.name}, se sídlem ${merchant.address}, IČO ${merchant.registrationNumber}.`,
+      `Máte-li jakékoliv dotazy týkající se zpracování vašich osobních údajů, napište nám na ${merchant.email} nebo zavolejte na ${merchant.phone}.`,
     ],
   },
 ]

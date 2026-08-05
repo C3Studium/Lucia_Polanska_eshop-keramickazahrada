@@ -13,7 +13,7 @@ import Image from "next/image"
 import { useRef, useState } from "react"
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import { urlFor } from "../../../../sanity/lib/image"
-import CTA from "../CTA"
+import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 
 export type KurzyIntroData = {
   content?: string
@@ -496,9 +496,9 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               Připravujeme komorní kurzy pro dospělé: čas pro soustředění,
               řemeslnou práci a radost z objektu, který vznikne jen jednou.
             </p>
-            <CTA
-              kind="primary"
+            <ContactTrigger
               text="Chci vědět o kurzech"
+              topic="Kurzy"
               className="kurzyTimelineCtaButton"
             />
           </motion.div>

@@ -3,6 +3,7 @@
 import { Divider, clx } from "@medusajs/ui"
 import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
+import { maxPurchasableQuantity } from "@lib/util/availability"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -34,8 +35,9 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       .finally(() => setUpdating(false))
   }
 
-  const maxQtyFromInventory = 10
-  const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
+  // Was a literal 10 on both branches, so a one-of-a-kind piece could be set to 10 and only
+  // failed at the backend — the worst possible place to learn it (spec §4).
+  const maxQuantity = maxPurchasableQuantity(item.variant, 10)
   const quantityLimit = Math.min(maxQuantity, 10)
 
   return (

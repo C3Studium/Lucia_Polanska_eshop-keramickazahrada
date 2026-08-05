@@ -17,11 +17,10 @@
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
-  outline: none;
 }
 
 .button:focus-visible {
-  outline: 1px solid var(--delete-button-focus, rgba(116, 126, 98, .82));
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -52,6 +51,6 @@
 .label {
   position: relative;
   z-index: 1;
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }

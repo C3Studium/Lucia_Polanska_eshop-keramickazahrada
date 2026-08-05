@@ -25,6 +25,7 @@ type ProductionAction =
   | "complete_production"
   | "request_balance"
   | "remind_balance"
+  | "announce_delay"
   | "cancel"
 
 type ActionBody = {
@@ -32,6 +33,8 @@ type ActionBody = {
   agreed_total?: number
   internal_note?: string | null
   estimated_completion_at?: string | null
+  /** announce_delay: shown to the customer in the delay e-mail. */
+  delay_reason?: string | null
   method?: string
 }
 
@@ -224,6 +227,7 @@ export const POST = async (
     // says nothing chases a customer on its own, so the only reminder that ever
     // goes out is one she chose to send.
     "remind_balance",
+    "announce_delay",
     "cancel",
   ]
   if (!actions.includes(body.action)) {
@@ -349,6 +353,61 @@ export const POST = async (
       stage: fullyPaid ? "ready_to_ship" : "awaiting_balance",
       production_completed_at: now,
       ready_to_ship_at: fullyPaid ? now : null,
+    })
+  }
+
+  if (body.action === "announce_delay") {
+    // Any stage where a promised date can still slip. Terminal stages and the
+    // pre-confirmation stage (no date was promised yet) are excluded.
+    requireStage(productionOrder.stage, [
+      "confirmed",
+      "in_production",
+      "awaiting_balance",
+    ])
+
+    if (!body.estimated_completion_at) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Nový termín dokončení je povinný."
+      )
+    }
+    const newDeadline = new Date(body.estimated_completion_at)
+    if (Number.isNaN(newDeadline.getTime())) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Nový termín dokončení není platné datum."
+      )
+    }
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    if (newDeadline.getTime() < startOfToday.getTime()) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Nový termín dokončení nemůže být v minulosti."
+      )
+    }
+
+    const originalDeadline = productionOrder.estimated_completion_at
+      ? new Date(productionOrder.estimated_completion_at)
+      : null
+
+    productionOrder = await madeToOrder.updateProductionOrders({
+      id: productionOrder.id,
+      estimated_completion_at: newDeadline,
+    })
+
+    // The customer e-mail (§16 „Výroba se protáhne") hangs off this event.
+    // Emitted rather than sent inline so a mail problem cannot fail the date
+    // change she just saved — same reasoning as specification-confirmed.
+    await eventBus.emit({
+      name: "made-to-order.delay-announced",
+      data: {
+        order_id: req.params.orderId,
+        production_order_id: productionOrder.id,
+        original_completion_at: originalDeadline?.toISOString() ?? null,
+        new_completion_at: newDeadline.toISOString(),
+        reason: body.delay_reason?.trim() || null,
+      },
     })
   }
 

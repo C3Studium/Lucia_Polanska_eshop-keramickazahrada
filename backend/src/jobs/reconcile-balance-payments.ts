@@ -3,6 +3,14 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { notifyMerchant } from "../lib/notify"
+import { balancePaymentUrl } from "../lib/balance-payment-link"
+import {
+  customerName,
+  formatMoney,
+  orderLink,
+  orderNumber,
+  sendCustomerEmail,
+} from "../lib/customer-email"
 
 /**
  * Asks ComGate what actually happened to balance payments nobody heard back
@@ -32,6 +40,74 @@ import { notifyMerchant } from "../lib/notify"
 
 /** Requests still waiting for an answer. Anything else is settled. */
 const OPEN_STATUSES = ["pending", "sent"]
+
+/** ComGate's terminal failure states, in the customer's language. */
+const FAILURE_REASONS: Record<string, string> = {
+  canceled: "Platba byla zrušena",
+  cancelled: "Platba byla zrušena",
+  error: "Platbu se nepodařilo dokončit",
+  expired: "Platnost platebního odkazu vypršela",
+}
+
+/**
+ * Tells the customer their balance payment did not go through.
+ *
+ * Only for requests that were actually *sent* to somebody — a failed attempt
+ * on a link nobody ever received would be a confusing mail out of nowhere.
+ * The retry button is the signed balance link: it never expires and creates a
+ * fresh payment session on click, so it works regardless of what happened to
+ * the original ComGate transaction. This is feedback on the customer's own
+ * attempt, not a reminder — D4's "the system only ever notifies her" rule is
+ * about chasing money, and this does not chase.
+ */
+const emailCustomerAboutFailure = async (
+  container: MedusaContainer,
+  request: any,
+  status: string
+) => {
+  const madeToOrder = container.resolve<MadeToOrderModuleService>(
+    MADE_TO_ORDER_MODULE
+  )
+  const [production] = (await madeToOrder.listProductionOrders({
+    id: request.production_order_id,
+  } as never)) as any[]
+  if (!production?.order_id) {
+    return
+  }
+
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: orders } = await query.graph({
+    entity: "order",
+    fields: [
+      "id",
+      "display_id",
+      "email",
+      "customer.first_name",
+      "customer.last_name",
+      "shipping_address.first_name",
+      "shipping_address.last_name",
+    ],
+    filters: { id: production.order_id },
+  })
+  const order = orders[0] as any
+  if (!order) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "payment-failed",
+    to: order.email,
+    key: `payfail:${request.id}`,
+    orderId: order.id,
+    data: {
+      customerName: customerName(order),
+      orderNumber: orderNumber(order),
+      paymentAmount: formatMoney(request.amount, request.currency_code),
+      failureReason: FAILURE_REASONS[status] ?? FAILURE_REASONS.error,
+      retryLink: balancePaymentUrl(order.id) || orderLink(order),
+    },
+  })
+}
 
 export default async function reconcileBalancePayments(
   container: MedusaContainer
@@ -121,6 +197,10 @@ export default async function reconcileBalancePayments(
       }
 
       if (["canceled", "cancelled", "error", "expired"].includes(status)) {
+        // Captured before the update overwrites it — only a request that was
+        // really sent to the customer earns them a failure e-mail.
+        const wasSentToCustomer = request.status === "sent"
+
         await madeToOrder.updateProductionPaymentRequests({
           id: request.id,
           status: "expired",
@@ -131,11 +211,16 @@ export default async function reconcileBalancePayments(
         await notifyMerchant(container, {
           key: `mn:payfail:${request.id}`,
           title: "Platba doplatku se nezdařila",
-          description:
-            "Odkaz vypršel nebo byl zrušený. Pošlete zákazníkovi nový přes tlačítko Požádat o doplatek.",
+          description: wasSentToCustomer
+            ? "Odkaz vypršel nebo byl zrušený. Zákazník dostal e-mail s odkazem na opakování platby; nový odkaz můžete poslat i přes tlačítko Požádat o doplatek."
+            : "Odkaz vypršel nebo byl zrušený. Pošlete zákazníkovi nový přes tlačítko Požádat o doplatek.",
           audience: "owner",
           urgent: true,
         })
+
+        if (wasSentToCustomer) {
+          await emailCustomerAboutFailure(container, request, status)
+        }
         continue
       }
 

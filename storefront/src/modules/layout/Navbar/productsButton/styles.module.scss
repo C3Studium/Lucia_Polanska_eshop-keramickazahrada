@@ -223,7 +223,7 @@
 }
 
 .imageShadeActive { opacity: 0.18; }
-.cardHitArea { z-index: 1; }
+.cardHitArea { z-index: 2; }
 
 .verticalTitle {
   position: absolute;
@@ -265,8 +265,8 @@
 
 .cardEyebrow {
   color: #ffe8d6;
-  font-size: 11px;
-  letter-spacing: 0.13em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -283,7 +283,6 @@
   position: absolute;
   right: 14px;
   bottom: 12px;
-  z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -292,7 +291,7 @@
   border-radius: 999px;
   color: var(--whiteText);
   background: rgba(19, 21, 17, 0.68);
-  font-size: 12px;
+  font-size: 13px;
   backdrop-filter: blur(8px);
   pointer-events: none;
 }
@@ -327,7 +326,7 @@
   justify-content: space-between;
   padding: 4px 6px 0;
   color: rgba(31, 35, 25, 0.5);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 @media (max-width: 900px) {
@@ -346,4 +345,12 @@
 
     .footerLink { flex: 0 0 auto; }
   }
+}
+
+/* Shown instead of sub-category links when an entry has none: how much is inside. */
+.cardCount {
+  color: rgba(255, 244, 235, 0.86);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.02em;
 }
