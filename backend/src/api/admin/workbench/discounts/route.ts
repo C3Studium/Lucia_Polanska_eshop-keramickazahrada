@@ -127,8 +127,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return `−${amount} ${target}`
   }
 
+  const expert = req.query.expert === "1"
+
   res.status(200).json({
     promotions: (promotions as any[]).map((promotion) => ({
+      ...(expert ? { raw: promotion } : {}),
       id: promotion.id,
       code: promotion.code,
       is_automatic: Boolean(promotion.is_automatic),

@@ -1,6 +1,9 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { ArrowPath, House } from "@medusajs/icons";
 import {
+  Badge,
+  Input,
+  toast,
   Button,
   Container,
   Heading,
@@ -10,9 +13,12 @@ import {
 } from "@medusajs/ui";
 import {
   QueryClient,
+  useMutation,
+  useQueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   OrderRow,
@@ -386,6 +392,86 @@ const shopTiles = (summary: OperationsSummary): Tile[] => {
   return tiles;
 };
 
+/**
+ * Vitrína + Dovolená — the shop seen from outside, on the dashboard
+ * (Matěj, 2026-08-06). The check walks the customer's path server-side;
+ * the vacation toggle writes the merchant setting the payment workflow
+ * enforces. Display here, law in the backend.
+ */
+const VitrinaCard = () => {
+  const queryClient = useQueryClient();
+  const { data } = useQuery<{
+    open: boolean;
+    vacation: boolean;
+    vacation_until: string | null;
+    problems: { text: string; path: string | null; severity: "warn" | "bad" }[];
+  }>({
+    queryKey: ["storefront-check"],
+    queryFn: () => sdk.client.fetch("/admin/workbench/storefront-check"),
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: settings } = useQuery<{ settings: any }>({
+    queryKey: ["merchant-settings"],
+    queryFn: () => sdk.client.fetch("/admin/merchant-settings"),
+  });
+
+  const vacationOn = Boolean(settings?.settings?.vacation_enabled);
+
+  return (
+    <section className="border-ui-border-base border-b px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {data ? (
+            <Badge size="2xsmall" color={data.open && !vacationOn ? "green" : vacationOn ? "orange" : "red"}>
+              {vacationOn
+                ? "Dovolená"
+                : data.open
+                  ? "Obchod je otevřený"
+                  : "Něco brání nákupu"}
+            </Badge>
+          ) : (
+            <Badge size="2xsmall" color="grey">
+              Kontroluji obchod…
+            </Badge>
+          )}
+          {vacationOn && settings?.settings?.vacation_until && (
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              do {settings.settings.vacation_until}
+            </Text>
+          )}
+        </div>
+        <Link
+          to="/dovolena-oznameni"
+          className="text-ui-fg-interactive txt-small hover:underline"
+        >
+          Dovolená a oznámení →
+        </Link>
+      </div>
+
+      {(data?.problems ?? []).map((problem, index) => (
+        <Text
+          key={index}
+          size="xsmall"
+          className={
+            problem.severity === "bad"
+              ? "text-ui-fg-error mt-2"
+              : "text-ui-fg-subtle mt-2"
+          }
+        >
+          {problem.severity === "bad" ? "●" : "○"} {problem.text}
+          {problem.path && (
+            <Link to={problem.path} className="text-ui-fg-interactive ml-1 hover:underline">
+              Vyřešit
+            </Link>
+          )}
+        </Text>
+      ))}
+    </section>
+  );
+};
+
 const PrehledInner = () => {
   const { data, isLoading, isError, refetch, isFetching } =
     useQuery<OperationsSummary>({
@@ -447,6 +533,7 @@ const PrehledInner = () => {
     <div className="flex flex-col gap-y-3">
       <Container className="divide-y p-0">
         <WorkTabs active="prehled" />
+      <VitrinaCard />
 
         <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
           <div>

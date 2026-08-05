@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
 
+import ShopBanner from "@modules/layout/components/shop-banner"
+import { getShopStatus } from "@lib/data/shop-status"
+
 export default async function PageLayout(props: { children: React.ReactNode }) {
   const customer = await retrieveCustomer()
   const cart = await retrieveCart()
@@ -43,8 +46,11 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   const merchant = getMerchantIdentity()
 
+  const shopStatus = await getShopStatus()
+
   return (
     <ContactDialogProvider merchant={merchant}>
+      <ShopBanner status={shopStatus} />
       <GlobalLiquidEther />
       <Navbar
         cart={cart}

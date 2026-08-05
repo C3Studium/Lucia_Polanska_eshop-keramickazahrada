@@ -1926,3 +1926,26 @@ prices with unpriced variants reported, demand totals). Every statistic
 reports its scan basis; nothing silently truncates.
 
 Gate: 286 unit / 75 integration / build clean.
+
+## 2026-08-06 — Person-grouping fix + honest statistics + Expert widening
+
+Matěj's report: „Matej Forejt 50×, yet it says first order". Root cause:
+Medusa mints a NEW customer record per guest checkout, and three surfaces
+grouped by record where a person = an e-mail. Fixed: the customers
+workbench now collapses records into persons (record_ids kept for Expert
+and the future merge tool), the order expansion matches history e-mail-first
+(two queries merged — customer_id alone is why a regular read as „první
+objednávka"), the Karta merges by id + e-mail.
+
+Statistics honesty: registrations count only has_account records (guest
+records made busy weeks look like signup waves); customers_total counts
+persons; products-stats zakázky stages get their own Czech map
+(productionStageLabels — merchant labels made them print raw English keys).
+
+Expert widening: ?expert=1 now also on customers (underlying records),
+inventory and discounts (raw rows); Zákazníci+ rows show „N záznamů v
+databázi" when a person is fragmented.
+
+Gate: typecheck ✓, 286 unit ✓, build ✓. Integration NOT RUN this round —
+the Railway test DB refuses connections (server closed unexpectedly; bare
+psql fails). Rerun required once the copy is woken/recreated.

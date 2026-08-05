@@ -33,6 +33,21 @@ export const stageLabels: Record<string, string> = {
   cancelled: "Zrušeno",
 };
 
+/**
+ * Production-order stages (made-to-order module) in her words. Distinct from
+ * the merchant stages above — mixing the two maps is how the products
+ * statistics ended up printing `specification_pending: 3` in English.
+ */
+export const productionStageLabels: Record<string, string> = {
+  specification_pending: "Čeká na zadání",
+  confirmed: "Potvrzeno",
+  in_production: "Ve výrobě",
+  awaiting_balance: "Čeká na doplatek",
+  ready_to_ship: "Připraveno k odeslání",
+  completed: "Dokončeno",
+  cancelled: "Zrušeno",
+};
+
 export const stageColors: Record<
   string,
   "green" | "orange" | "blue" | "red" | "grey" | "purple"

@@ -44,6 +44,9 @@ import { sdk } from "../../lib/sdk";
 
 type WorkbenchCustomer = {
   id: string;
+  has_account?: boolean;
+  records_count?: number;
+  record_ids?: string[];
   email: string;
   name: string | null;
   registered_at: string;
@@ -262,7 +265,7 @@ const CustomerStats = () => {
           {data.repeat_rate !== null ? ` (${data.repeat_rate} %)` : ""}
         </Text>
         <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-          {data.customers_total} registrovaných · newsletter odebírá{" "}
+          {data.accounts_total ?? data.customers_total} s účtem · newsletter odebírá{" "}
           {data.newsletter_subscribers} lidí ({data.customers_on_newsletter} z
           registrovaných)
         </Text>
@@ -317,9 +320,10 @@ const ZakazniciInner = () => {
   if (active === "vraci") params.set("repeat", "true");
   if (active === "newsletter") params.set("newsletter", "true");
   if (search.trim()) params.set("q", search.trim());
+  if (expert) params.set("expert", "1");
 
   const { data, isLoading, isError } = useQuery<WorkbenchCustomersResponse>({
-    queryKey: ["workbench-customers", active, search],
+    queryKey: ["workbench-customers", active, search, expert],
     enabled: active !== "statistiky",
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/customers?${params.toString()}`),
@@ -392,7 +396,16 @@ const ZakazniciInner = () => {
                   {customer.name ? customer.email : ""}
                   {customer.newsletter ? " · odebírá newsletter" : ""}
                 </Text>
-                {expert && <CopyId value={customer.id} />}
+                {expert && (
+                  <>
+                    <CopyId value={customer.id} />
+                    {(customer.records_count ?? 1) > 1 && (
+                      <Text size="xsmall" className="text-ui-fg-muted">
+                        {customer.records_count} záznamů v databázi (hosté)
+                      </Text>
+                    )}
+                  </>
+                )}
               </div>
 
               <div>

@@ -47,9 +47,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     wishlistByVariant.set(key, (wishlistByVariant.get(key) ?? 0) + 1)
   }
 
+  const expert = req.query.expert === "1"
   const decorate = (rows: any[]) =>
     rows
       .map((row) => ({
+        ...(expert ? { raw: row } : {}),
         ...row,
         waiting_customers: waitingByVariant.get(row.variant_id) ?? 0,
         wishlist_count: wishlistByVariant.get(row.variant_id) ?? 0,

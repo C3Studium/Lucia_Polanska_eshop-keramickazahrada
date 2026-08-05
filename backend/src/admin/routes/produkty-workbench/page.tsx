@@ -24,7 +24,7 @@ import { BundleEditor } from "../../components/bundle-editor";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
-import { formatCzk, stageLabels } from "../../lib/workbench";
+import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 
 /**
@@ -60,6 +60,7 @@ type WorkbenchVariant = {
 
 type WorkbenchProduct = {
   raw?: unknown;
+  store_url?: string | null;
   id: string;
   title: string;
   handle: string;
@@ -318,7 +319,7 @@ const StatsView = () => {
           {Object.entries(data.zakazky.by_stage as Record<string, number>)
             .map(
               ([stage, count]) =>
-                ` · ${stageLabels[stage] ?? stage}: ${count}`
+                ` · ${productionStageLabels[stage] ?? stage}: ${count}`
             )
             .join("")}
           <br />
@@ -660,6 +661,16 @@ const ProductsInner = () => {
               <ClearanceToggle product={product} makeClearance={true} />
             )}
 
+            {product.store_url && (
+              <a
+                href={product.store_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-ui-fg-interactive txt-small hover:underline"
+              >
+                V obchodě ↗
+              </a>
+            )}
             <Link
               to={`/products/${product.id}`}
               className="text-ui-fg-interactive txt-small hover:underline"

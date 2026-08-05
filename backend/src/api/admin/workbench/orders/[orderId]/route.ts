@@ -89,16 +89,38 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // newest first, excluding this order.
   let customerHistory: any[] = []
   if (order.customer?.id || order.email) {
-    const { data: others } = await query
-      .graph({
-        entity: "order",
-        fields: ["id", "display_id", "created_at", "total", "customer_id", "email"],
-        filters: (order.customer?.id
-          ? { customer_id: order.customer.id }
-          : { email: order.email }) as never,
-        pagination: { take: 20, skip: 0, order: { created_at: "DESC" } },
-      })
-      .catch(() => ({ data: [] as any[] }))
+    // E-mail first, id as a supplement, both merged: guest checkouts mint a
+    // NEW customer record per order, so matching by customer_id alone told a
+    // fifty-order regular „first order u vás". The person is the e-mail.
+    const [byEmail, byId] = await Promise.all([
+      order.email
+        ? query
+            .graph({
+              entity: "order",
+              fields: ["id", "display_id", "created_at", "total", "customer_id", "email"],
+              filters: { email: order.email } as never,
+              pagination: { take: 50, skip: 0, order: { created_at: "DESC" } },
+            })
+            .catch(() => ({ data: [] as any[] }))
+        : { data: [] as any[] },
+      order.customer?.id
+        ? query
+            .graph({
+              entity: "order",
+              fields: ["id", "display_id", "created_at", "total", "customer_id", "email"],
+              filters: { customer_id: order.customer.id } as never,
+              pagination: { take: 50, skip: 0, order: { created_at: "DESC" } },
+            })
+            .catch(() => ({ data: [] as any[] }))
+        : { data: [] as any[] },
+    ])
+    const seen = new Map<string, any>()
+    for (const row of [...(byEmail.data as any[]), ...(byId.data as any[])]) {
+      seen.set(row.id, row)
+    }
+    const others = [...seen.values()].sort((a, b) =>
+      a.created_at < b.created_at ? 1 : -1
+    )
 
     const otherIds = (others as any[])
       .filter((other) => other.id !== order.id)
