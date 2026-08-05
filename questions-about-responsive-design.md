@@ -86,3 +86,31 @@ room for the word, so it shows the arrow only. At 390px and up the word returns.
 - Widths were carried across from the old `@media` rules at their exact values rather than
   snapped onto named stops, so no boundary moved during the migration. Retuning any specific one
   onto a stop is a per-page decision — say the word for any that feel wrong.
+
+---
+
+## 6. Needs checking on a real device (I could not verify these headless)
+
+The device tiers are wired and their **inputs** are verified — the media queries resolve
+correctly for desktop, phone portrait, phone landscape, tablet and reduced-motion, including the
+case that width alone gets wrong (a phone on its side is 932px wide and still a phone).
+
+What I could not confirm in a headless browser:
+
+- **LiquidEther never mounts a canvas headless**, so the phone quality reduction
+  (`resolution` 0.28 -> 0.12, `iterationsPoisson` 14 -> 6, `autoSpeed` x0.6) is wired but its
+  effect is unmeasured. Worth a look on a real phone: the effect should still drift on its own,
+  just coarser.
+- **Reduced motion should unmount it entirely.** The wrapper div was still present in my probe.
+  Either the probe was hitting a stale dev build or the guard is not firing — please check
+  whether the ambient effect disappears with "reduce motion" on in the OS.
+- **Magnetic** no longer re-renders per pointer event (it used `setState` on every `mousemove`);
+  it now writes to a motion value and is skipped entirely on touch. Feel is unchanged on a mouse,
+  but worth a click around.
+
+## 7. Not yet done
+
+- Per-page orientation design beyond the store hero and the two scroll-story sections. Every page
+  is correct and contained at all ten viewports, but pages other than the store have not had a
+  deliberate landscape-versus-portrait composition pass.
+- `FAQImageShader` has not been tiered yet; only the site-wide LiquidEther has.

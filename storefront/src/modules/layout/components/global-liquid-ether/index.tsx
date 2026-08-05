@@ -2,7 +2,9 @@
 
 import LiquidEther from "@modules/home/E-com/Courses/VerticalImageCarousel/LiquidEther"
 import { usePathname } from "next/navigation"
-import type { CSSProperties } from "react"
+import { useMemo, type CSSProperties } from "react"
+
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import styles from "./style.module.scss"
 
 type AmbientPreset = {
@@ -84,11 +86,42 @@ function getPreset(pathname: string): AmbientPreset {
 
 export default function GlobalLiquidEther() {
   const pathname = usePathname()
+  const { isTouch, isPhone, reducedMotion } = useDeviceTier()
   const pathSegments = pathname.split("/").filter(Boolean)
   const isHomepage = pathSegments.length <= 1
   const preset = getPreset(pathname)
   const opacity =
     preset.name === "showcase" && isHomepage ? 0.1 : preset.opacity
+
+  /*
+   * The effect stays everywhere — it is ambient, and it drives itself through autoSpeed and
+   * autoIntensity without any pointer input. What changes by device is what it costs:
+   *
+   * - touch: no pointer forces at all. There is no cursor to follow, and a finger dragging the
+   *   page should not be read as one.
+   * - phone: the simulation grid and the pressure solve come right down. At this size the fine
+   *   structure those buy is simply not visible, and this is a full-screen fragment shader
+   *   running behind every page on a battery.
+   */
+  const quality = useMemo(() => {
+    const interactive = preset.interactive && !isTouch
+
+    return {
+      mouseForce: interactive ? 18 : 0,
+      cursorSize: interactive ? 82 : 0,
+      iterationsPoisson: isPhone ? 6 : preset.interactive ? 14 : 10,
+      resolution: isPhone ? 0.12 : preset.interactive ? 0.28 : 0.2,
+      takeoverDuration: interactive ? 0.25 : 0,
+      autoResumeDelay: interactive ? 1400 : 0,
+      autoRampDuration: interactive ? 0.6 : 1.8,
+      autoSpeed: isPhone ? preset.speed * 0.6 : preset.speed,
+    }
+  }, [preset, isTouch, isPhone])
+
+  // The one case where it should not run at all: the visitor asked for less motion.
+  if (reducedMotion) {
+    return null
+  }
 
   return (
     <div
@@ -99,17 +132,17 @@ export default function GlobalLiquidEther() {
       style={{ "--ambient-opacity": opacity } as CSSProperties}
     >
       <LiquidEther
-        key={preset.name}
-        mouseForce={preset.interactive ? 18 : 0}
-        cursorSize={preset.interactive ? 82 : 0}
-        iterationsPoisson={preset.interactive ? 14 : 10}
-        resolution={preset.interactive ? 0.28 : 0.2}
+        key={`${preset.name}-${isPhone ? "phone" : "full"}-${isTouch ? "touch" : "pointer"}`}
+        mouseForce={quality.mouseForce}
+        cursorSize={quality.cursorSize}
+        iterationsPoisson={quality.iterationsPoisson}
+        resolution={quality.resolution}
         colors={preset.colors}
-        autoSpeed={preset.speed}
+        autoSpeed={quality.autoSpeed}
         autoIntensity={preset.intensity}
-        takeoverDuration={preset.interactive ? 0.25 : 0}
-        autoResumeDelay={preset.interactive ? 1400 : 0}
-        autoRampDuration={preset.interactive ? 0.6 : 1.8}
+        takeoverDuration={quality.takeoverDuration}
+        autoResumeDelay={quality.autoResumeDelay}
+        autoRampDuration={quality.autoRampDuration}
         style={styleObj}
       />
     </div>
