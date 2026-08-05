@@ -122,7 +122,25 @@ that surface. Listed so they are not rediscovered as new.
 | T-7c | **The `input ~ label` utility (T-3a) is still live.** B4 fixed the primitives' ids and labels, but the Tailwind utility in `globals.scss:53` that shrinks any label following an input to 10px was not removed — the primitive's own floated-label styling depends on it. It needs replacing with a scoped rule, not deleting. | `src/styles/globals.scss:53` | **C** or a follow-up |
 | T-7d | **Type floors were applied mechanically.** 431 declarations were raised by script with a block-aware rule (uppercase → 12px, everything else → 13px). Spot-checked visually on `/store`, `/dotazy`, `/o-mne` and a product page, but not every one of the 84 files was inspected by eye. | 84 stylesheets | worth your review |
 
-## T-6 · The whole of Phases C–F is untouched
+## T-8 · Phase C — not yet started (added after the C1–C9 batch)
+
+Phase C is **partially complete**. Done: generic options (C3), availability vocabulary and
+sold-out badges (C1), quantity stepper and inventory cap (C2), incl.-VAT headline totals (C4),
+accordion dedupe / reviews hidden / Czech plurals (C7), fake status rail removed and pickup point
+shown (C9). Still outstanding:
+
+| # | Item | Spec | Note |
+|---|---|---|---|
+| T-8a | **URL-persisted filters/sort/search** on `/store`, and server-side search in the navbar overlay (which today downloads the entire catalogue in a 48-item loop and substring-filters client-side) | 2.5 | The Back button is this audience's primary navigation instrument; today it destroys the filtered view |
+| T-8b | **Packeta persistence in the main checkout** — adopt the express-checkout pattern; phone required when Zásilkovna is selected | 2.6 | The Review step already *shows* the point (A7); persisting it correctly on selection is the remaining half |
+| T-8c | **Gallery lightbox / zoom** on the PDP | 2.7 | Ceramics buyers need glaze detail |
+| T-8d | **Store hero compression** (full viewport → band) and the **sticky PDP purchase column** | 2.8 | Desktop only; the mobile buy bar is Phase F |
+| T-8e | **Converge the two confirmation surfaces** — `/order/[id]/confirmed` vs `/cart/[id]/confirmed` | 2.9 | Keep the `/cart/[id]/*` URLs, they are ComGate return targets (trap 11); render the order template |
+| T-8f | **Homepage recomposition** — real collections everywhere, shop CTA above the fold, section-anchored kiln keyframes, one kinetic showpiece | §6 | The largest single remaining item |
+| T-8g | **`/kurzy` readability pass** and the **account/auth light pass** (including the 15 remaining `console.log`s, T-3d) | §6 | |
+| T-8h | **BundleActions** — per-component value and "Ušetříte X Kč" | §4 | |
+
+## T-6 · The whole of Phases D–F is untouched
 
 For scale, measured on the branch as it stands:
 
@@ -1251,3 +1269,41 @@ browser on a single-variant product (stepper increments, note reads "Na objedná
 two-option product (both groups render), and the catalogue (PRODÁNO badges).
 
 ---
+
+## C7 + C9 — PDP details, plurals, and the confirmation (spec §14 P2 items 2.7, 2.9)
+
+**Files:** new `src/lib/util/plurals.ts`; `ProductPage/details/index.tsx`;
+`components/product-reviews/index.tsx`; `order/templates/order-completed-template.tsx`.
+
+**Czech plurals (trap 15).** `src/lib/util/plurals.ts` implements the three-form rule
+(1 / 2–4 / 5+) once, matching the correct implementation `ShopToolbar` already had. The reviews
+count said "3 recenzí" where it should say "3 recenze"; both call sites now use `withCount`.
+
+**Accordion dedupe.** "Výroba" rendered `product.description` **verbatim — identical to
+"Popisek"** — and panels rendered a literal "N/A" when their data was unset. The accordion is
+now Popisek / Rozměry a materiál / Doprava a vrácení, and a panel is only offered when it has
+something to say.
+
+**Reviews hidden until they have content.** Every new product rendered "0 recenzí" and five
+empty stars — actively undermining a shop where most pieces are new. The section returns `null`
+until there is at least one review (or an error to report).
+
+**The fake status rail is gone.** The three-step "Přijato → Ateliér → Na cestě" timeline on the
+order confirmation was presentational only, carrying its own `TODO(BACKEND)`. A progress
+indicator that never moves implies tracking the shop cannot provide — a trust liability. Removed,
+with a comment recording the condition for its return.
+
+**The confirmation now shows the pickup point** the customer chose, read from the order metadata
+that checkout persists. It was the one detail most likely to be wrong and the customer had no way
+to see it after paying.
+
+**Gate:** `pnpm lint` → 0 · `npx tsc --noEmit` → clean · `pnpm build` → 0 · axe re-run on
+`/store`, a product page and `/cart` → **0 violations**, so Phase B's floors survived Phase C.
+
+---
+
+# Phase C — status: partial
+
+Committed so far: **C1, C2, C3, C4, C7, C9**. The remaining P2 items are **not started** and are
+listed in the TODO section as T-8.
+
