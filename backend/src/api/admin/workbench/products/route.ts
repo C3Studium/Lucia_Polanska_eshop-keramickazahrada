@@ -60,7 +60,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "thumbnail",
           "created_at",
           "metadata",
+          "collection.id",
           "collection.title",
+          "categories.id",
           "categories.name",
           "variants.id",
           "variants.title",
@@ -201,6 +203,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         store_url: product.status === "published" ? productLink(product.handle) : null,
         thumbnail: product.thumbnail,
         collection: product.collection?.title ?? null,
+        collection_id: product.collection?.id ?? null,
+        category_refs: (product.categories ?? []).map((category: any) => ({
+          id: category.id,
+          name: category.name,
+        })),
         categories: (product.categories ?? []).map(
           (category: any) => category.name
         ),

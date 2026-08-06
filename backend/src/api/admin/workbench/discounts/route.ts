@@ -99,13 +99,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     scan = (scannedOrders as any[]).map((order) => ({
       id: order.id,
       created_at: String(order.created_at),
-      total: Number(order.total) || 0,
+      total: Number((order.total as any)?.value ?? (order.total as any)?.numeric_ ?? order.total) || 0,
       items: (order.items ?? []).map((item: any) => ({
         product_id: item?.product_id ?? null,
-        total: Number(item?.total) || 0,
+        total: Number((item?.total as any)?.value ?? (item?.total as any)?.numeric_ ?? item?.total) || 0,
         adjustments: (item?.adjustments ?? []).map((adjustment: any) => ({
           code: adjustment?.code ?? null,
-          amount: Number(adjustment?.amount) || 0,
+          amount: Number((adjustment?.amount as any)?.value ?? (adjustment?.amount as any)?.numeric_ ?? adjustment?.amount) || 0,
         })),
       })),
     }))
