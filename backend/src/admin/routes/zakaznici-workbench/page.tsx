@@ -360,14 +360,14 @@ const ZakazniciInner = () => {
 
       {active === "statistiky" && <CustomerStats />}
 
-      {isLoading && (
+      {active !== "statistiky" && isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
         </div>
       )}
 
-      {isError && (
+      {active !== "statistiky" && isError && (
         <EmptyState
           title="Zákazníky se nepodařilo načíst"
           description="Zkuste stránku obnovit."
@@ -381,7 +381,7 @@ const ZakazniciInner = () => {
         />
       )}
 
-      {!isLoading && !isError && rows.length > 0 && (
+      {active !== "statistiky" && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
           {rows.map((customer) => (
             <article

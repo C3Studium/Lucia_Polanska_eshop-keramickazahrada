@@ -512,7 +512,7 @@ const OrdersInner = () => {
 
       {active === "statistiky" && <OrderStats />}
 
-      {isLoading && (
+      {active !== "statistiky" && isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
@@ -520,7 +520,7 @@ const OrdersInner = () => {
         </div>
       )}
 
-      {isError && (
+      {active !== "statistiky" && isError && (
         <EmptyState
           title="Objednávky se nepodařilo načíst"
           description="Zkuste stránku obnovit."
