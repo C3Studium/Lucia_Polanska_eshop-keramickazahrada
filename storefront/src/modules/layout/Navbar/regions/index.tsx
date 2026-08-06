@@ -7,6 +7,7 @@ import { useParams, usePathname } from "next/navigation"
 import {
   useMemo,
   useState,
+  useTransition,
   type ComponentType,
   type CSSProperties,
 } from "react"
@@ -48,6 +49,7 @@ export default function RegionsSelect({
   regions: HttpTypes.StoreRegion[] | null
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isSwitching, startSwitching] = useTransition()
   const { countryCode } = useParams<{ countryCode: string }>()
   const pathname = usePathname()
 
@@ -79,18 +81,25 @@ export default function RegionsSelect({
     pathname.replace(new RegExp(`^/${countryCode}`), "") || "/"
 
   const handleChange = (option: CountryOption) => {
-    if (option.country === current.country) {
+    if (option.country === current.country || isSwitching) {
       setIsOpen(false)
       return
     }
 
     setIsOpen(false)
-    void updateRegion(option.country, currentPath)
+    /* The switch ends in a server redirect and takes a moment. Fired bare, React had no idea
+       anything was in flight, so a second click queued a second switch and the customer got
+       no sign the first one had been heard. */
+    startSwitching(async () => {
+      await updateRegion(option.country, currentPath)
+    })
   }
 
   return (
     <div
       className="regions__select"
+      aria-busy={isSwitching || undefined}
+      data-switching={isSwitching || undefined}
       data-open={isOpen || undefined}
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}

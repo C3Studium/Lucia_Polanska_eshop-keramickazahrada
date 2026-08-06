@@ -442,13 +442,18 @@ const Shipping: React.FC<ShippingProps> = ({
                 {hasPickupOptions && (
                   <RadioGroup
                     value={showPickupOptions}
-                    onChange={(value) => {
-                      const id = _pickupMethods.find(
+                    onChange={() => {
+                      const id = _pickupMethods?.find(
                         (option) => !option.insufficient_inventory
                       )?.id
                       if (id) {
                         handleSetShippingMethod(id, "pickup")
+                        return
                       }
+                      // Otherwise the row just refuses to select, with nothing said.
+                      setError(
+                        "Osobní odběr teď není možný — na skladě není dost kusů."
+                      )
                     }}
                   >
                     <Radio

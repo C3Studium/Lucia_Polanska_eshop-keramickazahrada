@@ -135,7 +135,7 @@ function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
         <span />
       </motion.span>
       <span className={styles.buttonLabel}>
-        Produkty
+        E-shop
         <motion.span animate={highlighted ? arrowTilted : arrowFlat} transition={menuFadeTransition}>
           {highlighted ? <ArrowRight size={12} color="white" /> : <Arrow size={12} />}
         </motion.span>

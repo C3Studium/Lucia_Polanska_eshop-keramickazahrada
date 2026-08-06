@@ -25,34 +25,36 @@ type Token = {
     icon?: IconToken
 }
 
+/* Sentence case, not caps. The copy is unchanged word for word — only the shouting is gone,
+   because at this size a wall of capitals reads as a sign rather than as her speaking. */
 const rootsCopy: CopyLine[] = [
     [
-        "JSEM Písecká rodačka,",
+        "Jsem písecká rodačka,",
         { type: "icon", name: "study", src: "/assets/icons/study.png" },
-        "ABSOLVENTKA",
+        "absolventka",
     ],
-    ["SPŠ KERAMICKÉ V BECHYNI A MÁMA DVOU"],
+    ["SPŠ keramické v Bechyni a máma dvou"],
     [
-        "ÚŽASNÝCH DĚTÍ. NAPLNO SE",
+        "úžasných dětí. Naplno se",
         { type: "icon", name: "pot", src: "/assets/icons/pot.png" },
-        "KERAMICE",
+        "keramice",
     ],
-    ["VĚNUJI od roku 2014."],
+    ["věnuji od roku 2014."],
 ]
 
 const signatureCopy: CopyLine[] = [
-    ["SVOU ORIGINÁLNÍ POETIKOU"],
+    ["Svou originální poetikou"],
     [
         { type: "icon", name: "dash", src: "/assets/icons/dash.png" },
-        "A přírodním designem",
+        "a přírodním designem",
     ],
     [
-        "I VOLBOU VYSOCE KVALITNÍCH",
+        "i volbou vysoce kvalitních",
         { type: "icon", name: "cube", src: "/assets/icons/cube.png" },
-        "MATERIÁLŮ",
+        "materiálů",
     ],
-    ["MÁ KERAMIKA OSLOVÍ KAŽDÉHO,"],
-    ["KDO HLEDÁ VÝTVARNOU I řemeslnou kvalitu."],
+    ["má keramika osloví každého,"],
+    ["kdo hledá výtvarnou i řemeslnou kvalitu."],
 ]
 
 const splitCopy = (lines: CopyLine[]): Token[][] =>

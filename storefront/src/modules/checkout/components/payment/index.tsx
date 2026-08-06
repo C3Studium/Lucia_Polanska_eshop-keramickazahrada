@@ -1,12 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import {
-  isComgate,
-  isPickupFulfillment,
-  isPickupPayment,
-  paymentInfoMap,
-} from "@lib/constants"
+import { isComgate, isPickupPayment, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
   legacyComgateOptionForMethod,
@@ -28,10 +23,13 @@ const Payment = ({
   cart,
   availablePaymentMethods,
   comgateMethods,
+  hasPickupShipping = false,
 }: {
   cart: any
   availablePaymentMethods: any[]
   comgateMethods: ComgatePaymentMethod[]
+  /** Decided by the checkout form, which can see the fulfilment provider of the chosen option. */
+  hasPickupShipping?: boolean
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
@@ -52,17 +50,8 @@ const Payment = ({
   /*
    * "Zaplatím při vyzvednutí" exists only for Osobní odběr — the customer collects from the
    * workshop and pays there. It is not dobírka and must never be offered for a carrier
-   * shipment, so it is filtered out unless the chosen shipping option uses the pickup
-   * fulfilment provider.
+   * shipment, so it is filtered out unless collection is the chosen delivery.
    */
-  const hasPickupShipping = Boolean(
-    cart?.shipping_methods?.some((method: any) =>
-      isPickupFulfillment(
-        method?.shipping_option?.provider_id ?? method?.provider_id
-      )
-    )
-  )
-
   const nonComgatePaymentMethods = useMemo(
     () =>
       availablePaymentMethods.filter(
@@ -91,7 +80,8 @@ const Payment = ({
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
   const paymentReady =
-    (activeSession && cart?.shipping_methods.length !== 0) || paidByGiftcard
+    (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
+    paidByGiftcard
 
   const createQueryString = useCallback(
     (name: string, value: string) => {

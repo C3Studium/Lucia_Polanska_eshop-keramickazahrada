@@ -20,8 +20,11 @@ export const listCartShippingMethods = async (cartId: string) => {
         method: "GET",
         query: {
           cart_id: cartId,
+          /* `fulfllment_set` was a typo, so the type never came back: every option looked
+             like a carrier shipment, Osobní odběr fell into the courier list, and the
+             pickup picker below it never appeared at all. */
           fields:
-            "+service_zone.fulfllment_set.type,*service_zone.fulfillment_set.location.address",
+            "+service_zone.fulfillment_set.type,*service_zone.fulfillment_set.location.address",
         },
         headers,
         next,

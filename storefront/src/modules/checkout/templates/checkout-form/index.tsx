@@ -3,7 +3,7 @@ import {
   listCartPaymentMethods,
   listComgatePaymentMethods,
 } from "@lib/data/payment"
-import { isComgate } from "@lib/constants"
+import { isComgate, isPickupFulfillment } from "@lib/constants"
 import { HttpTypes } from "@medusajs/types"
 import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
@@ -43,6 +43,25 @@ export default async function CheckoutForm({
       })
     : []
 
+  /*
+   * Whether the chosen delivery is Osobní odběr, decided here rather than in the payment
+   * step. The cart's own shipping_methods carry no fulfilment provider — the store cart is
+   * not fetched with that relation — so reading it there always said "no", and „Zaplatíte
+   * při vyzvednutí" was filtered out of the payment list even when collection was the
+   * chosen delivery. The full option list is already in hand on this side; match on it.
+   */
+  const chosenOptionIds = new Set(
+    (cart.shipping_methods ?? [])
+      .map((method) => method.shipping_option_id)
+      .filter(Boolean)
+  )
+  const hasPickupShipping = shippingMethods.some(
+    (option) =>
+      chosenOptionIds.has(option.id) &&
+      (isPickupFulfillment((option as any).provider_id) ||
+        (option as any).service_zone?.fulfillment_set?.type === "pickup")
+  )
+
   return (
     <div className={styles.root}>
       <Addresses cart={cart} customer={customer} countryCode={countryCode} />
@@ -58,6 +77,7 @@ export default async function CheckoutForm({
         cart={cart}
         availablePaymentMethods={paymentMethods}
         comgateMethods={comgateMethods}
+        hasPickupShipping={hasPickupShipping}
       />
       <Review
         cart={cart}

@@ -269,6 +269,13 @@
       height: 10px;
       content: "";
     }
+
+    /* The switch is a round trip to the server and a redirect. Without this the flag simply
+       sat there and the click read as ignored. */
+    &[data-switching] {
+      opacity: 0.55;
+      pointer-events: none;
+    }
   }
 
   .regions__select__button {

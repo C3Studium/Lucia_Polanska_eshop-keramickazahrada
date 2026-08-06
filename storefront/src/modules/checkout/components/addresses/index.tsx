@@ -38,7 +38,8 @@ const Addresses = ({
   )
 
   const handleEdit = () => {
-    router.push(pathname + "?step=address")
+    // Every other step keeps the page where it is; this one threw the customer to the top.
+    router.push(pathname + "?step=address", { scroll: false })
   }
 
   const [message, formAction] = useActionState(setAddresses, null)
@@ -48,7 +49,7 @@ const Addresses = ({
       <div className={s.headerRow}>
         <Heading level="h2" className={s.heading}>
           Doručovací a fakturační adresa
-          {!isOpen && <CheckCircleSolid />}
+          {!isOpen && cart?.shipping_address && <CheckCircleSolid />}
         </Heading>
         {!isOpen && cart?.shipping_address && (
           <PremiumActionButton

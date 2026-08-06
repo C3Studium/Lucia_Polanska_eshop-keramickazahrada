@@ -457,7 +457,9 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    // Unawaited, this was a Promise — always truthy, so the guard never fired and a missing
+    // cart surfaced later as an opaque failure instead of this sentence.
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
@@ -593,9 +595,21 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   }
 
   if (cartId) {
-    await updateCart({ region_id: region.id })
-  const cartCacheTag = await getCacheTag("carts")
-  if (cartCacheTag) revalidateTag(cartCacheTag)
+    /*
+     * A cart cannot always follow the shop across a currency — an item with no price in the
+     * new region makes Medusa refuse the update, and `updateCart` rethrows. That used to take
+     * the redirect below down with it: the customer picked a country, nothing happened, and
+     * because the caller fired this off unawaited there was not even an error to see. A cart
+     * that will not move is a reason to leave the cart where it is, not to refuse the country.
+     * `getOrSetCart` re-points it on the next add anyway.
+     */
+    try {
+      await updateCart({ region_id: region.id })
+      const cartCacheTag = await getCacheTag("carts")
+      if (cartCacheTag) revalidateTag(cartCacheTag)
+    } catch {
+      // Deliberately swallowed: the country change below must still happen.
+    }
   }
 
   const regionCacheTag = await getCacheTag("regions")
