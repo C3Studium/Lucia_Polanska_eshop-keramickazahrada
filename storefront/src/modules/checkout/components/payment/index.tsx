@@ -18,7 +18,9 @@ import { Container, Text, clx } from "@medusajs/ui"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer from "@modules/checkout/components/payment-container"
-import ComgatePaymentSelector from "@modules/common/components/comgate-payment-selector"
+import ComgatePaymentSelector, {
+  type ExtraPaymentOption,
+} from "@modules/common/components/comgate-payment-selector"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -68,6 +70,25 @@ const Payment = ({
           (hasPickupShipping || !isPickupPayment(provider.id))
       ),
     [availablePaymentMethods, hasPickupShipping]
+  )
+
+  /*
+   * Whatever is left after ComGate becomes a tile in ComGate's own grid. The copy comes from
+   * here rather than the old shared container, which described every method as "Visa,
+   * Mastercard a další podporované karty" — including pay-on-collection, where no card is
+   * involved and the money changes hands in the workshop.
+   */
+  const extraPaymentOptions = useMemo<ExtraPaymentOption[]>(
+    () =>
+      nonComgatePaymentMethods.map((provider) => ({
+        id: provider.id,
+        title: paymentInfoMap[provider.id]?.title ?? provider.id,
+        detail: isPickupPayment(provider.id)
+          ? "Zaplatíte na místě, až si objekt vyzvednete v ateliéru"
+          : "Platbu dokončíte v dalším kroku",
+        logo: paymentInfoMap[provider.id]?.icon,
+      })),
+    [nonComgatePaymentMethods]
   )
 
   // Switching away from Osobní odběr must clear a pickup payment already chosen.
@@ -224,34 +245,40 @@ const Payment = ({
                     : "Platbu dokončíte bezpečně v následujícím kroku."}
                 </p>
               </div>
-              {hasComgate && (
+              {/* One grid, not two lists. Osobní odběr's „Zaplatíte při vyzvednutí" joins
+                  ComGate's three as the fourth tile — and only when collection is the chosen
+                  delivery, so a carrier shipment still sees exactly three. */}
+              {hasComgate ? (
                 <ComgatePaymentSelector
                   methods={comgateMethods}
                   selectedOptionId={selectedPaymentMethod}
                   onSelect={selectComgate}
                   onConfirm={() => continueToReview(selectedPaymentMethod)}
+                  extraOptions={extraPaymentOptions}
+                  onSelectExtra={(id) => void setPaymentMethod(id)}
                   disabled={isLoading}
                   isSubmitting={isLoading}
                 />
-              )}
-
-              {nonComgatePaymentMethods.length > 0 && (
-                <RadioGroup
-                  className={styles.methodList}
-                  value={selectedPaymentMethod}
-                  onChange={(value: string) => void setPaymentMethod(value)}
-                  aria-label="Další způsoby platby"
-                >
-                  {nonComgatePaymentMethods.map((paymentMethod) => (
-                    <PaymentContainer
-                      key={paymentMethod.id}
-                      paymentInfoMap={paymentInfoMap}
-                      paymentProviderId={paymentMethod.id}
-                      selectedPaymentOptionId={selectedPaymentMethod}
-                      disabled={isLoading}
-                    />
-                  ))}
-                </RadioGroup>
+              ) : (
+                nonComgatePaymentMethods.length > 0 && (
+                  /* Fallback for a shop with no ComGate configured at all. */
+                  <RadioGroup
+                    className={styles.methodList}
+                    value={selectedPaymentMethod}
+                    onChange={(value: string) => void setPaymentMethod(value)}
+                    aria-label="Další způsoby platby"
+                  >
+                    {nonComgatePaymentMethods.map((paymentMethod) => (
+                      <PaymentContainer
+                        key={paymentMethod.id}
+                        paymentInfoMap={paymentInfoMap}
+                        paymentProviderId={paymentMethod.id}
+                        selectedPaymentOptionId={selectedPaymentMethod}
+                        disabled={isLoading}
+                      />
+                    ))}
+                  </RadioGroup>
+                )
               )}
             </>
           )}

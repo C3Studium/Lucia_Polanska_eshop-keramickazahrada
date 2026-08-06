@@ -43,6 +43,13 @@
   grid-template-columns: auto minmax(0, 1fr) auto auto;
 }
 
+/* With a fourth tile — „Zaplatíte při vyzvednutí", offered only for Osobní odběr — the bank
+   row stops spanning so the four sit as an even 2×2 instead of 2 + 1 + 1. */
+.groups[data-count="4"] .group[data-group="bank"] {
+  min-height: 98px;
+  grid-column: auto;
+}
+
 .group:disabled,
 .method:disabled,
 .otherBank:disabled,

@@ -10,7 +10,7 @@ import ApplePay from "@modules/common/icons/apple-pay"
 import GooglePay from "@modules/common/icons/google-pay"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import styles from "./style.module.scss"
 
 type MethodGroup = "card" | "wallet" | "bank"
@@ -20,11 +20,27 @@ type SelectorMethod = ComgatePaymentMethod & {
   selectorGroup: MethodGroup
 }
 
+/**
+ * A payment method that is not ComGate's — today only „Zaplatíte při vyzvednutí", which the
+ * checkout offers when the delivery is Osobní odběr. It sat in a second list *below* this
+ * component, which put the confirm button between the two: the customer read „Potvrdit
+ * objednávku a zaplatit" and only then met a further option. Rendered here it is simply the
+ * last tile of the one grid, and the button stays where a button belongs — after the choices.
+ */
+export type ExtraPaymentOption = {
+  id: string
+  title: string
+  detail: string
+  logo?: ReactNode
+}
+
 type ComgatePaymentSelectorProps = {
   methods: ComgatePaymentMethod[]
   selectedOptionId: string
   onSelect: (optionId: string) => void | Promise<void>
   onConfirm: () => void | Promise<void>
+  extraOptions?: ExtraPaymentOption[]
+  onSelectExtra?: (optionId: string) => void | Promise<void>
   disabled?: boolean
   isSubmitting?: boolean
   className?: string
@@ -207,6 +223,8 @@ export default function ComgatePaymentSelector({
   selectedOptionId,
   onSelect,
   onConfirm,
+  extraOptions = [],
+  onSelectExtra,
   disabled = false,
   isSubmitting = false,
   className = "",
@@ -277,6 +295,14 @@ export default function ComgatePaymentSelector({
     setOpenGroup((current) => (current === group ? null : group))
     if (group !== "bank") setBankSearch("")
   }
+
+  /* The grid is one row of tiles: ComGate's groups first, then anything the checkout added.
+     The count drives the layout — three tiles keep the wide bank row, four make a 2×2. */
+  const visibleGroups = useMemo(
+    () => grouped.filter((group) => group.methods.length > 0),
+    [grouped]
+  )
+  const tileCount = visibleGroups.length + extraOptions.length
 
   const activeGroupMethods =
     grouped.find((group) => group.id === openGroup)?.methods || []
@@ -359,9 +385,8 @@ export default function ComgatePaymentSelector({
             animate="visible"
             exit="exit"
           >
-            <div className={styles.groups}>
-              {grouped.map(({ id, methods: groupMethods }) => {
-                if (!groupMethods.length) return null
+            <div className={styles.groups} data-count={tileCount}>
+              {visibleGroups.map(({ id, methods: groupMethods }) => {
                 const meta = groupMeta[id]
                 const expanded = openGroup === id
 
@@ -398,6 +423,35 @@ export default function ComgatePaymentSelector({
                   </motion.button>
                 )
               })}
+
+              {extraOptions.map((option, index) => (
+                <motion.button
+                  type="button"
+                  className={styles.group}
+                  key={option.id}
+                  variants={itemVariants}
+                  data-group="extra"
+                  data-active={selectedOptionId === option.id}
+                  onClick={() => onSelectExtra?.(option.id)}
+                  disabled={disabled || isSubmitting}
+                  data-testid={`payment-option-${option.id}`}
+                >
+                  <span className={styles.groupFill} aria-hidden="true" />
+                  <span className={styles.groupIndex}>
+                    {String(visibleGroups.length + index + 1).padStart(2, "0")}
+                  </span>
+                  <span className={styles.groupCopy}>
+                    <strong>{option.title}</strong>
+                    <small>{option.detail}</small>
+                  </span>
+                  <span className={styles.logoStack} aria-hidden="true">
+                    {option.logo ? <span>{option.logo}</span> : null}
+                  </span>
+                  <span className={styles.groupArrow} aria-hidden="true">
+                    ↗
+                  </span>
+                </motion.button>
+              ))}
             </div>
 
             <AnimatePresence initial={false}>
