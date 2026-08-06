@@ -11,6 +11,10 @@ import { NEWSLETTER_MODULE } from "../../../../../modules/newsletter"
  * rather than login states.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  try {
+  const safely = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
+    try { return await promise } catch { return fallback }
+  }
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const newsletter = req.scope.resolve<any>(NEWSLETTER_MODULE)
 
@@ -31,11 +35,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         fields: ["id", "email", "first_name", "last_name", "has_account", "created_at"],
         pagination: { take: 1000, skip: 0 },
       }),
-      query.graph({
+      safely(query.graph({
         entity: "order",
         fields: ["id", "email", "customer_id", "total", "created_at"],
         pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
-      }),
+      }), { data: [] as any[] } as never),
       newsletter
         .listNewsletterSubscribers({ unsubscribed_at: null } as never)
         .catch(() => []) as Promise<any[]>,
@@ -131,4 +135,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     customers_on_newsletter: customersOnNewsletter,
     orders_scanned: (orders as any[]).length,
   })
+  } catch (error) {
+    res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Statistiky selhaly.",
+    })
+  }
 }

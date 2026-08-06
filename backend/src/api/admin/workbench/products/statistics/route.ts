@@ -32,6 +32,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const wishlist = req.scope.resolve<any>(WISHLIST_MODULE)
 
   const round = (value: number) => Math.round(value * 100) / 100
+  const toNumber = (value: unknown): number => {
+    const parsed = Number(
+      typeof value === "object" && value !== null
+        ? ((value as any).value ?? (value as any).numeric_ ?? 0)
+        : value
+    )
+    return Number.isFinite(parsed) ? parsed : 0
+  }
   const yearAgo = new Date()
   yearAgo.setFullYear(yearAgo.getFullYear() - 1)
   const monthAgo = new Date()
@@ -132,7 +140,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           revenue: 0,
         }
         entry.qty += Number(item.quantity) || 0
-        entry.revenue = round(entry.revenue + (Number(item.total) || 0))
+        entry.revenue = round(entry.revenue + toNumber(item.total))
         map.set(item.product_id, entry)
       }
     }
@@ -174,7 +182,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         productionRequests
           .filter((request) => request.status === "paid")
           .reduce(
-            (sum, request) => sum + (Number(request.amount) || 0),
+            (sum, request) => sum + toNumber(request.amount),
             0
           )
     )
@@ -191,7 +199,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       if (!bundleId) continue
       const entry = bundleSales.get(bundleId) ?? { qty: 0, revenue: 0 }
       entry.qty += Number(item.quantity) || 0
-      entry.revenue = round(entry.revenue + (Number(item.total) || 0))
+      entry.revenue = round(entry.revenue + toNumber(item.total))
       bundleSales.set(bundleId, entry)
     }
   }
