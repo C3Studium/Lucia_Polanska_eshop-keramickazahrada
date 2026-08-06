@@ -1,5 +1,7 @@
 "use client"
 
+import { motion } from "framer-motion"
+
 import { useActionState } from "react"
 import Input from "@modules/common/components/input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
@@ -7,6 +9,7 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 import s from "./style.module.scss"
+import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 
 type Props = {
@@ -19,14 +22,33 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
 
   return (
     <div className={s.root} data-testid="register-page">
-      <h1 className={s.title}>
+      <motion.h1
+        className={s.title}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.eyebrow}
+      >
         Staňte se členem!
-      </h1>
-      <p className={s.desc}>
+      </motion.h1>
+      <motion.p
+        className={s.desc}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.heading}
+      >
         Vytvořte si profil v Keramické zahradě a mějte své objednávky, adresy
         i uložené objekty na jednom místě.
-      </p>
-      <form className={s.form} action={formAction}>
+      </motion.p>
+      <motion.form
+        className={s.form}
+        action={formAction}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.lede}
+      >
         {redirectTo && (
           <input type="hidden" name="redirect_to" value={redirectTo} />
         )}
@@ -93,7 +115,7 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
           data-testid="register-button"
           text="Připojit se"
         />
-      </form>
+      </motion.form>
       <span className={s.note}>
         Již jste členem?{" "}
         <button

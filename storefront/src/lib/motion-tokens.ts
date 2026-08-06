@@ -37,11 +37,12 @@ export const duration = {
  * value in `style` wins over `animate` for the same property, so the entrance would never run.
  */
 export const heroReveal: Variants = {
-  hidden: { opacity: 0, y: 26 },
+  hidden: { opacity: 0, y: 64, filter: "blur(6px)" },
   show: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay, duration: 0.75, ease: easeReveal },
+    filter: "blur(0px)",
+    transition: { delay, duration: 1.05, ease: easeReveal },
   }),
 }
 
@@ -51,15 +52,32 @@ export const heroUncover: Variants = {
   show: (delay: number = 0) => ({
     opacity: 1,
     clipPath: "inset(0 0 0% 0)",
-    transition: { delay, duration: 1.05, ease: easeReveal },
+    transition: { delay, duration: 1.2, ease: easeReveal },
   }),
 }
 
-/** The beats a hero arrives on, so the stagger is identical from page to page. */
+/**
+ * A display line rising out of its own overflow. Put it on an inner element whose parent has
+ * `overflow: hidden` — the parent is the mask, this is what climbs out of it. Reads far more
+ * strongly than a fade at the sizes hero headings run at.
+ */
+export const heroLineRise: Variants = {
+  hidden: { y: "110%" },
+  show: (delay: number = 0) => ({
+    y: "0%",
+    transition: { delay, duration: 1.15, ease: easeReveal },
+  }),
+}
+
+/**
+ * The beats a hero arrives on, so the stagger is identical from page to page. Spread wider than
+ * a typical stagger on purpose: at these type sizes the parts need to land one at a time to be
+ * seen arriving at all.
+ */
 export const heroBeat = {
-  eyebrow: 0.05,
-  heading: 0.12,
-  lede: 0.2,
-  action: 0.28,
-  chrome: 0.36,
+  eyebrow: 0.1,
+  heading: 0.26,
+  lede: 0.46,
+  action: 0.62,
+  chrome: 0.78,
 } as const

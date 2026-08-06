@@ -21,7 +21,10 @@ const LoginTemplate = ({ redirectTo }: LoginTemplateProps) => {
 
   return (
     <AuthPortal mode={isSignIn ? "login" : "register"}>
-      <AnimatePresence mode="wait" initial={false}>
+      {/* No `initial={false}`: it sets a presence context that suppresses mount animations for
+          everything beneath it, so the sign-in heading's own entrance never ran. Switching
+          between the two views still animates — that is `mode="wait"` and `exit`, not this. */}
+      <AnimatePresence mode="wait">
         <motion.div
           key={currentView}
           initial={initial}

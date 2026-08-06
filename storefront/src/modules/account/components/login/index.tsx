@@ -6,7 +6,10 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { useActionState } from "react"
 
+import { motion } from "framer-motion"
+
 import s from "./login.module.scss"
+import { heroBeat, heroReveal } from "@lib/motion-tokens"
 
 
 type Props = {
@@ -19,11 +22,32 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
 
   return (
     <div className={s.root} data-testid="login-page">
-      <h1 className={s.title}>Vítejte zpět</h1>
-      <p className={s.desc}>
+      <motion.h1
+        className={s.title}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.eyebrow}
+      >
+        Vítejte zpět
+      </motion.h1>
+      <motion.p
+        className={s.desc}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.heading}
+      >
         Přihlaste se pro přístup k vylepšenému zážitku z nakupování.
-      </p>
-      <form className={s.form} action={formAction}>
+      </motion.p>
+      <motion.form
+        className={s.form}
+        action={formAction}
+        variants={heroReveal}
+        initial="hidden"
+        animate="show"
+        custom={heroBeat.lede}
+      >
         {redirectTo && (
           <input type="hidden" name="redirect_to" value={redirectTo} />
         )}
@@ -53,7 +77,7 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
           className={s.submit}
           data-testid="sign-in-button"
         />
-      </form>
+      </motion.form>
       <span className={s.note}>
         Ještě nemáte účet?{" "}
         <button

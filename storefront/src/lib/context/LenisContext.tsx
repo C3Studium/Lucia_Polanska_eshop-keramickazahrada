@@ -28,18 +28,26 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
        * motion keeps a visible tail for as long as there is distance left, and a second wheel
        * tick blends into the first instead of restarting a tween.
        */
-      /* 0.06 puts roughly 90% of the travel in the first 620ms with a tail past a second —
-         slow enough to read as a glide rather than a jump. 0.085 measured only 40ms slower
-         than the old curve, which was not a perceptible difference. */
-      lerp: 0.06,
+/*
+       * 0.045 is the point where the scroll stops reading as "the browser, slightly delayed" and
+       * starts reading as its own thing: let go mid-scroll and the page keeps travelling for
+       * about a second, decelerating the whole way. Each frame closes 4.5% of the remaining
+       * distance, so the tail is long by construction rather than by a timer.
+       *
+       *   50% of the travel  ~300ms
+       *   90%                ~1.0s
+       *   99%                ~2.0s
+       */
+      lerp: 0.045,
       smoothWheel: true,
       /*
        * Touch scrolling stays native. Momentum on a phone is the operating system's to own —
        * intercepting it fights the platform's own physics and feels worse, not better.
        */
       syncTouch: false,
-      // A wheel notch should still move roughly what the OS intends.
-      wheelMultiplier: 1,
+      /* Slightly more travel per notch. With a long tail, a short throw finishes before the
+         deceleration is visible — there has to be enough distance for the easing to show. */
+      wheelMultiplier: 1.15,
       touchMultiplier: 1.6,
     });
     lenisRef.current = lenis;
