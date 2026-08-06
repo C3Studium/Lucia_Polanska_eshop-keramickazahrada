@@ -108,6 +108,25 @@ What I could not confirm in a headless browser:
   it now writes to a motion value and is skipped entirely on touch. Feel is unchanged on a mouse,
   but worth a click around.
 
+## 7a. Pixel widths still to convert to named stops (99 calls)
+
+You asked for the whole thing on your system. 39 blocks converted cleanly; these files were
+refused by the converter rather than guessed at, because their blocks target descendant or
+pseudo selectors (`.masthead h1`, `.orderMeta > div:nth-child(2)`, `.actions > *`) with no
+top-level rule to invert against:
+
+  order pages (order-details, payment-details, transfer-actions, oder-complete, order-transfer,
+  order-state-shell), checkout/page.module.scss, store/loading.module.scss, Kurzy/Intro,
+  E-com Courses + Collections, ProductPage (product, Sold), Navbar + navbarSearch +
+  productsButton + mobileNav, ContactDialog, CookieNotice, Footer
+
+They need doing by hand. Not hard, just one at a time.
+
+**Also worth knowing:** converting to your table *moves boundaries*. A rule written at 700px now
+breaks at `h(xs)`=750 landscape and `v(md)`=600 portrait. That is inherent to using named stops
+rather than ad-hoc widths, but it means the layout changes at those exact widths — the store grid
+now goes 2-up from 600/750 instead of 620, for example. Worth a look at 620-760px tomorrow.
+
 ## 7. Not yet done
 
 - Per-page orientation design beyond the store hero and the two scroll-story sections. Every page
