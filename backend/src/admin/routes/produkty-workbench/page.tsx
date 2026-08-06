@@ -477,12 +477,13 @@ const ProductsInner = () => {
               : [];
 
   const renderRow = (product: WorkbenchProduct) => {
+    // Best variant wins — „can I sell it at all?" Skladem beats Dochází
+    // beats Vyprodáno; a product is only Vyprodáno when EVERY variant is.
     const worstStock = product.variants.reduce<"ok" | "low" | "out" | null>(
-      (worst, variant) => {
-        if (variant.stock_state === "out") return "out";
-        if (variant.stock_state === "low" && worst !== "out") return "low";
-        if (variant.stock_state === "ok" && !worst) return "ok";
-        return worst;
+      (best, variant) => {
+        if (variant.stock_state === "ok" || best === "ok") return "ok";
+        if (variant.stock_state === "low" || best === "low") return "low";
+        return variant.stock_state ?? best;
       },
       null
     );

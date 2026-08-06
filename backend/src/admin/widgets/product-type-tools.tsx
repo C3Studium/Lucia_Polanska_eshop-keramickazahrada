@@ -26,13 +26,34 @@ const Inner = ({ productId }: { productId: string }) => {
   });
   const { data: productData } = useQuery<{ product: any }>({
     queryKey: ["product-type-tools", productId],
-    queryFn: () => sdk.client.fetch(`/admin/products/${productId}?fields=id,title,metadata`),
+    queryFn: () => sdk.client.fetch(`/admin/products/${productId}?fields=id,title,status,metadata`),
     refetchOnWindowFocus: true,
   });
 
   const profile = profileData?.product?.profile;
   const product = productData?.product;
   const clearance = Boolean((product?.metadata as any)?.clearance);
+
+  const togglePublish = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/products/${productId}`, {
+        method: "POST",
+        body: {
+          status: product?.status === "published" ? "draft" : "published",
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        product?.status === "published"
+          ? "Skryto z obchodu — zákazníci produkt neuvidí."
+          : "Zveřejněno — produkt je v obchodě."
+      );
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
+  });
 
   const toggleClearance = useMutation({
     mutationFn: () =>
@@ -58,6 +79,25 @@ const Inner = ({ productId }: { productId: string }) => {
       <Text size="xsmall" weight="plus" className="text-ui-fg-muted uppercase">
         Typ produktu
       </Text>
+
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <Text size="small" weight="plus">V obchodě</Text>
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {product?.status === "published"
+              ? "Zákazníci produkt vidí a mohou koupit."
+              : "Skrytý — v obchodě není."}
+          </Text>
+        </div>
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={togglePublish.isPending}
+          onClick={() => togglePublish.mutate()}
+        >
+          {product?.status === "published" ? "Skrýt z obchodu" : "Zveřejnit"}
+        </Button>
+      </div>
 
       <div className="flex items-center justify-between gap-2">
         <div>

@@ -241,11 +241,22 @@ const filterTabs = [
 
 /** Zákazníci+ → Statistiky: repeat rate, top customers, registrations. */
 const CustomerStats = () => {
-  const { data, isLoading } = useQuery<any>({
+  const { data, isLoading, error } = useQuery<any>({
     queryKey: ["workbench-customer-statistics"],
     queryFn: () => sdk.client.fetch("/admin/workbench/customers/statistics"),
     refetchOnWindowFocus: true,
+    retry: 1,
   });
+  if (error) {
+    return (
+      <div className="px-6 py-5">
+        <Text size="small" className="text-ui-fg-error">
+          Statistiky se nepodařilo načíst:{" "}
+          {error instanceof Error ? error.message : "neznámá chyba"}
+        </Text>
+      </div>
+    );
+  }
   if (isLoading || !data) {
     return (
       <div className="px-6 py-5">

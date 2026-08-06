@@ -74,6 +74,7 @@ type WorkbenchOrder = {
 };
 
 type WorkbenchOrdersResponse = {
+  counts?: Record<string, number>;
   orders: WorkbenchOrder[];
   count: number;
 };
@@ -90,11 +91,22 @@ const filterTabs = [
 
 /** Objednávky+ → Statistiky: 12 months, AOV, providers, lead time, refunds. */
 const OrderStats = () => {
-  const { data, isLoading } = useQuery<any>({
+  const { data, isLoading, error } = useQuery<any>({
     queryKey: ["workbench-order-statistics"],
     queryFn: () => sdk.client.fetch("/admin/workbench/orders/statistics"),
     refetchOnWindowFocus: true,
+    retry: 1,
   });
+  if (error) {
+    return (
+      <div className="px-6 py-5">
+        <Text size="small" className="text-ui-fg-error">
+          Statistiky se nepodařilo načíst:{" "}
+          {error instanceof Error ? error.message : "neznámá chyba"}
+        </Text>
+      </div>
+    );
+  }
   if (isLoading || !data) {
     return (
       <div className="px-6 py-5">
@@ -508,7 +520,15 @@ const OrdersInner = () => {
         </div>
       </header>
 
-      <SubTabs tabs={filterTabs} active={active} onSelect={setActive} />
+      <SubTabs
+        tabs={filterTabs.map((tab) => ({
+          ...tab,
+          count:
+            tab.key === "statistiky" ? undefined : data?.counts?.[tab.key],
+        }))}
+        active={active}
+        onSelect={setActive}
+      />
 
       {active === "statistiky" && <OrderStats />}
 

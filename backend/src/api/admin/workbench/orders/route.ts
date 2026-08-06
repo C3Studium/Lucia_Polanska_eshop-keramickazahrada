@@ -132,7 +132,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
   const owingOnly = req.query.owing === "true"
 
-  const rows = (orders as any[])
+  const mappedAll = (orders as any[])
     .map((order) => {
       const payments = (order.payment_collections ?? []).flatMap(
         (collection: any) => collection?.payments ?? []
@@ -199,7 +199,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         delivered: fulfillments.some((f: any) => f?.delivered_at),
       }
     })
-    .filter((row) => {
+  const counts = {
+    vse: mappedAll.length,
+    received: mappedAll.filter((r) => r.stage === "received").length,
+    working: mappedAll.filter((r) => r.stage === "working").length,
+    shipping: mappedAll.filter((r) => r.stage === "shipping").length,
+    payment_problem: mappedAll.filter((r) => r.stage === "payment_problem")
+      .length,
+    dluzi: mappedAll.filter((r) => r.outstanding > 0).length,
+  }
+
+  const rows = mappedAll.filter((row) => {
       if (stageFilter && row.stage !== stageFilter) return false
       if (owingOnly && row.outstanding <= 0) return false
       if (
@@ -214,6 +224,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     })
 
   res.status(200).json({
+    counts,
     orders: rows,
     count: rows.length,
     limit,
