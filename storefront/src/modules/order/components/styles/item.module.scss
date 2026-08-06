@@ -13,16 +13,32 @@
 }
 
 .cellThumb {
-  width: 108px;
+  width: 82px;
   padding-left: 0 !important;
+
+  @include v(md) {
+    width: 108px;
+  }
+
+  @include h(xxs) {
+    width: 108px;
+  }
 }
 
 .thumbWrap {
-  width: 88px;
+  width: 68px;
   aspect-ratio: 4 / 5;
   overflow: hidden;
   border: 1px solid rgba(32, 33, 29, .12);
   background: rgba(255, 255, 255, .42);
+
+  @include v(md) {
+    width: 88px;
+  }
+
+  @include h(xxs) {
+    width: 88px;
+  }
 }
 
 .cellInfo {
@@ -46,8 +62,16 @@
 }
 
 .cellPrice {
-  width: 210px;
+  width: auto;
   padding-right: 0 !important;
+
+  @include v(md) {
+    width: 210px;
+  }
+
+  @include h(xxs) {
+    width: 210px;
+  }
 }
 
 .priceWrap {
@@ -66,6 +90,7 @@
 .unitWrap {
   color: rgba(32, 33, 29, .55);
   font-size: 14px;
+  display: none;
 }
 
 .divider {
@@ -79,23 +104,6 @@
   font: 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
+  display: none;
 }
 
-@include below-px(560px) {
-  .cellThumb {
-    width: 82px;
-  }
-
-  .thumbWrap {
-    width: 68px;
-  }
-
-  .cellPrice {
-    width: auto;
-  }
-
-  .totalLabel,
-  .unitWrap {
-    display: none;
-  }
-}

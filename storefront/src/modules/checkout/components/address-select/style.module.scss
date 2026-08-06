@@ -11,14 +11,24 @@
   gap: 24px;
   align-items: center;
   width: 100%;
-  min-height: 108px;
-  padding: 20px 22px;
+  min-height: 96px;
+  padding: 16px;
   border: 1px solid rgba(32, 33, 29, .26);
   border-radius: 0;
   background: transparent;
   color: #20211d;
   text-align: left;
   cursor: pointer;
+
+  @include v(md) {
+    min-height: 108px;
+    padding: 20px 22px;
+  }
+
+  @include h(xs) {
+    min-height: 108px;
+    padding: 20px 22px;
+  }
 }
 
 .accountAddressSelectButton::after {
@@ -120,11 +130,21 @@
 .accountAddressOptionInner {
   position: relative;
   display: grid;
-  grid-template-columns: 28px 20px minmax(0, 1fr) auto;
-  gap: 14px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px 14px;
   align-items: start;
   min-height: 118px;
   padding: 20px;
+
+  @include v(md) {
+    grid-template-columns: 28px 20px minmax(0, 1fr) auto;
+    gap: 14px;
+  }
+
+  @include h(xs) {
+    grid-template-columns: 28px 20px minmax(0, 1fr) auto;
+    gap: 14px;
+  }
 }
 
 .accountAddressOptionHighlight {
@@ -143,12 +163,14 @@
 
 .accountAddressOptionIndex {
   padding-top: 3px;
+  display: none;
 }
 
 .accountAddressOptionCopy {
   display: grid;
   min-width: 0;
   gap: 3px;
+  grid-column: 2;
 }
 
 .accountAddressOptionCopy strong {
@@ -165,25 +187,6 @@
 .accountAddressOptionState {
   padding-top: 3px;
   color: #6d755d;
+  display: none;
 }
 
-@include below-px(620px) {
-  .accountAddressSelectButton {
-    min-height: 96px;
-    padding: 16px;
-  }
-
-  .accountAddressOptionInner {
-    grid-template-columns: 20px minmax(0, 1fr);
-    gap: 10px 14px;
-  }
-
-  .accountAddressOptionIndex,
-  .accountAddressOptionState {
-    display: none;
-  }
-
-  .accountAddressOptionCopy {
-    grid-column: 2;
-  }
-}

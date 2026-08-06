@@ -1,7 +1,7 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .container {
   display: grid;
-  grid-template-columns: minmax(0, 11fr) minmax(360px, 9fr);
+  grid-template-columns: 1fr;
   gap: clamp(70px, 10vw, 180px);
   width: 100%;
   min-height: 54vh;
@@ -11,6 +11,16 @@
     radial-gradient(circle at 86% 28%, rgba(187, 183, 136, 0.2), transparent 28rem),
     #ffe8d6;
   border-top: 1px solid rgba(32, 33, 28, 0.18);
+  padding-right: 16px;
+  padding-left: 16px;
+
+  @include v(lg) {
+    grid-template-columns: minmax(0, 11fr) minmax(360px, 9fr);
+  }
+
+  @include h(sm) {
+    grid-template-columns: minmax(0, 11fr) minmax(360px, 9fr);
+  }
 }
 
 .reviews {
@@ -19,12 +29,20 @@
 
 .header {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-items: end;
   gap: 24px;
   margin-bottom: clamp(42px, 6vh, 70px);
   padding-bottom: 15px;
   border-bottom: 1px solid rgba(32, 33, 28, 0.22);
+
+  @include v(md) {
+    grid-template-columns: 1fr auto;
+  }
+
+  @include h(xxs) {
+    grid-template-columns: 1fr auto;
+  }
 }
 
 .headerCopy > span {
@@ -71,8 +89,16 @@
 
 .reviewsGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: clamp(32px, 3.6vw, 64px) clamp(24px, 3vw, 50px);
+
+  @include v(lg) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .review {
@@ -217,24 +243,3 @@
   cursor: wait;
 }
 
-@include below-px(900px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
-
-  .reviewsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@include below-px(560px) {
-  .container {
-    padding-right: 16px;
-    padding-left: 16px;
-  }
-
-  .header {
-    grid-template-columns: 1fr;
-  }
-
-}

@@ -25,10 +25,19 @@
 }
 
 .accountWishlistHeading {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 24px;
   align-items: end;
+  grid-template-columns: 1fr;
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountWishlistHeading h1 {
@@ -46,10 +55,19 @@
 }
 
 .accountWishlistIntro {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 24px;
   align-items: end;
+  grid-template-columns: 1fr;
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountWishlistIntro > p {
@@ -66,11 +84,21 @@
 
 .accountPreviewNotice {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 24px;
   align-items: baseline;
   padding: 16px 0;
   border-block: 1px solid rgba(126, 137, 106, 0.35);
+
+  @include v(md) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  @include h(xs) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
 }
 
 .accountPreviewNotice span {
@@ -88,11 +116,27 @@
 
 .accountWishlistGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: clamp(18px, 2.2vw, 30px);
   margin: 0;
   padding: 0;
   list-style: none;
+
+  @include v(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include v(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include h(xs) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(sm) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .accountWishlistCard {
@@ -192,13 +236,22 @@
 }
 
 .accountWishlistEmpty {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 30px;
   align-items: center;
   min-height: 210px;
   padding: 36px 0;
   border-block: 1px solid rgba(32, 33, 29, 0.2);
+  grid-template-columns: 1fr;
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountWishlistEmpty > div > span {
@@ -217,22 +270,3 @@
   --premium-link-fill: #20211d;
 }
 
-@include below-px(1050px) {
-  .accountWishlistGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@include below-px(680px) {
-  .accountWishlistHeading,
-  .accountWishlistIntro,
-  .accountPreviewNotice,
-  .accountWishlistEmpty {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .accountWishlistGrid {
-    grid-template-columns: 1fr;
-  }
-}

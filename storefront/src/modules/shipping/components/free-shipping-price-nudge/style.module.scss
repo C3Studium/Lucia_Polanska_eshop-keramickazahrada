@@ -47,17 +47,31 @@
 
 .popupRoot {
   position: fixed;
-  right: clamp(18px, 2.5vw, 44px);
-  bottom: clamp(18px, 3vw, 46px);
+  right: 14px;
+  bottom: 14px;
   z-index: 810;
   display: grid;
   gap: 24px;
-  width: min(calc(100% - 36px), 430px);
-  padding: 28px;
+  width: calc(100% - 28px);
+  padding: 22px;
   color: #ffe8d6;
   background: #20211c;
   box-shadow: 0 30px 70px -38px rgba(0, 0, 0, 0.94);
   transform-origin: right bottom;
+
+  @include v(md) {
+    right: clamp(18px, 2.5vw, 44px);
+    bottom: clamp(18px, 3vw, 46px);
+    width: min(calc(100% - 36px), 430px);
+    padding: 28px;
+  }
+
+  @include h(xxs) {
+    right: clamp(18px, 2.5vw, 44px);
+    bottom: clamp(18px, 3vw, 46px);
+    width: min(calc(100% - 36px), 430px);
+    padding: 28px;
+  }
 }
 
 .popupRoot::after {
@@ -141,8 +155,16 @@
 
 .popupActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
+
+  @include v(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(xxs) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .cartLink,
@@ -161,15 +183,3 @@
   --premium-link-fill: #bbb788;
 }
 
-@include below-px(520px) {
-  .popupRoot {
-    right: 14px;
-    bottom: 14px;
-    width: calc(100% - 28px);
-    padding: 22px;
-  }
-
-  .popupActions {
-    grid-template-columns: 1fr;
-  }
-}

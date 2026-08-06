@@ -5,6 +5,16 @@
   gap: 0;
   padding: 0;
   background: transparent;
+
+  @include v(md) {
+    gap: 0;
+    padding: 0;
+  }
+
+  @include h(xs) {
+    gap: 0;
+    padding: 0;
+  }
 }
 
 .root > * {
@@ -27,6 +37,3 @@
   outline-offset: 3px;
 }
 
-@include below-px(620px) {
-  .root { gap: 0; padding: 0; }
-}

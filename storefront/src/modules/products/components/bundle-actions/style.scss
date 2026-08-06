@@ -24,11 +24,20 @@
 
 .bundleInline__previews {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
   gap: clamp(10px, 0.8vw, 15px);
   padding: 16px 0 26px;
   border-top: 1px solid rgba(255, 232, 214, 0.2);
   border-bottom: 1px solid rgba(255, 232, 214, 0.2);
+  overflow-x: auto;
+
+  @include v(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include h(sm) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .bundleInline__preview {
@@ -185,9 +194,3 @@
   font-size: 15px !important;
 }
 
-@include below-px(900px) {
-  .bundleInline__previews {
-    grid-template-columns: repeat(3, minmax(90px, 1fr));
-    overflow-x: auto;
-  }
-}

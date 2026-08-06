@@ -55,7 +55,10 @@
   .deliveryOptions {
     padding-bottom: 2rem;
     padding-top: 0.5rem;
-    @include from-px(768px) {
+    @include h(xs) {
+      padding-top: 0;
+    }
+@include v(lg) {
       padding-top: 0;
     }
 

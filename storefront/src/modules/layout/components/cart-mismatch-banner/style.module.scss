@@ -23,10 +23,18 @@
 
 .content {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 190px;
+  grid-template-columns: 24px 1fr;
   align-items: center;
   gap: 18px;
   padding: 20px 24px;
+
+  @include v(md) {
+    grid-template-columns: 34px minmax(0, 1fr) 190px;
+  }
+
+  @include h(xs) {
+    grid-template-columns: 34px minmax(0, 1fr) 190px;
+  }
 }
 
 .index,
@@ -80,7 +88,7 @@
 
   i {
     display: grid;
-    width: 28px;
+    width: min(100%, 210px);
     height: 28px;
     place-items: center;
     border: 1px solid currentColor;
@@ -90,6 +98,15 @@
   &:disabled {
     cursor: wait;
     opacity: 0.72;
+  }
+  grid-column: 2;
+
+  @include v(md) {
+    width: 28px;
+  }
+
+  @include h(xs) {
+    width: 28px;
   }
 }
 
@@ -101,13 +118,3 @@
   transform-origin: left center;
 }
 
-@include below-px(660px) {
-  .content {
-    grid-template-columns: 24px 1fr;
-  }
-
-  .action {
-    grid-column: 2;
-    width: min(100%, 210px);
-  }
-}

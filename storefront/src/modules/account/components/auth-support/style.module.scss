@@ -4,8 +4,16 @@
   width: 100%;
   max-width: none;
   min-width: 0;
-  gap: clamp(24px, 3.2vh, 38px);
+  gap: 25px;
   color: #22231f;
+
+  @include v(md) {
+    gap: clamp(24px, 3.2vh, 38px);
+  }
+
+  @include h(xs) {
+    gap: clamp(24px, 3.2vh, 38px);
+  }
 }
 
 .header {
@@ -204,8 +212,16 @@
 
 .routes {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   border-top: 1px solid rgba(34, 35, 31, 0.18);
+
+  @include v(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(xs) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .route {
@@ -218,8 +234,19 @@
 }
 
 .route + .route {
-  padding-left: 20px;
-  border-left: 1px solid rgba(34, 35, 31, 0.18);
+  padding-left: 0;
+  border-left: 0;
+  border-top: 1px solid rgba(34, 35, 31, 0.18);
+
+  @include v(md) {
+    padding-left: 20px;
+    border-left: 1px solid rgba(34, 35, 31, 0.18);
+  }
+
+  @include h(xs) {
+    padding-left: 20px;
+    border-left: 1px solid rgba(34, 35, 31, 0.18);
+  }
 }
 
 .route > span {
@@ -305,18 +332,3 @@
     "Sentient-Regular", serif;
 }
 
-@include below-px(620px) {
-  .panel {
-    gap: 25px;
-  }
-
-  .routes {
-    grid-template-columns: 1fr;
-  }
-
-  .route + .route {
-    padding-left: 0;
-    border-top: 1px solid rgba(34, 35, 31, 0.18);
-    border-left: 0;
-  }
-}

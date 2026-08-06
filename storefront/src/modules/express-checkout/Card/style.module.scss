@@ -9,6 +9,7 @@
   transition:
     padding .52s cubic-bezier(.76, 0, .24, 1),
     background .42s ease;
+  padding-inline: 14px;
 }
 
 .card:last-child {
@@ -20,6 +21,7 @@
   border-radius: 18px;
   background: rgba(255, 248, 238, .58);
   box-shadow: inset 0 0 0 1px rgba(32, 33, 28, .07);
+  padding-inline: 14px;
 }
 
 .heading {
@@ -27,8 +29,8 @@
   box-sizing: border-box;
   width: 100%;
   min-height: 76px;
-  grid-template-columns: 32px minmax(0, 1fr) 30px;
-  gap: 12px;
+  grid-template-columns: 27px minmax(0, 1fr) 30px;
+  gap: 9px;
   align-items: center;
   padding: 0;
   border: 0;
@@ -36,6 +38,16 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
+
+  @include v(sm) {
+    grid-template-columns: 32px minmax(0, 1fr) 30px;
+    gap: 12px;
+  }
+
+  @include h(xxs) {
+    grid-template-columns: 32px minmax(0, 1fr) 30px;
+    gap: 12px;
+  }
 }
 
 .step {
@@ -97,14 +109,3 @@
   padding: 8px 0 28px;
 }
 
-@include below-px(390px) {
-  .card,
-  .active {
-    padding-inline: 14px;
-  }
-
-  .heading {
-    grid-template-columns: 27px minmax(0, 1fr) 30px;
-    gap: 9px;
-  }
-}

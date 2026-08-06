@@ -5,34 +5,62 @@
   z-index: 1;
   width: 100%;
   min-height: 100svh;
-  padding: clamp(12px, 3vw, 28px);
+  padding: 0;
   color: #212222;
   background:
     radial-gradient(circle at 78% 2%, rgba(199,152,121,.18), transparent 24rem),
     #eee8d6;
+
+  @include v(s) {
+    padding: clamp(12px, 3vw, 28px);
+  }
+
+  @include h(xxs) {
+    padding: clamp(12px, 3vw, 28px);
+  }
 }
 
 .frame {
   box-sizing: border-box;
   width: min(100%, 640px);
-  min-height: calc(100svh - clamp(24px, 6vw, 56px));
+  min-height: 100svh;
   margin: 0 auto;
   overflow: hidden;
-  border: 1px solid rgba(33,34,34,.18);
-  border-radius: clamp(20px, 4vw, 34px);
+  border: 0;
+  border-radius: 0;
   background: rgba(255,248,238,.38);
   box-shadow: 0 38px 80px -58px rgba(33,34,34,.8);
   backdrop-filter: blur(12px);
+
+  @include v(s) {
+    min-height: calc(100svh - clamp(24px, 6vw, 56px));
+    border: 1px solid rgba(33,34,34,.18);
+    border-radius: clamp(20px, 4vw, 34px);
+  }
+
+  @include h(xxs) {
+    min-height: calc(100svh - clamp(24px, 6vw, 56px));
+    border: 1px solid rgba(33,34,34,.18);
+    border-radius: clamp(20px, 4vw, 34px);
+  }
 }
 
 .brandHeader {
   box-sizing: border-box;
   display: flex;
-  min-height: 76px;
+  min-height: 68px;
   padding: 16px clamp(18px, 5vw, 32px);
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(33,34,34,.16);
+
+  @include v(s) {
+    min-height: 76px;
+  }
+
+  @include h(xxs) {
+    min-height: 76px;
+  }
 }
 
 .brand {
@@ -84,8 +112,3 @@
   box-shadow: none;
 }
 
-@include below-px(420px) {
-  .shell { padding: 0; }
-  .frame { min-height: 100svh; border: 0; border-radius: 0; }
-  .brandHeader { min-height: 68px; }
-}

@@ -50,7 +50,7 @@
 
 .control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px;
+  grid-template-columns: 1fr;
   gap: 10px;
 
   input {
@@ -82,7 +82,7 @@
   button {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr 26px;
+    grid-template-columns: 1fr;
     align-items: center;
     gap: 8px;
     height: 48px;
@@ -116,6 +116,14 @@
       opacity: 0.45;
     }
   }
+
+  @include v(md) {
+    grid-template-columns: 1fr 26px;
+  }
+
+  @include h(xxs) {
+    grid-template-columns: 1fr 26px;
+  }
 }
 
 .buttonFill {
@@ -140,8 +148,3 @@
   color: #e6a493;
 }
 
-@include below-px(520px) {
-  .control {
-    grid-template-columns: 1fr;
-  }
-}

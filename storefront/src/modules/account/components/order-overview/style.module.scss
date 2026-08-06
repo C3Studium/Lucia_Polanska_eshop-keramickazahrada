@@ -11,13 +11,21 @@
 
 .empty {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   gap: 40px;
   align-items: end;
   min-height: 280px;
   padding: 48px 0;
   border-top: 1px solid rgba(32, 33, 29, 0.2);
   border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+
+  @include v(md) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  @include h(xs) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 
 .emptyContent {
@@ -43,8 +51,3 @@
   --premium-link-fill: #20211d;
 }
 
-@include below-px(620px) {
-  .empty {
-    grid-template-columns: 1fr;
-  }
-}

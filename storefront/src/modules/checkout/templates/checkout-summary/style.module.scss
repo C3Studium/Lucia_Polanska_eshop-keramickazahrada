@@ -1,19 +1,37 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
-  position: sticky;
-  top: 92px;
+  position: relative;
+  top: 0;
   width: 100%;
   color: #f4efe4;
+
+  @include v(lg) {
+    position: sticky;
+    top: 92px;
+  }
+
+  @include h(sm) {
+    position: sticky;
+    top: 92px;
+  }
 }
 
 .summary {
   display: flex;
   width: 100%;
   flex-direction: column;
-  padding: 0 0 clamp(30px, 4vh, 48px);
+  padding: 0 0 28px;
   border-top: 1px solid rgba(255,232,214,.2);
   border-bottom: 1px solid rgba(255,232,214,.2);
   background: transparent;
+
+  @include v(md) {
+    padding: 0 0 clamp(30px, 4vh, 48px);
+  }
+
+  @include h(xs) {
+    padding: 0 0 clamp(30px, 4vh, 48px);
+  }
 }
 
 .eyebrow {
@@ -57,12 +75,3 @@
   outline-offset: 3px;
 }
 
-@include below-px(980px) {
-  .root { position: relative; top: 0; }
-}
-
-@include below-px(620px) {
-  .summary {
-    padding: 0 0 28px;
-  }
-}

@@ -22,10 +22,18 @@
 }
 
 .titleRow {
-  display: flex;
+  display: grid;
   align-items: end;
   justify-content: space-between;
   gap: 28px;
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .title {
@@ -47,18 +55,10 @@
   margin: 0 0 0 auto;
   color: rgba(32, 33, 29, 0.62);
   font: clamp(14px, 0.95vw, 17px) / 1.55 "Sansation-Light", sans-serif;
+  margin-left: 0;
 }
 
 .body {
   width: 100%;
 }
 
-@include below-px(700px) {
-  .titleRow {
-    display: grid;
-  }
-
-  .desc {
-    margin-left: 0;
-  }
-}

@@ -4,6 +4,7 @@
   width: 100%;
   min-width: 0;
   color: #20211c;
+  max-width: 680px;
 }
 
 .rail {
@@ -25,9 +26,17 @@
 
 .invitation {
   display: grid;
-  grid-template-columns: 1fr clamp(82px, 7vw, 118px);
+  grid-template-columns: 1fr 76px;
   gap: clamp(22px, 3vw, 46px);
   align-items: center;
+
+  @include v(md) {
+    grid-template-columns: 1fr clamp(82px, 7vw, 118px);
+  }
+
+  @include h(xxs) {
+    grid-template-columns: 1fr clamp(82px, 7vw, 118px);
+  }
 }
 
 .invitationCopy {
@@ -48,6 +57,7 @@
   font: 400 clamp(32px, 2.8vw, 52px) / 0.94 "Sentient-Regular", serif;
   letter-spacing: -0.045em;
   text-wrap: balance;
+  font-size: clamp(32px, 10vw, 44px);
 }
 
 .invitation h2 em {
@@ -155,6 +165,8 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 24px;
+  align-items: stretch;
+  flex-direction: column;
 }
 
 .primaryAction,
@@ -178,11 +190,13 @@
 .primaryAction {
   color: #ffe8d6;
   background: #20211c;
+  width: 100%;
 }
 
 .secondaryAction {
   color: #20211c;
   background: transparent;
+  width: 100%;
 }
 
 .primaryAction:hover,
@@ -383,28 +397,3 @@
   font: 400 14px/1 "Sansation-Regular", sans-serif;
 }
 
-@include below-px(900px) {
-  .container {
-    max-width: 680px;
-  }
-}
-
-@include below-px(560px) {
-  .invitation {
-    grid-template-columns: 1fr 76px;
-  }
-
-  .invitation h2 {
-    font-size: clamp(32px, 10vw, 44px);
-  }
-
-  .authActions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .primaryAction,
-  .secondaryAction {
-    width: 100%;
-  }
-}

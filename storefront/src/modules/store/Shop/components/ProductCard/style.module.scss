@@ -8,12 +8,20 @@
   position: relative;
   aspect-ratio: 4 / 4.75;
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: 17px;
   background: #ded9cb;
   isolation: isolate;
 
   &::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 2; background: linear-gradient(transparent, rgba(20,20,17,.28)); pointer-events: none; }
   img { object-fit: cover; }
+
+  @include v(md) {
+    border-radius: 20px;
+  }
+
+  @include h(xs) {
+    border-radius: 20px;
+  }
 }
 
 .primary,
@@ -88,10 +96,21 @@
   > span { display: inline-block; }
 }
 
-.meta { padding: 14px 4px 24px; }
+.meta { padding: 14px 4px 24px;
+  padding-bottom: 34px;
+}
 .heading { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid rgba(33,34,34,.18); }
 .heading p { margin: 0 0 6px; color: #5c5e54; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; }
-.heading h3 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(23px, 1.65vw, 31px); font-weight: 400; line-height: 1.08; }
+.heading h3 { margin: 0; font-family: "Sentient-Regular", serif; font-size: 24px; font-weight: 400; line-height: 1.08;
+
+  @include v(md) {
+    font-size: clamp(23px, 1.65vw, 31px);
+  }
+
+  @include h(xs) {
+    font-size: clamp(23px, 1.65vw, 31px);
+  }
+}
 .index { flex: 0 0 auto; display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid rgba(33,34,34,.35); border-radius: 50%; font-size: 12px; }
 
 .bottom { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-top: 12px; }
@@ -107,11 +126,6 @@
   .link:focus-visible .primary,
   .link:focus-visible .secondary,
   .link:focus-visible .discover { will-change: transform, opacity, clip-path; }
-}
-@include below-px(700px) {
-  .visual { border-radius: 17px; }
-  .meta { padding-bottom: 34px; }
-  .heading h3 { font-size: 24px; }
 }
 
 /* Availability chips: same shape as "Novinka", different tone. Never colour alone — each

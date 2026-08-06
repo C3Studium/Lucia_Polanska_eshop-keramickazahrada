@@ -25,10 +25,19 @@
 }
 
 .accountReviewsHeading {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 24px;
   align-items: end;
+  grid-template-columns: 1fr;
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountReviewsHeading h1 {
@@ -59,11 +68,19 @@
 
 .accountPreviewNotice {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 24px;
   align-items: baseline;
   padding: 16px 0;
   border-block: 1px solid rgba(126, 137, 106, 0.35);
+
+  @include v(md) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  @include h(xs) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
 }
 
 .accountPreviewNotice span {
@@ -81,12 +98,20 @@
 
 .accountReviewsList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   margin: 0;
   padding: 0;
   border-top: 1px solid rgba(32, 33, 29, 0.22);
   border-left: 1px solid rgba(32, 33, 29, 0.22);
   list-style: none;
+
+  @include v(lg) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .accountReviewCard {
@@ -101,22 +126,48 @@
 }
 
 .accountReviewCard:first-child {
-  grid-column: 1 / -1;
+  grid-column: auto;
+
+  @include v(lg) {
+    grid-column: 1 / -1;
+  }
+
+  @include h(sm) {
+    grid-column: 1 / -1;
+  }
 }
 
 .accountReviewSurfaceContent > a {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+  grid-template-columns: 28px minmax(0, 1fr) 30px;
   gap: clamp(16px, 2.2vw, 30px);
   align-items: start;
   min-height: 232px;
   padding: clamp(22px, 2.5vw, 34px);
   color: inherit;
+
+  @include v(md) {
+    grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+  }
+
+  @include h(xs) {
+    grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+  }
 }
 
 .accountReviewCard:first-child .accountReviewSurfaceContent > a {
-  grid-template-columns: 36px minmax(0, 1fr) minmax(180px, 250px) 34px;
-  min-height: 286px;
+  grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+  min-height: 232px;
+
+  @include v(lg) {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(180px, 250px) 34px;
+    min-height: 286px;
+  }
+
+  @include h(sm) {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(180px, 250px) 34px;
+    min-height: 286px;
+  }
 }
 
 .accountReviewCopy {
@@ -174,11 +225,22 @@
   overflow: hidden;
   border: 1px solid rgba(32, 33, 29, 0.12);
   background: rgba(255, 255, 255, 0.4);
+  display: none;
 }
 
 .accountReviewCard:first-child .accountReviewImage {
-  width: 100%;
-  height: 220px;
+  width: 112px;
+  height: 154px;
+
+  @include v(lg) {
+    width: 100%;
+    height: 220px;
+  }
+
+  @include h(sm) {
+    width: 100%;
+    height: 220px;
+  }
 }
 
 .accountReviewImage img {
@@ -198,13 +260,21 @@
 }
 
 .accountReviewsEmpty {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 30px;
   align-items: center;
   min-height: 210px;
   padding: 36px 0;
   border-block: 1px solid rgba(32, 33, 29, 0.2);
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountReviewsEmpty > div > span {
@@ -225,45 +295,3 @@
   --premium-link-fill: #20211d;
 }
 
-@include below-px(960px) {
-  .accountReviewsList {
-    grid-template-columns: 1fr;
-  }
-
-  .accountReviewCard:first-child {
-    grid-column: auto;
-  }
-
-  .accountReviewCard:first-child .accountReviewSurfaceContent > a {
-    grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
-    min-height: 232px;
-  }
-
-  .accountReviewCard:first-child .accountReviewImage {
-    width: 112px;
-    height: 154px;
-  }
-}
-
-@include below-px(680px) {
-  .accountReviewsHeading,
-  .accountPreviewNotice {
-    grid-template-columns: 1fr;
-  }
-
-  .accountReviewsHeading {
-    display: grid;
-  }
-
-  .accountReviewSurfaceContent > a {
-    grid-template-columns: 28px minmax(0, 1fr) 30px;
-  }
-
-  .accountReviewImage {
-    display: none;
-  }
-
-  .accountReviewsEmpty {
-    display: grid;
-  }
-}

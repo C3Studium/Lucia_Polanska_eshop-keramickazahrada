@@ -7,8 +7,16 @@
 
 .topLabel {
   margin-bottom: .5rem;
-  font-size: 1rem;
+  font-size: .9rem;
   font-weight: 500;
+
+  @include v(md) {
+    font-size: 1rem;
+  }
+
+  @include h(xs) {
+    font-size: 1rem;
+  }
 }
 
 .inputWrapper {
@@ -16,8 +24,16 @@
   display: flex;
   z-index: 0;
   width: 100%;
-  font-size: 1rem;
+  font-size: .9rem;
   font-weight: 500;
+
+  @include v(md) {
+    font-size: 1rem;
+  }
+
+  @include h(xs) {
+    font-size: 1rem;
+  }
 }
 
 .inputWrapper input {
@@ -176,13 +192,6 @@
   top: .82rem;
   right: 0;
   padding: .5rem;
-}
-
-@include below-px(720px) {
-  .topLabel,
-  .inputWrapper {
-    font-size: .9rem;
-  }
 }
 
 /* Requirement stated in words beside the label, not by a colour-only asterisk (SC 1.4.1). */

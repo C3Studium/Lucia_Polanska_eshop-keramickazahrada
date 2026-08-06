@@ -26,9 +26,17 @@
 
 .accountOverviewHeading {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, .4fr);
+  grid-template-columns: 1fr;
   gap: 30px;
   align-items: end;
+
+  @include v(md) {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .4fr);
+  }
+
+  @include h(xs) {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .4fr);
+  }
 }
 
 .accountOverviewHeading h1 {
@@ -58,8 +66,16 @@
 
 .accountOverviewStats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   border-block: 1px solid rgba(32, 33, 29, .2);
+
+  @include v(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include h(xs) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .accountOverviewStat {
@@ -70,7 +86,16 @@
 }
 
 .accountOverviewStat + .accountOverviewStat {
-  border-left: 1px solid rgba(32, 33, 29, .2);
+  border-left: 0;
+  border-top: 1px solid rgba(32, 33, 29, .2);
+
+  @include v(md) {
+    border-left: 1px solid rgba(32, 33, 29, .2);
+  }
+
+  @include h(xs) {
+    border-left: 1px solid rgba(32, 33, 29, .2);
+  }
 }
 
 .accountOverviewStatValue {
@@ -151,13 +176,21 @@
 }
 
 .accountOverviewEmpty {
-  display: flex;
+  display: grid;
   justify-content: space-between;
   gap: 30px;
   align-items: center;
   min-height: 180px;
   padding-block: 32px;
   border-block: 1px solid rgba(32, 33, 29, .2);
+
+  @include v(md) {
+    display: flex;
+  }
+
+  @include h(xs) {
+    display: flex;
+  }
 }
 
 .accountOverviewEmpty p {
@@ -165,18 +198,3 @@
   font: 400 clamp(1.8rem, 3vw, 3.2rem)/1 "Sentient-Regular", serif;
 }
 
-@include below-px(780px) {
-  .accountOverviewHeading,
-  .accountOverviewStats {
-    grid-template-columns: 1fr;
-  }
-
-  .accountOverviewStat + .accountOverviewStat {
-    border-top: 1px solid rgba(32, 33, 29, .2);
-    border-left: 0;
-  }
-
-  .accountOverviewEmpty {
-    display: grid;
-  }
-}

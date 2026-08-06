@@ -1,12 +1,20 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   display: grid;
-  grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: clamp(28px, 7vw, 100px);
   align-items: center;
   padding: clamp(34px, 5vw, 66px);
   background: #20221d;
   color: #f7e5d5;
+
+  @include v(md) {
+    grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
+  }
+
+  @include h(xs) {
+    grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
+  }
 }
 
 .title {
@@ -48,8 +56,3 @@
   text-underline-offset: 6px;
 }
 
-@include below-px(700px) {
-  .root {
-    grid-template-columns: 1fr;
-  }
-}
