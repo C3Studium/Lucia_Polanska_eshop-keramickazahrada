@@ -53,9 +53,13 @@
                     height: 100%;
                     width: 100%;
                     transform-style: preserve-3d;
-                    transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+                    transition: transform 0.42s cubic-bezier(0.76, 0, 0.24, 1);
                     p{
-                        transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+                        /* Was `all`, which dragged the label colour across the same 750ms as the
+                           flip and made the text look like it was fading rather than turning. */
+                        transition:
+                            transform 0.42s cubic-bezier(0.76, 0, 0.24, 1),
+                            color 0.16s cubic-bezier(0.22, 1, 0.36, 1);
                         pointer-events: none;
                         text-transform: uppercase;
                         display: flex;

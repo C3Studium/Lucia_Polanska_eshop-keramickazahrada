@@ -52,37 +52,51 @@ const BUTTON_PALETTES: Record<ButtonTone, ButtonPalette> = {
   },
 }
 
+/*
+ * The label colour has to be timed against the fill that sweeps under it, not run on its own
+ * schedule. Previously the fill took 720ms to arrive while the label finished turning light at
+ * 540ms, so the text went pale over ground the fill had not covered yet; on the way out the
+ * label darkened at 240ms while the dark fill was still there until 460ms, which read as the
+ * text disappearing.
+ *
+ * A single-colour label over a wiping fill can never be perfect mid-sweep — half the word is
+ * over fill and half is not. So the swap is now short and placed at the midpoint of the sweep,
+ * where the mismatch is smallest and briefest, instead of at one end where it is neither.
+ */
 const foregroundVariants: Variants = {
   [BUTTON_REST]: ({ palette }: ForegroundVariantCustom) => ({
     color: palette.foreground,
     transition: {
-      delay: 0.04,
-      duration: 0.2,
+      delay: 0.1,
+      duration: 0.12,
       ease: BUTTON_FOREGROUND_EASE,
     },
   }),
   [BUTTON_ACTIVE]: ({ palette }: ForegroundVariantCustom) => ({
     color: palette.activeForeground,
     transition: {
-      delay: 0.24,
-      duration: 0.3,
+      delay: 0.14,
+      duration: 0.12,
       ease: BUTTON_FOREGROUND_EASE,
     },
   }),
 }
 
+/* Hover feedback belongs in the 150-350ms band this project set for itself (spec 8.2). At 720ms
+   the fill was still arriving long after the pointer had settled, which is what made the button
+   feel slow rather than considered. */
 const solidFillVariants: Variants = {
   [BUTTON_REST]: {
     scaleX: 0,
     transition: {
-      duration: 0.46,
+      duration: 0.32,
       ease: BUTTON_EASE,
     },
   },
   [BUTTON_ACTIVE]: {
     scaleX: 1,
     transition: {
-      duration: 0.72,
+      duration: 0.42,
       ease: BUTTON_EASE,
     },
   },
@@ -122,8 +136,8 @@ const arrowSlideVariants: Variants = {
     x: "0%",
     opacity: 1,
     transition: {
-      delay: 0.1,
-      duration: 0.3,
+      delay: 0.08,
+      duration: 0.26,
       ease: BUTTON_EASE,
     },
   },

@@ -23,8 +23,11 @@ type NavButton = {
     onActiveChange?: (index: number | null) => void
 }
 
+/* A hover flip at 750ms is still turning over well after the pointer has arrived. 420ms keeps
+   the same curve and reads as deliberate rather than slow (spec 8.2: 150-350ms for feedback,
+   with a little more allowed for a 3D flip that travels further). */
 const t = {
-  duration: 0.75,
+  duration: 0.42,
   ease: [0.76, 0, 0.24, 1] as Easing,
 }
 

@@ -15,8 +15,32 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     }
 
     const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      /*
+       * Lerp rather than duration+easing.
+       *
+       * The previous config paired duration: 1.2 with an expo-out curve, which sounds slow but
+       * is the opposite: that curve covers half the distance in 120ms and three quarters in
+       * 240ms, spending its remaining second travelling the last 3%. The glide was over before
+       * it could be seen, so the page read as if it were scrolling natively — and every
+       * scroll-linked animation inherited that abruptness.
+       *
+       * Lerp eases toward the target by a fraction of the remaining distance each frame, so the
+       * motion keeps a visible tail for as long as there is distance left, and a second wheel
+       * tick blends into the first instead of restarting a tween.
+       */
+      /* 0.06 puts roughly 90% of the travel in the first 620ms with a tail past a second —
+         slow enough to read as a glide rather than a jump. 0.085 measured only 40ms slower
+         than the old curve, which was not a perceptible difference. */
+      lerp: 0.06,
+      smoothWheel: true,
+      /*
+       * Touch scrolling stays native. Momentum on a phone is the operating system's to own —
+       * intercepting it fights the platform's own physics and feels worse, not better.
+       */
+      syncTouch: false,
+      // A wheel notch should still move roughly what the OS intends.
+      wheelMultiplier: 1,
+      touchMultiplier: 1.6,
     });
     lenisRef.current = lenis;
 
