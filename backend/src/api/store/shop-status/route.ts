@@ -24,7 +24,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       : null,
     announcement:
       settings?.announcement_enabled && settings?.announcement_text?.trim()
-        ? { message: settings.announcement_text.trim() }
+        ? {
+            message: settings.announcement_text.trim(),
+            link: settings.announcement_link?.trim() || null,
+          }
         : null,
     commissions_paused: vacation,
   })

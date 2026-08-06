@@ -16,7 +16,7 @@ const ROTATE_MS = 6000
 
 export default function ShopBanner({ status }: { status: ShopStatus | null }) {
   const messages = useMemo(() => {
-    const list: string[] = []
+    const list: { text: string; link?: string | null }[] = []
     if (status?.vacation) {
       const until = status.vacation.until
         ? ` Zakázky přijímáme znovu po ${status.vacation.until
@@ -24,14 +24,18 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
             .reverse()
             .join(". ")}.`
         : ""
-      list.push(`${status.vacation.message}${until}`)
+      list.push({ text: `${status.vacation.message}${until}` })
     }
-    if (status?.announcement) list.push(status.announcement.message)
+    if (status?.announcement)
+      list.push({
+        text: status.announcement.message,
+        link: status.announcement.link ?? null,
+      })
     return list
   }, [status])
 
   const storageKey = useMemo(
-    () => `kz-banner-dismissed:${messages.join("|")}`,
+    () => `kz-banner-dismissed:${messages.map((m) => m.text).join("|")}`,
     [messages]
   )
 
@@ -61,7 +65,17 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
   return (
     <div className={styles.banner} role="status">
       <span key={index} className={styles.message}>
-        {messages[index % messages.length]}
+        {messages[index % messages.length].text}
+        {messages[index % messages.length].link && (
+          <a
+            href={messages[index % messages.length].link!}
+            target="_blank"
+            rel="noreferrer"
+            className={styles.action}
+          >
+            Zjistit víc
+          </a>
+        )}
       </span>
       <button
         type="button"

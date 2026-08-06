@@ -35,3 +35,20 @@
   opacity: 0.75;
 }
 .close:hover { opacity: 1; }
+
+.action {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 3px 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.action:hover {
+  background: #f5f2ec;
+  color: #2b2b28;
+}
