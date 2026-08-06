@@ -54,6 +54,20 @@ const RULES: ErrorRule[] = [
     message: "Vyberte prosím způsob doručení.",
   },
 
+  // --- shop configuration -----------------------------------------------------
+  /*
+   * Not a customer error at all: the sales channel behind the publishable key has been
+   * disabled in the admin, so Medusa refuses every create *and* every update of a cart on it
+   * — including saving the delivery address. It used to land on GENERIC_ERROR, which reads as
+   * "try again" for something no amount of trying will fix. Named here so the sentence tells
+   * the truth and the raw string is one search away in the log.
+   */
+  {
+    match: ["disabled sales channel"],
+    message:
+      "Obchod teď nemůže přijímat objednávky — jde o nastavení na naší straně, ne o vaši chybu. Napište nám prosím na info@keramickazahrada.cz, ozveme se hned, jak to spravíme.",
+  },
+
   // --- cart -------------------------------------------------------------------
   {
     match: ["cart", "not found"],

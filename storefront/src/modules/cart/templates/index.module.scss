@@ -133,7 +133,16 @@
   color: var(--cart-cream);
 }
 
-.right { min-width: 0; }
+.right {
+  min-width: 0;
+  /*
+   * `.grid` aligns to `start`, which sized this column to the summary itself — and a sticky
+   * element whose containing block is exactly its own height has nowhere to travel, so it
+   * scrolled away with the items. Stretching only this column to the row height gives it the
+   * run it needs; `.left` keeps its start alignment.
+   */
+  align-self: stretch;
+}
 
 .sticky {
   position: sticky;

@@ -341,7 +341,10 @@
   .methodSummary {
     display: flex;
     flex-direction: column;
-    width: 33%;
+    /* Was a hard `width: 33%`, which squeezed the pickup card into a third of the row:
+       „Osobní odběr" broke across two lines and the address came out one word per line. */
+    min-width: 0;
+    flex: 1;
     .methodLabel {
       font-size: 1rem;
       font-weight: 500;

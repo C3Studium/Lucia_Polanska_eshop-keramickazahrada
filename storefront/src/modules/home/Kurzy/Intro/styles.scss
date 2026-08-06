@@ -681,8 +681,15 @@
     }
 
     .kurzyTimelineCtaButton {
-      width: clamp(210px, 15vw, 250px);
-      max-width: none;
+      --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
+      --web-button-label-padding: 0;
+
+      /* Was a fixed clamp() width. The label is what has to fit — at 250px it was cut off at
+         both ends and ran under the arrow — so the pill takes its own measure and the clamp
+         becomes the floor it will not shrink below. */
+      width: fit-content;
+      min-width: clamp(210px, 15vw, 250px);
+      max-width: 100%;
       height: 52px;
       padding: 0;
       border: 1px solid rgba(255, 232, 214, 0.72);
@@ -718,7 +725,15 @@
       }
 
       p {
-        font-size: clamp(0.86rem, 0.82vw, 0.98rem);
+        /*
+         * The block's own body copy sets `p { color: rgba(255, 232, 214, .62) }`, and that
+         * bare descendant selector also caught the label inside this button — cream at 62%
+         * on a cream pill, which is why the button read as empty. WebButton animates its
+         * foreground as an inline style on the wrapping div, so a colour declared straight
+         * on the <p> beats it however the button is feeling. Inheriting hands the label
+         * back to that animation: charcoal at rest, cream once the dark fill has swept in.
+         */
+        color: inherit;
         line-height: 1;
         white-space: nowrap;
 

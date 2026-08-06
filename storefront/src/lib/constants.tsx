@@ -13,11 +13,27 @@ import Bancontact from "@modules/common/icons/bancontact"
  * collected on delivery. The provider authorizes and never captures, so the order must never be
  * presented as paid (§5.3).
  */
-export const PICKUP_PAYMENT_PROVIDER = "pp_pickup_pickup"
+/*
+ * The composite id is `pp_<service identifier>_<registration id>`, and the service renamed its
+ * identifier to `osobni-odber` — so the live provider is `pp_osobni-odber_pickup`. This pointed
+ * at the pre-rename `pp_pickup_pickup`, which the backend still lists but no module answers:
+ * opening a session on it returns 500. The costs of naming the dead one were all silent — the
+ * working provider had no entry in `paymentInfoMap` so its tile showed a raw id as its title,
+ * `isPickupPayment` did not recognise it so the "never offer this for a carrier shipment" rule
+ * (§5.3) never fired, and the tile that *did* read „Zaplatíte při vyzvednutí" was the broken one.
+ */
+export const PICKUP_PAYMENT_PROVIDER = "pp_osobni-odber_pickup"
+
+/** Left behind by the rename. Recognised so the rules still apply to it, but never offered. */
+export const RETIRED_PAYMENT_PROVIDERS = ["pp_pickup_pickup"]
+
 export const PICKUP_FULFILLMENT_PROVIDER = "pickup_osobni-odber"
 
+export const isRetiredPayment = (providerId?: string) =>
+  !!providerId && RETIRED_PAYMENT_PROVIDERS.includes(providerId)
+
 export const isPickupPayment = (providerId?: string) =>
-  providerId === PICKUP_PAYMENT_PROVIDER
+  providerId === PICKUP_PAYMENT_PROVIDER || isRetiredPayment(providerId)
 
 export const isPickupFulfillment = (providerId?: string) =>
   providerId === PICKUP_FULFILLMENT_PROVIDER
@@ -27,6 +43,11 @@ export const paymentInfoMap: Record<
   { title: string; icon: React.JSX.Element }
 > = {
   [PICKUP_PAYMENT_PROVIDER]: {
+    title: "Zaplatíte při vyzvednutí",
+    icon: <CreditCard />,
+  },
+  // Kept mapped so the retired id can never surface as a raw provider string.
+  pp_pickup_pickup: {
     title: "Zaplatíte při vyzvednutí",
     icon: <CreditCard />,
   },

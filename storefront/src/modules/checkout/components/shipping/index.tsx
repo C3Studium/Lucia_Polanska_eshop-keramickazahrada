@@ -530,7 +530,10 @@ const Shipping: React.FC<ShippingProps> = ({
 
           {showPickupOptions === PICKUP_OPTION_ON && (
             <div className={styles.deliveryOptions}>
-              <div>
+              {/* Same header treatment as „Způsob dopravy" above. Bare, the two spans ran
+                  together as „ObchodVyberte si obchod poblíž vás" — invisible until the
+                  pickup branch started rendering at all. */}
+              <div className={styles.deliveryOptionsHeader}>
                 <span className={clx(styles.radioLabel, "font-medium")}>
                   Obchod
                 </span>

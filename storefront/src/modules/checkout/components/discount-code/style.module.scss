@@ -12,7 +12,9 @@
 
     .form {
       width: 100%;
-      min-height: 150px;
+      /* Held 150px open whether or not the code panel was showing, which left a hand's worth
+         of empty cream between the button and the totals. The panel animates its own height
+         from 0, so there is nothing to reserve. */
       margin-bottom: 1.75rem;
 
       .label {

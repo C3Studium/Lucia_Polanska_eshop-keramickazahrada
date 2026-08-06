@@ -1,7 +1,12 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { isComgate, isPickupPayment, paymentInfoMap } from "@lib/constants"
+import {
+  isComgate,
+  isPickupPayment,
+  isRetiredPayment,
+  paymentInfoMap,
+} from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import {
   legacyComgateOptionForMethod,
@@ -57,6 +62,9 @@ const Payment = ({
       availablePaymentMethods.filter(
         (provider) =>
           !isComgate(provider.id) &&
+          // The backend still lists a provider left over from a rename; a session on it
+          // fails, so offering it only ever gives the customer a dead end.
+          !isRetiredPayment(provider.id) &&
           (hasPickupShipping || !isPickupPayment(provider.id))
       ),
     [availablePaymentMethods, hasPickupShipping]

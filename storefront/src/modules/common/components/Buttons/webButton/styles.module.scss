@@ -4,6 +4,12 @@
     --web-button-ink: #212222;
     --web-button-surface: rgba(255, 232, 214, 0.14);
     --web-button-fill: #212222;
+    /* The label lives three classes deep inside a CSS module, so a page that wants a smaller
+       or tighter button could not reach it — its own rule lost on specificity and the label
+       stayed at 1.5rem, overflowing whatever width the page had set. Exposed the way the
+       colours already are, so callers set a value instead of out-shouting a selector. */
+    --web-button-label-size: 1.5rem;
+    --web-button-label-padding: 10px 20px;
 
     position: relative;
     width: fit-content;
@@ -69,13 +75,13 @@
             justify-content: center;
             align-items: center;
             p{
-                font-size: 1.5rem;
-                padding: 10px 20px;
+                font-size: var(--web-button-label-size);
+                padding: var(--web-button-label-padding);
                 margin: 0px;
             }
         }
     }
-    
+
 }
 
 .buttonIcon{
