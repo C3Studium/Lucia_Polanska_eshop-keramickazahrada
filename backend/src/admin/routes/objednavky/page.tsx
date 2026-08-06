@@ -212,8 +212,57 @@ type OrderDetail = {
   internal_note: string | null;
 };
 
+/**
+ * Podací lístek — one click per parcel. A mixed order offers the split:
+ * stock items ship now, the zakázka ships when the kiln says so. Without ČP
+ * credentials the route answers with the honest reason; the buttons exist
+ * today so the day the account arrives nothing changes but the outcome.
+ */
+const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: boolean }) => {
+  const request = useMutation({
+    mutationFn: (parcel: "all" | "stock" | "zakazka") =>
+      sdk.client.fetch(
+        `/admin/merchant-orders/${orderId}/label${parcel === "all" ? "" : `?parcel=${parcel}`}`
+      ) as Promise<{ available: boolean; reason?: string; labels: { url: string }[] }>,
+    onSuccess: (result) => {
+      if (!result.available || !result.labels?.length) {
+        toast.info(result.reason ?? "Lístek zatím není k dispozici.");
+        return;
+      }
+      for (const label of result.labels) {
+        window.open(label.url, "_blank", "noreferrer");
+      }
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Lístek se nepodařilo vytvořit."),
+  });
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      <Button
+        size="small"
+        variant="secondary"
+        isLoading={request.isPending}
+        onClick={() => request.mutate("all")}
+      >
+        Podací lístek
+      </Button>
+      {madeToOrder && (
+        <>
+          <Button size="small" variant="secondary" onClick={() => request.mutate("stock")}>
+            Jen skladové zboží
+          </Button>
+          <Button size="small" variant="secondary" onClick={() => request.mutate("zakazka")}>
+            Jen zakázku
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
+
 /** Row expansion: the ledger, the timeline, the e-mails — the phone-call view. */
-const OrderExpansion = ({ orderId }: { orderId: string }) => {
+const OrderExpansion = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: boolean }) => {
   const { data, isLoading } = useQuery<OrderDetail>({
     queryKey: ["workbench-order", orderId],
     queryFn: () => sdk.client.fetch(`/admin/workbench/orders/${orderId}`),
@@ -365,6 +414,7 @@ const OrderExpansion = ({ orderId }: { orderId: string }) => {
         ))}
       </div>
       </div>
+      <LabelButtons orderId={orderId} madeToOrder={madeToOrder} />
       <RawData data={data} />
     </div>
   );
@@ -659,7 +709,9 @@ const OrdersInner = () => {
                   </Link>
                 </div>
               </article>
-              {expanded === order.id && <OrderExpansion orderId={order.id} />}
+              {expanded === order.id && (
+                <OrderExpansion orderId={order.id} madeToOrder={order.made_to_order} />
+              )}
               </Fragment>
             );
           })}
