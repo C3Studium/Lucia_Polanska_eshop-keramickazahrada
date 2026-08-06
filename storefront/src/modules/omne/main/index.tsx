@@ -1,6 +1,8 @@
 "use client"
 
 import { motion, useMotionValue } from "framer-motion"
+
+import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image";
 import type { PointerEvent } from "react";
 import AboutHeroShader from "./AboutHeroShader";
@@ -43,9 +45,15 @@ export default function AboutMe () {
                     pointerY={pointerY}
                 />
             </motion.div>
-            <p className="about__eyebrow">
+            <motion.p
+                className="about__eyebrow"
+                variants={heroReveal}
+                initial="hidden"
+                animate="show"
+                custom={heroBeat.eyebrow}
+            >
                 O mně · keramická zahrada
-            </p>
+            </motion.p>
             <div className="Text__content">
                 <div className="image__intro">
                     <motion.div
@@ -54,21 +62,45 @@ export default function AboutMe () {
                         animate={{ clipPath: "inset(0 0% 0 0 round 20px)" }}
                         transition={transition2}
                     />
-                    <div className="about__imageMeta" aria-hidden="true">
+                    <motion.div
+                        className="about__imageMeta"
+                        aria-hidden="true"
+                        variants={heroReveal}
+                        initial="hidden"
+                        animate="show"
+                        custom={heroBeat.heading}
+                    >
                         <span>Ručně tvořeno</span>
                         <i />
                         <span>Písek · od roku 2014</span>
-                    </div>
+                    </motion.div>
                     <h1>
-                        <span>
+                        <motion.span
+                            variants={heroReveal}
+                            initial="hidden"
+                            animate="show"
+                            custom={heroBeat.heading}
+                        >
                             Jmenuji se
-                        </span>
-                        <span className="handwritten">
+                        </motion.span>
+                        <motion.span
+                            className="handwritten"
+                            variants={heroReveal}
+                            initial="hidden"
+                            animate="show"
+                            custom={heroBeat.lede}
+                        >
                             Lucie Polanská
-                        </span>
+                        </motion.span>
                     </h1>
                 </div>
-                <div className="greetings">
+                <motion.div
+                    className="greetings"
+                    variants={heroReveal}
+                    initial="hidden"
+                    animate="show"
+                    custom={heroBeat.action}
+                >
                     <span className="greetings__icon" aria-hidden="true">
                         <motion.span
                             animate={animate2}
@@ -81,7 +113,7 @@ export default function AboutMe () {
                         Těší mě
                     </p>
                     <span className="greetings__line" aria-hidden="true" />
-                </div>
+                </motion.div>
             </div>
             <motion.div
                 className="Images__content"

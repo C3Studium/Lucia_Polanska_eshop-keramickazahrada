@@ -9,6 +9,8 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion"
+
+import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image"
 import { useRef, useState } from "react"
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types"
@@ -330,18 +332,47 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             className="kurzyHero__copy"
             style={{ opacity: heroCopyOpacity, x: heroCopyX, y: heroCopyY }}
           >
-            <span>Ateliér otevřený tvoření · 01</span>
-            <h1 id="kurzy-hero-title">
+            {/* Entrance on the children, not this element: its opacity, x and y are scroll-driven
+                motion values, and those win over `animate` for the same property. */}
+            <motion.span
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.eyebrow}
+            >
+              Ateliér otevřený tvoření · 01
+            </motion.span>
+            <motion.h1
+              id="kurzy-hero-title"
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.heading}
+            >
               Hlína zpomalí čas.
               <em>Ruce najdou vlastní rytmus.</em>
-            </h1>
-            <p>{data?.content || fallbackCopy}</p>
+            </motion.h1>
+            <motion.p
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.lede}
+            >
+              {data?.content || fallbackCopy}
+            </motion.p>
           </motion.div>
 
-          <div className="kurzyHero__scrollCue" aria-hidden="true">
+          <motion.div
+            className="kurzyHero__scrollCue"
+            aria-hidden="true"
+            variants={heroReveal}
+            initial="hidden"
+            animate="show"
+            custom={heroBeat.chrome}
+          >
             <MouseAnim />
             <span>Vstoupit do ateliéru</span>
-          </div>
+          </motion.div>
         </motion.article>
 
         <motion.article

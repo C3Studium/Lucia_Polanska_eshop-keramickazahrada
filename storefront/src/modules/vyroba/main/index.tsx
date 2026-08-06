@@ -8,6 +8,8 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion"
+
+import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import { useRef } from "react"
 import {
   firstProcessStep,
@@ -136,9 +138,19 @@ export default function MainVyroba() {
             className="vyrobaHero__meta"
             style={{ opacity: metaOpacity, y: metaY }}
           >
-            <span>Výroba · Keramická zahrada</span>
-            <i />
-            <span>Písek · Ručně od roku 2014</span>
+            {/* The entrance sits on an inner element: the header's own opacity and y are motion
+                values driven by scroll, and those win over `animate` for the same property. */}
+            <motion.div
+              className="vyrobaHero__metaInner"
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.eyebrow}
+            >
+              <span>Výroba · Keramická zahrada</span>
+              <i />
+              <span>Písek · Ručně od roku 2014</span>
+            </motion.div>
           </motion.header>
 
           <div className="vyrobaHero__visuals">
@@ -228,17 +240,35 @@ export default function MainVyroba() {
             className="vyrobaHero__copy"
             style={{ opacity: copyOpacity, y: copyY }}
           >
-            <motion.p className="vyrobaHero__eyebrow">
+            <motion.p
+              className="vyrobaHero__eyebrow"
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.heading}
+            >
               Sedm kroků. Dvě setkání s ohněm.
             </motion.p>
 
             <h1>
-              <span className="vyrobaHero__line">
+              <motion.span
+                className="vyrobaHero__line"
+                variants={heroReveal}
+                initial="hidden"
+                animate="show"
+                custom={heroBeat.lede}
+              >
                 <span>Než vznikne</span>
-              </span>
-              <span className="vyrobaHero__line vyrobaHero__line--accent">
+              </motion.span>
+              <motion.span
+                className="vyrobaHero__line vyrobaHero__line--accent"
+                variants={heroReveal}
+                initial="hidden"
+                animate="show"
+                custom={heroBeat.lede + 0.08}
+              >
                 <span>objekt.</span>
-              </span>
+              </motion.span>
             </h1>
           </motion.div>
 
@@ -251,22 +281,32 @@ export default function MainVyroba() {
               style={{ scaleX: footerRuleScale }}
               aria-hidden="true"
             />
-            <span className="vyrobaHero__footerLabel">
+            <motion.span
+              className="vyrobaHero__footerLabel"
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.action}
+            >
               Materiál · Ruce · Oheň
-            </span>
+            </motion.span>
             <p>
               Sedm kroků. Dva výpaly.
               <br />
               Jeden neopakovatelný výsledek.
             </p>
-            <button
+            <motion.button
               type="button"
               onClick={scrollToProcess}
               className="vyrobaHero__scroll"
+              variants={heroReveal}
+              initial="hidden"
+              animate="show"
+              custom={heroBeat.chrome}
             >
               <span>Objevovat proces</span>
               <i aria-hidden="true" />
-            </button>
+            </motion.button>
           </motion.footer>
         </motion.div>
       </div>
