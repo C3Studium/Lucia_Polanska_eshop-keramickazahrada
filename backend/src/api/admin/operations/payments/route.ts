@@ -109,18 +109,29 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       outstanding: Math.max(0, toNumber(order.total) - (captured - refunded)),
       payment_status: order.payment_status ?? null,
       is_problem: isPaymentProblem(order.payment_status),
+      // Authorized-but-uncaptured: pickup promises and cards on hold. They
+      // were invisible — neither a problem nor paid, so no tab claimed them.
+      is_authorized_unpaid:
+        captured - refunded <= 0 &&
+        String(order.payment_status ?? "") === "authorized",
       provider_id: provider ?? null,
     }
   })
 
+  const onlyAuthorized = req.query.filter === "authorized"
   const visible = onlyProblems
     ? mapped.filter((row) => row.is_problem).slice(offset, offset + limit)
-    : mapped
+    : onlyAuthorized
+      ? mapped
+          .filter((row) => row.is_authorized_unpaid)
+          .slice(offset, offset + limit)
+      : mapped
 
   res.status(200).json({
     payments: visible,
     count: onlyProblems ? mapped.filter((row) => row.is_problem).length : count,
     problem_count: mapped.filter((row) => row.is_problem).length,
+    authorized_count: mapped.filter((row) => row.is_authorized_unpaid).length,
     scanned: rows.length,
     limit,
     offset,

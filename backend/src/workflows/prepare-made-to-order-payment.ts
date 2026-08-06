@@ -12,6 +12,8 @@ import {
   releaseLockStep,
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
+import { splitCustomPayment } from "../lib/deposit-split"
+import { getMerchantSettings } from "../lib/merchant-settings"
 import {
   MADE_TO_ORDER_MODULE,
 } from "../modules/made-to-order"
@@ -97,10 +99,15 @@ const calculateMadeToOrderPaymentStep = createStep(
 
     // The customer's choice at checkout. Per cart rather than per product: a
     // cart can mix a commission with ordinary stock, and „pay everything now"
-    // is one decision about the whole basket.
-    const payFullRequested =
-      (cart.metadata as Record<string, unknown> | null)
-        ?.production_payment_mode === "full"
+    // is one decision about the whole basket. „custom" carries the slider
+    // position — the charge-now total the customer picked — which is
+    // re-validated below against today's cart, not trusted.
+    const cartMetadata = cart.metadata as Record<string, unknown> | null
+    const paymentMode = cartMetadata?.production_payment_mode
+    const payFullRequested = paymentMode === "full"
+    const customRequested =
+      paymentMode === "custom" &&
+      toNumber(cartMetadata?.production_payment_amount) > 0
     const productIds = [...new Set(items.map((item: any) => item.product_id).filter(Boolean))]
     const variantIds = [...new Set(items.map((item: any) => item.variant_id).filter(Boolean))]
     const [productProfiles, variantProfiles] = await Promise.all([
@@ -189,10 +196,63 @@ const calculateMadeToOrderPaymentStep = createStep(
       })
     }
 
+    // Dovolená: while the shop is closed, NEW commissions are refused here —
+    // at the money step, server-side — with the return date in the message.
+    // Stock items still sell; only work she cannot start is paused.
+    if (productionLines.length) {
+      const settings = await getMerchantSettings(container).catch(() => null)
+      if (settings?.vacation_enabled) {
+        const until = settings.vacation_until
+          ? ` Zakázky přijímáme znovu po ${settings.vacation_until
+              .split("-")
+              .reverse()
+              .join(". ")}.`
+          : ""
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          `Výroba na zakázku má právě přestávku.${until}`
+        )
+      }
+    }
+
     const originalTotal = toNumber(cart.total)
-    const paymentAmount = productionLines.length
+    let paymentAmount = productionLines.length
       ? roundMoney(originalTotal - productionLinesTotal + depositTotal)
       : originalTotal
+
+    if (customRequested && productionLines.length) {
+      // The slider. The stored amount is a charge-now total; the production
+      // portion of it is distributed across lines proportionally to headroom
+      // by the same function the checkout summary uses, so the number shown
+      // and the number charged cannot drift. Clamped, not rejected: the cart
+      // may have changed since the choice was stored (an item added, one
+      // removed), and failing the whole payment over a stale slider position
+      // helps nobody — the floor still holds, which is the rule that matters.
+      const nonProductionNow = roundMoney(originalTotal - productionLinesTotal)
+      const requestedProduction = roundMoney(
+        toNumber(cartMetadata?.production_payment_amount) - nonProductionNow
+      )
+      const split = splitCustomPayment(
+        productionLines.map((line) => ({
+          floor: line.deposit_amount,
+          ceiling:
+            profilesByProduct.get(line.product_id)?.allow_full_prepayment ===
+            false
+              ? line.deposit_amount
+              : line.line_total,
+        })),
+        requestedProduction
+      )
+
+      split.amounts.forEach((amount, index) => {
+        const line = productionLines[index]
+        line.deposit_amount = amount
+        line.deposit_percentage = line.line_total
+          ? roundMoney((amount / line.line_total) * 100)
+          : line.deposit_percentage
+      })
+      paymentAmount = roundMoney(nonProductionNow + split.applied)
+    }
 
     if (paymentAmount < 0 || !Number.isFinite(paymentAmount)) {
       throw new MedusaError(

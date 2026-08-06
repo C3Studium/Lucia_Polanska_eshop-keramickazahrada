@@ -89,8 +89,23 @@ export const GET = async (
   } as never)) as any[]
 
   let outstanding = 0
+  // The making-of, entries she chose to share. Newest first, capped — a
+  // customer page, not an archive.
+  let making: { text: string | null; image_url: string | null; at: string }[] =
+    []
 
   if (productionOrder) {
+    const visibleNotes = (await madeToOrder
+      .listProductionNotes(
+        { order_id: orderId, visible_to_customer: true } as never,
+        { order: { created_at: "DESC" }, take: 20 } as never
+      )
+      .catch(() => [])) as any[]
+    making = visibleNotes.map((note) => ({
+      text: note.text ?? null,
+      image_url: note.image_url ?? null,
+      at: note.created_at,
+    }))
     const requests = (await madeToOrder.listProductionPaymentRequests({
       production_order_id: productionOrder.id,
     } as never)) as any[]
@@ -104,6 +119,10 @@ export const GET = async (
     stage_label: customerStageLabel(stage),
     stage_changed_at: merchantOrder?.stage_changed_at ?? null,
     made_to_order: Boolean(productionOrder),
+    /** „Slíbeno do" — the date she committed to, when she has. */
+    promised_at: productionOrder?.estimated_completion_at ?? null,
+    /** Entries from the diary she explicitly shared — photos of the making. */
+    making,
     // Signed link, built by the backend. The storefront cannot construct one,
     // which is why it is returned here rather than left to the client.
     balance: outstanding > 0

@@ -264,6 +264,24 @@ medusaIntegrationTestRunner({
       })
     })
 
+    describe("workbench detail routes", () => {
+      // Fake ids: 404 is the correct answer; 500 means a projection or
+      // handler broke. Mounted-ness is proven by not getting Express's own
+      // HTML 404 — Medusa returns JSON for a mounted route.
+      it.each([
+        "/admin/workbench/orders/order_fake",
+        "/admin/made-to-order/orders/order_fake/notes",
+        "/admin/workbench/products/prod_fake",
+        "/admin/workbench/customers/cus_fake",
+        "/admin/workbench/customers/cus_fake/emails",
+      ])("%s answers without breaking", async (route) => {
+        const response = await api
+          .get(route, { headers: headers ?? undefined, validateStatus: () => true })
+          .catch((error: any) => error.response)
+        expect(response.status).toBeLessThan(500)
+      })
+    })
+
     describe("POST routes — validated bodies", () => {
       /**
        * Every route here reads `req.validatedBody`, which only exists once a
@@ -279,6 +297,9 @@ medusaIntegrationTestRunner({
        * the empty body, which is the thing that was missing.
        */
       const POST_ROUTES = [
+        "/admin/workbench/orders/batch-stage",
+        "/admin/workbench/inventory/add-stock",
+        "/store/orders/order_fake/request-tweak",
         "/store/restock-subscriptions",
         "/store/reviews",
         "/store/return-requests",
@@ -341,6 +362,15 @@ medusaIntegrationTestRunner({
       "/admin/operations/discounts",
       "/admin/operations/products",
       "/admin/operations/catalog-health",
+      "/admin/workbench/orders",
+      "/admin/workbench/products",
+      "/admin/workbench/inventory",
+      "/admin/workbench/customers",
+      "/admin/workbench/discounts",
+      "/admin/workbench/products/statistics",
+      "/admin/workbench/orders/statistics",
+      "/admin/workbench/customers/statistics",
+      "/admin/workbench/inventory/statistics",
       "/admin/inventory-alerts",
       "/admin/merchant-settings",
       "/admin/merchant-orders",

@@ -18,6 +18,8 @@ const DAY_MS = 24 * 60 * 60 * 1000
 type Row = {
   id: string
   kind: "selection" | "price_list" | "code" | "automatic"
+  /** Orders that used this code; `null` where usage has no meaning. */
+  used_count?: number | null
   title: string
   detail: string | null
   status: "running" | "scheduled" | "ended"
@@ -83,7 +85,15 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     }),
     query.graph({
       entity: "promotion",
-      fields: ["id", "code", "status", "is_automatic", "campaign.name"],
+      fields: [
+        "id",
+        "code",
+        "status",
+        "is_automatic",
+        "campaign.name",
+        "campaign.budget.used",
+        "campaign.budget.limit",
+      ],
     }),
   ])
 
@@ -139,6 +149,32 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     })
   }
 
+  // How often each code was actually used — the difference between a
+  // discount that works and one that only exists. Order adjustments carry
+  // the promotion code; counting them is the honest usage number, campaign
+  // budgets exist only when a budget was configured.
+  const usageByCode = new Map<string, number>()
+  try {
+    const { data: adjustedOrders } = await query.graph({
+      entity: "order",
+      fields: ["id", "items.adjustments.code"],
+      pagination: { take: 1000, skip: 0 },
+    })
+    for (const order of adjustedOrders as any[]) {
+      const codes = new Set<string>()
+      for (const item of order.items ?? []) {
+        for (const adjustment of item?.adjustments ?? []) {
+          if (adjustment?.code) codes.add(String(adjustment.code))
+        }
+      }
+      for (const code of codes) {
+        usageByCode.set(code, (usageByCode.get(code) ?? 0) + 1)
+      }
+    }
+  } catch {
+    // Usage is decoration on this view; the list must not die for it.
+  }
+
   for (const promotion of promotions as any[]) {
     const automatic = Boolean(promotion.is_automatic)
     rows.push({
@@ -151,6 +187,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         ? "Platí sama, zákazník nic nezadává"
         : "Zákazník zadá kód v košíku",
       status: promotion.status === "active" ? "running" : "scheduled",
+      used_count: promotion.code
+        ? (usageByCode.get(String(promotion.code)) ?? 0)
+        : null,
       starts_at: null,
       ends_at: null,
       ends_in_days: null,

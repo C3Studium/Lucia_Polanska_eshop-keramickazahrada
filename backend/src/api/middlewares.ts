@@ -10,6 +10,7 @@ import {
 import { PostCustomPriceSchema } from "./store/variants/[id]/price/route";
 import { PostStoreReviewSchema } from "./store/reviews/route";
 import { PostStoreRestockSubscriptionSchema } from "./store/restock-subscriptions/route";
+import { PostWorkbenchBatchStageSchema } from "./admin/workbench/orders/batch-stage/route";
 import { GetStoreReviewsSchema } from "./store/products/[id]/reviews/route";
 import { GetStoreCustomerReviewsSchema } from "./store/customers/me/reviews/route";
 import { GetAdminReviewsSchema } from "./admin/reviews/route";
@@ -333,9 +334,24 @@ export default defineMiddlewares({
       methods: ["DELETE"],
       middlewares: [debugAuthMiddleware()],
     },
+    {
+      // Batch moves read validatedBody — without this entry the handler
+      // throws on first access, the restock lesson.
+      matcher: "/admin/workbench/orders/batch-stage",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostWorkbenchBatchStageSchema),
+      ],
+    },
     // An order's progress is private to whoever placed it. Custom store routes
     // are not authenticated by default, so without this the merchant stage and
     // the outstanding balance of any order id would be readable by anyone.
+    {
+      matcher: "/store/orders/:id/request-tweak",
+      methods: ["POST"],
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
     {
       matcher: "/store/orders/:id/progress",
       methods: ["GET"],

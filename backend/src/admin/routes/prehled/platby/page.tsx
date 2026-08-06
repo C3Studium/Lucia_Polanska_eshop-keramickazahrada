@@ -41,6 +41,7 @@ const providerLabels: Record<string, string> = {
 
 const filters = [
   { key: "problem", label: "Nedoplacené" },
+  { key: "authorized", label: "Autorizované (nezaplacené)" },
   { key: "all", label: "Všechny" },
 ] as const;
 

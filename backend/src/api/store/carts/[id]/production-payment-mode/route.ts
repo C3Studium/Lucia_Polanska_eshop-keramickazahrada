@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
+import { splitCustomPayment } from "../../../../../lib/deposit-split"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
@@ -17,9 +18,20 @@ import type MadeToOrderModuleService from "../../../../../modules/made-to-order/
  * and the customer would be shown a number they are not charged.
  */
 
-export const PostProductionPaymentModeSchema = z.object({
-  mode: z.enum(["deposit", "full"]),
-})
+export const PostProductionPaymentModeSchema = z
+  .object({
+    mode: z.enum(["deposit", "full", "custom"]),
+    /**
+     * The slider's position — the total the customer wants to pay now, in the
+     * cart currency. Only meaningful with `mode: "custom"`; validated
+     * server-side against the owner's floor, because the slider is a courtesy
+     * and this is the guard.
+     */
+    amount: z.number().positive().optional(),
+  })
+  .refine((body) => body.mode !== "custom" || typeof body.amount === "number", {
+    message: "U vlastní částky uveďte, kolik chcete nyní zaplatit.",
+  })
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0
@@ -99,6 +111,10 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
   // Offered only when *every* commission in the basket allows it. Mixed
   // permission would mean a „pay everything" button that does not.
   let allowFull = true
+  // Per-line floor/ceiling for the slider. A line that forbids full
+  // prepayment contributes zero headroom — the slider cannot route money to
+  // it beyond the owner's minimum.
+  const splitLines: { floor: number; ceiling: number }[] = []
 
   for (const item of items as any[]) {
     const profile = byProduct.get(item.product_id)
@@ -125,16 +141,49 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     const lineTotal = toNumber(
       item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
     )
+    const lineFloor = roundMoney((lineTotal * percentage) / 100)
     productionTotal += lineTotal
-    depositTotal += roundMoney((lineTotal * percentage) / 100)
+    depositTotal += lineFloor
+    splitLines.push({
+      floor: lineFloor,
+      ceiling:
+        profile.allow_full_prepayment === false ? lineFloor : lineTotal,
+    })
   }
 
   const cartTotal = toNumber(cart.total)
+  const metadata = cart.metadata as Record<string, unknown> | null
+  const storedMode = metadata?.production_payment_mode
   const mode =
-    (cart.metadata as Record<string, unknown> | null)
-      ?.production_payment_mode === "full"
-      ? "full"
+    storedMode === "full" || storedMode === "custom"
+      ? (storedMode as "full" | "custom")
       : "deposit"
+
+  // What the slider may legally cover, as charge-now totals: non-production
+  // lines are always paid in full, so the slider moves only the production
+  // portion between Σfloor and Σceiling.
+  const nonProductionNow = roundMoney(cartTotal - productionTotal)
+  const sliderCeiling = roundMoney(
+    nonProductionNow +
+      splitLines.reduce((sum, line) => sum + line.ceiling, 0)
+  )
+  const depositNow = hasProduction
+    ? roundMoney(nonProductionNow + depositTotal)
+    : cartTotal
+
+  // The stored custom choice, re-clamped against today's cart — items may
+  // have been added or removed since it was made.
+  const storedAmount = toNumber(metadata?.production_payment_amount)
+  const customNow =
+    mode === "custom" && storedAmount > 0
+      ? roundMoney(
+          nonProductionNow +
+            splitCustomPayment(
+              splitLines,
+              roundMoney(storedAmount - nonProductionNow)
+            ).applied
+        )
+      : null
 
   return {
     cart_id: cart.id,
@@ -153,6 +202,20 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     balance_later: hasProduction
       ? roundMoney(productionTotal - depositTotal)
       : 0,
+    /**
+     * The slider. `minimum` is the owner's floor as a charge-now total —
+     * never lower, never zero, never „pay later". `maximum` is everything
+     * the basket permits now (a no-full-prepayment commission caps it below
+     * the cart total). `amount` is the current position under the stored
+     * choice.
+     */
+    custom: hasProduction
+      ? {
+          minimum: depositNow,
+          maximum: sliderCeiling,
+          amount: customNow ?? depositNow,
+        }
+      : null,
   }
 }
 
@@ -164,7 +227,7 @@ export const POST = async (
   req: MedusaRequest<z.infer<typeof PostProductionPaymentModeSchema>>,
   res: MedusaResponse
 ) => {
-  const { mode } = req.validatedBody
+  const { mode, amount } = req.validatedBody
   const summary = await summarise(req, req.params.id)
 
   if (!summary.has_made_to_order) {
@@ -181,6 +244,20 @@ export const POST = async (
     )
   }
 
+  if (mode === "custom") {
+    const bounds = summary.custom!
+    // 400, not a silent clamp: at checkout the customer is present and can
+    // move the slider; correcting them quietly would charge a number they
+    // did not choose. (Payment prep clamps instead — there the cart may have
+    // changed since the choice and failing the payment helps nobody.)
+    if (amount! < bounds.minimum || amount! > bounds.maximum) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Částka musí být mezi ${bounds.minimum} a ${bounds.maximum}.`
+      )
+    }
+  }
+
   const cartModule = req.scope.resolve(Modules.CART)
   const [cart] = await cartModule.listCarts(
     { id: req.params.id } as never,
@@ -191,6 +268,9 @@ export const POST = async (
     metadata: {
       ...((cart as any)?.metadata ?? {}),
       production_payment_mode: mode,
+      // Stored as the charge-now total the customer picked; anything else is
+      // cleared so a mode switch cannot resurrect an old amount.
+      production_payment_amount: mode === "custom" ? amount : null,
     },
   } as never)
 

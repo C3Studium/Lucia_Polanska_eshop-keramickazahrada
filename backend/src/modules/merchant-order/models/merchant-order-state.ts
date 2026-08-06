@@ -15,4 +15,11 @@ export const MerchantOrderState = model.define("merchant_order_state", {
   stage_changed_at: model.dateTime().nullable(),
   stage_changed_by: model.text().nullable(),
   internal_note: model.text().nullable(),
+  /**
+   * Every stage change, appended in order: {from, to, at, by, note}.
+   * `stage_changed_at/by` keep answering "what is true now"; this answers
+   * "how did it get here", which is the question when a customer calls about
+   * an order that took three weeks.
+   */
+  stage_history: model.json().default([] as unknown as Record<string, unknown>),
 })

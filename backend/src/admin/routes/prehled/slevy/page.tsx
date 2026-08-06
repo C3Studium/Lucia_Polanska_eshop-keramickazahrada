@@ -18,6 +18,7 @@ type DiscountRow = {
   title: string;
   detail: string | null;
   status: "running" | "scheduled" | "ended";
+  used_count?: number | null;
   starts_at: string | null;
   ends_at: string | null;
   ends_in_days: number | null;
@@ -135,6 +136,15 @@ const SlevyInner = () => {
                 {row.detail && (
                   <Text size="small" className="text-ui-fg-subtle mt-1">
                     {row.detail}
+                  </Text>
+                )}
+                {typeof row.used_count === "number" && (
+                  <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                    {row.used_count === 0
+                      ? "zatím nepoužito"
+                      : row.used_count === 1
+                        ? "použito 1×"
+                        : `použito ${row.used_count}×`}
                   </Text>
                 )}
               </div>

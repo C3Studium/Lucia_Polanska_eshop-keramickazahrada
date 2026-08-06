@@ -1778,3 +1778,174 @@ scrolling a few hundred pieces to find „Hrnek modrý" is slower than typing it
 
 - Gate: typecheck ✓ · build ✓ · tests: **241 passed** in 15 suites.
 - Migrations: one — `archivováno` added to the review status constraint.
+
+## 2026-08-06 — Admin deepening, phase 1 (plan: admin-advanced-plan.md)
+
+**Slider.** `production-payment-mode` gains `mode:"custom"` + amount;
+`custom:{minimum,maximum,amount}` in GET; 400 outside bounds at checkout,
+clamp at payment prep (cart may have changed since the choice). Distribution
+across lines is `lib/deposit-split.ts`, shared by both callers so shown and
+charged cannot drift; proportional to headroom; no-full-prepayment lines get
+zero headroom; last line absorbs rounding. 10 unit tests incl. a seeded
+property test.
+
+**Workbenches.** `/admin/workbench/{orders,products,inventory,customers}` +
+four sidebar pages (`objednavky`, `produkty-workbench`, `sklad-workbench`,
+`zakaznici-workbench`). Orders: stage+captured−refunded+outstanding in one
+row. Products: stock/wishlist/reviews/30d sales + deposit floor visible.
+Inventory: restock-waiting + wishlist counts, sorted by demand. Customers:
+LTV, outstanding, newsletter, filters for owes/repeat/newsletter. Slevy rows
+show code usage counts.
+
+**Found by the integration suite, fixed:** newsletter migration never ran
+anywhere — class-name collision (two `Migration20260805090000`), MikroORM
+skips by name. Renamed to `…090001` (idempotent, safe rerun) + a guard spec
+that fails the build on any future collision. Restock „waiting" filter used a
+non-existent column; rows are deleted after notify, so existence = waiting.
+
+**Docs:** `storefront-advanced-prompt.md` (slider brief; supersedes first
+brief §4.3), automation ideas proposed-not-implemented in the plan doc.
+
+Gate: 269 unit / 58 integration / build clean.
+
+## 2026-08-06 — Admin deepening, phase 2: the write layer
+
+Objednávky+: checkbox selection + batch stage moves (new
+POST /admin/workbench/orders/batch-stage — per-order results, sequential on
+purpose, cancelled deliberately absent from bulk) and row expansion (new
+GET /admin/workbench/orders/:id — payment ledger, stage timeline, e-mails).
+Stage timeline is real history now: stage_history jsonb appended by
+transition-merchant-order (migration 20260806120000, idempotent).
+
+Produkty+: ProductionProfileEditor drawer — the slider floor, lead times,
+specification prompt, full-prepayment toggle; PATCHes the existing
+made-to-order route. P8-3 closed.
+
+Sklad+: additive restock inline (kiln math done for her) + per-variant alert
+threshold edited in place, stored on inventory-item metadata where
+inventory-alerts reads it.
+
+Zákazníci+: Karta drawer — private note (customer metadata, canonical) +
+full per-customer e-mail history (new GET
+/admin/workbench/customers/:id/emails, failures shown deliberately).
+
+Czech-quote-in-string trap hit a third time (production-profile editor);
+reworded. Gate: 274 unit / 61 integration / build clean.
+
+## 2026-08-06 — Admin deepening, phase 3: replacement grade
+
+The bar: native Medusa pages can leave the sidebar. Slevy+ closes the last
+domain — promotions/campaigns/price lists in one workbench
+(GET /admin/workbench/discounts joins them with usage, budgets, windows);
+all writes go through the NATIVE admin APIs (activate/pause/delete
+promotions, campaign create/edit, price-list status) so one system owns
+every code and price. Seasonal sales deliberately stay in Přehled → Slevy.
+
+The OrcaSlicer levels: order Rozbalit now carries the customer block
+(previous orders w/ stages, guest history matched by e-mail), full items
+with thumbnails and the zakázka specification, and the delivery address —
+on top of ledger/timeline/e-maily. Produkty+ gains Rozbalit (per-variant
+price × stock × waiting × wishlist, 6-month sales bars, latest reviews,
+bundle + seasonal-sale membership — so nobody reprices something sitting in
+a running sale unknowingly). Karta gains the order list with stages and
+outstanding sums (new GET /admin/workbench/customers/:id).
+
+Gate: 275 unit / 65 integration / build clean.
+
+## 2026-08-06 — Phase 3 follow-up: kinds, statistics, and the Zákazníci+ fix
+
+Matěj's review: Zákazníci+ failed to load on the deployed instance, and the
++ pages needed per-kind tabs with their own controls plus statistics.
+
+Zákazníci+: every joined source is now individually caught (one broken
+module degrades its column, not the page), the pointless items projection on
+the order scan is gone, and orders match customers by id OR e-mail so
+guest-heavy history stops reading as „zatím bez objednávky".
+
+Produkty+ rebuilt around six tabs — Produkty · Zakázky · Balíčky · Poškozené
+· Oblíbené · Statistiky — with per-kind actions only where they belong: the
+deposit editor lives on Zakázky (plus „Nastavit jako zakázku" as the doorway
+from Produkty), bundles get a real editor (composition, quantity, pricing
+mode, discount — through the existing bundled-products routes), damaged
+pieces are marked/unmarked in place and show their one-off sale framing.
+Classification is server-side (kind = zakazka | balicek | poskozene | bezne)
+with counts.
+
+Statistics, both domains: /admin/workbench/products/statistics (kind counts,
+stock buckets, top sellers 30d/365d by qty and revenue, zakázky by stage
+with deposits paid and outstanding, bundles sold via the line-item
+bundle_id marker, wishlist top, clearance, reviews) and the discounts
+endpoint now answers „kolik to přineslo" — per code (basket revenue +
+discount given), per campaign (roll-up), per seasonal sale (member-product
+line revenue inside the window, deliberately not basket totals — the
+double-counting rule is documented in lib/sale-stats.ts, which is pure and
+unit-tested). Slevy+ gains the Statistiky tab and revenue on rows.
+
+Gate: 284 unit / 67 integration / build clean.
+
+## 2026-08-06 — Deník výroby (feature-ideas 2.1 + 2.2 + promised date)
+
+The zakázka diary: production_note model (text/photo/per-entry
+visible_to_customer flag, migration 20260806150000), routes to list/create
+per order and toggle/delete per entry (body parsed in-route — the actions
+pattern, immune to the restock validatedBody trap), and the drawer with
+phone-camera upload (capture=environment → /admin/uploads → MinIO), hooked
+into Přehled→Zakázky rows and Objednávky+ expansions of made-to-order rows.
+
+Customer side rides the existing progress route: `making` (shared entries,
+newest first, capped at 20) and `promised_at` (estimated_completion_at —
+already settable, shown and watched; it only needed exposing). Storefront
+brief gains §5 for the „Jak vzniká" section.
+
+Gate: 285 unit / 68 integration / build clean.
+
+## 2026-08-06 — Approval step, Expertní režim, statistics everywhere
+
+**2.3 „Hotovo — podívejte se".** The balance-request e-mail now carries the
+newest customer-visible diary photo (subscriber fetches it, payment-pending
+template renders it above the pay button) — approving IS paying. The
+customer's other half: POST /store/orders/:id/request-tweak (auth, own order,
+404 otherwise) writes the request into the zakázka's diary as
+created_by=customer and rings the merchant bell once; repeated requests
+within 24 h are absorbed politely. Feature-ideas 2.3 done in its minimal
+honest form (no new states — the diary is the record, requires_attention the
+signal).
+
+**Expertní režim.** lib/expert-mode.tsx: external store + localStorage, one
+toggle mounted on all five workbenches. On: copyable ids on rows, „Surová
+data" (full pretty-printed payloads) in order/product expansions, the Karta
+and Slevy+ statistics, and ?expert=1 on orders/products lists returning the
+untrimmed graph rows. Read-only amplification by design — no extra writes.
+
+**Statistics.** Three new endpoints + tabs: orders (12-month bars, AOV,
+payment-provider split, pickup share, median lead time measured from
+stage_history — the only honest source, refunds), customers (repeat rate
+matched by e-mail so guests count, top customers, registrations by month,
+newsletter overlap), inventory (pieces on shelves, stock value in CZK asked
+prices with unpriced variants reported, demand totals). Every statistic
+reports its scan basis; nothing silently truncates.
+
+Gate: 286 unit / 75 integration / build clean.
+
+## 2026-08-06 — Person-grouping fix + honest statistics + Expert widening
+
+Matěj's report: „Matej Forejt 50×, yet it says first order". Root cause:
+Medusa mints a NEW customer record per guest checkout, and three surfaces
+grouped by record where a person = an e-mail. Fixed: the customers
+workbench now collapses records into persons (record_ids kept for Expert
+and the future merge tool), the order expansion matches history e-mail-first
+(two queries merged — customer_id alone is why a regular read as „první
+objednávka"), the Karta merges by id + e-mail.
+
+Statistics honesty: registrations count only has_account records (guest
+records made busy weeks look like signup waves); customers_total counts
+persons; products-stats zakázky stages get their own Czech map
+(productionStageLabels — merchant labels made them print raw English keys).
+
+Expert widening: ?expert=1 now also on customers (underlying records),
+inventory and discounts (raw rows); Zákazníci+ rows show „N záznamů v
+databázi" when a person is fragmented.
+
+Gate: typecheck ✓, 286 unit ✓, build ✓. Integration NOT RUN this round —
+the Railway test DB refuses connections (server closed unexpectedly; bare
+psql fails). Rerun required once the copy is woken/recreated.

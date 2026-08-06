@@ -37,6 +37,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     entity: "order",
     fields: [
       "id",
+      "items.id",
+      "items.title",
+      "items.quantity",
+      "items.metadata",
       "fulfillments.id",
       "fulfillments.canceled_at",
       "fulfillments.data",
@@ -47,11 +51,59 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   })
 
   const order = orders[0] as any
+
+  // ?parcel=stock|zakazka — a mixed order ships as TWO parcels when she
+  // wants: the stock items now, the commission when the kiln says so. The
+  // split is by the line-item marker the checkout writes; each variant gets
+  // its own podací lístek. Default (no param) = everything in one.
+  const parcel =
+    req.query.parcel === "stock" || req.query.parcel === "zakazka"
+      ? req.query.parcel
+      : "all"
+  const isCommissionItem = (item: any) =>
+    Boolean((item?.metadata as any)?.made_to_order)
+  const parcelItems = (order?.items ?? []).filter((item: any) =>
+    parcel === "all"
+      ? true
+      : parcel === "zakazka"
+        ? isCommissionItem(item)
+        : !isCommissionItem(item)
+  )
+
   if (!order) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "Objednávka nebyla nalezena."
     )
+  }
+
+  if (parcel !== "all" && !parcelItems.length) {
+    res.status(200).json({
+      available: false,
+      reason:
+        parcel === "zakazka"
+          ? "V objednávce žádná zakázka není — stačí jeden lístek."
+          : "V objednávce nejsou skladové položky — stačí jeden lístek.",
+      labels: [],
+    } as LabelResponse)
+    return
+  }
+
+  // The ČP nAPI credentials gate everything real. Named plainly so the
+  // button can exist today and start working the day the account does.
+  if (!process.env.BALIKOVNA_API_TOKEN || !process.env.BALIKOVNA_API_SECRET) {
+    res.status(200).json({
+      available: false,
+      reason:
+        "Podací lístek zatím nejde vytvořit — čekáme na přístupy k České poště (B2B účet). Jakmile budou, tlačítko začne fungovat samo.",
+      labels: [],
+      parcel,
+      items: parcelItems.map((item: any) => ({
+        title: item.title,
+        quantity: item.quantity,
+      })),
+    } as never)
+    return
   }
 
   const fulfillment = (order.fulfillments || []).find(

@@ -151,6 +151,19 @@ const onBalanceRequested = async ({
     return
   }
 
+  // The approval moment (feature-ideas 2.3): the balance request carries the
+  // newest photo she chose to share, so „look what is finished" and „pay the
+  // rest" are one e-mail — approving IS the payment.
+  const [latestShared] = (await madeToOrder
+    .listProductionNotes(
+      {
+        order_id: data.order_id,
+        visible_to_customer: true,
+      } as never,
+      { order: { created_at: "DESC" }, take: 1 } as never
+    )
+    .catch(() => [])) as any[]
+
   await sendCustomerEmail(container, {
     template: "payment-pending",
     to: order.email,
@@ -165,6 +178,7 @@ const onBalanceRequested = async ({
       // The link she generated, or the signed one that works from any inbox.
       orderLink: request.payment_url || balancePaymentUrl(order.id) || orderLink(order),
       estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
+      makingPhotoUrl: latestShared?.image_url ?? null,
     },
   })
 }
