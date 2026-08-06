@@ -47,6 +47,7 @@ type ProductRow = {
   title: string;
   handle: string;
   status: string;
+  stock_state?: "ok" | "low" | "out" | null;
   thumbnail: string | null;
   kind: string;
   collection: string | null;
@@ -267,13 +268,22 @@ const ProduktyInner = () => {
                 </Text>
               </div>
 
-              <div>
+              <div className="flex flex-wrap gap-1">
                 <Badge
                   size="2xsmall"
                   color={product.status === "published" ? "green" : "grey"}
                 >
                   {product.status === "published" ? "Zveřejněno" : "Koncept"}
                 </Badge>
+                {product.stock_state === "ok" && (
+                  <Badge size="2xsmall" color="green">Skladem</Badge>
+                )}
+                {product.stock_state === "low" && (
+                  <Badge size="2xsmall" color="orange">Dochází</Badge>
+                )}
+                {product.stock_state === "out" && (
+                  <Badge size="2xsmall" color="red">Vyprodáno</Badge>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">

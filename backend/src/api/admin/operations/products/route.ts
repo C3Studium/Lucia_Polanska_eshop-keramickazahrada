@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { getInventoryAlerts } from "../../../../lib/inventory-alerts"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isClearanceProduct } from "../../../../lib/clearance"
 
@@ -29,6 +30,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const limit = Math.min(asPositiveInt(req.query.limit, 100), 200)
   const search = String(req.query.q ?? "").trim().toLowerCase()
   const kind = String(req.query.kind ?? "standard") as ProductKind
+
+  const alerts = await getInventoryAlerts(req.scope)
+  const stateByVariant = new Map<string, "low" | "out" | "ok">()
+  for (const bucket of ["low", "out", "ok"] as const) {
+    for (const row of alerts[bucket]) {
+      if (row.variant_id) stateByVariant.set(row.variant_id, bucket)
+    }
+  }
 
   const [{ data: products }, { data: productionProfiles }, { data: bundles }] =
     await Promise.all([
@@ -92,6 +101,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       title: product.title,
       handle: product.handle,
       status: product.status,
+      // Best variant wins: a product is „skladem" if ANY variant clears the
+      // threshold — the merchant question is „can I sell it", not „is every
+      // size healthy". Thresholds come from the shared classifier.
+      stock_state: (product.variants ?? []).reduce(
+        (best: "ok" | "low" | "out" | null, variant: any) => {
+          const state = stateByVariant.get(variant.id) ?? null
+          if (state === "ok" || best === "ok") return "ok"
+          if (state === "low" || best === "low") return "low"
+          return state ?? best
+        },
+        null
+      ),
       thumbnail: product.thumbnail ?? null,
       kind: kindOf(product),
       collection: product.collection?.title ?? null,
