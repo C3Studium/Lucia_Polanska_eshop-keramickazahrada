@@ -70,10 +70,10 @@ const AddStock = ({ row }: { row: DemandRow }) => {
 
   const add = useMutation({
     mutationFn: (added: number) =>
-      sdk.client.fetch(
-        `/admin/inventory-items/${row.inventory_item_id}/location-levels/${row.location_id}`,
-        { method: "POST", body: { stocked_quantity: row.stocked + added } }
-      ),
+      sdk.client.fetch(`/admin/workbench/inventory/add-stock`, {
+        method: "POST",
+        body: { inventory_item_id: row.inventory_item_id, quantity: added },
+      }),
     onSuccess: async (_result, added) => {
       setAmount("");
       await queryClient.invalidateQueries({
@@ -93,7 +93,7 @@ const AddStock = ({ row }: { row: DemandRow }) => {
       ),
   });
 
-  if (!row.inventory_item_id || !row.location_id) {
+  if (!row.inventory_item_id) {
     return (
       <Text size="xsmall" className="text-ui-fg-muted">
         Upravit lze ve skladu

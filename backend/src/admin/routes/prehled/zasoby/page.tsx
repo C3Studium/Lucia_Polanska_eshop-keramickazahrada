@@ -102,10 +102,10 @@ const AddStock = ({ row }: { row: StockRow }) => {
 
   const add = useMutation({
     mutationFn: (added: number) =>
-      sdk.client.fetch(
-        `/admin/inventory-items/${row.inventory_item_id}/location-levels/${row.location_id}`,
-        { method: "POST", body: { stocked_quantity: row.stocked + added } }
-      ),
+      sdk.client.fetch(`/admin/workbench/inventory/add-stock`, {
+        method: "POST",
+        body: { inventory_item_id: row.inventory_item_id, quantity: added },
+      }),
     onSuccess: async (_result, added) => {
       setAmount("");
       await queryClient.invalidateQueries({ queryKey: ["stock"] });
@@ -122,7 +122,7 @@ const AddStock = ({ row }: { row: StockRow }) => {
 
   // Without an item and a location there is nothing to update — better to show
   // nothing than a control that fails on click.
-  if (!row.inventory_item_id || !row.location_id) {
+  if (!row.inventory_item_id) {
     return (
       <Text size="xsmall" className="text-ui-fg-muted">
         Upravit lze ve skladu
