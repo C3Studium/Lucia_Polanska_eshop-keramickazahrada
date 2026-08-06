@@ -38,6 +38,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "id",
         "created_at",
         "total",
+        "shipping_methods.name",
         "shipping_methods.shipping_option.provider_id",
         "payment_collections.payments.provider_id",
         "payment_collections.payments.captured_at",
