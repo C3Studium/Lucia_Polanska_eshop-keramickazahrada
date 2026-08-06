@@ -15,40 +15,13 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     }
 
     const lenis = new Lenis({
-      /*
-       * Lerp rather than duration+easing.
-       *
-       * The previous config paired duration: 1.2 with an expo-out curve, which sounds slow but
-       * is the opposite: that curve covers half the distance in 120ms and three quarters in
-       * 240ms, spending its remaining second travelling the last 3%. The glide was over before
-       * it could be seen, so the page read as if it were scrolling natively — and every
-       * scroll-linked animation inherited that abruptness.
-       *
-       * Lerp eases toward the target by a fraction of the remaining distance each frame, so the
-       * motion keeps a visible tail for as long as there is distance left, and a second wheel
-       * tick blends into the first instead of restarting a tween.
-       */
-/*
-       * 0.045 is the point where the scroll stops reading as "the browser, slightly delayed" and
-       * starts reading as its own thing: let go mid-scroll and the page keeps travelling for
-       * about a second, decelerating the whole way. Each frame closes 4.5% of the remaining
-       * distance, so the tail is long by construction rather than by a timer.
-       *
-       *   50% of the travel  ~300ms
-       *   90%                ~1.0s
-       *   99%                ~2.0s
-       */
-      lerp: 0.045,
+      duration: 1.2,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.8,
       smoothWheel: true,
-      /*
-       * Touch scrolling stays native. Momentum on a phone is the operating system's to own —
-       * intercepting it fights the platform's own physics and feels worse, not better.
-       */
-      syncTouch: false,
-      /* Slightly more travel per notch. With a long tail, a short throw finishes before the
-         deceleration is visible — there has to be enough distance for the easing to show. */
-      wheelMultiplier: 1.15,
-      touchMultiplier: 1.6,
+      wheelMultiplier: 1,
+      touchMultiplier: 1,
+      autoRaf: false,
     });
     lenisRef.current = lenis;
 
@@ -63,6 +36,8 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     rafId.current = requestAnimationFrame(raf);
 
     return () => {
+      // The rAF is cancelled as well as the instance destroyed: without it the loop keeps
+      // calling raf() on a destroyed Lenis after unmount.
       if (rafId.current) cancelAnimationFrame(rafId.current);
       lenis.destroy();
 

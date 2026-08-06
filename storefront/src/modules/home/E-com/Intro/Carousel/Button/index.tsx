@@ -16,12 +16,22 @@ const holdAccelerationDuration = 3000
 const initialHoldDelay = 550
 const holdStepDuration = 2600
 
+/*
+ * The pill grows leftward from its right edge. Expressed as a clip rather than a width: width is
+ * a layout property, so animating it forced layout + paint every frame and the motion visibly
+ * stuttered. A clip-path inset runs on the compositor, and unlike scaleX it leaves the image and
+ * the arrow undistorted. 50 of 125px visible at rest = 60% clipped from the left.
+ */
 const expandAnim = {
   rest: {
-    width: 50,
+    clipPath: "inset(0 0 0 60% round 25px)",
+    transition: {
+      duration: 0.3,
+      ease: [0.76, 0, 0.24, 1] as Easing,
+    },
   },
   hover: {
-    width: 125,
+    clipPath: "inset(0 0 0 0% round 25px)",
     transition: {
       duration: 0.35,
       ease: [0.76, 0, 0.24, 1] as Easing,
@@ -84,12 +94,14 @@ export default function CarouselButton({
     },
   }
 
+  /* scaleX rather than width, for the same reason. The line is a plain bar, so scaling it is
+     exactly equivalent visually and costs nothing per frame. */
   const lineAnim = {
     rest: {
-      width: "100%",
+      scaleX: 1,
     },
     hover: {
-      width: "150%",
+      scaleX: 1.5,
       transition: {
         duration: 0.35,
         ease: [0.76, 0, 0.24, 1] as Easing,

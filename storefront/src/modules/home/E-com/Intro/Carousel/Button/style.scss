@@ -6,8 +6,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
+    /*
+     * Always the expanded width; the collapsed state is a clip, not a narrower box.
+     * Animating `width` made the browser re-run layout and paint on every frame, which is what
+     * made these read as though they were running at a fraction of the frame rate. clip-path is
+     * handled on the compositor and does not distort the image the way scaleX would.
+     */
+    width: 125px;
     height: 50px;
+    justify-content: flex-end;
 
     .Carousel__button{
         position: relative;

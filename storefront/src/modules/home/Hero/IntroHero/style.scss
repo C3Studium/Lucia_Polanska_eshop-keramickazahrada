@@ -376,7 +376,10 @@
     will-change: transform, opacity;
   }
 
-  .Hero__Intro__Lede p {
+  /* Direct child only. As a descendant selector this also matched the <p> inside the CTA's
+     own markup, painting the button's label #f4ece4 and beating the colour animation on it —
+     the label sat cream on a cream fill and never turned over. */
+  .Hero__Intro__Lede > p {
     margin: 0;
     color: #f4ece4;
     font-family: "Sentient-Light", serif;

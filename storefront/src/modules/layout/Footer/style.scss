@@ -376,8 +376,16 @@ p.newsletter__error {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(22px, 3vw, 52px);
-  align-content: end;
-  padding-top: clamp(28px, 2.8vw, 48px);
+  /*
+   * Sits under the newsletter rather than being pinned to the floor of its row. This column's
+   * height is set by the brand column opposite, which is much taller, so `end` left the link
+   * groups stranded at the bottom with a void above them and the two halves of the right column
+   * read as unrelated. `start` with a deliberate gap keeps them as one block; the slack collects
+   * at the bottom where the eye reads it as margin. Footer height is unchanged — the brand
+   * column still sets it.
+   */
+  align-content: start;
+  padding-top: clamp(44px, 4.4vw, 76px);
 }
 
 .footer__linkGroup > .footer__groupTitle {

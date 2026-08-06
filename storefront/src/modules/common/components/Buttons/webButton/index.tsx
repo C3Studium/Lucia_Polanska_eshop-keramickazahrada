@@ -67,16 +67,16 @@ const foregroundVariants: Variants = {
   [BUTTON_REST]: ({ palette }: ForegroundVariantCustom) => ({
     color: palette.foreground,
     transition: {
-      delay: 0.1,
-      duration: 0.12,
+      delay: 0.05,
+      duration: 0.1,
       ease: BUTTON_FOREGROUND_EASE,
     },
   }),
   [BUTTON_ACTIVE]: ({ palette }: ForegroundVariantCustom) => ({
     color: palette.activeForeground,
     transition: {
-      delay: 0.14,
-      duration: 0.12,
+      delay: 0.07,
+      duration: 0.1,
       ease: BUTTON_FOREGROUND_EASE,
     },
   }),
@@ -89,14 +89,14 @@ const solidFillVariants: Variants = {
   [BUTTON_REST]: {
     scaleX: 0,
     transition: {
-      duration: 0.32,
+      duration: 0.18,
       ease: BUTTON_EASE,
     },
   },
   [BUTTON_ACTIVE]: {
     scaleX: 1,
     transition: {
-      duration: 0.42,
+      duration: 0.22,
       ease: BUTTON_EASE,
     },
   },

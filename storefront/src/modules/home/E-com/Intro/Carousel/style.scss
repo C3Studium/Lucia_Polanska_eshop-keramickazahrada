@@ -1,7 +1,14 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * The loop was running the whole time — measured at 30 distinct transforms per 31 frames — but a
+ * 2x6px dot travelling 8.8px at 40% opacity is below the threshold at which anyone reads it as
+ * movement. Same travel idea, enough contrast and distance to actually be seen.
+ */
 @keyframes wheelAnim {
-  0%, 100% { transform: translate(-50%, 0); opacity: 0.4; }
-  50% { transform: translate(-50%, 0.55rem); opacity: 1; }
+  0%   { transform: translate(-50%, 0); opacity: 0; }
+  18%  { opacity: 1; }
+  70%  { transform: translate(-50%, 0.95rem); opacity: 1; }
+  100% { transform: translate(-50%, 1.05rem); opacity: 0; }
 }
 
 .Intro__Carousel {
@@ -145,11 +152,11 @@
               position: absolute;
               top: 0.42rem;
               left: 50%;
-              width: 2px;
-              height: 0.4rem;
+              width: 3px;
+              height: 0.5rem;
               border-radius: 999px;
               background: var(--blackText);
-              animation: wheelAnim 1.7s ease-in-out infinite;
+              animation: wheelAnim 1.9s cubic-bezier(0.76, 0, 0.24, 1) infinite;
             }
           }
         }
