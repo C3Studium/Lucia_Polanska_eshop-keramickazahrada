@@ -189,6 +189,31 @@ optional.
 
 ---
 
+## 7. Parked pending legal — one consent decision, three things
+
+Explored 2026-08-06 on Matěj's question (sending oznámení to customers'
+inboxes with consent gathered at login). Engineering-grade legal reading,
+not legal advice; one hour of a Czech lawyer before launch.
+
+**The finding:** an e-mailed announcement IS direct marketing (GDPR +
+zák. č. 480/2004 Sb.), i.e. the same legal object as the parked newsletter.
+One decision must cover: (1) newsletter campaigns, (2) broadcast oznámení,
+(3) the signup form already collecting e-mails today without papers.
+
+**Routes:** explicit opt-in (unchecked box at registration/checkout, not
+bundled with ToS, revocable, with stored proof of when/what/where) — or
+§ 7 odst. 3 soft opt-in for existing buyers of similar goods (notice at
+purchase + opt-out in every message; buyers only).
+
+**The free carve-out:** „dovolená posune VAŠI rozpracovanou zakázku" is a
+transactional message about their own order — sendable today via the
+existing customer-email infra, no consent machinery. Only broadcasts are
+marketing.
+
+**When approved, our side is small** (sending goes to an external
+provider): consent capture with proof, an account toggle, unsubscribe
+handling, and a clean export of the consented list. No sender.
+
 ## The „don't build" list — unchanged, plus one
 
 - **Kiln/firing planner** — one person, one kiln; a wall calendar wins.
