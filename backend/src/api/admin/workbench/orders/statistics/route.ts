@@ -12,6 +12,7 @@ import type MerchantOrderModuleService from "../../../../../modules/merchant-ord
  * and how much money went back. One scan, caps reported.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  try {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const merchantOrders = req.scope.resolve<MerchantOrderModuleService>(
     MERCHANT_ORDER_MODULE
@@ -43,7 +44,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "payment_collections.payments.amount",
         "payment_collections.payments.refunds.amount",
       ],
-      filters: { created_at: { $gte: yearAgo.toISOString() } } as never,
+      // The list route proves this exact shape; combining a created_at
+      // filter with the nested payment joins was the one thing only this
+      // route did — and the one route that failed. The 12-month window is
+      // applied in JS below instead.
+      filters: { id: { $ne: null } } as never,
       pagination: { take: 1000, skip: 0, order: { created_at: "DESC" } },
     }),
     merchantOrders.listMerchantOrderStates({} as never, {
@@ -71,7 +76,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   let pickupOrders = 0
   const paymentProviders = new Map<string, number>()
 
-  for (const order of orders as any[]) {
+  const yearAgoIso = yearAgo.toISOString()
+  const recent = (orders as any[]).filter(
+    (order) => String(order.created_at) >= yearAgoIso
+  )
+  for (const order of recent) {
     const bucket = byMonth.get(monthKey(order.created_at))
     const total = toNumber(order.total)
     revenueTotal = round(revenueTotal + total)
@@ -130,7 +139,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     ? Math.round(leadTimes[Math.floor(leadTimes.length / 2)] * 10) / 10
     : null
 
-  const orderCount = (orders as any[]).length
+  const orderCount = recent.length
 
   res.status(200).json({
     months: months.map((month) => ({ month, ...byMonth.get(month)! })),
@@ -148,4 +157,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     lead_times_measured: leadTimes.length,
     orders_scanned: orderCount,
   })
+  } catch (error) {
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Statistiky selhaly.",
+    })
+  }
 }
