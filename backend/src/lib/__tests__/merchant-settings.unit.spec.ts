@@ -11,6 +11,7 @@ describe("merchant settings allowlist", () => {
   it("exposes exactly the keys A3 permits — the list is closed", () => {
     expect([...MERCHANT_SETTING_KEYS].sort()).toEqual([
       "announcement_enabled",
+      "announcement_link",
       "announcement_text",
       "daily_digest_enabled",
       "default_parcel_weight_kg",

@@ -31,6 +31,7 @@ const Inner = () => {
   const [vMessage, setVMessage] = useState("");
   const [announce, setAnnounce] = useState(false);
   const [aText, setAText] = useState("");
+  const [aLink, setALink] = useState("");
 
   useEffect(() => {
     const s = data?.settings;
@@ -40,6 +41,7 @@ const Inner = () => {
     setVMessage(s.vacation_message ?? "");
     setAnnounce(Boolean(s.announcement_enabled));
     setAText(s.announcement_text ?? "");
+    setALink(s.announcement_link ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -52,6 +54,7 @@ const Inner = () => {
           vacation_message: vMessage,
           announcement_enabled: announce,
           announcement_text: aText,
+          announcement_link: aLink.trim(),
         },
       }),
     onSuccess: async () => {
@@ -114,9 +117,19 @@ const Inner = () => {
           <Switch checked={announce} onCheckedChange={setAnnounce} />
         </div>
         {announce && (
-          <Input size="small" value={aText}
-            placeholder="Např.: V sobotu mě najdete na trhu na Náplavce!"
-            onChange={(e) => setAText(e.target.value)} />
+          <div className="flex flex-col gap-y-2">
+            <Input size="small" value={aText}
+              placeholder="Např.: V sobotu mě najdete na trhu na Náplavce!"
+              onChange={(e) => setAText(e.target.value)} />
+            <div>
+              <Text size="xsmall" className="text-ui-fg-subtle mb-1">
+                Odkaz pod tlačítkem (nepovinné) — mapa trhu, stránka události…
+              </Text>
+              <Input size="small" type="url" value={aLink}
+                placeholder="https://…"
+                onChange={(e) => setALink(e.target.value)} />
+            </div>
+          </div>
         )}
       </section>
 

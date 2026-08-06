@@ -87,6 +87,8 @@ const KEY_SCHEMAS = {
   /** Oznámení — an event banner atop the storefront („v sobotu na trhu…"). */
   announcement_enabled: z.boolean(),
   announcement_text: z.string().max(300),
+  /** Where the announcement's button leads — mapa, událost, článek. */
+  announcement_link: z.string().url().or(z.literal("")),
 } as const
 
 /** Full settings object — every key present, defaults filled in. */
@@ -107,6 +109,7 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   vacation_message: "",
   announcement_enabled: false,
   announcement_text: "",
+  announcement_link: "",
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
   review_request_days: 10,

@@ -298,6 +298,7 @@ medusaIntegrationTestRunner({
        */
       const POST_ROUTES = [
         "/admin/workbench/orders/batch-stage",
+        "/admin/workbench/inventory/add-stock",
         "/store/orders/order_fake/request-tweak",
         "/store/restock-subscriptions",
         "/store/reviews",

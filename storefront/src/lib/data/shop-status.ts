@@ -7,7 +7,7 @@
  */
 export type ShopStatus = {
   vacation: { until: string | null; message: string } | null
-  announcement: { message: string } | null
+  announcement: { message: string; link?: string | null } | null
   commissions_paused: boolean
 }
 
