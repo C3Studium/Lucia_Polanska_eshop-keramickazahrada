@@ -5,6 +5,8 @@ import React from "react"
 
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Help from "@modules/order/components/help"
+import CarrierDamageNotice from "@modules/order/components/carrier-damage"
+import { isCarrierShippingMethod } from "@lib/util/carrier"
 import ReturnRequest from "@modules/order/components/return-request"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
@@ -95,6 +97,12 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       </AccountSectionReveal>
 
       <AccountSectionReveal>
+        <CarrierDamageNotice
+          orderNumber={order.display_id}
+          isCarrierDelivery={isCarrierShippingMethod(order as any)}
+          stage="delivered"
+        />
+
         <Help />
       </AccountSectionReveal>
     </AccountPageReveal>

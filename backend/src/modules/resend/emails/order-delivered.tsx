@@ -11,8 +11,11 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { CarrierDamageClaim } from "../components/carrier-damage"
 
 interface OrderDeliveredEmailProps {
+  /** Storefront page with the claim block and the downloadable document. */
+  claimUrl?: string;
   customerName?: string;
   orderNumber?: string;
 }
@@ -23,7 +26,8 @@ interface OrderDeliveredEmailProps {
  */
 function OrderDeliveredEmailComponent({
   customerName = "Vážený zákazník",
-  orderNumber = "#12345"
+  orderNumber = "#12345",
+  claimUrl,
 }: OrderDeliveredEmailProps) {
   return (
     <EmailLayout
@@ -53,6 +57,10 @@ function OrderDeliveredEmailComponent({
           Prohlédnout další kousky
         </EmailButton>
       </ButtonRow>
+      {/* The two working days are running from today, so the claim route belongs here
+          rather than only in the terms. */}
+      <CarrierDamageClaim orderNumber={orderNumber} claimUrl={claimUrl} />
+
 
       <Signature />
     </EmailLayout>

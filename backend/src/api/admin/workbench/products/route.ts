@@ -40,7 +40,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const wishlist = req.scope.resolve<any>(WISHLIST_MODULE)
   const reviews = req.scope.resolve<any>(PRODUCT_REVIEW_MODULE)
 
-  const limit = Math.min(Number(req.query.limit) || 50, 200)
+  /*
+   * Default raised from 50 on 2026-08-07. The old default silently truncated: this route
+   * counts `kinds` across the whole catalogue but returns only `limit` rows, so a caller
+   * that did not ask for a limit got the first 50 products of 86 and a set of counts
+   * describing all of them. Balíčky emptied first — bundle products are created after the
+   * pieces they contain, so they sort last — and the tab showed "4" above an empty list.
+   *
+   * A larger default does not make truncation impossible, only unlikely; `count` below is
+   * the filtered total so a caller can always tell, and both workbenches now say so.
+   */
+  const limit = Math.min(Number(req.query.limit) || 200, 200)
   const offset = Math.max(Number(req.query.offset) || 0, 0)
   const search =
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
@@ -200,6 +210,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         /* Dobírka is opt-in per product: the carrier collecting cash is a risk she
            takes piece by piece, not a shop-wide setting. Absent metadata means no. */
         cod_allowed: Boolean((product.metadata as any)?.cod_allowed),
+        /* Archived pieces are kept, not deleted — they still own their order history —
+           but they leave the shop and the working lists. */
+        archived: Boolean((product.metadata as any)?.archived),
         /* Fragile is hers to declare — no dimension or weight implies it. It forces the
            whole basket onto the fragile carriage, so it is the one flag a customer
            cannot override. */
@@ -244,21 +257,38 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       }
     })
 
+  /*
+   * Archived is orthogonal to kind — an archived piece is still a zakázka or a balíček —
+   * so it is filtered separately and, by default, *out*. Every tab that asks about kinds
+   * is asking about things she is still selling; the archive is somewhere you go on
+   * purpose, which is what `archived=1` is for.
+   */
+  const wantsArchived = req.query.archived === "1"
+  const live = rows.filter((row) => row.archived === wantsArchived)
+
   const kindFilter =
     typeof req.query.kind === "string" ? req.query.kind : null
   const filtered = kindFilter
-    ? rows.filter((row) => row.kind === kindFilter)
-    : rows
+    ? live.filter((row) => row.kind === kindFilter)
+    : live
+
+  const page = filtered.slice(offset, offset + limit)
 
   res.status(200).json({
-    products: filtered.slice(offset, offset + limit),
+    products: page,
+    /** The filtered total — compare against `products.length` to detect truncation. */
     count: filtered.length,
+    /** Explicit, so a caller never has to infer it from two numbers it forgot to compare. */
+    truncated: page.length < filtered.length,
+    /* Counted over the live set, not over everything: a badge that included archived
+       pieces would send her looking for rows the list deliberately does not show. */
     kinds: {
-      bezne: rows.filter((row) => row.kind === "bezne").length,
-      zakazka: rows.filter((row) => row.kind === "zakazka").length,
-      balicek: rows.filter((row) => row.kind === "balicek").length,
-      poskozene: rows.filter((row) => row.kind === "poskozene").length,
+      bezne: live.filter((row) => row.kind === "bezne").length,
+      zakazka: live.filter((row) => row.kind === "zakazka").length,
+      balicek: live.filter((row) => row.kind === "balicek").length,
+      poskozene: live.filter((row) => row.kind === "poskozene").length,
     },
+    archived_count: rows.filter((row) => row.archived).length,
     limit,
     offset,
   })

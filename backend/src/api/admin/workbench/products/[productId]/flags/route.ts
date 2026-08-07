@@ -43,6 +43,12 @@ const PatchFlagsSchema = z
      * default — distinct from "leave unchanged", which is omitting the key.
      */
     packaging_price: z.number().min(0).nullable().optional(),
+    /**
+     * Archived: kept in the database, gone from the shop and from the working
+     * lists. Deliberately not a delete — an archived product still owns its
+     * order history, and deleting it would take that with it.
+     */
+    archived: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

@@ -7,6 +7,8 @@ import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
 import { addOrderCommissionNote } from "@lib/data/commission-actions"
+import { isCarrierShippingMethod } from "@lib/util/carrier"
+import CarrierDamageNotice from "@modules/order/components/carrier-damage"
 import CommissionBrief from "@modules/checkout/components/commission-brief"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
@@ -108,6 +110,16 @@ export default async function OrderCompletedTemplate({
             a real fulfillment timeline — until then the confirmation states only what is true. */}
 
         <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
+
+        {/* Carrier deliveries only — Osobní odběr has no courier to inspect in front
+            of and no carrier to claim against. */}
+        <section className={s.commission}>
+          <CarrierDamageNotice
+            orderNumber={order.display_id}
+            isCarrierDelivery={isCarrierShippingMethod(order as any)}
+            stage="pending"
+          />
+        </section>
 
         {/* The conversation about a commissioned piece does not end at checkout: it runs
             until the piece does. Only rendered when the backend says this order is a

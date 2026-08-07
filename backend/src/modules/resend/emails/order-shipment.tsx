@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { CarrierDamageWarning } from "../components/carrier-damage"
 
 interface OrderShipmentEmailProps {
   customerName?: string;
@@ -57,6 +58,10 @@ function OrderShipmentEmailComponent({
       <LedgerEnd />
 
       <Note tone="olive">Křehké objekty cestují v ochranném balení.</Note>
+
+      {/* The ninety seconds at the door decide who pays for a broken pot. This is the
+          last thing they read before that moment. */}
+      <CarrierDamageWarning />
 
       <ButtonRow>
         {hasTracking ? (

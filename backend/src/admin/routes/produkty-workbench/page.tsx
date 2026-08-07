@@ -29,6 +29,7 @@ import { ProductionProfileEditor } from "../../components/production-profile-edi
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ShippingProfileEditor } from "../../components/shipping-profile-editor";
+import { ArchiveToggle } from "../../components/archive-toggle";
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -73,6 +74,8 @@ type WorkbenchProduct = {
   cod_allowed: boolean;
   /** Declared by her; forces the whole basket onto the fragile carriage. */
   fragile: boolean;
+  /** Retired: kept for its order history, gone from the shop and these lists. */
+  archived: boolean;
   /** What wrapping this piece costs. Null = shop default. */
   packaging_price: number | null;
   bundle: { id: string; title: string } | null;
@@ -98,7 +101,10 @@ type WorkbenchProduct = {
 type WorkbenchProductsResponse = {
   products: WorkbenchProduct[];
   count: number;
+  /** Set when the server returned fewer rows than matched — never silently. */
+  truncated?: boolean;
   kinds: { bezne: number; zakazka: number; balicek: number; poskozene: number };
+  archived_count?: number;
 };
 
 type ProductDetail = {
@@ -526,6 +532,7 @@ type TabKey =
   | "balicky"
   | "poskozene"
   | "oblibene"
+  | "archivovane"
   | "statistiky";
 
 const tabs: { key: TabKey; label: string }[] = [
@@ -534,6 +541,7 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: "balicky", label: "Balíčky" },
   { key: "poskozene", label: "Poškozené" },
   { key: "oblibene", label: "Oblíbené" },
+  { key: "archivovane", label: "Archivované" },
   { key: "statistiky", label: "Statistiky" },
 ];
 
@@ -543,11 +551,34 @@ const ProductsInner = () => {
   const [expanded, setExpanded] = useState<string | null>(null);
   const expert = useExpertMode();
 
+  /*
+   * The kind goes to the server, and this is load-bearing rather than an optimisation.
+   *
+   * The route counts `kinds` across the whole catalogue but returns only `limit` rows —
+   * default 50. Asking without a kind therefore got the first 50 products of 86 and left
+   * this page to filter them locally, so a tab whose products sort late came back empty
+   * while its badge confidently showed the real number. Bundles are created after the
+   * pieces they contain, so Balíčky was the tab that emptied first.
+   *
+   * Filtering server-side means the slice applies to the kind being looked at. `oblibene`
+   * ranks the whole catalogue by wishlist demand, so it deliberately sends no kind — and
+   * the raised limit is what keeps that one honest.
+   */
+  const kindForTab: Partial<Record<TabKey, WorkbenchProduct["kind"]>> = {
+    produkty: "bezne",
+    zakazky: "zakazka",
+    balicky: "balicek",
+    poskozene: "poskozene",
+  };
+
   const { data, isLoading, isError } = useQuery<WorkbenchProductsResponse>({
-    queryKey: ["workbench-products", search, expert],
+    queryKey: ["workbench-products", search, expert, active],
     queryFn: () =>
       sdk.client.fetch(
         `/admin/workbench/products?${new URLSearchParams({
+          limit: "200",
+          ...(active === "archivovane" ? { archived: "1" } : {}),
+          ...(kindForTab[active] ? { kind: kindForTab[active] as string } : {}),
           ...(search.trim() ? { q: search.trim() } : {}),
           ...(expert ? { expert: "1" } : {}),
         }).toString()}`
@@ -558,6 +589,9 @@ const ProductsInner = () => {
   const all = data?.products ?? [];
   const byKind = (kind: WorkbenchProduct["kind"]) =>
     all.filter((product) => product.kind === kind);
+  // The route already returned only archived rows for this tab; kind is irrelevant here
+  // because an archived piece keeps whatever kind it had.
+  const archivedRows = all;
 
   const rows =
     active === "produkty"
@@ -572,7 +606,9 @@ const ProductsInner = () => {
               ? [...all]
                   .filter((product) => product.wishlist_count > 0)
                   .sort((a, b) => b.wishlist_count - a.wishlist_count)
-              : [];
+              : active === "archivovane"
+                ? archivedRows
+                : [];
 
   const renderRow = (product: WorkbenchProduct) => {
     // Best variant wins — „can I sell it at all?" Skladem beats Dochází
@@ -639,6 +675,17 @@ const ProductsInner = () => {
             {/* Off is the norm, so only „on" is worth a badge — otherwise every row
                 carries a label that says nothing. She sets these one by one and needs
                 to see at a glance which ones she has already done. */}
+            {product.archived && (
+              <Badge
+                size="2xsmall"
+                color="grey"
+                className={
+                  product.status !== "published" || worstStock ? "ml-1" : ""
+                }
+              >
+                archiv
+              </Badge>
+            )}
             {product.fragile && (
               <Badge
                 size="2xsmall"
@@ -746,7 +793,11 @@ const ProductsInner = () => {
             {/* Every kind of sellable thing, because it is a property of the piece and
                 not of the tab: she asked for it on zakázky and poškozené especially,
                 where a refused parcel costs the most. */}
-            {active !== "oblibene" && <CodToggle product={product} />}
+            {active !== "oblibene" && <ArchiveToggle product={product} />}
+
+            {active !== "oblibene" && active !== "archivovane" && (
+              <CodToggle product={product} />
+            )}
 
             {active !== "oblibene" && (
               <ShippingProfileEditor
@@ -885,7 +936,9 @@ const ProductsInner = () => {
                   ? data?.kinds.balicek
                   : tab.key === "poskozene"
                     ? data?.kinds.poskozene
-                    : undefined;
+                    : tab.key === "archivovane"
+                      ? data?.archived_count
+                      : undefined;
           return (
             <button
               key={tab.key}
@@ -940,7 +993,9 @@ const ProductsInner = () => {
                       ? "Žádné poškozené kusy"
                       : active === "oblibene"
                         ? "Zákazníci si zatím nic neuložili"
-                        : "Nic nenalezeno"
+                        : active === "archivovane"
+                          ? "Archiv je prázdný"
+                          : "Nic nenalezeno"
               }
               description={
                 active === "poskozene"
@@ -949,13 +1004,24 @@ const ProductsInner = () => {
                     ? "Nový balíček vytvoříte tlačítkem nahoře."
                     : active === "zakazky"
                       ? "Produkt zařadíte mezi zakázky v záložce Produkty akcí ‚Nastavit jako zakázku‘."
-                      : "Zkuste jiné hledání."
+                      : active === "archivovane"
+                        ? "Archivované kusy zmizí z obchodu i ze seznamů, ale zůstanou v historii objednávek."
+                        : "Zkuste jiné hledání."
               }
             />
           )}
 
           {!isLoading && !isError && rows.length > 0 && (
             <div className="divide-y">{rows.map(renderRow)}</div>
+          )}
+
+          {data?.truncated && (
+            <div className="px-6 py-3">
+              <Text size="xsmall" className="text-ui-fg-muted">
+                Zobrazeno {data.products.length} z {data.count} — zbytek se sem
+                nevešel. Zkuste hledání.
+              </Text>
+            </div>
           )}
         </>
       )}

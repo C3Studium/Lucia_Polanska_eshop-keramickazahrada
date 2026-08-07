@@ -78,6 +78,9 @@ export const sections: LegalSectionData[] = [
       "V případě, že je způsob dopravy smluven na základě zvláštního požadavku kupujícího, nese kupující riziko a případné dodatečné náklady spojené s tímto způsobem dopravy. Je-li prodávající podle kupní smlouvy povinen dodat zboží na místo určené kupujícím v objednávce, je kupující povinen převzít zboží při dodání.",
       "V případě, že je z důvodů na straně kupujícího nutno zboží doručovat opakovaně nebo jiným způsobem, než bylo uvedeno v objednávce, je kupující povinen uhradit náklady spojené s opakovaným doručováním zboží, resp. náklady spojené s jiným způsobem doručení.",
       "Při převzetí zboží od přepravce je kupující povinen zkontrolovat neporušenost obalů zboží a v případě jakýchkoliv závad toto neprodleně oznámit přepravci. V případě shledání porušení obalu svědčícího o neoprávněném vniknutí do zásilky nemusí kupující zásilku od přepravce převzít.",
+      /* TODO: add the document — the prefilled claim form is linked from the order pages
+         and the reklamační řád; this clause is what makes the deadline enforceable. */
+      "Reklamaci poškození vzniklého při přepravě uplatňuje u dopravce příjemce zásilky. Podle podmínek České pošty je nutné poškození oznámit při převzetí, nejpozději do dvou pracovních dnů od dodání; po uplynutí této lhůty dopravce reklamaci nepřijme. Převezme-li kupující zásilku bez výhrad a poškození oznámí až po této lhůtě, nemůže prodávající poskytnout náhradu ani výměnu zboží. Tím nejsou dotčena práva kupujícího z vadného plnění u vad, které nevznikly přepravou.",
     ],
   },
   {

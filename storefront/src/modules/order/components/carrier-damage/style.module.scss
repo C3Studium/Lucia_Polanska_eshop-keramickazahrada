@@ -1,0 +1,102 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Clay-edged rather than red: this is a caution the customer must actually read, not an
+   error state. A red panel on a successful order reads as "something went wrong". */
+.root {
+  --damage-accent: #c2601f;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: clamp(18px, 2vw, 26px);
+  border: 1px solid rgba(255, 232, 214, 0.2);
+  border-left: 2px solid var(--damage-accent);
+  background: rgba(255, 232, 214, 0.05);
+  color: #ffe8d6;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--damage-accent);
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.heading {
+  margin: 0;
+  font-family: "Sentient-Regular", serif;
+  font-size: clamp(1.15rem, 1.5vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.lede {
+  margin: 0;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  opacity: 0.82;
+}
+
+.steps {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.5;
+
+  strong {
+    font-family: "Sansation-Regular", sans-serif;
+    font-weight: 400;
+  }
+
+  a {
+    color: var(--damage-accent);
+    text-underline-offset: 3px;
+  }
+}
+
+.document {
+  margin-top: 0.35rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed rgba(255, 232, 214, 0.28);
+  border-radius: 4px;
+}
+
+.documentLabel {
+  margin: 0 0 0.2rem;
+  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.66;
+}
+
+.documentNote {
+  margin: 0;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  opacity: 0.78;
+}
+
+.more {
+  margin: 0;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.88rem;
+  opacity: 0.72;
+
+  a {
+    color: var(--damage-accent);
+    text-underline-offset: 3px;
+  }
+}
+
+@include below-px(560px) {
+  .steps {
+    font-size: 0.88rem;
+  }
+}

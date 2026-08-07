@@ -46,6 +46,7 @@ import { sdk } from "../../lib/sdk";
 type PackagingProduct = {
   id: string;
   title: string;
+  thumbnail: string | null;
   kind: "bezne" | "zakazka" | "balicek" | "poskozene";
   fragile: boolean;
   packaging_price: number | null;
@@ -53,6 +54,9 @@ type PackagingProduct = {
 
 type Response = {
   products: PackagingProduct[];
+  count?: number;
+  /** Set when the server returned fewer rows than matched — never silently. */
+  truncated?: boolean;
   kinds: { bezne: number; zakazka: number; balicek: number; poskozene: number };
 };
 
@@ -107,6 +111,24 @@ const Row = ({ product }: { product: PackagingProduct }) => {
 
   return (
     <div className="flex flex-wrap items-center gap-3 px-6 py-3">
+      {/* The picture, because she prices packaging by looking at the piece — the
+          wrapping a flat tile needs and the wrapping a tall flower needs are not
+          the same, and a list of names alone makes her open each product to
+          remember which is which. */}
+      <div className="bg-ui-bg-subtle h-12 w-12 shrink-0 overflow-hidden rounded-md">
+        {product.thumbnail ? (
+          <img
+            src={product.thumbnail}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="text-ui-fg-muted flex h-full w-full items-center justify-center">
+            <Text size="xsmall">—</Text>
+          </div>
+        )}
+      </div>
       <div className="min-w-48 flex-1">
         <Text size="small">{product.title}</Text>
         {product.fragile && (
@@ -142,14 +164,22 @@ const BaleniInner = () => {
   const [active, setActive] = useState<TabKey>("bezne");
   const [search, setSearch] = useState("");
 
+  /* Filtered server-side, for the reason spelled out in Produkty+: the route slices to
+     `limit` after filtering, so asking for everything and narrowing here silently loses
+     whichever kind sorts last. `kinds` is still counted across the whole catalogue, so the
+     tab badges stay right. */
   const { data, isLoading, isError } = useQuery<Response>({
-    queryKey: ["packaging-products"],
-    queryFn: () => sdk.client.fetch(`/admin/workbench/products?limit=200`),
+    queryKey: ["packaging-products", active],
+    queryFn: () =>
+      // No `archived` param, so the route excludes archived by default — there is no
+      // point pricing the wrapping for a piece she has retired.
+      sdk.client.fetch(
+        `/admin/workbench/products?limit=200&kind=${encodeURIComponent(active)}`
+      ),
   });
 
   const all = data?.products ?? [];
   const rows = all
-    .filter((product) => product.kind === active)
     .filter((product) =>
       search.trim()
         ? product.title.toLowerCase().includes(search.trim().toLowerCase())
@@ -246,6 +276,9 @@ const BaleniInner = () => {
               than something she discovers from a wrong shipping total. */}
           <div className="px-6 py-4">
             <Text size="xsmall" className="text-ui-fg-subtle">
+              {data?.truncated
+                ? `Zobrazeno ${rows.length} z ${data.count} — zbytek se sem nevešel. Zkuste hledání. · `
+                : ""}
               Naceněno {priced.length} z {rows.length}
               {priced.length > 0
                 ? ` · dohromady ${formatCzk(total)} za kus napříč záložkou`
