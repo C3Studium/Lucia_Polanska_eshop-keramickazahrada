@@ -1,10 +1,13 @@
-import { paymentInfoMap } from "@lib/constants"
+import { paymentMethodTitle } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import { convertToLocale } from "@lib/util/money"
 import OrderProgressPanel from "@modules/order/components/order-progress"
 import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
+import type { CommissionNote } from "@lib/util/made-to-order"
+import { addOrderCommissionNote } from "@lib/data/commission-actions"
+import CommissionBrief from "@modules/checkout/components/commission-brief"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -15,6 +18,8 @@ type OrderCompletedTemplateProps = {
   progress?: OrderProgress | null
   /** Used when the merchant workflow has no stage for this order yet. */
   progressFallback?: string
+  /** The zakázka's diary, when this order has one. Absent for ordinary orders. */
+  commissionNotes?: CommissionNote[] | null
 }
 
 const formatDate = (date: string | Date) =>
@@ -30,6 +35,7 @@ export default async function OrderCompletedTemplate({
   order,
   progress = null,
   progressFallback = "Přijato",
+  commissionNotes = null,
 }: OrderCompletedTemplateProps) {
   const money = (amount?: number | null) =>
     convertToLocale({
@@ -61,7 +67,7 @@ export default async function OrderCompletedTemplate({
     "cs"
   )
   const paymentTitle = payment
-    ? paymentInfoMap[payment.provider_id]?.title ?? payment.provider_id
+    ? paymentMethodTitle(payment.provider_id)
     : "Čeká na přiřazení"
 
   return (
@@ -102,6 +108,26 @@ export default async function OrderCompletedTemplate({
             a real fulfillment timeline — until then the confirmation states only what is true. */}
 
         <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
+
+        {/* The conversation about a commissioned piece does not end at checkout: it runs
+            until the piece does. Only rendered when the backend says this order is a
+            zakázka — an ordinary order has no diary and gets no box. */}
+        {commissionNotes && (
+          <section className={s.commission} aria-label="Zakázková výroba">
+            <CommissionBrief
+              variant="order"
+              note=""
+              photos={[]}
+              notes={commissionNotes}
+              onSubmitAction={async (input) =>
+                addOrderCommissionNote(order.id, {
+                  note: input.note,
+                  newPhotos: input.newPhotos,
+                })
+              }
+            />
+          </section>
+        )}
 
         {/* BACKEND-HOOKED: These values come from the retrieved StoreOrder response. */}
         <section className={s.orderMeta} aria-label="Údaje objednávky">

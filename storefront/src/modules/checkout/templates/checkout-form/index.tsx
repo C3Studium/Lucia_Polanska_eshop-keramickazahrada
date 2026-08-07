@@ -4,6 +4,12 @@ import {
   listComgatePaymentMethods,
 } from "@lib/data/payment"
 import { isComgate, isPickupFulfillment } from "@lib/constants"
+import { deliveryRestrictionFor } from "@lib/util/fragile"
+import {
+  cartAllowsDobirka,
+  countryAllowsDobirka,
+  deliveryCollectsDobirka,
+} from "@lib/util/dobirka"
 import { HttpTypes } from "@medusajs/types"
 import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
@@ -55,6 +61,37 @@ export default async function CheckoutForm({
       .map((method) => method.shipping_option_id)
       .filter(Boolean)
   )
+  /*
+   * Zakázková výroba restricts delivery to fragile carriage or collection. Either signal
+   * counts — the catalogue category, or an enabled production profile — because today only
+   * the first is set on any product and only the second drives the deposit.
+   */
+  /*
+   * Fragile and zakázková výroba restrict delivery the same way, so they are decided
+   * together — what differs is only the sentence the customer reads. Fragile wins when both
+   * apply: it is the physical fact about the parcel.
+   */
+  const deliveryRestriction = deliveryRestrictionFor(
+    cart as any,
+    Boolean(productionMode?.has_made_to_order)
+  )
+
+  /*
+   * Dobírka needs all three to hold: every piece allows it, the chosen delivery is a Česká
+   * pošta carriage, and the address is Czech. Decided here for the same reason pickup is —
+   * only this side can see the shipping option behind the cart's chosen method.
+   */
+  const chosenOption = shippingMethods.find((option) =>
+    chosenOptionIds.has(option.id)
+  )
+  const allowsDobirka =
+    cartAllowsDobirka(cart as any) &&
+    countryAllowsDobirka(cart as any, countryCode) &&
+    deliveryCollectsDobirka(
+      chosenOption,
+      (chosenOption as any)?.service_zone?.fulfillment_set?.type === "pickup"
+    )
+
   const hasPickupShipping = shippingMethods.some(
     (option) =>
       chosenOptionIds.has(option.id) &&
@@ -72,12 +109,14 @@ export default async function CheckoutForm({
         packetaShippingMethodId={
           process.env.NEXT_PUBLIC_PACKETA_SHIPPING_METHOD_ID
         }
+        restriction={deliveryRestriction}
       />
       <Payment
         cart={cart}
         availablePaymentMethods={paymentMethods}
         comgateMethods={comgateMethods}
         hasPickupShipping={hasPickupShipping}
+        allowsDobirka={allowsDobirka}
       />
       <Review
         cart={cart}

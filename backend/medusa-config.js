@@ -308,6 +308,13 @@ const medusaConfig = {
             // revenue until she records the money (see the provider's docs).
             resolve: './src/modules/pickupPayment',
             id: 'pickup',
+          },
+          {
+            // Dobírka — the carrier collects on delivery. Offered per product
+            // and only inside Czechia; see the module's own note about this
+            // reversing a previously standing rule.
+            resolve: './src/modules/dobirkaPayment',
+            id: 'ceska-posta',
             options: {},
           },
           // Stripe provider (conditionally enabled if env present)

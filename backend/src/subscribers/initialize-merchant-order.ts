@@ -115,6 +115,29 @@ export default async function initializeMerchantOrder({
     .filter((value: unknown): value is string =>
       typeof value === "string" && Boolean(value.trim())
     )
+
+  /*
+   * What the customer wrote and photographed at checkout. It rode here on the
+   * line item's own metadata, which Medusa copies from cart to order — so it
+   * survives without this subscriber having to go back and find the cart,
+   * which by now may not exist.
+   */
+  const briefs = (order.items ?? [])
+    .map((item: any) => item?.metadata?.made_to_order)
+    .filter(Boolean) as { note?: unknown; photos?: unknown }[]
+
+  const customerNotes = briefs
+    .map((brief) => (typeof brief.note === "string" ? brief.note.trim() : ""))
+    .filter(Boolean)
+  const customerPhotos = briefs.flatMap((brief) =>
+    Array.isArray(brief.photos)
+      ? brief.photos.filter(
+          (url: unknown): url is string =>
+            typeof url === "string" && Boolean(url.trim())
+        )
+      : []
+  )
+
   const productionOrder = await madeToOrderService.createProductionOrders({
     order_id: order.id,
     stage: specifications.length ? "specification_pending" : "confirmed",
@@ -122,8 +145,36 @@ export default async function initializeMerchantOrder({
     agreed_total: originalTotal,
     original_total: originalTotal,
     currency_code: String(order.currency_code || "czk").toLowerCase(),
-    customer_note: specifications.join("\n\n") || null,
+    customer_note: [...specifications, ...customerNotes].join("\n\n") || null,
   })
+
+  /*
+   * The brief becomes the first entries in the diary, so she reads it in the
+   * same place she reads everything else about this piece rather than having
+   * to go hunting in the order's line items for it. Marked as the customer's
+   * and visible to them, because they wrote it.
+   */
+  if (customerNotes.length || customerPhotos.length) {
+    const entries = customerPhotos.length
+      ? customerPhotos.map((url, index) => ({
+          order_id: order.id,
+          text: index === 0 ? customerNotes.join("\n\n") || null : null,
+          image_url: url,
+          visible_to_customer: true,
+          created_by: "customer",
+        }))
+      : [
+          {
+            order_id: order.id,
+            text: customerNotes.join("\n\n"),
+            image_url: null,
+            visible_to_customer: true,
+            created_by: "customer",
+          },
+        ]
+
+    await madeToOrderService.createProductionNotes(entries as never)
+  }
 
   const paymentSession = paymentCollection.payment_sessions?.[0]
   const payment = paymentCollection.payments?.[0]

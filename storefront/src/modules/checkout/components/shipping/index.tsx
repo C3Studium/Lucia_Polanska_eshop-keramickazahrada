@@ -6,6 +6,12 @@ import { RadioGroup, Radio } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
+import {
+  deliveryAllowedUnder,
+  restrictionNotice,
+  restrictionRowHint,
+  type DeliveryRestriction,
+} from "@lib/util/fragile"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes, StoreOrderAddress } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
@@ -16,14 +22,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 
-const PICKUP_OPTION_ON = "__PICKUP_ON"
-const PICKUP_OPTION_OFF = "__PICKUP_OFF"
-
 type ShippingProps = {
   cart: HttpTypes.StoreCart
   availableShippingMethods: HttpTypes.StoreCartShippingOption[] | null
   packetaApiKey?: string
   packetaShippingMethodId?: string
+  /** Set when the basket forces fragile carriage or collection — and why. */
+  restriction?: DeliveryRestriction
 }
 
 function formatAddress(address: StoreOrderAddress | null): string {
@@ -61,12 +66,11 @@ const Shipping: React.FC<ShippingProps> = ({
   availableShippingMethods,
   packetaApiKey,
   packetaShippingMethodId,
+  restriction = null,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
 
-  const [showPickupOptions, setShowPickupOptions] =
-    useState<string>(PICKUP_OPTION_OFF)
   const [calculatedPricesMap, setCalculatedPricesMap] = useState<
     Record<string, number>
   >({})
@@ -141,53 +145,45 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const isOpen = searchParams.get("step") === "delivery"
 
-  const _shippingMethods = useMemo(
-    () =>
-      availableShippingMethods?.filter(
-        (option) => getFulfillmentType(option) !== "pickup"
-      ),
-    [availableShippingMethods]
-  )
+  /*
+   * One list, carriers first and collection last. It used to be two: the couriers here, and
+   * Osobní odběr behind a „Vyberte způsob vyzvednutí" row that opened a second panel below.
+   * That made a choice of the same kind — how do I get this — read as two unrelated
+   * questions, and put the answer to one of them outside the component that asked it.
+   */
+  const deliveryOptions = useMemo(() => {
+    const options = availableShippingMethods ?? []
+    const isPickup = (option: HttpTypes.StoreCartShippingOption) =>
+      getFulfillmentType(option) === "pickup"
 
-  const _pickupMethods = useMemo(
-    () =>
-      availableShippingMethods?.filter(
-        (option) => getFulfillmentType(option) === "pickup"
-      ),
-    [availableShippingMethods]
-  )
-
-  const hasPickupOptions = !!_pickupMethods?.length
+    return [
+      ...options.filter((option) => !isPickup(option)),
+      ...options.filter(isPickup),
+    ]
+  }, [availableShippingMethods])
 
   useEffect(() => {
     setIsLoadingPrices(true)
 
-    if (_shippingMethods?.length) {
-      const promises = _shippingMethods
-        .filter((sm) => sm.price_type === "calculated")
-        .map((sm) => calculatePriceForShippingOption(sm.id, cart.id))
+    const promises = deliveryOptions
+      .filter((sm) => sm.price_type === "calculated")
+      .map((sm) => calculatePriceForShippingOption(sm.id, cart.id))
 
-      if (promises.length) {
-        Promise.allSettled(promises).then((res) => {
-          const pricesMap: Record<string, number> = {}
-          res
-            .filter((r) => r.status === "fulfilled")
-            .forEach((p) => (pricesMap[p.value?.id || ""] = p.value?.amount!))
-
-          setCalculatedPricesMap(pricesMap)
-          setIsLoadingPrices(false)
-        })
-      } else {
-        setIsLoadingPrices(false)
-      }
-    } else {
+    if (!promises.length) {
       setIsLoadingPrices(false)
+      return
     }
 
-    if (_pickupMethods?.find((m) => m.id === shippingMethodId)) {
-      setShowPickupOptions(PICKUP_OPTION_ON)
-    }
-  }, [_pickupMethods, _shippingMethods, cart.id, shippingMethodId])
+    Promise.allSettled(promises).then((res) => {
+      const pricesMap: Record<string, number> = {}
+      res
+        .filter((r) => r.status === "fulfilled")
+        .forEach((p) => (pricesMap[p.value?.id || ""] = p.value?.amount!))
+
+      setCalculatedPricesMap(pricesMap)
+      setIsLoadingPrices(false)
+    })
+  }, [deliveryOptions, cart.id])
 
   // (removed debug logging)
 
@@ -351,17 +347,9 @@ const Shipping: React.FC<ShippingProps> = ({
     open()
   }
 
-  const handleSetShippingMethod = async (
-    id: string,
-    variant: "shipping" | "pickup"
-  ) => {
+  const handleSetShippingMethod = async (id: string) => {
     setError(null)
 
-    if (variant === "pickup") {
-      setShowPickupOptions(PICKUP_OPTION_ON)
-    } else {
-      setShowPickupOptions(PICKUP_OPTION_OFF)
-    }
     let currentId: string | null = null
     setIsLoading(true)
 
@@ -437,53 +425,37 @@ const Shipping: React.FC<ShippingProps> = ({
                 Jak byste chtěli, aby byla vaše objednávka doručena?
               </span>
             </div>
+            {restriction && (
+              <p className={styles.commissionNotice} role="status">
+                {restrictionNotice[restriction]}
+              </p>
+            )}
             <div data-testid="delivery-options-container">
               <div className={styles.deliveryOptions}>
-                {hasPickupOptions && (
-                  <RadioGroup
-                    value={showPickupOptions}
-                    onChange={() => {
-                      const id = _pickupMethods?.find(
-                        (option) => !option.insufficient_inventory
-                      )?.id
-                      if (id) {
-                        handleSetShippingMethod(id, "pickup")
-                        return
-                      }
-                      // Otherwise the row just refuses to select, with nothing said.
-                      setError(
-                        "Osobní odběr teď není možný — na skladě není dost kusů."
-                      )
-                    }}
-                  >
-                    <Radio
-                      value={PICKUP_OPTION_ON}
-                      data-testid="delivery-option-radio"
-                      className={clx(styles.radioRow, {
-                        [styles.active]: showPickupOptions === PICKUP_OPTION_ON,
-                      })}
-                    >
-                      <div className={styles.radioContent}>
-                        <MedusaRadio
-                          checked={showPickupOptions === PICKUP_OPTION_ON}
-                        />
-                        <span className={styles.radioLabel}>
-                          Vyberte způsob vyzvednutí
-                        </span>
-                      </div>
-                      <span className={styles.radioPrice}>-</span>
-                    </Radio>
-                  </RadioGroup>
-                )}
                 <RadioGroup
                   value={shippingMethodId}
-                  onChange={(v) => v && handleSetShippingMethod(v, "shipping")}
+                  onChange={(v) => v && handleSetShippingMethod(v)}
                 >
-                  {_shippingMethods?.map((option) => {
-                    const isDisabled =
+                  {deliveryOptions.map((option) => {
+                    const isPickup = getFulfillmentType(option) === "pickup"
+                    const address = isPickup
+                      ? formatAddress(
+                          (option as any).service_zone?.fulfillment_set?.location
+                            ?.address
+                        )
+                      : ""
+                    const hasNoPrice =
                       option.price_type === "calculated" &&
                       !isLoadingPrices &&
                       typeof calculatedPricesMap[option.id] !== "number"
+                    const blockedByRestriction =
+                      Boolean(restriction) &&
+                      !deliveryAllowedUnder(option, isPickup)
+                    const isDisabled =
+                      hasNoPrice ||
+                      blockedByRestriction ||
+                      !!option.insufficient_inventory
+
                     return (
                       <Radio
                         key={option.id}
@@ -499,9 +471,27 @@ const Shipping: React.FC<ShippingProps> = ({
                           <MedusaRadio
                             checked={option.id === shippingMethodId}
                           />
-                          <span className={styles.radioLabel}>
-                            {option.name}
-                          </span>
+                          <div className={styles.methodSummary}>
+                            <span className={styles.methodLabel}>
+                              {option.name}
+                            </span>
+                            {address && (
+                              <span className={styles.methodText}>
+                                {address}
+                              </span>
+                            )}
+                            {blockedByRestriction && restriction && (
+                              <span className={styles.methodText}>
+                                {restrictionRowHint[restriction]}
+                              </span>
+                            )}
+                            {!blockedByRestriction &&
+                              option.insufficient_inventory && (
+                                <span className={styles.methodText}>
+                                  Není skladem v požadovaném množství
+                                </span>
+                              )}
+                          </div>
                         </div>
                         <span className={styles.radioPrice}>
                           {option.price_type === "flat" ? (
@@ -527,68 +517,6 @@ const Shipping: React.FC<ShippingProps> = ({
               </div>
             </div>
           </div>
-
-          {showPickupOptions === PICKUP_OPTION_ON && (
-            <div className={styles.deliveryOptions}>
-              {/* Same header treatment as „Způsob dopravy" above. Bare, the two spans ran
-                  together as „ObchodVyberte si obchod poblíž vás" — invisible until the
-                  pickup branch started rendering at all. */}
-              <div className={styles.deliveryOptionsHeader}>
-                <span className={clx(styles.radioLabel, "font-medium")}>
-                  Obchod
-                </span>
-                <span className={clx(styles.radioAddress, "mb-4")}>
-                  Vyberte si obchod poblíž vás
-                </span>
-              </div>
-              <div data-testid="delivery-options-container">
-                <div className={styles.deliveryOptions}>
-                  <RadioGroup
-                    value={shippingMethodId}
-                    onChange={(v) => v && handleSetShippingMethod(v, "pickup")}
-                  >
-                    {_pickupMethods?.map((option) => {
-                      return (
-                        <Radio
-                          key={option.id}
-                          value={option.id}
-                          disabled={option.insufficient_inventory}
-                          data-testid="delivery-option-radio"
-                          className={clx(styles.radioRow, {
-                            [styles.active]: option.id === shippingMethodId,
-                            [styles.disabled]: option.insufficient_inventory,
-                          })}
-                        >
-                          <div className={styles.radioContent}>
-                            <MedusaRadio
-                              checked={option.id === shippingMethodId}
-                            />
-                            <div className={styles.methodSummary}>
-                              <span className={styles.methodLabel}>
-                                {option.name}
-                              </span>
-                              <span className={styles.methodText}>
-                                {formatAddress(
-                                  (option as any).service_zone?.fulfillment_set
-                                    ?.location?.address
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                          <span className={styles.radioPrice}>
-                            {convertToLocale({
-                              amount: option.amount!,
-                              currency_code: cart?.currency_code,
-                            })}
-                          </span>
-                        </Radio>
-                      )
-                    })}
-                  </RadioGroup>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className={styles.packetaSelector}></div>
 

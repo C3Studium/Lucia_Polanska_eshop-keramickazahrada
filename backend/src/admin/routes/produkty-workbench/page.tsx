@@ -22,11 +22,13 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
+import { NewOfKind } from "../../components/new-of-kind";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import { ShippingProfileEditor } from "../../components/shipping-profile-editor";
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -67,6 +69,12 @@ type WorkbenchProduct = {
   handle: string;
   status: string;
   kind: "bezne" | "zakazka" | "balicek" | "poskozene";
+  /** Whether the carrier may collect cash for this piece. Opt-in, per product. */
+  cod_allowed: boolean;
+  /** Declared by her; forces the whole basket onto the fragile carriage. */
+  fragile: boolean;
+  /** What wrapping this piece costs. Null = shop default. */
+  packaging_price: number | null;
   bundle: { id: string; title: string } | null;
   clearance: boolean;
   thumbnail: string | null;
@@ -275,9 +283,12 @@ const ClearanceToggle = ({
   const queryClient = useQueryClient();
   const mutate = useMutation({
     mutationFn: () =>
-      sdk.client.fetch(`/admin/products/${product.id}`, {
+      // Via the workbench flags route, which merges. Writing metadata straight to
+      // the native product endpoint replaces the whole object and erased the other
+      // flags — see that route's note.
+      sdk.client.fetch(`/admin/workbench/products/${product.id}/flags`, {
         method: "POST",
-        body: { metadata: { clearance: makeClearance } },
+        body: { clearance: makeClearance },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
@@ -300,6 +311,51 @@ const ClearanceToggle = ({
       onClick={() => mutate.mutate()}
     >
       {makeClearance ? "Označit jako poškozené" : "Ukončit výprodej"}
+    </button>
+  );
+};
+
+/**
+ * Dobírka on or off for one piece.
+ *
+ * Per product because the risk is per product: a refused parcel costs her the
+ * carriage both ways, which is survivable on a mug and not on a commission.
+ * Stored on the product's own metadata so nothing new has to be migrated, and
+ * so the storefront can read it from the cart it already fetches.
+ *
+ * Turning it on here is necessary but not sufficient — checkout still refuses
+ * dobírka outside Czechia and for anything not going by Česká pošta.
+ */
+const CodToggle = ({ product }: { product: WorkbenchProduct }) => {
+  const queryClient = useQueryClient();
+  const next = !product.cod_allowed;
+  const mutate = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/workbench/products/${product.id}/flags`, {
+        method: "POST",
+        body: { cod_allowed: next },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        next
+          ? `${product.title} — dobírka povolena.`
+          : `${product.title} — dobírka vypnuta.`
+      );
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Změna se nepodařila."
+      ),
+  });
+
+  return (
+    <button
+      type="button"
+      className="text-ui-fg-subtle txt-small hover:underline"
+      onClick={() => mutate.mutate()}
+    >
+      {next ? "Povolit dobírku" : "Zakázat dobírku"}
     </button>
   );
 };
@@ -463,7 +519,16 @@ const StatsView = () => {
   );
 };
 
-const tabs = [
+/** Narrowed so the create button can be keyed off the tab without a cast. */
+type TabKey =
+  | "produkty"
+  | "zakazky"
+  | "balicky"
+  | "poskozene"
+  | "oblibene"
+  | "statistiky";
+
+const tabs: { key: TabKey; label: string }[] = [
   { key: "produkty", label: "Produkty" },
   { key: "zakazky", label: "Zakázky" },
   { key: "balicky", label: "Balíčky" },
@@ -473,7 +538,7 @@ const tabs = [
 ];
 
 const ProductsInner = () => {
-  const [active, setActive] = useState("produkty");
+  const [active, setActive] = useState<TabKey>("produkty");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const expert = useExpertMode();
@@ -571,6 +636,25 @@ const ProductsInner = () => {
                 {stockBadge[worstStock].label}
               </Badge>
             )}
+            {/* Off is the norm, so only „on" is worth a badge — otherwise every row
+                carries a label that says nothing. She sets these one by one and needs
+                to see at a glance which ones she has already done. */}
+            {product.fragile && (
+              <Badge
+                size="2xsmall"
+                color="orange"
+                className={
+                  product.status !== "published" || worstStock ? "ml-1" : ""
+                }
+              >
+                křehké
+              </Badge>
+            )}
+            {product.cod_allowed && (
+              <Badge size="2xsmall" color="blue" className="ml-1">
+                dobírka
+              </Badge>
+            )}
           </div>
 
           <div>
@@ -659,6 +743,28 @@ const ProductsInner = () => {
               />
             )}
 
+            {/* Every kind of sellable thing, because it is a property of the piece and
+                not of the tab: she asked for it on zakázky and poškozené especially,
+                where a refused parcel costs the most. */}
+            {active !== "oblibene" && <CodToggle product={product} />}
+
+            {active !== "oblibene" && (
+              <ShippingProfileEditor
+                productId={product.id}
+                productTitle={product.title}
+                fragile={product.fragile}
+                packagingPrice={product.packaging_price}
+                trigger={
+                  <button
+                    type="button"
+                    className="text-ui-fg-subtle txt-small hover:underline"
+                  >
+                    Doprava a balení
+                  </button>
+                }
+              />
+            )}
+
             {active === "produkty" && (
               <ProductionProfileEditor
                 productId={product.id}
@@ -742,6 +848,8 @@ const ProductsInner = () => {
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <ExpertToggle />
+          {/* Every tab that lists a kind can now start one. Oblíbené and Statistiky are
+              read-outs of what exists, so they get no button. */}
           {active === "balicky" && (
             <BundleEditor
               trigger={
@@ -751,6 +859,9 @@ const ProductsInner = () => {
               }
             />
           )}
+          {(active === "produkty" ||
+            active === "zakazky" ||
+            active === "poskozene") && <NewOfKind kind={active} />}
           <Input
             size="small"
             type="search"

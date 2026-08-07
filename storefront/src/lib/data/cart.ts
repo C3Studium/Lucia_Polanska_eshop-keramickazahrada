@@ -40,8 +40,11 @@ export async function retrieveCart(cartId?: string) {
     .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
       method: "GET",
       query: {
+        /* `items.product.categories.handle`: checkout has to know whether a line is
+           zakázková výroba, and the handle is the readable, admin-stable way to ask. The
+           relation already comes back — only the ids, which say nothing on their own. */
         fields:
-          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name",
+          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +items.product.categories.handle",
       },
       headers,
       next,

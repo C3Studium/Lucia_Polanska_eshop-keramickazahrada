@@ -57,9 +57,12 @@ const Inner = ({ productId }: { productId: string }) => {
 
   const toggleClearance = useMutation({
     mutationFn: () =>
-      sdk.client.fetch(`/admin/products/${productId}`, {
+      // Through the workbench flags route, which merges. The native product
+      // endpoint replaces metadata wholesale and would strip křehké, dobírka and
+      // the packaging price off this piece.
+      sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
         method: "POST",
-        body: { metadata: { clearance: !clearance } },
+        body: { clearance: !clearance },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["product-type-tools", productId] });

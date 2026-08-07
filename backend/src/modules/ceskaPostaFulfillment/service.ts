@@ -1,4 +1,7 @@
-import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
+import {
+  AbstractFulfillmentProviderService,
+  Modules,
+} from "@medusajs/framework/utils"
 import type {
   CreateFulfillmentResult,
   FulfillmentDTO,
@@ -63,10 +66,26 @@ type ProviderOptions = {
   customer_id?: string
   /** Fallback when no product in the parcel carries a weight (D2). */
   default_parcel_weight_kg?: number
+  /**
+   * Carriage before packaging, per service code. These mirror what the flat
+   * shipping options charge today, so switching an option to `calculated`
+   * cannot silently change the base price out from under her.
+   */
+  base_price_czk?: Record<string, number>
+  /** Used for a piece she has not priced yet, so the catalogue works half-filled. */
+  default_packaging_price_czk?: number
 }
 
 type InjectedDependencies = {
   logger: Logger
+  /**
+   * Resolved opportunistically. The calculation context hands over each line's
+   * `product.id` but not its metadata, and that is where the packaging price
+   * lives — so the product service is looked up rather than assumed. If a
+   * future Medusa stops registering it here, `calculatePrice` falls back to
+   * carriage alone instead of failing.
+   */
+  [key: string]: unknown
 }
 
 /** Service codes as Česká pošta names them. `NB` is „Do Balíkovny". */
@@ -83,10 +102,13 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
   protected readonly logger_: Logger
   protected readonly options_: ProviderOptions
 
-  constructor({ logger }: InjectedDependencies, options: ProviderOptions = {}) {
+  protected readonly container_: InjectedDependencies
+
+  constructor(container: InjectedDependencies, options: ProviderOptions = {}) {
     super()
-    this.logger_ = logger
+    this.logger_ = container.logger as Logger
     this.options_ = options
+    this.container_ = container
   }
 
   /**
@@ -152,10 +174,107 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     return Boolean(data)
   }
 
+  /**
+   * True since 2026-08-07, for packaging — not for carrier rating.
+   *
+   * The old `false` was about live ČP rating, which still waits on the B2B
+   * profile (P4-2). What is calculated here is *her* arithmetic, not theirs:
+   * carriage plus what it costs to wrap each piece. That needs no credentials.
+   *
+   * **An option only calculates if its `price_type` is `calculated`.** That is
+   * data on the shipping option, not code — so until she switches the Česká
+   * pošta options in the admin, everything keeps charging today's flat prices
+   * and nothing changes.
+   */
   async canCalculate(): Promise<boolean> {
-    // Prices are the flat ones configured on the shipping option. Live rating
-    // would need the same B2B profile P4-2 waits for.
-    return false
+    return true
+  }
+
+  /**
+   * What this parcel costs: carriage + the wrapping for every piece in it.
+   *
+   * ## Never throws
+   *
+   * The storefront disables a calculated option that returns no price, so an
+   * exception here would not surface as an error — it would quietly remove
+   * every carrier option from checkout and leave only Osobní odběr. Every
+   * failure path therefore falls back to carriage alone, which is exactly
+   * today's behaviour.
+   *
+   * ## Why the metadata is fetched
+   *
+   * The calculation context carries each line's `product.id` but not its
+   * metadata, and `packaging_price` lives there. Reading it server-side also
+   * means the price cannot be influenced by anything the browser sent.
+   *
+   * There is no separate box cost. The box is folded into each piece's
+   * packaging price (owner's decision, 2026-08-07), so this sum is the whole
+   * of it — no catalogue, no packer, nothing to measure.
+   */
+  async calculatePrice(
+    optionData: Record<string, unknown>,
+    _data: Record<string, unknown>,
+    context: Record<string, any>
+  ): Promise<{ calculated_amount: number; is_calculated_price_tax_inclusive: boolean }> {
+    const serviceCode = String(
+      (optionData as any)?.service_code ?? CP_SERVICE_CODES.address
+    )
+    const base =
+      this.options_.base_price_czk?.[serviceCode] ??
+      (serviceCode === CP_SERVICE_CODES.balikovna ? 90 : 150)
+
+    const flat = { calculated_amount: base, is_calculated_price_tax_inclusive: true }
+
+    try {
+      const items: any[] = Array.isArray(context?.items) ? context.items : []
+      if (!items.length) return flat
+
+      const productIds = [
+        ...new Set(
+          items.map((item) => item?.product?.id ?? item?.variant?.product?.id).filter(Boolean)
+        ),
+      ]
+      if (!productIds.length) return flat
+
+      const productModule: any =
+        this.container_?.[Modules.PRODUCT] ?? this.container_?.productModuleService
+      if (!productModule?.listProducts) {
+        // No way to read the metadata here — carriage only, rather than a wrong number.
+        return flat
+      }
+
+      const products: any[] = await productModule.listProducts(
+        { id: productIds },
+        { select: ["id", "metadata"] }
+      )
+      const priceByProduct = new Map<string, number>()
+      for (const product of products) {
+        const raw = (product?.metadata as any)?.packaging_price
+        const parsed = typeof raw === "number" ? raw : Number(raw)
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          priceByProduct.set(product.id, parsed)
+        }
+      }
+
+      const fallback = this.options_.default_packaging_price_czk ?? 0
+
+      const packaging = items.reduce((sum, item) => {
+        const productId = item?.product?.id ?? item?.variant?.product?.id
+        const each = priceByProduct.get(productId) ?? fallback
+        const quantity = Number(item?.quantity) || 1
+        return sum + each * quantity
+      }, 0)
+
+      return {
+        calculated_amount: Math.round((base + packaging) * 100) / 100,
+        is_calculated_price_tax_inclusive: true,
+      }
+    } catch (error: any) {
+      this.logger_?.warn?.(
+        `[ceska-posta] packaging calculation failed, charging carriage only: ${error?.message}`
+      )
+      return flat
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Container } from "@medusajs/ui"
+import { CreditCard } from "@medusajs/icons"
 
-import { paymentInfoMap } from "@lib/constants"
+import { paymentInfoMap, paymentMethodTitle } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
@@ -39,14 +40,14 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
             <div className={styles.colLeft}>
               <p className={styles.label}>Způsob platby</p>
               <p className={styles.value} data-testid="payment-method">
-                {paymentInfoMap[payment.provider_id].title}
+                {paymentMethodTitle(payment.provider_id)}
               </p>
             </div>
             <div className={styles.colRight}>
               <p className={styles.label}>Platební údaje</p>
               <div className={styles.detailsRow}>
                 <Container className={styles.iconWrap}>
-                  {paymentInfoMap[payment.provider_id].icon}
+                  {paymentInfoMap[payment.provider_id]?.icon ?? <CreditCard />}
                 </Container>
                 <p className={styles.value} data-testid="payment-amount">
                   {`${translateStatus(

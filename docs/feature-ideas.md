@@ -9,8 +9,26 @@ they are not the menu.
 The test each idea has to pass: *name the moment in her day it removes.*
 
 Effort: **S** = hours · **M** = a day-ish · **L** = several days.
-Standing rules hold: never pay-later, never dobírka, Czech UI, A2 stays
-numeric, automations only after approval.
+Standing rules hold: never pay-later, ~~never dobírka~~ (see below), Czech UI,
+A2 stays numeric, automations only after approval.
+
+> **Dobírka — rule lifted 2026-08-07.** Agreed with the owner in the meeting
+> that day: she wants it, and she wants to decide **per product**, by hand.
+> The reasoning behind the old rule has not gone away — a refused parcel costs
+> the carriage both ways — which is exactly why it is opt-in rather than a
+> shop-wide switch, and why she turns it on for the pieces where that risk is
+> acceptable. Note the public `doprava-a-platba` page had been advertising
+> dobírka at 55 Kč throughout, so the shop was already promising what the rule
+> forbade.
+>
+> Implemented as `pp_dobirka_ceska-posta` (`src/modules/dobirkaPayment`), which
+> authorizes and never captures — so the A2 ship gate still blocks dispatch
+> until she records the money the carrier handed over. Offered only when **all
+> three** hold: every piece in the basket allows it, the delivery is a Česká
+> pošta carriage, and the delivery address is Czech.
+>
+> **Never pay-later still stands.** Dobírka is not pay-later: the money is
+> collected on delivery by a third party, not deferred to an invoice.
 
 ---
 

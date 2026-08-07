@@ -1,5 +1,6 @@
 import { retrieveOrder } from "@lib/data/orders"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
+import { listCommissionNotes } from "@lib/data/made-to-order"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -22,6 +23,13 @@ export default async function OrderConfirmedPage(props: Props) {
   const outcome = searchParams.platba
   // Null for a guest, for someone else's order, or while the merchant workflow has no stage.
   const progress = order ? await getOrderProgress(params.id) : null
+
+  /*
+   * The zakázka's diary. The route 404s for an order that is not a commission, and the fetcher
+   * turns that into an empty list — so `null` here means "not a zakázka, draw nothing" while an
+   * empty array means "a zakázka with nothing said yet", which still deserves the box.
+   */
+  const commissionNotes = order ? await listCommissionNotes(params.id) : null
 
   /*
    * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
@@ -56,6 +64,7 @@ export default async function OrderConfirmedPage(props: Props) {
         order={order}
         progress={progress}
         progressFallback={fallbackStageLabel(order)}
+        commissionNotes={commissionNotes}
       />
     </>
   )

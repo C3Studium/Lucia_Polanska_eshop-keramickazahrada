@@ -12,6 +12,11 @@ import {
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import { isCommissionLine } from "@lib/util/commission"
+import { readCommissionBrief } from "@lib/util/made-to-order"
+import { saveCommissionBrief } from "@lib/data/commission-actions"
+import CommissionBrief from "../commission-brief"
+
 import PaymentButton from "../payment-button"
 import ProductionPaymentModeChoice from "../production-payment-mode"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
@@ -40,6 +45,21 @@ const Review = ({
 
   const isOpen = searchParams.get("step") === "review"
   const comgateMethod = searchParams.get("method")
+
+  /*
+   * Which lines are commissions. Either signal counts — the catalogue category or an enabled
+   * production profile — because today only the first is set on any product, and the brief
+   * has to appear for the pieces she actually sells as zakázky.
+   */
+  const commissionLines = ((cart?.items ?? []) as any[])
+    .filter(
+      (item) => isCommissionLine(item) || item?.metadata?.made_to_order
+    )
+    .map((item) => ({
+      id: item.id as string,
+      title: (item.product_title || item.title) as string,
+      brief: readCommissionBrief(item),
+    }))
 
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
@@ -132,13 +152,39 @@ const Review = ({
               <OrderRecap cart={cart} />
             </motion.div>
 
+            {/* The brief, one per commissioned line: what they want, and pictures of it.
+                Placed before the money, because it is the thing being bought. */}
+            {commissionLines.map((line) => (
+              <motion.div
+                key={line.id}
+                variants={rowVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <CommissionBrief
+                  variant="checkout"
+                  title={line.title}
+                  note={line.brief.note ?? ""}
+                  photos={line.brief.photos ?? []}
+                  onSubmitAction={async (input) =>
+                    saveCommissionBrief(line.id, {
+                      specification: line.brief.specification,
+                      ...input,
+                    })
+                  }
+                />
+              </motion.div>
+            ))}
+
             {/* Commissioned pieces: pay a deposit now or the whole amount. Rendered only when
                 the cart actually contains one — the API says so, we do not infer it. */}
             {productionMode?.has_made_to_order && (
               <motion.div variants={rowVariants} initial="hidden" animate="visible">
                 <ProductionPaymentModeChoice
                   initial={productionMode}
-                  onSelect={(mode) => selectProductionPaymentMode(cart.id, mode)}
+                  onSelect={(mode, amount) =>
+                    selectProductionPaymentMode(cart.id, mode, amount)
+                  }
                 />
               </motion.div>
             )}

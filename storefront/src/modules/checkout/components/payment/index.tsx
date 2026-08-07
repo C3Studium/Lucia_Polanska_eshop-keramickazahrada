@@ -3,6 +3,7 @@
 import { RadioGroup } from "@headlessui/react"
 import {
   isComgate,
+  isDobirkaPayment,
   isPickupPayment,
   isRetiredPayment,
   paymentInfoMap,
@@ -31,12 +32,15 @@ const Payment = ({
   availablePaymentMethods,
   comgateMethods,
   hasPickupShipping = false,
+  allowsDobirka = false,
 }: {
   cart: any
   availablePaymentMethods: any[]
   comgateMethods: ComgatePaymentMethod[]
   /** Decided by the checkout form, which can see the fulfilment provider of the chosen option. */
   hasPickupShipping?: boolean
+  /** All three dobírka conditions hold: every piece allows it, ČP carriage, Czech address. */
+  allowsDobirka?: boolean
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
@@ -67,9 +71,11 @@ const Payment = ({
           // The backend still lists a provider left over from a rename; a session on it
           // fails, so offering it only ever gives the customer a dead end.
           !isRetiredPayment(provider.id) &&
-          (hasPickupShipping || !isPickupPayment(provider.id))
+          (hasPickupShipping || !isPickupPayment(provider.id)) &&
+          // Dobírka is opt-in per product, Česká pošta only, Czechia only.
+          (allowsDobirka || !isDobirkaPayment(provider.id))
       ),
-    [availablePaymentMethods, hasPickupShipping]
+    [availablePaymentMethods, hasPickupShipping, allowsDobirka]
   )
 
   /*
@@ -85,6 +91,8 @@ const Payment = ({
         title: paymentInfoMap[provider.id]?.title ?? provider.id,
         detail: isPickupPayment(provider.id)
           ? "Zaplatíte na místě, až si objekt vyzvednete v ateliéru"
+          : isDobirkaPayment(provider.id)
+          ? "Zaplatíte doručovateli při převzetí zásilky"
           : "Platbu dokončíte v dalším kroku",
         logo: paymentInfoMap[provider.id]?.icon,
       })),

@@ -16,7 +16,10 @@ const LocalizedClientLink = ({
   children?: React.ReactNode
   href: string
   className?: string
-  onClick?: () => void
+  /* The handler is forwarded to a real `<a>`, so it is handed a real event. Typed as
+     `() => void` this rejected every caller that wanted to read one — e.g. to call
+     preventDefault. Optional parameters keep the zero-argument callers valid. */
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
   passHref?: true
   [x: string]: any
 }) => {

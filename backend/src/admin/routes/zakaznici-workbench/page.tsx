@@ -28,6 +28,7 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { ThankYouButton } from "../../components/thank-you-button";
 
 /**
  * Zákazníci — the advanced customer workbench (admin-advanced-plan.md).
@@ -72,6 +73,28 @@ type WorkbenchCustomersResponse = {
  * it. Failures in the e-mail list are shown deliberately: a send that failed
  * is the answer to „proč mi nic nepřišlo?".
  */
+/**
+ * Whether the row should nudge her to say thank you.
+ *
+ * Three orders or more, with the most recent inside six months — someone who has
+ * come back, and recently enough that a thank-you still reads as one rather than
+ * as an attempt to win back somebody who quietly left. Only a hint: the button is
+ * on every row, and the decision stays hers.
+ */
+const THANKS_MIN_ORDERS = 3;
+const THANKS_WINDOW_DAYS = 180;
+
+const deservesThanks = (customer: {
+  orders_count: number;
+  last_order_at: string | null;
+}) => {
+  if (customer.orders_count < THANKS_MIN_ORDERS) return false;
+  if (!customer.last_order_at) return false;
+  const days =
+    (Date.now() - new Date(customer.last_order_at).getTime()) / 86_400_000;
+  return days <= THANKS_WINDOW_DAYS;
+};
+
 const CustomerDrawer = ({
   customer,
   trigger,
@@ -490,6 +513,13 @@ const ZakazniciInner = () => {
                 >
                   Napsat
                 </a>
+                {/* Starred when the numbers already argue for it — three orders or more,
+                    and one of them recent enough that a thank-you still reads as one. */}
+                <ThankYouButton
+                  customerId={customer.id}
+                  customerName={customer.name || customer.email}
+                  suggested={deservesThanks(customer)}
+                />
               </div>
             </article>
           ))}

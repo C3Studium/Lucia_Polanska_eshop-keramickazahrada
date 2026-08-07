@@ -197,6 +197,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         handle: product.handle,
         status: product.status,
         kind,
+        /* Dobírka is opt-in per product: the carrier collecting cash is a risk she
+           takes piece by piece, not a shop-wide setting. Absent metadata means no. */
+        cod_allowed: Boolean((product.metadata as any)?.cod_allowed),
+        /* Fragile is hers to declare — no dimension or weight implies it. It forces the
+           whole basket onto the fragile carriage, so it is the one flag a customer
+           cannot override. */
+        fragile: Boolean((product.metadata as any)?.fragile),
+        /* What the wrapping for this piece costs her: bubble wrap, paper, tape. Added to
+           carriage at checkout. Null means „use the shop default". */
+        packaging_price:
+          typeof (product.metadata as any)?.packaging_price === "number"
+            ? ((product.metadata as any).packaging_price as number)
+            : null,
         bundle,
         clearance,
         // The handshake: what she edits, seen as the customer sees it.

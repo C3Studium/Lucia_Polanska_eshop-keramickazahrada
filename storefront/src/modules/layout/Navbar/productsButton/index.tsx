@@ -7,7 +7,7 @@ import LinkCat from "./Link"
 import CollectionCategoryLink from "./CategoryLink"
 import { AnimatePresence, Easing, motion, useAnimate, type AnimationSequence } from "framer-motion"
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { withCount } from "@lib/util/plurals"
 import styles from "./styles.module.scss"
 
@@ -31,6 +31,8 @@ export type NavigationCollection = {
 type ProductButtonProps = {
   onClickAction: (next: boolean) => void
   isActive: boolean
+  /** True anywhere in the catalogue, so the button stays lit like the other nav links do. */
+  isRouteActive?: boolean
   /** False when the catalogue returned nothing to put in the menu. */
   hasMenu?: boolean
 }
@@ -44,6 +46,50 @@ type CollectionListProps = {
 }
 
 const ease = [0.76, 0, 0.24, 1] as Easing
+
+/**
+ * Whether a pointer event is a real hover, and not a tap wearing a mouse costume.
+ *
+ * Chromium replays a touch tap as *compatibility* events about 150ms later, and those arrive
+ * with `pointerType: "mouse"` — so reading the event's own type cannot tell them apart. Two
+ * things can: a device that reports no hover at all never produces a genuine one, and a real
+ * touch that happened moments ago explains any "mouse" event that follows it.
+ *
+ * Without this the menu shut 150ms after every tap: the backdrop appeared under the finger and
+ * its hover-to-close fired on the tap's own echo.
+ */
+function useIsRealHover() {
+  const lastTouchAt = useRef(-Infinity)
+  const deviceHovers = useRef(true)
+
+  useEffect(() => {
+    const query = window.matchMedia("(hover: hover) and (pointer: fine)")
+    const sync = () => {
+      deviceHovers.current = query.matches
+    }
+    sync()
+    query.addEventListener("change", sync)
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch" || event.pointerType === "pen") {
+        lastTouchAt.current = event.timeStamp
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown, true)
+
+    return () => {
+      query.removeEventListener("change", sync)
+      document.removeEventListener("pointerdown", onPointerDown, true)
+    }
+  }, [])
+
+  return useCallback((event: { pointerType?: string; timeStamp: number }) => {
+    if (!deviceHovers.current) return false
+    if (event.pointerType && event.pointerType !== "mouse") return false
+    // The echo lands ~150ms after the tap; a second is comfortably clear of it.
+    return event.timeStamp - lastTouchAt.current > 1000
+  }, [])
+}
 
 /* Hoisted so the menu — which re-renders on every hover of a collection card — stops
    allocating a fresh object per motion prop, per card, per render. Values unchanged. */
@@ -84,10 +130,24 @@ const footerLinks = [
 export function ProductButton({
   onClickAction,
   isActive,
+  isRouteActive = false,
   hasMenu = true,
 }: ProductButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const highlighted = isActive || isHovered
+  const isRealHover = useIsRealHover()
+  const highlighted = isActive || isHovered || isRouteActive
+  /* Which input is driving decides what a press means. A mouse has hover, so the menu can
+     preview itself on the way past and the click is free to do the obvious thing — go to the
+     shop. A finger has no hover, so its first tap has to *be* the preview; a second tap, with
+     the menu already open, goes through. Read from the event rather than sniffed from the
+     user agent, so a touchscreen laptop behaves like whichever one is actually in your hand. */
+  const pointerType = useRef("mouse")
+  /* Whether the menu was already open when the press started. `isActive` cannot be trusted
+     inside the click handler: the order is pointerdown → focus → click, and focus opens the
+     menu, so by click time the state has already flipped and a toggle reads it backwards —
+     which is exactly why the first tap opened and instantly re-closed. pointerdown lands
+     before any of that. */
+  const wasOpenAtPress = useRef(false)
 
   // With nothing to put in the menu, the label still has to lead somewhere: the
   // catalogue itself. A control that opens an empty panel is worse than a link.
@@ -99,26 +159,55 @@ export function ProductButton({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <ProductButtonFace highlighted={isHovered} />
+        <ProductButtonFace highlighted={isHovered || isRouteActive} />
       </LocalizedClientLink>
     )
   }
 
   return (
-    <button
-      type="button"
+    <LocalizedClientLink
+      href="/store"
       className={styles.button}
       aria-expanded={isActive}
       aria-controls="collection-navigation"
-      onClick={() => onClickAction(!isActive)}
-      onMouseEnter={() => {
+      onPointerDown={(event: React.PointerEvent<HTMLAnchorElement>) => {
+        pointerType.current = event.pointerType || "mouse"
+        wasOpenAtPress.current = isActive
+      }}
+      onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+        // Keyboard Enter reports no pointer type, and a keyboard has no hover either — but it
+        // has focus, which opens the menu below. So Enter is left to navigate.
+        const isTouch = pointerType.current === "touch" || pointerType.current === "pen"
+
+        /* A finger toggles, full stop. Making the second tap navigate instead read as a
+           shortcut, but it took the toggle away: the obvious way to shut the menu — tap the
+           thing you tapped to open it — walked you off the page instead, and nothing on
+           screen said it would. The shop is reached from the „Zobrazit celý e-shop" link
+           inside the menu, where it can be seen and read. */
+        if (isTouch) {
+          event.preventDefault()
+          onClickAction(!wasOpenAtPress.current)
+        }
+      }}
+      /* Deliberately pointer- rather than mouse-events: a tap emits a synthetic mouseenter
+         *before* its click, which would open the menu and make the very first tap look like
+         the second one — straight to /store, no menu, every time. */
+      onPointerEnter={(event: React.PointerEvent<HTMLAnchorElement>) => {
+        if (!isRealHover(event)) return
         setIsHovered(true)
         onClickAction(true)
       }}
-      onMouseLeave={() => setIsHovered(false)}
+      onPointerLeave={() => setIsHovered(false)}
+      /* Without this the menu is unreachable by keyboard: Enter would only ever navigate.
+         Gated on :focus-visible because a tap focuses too — and an unguarded open here beat
+         the click handler to it, so a finger opened the menu on focus and then toggled it
+         straight back shut on the very same tap. */
+      onFocus={(event: React.FocusEvent<HTMLAnchorElement>) => {
+        if (event.target.matches(":focus-visible")) onClickAction(true)
+      }}
     >
       <ProductButtonFace highlighted={highlighted} />
-    </button>
+    </LocalizedClientLink>
   )
 }
 
@@ -152,6 +241,7 @@ export function CollectionList({
   onActiveIndexChange,
 }: CollectionListProps) {
   const items = collections
+  const isRealHover = useIsRealHover()
   const safeActiveIndex = Math.min(activeIndex, items.length - 1)
   const [cardsScope, animateCards] = useAnimate<HTMLDivElement>()
   const previousIndex = useRef(0)
@@ -184,13 +274,21 @@ export function CollectionList({
           animate={menuFadeTo}
           exit={menuFadeFrom}
           transition={menuFadeTransition}
-          onMouseLeave={() => setActive(false)}
+          /* Closing on leave is a mouse idea — a pointer that has moved away has said it is
+             done. A finger emits the same events synthetically right after the tap. */
+          onPointerLeave={(event) => {
+            if (isRealHover(event)) setActive(false)
+          }}
         >
           <button
             type="button"
             className={styles.backdrop}
             aria-label="Zavřít nabídku produktů"
-            onMouseEnter={() => setActive(false)}
+            // Same story: the tap's echo landed here the instant the backdrop appeared under
+            // the finger. The click below is the touch way out, and stays unguarded.
+            onPointerEnter={(event) => {
+              if (isRealHover(event)) setActive(false)
+            }}
             onClick={() => setActive(false)}
           />
           <motion.div
@@ -240,6 +338,20 @@ export function CollectionList({
                 />
               ))}
             </div>
+            {/* The one way into the shop as a whole. The cards each lead to a single
+                collection and the footer below is legal text, so without this there was no
+                „everything" — and on touch, where the button toggles rather than navigates,
+                no route to /store at all. */}
+            <LocalizedClientLink
+              href="/store"
+              className={styles.storeLink}
+              onClick={() => setActive(false)}
+              data-testid="menu-store-link"
+            >
+              <span>Zobrazit celý e-shop</span>
+              <ArrowRight size={13} color="currentColor" />
+            </LocalizedClientLink>
+
             <nav className={styles.menuFooter} aria-label="Důležité odkazy">
               <div className={styles.footerLinks}>
                 {footerLinks.map((link, index) => (

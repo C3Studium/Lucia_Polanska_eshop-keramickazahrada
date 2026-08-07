@@ -37,6 +37,14 @@ type PaymentsResponse = {
 const providerLabels: Record<string, string> = {
   pp_comgate_comgate: "Platební karta / převod",
   pp_system_default: "Ručně označeno",
+  /*
+   * Osobní odběr. Missing here it fell through to „Online platba", which is the one thing it
+   * is not — no gateway is involved, the customer pays in the workshop when they collect.
+   * `pp_pickup_pickup` is the pre-rename registration the backend still lists; named too so
+   * an older order does not read as a database key.
+   */
+  "pp_osobni-odber_pickup": "Zaplaceno při vyzvednutí",
+  pp_pickup_pickup: "Zaplaceno při vyzvednutí",
 };
 
 const filters = [

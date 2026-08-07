@@ -32,6 +32,19 @@ type NavbarProps = {
 
 const navButtonHrefs = ["/", "/dotazy", "/vyroba", "/kurzy", "/o-mne"] as const
 
+/*
+ * The other nav buttons each own exactly one route, so an equality check settles them. E-shop
+ * owns a whole branch of the site — the shop itself, a single object, and the collection and
+ * category pages its own menu links to — so it matches on prefix instead. Without this it was
+ * the one button in the bar that went dark the moment you used it.
+ */
+const catalogueRoots = [
+  "/store",
+  "/products",
+  "/collections",
+  "/categories",
+] as const
+
 export default function Navbar({
   cart,
   regions,
@@ -61,6 +74,11 @@ export default function Navbar({
     const localizedHref =
       href === "/" ? `/${countryCode}` : `/${countryCode}${href}`
     return pathname === localizedHref
+  })
+
+  const isCatalogueRoute = catalogueRoots.some((root) => {
+    const base = `/${countryCode}${root}`
+    return pathname === base || pathname.startsWith(`${base}/`)
   })
 
   const handleButtonActiveChange = (index: number | null) => {
@@ -209,6 +227,7 @@ export default function Navbar({
           <ProductButton
             onClickAction={handleProductsOpenChange}
             isActive={isOpen}
+            isRouteActive={isCatalogueRoute}
             hasMenu={navigationCollections.length > 0}
           />
           <div className="navbar__center-side navbar__center-side--right">

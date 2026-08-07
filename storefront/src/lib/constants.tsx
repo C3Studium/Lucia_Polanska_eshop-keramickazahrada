@@ -29,6 +29,17 @@ export const RETIRED_PAYMENT_PROVIDERS = ["pp_pickup_pickup"]
 
 export const PICKUP_FULFILLMENT_PROVIDER = "pickup_osobni-odber"
 
+/**
+ * Dobírka — the carrier collects on delivery. `pp_<identifier>_<registration id>`.
+ *
+ * Never offered on its own: it needs the piece to allow it, the delivery to be a Česká pošta
+ * carriage, and the customer to be in Czechia. See `@lib/util/dobirka`.
+ */
+export const DOBIRKA_PAYMENT_PROVIDER = "pp_dobirka_ceska-posta"
+
+export const isDobirkaPayment = (providerId?: string) =>
+  providerId === DOBIRKA_PAYMENT_PROVIDER
+
 export const isRetiredPayment = (providerId?: string) =>
   !!providerId && RETIRED_PAYMENT_PROVIDERS.includes(providerId)
 
@@ -75,8 +86,33 @@ export const paymentInfoMap: Record<
     title: "Google Pay",
     icon: <GooglePay />
   },
+  "pp_dobirka_ceska-posta": {
+    title: "Dobírka",
+    icon: <CreditCard />
+  },
   // Add more payment providers here
   // NOTE: here you can add any custom payment provider that you want to use
+}
+
+/**
+ * A payment method's name, for anywhere a customer reads one.
+ *
+ * Never returns a provider id. The order pages used to fall back to `payment.provider_id`, so
+ * a confirmation e-mail's twin on screen read „pp_osobni-odber_pickup" where it should have
+ * said „Zaplatíte při vyzvednutí" — and `payment-details` did not even fall back, it indexed
+ * the map straight and threw on anything missing. A provider nobody has named yet is still
+ * better described as a payment than as a database key.
+ */
+export const paymentMethodTitle = (providerId?: string | null): string => {
+  if (!providerId) return "Platba"
+
+  const known = paymentInfoMap[providerId]?.title
+  if (known) return known
+
+  if (isComgate(providerId)) return "Online platba"
+  if (isPickupPayment(providerId)) return "Zaplatíte při vyzvednutí"
+
+  return "Platba"
 }
 
 export const isManual = (providerId?: string) => {

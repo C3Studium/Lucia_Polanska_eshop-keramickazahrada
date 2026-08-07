@@ -5,9 +5,13 @@ import SignInPrompt from "../components/sign-in-prompt"
 import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
+import { getProductionPaymentMode } from "@lib/data/made-to-order"
+import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
+import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
+
 import s from "./index.module.scss"
 
-const CartTemplate = ({
+const CartTemplate = async ({
   cart,
   customer,
 }: {
@@ -15,6 +19,13 @@ const CartTemplate = ({
   customer: HttpTypes.StoreCustomer | null
 }) => {
   const itemCount = cart?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
+
+  /* Asked here as well as at checkout: a commission's deposit is the thing most likely to
+     surprise someone at the till, and the basket is where they are still deciding. The choice
+     lives on the cart, so whatever is set here is what checkout opens on. */
+  const productionMode = cart?.id
+    ? await getProductionPaymentMode(cart.id)
+    : null
 
   return (
     <div className={s.root}>
@@ -40,6 +51,15 @@ const CartTemplate = ({
                 </>
               )}
               <ItemsTemplate cart={cart} />
+              {productionMode?.has_made_to_order && (
+                <ProductionPaymentModeChoice
+                  variant="cart"
+                  initial={productionMode}
+                  // Bound rather than wrapped in a fresh inline action: the cart id is the
+                  // only thing this side knows that the client side needs.
+                  onSelect={selectProductionPaymentMode.bind(null, cart.id)}
+                />
+              )}
               </div>
               <div className={s.right}>
                 <div className={s.sticky}>

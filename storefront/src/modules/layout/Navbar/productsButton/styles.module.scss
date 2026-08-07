@@ -162,15 +162,25 @@
 
 .collectionCards {
   --expanded-card-width: calc((100vw - 80px) * 0.4444 + 6px);
+  /* Everything under the cards that the panel still has to fit: the „Zobrazit celý e-shop"
+     row (52px + its 14px rule) and the legal footer. The cards take what is left, so adding
+     a row means widening this — miss it and the footer is pushed off the bottom edge, which
+     is exactly what happened on every tablet the moment the row appeared. */
+  --below-cards: 66px;
   display: flex;
   gap: 8px;
   width: 100%;
-  height: min(80vh, calc(100dvh - 182px));
+  /* Off *both* terms: the 80vh branch is the one that binds on a tablet, so subtracting from
+     the dvh branch alone changed nothing at all. */
+  height: min(
+    calc(80vh - var(--below-cards)),
+    calc(100dvh - 182px - var(--below-cards))
+  );
   min-height: 520px;
 
   /* A 520px floor inside a 430px window leaves the menu unscrollable and unclosable. */
   @include phs-h {
-    height: calc(100dvh - 96px);
+    height: calc(100dvh - 96px - var(--below-cards));
     min-height: 0;
   }
 }
@@ -302,6 +312,41 @@
   pointer-events: none;
 }
 
+/* The menu's primary action, so it sits on its own row above the legal links rather than
+   among them — it is where you go, not fine print. */
+.storeLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  margin-top: 14px;
+  padding: 0 4px;
+  border-top: 1px solid rgba(31, 35, 25, 0.3);
+  color: #1f2319;
+  font-size: clamp(15px, 1.15vw, 19px);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+
+  span {
+    display: inline-block;
+  }
+
+  svg {
+    flex: 0 0 auto;
+    transition: transform 0.42s cubic-bezier(0.76, 0, 0.24, 1);
+  }
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.66;
+
+    svg {
+      transform: translateX(5px);
+    }
+  }
+}
+
 .menuFooter {
   padding-top: 7px;
 }
@@ -337,7 +382,14 @@
 
 @include below-px(900px) {
   .collectionCards {
-    height: 80vh;
+    /* This is the rule that actually applies on every touch device, and it replaced the base
+       height wholesale — a flat 80vh with nothing set aside for what sits under the cards.
+       Both terms have to allow for it: 80vh alone pushed the footer past the bottom edge,
+       and the dvh term keeps the whole panel inside a short window. */
+    height: min(
+      calc(80vh - var(--below-cards)),
+      calc(100dvh - 192px - var(--below-cards))
+    );
     min-height: 480px;
     overflow-x: auto;
   }

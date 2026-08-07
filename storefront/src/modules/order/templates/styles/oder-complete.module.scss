@@ -233,6 +233,12 @@
   box-shadow: 0 0 0 7px rgba(123, 132, 103, .12);
 }
 
+/* The zakázka's conversation panel — its own breathing room between the progress rail and
+   the order's facts, because it is the one part of this page that expects a reply. */
+.commission {
+  margin: clamp(28px, 4vh, 46px) 0 0;
+}
+
 .orderMeta {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr .8fr;
