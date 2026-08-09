@@ -15,6 +15,13 @@ Everything else follows from that decision — which numbers land on the overvie
 Two halves in one repo: a custom Next.js storefront, and a Medusa backend I extended heavily.
 
 **Storefront** — [`storefront/`](storefront/). Next.js 15 App Router, React 19, TypeScript. Routes are namespaced by country (`/[countryCode]`) and split into three layout groups: `(main)`, `(checkout)`, and `(express-checkout)` — a separate one-page flow for buying a single piece. Route segments are Czech (`/o-mne`, `/vyroba`, `/kurzy`, `/doprava-a-platba`) because Czech customers read the URLs. Editorial content comes from Sanity with the Studio embedded at `/studio`. It talks to Medusa over the JS SDK; a few Next route handlers under `src/app/api` cover what needs a server session.
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 19 12" src="https://github.com/user-attachments/assets/31d39464-7a77-46ac-8a42-05b4336bd0f2" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 19 27" src="https://github.com/user-attachments/assets/293cce5f-46df-450a-93e9-7bdd8c4ee25d" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 19 51" src="https://github.com/user-attachments/assets/03553ef1-3893-433f-b5dc-674987022b29" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 20 08" src="https://github.com/user-attachments/assets/80fce314-0773-4640-ae0d-43c6ad69a4f0" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 20 23" src="https://github.com/user-attachments/assets/10136e69-6e4c-46b2-96df-2e94537c78f8" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 20 40" src="https://github.com/user-attachments/assets/6329acf0-f7e9-4949-af57-8e209241cf32" />
+
 
 **Backend** — [`backend/`](backend/), Medusa 2.18 (headless commerce). I chose Medusa deliberately. Payments, order state, refunds and GDPR belong in a proper commerce engine that is maintained and audited — not in code I hand-roll for one client. I wanted the liability-heavy parts to be someone else's solved problem, so my time could go into the layer that is actually specific to this shop.
 
@@ -32,7 +39,10 @@ Two halves in one repo: a custom Next.js storefront, and a Medusa backend I exte
 
 The admin is the part of this project I'd most want you to look at, and it's the part the staging link can't show you — it sits behind auth.
 
-**Screenshots: [`/admin-preview`](admin-preview/)**
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 17 02" src="https://github.com/user-attachments/assets/3fb7f1b3-74f8-4474-879c-e257534f9d17" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 17 32" src="https://github.com/user-attachments/assets/d2d1607e-2881-4e06-9b94-4f34a4c745fc" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 18 39" src="https://github.com/user-attachments/assets/908f8780-a426-4fdc-ab2a-fc350f794013" />
+
 
 Everything shown there runs on **test data**. The products, orders, customer names and amounts are seeded for demonstration — no real customer information appears in any screenshot.
 
@@ -41,6 +51,7 @@ Everything shown there runs on **test data**. The products, orders, customer nam
 [`storefront/src/styles/system/`](storefront/src/styles/system/) holds the tokens and the API — breakpoints, colours, the typography scale, mixins, shortcuts, cascade layers — and emits no CSS of its own, so importing it anywhere is free. Everything else is co-located: 154 `.scss` and `.module.scss` files sitting next to the components they style.
 
 [`scripts/sync-styles.js`](storefront/scripts/sync-styles.js) runs before both `dev` and `build`. It injects the responsive shortcut API into every SCSS file, repairs relative paths when a file is moved or renamed, and regenerates `_generated-styles.scss` — so `globals.scss` stays a short, stable entrypoint instead of a hand-maintained import list that rots.
+
 
 Breakpoints are emitted as [CSS cascade layers](storefront/src/styles/system/_layers.scss) rather than plain media queries. That's what makes device-qualified stops work: a phone in landscape matches a tablet breakpoint on width alone, so the phone-specific stop sits in a later layer and wins without a specificity hack.
 
