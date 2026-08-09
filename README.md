@@ -41,7 +41,9 @@ The admin is the part of this project I'd most want you to look at, and it's the
 
 <img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 17 02" src="https://github.com/user-attachments/assets/3fb7f1b3-74f8-4474-879c-e257534f9d17" />
 <img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 17 32" src="https://github.com/user-attachments/assets/d2d1607e-2881-4e06-9b94-4f34a4c745fc" />
-<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 6 18 39" src="https://github.com/user-attachments/assets/908f8780-a426-4fdc-ab2a-fc350f794013" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 20 38 08" src="https://github.com/user-attachments/assets/378a07b0-ab3c-42d5-a7f0-d2062b91c978" />
+<img width="1728" height="1117" alt="Screenshot 2026-08-09 at 20 37 57" src="https://github.com/user-attachments/assets/c245acdd-432e-4818-b55e-527ffa776d81" />
+
 
 
 Everything shown there runs on **test data**. The products, orders, customer names and amounts are seeded for demonstration — no real customer information appears in any screenshot.
