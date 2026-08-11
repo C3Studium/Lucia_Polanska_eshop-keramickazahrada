@@ -1,7 +1,7 @@
 "use client"
 
 import ArrowRight from "@modules/common/icons/arrow-right"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
 import { useRef } from "react"
 import styles from "./style.module.scss"
@@ -20,11 +20,29 @@ const reveal = {
   }),
 }
 
+/*
+ * Lenis is configured with `lerp: 0.8` (LenisContext.tsx), which settles a wheel notch in about
+ * four frames — close to raw deltas. Every other scroll-driven surface on the site springs its own
+ * progress before using it; this hero was the one reading `scrollYProgress` straight, so the
+ * parallax stepped with each notch.
+ *
+ * Tuned against a step: a 400px scroll discontinuity now spreads over roughly twenty frames and is
+ * ~90% travelled by 400ms. Stiffer than the home page's stage springs on purpose — this hero has
+ * only a viewport of travel, so a slower one reads as the image drifting loose from the page.
+ */
+const parallaxSpring = {
+  stiffness: 200,
+  damping: 34,
+  mass: 0.3,
+  restDelta: 0.0004,
+}
+
 export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] })
-  const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "14%"])
-  const copyY = useTransform(scrollYProgress, [0, 1], ["0%", "-8%"])
+  const progress = useSpring(scrollYProgress, parallaxSpring)
+  const imageY = useTransform(progress, [0, 1], ["0%", "14%"])
+  const copyY = useTransform(progress, [0, 1], ["0%", "-8%"])
 
   return (
     <section

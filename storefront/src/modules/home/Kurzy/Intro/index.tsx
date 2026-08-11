@@ -22,29 +22,39 @@ export type KurzyIntroData = {
   images?: SanityImageSource[]
 } | null
 
-const fallbackCopy =
-  "Na kurzech si děti hlínu osahají pomalu a bez spěchu. Od prvního doteku přes vlastní tvar až po glazování — a domů si pak odnesou nejen svůj výrobek, ale hlavně radost, že si ho udělaly samy."
+/*
+ * Scene order: what a course is → courses for children → courses for adults.
+ *
+ * It used to run hero → children → the three process steps → adults, which explained *who* a
+ * course was for before it explained *what one is*, and buried the general description in a
+ * 29vw column of the hero that only faded in halfway through the first scene's scroll and out
+ * again a moment later. The three steps now sit together in one "O kurzech" scene as a strip,
+ * which is both the answer to "what is this" and three screens shorter.
+ */
+const fallbackLede =
+  "V ateliéru u Písku vedu keramické kurzy pro děti i dospělé. Malé skupiny, klidné tempo a výrobek, který si odnesete domů."
 
-const workshopMoments = [
+const fallbackAbout =
+  "Na kurzu si hlínu osaháte pomalu a bez spěchu. Provedu vás celým procesem — od výběru hlíny přes modelování až po glazování a výpal. Nikomu nic nepředepisuju: každý si najde svůj vlastní způsob a odnese si kousek, který nikde jinde neseženete."
+
+const courseSteps = [
   {
     number: "01",
     eyebrow: "První setkání",
     title: "Poznat materiál",
     accent: "dotekem.",
-    text: "Děti objevují, jak hlína reaguje na tlak, vodu, nástroje i trpělivost.",
+    text: "Hlína reaguje na tlak, vodu, nástroje i trpělivost. Napřed si zvyknete na ni, ona na vás.",
     src: "/assets/img/roller/2h.jpg",
     alt: "Keramický detail vzniklý ruční prací",
-    range: [0.485, 0.525, 0.59, 0.63] as [number, number, number, number],
   },
   {
     number: "02",
     eyebrow: "Vlastní rukopis",
     title: "Najít vlastní tvar",
     accent: "bez předlohy.",
-    text: "Na každém výrobku je pak vidět, čí ruce ho dělaly — i s tou drobnou nedokonalostí.",
+    text: "Na hotovém kusu je pak vidět, čí ruce ho dělaly — i s tou drobnou nedokonalostí.",
     src: "/assets/img/roller/3v.jpg",
     alt: "Ručně modelovaný keramický výrobek",
-    range: [0.59, 0.625, 0.69, 0.73] as [number, number, number, number],
   },
   {
     number: "03",
@@ -54,9 +64,23 @@ const workshopMoments = [
     text: "Po glazování a výpalu se z nápadu stane opravdová věc do domu nebo na zahradu.",
     src: "/assets/img/roller/4h.jpg",
     alt: "Hotový keramický výrobek v zahradě",
-    range: [0.69, 0.725, 0.79, 0.835] as [number, number, number, number],
   },
 ]
+
+/*
+ * Beats of the pinned stage. Written down together because the handover between two scenes is the
+ * one thing that has to be read as a pair: the outgoing scene is gone before the incoming one
+ * starts. The previous version faded the hero out over 0.24–0.30 while the workshop faded in over
+ * 0.235–0.30 — the same stretch — so the middle of every transition was two half-transparent
+ * scenes stacked on top of each other, with the giant title lockup showing through the copy.
+ */
+const HERO_HOLD = 0.11
+const HERO_OUT = 0.235
+const ABOUT_IN = 0.25
+const ABOUT_OUT = 0.5
+const KIDS_IN = 0.515
+const KIDS_OUT = 0.765
+const ADULTS_IN = 0.78
 
 export default function Intro({ data }: { data?: KurzyIntroData }) {
   const timelineRef = useRef<HTMLElement>(null)
@@ -75,13 +99,13 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
 
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
     const scene =
-      progress < 0.27 ? 0 : progress < 0.47 ? 1 : progress < 0.8 ? 2 : 3
+      progress < 0.24 ? 0 : progress < 0.51 ? 1 : progress < 0.775 ? 2 : 3
     setActiveScene((current) => (current === scene ? current : scene))
   })
 
   const background = useTransform(
     scrollYProgress,
-    [0, 0.245, 0.31, 0.445, 0.51, 0.775, 0.84, 1],
+    [0, 0.17, 0.26, 0.45, 0.53, 0.71, 0.79, 1],
     [
       "#1d1e1a",
       "#1d1e1a",
@@ -116,146 +140,174 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
     ]
   )
 
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.24, 0.3], [1, 1, 0])
+  /* The hero leaves as one piece — no scene is fading in underneath it any more, so it can take
+     its time going rather than being rushed off in the 0.06 it used to share with the next one. */
+  const heroOpacity = useTransform(
+    scrollYProgress,
+    [0, HERO_HOLD + 0.06, HERO_OUT],
+    [1, 1, 0]
+  )
   const heroY = useTransform(
     scrollYProgress,
-    [0, 0.24, 0.3],
-    ["0vh", "0vh", "-6vh"]
+    [0, HERO_HOLD + 0.06, HERO_OUT],
+    ["0vh", "0vh", "-7vh"]
   )
-  const heroScale = useTransform(scrollYProgress, [0, 0.24, 0.3], [1, 1, 0.97])
+  const heroScale = useTransform(
+    scrollYProgress,
+    [0, HERO_HOLD + 0.06, HERO_OUT],
+    [1, 1, 0.965]
+  )
+  /* The lockup still steps aside for the copy, but over 0.09 of scroll instead of 0.035 — at the
+     old rate it crossed 16vw and lost a quarter of its size inside about a fifth of a screen. */
   const heroTitleX = useTransform(
     scrollYProgress,
-    [0, 0.16, 0.195, 0.25, 0.3],
-    ["0vw", "0vw", "-16vw", "-16vw", "-18vw"]
+    [0, 0.045, 0.135, HERO_OUT],
+    ["0vw", "0vw", "-15vw", "-17vw"]
   )
   const heroTitleY = useTransform(
     scrollYProgress,
-    [0, 0.16, 0.195, 0.25, 0.3],
-    ["0vh", "0vh", "0vh", "0vh", "-4vh"]
+    [0, 0.045, 0.135, HERO_OUT],
+    ["0vh", "0vh", "0vh", "-3vh"]
   )
   const heroTitleScale = useTransform(
     scrollYProgress,
-    [0, 0.16, 0.195, 0.25, 0.3],
-    [1, 1, 0.75, 0.75, 0.72]
+    [0, 0.045, 0.135, HERO_OUT],
+    [1, 1, 0.76, 0.73]
   )
 
   const image1 = useTransform(
     scrollYProgress,
-    [0, 0.045, 0.095, 0.245, 0.295],
+    [0, 0.04, 0.085, 0.155, 0.205],
     ["0vw", "24vw", "24vw", "24vw", "0vw"]
   )
   const image2 = useTransform(
     scrollYProgress,
-    [0.025, 0.085, 0.135, 0.245, 0.295],
+    [0.02, 0.075, 0.12, 0.155, 0.205],
     ["0vw", "0vw", "24vw", "24vw", "0vw"]
   )
   const image3 = useTransform(
     scrollYProgress,
-    [0.065, 0.125, 0.175, 0.245, 0.295],
+    [0.055, 0.11, 0.155, 0.175, 0.205],
     ["0vw", "0vw", "24vw", "24vw", "0vw"]
   )
+  /* Arrives once the lockup has cleared its column and stays for the rest of the hero, rather
+     than the 0.07-wide window it used to flash through. */
   const heroCopyOpacity = useTransform(
     scrollYProgress,
-    [0.185, 0.215, 0.255, 0.295],
+    [0.09, 0.155, HERO_HOLD + 0.075, HERO_OUT - 0.01],
     [0, 1, 1, 0]
   )
   const heroCopyY = useTransform(
     scrollYProgress,
-    [0.185, 0.215, 0.255, 0.295],
-    [24, 0, 0, -16]
+    [0.09, 0.155, HERO_OUT - 0.01],
+    [26, 0, -14]
   )
-  const heroCopyX = useTransform(
+
+  const aboutOpacity = useTransform(
     scrollYProgress,
-    [0.185, 0.215, 0.255, 0.295],
-    ["2vw", "0vw", "0vw", "3vw"]
+    [ABOUT_IN, ABOUT_IN + 0.06, ABOUT_OUT, ABOUT_OUT + 0.04],
+    [0, 1, 1, 0]
+  )
+  const aboutY = useTransform(
+    scrollYProgress,
+    [ABOUT_IN, ABOUT_IN + 0.06, ABOUT_OUT, ABOUT_OUT + 0.04],
+    ["4vh", "0vh", "0vh", "-4vh"]
+  )
+  const aboutHeadingX = useTransform(
+    scrollYProgress,
+    [ABOUT_IN + 0.01, ABOUT_IN + 0.08, ABOUT_OUT, ABOUT_OUT + 0.04],
+    [-26, 0, 0, 14]
+  )
+  const aboutLedeY = useTransform(
+    scrollYProgress,
+    [ABOUT_IN + 0.03, ABOUT_IN + 0.1, ABOUT_OUT, ABOUT_OUT + 0.04],
+    [24, 0, 0, -12]
+  )
+  const aboutLedeOpacity = useTransform(
+    scrollYProgress,
+    [ABOUT_IN + 0.03, ABOUT_IN + 0.1],
+    [0, 1]
   )
 
   const workshopOpacity = useTransform(
     scrollYProgress,
-    [0.235, 0.3, 0.445, 0.495],
+    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
     [0, 1, 1, 0]
   )
   const workshopX = useTransform(
     scrollYProgress,
-    [0.235, 0.3, 0.445, 0.495],
+    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
     ["3vw", "0vw", "0vw", "-3vw"]
   )
   const workshopScale = useTransform(
     scrollYProgress,
-    [0.235, 0.3, 0.445, 0.495],
+    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
     [0.985, 1, 1, 0.99]
   )
   const workshopClip = useTransform(
     scrollYProgress,
-    [0.235, 0.3, 1],
+    [KIDS_IN, KIDS_IN + 0.055, 1],
     ["inset(0% 100% 0% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
   const workshopCopyX = useTransform(
     scrollYProgress,
-    [0.255, 0.305, 0.445, 0.49],
+    [KIDS_IN + 0.015, KIDS_IN + 0.07, KIDS_OUT, KIDS_OUT + 0.035],
     [24, 0, 0, -18]
   )
   const workshopCopyOpacity = useTransform(
     scrollYProgress,
-    [0.255, 0.305, 0.445, 0.49],
+    [KIDS_IN + 0.015, KIDS_IN + 0.07, KIDS_OUT, KIDS_OUT + 0.035],
     [0, 1, 1, 0]
   )
   const workshopPortraitY = useTransform(
     scrollYProgress,
-    [0.255, 0.31, 0.445, 0.49],
+    [KIDS_IN + 0.015, KIDS_IN + 0.075, KIDS_OUT, KIDS_OUT + 0.035],
     [30, 0, 0, -18]
   )
   const workshopPortraitOpacity = useTransform(
     scrollYProgress,
-    [0.27, 0.325, 0.45, 0.49],
+    [KIDS_IN + 0.03, KIDS_IN + 0.09, KIDS_OUT, KIDS_OUT + 0.035],
     [0, 1, 1, 0]
   )
   const workshopFactsY = useTransform(
     scrollYProgress,
-    [0.285, 0.335, 0.445, 0.49],
+    [KIDS_IN + 0.045, KIDS_IN + 0.1, KIDS_OUT, KIDS_OUT + 0.035],
     [18, 0, 0, -12]
   )
   const workshopFactsOpacity = useTransform(
     scrollYProgress,
-    [0.31, 0.36, 0.445, 0.485],
+    [KIDS_IN + 0.07, KIDS_IN + 0.12, KIDS_OUT, KIDS_OUT + 0.03],
     [0, 1, 1, 0]
-  )
-
-  const momentsOpacity = useTransform(
-    scrollYProgress,
-    [0.435, 0.495, 0.79, 0.84],
-    [0, 1, 1, 0]
-  )
-  const momentsY = useTransform(
-    scrollYProgress,
-    [0.435, 0.495, 0.79, 0.84],
-    ["5vh", "0vh", "0vh", "-5vh"]
   )
 
   const adultsOpacity = useTransform(
     scrollYProgress,
-    [0.775, 0.835, 1],
+    [ADULTS_IN, ADULTS_IN + 0.06, 1],
     [0, 1, 1]
   )
   const adultsY = useTransform(
     scrollYProgress,
-    [0.775, 0.835, 1],
+    [ADULTS_IN, ADULTS_IN + 0.06, 1],
     ["6vh", "0vh", "0vh"]
   )
   const adultsImageClip = useTransform(
     scrollYProgress,
-    [0.775, 0.835, 1],
+    [ADULTS_IN, ADULTS_IN + 0.06, 1],
     ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
-  const adultsCopyX = useTransform(scrollYProgress, [0.8, 0.855, 1], [30, 0, 0])
+  const adultsCopyX = useTransform(
+    scrollYProgress,
+    [ADULTS_IN + 0.025, ADULTS_IN + 0.08, 1],
+    [30, 0, 0]
+  )
   const adultsDetailX = useTransform(
     scrollYProgress,
-    [0.8, 0.855, 1],
+    [ADULTS_IN + 0.025, ADULTS_IN + 0.08, 1],
     [-20, 0, 0]
   )
   const adultsDetailOpacity = useTransform(
     scrollYProgress,
-    [0.81, 0.865, 1],
+    [ADULTS_IN + 0.035, ADULTS_IN + 0.09, 1],
     [0, 1, 1]
   )
 
@@ -330,9 +382,9 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
 
           <motion.div
             className="kurzyHero__copy"
-            style={{ opacity: heroCopyOpacity, x: heroCopyX, y: heroCopyY }}
+            style={{ opacity: heroCopyOpacity, y: heroCopyY }}
           >
-            {/* Entrance on the children, not this element: its opacity, x and y are scroll-driven
+            {/* Entrance on the children, not this element: its opacity and y are scroll-driven
                 motion values, and those win over `animate` for the same property. */}
             <motion.span
               variants={heroReveal}
@@ -358,7 +410,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               animate="show"
               custom={heroBeat.lede}
             >
-              {data?.content || fallbackCopy}
+              {fallbackLede}
             </motion.p>
           </motion.div>
 
@@ -375,9 +427,48 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           </motion.div>
         </motion.article>
 
+        <motion.section
+          className={`kurzyScene kurzyAbout${
+            activeScene === 1 ? " is-active" : ""
+          }`}
+          style={{ opacity: aboutOpacity, y: aboutY }}
+          aria-labelledby="kurzy-about-title"
+        >
+          <SceneMeta left="02 · O kurzech" right="Pro děti i dospělé" />
+
+          <motion.header
+            className="kurzyAbout__intro"
+            style={{ x: aboutHeadingX }}
+          >
+            <span>Jak to na kurzu vypadá</span>
+            <h2 id="kurzy-about-title">
+              Nejdřív hlína.
+              <em>Potom nápad.</em>
+            </h2>
+          </motion.header>
+
+          <motion.div
+            className="kurzyAbout__lede"
+            style={{ y: aboutLedeY, opacity: aboutLedeOpacity }}
+          >
+            <p>{data?.content || fallbackAbout}</p>
+          </motion.div>
+
+          <div className="kurzyAbout__steps">
+            {courseSteps.map((step, index) => (
+              <CourseStep
+                key={step.number}
+                step={step}
+                progress={scrollYProgress}
+                index={index}
+              />
+            ))}
+          </div>
+        </motion.section>
+
         <motion.article
           className={`kurzyScene kurzyWorkshop${
-            activeScene === 1 ? " is-active" : ""
+            activeScene === 2 ? " is-active" : ""
           }`}
           style={{
             opacity: workshopOpacity,
@@ -387,7 +478,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           aria-labelledby="kurzy-workshop-title"
         >
           <SceneMeta
-            left="01 · Kurzy pro děti"
+            left="03 · Kurzy pro děti"
             right="Rukama · Pomalu · Společně"
           />
 
@@ -434,6 +525,16 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               co mu vzniklo pod rukama. Nikomu nic nepředepisuju — každý si
               najde svůj způsob.
             </p>
+            <div className="kurzyWorkshop__action">
+              <ContactTrigger
+                text="Kurz pro školu"
+                topic="Kurzy"
+                className="kurzyTimelineCtaButton"
+              />
+              <span>
+                Pro školy i kroužky — program a délku přizpůsobím věku skupiny.
+              </span>
+            </div>
           </motion.div>
 
           <motion.dl
@@ -445,8 +546,8 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               <dd>Děti a malé skupiny</dd>
             </div>
             <div>
-              <dt>Přístup</dt>
-              <dd>Individuální vedení</dd>
+              <dt>Školy a kroužky</dt>
+              <dd>Po domluvě</dd>
             </div>
             <div>
               <dt>Od hlíny po</dt>
@@ -455,35 +556,6 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           </motion.dl>
         </motion.article>
 
-        <motion.section
-          className={`kurzyScene kurzyTimelineMoments${
-            activeScene === 2 ? " is-active" : ""
-          }`}
-          style={{ opacity: momentsOpacity, y: momentsY }}
-          aria-labelledby="kurzy-moments-title"
-        >
-          <SceneMeta left="02 · Co děti čeká" right="Tři kroky" />
-
-          <header className="kurzyTimelineMoments__intro">
-            <span>Od prvního doteku k hotovému výrobku</span>
-            <h2 id="kurzy-moments-title">
-              Nejdřív hlína.
-              <em>Potom nápad.</em>
-            </h2>
-          </header>
-
-          <div className="kurzyTimelineMoments__chapters">
-            {workshopMoments.map((moment, index) => (
-              <MomentChapter
-                key={moment.number}
-                moment={moment}
-                progress={scrollYProgress}
-                index={index}
-              />
-            ))}
-          </div>
-        </motion.section>
-
         <motion.article
           className={`kurzyScene kurzyTimelineAdults${
             activeScene === 3 ? " is-active" : ""
@@ -491,7 +563,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           style={{ opacity: adultsOpacity, y: adultsY }}
           aria-labelledby="kurzy-adults-title"
         >
-          <SceneMeta left="03 · Kurzy pro dospělé" right="Připravujeme" />
+          <SceneMeta left="04 · Kurzy pro dospělé" right="Připravujeme" />
 
           <motion.figure
             className="kurzyTimelineAdults__image"
@@ -548,8 +620,8 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           }`}
         >
           <span>01 · Kurzy</span>
-          <span>02 · Ateliér</span>
-          <span>03 · Proces</span>
+          <span>02 · O kurzech</span>
+          <span>03 · Děti</span>
           <span>04 · Dospělí</span>
           <i>
             <motion.b style={{ scaleX: progressScale }} />
@@ -597,71 +669,52 @@ function HeroTitleRow({
   )
 }
 
-function MomentChapter({
-  moment,
+function CourseStep({
+  step,
   progress,
   index,
 }: {
-  moment: (typeof workshopMoments)[number]
+  step: (typeof courseSteps)[number]
   progress: MotionValue<number>
   index: number
 }) {
-  const [start, reveal, hold, end] = moment.range
+  /* All three are on screen together now, so the only per-step value is when it arrives: a beat
+     apart, left to right, inside the scene's own entrance. */
+  const start = ABOUT_IN + 0.015 + index * 0.025
+  const settled = start + 0.055
+
   const opacity = useTransform(
     progress,
-    [start, reveal, hold, end],
+    [start, settled, ABOUT_OUT, ABOUT_OUT + 0.035],
     [0, 1, 1, 0]
   )
-  const imageClip = useTransform(
+  const y = useTransform(
     progress,
-    [start, reveal, end],
-    ["inset(0% 100% 0% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
+    [start, settled, ABOUT_OUT, ABOUT_OUT + 0.035],
+    [30, 0, 0, -14]
   )
-  const imageScale = useTransform(
+  const clip = useTransform(
     progress,
-    [start, reveal, hold, end],
-    [1.025, 1, 1, 0.99]
-  )
-  const copyX = useTransform(
-    progress,
-    [start, reveal, hold, end],
-    [index % 2 === 0 ? 24 : -24, 0, 0, index % 2 === 0 ? -16 : 16]
-  )
-  const copyY = useTransform(
-    progress,
-    [start, reveal, hold, end],
-    [12, 0, 0, -10]
+    [start, settled, 1],
+    ["inset(0% 0% 100% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
 
   return (
-    <motion.article
-      className={`kurzyMoment kurzyMoment--${index + 1}`}
-      style={{ opacity }}
-    >
-      <motion.figure style={{ clipPath: imageClip }}>
-        <motion.div style={{ scale: imageScale }}>
-          <Image src={moment.src} alt={moment.alt} fill sizes="48vw" />
-        </motion.div>
-        <figcaption>
-          <span>{moment.number} · Ateliér</span>
-          <i />
-          <span>Keramická zahrada</span>
-        </figcaption>
+    <motion.article className="kurzyStep" style={{ opacity, y }}>
+      <motion.figure style={{ clipPath: clip }}>
+        <Image src={step.src} alt={step.alt} fill sizes="30vw" />
       </motion.figure>
-
-      <motion.div className="kurzyMoment__copy" style={{ x: copyX, y: copyY }}>
-        <div className="kurzyMoment__number">
-          <span>{moment.number}</span>
-          <i />
-          <span>03</span>
-        </div>
-        <span>{moment.eyebrow}</span>
-        <h3>
-          {moment.title}
-          <em>{moment.accent}</em>
-        </h3>
-        <p>{moment.text}</p>
-      </motion.div>
+      {/* No "of 03" counter: all three are on screen at once, so the total is already visible. */}
+      <div className="kurzyStep__number">
+        <span>{step.number}</span>
+        <i />
+      </div>
+      <span className="kurzyStep__eyebrow">{step.eyebrow}</span>
+      <h3>
+        {step.title}
+        <em>{step.accent}</em>
+      </h3>
+      <p>{step.text}</p>
     </motion.article>
   )
 }

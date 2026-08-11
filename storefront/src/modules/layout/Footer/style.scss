@@ -51,7 +51,13 @@
 
 .footer__main {
   display: grid;
-  grid-template-columns: minmax(350px, 0.72fr) minmax(620px, 1.28fr);
+  /*
+   * 0.86/1.14 rather than 0.72/1.28. The wordmark is sized off this column now, so starving it
+   * shrinks the brand mark: at 0.72fr on a 1280px screen the column left room for a 40px lockup
+   * against a 40px newsletter heading beside it. The right column keeps enough for the newsletter's
+   * two-up copy/form and three link columns at every width down to the 1180px stop.
+   */
+  grid-template-columns: minmax(350px, 0.86fr) minmax(560px, 1.14fr);
   border-bottom: 1px solid var(--footer-line);
 }
 
@@ -62,6 +68,8 @@
   flex-direction: column;
   justify-content: space-between;
   border-right: 1px solid var(--footer-line);
+  /* So the wordmark can be sized against this column instead of the viewport — see below. */
+  container-type: inline-size;
 }
 
 .footer__brandMeta {
@@ -86,32 +94,32 @@
   text-transform: uppercase;
 }
 
-.footer__brand > .footer__wordmark {
+/*
+ * The wordmark is set on one line by design, so its size has to come from the column it sits in —
+ * not the viewport. At `4.25vw` it was 100–115px wider than its own column at every width from
+ * 900px up, and `white-space: nowrap` let it spill straight across the divider into the newsletter:
+ * that is the "squished together" in the middle range. 8.5 is the measured width-to-size ratio of
+ * the string, so 11.2cqw of the brand column always lands inside it with a little to spare.
+ *
+ * The selector is a single class on purpose. As `.footer__brand > .footer__wordmark` it out-ranked
+ * every responsive override written against `.footer__wordmark`, so the 1180px, 900px and 620px
+ * blocks below silently did nothing — including the 620px step-down in size.
+ */
+.footer__wordmark {
   margin: 0;
-  font: 400 clamp(48px, 4.25vw, 78px)/0.92 "Sentient-Regular", serif;
+  font: 400 min(11.2cqw, 78px)/0.92 "Sentient-Regular", serif;
   letter-spacing: -0.058em;
-  /* The wordmark is set on one line by design, but at 48px it is ~180px wider than a 320px
-     phone, which pushed the whole page into horizontal scroll. Below the smallest portrait stop
-     it wraps and steps down instead — the lockup survives, the page stops scrolling sideways. */
-  white-space: normal;
+  white-space: nowrap;
 
-  @include v(s) {
-    white-space: nowrap;
-  }
-
-  @include h(xs) {
-    white-space: nowrap;
-  }
-}
-
-/* 320px-class phones: the display size has to come down or nothing fits. */
-@include below-px(374px) {
-  .footer__brand > .footer__wordmark {
+  /* Below the smallest portrait stop it wraps instead: at the minimum legible size the lockup is
+     still wider than a 320px phone, and nowrap there put the whole page into horizontal scroll. */
+  @include below-px(374px) {
     font-size: 38px;
+    white-space: normal;
   }
 }
 
-.footer__brand > .footer__wordmark em {
+.footer__wordmark em {
   color: var(--footer-muted);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
@@ -317,26 +325,26 @@ p.newsletter__error {
   font: 300 clamp(15px, 0.94vw, 17px)/1.5 "Sansation-Light", sans-serif;
 }
 
+/*
+ * A full-width band between the two-column block and the legal line, so the footer reads as four
+ * rules: topline / brand + newsletter / merchant identity / payments + legal.
+ *
+ * `auto-fit` rather than a column count per breakpoint: the five fields are short and of similar
+ * length, so letting them pack themselves gives 5 across on a desktop, 3 on a tablet and 1 on a
+ * phone without a single media query — and the e-mail always gets at least 190px, which is what it
+ * needs to stay one unbroken token.
+ */
 .footer__identity {
   display: grid;
-  margin: clamp(22px, 2vw, 32px) 0 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(14px, 1.2vw, 20px) clamp(18px, 1.6vw, 30px);
-
-  /* The e-mail address is one unbreakable 187px token; in a 160px column on a 320px phone it
-     pushed the page into horizontal scroll. One column, and let it break where it must. */
-  @include below-px(374px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: clamp(16px, 1.6vw, 26px) clamp(18px, 2vw, 40px);
+  padding: clamp(22px, 2.2vw, 36px) 0;
+  border-bottom: 1px solid var(--footer-line);
 
   a {
     overflow-wrap: anywhere;
   }
-}
-
-/* Sídlo is the longest value; it takes the full width rather than wrapping awkwardly. */
-.footer__identity > div:nth-child(2) {
-  grid-column: 1 / -1;
 }
 
 .footer__identity > div {
@@ -528,18 +536,29 @@ p.newsletter__error {
   transform: scaleX(1);
 }
 
+/*
+ * The old split here took the brand column *down* to 0.62fr, so between 900px and 1180px it sat at
+ * its 310px floor while the newsletter kept 680px — the brand side was the one being starved. Both
+ * sides now give ground at the same rate, and the newsletter stacks its copy above its form rather
+ * than squeezing a 40px display line into a 190px column.
+ */
 @include below-px(1180px) {
   .footer__main {
-    grid-template-columns: minmax(310px, 0.62fr) minmax(570px, 1.38fr);
-  }
-
-  .footer__wordmark {
-    white-space: normal;
+    grid-template-columns: minmax(330px, 0.86fr) minmax(430px, 1.14fr);
   }
 
   .footer__newsletter {
-    grid-template-columns: 0.72fr 1.28fr;
-    gap: 28px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .footer__newsletterCopy > .footer__newsletterTitle {
+    max-width: none;
+  }
+
+  .footer__navigation {
+    gap: clamp(18px, 2.4vw, 34px);
+    padding-top: clamp(30px, 3.2vw, 48px);
   }
 }
 
@@ -556,10 +575,6 @@ p.newsletter__error {
 
   .footer__brandMeta {
     margin-bottom: 46px;
-  }
-
-  .footer__wordmark {
-    white-space: nowrap;
   }
 
   .footer__statement {
@@ -600,11 +615,6 @@ p.newsletter__error {
 
   .footer__brandMeta {
     margin-bottom: 38px;
-  }
-
-  .footer__wordmark {
-    font-size: clamp(43px, 13vw, 64px);
-    white-space: normal;
   }
 
   .footer__statement {

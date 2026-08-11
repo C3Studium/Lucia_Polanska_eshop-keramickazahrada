@@ -235,8 +235,8 @@ function Question({ desc, title, id, number, index, active, setActive }: Questio
        position — not on which question happens to be open. */
     const questionTransition = useMemo(
         () => ({
-            duration: 0.4,
-            delay: Math.min(index * 0.032, 0.16),
+            duration: 0.62,
+            delay: Math.min(index * 0.05, 0.3),
             ease: easeReveal,
             layout: questionLayoutTransition,
         }),
@@ -322,8 +322,14 @@ const questionAnimate = { opacity: 1, y: 0 }
 const questionExit = { opacity: 0, y: -10 }
 const answerInitial = { height: 0, opacity: 0 }
 const answerAnimate = { height: "auto", opacity: 1 }
-const answerTransition = { duration: 0.78, ease: easeReveal }
-const answerCopyInitial = { opacity: 0, y: 10 }
+/*
+ * The accordion is the slowest thing on the page on purpose — an answer that unfolds is easier to
+ * follow than one that snaps. The panel's own height and the `layout` transition that slides the
+ * rows below it share a duration: if they differ, the rows visibly race the panel they are being
+ * pushed by. The copy starts a beat into the opening and lands just before it finishes.
+ */
+const answerTransition = { duration: 1.05, ease: easeReveal }
+const answerCopyInitial = { opacity: 0, y: 12 }
 const answerCopyAnimate = { opacity: 1, y: 0 }
-const answerCopyTransition = { delay: 0.22, duration: 0.44, ease: easeReveal }
-const questionLayoutTransition = { duration: 0.8, ease: easeReveal }
+const answerCopyTransition = { delay: 0.34, duration: 0.62, ease: easeReveal }
+const questionLayoutTransition = { duration: 1.05, ease: easeReveal }

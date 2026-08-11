@@ -216,7 +216,9 @@
     height: 28px;
     border: 1px solid rgba(38, 40, 32, 0.28);
     border-radius: 50%;
-    transition: color 0.35s ease, background-color 0.35s ease, transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+    /* Paced against the 1.05s panel in index.tsx. The colour swap stays quick — that is the click
+       acknowledgement — while the rotation travels with the answer it is opening. */
+    transition: color 0.35s ease, background-color 0.35s ease, transform 0.72s cubic-bezier(0.76, 0, 0.24, 1);
 
     i {
         position: absolute;

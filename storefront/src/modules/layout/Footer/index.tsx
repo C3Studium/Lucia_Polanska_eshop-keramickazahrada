@@ -188,8 +188,6 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
               v píseckém ateliéru.
             </p>
 
-            <MerchantBlock merchant={merchant} />
-
             <div className="footer__socials" aria-label="Sociální sítě">
               {socialLinks.map((link) => (
                 <FooterIcon
@@ -223,6 +221,13 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
             </nav>
           </div>
         </div>
+
+        {/* Its own band rather than the tail of the brand column. Sitting there it made that column
+            ~240px taller than the newsletter/navigation column beside it, and since the two share
+            one bordered row the difference showed up as a hole under the link groups. Across the
+            full width the two columns come out within ~35px of each other, and the merchant details
+            get a line of their own instead of a 270px gutter that broke the e-mail mid-word. */}
+        <MerchantBlock merchant={merchant} />
 
         <div className="footer__bottom">
           <div className="footer__payments">
