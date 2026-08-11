@@ -29,6 +29,21 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
   poskozene: { label: "Poškozené", color: "red" },
 };
 
+/* Picking by name alone is guesswork in a catalogue where half the pieces are
+   „Kytka …" — the photo is how she recognises them. Falls back to the first
+   letter, the same shape the Balíčky list uses. */
+const Thumb = ({ src, title }: { src?: string | null; title: string }) => (
+  <div className="bg-ui-bg-subtle shadow-borders-base flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md">
+    {src ? (
+      <img src={src} alt="" className="size-full object-cover" />
+    ) : (
+      <span className="text-ui-fg-muted text-[10px] font-medium">
+        {title?.slice(0, 1).toLocaleUpperCase("cs") || "–"}
+      </span>
+    )}
+  </div>
+);
+
 const Inner = () => {
   const queryClient = useQueryClient();
   const [collectionId, setCollectionId] = useState<string | null>(null);
@@ -591,6 +606,7 @@ const Inner = () => {
                           else next.delete(product.id);
                           setPickerSelected(next);
                         }} />
+                      <Thumb src={product.thumbnail} title={product.title} />
                       <Text size="small" className="min-w-0 flex-1 truncate">
                         {product.title}
                         <span className="text-ui-fg-muted">
@@ -634,6 +650,7 @@ const Inner = () => {
                   setSelected(next);
                 }}
               />
+              <Thumb src={product.thumbnail} title={product.title} />
               <div className="min-w-0 flex-1">
                 <Text size="small" weight="plus" className="truncate">{product.title}</Text>
                 <Badge size="2xsmall" color={kindBadge[product.kind]?.color ?? "grey"}>
