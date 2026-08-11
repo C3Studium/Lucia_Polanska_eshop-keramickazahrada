@@ -8,13 +8,14 @@ import FilterPanel from "./components/FilterPanel"
 import ProductGrid from "./components/ProductGrid"
 import ShopHero from "./components/ShopHero"
 import ShopToolbar from "./components/ShopToolbar"
-import type { FilterChip, ShopCategory, ShopFilters } from "./types"
+import type { FilterChip, ShopCategory, ShopFilters, ShopNavCollection } from "./types"
 import styles from "./style.module.scss"
 
 type EComProps = {
   countryCode: string
   products: HttpTypes.StoreProduct[]
   categories?: ShopCategory[]
+  navCollections?: ShopNavCollection[]
   totalCount?: number
   initialFilters?: Partial<ShopFilters>
   initialFilterLabel?: string
@@ -42,6 +43,7 @@ export default function ECom({
   countryCode,
   products: initialProducts,
   categories = [],
+  navCollections = [],
   totalCount,
   initialFilters,
   initialFilterLabel,
@@ -261,6 +263,7 @@ export default function ECom({
 
         <div className={styles.layout}>
           <FilterPanel
+        navCollections={navCollections}
             categories={categories}
             filters={filters}
             isOpen={filtersOpen}

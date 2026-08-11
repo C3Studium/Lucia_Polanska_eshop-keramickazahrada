@@ -7,6 +7,7 @@ import styles from "./style.module.scss"
 
 type FilterPanelProps = {
   categories: ShopCategory[]
+  navCollections?: import("../../types").ShopNavCollection[]
   filters: ShopFilters
   isOpen: boolean
   onChange: (patch: Partial<ShopFilters>) => void
@@ -24,6 +25,7 @@ const priceRanges = [
 
 export default function FilterPanel({
   categories,
+  navCollections = [],
   filters,
   isOpen,
   onChange,
@@ -69,6 +71,39 @@ export default function FilterPanel({
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
         </div>
 
+        {navCollections.length > 0 && (
+          <FilterGroup index="00" title="Kolekce">
+            <div className={styles.categoryList}>
+              {navCollections.map((collection) => (
+                <div key={collection.id}>
+                  <FilterButton
+                    active={filters.collectionId === collection.id && !filters.categoryId}
+                    label={collection.title}
+                    onClick={() =>
+                      onChange({ collectionId: collection.id, categoryId: "" })
+                    }
+                  />
+                  {collection.categories.map((category) => (
+                    <FilterButton
+                      key={category.id}
+                      active={
+                        filters.collectionId === collection.id &&
+                        filters.categoryId === category.id
+                      }
+                      label={`— ${category.name}`}
+                      onClick={() =>
+                        onChange({
+                          collectionId: collection.id,
+                          categoryId: category.id,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </FilterGroup>
+        )}
         <FilterGroup index="01" title="Kategorie">
           <div className={styles.categoryList}>
             <FilterButton active={!filters.categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />

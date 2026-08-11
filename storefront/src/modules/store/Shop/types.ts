@@ -21,3 +21,9 @@ export type FilterChip = {
   label: string
   onRemove: () => void
 }
+
+export type ShopNavCollection = {
+  id: string
+  title: string
+  categories: ShopCategory[]
+}

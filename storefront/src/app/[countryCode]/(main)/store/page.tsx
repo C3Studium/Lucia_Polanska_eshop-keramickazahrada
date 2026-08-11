@@ -4,7 +4,7 @@ import ECom from "@modules/store/Shop"
 import type { ShopFilters } from "@modules/store/Shop/types"
 import { listStoreCatalogue } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
-import { getCollectionByHandle } from "@lib/data/collections"
+import { getCollectionByHandle, listCollections } from "@lib/data/collections"
 
 type StorePageProps = {
   params: Promise<{ countryCode: string }>
@@ -38,8 +38,27 @@ export default async function StorePage({
   const [{ countryCode }, query] = await Promise.all([params, searchParams])
 
   const categories = await listCategories({
-    fields: "id,name,handle",
+    fields: "id,name,handle,metadata,*products",
     limit: 100,
+  })
+
+  const { collections: allCollections } = await listCollections({
+    fields: "id,title,handle,*products",
+  }).catch(() => ({ collections: [] as any[], count: 0 }))
+
+  const navCollections = allCollections.map((collection: any) => {
+    const productIds = new Set(
+      (collection.products ?? []).map(({ id }: any) => id)
+    )
+    return {
+      id: collection.id,
+      title: collection.title,
+      categories: categories.filter(
+        (category: any) =>
+          category.products?.some(({ id }: any) => productIds.has(id)) ||
+          (category.metadata as any)?.collection_id === collection.id
+      ),
+    }
   })
 
   const category = query.category
@@ -69,6 +88,7 @@ export default async function StorePage({
       countryCode={countryCode}
       products={products}
       categories={categories}
+      navCollections={navCollections}
       totalCount={count}
       initialFilters={initialFilters}
       initialFilterLabel={category?.name ?? collection?.title}

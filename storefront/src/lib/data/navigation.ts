@@ -41,7 +41,7 @@ export const listNavigationCollections = async (): Promise<
       collections: [],
       count: 0,
     })),
-    listCategories({ limit: 100 }).catch(() => []),
+    listCategories({ limit: 100, fields: "id,name,handle,metadata,*products" }).catch(() => []),
   ])
 
   return collectionResult.collections.length
@@ -63,8 +63,14 @@ function toCollectionCards(
       image: imageFor(collection.metadata, collection.products),
       productCount: collection.products?.length ?? 0,
       categories: categories
-        .filter((category) =>
-          category.products?.some(({ id }) => productIds.has(id))
+        .filter(
+          (category) =>
+            // Buď má v kolekci produkty, nebo je do ní zařazená ručně přes
+            // metadata.collection_id (vazba z admin Rozdělení) — díky tomu
+            // se v menu ukáže i čerstvě založená prázdná kategorie.
+            category.products?.some(({ id }) => productIds.has(id)) ||
+            (category.metadata as Record<string, unknown> | null)
+              ?.collection_id === collection.id
         )
         .slice(0, CATEGORY_LINK_LIMIT)
         .map(toNavigationCategory),

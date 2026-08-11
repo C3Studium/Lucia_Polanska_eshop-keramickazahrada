@@ -39,6 +39,7 @@ const Inner = () => {
   const [kindTab, setKindTab] = useState<"vse" | "bezne" | "zakazka" | "balicek" | "poskozene">("vse");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignSearch, setAssignSearch] = useState("");
+  const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
   const [renaming, setRenaming] = useState("");
 
   const invalidate = async () => {
@@ -49,7 +50,7 @@ const Inner = () => {
 
   const { data: collectionsData } = useQuery<any>({
     queryKey: ["rozdeleni-collections"],
-    queryFn: () => sdk.client.fetch("/admin/collections?limit=100"),
+    queryFn: () => sdk.client.fetch("/admin/collections?limit=100&fields=id,title,handle,metadata"),
     refetchOnWindowFocus: true,
   });
   const { data: categoriesData } = useQuery<any>({
@@ -123,6 +124,55 @@ const Inner = () => {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
   });
+  const setCollectionImage = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("files", file);
+      const response = await fetch(`/admin/uploads`, {
+        method: "POST", credentials: "include", body: formData,
+      });
+      if (!response.ok) throw new Error("Fotku se nepodařilo nahrát.");
+      const payload = await response.json();
+      const url: string | undefined = payload?.files?.[0]?.url;
+      if (!url) throw new Error("Úložiště nevrátilo adresu fotky.");
+      const current = collections.find((c) => c.id === collectionId);
+      // metadata.image — stejný klíč, který už čte storefront navbar.
+      return sdk.client.fetch(`/admin/collections/${collectionId}`, {
+        method: "POST",
+        body: { metadata: { ...(current?.metadata ?? {}), image: url } },
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["rozdeleni-collections"] });
+      toast.success("Fotka kolekce nastavena — uvidí ji i menu obchodu.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+  });
+
+  const renameCategory = useMutation({
+    mutationFn: (payload: { id: string; name: string }) =>
+      sdk.client.fetch(`/admin/product-categories/${payload.id}`, {
+        method: "POST", body: { name: payload.name },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
+      await invalidate();
+      toast.success("Kategorie přejmenována.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+  });
+  const deleteCategory = useMutation({
+    mutationFn: (id: string) =>
+      sdk.client.fetch(`/admin/product-categories/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      setCategoryId(null);
+      await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
+      await invalidate();
+      toast.success("Kategorie smazána — produkty zůstaly.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+  });
+
   const createCategory = useMutation({
     mutationFn: () => {
       if (!newCategory.trim()) throw new Error("Kategorie potřebuje název.");
@@ -217,6 +267,65 @@ const Inner = () => {
               <Text size="xsmall" className="text-ui-fg-muted">
                 {products.filter((p) => p.collection_id === collection.id).length} produktů
               </Text>
+              {collection.id === collectionId && (
+                <div className="mt-2 flex flex-wrap items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}>
+                  {(collection.metadata as any)?.image && (
+                    <img src={(collection.metadata as any).image} alt=""
+                      className="h-8 w-8 rounded object-cover" />
+                  )}
+                  <label className="text-ui-fg-interactive txt-xsmall cursor-pointer hover:underline">
+                    {(collection.metadata as any)?.image ? "Změnit fotku" : "Nastavit fotku"}
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setCollectionImage.mutate(file);
+                        e.currentTarget.value = "";
+                      }} />
+                  </label>
+                  {renaming === "" ? (
+                    <>
+                      <button type="button"
+                        className="text-ui-fg-interactive txt-xsmall hover:underline"
+                        onClick={() => setRenaming(collection.title)}>
+                        Přejmenovat
+                      </button>
+                      <Prompt>
+                        <Prompt.Trigger asChild>
+                          <button type="button"
+                            className="text-ui-fg-subtle txt-xsmall hover:underline">
+                            Smazat
+                          </button>
+                        </Prompt.Trigger>
+                        <Prompt.Content>
+                          <Prompt.Header>
+                            <Prompt.Title>Smazat kolekci?</Prompt.Title>
+                            <Prompt.Description>
+                              Produkty zůstanou v obchodě, jen přijdou o kolekci.
+                            </Prompt.Description>
+                          </Prompt.Header>
+                          <Prompt.Footer>
+                            <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                            <Prompt.Action onClick={() => deleteCollection.mutate(collection.id)}>
+                              Smazat
+                            </Prompt.Action>
+                          </Prompt.Footer>
+                        </Prompt.Content>
+                      </Prompt>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Input size="small" value={renaming}
+                        onChange={(e) => setRenaming(e.target.value)} />
+                      <Button size="small" variant="secondary"
+                        onClick={() => {
+                          renameCollection.mutate({ id: collection.id, title: renaming });
+                          setRenaming("");
+                        }}>OK</Button>
+                    </span>
+                  )}
+                </div>
+              )}
             </button>
           ))}
           <div className="mt-2 flex gap-2">
@@ -253,50 +362,63 @@ const Inner = () => {
           )}
           {selectedCollection && (
             <>
-              <div className="mb-1 flex items-center gap-1 px-1">
-                {renaming === "" ? (
-                  <>
-                    <button type="button" className="text-ui-fg-interactive txt-xsmall hover:underline"
-                      onClick={() => setRenaming(selectedCollection.title)}>Přejmenovat</button>
-                    <Prompt>
-                      <Prompt.Trigger asChild>
-                        <button type="button" className="text-ui-fg-subtle txt-xsmall hover:underline">Smazat</button>
-                      </Prompt.Trigger>
-                      <Prompt.Content>
-                        <Prompt.Header>
-                          <Prompt.Title>Smazat kolekci?</Prompt.Title>
-                          <Prompt.Description>
-                            Produkty zůstanou v obchodě, jen přijdou o kolekci.
-                          </Prompt.Description>
-                        </Prompt.Header>
-                        <Prompt.Footer>
-                          <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                          <Prompt.Action onClick={() => deleteCollection.mutate(selectedCollection.id)}>
-                            Smazat
-                          </Prompt.Action>
-                        </Prompt.Footer>
-                      </Prompt.Content>
-                    </Prompt>
-                  </>
-                ) : (
-                  <>
-                    <Input size="small" value={renaming} onChange={(e) => setRenaming(e.target.value)} />
-                    <Button size="small" variant="secondary"
-                      onClick={() => { renameCollection.mutate({ id: selectedCollection.id, title: renaming }); setRenaming(""); }}>
-                      OK
-                    </Button>
-                  </>
-                )}
-              </div>
               <button type="button" onClick={() => setCategoryId(null)}
                 className={categoryId === null ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
                 <Text size="small">Vše ({inCollection.length})</Text>
               </button>
               {categoriesHere.map((category: any) => (
-                <button key={category.id} type="button" onClick={() => setCategoryId(category.id)}
-                  className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
-                  <Text size="small">{category.name}</Text>
-                </button>
+                <div key={category.id}
+                  className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
+                  {renamingCategory?.id === category.id ? (
+                    <span className="flex items-center gap-1">
+                      <Input size="small" value={renamingCategory.name}
+                        onChange={(e) => setRenamingCategory({ id: category.id, name: e.target.value })} />
+                      <Button size="small" variant="secondary"
+                        onClick={() => {
+                          renameCategory.mutate(renamingCategory);
+                          setRenamingCategory(null);
+                        }}>OK</Button>
+                    </span>
+                  ) : (
+                    <>
+                      <button type="button" className="w-full text-left"
+                        onClick={() => setCategoryId(category.id)}>
+                        <Text size="small">{category.name}</Text>
+                      </button>
+                      {categoryId === category.id && (
+                        <span className="mt-1 flex gap-2">
+                          <button type="button"
+                            className="text-ui-fg-interactive txt-xsmall hover:underline"
+                            onClick={() => setRenamingCategory({ id: category.id, name: category.name })}>
+                            Přejmenovat
+                          </button>
+                          <Prompt>
+                            <Prompt.Trigger asChild>
+                              <button type="button"
+                                className="text-ui-fg-subtle txt-xsmall hover:underline">
+                                Smazat
+                              </button>
+                            </Prompt.Trigger>
+                            <Prompt.Content>
+                              <Prompt.Header>
+                                <Prompt.Title>Smazat kategorii?</Prompt.Title>
+                                <Prompt.Description>
+                                  Produkty zůstanou, jen přijdou o tuhle kategorii.
+                                </Prompt.Description>
+                              </Prompt.Header>
+                              <Prompt.Footer>
+                                <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                                <Prompt.Action onClick={() => deleteCategory.mutate(category.id)}>
+                                  Smazat
+                                </Prompt.Action>
+                              </Prompt.Footer>
+                            </Prompt.Content>
+                          </Prompt>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
               ))}
               <div className="mt-2 flex gap-2">
                 <Input size="small" placeholder="Nová kategorie…" value={newCategory}
