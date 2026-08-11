@@ -1,7 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ListTree } from "@medusajs/icons";
+import { ListTree, Plus } from "@medusajs/icons";
 import {
-  Badge, Button, Container, Heading, Input, Prompt, Text, Toaster, toast,
+  Badge, Button, Container, FocusModal, Heading, Input, Prompt, Text, Toaster, toast,
 } from "@medusajs/ui";
 import {
   QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -31,18 +31,51 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 
 /* Picking by name alone is guesswork in a catalogue where half the pieces are
    „Kytka …" — the photo is how she recognises them. Falls back to the first
-   letter, the same shape the Balíčky list uses. */
-const Thumb = ({ src, title }: { src?: string | null; title: string }) => (
-  <div className="bg-ui-bg-subtle shadow-borders-base flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md">
-    {src ? (
-      <img src={src} alt="" className="size-full object-cover" />
-    ) : (
-      <span className="text-ui-fg-muted text-[10px] font-medium">
-        {title?.slice(0, 1).toLocaleUpperCase("cs") || "–"}
-      </span>
-    )}
-  </div>
-);
+   letter, the same shape the Balíčky list uses. With a photo and `onZoom` the
+   thumb becomes a button (hover shows „+") that opens the full-size photos —
+   32 px is enough to recognise a piece, not to check its details. */
+const Thumb = ({
+  src,
+  title,
+  onZoom,
+}: {
+  src?: string | null;
+  title: string;
+  onZoom?: () => void;
+}) => {
+  if (src && onZoom) {
+    return (
+      <button
+        type="button"
+        title="Zvětšit fotku"
+        onClick={(e) => {
+          /* The picker renders thumbs inside a <label> — without this, the
+             click would also toggle the row's checkbox. */
+          e.preventDefault();
+          e.stopPropagation();
+          onZoom();
+        }}
+        className="group bg-ui-bg-subtle shadow-borders-base relative flex size-8 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden rounded-md"
+      >
+        <img src={src} alt="" className="size-full object-cover" />
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <Plus />
+        </span>
+      </button>
+    );
+  }
+  return (
+    <div className="bg-ui-bg-subtle shadow-borders-base flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md">
+      {src ? (
+        <img src={src} alt="" className="size-full object-cover" />
+      ) : (
+        <span className="text-ui-fg-muted text-[10px] font-medium">
+          {title?.slice(0, 1).toLocaleUpperCase("cs") || "–"}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const Inner = () => {
   const queryClient = useQueryClient();
@@ -64,6 +97,28 @@ const Inner = () => {
   const [pending, setPending] = useState<
     Record<string, { collection_id: string | null; category_id: string | null }>
   >({});
+  /* Klik na miniaturu otevře fotky v plné velikosti — kontrola detailů kusu
+     bez odchodu ze stránky. Seznam nese jen thumbnail, zbytek fotek se
+     dotáhne až při otevření. */
+  const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(
+    null
+  );
+  const { data: lightboxData, isLoading: lightboxLoading } = useQuery<any>({
+    queryKey: ["rozdeleni-lightbox", lightbox?.id],
+    queryFn: () =>
+      sdk.client.fetch(
+        `/admin/products/${lightbox!.id}?fields=title,thumbnail,*images`
+      ),
+    enabled: Boolean(lightbox),
+  });
+  const lightboxImages: string[] = (() => {
+    const product = lightboxData?.product;
+    const urls = (product?.images ?? [])
+      .map((image: any) => image?.url)
+      .filter(Boolean);
+    if (urls.length) return urls;
+    return product?.thumbnail ? [product.thumbnail] : [];
+  })();
   const [renaming, setRenaming] = useState("");
 
   const invalidate = async () => {
@@ -727,7 +782,8 @@ const Inner = () => {
                           else next.delete(product.id);
                           setPickerSelected(next);
                         }} />
-                      <Thumb src={product.thumbnail} title={product.title} />
+                      <Thumb src={product.thumbnail} title={product.title}
+                        onZoom={() => setLightbox({ id: product.id, title: product.title })} />
                       <Text size="small" className="min-w-0 flex-1 truncate">
                         {product.title}
                         <span className="text-ui-fg-muted">
@@ -777,7 +833,8 @@ const Inner = () => {
                   setSelected(next);
                 }}
               />
-              <Thumb src={product.thumbnail} title={product.title} />
+              <Thumb src={product.thumbnail} title={product.title}
+                onZoom={() => setLightbox({ id: product.id, title: product.title })} />
               <div className="min-w-0 flex-1">
                 <Text size="small" weight="plus" className="truncate">{product.title}</Text>
                 <Badge size="2xsmall" color={kindBadge[product.kind]?.color ?? "grey"}>
@@ -835,6 +892,43 @@ const Inner = () => {
             })}
         </div>
       </div>
+
+      {/* Lightbox — full-size photos of the clicked piece. */}
+      <FocusModal
+        open={Boolean(lightbox)}
+        onOpenChange={(open) => {
+          if (!open) setLightbox(null);
+        }}
+      >
+        <FocusModal.Content>
+          <FocusModal.Header>
+            <FocusModal.Title asChild>
+              <Heading>{lightbox?.title ?? ""}</Heading>
+            </FocusModal.Title>
+          </FocusModal.Header>
+          <FocusModal.Body className="flex flex-col items-center gap-6 overflow-y-auto p-6">
+            {lightboxLoading && (
+              <Text size="small" className="text-ui-fg-subtle py-12">
+                Načítám fotky…
+              </Text>
+            )}
+            {!lightboxLoading && lightboxImages.length === 0 && (
+              <Text size="small" className="text-ui-fg-subtle py-12">
+                Produkt zatím nemá žádné fotky — přidáte je přes Upravit.
+              </Text>
+            )}
+            {!lightboxLoading &&
+              lightboxImages.map((url) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={lightbox?.title ?? ""}
+                  className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
+                />
+              ))}
+          </FocusModal.Body>
+        </FocusModal.Content>
+      </FocusModal>
     </Container>
   );
 };
