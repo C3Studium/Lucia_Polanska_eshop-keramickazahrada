@@ -22,7 +22,6 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
-import { NewOfKind } from "../../components/new-of-kind";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
@@ -942,20 +941,24 @@ const ProductsInner = () => {
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <ExpertToggle />
-          {/* Every tab that lists a kind can now start one. Oblíbené and Statistiky are
-              read-outs of what exists, so they get no button. */}
-          {active === "balicky" && (
-            <BundleEditor
-              trigger={
-                <Button size="small" variant="secondary">
-                  Nový balíček
-                </Button>
-              }
-            />
-          )}
+          {/* Every kind starts in the one Nový produkt panel — the button just
+              carries the tab's kind so the right card is preselected. Oblíbené,
+              Archivované and Statistiky are read-outs of what exists, so they
+              get no button. */}
           {(active === "produkty" ||
             active === "zakazky" ||
-            active === "poskozene") && <NewOfKind kind={active} />}
+            active === "balicky" ||
+            active === "poskozene") && (
+            <Button size="small" variant="secondary" asChild>
+              <Link
+                to={`/novy-produkt?druh=${
+                  { produkty: "produkt", zakazky: "zakazka", balicky: "balicek", poskozene: "poskozeny" }[active]
+                }`}
+              >
+                Přidat produkt
+              </Link>
+            </Button>
+          )}
           <Input
             size="small"
             type="search"
@@ -1053,11 +1056,11 @@ const ProductsInner = () => {
               }
               description={
                 active === "poskozene"
-                  ? "Poškozený kus označíte v záložce Produkty akcí ‚Označit jako poškozené‘."
+                  ? "Poškozený kus založíte tlačítkem Přidat produkt nahoře, nebo označíte existující v záložce Produkty."
                   : active === "balicky"
-                    ? "Nový balíček vytvoříte tlačítkem nahoře."
+                    ? "Balíček sestavíte tlačítkem Přidat produkt nahoře."
                     : active === "zakazky"
-                      ? "Produkt zařadíte mezi zakázky v záložce Produkty akcí ‚Nastavit jako zakázku‘."
+                      ? "Zakázku založíte tlačítkem Přidat produkt nahoře, nebo tak označíte existující produkt akcí ‚Nastavit jako zakázku‘."
                       : active === "archivovane"
                         ? "Archivované kusy zmizí z obchodu i ze seznamů, ale zůstanou v historii objednávek."
                         : "Zkuste jiné hledání."

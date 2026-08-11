@@ -532,7 +532,10 @@ const AddProductDrawer = () => {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <Drawer.Trigger asChild>
-        <Button variant="primary">Přidat produkt</Button>
+        {/* Deliberately not „Přidat produkt" — that phrase means the Nový
+            produkt panel everywhere else. This drawer marks an *existing*
+            product as made to order. */}
+        <Button variant="primary">Přidat existující produkt</Button>
       </Drawer.Trigger>
       <Drawer.Content className="flex h-full flex-col">
         <Drawer.Header>

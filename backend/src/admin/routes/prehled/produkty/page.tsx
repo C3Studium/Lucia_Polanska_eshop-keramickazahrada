@@ -87,8 +87,9 @@ const managedTabs = [
 const emptyWhy: Record<string, string> = {
   standard: "Nový produkt založíte tlačítkem vpravo nahoře.",
   "made-to-order":
-    "Označte produkt jako vyráběný na zakázku v Produktech na zakázku.",
-  bundle: "Balíček spojí více produktů do jedné nabídky — zakládá se v Balíčcích.",
+    "Zakázku založíte tlačítkem Nový produkt, nebo tak označíte existující produkt v Nastavení zakázkové výroby.",
+  bundle:
+    "Balíček spojí více produktů do jedné nabídky — založíte ho tlačítkem Nový produkt.",
   clearance:
     "Poškozený nebo poslední kus označíte přepínačem Výprodej u produktu.",
 };

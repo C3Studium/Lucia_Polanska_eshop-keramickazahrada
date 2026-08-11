@@ -45,8 +45,13 @@ export const BundleEditor = ({
   trigger,
   onSaved,
 }: {
-  /** Omit to create a new bundle. */
-  bundleId?: string;
+  /*
+   * Edit only. Creating goes through the Nový produkt panel
+   * (CreateBundledProduct), because POST /admin/bundled-products requires the
+   * composite product payload this drawer never collects — the old create
+   * mode here could only ever 400.
+   */
+  bundleId: string;
   trigger: React.ReactNode;
   onSaved?: () => void;
 }) => {
@@ -84,12 +89,6 @@ export const BundleEditor = ({
             quantity: item.quantity,
           }))
       );
-    }
-    if (open && !bundleId) {
-      setTitle("");
-      setPricingMode("component_sum");
-      setDiscount("");
-      setItems([]);
     }
   }, [open, bundleId, detail]);
 
@@ -131,20 +130,15 @@ export const BundleEditor = ({
         })),
       };
 
-      return bundleId
-        ? sdk.client.fetch(`/admin/bundled-products/${bundleId}`, {
-            method: "PATCH",
-            body,
-          })
-        : sdk.client.fetch(`/admin/bundled-products`, {
-            method: "POST",
-            body,
-          });
+      return sdk.client.fetch(`/admin/bundled-products/${bundleId}`, {
+        method: "PATCH",
+        body,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
       await queryClient.invalidateQueries({ queryKey: ["workbench-bundle", bundleId] });
-      toast.success(bundleId ? "Balíček upraven." : "Balíček vytvořen.");
+      toast.success("Balíček upraven.");
       setOpen(false);
       onSaved?.();
     },
@@ -159,9 +153,7 @@ export const BundleEditor = ({
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
       <Drawer.Content>
         <Drawer.Header>
-          <Drawer.Title>
-            {bundleId ? `Balíček — ${title || "…"}` : "Nový balíček"}
-          </Drawer.Title>
+          <Drawer.Title>{`Balíček — ${title || "…"}`}</Drawer.Title>
         </Drawer.Header>
         <Drawer.Body className="flex flex-col gap-y-5 overflow-y-auto">
           <div>

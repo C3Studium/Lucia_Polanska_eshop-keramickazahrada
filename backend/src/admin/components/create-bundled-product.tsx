@@ -9,7 +9,15 @@ import {
 } from "./bundle-product-details";
 import { sdk } from "../lib/sdk";
 
-const CreateBundledProduct = () => {
+const CreateBundledProduct = ({
+  trigger,
+  onCreated,
+}: {
+  /** Custom trigger element — defaults to the primary „Vytvořit balíček" button. */
+  trigger?: React.ReactNode;
+  /** Called with the composite product's id after a successful create. */
+  onCreated?: (productId: string | null) => void;
+} = {}) => {
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState<BundleProductDetails>(
     createEmptyBundleProductDetails
@@ -83,7 +91,7 @@ const CreateBundledProduct = () => {
     }
 
     try {
-      await createBundle({
+      const result: any = await createBundle({
         title: validTitle,
         pricing_mode: details.pricing_mode,
         discount_percentage: details.discount_percentage,
@@ -121,6 +129,16 @@ const CreateBundledProduct = () => {
       toast.success("Balíček byl vytvořen");
       setOpen(false);
       reset();
+
+      if (onCreated) {
+        // The workflow returns the bundle with its linked composite product;
+        // the link is modeled list-ish in some projections, so accept both.
+        const linked = result?.bundled_product?.product;
+        const productId = Array.isArray(linked)
+          ? linked[0]?.id ?? null
+          : linked?.id ?? null;
+        onCreated(productId);
+      }
     } catch {
       toast.error("Balíček se nepodařilo vytvořit");
     }
@@ -129,7 +147,7 @@ const CreateBundledProduct = () => {
   return (
     <FocusModal open={open} onOpenChange={handleOpenChange}>
       <FocusModal.Trigger asChild>
-        <Button variant="primary">Vytvořit balíček</Button>
+        {trigger ?? <Button variant="primary">Vytvořit balíček</Button>}
       </FocusModal.Trigger>
       <FocusModal.Content>
         <FocusModal.Header>
