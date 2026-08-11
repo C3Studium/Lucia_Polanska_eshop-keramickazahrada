@@ -85,9 +85,13 @@ const Inner = () => {
   const allCategories: any[] = categoriesData?.product_categories ?? [];
   const products: any[] = productsData?.products ?? [];
 
-  const inCollection = products.filter(
-    (product) => product.collection_id === collectionId
-  );
+  /* No collection selected = the whole shop, not „bez kolekce". The first
+     view used to filter on collection_id === null, so assigning a collection
+     made the product vanish from the very list she was working in. */
+  const inCollection =
+    collectionId === null
+      ? products
+      : products.filter((product) => product.collection_id === collectionId);
   const categoriesHere = [
     ...new Map(
       [
@@ -295,12 +299,30 @@ const Inner = () => {
   return (
     <Container className="p-0">
       <Toaster />
-      <header className="border-ui-border-base border-b px-6 pb-4 pt-6">
-        <Heading>Rozdělení</Heading>
-        <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
-          Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
-          prostředek, klik uprostřed pravý sloupec.
-        </Text>
+      <header className="border-ui-border-base flex flex-wrap items-start justify-between gap-3 border-b px-6 pb-4 pt-6">
+        <div>
+          <Heading>Rozdělení</Heading>
+          <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
+            Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
+            prostředek, klik uprostřed pravý sloupec.
+          </Text>
+        </div>
+        <Button
+          size="small"
+          variant="secondary"
+          onClick={() => {
+            // Back to the first-open view: no selection, every product listed.
+            setCollectionId(null);
+            setCategoryId(null);
+            setKindTab("vse");
+            setPickerOpen(false);
+            setPickerSelected(new Set());
+            setSelected(new Set());
+            setRenaming("");
+          }}
+        >
+          Zobrazit vše
+        </Button>
       </header>
 
       <div className="grid min-h-[60vh] lg:grid-cols-[260px_240px_minmax(0,1fr)] divide-x divide-ui-border-base">
