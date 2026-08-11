@@ -23,7 +23,7 @@ export type KurzyIntroData = {
 } | null
 
 const fallbackCopy =
-  "V keramických kurzech děti poznávají hlínu pomalu a bez spěchu. Od prvního doteku přes vlastní tvar až po glazování vzniká nejen originální objekt, ale také radost z práce rukama."
+  "Na kurzech si děti hlínu osahají pomalu a bez spěchu. Od prvního doteku přes vlastní tvar až po glazování — a domů si pak odnesou nejen svůj výrobek, ale hlavně radost, že si ho udělaly samy."
 
 const workshopMoments = [
   {
@@ -41,9 +41,9 @@ const workshopMoments = [
     eyebrow: "Vlastní rukopis",
     title: "Najít vlastní tvar",
     accent: "bez předlohy.",
-    text: "Každý objekt si uchová vlastní stopu, drobnou nedokonalost a osobní charakter.",
+    text: "Na každém výrobku je pak vidět, čí ruce ho dělaly — i s tou drobnou nedokonalostí.",
     src: "/assets/img/roller/3v.jpg",
-    alt: "Ručně modelovaný keramický objekt",
+    alt: "Ručně modelovaný keramický výrobek",
     range: [0.59, 0.625, 0.69, 0.73] as [number, number, number, number],
   },
   {
@@ -51,9 +51,9 @@ const workshopMoments = [
     eyebrow: "Po výpalu",
     title: "Odnést si radost",
     accent: "domů.",
-    text: "Nápad se po glazování vrací jako skutečný předmět pro domov nebo zahradu.",
+    text: "Po glazování a výpalu se z nápadu stane opravdová věc do domu nebo na zahradu.",
     src: "/assets/img/roller/4h.jpg",
-    alt: "Hotový keramický objekt v zahradě",
+    alt: "Hotový keramický výrobek v zahradě",
     range: [0.69, 0.725, 0.79, 0.835] as [number, number, number, number],
   },
 ]
@@ -340,7 +340,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               animate="show"
               custom={heroBeat.eyebrow}
             >
-              Ateliér otevřený tvoření · 01
+              Keramické kurzy · 01
             </motion.span>
             <motion.h1
               id="kurzy-hero-title"
@@ -349,8 +349,8 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               animate="show"
               custom={heroBeat.heading}
             >
-              Hlína zpomalí čas.
-              <em>Ruce najdou vlastní rytmus.</em>
+              U hlíny se nedá spěchat.
+              <em>A to je na tom to nejlepší.</em>
             </motion.h1>
             <motion.p
               variants={heroReveal}
@@ -371,7 +371,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             custom={heroBeat.chrome}
           >
             <MouseAnim />
-            <span>Vstoupit do ateliéru</span>
+            <span>Pojďte dál</span>
           </motion.div>
         </motion.article>
 
@@ -414,7 +414,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           >
             <Image
               src="/assets/img/roller/1v.jpg"
-              alt="Detail ručně vytvořeného keramického objektu"
+              alt="Detail ručně vytvořeného keramického výrobku"
               fill
               sizes="20vw"
             />
@@ -426,13 +426,13 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           >
             <span>Klid · Soustředění · Radost</span>
             <h2 id="kurzy-workshop-title">
-              Tvoření, které učí
-              <em>dívat se rukama.</em>
+              Práce rukama
+              <em>děti baví.</em>
             </h2>
             <p>
-              Práce s hlínou se přirozeně propojuje se soustředěním, fantazií a
-              radostí z vlastního výsledku. Každému dítěti necháváme prostor
-              najít svůj způsob tvorby.
+              U hlíny se dítě samo zklidní, zapojí fantazii a má radost z toho,
+              co mu vzniklo pod rukama. Nikomu nic nepředepisuju — každý si
+              najde svůj způsob.
             </p>
           </motion.div>
 
@@ -462,13 +462,13 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           style={{ opacity: momentsOpacity, y: momentsY }}
           aria-labelledby="kurzy-moments-title"
         >
-          <SceneMeta left="02 · Co děti zažijí" right="Tři tiché momenty" />
+          <SceneMeta left="02 · Co děti čeká" right="Tři kroky" />
 
           <header className="kurzyTimelineMoments__intro">
-            <span>Od prvního doteku k hotovému objektu</span>
+            <span>Od prvního doteku k hotovému výrobku</span>
             <h2 id="kurzy-moments-title">
-              Nejdřív materiál.
-              <em>Potom vlastní příběh.</em>
+              Nejdřív hlína.
+              <em>Potom nápad.</em>
             </h2>
           </header>
 
@@ -503,7 +503,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
               fill
               sizes="34vw"
             />
-            <figcaption>Prostor pro zpomalení · Písek</figcaption>
+            <figcaption>Ateliér · Písek</figcaption>
           </motion.figure>
 
           <motion.figure
@@ -518,17 +518,18 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             className="kurzyTimelineAdults__copy"
             style={{ x: adultsCopyX }}
           >
-            <span>Vrátit se k práci rukama</span>
+            <span>Zase si něco udělat rukama</span>
             <h2 id="kurzy-adults-title">
-              Místo pro klid.
-              <em>A vlastní tvar.</em>
+              Chystám kurzy
+              <em>i pro dospělé.</em>
             </h2>
             <p>
-              Připravujeme komorní kurzy pro dospělé: čas pro soustředění,
-              řemeslnou práci a radost z objektu, který vznikne jen jednou.
+              Malá skupina, pár klidných hodin u hlíny a výrobek, který
+              si odnesete domů. Dejte vědět, ať vám můžu napsat, až budu mít
+              termíny.
             </p>
             <ContactTrigger
-              text="Chci vědět o kurzech"
+              text="Dejte mi vědět"
               topic="Kurzy"
               className="kurzyTimelineCtaButton"
             />

@@ -11,7 +11,7 @@ type Props = {
 
 export const metadata: Metadata = {
   title: "Čekáme na potvrzení platby",
-  description: "Vaše objednávka je uložená a čeká na potvrzení platby.",
+  description: "Objednávku máme, čekáme jen na potvrzení platby.",
 }
 
 export default async function PaymentPendingPage(props: Props) {

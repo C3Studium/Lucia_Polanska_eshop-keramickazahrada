@@ -17,9 +17,9 @@ const copy: Record<
   success: {
     eyebrow: "Objednávka potvrzena",
     title: "Děkujeme.",
-    accent: "Objekt je váš.",
+    accent: "Máme to.",
     description:
-      "Potvrzení jsme poslali na váš e-mail. Jakmile výběr připravíme v ateliéru, dáme vám vědět.",
+      "Potvrzení jsme poslali na váš e-mail. Jakmile to v ateliéru připravíme, dáme vám vědět.",
     mark: "✓",
   },
   pending: {
@@ -27,7 +27,7 @@ const copy: Record<
     title: "Ještě",
     accent: "malý okamžik.",
     description:
-      "Platební brána nám zatím neposlala konečný výsledek. Objednávku držíme a stav potvrdíme e-mailem.",
+      "Platební brána nám zatím nedala vědět, jak to dopadlo. Objednávku držíme a napíšeme vám, jakmile to budeme vědět.",
     mark: "…",
   },
   canceled: {
@@ -35,7 +35,7 @@ const copy: Record<
     title: "Nic se",
     accent: "neztratilo.",
     description:
-      "Objednávka nebyla zaplacena. Můžete se vrátit k výběru a zvolit jiný způsob platby.",
+      "Objednávka není zaplacená. Můžete se vrátit zpátky a zvolit jiný způsob platby.",
     mark: "×",
   },
   failed: {
@@ -43,7 +43,7 @@ const copy: Record<
     title: "Zkusme to",
     accent: "ještě jednou.",
     description:
-      "Platbu nebo vytvoření objednávky se nepodařilo potvrdit. Nic jsme vám nenaúčtovali.",
+      "Platbu ani objednávku se nepovedlo potvrdit. Nic jsme vám nestrhli.",
     mark: "!",
   },
 }
@@ -143,7 +143,7 @@ export default function ExpressResult({
       <div className={styles.actions}>
         {status === "success" ? (
           <PremiumActionButton
-            text="Pokračovat v obchodě"
+            text="Zpět do obchodu"
             onClickAction={() => router.push(`/${countryCode}/store`)}
             className={styles.action}
           />

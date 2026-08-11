@@ -75,8 +75,8 @@ const sections: LegalSectionData[] = [
     id: "dorucovaci-doba",
     title: "Doručovací doba",
     paragraphs: [
-      "Vždy se Vám snažíme zboží doručit co nejdříve. Objekty, které máme skladem, předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby. U zakázkové výroby se na termínu domluvíme předem — každý kus vzniká ruční prací.",
-      "Po zabalení zboží Vám automaticky od nás dorazí e-mail, že je zboží zabaleno a nyní se pouze čeká na předání dopravci",
+      "Snažíme se posílat co nejdřív. Co máme skladem, předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby. U zakázkové výroby se na termínu domluvíme předem — každý kus vzniká ručně.",
+      "Jakmile zásilku zabalíme, přijde vám e-mail. Pak už jen čeká na předání dopravci.",
     ],
   },
   {
@@ -146,7 +146,7 @@ const sections: LegalSectionData[] = [
     id: "neuspesna-platba",
     title: "Co když se mi platba nepovede?",
     paragraphs: [
-      "I toto se bohužel může stát - klidně nám napište nebo zavolejte a společně dořešíme. Peníze rovněž můžete zaslat přímo na náš bankovní účet.",
+      "Stává se to. Napište nebo zavolejte a vyřešíme to spolu. Peníze můžete poslat i přímo na náš účet.",
       "Jako variabilní symbol vždy uveďte číslo objednávky.",
       `Číslo účtu: ${merchant.bankAccount}`,
     ],
@@ -221,8 +221,8 @@ export default function Page() {
       code="SERVIS · 04"
       eyebrow="Od ateliéru k vám"
       title="Doprava a platba"
-      accent="Bezpečně zabalené. Jasně doručené."
-      description="Možnosti dopravy, ceny, doručovací časy a bezpečné způsoby platby přehledně podle místa objednávky."
+      accent="Zabalíme a pošleme."
+      description="Ceny dopravy, doručovací lhůty a všechny způsoby platby — zvlášť pro Česko a pro Slovensko."
       sections={sections}
     />
   )

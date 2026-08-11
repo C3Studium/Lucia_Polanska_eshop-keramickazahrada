@@ -166,7 +166,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
 
   const description =
     product.description?.trim() ||
-    "Ručně vytvořený keramický objekt z píseckého ateliéru."
+    "Ručně vyrobená keramika z píseckého ateliéru."
   const descriptionWords = description.split(/\s+/).filter(Boolean)
   const hasLongDescription = descriptionWords.length > 25
   const descriptionPreview = hasLongDescription
@@ -209,8 +209,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             <h1>{displayTitle}</h1>
             <p className="product__signature">
               {bundle
-                ? "Objekty vybrané společně."
-                : "Originál vytvořený rukama."}
+                ? "Vybráno dohromady."
+                : "Vyrobeno rukama, jen jednou."}
             </p>
             <p className="product__lead">
               {descriptionPreview}
@@ -270,7 +270,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             transition={transition2}
           >
             <div className="product__purchaseHeader">
-              <span>Volba objektu</span>
+              <span>Vaše volba</span>
               <span>{inStock ? "K dispozici" : "Na dotaz"}</span>
             </div>
 
@@ -278,10 +278,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               <small>Vaše provedení</small>
               <span>
                 {bundle
-                  ? `${bundle.items.length} objekty · jeden celek`
+                  ? `${bundle.items.length} kusy dohromady`
                   : selectedOptionLabels ||
                     selectedVariant?.title ||
-                    "Originální provedení"}
+                    "Jediné provedení"}
               </span>
             </div>
 
@@ -355,7 +355,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             )}
 
             <div className="product__serviceNotes">
-              <span>Bezpečně baleno</span>
+              <span>Zabalíme pečlivě</span>
               <span>Ručně vytvořeno</span>
               <span>Ateliér · Písek</span>
             </div>

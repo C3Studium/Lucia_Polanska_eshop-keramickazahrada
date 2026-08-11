@@ -29,14 +29,14 @@ const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
   return (
     <div className={s.empty} data-testid="no-orders-container">
       <div className={s.emptyContent}>
-        <h2 className={s.title}>Nic tu nemáte...</h2>
+        <h2 className={s.title}>Zatím tu nic není</h2>
         <p className={s.desc}>
-          Zatím nemáte žádné objednávky, pojďme to změnit {":)"}
+          Ještě jste u nás nic neobjednali. Třeba vás něco zaujme.
         </p>
       </div>
       <div className={s.ctaWrap}>
         <PremiumActionLink
-          text="Pokračovat v nakupování"
+          text="Prohlédnout výrobky"
           href="/store"
           className={s.emptyAction}
         />

@@ -446,7 +446,7 @@ export async function submitPromotionForm(
     if (cart) {
       const found = (cart.promotions || []).some((p: any) => p.code === code)
       if (!found) {
-        return "Slevový kód není platný." // Czech: "Promotion code is not valid."
+        return "Tenhle slevový kód neplatí." // Czech: "Promotion code is not valid."
       }
     }
   } catch (e: any) {

@@ -198,7 +198,7 @@ export default function ContactDialogPanel({
           <div className={styles.panelMeta}>
             <span>Kontakt · Ateliér</span>
             <span className={styles.availability}>
-              <i aria-hidden="true" /> Odpovídáme do 2 pracovních dnů
+              <i aria-hidden="true" /> Ozvu se do dvou pracovních dnů
             </span>
           </div>
           <motion.button
@@ -241,7 +241,7 @@ export default function ContactDialogPanel({
             exit="hidden"
           >
             <motion.div className={styles.title} variants={itemVariants}>
-              <span className={styles.eyebrow}>Kontakt přímo do ateliéru</span>
+              <span className={styles.eyebrow}>Napište přímo do ateliéru</span>
               <h2 id={`${fieldId}-title`}>
                 Napište mi.<em>Ozvu se osobně.</em>
               </h2>
@@ -259,7 +259,7 @@ export default function ContactDialogPanel({
                 noValidate={false}
               >
                 <fieldset className={styles.topics}>
-                  <legend>S čím vám můžeme pomoci?</legend>
+                  <legend>S čím vám můžu pomoct?</legend>
                   <div onMouseLeave={() => setHoveredInquiry(null)}>
                     {inquiryOptions.map((option) => {
                       const highlighted = (hoveredInquiry ?? inquiry) === option
@@ -327,7 +327,7 @@ export default function ContactDialogPanel({
                     id={`${fieldId}-message`}
                     className={styles.input}
                     name="message"
-                    placeholder="Popište svou představu, otázku nebo projekt…"
+                    placeholder="Napište, co potřebujete — otázku, představu, cokoliv…"
                     required
                   />
                 </div>
@@ -362,8 +362,8 @@ export default function ContactDialogPanel({
 
                 <div className={styles.formFooter}>
                   <p>
-                    Odesláním souhlasíte se zpracováním údajů pouze pro vyřízení této
-                    zprávy.
+                    Odesláním souhlasíte s tím, že vaše údaje použiju jen k odpovědi
+                    na tuhle zprávu.
                   </p>
                   <WebButton
                     Kind="Button"
@@ -457,9 +457,9 @@ function SentMessage({ email, onClose }: { email: string; onClose: () => void })
     <div className={styles.successPanel} role="status">
       <h3>Zpráva odešla.</h3>
       <p>
-        Děkujeme — ozveme se vám do dvou pracovních dnů. Během práce u pece to
-        výjimečně může trvat o něco déle. Kopii jsme neposílali; pokud si nejste jistí,
-        napište nám kdykoli na {email}.
+        Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to
+        výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si
+        nebyli jistí, napište mi kdykoliv na {email}.
       </p>
       <WebButton
         Kind="Button"
@@ -475,7 +475,7 @@ function DirectContact({ merchant }: { merchant: MerchantIdentity }) {
   return (
     <div className={styles.directContact}>
       <p>
-        Napište nebo zavolejte přímo do ateliéru — ozveme se vám do dvou pracovních
+        Napište nebo zavolejte přímo do ateliéru — ozvu se vám do dvou pracovních
         dnů.
       </p>
       <dl className={styles.directContactList}>
@@ -502,14 +502,14 @@ function DirectContact({ merchant }: { merchant: MerchantIdentity }) {
 
 function failureMessage(status: number) {
   if (status === 400) {
-    return "Zkontrolujte prosím vyplněné údaje — něco chybí nebo je v jiném tvaru, než čekáme. Nebo nám napište přímo na"
+    return "Zkontrolujte prosím vyplněné údaje — něco chybí, nebo je to v jiném tvaru. Nebo mi napište rovnou na"
   }
 
   if (status === 429) {
-    return "Zpráv přišlo příliš mnoho krátce po sobě. Zkuste to prosím za chvíli, nebo nám napište přímo na"
+    return "Přišlo příliš mnoho zpráv krátce po sobě. Zkuste to prosím za chvíli, nebo mi napište rovnou na"
   }
 
-  return "Zprávu se nepodařilo odeslat. Zkuste to prosím znovu, nebo nám napište přímo na"
+  return "Zprávu se nepovedlo odeslat. Zkuste to prosím znovu, nebo mi napište rovnou na"
 }
 
 

@@ -79,10 +79,10 @@ export default function Page() {
   return (
     <LegalDocument
       code="FORM · 03"
-      eyebrow="Vrácení · krok za krokem"
+      eyebrow="Vrácení zboží"
       title="Odstoupení od smlouvy"
-      accent="Jednoduše a bez nejistoty."
-      description="Vzor oznámení a všechny údaje potřebné k odstoupení od kupní smlouvy na jednom místě."
+      accent="Krok za krokem."
+      description="Vzor oznámení i všechny údaje, které k vrácení zboží potřebujete."
       sections={sections}
     />
   )

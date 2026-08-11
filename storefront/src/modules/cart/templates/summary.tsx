@@ -39,7 +39,7 @@ const Summary = ({ cart }: SummaryProps) => {
   return (
     <div className={s.root}>
       <p className={s.eyebrow}>Objednávka</p>
-      <h2 className={s.title}>Souhrn košíku</h2>
+      <h2 className={s.title}>Kolik to dělá</h2>
       <DiscountCode cart={cart} />
       <Divider />
       <CartTotals totals={cart} />

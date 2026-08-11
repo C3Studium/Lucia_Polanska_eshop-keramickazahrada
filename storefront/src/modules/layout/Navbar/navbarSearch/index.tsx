@@ -257,7 +257,7 @@ function ProductQuarryBase({ hit }: { hit: NavbarProductHit }) {
             />
           </motion.div>
           <span className={styles.productIndex} aria-hidden="true">
-            Objekt
+            Výrobek
           </span>
         </div>
         <div className={styles.productCopy}>
@@ -389,13 +389,13 @@ function SearchContent({
   const resultLabel = normalizedQuery
     ? products.length > 0
       ? `${products.length} ${
-          products.length === 1 ? "nalezený objekt" : "nalezených objektů"
+          products.length === 1 ? "nalezený výrobek" : "nalezených výrobků"
         }`
       : "Nic jsme nenašli"
     : `${catalogueProducts.length} ${
         catalogueProducts.length === 1
-          ? "objekt v katalogu"
-          : "objektů v katalogu"
+          ? "výrobek v nabídce"
+          : "výrobků v nabídce"
       }`
 
 
@@ -474,7 +474,7 @@ function SearchContent({
 
       <motion.div className={styles.resultsHeader} variants={sectionVariants}>
         <p aria-live="polite">
-          {isLoading ? "Otevírám ateliérový výběr…" : resultLabel}
+          {isLoading ? "Načítám…" : resultLabel}
         </p>
         <button type="button" onClick={onClose} aria-label="Zavřít vyhledávání">
           Zavřít
@@ -511,9 +511,9 @@ function SearchContent({
               exit={fadeOnly}
               role="alert"
             >
-              <span>Ateliér je na chvíli nedostupný.</span>
+              <span>Něco se zaseklo.</span>
               <button type="button" onClick={onRetry}>
-                Načíst produkty znovu <i>↻</i>
+                Zkusit znovu <i>↻</i>
               </button>
               <LocalizedClientLink href="/store">
                 Pokračovat do obchodu
@@ -549,7 +549,7 @@ function SearchContent({
             >
               <span>Zkuste jiný název, kategorii nebo kolekci.</span>
               <button type="button" onClick={() => onQueryChange("")}>
-                Zobrazit celý výběr <i>→</i>
+                Zobrazit všechno <i>→</i>
               </button>
             </motion.div>
           )}

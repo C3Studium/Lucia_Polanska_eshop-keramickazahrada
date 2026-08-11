@@ -38,7 +38,7 @@ export async function saveCommissionBrief(
   try {
     const cartId = await getCartId()
     if (!cartId) {
-      return { success: false, message: "Košík se nepodařilo najít." }
+      return { success: false, message: "Košík se nepovedlo najít." }
     }
 
     let photos = input.keepPhotos
@@ -48,7 +48,7 @@ export async function saveCommissionBrief(
       if (!uploaded.length) {
         return {
           success: false,
-          message: "Fotky se nepodařilo nahrát. Zkuste to prosím znovu.",
+          message: "Fotky se nepovedlo nahrát. Zkuste to prosím znovu.",
         }
       }
       photos = [...photos, ...uploaded.map((file) => file.url)]
@@ -96,7 +96,7 @@ export async function addOrderCommissionNote(
       if (!uploaded.length) {
         return {
           success: false,
-          message: "Fotky se nepodařilo nahrát. Zkuste to prosím znovu.",
+          message: "Fotky se nepovedlo nahrát. Zkuste to prosím znovu.",
         }
       }
       image_urls = uploaded.map((file) => file.url)
@@ -105,7 +105,7 @@ export async function addOrderCommissionNote(
     if (!input.note.trim() && !image_urls.length) {
       return {
         success: false,
-        message: "Napište prosím poznámku, nebo přiložte fotku.",
+        message: "Napište prosím pár slov, nebo přiložte fotku.",
       }
     }
 
@@ -115,7 +115,7 @@ export async function addOrderCommissionNote(
     })
 
     if (!notes) {
-      return { success: false, message: "Poznámku se nepodařilo uložit." }
+      return { success: false, message: "Poznámku se nepovedlo uložit." }
     }
 
     const ordersCacheTag = await getCacheTag("orders")

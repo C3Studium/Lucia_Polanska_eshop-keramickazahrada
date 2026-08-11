@@ -10,7 +10,7 @@ import type { KurzyIntroData } from "@modules/home/Kurzy/Intro"
 export const metadata: Metadata = {
   title: "Keramické kurzy",
   description:
-    "Keramické kurzy pro děti a připravované kurzy pro dospělé v ateliéru Lucie Polanské u Písku.",
+    "Keramické kurzy pro děti a chystané kurzy pro dospělé v ateliéru u Písku.",
 }
 
 export default async function Home(props: {

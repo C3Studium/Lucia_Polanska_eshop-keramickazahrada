@@ -212,11 +212,11 @@ export default function MainVyroba() {
             >
               <Image
                 src="/assets/img/vyroba/2.png"
-                alt="Dokončený keramický objekt"
+                alt="Hotová keramika"
                 fill
                 sizes="(max-width: 720px) 34vw, 17vw"
               />
-              <figcaption>Výsledek · Originál</figcaption>
+              <figcaption>Hotovo · Jediný kus</figcaption>
             </motion.figure>
           </div>
 
@@ -247,7 +247,7 @@ export default function MainVyroba() {
               animate="show"
               custom={heroBeat.heading}
             >
-              Sedm kroků. Dvě setkání s ohněm.
+              Sedm kroků a dva výpaly.
             </motion.p>
 
             <h1>
@@ -267,7 +267,7 @@ export default function MainVyroba() {
                 animate="show"
                 custom={heroBeat.lede + 0.08}
               >
-                <span>objekt.</span>
+                <span>jediný kus.</span>
               </motion.span>
             </h1>
           </motion.div>
@@ -291,9 +291,9 @@ export default function MainVyroba() {
               Materiál · Ruce · Oheň
             </motion.span>
             <p>
-              Sedm kroků. Dva výpaly.
+              Sedm kroků, dva výpaly
               <br />
-              Jeden neopakovatelný výsledek.
+              a kus, který se už nezopakuje.
             </p>
             <motion.button
               type="button"

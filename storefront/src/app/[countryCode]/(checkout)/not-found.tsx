@@ -4,7 +4,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Stránka nenalezena",
-  description: "Stránka, kterou jste se pokusili otevřít, neexistuje.",
+  description: "Tuhle stránku jsme nenašli.",
 }
 
 export default async function NotFound() {
@@ -12,7 +12,7 @@ export default async function NotFound() {
     <div className={styles.root}>
       <h1 className={styles.heading}>Stránka nenalezena</h1>
       <p className={styles.message}>
-        Stránka, kterou jste se pokusili otevřít, neexistuje.
+        Tuhle stránku jsme nenašli. Možná se přesunula, nebo tu nikdy nebyla.
       </p>
       <LocalizedClientLink href="/">Zpět na úvodní stránku</LocalizedClientLink>
     </div>

@@ -25,13 +25,13 @@ export const ProfileTemplate = ({
     <AccountPageReveal className={s.content} data-testid="profile-page-wrapper">
       <AccountSectionReveal>
         <div className={s.header}>
-          <p className={s.eyebrow}>Soukromý archiv · osobní údaje</p>
+          <p className={s.eyebrow}>Váš účet · osobní údaje</p>
           <h1 className={s.title}>
             Váš <em>profil.</em>
           </h1>
           <Divider />
           <p className={s.desc}>
-            Kontaktní údaje, heslo a fakturační informace přehledně na jednom
+            Kontaktní údaje, heslo a fakturační adresa — všechno na jednom
             místě.
           </p>
         </div>

@@ -33,10 +33,10 @@ export default function PaymentPending({
 
   return (
     <OrderStateShell
-      eyebrow="Platba · čekáme na banku"
-      title="Objednávka je uložená."
-      accent="Čekáme na potvrzení z banky."
-      description="Platbu jsme zahájili, ale banka ji ještě nepotvrdila. U bankovního převodu to bývá i několik hodin, o víkendu déle. Nemusíte nic dělat — jakmile platbu potvrdíme, pošleme vám e-mail."
+      eyebrow="Čekáme na banku"
+      title="Objednávku máme."
+      accent="Teď čekáme na banku."
+      description="Platbu jsme odeslali, banka ji ale zatím nepotvrdila. U převodu to bývá i pár hodin, o víkendu klidně déle. Nemusíte nic dělat — jakmile ji potvrdíme, napíšeme vám."
       status="pending"
     >
       <dl className={styles.reference}>
@@ -45,7 +45,7 @@ export default function PaymentPending({
           <dd>{orderNumber ?? reference}</dd>
         </div>
         <div>
-          <dt>Když si nebudete jistí</dt>
+          <dt>Kdyby něco</dt>
           <dd>
             <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
             <span aria-hidden="true"> · </span>
@@ -54,7 +54,7 @@ export default function PaymentPending({
         </div>
       </dl>
       <p className={styles.note}>
-        Stránka se sama každých pár vteřin obnovuje. Klidně ji zavřete — na výsledek to
+        Stránka se sama každých pár vteřin obnoví. Klidně ji zavřete, na výsledek to
         nemá vliv.
       </p>
     </OrderStateShell>

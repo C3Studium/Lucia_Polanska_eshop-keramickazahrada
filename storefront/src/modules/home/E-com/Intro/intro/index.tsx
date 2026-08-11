@@ -38,7 +38,7 @@ export default function Intro ({
             <div className="ECom__Intro__Rail" aria-hidden="true">
                 <span>01 · Keramická zahrada</span>
                 <span className="rail__line" />
-                <span>Objekty s vlastním příběhem</span>
+                <span>Ručně, v píseckém ateliéru</span>
             </div>
             <div className="ECom__Intro__Title">
                 <h2>
@@ -73,12 +73,12 @@ export default function Intro ({
             </div>
             <div className="ECom__Intro__Content">
                 <p>
-                    {data?.content1 ? textWithBreaks(data.content1, isInView) : wordSplit("Objevte svět ručně vyráběné keramiky, kde každý kousek nese osobní příběh, každý výrobek je originál.", isInView)}
+                    {data?.content1 ? textWithBreaks(data.content1, isInView) : wordSplit("Každý výrobek tvořím rukama, jeden po druhém. Žádné dva nejsou úplně stejné — a to je na tom to hezké.", isInView)}
                 </p>
                 <p className="ECom__Intro__Aside">
                     {data?.content2
                         ? textWithBreaks(data.content2, isInView)
-                        : wordSplit("Pro zahradu i domov. Vytvořeno pomalu, rukama a v malém počtu.", isInView)}
+                        : wordSplit("Pro zahradu i pro domov. Vzniká to pomalu a jen v malém počtu.", isInView)}
                 </p>
             </div>
         </section>

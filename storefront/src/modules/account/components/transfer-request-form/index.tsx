@@ -32,8 +32,8 @@ export default function TransferRequestForm() {
         <div className={s.intro}>
           <h3 className={s.title}>Převod objednávek</h3>
           <p className={s.desc}>
-            Nemůžete najít objednávku, kterou hledáte?
-            <br /> Propojte objednávku se svým účtem.
+            Nevidíte tu objednávku, kterou hledáte?
+            <br /> Napište její číslo a připojíme ji k vašemu účtu.
           </p>
         </div>
         <form action={formAction} className={s.form}>

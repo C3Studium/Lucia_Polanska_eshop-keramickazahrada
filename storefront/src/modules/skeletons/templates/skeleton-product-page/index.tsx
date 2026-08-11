@@ -4,7 +4,7 @@ import s from "../../style.module.scss"
 const SkeletonProductPage = () => {
   return (
     <main className={s.productPage} aria-busy="true" aria-live="polite">
-      <span className={s.srOnly}>Načítáme objekt a jeho varianty.</span>
+      <span className={s.srOnly}>Načítáme výrobek.</span>
       <section className={s.productStory} aria-hidden="true">
         <aside className={s.productIdentity}>
           <div className={s.productEyebrow}>

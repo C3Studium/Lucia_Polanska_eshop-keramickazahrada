@@ -11,7 +11,7 @@ type ShippingDetailsProps = {
 const ShippingDetails = ({ order }: ShippingDetailsProps) => {
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>Kam objednávka míří</h2>
+      <h2 className={styles.title}>Kam to posíláme</h2>
       <div className={styles.row}>
         <div className={styles.col} data-testid="shipping-address-summary">
           <p className={styles.label}>Adresa doručení</p>

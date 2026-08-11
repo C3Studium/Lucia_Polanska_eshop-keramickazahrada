@@ -84,7 +84,7 @@ export const Router = ({
   const selectedTitle =
     cart?.items?.length === 1
       ? cart.items[0].product_title || cart.items[0].title
-      : `${cart?.items?.length || 0} objektů v souboru`
+      : `${cart?.items?.length || 0} kusů dohromady`
 
   return (
     <>
@@ -103,14 +103,14 @@ export const Router = ({
         <motion.h1
           variants={variants3}
         >
-          Váš výběr.
-          <em>Bez zdržení.</em>
+          Rychlý nákup.
+          <em>Bez zbytečného klikání.</em>
         </motion.h1>
         <motion.p
           variants={variants4}
         >
-          Navrženo pro nákup ze sociálních sítí. Vyberete provedení, doručení a
-          bezpečně zaplatíte — bez opakovaného vyplňování.
+          Vyberete provedení, doručení a bezpečně zaplatíte. Tři kroky
+          a je to.
         </motion.p>
       </motion.header>
 
@@ -123,7 +123,7 @@ export const Router = ({
       <main>
         <Card
           step="01"
-          title="Váš objekt"
+          title="Co kupujete"
           isActive={active === "selection"}
           isDone={hasSelection}
           summary={hasSelection ? selectedTitle : undefined}
@@ -188,7 +188,7 @@ export const Router = ({
       <footer className={styles.trust}>
         <span>Bezpečná platba</span>
         <span>Pečlivé balení</span>
-        <span>Pomoc z ateliéru</span>
+        <span>Poradíme z ateliéru</span>
       </footer>
     </>
   )

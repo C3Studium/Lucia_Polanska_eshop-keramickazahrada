@@ -5,7 +5,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Stránka nenalezena",
-  description: "Stránka, kterou jste se pokusili otevřít, neexistuje.",
+  description: "Tuhle stránku jsme nenašli.",
 }
 
 export default function NotFound() {
@@ -13,7 +13,7 @@ export default function NotFound() {
     <div className={styles.root}>
       <h1 className={styles.heading}>Stránka nenalezena</h1>
       <p className={styles.message}>
-        Stránka, kterou jste se pokusili otevřít, neexistuje.
+        Tuhle stránku jsme nenašli. Možná se přesunula, nebo tu nikdy nebyla.
       </p>
       <Link className={styles.link} href="/">
         <p className={styles.linkText}>Zpět na úvodní stránku</p>

@@ -31,7 +31,7 @@ const previewReviews: StoreProductReview[] = [
     title: "Ještě krásnější než na fotografii",
     rating: 5,
     content:
-      "Objekt má své místo u vstupu do zahrady. Každý den vypadá trochu jinak podle světla a přesně to na ruční práci miluji.",
+      "Stojí to u nás hned u vstupu do zahrady. Každý den to vypadá trochu jinak podle světla a přesně to mám na ruční práci ráda.",
     first_name: "Jana",
     last_name: "K.",
   },
@@ -40,7 +40,7 @@ const previewReviews: StoreProductReview[] = [
     title: "Kousek s opravdovým charakterem",
     rating: 5,
     content:
-      "Povrch, barva i drobné nepravidelnosti působí velmi přirozeně. Balíček dorazil pečlivě zabalený a objekt dělá radost celé rodině.",
+      "Povrch, barva i ty drobné nepravidelnosti vypadají moc hezky. Balíček dorazil pečlivě zabalený a radost z toho má celá rodina.",
     first_name: "Petra",
     last_name: "M.",
   },
@@ -67,7 +67,7 @@ const previewReviews: StoreProductReview[] = [
     title: "Poctivě vytvořený originál",
     rating: 5,
     content:
-      "Naživo je krásně vidět práce rukou a drobné odlišnosti materiálu. Přesně takový osobní objekt jsme do našeho prostoru hledali.",
+      "Naživo je krásně vidět ruční práce i drobné odlišnosti materiálu. Přesně něco takového jsme sháněli.",
     first_name: "Eva",
     last_name: "P.",
   },
@@ -76,7 +76,7 @@ const previewReviews: StoreProductReview[] = [
     title: "Bezpečně až k nám domů",
     rating: 5,
     content:
-      "Měla jsem obavu z dopravy, ale objekt dorazil opravdu pečlivě zabalený. Komunikace i celý zážitek z objednávky byly výborné.",
+      "Měla jsem obavu z dopravy, ale dorazilo to opravdu pečlivě zabalené. Komunikace byla skvělá a objednávka bez problému.",
     first_name: "Hana",
     last_name: "R.",
   },
@@ -174,7 +174,7 @@ export default function ProductReviews({
       )
 
       if (!response.ok) {
-        throw new Error("Chyba při načítání recenzí")
+        throw new Error("Recenze se nepovedlo načíst")
       }
 
       const payload = await response.json()
@@ -209,7 +209,7 @@ export default function ProductReviews({
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Chyba při načítání recenzí"
+          : "Recenze se nepovedlo načíst"
       )
     } finally {
       setIsLoadingMore(false)
@@ -237,7 +237,7 @@ export default function ProductReviews({
       >
         <div className={styles.reviewMeta}>
           <span>{String(index + 1).padStart(2, "0")} · zkušenost</span>
-          <span>ověřený objekt</span>
+          <span>ověřený nákup</span>
         </div>
         <div className={styles.reviewHeader}>
           {review?.title ? <strong>{review.title}</strong> : null}
@@ -286,7 +286,7 @@ export default function ProductReviews({
           </div>
           {error && (
             <p className={styles.error}>
-              Nepodařilo se načíst recenze: {error}
+              Recenze se nepovedlo načíst: {error}
             </p>
           )}
           <div className={styles.starsAndCount}>
@@ -331,7 +331,7 @@ export default function ProductReviews({
               onClick={showMoreReviews}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? "Načítám…" : "Objevit další recenze"}
+              {isLoadingMore ? "Načítám…" : "Zobrazit další recenze"}
               <span>↓</span>
             </button>
           </div>

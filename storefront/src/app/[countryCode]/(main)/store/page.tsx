@@ -18,7 +18,7 @@ type StorePageProps = {
 export const metadata: Metadata = {
   title: "Obchod",
   description:
-    "Ateliérový výběr autorské keramiky Lucie Polanské — originální objekty pro zahradu i domov, každý kus ručně tvořený.",
+    "Keramika z ateliéru Lucie Polanské — pro zahradu i domov. Každý kus je dělaný rukama a je jen jeden.",
 }
 
 const defaultFilters: ShopFilters = {

@@ -60,7 +60,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
           <Label className={styles.label}>
             <PremiumActionButton
               compact
-              text="Zadat slevový kód(y)"
+              text="Mám slevový kód"
               onClickAction={() => setIsOpen((current) => !current)}
               active={isOpen}
               type="button"
@@ -113,7 +113,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
           <div className={styles.promotionsWrap}>
             <div className={styles.promotionsCol}>
               <Heading className={styles.heading}>
-                Použitý(é) slevový kód(y) použitý(é):
+                Použité slevové kódy:
               </Heading>
 
               {promotions.map((promotion) => {
@@ -171,7 +171,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                       >
                         <Trash size={14} />
                         <span className="sr-only">
-                          Odebrat slevový kód z objednávky
+                          Odebrat slevový kód
                         </span>
                       </button>
                     )}

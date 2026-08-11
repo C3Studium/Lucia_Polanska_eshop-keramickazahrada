@@ -58,7 +58,7 @@ const SkeletonAccountPage = ({
   if (contentOnly) {
     return (
       <div aria-busy="true" aria-live="polite">
-        <span className={s.srOnly}>Načítáme váš soukromý archiv.</span>
+        <span className={s.srOnly}>Načítáme váš účet.</span>
         <AccountContent contentOnly />
       </div>
     )
@@ -66,7 +66,7 @@ const SkeletonAccountPage = ({
 
   return (
     <main className={s.accountPage} aria-busy="true" aria-live="polite">
-      <span className={s.srOnly}>Načítáme váš soukromý archiv.</span>
+      <span className={s.srOnly}>Načítáme váš účet.</span>
       <div className={s.accountFrame}>
         <aside className={s.accountNav} aria-hidden="true">
           <div className={s.accountNavTitle}>

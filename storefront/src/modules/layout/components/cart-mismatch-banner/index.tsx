@@ -48,10 +48,10 @@ function CartMismatchBanner({
           01
         </div>
         <div className={styles.copy}>
-          <span>Košík čeká na propojení</span>
+          <span>Košík ještě není propojený</span>
           <p>
-            Přihlášení proběhlo správně, ale výběr ještě není přiřazený k vašemu
-            účtu.
+            Přihlásili jste se v pořádku, ale košík ještě není připojený
+            k vašemu účtu.
           </p>
           <AnimatePresence mode="wait" initial={false}>
             {state === "error" && (
@@ -63,7 +63,7 @@ function CartMismatchBanner({
                 transition={transition2}
                 role="alert"
               >
-                Propojení se nepodařilo. Zkuste to prosím znovu.
+                Propojení se nepovedlo. Zkuste to prosím znovu.
               </motion.small>
             )}
           </AnimatePresence>

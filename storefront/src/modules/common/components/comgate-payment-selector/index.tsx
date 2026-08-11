@@ -92,7 +92,7 @@ const fallbackMethods: ComgatePaymentMethod[] = [
     groupLabel: "Mobilní peněženka",
     name: "Apple Pay",
     name_short: "Apple Pay",
-    description: "Potvrzení přes Face ID nebo Touch ID",
+    description: "Potvrdíte přes Face ID nebo Touch ID",
     logo: "",
     logo_120c: "",
     logo_240: "",
@@ -106,7 +106,7 @@ const fallbackMethods: ComgatePaymentMethod[] = [
     groupLabel: "Mobilní peněženka",
     name: "Google Pay",
     name_short: "Google Pay",
-    description: "Rychlé potvrzení přes Google účet",
+    description: "Rychle potvrdíte přes Google účet",
     logo: "",
     logo_120c: "",
     logo_240: "",
@@ -120,7 +120,7 @@ const fallbackMethods: ComgatePaymentMethod[] = [
     groupLabel: "Bankovní převod",
     name: "Ostatní banky",
     name_short: "Ostatní banky",
-    description: "Vyberete banku v zabezpečené bráně ComGate",
+    description: "Banku si vyberete v zabezpečené bráně ComGate",
     logo: "",
     logo_120c: "",
     logo_240: "",
@@ -339,7 +339,7 @@ export default function ComgatePaymentSelector({
                 <MethodLogo method={selectedMethod} />
               </span>
               <span className={styles.selectedCopy}>
-                <small>Vybraná metoda</small>
+                <small>Vybrali jste</small>
                 <strong>
                   {selectedMethod.name_short || selectedMethod.name}
                 </strong>
@@ -483,7 +483,7 @@ export default function ComgatePaymentSelector({
                           onChange={(event) =>
                             setBankSearch(event.target.value)
                           }
-                          placeholder="Název banky…"
+                          placeholder="Napište název banky…"
                           autoComplete="off"
                         />
                         {bankSearch && (
@@ -524,7 +524,7 @@ export default function ComgatePaymentSelector({
 
                     {!filteredMethods.length && (
                       <p className={styles.noResults}>
-                        Banku jsme nenašli. Použijte volbu „Ostatní banky“.
+                        Takovou banku nemáme. Zkuste volbu „Ostatní banky“.
                       </p>
                     )}
 
@@ -540,7 +540,7 @@ export default function ComgatePaymentSelector({
                         </span>
                         <span>
                           <strong>Ostatní banky</strong>
-                          <small>Banku vyberete v zabezpečené bráně</small>
+                          <small>Banku si vyberete v zabezpečené bráně</small>
                         </span>
                         <span aria-hidden="true">↗</span>
                       </button>

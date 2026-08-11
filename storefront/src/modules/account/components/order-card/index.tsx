@@ -76,7 +76,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
             </dd>
           </div>
           <div>
-            <dt>Počet objektů</dt>
+            <dt>Počet kusů</dt>
             <dd>{numberOfItems} ks</dd>
           </div>
         </dl>
@@ -85,7 +85,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
           className={s.products}
           aria-label={`${numberOfItems} kusů v objednávce`}
         >
-          <span className={s.label}>Výběr</span>
+          <span className={s.label}>Co jste objednali</span>
           <div className={s.productIcons} data-testid="order-items-preview">
             {visibleItems.map((item) => {
               return (
@@ -124,7 +124,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
         <div className={s.actions}>
           <PremiumActionLink
             href={`/account/orders/details/${order.id}`}
-            text="Otevřít záznam"
+            text="Zobrazit objednávku"
             className={s.detailsLink}
           />
         </div>

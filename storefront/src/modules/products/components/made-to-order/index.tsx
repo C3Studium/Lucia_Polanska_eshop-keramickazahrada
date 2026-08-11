@@ -54,7 +54,7 @@ export default function MadeToOrderPanel({
         Vyrábí se na zakázku
       </p>
 
-      {leadTime && <p className={styles.lead}>Hotové za {leadTime}.</p>}
+      {leadTime && <p className={styles.lead}>Hotovo zhruba za {leadTime}.</p>}
 
       {depositPercentage != null && (
         <p className={styles.deposit}>
@@ -69,7 +69,7 @@ export default function MadeToOrderPanel({
       {profile.specification_required && (
         <div className={styles.field}>
           <label htmlFor={fieldId}>
-            {profile.specification_prompt || "Popište své přání"}{" "}
+            {profile.specification_prompt || "Napište, co si představujete"}{" "}
             <i>(povinné)</i>
           </label>
           <textarea
@@ -81,11 +81,11 @@ export default function MadeToOrderPanel({
             required
             aria-describedby={isMissing ? `${fieldId}-error` : undefined}
             aria-invalid={isMissing || undefined}
-            placeholder="Rozměry, barva glazury, nápis, termín…"
+            placeholder="Rozměry, barva glazury, nápis, do kdy to potřebujete…"
           />
           {isMissing && (
             <p className={styles.error} id={`${fieldId}-error`} role="alert">
-              Bez krátkého popisu nemůžeme zakázku přijmout.
+              Bez pár řádků nevíme, co máme vyrobit.
             </p>
           )}
         </div>

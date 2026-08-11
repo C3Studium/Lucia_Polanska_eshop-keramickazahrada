@@ -16,14 +16,14 @@ export const AddressesTemplate = ({ customer, region }: AddressesTemplateProps) 
             <AccountPageReveal className={styles.content} data-testid="addresses-page-wrapper">
                 <AccountSectionReveal>
                 <div className={styles.header}>
-                    <p className={styles.eyebrow}>Soukromý archiv · doručení</p>
+                    <p className={styles.eyebrow}>Váš účet · adresy</p>
                     <h1 className={styles.title}>
                         Místa <em>doručení.</em>
                     </h1>
                     <Divider />
                     <p className={styles.desc}>
-                        Uložte místa, kam mají vaše další objekty bezpečně
-                        dorazit. Při příští objednávce je nabídneme automaticky.
+                        Uložte si adresy, kam vám máme posílat. Při příští
+                        objednávce je nabídneme samy.
                     </p>
                 </div>
                 </AccountSectionReveal>

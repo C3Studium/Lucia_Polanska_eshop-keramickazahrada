@@ -18,7 +18,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   return (
     <div className={s.section} data-testid="account-page">
       {customer && isVerified && (
-        <div className={s.archiveWord} aria-hidden="true">ARCHIV</div>
+        <div className={s.archiveWord} aria-hidden="true">ÚČET</div>
       )}
       <div className={s.container}>
         {customer && isVerified && (

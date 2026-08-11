@@ -18,8 +18,8 @@ export default function ShopToolbar({ chips, count, search, sort, onOpenFilters,
     <header className={styles.root}>
       <div className={styles.topline}>
         <div className={styles.title}>
-          <span>Aktuální výběr</span>
-          <p aria-live="polite"><strong>{count}</strong> {count === 1 ? "objekt" : count > 1 && count < 5 ? "objekty" : "objektů"}</p>
+          <span>Zobrazujeme</span>
+          <p aria-live="polite"><strong>{count}</strong> {count === 1 ? "výrobek" : count > 1 && count < 5 ? "výrobky" : "výrobků"}</p>
         </div>
 
         <label className={styles.search}>
@@ -31,7 +31,7 @@ export default function ShopToolbar({ chips, count, search, sort, onOpenFilters,
           <input
             value={search}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Hledat podle názvu nebo typu"
+            placeholder="Hledat podle názvu"
             type="search"
             autoComplete="off"
           />

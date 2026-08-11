@@ -16,34 +16,34 @@ type AuthPortalProps = {
 const copy = {
   login: {
     index: "01",
-    eyebrow: "Soukromý archiv",
+    eyebrow: "Váš účet",
     title: "Vítejte",
     accent: "zpět.",
-    note: "Vaše objednávky, uložené objekty a adresy na jednom klidném místě.",
+    note: "Objednávky, oblíbené kousky a adresy máte na jednom místě.",
     word: "VSTUP",
   },
   register: {
     index: "02",
-    eyebrow: "Nový zápis",
-    title: "Váš vlastní",
-    accent: "archiv.",
-    note: "Účet uchová vše důležité, aniž by stál mezi vámi a objektem.",
-    word: "ZÁPIS",
+    eyebrow: "Nový účet",
+    title: "Založte si",
+    accent: "účet.",
+    note: "Adresu vyplníte jednou a příště už jen potvrdíte objednávku.",
+    word: "ÚČET",
   },
   recovery: {
     index: "03",
     eyebrow: "Obnova přístupu",
     title: "Cesta",
     accent: "zpátky.",
-    note: "Jeden bezpečný krok a můžete pokračovat tam, kde jste skončili.",
+    note: "Jeden krok a můžete pokračovat tam, kde jste skončili.",
     word: "OBNOVA",
   },
   verification: {
     index: "04",
-    eyebrow: "Potvrzení adresy",
+    eyebrow: "Potvrzení e-mailu",
     title: "Ještě jeden",
     accent: "krok.",
-    note: "Ověřená adresa chrání vaše objednávky i uložené údaje.",
+    note: "Ověřený e-mail chrání vaše objednávky i uložené údaje.",
     word: "OVĚŘIT",
   },
 }
@@ -103,7 +103,7 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
           animate={animate3}
           transition={transition4}
         >
-          <span className={s.visualLabel}>Přístup k vašemu výběru</span>
+          <span className={s.visualLabel}>Ateliér Lucie Polanské</span>
           <h1>
             <span>{content.title}</span>
             <em>{content.accent}</em>
@@ -118,7 +118,7 @@ export default function AuthPortal({ mode, children }: AuthPortalProps) {
         >
           <div className={s.ledgerTop}>
             <span>{content.index}</span>
-            <span>{mode === "register" ? "Nový zákaznický zápis" : "Bezpečný přístup"}</span>
+            <span>{mode === "register" ? "Zakládáte nový účet" : "Bezpečné přihlášení"}</span>
           </div>
           <div className={s.formSlot}>{children}</div>
           <div className={s.ledgerFoot}>

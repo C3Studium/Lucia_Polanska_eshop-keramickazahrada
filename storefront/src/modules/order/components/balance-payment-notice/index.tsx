@@ -5,7 +5,7 @@ const MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
   paid: { tone: "ok", text: "Doplatek je zaplacený. Děkujeme!" },
   chyba: {
     tone: "warn",
-    text: "Platbu se nepodařilo otevřít. Napište nám prosím.",
+    text: "Platbu se nepovedlo otevřít. Napište nám prosím.",
   },
   "neplatny-odkaz": {
     tone: "warn",

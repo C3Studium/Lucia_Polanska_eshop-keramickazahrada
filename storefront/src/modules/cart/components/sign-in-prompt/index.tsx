@@ -7,8 +7,8 @@ const SignInPrompt = () => {
   return (
     <div className={s.root}>
       <div className={s.content}>
-        <h2 className={s.title}>Máte již účet?</h2>
-        <p className={s.desc}>Přihlaste se pro lepší zážitek.</p>
+        <h2 className={s.title}>Máte u nás účet?</h2>
+        <p className={s.desc}>Přihlaste se a nemusíte znovu vyplňovat adresu.</p>
       </div>
       <div className={s.ctaWrap}>
         <LocalizedClientLink

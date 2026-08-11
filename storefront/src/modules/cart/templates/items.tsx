@@ -16,10 +16,10 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <div className={s.root}>
       <div className={s.headerRow}>
-        <h2 className={s.title}>Vybrané kusy</h2>
+        <h2 className={s.title}>Co máte v košíku</h2>
         <p className={s.sectionMeta}>
           <span>{String(items?.length ?? 0).padStart(2, "0")}</span>
-          Objekt z ateliéru
+          Z ateliéru
         </p>
       </div>
       <div className={s.tableBody} data-testid="items-table">

@@ -33,7 +33,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
             className="product"
             id="product-overview"
             data-scroll-section
-            data-scroll-label="Objekt"
+            data-scroll-label="Výrobek"
         >
             <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} />
         </section>

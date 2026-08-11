@@ -50,11 +50,11 @@ export default function PaymentConfirmed({
   if (failed) {
     return (
       <OrderStateShell
-        eyebrow="Platba · potřebujeme chvíli"
+        eyebrow="Ještě to dořešíme"
         title="Platbu máme."
-        accent="Objednávku dokončíme ručně."
+        accent="Objednávku dodělám ručně."
         // The money has left the customer's account. Never imply they should pay again.
-        description={`Platba proběhla, ale objednávku se nepodařilo automaticky uzavřít. Nic neplaťte znovu — máme o platbě záznam a objednávku dokončíme ručně. Ozvěte se nám prosím na ${supportEmail} nebo ${supportPhone} a uveďte číslo ${id}; obratem se vám ozveme.`}
+        description={`Platba prošla, ale objednávka se sama nedokončila. Znovu prosím neplaťte — platbu máme zaznamenanou a objednávku dodělám ručně. Napište nám na ${supportEmail} nebo zavolejte na ${supportPhone} a uveďte číslo ${id}. Ozveme se obratem.`}
         status="canceled"
         primary={{ href: "/store", label: "Pokračovat v obchodě" }}
       />
@@ -63,10 +63,10 @@ export default function PaymentConfirmed({
 
   return (
     <OrderStateShell
-      eyebrow="Platba · ověření"
+      eyebrow="Ověřujeme platbu"
       title="Platbu máme."
-      accent="Objednávku dokončujeme."
-      description="Ještě okamžik — potvrzujeme objednávku a připravujeme její bezpečné uložení. Tuto stránku není potřeba obnovovat."
+      accent="Ještě ji dokončujeme."
+      description="Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat."
       status="pending"
     />
   )

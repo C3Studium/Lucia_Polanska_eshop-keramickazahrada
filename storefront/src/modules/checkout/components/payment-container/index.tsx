@@ -30,28 +30,28 @@ const getPaymentMeta = (providerId: string) => {
   if (providerId.includes("applepay")) {
     return {
       category: "Mobilní peněženka",
-      detail: "Potvrzení přes Face ID nebo Touch ID",
+      detail: "Potvrdíte přes Face ID nebo Touch ID",
     }
   }
 
   if (providerId.includes("googlepay")) {
     return {
       category: "Mobilní peněženka",
-      detail: "Rychlé potvrzení přes váš Google účet",
+      detail: "Rychle potvrdíte přes svůj Google účet",
     }
   }
 
   if (providerId.includes("bank")) {
     return {
       category: "Online převod",
-      detail: "Bezpečné přesměrování do internetového bankovnictví",
+      detail: "Bezpečně vás přesměrujeme do bankovnictví",
     }
   }
 
   if (isManual(providerId)) {
     return {
       category: "Testovací metoda",
-      detail: "Pouze pro kontrolu objednávkového procesu",
+      detail: "Jen pro testování objednávek",
     }
   }
 

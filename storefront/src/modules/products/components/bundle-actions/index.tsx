@@ -129,14 +129,14 @@ export default function BundleActions({
   return (
     <div className="bundleInline">
       <div className="bundleInline__heading">
-        <span>Objekty v souboru</span>
+        <span>Co je v sadě</span>
         <span>{String(bundle.items.length).padStart(2, "0")}</span>
       </div>
 
       <div
         className="bundleInline__previews"
         role="tablist"
-        aria-label="Objekty v souboru"
+        aria-label="Co je v sadě"
       >
         {bundle.items.map((item, index) => {
           const isActive = activeItemIndex === index
@@ -224,14 +224,14 @@ export default function BundleActions({
             data-testid="add-bundle-button"
           >
             {isPreview
-              ? "Náhled souboru"
+              ? "Náhled"
               : !allVariantsSelected
-              ? "Dokončete provedení"
+              ? "Vyberte provedení"
               : addState.kind === "added"
               ? "Přidáno ✓"
               : addState.kind === "adding"
               ? "Přidáváme…"
-              : "Přidat soubor do košíku"}
+              : "Přidat vše do košíku"}
           </CartButton>
         </div>
         {addState.kind === "error" && (
@@ -241,13 +241,13 @@ export default function BundleActions({
         )}
         {addState.kind === "added" && (
           <p className="bundleInline__confirm" role="status">
-            Soubor je v košíku.
+            Máte to v košíku.
           </p>
         )}
         <p>
           {isPreview
-            ? "Ukázkové provedení · nákup bude dostupný po napojení dat."
-            : "Všechny vybrané objekty přidáme do košíku společně."}
+            ? "Ukázka · koupit půjde, až budou napojená data."
+            : "Všechny vybrané kusy přidáme do košíku najednou."}
         </p>
       </div>
     </div>

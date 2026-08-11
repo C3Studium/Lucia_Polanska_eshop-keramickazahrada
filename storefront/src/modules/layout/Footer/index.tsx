@@ -184,7 +184,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
             </p>
 
             <p className="footer__statement">
-              Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
+              Keramika pro zahradu i domov. Všechno vzniká rukama
               v píseckém ateliéru.
             </p>
 
@@ -210,8 +210,8 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
             >
               <div className="footer__newsletterCopy">
                 <span>Novinky · 01</span>
-                <p id="newsletter-title" className="footer__newsletterTitle">Zůstaňte blízko ateliéru.</p>
-                <p>Nové objekty a termíny kurzů bez zbytečného hluku.</p>
+                <p id="newsletter-title" className="footer__newsletterTitle">Ozveme se, když bude co říct.</p>
+                <p>Novinky z ateliéru a termíny kurzů. Nic víc.</p>
               </div>
               <Newsletter />
             </section>
@@ -355,7 +355,7 @@ function Newsletter() {
   if (status === "done") {
     return (
       <p className="newsletter__success" role="status">
-        Děkujeme — jste blízko ateliéru.
+        Děkujeme! Ozveme se, až bude co nového.
       </p>
     )
   }
@@ -382,10 +382,10 @@ function Newsletter() {
       </div>
       {status === "error" ? (
         <p className="newsletter__error" role="alert">
-          Uložení se nepodařilo, zkuste to prosím znovu.
+          Nepovedlo se to uložit, zkuste to prosím znovu.
         </p>
       ) : null}
-      <p>Odesláním souhlasíte se zpracováním e-mailu pro zasílání novinek.</p>
+      <p>Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek.</p>
     </form>
   )
 }

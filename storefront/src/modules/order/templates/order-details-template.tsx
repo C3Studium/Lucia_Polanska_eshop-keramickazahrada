@@ -32,7 +32,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       data-testid="order-details-page-wrapper"
     >
       <AccountSectionReveal className={s.accountOrderDetailsHeader}>
-        <p>Soukromý archiv · objednávka #{order.display_id}</p>
+        <p>Objednávka #{order.display_id}</p>
         <div className={s.accountOrderDetailsHeading}>
           <h1>
             Detail
@@ -57,8 +57,8 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       >
         <div className={s.accountOrderDetailsMain}>
           <section className={s.accountOrderDetailsSection}>
-            <span>01 · objekty</span>
-            <h2>Výběr v objednávce</h2>
+            <span>01 · výrobky</span>
+            <h2>Co jste objednali</h2>
             <Items order={order} />
           </section>
 

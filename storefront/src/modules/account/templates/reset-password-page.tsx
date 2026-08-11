@@ -34,11 +34,11 @@ export default function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!token) {
-      toast.error("Chybí token.")
+      toast.error("Odkaz není celý — otevřete ho prosím z e-mailu znovu.")
       return
     }
     if (!password) {
-      toast.error("Heslo je povinné pole.")
+      toast.error("Vyplňte prosím heslo.")
       return
     }
     if (password !== confirmPassword) {
@@ -62,7 +62,7 @@ export default function ResetPasswordForm() {
         setSuccess(true)
       })
       .catch((error) => {
-        toast.error(`Heslo se nepodařilo změnit: ${error.message}`)
+        toast.error(`Heslo se nepovedlo změnit: ${error.message}`)
       })
       .finally(() => {
         setLoading(false)
@@ -78,10 +78,10 @@ export default function ResetPasswordForm() {
         identifier: email,
         password,
       })
-      toast.success("Přihlášení bylo úspěšné!")
+      toast.success("Jste přihlášeni.")
       router.push("/account")
     } catch (error: any) {
-      toast.error(error?.message || "Přihlášení se nezdařilo.")
+      toast.error(error?.message || "Přihlášení se nepovedlo.")
     } finally {
       setLoginLoading(false)
     }
@@ -98,7 +98,7 @@ export default function ResetPasswordForm() {
             </>
           }
           description={
-            "Zvolte nové heslo a vraťte se ke svým objednávkám a uloženým objektům."
+            "Zvolte si nové heslo a vraťte se ke svým objednávkám i uloženým kouskům."
           }
         />
         <SupportForm onSubmit={handleSubmit}>
@@ -153,8 +153,8 @@ export default function ResetPasswordForm() {
           </SupportButton>
           {success && (
             <>
-              <SupportNotice eyebrow="Přístup obnoven" tone="success">
-                Heslo je bezpečně změněné.
+              <SupportNotice eyebrow="Hotovo" tone="success">
+                Heslo je změněné.
               </SupportNotice>
               <SupportButton
                 type="button"

@@ -85,10 +85,10 @@ export default function Page() {
   return (
     <LegalDocument
       code="DATA · 05"
-      eyebrow="Nastavení · srozumitelně"
+      eyebrow="Cookies"
       title="Používání cookies"
-      accent="Malé soubory, jasná pravidla."
-      description="Co cookies znamenají, k čemu je používáme a jak můžete jejich ukládání ovládat ve svém prohlížeči."
+      accent="Krátce a jasně."
+      description="Co cookies jsou, k čemu je používáme a jak si je můžete v prohlížeči vypnout."
       sections={sections}
     />
   )

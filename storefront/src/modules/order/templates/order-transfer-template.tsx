@@ -23,39 +23,39 @@ const stateCopy: Record<
   }
 > = {
   pending: {
-    eyebrow: "Soukromá žádost · čeká na vaše rozhodnutí",
+    eyebrow: "Čeká to na vaše rozhodnutí",
     title: "Objednávka",
-    accent: "má změnit majitele.",
+    accent: "má přejít na vás.",
     description:
-      "Někdo vás požádal o převzetí této objednávky. Než se cokoliv změní, zkontrolujte si, co přijetí převodu znamená.",
-    status: "Čeká na rozhodnutí",
+      "Někdo vás požádal, abyste si tuhle objednávku převzali. Než něco potvrdíte, přečtěte si, co to znamená.",
+    status: "Čeká na vás",
     mark: "↗",
   },
   accepted: {
-    eyebrow: "Převod byl bezpečně dokončen",
+    eyebrow: "Hotovo",
     title: "Objednávka",
     accent: "je nyní vaše.",
     description:
-      "Převod jsme zaznamenali. Objednávku nyní najdete mezi svými objednávkami a další zprávy budou směřovat k novému majiteli.",
+      "Převod máme zapsaný. Objednávku teď najdete mezi svými a další zprávy o ní budou chodit vám.",
     status: "Převod přijat",
     mark: "✓",
   },
   declined: {
-    eyebrow: "Žádost byla uzavřena",
+    eyebrow: "Žádost je uzavřená",
     title: "Objednávka",
-    accent: "zůstává původnímu majiteli.",
+    accent: "zůstává tam, kde byla.",
     description:
-      "Převod jste odmítli. Vlastnictví ani přístup k objednávce se nezměnily a tato žádost už nevyžaduje další krok.",
+      "Převod jste odmítli. Nic se nezměnilo a s touhle žádostí už nemusíte nic dělat.",
     status: "Převod odmítnut",
     mark: "×",
   },
   error: {
-    eyebrow: "Žádost se nepodařilo zpracovat",
+    eyebrow: "Něco se nepovedlo",
     title: "Převod",
-    accent: "potřebuje nový pokus.",
+    accent: "se nepovedl.",
     description:
-      "Odkaz mohl vypršet nebo už byl použit. Vlastnictví objednávky jsme nezměnili.",
-    status: "Akce nebyla dokončena",
+      "Odkaz nejspíš vypršel, nebo už byl použitý. Na objednávce jsme nic nezměnili.",
+    status: "Nedokončeno",
     mark: "!",
   },
 }
@@ -119,10 +119,10 @@ export default function OrderTransferTemplate({
           <section className={s.decision}>
             <div className={s.decisionIntro}>
               <p>Než se rozhodnete</p>
-              <h2>Co se přijetím změní</h2>
+              <h2>Co se změní, když to přijmete</h2>
               <span>
-                Obsah objednávky zůstává z bezpečnostních důvodů skrytý, dokud
-                není převod potvrzen.
+                Co je v objednávce, kvůli bezpečnosti neukazujeme, dokud převod
+                nepotvrdíte.
               </span>
             </div>
 
@@ -131,49 +131,49 @@ export default function OrderTransferTemplate({
                 <span>01</span>
                 <div>
                   <strong>Přístup</strong>
-                  <p>Objednávka se přiřadí k účtu nového majitele.</p>
+                  <p>Objednávka se připojí k účtu nového majitele.</p>
                 </div>
               </article>
               <article>
                 <span>02</span>
                 <div>
                   <strong>Oznámení</strong>
-                  <p>Další důležité zprávy obdrží nový majitel.</p>
+                  <p>Další zprávy o objednávce budou chodit jemu.</p>
                 </div>
               </article>
               <article>
                 <span>03</span>
                 <div>
                   <strong>Správa</strong>
-                  <p>Nový majitel převezme přístup k detailům objednávky.</p>
+                  <p>Detaily objednávky uvidí nový majitel.</p>
                 </div>
               </article>
             </div>
 
             <div className={s.actionPanel}>
               <div>
-                <p>Vaše rozhodnutí</p>
-                <h2>Přijmout, nebo ponechat beze změny?</h2>
+                <p>Je to na vás</p>
+                <h2>Přijmout, nebo nechat být?</h2>
               </div>
               {canDecide && <TransferActions id={id} token={token!} />}
               <p className={s.securityNote}>
-                Tento odkaz je určený pouze pro vyřízení této žádosti.
-                Potvrzujte jej jen tehdy, pokud převod očekáváte.
+                Tenhle odkaz platí jen pro tuhle jednu žádost. Potvrzujte ho
+                jen tehdy, když o převodu víte.
               </p>
             </div>
           </section>
         ) : (
           <section className={s.result}>
             <div>
-              <p>Výsledek žádosti</p>
+              <p>Jak to dopadlo</p>
               <h2>{copy.status}</h2>
             </div>
             <p>
               {state === "accepted"
-                ? "Změna je zapsaná. Pro další práci s objednávkou přejděte do svého účtu."
+                ? "Máme to zapsané. Objednávku teď najdete ve svém účtu."
                 : state === "declined"
-                  ? "Není potřeba nic dalšího. Můžete bezpečně pokračovat zpět do obchodu."
-                  : "Zkuste otevřít původní odkaz znovu. Pokud potíže přetrvají, požádejte původního majitele o novou žádost."}
+                  ? "Víc už dělat nemusíte. Klidně se vraťte do obchodu."
+                  : "Zkuste otevřít původní odkaz znovu. Kdyby to pořád nešlo, požádejte o novou žádost toho, kdo ji poslal."}
             </p>
             {error && <p className={s.errorDetail}>{error}</p>}
             <div className={s.resultActions}>
@@ -190,8 +190,8 @@ export default function OrderTransferTemplate({
         )}
 
         <footer className={s.footer}>
-          <span>Soukromý odkaz</span>
-          <span>Bezpečné rozhodnutí</span>
+          <span>Odkaz jen pro vás</span>
+          <span>Nic se nestane bez potvrzení</span>
           <span>Ateliér · Písek</span>
         </footer>
       </div>

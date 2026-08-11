@@ -13,8 +13,8 @@ import { sdk } from "@lib/config"
 import s from "../styles/profile.module.scss"
 
 export const metadata: Metadata = {
-  title: "Oblíbené objekty",
-  description: "Objekty uložené na později.",
+  title: "Oblíbené",
+  description: "Kousky, které jste si uložili na později.",
 }
 
 async function getCustomerWishlists(_customerId: string) {

@@ -21,7 +21,7 @@ export default function ShareButton({
       const url = window.location.href
       if (navigator.share) {
         await navigator.share({
-          title: "Můj výběr · Keramická zahrada",
+          title: "Moje oblíbené · Keramická zahrada",
           url,
         })
       } else {
@@ -37,7 +37,7 @@ export default function ShareButton({
   }
   return (
     <PremiumActionButton
-      text={submitting ? "Sdílím…" : "Sdílet výběr"}
+      text={submitting ? "Sdílím…" : "Sdílet"}
       className={s.accountWishlistShare}
       data-testid={dataTestId}
       onClickAction={onShare}

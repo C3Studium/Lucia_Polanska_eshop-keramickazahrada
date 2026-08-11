@@ -65,7 +65,7 @@ export default function ProductReviewsForm({
   const submitReview = async () => {
     if (!activeCustomer || !content || !rating) {
       toast.error("Chybí hodnocení", {
-        description: "Prosím doplňte text recenze a počet hvězd.",
+        description: "Doplňte prosím text recenze a hvězdičky.",
       })
       return
     }
@@ -94,15 +94,15 @@ export default function ProductReviewsForm({
         setContent("")
         setRating(0)
         toast.success("Děkujeme", {
-          description: "Vaše recenze byla odeslána ke schválení.",
+          description: "Recenzi jsme dostali, ještě ji projdeme a zveřejníme.",
         })
       })
       .catch((error) => {
-        toast.error("Recenzi se nepodařilo odeslat", {
+        toast.error("Recenzi se nepovedlo odeslat", {
           description:
             error instanceof Error
               ? error.message
-              : "Zkuste to prosím znovu za chvíli.",
+              : "Zkuste to prosím za chvíli znovu.",
         })
       })
       .finally(() => {
@@ -119,21 +119,20 @@ export default function ProductReviewsForm({
       transition={transition}
     >
       <div className={styles.rail}>
-        <span>Váš objekt · váš příběh</span>
+        <span>Vaše zkušenost</span>
         <i />
         <span>05</span>
       </div>
 
       <div className={styles.invitation}>
         <div className={styles.invitationCopy}>
-          <span className={styles.eyebrow}>Zkušenost, která zůstává</span>
+          <span className={styles.eyebrow}>Přidat recenzi</span>
           <h2>
-            Máte objekt doma?
-            <em>Řekněte, jak s vámi žije.</em>
+            Máte to už doma?
+            <em>Napište, jak se vám to líbí.</em>
           </h2>
           <p>
-            Vaše zkušenost pomůže dalším lidem vybrat si objekt, který jim bude
-            dělat radost dlouho.
+            Ostatním to hodně pomůže při výběru — a mně taky.
           </p>
         </div>
 
@@ -148,13 +147,13 @@ export default function ProductReviewsForm({
       {!hasActiveCustomer ? (
         <div className={styles.loadingState} aria-label="Načítání účtu">
           <i />
-          <span>Ověřujeme váš účet</span>
+          <span>Moment, kontrolujeme přihlášení</span>
         </div>
       ) : !activeCustomer ? (
         <div className={styles.authPrompt}>
           <p>
-            Pro přidání recenze se přihlaste, nebo si během chvíle vytvořte
-            účet.
+            Abyste mohli napsat recenzi, přihlaste se — nebo si během chvilky
+            založte účet.
           </p>
           <div className={styles.authActions}>
             <Link href="/account" className={styles.primaryAction}>
@@ -170,8 +169,8 @@ export default function ProductReviewsForm({
         <div className={styles.memberPrompt}>
           <p>
             {activeCustomer.first_name
-              ? `${activeCustomer.first_name}, jaký je váš objekt v každodenním životě?`
-              : "Jaký je váš objekt v každodenním životě?"}
+              ? `${activeCustomer.first_name}, jak se vám to doma osvědčilo?`
+              : "Jak se vám to doma osvědčilo?"}
           </p>
           <ClickButton
             text="Napsat recenzi"
@@ -209,7 +208,7 @@ export default function ProductReviewsForm({
                 name="title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="Například: Dělá mi radost každý den"
+                placeholder="Třeba: Dělá mi radost každý den"
               />
             </div>
 
@@ -219,7 +218,7 @@ export default function ProductReviewsForm({
                 name="content"
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
-                placeholder="Napište, kam jste objekt umístili a co na něm máte rádi…"
+                placeholder="Kam jste to dali a co se vám na tom líbí…"
               />
             </div>
 

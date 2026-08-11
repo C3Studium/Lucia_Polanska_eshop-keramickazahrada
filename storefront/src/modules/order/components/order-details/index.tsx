@@ -21,7 +21,7 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
       <div className={styles.accountOrderConfirmation}>
         <span>Potvrzení objednávky</span>
         <p>
-          Potvrzení jsme odeslali na{" "}
+          Potvrzení jsme poslali na{" "}
           <strong data-testid="order-email">{order.email}</strong>
         </p>
       </div>

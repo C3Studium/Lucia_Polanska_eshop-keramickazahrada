@@ -90,10 +90,10 @@ const Payment = ({
         id: provider.id,
         title: paymentInfoMap[provider.id]?.title ?? provider.id,
         detail: isPickupPayment(provider.id)
-          ? "Zaplatíte na místě, až si objekt vyzvednete v ateliéru"
+          ? "Zaplatíte na místě, až si to vyzvednete v ateliéru"
           : isDobirkaPayment(provider.id)
-          ? "Zaplatíte doručovateli při převzetí zásilky"
-          : "Platbu dokončíte v dalším kroku",
+          ? "Zaplatíte doručovateli, až vám zásilku předá"
+          : "Zaplatíte v dalším kroku",
         logo: paymentInfoMap[provider.id]?.icon,
       })),
     [nonComgatePaymentMethods]
@@ -170,7 +170,7 @@ const Payment = ({
     const result = await initiatePaymentSession(cart, { provider_id: method })
 
     if (!result.success) {
-      setError(result.message || "Platební metodu se nepodařilo připravit.")
+      setError(result.message || "Platbu se nepovedlo připravit. Zkuste to prosím znovu.")
     }
   }
 
@@ -205,7 +205,7 @@ const Payment = ({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Platební metodu se nepodařilo připravit."
+          : "Platbu se nepovedlo připravit. Zkuste to prosím znovu."
       )
     } finally {
       setIsLoading(false)
@@ -246,11 +246,11 @@ const Payment = ({
           {!paidByGiftcard && availablePaymentMethods?.length > 0 && (
             <>
               <div className={styles.methodIntro}>
-                <span>Vyberte způsob úhrady</span>
+                <span>Jak chcete zaplatit?</span>
                 <p>
                   {hasComgate
-                    ? "Vyberte metodu. V dalším kroku uvidíte celou objednávku a teprve pak přejdete k platbě."
-                    : "Platbu dokončíte bezpečně v následujícím kroku."}
+                    ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
+                    : "Platit budete bezpečně až v dalším kroku."}
                 </p>
               </div>
               {/* One grid, not two lists. Osobní odběr's „Zaplatíte při vyzvednutí" joins
@@ -294,14 +294,14 @@ const Payment = ({
           {paidByGiftcard && (
             <div className={styles.colThird}>
               <Text className={styles.sectionTitle}>Způsob platby</Text>
-              <Text className={styles.sectionText}>Dárková karta</Text>
+              <Text className={styles.sectionText}>Dárkový poukaz</Text>
             </div>
           )}
 
           <div aria-live="polite">
             {isLoading && isComgate(selectedPaymentMethod) && (
               <p className={styles.paymentStatus}>
-                Připravujeme zvolenou metodu a otevíráme Comgate…
+                Připravujeme platbu a otevíráme Comgate…
               </p>
             )}
             <ErrorMessage
@@ -347,7 +347,7 @@ const Payment = ({
                     )}
                   </Container>
                   <Text className={styles.sectionText}>
-                    Připraveno k dokončení
+                    Můžete pokračovat
                   </Text>
                 </div>
               </div>
@@ -355,7 +355,7 @@ const Payment = ({
           ) : paidByGiftcard ? (
             <div className={styles.colThird}>
               <Text className={styles.sectionTitle}>Způsob platby</Text>
-              <Text className={styles.sectionText}>Dárková karta</Text>
+              <Text className={styles.sectionText}>Dárkový poukaz</Text>
             </div>
           ) : null}
         </div>

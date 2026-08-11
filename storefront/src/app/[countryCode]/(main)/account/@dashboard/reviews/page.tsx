@@ -98,7 +98,7 @@ export default async function ReviewsPage(props: PageProps) {
   if (!customer) {
     return (
       <div>
-        <p>Pro přístup k recenzím se prosím přihlaste</p>
+        <p>Abyste viděli své recenze, přihlaste se prosím.</p>
         <LocalizedClientLink href={`/account`}>
           Přihlásit se
         </LocalizedClientLink>

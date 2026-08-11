@@ -111,10 +111,10 @@ export default function Page() {
   return (
     <LegalDocument
       code="GDPR · 02"
-      eyebrow="Soukromí · transparentně"
+      eyebrow="Soukromí"
       title="Ochrana osobních údajů"
-      accent="Vaše soukromí zůstává vaše."
-      description="Přehled toho, jaké údaje používáme, proč je potřebujeme a jaká práva máte při návštěvě nebo nákupu."
+      accent="Vaše údaje zůstávají vaše."
+      description="Jaké údaje o vás máme, k čemu je potřebujeme a co s nimi můžete udělat."
       sections={sections}
     />
   )

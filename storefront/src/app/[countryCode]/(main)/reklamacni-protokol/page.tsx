@@ -77,11 +77,11 @@ const sections: LegalSectionData[] = [
 export default function Page() {
   return (
     <LegalDocument
-      code="PRÁVO · 06"
+      code="06"
       eyebrow="Reklamace · postup"
       title="Reklamační protokol"
       accent="Když něco není v pořádku."
-      description="Formulář a postup pro uplatnění reklamace. Napište nám dřív, než zboží odešlete — často se domluvíme rychleji."
+      description="Jak reklamaci podat a co k ní potřebujete. Napište nám dřív, než zboží pošlete — často se domluvíme rychleji."
       sections={sections}
       supplements={{ postup: <ProtocolDownload /> }}
     />

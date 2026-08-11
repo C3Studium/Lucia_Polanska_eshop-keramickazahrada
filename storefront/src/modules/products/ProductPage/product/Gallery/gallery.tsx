@@ -40,7 +40,7 @@ const ruleInView = { scaleX: 1 }
 const ruleTransition = { duration: 1, delay: 0.12, ease: easeMicro }
 
 const captions = [
-  ["Celý objekt", "Tvar a proporce"],
+  ["Celý kus", "Tvar a proporce"],
   ["Detail povrchu", "Stopa ruky"],
   ["V prostoru", "Měřítko a světlo"],
   ["Zblízka", "Glazura a materiál"],
@@ -107,7 +107,7 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
   }, [bundle, images, product.title])
 
   if (!galleryImages.length && !bundleImages.length) {
-    return <div className="product__mediaEmpty">Fotografie připravujeme.</div>
+    return <div className="product__mediaEmpty">Fotky sem ještě doplníme.</div>
   }
 
   const galleryCount = galleryImages.length + (bundleImages.length ? 1 : 0)
@@ -115,7 +115,7 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
   return (
     <div className="product__gallery">
       <div className="product__galleryIntro">
-        <span>{bundle ? "Soubor v detailu" : "Objekt v detailu"}</span>
+        <span>{bundle ? "Sada zblízka" : "Zblízka"}</span>
         <span>{String(galleryCount).padStart(2, "0")} pohledů</span>
       </div>
 
@@ -152,7 +152,7 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
             ))}
           </div>
           <figcaption>
-            <span>01 · Celý soubor</span>
+            <span>01 · Všechny fotky</span>
             <span>{bundle?.title}</span>
           </figcaption>
         </motion.figure>
@@ -200,8 +200,8 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
       })}
 
       <div className="product__galleryOutro">
-        <span>Každý objekt nese drobnou odchylku.</span>
-        <p>Právě v ní zůstává viditelná práce rukou.</p>
+        <span>Na každém kusu je něco malinko jinak.</span>
+        <p>Přesně podle toho poznáte ruční práci.</p>
 
         <motion.div
           className="product__galleryOutroGraphic"

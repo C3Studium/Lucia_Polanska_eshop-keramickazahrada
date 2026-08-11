@@ -41,17 +41,17 @@ export default function ReviewsTemplate({
       data-testid="reviews-page-wrapper"
     >
       <AccountSectionReveal className={s.accountReviewsHeader}>
-        <p>Soukromý archiv · recenze</p>
+        <p>Váš účet · recenze</p>
         <div className={s.accountReviewsHeading}>
           <h1>
             Vaše
             <em>zkušenosti.</em>
           </h1>
-          <span>{String(visibleReviews.length).padStart(2, "0")} příběhů</span>
+          <span>{String(visibleReviews.length).padStart(2, "0")} recenzí</span>
         </div>
         <p className={s.accountReviewsDescription}>
-          Zkušenosti s objekty, které už našly své místo u vás. Vaše slova
-          pomáhají ostatním vybírat pomalu a s jistotou.
+          Co jste napsali o věcech, které už máte doma. Ostatním to hodně
+          pomáhá při výběru.
         </p>
       </AccountSectionReveal>
 
@@ -60,8 +60,7 @@ export default function ReviewsTemplate({
           <div className={s.accountPreviewNotice}>
             <span>Vývojový náhled</span>
             <p>
-              Ukázkové recenze se zobrazují jen lokálně, dokud účet nemá vlastní
-              záznamy.
+              Tohle jsou jen ukázky. Zmizí, jakmile napíšete první vlastní recenzi.
             </p>
           </div>
         )}
@@ -69,12 +68,12 @@ export default function ReviewsTemplate({
         {!visibleReviews.length ? (
           <div className={s.accountReviewsEmpty}>
             <div>
-              <span>Zatím bez příběhu</span>
-              <p>Recenzi můžete přidat u objektu, který už máte doma.</p>
+              <span>Zatím tu nic není</span>
+              <p>Recenzi napíšete u výrobku, který už máte doma.</p>
             </div>
             <PremiumActionLink
               href="/store"
-              text="Prohlédnout obchod"
+              text="Do obchodu"
               className={s.accountReviewsAction}
             />
           </div>
@@ -112,10 +111,10 @@ export default function ReviewsTemplate({
                       </span>
                       <div className={s.accountReviewCopy}>
                         <span className={s.accountReviewProduct}>
-                          {product?.title || "Ateliérový objekt"}
+                          {product?.title || "Z ateliéru"}
                         </span>
                         <h2>{review?.title || "Vaše zkušenost"}</h2>
-                        <p>{review?.content || "Bez doprovodného textu."}</p>
+                        <p>{review?.content || "Bez textu."}</p>
                         <div className={s.accountReviewFooter}>
                           <div
                             className={s.accountReviewStars}
@@ -141,7 +140,7 @@ export default function ReviewsTemplate({
                       <div className={s.accountReviewImage}>
                         <Image
                           src={image}
-                          alt={product?.title || "Objekt z recenze"}
+                          alt={product?.title || "Výrobek z recenze"}
                           width={260}
                           height={320}
                         />

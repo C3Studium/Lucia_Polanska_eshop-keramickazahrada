@@ -12,7 +12,7 @@ import {
 import WebButton from "@modules/common/components/Buttons/webButton"
 
 const ease = [.22, 1, .36, 1] as const
-const titleWords = ["Proces", "končí."]
+const titleWords = ["Takhle", "to vzniká."]
 
 const ruleReveal: Variants = {
     hidden: { scaleX: 0 },
@@ -137,7 +137,7 @@ export default function VyrobaCta() {
                             />
                         </motion.div>
                         <figcaption>
-                            <span>Hotový objekt</span>
+                            <span>Hotový kus</span>
                             <i />
                             <span>Keramická zahrada</span>
                         </figcaption>
@@ -162,10 +162,10 @@ export default function VyrobaCta() {
 
                 <div className="vyrobaCta__content">
                     <motion.p className="vyrobaCta__eyebrow" variants={fadeUp}>
-                        Z rukou do vašeho prostoru
+                        Z mých rukou k vám domů
                     </motion.p>
 
-                    <h2 id="vyroba-cta-title" aria-label="Proces končí. Příběh začíná u vás.">
+                    <h2 id="vyroba-cta-title" aria-label="Takhle to vzniká. Zbytek je na vás.">
                         <span className="vyrobaCta__line" aria-hidden="true">
                             {titleWords.map((word) => {
                                 const startIndex = characterIndex
@@ -189,20 +189,20 @@ export default function VyrobaCta() {
                         </span>
                         <span className="vyrobaCta__line vyrobaCta__line--accent">
                             <motion.span variants={accentReveal} aria-hidden="true">
-                                Příběh začíná u vás.
+                                Zbytek je na vás.
                             </motion.span>
                         </span>
                     </h2>
 
                     <motion.div className="vyrobaCta__action" variants={fadeUp}>
                         <p>
-                            Objevte autorské objekty, které prošly celým procesem
-                            pomalu, ručně a v malém počtu.
+                            Podívejte se na keramiku, která tímhle vším prošla —
+                            ručně, pomalu a jen v malém počtu.
                         </p>
                         <WebButton
                             Kind="Link"
                             href="/store"
-                            title="Prohlédnout objekty"
+                            title="Prohlédnout výrobky"
                             className="vyrobaCta__button"
                         />
                     </motion.div>

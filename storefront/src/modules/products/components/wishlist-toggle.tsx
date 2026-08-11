@@ -92,7 +92,7 @@ export default function WishlistToggle({
 
   const toggle = async () => {
     if (!variantId) {
-      toast.error("Nejprve vyberte provedení objektu.")
+      toast.error("Nejdřív prosím vyberte provedení.")
       return
     }
 
@@ -113,10 +113,10 @@ export default function WishlistToggle({
           )
 
           if (!response.ok) {
-            throw new Error("Objekt se nepodařilo odebrat.")
+            throw new Error("Nepovedlo se to odebrat.")
           }
 
-          toast.success("Objekt byl odebrán z oblíbených.")
+          toast.success("Odebráno z oblíbených.")
         } catch (removeError) {
           updateWishlistState(previousItems)
           throw removeError
@@ -146,7 +146,7 @@ export default function WishlistToggle({
           const data = await response.json()
 
           if (!response.ok || !data?.success) {
-            throw new Error(data?.message || "Objekt se nepodařilo uložit.")
+            throw new Error(data?.message || "Nepovedlo se to uložit.")
           }
 
           const canonicalItems = data?.wishlist?.items
@@ -156,7 +156,7 @@ export default function WishlistToggle({
             await refreshWishlist()
           }
 
-          toast.success("Objekt byl uložen do oblíbených.")
+          toast.success("Uloženo do oblíbených.")
         } catch (saveError) {
           updateWishlistState(previousItems)
           throw saveError
@@ -164,7 +164,7 @@ export default function WishlistToggle({
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Změnu se nepodařilo uložit."
+        error instanceof Error ? error.message : "Změnu se nepovedlo uložit."
       )
     } finally {
       setIsPending(false)
@@ -182,8 +182,8 @@ export default function WishlistToggle({
       <LocalizedClientLink
         href="/account"
         className={s.login}
-        aria-label="Přihlásit se a uložit objekt"
-        title="Přihlásit se a uložit objekt"
+        aria-label="Přihlásit se a uložit do oblíbených"
+        title="Přihlásit se a uložit do oblíbených"
       >
         <motion.span
           whileHover={whileHover}
@@ -206,13 +206,13 @@ export default function WishlistToggle({
       aria-pressed={inWishlist}
       aria-label={
         inWishlist
-          ? "Odebrat objekt z oblíbených"
-          : "Uložit objekt do oblíbených"
+          ? "Odebrat z oblíbených"
+          : "Uložit do oblíbených"
       }
       title={
         inWishlist
-          ? "Odebrat objekt z oblíbených"
-          : "Uložit objekt do oblíbených"
+          ? "Odebrat z oblíbených"
+          : "Uložit do oblíbených"
       }
       initial={false}
       animate={inWishlist ? "saved" : "idle"}

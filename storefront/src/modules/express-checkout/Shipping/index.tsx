@@ -108,7 +108,7 @@ export const Shipping = ({
   const openPacketa = () => {
     setError(null)
     if (!packetaApiKey) {
-      setError("Výběr výdejního místa není nakonfigurovaný.")
+      setError("Výběr výdejního místa se nám nepovedlo spustit. Napište nám prosím.")
       return
     }
 
@@ -125,7 +125,7 @@ export const Shipping = ({
             packeta_pickup_point_label: label,
           })
           if (!result.success) {
-            setError(result.message || "Výdejní místo se nepodařilo uložit.")
+            setError(result.message || "Výdejní místo se nepovedlo uložit.")
             return
           }
           setPacketaPoint(label)
@@ -166,7 +166,7 @@ export const Shipping = ({
     script.addEventListener("load", choose, { once: true })
     script.addEventListener(
       "error",
-      () => setError("Výběr výdejního místa se nepodařilo načíst."),
+      () => setError("Mapu výdejních míst se nepovedlo načíst."),
       { once: true }
     )
   }
@@ -183,7 +183,7 @@ export const Shipping = ({
     })
 
     if (!addressResult.success) {
-      setError(addressResult.message || "Adresu se nepodařilo uložit.")
+      setError(addressResult.message || "Adresu se nepovedlo uložit.")
       setIsSubmitting(false)
       return
     }
@@ -195,7 +195,7 @@ export const Shipping = ({
 
     setIsSubmitting(false)
     if (!shippingResult.success) {
-      setError(shippingResult.message || "Dopravu se nepodařilo uložit.")
+      setError(shippingResult.message || "Dopravu se nepovedlo uložit.")
       return
     }
 
@@ -205,9 +205,9 @@ export const Shipping = ({
   return (
     <div className={styles.deliveryStep}>
       <div className={styles.sectionIntro}>
-        <span className={styles.eyebrow}>Kam výběr dorazí</span>
+        <span className={styles.eyebrow}>Kam to poslat</span>
         <p>
-          Sedm údajů a jedna volba dopravy. Zemi jsme převzali z verze obchodu.
+          Sedm údajů a volba dopravy. Zemi máme z verze obchodu, kterou máte zvolenou.
         </p>
       </div>
 
@@ -303,7 +303,7 @@ export const Shipping = ({
                   <strong>{method.name}</strong>
                   <small>
                     {method.id === packetaShippingMethodId
-                      ? packetaPoint || "Po volbě vyberete výdejní místo"
+                      ? packetaPoint || "Výdejní místo si vyberete vzápětí"
                       : "Doručení na uvedenou adresu"}
                   </small>
                 </span>
@@ -333,7 +333,7 @@ export const Shipping = ({
       <PremiumActionButton
         text={
           isSubmitting
-            ? "Ukládám doručení"
+            ? "Ukládáme…"
             : selectedMethod
               ? "Pokračovat k platbě"
               : "Vyberte dopravu"

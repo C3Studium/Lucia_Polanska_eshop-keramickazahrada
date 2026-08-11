@@ -2,9 +2,9 @@
  * Czech has three plural forms: 1 / 2–4 / 5+. Getting it wrong reads as machine translation,
  * which is precisely the impression a hand-made atelier cannot afford.
  *
- *   pluralize(1, "objekt", "objekty", "objektů")  → "objekt"
- *   pluralize(3, …)                               → "objekty"
- *   pluralize(7, …)                               → "objektů"
+ *   pluralize(1, "výrobek", "výrobky", "výrobků")  → "výrobek"
+ *   pluralize(3, …)                                → "výrobky"
+ *   pluralize(7, …)                                → "výrobků"
  */
 export function pluralize(
   count: number,
@@ -28,8 +28,8 @@ export const withCount = (
   many: string
 ) => `${count} ${pluralize(count, one, few, many)}`
 
-export const objekt = (count: number) =>
-  pluralize(count, "objekt", "objekty", "objektů")
+export const vyrobek = (count: number) =>
+  pluralize(count, "výrobek", "výrobky", "výrobků")
 
 export const kus = (count: number) => pluralize(count, "kus", "kusy", "kusů")
 

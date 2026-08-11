@@ -166,7 +166,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
           phone: customerForm.phone,
         })
         if (!deleteRes.success) {
-          return "Účet se nepodařilo připravit k registraci. Zkuste to prosím znovu."
+          return "Účet se nepovedlo založit. Zkuste to prosím znovu."
         }
         // Proceed with standard signup
       } else if (
@@ -178,7 +178,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
         if (!restoreRes || restoreRes.success === false) {
           return toCzechErrorMessage(restoreRes?.message)
         }
-        return "Váš účet jsme obnovili. Pokud si nepamatujete heslo, nechte si ho prosím zaslat znovu."
+        return "Váš účet jsme obnovili. Kdybyste si nepamatovali heslo, nechte si poslat nové."
       } else {
         return "Účet s tímto e-mailem už existuje. Zkuste se prosím přihlásit."
       }

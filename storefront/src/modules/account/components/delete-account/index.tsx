@@ -217,7 +217,7 @@ const DeleteAccountModal = ({
 
       if (!result.success) {
         setError(
-          "Účet se nepodařilo smazat. Zkuste to prosím znovu, nebo nás kontaktujte."
+          "Účet se nepovedlo smazat. Zkuste to prosím znovu, nebo nám napište."
         )
         isDeletingRef.current = false
         setIsDeleting(false)
@@ -227,7 +227,7 @@ const DeleteAccountModal = ({
       await signout(countryCode)
     } catch {
       setError(
-        "Účet se nepodařilo smazat. Zkuste to prosím znovu, nebo nás kontaktujte."
+        "Účet se nepovedlo smazat. Zkuste to prosím znovu, nebo nám napište."
       )
       isDeletingRef.current = false
       setIsDeleting(false)
@@ -269,7 +269,7 @@ const DeleteAccountModal = ({
             />
 
             <motion.div className={styles.header} variants={contentVariants}>
-              <span className={styles.index}>Citlivá akce · 01</span>
+              <span className={styles.index}>Pozor</span>
               <motion.button
                 ref={closeButtonRef}
                 type="button"
@@ -298,13 +298,13 @@ const DeleteAccountModal = ({
               className={styles.description}
               variants={contentVariants}
             >
-              Objednávky zůstanou v účetnictví ateliéru, ale přijdete o svůj
-              profil, adresy, recenze a uložené objekty. Tuto akci nelze vrátit.
+              Objednávky nám musí zůstat kvůli účetnictví, ale přijdete o svůj
+              profil, adresy, recenze i uložené kousky. Zpátky to už nevrátíme.
             </motion.p>
 
             {customerEmail && (
               <motion.div className={styles.account} variants={contentVariants}>
-                <span>Účet určený ke smazání</span>
+                <span>Smažeme tenhle účet</span>
                 <strong>{customerEmail}</strong>
               </motion.div>
             )}
@@ -344,7 +344,7 @@ const DeleteAccountModal = ({
             </motion.div>
 
             <motion.p className={styles.note} variants={contentVariants}>
-              Smazání provedeme až po vašem potvrzení tímto tlačítkem.
+              Nic se nestane, dokud to nepotvrdíte tímhle tlačítkem.
             </motion.p>
           </motion.div>
         </motion.div>

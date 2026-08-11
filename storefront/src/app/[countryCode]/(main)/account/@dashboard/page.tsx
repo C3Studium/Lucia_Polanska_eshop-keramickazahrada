@@ -7,7 +7,7 @@ import { listOrders } from "@lib/data/orders"
 
 export const metadata: Metadata = {
   title: "Můj účet",
-  description: "Přehled objednávek a osobních údajů.",
+  description: "Vaše objednávky a osobní údaje na jednom místě.",
 }
 
 export default async function OverviewTemplate() {

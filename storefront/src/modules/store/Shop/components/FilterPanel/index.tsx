@@ -63,15 +63,15 @@ export default function FilterPanel({
       >
         <div className={styles.heading}>
           <div>
-            <span>Studio výběru</span>
-            <h2>Najděte svůj kus</h2>
+            <span>Filtry</span>
+            <h2>Najděte, co hledáte</h2>
           </div>
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
         </div>
 
         <FilterGroup index="01" title="Kategorie">
           <div className={styles.categoryList}>
-            <FilterButton active={!filters.categoryId} label="Všechny objekty" onClick={() => onChange({ categoryId: "" })} />
+            <FilterButton active={!filters.categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />
             {categories.map((category) => (
               <FilterButton
                 key={category.id}
@@ -105,8 +105,8 @@ export default function FilterPanel({
         </FilterGroup>
 
         <div className={styles.footer}>
-          <span>{activeCount ? `${activeCount} aktivní` : "Bez omezení"}</span>
-          <button type="button" onClick={onReset} disabled={!activeCount}>Vyčistit výběr</button>
+          <span>{activeCount ? `${activeCount} aktivní` : "Zatím bez filtrů"}</span>
+          <button type="button" onClick={onReset} disabled={!activeCount}>Zrušit filtry</button>
         </div>
       </motion.aside>
     </>

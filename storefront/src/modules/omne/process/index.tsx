@@ -15,7 +15,7 @@ import Image from "next/image"
 const process = [
     {
         src: "/assets/img/ome/4.png",
-        alt: "Keramický objekt z ateliéru Lucie Polanské",
+        alt: "Keramika z ateliéru Lucie Polanské",
         label: "Praxe / Studium",
         lead: "Řemeslo stojí na znalosti materiálu.",
         detail: "V Bechyni jsem získala základ. Vlastní rukopis ale roste každým dalším výpalem.",
@@ -29,10 +29,10 @@ const process = [
     },
     {
         src: "/assets/img/vyroba/4.png",
-        alt: "Keramický objekt zasazený v zahradě",
+        alt: "Keramika zasazená v zahradě",
         label: "Inspirace",
-        lead: "Tvary hledám v zahradě, krajině a každodenních rituálech.",
-        detail: "Vznikají tak objekty, které mají vlastní charakter a přirozeně stárnou.",
+        lead: "Tvary hledám v zahradě, v krajině a v obyčejných věcech kolem sebe.",
+        detail: "Vznikají tak věci, které mají vlastní charakter a hezky zestárnou.",
     },
 ]
 

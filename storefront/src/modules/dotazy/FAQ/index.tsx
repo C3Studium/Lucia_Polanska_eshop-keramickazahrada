@@ -22,61 +22,61 @@ const faq = [
         id: "vyroba-na-zakazku",
         category: "zakazka" as Category,
         title: "Vyrábíte keramiku na zakázku?",
-        desc: "Ano. Zakázkovou tvorbu připravujeme pro jednotlivce, interiéry i menší architektonické projekty. Každou poptávku nejdříve společně upřesníme — od rozměru a povrchu až po termín a rozpočet.",
+        desc: "Ano, ráda. Dělám zakázky pro jednotlivce, do interiérů i na menší architektonické projekty. Vždycky si to nejdřív spolu ujasníme — rozměr, povrch, termín i cenu.",
     },
     {
         id: "prubeh-zakazky",
         category: "zakazka" as Category,
         title: "Jak probíhá zakázková výroba?",
-        desc: "Po úvodní konzultaci připravíme návrh, cenový rámec a orientační termín. Po jejich odsouhlasení začíná ruční výroba, sušení, první výpal, glazování a závěrečný výpal. O důležitých krocích vás průběžně informujeme.",
+        desc: "Nejdřív si popovídáme, pak vám pošlu návrh, cenu a přibližný termín. Když odsouhlasíte, pustím se do práce — modelování, sušení, první výpal, glazování a závěrečný výpal. Průběžně vám dávám vědět, jak to jde.",
     },
     {
         id: "delka-vyroby",
         category: "zakazka" as Category,
         title: "Jak dlouho trvá výroba na zakázku?",
-        desc: "Obvykle šest až deset týdnů podle rozsahu, použité techniky a vytíženosti pece. Keramika potřebuje přirozeně vyschnout a projít několika výpaly, proto přesný termín potvrzujeme vždy individuálně.",
+        desc: "Většinou šest až deset týdnů — podle toho, jak je to velké a kolik toho mám v peci. Hlína musí pomalu vyschnout a projít dvěma výpaly, spěchat se nedá. Přesný termín si vždycky domluvíme předem.",
     },
     {
         id: "dostupnost",
         category: "produkty" as Category,
         title: "Kdy bude vyprodaný produkt znovu dostupný?",
-        desc: "Menší série doplňujeme průběžně, každý kus se však může lehce lišit. U vybraného produktu doporučujeme zapnout upozornění na dostupnost nebo nám napsat — rádi sdělíme nejbližší plánovaný termín.",
+        desc: "Menší série doplňuju průběžně, ale každý kus vypadá trochu jinak. U výrobku si můžete nechat poslat upozornění, až bude znovu skladem — nebo mi napište a řeknu vám, kdy to plánuju.",
     },
     {
         id: "rucni-vyroba",
         category: "produkty" as Category,
         title: "Jsou všechny produkty ručně vyráběné?",
-        desc: "Ano. Každý objekt vzniká ručně v malých sériích v našem ateliéru. Drobné rozdíly v kresbě, odstínu nebo rozměru nejsou vadou, ale přirozenou součástí autorské keramiky.",
+        desc: "Ano, všechno. Každý kus dělám ručně v ateliéru v Písku. Drobné rozdíly v kresbě, odstínu nebo rozměru nejsou vada — podle nich poznáte ruční práci.",
     },
     {
         id: "baleni",
         category: "doprava" as Category,
         title: "Jak keramiku balíte pro bezpečnou přepravu?",
-        desc: "Každý kus chráníme několika vrstvami a ukládáme jej do pevné krabice tak, aby se během přepravy nemohl pohybovat. Kde je to možné, používáme znovu využitelné nebo recyklovatelné výplně.",
+        desc: "Každý kus obalíme několika vrstvami a uložíme do pevné krabice tak, aby se v ní nemohl hýbat. Kde to jde, používáme výplně, které se dají použít znovu nebo vytřídit.",
     },
     {
         id: "poskozena-zasilka",
         category: "doprava" as Category,
         title: "Jak postupovat, když zásilka dorazí poškozená?",
-        desc: "Balík i poškozený výrobek prosím vyfoťte ihned po rozbalení a ozvěte se nám do 48 hodin. Připojte číslo objednávky; společně domluvíme výměnu, opravu nebo vrácení peněz.",
+        desc: "Vyfoťte prosím balík i poškozený kus hned po rozbalení a ozvěte se nám do 48 hodin. Přiložte číslo objednávky a domluvíme se na výměně, opravě nebo vrácení peněz.",
     },
     {
         id: "vraceni",
         category: "doprava" as Category,
         title: "Mohu produkt vrátit nebo vyměnit?",
-        desc: "Nepoužitý produkt ze standardní nabídky můžete vrátit do 14 dnů od převzetí. Zakázkové a personalizované výrobky vrátit nelze, pokud nejsou poškozené nebo vadné.",
+        desc: "Nepoužitý výrobek z běžné nabídky můžete vrátit do 14 dnů od převzetí. Zakázkové kusy dělané přímo pro vás vrátit bohužel nejde — pokud tedy nejsou poškozené nebo vadné.",
     },
     {
         id: "kurzy-pro-skoly",
         category: "kurzy" as Category,
         title: "Pořádáte kurzy pro školy nebo soukromé skupiny?",
-        desc: "Ano. Program, délku i náročnost workshopu přizpůsobíme věku a zkušenostem skupiny. Napište nám přibližný počet účastníků a preferovaný termín a připravíme konkrétní nabídku.",
+        desc: "Ano. Program i délku přizpůsobím věku a zkušenostem skupiny. Napište mi, kolik vás bude a kdy by se vám to hodilo, a připravím konkrétní nabídku.",
     },
     {
         id: "kontakt",
         category: "vse" as Category,
         title: "Jak vás mohu kontaktovat?",
-        desc: "Nejrychleji přes kontaktní formulář nebo telefonicky na čísle +420 775 211 578. Odpovídáme zpravidla do dvou pracovních dnů; během práce u pece to může trvat o něco déle.",
+        desc: "Nejrychleji přes kontaktní formulář, nebo mi zavolejte na +420 775 211 578. Odpovídám zpravidla do dvou pracovních dnů; když stojím u pece, může to trvat o kousek déle.",
     },
 ]
 
@@ -113,14 +113,14 @@ export default function FAQBody() {
                 variants={sectionVariants}
             >
                 <motion.div variants={faqRevealItem}>
-                    <span className="faqEyebrow">Pomoc při výběru · 02</span>
+                    <span className="faqEyebrow">Odpovědi · 02</span>
                     <h2 id="faq-section-title">
-                        Vše důležité,<br />co potřebujete vědět.
+                        Na co se ptáte<br />nejčastěji.
                     </h2>
                 </motion.div>
                 <motion.p variants={faqRevealItem}>
-                    Keramika vzniká pomalu a stejně pečlivě přistupujeme i k vašim otázkám.
-                    Zde najdete odpovědi k objednávkám, výrobě, dopravě i kurzům.
+                    Sepsala jsem, na co se lidé ptají nejčastěji — objednávky, výroba,
+                    doprava i kurzy. Kdyby tu něco chybělo, napište mi.
                 </motion.p>
             </motion.div>
 
@@ -137,7 +137,7 @@ export default function FAQBody() {
                         type="search"
                         value={query}
                         onChange={(event) => setQuery(event.currentTarget.value)}
-                        placeholder="Co potřebujete vědět?"
+                        placeholder="Na co se chcete zeptat?"
                     />
                     <span className="faqSearchIcon" aria-hidden="true" />
                 </label>
@@ -187,7 +187,7 @@ export default function FAQBody() {
                     </AnimatePresence>
                     {!visibleQuestions.length && (
                         <motion.p className="faqEmpty" initial={emptyInitial} animate={emptyAnimate}>
-                            Tuto otázku jsme nenašli. Napište nám a rádi vám poradíme osobně.
+                            Na tohle tu odpověď nemáme. Napište mi a poradím vám osobně.
                         </motion.p>
                     )}
                 </motion.div>
@@ -204,9 +204,9 @@ export default function FAQBody() {
                         <span />
                     </div>
                     <div className="faqContactCopy">
-                        <span className="faqEyebrow">Osobní pomoc · 03</span>
+                        <span className="faqEyebrow">Ještě něco? · 03</span>
                         <h3>Nenašli jste odpověď?</h3>
-                        <p>Napište přímo do ateliéru. Ozveme se zpravidla do dvou pracovních dnů.</p>
+                        <p>Napište mi přímo do ateliéru. Ozvu se zpravidla do dvou pracovních dnů.</p>
                         <div className="faqContactActions">
                             <ContactTrigger text="Napsat zprávu" />
                             <a href="tel:+420775211578">+420 775 211 578</a>

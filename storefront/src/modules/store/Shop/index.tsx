@@ -247,15 +247,15 @@ export default function ECom({
         aria-label="Katalog produktů"
       >
         <header className={styles.introduction}>
-          <p>Ateliérový výběr</p>
+          <p>Co je právě k mání</p>
           <h2>
-            Vyberte si objekt,
+            Vyberte si něco,
             <br />
-            <em>který zůstane.</em>
+            <em>co vám zůstane.</em>
           </h2>
           <span>
-            Užitá keramika, autorské solitéry a drobné série. Přirozené odchylky
-            nejsou vadou, ale podpisem rukou.
+            Keramika na běžné používání, jednotlivé kusy i malé série. Drobné
+            odchylky nejsou vada — podle nich poznáte, že to dělal člověk.
           </span>
         </header>
 

@@ -254,7 +254,7 @@ const CartDropdown = ({
                     <span>položek</span>
                   </div>
 
-                  <span className={styles.emptyText}>Váš nákupní košík je prázdný.</span>
+                  <span className={styles.emptyText}>V košíku zatím nic není.</span>
                   <div className={styles.emptyAction} onClick={close}>
                     <WebButton
                       title="Do obchodu"

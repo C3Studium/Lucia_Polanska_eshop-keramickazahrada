@@ -194,7 +194,7 @@ function FreeShippingPopup({
           aria-live="polite"
         >
           <div className={styles.popupTop}>
-            <span className={styles.popupIndex}>Výhoda · 01</span>
+            <span className={styles.popupIndex}>Doprava zdarma</span>
             <motion.button
               type="button"
               className={styles.close}
@@ -221,12 +221,12 @@ function FreeShippingPopup({
             />
             <div>
               <h2>
-                {price.target_reached ? "Doprava je na nás." : "Ještě kousek."}
+                {price.target_reached ? "Dopravu platíme my." : "Ještě kousek."}
               </h2>
               <p>
                 {price.target_reached
-                  ? "Váš výběr už splňuje podmínky dopravy zdarma."
-                  : "Přidejte další objekt v hodnotě "}
+                  ? "Máte nakoupeno tolik, že dopravu platíme my."
+                  : "Do dopravy zdarma vám zbývá "}
                 {!price.target_reached && (
                   <strong>
                     {convertToLocale({
@@ -253,7 +253,7 @@ function FreeShippingPopup({
             {!price.target_reached && (
               <PremiumActionLink
                 href="/store"
-                text="Pokračovat ve výběru"
+                text="Nakupovat dál"
                 className={styles.storeLink}
               />
             )}

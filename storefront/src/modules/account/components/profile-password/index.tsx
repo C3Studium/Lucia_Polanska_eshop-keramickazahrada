@@ -20,15 +20,15 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
     const confirm_password = formData.get("confirm_password") as string
 
     if (!old_password || !new_password || !confirm_password) {
-      toast.error("Vyplňte prosím všechna pole")
+      toast.error("Vyplňte prosím všechna pole.")
       return
     }
     if (new_password !== confirm_password) {
-      toast.error("Nová hesla se neshodují")
+      toast.error("Nová hesla se neshodují.")
       return
     }
     if (new_password.length < 8) {
-      toast.error("Nové heslo musí mít alespoň 8 znaků")
+      toast.error("Nové heslo musí mít aspoň 8 znaků.")
       return
     }
 
@@ -41,14 +41,14 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        toast.error(data?.message || "Nepodařilo se změnit heslo")
+        toast.error(data?.message || "Heslo se nepovedlo změnit.")
         return
       }
 
       setSuccessState(true)
-      toast.success("Heslo bylo úspěšně změněno")
+      toast.success("Heslo je změněné.")
     } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se změnit heslo")
+      toast.error(e?.message || "Heslo se nepovedlo změnit.")
     }
   }
 
@@ -67,7 +67,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
       <AccountInfo
         label="Heslo"
         currentInfo={
-          <span>Heslo není z bezpečnostních důvodů zobrazeno</span>
+          <span>Heslo kvůli bezpečnosti nezobrazujeme</span>
         }
         isSuccess={successState}
         isError={false}

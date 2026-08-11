@@ -40,7 +40,7 @@ const CartTemplate = async ({
                 <i />
                 <b />
               </div>
-              <p className={s.introCopy}>Každý kus vzniká rukama. Před odesláním jej bezpečně zabalíme v píseckém ateliéru.</p>
+              <p className={s.introCopy}>Všechno je dělané rukama. Než to pošleme, pečlivě to v ateliéru zabalíme.</p>
             </header>
             <div className={s.grid}>
               <div className={s.left}>

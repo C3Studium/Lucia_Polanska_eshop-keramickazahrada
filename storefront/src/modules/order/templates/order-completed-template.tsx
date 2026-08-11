@@ -84,22 +84,22 @@ export default async function OrderCompletedTemplate({
         <header className={s.masthead}>
           <span>Objednávka · {orderNumber}</span>
           {/* TODO(BACKEND): Derive this masthead label from fulfillment_status instead of using a fixed confirmation label. */}
-          <span className={s.confirmed}>Přijata do ateliéru</span>
+          <span className={s.confirmed}>Máme ji</span>
         </header>
 
         <section className={s.hero}>
           <div className={s.heroCopy}>
-            <p className={s.eyebrow}>Objednávka je bezpečně uložená</p>
+            <p className={s.eyebrow}>Objednávka je uložená</p>
             <h1 className={s.title}>
-              <span>Máme ji.</span>
-              <em>Teď přichází na řadu ateliér.</em>
+              <span>Děkujeme!</span>
+              <em>Teď se do toho pustím.</em>
             </h1>
           </div>
 
           <div className={s.heroAside}>
             <p>
-              Potvrzení odešlo na <strong>{order.email}</strong>. Jakmile se
-              objednávka posune, ozveme se znovu.
+              Potvrzení jsme poslali na <strong>{order.email}</strong>. Jakmile
+              se něco pohne, ozveme se vám znovu.
             </p>
             <span>Reference · {orderNumber}</span>
           </div>
@@ -174,8 +174,8 @@ export default async function OrderCompletedTemplate({
           <section className={s.objects}>
             <div className={s.sectionHead}>
               <div>
-                <p>01 · Výběr</p>
-                <h2>Objekty v objednávce</h2>
+                <p>01 · Co jste objednali</p>
+                <h2>Kolik to dělá</h2>
               </div>
               <span>
                 {items.reduce((count, item) => count + item.quantity, 0)} ks
@@ -202,7 +202,7 @@ export default async function OrderCompletedTemplate({
                       <Thumbnail thumbnail={item.thumbnail} size="square" />
                     </div>
                     <div className={s.itemCopy}>
-                      <p>Ateliérový objekt</p>
+                      <p>Z ateliéru</p>
                       <h3 data-testid="product-name">{item.product_title}</h3>
                       <div className={s.variant}>
                         <LineItemOptions
@@ -233,7 +233,7 @@ export default async function OrderCompletedTemplate({
                 Bezpečná platba · pečlivé balení
               </p>
               <span className={s.receiptEyebrow}>02 · Souhrn</span>
-              <h2>Vaše objednávka</h2>
+              <h2>Kolik to dělá</h2>
 
               <div className={s.totalRows}>
                 <div>
@@ -282,7 +282,7 @@ export default async function OrderCompletedTemplate({
               <span>03</span>
               <div>
                 <p>Doručení</p>
-                <h2>Kam objednávka zamíří</h2>
+                <h2>Kam to pošleme</h2>
               </div>
             </div>
 
@@ -312,7 +312,7 @@ export default async function OrderCompletedTemplate({
               </div>
               <div data-testid="shipping-method-summary">
                 <span>Způsob dopravy</span>
-                <strong>{shippingMethod?.name || "Bude upřesněno"}</strong>
+                <strong>{shippingMethod?.name || "Ještě upřesníme"}</strong>
                 <p>
                   {shippingMethod
                     ? money(shippingMethod.total ?? shippingMethod.amount)
@@ -327,7 +327,7 @@ export default async function OrderCompletedTemplate({
               <span>04</span>
               <div>
                 <p>Platba</p>
-                <h2>Jak byla objednávka uhrazena</h2>
+                <h2>Jak jste zaplatili</h2>
               </div>
             </div>
 
@@ -352,8 +352,8 @@ export default async function OrderCompletedTemplate({
 
         <section className={s.support}>
           <div>
-            <p>Potřebujete něco doplnit?</p>
-            <h2>Jsme na dosah.</h2>
+            <p>Potřebujete s něčím pomoct?</p>
+            <h2>Ozvěte se.</h2>
           </div>
           <p>
             Napište na{" "}
@@ -366,7 +366,7 @@ export default async function OrderCompletedTemplate({
           <div className={s.actions}>
             <PremiumActionLink
               href="/store"
-              text="Pokračovat v obchodě"
+              text="Zpět do obchodu"
             />
             <LocalizedClientLink className={s.textAction} href="/dotazy">
               Časté dotazy
@@ -375,8 +375,8 @@ export default async function OrderCompletedTemplate({
         </section>
 
         <footer className={s.footer}>
-          <span>Bezpečně zabaleno</span>
-          <span>Ručně vytvořeno</span>
+          <span>Zabalíme pečlivě</span>
+          <span>Ručně vyrobeno</span>
           <span>Ateliér · Písek</span>
         </footer>
       </div>

@@ -8,9 +8,9 @@
 export const accountPreviewReviews = [
   {
     id: "preview-review-01",
-    title: "Objekt, který zklidnil celý stůl",
+    title: "Krásně to sedlo ke stolu",
     content:
-      "Naživo je ještě jemnější než na fotografii. Glazura se během dne mění se světlem a každý kus působí opravdu osobně.",
+      "Naživo je to ještě jemnější než na fotce. Glazura se během dne mění se světlem a je znát, že to dělal člověk.",
     rating: 5,
     created_at: "2026-06-18T10:30:00.000Z",
     product: {
@@ -22,7 +22,7 @@ export const accountPreviewReviews = [
     id: "preview-review-02",
     title: "Krásná ruční práce",
     content:
-      "Balíček dorazil bezpečně a samotný objekt má příjemnou váhu i strukturu. Je vidět, že vznikal pomalu a pečlivě.",
+      "Balíček dorazil v pořádku a samotný kousek má příjemnou váhu i povrch. Je vidět, že vznikal pomalu a pečlivě.",
     rating: 5,
     created_at: "2026-05-02T16:45:00.000Z",
     product: {
@@ -34,7 +34,7 @@ export const accountPreviewReviews = [
     id: "preview-review-03",
     title: "Dárek, který si našel své místo",
     content:
-      "Kupovala jsem jej jako dárek, ale nejraději bych si ho nechala. Barvy jsou přirozené a zpracování velmi čisté.",
+      "Kupovala jsem to jako dárek, ale nejradši bych si to nechala. Barvy jsou přirozené a zpracování moc pěkné.",
     rating: 4,
     created_at: "2026-03-21T09:15:00.000Z",
     product: {

@@ -17,11 +17,11 @@ export const processSteps = [
     number: "01",
     title: "Návrh",
     label: "Myšlenka · Funkce",
-    lead: "Tvar začíná dřív, než se hlína dotkne rukou.",
+    lead: "Tvar mám v hlavě dřív, než sáhnu po hlíně.",
     accent: "pozorováním.",
-    text: "V přírodě hledám rytmus, proporci a klid. První návrh propojuje charakter objektu s tím, jak se bude držet, používat a přirozeně žít v prostoru.",
+    text: "Nápady sbírám venku — v zahradě, v krajině, na obyčejných věcech kolem. U prvního návrhu už myslím na to, jak se to bude držet v ruce a kam si to doma dáte.",
     src: "/assets/img/vyroba/1.png",
-    alt: "První návrh keramického objektu",
+    alt: "První návrh keramického výrobku",
   },
   {
     number: "02",
@@ -29,9 +29,9 @@ export const processSteps = [
     label: "Dotek · Tvar",
     lead: "Ruce hledají správné",
     accent: "napětí.",
-    text: "Hlína reaguje na každý tlak i drobnou změnu směru. Objekt roste pomalu, vrstvu po vrstvě, a jeho jemné nepravidelnosti zůstávají přiznanou stopou ruční práce.",
+    text: "Hlína pozná každý tlak a každou změnu směru. Roste to pomalu, vrstvu po vrstvě, a drobné nepravidelnosti nechávám být — podle nich poznáte, že to není ze stroje.",
     src: "/assets/img/vyroba/2.png",
-    alt: "Ruční modelování keramického objektu",
+    alt: "Ruční modelování keramiky",
   },
   {
     number: "03",
@@ -39,9 +39,9 @@ export const processSteps = [
     label: "Čas · Trpělivost",
     lead: "Materiál potřebuje",
     accent: "čas.",
-    text: "Hotový tvar musí schnout rovnoměrně a bez spěchu. Tichá fáze omezuje vnitřní pnutí a připravuje objekt na první setkání s ohněm.",
+    text: "Hotový tvar musí schnout pomalu a rovnoměrně, jinak popraská. Tahle nudná část rozhoduje o tom, jestli výrobek přežije první výpal.",
     src: "/assets/img/vyroba/3.png",
-    alt: "Detail keramického objektu během schnutí",
+    alt: "Keramika během schnutí",
   },
   {
     number: "04",
@@ -49,9 +49,9 @@ export const processSteps = [
     label: "Oheň · První proměna",
     lead: "První oheň dává hlíně",
     accent: "stabilitu.",
-    text: "Přežah zpevní křehký vysušený tvar a současně jej ponechá připravený přijmout glazuru. Každý objekt po výpalu pečlivě kontroluji.",
+    text: "Přežah vysušenou hlínu zpevní a připraví ji na glazuru. Každý kus po výpalu pečlivě prohlédnu.",
     src: "/assets/img/vyroba/4.png",
-    alt: "Keramický objekt po prvním výpalu",
+    alt: "Keramika po prvním výpalu",
   },
   {
     number: "05",
@@ -59,9 +59,9 @@ export const processSteps = [
     label: "Barva · Povrch",
     lead: "Povrch získává",
     accent: "vlastní hlas.",
-    text: "Glazuru a dekor volím podle tvaru, světla a prostředí, ve kterém bude objekt žít. Barva nemá formu překrýt, ale zvýraznit její charakter.",
+    text: "Glazuru vybírám podle tvaru a podle toho, kde bude výrobek stát. Barva nemá tvar přebít — má ho vytáhnout.",
     src: "/assets/img/vyroba/5.png",
-    alt: "Nanášení dekoru na keramický objekt",
+    alt: "Nanášení dekoru na keramiku",
   },
   {
     number: "06",
@@ -69,19 +69,19 @@ export const processSteps = [
     label: "Oheň · Charakter",
     lead: "Druhý oheň rozhodne o",
     accent: "charakteru.",
-    text: "Při závěrečném výpalu se propojí hlína, glazura a teplota. Výsledek lze vést zkušeností, nikdy jej však nelze zopakovat úplně stejně.",
+    text: "V peci se potká hlína, glazura a teplota. Zkušeností se to dá vést, ale úplně stejně to podruhé nevyjde nikdy.",
     src: "/assets/img/vyroba/6.png",
-    alt: "Hotový keramický objekt po závěrečném výpalu",
+    alt: "Hotová keramika po závěrečném výpalu",
   },
   {
     number: "07",
     title: "Cesta",
     label: "Kontrola · Nový domov",
-    lead: "Hotový objekt začíná",
-    accent: "nový příběh.",
-    text: "Každý kus naposledy prohlédnu, bezpečně zabalím a připravím na cestu. Z ateliéru odchází jako originál určený pro konkrétní domov nebo zahradu.",
+    lead: "A pak už jen",
+    accent: "cesta k vám.",
+    text: "Každý kus naposledy prohlédnu, pořádně zabalím a připravím na cestu. Z ateliéru odchází jako jediný svého druhu — pro konkrétní dům nebo zahradu.",
     src: "/assets/img/img/1.jpg",
-    alt: "Dokončený keramický objekt připravený pro nový domov",
+    alt: "Hotová keramika připravená na cestu",
   },
 ]
 
@@ -325,7 +325,7 @@ export default function Gallery() {
         <header className="atelierProcess__header">
           <span>Proces · Sedm kapitol</span>
           <i />
-          <span>Od myšlenky k originálu</span>
+          <span>Od nápadu k hotovému kusu</span>
         </header>
 
         <div className="atelierProcess__stage">
@@ -391,10 +391,10 @@ export default function Gallery() {
       </div>
 
       <div className="Gallery__outro">
-        <span>Výsledkem procesu je vždy originál</span>
+        <span>Každý kus je jiný</span>
         <h2>
-          Stejný postup.
-          <em> Nikdy stejný objekt.</em>
+          Stejný postup,
+          <em> pokaždé jiný výsledek.</em>
         </h2>
       </div>
     </section>

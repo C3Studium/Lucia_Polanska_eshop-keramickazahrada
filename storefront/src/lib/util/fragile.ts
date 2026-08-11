@@ -64,15 +64,15 @@ export const restrictionNotice: Record<
   string
 > = {
   fragile:
-    "Vybrali jste křehký kus. Kvůli bezpečné přepravě ho posíláme jen jako křehký balík Českou poštou — nebo si ho můžete vyzvednout osobně v ateliéru.",
+    "Vybrali jste křehký kus. Aby dorazil v pořádku, posíláme ho jen jako křehký balík Českou poštou — nebo si pro něj můžete přijet do ateliéru.",
   commission:
-    "Zakázkovou výrobu posíláme jen jako křehký balík, nebo si ji můžete vyzvednout osobně v ateliéru.",
+    "Zakázkovou výrobu posíláme jen jako křehký balík. Nebo si pro ni můžete přijet do ateliéru.",
 }
 
 export const restrictionRowHint: Record<
   NonNullable<DeliveryRestriction>,
   string
 > = {
-  fragile: "Nedostupné pro křehké kusy",
-  commission: "Nedostupné pro zakázkovou výrobu",
+  fragile: "U křehkých kusů to bohužel nejde",
+  commission: "U zakázkové výroby to bohužel nejde",
 }

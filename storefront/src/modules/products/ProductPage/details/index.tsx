@@ -52,16 +52,16 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
 
     const shipping = [
         {
-            title: "Rychlé a bezpečné doručení",
-            content: "Vaši ručně vyrobenou keramiku pečlivě zabalíme a doručíme přes Českou poštu nebo Zásilkovnu - buď k vám domů, nebo na výdejní místo dle vašeho výběru.",
+            title: "Jak to k vám dorazí",
+            content: "Keramiku pečlivě zabalíme a pošleme Českou poštou nebo Zásilkovnou — buď k vám domů, nebo na výdejní místo, které si vyberete.",
         },
         {
-            title: "Výměna bez starostí",
-            content: "Nesedí barva, tvar nebo styl? Napište nám – uděláme, co bude v našich silách, abychom našli vhodnou výměnu.",
+            title: "Když něco nesedne",
+            content: "Nesedí barva nebo tvar? Napište nám a domluvíme se. Uděláme, co půjde, abyste měli doma to, co jste si představovali.",
         },
         {
-            title: "Cena Doručení",
-            content: "Cena doručení se liší podle velikosti a váhy objednávky. Pro více informací nás kontaktujte.",
+            title: "Cena dopravy",
+            content: "Odvíjí se od velikosti a váhy zásilky. Přesnou částku uvidíte v pokladně ještě před dokončením objednávky.",
         }
     ];
 

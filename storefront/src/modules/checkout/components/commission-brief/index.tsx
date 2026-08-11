@@ -84,7 +84,7 @@ export default function CommissionBrief({
 
     const room = MAX_PHOTOS - total
     if (room <= 0) {
-      setStatus({ kind: "error", message: `Víc než ${MAX_PHOTOS} fotek nepřidávejte.` })
+      setStatus({ kind: "error", message: `Víc než ${MAX_PHOTOS} fotek bohužel nejde přidat.` })
       return
     }
 
@@ -114,7 +114,7 @@ export default function CommissionBrief({
   const save = () => {
     if (isPending) return
     if (!text.trim() && !kept.length && !drafts.length) {
-      setStatus({ kind: "error", message: "Napište prosím poznámku, nebo přiložte fotku." })
+      setStatus({ kind: "error", message: "Napište prosím pár slov, nebo přiložte fotku." })
       return
     }
 
@@ -126,7 +126,7 @@ export default function CommissionBrief({
       })
 
       if (!result.success) {
-        setStatus({ kind: "error", message: result.message ?? "Nepodařilo se uložit." })
+        setStatus({ kind: "error", message: result.message ?? "Nepovedlo se to uložit." })
         return
       }
 
@@ -151,13 +151,13 @@ export default function CommissionBrief({
       <header className={styles.header}>
         <p className={styles.eyebrow}>Zakázková výroba</p>
         <h3 className={styles.heading}>
-          {variant === "order" ? "Zpráva do ateliéru" : "Popište, co si přejete"}
+          {variant === "order" ? "Napište mi" : "Co si představujete?"}
         </h3>
         {title && <p className={styles.piece}>{title}</p>}
         <p className={styles.lede}>
           {variant === "order"
-            ? "Napadlo vás ještě něco? Napište mi a přiložte fotky — čtu to u rozdělané práce."
-            : "Přiložte fotky a napište, jak si kus představujete. Podle toho ho vyrobím."}
+            ? "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce."
+            : "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím."}
         </p>
       </header>
 

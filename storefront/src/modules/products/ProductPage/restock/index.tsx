@@ -51,7 +51,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
   }
 
   const isLoading = state === "loading"
-  const objectName = variant.title || product.title || "tento objekt"
+  const objectName = variant.title || product.title || "tenhle kousek"
 
   return (
     <motion.section
@@ -63,11 +63,11 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
       aria-labelledby={`${emailId}-title`}
     >
       <div className={s.heading}>
-        <span>Objekt je právě vybraný</span>
-        <strong id={`${emailId}-title`}>Dejte mi vědět.</strong>
+        <span>Právě vyprodáno</span>
+        <strong id={`${emailId}-title`}>Dejte mi vědět, až bude znovu.</strong>
         <p>
-          Jakmile bude {objectName} znovu k dispozici, pošleme vám jediný
-          stručný e-mail.
+          Jakmile budeme mít {objectName} znovu skladem, pošleme vám jeden
+          krátký e-mail. Nic víc.
         </p>
       </div>
 
@@ -101,7 +101,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
               transition={transition2}
               aria-hidden="true"
             />
-            <span>{isLoading ? "Ukládáme…" : "Upozornit mě"}</span>
+            <span>{isLoading ? "Ukládáme…" : "Dejte mi vědět"}</span>
             <motion.i
               animate={isLoading ? { rotate: 360 } : { rotate: 0 }}
               transition={
@@ -129,7 +129,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
             transition={transition3}
             role="status"
           >
-            Hotovo. Jakmile bude objekt dostupný, ozveme se.
+            Hotovo. Jakmile to bude skladem, ozveme se.
           </motion.p>
         )}
         {state === "error" && (
@@ -143,7 +143,7 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
             transition={transition3}
             role="alert"
           >
-            Uložení se nepodařilo. Zkontrolujte e-mail a zkuste to znovu.
+            Nepovedlo se to uložit. Zkontrolujte e-mail a zkuste to znovu.
           </motion.p>
         )}
       </AnimatePresence>

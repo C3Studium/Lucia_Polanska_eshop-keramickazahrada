@@ -116,12 +116,12 @@ export default function DotazyMain () {
                         {/* The page started its outline at h2 — screen-reader users navigating
                             by heading landed nowhere. This is the page's h1. */}
                         <h1>
-                            Než si keramika
-                            <em> najde místo u vás.</em>
+                            Zeptejte se
+                            <em> na cokoliv.</em>
                         </h1>
-                        <p>Vše podstatné o objednávkách, péči o keramiku a zakázkové práci našeho ateliéru.</p>
+                        <p>Objednávky, péče o keramiku, zakázková výroba i kurzy — všechno na jednom místě.</p>
                         <a href="#faq-section-title" onClick={scrollToAnswers}>
-                            Procházet odpovědi
+                            Přejít na odpovědi
                             <span aria-hidden="true">↓</span>
                         </a>
                     </motion.div>

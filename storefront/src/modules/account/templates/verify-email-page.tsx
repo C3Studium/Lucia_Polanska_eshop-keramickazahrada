@@ -32,7 +32,7 @@ export default function VerifyEmailPage() {
   const handleVerify = async () => {
     if (!token || !email) {
       setStatus("error")
-      toast.error("Ověřovací odkaz je neúplný.")
+      toast.error("Odkaz není celý — zkopírujte ho prosím z e-mailu znovu.")
       return
     }
 
@@ -51,17 +51,17 @@ export default function VerifyEmailPage() {
         }
       } else {
         setStatus("error")
-        toast.error(result.message || "Ověření selhalo.")
+        toast.error(result.message || "Ověření se nepovedlo.")
       }
     } catch {
       setStatus("error")
-      toast.error("Ověření selhalo.")
+      toast.error("Ověření se nepovedlo.")
     }
   }
 
   const handleResend = async () => {
     if (!email) {
-      toast.error("Chybí e-mail pro opětovné odeslání.")
+      toast.error("Nevíme, kam e-mail poslat.")
       return
     }
     setResending(true)
@@ -75,7 +75,7 @@ export default function VerifyEmailPage() {
         toast.error(result.message)
       }
     } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se odeslat ověřovací e-mail.")
+      toast.error(e?.message || "E-mail se nepovedlo odeslat.")
     } finally {
       setResending(false)
     }
@@ -98,20 +98,20 @@ export default function VerifyEmailPage() {
           }
           description={
             status === "verifying"
-              ? "Právě ověřujeme bezpečný odkaz. Zabere to jen okamžik."
+              ? "Ověřujeme odkaz, chviličku to zabere."
               : status === "success"
-              ? "E-mail je potvrzený. Váš soukromý archiv je připravený."
-              : "Odkaz se nepodařilo ověřit. Mohl vypršet nebo už být použitý."
+              ? "E-mail je potvrzený. Účet máte hotový."
+              : "Odkaz se nepovedlo ověřit. Nejspíš vypršel, nebo už byl použitý."
           }
         />
         {email && <SupportEmail>{email}</SupportEmail>}
         <SupportNotice
           eyebrow={
             status === "verifying"
-              ? "Probíhá ověření"
+              ? "Ověřujeme"
               : status === "success"
               ? "Přístup potvrzen"
-              : "Odkaz vyžaduje pozornost"
+              : "S odkazem něco není v pořádku"
           }
           tone={
             status === "success"
@@ -122,12 +122,12 @@ export default function VerifyEmailPage() {
           }
         >
           {status === "verifying"
-            ? "Kontrolujeme platnost odkazu a propojení s vaším účtem."
+            ? "Kontrolujeme, jestli odkaz platí."
             : status === "success"
-            ? "Můžete pokračovat ke svým objednávkám a uloženým objektům."
+            ? "Můžete se podívat na objednávky i na uložené kousky."
             : resent
-            ? "Nový ověřovací e-mail je na cestě."
-            : "Zkuste ověření zopakovat, nebo si pošlete nový odkaz."}
+            ? "Nový e-mail je na cestě."
+            : "Zkuste to ještě jednou, nebo si nechte poslat nový odkaz."}
         </SupportNotice>
         {status === "error" && token && email && (
           <SupportButton type="button" onClick={handleVerify}>
@@ -151,11 +151,11 @@ export default function VerifyEmailPage() {
         <SupportLinks>
           {status === "success" ? (
             <>
-              <SupportLink href="/account" label="Soukromý archiv">
+              <SupportLink href="/account" label="Váš účet">
                 Přejít na můj účet
               </SupportLink>
-              <SupportLink href="/store" label="Pokračovat ve výběru">
-                Prohlédnout objekty
+              <SupportLink href="/store" label="Zpět do obchodu">
+                Prohlédnout výrobky
               </SupportLink>
             </>
           ) : (
@@ -164,7 +164,7 @@ export default function VerifyEmailPage() {
                 Přihlásit se
               </SupportLink>
               <SupportLink href="/dotazy" label="Potřebuji pomoc">
-                Kontaktovat ateliér
+                Napsat do ateliéru
               </SupportLink>
             </>
           )}

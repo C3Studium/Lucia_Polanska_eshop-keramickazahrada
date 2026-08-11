@@ -11,7 +11,7 @@ import {
 
 import WebButton from "@modules/common/components/Buttons/webButton"
 
-const titleWords = ["Příběh", "pokračuje"]
+const titleWords = ["Teď", "je řada"]
 const motionEase = [.22, 1, .36, 1] as const
 
 const ruleAnim: Variants = {
@@ -147,7 +147,7 @@ export default function AboutCta() {
             className="aboutCta"
             id="about-objects"
             data-scroll-section
-            data-scroll-label="Objekty"
+            data-scroll-label="Výrobky"
             aria-labelledby="about-cta-title"
             onPointerMove={handlePointerMove}
             onPointerLeave={resetPointer}
@@ -158,7 +158,7 @@ export default function AboutCta() {
             <header className="aboutCta__meta">
                 <span>04 · Pokračování</span>
                 <motion.i variants={ruleAnim} />
-                <span>Objekty s vlastním příběhem</span>
+                <span>Ručně, v píseckém ateliéru</span>
             </header>
 
             <div className="aboutCta__composition">
@@ -205,10 +205,10 @@ export default function AboutCta() {
                         className="aboutCta__eyebrow"
                         variants={eyebrowAnim}
                     >
-                        Z ateliéru do vašeho prostoru
+                        Z ateliéru k vám domů
                     </motion.p>
 
-                    <h2 id="about-cta-title" aria-label="Příběh pokračuje u vás.">
+                    <h2 id="about-cta-title" aria-label="Teď je řada na vás.">
                         <span className="aboutCta__line" aria-hidden="true">
                             {titleWords.map((word, wordIndex) => {
                                 const characterOffset = titleWords
@@ -233,7 +233,7 @@ export default function AboutCta() {
                                 variants={accentAnim}
                                 aria-hidden="true"
                             >
-                                u vás.
+                                na vás.
                             </motion.span>
                         </span>
                     </h2>
@@ -243,13 +243,13 @@ export default function AboutCta() {
                         variants={supportingAnim}
                     >
                         <p>
-                            Objevte keramické objekty pro zahradu i domov, vytvořené pomalu
-                            a v malém počtu.
+                            Podívejte se na keramiku pro zahradu i domov. Všechno
+                            vzniká pomalu a jen v malém počtu.
                         </p>
                         <WebButton
                             Kind="Link"
                             href="/store"
-                            title="Prohlédnout objekty"
+                            title="Prohlédnout výrobky"
                             className="aboutCta__button"
                         />
                     </motion.div>

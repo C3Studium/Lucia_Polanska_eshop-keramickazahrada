@@ -20,7 +20,7 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
 
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>Souhrn objednávky</h2>
+      <h2 className={styles.title}>Kolik to dělá</h2>
       <div className={styles.content}>
         <div className={styles.row}>
           <span>Mezisoučet</span>

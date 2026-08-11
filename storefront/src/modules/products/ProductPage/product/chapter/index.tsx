@@ -11,7 +11,7 @@ export default function ProductChapter() {
       id="product-craft"
       data-scroll-section
       data-scroll-label="Výroba"
-      aria-label="Zkušenost s objektem"
+      aria-label="Jak keramika vzniká"
     >
       <div className="product__chapterEnd">
         <motion.aside
@@ -22,7 +22,7 @@ export default function ProductChapter() {
           transition={transition}
         >
           <div className="product__chapterVisualHeader">
-            <span>02 · Jak vzniká objekt</span>
+            <span>02 · Jak to vzniká</span>
             <i />
             <span>7 kroků</span>
           </div>
@@ -64,7 +64,7 @@ export default function ProductChapter() {
           </div>
 
           <div className="product__chapterAction">
-            <p>Od první myšlenky až po poslední výpal.</p>
+            <p>Od prvního nápadu až po poslední výpal.</p>
             <WebButton
               Kind="Link"
               href="/vyroba"
@@ -80,8 +80,8 @@ export default function ProductChapter() {
           viewport={viewport4}
           transition={transition4}
         >
-          Vyrobeno pomalu.
-          <em> Aby zůstalo dlouho.</em>
+          Dělám to pomalu.
+          <em> Aby vám to dlouho vydrželo.</em>
         </motion.p>
       </div>
     </section>

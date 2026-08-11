@@ -27,7 +27,7 @@ export default function IntroSection({ data }: { data?: any }) {
             ref={chapterRef}
             id="home-objects"
             data-scroll-section
-            data-scroll-label="Objekty"
+            data-scroll-label="Výrobky"
         >
             <motion.div
                 className="home__introChapter__Opening"

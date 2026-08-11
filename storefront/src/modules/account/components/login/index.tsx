@@ -38,7 +38,7 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
         animate="show"
         custom={heroBeat.heading}
       >
-        Přihlaste se pro přístup k vylepšenému zážitku z nakupování.
+        Vaše objednávky, adresy i uložené kousky na jednom místě.
       </motion.p>
       <motion.form
         className={s.form}
@@ -85,7 +85,7 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
           className={s.underline}
           data-testid="register-button"
         >
-          Připojte se k nám
+          Založte si účet
         </button>
         .
       </span>

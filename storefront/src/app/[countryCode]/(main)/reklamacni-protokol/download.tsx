@@ -20,10 +20,10 @@ export default function ProtocolDownload() {
       <div className={styles.placeholder}>
         <p className={styles.eyebrow}>Protokol ke stažení</p>
         <p>
-          Formulář právě finalizujeme. Než ho sem doplníme, reklamaci vyřídíme stejně
-          rychle e-mailem — napište nám na{" "}
+          Formulář ještě dokončujeme. Než ho sem doplníme, vyřídíme reklamaci
+          stejně rychle e-mailem — napište nám na{" "}
           <a href={`mailto:${merchant.email}`}>{merchant.email}</a> číslo objednávky,
-          popis vady a fotografie. Ozveme se vám s dalším postupem.
+          popis vady a fotky. Ozveme se vám s dalším postupem.
         </p>
       </div>
     )

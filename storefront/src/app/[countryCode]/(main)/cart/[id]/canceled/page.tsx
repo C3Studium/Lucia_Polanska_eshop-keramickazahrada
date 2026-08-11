@@ -7,7 +7,7 @@ type Props = {
 }
 export const metadata: Metadata = {
   title: "Platba nebyla dokončena",
-  description: "Vraťte se bezpečně k dokončení své objednávky.",
+  description: "Vraťte se a objednávku v klidu dokončete.",
 }
 
 export default async function OrderConfirmedPage(props: Props) {

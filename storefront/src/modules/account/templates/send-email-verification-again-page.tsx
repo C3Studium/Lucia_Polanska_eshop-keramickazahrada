@@ -46,7 +46,7 @@ export default function VerifyEmailReminderPage({ customer }: Props) {
               Zkontrolujte <em>poštu.</em>
             </>
           }
-          description="Ověřovací odkaz vás bezpečně propojí s vaším soukromým archivem."
+          description="Odkazem si potvrdíte e-mail a rovnou se dostanete do svého účtu."
         />
         <SupportEmail>{customer.email}</SupportEmail>
         <SupportNotice
@@ -54,8 +54,8 @@ export default function VerifyEmailReminderPage({ customer }: Props) {
           tone={resent ? "success" : "neutral"}
         >
           {resent
-            ? "Nový ověřovací odkaz je na cestě."
-            : "Zkontrolujte doručenou poštu i složku se spamem. Odkaz může dorazit s krátkým zpožděním."}
+            ? "Nový odkaz je na cestě."
+            : "Mrkněte do doručené pošty i do spamu. Někdy odkaz dorazí s malým zpožděním."}
         </SupportNotice>
         <SupportButton type="button" onClick={handleResend} disabled={loading}>
           {loading
@@ -65,7 +65,7 @@ export default function VerifyEmailReminderPage({ customer }: Props) {
             : "Znovu odeslat ověřovací e-mail"}
         </SupportButton>
         <SupportLinks>
-          <SupportLink href="/account" label="Zpět do archivu">
+          <SupportLink href="/account" label="Zpět do účtu">
             Můj účet
           </SupportLink>
           <SupportLink href="/dotazy" label="Odkaz nedorazil">

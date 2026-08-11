@@ -114,7 +114,7 @@ const Shipping: React.FC<ShippingProps> = ({
           res.statusText,
           body
         )
-        setError("Nepodařilo se uložit místo vyzvednutí. Zkuste to znovu.")
+        setError("Výdejní místo se nepovedlo uložit. Zkuste to prosím znovu.")
         return
       }
 
@@ -135,7 +135,7 @@ const Shipping: React.FC<ShippingProps> = ({
       setError(null)
     } catch (err: any) {
       console.error("Network error while saving pickup point:", err)
-      setError("Došlo k síťové chybě při ukládání místa vyzvednutí.")
+      setError("Spojení vypadlo, výdejní místo se neuložilo. Zkuste to prosím znovu.")
     }
   }
 
@@ -308,7 +308,7 @@ const Shipping: React.FC<ShippingProps> = ({
       if (!(window as any).Packeta?.Widget) return
       if (!key) {
         console.error("PACKETA_API_KEY is not configured")
-        setError("Výběr výdejního místa není nakonfigurovaný.")
+        setError("Výběr výdejního místa se nám nepovedlo spustit. Napište nám prosím.")
         return
       }
       try {
@@ -340,7 +340,7 @@ const Shipping: React.FC<ShippingProps> = ({
         () => console.error("Failed to load Packeta widget script"),
         { once: true }
       )
-      setError("Načítáme výběr výdejního místa…")
+      setError("Ještě načítáme mapu výdejních míst, moment…")
       return
     }
 
@@ -374,10 +374,10 @@ const Shipping: React.FC<ShippingProps> = ({
       if (res?.success) return
 
       setShippingMethodId(currentId)
-      setError(res?.message || "Způsob dopravy se nepodařilo uložit.")
+      setError(res?.message || "Dopravu se nepovedlo uložit. Zkuste to prosím znovu.")
     } catch {
       setShippingMethodId(currentId)
-      setError("Způsob dopravy se nepodařilo uložit.")
+      setError("Dopravu se nepovedlo uložit. Zkuste to prosím znovu.")
     } finally {
       setIsLoading(false)
     }
@@ -422,7 +422,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 Způsob dopravy:
               </span>
               <span className={clx(styles.radioAddress, "mb-4")}>
-                Jak byste chtěli, aby byla vaše objednávka doručena?
+                Kam a jak vám to máme poslat?
               </span>
             </div>
             {restriction && (
@@ -488,7 +488,7 @@ const Shipping: React.FC<ShippingProps> = ({
                             {!blockedByRestriction &&
                               option.insufficient_inventory && (
                                 <span className={styles.methodText}>
-                                  Není skladem v požadovaném množství
+                                  Tolik kusů bohužel nemáme
                                 </span>
                               )}
                           </div>
@@ -525,7 +525,7 @@ const Shipping: React.FC<ShippingProps> = ({
             !packetaPickupPointSelected && (
               <div className={styles.packetaNotice}>
                 <p className={styles.packetaNoticeText}>
-                  Prosím, zvolte místo vyzvednutí v okně výdejního místa.
+                  Vyberte prosím výdejní místo v mapě.
                 </p>
                 <PremiumActionButton
                   text="Znovu vybrat místo"
@@ -586,7 +586,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 })}
               </span>
             </div>
-            <p>Dopravu můžete upravit až do potvrzení objednávky.</p>
+            <p>Dopravu můžete změnit, dokud objednávku nepotvrdíte.</p>
           </div>
         )
       )}

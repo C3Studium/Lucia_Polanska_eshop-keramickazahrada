@@ -85,7 +85,7 @@ const AddressSelect = ({
               <strong>
                 {selectedAddress
                   ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
-                  : "Vyberte místo doručení"}
+                  : "Kam vám to máme poslat?"}
               </strong>
               <span>
                 {selectedAddress
@@ -96,7 +96,7 @@ const AddressSelect = ({
                     ]
                       .filter(Boolean)
                       .join(" · ")
-                  : "Otevřít váš adresář"}
+                  : "Vybrat z uložených adres"}
               </span>
             </span>
             <motion.span

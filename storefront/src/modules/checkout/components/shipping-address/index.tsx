@@ -143,7 +143,7 @@ const ShippingAddress = ({
               <h3 id="saved-addresses-heading">
                 Vítejte zpět{customer.first_name ? `, ${customer.first_name}` : ""}.
               </h3>
-              <p>Vyberte uloženou adresu, nebo pokračujte vyplněním formuláře.</p>
+              <p>Vyberte si uloženou adresu, nebo vyplňte novou níž.</p>
             </div>
           </motion.div>
           <motion.div
@@ -231,7 +231,7 @@ const ShippingAddress = ({
         <div className={styles.countryField}>
           <span className={styles.countryLabel}>Země doručení</span>
           <strong>{cart?.region?.countries?.find((country) => country.iso_2 === routeCountry)?.display_name || routeCountry.toUpperCase()}</strong>
-          <span>Nastaveno podle zvolené verze obchodu</span>
+          <span>Podle verze obchodu, kterou máte zvolenou</span>
         </div>
         <input
           type="hidden"

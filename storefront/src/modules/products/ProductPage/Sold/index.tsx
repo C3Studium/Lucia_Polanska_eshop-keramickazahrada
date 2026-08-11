@@ -280,7 +280,7 @@ function ProductRail({ products }: ProductRailProps) {
             </div>
             <div className="soldProducts__cardMeta">
               <div>
-                <span>{collection || "Objekt z ateliéru"}</span>
+                <span>{collection || "Z ateliéru"}</span>
                 <h3>{product.title}</h3>
               </div>
               <span className="soldProducts__arrow" aria-hidden="true">
@@ -323,36 +323,36 @@ export default function SoldProducts({ products }: SoldProductsProps) {
       className="soldProducts"
       id="product-related"
       data-scroll-section
-      data-scroll-label="Další objekty"
+      data-scroll-label="Další výrobky"
       aria-labelledby="next-objects-title"
     >
       <div className="soldProducts__head">
-        <span>Další kapitola · 03</span>
+        <span>Mohlo by se hodit · 03</span>
         <div className="soldProducts__line" />
         <span>
-          {isCollectionSelection ? "V rámci kolekce" : "Výběr z ateliéru"}
+          {isCollectionSelection ? "Ze stejné kolekce" : "Z ateliéru"}
         </span>
       </div>
 
       <div className="soldProducts__intro">
         <h2 id="next-objects-title">
-          Další objekty,
-          <em> každý s vlastním příběhem.</em>
+          Podívejte se ještě
+          <em> na tyhle kousky.</em>
         </h2>
         <p>
           {isCollectionSelection
-            ? "Pokračujte mezi originály ze stejné kolekce."
-            : "Pokračujte mezi dalšími originály z ateliéru."}{" "}
-          Každý vzniká pomalu, ručně a v malém počtu.
+            ? "Další kusy ze stejné kolekce."
+            : "Další kusy, které mám teď v ateliéru."}{" "}
+          Všechno vzniká ručně a jen v malém počtu.
         </p>
       </div>
 
       <ProductRail products={products} />
 
       <div className="soldProducts__foot" aria-hidden="true">
-        <span>Posuňte nebo pokračujte stránkou</span>
+        <span>Posuňte doprava</span>
         <div />
-        <span>Výběr z ateliéru</span>
+        <span>Z ateliéru</span>
       </div>
     </section>
   )

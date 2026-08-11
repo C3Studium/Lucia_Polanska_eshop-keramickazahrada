@@ -6,7 +6,7 @@ import DotazyMain from "@modules/dotazy/main"
 export const metadata: Metadata = {
   title: "Časté otázky",
   description:
-    "Odpovědi na časté otázky o autorské keramice, zakázkové výrobě, dopravě, vrácení zboží a keramických kurzech.",
+    "Odpovědi na to, na co se ptáte nejčastěji — keramika, zakázková výroba, doprava, vrácení zboží i kurzy.",
 }
 
 export default function FAQPage() {

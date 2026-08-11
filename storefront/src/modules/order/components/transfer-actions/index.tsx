@@ -53,13 +53,13 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
           </span>
           <strong>
             {status.accept === "success"
-              ? "Objednávka je nyní přiřazená k novému majiteli."
-              : "Objednávka zůstává beze změny."}
+              ? "Objednávka teď patří novému majiteli."
+              : "Objednávka zůstává, jak byla."}
           </strong>
           <p>
             {status.accept === "success"
-              ? "Další informace najdete ve svém účtu."
-              : "Tato žádost už nevyžaduje žádný další krok."}
+              ? "Podrobnosti najdete ve svém účtu."
+              : "S touhle žádostí už nemusíte nic dělat."}
           </p>
         </div>
       ) : (
@@ -67,7 +67,7 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
           <PremiumActionButton
             text={
               status.accept === "pending"
-                ? "Převádím objednávku…"
+                ? "Převádíme objednávku…"
                 : "Přijmout převod"
             }
             onClickAction={acceptTransfer}
@@ -77,8 +77,8 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
           <PremiumActionButton
             text={
               status.decline === "pending"
-                ? "Zamítám žádost…"
-                : "Ponechat beze změny"
+                ? "Zamítáme žádost…"
+                : "Nechat být"
             }
             onClickAction={declineTransfer}
             disabled={busy}
@@ -90,7 +90,7 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
 
       {errorMessage && (
         <div className={styles.error} role="alert">
-          <strong>Žádost se nepodařilo zpracovat.</strong>
+          <strong>Žádost se nepovedlo zpracovat.</strong>
           <span>{errorMessage}</span>
         </div>
       )}

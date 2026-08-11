@@ -128,7 +128,7 @@ export const Product = ({
 
     setIsSubmitting(false)
     if (!result.success) {
-      setError(result.message || "Výběr se nepodařilo uložit.")
+      setError(result.message || "Nepovedlo se to uložit. Zkuste to prosím znovu.")
       return
     }
     onContinueAction()
@@ -155,13 +155,13 @@ export const Product = ({
           height={760}
           priority
         />
-        <span>{bundle ? "Ateliérový soubor" : "Originál z ateliéru"}</span>
+        <span>{bundle ? "Sada z ateliéru" : "Z ateliéru"}</span>
       </motion.div>
 
       <div className={styles.productIdentity}>
         <div>
           <span className={styles.eyebrow}>
-            {bundle ? `${bundle.items.length} objekty společně` : "Váš objekt"}
+            {bundle ? `${bundle.items.length} kusy dohromady` : "Váš výběr"}
           </span>
           <h2>{bundle?.title || product.title}</h2>
         </div>
@@ -265,10 +265,10 @@ export const Product = ({
         <PremiumActionButton
           text={
             isSubmitting
-              ? "Připravuji výběr"
+              ? "Připravujeme…"
               : ready
                 ? "Pokračovat k doručení"
-                : "Zvolte provedení"
+                : "Vyberte provedení"
           }
           disabled={!ready || isSubmitting}
           onClickAction={submit}

@@ -113,18 +113,18 @@ export const Payment = ({
 
       if (!result.success) {
         throw new Error(
-          result.message || "Platební bránu se nepodařilo otevřít."
+          result.message || "Platební bránu se nepovedlo otevřít."
         )
       }
 
       const redirectUrl = extractComgateRedirectUrl(result.data)
       if (!redirectUrl) {
-        throw new Error("Platební brána nevrátila adresu pro pokračování.")
+        throw new Error("Platební brána se neozvala. Zkuste to prosím znovu.")
       }
 
       window.location.assign(redirectUrl)
     } catch (paymentError: any) {
-      setError(paymentError?.message || "Platbu se nepodařilo dokončit.")
+      setError(paymentError?.message || "Platbu se nepovedlo dokončit.")
       setIsSubmitting(false)
     }
   }
@@ -139,7 +139,7 @@ export const Payment = ({
     <div className={styles.paymentStep}>
       <div className={styles.orderMiniature}>
         <div className={styles.orderMiniatureHeader}>
-          <span className={styles.eyebrow}>Váš výběr</span>
+          <span className={styles.eyebrow}>Co kupujete</span>
           <span>
             {cart.items?.reduce((sum, item) => sum + item.quantity, 0)} ks
           </span>
@@ -200,13 +200,13 @@ export const Payment = ({
           <span>Šifrovaně a bezpečně</span>
         </div>
         <p className={styles.paymentConsent}>
-          Vyberte metodu. Potvrzením objednávky souhlasíte s obchodními
-          podmínkami a přejdete k zabezpečené platbě.
+          Vyberte si způsob platby. Potvrzením objednávky souhlasíte
+          s obchodními podmínkami a přejdete k zabezpečené platbě.
         </p>
         <div aria-busy={isSubmitting}>
           {!comgateAvailable && (
             <p className={styles.paymentUnavailable} role="alert">
-              Comgate nyní není dostupný. Zkuste to prosím za chvíli znovu.
+              Comgate teď není dostupný. Zkuste to prosím za chvíli znovu.
             </p>
           )}
           {comgateAvailable && (

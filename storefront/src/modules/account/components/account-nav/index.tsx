@@ -18,7 +18,7 @@ const navigation = [
     index: "01",
     href: "/account",
     title: "Přehled",
-    caption: "Váš archiv",
+    caption: "Všechno na jednom místě",
     testId: "overview-link",
   },
   {
@@ -39,7 +39,7 @@ const navigation = [
     index: "04",
     href: "/account/orders",
     title: "Objednávky",
-    caption: "Cesta objektů",
+    caption: "Co jste u nás koupili",
     testId: "orders-link",
   },
   {
@@ -53,7 +53,7 @@ const navigation = [
     index: "06",
     href: "/account/wishlist",
     title: "Seznam přání",
-    caption: "Uložené objekty",
+    caption: "Uložené kousky",
     testId: "wishlist-link",
   },
 ]
@@ -131,10 +131,10 @@ const AccountNav = ({
     <>
       <aside className={styles.root} data-testid="account-nav">
         <div className={styles.top}>
-          <p className={styles.eyebrow}>Soukromý archiv · {activeItem.index}</p>
+          <p className={styles.eyebrow}>Váš účet · {activeItem.index}</p>
           <h2>
             Váš
-            <em>ateliér.</em>
+            <em>účet.</em>
           </h2>
         </div>
 
@@ -171,7 +171,7 @@ const AccountNav = ({
         </nav>
 
         <div className={styles.accountMeta}>
-          <span>Přihlášený archiv</span>
+          <span>Jste přihlášeni</span>
           <p>{customer?.email}</p>
         </div>
 

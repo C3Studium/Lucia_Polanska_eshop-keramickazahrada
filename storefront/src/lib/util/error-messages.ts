@@ -9,7 +9,7 @@ import { SUPPORT_EMAIL } from "@lib/constants/contact"
  * says what to do next rather than what went wrong.
  */
 
-export const GENERIC_ERROR = `Něco se nepovedlo. Zkuste to prosím znovu, nebo nám napište na ${SUPPORT_EMAIL}.`
+export const GENERIC_ERROR = `Něco se nepovedlo. Zkuste to prosím znovu — a když to nepůjde, napište nám na ${SUPPORT_EMAIL} a vyřešíme to spolu.`
 
 type ErrorRule = {
   /** Every token must appear in the backend message for the rule to match. */
@@ -22,32 +22,32 @@ const RULES: ErrorRule[] = [
   {
     match: ["not associated with any stock location"],
     message:
-      "Tento objekt momentálně nelze objednat — nemá nastavenou skladovou dostupnost. Napište nám prosím a rádi to vyřešíme.",
+      "Tenhle výrobek teď nejde objednat — máme u něj špatně nastavený sklad. Napište nám prosím, rychle to spravíme.",
   },
   {
     match: ["insufficient inventory"],
     message:
-      "Tento objekt už není skladem v požadovaném množství. Zkuste prosím snížit počet kusů.",
+      "Tolik kusů už bohužel nemáme. Zkuste prosím zadat menší počet.",
   },
   {
     match: ["not enough inventory"],
     message:
-      "Tento objekt už není skladem v požadovaném množství. Zkuste prosím snížit počet kusů.",
+      "Tolik kusů už bohužel nemáme. Zkuste prosím zadat menší počet.",
   },
   {
     match: ["variant", "does not have", "inventory"],
-    message: "Tento objekt už bohužel není skladem.",
+    message: "Tenhle výrobek už bohužel není skladem.",
   },
 
   // --- shipping ---------------------------------------------------------------
   {
     match: ["shipping options", "do not have a price"],
     message:
-      "Zvolený způsob dopravy teď není dostupný. Vyberte prosím jiný, nebo nám napište.",
+      "Tenhle způsob dopravy teď nejde použít. Vyberte prosím jiný, nebo nám napište.",
   },
   {
     match: ["shipping option", "not found"],
-    message: "Zvolený způsob dopravy už není dostupný. Vyberte prosím jiný.",
+    message: "Tenhle způsob dopravy už není dostupný. Vyberte prosím jiný.",
   },
   {
     match: ["no shipping method"],
@@ -65,38 +65,38 @@ const RULES: ErrorRule[] = [
   {
     match: ["disabled sales channel"],
     message:
-      "Obchod teď nemůže přijímat objednávky — jde o nastavení na naší straně, ne o vaši chybu. Napište nám prosím na info@keramickazahrada.cz, ozveme se hned, jak to spravíme.",
+      "Obchod teď nedokáže přijmout objednávku — chyba je na naší straně, ne u vás. Napište nám prosím na info@keramickazahrada.cz, ozveme se hned, jak to spravíme.",
   },
 
   // --- cart -------------------------------------------------------------------
   {
     match: ["cart", "not found"],
     message:
-      "Košík se nepodařilo najít. Obnovte prosím stránku — obsah košíku by měl zůstat zachovaný.",
+      "Košík se nám teď nepodařilo načíst. Obnovte prosím stránku — co jste si vybrali, by mělo zůstat.",
   },
   {
     match: ["cart", "already completed"],
-    message: "Tato objednávka už byla dokončena. Podívejte se prosím do e-mailu s potvrzením.",
+    message: "Tuhle objednávku už máme hotovou. Podrobnosti najdete v e-mailu s potvrzením.",
   },
   {
     match: ["line item", "not found"],
-    message: "Tuto položku se v košíku nepodařilo najít. Obnovte prosím stránku.",
+    message: "Tuhle položku už v košíku nevidíme. Obnovte prosím stránku.",
   },
 
   // --- payment ----------------------------------------------------------------
   {
     match: ["payment", "authorization"],
     message:
-      "Platbu se nepodařilo autorizovat. Zkuste to prosím znovu, nebo zvolte jiný způsob platby.",
+      "Platba neprošla. Zkuste to prosím ještě jednou, nebo zvolte jiný způsob platby.",
   },
   {
     match: ["payment session", "not found"],
-    message: "Platba vypršela. Vraťte se prosím o krok zpět a vyberte způsob platby znovu.",
+    message: "Platba mezitím vypršela. Vraťte se prosím o krok zpět a vyberte způsob platby znovu.",
   },
   {
     match: ["payment collection"],
     message:
-      "Platbu se nepodařilo připravit. Zkuste to prosím znovu, nebo zvolte jiný způsob platby.",
+      "Platbu se nepovedlo připravit. Zkuste to prosím ještě jednou, nebo zvolte jiný způsob platby.",
   },
 
   // --- account and authentication ---------------------------------------------
@@ -110,15 +110,15 @@ const RULES: ErrorRule[] = [
   },
   {
     match: ["invalid email or password"],
-    message: "E-mail nebo heslo nesouhlasí. Zkuste to prosím znovu.",
+    message: "E-mail nebo heslo nesedí. Zkuste to prosím ještě jednou.",
   },
   {
     match: ["unauthorized"],
-    message: "Přihlášení vypršelo. Přihlaste se prosím znovu.",
+    message: "Přihlášení mezitím vypršelo. Přihlaste se prosím znovu.",
   },
   {
     match: ["invalid token"],
-    message: "Odkaz už není platný. Nechte si prosím poslat nový.",
+    message: "Tenhle odkaz už neplatí. Nechte si prosím poslat nový.",
   },
   {
     match: ["password", "too short"],
@@ -128,33 +128,33 @@ const RULES: ErrorRule[] = [
   // --- address and region -----------------------------------------------------
   {
     match: ["country", "not found"],
-    message: "Do této země zatím nedoručujeme. Vyberte prosím jinou.",
+    message: "Do téhle země zatím bohužel neposíláme. Vyberte prosím jinou.",
   },
   {
     match: ["region", "not found"],
-    message: "Tuto zemi doručení se nepodařilo načíst. Obnovte prosím stránku.",
+    message: "Tuhle zemi se nepovedlo načíst. Obnovte prosím stránku.",
   },
 
   // --- discounts --------------------------------------------------------------
   {
     match: ["promotion", "not found"],
-    message: "Tento slevový kód neznáme. Zkontrolujte prosím jeho zápis.",
+    message: "Tenhle slevový kód neznáme. Zkontrolujte prosím, jestli sedí.",
   },
   {
     match: ["discount", "not found"],
-    message: "Tento slevový kód neznáme. Zkontrolujte prosím jeho zápis.",
+    message: "Tenhle slevový kód neznáme. Zkontrolujte prosím, jestli sedí.",
   },
 
   // --- transport --------------------------------------------------------------
   {
     match: ["no response received"],
     message:
-      "Spojení se serverem se nepodařilo navázat. Zkontrolujte prosím připojení a zkuste to znovu.",
+      "Nepovedlo se nám spojit se serverem. Zkontrolujte prosím připojení a zkuste to znovu.",
   },
   {
     match: ["failed to fetch"],
     message:
-      "Spojení se serverem se nepodařilo navázat. Zkontrolujte prosím připojení a zkuste to znovu.",
+      "Nepovedlo se nám spojit se serverem. Zkontrolujte prosím připojení a zkuste to znovu.",
   },
 ]
 

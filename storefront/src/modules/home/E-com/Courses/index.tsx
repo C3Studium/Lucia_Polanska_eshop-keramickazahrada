@@ -17,7 +17,7 @@ const courseImages: VerticalCarouselImage[] = [
   {
     id: 2,
     src: "/assets/img/img/3.jpg",
-    alt: "Ruční modelování keramického objektu",
+    alt: "Ruční modelování keramického výrobku",
   },
 ]
 
@@ -97,13 +97,13 @@ export default function Courses() {
             <span>Malé skupiny · Písek</span>
           </div>
           <div className="title">
-            <h2>Hlína zpomalí čas.</h2>
-            <em>Ruce najdou vlastní rytmus.</em>
+            <h2>U hlíny se nedá spěchat.</h2>
+            <em>A to je na tom to nejlepší.</em>
           </div>
           <div className="Courses__footer">
             <p>
-              Komorní kurzy pro děti i dospělé. Prostor pro soustředění,
-              řemeslnou práci a radost z objektu, který vznikne jen jednou.
+              Kurzy pro děti i dospělé, vždycky v malé skupině. Pár hodin
+              u hlíny — a domů si odnesete něco, co jste udělali sami.
             </p>
             <WebButton
               Kind="Link"
@@ -132,29 +132,29 @@ export default function Courses() {
           >
             <span>Pokračování</span>
             <span className="line" />
-            <span>Objekty s vlastním příběhem</span>
+            <span>Ručně, v píseckém ateliéru</span>
           </motion.div>
           <div className="Courses__cta">
             <motion.div
               className="Courses__ctaInner"
               style={{ opacity: ctaOpacity, y: ctaY }}
             >
-              <span className="Courses__ctaKicker">Z ateliéru do vašeho prostoru</span>
+              <span className="Courses__ctaKicker">Z ateliéru k vám domů</span>
               <h2>
-                Každý objekt
-                <em>čeká na své místo.</em>
+                Každý výrobek
+                <em>hledá svoje místo.</em>
               </h2>
               <div className="Courses__ctaFooter">
                 <p>
-                  Objevte ručně vytvořené originály pro zahradu i domov.
-                  Každý vznikl pomalu a pouze v malém počtu.
+                  Ručně tvořená keramika pro zahradu i domov. Všechno vzniká
+                  pomalu a jen v malém počtu.
                 </p>
                 <div className="Courses__ctaActions">
                   <WebButton
                     Kind="Link"
-                    title="Prohlédnout objekty"
+                    title="Prohlédnout výrobky"
                     href="/store"
-                    alt="Prohlédnout keramické objekty"
+                    alt="Prohlédnout keramiku"
                   />
                   <LocalizedClientLink href="/dotazy">
                     Nebo se zeptat Lucie <span aria-hidden="true">↗</span>

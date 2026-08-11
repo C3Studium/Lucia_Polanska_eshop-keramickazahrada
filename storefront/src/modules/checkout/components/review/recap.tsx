@@ -19,7 +19,7 @@ export default function OrderRecap({ cart }: { cart: any }) {
   return (
     <div className={styles.recap}>
       <section className={styles.recapBlock} aria-labelledby="recap-items">
-        <h3 id="recap-items">Objekty</h3>
+        <h3 id="recap-items">Co objednáváte</h3>
         <ul className={styles.itemList}>
           {cart?.items?.map((item: any) => (
             <li key={item.id}>
@@ -48,7 +48,7 @@ export default function OrderRecap({ cart }: { cart: any }) {
               {address.country_code?.toUpperCase()}
             </p>
           ) : (
-            <p className={styles.recapText}>Adresa zatím nebyla vyplněna.</p>
+            <p className={styles.recapText}>Adresu jste zatím nevyplnili.</p>
           )}
           {shippingMethod && (
             <p className={styles.recapNote}>
@@ -88,7 +88,7 @@ export default function OrderRecap({ cart }: { cart: any }) {
             </div>
           </dl>
           <p className={styles.vatNote}>
-            Včetně DPH {money(cart?.tax_total)}. Konečná částka k úhradě.
+            Včetně DPH {money(cart?.tax_total)}. Tolik zaplatíte.
           </p>
         </section>
       </div>

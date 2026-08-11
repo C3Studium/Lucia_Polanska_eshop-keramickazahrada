@@ -21,7 +21,7 @@ export default function RequestResetPassword() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!email) {
-      toast.error("Email je povinné pole.")
+      toast.error("Vyplňte prosím e-mail.")
       return
     }
     setLoading(true)
@@ -32,7 +32,7 @@ export default function RequestResetPassword() {
       })
       .then(() => {
         toast.success(
-          "Pokud existuje účet s tímto e-mailem, obdržíte instrukce k obnovení hesla."
+          "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla."
         )
       })
       .catch((error) => {
@@ -54,7 +54,7 @@ export default function RequestResetPassword() {
             </>
           }
           description={
-            "Zadejte e-mail účtu. Pošleme vám bezpečný odkaz pro nastavení nového hesla."
+            "Napište e-mail, na který máte účet. Pošleme vám odkaz pro nastavení nového hesla."
           }
         />
 
@@ -71,7 +71,7 @@ export default function RequestResetPassword() {
             />
           </SupportField>
           <SupportButton type="submit" disabled={loading}>
-            {loading ? "Odesíláme…" : "Poslat bezpečný odkaz"}
+            {loading ? "Odesíláme…" : "Poslat odkaz"}
           </SupportButton>
         </SupportForm>
 

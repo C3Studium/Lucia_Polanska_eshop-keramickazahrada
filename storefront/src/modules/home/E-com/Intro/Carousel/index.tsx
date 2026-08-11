@@ -9,7 +9,7 @@ import ImageCarousel, {
 } from "./ImageCarousel"
 
 const leftCarouselImages: CarouselImage[] = [
-  { id: 1, src: "/assets/img/img/7.jpg", alt: "Keramický objekt pokrytý modrými květy" },
+  { id: 1, src: "/assets/img/img/7.jpg", alt: "Keramika pokrytá modrými květy" },
   { id: 2, src: "/assets/img/img/10.jpg", alt: "Keramický reliéf s květy" },
   { id: 3, src: "/assets/img/img/8.jpg", alt: "Keramická slepice v zahradě" },
   { id: 4, src: "/assets/img/img/4.jpg", alt: "Autorská keramická socha" },
@@ -21,9 +21,9 @@ const rightCarouselImages: CarouselImage[] = [
   { id: 1, src: "/assets/img/img/10.jpg", alt: "Detail keramického reliéfu" },
   { id: 2, src: "/assets/img/img/6.jpg", alt: "Ručně modelovaná keramická tvář" },
   { id: 3, src: "/assets/img/img/11.jpg", alt: "Lucie Polanská při práci v ateliéru" },
-  { id: 4, src: "/assets/img/img/7.jpg", alt: "Keramický objekt v zahradě" },
+  { id: 4, src: "/assets/img/img/7.jpg", alt: "Keramický výrobek v zahradě" },
   { id: 5, src: "/assets/img/img/12.jpg", alt: "Portrét z keramického ateliéru" },
-  { id: 6, src: "/assets/img/img/3.jpg", alt: "Ruční práce na velkém keramickém objektu" },
+  { id: 6, src: "/assets/img/img/3.jpg", alt: "Ruční práce na velkém keramickém výrobku" },
 ]
 
 export default function Carousel () {
@@ -50,8 +50,8 @@ export default function Carousel () {
         <div className="Left__section">
             <div className="Content">
                 <div className="text">
-                    <span>Autorský výběr</span>
-                    <p>Objekty, které vznikají pomalu.</p>
+                    <span>Vybráno z ateliéru</span>
+                    <p>Každý kus dělám rukama.</p>
                 </div>
 
                 <div className="right__content">
@@ -99,7 +99,7 @@ export default function Carousel () {
             </div>
 
             <div className="Custom__orders">
-                <p>Máte v hlavě objekt, který ještě neexistuje?</p>
+                <p>Máte v hlavě něco, co nikde neseženete?</p>
                 <WebButton Kind="Link" title="Zakázková tvorba" href="/vyroba" alt="Zakázková keramická tvorba"/>
             </div>
         </div>

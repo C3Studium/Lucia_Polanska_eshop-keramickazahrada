@@ -279,7 +279,7 @@ export default function IntroHero({
                 style={nameStyle}
             >
                 <div className="Hero__Intro__Lockup">
-                <span className="Hero__Intro__Eyebrow">Objekty s vlastním příběhem</span>
+                <span className="Hero__Intro__Eyebrow">Keramika z píseckého ateliéru</span>
 
                 {/* One h1, and it carries the promise rather than the name: a visitor arrives
                     looking for ceramics, not for a person. The first line of the Sanity `content`
@@ -310,7 +310,7 @@ export default function IntroHero({
                     <div className="Hero__Intro__Header__Cta">
                         <WebButton
                             href="/store"
-                            title="Prohlédnout objekty"
+                            title="Prohlédnout výrobky"
                             Kind="Link"
                             tone="dark"
                         />

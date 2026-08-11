@@ -55,12 +55,12 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             images={item.variant?.product?.images}
             size="square"
           />
-          {type === "full" && <span className={s.imageIndex}>Objekt · 01</span>}
+          {type === "full" && <span className={s.imageIndex}>01</span>}
         </LocalizedClientLink>
       </div>
 
       <div className={s.cellTitle}>
-        <p className={s.kicker}>Ateliérový objekt</p>
+        <p className={s.kicker}>Z ateliéru</p>
         <LocalizedClientLink href={`/products/${item.product_handle}`}>
           <h3 className={s.title} data-testid="product-title">
             {item.product_title}

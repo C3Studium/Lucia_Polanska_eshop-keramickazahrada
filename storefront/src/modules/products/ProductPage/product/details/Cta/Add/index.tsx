@@ -112,7 +112,7 @@ export default function CTA({
       )}
       {addState.kind === "added" && (
         <p className="product__details__cta__confirm" role="status">
-          Objekt je v košíku.
+          Máte to v košíku.
         </p>
       )}
 

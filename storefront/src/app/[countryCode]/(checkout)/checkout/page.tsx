@@ -10,7 +10,7 @@ import styles from "./page.module.scss"
 
 export const metadata: Metadata = {
   title: "Pokladna",
-  description: "Dokončení objednávky — doprava, platba a rekapitulace.",
+  description: "Dokončení objednávky — doprava, platba a přehled.",
 }
 
 export default async function Checkout(props:{params: Promise<{countryCode:string}>}) {
@@ -28,12 +28,12 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
     <div className={styles.root}>
       <header className={styles.masthead}>
         <div>
-          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "objekt" : "objekty"}</p>
-          <h1>Dokončete<br /><em>svůj výběr.</em></h1>
+          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : "výrobky"}</p>
+          <h1>Ještě<br /><em>pár kroků.</em></h1>
         </div>
         <div className={styles.mastheadAside}>
           <p className={styles.mastheadCopy}>
-            Několik klidných kroků a váš objekt může vyrazit z píseckého ateliéru.
+            Ještě pár kroků a můžeme to z ateliéru poslat k vám.
           </p>
           <LocalizedClientLink href="/cart" className={styles.backLink}>
             <span>←</span> Zpět do košíku

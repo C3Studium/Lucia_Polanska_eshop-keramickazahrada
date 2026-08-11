@@ -98,7 +98,7 @@ const Addresses = ({
                   className={s.col + " shipping"}
                   data-testid="shipping-address-summary"
                 >
-                  <Text className={s.label}>Kam objednávku pošleme</Text>
+                  <Text className={s.label}>Kam to pošleme</Text>
                   <Text className={s.value}>
                     {cart.shipping_address.first_name}{" "}
                     {cart.shipping_address.last_name}
@@ -120,7 +120,7 @@ const Addresses = ({
                   className={s.col + " contact"}
                   data-testid="shipping-contact-summary"
                 >
-                  <Text className={s.label}>Kontakt pro doručení</Text>
+                  <Text className={s.label}>Kontakt na vás</Text>
                   <Text className={s.value}>{cart.shipping_address.phone}</Text>
                   <Text className={s.value}>{cart.email}</Text>
                 </div>

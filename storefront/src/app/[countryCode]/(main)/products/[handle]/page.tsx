@@ -86,7 +86,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
   const description = summarize(
     product.subtitle || product.description,
-    `${product.title} — ručně tvořený keramický objekt z ateliéru Lucie Polanské.`
+    `${product.title} — ručně vyrobená keramika z ateliéru Lucie Polanské.`
   )
 
   return {
@@ -186,7 +186,7 @@ export default async function ProductPage(props: Props) {
   /*
   const previewBundle: BundleProduct = {
     id: `preview-${pricedProduct.id}`,
-    title: "Ateliérový výběr",
+    title: "Mohlo by se hodit",
     product: {
       id: pricedProduct.id,
       thumbnail: pricedProduct.thumbnail || "",

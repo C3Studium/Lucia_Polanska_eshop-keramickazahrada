@@ -12,7 +12,7 @@ export default async function VerifyEmail() {
 
   if (!customer) {
     // Optionally render a fallback or redirect
-    return <div>Žádný zákazník nebyl nalezen.</div>
+    return <div>Takový účet jsme nenašli.</div>
   }
 
   return <VerifyEmailReminderPage customer={{ email: customer.email }} />

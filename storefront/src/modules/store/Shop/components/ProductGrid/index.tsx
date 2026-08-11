@@ -34,9 +34,9 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
   if (loadError && !products.length) {
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo} role="alert">
-        <span>Ateliér je na chvíli nedostupný</span>
-        <h2>Katalog se nepodařilo otevřít.</h2>
-        <p>Vaše volba zůstala zachovaná. Zkuste spojení obnovit, nebo se vraťte k celému výběru.</p>
+        <span>Něco se zaseklo</span>
+        <h2>Výrobky se nepovedlo načíst.</h2>
+        <p>Co jste si nastavili, jsme nezahodili. Zkuste to načíst znovu, nebo se vraťte na celou nabídku.</p>
         <div className={styles.emptyActions}>
           <button type="button" onClick={onRetry}>Načíst znovu <i>↻</i></button>
           <button type="button" onClick={onReset}>Zrušit filtry <i>→</i></button>
@@ -49,9 +49,9 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo}>
         <span>Nic jsme nenašli</span>
-        <h2>Zkuste výběr trochu otevřít.</h2>
-        <p>Každý objekt se nevejde do každé škatulky. Zrušte filtry a objevte celou kolekci.</p>
-        <button type="button" onClick={onReset}>Zobrazit všechny objekty <i>→</i></button>
+        <h2>Zkuste to s méně filtry.</h2>
+        <p>Takhle úzkému zadání nic neodpovídá. Zrušte filtry a podívejte se na všechno.</p>
+        <button type="button" onClick={onReset}>Zobrazit všechno <i>→</i></button>
       </motion.div>
     )
   }
@@ -61,7 +61,7 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
       <AnimatePresence>
         {refreshing && (
           <motion.div className={styles.refreshing} role="status" initial={fadeIn} animate={fadeTo} exit={fadeIn}>
-            Aktualizuji ateliérový výběr
+            Načítám další
           </motion.div>
         )}
       </AnimatePresence>
@@ -74,7 +74,7 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
 
       {loadError && products.length > 0 && (
         <div className={styles.inlineError} role="alert">
-          <span>Další objekty se nepodařilo načíst.</span>
+          <span>Další výrobky se nepovedlo načíst.</span>
           <button type="button" onClick={onRetry}>Zkusit znovu</button>
         </div>
       )}
@@ -82,9 +82,9 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
       {(canLoadMore || loading) && (
         <div className={styles.loadMore}>
           <div className={styles.progress}><i style={{ width: `${Math.min(100, total ? loadedCount / total * 100 : 100)}%` }} /></div>
-          <p aria-live="polite">{`Načteno ${Math.min(loadedCount, total)} z ${Math.max(total, loadedCount)} objektů`}</p>
+          <p aria-live="polite">{`Načteno ${Math.min(loadedCount, total)} z ${Math.max(total, loadedCount)} výrobků`}</p>
           <button type="button" onClick={onLoadMore} disabled={loading}>
-            {loading ? "Načítám…" : "Objevit další objekty"}<span>↓</span>
+            {loading ? "Načítám…" : "Zobrazit další"}<span>↓</span>
           </button>
         </div>
       )}

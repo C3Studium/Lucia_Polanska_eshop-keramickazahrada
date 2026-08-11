@@ -73,7 +73,7 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
             rel="noreferrer"
             className={styles.action}
           >
-            Zjistit víc
+            Víc informací
           </a>
         )}
       </span>

@@ -26,7 +26,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
   const recentOrders = orders?.slice(0, 3) || []
   const displayName =
     [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
-    "váš archiv"
+    "váš účet"
 
   return (
     <AccountPageReveal
@@ -34,14 +34,14 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       data-testid="overview-page"
     >
       <AccountSectionReveal className={s.accountOverviewHero}>
-        <p className={s.accountOverviewEyebrow}>Soukromý archiv · přehled</p>
+        <p className={s.accountOverviewEyebrow}>Váš účet</p>
         <div className={s.accountOverviewHeading}>
           <h1 data-testid="welcome-message" data-value={customer?.first_name}>
             Dobrý den,
             <em>{displayName}.</em>
           </h1>
           <div className={s.accountOverviewIntro}>
-            <span>Přihlášený archiv</span>
+            <span>Jste přihlášeni</span>
             <p data-testid="customer-email" data-value={customer?.email}>
               {customer?.email}
             </p>
@@ -60,7 +60,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               {percentage}
               <small>%</small>
             </strong>
-            <p>Profil dokončen</p>
+            <p>Vyplněný profil</p>
           </div>
           <div className={s.accountOverviewProgress} aria-hidden="true">
             <motion.i
@@ -71,10 +71,10 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           </div>
           {incompleteSteps.length > 0 ? (
             <p className={s.accountOverviewNote}>
-              Zbývá doplnit: {incompleteSteps.map((step) => step.label).join(", ")}.
+              Ještě chybí: {incompleteSteps.map((step) => step.label).join(", ")}.
             </p>
           ) : (
-            <p className={s.accountOverviewNote}>Všechny základní údaje jsou připravené.</p>
+            <p className={s.accountOverviewNote}>Máte vyplněné všechno, co potřebujeme.</p>
           )}
           <PremiumActionLink
             href="/account/profile"
@@ -84,7 +84,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         </article>
 
         <article className={s.accountOverviewStat}>
-          <span className={s.accountOverviewIndex}>02 · doručení</span>
+          <span className={s.accountOverviewIndex}>02 · adresy</span>
           <div className={s.accountOverviewStatValue}>
             <strong data-testid="addresses-count" data-value={addressCount}>
               {String(addressCount).padStart(2, "0")}
@@ -92,7 +92,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
             <p>{addressCount === 1 ? "Uložená adresa" : "Uložené adresy"}</p>
           </div>
           <p className={s.accountOverviewNote}>
-            Oblíbená místa doručení budete mít při příštím výběru po ruce.
+            Uložené adresy vám příště ušetří vyplňování.
           </p>
           <PremiumActionLink
             href="/account/addresses"
@@ -105,7 +105,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       <AccountSectionReveal className={s.accountOverviewOrders}>
         <div className={s.accountOverviewSectionHead}>
           <div>
-            <span className={s.accountOverviewIndex}>03 · poslední záznamy</span>
+            <span className={s.accountOverviewIndex}>03 · poslední objednávky</span>
             <h2>Nedávné objednávky</h2>
           </div>
           <span>{String(orders?.length || 0).padStart(2, "0")} celkem</span>
@@ -133,11 +133,11 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         ) : (
           <div className={s.accountOverviewEmpty}>
             <p data-testid="no-orders-message">
-              V archivu zatím není žádná objednávka.
+              Zatím jste u nás nic neobjednali.
             </p>
             <PremiumActionLink
               href="/store"
-              text="Objevit objekty"
+              text="Prohlédnout výrobky"
               className={s.accountOverviewAction}
             />
           </div>

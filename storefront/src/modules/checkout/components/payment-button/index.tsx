@@ -46,7 +46,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     default:
       return (
         <div className={styles.root}>
-            <ClickButton text="Vyberte způsob platby" disabled={true} />
+            <ClickButton text="Nejdřív vyberte platbu" disabled={true} />
           </div>
       )
   }
@@ -117,7 +117,7 @@ const ComgatePaymentButton = ({
   const handlePayment = () => {
     if (!redirectUrl) {
       setErrorMessage(
-        "Platební bránu se nepodařilo otevřít. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
+        "Platební bránu se nepovedlo otevřít. Zkuste to prosím znovu, nebo nám napište na info@keramickazahrada.cz."
       )
       return
     }

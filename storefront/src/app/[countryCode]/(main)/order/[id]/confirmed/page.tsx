@@ -14,7 +14,7 @@ type Props = {
 
 export const metadata: Metadata = {
   title: "Objednávka potvrzena",
-  description: "Vaše objednávka byla úspěšně dokončena",
+  description: "Objednávku máme, děkujeme.",
 }
 
 export default async function OrderConfirmedPage(props: Props) {
@@ -45,7 +45,7 @@ export default async function OrderConfirmedPage(props: Props) {
           eyebrow="Platba · doplatek"
           title="Máme to."
           accent="Objednávka je v pořádku."
-          description="Podrobnosti objednávky se nám tu nepodařilo načíst — otevřete je prosím z e-mailu s potvrzením, nebo ve svém účtu."
+          description="Podrobnosti se nám tu nepovedlo načíst. Najdete je v e-mailu s potvrzením, nebo ve svém účtu."
           status={outcome === "paid" ? "success" : "pending"}
           primary={{ href: "/account/orders", label: "Moje objednávky" }}
         >

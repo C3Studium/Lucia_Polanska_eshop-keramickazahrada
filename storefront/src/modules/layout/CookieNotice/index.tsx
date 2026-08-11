@@ -54,8 +54,8 @@ export default function CookieNotice() {
           exit="exit"
         >
           <p className={styles.text}>
-            Používáme jen cookies nutné pro chod obchodu — košík, přihlášení a volbu
-            země. Nesledujeme vás a nic nepředáváme dál.{" "}
+            Používáme jen cookies, bez kterých by obchod nefungoval — košík,
+            přihlášení a volba země. Nesledujeme vás a nikomu nic nepředáváme.{" "}
             <LocalizedClientLink href="/cookies" className={styles.link}>
               Více o cookies
             </LocalizedClientLink>

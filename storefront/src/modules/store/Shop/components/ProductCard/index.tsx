@@ -139,7 +139,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
           <div className={styles.primary}>
             <Image
               src={primaryImage}
-              alt={product.title || "Keramický objekt"}
+              alt={product.title || "Keramický výrobek"}
               fill
               priority={priority}
               quality={80}
@@ -184,7 +184,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
             aria-hidden="true"
           >
             <span className={styles.discoverBackground} />
-            <span className={styles.discoverLabel}>Detail objektu</span>
+            <span className={styles.discoverLabel}>Zobrazit detail</span>
             <i>→</i>
           </motion.span>
         </div>
@@ -198,7 +198,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
             <span className={styles.index} aria-hidden="true">LP</span>
           </div>
           <div className={styles.bottom}>
-            <p className={styles.description}>{product.subtitle || product.description || "Ručně vytvořený originál z ateliéru Lucie Polanské."}</p>
+            <p className={styles.description}>{product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}</p>
             <div className={styles.price}>
               {hasSale && <del>{cheapestPrice?.original_price}</del>}
               <strong>{cheapestPrice?.calculated_price || "Cena na dotaz"}</strong>

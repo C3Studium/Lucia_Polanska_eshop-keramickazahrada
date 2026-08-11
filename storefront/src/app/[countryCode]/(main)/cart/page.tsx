@@ -6,7 +6,7 @@ import { notFound } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Košík",
-  description: "Zobrazit svůj košík",
+  description: "Co máte v košíku.",
 }
 
 export default async function Cart() {

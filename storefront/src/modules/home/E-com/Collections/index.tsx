@@ -12,24 +12,24 @@ import {
 const collections = [
   {
     id: 1,
-    title: "Zahradní objekty",
-    description: "Solitéry, které přirozeně stárnou společně se zahradou.",
+    title: "Do zahrady",
+    description: "Kusy, které venku hezky zestárnou spolu se zahradou.",
     image: "/assets/img/img/7.jpg",
     href: "/store",
     item: VerticalItem,
   },
   {
     id: 2,
-    title: "Nové objekty",
-    description: "Čerstvě dokončené originály z píseckého ateliéru.",
+    title: "Novinky",
+    description: "Co právě vyšlo z pece v píseckém ateliéru.",
     image: "/assets/img/img/10.jpg",
     href: "/store",
     item: HorizontalItem,
   },
   {
     id: 3,
-    title: "Malé solitéry",
-    description: "Drobné objekty s výrazem, strukturou a vlastním charakterem.",
+    title: "Drobnosti",
+    description: "Malé kousky, které mají svůj výraz i charakter.",
     image: "/assets/img/img/1.jpg",
     href: "/store",
     item: HorizontalItem,
@@ -37,7 +37,7 @@ const collections = [
   {
     id: 4,
     title: "Květinové reliéfy",
-    description: "Keramika inspirovaná tvarem, rytmem a barvou zahrady.",
+    description: "Keramika podle toho, co roste za oknem.",
     image: "/assets/img/img/7.jpg",
     href: "/store",
     item: VerticalItem,
@@ -45,7 +45,7 @@ const collections = [
   {
     id: 5,
     title: "Figurální tvorba",
-    description: "Tváře a postavy modelované bez formy, vždy pouze jednou.",
+    description: "Tváře a postavy. Modeluju je bez formy, vždycky jen jednou.",
     image: "/assets/img/img/4.jpg",
     href: "/store",
     item: HorizontalItem,
@@ -53,7 +53,7 @@ const collections = [
   {
     id: 6,
     title: "Do interiéru",
-    description: "Autorské objekty pro klidná místa a každodenní rituály.",
+    description: "Výrobky, které se hodí na polici, ke stolu i na parapet.",
     image: "/assets/img/img/8.jpg",
     href: "/store",
     item: HorizontalItem,
@@ -243,9 +243,9 @@ export default function Collections() {
               <span>Ručně tvořeno v Písku</span>
             </div>
             <h2>
-              Stejný postup. <em>Nikdy stejný objekt.</em>
+              Stejný postup, <em>pokaždé jiný výsledek.</em>
             </h2>
-            <p>Každý kus vzniká pomalu, bez formy a v malém počtu.</p>
+            <p>Pracuju bez formy, takže se mi dva stejné kusy udělat ani nepodaří.</p>
           </motion.div>
           <motion.div className="Collecion__wrapper" style={{ x }}>
             {collections.map((collection, index) => (

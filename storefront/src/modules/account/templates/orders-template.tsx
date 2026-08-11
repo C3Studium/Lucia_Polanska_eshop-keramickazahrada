@@ -18,16 +18,16 @@ export const OrdersTemplate = ({ orders }: ProfileTemplateProps) => {
   return (
     <AccountPageReveal className={s.content} data-testid="orders-page-wrapper">
       <AccountSectionReveal className={s.header}>
-        <p className={s.eyebrow}>Soukromý archiv · objednávky</p>
+        <p className={s.eyebrow}>Váš účet · objednávky</p>
         <div className={s.titleRow}>
           <h1 className={s.title}>
             Vaše <em>objednávky.</em>
           </h1>
-          <span>{String(orders.length).padStart(2, "0")} záznamů</span>
+          <span>{String(orders.length).padStart(2, "0")} objednávek</span>
         </div>
         <p className={s.desc}>
-          Objekty, které si k vám našly cestu, seřazené jako klidný archiv — s
-          částkou, datem i aktuálními detaily na jednom místě.
+          Všechno, co jste si u nás objednali — od nejnovějšího. U každé
+          objednávky najdete datum, částku i aktuální stav.
         </p>
       </AccountSectionReveal>
       <AccountSectionReveal className={s.body}>

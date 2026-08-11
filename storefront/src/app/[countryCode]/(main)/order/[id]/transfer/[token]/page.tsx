@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Převod objednávky",
-  description: "Bezpečně rozhodněte o převodu vlastnictví objednávky.",
+  description: "Rozhodněte, jestli objednávku převzít.",
 }
 
 export default async function TransferPage({

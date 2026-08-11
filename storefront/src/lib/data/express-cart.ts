@@ -101,7 +101,7 @@ export async function selectExpressVariant({
   } catch (error: any) {
     return {
       success: false,
-      message: error?.message || "Produkt se nepodařilo připravit.",
+      message: error?.message || "Výrobek se nepovedlo připravit.",
     }
   }
 }
@@ -132,7 +132,7 @@ export async function selectExpressBundle({
   } catch (error: any) {
     return {
       success: false,
-      message: error?.message || "Balíček se nepodařilo připravit.",
+      message: error?.message || "Sadu se nepovedlo připravit.",
     }
   }
 }
@@ -179,7 +179,7 @@ export async function setExpressAddress({
   } catch (error: any) {
     return {
       success: false,
-      message: error?.message || "Adresu se nepodařilo uložit.",
+      message: error?.message || "Adresu se nepovedlo uložit.",
     }
   }
 }
@@ -194,7 +194,7 @@ export async function setExpressCartMetadata(
   } catch (error: any) {
     return {
       success: false,
-      message: error?.message || "Výdejní místo se nepodařilo uložit.",
+      message: error?.message || "Výdejní místo se nepovedlo uložit.",
     }
   }
 }
@@ -215,12 +215,12 @@ export async function completeExpressCart(cartId: string) {
 
     return {
       success: false,
-      message: result.error?.message || "Objednávku se nepodařilo dokončit.",
+      message: result.error?.message || "Objednávku se nepovedlo dokončit.",
     }
   } catch (error: any) {
     return {
       success: false,
-      message: error?.message || "Objednávku se nepodařilo dokončit.",
+      message: error?.message || "Objednávku se nepovedlo dokončit.",
     }
   }
 }

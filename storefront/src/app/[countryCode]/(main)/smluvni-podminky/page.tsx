@@ -131,11 +131,11 @@ const supplements = {
 export default function Page() {
   return (
     <LegalDocument
-      code="PRÁVO · 01"
-      eyebrow="Nákup · pravidla a jistota"
+      code="01"
+      eyebrow="Pravidla nákupu"
       title="Obchodní podmínky"
-      accent="Důležité věci bez drobného písma."
-      description="Pravidla nákupu mezi vámi a ateliérem Lucie Polanské, uspořádaná do přehledných kapitol."
+      accent="Bez drobného písma."
+      description="Jak to mezi námi funguje — od objednávky přes platbu a dopravu až po vrácení zboží."
       updated="Platné od 1. 1. 2015"
       sections={sections}
       supplements={supplements}

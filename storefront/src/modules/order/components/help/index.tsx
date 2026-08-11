@@ -6,7 +6,7 @@ const Help = () => {
   // WIP: add here correct contact information
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>Potřebujete pomoc?</h2>
+      <h2 className={styles.title}>Potřebujete s něčím pomoct?</h2>
       <div className={styles.content}>
         <ul className={styles.list}>
           <li>

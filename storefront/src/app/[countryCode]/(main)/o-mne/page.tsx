@@ -9,7 +9,7 @@ import AboutPageExperience from "@modules/omne/page"
 export const metadata: Metadata = {
   title: "O mně — Lucie Polanská",
   description:
-    "Poznejte Lucii Polanskou, její cestu ke keramice, rukopis a inspiraci za objekty z Keramické zahrady.",
+    "Kdo je Lucie Polanská, jak se dostala ke keramice a co ji na téhle práci baví.",
 }
 
 export default async function Home(props: {

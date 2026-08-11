@@ -6,7 +6,7 @@ const EmptyCartMessage = () => {
     <div className={s.root} data-testid="empty-cart-message">
       <h1 className={s.title}>Košík</h1>
       <p className={s.desc}>
-        Zatím tu čeká prázdné místo. Prohlédněte si objekty z ateliéru a vyberte ten, který s vámi zůstane.
+        Zatím je prázdný. Podívejte se, co je v ateliéru — třeba vás něco chytne.
       </p>
       <div>
         <LinkButton href="/store" text="Prozkoumat produkty" />

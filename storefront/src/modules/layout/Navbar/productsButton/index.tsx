@@ -469,7 +469,7 @@ function CollectionCard({
                 ))
               ) : (
                 <motion.span className={styles.cardCount} variants={categoryVariants}>
-                  {withCount(collection.productCount, "objekt", "objekty", "objektů")}
+                  {withCount(collection.productCount, "výrobek", "výrobky", "výrobků")}
                 </motion.span>
               )}
             </motion.div>

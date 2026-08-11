@@ -112,7 +112,7 @@ const Review = ({
       const redirectUrl = extractComgateRedirectUrl(result.data)
 
       if (!redirectUrl) {
-        throw new Error("Platební brána nevrátila adresu pro pokračování.")
+        throw new Error("Platební brána se neozvala. Zkuste to prosím znovu.")
       }
 
       window.location.assign(redirectUrl)
@@ -120,7 +120,7 @@ const Review = ({
       setError(
         paymentError instanceof Error
           ? paymentError.message
-          : "Platbu se nepodařilo zahájit. Zkuste to prosím znovu."
+          : "Platbu se nepovedlo spustit. Zkuste to prosím znovu."
       )
       setIsPaying(false)
     }
@@ -253,7 +253,7 @@ const Review = ({
                   </button>
                   {!accepted && (
                     <p className={styles.gateHint}>
-                      K pokračování prosím potvrďte souhlas s podmínkami.
+                      Než budete pokračovat, potvrďte prosím souhlas s podmínkami.
                     </p>
                   )}
                 </>
@@ -265,7 +265,7 @@ const Review = ({
                 />
               ) : (
                 <p className={styles.gateHint}>
-                  K pokračování prosím potvrďte souhlas s podmínkami.
+                  Než budete pokračovat, potvrďte prosím souhlas s podmínkami.
                 </p>
               )}
             </motion.div>

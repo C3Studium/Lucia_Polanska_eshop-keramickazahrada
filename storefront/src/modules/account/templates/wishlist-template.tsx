@@ -39,18 +39,17 @@ export default function WishlistTemplate({
       data-testid="wishlist-page-wrapper"
     >
       <AccountSectionReveal className={s.accountWishlistHeader}>
-        <p>Soukromý archiv · uložené</p>
+        <p>Váš účet · oblíbené</p>
         <div className={s.accountWishlistHeading}>
           <h1>
             Oblíbené
-            <em>objekty.</em>
+            <em>kousky.</em>
           </h1>
           <span>{String(items.length).padStart(2, "0")} uložených</span>
         </div>
         <div className={s.accountWishlistIntro}>
           <p>
-            Osobní výběr objektů, ke kterým se můžete vrátit, až přijde jejich
-            čas.
+            Kousky, které se vám líbí. Zůstanou tu, dokud se nerozhodnete.
           </p>
           {items.length > 0 && !isPreview && (
             <ShareButton data-testid="share-button" />
@@ -63,8 +62,7 @@ export default function WishlistTemplate({
           <div className={s.accountPreviewNotice}>
             <span>Vývojový náhled</span>
             <p>
-              Ukázkové položky se zobrazují jen lokálně, dokud seznam přání
-              neobsahuje vlastní objekty.
+              Tohle jsou jen ukázky. Zmizí, jakmile si uložíte první vlastní kousek.
             </p>
           </div>
         )}
@@ -72,12 +70,12 @@ export default function WishlistTemplate({
         {items.length === 0 ? (
           <div className={s.accountWishlistEmpty}>
             <div>
-              <span>Výběr je zatím prázdný</span>
-              <p>Až vás některý objekt osloví, uložte si jej záložkou.</p>
+              <span>Zatím je tu prázdno</span>
+              <p>Až vás něco zaujme, klepněte na srdíčko a uloží se to sem.</p>
             </div>
             <PremiumActionLink
               href="/store"
-              text="Objevovat objekty"
+              text="Prohlédnout výrobky"
               className={s.accountWishlistAction}
             />
           </div>
@@ -92,7 +90,7 @@ export default function WishlistTemplate({
               const variant = item?.product_variant
               const product = variant?.product
               const title =
-                product?.title || variant?.title || "Ateliérový objekt"
+                product?.title || variant?.title || "Z ateliéru"
               const subtitle = getVariantOptionsSummary(variant)
               const href = product?.handle
                 ? `/products/${product.handle}`
@@ -130,7 +128,7 @@ export default function WishlistTemplate({
                         className={s.accountWishlistInfo}
                         href={href}
                       >
-                        <span>Ateliérový objekt</span>
+                        <span>Z ateliéru</span>
                         <h2>{title}</h2>
                         {subtitle && <p>{subtitle}</p>}
                       </LocalizedClientLink>

@@ -29,7 +29,7 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
         animate="show"
         custom={heroBeat.eyebrow}
       >
-        Staňte se členem!
+        Založte si účet
       </motion.h1>
       <motion.p
         className={s.desc}
@@ -38,8 +38,8 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
         animate="show"
         custom={heroBeat.heading}
       >
-        Vytvořte si profil v Keramické zahradě a mějte své objednávky, adresy
-        i uložené objekty na jednom místě.
+        Objednávky, adresy i uložené kousky budete mít na jednom místě —
+        a příště nebudete nic vypisovat znovu.
       </motion.p>
       <motion.form
         className={s.form}
@@ -113,11 +113,11 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
           type="submit"
           className={s.submit}
           data-testid="register-button"
-          text="Připojit se"
+          text="Založit účet"
         />
       </motion.form>
       <span className={s.note}>
-        Již jste členem?{" "}
+        Máte už účet?{" "}
         <button
           onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
           className={s.underline}

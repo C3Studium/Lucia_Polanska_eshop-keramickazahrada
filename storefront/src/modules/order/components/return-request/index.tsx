@@ -51,7 +51,7 @@ export default function ReturnRequest({ orderId, email, customerName }: Props) {
   if (state === "sent") {
     return (
       <p className={styles.sent} role="status">
-        Žádost jsme přijali. Ozveme se vám e-mailem, jakmile ji projdeme.
+        Máme to. Ozveme se vám e-mailem, jakmile si to projdeme.
       </p>
     )
   }
@@ -67,7 +67,7 @@ export default function ReturnRequest({ orderId, email, customerName }: Props) {
   return (
     <div className={styles.root}>
       <label htmlFor={fieldId} className={styles.label}>
-        Proč zboží vracíte? <i>(povinné)</i>
+        Proč to vracíte? <i>(povinné)</i>
       </label>
       <textarea
         id={fieldId}
@@ -75,7 +75,7 @@ export default function ReturnRequest({ orderId, email, customerName }: Props) {
         rows={3}
         value={reason}
         onChange={(event) => setReason(event.target.value)}
-        placeholder="Napište prosím krátce, co se stalo."
+        placeholder="Napište prosím pár slovy, co se stalo."
         required
       />
 

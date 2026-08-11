@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s | Keramická zahrada",
   },
   description:
-    "Ručně tvořená autorská keramika pro zahradu i domov. Objevte originální objekty, zakázkovou tvorbu a keramické kurzy Lucie Polanské.",
+    "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {

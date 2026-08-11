@@ -49,8 +49,8 @@ export default function OrderStateShell({
             {status === "pending"
               ? "Objednávku právě dokončujeme"
               : status === "success"
-                ? "Objednávka je v bezpečí"
-                : "Objednávka nebyla dokončena"}
+                ? "Objednávku máme"
+                : "Objednávka se nedokončila"}
           </p>
           <h1>
             {title}
@@ -80,7 +80,7 @@ export default function OrderStateShell({
 
       <div className={s.footer}>
         <span>Bezpečná platba</span>
-        <span>Osobní péče</span>
+        <span>Ozveme se osobně</span>
         <span>Ateliér · Písek</span>
       </div>
     </main>

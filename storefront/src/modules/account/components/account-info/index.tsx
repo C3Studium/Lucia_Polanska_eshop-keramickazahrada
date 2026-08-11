@@ -86,7 +86,7 @@ const AccountInfo = ({
             exit="closed"
             data-testid="success-message"
           >
-            <p>{label} bylo úspěšně aktualizováno.</p>
+            <p>{label} jsme uložili.</p>
           </motion.div>
         )}
         {isError && (
