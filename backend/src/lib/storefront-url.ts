@@ -81,6 +81,12 @@ export const storeLink = (): string => {
   return base ? `${base}/store` : ""
 }
 
+/** Detail objednávky v účtu — tam bydlí editace. */
+export const accountOrderLink = (orderId?: string | null): string => {
+  const base = storefrontBase()
+  return base && orderId ? `${base}/account/orders/details/${orderId}` : ""
+}
+
 /** A customer's own order history — `app/[countryCode]/(main)/account/orders`. */
 export const accountOrdersLink = (): string => {
   const base = storefrontBase()

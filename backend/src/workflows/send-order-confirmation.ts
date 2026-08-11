@@ -1,6 +1,7 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
 import { balancePaymentUrl } from "../lib/balance-payment-link";
+import { accountOrderLink } from "../lib/storefront-url";
 import { resolveBalanceStep } from "./steps/resolve-balance";
 import { sendNotificationStep } from "./steps/send-notification";
 
@@ -69,6 +70,7 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
             balance_currency: balance.currency_code,
             // Signed, so the customer can pay from the e-mail without an
             // account. Absent when nothing is owed.
+            edit_order_url: accountOrderLink(id),
             balance_payment_url: balance.outstanding > 0
               ? balancePaymentUrl(id)
               : null,

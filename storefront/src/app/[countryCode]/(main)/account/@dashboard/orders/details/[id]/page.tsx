@@ -1,5 +1,7 @@
 import { retrieveOrder } from "@lib/data/orders"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
+import OrderEdit from "@modules/order/components/order-edit"
+import { getOrderEditContext } from "@lib/data/order-edit"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -29,5 +31,12 @@ export default async function OrderDetailPage(props: Props) {
     notFound()
   }
 
-  return <OrderDetailsTemplate order={order} />
+  const editContext = await getOrderEditContext(order.id)
+
+  return (
+    <>
+      {editContext && <OrderEdit orderId={order.id} context={editContext} />}
+      <OrderDetailsTemplate order={order} />
+    </>
+  )
 }
