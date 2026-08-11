@@ -40,6 +40,9 @@ const Inner = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignSearch, setAssignSearch] = useState("");
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set());
   const [renaming, setRenaming] = useState("");
 
   const invalidate = async () => {
@@ -226,6 +229,41 @@ const Inner = () => {
       toast.success(`Smazáno ${count} produktů.`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Mazání se nepodařilo."),
+  });
+
+  const bulkAssign = useMutation({
+    mutationFn: async () => {
+      for (const id of pickerSelected) {
+        const product = products.find((item) => item.id === id);
+        const currentCategories = (product?.category_refs ?? []).map(
+          (category: any) => ({ id: category.id })
+        );
+        const wantsCategory =
+          categoryId && categoryId !== "none"
+            ? currentCategories.some((c: any) => c.id === categoryId)
+              ? currentCategories
+              : [...currentCategories, { id: categoryId }]
+            : currentCategories;
+        await sdk.client.fetch(`/admin/products/${id}`, {
+          method: "POST",
+          body: {
+            collection_id: collectionId,
+            // Kategorie se SLUČUJÍ — produkt může být ve více kategoriích,
+            // zařazení sem mu ostatní nesmí vzít.
+            categories: wantsCategory,
+          },
+        });
+      }
+    },
+    onSuccess: async () => {
+      const count = pickerSelected.size;
+      setPickerSelected(new Set());
+      setPickerOpen(false);
+      setPickerSearch("");
+      await invalidate();
+      toast.success(`Zařazeno ${count} produktů.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Zařazení se nepodařilo."),
   });
 
   const moveProduct = useMutation({
@@ -458,6 +496,18 @@ const Inner = () => {
                 </button>
               ))}
               <div className="flex-1" />
+              {selectedCollection && (
+                <Button size="small" variant="secondary"
+                  onClick={() => setPickerOpen((open) => !open)}>
+                  {pickerOpen
+                    ? "Zavřít výběr"
+                    : `Přidat produkty do ${
+                        categoryId && categoryId !== "none"
+                          ? "kategorie"
+                          : "kolekce"
+                      }`}
+                </Button>
+              )}
               <Button size="small" variant="secondary" asChild>
                 <Link to="/novy-produkt">Přidat produkt</Link>
               </Button>
@@ -497,52 +547,77 @@ const Inner = () => {
               </div>
             )}
           </div>
-          {selectedCollection &&
-            visibleProducts.filter((p) => kindTab === "vse" || p.kind === kindTab)
-              .length === 0 && (
-            <div className="flex flex-col gap-2 p-4">
-              <Text size="small" className="text-ui-fg-muted">
-                Nic tu není — najděte produkt a zařaďte ho sem
-                {categoryId && categoryId !== "none" ? " (i do kategorie)" : ""}:
-              </Text>
-              <Input size="small" type="search" placeholder="Hledat produkt…"
-                value={assignSearch}
-                onChange={(e) => setAssignSearch(e.target.value)} />
-              {assignSearch.trim().length > 1 &&
-                products
-                  .filter(
-                    (product) =>
-                      product.collection_id !== collectionId &&
+          {pickerOpen && selectedCollection && (
+            <div className="border-ui-border-base flex flex-col gap-2 border-b p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input size="small" type="search" className="min-w-56 flex-1"
+                  placeholder="Filtrovat produkty…"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)} />
+                <Button size="small"
+                  isLoading={bulkAssign.isPending}
+                  disabled={pickerSelected.size === 0}
+                  onClick={() => bulkAssign.mutate()}>
+                  Zařadit vybrané ({pickerSelected.size})
+                </Button>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {products
+                  .filter((product) => {
+                    // Nenabízet, co už tady je.
+                    const inThisCollection = product.collection_id === collectionId;
+                    const inThisCategory =
+                      categoryId && categoryId !== "none"
+                        ? (product.category_refs ?? []).some(
+                            (c: any) => c.id === categoryId
+                          )
+                        : true;
+                    if (inThisCollection && inThisCategory) return false;
+                    return (
+                      !pickerSearch.trim() ||
                       product.title
                         .toLowerCase()
-                        .includes(assignSearch.trim().toLowerCase())
-                  )
-                  .slice(0, 8)
+                        .includes(pickerSearch.trim().toLowerCase())
+                    );
+                  })
                   .map((product) => (
-                    <div key={product.id}
-                      className="flex items-center justify-between gap-2">
+                    <label key={product.id}
+                      className="hover:bg-ui-bg-base-hover flex cursor-pointer items-center gap-2 rounded px-2 py-1.5">
+                      <input type="checkbox"
+                        checked={pickerSelected.has(product.id)}
+                        onChange={(e) => {
+                          const next = new Set(pickerSelected);
+                          if (e.target.checked) next.add(product.id);
+                          else next.delete(product.id);
+                          setPickerSelected(next);
+                        }} />
                       <Text size="small" className="min-w-0 flex-1 truncate">
                         {product.title}
                         <span className="text-ui-fg-muted">
                           {" "}· {product.collection ?? "bez kolekce"}
+                          {(product.category_refs ?? []).length
+                            ? ` · ${(product.category_refs ?? [])
+                                .map((c: any) => c.name)
+                                .join(", ")}`
+                            : ""}
                         </span>
                       </Text>
-                      <Button size="small" variant="secondary"
-                        onClick={() =>
-                          moveProduct.mutate({
-                            id: product.id,
-                            body: {
-                              collection_id: collectionId,
-                              ...(categoryId && categoryId !== "none"
-                                ? { categories: [{ id: categoryId }] }
-                                : {}),
-                            },
-                          })
-                        }>
-                        Zařadit sem
-                      </Button>
-                    </div>
+                    </label>
                   ))}
+              </div>
+            </div>
+          )}
+          {selectedCollection &&
+            visibleProducts.filter((p) => kindTab === "vse" || p.kind === kindTab)
+              .length === 0 && (
+            <div className="flex flex-col items-start gap-2 p-4">
+              <Text size="small" className="text-ui-fg-muted">
+                Zatím tu nic není.
+              </Text>
+              <Button size="small" variant="secondary"
+                onClick={() => setPickerOpen(true)}>
+                Přidat produkty do {categoryId && categoryId !== "none" ? "kategorie" : "kolekce"}
+              </Button>
             </div>
           )}
           {visibleProducts
