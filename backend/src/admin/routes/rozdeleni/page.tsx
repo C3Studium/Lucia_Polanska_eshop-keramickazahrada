@@ -85,6 +85,11 @@ const Inner = () => {
   const [newCategory, setNewCategory] = useState("");
   const [newCategoryCollection, setNewCategoryCollection] = useState("");
   const [kindTab, setKindTab] = useState<"vse" | "bezne" | "zakazka" | "balicek" | "poskozene">("vse");
+  /* „Zobrazit všechny kategorie" — the middle column stops being scoped to a
+     collection and lists every category, including orphans (Medusa seed data
+     like Shirts/Pants) that belong to no collection and were otherwise
+     unreachable, so she can rename or delete them. */
+  const [allCats, setAllCats] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignSearch, setAssignSearch] = useState("");
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
@@ -436,33 +441,28 @@ const Inner = () => {
 
   const selectedCollection = collections.find((c) => c.id === collectionId);
 
+  /* Back to the first-open view: no selection, every product listed. Pending
+     row edits deliberately survive — a view reset must not discard her work. */
+  const resetView = () => {
+    setCollectionId(null);
+    setCategoryId(null);
+    setAllCats(false);
+    setKindTab("vse");
+    setPickerOpen(false);
+    setPickerSelected(new Set());
+    setSelected(new Set());
+    setRenaming("");
+  };
+
   return (
     <Container className="p-0">
       <Toaster />
-      <header className="border-ui-border-base flex flex-wrap items-start justify-between gap-3 border-b px-6 pb-4 pt-6">
-        <div>
-          <Heading>Rozdělení</Heading>
-          <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
-            Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
-            prostředek, klik uprostřed pravý sloupec.
-          </Text>
-        </div>
-        <Button
-          size="small"
-          variant="secondary"
-          onClick={() => {
-            // Back to the first-open view: no selection, every product listed.
-            setCollectionId(null);
-            setCategoryId(null);
-            setKindTab("vse");
-            setPickerOpen(false);
-            setPickerSelected(new Set());
-            setSelected(new Set());
-            setRenaming("");
-          }}
-        >
-          Zobrazit vše
-        </Button>
+      <header className="border-ui-border-base border-b px-6 pb-4 pt-6">
+        <Heading>Rozdělení</Heading>
+        <Text size="small" className="text-ui-fg-subtle mt-1 max-w-2xl">
+          Kolekce, jejich kategorie a produkty vedle sebe. Klik vlevo otevře
+          prostředek, klik uprostřed pravý sloupec.
+        </Text>
       </header>
 
       <div className="grid min-h-[60vh] lg:grid-cols-[260px_240px_minmax(0,1fr)] divide-x divide-ui-border-base">
@@ -470,7 +470,7 @@ const Inner = () => {
         <div className="flex flex-col gap-1 p-3">
           {collections.map((collection) => (
             <button key={collection.id} type="button"
-              onClick={() => { setCollectionId(collection.id); setCategoryId(null); setRenaming(""); }}
+              onClick={() => { setCollectionId(collection.id); setCategoryId(null); setAllCats(false); setRenaming(""); }}
               className={
                 collection.id === collectionId
                   ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left"
@@ -550,11 +550,18 @@ const Inner = () => {
               isLoading={createCollection.isPending}
               onClick={() => createCollection.mutate()}>+</Button>
           </div>
+          {/* Sticky, so the way out of any selection is always on screen. */}
+          <div className="border-ui-border-base bg-ui-bg-base sticky bottom-0 -mx-3 -mb-3 mt-auto border-t p-2">
+            <Button size="small" variant="secondary" className="w-full"
+              onClick={resetView}>
+              Zobrazit vše
+            </Button>
+          </div>
         </div>
 
         {/* ── 2. kategorie in this collection ── */}
         <div className="flex flex-col gap-1 p-3">
-          {!selectedCollection && (
+          {!selectedCollection && !allCats && (
             <div className="flex flex-col gap-2 px-1 py-1">
               <Text size="xsmall" className="text-ui-fg-muted">
                 Vyberte kolekci vlevo — nebo založte kategorii rovnou:
@@ -575,13 +582,19 @@ const Inner = () => {
                 onClick={() => createCategory.mutate()}>Založit kategorii</Button>
             </div>
           )}
-          {selectedCollection && (
+          {(selectedCollection || allCats) && (
             <>
+              {allCats && (
+                <Text size="xsmall" className="text-ui-fg-muted px-1">
+                  Všechny kategorie v obchodě — i ty, které nepatří pod žádnou
+                  kolekci.
+                </Text>
+              )}
               <button type="button" onClick={() => setCategoryId(null)}
                 className={categoryId === null ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
                 <Text size="small">Vše ({inCollection.length})</Text>
               </button>
-              {categoriesHere.map((category: any) => (
+              {(allCats ? allCategories : categoriesHere).map((category: any) => (
                 <div key={category.id}
                   className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
                   {renamingCategory?.id === category.id ? (
@@ -635,14 +648,19 @@ const Inner = () => {
                   )}
                 </div>
               ))}
-              <div className="mt-2 flex gap-2">
-                <Input size="small" placeholder="Nová kategorie…" value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)} />
-                <Button size="small" variant="secondary"
-                  isLoading={createCategory.isPending}
-                  onClick={() => createCategory.mutate()}>+</Button>
-              </div>
-              {uncategorised.length > 0 && categoriesHere.length > 0 && (
+              {/* Creating a category needs a collection to belong to — in the
+                  all-categories view there is none, so no inline form there. */}
+              {selectedCollection && (
+                <div className="mt-2 flex gap-2">
+                  <Input size="small" placeholder="Nová kategorie…" value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)} />
+                  <Button size="small" variant="secondary"
+                    isLoading={createCategory.isPending}
+                    onClick={() => createCategory.mutate()}>+</Button>
+                </div>
+              )}
+              {uncategorised.length > 0 &&
+                (allCats ? allCategories : categoriesHere).length > 0 && (
                 <button type="button" onClick={() => setCategoryId("none")}
                   className={categoryId === "none" ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
                   <Text size="small">Bez kategorie ({uncategorised.length})</Text>
@@ -650,6 +668,18 @@ const Inner = () => {
               )}
             </>
           )}
+          <div className="border-ui-border-base bg-ui-bg-base sticky bottom-0 -mx-3 -mb-3 mt-auto border-t p-2">
+            <Button size="small" variant="secondary" className="w-full"
+              onClick={() => {
+                // Orphan categories live nowhere else — this is their door.
+                setAllCats(true);
+                setCollectionId(null);
+                setCategoryId(null);
+                setRenaming("");
+              }}>
+              Zobrazit všechny kategorie
+            </Button>
+          </div>
         </div>
 
         {/* ── 3. produkty ── */}
@@ -800,17 +830,21 @@ const Inner = () => {
               </div>
             </div>
           )}
-          {selectedCollection &&
+          {(selectedCollection || allCats) &&
             visibleProducts.filter((p) => kindTab === "vse" || p.kind === kindTab)
               .length === 0 && (
             <div className="flex flex-col items-start gap-2 p-4">
               <Text size="small" className="text-ui-fg-muted">
                 Zatím tu nic není.
               </Text>
-              <Button size="small" variant="secondary"
-                onClick={() => setPickerOpen(true)}>
-                Přidat produkty do {categoryId && categoryId !== "none" ? "kategorie" : "kolekce"}
-              </Button>
+              {/* The picker writes collection_id, so it needs a collection —
+                  in the all-categories view there is none to offer. */}
+              {selectedCollection && (
+                <Button size="small" variant="secondary"
+                  onClick={() => setPickerOpen(true)}>
+                  Přidat produkty do {categoryId && categoryId !== "none" ? "kategorie" : "kolekce"}
+                </Button>
+              )}
             </div>
           )}
           {visibleProducts
@@ -890,6 +924,12 @@ const Inner = () => {
             </div>
               );
             })}
+          <div className="bg-ui-bg-base sticky bottom-0 mt-auto p-2">
+            <Button size="small" variant="secondary" className="w-full"
+              onClick={resetView}>
+              Zobrazit všechny produkty
+            </Button>
+          </div>
         </div>
       </div>
 
