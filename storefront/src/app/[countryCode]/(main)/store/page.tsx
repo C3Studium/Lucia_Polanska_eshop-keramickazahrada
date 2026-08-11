@@ -43,23 +43,26 @@ export default async function StorePage({
   })
 
   const { collections: allCollections } = await listCollections({
-    fields: "id,title,handle,*products",
+    fields: "id,title,handle,metadata,*products",
   }).catch(() => ({ collections: [] as any[], count: 0 }))
 
-  const navCollections = allCollections.map((collection: any) => {
+  // Kolekce skryté očkem v adminu (metadata.hidden) do nabídky nepatří.
+  const navCollections = allCollections
+    .filter((collection: any) => !(collection.metadata as any)?.hidden)
+    .map((collection: any) => {
     const productIds = new Set(
       (collection.products ?? []).map(({ id }: any) => id)
     )
-    return {
-      id: collection.id,
-      title: collection.title,
-      categories: categories.filter(
-        (category: any) =>
-          category.products?.some(({ id }: any) => productIds.has(id)) ||
-          (category.metadata as any)?.collection_id === collection.id
-      ),
-    }
-  })
+      return {
+        id: collection.id,
+        title: collection.title,
+        categories: categories.filter(
+          (category: any) =>
+            category.products?.some(({ id }: any) => productIds.has(id)) ||
+            (category.metadata as any)?.collection_id === collection.id
+        ),
+      }
+    })
 
   const category = query.category
     ? categories.find((item) => item.handle === query.category)

@@ -44,8 +44,15 @@ export const listNavigationCollections = async (): Promise<
     listCategories({ limit: 100, fields: "id,name,handle,metadata,*products" }).catch(() => []),
   ])
 
-  return collectionResult.collections.length
-    ? toCollectionCards(collectionResult.collections, categories)
+  // Kolekce skryté očkem v adminu (metadata.hidden) do menu nepatří; když
+  // jsou skryté všechny, menu se poskládá z kategorií jako dřív.
+  const visibleCollections = collectionResult.collections.filter(
+    (collection) =>
+      !(collection.metadata as Record<string, unknown> | null)?.hidden
+  )
+
+  return visibleCollections.length
+    ? toCollectionCards(visibleCollections, categories)
     : toCategoryCards(categories)
 }
 

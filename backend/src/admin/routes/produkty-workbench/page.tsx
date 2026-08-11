@@ -22,6 +22,7 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
+import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
@@ -245,35 +246,27 @@ const ProductExpansion = ({ productId }: { productId: string }) => {
   );
 };
 
-/** Row-level show/hide on the storefront, through the native product. */
+/** Row-level show/hide on the storefront — the shared eye with its warning. */
 const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
   const queryClient = useQueryClient();
-  const published = product.status === "published";
-  const mutate = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/products/${product.id}`, {
-        method: "POST",
-        body: { status: published ? "draft" : "published" },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      toast.success(
-        published
-          ? `${product.title} skryt z obchodu.`
-          : `${product.title} zveřejněn.`
-      );
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
-  });
   return (
-    <button
-      type="button"
-      className="text-ui-fg-interactive txt-small hover:underline"
-      onClick={() => mutate.mutate()}
-    >
-      {published ? "Skrýt z obchodu" : "Zveřejnit"}
-    </button>
+    <VisibilityEye
+      visible={product.status === "published"}
+      label={`produkt ${product.title}`}
+      hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+      showText="Produkt se vrátí do obchodu a půjde koupit."
+      onToggle={() =>
+        sdk.client.fetch(`/admin/products/${product.id}`, {
+          method: "POST",
+          body: {
+            status: product.status === "published" ? "draft" : "published",
+          },
+        })
+      }
+      onDone={() =>
+        queryClient.invalidateQueries({ queryKey: ["workbench-products"] })
+      }
+    />
   );
 };
 

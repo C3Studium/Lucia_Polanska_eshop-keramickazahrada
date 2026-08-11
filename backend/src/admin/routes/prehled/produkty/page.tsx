@@ -21,6 +21,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
+import { VisibilityEye } from "../../../components/visibility-eye";
 import { sdk } from "../../../lib/sdk";
 
 /**
@@ -333,6 +334,25 @@ const ProduktyInner = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <VisibilityEye
+                  visible={product.status === "published"}
+                  label={`produkt ${product.title}`}
+                  hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+                  showText="Produkt se vrátí do obchodu a půjde koupit."
+                  onToggle={() =>
+                    sdk.client.fetch(`/admin/products/${product.id}`, {
+                      method: "POST",
+                      body: {
+                        status:
+                          product.status === "published" ? "draft" : "published",
+                      },
+                    })
+                  }
+                  onDone={async () => {
+                    await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+                    await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+                  }}
+                />
                 <Button size="small" variant="secondary" asChild>
                   <Link to={`/products/${product.id}`}>Upravit</Link>
                 </Button>

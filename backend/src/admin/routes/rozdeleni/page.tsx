@@ -1,5 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { ListTree, Plus } from "@medusajs/icons";
+import {
+  ArchiveBox, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree, Plus,
+} from "@medusajs/icons";
 import {
   Badge, Button, Container, FocusModal, Heading, Input, Prompt, Text, Toaster, toast,
 } from "@medusajs/ui";
@@ -8,6 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
 
 /**
@@ -90,6 +93,9 @@ const Inner = () => {
      like Shirts/Pants) that belong to no collection and were otherwise
      unreachable, so she can rename or delete them. */
   const [allCats, setAllCats] = useState(false);
+  /* Icon tabs of the all-categories view: everything · with a collection ·
+     without one (the misclick she'll want to fix) · archived. */
+  const [catTab, setCatTab] = useState<"vse" | "skolekci" | "bez" | "archiv">("vse");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignSearch, setAssignSearch] = useState("");
   const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null);
@@ -139,7 +145,7 @@ const Inner = () => {
   });
   const { data: categoriesData } = useQuery<any>({
     queryKey: ["rozdeleni-categories"],
-    queryFn: () => sdk.client.fetch("/admin/product-categories?limit=100&fields=id,name,metadata"),
+    queryFn: () => sdk.client.fetch("/admin/product-categories?limit=100&fields=id,name,metadata,is_active"),
   });
   const { data: productsData } = useQuery<any>({
     queryKey: ["workbench-products-all"],
@@ -176,6 +182,22 @@ const Inner = () => {
     ).values(),
   ];
   const categoriesHere = collectionId ? categoriesOf(collectionId) : [];
+
+  /* The scoped column derives rows from product.category_refs, which carry
+     only id+name — flags (is_active, archived) live on the full record. */
+  const fullCategory = (id: string) =>
+    allCategories.find((category: any) => category.id === id);
+  const categoryArchived = (category: any) =>
+    Boolean((fullCategory(category.id)?.metadata as any)?.archived);
+  const categoryHidden = (category: any) =>
+    fullCategory(category.id)?.is_active === false;
+  const categoryHasCollection = (category: any) =>
+    Boolean((fullCategory(category.id)?.metadata as any)?.collection_id) ||
+    products.some(
+      (p) =>
+        p.collection_id &&
+        (p.category_refs ?? []).some((c: any) => c.id === category.id)
+    );
 
   /* The category a row shows for a collection: the product's first category
      that belongs to it. Products can hold more (bulk picker merges); the row
@@ -315,6 +337,34 @@ const Inner = () => {
       await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
       await invalidate();
       toast.success("Kategorie smazána — produkty zůstaly.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+  });
+
+  /* Archiv kategorie = metadata.archived (celý objekt se posílá sloučený —
+     nativní update metadata NAHRAZUJE). Archivace zároveň kategorii skryje
+     z obchodu (is_active: false); návrat z archivu ji sám nezveřejní —
+     o očku rozhoduje ona. */
+  const archiveCategory = useMutation({
+    mutationFn: (payload: { id: string; archive: boolean }) => {
+      const full = fullCategory(payload.id);
+      return sdk.client.fetch(`/admin/product-categories/${payload.id}`, {
+        method: "POST",
+        body: {
+          metadata: { ...(full?.metadata ?? {}), archived: payload.archive },
+          ...(payload.archive ? { is_active: false } : {}),
+        },
+      });
+    },
+    onSuccess: async (_, payload) => {
+      setCategoryId(null);
+      await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
+      await invalidate();
+      toast.success(
+        payload.archive
+          ? "Kategorie archivována — z obchodu i ze seznamů zmizela, produkty zůstaly."
+          : "Kategorie vrácena z archivu. V obchodě se ukáže, až ji zobrazíte očkem."
+      );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
   });
@@ -476,9 +526,14 @@ const Inner = () => {
                   ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left"
                   : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"
               }>
-              <Text size="small" weight={collection.id === collectionId ? "plus" : "regular"}>
-                {collection.title}
-              </Text>
+              <span className="flex items-center gap-1.5">
+                <Text size="small" weight={collection.id === collectionId ? "plus" : "regular"}>
+                  {collection.title}
+                </Text>
+                {Boolean((collection.metadata as any)?.hidden) && (
+                  <EyeSlash className="text-ui-fg-muted shrink-0" />
+                )}
+              </span>
               <Text size="xsmall" className="text-ui-fg-muted">
                 {products.filter((p) => p.collection_id === collection.id).length} produktů
               </Text>
@@ -500,6 +555,25 @@ const Inner = () => {
                   </label>
                   {renaming === "" ? (
                     <>
+                      <VisibilityEye
+                        visible={!(collection.metadata as any)?.hidden}
+                        label={`kolekci ${collection.title}`}
+                        hideText="Zákazníci ji přestanou vidět v menu Eshop produktů i v obchodě. Produkty v ní zůstanou dostupné jinými cestami."
+                        showText="Kolekce se vrátí do menu a do obchodu."
+                        onToggle={() =>
+                          sdk.client.fetch(`/admin/collections/${collection.id}`, {
+                            method: "POST",
+                            body: {
+                              /* Metadata update REPLACES — always send merged. */
+                              metadata: {
+                                ...(collection.metadata ?? {}),
+                                hidden: !(collection.metadata as any)?.hidden,
+                              },
+                            },
+                          })
+                        }
+                        onDone={invalidate}
+                      />
                       <button type="button"
                         className="text-ui-fg-interactive txt-xsmall hover:underline"
                         onClick={() => setRenaming(collection.title)}>
@@ -585,16 +659,49 @@ const Inner = () => {
           {(selectedCollection || allCats) && (
             <>
               {allCats && (
-                <Text size="xsmall" className="text-ui-fg-muted px-1">
-                  Všechny kategorie v obchodě — i ty, které nepatří pod žádnou
-                  kolekci.
-                </Text>
+                <>
+                  <Text size="xsmall" className="text-ui-fg-muted px-1">
+                    Všechny kategorie v obchodě — i ty, které nepatří pod
+                    žádnou kolekci.
+                  </Text>
+                  <div className="flex items-center gap-1 px-1 pb-1">
+                    {([
+                      ["vse", ListBullet, "Všechny"],
+                      ["skolekci", Folder, "S kolekcí"],
+                      ["bez", ExclamationCircle, "Bez kolekce"],
+                      ["archiv", ArchiveBox, "Archivované"],
+                    ] as const).map(([key, Icon, titleText]) => (
+                      <button key={key} type="button" title={titleText}
+                        onClick={() => { setCatTab(key); setCategoryId(null); }}
+                        className={
+                          catTab === key
+                            ? "bg-ui-bg-base-pressed text-ui-fg-base rounded-md p-1.5"
+                            : "text-ui-fg-muted hover:bg-ui-bg-base-hover hover:text-ui-fg-base rounded-md p-1.5"
+                        }>
+                        <Icon />
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
               <button type="button" onClick={() => setCategoryId(null)}
                 className={categoryId === null ? "bg-ui-bg-base-pressed rounded-md px-3 py-2 text-left" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2 text-left"}>
                 <Text size="small">Vše ({inCollection.length})</Text>
               </button>
-              {(allCats ? allCategories : categoriesHere).map((category: any) => (
+              {(allCats
+                ? allCategories.filter((category: any) =>
+                    catTab === "archiv"
+                      ? categoryArchived(category)
+                      : !categoryArchived(category) &&
+                        (catTab === "vse" ||
+                          (catTab === "skolekci"
+                            ? categoryHasCollection(category)
+                            : !categoryHasCollection(category)))
+                  )
+                : categoriesHere.filter(
+                    (category: any) => !categoryArchived(category)
+                  )
+              ).map((category: any) => (
                 <div key={category.id}
                   className={categoryId === category.id ? "bg-ui-bg-base-pressed rounded-md px-3 py-2" : "hover:bg-ui-bg-base-hover rounded-md px-3 py-2"}>
                   {renamingCategory?.id === category.id ? (
@@ -611,10 +718,71 @@ const Inner = () => {
                     <>
                       <button type="button" className="w-full text-left"
                         onClick={() => setCategoryId(category.id)}>
-                        <Text size="small">{category.name}</Text>
+                        <span className="flex items-center gap-1.5">
+                          <Text size="small">{category.name}</Text>
+                          {categoryHidden(category) && (
+                            <EyeSlash className="text-ui-fg-muted shrink-0" />
+                          )}
+                        </span>
                       </button>
                       {categoryId === category.id && (
-                        <span className="mt-1 flex gap-2">
+                        <span className="mt-1 flex items-center gap-2">
+                          <VisibilityEye
+                            visible={!categoryHidden(category)}
+                            label={`kategorii ${category.name}`}
+                            hideText="Zákazníci ji přestanou vidět v menu i ve filtrech obchodu. Produkty v ní zůstanou dostupné jinými cestami."
+                            showText="Kategorie se vrátí do menu a filtrů obchodu."
+                            onToggle={() =>
+                              sdk.client.fetch(
+                                `/admin/product-categories/${category.id}`,
+                                {
+                                  method: "POST",
+                                  body: { is_active: categoryHidden(category) },
+                                }
+                              )
+                            }
+                            onDone={async () => {
+                              await queryClient.invalidateQueries({
+                                queryKey: ["rozdeleni-categories"],
+                              });
+                              await invalidate();
+                            }}
+                          />
+                          <Prompt>
+                            <Prompt.Trigger asChild>
+                              <button type="button"
+                                title={categoryArchived(category) ? "Vrátit z archivu" : "Archivovat"}
+                                className="text-ui-fg-subtle hover:text-ui-fg-base">
+                                <ArchiveBox />
+                              </button>
+                            </Prompt.Trigger>
+                            <Prompt.Content>
+                              <Prompt.Header>
+                                <Prompt.Title>
+                                  {categoryArchived(category)
+                                    ? `Vrátit kategorii ${category.name} z archivu?`
+                                    : `Archivovat kategorii ${category.name}?`}
+                                </Prompt.Title>
+                                <Prompt.Description>
+                                  {categoryArchived(category)
+                                    ? "Vrátí se do seznamů. V obchodě se ukáže, až ji zobrazíte očkem."
+                                    : "Zmizí z obchodu i ze seznamů, produkty o ni nepřijdou. Najdete ji v záložce archivu (ikona krabice)."}
+                                </Prompt.Description>
+                              </Prompt.Header>
+                              <Prompt.Footer>
+                                <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                                <Prompt.Action
+                                  onClick={() =>
+                                    archiveCategory.mutate({
+                                      id: category.id,
+                                      archive: !categoryArchived(category),
+                                    })
+                                  }>
+                                  {categoryArchived(category) ? "Vrátit" : "Archivovat"}
+                                </Prompt.Action>
+                              </Prompt.Footer>
+                            </Prompt.Content>
+                          </Prompt>
                           <button type="button"
                             className="text-ui-fg-interactive txt-xsmall hover:underline"
                             onClick={() => setRenamingCategory({ id: category.id, name: category.name })}>
@@ -918,6 +1086,22 @@ const Inner = () => {
                   </Button>
                 </>
               )}
+              <VisibilityEye
+                visible={product.status === "published"}
+                label={`produkt ${product.title}`}
+                hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+                showText="Produkt se vrátí do obchodu a půjde koupit."
+                onToggle={() =>
+                  sdk.client.fetch(`/admin/products/${product.id}`, {
+                    method: "POST",
+                    body: {
+                      status:
+                        product.status === "published" ? "draft" : "published",
+                    },
+                  })
+                }
+                onDone={invalidate}
+              />
               <Link to={`/products/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
                 Upravit
               </Link>
