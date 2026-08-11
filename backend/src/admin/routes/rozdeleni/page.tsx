@@ -263,6 +263,32 @@ const Inner = () => {
         : inCollection.filter((product) =>
             (product.category_refs ?? []).some((c: any) => c.id === categoryId)
           );
+  /* What the right column actually renders — and what „Označit vše" means. */
+  const listedProducts = visibleProducts.filter(
+    (p) => kindTab === "vse" || p.kind === kindTab
+  );
+  const allListedSelected =
+    listedProducts.length > 0 &&
+    listedProducts.every((p) => selected.has(p.id));
+
+  /* The picker's offer: everything that is not already in the target,
+     narrowed by its search — shared by the rows and its „Označit vše". */
+  const pickerCandidates = products.filter((product) => {
+    // Nenabízet, co už tady je.
+    const inThisCollection = product.collection_id === collectionId;
+    const inThisCategory =
+      categoryId && categoryId !== "none"
+        ? (product.category_refs ?? []).some((c: any) => c.id === categoryId)
+        : true;
+    if (inThisCollection && inThisCategory) return false;
+    return (
+      !pickerSearch.trim() ||
+      product.title.toLowerCase().includes(pickerSearch.trim().toLowerCase())
+    );
+  });
+  const allPickerSelected =
+    pickerCandidates.length > 0 &&
+    pickerCandidates.every((p) => pickerSelected.has(p.id));
 
   const createCollection = useMutation({
     mutationFn: () => {
@@ -950,25 +976,25 @@ const Inner = () => {
                   Zařadit vybrané ({pickerSelected.size})
                 </Button>
               </div>
+              {pickerCandidates.length > 0 && (
+                <label className="flex w-fit cursor-pointer items-center gap-2 px-2">
+                  <input type="checkbox"
+                    checked={allPickerSelected}
+                    onChange={(e) => {
+                      const next = new Set(pickerSelected);
+                      for (const p of pickerCandidates) {
+                        if (e.target.checked) next.add(p.id);
+                        else next.delete(p.id);
+                      }
+                      setPickerSelected(next);
+                    }} />
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Označit vše ({pickerCandidates.length})
+                  </Text>
+                </label>
+              )}
               <div className="max-h-80 overflow-y-auto">
-                {products
-                  .filter((product) => {
-                    // Nenabízet, co už tady je.
-                    const inThisCollection = product.collection_id === collectionId;
-                    const inThisCategory =
-                      categoryId && categoryId !== "none"
-                        ? (product.category_refs ?? []).some(
-                            (c: any) => c.id === categoryId
-                          )
-                        : true;
-                    if (inThisCollection && inThisCategory) return false;
-                    return (
-                      !pickerSearch.trim() ||
-                      product.title
-                        .toLowerCase()
-                        .includes(pickerSearch.trim().toLowerCase())
-                    );
-                  })
+                {pickerCandidates
                   .map((product) => (
                     <label key={product.id}
                       className="hover:bg-ui-bg-base-hover flex cursor-pointer items-center gap-2 rounded px-2 py-1.5">
@@ -998,9 +1024,7 @@ const Inner = () => {
               </div>
             </div>
           )}
-          {(selectedCollection || allCats) &&
-            visibleProducts.filter((p) => kindTab === "vse" || p.kind === kindTab)
-              .length === 0 && (
+          {(selectedCollection || allCats) && listedProducts.length === 0 && (
             <div className="flex flex-col items-start gap-2 p-4">
               <Text size="small" className="text-ui-fg-muted">
                 Zatím tu nic není.
@@ -1015,9 +1039,26 @@ const Inner = () => {
               )}
             </div>
           )}
-          {visibleProducts
-            .filter((product) => kindTab === "vse" || product.kind === kindTab)
-            .map((product) => {
+          {listedProducts.length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2">
+              <label className="flex cursor-pointer items-center gap-3">
+                <input type="checkbox"
+                  checked={allListedSelected}
+                  onChange={(e) => {
+                    const next = new Set(selected);
+                    for (const p of listedProducts) {
+                      if (e.target.checked) next.add(p.id);
+                      else next.delete(p.id);
+                    }
+                    setSelected(next);
+                  }} />
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  Označit vše ({listedProducts.length})
+                </Text>
+              </label>
+            </div>
+          )}
+          {listedProducts.map((product) => {
               const draft = draftFor(product);
               const dirty = Boolean(pending[product.id]);
               const applyingThis =
