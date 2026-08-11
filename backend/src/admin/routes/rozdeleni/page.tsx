@@ -58,6 +58,12 @@ const Inner = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set());
+  /* Rozpracované přeřazení: řádkové selecty nezapisují hned, jen sem. Uloží
+     se až Potvrdit (řádek) / Potvrdit vše (lišta) — takže může rozdělat
+     změn kolik chce a pak je jedním klikem uložit, nebo zahodit. */
+  const [pending, setPending] = useState<
+    Record<string, { collection_id: string | null; category_id: string | null }>
+  >({});
   const [renaming, setRenaming] = useState("");
 
   const invalidate = async () => {
@@ -92,20 +98,78 @@ const Inner = () => {
     collectionId === null
       ? products
       : products.filter((product) => product.collection_id === collectionId);
-  const categoriesHere = [
+  // Kategorie „patří" kolekci přes metadata.collection_id — Medusa je má
+  // globální, tohle je naše vazba, aby seděl model kolekce → podkategorie
+  // i pro prázdné kategorie — plus kategorie, které se v kolekci reálně
+  // vyskytují na produktech. Stejná unie jako storefront menu.
+  const categoriesOf = (collId: string) => [
     ...new Map(
       [
-        ...inCollection.flatMap((product) => product.category_refs ?? []),
-        // Kategorie „patří" kolekci přes metadata.collection_id — Medusa je
-        // má globální, tohle je naše vazba, aby seděl model kolekce →
-        // podkategorie i pro prázdné kategorie.
+        ...products
+          .filter((product) => product.collection_id === collId)
+          .flatMap((product) => product.category_refs ?? []),
         ...allCategories.filter(
           (category: any) =>
-            (category.metadata as any)?.collection_id === collectionId
+            (category.metadata as any)?.collection_id === collId
         ),
       ].map((category: any) => [category.id, category])
     ).values(),
   ];
+  const categoriesHere = collectionId ? categoriesOf(collectionId) : [];
+
+  /* The category a row shows for a collection: the product's first category
+     that belongs to it. Products can hold more (bulk picker merges); the row
+     editor manages „the" place, not the whole set. */
+  const savedCategoryFor = (product: any, collId: string | null) => {
+    if (!collId) return null;
+    const allowed = new Set(categoriesOf(collId).map((c: any) => c.id));
+    return (
+      (product.category_refs ?? []).find((c: any) => allowed.has(c.id))?.id ??
+      null
+    );
+  };
+
+  const draftFor = (product: any) =>
+    pending[product.id] ?? {
+      collection_id: (product.collection_id ?? null) as string | null,
+      category_id: savedCategoryFor(product, product.collection_id ?? null),
+    };
+
+  const setDraft = (
+    product: any,
+    patch: Partial<{ collection_id: string | null; category_id: string | null }>
+  ) => {
+    setPending((prev) => {
+      const current = prev[product.id] ?? {
+        collection_id: (product.collection_id ?? null) as string | null,
+        category_id: savedCategoryFor(product, product.collection_id ?? null),
+      };
+      const next = { ...current, ...patch };
+      if ("collection_id" in patch) {
+        // Nová kolekce = nová nabídka kategorií; dosavadní volba přežije,
+        // jen pokud do ní patří.
+        const allowed = new Set(
+          (next.collection_id ? categoriesOf(next.collection_id) : []).map(
+            (c: any) => c.id
+          )
+        );
+        next.category_id =
+          next.category_id && allowed.has(next.category_id)
+            ? next.category_id
+            : null;
+      }
+      // Ruční návrat k uloženému stavu = žádná rozpracovaná změna.
+      const savedCollection = (product.collection_id ?? null) as string | null;
+      if (
+        next.collection_id === savedCollection &&
+        next.category_id === savedCategoryFor(product, savedCollection)
+      ) {
+        const { [product.id]: _dropped, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [product.id]: next };
+    });
+  };
   const uncategorised = inCollection.filter(
     (product) => !(product.category_refs ?? []).length
   );
@@ -285,14 +349,35 @@ const Inner = () => {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Zařazení se nepodařilo."),
   });
 
-  const moveProduct = useMutation({
-    mutationFn: (payload: { id: string; body: any }) =>
-      sdk.client.fetch(`/admin/products/${payload.id}`, {
-        method: "POST", body: payload.body,
-      }),
-    onSuccess: async () => { await invalidate(); toast.success("Přesunuto."); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Přesun se nepodařil."),
+  const applyPending = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        const draft = pending[id];
+        if (!draft) continue;
+        await sdk.client.fetch(`/admin/products/${id}`, {
+          method: "POST",
+          body: {
+            collection_id: draft.collection_id,
+            categories: draft.category_id ? [{ id: draft.category_id }] : [],
+          },
+        });
+      }
+    },
+    onSuccess: async (_, ids) => {
+      setPending((prev) => {
+        const rest = { ...prev };
+        for (const id of ids) delete rest[id];
+        return rest;
+      });
+      await invalidate();
+      toast.success(
+        ids.length === 1 ? "Změna uložena." : `Uloženo změn: ${ids.length}.`
+      );
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Uložení se nepodařilo."),
   });
+  const pendingCount = Object.keys(pending).length;
 
   const selectedCollection = collections.find((c) => c.id === collectionId);
 
@@ -533,6 +618,20 @@ const Inner = () => {
                 </button>
               ))}
               <div className="flex-1" />
+              {pendingCount > 0 && (
+                <>
+                  <Button size="small"
+                    isLoading={applyPending.isPending}
+                    onClick={() => applyPending.mutate(Object.keys(pending))}>
+                    Potvrdit vše ({pendingCount})
+                  </Button>
+                  <Button size="small" variant="secondary"
+                    disabled={applyPending.isPending}
+                    onClick={() => setPending({})}>
+                    Zrušit vše
+                  </Button>
+                </>
+              )}
               {selectedCollection && (
                 <Button size="small" variant="secondary"
                   onClick={() => setPickerOpen((open) => !open)}>
@@ -660,7 +759,13 @@ const Inner = () => {
           )}
           {visibleProducts
             .filter((product) => kindTab === "vse" || product.kind === kindTab)
-            .map((product) => (
+            .map((product) => {
+              const draft = draftFor(product);
+              const dirty = Boolean(pending[product.id]);
+              const applyingThis =
+                applyPending.isPending &&
+                (applyPending.variables ?? []).includes(product.id);
+              return (
             <div key={product.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <input
                 type="checkbox"
@@ -681,34 +786,53 @@ const Inner = () => {
               </div>
               <select
                 className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
-                value={product.collection_id ?? ""}
+                value={draft.collection_id ?? ""}
                 onChange={(e) =>
-                  moveProduct.mutate({ id: product.id, body: { collection_id: e.target.value || null } })
+                  setDraft(product, { collection_id: e.target.value || null })
                 }>
                 <option value="">Bez kolekce</option>
                 {collections.map((c) => (
                   <option key={c.id} value={c.id}>{c.title}</option>
                 ))}
               </select>
-              <select
-                className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
-                value={(product.category_refs ?? [])[0]?.id ?? ""}
-                onChange={(e) =>
-                  moveProduct.mutate({
-                    id: product.id,
-                    body: { categories: e.target.value ? [{ id: e.target.value }] : [] },
-                  })
-                }>
-                <option value="">Bez kategorie</option>
-                {allCategories.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              {/* Kategorie až po kolekci — a jen ty, které do ní patří. */}
+              {draft.collection_id && (
+                <select
+                  className="bg-ui-bg-field border-ui-border-base txt-small rounded-md border px-2 py-1"
+                  value={draft.category_id ?? ""}
+                  onChange={(e) =>
+                    setDraft(product, { category_id: e.target.value || null })
+                  }>
+                  <option value="">Bez kategorie</option>
+                  {categoriesOf(draft.collection_id).map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
+              {dirty && (
+                <>
+                  <Button size="small" isLoading={applyingThis}
+                    onClick={() => applyPending.mutate([product.id])}>
+                    Potvrdit
+                  </Button>
+                  <Button size="small" variant="transparent"
+                    disabled={applyingThis}
+                    onClick={() =>
+                      setPending((prev) => {
+                        const { [product.id]: _dropped, ...rest } = prev;
+                        return rest;
+                      })
+                    }>
+                    Zrušit
+                  </Button>
+                </>
+              )}
               <Link to={`/products/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
                 Upravit
               </Link>
             </div>
-          ))}
+              );
+            })}
         </div>
       </div>
     </Container>
