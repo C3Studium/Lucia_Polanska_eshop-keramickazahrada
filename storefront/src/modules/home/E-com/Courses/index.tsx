@@ -21,6 +21,28 @@ const courseImages: VerticalCarouselImage[] = [
   },
 ]
 
+const clamp01 = (value: number, from: number, to: number) =>
+  Math.min(1, Math.max(0, (value - from) / (to - from)))
+
+/*
+ * Beats of the pinned stage, as fractions of the pin.
+ *
+ * Everything used to happen in the last quarter — curtain at 0.76, rail 0.82, CTA 0.84, window
+ * 0.86 — behind roughly 1.9 viewports in which nothing moved at all except the shader. Two and a
+ * half screens of scrolling bought one still frame and then four overlapping reveals at the end.
+ * The stage is shorter now (300vh, see style.scss), the middle drifts instead of sitting, and the
+ * CTA gets its own stretch to arrive in rather than being crammed against the release.
+ */
+const DRIFT_END = 0.62
+const CURTAIN_START = 0.5
+const CURTAIN_END = 0.72
+const WINDOW_START = 0.56
+const WINDOW_END = 0.78
+const CTA_START = 0.6
+const CTA_END = 0.8
+const RAIL_START = 0.66
+const RAIL_END = 0.8
+
 export default function Courses() {
   const sectionRef = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({
@@ -46,23 +68,73 @@ export default function Courses() {
   const shaderProgress = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
-      Math.min(1, entryValue * 0.66 + pinnedValue * 0.34)
+      Math.min(1, entryValue * 0.55 + pinnedValue * 0.45)
   )
-  const imageOpacity = useTransform(entry, [0.02, 0.62], [0.34, 1])
-  const imageScale = useTransform(entry, [0.02, 0.94], [1.045, 1])
-  const imageY = useTransform(entry, [0.02, 0.94], ["2%", "0%"])
-  const contentOpacity = useTransform(entry, [0.74, 0.96], [0, 1])
-  const contentY = useTransform(entry, [0.74, 0.96], [18, 0])
+  /* Arrives already half-lit. It used to fade up from 0.34 while the previous section's dark exit
+     curtain was still scrolling off above it, so the handover read as a viewport of nothing. */
+  const imageOpacity = useTransform(entry, [0, 0.45], [0.46, 1])
+  /* Entry settles the over-scale; the pin then keeps drifting, which is what gives the long middle
+     of this stage something to do besides the shader. */
+  const imageScale = useTransform(
+    [entry, revealProgress],
+    ([entryValue, pinnedValue]: number[]) =>
+      1.055 -
+      0.055 * clamp01(entryValue, 0.02, 0.92) +
+      0.045 * clamp01(pinnedValue, 0, DRIFT_END)
+  )
+  const imageY = useTransform(
+    [entry, revealProgress],
+    ([entryValue, pinnedValue]: number[]) =>
+      `${
+        2 -
+        2 * clamp01(entryValue, 0.02, 0.92) -
+        2.4 * clamp01(pinnedValue, 0, DRIFT_END)
+      }%`
+  )
+  /* Fades out under the rising curtain. Left at full opacity it showed through the CTA's masked
+     window — the tail of "A to je na tom to nejlepší." sat inside the circle on top of the photo. */
+  const contentOpacity = useTransform(
+    [entry, revealProgress],
+    ([entryValue, pinnedValue]: number[]) =>
+      clamp01(entryValue, 0.74, 0.98) *
+      (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
+  )
+  const contentY = useTransform(
+    [entry, revealProgress],
+    ([entryValue, pinnedValue]: number[]) =>
+      22 -
+      22 * clamp01(entryValue, 0.74, 0.98) -
+      26 * clamp01(pinnedValue, 0.08, DRIFT_END)
+  )
+  /* The section's own `pointer-events: auto` on links survives an opacity of 0, so the invisible
+     "Objevit kurzy" would stay clickable over the CTA. visibility takes the children with it. */
+  const contentVisibility = useTransform(contentOpacity, (value) =>
+    value > 0.02 ? "visible" : "hidden"
+  )
   const footerCurtain = useTransform(
     revealProgress,
-    [0.76, 0.9],
+    [CURTAIN_START, CURTAIN_END],
     ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
-  const footerRailOpacity = useTransform(revealProgress, [0.82, 0.9], [0, 1])
-  const ctaOpacity = useTransform(revealProgress, [0.84, 0.93], [0, 1])
-  const ctaY = useTransform(revealProgress, [0.84, 0.93], [32, 0])
-  const ctaWindowOpacity = useTransform(revealProgress, [0.86, 0.94], [0, 1])
-  const ctaWindowScale = useTransform(revealProgress, [0.8, 0.94], [0.86, 1])
+  const footerRailOpacity = useTransform(
+    revealProgress,
+    [RAIL_START, RAIL_END],
+    [0, 1]
+  )
+  const ctaOpacity = useTransform(revealProgress, [CTA_START, CTA_END], [0, 1])
+  const ctaY = useTransform(revealProgress, [CTA_START, CTA_END], [34, 0])
+  const ctaWindowOpacity = useTransform(
+    revealProgress,
+    [WINDOW_START, WINDOW_START + 0.1],
+    [0, 1]
+  )
+  /* Only a hair of scale: the photo showing through is a static CSS mask on the surface below and
+     cannot scale with the ring, so a large range visibly separated the two. */
+  const ctaWindowScale = useTransform(
+    revealProgress,
+    [WINDOW_START, WINDOW_END],
+    [0.95, 1]
+  )
 
   return (
     <section
@@ -89,7 +161,11 @@ export default function Courses() {
 
         <motion.div
           className="Courses__content"
-          style={{ opacity: contentOpacity, y: contentY }}
+          style={{
+            opacity: contentOpacity,
+            y: contentY,
+            visibility: contentVisibility,
+          }}
         >
           <div className="Courses__meta">
             <span>04 · Kurzy</span>

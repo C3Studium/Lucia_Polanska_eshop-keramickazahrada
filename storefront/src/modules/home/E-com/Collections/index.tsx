@@ -1,6 +1,6 @@
 "use client"
 import { HorizontalItem, VerticalItem } from "./item"
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   useScroll,
   motion,
@@ -68,6 +68,18 @@ const springConfig = {
   mass: 0.7,
 }
 
+/*
+ * One clock for the whole stage, written down so the beats can be read at a glance.
+ *
+ * The old distribution never resolved: the last card's own timeline ran to 1.0 while the scene
+ * was already fading out from 0.84 and the curtain closing from 0.78, so the set was never once
+ * settled and still. Cards now finish at CARDS_SETTLED, the rail lands shortly after, and there
+ * is a beat where the whole thing simply stands there before the exit takes it.
+ */
+const CARDS_SETTLED = 0.62
+const RAIL_END = 0.72
+const EXIT_START = 0.86
+
 const deterministicRandom = (seed: number) => {
   const x = Math.sin(seed * 999.91) * 10000
   return x - Math.floor(x)
@@ -96,10 +108,10 @@ function CollectionCardMotion({
   index: number
   total: number
 }) {
-  const segment = 1 / total
-  const overlap = segment * 0.38
+  const segment = CARDS_SETTLED / total
+  const overlap = segment * 0.42
   const start = Math.max(0, index * segment - overlap)
-  const end = Math.min(1, (index + 1) * segment + overlap)
+  const end = Math.min(CARDS_SETTLED, (index + 1) * segment + overlap)
 
   // Local timeline per item, with overlap to avoid "one-by-one" robotic pacing.
   const localProgress = useTransform(progress, [start, end], [0, 1])
@@ -148,27 +160,70 @@ function CollectionCardMotion({
 
 export default function Collections() {
   const ref = useRef(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const railRef = useRef<HTMLDivElement>(null)
+  const [travel, setTravel] = useState({ from: 0, to: 0 })
   const { scrollYProgress: localScrollYProgress } = useScroll({
     target: ref,
     offset: ["start 0.6", "end end"],
   })
   const scrollYProgress = localScrollYProgress
 
+  /*
+   * The rail is a fixed four-column grid, ~2030px wide whatever the screen. The old keyframes
+   * carried it from 24vw to -1.5vw, which on a 1440x780 laptop left the last two collections
+   * ~590px past the right edge for the entire section — they could not be seen at any scroll
+   * position, and it got worse the narrower the window. Measuring the actual overflow means the
+   * stage always walks the whole rail through the window, and travels no further than it needs to.
+   */
+  useEffect(() => {
+    const stage = stageRef.current
+    const rail = railRef.current
+
+    if (!stage || !rail) {
+      return
+    }
+
+    const measure = () => {
+      // Below 760px the rail is a native horizontal scroller (see style.scss); translating it as
+      // well would fight the thumb.
+      if (getComputedStyle(rail).overflowX !== "visible") {
+        setTravel({ from: 0, to: 0 })
+        return
+      }
+
+      const overflow = Math.max(0, rail.scrollWidth - stage.clientWidth)
+
+      setTravel({
+        from: Math.min(stage.clientWidth * 0.18, overflow * 0.4 + 48),
+        to: -overflow,
+      })
+    }
+
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage)
+    observer.observe(rail)
+
+    return () => observer.disconnect()
+  }, [])
+
   const xRaw = useTransform(
     scrollYProgress,
-    [0, 0.72, 1],
-    ["24vw", "-1.5vw", "-1.5vw"]
+    [0, RAIL_END, 1],
+    [travel.from, travel.to, travel.to]
   )
   const yRaw = useTransform(scrollYProgress, [0, 1], ["3%", "-2%"])
   const wrapperScaleRaw = useTransform(
     scrollYProgress,
-    [0, 0.25, 0.8, 1],
-    [0.985, 1, 1, 0.974]
+    [0, 0.2, EXIT_START, 1],
+    [0.985, 1, 1, 0.976]
   )
   const headerYRaw = useTransform(scrollYProgress, [0, 1], ["0%", "3%"])
   const sceneOpacityRaw = useTransform(
     scrollYProgress,
-    [0, 0.08, 0.84, 1],
+    [0, 0.08, 0.9, 1],
     [0, 1, 1, 0]
   )
   const sceneClipRaw = useTransform(
@@ -178,7 +233,7 @@ export default function Collections() {
   )
   const exitCurtain = useTransform(
     scrollYProgress,
-    [0.78, 1],
+    [EXIT_START, 1],
     ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
 
@@ -234,6 +289,7 @@ export default function Collections() {
           aria-hidden="true"
         />
         <motion.div
+          ref={stageRef}
           className="sticky__Wrapper"
           style={{ y, scale: wrapperScale, opacity: sceneOpacity }}
         >
@@ -247,7 +303,7 @@ export default function Collections() {
             </h2>
             <p>Pracuju bez formy, takže se mi dva stejné kusy udělat ani nepodaří.</p>
           </motion.div>
-          <motion.div className="Collecion__wrapper" style={{ x }}>
+          <motion.div ref={railRef} className="Collecion__wrapper" style={{ x }}>
             {collections.map((collection, index) => (
               <CollectionCardMotion
                 key={collection.id}

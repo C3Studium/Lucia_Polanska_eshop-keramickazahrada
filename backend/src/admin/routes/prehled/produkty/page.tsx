@@ -134,6 +134,40 @@ const DeleteProduct = ({ product }: { product: ProductRow }) => {
 };
 
 const ProduktyInner = () => {
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulkArchive = useMutation({
+    mutationFn: async () => {
+      for (const id of selected) {
+        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+          method: "POST", body: { archived: true },
+        });
+      }
+    },
+    onSuccess: async () => {
+      const count = selected.size; setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+      toast.success(`Archivováno ${count} — z obchodu pryč, historie zůstává.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Archivace se nepodařila."),
+  });
+  const bulkHide = useMutation({
+    mutationFn: async () => {
+      for (const id of selected) {
+        await sdk.client.fetch(`/admin/products/${id}`, {
+          method: "POST", body: { status: "draft" },
+        });
+      }
+    },
+    onSuccess: async () => {
+      const count = selected.size; setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+      toast.success(`Skryto ${count} produktů — v obchodě nejsou, tady zůstávají.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Skrytí se nepodařilo."),
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const activeKey = searchParams.get("druh") ?? tabs[0].key;
   const active = tabs.find((tab) => tab.key === activeKey) ?? tabs[0];
@@ -152,6 +186,17 @@ const ProduktyInner = () => {
   return (
     <Container className="divide-y p-0">
       <WorkTabs active="produkty" />
+      {selected.size > 0 && (
+        <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-2 px-6 py-3">
+          <Text size="small" weight="plus">Vybráno: {selected.size}</Text>
+          <Button size="small" variant="secondary" isLoading={bulkArchive.isPending}
+            onClick={() => bulkArchive.mutate()}>Archivovat</Button>
+          <Button size="small" variant="secondary" isLoading={bulkHide.isPending}
+            onClick={() => bulkHide.mutate()}>Skrýt z obchodu</Button>
+          <Button size="small" variant="transparent"
+            onClick={() => setSelected(new Set())}>Zrušit výběr</Button>
+        </div>
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
         <div>

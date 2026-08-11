@@ -2,7 +2,9 @@
 .courses__section {
   position: relative;
   width: 100%;
-  height: 350vh;
+  /* 2 viewports of pin, down from 2.5. At 350vh the middle of the stage was a viewport and a half
+     of held frame; the beats in index.tsx are spread across what is left. */
+  height: 300vh;
   background: #212222;
 
   .courses__wrapper {

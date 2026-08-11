@@ -550,6 +550,41 @@ const ProductsInner = () => {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const expert = useExpertMode();
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulkArchive = useMutation({
+    mutationFn: async () => {
+      for (const id of selected) {
+        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+          method: "POST", body: { archived: true },
+        });
+      }
+    },
+    onSuccess: async () => {
+      const count = selected.size; setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+      toast.success(`Archivováno ${count} — z obchodu pryč, historie zůstává.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Archivace se nepodařila."),
+  });
+  const bulkHide = useMutation({
+    mutationFn: async () => {
+      for (const id of selected) {
+        await sdk.client.fetch(`/admin/products/${id}`, {
+          method: "POST", body: { status: "draft" },
+        });
+      }
+    },
+    onSuccess: async () => {
+      const count = selected.size; setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+      toast.success(`Skryto ${count} produktů — v obchodě nejsou, tady zůstávají.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Skrytí se nepodařilo."),
+  });
+
 
   /*
    * The kind goes to the server, and this is load-bearing rather than an optimisation.
@@ -635,6 +670,14 @@ const ProductsInner = () => {
       <Fragment key={product.id}>
         <article className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_150px_150px_170px_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
+            <input type="checkbox" className="mt-1"
+              checked={selected.has(product.id)}
+              onChange={(e) => {
+                const next = new Set(selected);
+                if (e.target.checked) next.add(product.id); else next.delete(product.id);
+                setSelected(next);
+              }} />
+
             {product.thumbnail ? (
               <img
                 src={product.thumbnail}
@@ -924,6 +967,17 @@ const ProductsInner = () => {
         </div>
       </header>
 
+      {selected.size > 0 && (
+        <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-2 px-6 py-3">
+          <Text size="small" weight="plus">Vybráno: {selected.size}</Text>
+          <Button size="small" variant="secondary" isLoading={bulkArchive.isPending}
+            onClick={() => bulkArchive.mutate()}>Archivovat</Button>
+          <Button size="small" variant="secondary" isLoading={bulkHide.isPending}
+            onClick={() => bulkHide.mutate()}>Skrýt z obchodu</Button>
+          <Button size="small" variant="transparent"
+            onClick={() => setSelected(new Set())}>Zrušit výběr</Button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 px-6 py-4">
         {tabs.map((tab) => {
           const isActive = tab.key === active;

@@ -5,15 +5,17 @@
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
     /*
      * Always the expanded width; the collapsed state is a clip, not a narrower box.
      * Animating `width` made the browser re-run layout and paint on every frame, which is what
      * made these read as though they were running at a fraction of the frame rate. clip-path is
      * handled on the compositor and does not distort the image the way scaleX would.
+     *
+     * The circle and the strip it opens into are declared in Button/index.tsx and arrive here as
+     * custom properties, so the box, the clip and the arrow cannot drift apart again.
      */
-    width: 125px;
-    height: 50px;
+    width: calc(var(--carousel-btn-size) + var(--carousel-btn-reach));
+    height: var(--carousel-btn-size);
     justify-content: flex-end;
 
     .Carousel__button{
@@ -22,9 +24,8 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        height: 50px;
-        border-radius: 25px;
-        padding: 10px;
+        height: var(--carousel-btn-size);
+        border-radius: calc(var(--carousel-btn-size) / 2);
         border: 2px solid var(--iconsPink);
         cursor: pointer;
         overflow: hidden;
@@ -57,61 +58,74 @@
             }
         }
 
+        /* Pinned over the circle that is actually visible at rest — 4px narrower than the circle
+           because absolute offsets here start inside the 2px border. Anchoring the arrow to the
+           full 125px box is what left the previous-button's head outside the clip entirely. */
         .arrowCarousel{
-            position: relative;
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
             z-index: 2;
-            display: inline-flex;
+            display: flex;
+            width: calc(var(--carousel-btn-size) - 4px);
             align-items: center;
             justify-content: center;
-            width: 100%;
-            height: 18px;
 
             .arrow__icon{
                 position: relative;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
+                display: block;
                 width: 100%;
                 height: 12px;
 
                 .arrow__line{
                     position: absolute;
-                    top: calc(50% - 0.75px);
-                    right: 8px;
-                    width: 100%;
+                    top: 50%;
+                    right: var(--arrow-inset);
+                    width: var(--arrow-rest);
                     height: 1.5px;
+                    margin-top: -0.75px;
                     transform-origin: right center;
                     background-color: var(--whiteText);
                 }
 
+                /* Zero-sized anchor at the shaft's leading end; the two strokes hinge on it, so
+                   the chevron's vertex lands exactly on the tip whatever the shaft's length. */
+                .arrow__tip{
+                    position: absolute;
+                    top: 50%;
+                    right: var(--arrow-inset);
+                    width: 0;
+                    height: 0;
+                }
+
                 .arrow__head{
                     position: absolute;
-                    right: 6px;
+                    top: -0.75px;
+                    right: 0;
                     width: 8px;
                     height: 1.5px;
                     background-color: var(--whiteText);
                     transform-origin: right center;
 
                     &--top{
-                        top: 50%;
                         transform: rotate(45deg);
                     }
 
                     &--bottom{
-                        bottom: 50%;
                         transform: rotate(-45deg);
                     }
                 }
 
                 &--left{
 
-                    .arrow__line{
-                        left: 8px;
-                        transform-origin: left center;
+                    .arrow__tip{
+                        right: calc(var(--arrow-inset) + var(--arrow-rest));
                     }
+
                     .arrow__head{
                         right: auto;
-                        left: 6px;
+                        left: 0;
                         transform-origin: left center;
 
                         &--top{
@@ -124,16 +138,6 @@
                     }
                 }
             }
-        }
-    }
-
-    &--left{
-        .Carousel__button{
-        }
-    }
-
-    &--right{
-        .Carousel__button{
         }
     }
 }

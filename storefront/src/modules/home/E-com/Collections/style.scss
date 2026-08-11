@@ -287,6 +287,44 @@
   }
 }
 
+/*
+ * Laptops with a short viewport — 1280x720, 1366x768, 1440x800.
+ *
+ * The stage is a fixed split of a 100svh panel: 30% minimum for the header, 66% for the rail. At
+ * 780px that is a third of the screen spent on two lines of type, and it leaves the cards barely
+ * clear of the fold once the rail's own drift is added on top. Here the header takes only the room
+ * it needs and the rail gets everything left over, so the cards cannot be cut off whatever the
+ * heading wraps to. Narrower columns also give the scroll story less ground to cover.
+ */
+@include lt-h {
+  .Collections {
+    .sticky {
+      padding-top: clamp(4rem, 6.5vh, 5rem);
+      padding-bottom: 4.2vh;
+
+      .header {
+        min-height: 0;
+        padding-bottom: clamp(1rem, 2.4vh, 1.75rem);
+
+        h2 {
+          font-size: clamp(2.6rem, 3.3vw, 3.6rem);
+        }
+
+        > p {
+          font-size: clamp(0.9rem, 0.92vw, 1.02rem);
+        }
+      }
+
+      .Collecion__wrapper {
+        height: auto;
+        min-height: 0;
+        flex: 1 1 auto;
+        grid-template-columns: repeat(4, minmax(17rem, 25rem));
+      }
+    }
+  }
+}
+
 @include below-px(900px) {
   .Collections {
     height: 190vh;
@@ -351,7 +389,11 @@
         height: 72%;
         margin-top: auto;
         /* One row of cards you can push through with a thumb, instead of two rows that only
-           work if the whole rail fits. */
+           work if the whole rail fits. The width has to come back to the panel: inherited as
+           `max-content` the element was 1255px wide on a 390px screen, so `overflow-x` had
+           nothing to scroll — it overflowed its parent instead of itself, and cards 2–6 could
+           not be reached at all. */
+        width: 100%;
         grid-template-columns: repeat(4, minmax(15rem, 78vw));
         grid-template-rows: minmax(0, 1fr);
         overflow-x: auto;
