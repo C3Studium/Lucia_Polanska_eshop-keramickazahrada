@@ -277,107 +277,41 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
   );
 };
 
-/** Mark / unmark a piece as damaged clearance, through the native product. */
-const ClearanceToggle = ({
-  product,
-  makeClearance,
-}: {
-  product: WorkbenchProduct;
-  makeClearance: boolean;
-}) => {
-  const queryClient = useQueryClient();
-  const mutate = useMutation({
-    mutationFn: () =>
-      // Via the workbench flags route, which merges. Writing metadata straight to
-      // the native product endpoint replaces the whole object and erased the other
-      // flags — see that route's note.
-      sdk.client.fetch(`/admin/workbench/products/${product.id}/flags`, {
-        method: "POST",
-        body: { clearance: makeClearance },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      toast.success(
-        makeClearance
-          ? `${product.title} zařazen do výprodeje poškozených.`
-          : `${product.title} vyřazen z výprodeje.`
-      );
-    },
-    onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
-      ),
-  });
-
-  return (
-    <label
-      className="flex cursor-pointer items-center gap-1.5"
-      title="Poškozený / poslední kus ve výprodeji — po prodeji se sám schová."
-    >
-      <Switch
-        size="small"
-        checked={!makeClearance}
-        disabled={mutate.isPending}
-        onCheckedChange={() => mutate.mutate()}
-      />
-      <Text size="xsmall" className="text-ui-fg-subtle">
-        Poškozené
-      </Text>
-    </label>
-  );
-};
-
 /**
- * Dobírka on or off for one piece.
+ * One flag of the piece as a small switch — Dobírka or Poškozené.
  *
- * Per product because the risk is per product: a refused parcel costs her the
- * carriage both ways, which is survivable on a mug and not on a commission.
- * Stored on the product's own metadata so nothing new has to be migrated, and
- * so the storefront can read it from the cart it already fetches.
+ * Presentational only: flipping STAGES the change (Rozdělení pattern), it
+ * does not save. Saving happens through the row's Potvrdit or the toolbar's
+ * Potvrdit vše, both of which go through the workbench flags route — the one
+ * safe metadata writer (native product update REPLACES metadata).
  *
- * Turning it on here is necessary but not sufficient — checkout still refuses
- * dobírka outside Czechia and for anything not going by Česká pošta.
+ * Dobírka stays per product because the risk is per product: a refused parcel
+ * costs her the carriage both ways — survivable on a mug, not on a commission.
+ * Checkout still refuses dobírka outside Czechia and off Česká pošta.
  */
-const CodToggle = ({ product }: { product: WorkbenchProduct }) => {
-  const queryClient = useQueryClient();
-  const next = !product.cod_allowed;
-  const mutate = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/workbench/products/${product.id}/flags`, {
-        method: "POST",
-        body: { cod_allowed: next },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
-      toast.success(
-        next
-          ? `${product.title} — dobírka povolena.`
-          : `${product.title} — dobírka vypnuta.`
-      );
-    },
-    onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
-      ),
-  });
-
-  return (
-    <label
-      className="flex cursor-pointer items-center gap-1.5"
-      title="Zákazník smí platit při převzetí — jen ČR a Česká pošta."
+const FlagSwitch = ({
+  label,
+  title,
+  checked,
+  dirty,
+  onFlip,
+}: {
+  label: string;
+  title: string;
+  checked: boolean;
+  dirty: boolean;
+  onFlip: () => void;
+}) => (
+  <label className="flex cursor-pointer items-center gap-1.5" title={title}>
+    <Switch size="small" checked={checked} onCheckedChange={onFlip} />
+    <Text
+      size="xsmall"
+      className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}
     >
-      <Switch
-        size="small"
-        checked={product.cod_allowed}
-        disabled={mutate.isPending}
-        onCheckedChange={() => mutate.mutate()}
-      />
-      <Text size="xsmall" className="text-ui-fg-subtle">
-        Dobírka
-      </Text>
-    </label>
-  );
-};
+      {label}
+    </Text>
+  </label>
+);
 
 const StatsView = () => {
   const { data, isLoading } = useQuery<any>({
@@ -564,6 +498,13 @@ const ProductsInner = () => {
   const [expanded, setExpanded] = useState<string | null>(null);
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
+  /* Rozpracované přepínače (Rozdělení pattern): flip nezapisuje, jen se drží
+     tady. Uloží se až Potvrdit (řádek) / Potvrdit vše (lišta), nebo zahodí.
+     Když je označeno víc produktů checkboxem, flip na označeném řádku
+     rozpracuje tutéž hodnotu pro všechny označené. */
+  const [pendingFlags, setPendingFlags] = useState<
+    Record<string, { cod_allowed?: boolean; clearance?: boolean }>
+  >({});
   const expert = useExpertMode();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -659,6 +600,67 @@ const ProductsInner = () => {
               : active === "archivovane"
                 ? archivedRows
                 : [];
+
+  type FlagKey = "cod_allowed" | "clearance";
+  const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>
+    key === "cod_allowed" ? product.cod_allowed : product.clearance;
+  const effectiveFlag = (product: WorkbenchProduct, key: FlagKey) =>
+    pendingFlags[product.id]?.[key] ?? savedFlag(product, key);
+
+  const stageFlag = (product: WorkbenchProduct, key: FlagKey) => {
+    const newValue = !effectiveFlag(product, key);
+    /* Flip on a checked row = the whole selection gets the same VALUE (not a
+       per-row toggle — mixed states flipping in opposite directions would be
+       chaos). An unchecked row stages only itself. */
+    const targets =
+      selected.size > 0 && selected.has(product.id)
+        ? [...selected]
+        : [product.id];
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const id of targets) {
+        const target = rows.find((row) => row.id === id);
+        if (!target) continue;
+        const entry = { ...(next[id] ?? {}) };
+        if (savedFlag(target, key) === newValue) {
+          // Back at the saved state — nothing pending for this flag.
+          delete entry[key];
+        } else {
+          entry[key] = newValue;
+        }
+        if (Object.keys(entry).length === 0) delete next[id];
+        else next[id] = entry;
+      }
+      return next;
+    });
+  };
+
+  const applyFlags = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        const draft = pendingFlags[id];
+        if (!draft || Object.keys(draft).length === 0) continue;
+        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+          method: "POST",
+          body: draft,
+        });
+      }
+    },
+    onSuccess: async (_, ids) => {
+      setPendingFlags((prev) => {
+        const next = { ...prev };
+        for (const id of ids) delete next[id];
+        return next;
+      });
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(
+        ids.length === 1 ? "Změna uložena." : `Uloženo změn: ${ids.length}.`
+      );
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Uložení se nepodařilo."),
+  });
+  const pendingCount = Object.keys(pendingFlags).length;
 
   const renderRow = (product: WorkbenchProduct) => {
     // Best variant wins — „can I sell it at all?" Skladem beats Dochází
@@ -895,13 +897,45 @@ const ProductsInner = () => {
             />
 
             {active !== "oblibene" && active !== "archivovane" && (
-              <CodToggle product={product} />
+              <FlagSwitch
+                label="Dobírka"
+                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta."
+                checked={effectiveFlag(product, "cod_allowed")}
+                dirty={pendingFlags[product.id]?.cod_allowed !== undefined}
+                onFlip={() => stageFlag(product, "cod_allowed")}
+              />
             )}
-            {active === "poskozene" && (
-              <ClearanceToggle product={product} makeClearance={false} />
+            {(active === "produkty" || active === "poskozene") && (
+              <FlagSwitch
+                label="Poškozené"
+                title="Poškozený / poslední kus ve výprodeji — po prodeji se sám schová."
+                checked={effectiveFlag(product, "clearance")}
+                dirty={pendingFlags[product.id]?.clearance !== undefined}
+                onFlip={() => stageFlag(product, "clearance")}
+              />
             )}
-            {active === "produkty" && (
-              <ClearanceToggle product={product} makeClearance={true} />
+            {pendingFlags[product.id] && (
+              <>
+                <Button size="small"
+                  isLoading={
+                    applyFlags.isPending &&
+                    (applyFlags.variables ?? []).includes(product.id)
+                  }
+                  onClick={() => applyFlags.mutate([product.id])}>
+                  Potvrdit
+                </Button>
+                <Button size="small" variant="transparent"
+                  disabled={applyFlags.isPending}
+                  onClick={() =>
+                    setPendingFlags((prev) => {
+                      const next = { ...prev };
+                      delete next[product.id];
+                      return next;
+                    })
+                  }>
+                  Zrušit
+                </Button>
+              </>
             )}
 
             {active !== "oblibene" && (
@@ -962,6 +996,20 @@ const ProductsInner = () => {
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          {pendingCount > 0 && (
+            <>
+              <Button size="small"
+                isLoading={applyFlags.isPending}
+                onClick={() => applyFlags.mutate(Object.keys(pendingFlags))}>
+                Potvrdit vše ({pendingCount})
+              </Button>
+              <Button size="small" variant="secondary"
+                disabled={applyFlags.isPending}
+                onClick={() => setPendingFlags({})}>
+                Zrušit vše
+              </Button>
+            </>
+          )}
           <ExpertToggle />
           {/* Every kind starts in the one Nový produkt panel — the button just
               carries the tab's kind so the right card is preselected. Oblíbené,
