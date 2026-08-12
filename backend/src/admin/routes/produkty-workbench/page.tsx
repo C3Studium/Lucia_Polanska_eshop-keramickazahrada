@@ -22,6 +22,7 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
+import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
@@ -541,6 +542,8 @@ const ProductsInner = () => {
   const [active, setActive] = useState<TabKey>("produkty");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
+  const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   const expert = useExpertMode();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -670,15 +673,14 @@ const ProductsInner = () => {
                 setSelected(next);
               }} />
 
-            {product.thumbnail ? (
-              <img
-                src={product.thumbnail}
-                alt=""
-                className="h-10 w-10 rounded-md object-cover"
-              />
-            ) : (
-              <div className="bg-ui-bg-component h-10 w-10 rounded-md" />
-            )}
+            <Thumb
+              src={product.thumbnail}
+              title={product.title}
+              sizeClassName="size-10"
+              onZoom={() =>
+                setLightbox({ id: product.id, title: product.title })
+              }
+            />
             <div className="min-w-0">
               <Text size="small" weight="plus" className="truncate">
                 {product.title}
@@ -923,6 +925,7 @@ const ProductsInner = () => {
   return (
     <Container className="divide-y p-0">
       <Toaster />
+      <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
         <div>
           <Heading>Produkty — pracovní přehled</Heading>
