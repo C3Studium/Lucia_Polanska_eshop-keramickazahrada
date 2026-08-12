@@ -24,8 +24,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Fragment, useState } from "react";
-import { Link } from "react-router-dom";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
@@ -505,6 +505,32 @@ const ProductsInner = () => {
   const [pendingFlags, setPendingFlags] = useState<
     Record<string, { cod_allowed?: boolean; clearance?: boolean }>
   >({});
+
+  /* Deep link z Rozdělení: ?produkt=<id>&druh=<kind> přepne na správnou
+     záložku a rovnou řádek rozbalí — rychlé akce bez hledání. Parametry se
+     hned smažou, aby další klikání po stránce nic nehijacklo. */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const scrollTarget = useRef<string | null>(null);
+  useEffect(() => {
+    const targetId = searchParams.get("produkt");
+    if (!targetId) return;
+    const kind = searchParams.get("druh");
+    setActive(
+      kind === "zakazka"
+        ? "zakazky"
+        : kind === "balicek"
+          ? "balicky"
+          : kind === "poskozene"
+            ? "poskozene"
+            : "produkty"
+    );
+    setExpanded(targetId);
+    scrollTarget.current = targetId;
+    const next = new URLSearchParams(searchParams);
+    next.delete("produkt");
+    next.delete("druh");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   const expert = useExpertMode();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -576,6 +602,17 @@ const ProductsInner = () => {
       ),
     refetchOnWindowFocus: true,
   });
+
+  /* Scroll na deep-linknutý řádek až ve chvíli, kdy je vykreslený. Ruční
+     Rozbalit neskroluje — jen příchod z Rozdělení. */
+  useEffect(() => {
+    if (!scrollTarget.current || isLoading) return;
+    const el = document.getElementById(`workbench-row-${scrollTarget.current}`);
+    if (el) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      scrollTarget.current = null;
+    }
+  }, [isLoading, data]);
 
   const all = data?.products ?? [];
   const byKind = (kind: WorkbenchProduct["kind"]) =>
@@ -685,7 +722,9 @@ const ProductsInner = () => {
 
     return (
       <Fragment key={product.id}>
-        <article className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_150px_150px_170px_minmax(0,1fr)_auto] lg:items-center">
+        <article
+          id={`workbench-row-${product.id}`}
+          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_150px_150px_170px_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
             <input type="checkbox" className="mt-1"
               checked={selected.has(product.id)}
