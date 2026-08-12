@@ -81,6 +81,53 @@ pnpm dev            # http://localhost:8000
 
 `pnpm dev` runs the style sync, starts a watcher for structural SCSS changes, and boots Next on port 8000. Backend setup is in [`backend/README.md`](backend/README.md).
 
+## 🚀 Launch checklist — Keramická zahrada (spuštění 09/2026)
+
+### 1. Právní povinnosti e-shopu (BLOKÁTOR LAUNCHE — bez toho nespouštět)
+- [ ] **Obchodní podmínky** — vč. práva odstoupení do 14 dnů + vzorový formulář pro odstoupení (texty dodá Lucia / vzor + kontrola právníkem)
+- [ ] **Reklamační řád**
+- [ ] **Zásady zpracování osobních údajů (GDPR)** — jaká data, proč, jak dlouho, kdo zpracovává (Medusa hosting, platební brána, e-mail)
+- [ ] **Identifikace prodejce** viditelně v patičce: jméno/firma, IČO, sídlo, e-mail, telefon
+- [ ] **Zmínka o mimosoudním řešení sporů (ČOI)** v obchodních podmínkách
+- [ ] Stránky `/obchodni-podminky`, `/reklamacni-rad`, `/ochrana-osobnich-udaju` — nalinkované z patičky
+- [ ] **Checkbox v checkoutu**: „Odesláním objednávky souhlasím s obchodními podmínkami" (povinný, s odkazem)
+- [ ] **Ceny**: jasně s DPH / bez DPH podle toho, zda je Lucia plátce
+- [ ] **Cookie lišta**: přijmout vše / odmítnout / nastavit — analytika se NESPOUŠTÍ před souhlasem
+- [ ] Potvrzení objednávky e-mailem obsahuje rekapitulaci + OP (příloha nebo odkaz)
+
+### 2. Zbývající vývoj
+- [ ] **iDoklad SDK** — vystavení faktury při dokončené objednávce (správné položky, DPH, odeslání e-mailem)
+- [ ] **Edit orders** — úprava objednávky v adminu podle Luciina zadání
+- [ ] LICENSE v repu vyměněna za „All rights reserved / portfolio purposes" ✅/❌
+
+### 3. Testovací scénáře (projít VŠECHNY před launchem, s testovacími daty)
+- [ ] Objednávka: host / registrovaný zákazník — od košíku po potvrzení
+- [ ] Platba: úspěch / selhání / opuštění brány → stav objednávky sedí
+- [ ] Doprava: všechny metody, správné ceny, kombinace s produkty
+- [ ] Edit objednávky v adminu → promítne se zákazníkovi + do faktury
+- [ ] Storno / odstoupení → vratka, stav, e-mail
+- [ ] Faktura z iDokladu: položky, DPH, číselná řada, doručení
+- [ ] Kurzy (termíny/kapacita) — celý flow rezervace
+- [ ] E-maily: potvrzení, expedice, storno — obsah i doručitelnost (SPF/DKIM domény!)
+- [ ] Mobil: celý checkout na telefonu
+- [ ] Admin workflow s Lucií: sama projde svůj denní postup — vytvořit produkt, přijmout objednávku, expedovat
+
+### 4. Přepnutí na ostro
+- [ ] Doména: DNS → produkce, SSL, redirect ze staging URL
+- [ ] Platební brána: přepnout z testovacího na ostrý režim (klíče!)
+- [ ] Vyčistit testovací data z DB (objednávky, zákazníci, faktury)
+- [ ] iDoklad: ostrá číselná řada faktur
+- [ ] Analytika (GA4/Clarity) na ostré doméně, za cookie souhlasem
+- [ ] SEO základ: meta, OG obrázky, sitemap.xml, robots.txt (staging = noindex!)
+- [ ] Zálohy DB nastavené + vyzkoušená obnova
+- [ ] 404 stránka, favicon, kontrola všech odkazů v patičce
+
+### 5. Po launchi (první týden)
+- [ ] Sledovat error logy + první reálné objednávky
+- [ ] První ostrá faktura — ruční kontrola správnosti
+- [ ] Lighthouse/rychlost na produkci
+- [ ] Předání Lucii: krátký návod k adminu (stačí 1 stránka / video z mobilu)
+
 ---
 
 Built by Matěj Forejt. Design and build, end to end.
