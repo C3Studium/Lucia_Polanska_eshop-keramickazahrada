@@ -1,5 +1,10 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { TagSolid } from "@medusajs/icons";
+import {
+  ArrowUpRightOnBox,
+  ChevronDown,
+  FlyingBox,
+  TagSolid,
+} from "@medusajs/icons";
 import {
   Badge,
   Button,
@@ -7,6 +12,7 @@ import {
   Heading,
   Input,
   Skeleton,
+  Switch,
   Text,
   Toaster,
   toast,
@@ -304,13 +310,20 @@ const ClearanceToggle = ({
   });
 
   return (
-    <button
-      type="button"
-      className="text-ui-fg-interactive txt-small hover:underline"
-      onClick={() => mutate.mutate()}
+    <label
+      className="flex cursor-pointer items-center gap-1.5"
+      title="Poškozený / poslední kus ve výprodeji — po prodeji se sám schová."
     >
-      {makeClearance ? "Označit jako poškozené" : "Ukončit výprodej"}
-    </button>
+      <Switch
+        size="small"
+        checked={!makeClearance}
+        disabled={mutate.isPending}
+        onCheckedChange={() => mutate.mutate()}
+      />
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Poškozené
+      </Text>
+    </label>
   );
 };
 
@@ -349,13 +362,20 @@ const CodToggle = ({ product }: { product: WorkbenchProduct }) => {
   });
 
   return (
-    <button
-      type="button"
-      className="text-ui-fg-subtle txt-small hover:underline"
-      onClick={() => mutate.mutate()}
+    <label
+      className="flex cursor-pointer items-center gap-1.5"
+      title="Zákazník smí platit při převzetí — jen ČR a Česká pošta."
     >
-      {next ? "Povolit dobírku" : "Zakázat dobírku"}
-    </button>
+      <Switch
+        size="small"
+        checked={product.cod_allowed}
+        disabled={mutate.isPending}
+        onCheckedChange={() => mutate.mutate()}
+      />
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        Dobírka
+      </Text>
+    </label>
   );
 };
 
@@ -801,15 +821,23 @@ const ProductsInner = () => {
             )}
           </div>
 
-          <div className="flex flex-wrap justify-start gap-3 lg:justify-end">
+          {/* Text is kept for what changes the piece's identity; the mechanical,
+              every-row actions are icons and the two per-piece flags are small
+              switches — state visible at a glance, still one click to flip. */}
+          <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
             <button
               type="button"
-              className="text-ui-fg-interactive txt-small hover:underline"
+              title={expanded === product.id ? "Sbalit" : "Rozbalit"}
+              className="text-ui-fg-subtle hover:text-ui-fg-base"
               onClick={() =>
                 setExpanded(expanded === product.id ? null : product.id)
               }
             >
-              {expanded === product.id ? "Skrýt" : "Rozbalit"}
+              <ChevronDown
+                className={`transition-transform ${
+                  expanded === product.id ? "rotate-180" : ""
+                }`}
+              />
             </button>
 
             {active === "zakazky" && (
@@ -822,32 +850,6 @@ const ProductsInner = () => {
                     className="text-ui-fg-interactive txt-small hover:underline"
                   >
                     Podmínky
-                  </button>
-                }
-              />
-            )}
-
-            {/* Every kind of sellable thing, because it is a property of the piece and
-                not of the tab: she asked for it on zakázky and poškozené especially,
-                where a refused parcel costs the most. */}
-            {active !== "oblibene" && <ArchiveToggle product={product} />}
-
-            {active !== "oblibene" && active !== "archivovane" && (
-              <CodToggle product={product} />
-            )}
-
-            {active !== "oblibene" && (
-              <ShippingProfileEditor
-                productId={product.id}
-                productTitle={product.title}
-                fragile={product.fragile}
-                packagingPrice={product.packaging_price}
-                trigger={
-                  <button
-                    type="button"
-                    className="text-ui-fg-subtle txt-small hover:underline"
-                  >
-                    Doprava a balení
                   </button>
                 }
               />
@@ -882,13 +884,6 @@ const ProductsInner = () => {
               />
             )}
 
-            {active === "poskozene" && (
-              <ClearanceToggle product={product} makeClearance={false} />
-            )}
-            {active === "produkty" && (
-              <ClearanceToggle product={product} makeClearance={true} />
-            )}
-
             <VariantsEditor
               productId={product.id}
               productTitle={product.title}
@@ -898,15 +893,46 @@ const ProductsInner = () => {
                 </button>
               }
             />
+
+            {active !== "oblibene" && active !== "archivovane" && (
+              <CodToggle product={product} />
+            )}
+            {active === "poskozene" && (
+              <ClearanceToggle product={product} makeClearance={false} />
+            )}
+            {active === "produkty" && (
+              <ClearanceToggle product={product} makeClearance={true} />
+            )}
+
+            {active !== "oblibene" && (
+              <ShippingProfileEditor
+                productId={product.id}
+                productTitle={product.title}
+                fragile={product.fragile}
+                packagingPrice={product.packaging_price}
+                trigger={
+                  <button
+                    type="button"
+                    title="Doprava a balení"
+                    className="text-ui-fg-subtle hover:text-ui-fg-base"
+                  >
+                    <FlyingBox />
+                  </button>
+                }
+              />
+            )}
+
+            {active !== "oblibene" && <ArchiveToggle product={product} />}
             <PublishToggle product={product} />
             {product.store_url && (
               <a
                 href={product.store_url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-ui-fg-interactive txt-small hover:underline"
+                title="Otevřít v obchodě"
+                className="text-ui-fg-subtle hover:text-ui-fg-base"
               >
-                V obchodě ↗
+                <ArrowUpRightOnBox />
               </a>
             )}
             <Link

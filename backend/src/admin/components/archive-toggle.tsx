@@ -1,3 +1,4 @@
+import { ArchiveBox } from "@medusajs/icons";
 import { toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
@@ -65,11 +66,12 @@ export const ArchiveToggle = ({
   return (
     <button
       type="button"
-      className="text-ui-fg-subtle txt-small hover:underline"
+      title={archiving ? "Archivovat" : "Obnovit z archivu"}
+      className="text-ui-fg-subtle hover:text-ui-fg-base disabled:opacity-50"
       onClick={() => mutate.mutate()}
       disabled={mutate.isPending}
     >
-      {archiving ? "Archivovat" : "Obnovit z archivu"}
+      <ArchiveBox />
     </button>
   );
 };
