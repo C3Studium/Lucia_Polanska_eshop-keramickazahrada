@@ -2,33 +2,51 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
 import { sendCustomerEmail } from "../../../../lib/customer-email"
 
+/**
+ * Confirms an e-mail verification token.
+ *
+ * Looks only at registered records (`has_account: true`) and, among them,
+ * at the one actually carrying the token — `listCustomers({ email })[0]`
+ * used to grab whichever record came first, and after a guest purchase that
+ * was the guest: its token never matched the mailed one (or worse, resend had
+ * written a token there), so verification either failed outright or marked a
+ * record the login never reads. See resend-verification-email for the story.
+ */
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const { token, email } = req.body as { token: string; email: string }
-
-  console.log("[VERIFY EMAIL] Incoming request:", { token, email })
+  const { token, email } = (req.body ?? {}) as { token?: string; email?: string }
 
   if (!token || !email) {
-    console.log("[VERIFY EMAIL] Missing token or email.")
-    res.status(400).json({ message: "Missing token or email." })
+    res.status(400).json({ message: "Chybí token nebo e-mail." })
     return
   }
 
   const customerModuleService = req.scope.resolve(Modules.CUSTOMER)
-  let customer = null as any
+
+  let customer: any = null
   try {
-    const customers = await customerModuleService.listCustomers({ email })
-    customer = customers[0] || null
-    console.log("[VERIFY EMAIL] Retrieved customer:", customer)
+    const customers = await customerModuleService.listCustomers({
+      email,
+      has_account: true,
+    })
+    customer =
+      customers.find(
+        (candidate: any) =>
+          candidate.metadata?.email_verification_token === token
+      ) ??
+      customers[0] ??
+      null
   } catch (err) {
-    console.log("[VERIFY EMAIL] Error retrieving customer:", err)
-    customer = null
+    console.error("[VERIFY EMAIL] Error retrieving customer:", err)
   }
 
   if (!customer || !customer.metadata?.email_verification_token) {
-    console.log("[VERIFY EMAIL] No customer or missing verification token.", {
-      customer,
-    })
-    res.status(404).json({ message: "Invalid token or email." })
+    // Already-verified accounts have the token cleared — a second click on the
+    // same mail should read as success, not as a scary error.
+    if (customer?.metadata?.email_verified === true) {
+      res.status(200).json({ ok: true, message: "E-mail už je ověřený." })
+      return
+    }
+    res.status(404).json({ message: "Odkaz neplatí. Nechte si poslat nový." })
     return
   }
 
@@ -36,18 +54,10 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const expiresAt = customer.metadata.email_verification_expires_at
   const isExpired = expiresAt && new Date(expiresAt) < new Date()
 
-  console.log("[VERIFY EMAIL] Token matches:", tokenMatches)
-  console.log("[VERIFY EMAIL] Token expires at:", expiresAt, "Is expired:", isExpired)
-
   if (!tokenMatches || isExpired) {
-    console.log("[VERIFY EMAIL] Invalid or expired token.", {
-      tokenMatches,
-      isExpired,
-      customerToken: customer.metadata.email_verification_token,
-      providedToken: token,
-      expiresAt,
-    })
-    res.status(400).json({ message: "Invalid or expired token." })
+    res
+      .status(400)
+      .json({ message: "Odkaz už neplatí. Nechte si poslat nový." })
     return
   }
 
@@ -61,10 +71,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         email_verification_expires_at: null,
       },
     })
-    console.log("[VERIFY EMAIL] Email verified and customer updated:", customer.id)
   } catch (err) {
-    console.log("[VERIFY EMAIL] Error updating customer:", err)
-    res.status(500).json({ message: "Failed to update customer." })
+    console.error("[VERIFY EMAIL] Error updating customer:", err)
+    res.status(500).json({ message: "Ověření se nepodařilo uložit." })
     return
   }
 
@@ -81,17 +90,19 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       data: { customerName: customer.first_name || "" },
     })
   } catch (err) {
-    console.log("[VERIFY EMAIL] Failed to queue the welcome e-mail:", err)
+    console.error("[VERIFY EMAIL] Failed to queue the welcome e-mail:", err)
   }
 
-  // retrieve updated customer to return to client
   let updatedCustomer = null
   try {
     updatedCustomer = await customerModuleService.retrieveCustomer(customer.id)
-    console.log("[VERIFY EMAIL] Updated customer:", updatedCustomer)
   } catch (err) {
-    console.log("[VERIFY EMAIL] Error retrieving updated customer:", err)
+    console.error("[VERIFY EMAIL] Error retrieving updated customer:", err)
   }
 
-  res.status(200).json({ ok: true, message: "Email verified successfully.", customer: updatedCustomer })
-  }
+  res.status(200).json({
+    ok: true,
+    message: "E-mail je ověřený.",
+    customer: updatedCustomer,
+  })
+}

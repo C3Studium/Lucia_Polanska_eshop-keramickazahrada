@@ -132,6 +132,19 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   return updateRes
 }
 
+/**
+ * Registrace (přepsáno 2026-08-13 po Matějově hlášení).
+ *
+ * Průmyslový standard v Medusa 2: guest nákupy registraci NEblokují — guest
+ * záznamy zůstávají (vlastní historii objednávek; admin lidi skládá podle
+ * e-mailu) a registrace vedle nich založí vlastní záznam s has_account: true.
+ * Dřívější mazání guest zákazníka přes upgrade-guest sirotčilo objednávky
+ * a stejně řešilo neexistující konflikt.
+ *
+ * Ověřovací token se zapíše na NOVÝ registrovaný záznam při create — subscriber
+ * customer.created podle něj pozná registraci (guesti token nemají) a pošle
+ * ověřovací e-mail.
+ */
 export async function signup(_currentState: unknown, formData: FormData) {
   const password = formData.get("password") as string
   const email = formData.get("email") as string
@@ -144,53 +157,38 @@ export async function signup(_currentState: unknown, formData: FormData) {
     phone: formData.get("phone") as string,
   }
 
-  // Generate verification token and expiry
   const token = uuidv4()
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
 
   try {
-    // 1. Check if customer exists
-    let existingCustomer = await getCustomerByEmail(email)
-    if (existingCustomer) {
-      const accountCustomer = existingCustomer as typeof existingCustomer & {
-        has_account?: boolean
-      }
+    // Existuje už REGISTROVANÝ účet? (Guest záznamy jsou tu neviditelné.)
+    if (await isEmailRegistered(email)) {
+      return "Účet s tímto e-mailem už existuje. Zkuste se prosím přihlásit."
+    }
 
-      if (accountCustomer.has_account === false) {
-        // Delete guest and create new account
-        const deleteRes = await deleteCustomer({
+    let authToken: string
+    try {
+      authToken = (await sdk.auth.register("customer", "emailpass", {
+        email,
+        password,
+      })) as string
+    } catch {
+      /*
+       * Nedokončená dřívější registrace: auth identita existuje, zákazník ne.
+       * Nárok na ni prokazuje heslo — když sedí, registrace pokračuje; když
+       * ne, nemáme jak poznat vlastníka.
+       */
+      try {
+        authToken = (await sdk.auth.login("customer", "emailpass", {
           email,
           password,
-          first_name: customerForm.first_name,
-          last_name: customerForm.last_name,
-          phone: customerForm.phone,
-        })
-        if (!deleteRes.success) {
-          return "Účet se nepovedlo založit. Zkuste to prosím znovu."
-        }
-        // Proceed with standard signup
-      } else if (
-        accountCustomer.has_account === true &&
-        existingCustomer.deleted_at
-      ) {
-        // Restore deleted customer, but do NOT log in
-        const restoreRes = await restoreCustomer(existingCustomer.id)
-        if (!restoreRes || restoreRes.success === false) {
-          return toCzechErrorMessage(restoreRes?.message)
-        }
-        return "Váš účet jsme obnovili. Kdybyste si nepamatovali heslo, nechte si poslat nové."
-      } else {
-        return "Účet s tímto e-mailem už existuje. Zkuste se prosím přihlásit."
+        })) as string
+      } catch {
+        return "Tento e-mail už má rozdělanou registraci s jiným heslem. Nechte si poslat nové heslo, nebo nám napište."
       }
     }
 
-    // 2. Standard Medusa registration flow
-    const registerToken = await sdk.auth.register("customer", "emailpass", {
-      email,
-      password,
-    })
-
-    await setAuthToken(registerToken as string)
+    await setAuthToken(authToken)
 
     const headers = {
       ...(await getAuthHeaders()),
@@ -222,7 +220,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
     await transferCart()
   } catch (error: any) {
-    return error.toString()
+    return toCzechErrorMessage(error?.message ?? error?.toString())
   }
 
   if (redirectTo) {
@@ -405,28 +403,27 @@ export const updateCustomerAddress = async (
     })
 }
 
-// FIXING THE ISSUE WITH THE ACC REGISTRATION - issue with email already registered inside db but acc not created
-export async function getCustomerByEmail(
-  email: string
-): Promise<HttpTypes.StoreCustomer | null> {
+/**
+ * Existuje pro adresu registrovaný účet? Backend vrací jen boolean — dřív
+ * odsud tekl celý záznam zákazníka (a s force-cache klidně zastaralý), teď
+ * není co cachovat ani co vyzradit.
+ */
+export async function isEmailRegistered(email: string): Promise<boolean> {
   const headers = {
     ...(await getAuthHeaders()),
   }
 
   return await sdk.client
-    .fetch<{ customer: HttpTypes.StoreCustomer }>(
+    .fetch<{ registered: boolean }>(
       `store/customers/by-email?email=${encodeURIComponent(email)}`,
       {
         method: "GET",
         headers,
-        next: {
-          tags: ["customers"],
-        },
-        cache: "force-cache",
+        cache: "no-store",
       }
     )
-    .then(({ customer }) => customer)
-    .catch(() => null)
+    .then(({ registered }) => registered)
+    .catch(() => false)
 }
 
 export async function resendVerification(
@@ -449,54 +446,6 @@ export async function resendVerification(
   } catch (e: any) {
     // If sdk.client.fetch throws, try to extract the error message
     return { success: false, message: toCzechErrorMessage(e?.message) }
-  }
-}
-
-// NEED a new call and method to delete guest to registered account properly
-export async function deleteCustomer({
-  email,
-  password,
-  first_name,
-  last_name,
-  phone,
-  metadata = {},
-}: {
-  email: string
-  password: string
-  first_name?: string
-  last_name?: string
-  phone?: string
-  metadata?: Record<string, any>
-}): Promise<{ success: boolean; message: string }> {
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  console.log("Headers:", headers)
-
-  try {
-    const response = await sdk.client.fetch<{
-      message: string
-      customer?: any
-    }>("store/customers/upgrade-guest", {
-      method: "POST",
-      headers,
-      body: {
-        email,
-        password,
-        first_name,
-        last_name,
-        phone,
-        metadata,
-      },
-    })
-
-    return { success: true, message: response.message }
-  } catch (error: any) {
-    return {
-      success: false,
-      message: toCzechErrorMessage(error?.message),
-    }
   }
 }
 
@@ -537,22 +486,10 @@ export async function verifyCustomerEmail(token: string, email: string) {
   }
 }
 
-export async function restoreCustomer(customerId: string) {
-  try {
-    const res = await fetch("/api/store/customers/restore-account", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer_id: customerId }),
-    })
-    const data = await res.json()
-    return data
-  } catch (e: any) {
-    return {
-      success: false,
-      message: toCzechErrorMessage(e?.message),
-    }
-  }
-}
+/* restoreCustomer je pryč (2026-08-13): volal relativní fetch na
+   /api/store/... — cestu, která nikde neexistovala, z server action, kde
+   relativní fetch stejně nefunguje. Jeho jediná větev v signup byla mrtvá,
+   protože listCustomers smazané účty vůbec nevrací. */
 
 export async function deleteAccount(): Promise<{
   success: boolean

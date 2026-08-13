@@ -5,6 +5,7 @@ import {
   productLink,
   storefrontBase,
   storeLink,
+  verifyEmailLink,
 } from "../storefront-url"
 
 /**
@@ -81,6 +82,12 @@ describe("customer e-mail links", () => {
     )
   })
 
+  it("links e-mail verification to the page the storefront serves, with the address encoded", () => {
+    expect(verifyEmailLink("tok-1", "jana+test@seznam.cz")).toBe(
+      "https://keramickazahrada.cz/cz/verify-email?token=tok-1&email=jana%2Btest%40seznam.cz"
+    )
+  })
+
   it("returns nothing rather than a broken link when the id or handle is missing", () => {
     // A half-built URL in an e-mail is worse than no button: the customer
     // clicks it. Callers render the button only when this is non-empty.
@@ -89,6 +96,8 @@ describe("customer e-mail links", () => {
     expect(productLink(null)).toBe("")
     expect(productLink(undefined)).toBe("")
     expect(cartRecoverLink(null)).toBe("")
+    expect(verifyEmailLink(null, "jana@seznam.cz")).toBe("")
+    expect(verifyEmailLink("tok-1", null)).toBe("")
   })
 
   it("returns nothing when no storefront is configured", () => {

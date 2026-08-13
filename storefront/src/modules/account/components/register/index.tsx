@@ -91,7 +91,11 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             data-testid="password-input"
           />
         </div>
-        <ErrorMessage error={message} data-testid="register-error" />
+        {/* Úspěšná registrace vrací objekt zákazníka — chybová lišta patří jen textu. */}
+        <ErrorMessage
+          error={typeof message === "string" ? message : null}
+          data-testid="register-error"
+        />
         <span className={s.note}>
           Vytvořením účtu souhlasíte se{" "}
           <LocalizedClientLink

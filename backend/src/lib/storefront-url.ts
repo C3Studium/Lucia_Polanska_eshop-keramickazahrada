@@ -92,3 +92,20 @@ export const accountOrdersLink = (): string => {
   const base = storefrontBase()
   return base ? `${base}/account/orders` : ""
 }
+
+/**
+ * E-mail verification — `app/[countryCode]/(main)/verify-email`.
+ *
+ * Used to be built inline in two places (the customer.created subscriber and
+ * the resend route) off `configModule.admin.storefrontUrl`, a THIRD idea of
+ * where the storefront lives, with an unencoded e-mail in the query.
+ */
+export const verifyEmailLink = (
+  token?: string | null,
+  email?: string | null
+): string => {
+  const base = storefrontBase()
+  return base && token && email
+    ? `${base}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+    : ""
+}
