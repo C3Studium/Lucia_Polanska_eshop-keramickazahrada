@@ -28,7 +28,28 @@ type LabelResponse = {
   available: boolean
   reason?: string
   labels: Array<{ url: string; tracking_number: string | null }>
+  /**
+   * Kam zásilka jede — u Balíkovny podle manuálu ČP: adresa štítku je
+   * „BALÍKOVNA, {ZIP} {NAME}" (PSČ výhradně z pole zip widgetu, ne z adresy).
+   * Admin to ukazuje pod tlačítky, aby šlo ověřit celý řetěz checkout →
+   * objednávka → štítek i dřív, než existují ČP přístupy.
+   */
+  destination?: {
+    type: "balikovna"
+    zip: string | null
+    name: string | null
+    address: string | null
+    address_line: string | null
+  } | null
+  /** Co je špatně, ale nebrání odpovědi — admin je ukáže oranžově. */
+  warnings?: string[]
 }
+
+const fold = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -37,10 +58,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     entity: "order",
     fields: [
       "id",
+      "metadata",
       "items.id",
       "items.title",
       "items.quantity",
       "items.metadata",
+      "shipping_methods.name",
       "fulfillments.id",
       "fulfillments.canceled_at",
       "fulfillments.data",
@@ -51,6 +74,49 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   })
 
   const order = orders[0] as any
+
+  /*
+   * Balíkovna context: který checkout zapsal do cart.metadata, to completion
+   * přeneslo na objednávku. Jede-li objednávka do Balíkovny a místo chybí,
+   * je to přesně ta chyba, kterou má admin UKÁZAT, ne spolknout.
+   */
+  const viaBalikovna = (order?.shipping_methods ?? []).some((method: any) =>
+    fold(String(method?.name ?? "")).includes("balikovna")
+  )
+  const orderMeta = (order?.metadata ?? {}) as Record<string, unknown>
+  const pointZip =
+    typeof orderMeta.balikovna_point_zip === "string"
+      ? orderMeta.balikovna_point_zip
+      : null
+  const pointName =
+    typeof orderMeta.balikovna_point_name === "string"
+      ? orderMeta.balikovna_point_name
+      : null
+  const destination: LabelResponse["destination"] = viaBalikovna
+    ? {
+        type: "balikovna",
+        zip: pointZip,
+        name: pointName,
+        address:
+          typeof orderMeta.balikovna_point_address === "string"
+            ? orderMeta.balikovna_point_address
+            : null,
+        // Formát štítku dle manuálu ČP — ZIP z widgetu, nikdy z adresy.
+        address_line:
+          pointZip && pointName ? `BALÍKOVNA, ${pointZip} ${pointName}` : null,
+      }
+    : null
+  const warnings: string[] = []
+  if (viaBalikovna && (!pointZip || !pointName)) {
+    warnings.push(
+      "Objednávka jede do Balíkovny, ale nemá uložené výdejní místo — bez něj štítek nepůjde vystavit. Zkontrolujte, že zákazník místo vybral (metadata objednávky)."
+    )
+  }
+  const withContext = (body: LabelResponse): LabelResponse => ({
+    ...body,
+    destination,
+    warnings,
+  })
 
   // ?parcel=stock|zakazka — a mixed order ships as TWO parcels when she
   // wants: the stock items now, the commission when the kiln says so. The
@@ -78,14 +144,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   if (parcel !== "all" && !parcelItems.length) {
-    res.status(200).json({
-      available: false,
-      reason:
-        parcel === "zakazka"
-          ? "V objednávce žádná zakázka není — stačí jeden lístek."
-          : "V objednávce nejsou skladové položky — stačí jeden lístek.",
-      labels: [],
-    } as LabelResponse)
+    res.status(200).json(
+      withContext({
+        available: false,
+        reason:
+          parcel === "zakazka"
+            ? "V objednávce žádná zakázka není — stačí jeden lístek."
+            : "V objednávce nejsou skladové položky — stačí jeden lístek.",
+        labels: [],
+      })
+    )
     return
   }
 
@@ -93,10 +161,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // button can exist today and start working the day the account does.
   if (!process.env.BALIKOVNA_API_TOKEN || !process.env.BALIKOVNA_API_SECRET) {
     res.status(200).json({
-      available: false,
-      reason:
-        "Podací lístek zatím nejde vytvořit — čekáme na přístupy k České poště (B2B účet). Jakmile budou, tlačítko začne fungovat samo.",
-      labels: [],
+      ...withContext({
+        available: false,
+        reason:
+          "Podací lístek zatím nejde vytvořit — čekáme na přístupy k České poště (B2B účet). Jakmile budou, tlačítko začne fungovat samo.",
+        labels: [],
+      }),
       parcel,
       items: parcelItems.map((item: any) => ({
         title: item.title,
@@ -111,13 +181,14 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   )
 
   if (!fulfillment) {
-    const body: LabelResponse = {
-      available: false,
-      reason:
-        "Zásilka ještě není připravená. Nejdřív ji připravte k odeslání, štítek bude až potom.",
-      labels: [],
-    }
-    res.status(200).json(body)
+    res.status(200).json(
+      withContext({
+        available: false,
+        reason:
+          "Zásilka ještě není připravená. Nejdřív ji připravte k odeslání, štítek bude až potom.",
+        labels: [],
+      })
+    )
     return
   }
 
@@ -131,17 +202,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!labels.length) {
     const recordOnly = fulfillment?.data?.mode === "manual"
 
-    const body: LabelResponse = {
-      available: false,
-      reason: recordOnly
-        ? "Zásilka zatím není podaná u České pošty, takže štítek neexistuje. Podejte ji v portálu České pošty — jakmile bude e-shop napojený, štítek se stáhne odsud."
-        : "Dopravce zatím štítek nevrátil. Zkuste to prosím za chvíli.",
-      labels: [],
-    }
-    res.status(200).json(body)
+    res.status(200).json(
+      withContext({
+        available: false,
+        reason: recordOnly
+          ? "Zásilka zatím není podaná u České pošty, takže štítek neexistuje. Podejte ji v portálu České pošty — jakmile bude e-shop napojený, štítek se stáhne odsud."
+          : "Dopravce zatím štítek nevrátil. Zkuste to prosím za chvíli.",
+        labels: [],
+      })
+    )
     return
   }
 
-  const body: LabelResponse = { available: true, labels }
-  res.status(200).json(body)
+  res.status(200).json(withContext({ available: true, labels }))
 }

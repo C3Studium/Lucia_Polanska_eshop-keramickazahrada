@@ -472,3 +472,79 @@
       }
   }
 }
+
+/* ── Balíkovna — výběr výdejního místa ─────────────────────────────────── */
+.carrierIcon {
+  display: inline-block;
+  margin-right: 0.5rem;
+  vertical-align: -3px;
+}
+
+.balikovnaChange {
+  margin-top: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blackText);
+  font-family: "Sansation-Light";
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.balikovnaModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.balikovnaBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(20, 21, 17, 0.55);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.balikovnaPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Manuál ČP: doporučené minimum dialogu je 360 × 800 px. */
+  width: min(430px, 94vw);
+  height: min(820px, 88vh);
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+}
+
+.balikovnaPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--blackText);
+  font-family: "Sansation-Regular";
+
+  button {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+}
+
+.balikovnaFrame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+}

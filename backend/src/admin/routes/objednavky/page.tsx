@@ -230,44 +230,100 @@ type OrderDetail = {
  * credentials the route answers with the honest reason; the buttons exist
  * today so the day the account arrives nothing changes but the outcome.
  */
+type LabelResult = {
+  available: boolean;
+  reason?: string;
+  labels: { url: string }[];
+  destination?: {
+    type: "balikovna";
+    zip: string | null;
+    name: string | null;
+    address: string | null;
+    address_line: string | null;
+  } | null;
+  warnings?: string[];
+};
+
 const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: boolean }) => {
+  /* Poslední odpověď zůstává vidět pod tlačítky — toast zmizí, tohle ne.
+     Přesně kvůli testování Balíkovny: ať je vidět, kam by zásilka jela,
+     co chybí a proč štítek (ještě) není. */
+  const [last, setLast] = useState<LabelResult | null>(null);
+
   const request = useMutation({
     mutationFn: (parcel: "all" | "stock" | "zakazka") =>
       sdk.client.fetch(
         `/admin/merchant-orders/${orderId}/label${parcel === "all" ? "" : `?parcel=${parcel}`}`
-      ) as Promise<{ available: boolean; reason?: string; labels: { url: string }[] }>,
+      ) as Promise<LabelResult>,
     onSuccess: (result) => {
+      setLast(result);
+      for (const warning of result.warnings ?? []) {
+        toast.warning(warning);
+      }
       if (!result.available || !result.labels?.length) {
         toast.info(result.reason ?? "Lístek zatím není k dispozici.");
         return;
       }
+      toast.success("Štítek je připravený — otevírám PDF.");
       for (const label of result.labels) {
         window.open(label.url, "_blank", "noreferrer");
       }
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Lístek se nepodařilo vytvořit."),
+    onError: (error) => {
+      setLast(null);
+      toast.error(error instanceof Error ? error.message : "Lístek se nepodařilo vytvořit.");
+    },
   });
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      <Button
-        size="small"
-        variant="secondary"
-        isLoading={request.isPending}
-        onClick={() => request.mutate("all")}
-      >
-        Podací lístek
-      </Button>
-      {madeToOrder && (
-        <>
-          <Button size="small" variant="secondary" onClick={() => request.mutate("stock")}>
-            Jen skladové zboží
-          </Button>
-          <Button size="small" variant="secondary" onClick={() => request.mutate("zakazka")}>
-            Jen zakázku
-          </Button>
-        </>
+    <div className="mt-3 flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={request.isPending}
+          onClick={() => request.mutate("all")}
+        >
+          Podací lístek
+        </Button>
+        {madeToOrder && (
+          <>
+            <Button size="small" variant="secondary" onClick={() => request.mutate("stock")}>
+              Jen skladové zboží
+            </Button>
+            <Button size="small" variant="secondary" onClick={() => request.mutate("zakazka")}>
+              Jen zakázku
+            </Button>
+          </>
+        )}
+      </div>
+      {last && (
+        <div className="flex flex-col gap-1">
+          {last.destination?.type === "balikovna" && (
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              {last.destination.address_line
+                ? `Adresa na štítku: ${last.destination.address_line}`
+                : "Do Balíkovny — výdejní místo zatím chybí."}
+              {last.destination.address ? ` · ${last.destination.address}` : ""}
+            </Text>
+          )}
+          {(last.warnings ?? []).map((warning) => (
+            <Text key={warning} size="xsmall" className="text-ui-tag-orange-text">
+              ⚠ {warning}
+            </Text>
+          ))}
+          {last.available ? (
+            <Text size="xsmall" className="text-ui-tag-green-text">
+              Štítek od dopravce je k dispozici.
+            </Text>
+          ) : (
+            last.reason && (
+              <Text size="xsmall" className="text-ui-fg-muted">
+                {last.reason}
+              </Text>
+            )
+          )}
+        </div>
       )}
     </div>
   );

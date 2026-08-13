@@ -12,6 +12,15 @@ import {
   restrictionRowHint,
   type DeliveryRestriction,
 } from "@lib/util/fragile"
+import {
+  BALIKOVNA_WIDGET_ORIGIN,
+  BALIKOVNA_WIDGET_URL,
+  balikovnaPointFromMetadata,
+  formatBalikovnaPoint,
+  isBalikovnaOption,
+  parsePickerResult,
+  type BalikovnaPoint,
+} from "@lib/util/balikovna"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes, StoreOrderAddress } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
@@ -84,6 +93,12 @@ const Shipping: React.FC<ShippingProps> = ({
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(
     cart.shipping_methods?.at(-1)?.shipping_option_id || null
   )
+  /* Balíkovna: vybrané výdejní místo přežívá v cart.metadata, takže návrat
+     na krok dopravy (nebo reload) o něj nepřijde. */
+  const [balikovnaPoint, setBalikovnaPoint] = useState<BalikovnaPoint | null>(
+    () => balikovnaPointFromMetadata(cart.metadata as Record<string, unknown>)
+  )
+  const [balikovnaOpen, setBalikovnaOpen] = useState(false)
 
   async function onPointSelected(pickupPoint: string) {
     const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(
@@ -139,11 +154,72 @@ const Shipping: React.FC<ShippingProps> = ({
     }
   }
 
+  /* Uložení vybrané Balíkovny do košíku — stejná cesta jako u Packety, ale
+     ve čtyřech polích: štítek potřebuje ZIP a NAME zvlášť (PSČ z adresy bývá
+     jiné než PSČ provozovny — viz lib/util/balikovna.ts). */
+  async function saveBalikovnaPoint(point: BalikovnaPoint) {
+    const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(
+      /\/+$/,
+      ""
+    )
+    try {
+      const res = await fetch(`${base}/store/carts/${cart.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-publishable-api-key":
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
+        },
+        body: JSON.stringify({
+          metadata: {
+            balikovna_point_id: point.id,
+            balikovna_point_zip: point.zip,
+            balikovna_point_name: point.name,
+            balikovna_point_address: point.address,
+          },
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "<unreadable>")
+        console.error("Failed to save Balíkovna point", res.status, body)
+        setBalikovnaPoint(null)
+        setError("Balíkovnu se nepovedlo uložit. Zkuste to prosím znovu.")
+        return
+      }
+      setError(null)
+    } catch (err) {
+      console.error("Network error while saving Balíkovna point:", err)
+      setBalikovnaPoint(null)
+      setError("Spojení vypadlo, Balíkovna se neuložila. Zkuste to prosím znovu.")
+    }
+  }
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
 
   const isOpen = searchParams.get("step") === "delivery"
+
+  /* Widget hlásí výběr postMessage zprávou `pickerResult` (oficiální manuál
+     Balíkovny) — posloucháme jen s otevřeným dialogem a jen zprávy z jejich
+     originu, cokoliv jiného ignorujeme. */
+  useEffect(() => {
+    if (!balikovnaOpen) return
+
+    const listener = (event: MessageEvent) => {
+      if (event.origin !== BALIKOVNA_WIDGET_ORIGIN) return
+      const point = parsePickerResult(event.data)
+      if (!point) return
+      setBalikovnaOpen(false)
+      setBalikovnaPoint(point)
+      void saveBalikovnaPoint(point)
+    }
+
+    window.addEventListener("message", listener)
+    return () => window.removeEventListener("message", listener)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [balikovnaOpen, cart.id])
 
   /*
    * One list, carriers first and collection last. It used to be two: the couriers here, and
@@ -360,6 +436,15 @@ const Shipping: React.FC<ShippingProps> = ({
       setPacketaPickupPointSelected(false)
     }
 
+    // Balíkovna: mapa výdejních míst se otevře hned s výběrem dopravy —
+    // stejný okamžik jako u Packety, ať se chovají jednotně.
+    if (
+      isBalikovnaOption(deliveryOptions.find((option) => option.id === id)) &&
+      !balikovnaPoint
+    ) {
+      setBalikovnaOpen(true)
+    }
+
     setShippingMethodId((prev) => {
       currentId = prev
       return id
@@ -473,6 +558,15 @@ const Shipping: React.FC<ShippingProps> = ({
                           />
                           <div className={styles.methodSummary}>
                             <span className={styles.methodLabel}>
+                              {isBalikovnaOption(option) && (
+                                <img
+                                  src="/assets/img/balikovna.svg"
+                                  alt=""
+                                  width={18}
+                                  height={18}
+                                  className={styles.carrierIcon}
+                                />
+                              )}
                               {option.name}
                             </span>
                             {address && (
@@ -520,6 +614,86 @@ const Shipping: React.FC<ShippingProps> = ({
 
           <div className={styles.packetaSelector}></div>
 
+          {/* Balíkovna: bez vybraného místa se nedá pokračovat — štítek by
+              neměl kam jet. Stejný vzor jako Packeta níže. */}
+          {(() => {
+            const selectedOption = deliveryOptions.find(
+              (option) => option.id === shippingMethodId
+            )
+            if (!isBalikovnaOption(selectedOption)) return null
+            return !balikovnaPoint ? (
+              <div className={styles.packetaNotice}>
+                <p className={styles.packetaNoticeText}>
+                  Vyberte prosím Balíkovnu, kam vám balík pošleme.
+                </p>
+                <PremiumActionButton
+                  text="Vybrat Balíkovnu"
+                  onClickAction={() => setBalikovnaOpen(true)}
+                  className={styles.openPacketaBtn}
+                  data-testid="open-balikovna-button"
+                />
+              </div>
+            ) : (
+              <div
+                className={styles.packetaConfirmation}
+                data-testid="balikovna-confirmation"
+              >
+                <p className={styles.packetaConfirmationLabel}>
+                  Vybraná Balíkovna:
+                </p>
+                <p className={styles.packetaConfirmationValue}>
+                  {formatBalikovnaPoint(balikovnaPoint)}
+                  {balikovnaPoint.address
+                    ? ` · ${balikovnaPoint.address}`
+                    : ""}
+                </p>
+                <button
+                  type="button"
+                  className={styles.balikovnaChange}
+                  onClick={() => setBalikovnaOpen(true)}
+                >
+                  Změnit Balíkovnu
+                </button>
+              </div>
+            )
+          })()}
+
+          {balikovnaOpen && (
+            <div
+              className={styles.balikovnaModal}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Výběr Balíkovny"
+            >
+              <button
+                type="button"
+                className={styles.balikovnaBackdrop}
+                aria-label="Zavřít výběr Balíkovny"
+                onClick={() => setBalikovnaOpen(false)}
+              />
+              <div className={styles.balikovnaPanel}>
+                <div className={styles.balikovnaPanelHeader}>
+                  <span>Vyberte svou Balíkovnu</span>
+                  <button
+                    type="button"
+                    onClick={() => setBalikovnaOpen(false)}
+                    aria-label="Zavřít"
+                  >
+                    ×
+                  </button>
+                </div>
+                {/* Oficiální dialog ČP; allow="geolocation" kvůli funkci
+                    „Moje poloha" (bez něj ji prohlížeč zablokuje). */}
+                <iframe
+                  title="Výběr místa pro vyzvednutí zásilky"
+                  src={BALIKOVNA_WIDGET_URL}
+                  allow="geolocation"
+                  className={styles.balikovnaFrame}
+                />
+              </div>
+            </div>
+          )}
+
           {/* If packeta shipping method is selected but no pickup point chosen, show notice and reopen button */}
           {shippingMethodId === packetaShippingMethodId?.toString() &&
             !packetaPickupPointSelected && (
@@ -566,6 +740,12 @@ const Shipping: React.FC<ShippingProps> = ({
                 !cart.shipping_methods?.[0] ||
                 (shippingMethodId === packetaShippingMethodId?.toString() &&
                   !packetaPickupPointSelected) ||
+                (isBalikovnaOption(
+                  deliveryOptions.find(
+                    (option) => option.id === shippingMethodId
+                  )
+                ) &&
+                  !balikovnaPoint) ||
                 isLoading
               }
               data-testid="submit-delivery-option-button"

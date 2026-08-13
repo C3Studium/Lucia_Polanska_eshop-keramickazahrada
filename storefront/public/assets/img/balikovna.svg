@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-hidden="true">
+  <!-- Značka Balíkovny (dva balíky, firemní modrá + žlutá). Aproximace pro
+       checkout — oficiální loga posílá ČP v implementačním balíčku
+       (podporaobchodu@cpost.cz); až dorazí, stačí nahradit tento soubor. -->
+  <rect x="2.5" y="12.5" width="17" height="17" rx="2" fill="#29327e"/>
+  <rect x="16.5" y="2.5" width="13" height="13" rx="2" fill="#ffd41f"/>
+</svg>
