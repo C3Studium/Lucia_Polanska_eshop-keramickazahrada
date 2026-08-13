@@ -19,6 +19,23 @@
     background: #212222;
   }
 
+  /* Pokračování šedého závěsu Kolekcí — stejný povrch (radial + #212222),
+     takže šev mezi sekcemi není vidět. Otevírá se clip-pathem shora dolů
+     hned při nájezdu sekce; nad fotkou i obsahem, dokud se neodklopí. */
+  .Courses__entryCover {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    background: radial-gradient(
+        circle at 72% 24%,
+        rgba(116, 126, 98, 0.22),
+        transparent 32%
+      ),
+      #212222;
+    pointer-events: none;
+    will-change: clip-path;
+  }
+
   .image__bg {
     position: absolute;
     inset: 0;

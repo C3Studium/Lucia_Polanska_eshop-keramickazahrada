@@ -65,16 +65,27 @@ export default function Courses() {
     mass: 0.62,
     restDelta: 0.0005,
   })
+  /*
+   * The hand-off cascade (Matěj, 2026-08-13): the collection fades, the grey
+   * is right behind it, the green photo lands a beat later and the shader a
+   * beat after that. The beats are scroll fractions of the entry, not clock
+   * time, so scrubbing back plays the cascade in reverse:
+   *   grey cover opens 0.05–0.30 · photo 0.08–0.28 · shader from 0.18.
+   */
+  const entryCoverClip = useTransform(
+    entry,
+    [0.05, 0.3],
+    ["inset(0% 0% 0% 0%)", "inset(100% 0% 0% 0%)"]
+  )
   const shaderProgress = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
-      Math.min(1, entryValue * 0.55 + pinnedValue * 0.45)
+      Math.min(
+        1,
+        Math.max(0, (entryValue - 0.18) * 1.4) * 0.55 + pinnedValue * 0.45
+      )
   )
-  /* Arrives nearly lit and is full by 30 % of the entry — the entry runs
-     exactly while Collections' dark curtain scrolls off above, so the photo
-     has to be ready under it for the hand-off to read as one tight cut
-     (Matěj, 2026-08-13), not a viewport of nothing. */
-  const imageOpacity = useTransform(entry, [0, 0.3], [0.72, 1])
+  const imageOpacity = useTransform(entry, [0.08, 0.28], [0.35, 1])
   /* Entry settles the over-scale early (by 0.6, in step with the content);
      the pin then keeps drifting, which is what gives the long middle of this
      stage something to do besides the shader. */
@@ -164,6 +175,16 @@ export default function Courses() {
             scrollProgress={shaderProgress}
           />
         </motion.div>
+
+        {/* Grey continuation of Collections' exit curtain — same surface, so
+            the seam between the sections is invisible. The clip wipes it open
+            top-to-bottom right as the section enters, revealing the photo
+            underneath (the „opens right away" part of the cascade). */}
+        <motion.div
+          className="Courses__entryCover"
+          style={{ clipPath: entryCoverClip }}
+          aria-hidden="true"
+        />
 
         <motion.div
           className="Courses__content"
