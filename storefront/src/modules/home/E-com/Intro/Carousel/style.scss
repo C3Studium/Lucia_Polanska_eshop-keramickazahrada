@@ -178,6 +178,12 @@
         .buttons {
           display: flex;
           gap: 0.7rem;
+          /* Reserved for one grown pill (250 % = 125px) + one resting circle,
+             right-anchored — so hover growth extends leftward into this box
+             instead of shoving the whole header row. Sizes mirror
+             Button/index.tsx. */
+          width: calc(125px + 50px + 0.7rem);
+          justify-content: flex-end;
         }
       }
     }

@@ -2,7 +2,7 @@
 
 import { Easing, motion } from "framer-motion"
 import Image from "next/image"
-import { CSSProperties, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 type CarouselButtonProps = {
   src: string
@@ -17,42 +17,24 @@ const initialHoldDelay = 550
 const holdStepDuration = 2600
 
 /*
- * All of the button's geometry lives here and is handed to the stylesheet as custom properties.
- * It used to be split three ways — 125px in the SCSS, 60% in the clip, `width: 100%` on the
- * shaft — and the three had drifted apart: the shaft was 101px inside a 50px window so it ran off
- * both edges, and the left button anchored its head to the far side of the hidden strip, which
- * meant it had no visible arrowhead at all.
+ * Rest = the 50px circle, hover = 250 % of it (Matěj, 2026-08-13). The width
+ * really animates — the previous clip-path trick kept the box at full size and
+ * cut a window out of it, which sliced the pink border and the image with it:
+ * that was the "broken ring" look. Growing the box instead means the border
+ * always wraps the whole pill and the cover image just re-crops, so nothing
+ * shrinks and nothing is clipped mid-animation.
+ *
+ * The row holding both buttons is right-anchored with a reserved width
+ * (Carousel/style.scss), so a growing button extends leftward — the left one
+ * opens into free space, the right one pushes its neighbour aside.
  */
-const BUTTON_SIZE = 50 // the circle you actually see at rest
-const BUTTON_REACH = 75 // the strip the pill opens into on hover
-const ARROW_INSET = 13 // arrow tip, measured in from the right edge of that circle
-const ARROW_REST = 20 // shaft length at rest, centred in the circle
-const ARROW_HOVER = 62 // shaft length once the pill is open
+const BUTTON_SIZE = 50
+const BUTTON_GROWN = BUTTON_SIZE * 2.5
+const LINE_REST = 20
+const LINE_HOVER = 84
 
 const ease = [0.76, 0, 0.24, 1] as Easing
-
-/*
- * The pill grows leftward from its right edge. Expressed as a clip rather than a width: width is
- * a layout property, so animating it forced layout + paint every frame and the motion visibly
- * stuttered. A clip-path inset runs on the compositor, and unlike scaleX it leaves the image and
- * the arrow undistorted.
- */
-const expandAnim = {
-  rest: {
-    clipPath: `inset(0 0 0 ${BUTTON_REACH}px round ${BUTTON_SIZE / 2}px)`,
-    transition: {
-      duration: 0.3,
-      ease,
-    },
-  },
-  hover: {
-    clipPath: `inset(0 0 0 0px round ${BUTTON_SIZE / 2}px)`,
-    transition: {
-      duration: 0.35,
-      ease,
-    },
-  },
-}
+const grow = { duration: 0.4, ease }
 
 export default function CarouselButton({
   src,
@@ -94,115 +76,53 @@ export default function CarouselButton({
 
   useEffect(() => stopHold, [])
 
-  const arrowAnim = {
-    rest: {
-      x: 0,
-      opacity: 0.85,
-    },
-    hover: {
-      x: left ? -3 : 3,
-      opacity: 1,
-      transition: {
-        duration: 0.35,
-        ease,
-      },
-    },
-  }
-
-  /* scaleX rather than width, for the same reason as the clip above. The shaft is a plain bar, so
-     scaling it is exactly equivalent visually and costs nothing per frame. It grows leftward, out
-     of the circle and into the strip the pill has just revealed. */
-  const lineAnim = {
-    rest: {
-      scaleX: 1,
-    },
-    hover: {
-      scaleX: ARROW_HOVER / ARROW_REST,
-      transition: {
-        duration: 0.35,
-        ease,
-      },
-    },
-  }
-
-  /* The head sits on the shaft's leading end. Pointing right that end is pinned; pointing left it
-     is the end the shaft grows from, so the head travels the extra length with it. */
-  const tipAnim = {
-    rest: {
-      x: 0,
-    },
-    hover: {
-      x: left ? -(ARROW_HOVER - ARROW_REST) : 0,
-      transition: {
-        duration: 0.35,
-        ease,
-      },
-    },
-  }
-
   return (
-    <motion.div
-        className="Carousel__button__wrapper"
-        variants={expandAnim}
-        initial="rest"
-        animate={isHovered ? "hover" : "rest"}
-        style={wrapperStyle}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+    <motion.button
+      className={`Carousel__button ${left ? "Carousel__button--left" : ""}`}
+      type="button"
+      aria-label={alt}
+      initial={false}
+      animate={{ width: isHovered ? BUTTON_GROWN : BUTTON_SIZE }}
+      transition={grow}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={(event) => {
+        if (event.detail === 0) {
+          onClick?.(1)
+        }
+      }}
+      onPointerDown={(event) => {
+        if (event.button === 0) {
+          startHold()
+        }
+      }}
+      onPointerUp={stopHold}
+      onPointerCancel={stopHold}
+      onPointerLeave={stopHold}
     >
-        <motion.button
-            className="Carousel__button"
-            type="button"
-            aria-label={alt}
-            onClick={(event) => {
-              if (event.detail === 0) {
-                onClick?.(1)
-              }
-            }}
-            onPointerDown={(event) => {
-              if (event.button === 0) {
-                startHold()
-              }
-            }}
-            onPointerUp={stopHold}
-            onPointerCancel={stopHold}
-            onPointerLeave={stopHold}
-        >
-            <div className="image__bg">
-                <div className="image__overlay"/>
-                <Image src={src} alt="" fill sizes="125px" quality={60} />
-            </div>
-            <motion.span className="arrowCarousel" variants={arrowAnim} initial="rest" animate={isHovered ? "hover" : "rest"}>
-                <span className={left ? "arrow__icon arrow__icon--left" : "arrow__icon"}>
-                <motion.span
-                    className="arrow__line"
-                    variants={lineAnim}
-                    initial="rest"
-                    animate={isHovered ? "hover" : "rest"}
-                />
-                <motion.span
-                    className="arrow__tip"
-                    variants={tipAnim}
-                    initial="rest"
-                    animate={isHovered ? "hover" : "rest"}
-                >
-                    <span className="arrow__head arrow__head--top" />
-                    <span className="arrow__head arrow__head--bottom" />
-                </motion.span>
-                </span>
-            </motion.span>
-        </motion.button>
-    </motion.div>
+      <div className="image__bg">
+        <div className="image__overlay" />
+        <Image src={src} alt="" fill sizes="125px" quality={60} />
+      </div>
+      {/*
+       * The arrow is a flex row anchored to the pill's still end — [chevron,
+       * line] for the left button, [line, chevron] for the right. Only the
+       * line's width animates; being in normal flow it shoulders the chevron
+       * outward as it grows, which is the whole "the line pushes the head"
+       * behaviour with no coordinate math to drift.
+       */}
+      <span className="arrow__icon" aria-hidden>
+        <motion.span
+          className="arrow__line"
+          initial={false}
+          animate={{ width: isHovered ? LINE_HOVER : LINE_REST }}
+          transition={grow}
+        />
+        <span className="arrow__tip">
+          <span className="arrow__head arrow__head--top" />
+          <span className="arrow__head arrow__head--bottom" />
+        </span>
+      </span>
+    </motion.button>
   )
 }
-
-
-/* Hoisted from JSX: these motion objects are static, so allocating them per
-   render only gave framer-motion new references to re-diff. Values are unchanged. */
-const wrapperStyle = {
-  transformOrigin: "right center",
-  "--carousel-btn-size": `${BUTTON_SIZE}px`,
-  "--carousel-btn-reach": `${BUTTON_REACH}px`,
-  "--arrow-inset": `${ARROW_INSET}px`,
-  "--arrow-rest": `${ARROW_REST}px`,
-} as CSSProperties

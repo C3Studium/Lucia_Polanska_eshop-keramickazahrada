@@ -1,142 +1,124 @@
 @use "../../../../../../styles/system/_shortcuts.scss" as *;
 
-
-.Carousel__button__wrapper{
+/*
+ * The pill really changes width (framer animates it inline; geometry lives in
+ * Button/index.tsx). The border sits on the pill itself and the image fills it
+ * with `cover`, so growth extends the ring and re-crops the photo — nothing
+ * shrinks, nothing gets sliced the way the old clip-path window sliced the
+ * border ring.
+ */
+.Carousel__button {
     position: relative;
-    display: flex;
-    align-items: center;
-    /*
-     * Always the expanded width; the collapsed state is a clip, not a narrower box.
-     * Animating `width` made the browser re-run layout and paint on every frame, which is what
-     * made these read as though they were running at a fraction of the frame rate. clip-path is
-     * handled on the compositor and does not distort the image the way scaleX would.
-     *
-     * The circle and the strip it opens into are declared in Button/index.tsx and arrive here as
-     * custom properties, so the box, the clip and the arrow cannot drift apart again.
-     */
-    width: calc(var(--carousel-btn-size) + var(--carousel-btn-reach));
-    height: var(--carousel-btn-size);
-    justify-content: flex-end;
+    width: 50px; // rest; framer drives the real value
+    height: 50px;
+    padding: 0;
+    display: block;
+    flex-shrink: 0;
+    border: 2px solid var(--iconsPink);
+    border-radius: 25px;
+    overflow: hidden;
+    background: transparent;
+    cursor: pointer;
 
-    .Carousel__button{
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: var(--carousel-btn-size);
-        border-radius: calc(var(--carousel-btn-size) / 2);
-        border: 2px solid var(--iconsPink);
-        cursor: pointer;
-        overflow: hidden;
-        background: transparent;
-        transform-origin: right center;
+    &:hover {
+        z-index: 3;
+    }
 
-        &:hover{
-            z-index: 3;
+    .image__bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+
+        img {
+            object-fit: cover;
         }
 
-        .image__bg{
+        .image__overlay {
             position: absolute;
             inset: 0;
-            width: 100%;
-            height: 100%;
-            img{
-                object-fit: cover;
-                width: 100%;
-                height: 100%;
-            }
+            z-index: 1;
+            background-color: var(--bgBlack);
+            opacity: 0.6;
+        }
+    }
 
-            .image__overlay{
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                background-color: var(--bgBlack);
-                opacity: 0.6;
-                z-index: 1;
-            }
+    /*
+     * Anchored to the pill's still end — the right button's left edge moves as
+     * it grows, so its arrow hangs off `left`; the left button mirrors it. The
+     * chevron and the line sit in one flex row: the line's width animates and
+     * simply pushes the chevron outward, no absolute coordinates to drift.
+     */
+    .arrow__icon {
+        position: absolute;
+        top: 50%;
+        left: 11px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        transform: translateY(-50%);
+    }
+
+    .arrow__line {
+        width: 20px; // rest; framer drives the real value
+        height: 1.5px;
+        // Runs under the chevron so the joint never shows a seam.
+        margin-right: -2px;
+        background-color: var(--whiteText);
+    }
+
+    .arrow__tip {
+        position: relative;
+        width: 7px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .arrow__head {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        width: 9px;
+        height: 1.5px;
+        margin-top: -0.75px;
+        background-color: var(--whiteText);
+        transform-origin: right center;
+
+        &--top {
+            transform: rotate(45deg);
         }
 
-        /* Pinned over the circle that is actually visible at rest — 4px narrower than the circle
-           because absolute offsets here start inside the 2px border. Anchoring the arrow to the
-           full 125px box is what left the previous-button's head outside the clip entirely. */
-        .arrowCarousel{
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 2;
-            display: flex;
-            width: calc(var(--carousel-btn-size) - 4px);
-            align-items: center;
-            justify-content: center;
+        &--bottom {
+            transform: rotate(-45deg);
+        }
+    }
 
-            .arrow__icon{
-                position: relative;
-                display: block;
-                width: 100%;
-                height: 12px;
+    &--left {
+        .arrow__icon {
+            left: auto;
+            right: 11px;
+        }
 
-                .arrow__line{
-                    position: absolute;
-                    top: 50%;
-                    right: var(--arrow-inset);
-                    width: var(--arrow-rest);
-                    height: 1.5px;
-                    margin-top: -0.75px;
-                    transform-origin: right center;
-                    background-color: var(--whiteText);
-                }
+        // Chevron first, line second — the row mirrors, the animation doesn't.
+        .arrow__tip {
+            order: -1;
+        }
 
-                /* Zero-sized anchor at the shaft's leading end; the two strokes hinge on it, so
-                   the chevron's vertex lands exactly on the tip whatever the shaft's length. */
-                .arrow__tip{
-                    position: absolute;
-                    top: 50%;
-                    right: var(--arrow-inset);
-                    width: 0;
-                    height: 0;
-                }
+        .arrow__line {
+            margin-right: 0;
+            margin-left: -2px;
+        }
 
-                .arrow__head{
-                    position: absolute;
-                    top: -0.75px;
-                    right: 0;
-                    width: 8px;
-                    height: 1.5px;
-                    background-color: var(--whiteText);
-                    transform-origin: right center;
+        .arrow__head {
+            right: auto;
+            left: 0;
+            transform-origin: left center;
 
-                    &--top{
-                        transform: rotate(45deg);
-                    }
+            &--top {
+                transform: rotate(-45deg);
+            }
 
-                    &--bottom{
-                        transform: rotate(-45deg);
-                    }
-                }
-
-                &--left{
-
-                    .arrow__tip{
-                        right: calc(var(--arrow-inset) + var(--arrow-rest));
-                    }
-
-                    .arrow__head{
-                        right: auto;
-                        left: 0;
-                        transform-origin: left center;
-
-                        &--top{
-                            transform: rotate(-45deg);
-                        }
-
-                        &--bottom{
-                            transform: rotate(45deg);
-                        }
-                    }
-                }
+            &--bottom {
+                transform: rotate(45deg);
             }
         }
     }
