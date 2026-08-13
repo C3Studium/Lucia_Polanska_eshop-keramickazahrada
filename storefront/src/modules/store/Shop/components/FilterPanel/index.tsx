@@ -32,7 +32,12 @@ export default function FilterPanel({
   onClose,
   onReset,
 }: FilterPanelProps) {
-  const activeCount = [filters.categoryId, filters.priceRange, filters.isNew, filters.onSale].filter(Boolean).length
+  const activeCount = [
+    filters.categoryId || filters.collectionId,
+    filters.priceRange,
+    filters.isNew,
+    filters.onSale,
+  ].filter(Boolean).length
   const closeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -71,54 +76,83 @@ export default function FilterPanel({
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
         </div>
 
-        {navCollections.length > 0 && (
-          <FilterGroup index="00" title="Kolekce">
+        {/* Jedna hierarchie místo dvou seznamů (Matěj, 2026-08-13): zákazník
+            zná „kategorie" z menu Eshop produktů, kde jsou nahoře kolekce.
+            Klik na kolekci ji vybere a rozbalí subkategorie; rozbalení řídí
+            přímo vybraná kolekce, žádný druhý stav. Plochý seznam kategorií
+            zůstává jen jako záloha pro obchod bez kolekcí. */}
+        {navCollections.length > 0 ? (
+          <FilterGroup index="00" title="Kategorie">
             <div className={styles.categoryList}>
-              {navCollections.map((collection) => (
-                <div key={collection.id}>
-                  <FilterButton
-                    active={filters.collectionId === collection.id && !filters.categoryId}
-                    label={collection.title}
-                    onClick={() =>
-                      onChange({ collectionId: collection.id, categoryId: "" })
-                    }
-                  />
-                  {collection.categories.map((category) => (
-                    <FilterButton
-                      key={category.id}
-                      active={
-                        filters.collectionId === collection.id &&
-                        filters.categoryId === category.id
-                      }
-                      label={`— ${category.name}`}
+              <FilterButton
+                active={!filters.categoryId && !filters.collectionId}
+                label="Všechno"
+                onClick={() => onChange({ collectionId: "", categoryId: "" })}
+              />
+              {navCollections.map((collection) => {
+                const isExpanded = filters.collectionId === collection.id
+                const isActive = isExpanded && !filters.categoryId
+                return (
+                  <div key={collection.id}>
+                    <button
+                      type="button"
+                      className={`${styles.collectionRow} ${isActive ? styles.activeCategory : ""}`}
+                      aria-pressed={isActive}
+                      aria-expanded={isExpanded}
                       onClick={() =>
-                        onChange({
-                          collectionId: collection.id,
-                          categoryId: category.id,
-                        })
+                        onChange(
+                          isActive
+                            ? { collectionId: "", categoryId: "" }
+                            : { collectionId: collection.id, categoryId: "" }
+                        )
                       }
-                    />
-                  ))}
-                </div>
+                    >
+                      <span>{collection.title}</span>
+                      <em aria-hidden>{isExpanded ? "–" : "+"}</em>
+                    </button>
+                    {isExpanded && collection.categories.length > 0 && (
+                      <div className={styles.subList}>
+                        {collection.categories.map((category) => (
+                          <FilterButton
+                            key={category.id}
+                            active={filters.categoryId === category.id}
+                            label={category.name}
+                            onClick={() =>
+                              onChange(
+                                filters.categoryId === category.id
+                                  ? { categoryId: "" }
+                                  : {
+                                      collectionId: collection.id,
+                                      categoryId: category.id,
+                                    }
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </FilterGroup>
+        ) : (
+          <FilterGroup index="00" title="Kategorie">
+            <div className={styles.categoryList}>
+              <FilterButton active={!filters.categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />
+              {categories.map((category) => (
+                <FilterButton
+                  key={category.id}
+                  active={filters.categoryId === category.id}
+                  label={category.name}
+                  onClick={() => onChange({ categoryId: filters.categoryId === category.id ? "" : category.id })}
+                />
               ))}
             </div>
           </FilterGroup>
         )}
-        <FilterGroup index="01" title="Kategorie">
-          <div className={styles.categoryList}>
-            <FilterButton active={!filters.categoryId} label="Všechno" onClick={() => onChange({ categoryId: "" })} />
-            {categories.map((category) => (
-              <FilterButton
-                key={category.id}
-                active={filters.categoryId === category.id}
-                label={category.name}
-                onClick={() => onChange({ categoryId: filters.categoryId === category.id ? "" : category.id })}
-              />
-            ))}
-          </div>
-        </FilterGroup>
 
-        <FilterGroup index="02" title="Cena">
+        <FilterGroup index="01" title="Cena">
           <div className={styles.priceGrid}>
             {priceRanges.map((range) => (
               <button
@@ -134,7 +168,7 @@ export default function FilterPanel({
           </div>
         </FilterGroup>
 
-        <FilterGroup index="03" title="Výběr">
+        <FilterGroup index="02" title="Výběr">
           <Toggle label="Novinky" active={filters.isNew} onClick={() => onChange({ isNew: !filters.isNew })} />
           <Toggle label="Ve slevě" active={filters.onSale} onClick={() => onChange({ onSale: !filters.onSale })} />
         </FilterGroup>

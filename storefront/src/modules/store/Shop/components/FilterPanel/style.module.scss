@@ -45,11 +45,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 0;
+    // 8px se s rostoucím seznamem sčítalo do „strašně daleko od sebe" —
+    // filtr má být přehled, ne rozcestník přes celou obrazovku.
+    padding: 4px 0;
     border: 0;
     background: transparent;
     color: #c9c9c3;
-    font-size: 16px;
+    font-size: 15px;
     text-align: left;
     cursor: pointer;
     transition: color .25s ease;
@@ -61,6 +63,31 @@
   .activeCategory {
     color: #ffe8d6;
     i { width: 28px; }
+  }
+
+  // Kolekce = rozbalovací řádek; +/− místo podtržítka říká, že se rozbalí.
+  .collectionRow {
+    width: 100%;
+
+    em {
+      color: #a8a8a2;
+      font-size: 15px;
+      font-style: normal;
+      line-height: 1;
+    }
+
+    &.activeCategory em { color: #ffe8d6; }
+  }
+
+  // Subkategorie rozbalené kolekce — odsazené, o chlup menší, s linkou.
+  .subList {
+    display: flex;
+    flex-direction: column;
+    margin: 1px 0 4px;
+    padding-left: 13px;
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+
+    button { padding: 3px 0; font-size: 14px; }
   }
 }
 
