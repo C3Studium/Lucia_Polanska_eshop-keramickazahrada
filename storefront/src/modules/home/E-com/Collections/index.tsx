@@ -79,14 +79,14 @@ const springConfig = {
 const CARDS_SETTLED = 0.62
 const RAIL_END = 0.72
 /*
- * 0.93 rather than 0.86 (Matěj, 2026-08-13): the curtain used to start rising
- * with 14 % of the pin still to go and the content faded from 0.9, so the dark
- * hand-off began early and the viewer then rode a whole viewport of nothing.
- * Both now hold almost to the release point — the curtain snaps up late, and
- * Courses (whose entry starts the moment this section un-pins) is already lit
- * underneath it, so the two read as one tight cut instead of a gap.
+ * The exit holds almost to the release point (0.86 → 0.93 → 0.90 as tuned
+ * with Matěj): curtain rises 0.90–0.97, cards fade 0.93–0.985 — both settle
+ * a hair BEFORE the pin releases, so the seam never pops mid-move. The
+ * scroll-off itself is no longer dead: the curtain keeps scaling (see
+ * leaveProgress) and Courses' stage leads up over it.
  */
-const EXIT_START = 0.93
+const EXIT_START = 0.9
+const EXIT_END = 0.97
 
 const deterministicRandom = (seed: number) => {
   const x = Math.sin(seed * 999.91) * 10000
@@ -176,6 +176,14 @@ export default function Collections() {
     offset: ["start 0.6", "end end"],
   })
   const scrollYProgress = localScrollYProgress
+  /* The scroll-off phase: pin release → section gone. The curtain used to be
+     a dead flat surface for that whole viewport of scroll; a slow scale keeps
+     it breathing while Courses slides up over it (Matěj, 2026-08-14). */
+  const { scrollYProgress: leaveProgress } = useScroll({
+    target: ref,
+    offset: ["end end", "end start"],
+  })
+  const curtainScale = useTransform(leaveProgress, [0, 1], [1, 1.06])
 
   /*
    * The rail is a fixed four-column grid, ~2030px wide whatever the screen. The old keyframes
@@ -231,7 +239,7 @@ export default function Collections() {
   const headerYRaw = useTransform(scrollYProgress, [0, 1], ["0%", "3%"])
   const sceneOpacityRaw = useTransform(
     scrollYProgress,
-    [0, 0.08, 0.96, 1],
+    [0, 0.08, 0.93, 0.985],
     [0, 1, 1, 0]
   )
   const sceneClipRaw = useTransform(
@@ -241,7 +249,7 @@ export default function Collections() {
   )
   const exitCurtain = useTransform(
     scrollYProgress,
-    [EXIT_START, 1],
+    [EXIT_START, EXIT_END],
     ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   )
 
@@ -293,7 +301,7 @@ export default function Collections() {
       <motion.div className="sticky" style={{ clipPath: sceneClipRaw }}>
         <motion.div
           className="Collections__exitCurtain"
-          style={{ clipPath: exitCurtain }}
+          style={{ clipPath: exitCurtain, scale: curtainScale }}
           aria-hidden="true"
         />
         <motion.div

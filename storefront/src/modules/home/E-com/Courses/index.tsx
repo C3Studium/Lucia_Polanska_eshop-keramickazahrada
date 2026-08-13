@@ -66,15 +66,23 @@ export default function Courses() {
     restDelta: 0.0005,
   })
   /*
-   * The hand-off cascade (Matěj, 2026-08-13): the collection fades, the grey
-   * is right behind it, the green photo lands a beat later and the shader a
-   * beat after that. The beats are scroll fractions of the entry, not clock
-   * time, so scrubbing back plays the cascade in reverse:
-   *   grey cover opens 0.05–0.30 · photo 0.08–0.28 · shader from 0.18.
+   * The hand-off cascade (Matěj, 2026-08-14). Two mechanisms make it tight:
+   *
+   * 1. The stage LEADS the scroll — during entry it rides up to 26 % of its
+   *    height above its natural spot (tapering to 0 by 0.6, so the pin takes
+   *    over seamlessly) and the section sits above Collections in z-order.
+   *    The photo therefore climbs OVER the leaving grey curtain instead of
+   *    waiting a whole viewport below it — the dark dead time is roughly cut
+   *    in half.
+   * 2. The beats right behind each other, as scroll fractions of the entry so
+   *    scrubbing back replays them in reverse: grey cover melts 0.02–0.18 ·
+   *    photo 0.03–0.18 with its own settle-scale · shader from 0.10 · content
+   *    0.20–0.50.
    */
+  const stageLead = useTransform(entry, [0, 0.6], ["-26%", "0%"])
   const entryCoverClip = useTransform(
     entry,
-    [0.05, 0.3],
+    [0.02, 0.18],
     ["inset(0% 0% 0% 0%)", "inset(100% 0% 0% 0%)"]
   )
   const shaderProgress = useTransform(
@@ -82,18 +90,18 @@ export default function Courses() {
     ([entryValue, pinnedValue]: number[]) =>
       Math.min(
         1,
-        Math.max(0, (entryValue - 0.18) * 1.4) * 0.55 + pinnedValue * 0.45
+        Math.max(0, (entryValue - 0.1) * 1.5) * 0.55 + pinnedValue * 0.45
       )
   )
-  const imageOpacity = useTransform(entry, [0.08, 0.28], [0.35, 1])
-  /* Entry settles the over-scale early (by 0.6, in step with the content);
+  const imageOpacity = useTransform(entry, [0.03, 0.18], [0.25, 1])
+  /* Entry settles the over-scale early (by 0.5, right behind the cover melt);
      the pin then keeps drifting, which is what gives the long middle of this
      stage something to do besides the shader. */
   const imageScale = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
       1.055 -
-      0.055 * clamp01(entryValue, 0.02, 0.6) +
+      0.055 * clamp01(entryValue, 0.03, 0.5) +
       0.045 * clamp01(pinnedValue, 0, DRIFT_END)
   )
   const imageY = useTransform(
@@ -101,26 +109,26 @@ export default function Courses() {
     ([entryValue, pinnedValue]: number[]) =>
       `${
         2 -
-        2 * clamp01(entryValue, 0.02, 0.6) -
+        2 * clamp01(entryValue, 0.03, 0.5) -
         2.4 * clamp01(pinnedValue, 0, DRIFT_END)
       }%`
   )
-  /* In by 0.3–0.62 of the entry — visible while the previous curtain is still
-     peeling away, which is what makes the transition tight. Fades out under
-     this section's own rising curtain later: left at full opacity it showed
-     through the CTA's masked window — the tail of "A to je na tom to
+  /* In by 0.20–0.50 of the entry — the last beat of the cascade, riding the
+     led stage so it shows while the grey above is still leaving. Fades out
+     under this section's own rising curtain later: left at full opacity it
+     showed through the CTA's masked window — the tail of "A to je na tom to
      nejlepší." sat inside the circle on top of the photo. */
   const contentOpacity = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
-      clamp01(entryValue, 0.3, 0.62) *
+      clamp01(entryValue, 0.2, 0.5) *
       (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
   )
   const contentY = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
       22 -
-      22 * clamp01(entryValue, 0.3, 0.62) -
+      22 * clamp01(entryValue, 0.2, 0.5) -
       26 * clamp01(pinnedValue, 0.08, DRIFT_END)
   )
   /* The section's own `pointer-events: auto` on links survives an opacity of 0, so the invisible
@@ -161,7 +169,7 @@ export default function Courses() {
       data-scroll-section
       data-scroll-label="Kurzy"
     >
-      <div className="courses__wrapper">
+      <motion.div className="courses__wrapper" style={{ y: stageLead }}>
         <motion.div
           className="image__bg"
           style={{
@@ -274,7 +282,7 @@ export default function Courses() {
             <span>Pokračujte do e-shopu</span>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   )
 }

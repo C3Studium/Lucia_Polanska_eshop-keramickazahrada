@@ -1,6 +1,10 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .courses__section {
   position: relative;
+  /* Nad odjíždějící scénou Kolekcí — jeviště si při nájezdu předbíhá scroll
+     (stageLead v index.tsx) a šplhá PŘES její šedý závěs; bez explicitního
+     z-indexu by o pořadí rozhodovalo jen pořadí v DOM. */
+  z-index: 2;
   width: 100%;
   /* 2 viewports of pin, down from 2.5. At 350vh the middle of the stage was a viewport and a half
      of held frame; the beats in index.tsx are spread across what is left. */
