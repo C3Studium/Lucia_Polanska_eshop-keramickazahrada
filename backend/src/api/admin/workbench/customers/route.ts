@@ -59,7 +59,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "email",
           "first_name",
           "last_name",
+          "phone",
           "has_account",
+          "metadata",
           "created_at",
         ],
         pagination: { take: 1000, skip: 0 },
@@ -103,10 +105,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   type Person = {
     key: string
     email: string | null
+    emails: string[]
     name: string | null
+    phone: string | null
     record_ids: string[]
     records: any[]
     has_account: boolean
+    email_verified: boolean
     registered_at: string
     orders_count: number
     lifetime_value: number
@@ -126,10 +131,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       person = {
         key,
         email,
+        emails: [],
         name: null,
+        phone: null,
         record_ids: [],
         records: [],
         has_account: false,
+        email_verified: false,
         registered_at: record.created_at,
         orders_count: 0,
         lifetime_value: 0,
@@ -143,6 +151,16 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     person.record_ids.push(record.id)
     if (expert) person.records.push(record)
     person.has_account = person.has_account || Boolean(record.has_account)
+    /* Ověření žije v metadata REGISTROVANÉHO záznamu (viz store
+       verify-email) — guest záznamy ho nemají a mít nemohou. */
+    if (
+      record.has_account &&
+      (record.metadata as any)?.email_verified === true
+    ) {
+      person.email_verified = true
+    }
+    if (email && !person.emails.includes(email)) person.emails.push(email)
+    if (record.phone && !person.phone) person.phone = record.phone
     if (record.created_at < person.registered_at) {
       person.registered_at = record.created_at
     }
@@ -217,18 +235,79 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   )
 
+  /*
+   * Druhý slučovací průchod, jen pro hosty (Matěj, 2026-08-14): kdo nakoupil
+   * pod dvěma e-maily, ale se stejným jménem a telefonem, je jeden člověk.
+   * Registrovaných se to netýká — účet je identita sám o sobě a slučování
+   * hosta k účtu je budoucí ruční „sloučit" (feature-ideas 5.3), ne heuristika.
+   * Telefon se porovnává po číslicích bez předvolby, ať formát nerozhoduje.
+   */
+  const normalizePhone = (phone: unknown): string | null => {
+    if (typeof phone !== "string") return null
+    const digits = phone.replace(/\D/g, "")
+    if (!digits) return null
+    return digits.length > 9 ? digits.slice(-9) : digits
+  }
+
+  const mergedPersons: Person[] = []
+  const guestByIdentity = new Map<string, Person>()
+  for (const person of persons.values()) {
+    const phone = normalizePhone(person.phone)
+    const name = (person.name ?? "").trim().toLowerCase()
+    if (person.has_account || !phone || !name) {
+      mergedPersons.push(person)
+      continue
+    }
+    const identity = `${name}|${phone}`
+    const existing = guestByIdentity.get(identity)
+    if (!existing) {
+      guestByIdentity.set(identity, person)
+      mergedPersons.push(person)
+      continue
+    }
+    existing.record_ids.push(...person.record_ids)
+    if (expert) existing.records.push(...person.records)
+    for (const email of person.emails) {
+      if (!existing.emails.includes(email)) existing.emails.push(email)
+    }
+    existing.orders_count += person.orders_count
+    existing.lifetime_value = round(
+      existing.lifetime_value + person.lifetime_value
+    )
+    existing.outstanding = round(existing.outstanding + person.outstanding)
+    existing.wishlist_size += person.wishlist_size
+    existing.reviews_written += person.reviews_written
+    if (
+      person.last_order_at &&
+      (!existing.last_order_at || person.last_order_at > existing.last_order_at)
+    ) {
+      existing.last_order_at = person.last_order_at
+    }
+    if (person.registered_at < existing.registered_at) {
+      existing.registered_at = person.registered_at
+    }
+  }
+
   const owingOnly = req.query.owing === "true"
   const newsletterOnly = req.query.newsletter === "true"
   const repeatOnly = req.query.repeat === "true"
+  /** `registrovani` = mají účet; `neregistrovani` = jen hosté. */
+  const groupFilter =
+    typeof req.query.skupina === "string" ? req.query.skupina : null
 
-  const rows = [...persons.values()]
+  const rows = mergedPersons
     .map((person) => ({
       // The primary id is the newest record — the one native detail opens.
       id: person.record_ids[person.record_ids.length - 1],
       email: person.email,
+      emails: person.emails,
       name: person.name,
+      phone: person.phone,
       registered_at: person.registered_at,
       has_account: person.has_account,
+      /* true = ověřený, false = účet čeká na ověření, null = bez účtu
+         (host nemá co ověřovat). */
+      email_verified: person.has_account ? person.email_verified : null,
       records_count: person.record_ids.length,
       record_ids: person.record_ids,
       ...(expert ? { records: person.records } : {}),
@@ -238,16 +317,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       outstanding: person.outstanding,
       wishlist_size: person.wishlist_size,
       reviews_written: person.reviews_written,
-      newsletter: person.email ? newsletterEmails.has(person.email) : false,
+      newsletter: person.emails.some((email) => newsletterEmails.has(email)),
     }))
     .filter((row) => {
+      if (groupFilter === "registrovani" && !row.has_account) return false
+      if (groupFilter === "neregistrovani" && row.has_account) return false
       if (owingOnly && row.outstanding <= 0) return false
       if (newsletterOnly && !row.newsletter) return false
       if (repeatOnly && row.orders_count < 2) return false
       if (
         search &&
-        !String(row.email ?? "").toLowerCase().includes(search) &&
-        !String(row.name ?? "").toLowerCase().includes(search)
+        !row.emails.some((email) => email.includes(search)) &&
+        !String(row.name ?? "").toLowerCase().includes(search) &&
+        !String(row.phone ?? "").replace(/\s/g, "").includes(search.replace(/\s/g, ""))
       ) {
         return false
       }
@@ -258,6 +340,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   res.status(200).json({
     customers: rows.slice(offset, offset + limit),
     count: rows.length,
+    /* Počty pro horní přepínač — přes všechny osoby, bez ohledu na filtry. */
+    groups: {
+      registrovani: mergedPersons.filter((person) => person.has_account).length,
+      neregistrovani: mergedPersons.filter((person) => !person.has_account)
+        .length,
+    },
     limit,
     offset,
   })

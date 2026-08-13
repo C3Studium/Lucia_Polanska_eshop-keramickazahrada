@@ -46,9 +46,13 @@ import { ThankYouButton } from "../../components/thank-you-button";
 type WorkbenchCustomer = {
   id: string;
   has_account?: boolean;
+  /** true = ověřený e-mail, false = účet čeká na ověření, null = bez účtu. */
+  email_verified?: boolean | null;
   records_count?: number;
   record_ids?: string[];
   email: string;
+  emails?: string[];
+  phone?: string | null;
   name: string | null;
   registered_at: string;
   orders_count: number;
@@ -63,6 +67,7 @@ type WorkbenchCustomer = {
 type WorkbenchCustomersResponse = {
   customers: WorkbenchCustomer[];
   count: number;
+  groups?: { registrovani: number; neregistrovani: number };
 };
 
 /**
@@ -345,20 +350,34 @@ const CustomerStats = () => {
 };
 
 const ZakazniciInner = () => {
+  /* Horní přepínač: Uživatelé (mají účet — pod nimi žijí filtry a statistiky)
+     vs. Neregistrovaní (jen hosté, na backendu sloučení podle jména+telefonu,
+     i když nakoupili pod různými e-maily). */
+  const [group, setGroup] = useState<"uzivatele" | "neregistrovani">(
+    "uzivatele"
+  );
   const [active, setActive] = useState("vse");
   const [search, setSearch] = useState("");
   const expert = useExpertMode();
 
   const params = new URLSearchParams();
-  if (active === "dluzi") params.set("owing", "true");
-  if (active === "vraci") params.set("repeat", "true");
-  if (active === "newsletter") params.set("newsletter", "true");
+  params.set(
+    "skupina",
+    group === "uzivatele" ? "registrovani" : "neregistrovani"
+  );
+  if (group === "uzivatele") {
+    if (active === "dluzi") params.set("owing", "true");
+    if (active === "vraci") params.set("repeat", "true");
+    if (active === "newsletter") params.set("newsletter", "true");
+  }
   if (search.trim()) params.set("q", search.trim());
   if (expert) params.set("expert", "1");
 
+  const showingStats = group === "uzivatele" && active === "statistiky";
+
   const { data, isLoading, isError } = useQuery<WorkbenchCustomersResponse>({
-    queryKey: ["workbench-customers", active, search, expert],
-    enabled: active !== "statistiky",
+    queryKey: ["workbench-customers", group, active, search, expert],
+    enabled: !showingStats,
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/customers?${params.toString()}`),
     refetchOnWindowFocus: true,
@@ -390,32 +409,64 @@ const ZakazniciInner = () => {
         </div>
       </header>
 
-      <SubTabs tabs={filterTabs} active={active} onSelect={setActive} />
+      <div className="flex flex-wrap items-center gap-2 px-6 py-3">
+        {([
+          ["uzivatele", "Uživatelé", data?.groups?.registrovani],
+          ["neregistrovani", "Neregistrovaní", data?.groups?.neregistrovani],
+        ] as const).map(([key, label, count]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => {
+              setGroup(key);
+              setActive("vse");
+            }}
+            className={
+              group === key
+                ? "border-ui-border-interactive bg-ui-bg-base-pressed txt-small rounded-lg border px-3 py-1.5"
+                : "border-ui-border-base bg-ui-bg-base hover:bg-ui-bg-base-hover txt-small rounded-lg border px-3 py-1.5"
+            }
+          >
+            {label}
+            {typeof count === "number" ? ` (${count})` : ""}
+          </button>
+        ))}
+        {group === "neregistrovani" && (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            Hosté bez účtu — stejné jméno a telefon se počítá jako jeden
+            člověk, i s různými e-maily.
+          </Text>
+        )}
+      </div>
 
-      {active === "statistiky" && <CustomerStats />}
+      {group === "uzivatele" && (
+        <SubTabs tabs={filterTabs} active={active} onSelect={setActive} />
+      )}
 
-      {active !== "statistiky" && isLoading && (
+      {showingStats && <CustomerStats />}
+
+      {!showingStats && isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
         </div>
       )}
 
-      {active !== "statistiky" && isError && (
+      {!showingStats && isError && (
         <EmptyState
           title="Zákazníky se nepodařilo načíst"
           description="Zkuste stránku obnovit."
         />
       )}
 
-      {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
+      {!showingStats && !isLoading && !isError && rows.length === 0 && (
         <EmptyState
           title="Nikdo tu není"
           description="Žádný zákazník neodpovídá zvolenému filtru."
         />
       )}
 
-      {active !== "statistiky" && !isLoading && !isError && rows.length > 0 && (
+      {!showingStats && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
           {rows.map((customer) => (
             <article
@@ -423,11 +474,27 @@ const ZakazniciInner = () => {
               className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.3fr)_190px_190px_minmax(0,1fr)_auto] lg:items-center"
             >
               <div className="min-w-0">
-                <Text size="small" weight="plus" className="truncate">
-                  {customer.name || customer.email}
-                </Text>
+                <span className="flex items-center gap-2">
+                  <Text size="small" weight="plus" className="truncate">
+                    {customer.name || customer.email}
+                  </Text>
+                  {/* Stav účtu na první pohled: ověřený e-mail zeleně, čekající
+                      oranžově. U hostů není co ověřovat, tak nic. */}
+                  {customer.email_verified === true && (
+                    <Badge size="2xsmall" color="green">e-mail ověřen</Badge>
+                  )}
+                  {customer.email_verified === false && (
+                    <Badge size="2xsmall" color="orange">e-mail neověřen</Badge>
+                  )}
+                </span>
                 <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
-                  {customer.name ? customer.email : ""}
+                  {/* Bez jména stojí e-mail v titulku — neopakovat ho, ledaže
+                      jich sloučený host nasbíral víc. */}
+                  {customer.emails?.length &&
+                  (customer.name || customer.emails.length > 1)
+                    ? customer.emails.join(" · ")
+                    : ""}
+                  {customer.phone ? ` · ${customer.phone}` : ""}
                   {customer.newsletter ? " · odebírá newsletter" : ""}
                 </Text>
                 {expert && (
