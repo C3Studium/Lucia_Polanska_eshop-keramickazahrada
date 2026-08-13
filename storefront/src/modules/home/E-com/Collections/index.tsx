@@ -78,7 +78,15 @@ const springConfig = {
  */
 const CARDS_SETTLED = 0.62
 const RAIL_END = 0.72
-const EXIT_START = 0.86
+/*
+ * 0.93 rather than 0.86 (Matěj, 2026-08-13): the curtain used to start rising
+ * with 14 % of the pin still to go and the content faded from 0.9, so the dark
+ * hand-off began early and the viewer then rode a whole viewport of nothing.
+ * Both now hold almost to the release point — the curtain snaps up late, and
+ * Courses (whose entry starts the moment this section un-pins) is already lit
+ * underneath it, so the two read as one tight cut instead of a gap.
+ */
+const EXIT_START = 0.93
 
 const deterministicRandom = (seed: number) => {
   const x = Math.sin(seed * 999.91) * 10000
@@ -223,7 +231,7 @@ export default function Collections() {
   const headerYRaw = useTransform(scrollYProgress, [0, 1], ["0%", "3%"])
   const sceneOpacityRaw = useTransform(
     scrollYProgress,
-    [0, 0.08, 0.9, 1],
+    [0, 0.08, 0.96, 1],
     [0, 1, 1, 0]
   )
   const sceneClipRaw = useTransform(

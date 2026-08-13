@@ -70,16 +70,19 @@ export default function Courses() {
     ([entryValue, pinnedValue]: number[]) =>
       Math.min(1, entryValue * 0.55 + pinnedValue * 0.45)
   )
-  /* Arrives already half-lit. It used to fade up from 0.34 while the previous section's dark exit
-     curtain was still scrolling off above it, so the handover read as a viewport of nothing. */
-  const imageOpacity = useTransform(entry, [0, 0.45], [0.46, 1])
-  /* Entry settles the over-scale; the pin then keeps drifting, which is what gives the long middle
-     of this stage something to do besides the shader. */
+  /* Arrives nearly lit and is full by 30 % of the entry — the entry runs
+     exactly while Collections' dark curtain scrolls off above, so the photo
+     has to be ready under it for the hand-off to read as one tight cut
+     (Matěj, 2026-08-13), not a viewport of nothing. */
+  const imageOpacity = useTransform(entry, [0, 0.3], [0.72, 1])
+  /* Entry settles the over-scale early (by 0.6, in step with the content);
+     the pin then keeps drifting, which is what gives the long middle of this
+     stage something to do besides the shader. */
   const imageScale = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
       1.055 -
-      0.055 * clamp01(entryValue, 0.02, 0.92) +
+      0.055 * clamp01(entryValue, 0.02, 0.6) +
       0.045 * clamp01(pinnedValue, 0, DRIFT_END)
   )
   const imageY = useTransform(
@@ -87,23 +90,26 @@ export default function Courses() {
     ([entryValue, pinnedValue]: number[]) =>
       `${
         2 -
-        2 * clamp01(entryValue, 0.02, 0.92) -
+        2 * clamp01(entryValue, 0.02, 0.6) -
         2.4 * clamp01(pinnedValue, 0, DRIFT_END)
       }%`
   )
-  /* Fades out under the rising curtain. Left at full opacity it showed through the CTA's masked
-     window — the tail of "A to je na tom to nejlepší." sat inside the circle on top of the photo. */
+  /* In by 0.3–0.62 of the entry — visible while the previous curtain is still
+     peeling away, which is what makes the transition tight. Fades out under
+     this section's own rising curtain later: left at full opacity it showed
+     through the CTA's masked window — the tail of "A to je na tom to
+     nejlepší." sat inside the circle on top of the photo. */
   const contentOpacity = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
-      clamp01(entryValue, 0.74, 0.98) *
+      clamp01(entryValue, 0.3, 0.62) *
       (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
   )
   const contentY = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
       22 -
-      22 * clamp01(entryValue, 0.74, 0.98) -
+      22 * clamp01(entryValue, 0.3, 0.62) -
       26 * clamp01(pinnedValue, 0.08, DRIFT_END)
   )
   /* The section's own `pointer-events: auto` on links survives an opacity of 0, so the invisible
