@@ -65,22 +65,43 @@
     i { width: 28px; }
   }
 
-  // Kolekce = rozbalovací řádek; +/− místo podtržítka říká, že se rozbalí.
+  // Kolekce = rozbalovací řádek; ± místo podtržítka říká, že se rozbalí.
   .collectionRow {
     width: 100%;
 
-    em {
-      color: #a8a8a2;
-      font-size: 15px;
-      font-style: normal;
-      line-height: 1;
-    }
-
-    &.activeCategory em { color: #ffe8d6; }
+    &.activeCategory .plusIcon i { background: #ffe8d6; }
   }
 
-  // Subkategorie rozbalené kolekce — odsazené, o chlup menší, s linkou.
+  // Dva proužky tvořící +. Svislý se otočí o 90° na vodorovný, takže se
+  // + „stočí" do − — stejný easing jako vyjíždění seznamu pod ním.
+  .plusIcon {
+    position: relative;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+
+    i {
+      position: absolute;
+      inset: 0;
+      width: 11px;
+      height: 1px;
+      margin: auto;
+      background: #a8a8a2;
+      transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1), background-color 0.25s ease;
+    }
+
+    i:last-child { transform: rotate(90deg); }
+  }
+
+  .plusIconOpen i:last-child { transform: rotate(0deg); }
+
+  // Subkategorie rozbalené kolekce — výšku animuje framer-motion, proto
+  // overflow hidden tady a odsazení s linkou až na vnitřním obalu.
   .subList {
+    overflow: hidden;
+  }
+
+  .subListInner {
     display: flex;
     flex-direction: column;
     margin: 1px 0 4px;
@@ -91,26 +112,119 @@
   }
 }
 
-.priceGrid {
+/* Cena od–do: dráha se dvěma palci. Oba <input type="range"> leží přes sebe
+   s vypnutými pointer-events; klikat jde jen na palce, takže se nehádají
+   o dráhu. Vyplněný úsek kreslí .priceSliderFill podle procent zvenku. */
+.priceFilter {
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  flex-direction: column;
+  gap: 13px;
+}
 
-  button {
-    padding: 7px 10px;
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 999px;
+.priceSlider {
+  position: relative;
+  height: 18px;
+  margin: 4px 7px 0;
+
+  input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
     background: transparent;
-    color: #c9c9c3;
-    font-size: 13px;
-    cursor: pointer;
-    transition: border-color .25s ease, background-color .25s ease, color .25s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    pointer-events: none;
 
-    &:hover { border-color: rgba(255,232,214,.65); color: #fff; }
+    &::-webkit-slider-thumb {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #212222;
+      border-radius: 50%;
+      background: #ffe8d6;
+      cursor: grab;
+      appearance: none;
+      -webkit-appearance: none;
+      pointer-events: auto;
+      transition: transform 0.2s ease;
+
+      &:hover { transform: scale(1.15); }
+      &:active { cursor: grabbing; }
+    }
+
+    &::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #212222;
+      border-radius: 50%;
+      background: #ffe8d6;
+      cursor: grab;
+      pointer-events: auto;
+    }
+
+    &::-webkit-slider-runnable-track { background: transparent; }
+    &::-moz-range-track { background: transparent; }
+  }
+}
+
+.priceSliderTrack,
+.priceSliderFill {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.priceSliderTrack {
+  right: 0;
+  left: 0;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.priceSliderFill {
+  background: #ffe8d6;
+}
+
+.priceInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a8a8a2;
+  font-size: 13px;
+
+  label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
   }
 
-  .selectedPill { border-color: #ffe8d6; background: #ffe8d6; color: #212222; }
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9px;
+    background: transparent;
+    color: #f7f3ea;
+    font-size: 14px;
+    appearance: textfield;
+    -moz-appearance: textfield;
+    transition: border-color 0.25s ease;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
+    &:focus { border-color: rgba(255, 232, 214, 0.65); outline: 0; }
+    &::placeholder { color: #7d7d78; }
+  }
+
+  i { font-style: normal; }
 }
+
+.priceUnit { flex-shrink: 0; }
 
 .toggle {
   display: flex;

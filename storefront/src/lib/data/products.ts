@@ -115,11 +115,22 @@ export type StoreCatalogueFilters = {
   sort: "featured" | "newest" | "price-asc" | "price-desc"
 }
 
-const cataloguePriceRanges: Record<string, { min: number; max: number }> = {
-  "0-500": { min: 0, max: 500 },
-  "500-1000": { min: 500, max: 1000 },
-  "1000-2500": { min: 1000, max: 2500 },
-  "2500+": { min: 2500, max: Number.POSITIVE_INFINITY },
+/**
+ * Price range comes as a string so it can live in a URL: `"min-max"` for a
+ * bounded range, `"min+"` for no upper limit, `""` for no filter. Used to be a
+ * four-entry lookup of preset pills; the filter panel now sends arbitrary
+ * ranges from its slider/inputs, and the old preset strings still parse the
+ * same.
+ */
+const parseCataloguePriceRange = (
+  value: string
+): { min: number; max: number } | null => {
+  if (!value) return null
+  const open = value.match(/^(\d+)\+$/)
+  if (open) return { min: Number(open[1]), max: Number.POSITIVE_INFINITY }
+  const pair = value.match(/^(\d+)-(\d+)$/)
+  if (pair) return { min: Number(pair[1]), max: Number(pair[2]) }
+  return null
 }
 
 /**
@@ -216,7 +227,7 @@ export const listStoreCatalogue = async ({
     catalogueProducts.push(...products)
   }
 
-  const priceRange = cataloguePriceRanges[filters.priceRange]
+  const priceRange = parseCataloguePriceRange(filters.priceRange)
   const refinedProducts = catalogueProducts.filter((product) => {
     const { cheapestPrice } = getProductPrice({ product })
     const price = cheapestPrice?.calculated_price_number
