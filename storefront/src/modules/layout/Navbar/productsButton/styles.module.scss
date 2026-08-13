@@ -59,6 +59,10 @@
   .button:hover &,
   .button[aria-expanded="true"] & { color: var(--whiteText); }
 
+  // Aktivní route (jsme v e-shopu): podklad je nahoře i bez hoveru,
+  // tak text nesmí zůstat černý na tmavé fotce.
+  &.buttonLabelOn { color: var(--whiteText); }
+
   > span { display: inline-flex; }
 }
 

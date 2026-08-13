@@ -223,7 +223,12 @@ function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
         <Image src="/assets/links/home_img.png" alt="" fill sizes="110px" />
         <span />
       </motion.span>
-      <span className={styles.buttonLabel}>
+      {/* Colour rides the same `highlighted` flag as the backdrop and arrow.
+          The CSS :hover/[aria-expanded] rules alone missed the third case —
+          being ON the catalogue route — leaving black text on the dark thumb. */}
+      <span
+        className={`${styles.buttonLabel} ${highlighted ? styles.buttonLabelOn : ""}`}
+      >
         E-shop
         <motion.span animate={highlighted ? arrowTilted : arrowFlat} transition={menuFadeTransition}>
           {highlighted ? <ArrowRight size={12} color="white" /> : <Arrow size={12} />}
