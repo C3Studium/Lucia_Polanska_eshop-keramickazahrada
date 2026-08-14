@@ -211,3 +211,34 @@ export const BALIKOVNA_API_URL = process.env.BALIKOVNA_API_URL
 export const BALIKOVNA_API_TOKEN = process.env.BALIKOVNA_API_TOKEN
 export const BALIKOVNA_API_SECRET = process.env.BALIKOVNA_API_SECRET
 export const BALIKOVNA_API_CUSTOMER_ID = process.env.BALIKOVNA_API_CUSTOMER_ID
+
+/**
+ * (optional) iDoklad invoicing — FINISHINGTODOLIST §1.
+ *
+ * Client id + secret are generated in the iDoklad app itself: Nastavení →
+ * Aplikace → záložka API → „Vygenerovat" — and those two are sufficient: the
+ * legacy token endpoint accepts them alone (probed 2026-08-14) and the module
+ * uses it when no application id is set. The optional application id comes
+ * from the iDoklad Developer portal (https://developer.idoklad.cz) and
+ * switches token requests to the newer v2 endpoint the current docs describe.
+ *
+ * While client id/secret are absent the module is not registered and every
+ * invoicing entry point is a logged no-op — checkout never depends on it.
+ *
+ * IDOKLAD_VAT_PAYER stays unset (false): Lucia is not a VAT payer (neplátce
+ * DPH), documents go out without VAT. IDOKLAD_NUMERIC_SEQUENCE_ID optionally
+ * pins the číselná řada; unset means the agenda default, and the production
+ * sequence is chosen only at go-live.
+ */
+export const IDOKLAD_CLIENT_ID = process.env.IDOKLAD_CLIENT_ID
+export const IDOKLAD_CLIENT_SECRET = process.env.IDOKLAD_CLIENT_SECRET
+export const IDOKLAD_APPLICATION_ID = process.env.IDOKLAD_APPLICATION_ID
+export const IDOKLAD_VAT_PAYER = process.env.IDOKLAD_VAT_PAYER
+export const IDOKLAD_NUMERIC_SEQUENCE_ID = process.env.IDOKLAD_NUMERIC_SEQUENCE_ID
+/**
+ * iDoklad has no sandbox environment: testing means a *separate* trial/free
+ * iDoklad account whose own client id/secret go into the vars above. This
+ * flag is purely informational — set it while those test credentials are in
+ * place so the admin widget labels invoices as going to the test agenda.
+ */
+export const IDOKLAD_TEST_MODE = process.env.IDOKLAD_TEST_MODE

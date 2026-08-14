@@ -42,6 +42,7 @@ import { bundlePublishedEmail } from "./emails/bundle-published";
 import { RefundRequestEmail } from "./emails/refund-request";
 import { ReturnRejectedEmail } from "./emails/return-rejected";
 import { PriceDropEmail } from "./emails/price-drop";
+import { InvoiceIssuedEmail } from "./emails/invoice-issued";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -80,6 +81,9 @@ enum Templates {
   REFUND_REQUEST = "refund-request",
   RETURN_REJECTED = "return-rejected",
   PRICE_DROP = "price-drop",
+  // iDoklad (FINISHINGTODOLIST §1): sent with a link to our own copy of the
+  // invoice PDF once the invoice is issued.
+  INVOICE_ISSUED = "invoice-issued",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -137,6 +141,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.REFUND_REQUEST]: RefundRequestEmail,
   [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
   [Templates.PRICE_DROP]: PriceDropEmail,
+  [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
 }
 
 export enum EmailTemplates {
@@ -173,6 +178,7 @@ export enum EmailTemplates {
   REFUND_REQUEST = "refund-request",
   RETURN_REJECTED = "return-rejected",
   PRICE_DROP = "price-drop",
+  INVOICE_ISSUED = "invoice-issued",
 }
 
 /**
@@ -336,6 +342,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Žádost o vrácení nemůžeme přijmout"
       case Templates.PRICE_DROP:
         return "Objekt změnil cenu"
+      case Templates.INVOICE_ISSUED:
+        return "Faktura k vaší objednávce"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"

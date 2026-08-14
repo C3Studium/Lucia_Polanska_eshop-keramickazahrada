@@ -56,6 +56,12 @@ table follows that file's order.
 | `BALIKOVNA_API_KEY` | P0-3 (D8) | B2B credential | same |
 | `BALIKOVNA_API_SECRET` | P0-3 (D8) | B2B credential | same |
 | `BALIKOVNA_API_CUSTOMER_ID` | P0-3 (D8) | Contract / customer number on the packets | same |
+| `IDOKLAD_CLIENT_ID` | FINISHINGTODOLIST §1 | iDoklad API — client id (iDoklad app: Nastavení → Aplikace → API → Vygenerovat) | invoicing module **not registered**; every invoice trigger is a logged no-op |
+| `IDOKLAD_CLIENT_SECRET` | FINISHINGTODOLIST §1 | iDoklad API — client secret (same place) | same |
+| `IDOKLAD_APPLICATION_ID` | FINISHINGTODOLIST §1 | Application id from the iDoklad Developer portal (developer.idoklad.cz) — required by the current v3 client-credentials flow | token requests fall back to the legacy endpoint, which may stop working |
+| `IDOKLAD_VAT_PAYER` | FINISHINGTODOLIST §1 | `true` only if Lucia ever registers for VAT | treated as `false` — neplátce DPH, documents without VAT |
+| `IDOKLAD_NUMERIC_SEQUENCE_ID` | FINISHINGTODOLIST §1 | Pins the iDoklad číselná řada for issued invoices (ostrá řada at go-live) | agenda default sequence is used |
+| `IDOKLAD_TEST_MODE` | FINISHINGTODOLIST §5 | Informational: the credentials above belong to a trial/test agenda (iDoklad has no sandbox — testing = separate free account); the admin widget shows a „Test" badge | treated as production credentials, no badge |
 
 The daily summary (07:05) goes to **both** notification addresses; if both are
 empty the digest job logs a warning and sends nothing.

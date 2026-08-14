@@ -41,7 +41,13 @@ import {
   BALIKOVNA_API_URL,
   BALIKOVNA_API_TOKEN,
   BALIKOVNA_API_SECRET,
-  BALIKOVNA_API_CUSTOMER_ID
+  BALIKOVNA_API_CUSTOMER_ID,
+  IDOKLAD_CLIENT_ID,
+  IDOKLAD_CLIENT_SECRET,
+  IDOKLAD_APPLICATION_ID,
+  IDOKLAD_VAT_PAYER,
+  IDOKLAD_NUMERIC_SEQUENCE_ID,
+  IDOKLAD_TEST_MODE
 } from 'lib/constants';
 console.log('[Medusa Config] Constants imported successfully')
 console.log('[Medusa Config] DATABASE_URL present:', !!DATABASE_URL)
@@ -225,6 +231,20 @@ const medusaConfig = {
     {
       resolve: "./src/modules/made-to-order",
     },
+    // iDoklad invoicing (FINISHINGTODOLIST §1) — registered only with
+    // credentials in hand; without them every invoicing entry point degrades
+    // to a logged no-op, so checkout and fulfilment never depend on it.
+    ...(IDOKLAD_CLIENT_ID && IDOKLAD_CLIENT_SECRET ? [{
+      resolve: "./src/modules/idoklad",
+      options: {
+        client_id: IDOKLAD_CLIENT_ID,
+        client_secret: IDOKLAD_CLIENT_SECRET,
+        application_id: IDOKLAD_APPLICATION_ID,
+        vat_payer: IDOKLAD_VAT_PAYER,
+        numeric_sequence_id: IDOKLAD_NUMERIC_SEQUENCE_ID,
+        test_mode: IDOKLAD_TEST_MODE,
+      },
+    }] : []),
     ...(REDIS_URL ? [{
       key: Modules.EVENT_BUS,
       resolve: '@medusajs/medusa/event-bus-redis',

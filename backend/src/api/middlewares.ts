@@ -231,6 +231,24 @@ export default defineMiddlewares({
       methods: ["GET"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },
+    // iDoklad invoicing — custom admin routes, explicitly authenticated like
+    // the other admin actions here. No body schemas: the handlers take no
+    // input beyond the order id in the path.
+    {
+      matcher: "/admin/idoklad/orders/:orderId",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/idoklad/orders/:orderId/issue",
+      methods: ["POST"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/idoklad/orders/:orderId/mark-paid",
+      methods: ["POST"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
     {
       matcher: "/store/carts/:id/line-item-bundles",
       methods: ["POST"],
