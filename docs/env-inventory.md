@@ -62,6 +62,7 @@ table follows that file's order.
 | `IDOKLAD_VAT_PAYER` | FINISHINGTODOLIST §1 | `true` only if Lucia ever registers for VAT | treated as `false` — neplátce DPH, documents without VAT |
 | `IDOKLAD_NUMERIC_SEQUENCE_ID` | FINISHINGTODOLIST §1 | Pins the iDoklad číselná řada for issued invoices (ostrá řada at go-live) | agenda default sequence is used |
 | `IDOKLAD_TEST_MODE` | FINISHINGTODOLIST §5 | Informational: the credentials above belong to a trial/test agenda (iDoklad has no sandbox — testing = separate free account); the admin widget shows a „Test" badge | treated as production credentials, no badge |
+| `CNB_PRICE_MARKUP_PERCENT` | ČNB currency sync (2026-08-16) | Percent padding on CZK→foreign conversions (daily `sync-currency-prices` job, official ČNB fixing, no key) to absorb drift between fixings | conversion runs at the raw fixing (0 %) |
 
 The daily summary (07:05) goes to **both** notification addresses; if both are
 empty the digest job logs a warning and sends nothing.

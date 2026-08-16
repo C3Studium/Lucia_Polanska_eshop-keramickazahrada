@@ -56,6 +56,12 @@ const PatchFlagsSchema = z
      * detail page grew a switch for it, nothing could set it.
      */
     is_personalized: z.boolean().optional(),
+    /**
+     * The customer-facing sentence shown when a sold-out piece keeps selling
+     * on backorder — „jak dlouho trvá vyrobit". Read by the storefront
+     * (`storefront/src/lib/util/backorder.ts`). `null` clears it.
+     */
+    backorder_note: z.string().trim().max(300).nullable().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

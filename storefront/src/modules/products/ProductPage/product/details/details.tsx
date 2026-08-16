@@ -7,10 +7,12 @@ import {
   type ProductionProfile,
 } from "@lib/util/made-to-order"
 import {
+  availabilityLabel,
   isPurchasable,
   maxPurchasableQuantity,
   variantAvailability,
 } from "@lib/util/availability"
+import { backorderNote } from "@lib/util/backorder"
 import { addToCart } from "@lib/data/cart"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import type { AddToCartState } from "./Cta/Add"
@@ -65,14 +67,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
-  const [specification, setSpecification] = useState("")
-  const [specificationTouched, setSpecificationTouched] = useState(false)
 
   const isMadeToOrder = Boolean(productionProfile?.enabled)
-  const needsSpecification = Boolean(
-    isMadeToOrder && productionProfile?.specification_required
-  )
-  const specificationMissing = needsSpecification && !specification.trim()
   const resetTimer = useRef<number | undefined>(undefined)
   const isAdding = addState.kind === "adding"
 
@@ -120,24 +116,17 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || isAdding) return
 
-    // The backend rejects an empty specification on a made-to-order item; stopping here saves
-    // the customer a round trip. It is not the guard — the backend is.
-    if (specificationMissing) {
-      setSpecificationTouched(true)
-      return
-    }
-
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
 
     try {
+      // The empty marker is what lets the cart recognise the line as a commission and open
+      // the brief there — the description itself is written in the cart, not here.
       const result = await addToCart({
         variantId: selectedVariant.id,
         quantity,
         countryCode,
-        ...(needsSpecification
-          ? { metadata: madeToOrderMetadata(specification) }
-          : {}),
+        ...(isMadeToOrder ? { metadata: madeToOrderMetadata("") } : {}),
       })
 
       if (!result?.success) {
@@ -271,7 +260,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
           >
             <div className="product__purchaseHeader">
               <span>Vaše volba</span>
-              <span>{inStock ? "K dispozici" : "Na dotaz"}</span>
+              {/* The shared availability vocabulary (spec §12); bundles are
+                  stock-blind on the storefront, so they keep the older
+                  two-state copy instead of mislabelling themselves. */}
+              <span>
+                {bundle
+                  ? inStock
+                    ? "K dispozici"
+                    : "Na dotaz"
+                  : availabilityLabel[availability]}
+              </span>
             </div>
 
             <div className="product__selection">
@@ -321,12 +319,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         selectedVariant?.calculated_price?.calculated_amount ?? null
                       }
                       currencyCode={region?.currency_code ?? "czk"}
-                      specification={specification}
-                      onSpecificationChange={(value) => {
-                        setSpecification(value)
-                        if (value.trim()) setSpecificationTouched(false)
-                      }}
-                      showRequiredError={specificationTouched}
                     />
                   )}
                   <ProductPrice
@@ -340,6 +332,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     isAdding={isAdding}
                     addState={addState}
                     availability={availability}
+                    backorderNote={isMadeToOrder ? null : backorderNote(product)}
                     quantity={quantity}
                     maxQuantity={maxQuantity}
                     onQuantityChange={setQuantity}

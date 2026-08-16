@@ -33,7 +33,7 @@ export default function VerticalImageCarousel({
           alt={activeImage.alt}
           fill
           sizes="100vw"
-          quality={85}
+          quality={100}
         />
       </div>
 

@@ -142,7 +142,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
               alt={product.title || "Keramický výrobek"}
               fill
               priority={priority}
-              quality={80}
+              quality={100}
               sizes={IMAGE_SIZES}
             />
           </div>
@@ -159,7 +159,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
                   alt=""
                   fill
                   loading="lazy"
-                  quality={74}
+                  quality={100}
                   sizes={IMAGE_SIZES}
                 />
               </motion.div>

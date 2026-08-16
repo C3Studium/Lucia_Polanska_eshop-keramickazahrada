@@ -230,7 +230,7 @@ export default async function ProductPage(props: Props) {
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}
       />
-      <ProductChapter />
+      {/* <ProductChapter /> */}
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} />
       <SoldProducts products={relatedProducts} />
     </main>

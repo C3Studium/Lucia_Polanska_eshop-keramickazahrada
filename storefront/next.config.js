@@ -23,6 +23,11 @@ const nextConfig = {
     return config
   },
   images: {
+    // Product photography ships at quality 100 everywhere (2026-08-16 — the
+    // old mix of 50–90 looked visibly compressed on retina screens); 75 stays
+    // allowed for decorative images that don't pass an explicit quality.
+    // Listing the values now is also what Next 16 will require.
+    qualities: [75, 100],
     remotePatterns: [
       {
         protocol: "http",

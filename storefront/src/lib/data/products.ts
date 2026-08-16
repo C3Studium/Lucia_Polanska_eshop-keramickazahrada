@@ -3,6 +3,8 @@
 import { sdk } from "@lib/config"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
+import { listCategories } from "./categories"
+import { listCollections } from "./collections"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 import { StoreProductReview } from "../../types/global"
@@ -133,6 +135,139 @@ const parseCataloguePriceRange = (
   return null
 }
 
+/** Diacritics-insensitive lowercase, so „kvetinace" and „Květináče" meet in the middle. */
+const foldSearchText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLocaleLowerCase("cs")
+
+/** Words shorter than this carry no signal on their own („na", „do", „a"). */
+const SEARCH_TOKEN_MIN = 3
+
+const tokenizeSearchText = (value: string) =>
+  foldSearchText(value)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= SEARCH_TOKEN_MIN)
+
+const commonPrefixLength = (first: string, second: string) => {
+  let index = 0
+  while (
+    index < first.length &&
+    index < second.length &&
+    first[index] === second[index]
+  ) {
+    index += 1
+  }
+  return index
+}
+
+/** Classic two-row Levenshtein; tokens are single short words, so this stays cheap. */
+const editDistance = (first: string, second: string) => {
+  let previous = Array.from({ length: second.length + 1 }, (_, i) => i)
+
+  for (let i = 1; i <= first.length; i += 1) {
+    const current = [i]
+    for (let j = 1; j <= second.length; j += 1) {
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + (first[i - 1] === second[j - 1] ? 0 : 1)
+      )
+    }
+    previous = current
+  }
+
+  return previous[second.length]
+}
+
+/**
+ * Whether two folded word tokens mean the same word to a customer. Czech
+ * inflection moves the END of a word („kytky" / „kytičky", „hrnek" / „hrnky"),
+ * so a shared beginning or a small edit budget is the signal — an exact-only
+ * match sent „Kytky" home with nothing.
+ */
+const searchTokensAlike = (first: string, second: string) => {
+  if (first === second) return true
+  if (first.startsWith(second) || second.startsWith(first)) return true
+  if (commonPrefixLength(first, second) >= 4) return true
+
+  // Inflection never touches the first letter — without this guard the edit
+  // budget bridged unrelated words („plastika" → „klasika").
+  if (first[0] !== second[0]) return false
+
+  const shorter = Math.min(first.length, second.length)
+  const budget = shorter >= 5 ? 2 : shorter === 4 ? 1 : 0
+  return budget > 0 && editDistance(first, second) <= budget
+}
+
+/**
+ * Medusa's `q` searches product text and knows nothing about the shop's own
+ * taxonomy — typing a category's name („Kytky") found nothing unless the word
+ * also appeared in a product. So the term is matched here against category and
+ * collection names too, and their products join the results after the direct
+ * text hits. Matching is diacritics-insensitive and works in both directions
+ * (term inside name, name inside term), entries hidden by the admin eye stay
+ * out, and an axis the customer has explicitly filtered is never expanded —
+ * search must not smuggle other categories into a pinned category view.
+ */
+const matchCatalogueTaxonomy = async (
+  term: string,
+  filters: StoreCatalogueFilters
+): Promise<{ categoryIds: string[]; collectionIds: string[] }> => {
+  const folded = foldSearchText(term)
+  if (!folded) return { categoryIds: [], collectionIds: [] }
+
+  const [categories, collectionResult] = await Promise.all([
+    listCategories({ limit: 100, fields: "id,name,metadata" }).catch(
+      () => [] as HttpTypes.StoreProductCategory[]
+    ),
+    listCollections({ fields: "id,title,metadata" }).catch(() => ({
+      collections: [] as HttpTypes.StoreCollection[],
+      count: 0,
+    })),
+  ])
+
+  const termTokens = tokenizeSearchText(term)
+  const matchesName = (name: string | null | undefined) => {
+    const foldedName = foldSearchText(name ?? "")
+    if (!foldedName) return false
+    // Whole-phrase containment first („na drátě"), then word-by-word with
+    // inflection tolerance — „Kytky" has to reach „Kytičky na drátě".
+    if (
+      foldedName.includes(folded) ||
+      (foldedName.length >= 3 && folded.includes(foldedName))
+    ) {
+      return true
+    }
+    const nameTokens = tokenizeSearchText(foldedName)
+    return termTokens.some((termToken) =>
+      nameTokens.some((nameToken) => searchTokensAlike(termToken, nameToken))
+    )
+  }
+  const isHidden = (metadata: unknown) =>
+    Boolean((metadata as Record<string, unknown> | null)?.hidden)
+
+  return {
+    categoryIds: filters.categoryId
+      ? []
+      : categories
+          .filter(
+            (category) =>
+              !isHidden(category.metadata) && matchesName(category.name)
+          )
+          .map((category) => category.id),
+    collectionIds: filters.collectionId
+      ? []
+      : collectionResult.collections
+          .filter(
+            (collection) =>
+              !isHidden(collection.metadata) && matchesName(collection.title)
+          )
+          .map((collection) => collection.id),
+  }
+}
+
 /**
  * Store catalogue query built on the existing Medusa product data layer.
  *
@@ -158,20 +293,31 @@ export const listStoreCatalogue = async ({
 }> => {
   const normalizedLimit = Math.min(Math.max(limit, 1), 48)
   const normalizedOffset = Math.max(offset, 0)
+
+  const searchTerm = filters.search.trim()
+  const taxonomy = searchTerm
+    ? await matchCatalogueTaxonomy(searchTerm, filters)
+    : { categoryIds: [], collectionIds: [] }
+  const searchAcrossTaxonomy =
+    taxonomy.categoryIds.length > 0 || taxonomy.collectionIds.length > 0
+
   const needsCalculatedPriceRefinement = Boolean(
     filters.priceRange ||
     filters.onSale ||
     filters.sort === "price-asc" ||
     filters.sort === "price-desc"
   )
+  // Both taxonomy-widened search and price work need the whole result set here
+  // before it can be filtered, ordered and paged locally.
+  const needsLocalAssembly = needsCalculatedPriceRefinement || searchAcrossTaxonomy
 
   const queryParams: StoreProductListQuery = {
-    limit: needsCalculatedPriceRefinement ? 100 : normalizedLimit,
+    limit: needsLocalAssembly ? 100 : normalizedLimit,
     fields: "*bundle,*type,*categories,*images",
   }
 
-  if (filters.search.trim()) {
-    queryParams.q = filters.search.trim()
+  if (searchTerm) {
+    queryParams.q = searchTerm
   }
 
   if (filters.categoryId) {
@@ -192,7 +338,7 @@ export const listStoreCatalogue = async ({
     queryParams.order = "-created_at"
   }
 
-  if (!needsCalculatedPriceRefinement) {
+  if (!needsLocalAssembly) {
     const {
       response: { products, count },
     } = await listProducts({
@@ -205,30 +351,68 @@ export const listStoreCatalogue = async ({
     return { products, count }
   }
 
-  const firstPage = await listProducts({
-    pageParam: 1,
-    queryParams,
-    countryCode,
-    regionId,
-  })
-  const catalogueProducts = [...firstPage.response.products]
-  const pageCount = Math.ceil(firstPage.response.count / queryParams.limit!)
-
-  for (let page = 2; page <= pageCount; page += 1) {
-    const {
-      response: { products },
-    } = await listProducts({
-      pageParam: page,
-      queryParams,
+  const fetchAllPages = async (pageQuery: StoreProductListQuery) => {
+    const firstPage = await listProducts({
+      pageParam: 1,
+      queryParams: pageQuery,
       countryCode,
       regionId,
     })
+    const gathered = [...firstPage.response.products]
+    const pageCount = Math.ceil(firstPage.response.count / pageQuery.limit!)
 
-    catalogueProducts.push(...products)
+    for (let page = 2; page <= pageCount; page += 1) {
+      const {
+        response: { products },
+      } = await listProducts({
+        pageParam: page,
+        queryParams: pageQuery,
+        countryCode,
+        regionId,
+      })
+
+      gathered.push(...products)
+    }
+
+    return gathered
   }
 
+  const catalogueProducts = await fetchAllPages(queryParams)
+
+  if (searchAcrossTaxonomy) {
+    // Products of the matched categories/collections join AFTER the direct text
+    // hits, so plain matches keep the front of the list. The other explicit
+    // filters ride along in the sub-queries untouched.
+    const taxonomyQuery = { ...queryParams }
+    delete taxonomyQuery.q
+
+    if (taxonomy.categoryIds.length > 0) {
+      catalogueProducts.push(
+        ...(await fetchAllPages({
+          ...taxonomyQuery,
+          category_id: taxonomy.categoryIds,
+        }))
+      )
+    }
+    if (taxonomy.collectionIds.length > 0) {
+      catalogueProducts.push(
+        ...(await fetchAllPages({
+          ...taxonomyQuery,
+          collection_id: taxonomy.collectionIds,
+        }))
+      )
+    }
+  }
+
+  const seenIds = new Set<string>()
+  const uniqueProducts = catalogueProducts.filter((product) => {
+    if (seenIds.has(product.id)) return false
+    seenIds.add(product.id)
+    return true
+  })
+
   const priceRange = parseCataloguePriceRange(filters.priceRange)
-  const refinedProducts = catalogueProducts.filter((product) => {
+  const refinedProducts = uniqueProducts.filter((product) => {
     const { cheapestPrice } = getProductPrice({ product })
     const price = cheapestPrice?.calculated_price_number
 
@@ -269,6 +453,15 @@ export const listStoreCatalogue = async ({
         ? firstPrice - secondPrice
         : secondPrice - firstPrice
     })
+  }
+
+  if (filters.sort === "newest" && searchAcrossTaxonomy) {
+    // Each sub-query came back ordered, but the merge interleaved them.
+    refinedProducts.sort(
+      (first, second) =>
+        new Date(second.created_at ?? 0).getTime() -
+        new Date(first.created_at ?? 0).getTime()
+    )
   }
 
   return {

@@ -141,6 +141,58 @@
   opacity: 0.62;
 }
 
+.exact {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.exact > label {
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.exactField {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.exactField input {
+  width: 8.5ch;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(32, 33, 28, 0.28);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+
+  &:focus-visible {
+    border-color: rgba(32, 33, 28, 0.6);
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.exactField > span {
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.exactHint {
+  margin: 0;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: 0.78rem;
+  opacity: 0.62;
+}
+
 .presets {
   display: flex;
   flex-wrap: wrap;

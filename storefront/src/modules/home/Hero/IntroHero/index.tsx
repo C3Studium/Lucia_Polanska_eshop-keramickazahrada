@@ -59,7 +59,7 @@ export default function IntroHero({
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
     // const reduceMotion = useReducedMotion();
     const heroImage = data?.images?.[0]
-        ? urlFor(data.images[0]).width(2400).quality(90).url()
+        ? urlFor(data.images[0]).width(2400).quality(100).url()
         : "/assets/img/img/2.jpg";
     const { scrollYProgress } = useScroll({
         target: ref,

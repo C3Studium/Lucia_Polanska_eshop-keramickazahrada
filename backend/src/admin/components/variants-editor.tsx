@@ -28,8 +28,20 @@ const Row = ({ productId, variant }: { productId: string; variant: any }) => {
         method: "POST",
         body: {
           title: title.trim() || variant.title,
+          // The price list replaces wholesale — foreign currencies derived by
+          // the ČNB job must ride along, or a CZK edit would wipe them.
           prices: price
-            ? [{ currency_code: "czk", amount: Number(price) }]
+            ? [
+                { currency_code: "czk", amount: Number(price) },
+                ...(variant.prices ?? [])
+                  .filter(
+                    (p: any) => String(p.currency_code).toLowerCase() !== "czk"
+                  )
+                  .map((p: any) => ({
+                    currency_code: p.currency_code,
+                    amount: p.amount,
+                  })),
+              ]
             : undefined,
         },
       }),
@@ -90,6 +102,9 @@ export const VariantsEditor = ({ productId, productTitle, trigger }: {
           prices: newPrice
             ? [{ currency_code: "czk", amount: Number(newPrice) }]
             : [],
+          // Shop default: keep selling after sell-out (stock goes negative);
+          // per-product override lives on the product detail page.
+          allow_backorder: true,
         },
       });
     },

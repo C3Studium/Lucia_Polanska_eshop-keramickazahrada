@@ -124,7 +124,7 @@ function DirectionalClipPath({
           alt={image.alt}
           fill
           sizes="(max-width: 1024px) 100vw, 60vw"
-          quality={85}
+          quality={100}
         />
       </div>
     </motion.div>

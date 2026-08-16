@@ -24,6 +24,8 @@ type CTAProps = {
   addState?: AddToCartState
   isValidVariant: boolean
   availability?: Availability
+  /** Merchant's own sentence about the wait when buying a sold-out piece. */
+  backorderNote?: string | null
   quantity?: number
   maxQuantity?: number
   onQuantityChange?: (next: number) => void
@@ -40,6 +42,7 @@ export default function CTA({
   addState = { kind: "idle" },
   isValidVariant,
   availability = "made-to-order",
+  backorderNote = null,
   quantity = 1,
   maxQuantity = 0,
   onQuantityChange,
@@ -119,6 +122,12 @@ export default function CTA({
       {/* One vocabulary, shared with the cards and the badge: Skladem / Poslední kus /
           Prodáno / Na objednávku (spec §12). */}
       <p>{availabilityLabel[availability]}</p>
+
+      {/* The wait, in the merchant's words — only when the piece really is
+          being made for this order, i.e. the availability says so. */}
+      {availability === "made-to-order" && backorderNote && (
+        <p className="product__details__cta__backorderNote">{backorderNote}</p>
+      )}
     </div>
   )
 }

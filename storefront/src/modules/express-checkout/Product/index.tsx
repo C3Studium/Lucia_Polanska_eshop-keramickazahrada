@@ -153,6 +153,7 @@ export const Product = ({
           alt={product.title || ""}
           width={620}
           height={760}
+          quality={100}
           priority
         />
         <span>{bundle ? "Sada z ateliéru" : "Z ateliéru"}</span>
@@ -196,6 +197,7 @@ export const Product = ({
                   alt=""
                   width={68}
                   height={68}
+                  quality={100}
                 />
                 <span>{String(index + 1).padStart(2, "0")}</span>
               </button>

@@ -44,6 +44,10 @@ export default function ProductionPaymentModeChoice({
   const bounds = state.custom
   // Tracks the handle while dragging; the cart is only told once the drag ends.
   const [draft, setDraft] = useState<number>(bounds?.amount ?? 0)
+  /* What is in the number field while the customer types. `null` means "mirror the slider".
+     Kept as a string and clamped only on commit — clamping per keystroke made digit-by-digit
+     entry impossible (the price filter learned the same lesson). */
+  const [typed, setTyped] = useState<string | null>(null)
   const commitTimer = useRef<number | undefined>(undefined)
   const sliderId = useId()
 
@@ -92,6 +96,7 @@ export default function ProductionPaymentModeChoice({
   }
 
   const onSlide = (next: number) => {
+    setTyped(null)
     setDraft(next)
     if (commitTimer.current) window.clearTimeout(commitTimer.current)
     commitTimer.current = window.setTimeout(() => commit(next), 400)
@@ -99,8 +104,18 @@ export default function ProductionPaymentModeChoice({
 
   const jump = (amount: number) => {
     if (commitTimer.current) window.clearTimeout(commitTimer.current)
+    setTyped(null)
     setDraft(amount)
     commit(amount)
+  }
+
+  /** The typed amount, clamped to the bounds only now that the customer is done typing. */
+  const commitTyped = () => {
+    if (typed === null) return
+    const parsed = Math.round(Number(typed.replace(/\s+/g, "")))
+    setTyped(null)
+    if (!typed.trim() || Number.isNaN(parsed)) return
+    jump(Math.min(bounds.maximum, Math.max(bounds.minimum, parsed)))
   }
 
   return (
@@ -147,6 +162,38 @@ export default function ProductionPaymentModeChoice({
       <div className={styles.scale} aria-hidden="true">
         <span>{money(bounds.minimum)}</span>
         <span>{money(bounds.maximum)}</span>
+      </div>
+
+      <div className={styles.exact}>
+        <label htmlFor={`${sliderId}-exact`}>Nebo napište přesnou částku</label>
+        <div className={styles.exactField}>
+          <input
+            id={`${sliderId}-exact`}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={typed ?? String(draft)}
+            disabled={isPending || span === 0}
+            onChange={(event) =>
+              setTyped(event.target.value.replace(/[^\d\s]/g, ""))
+            }
+            onBlur={commitTyped}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                commitTyped()
+              }
+            }}
+            aria-describedby={`${sliderId}-exact-hint`}
+            data-testid="production-payment-input"
+          />
+          <span aria-hidden="true">
+            {currency_code === "czk" ? "Kč" : currency_code.toUpperCase()}
+          </span>
+        </div>
+        <p className={styles.exactHint} id={`${sliderId}-exact-hint`}>
+          Cokoliv mezi {money(bounds.minimum)} a {money(bounds.maximum)}.
+        </p>
       </div>
 
       <div className={styles.presets}>

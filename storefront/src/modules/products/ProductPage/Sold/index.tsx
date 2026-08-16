@@ -268,6 +268,7 @@ function ProductRail({ products }: ProductRailProps) {
                   alt=""
                   fill
                   draggable={false}
+                  quality={100}
                   sizes="(max-width: 760px) 78vw, (max-width: 1200px) 42vw, 31vw"
                 />
               )}

@@ -131,6 +131,11 @@ const NovyProduktInner = () => {
             // Made to order is never in stock — that is the point, and it
             // keeps the piece out of the sold-out alerts.
             manage_inventory: kind !== "zakazka",
+            // Shop default: an ordinary piece keeps selling after sell-out
+            // (stock goes negative). Not for zakázka (the production profile
+            // owns that flow) and not for a damaged one-off — there is no
+            // second piece to make.
+            allow_backorder: kind === "produkt" || kind === "balicek",
             options: { Provedení: "Standardní" },
           },
         ],

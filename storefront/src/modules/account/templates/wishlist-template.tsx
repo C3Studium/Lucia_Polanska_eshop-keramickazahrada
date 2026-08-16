@@ -118,6 +118,7 @@ export default function WishlistTemplate({
                           alt={title}
                           width={520}
                           height={640}
+                          quality={100}
                         />
                         <span>{String(index + 1).padStart(2, "0")}</span>
                         {isPreview && <i>Náhled</i>}

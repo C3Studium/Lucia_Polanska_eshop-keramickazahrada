@@ -164,13 +164,11 @@ const Review = ({
                 <CommissionBrief
                   variant="checkout"
                   title={line.title}
-                  note={line.brief.note ?? ""}
+                  // The text is the specification; older lines may still carry it as `note`.
+                  note={line.brief.specification || line.brief.note || ""}
                   photos={line.brief.photos ?? []}
                   onSubmitAction={async (input) =>
-                    saveCommissionBrief(line.id, {
-                      specification: line.brief.specification,
-                      ...input,
-                    })
+                    saveCommissionBrief(line.id, input)
                   }
                 />
               </motion.div>

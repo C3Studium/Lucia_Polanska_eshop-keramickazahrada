@@ -3,10 +3,11 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 
-import AboutInfo from "@modules/omne/about"
+// import AboutInfo from "@modules/omne/about"
 import AboutCta from "@modules/omne/cta"
 import AboutMe from "@modules/omne/main"
-import ProcessAbout from "@modules/omne/process"
+import AboutStory from "@modules/omne/story"
+// import ProcessAbout from "@modules/omne/process"
 
 const phaseEase = (value: number) => 1 - Math.pow(1 - value, 3)
 
@@ -69,8 +70,10 @@ export default function AboutPageExperience() {
                 className="aboutPage__phaseTrigger"
                 aria-hidden="true"
             />
-            <AboutInfo />
-            <ProcessAbout />
+            {/* Vyroba-gallery variant carrying the old AboutInfo copy (no icons). */}
+            <AboutStory />
+            {/* <AboutInfo />
+            <ProcessAbout /> */}
             <AboutCta />
         </motion.main>
     )

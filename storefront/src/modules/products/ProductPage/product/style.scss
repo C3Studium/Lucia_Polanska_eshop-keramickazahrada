@@ -614,6 +614,21 @@
   color: #f3b3a4;
 }
 
+/*
+ * Backorder note — the merchant's sentence about the wait („Vyrobíme do tří
+ * týdnů."). Sits under the availability word on the same ink stage; muted
+ * cream (#d9d7c9 ≈ 11.5:1 against --pdp-ink) so it informs without shouting.
+ */
+.product__details__cta__backorderNote {
+  width: 100%;
+  margin: 0;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  color: #d9d7c9;
+}
+
 /* Quantity stepper. 44px targets on the ink stage; cream text is 13.7:1 there. */
 .product__details__cta__quantity {
   display: flex;

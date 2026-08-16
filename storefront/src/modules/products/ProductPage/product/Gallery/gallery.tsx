@@ -143,7 +143,7 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
                   alt={item.title}
                   fill
                   sizes="(max-width: 900px) 38vw, 20vw"
-                  quality={90}
+                  quality={100}
                   className="product__bundleAsset"
                   priority={index === 0}
                 />
@@ -182,7 +182,7 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
                 alt={`${image.productTitle} – ${caption[0].toLowerCase()}`}
                 fill
                 sizes="(max-width: 900px) 100vw, 52vw"
-                quality={90}
+                quality={100}
                 className="product__mediaAsset"
                 priority={index === 0}
               />

@@ -24,7 +24,7 @@ export default function ContactTrigger({
   className,
   topic,
 }: ContactTriggerProps) {
-  const { open } = useContactDialog()
+  const { open, isOpen } = useContactDialog()
   const resolvedTopic =
     topic ?? (text.toLocaleLowerCase("cs").includes("kurz") ? "Kurzy" : "Obecný dotaz")
 
@@ -37,6 +37,9 @@ export default function ContactTrigger({
           Kind="Button"
           title={text}
           className={className}
+          /* An open dialog is „being on Kontakt" — the button holds the same
+             active look the nav links get on their own routes. */
+          isActive={isOpen}
           onClickAction={() => open(resolvedTopic)}
         />
       ) : (

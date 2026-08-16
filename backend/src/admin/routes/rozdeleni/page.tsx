@@ -1,6 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  ArchiveBox, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
+  ArchiveBox, ExclamationCircle, EyeSlash, Folder, GridList, ListBullet,
+  ListTree, QueueList,
 } from "@medusajs/icons";
 import {
   Badge, Button, Container, Heading, Input, Prompt, Text, Toaster, toast,
@@ -36,6 +37,26 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 /* Thumb + ProductLightbox live in components/product-thumb.tsx — shared with
    Produkty+, so „the photo opens the photos" behaves the same everywhere. */
 
+/** Tři styly zobrazení produktů vpravo; volba přežívá reload (localStorage). */
+type ProductView = "radky" | "mrizka" | "kompakt";
+
+const VIEW_STORAGE_KEY = "kz-rozdeleni-view";
+
+const readProductView = (): ProductView => {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    return stored === "mrizka" || stored === "kompakt" ? stored : "radky";
+  } catch {
+    return "radky";
+  }
+};
+
+const viewOptions: { key: ProductView; label: string; Icon: typeof ListBullet }[] = [
+  { key: "radky", label: "Řádky — plná práce s přeřazením", Icon: ListBullet },
+  { key: "mrizka", label: "Mřížka — fotky vedle sebe", Icon: GridList },
+  { key: "kompakt", label: "Kompaktní — rychlé skenování", Icon: QueueList },
+];
+
 const Inner = () => {
   const queryClient = useQueryClient();
   const [collectionId, setCollectionId] = useState<string | null>(null);
@@ -64,6 +85,18 @@ const Inner = () => {
   const [pending, setPending] = useState<
     Record<string, { collection_id: string | null; category_id: string | null }>
   >({});
+  /* Tři styly pravého sloupce: řádky (plná práce s přeřazením), mřížka
+     (fotky — vizuální kontrola katalogu) a kompaktní (rychlé skenování,
+     nejlepší na telefonu). Volba se pamatuje jako u expertního režimu. */
+  const [view, setView] = useState<ProductView>(readProductView);
+  const changeView = (next: ProductView) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // Private mode etc. — the choice just won't survive a reload.
+    }
+  };
   /* Klik na miniaturu otevře fotky v plné velikosti — kontrola detailů kusu
      bez odchodu ze stránky (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(
@@ -416,10 +449,13 @@ const Inner = () => {
     onSuccess: async () => {
       const count = pickerSelected.size;
       setPickerSelected(new Set());
-      setPickerOpen(false);
+      // The picker stays open on purpose: filling several categories in a row
+      // is the normal flow, and closing it here forced a re-click on „Přidat
+      // produkty" after every batch. Clicking another category just re-aims
+      // the picker (the target line above the search says where).
       setPickerSearch("");
       await invalidate();
-      toast.success(`Zařazeno ${count} produktů.`);
+      toast.success(`Zařazeno ${count} produktů — výběr zůstává otevřený.`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Zařazení se nepodařilo."),
   });
@@ -836,6 +872,23 @@ const Inner = () => {
                 </button>
               ))}
               <div className="flex-1" />
+              <div className="border-ui-border-base flex items-center gap-0.5 rounded-lg border p-0.5">
+                {viewOptions.map(({ key, label, Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    title={label}
+                    onClick={() => changeView(key)}
+                    className={
+                      view === key
+                        ? "bg-ui-bg-base-pressed text-ui-fg-base rounded-md p-1"
+                        : "text-ui-fg-muted hover:text-ui-fg-base rounded-md p-1"
+                    }
+                  >
+                    <Icon />
+                  </button>
+                ))}
+              </div>
               {pendingCount > 0 && (
                 <>
                   <Button size="small"
@@ -903,6 +956,23 @@ const Inner = () => {
           </div>
           {pickerOpen && selectedCollection && (
             <div className="border-ui-border-base flex flex-col gap-2 border-b p-4">
+              {/* Where the batch will land — updates live as she clicks other
+                  categories, so the sticky picker never aims silently. */}
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                Zařazuje se do:{" "}
+                <span className="text-ui-fg-base font-medium">
+                  {selectedCollection.title}
+                  {categoryId && categoryId !== "none"
+                    ? ` → ${
+                        allCategories.find(
+                          (category: any) => category.id === categoryId
+                        )?.name ?? "kategorie"
+                      }`
+                    : ""}
+                </span>{" "}
+                — cíl změníte kliknutím na jinou kategorii, výběr zůstane
+                otevřený.
+              </Text>
               <div className="flex flex-wrap items-center gap-2">
                 <Input size="small" type="search" className="min-w-56 flex-1"
                   placeholder="Filtrovat produkty…"
@@ -997,12 +1067,139 @@ const Inner = () => {
               </label>
             </div>
           )}
-          {listedProducts.map((product) => {
+          {/* Mřížka — fotky vedle sebe; 2 sloupce na telefonu. Přeřazovací
+              selecty tu nejsou schválně: mřížka je na koukání a hromadný
+              výběr, práce s kolonkami patří řádkům. */}
+          {view === "mrizka" && listedProducts.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 2xl:grid-cols-4">
+              {listedProducts.map((product) => (
+                <figure
+                  key={product.id}
+                  className="border-ui-border-base overflow-hidden rounded-lg border"
+                >
+                  <div className="relative">
+                    <button
+                      type="button"
+                      title="Zvětšit fotku"
+                      className="bg-ui-bg-subtle block aspect-square w-full"
+                      onClick={() =>
+                        setLightbox({ id: product.id, title: product.title })
+                      }
+                    >
+                      {product.thumbnail ? (
+                        <img
+                          src={product.thumbnail}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-ui-fg-muted flex h-full w-full items-center justify-center">
+                          <Text size="xsmall">—</Text>
+                        </div>
+                      )}
+                    </button>
+                    <input
+                      type="checkbox"
+                      className="absolute left-2 top-2 size-4"
+                      checked={selected.has(product.id)}
+                      onChange={(e) => {
+                        const next = new Set(selected);
+                        if (e.target.checked) next.add(product.id);
+                        else next.delete(product.id);
+                        setSelected(next);
+                      }}
+                    />
+                  </div>
+                  <figcaption className="flex flex-col gap-1 p-2">
+                    <Link
+                      to={`/produkt/${product.id}`}
+                      className="block hover:underline"
+                    >
+                      <Text size="small" weight="plus" className="truncate">
+                        {product.title}
+                      </Text>
+                    </Link>
+                    <div className="flex items-center justify-between gap-1">
+                      <Badge
+                        size="2xsmall"
+                        color={kindBadge[product.kind]?.color ?? "grey"}
+                      >
+                        {kindBadge[product.kind]?.label ?? product.kind}
+                      </Badge>
+                      <VisibilityEye
+                        visible={product.status === "published"}
+                        label={`produkt ${product.title}`}
+                        hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+                        showText="Produkt se vrátí do obchodu a půjde koupit."
+                        onToggle={() =>
+                          sdk.client.fetch(`/admin/products/${product.id}`, {
+                            method: "POST",
+                            body: {
+                              status:
+                                product.status === "published"
+                                  ? "draft"
+                                  : "published",
+                            },
+                          })
+                        }
+                        onDone={invalidate}
+                      />
+                    </div>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+          {view !== "mrizka" && listedProducts.map((product) => {
               const draft = draftFor(product);
               const dirty = Boolean(pending[product.id]);
               const applyingThis =
                 applyPending.isPending &&
                 (applyPending.variables ?? []).includes(product.id);
+              /* Kompaktní řádek — miniatura, název, druh. Hustý seznam pro
+                 telefon a rychlou kontrolu; editace vede na detail produktu. */
+              if (view === "kompakt") {
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-2 px-4 py-1.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(product.id)}
+                      onChange={(e) => {
+                        const next = new Set(selected);
+                        if (e.target.checked) next.add(product.id);
+                        else next.delete(product.id);
+                        setSelected(next);
+                      }}
+                    />
+                    <Thumb
+                      src={product.thumbnail}
+                      title={product.title}
+                      sizeClassName="size-6"
+                      onZoom={() =>
+                        setLightbox({ id: product.id, title: product.title })
+                      }
+                    />
+                    <Link
+                      to={`/produkt/${product.id}`}
+                      className="min-w-0 flex-1 hover:underline"
+                    >
+                      <Text size="small" className="truncate">
+                        {product.title}
+                      </Text>
+                    </Link>
+                    <Badge
+                      size="2xsmall"
+                      color={kindBadge[product.kind]?.color ?? "grey"}
+                    >
+                      {kindBadge[product.kind]?.label ?? product.kind}
+                    </Badge>
+                  </div>
+                );
+              }
               return (
             <div key={product.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <input

@@ -59,7 +59,7 @@ export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
           alt="Lucie Polanská při ruční tvorbě keramiky"
           fill
           priority
-          quality={84}
+          quality={100}
           sizes="100vw"
         />
       </motion.div>

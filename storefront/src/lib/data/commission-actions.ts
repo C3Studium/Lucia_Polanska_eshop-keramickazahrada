@@ -20,7 +20,11 @@ export type BriefResult = {
 }
 
 /**
- * Saves the customer's brief onto a cart line — the note, and the photos it came with.
+ * Saves the customer's brief onto a cart line — the description, and the photos it came with.
+ *
+ * The text IS the specification: since the product page stopped collecting one, this box (in
+ * the cart and again at checkout) is the only place the customer describes the piece, and the
+ * payment step refuses a specification-required commission without it.
  *
  * Written to the **line item's** metadata rather than the cart's, because Medusa copies line
  * metadata into the order. By the time the owner reads this the cart is long gone; the brief
@@ -29,7 +33,6 @@ export type BriefResult = {
 export async function saveCommissionBrief(
   lineId: string,
   input: {
-    specification?: string
     note: string
     keepPhotos: string[]
     newPhotos: CommissionUpload[]
@@ -60,10 +63,7 @@ export async function saveCommissionBrief(
       cartId,
       lineId,
       {
-        metadata: madeToOrderMetadata(input.specification ?? "", {
-          note: input.note,
-          photos,
-        }).made_to_order,
+        metadata: madeToOrderMetadata(input.note, { photos }).made_to_order,
       } as never,
       {},
       headers

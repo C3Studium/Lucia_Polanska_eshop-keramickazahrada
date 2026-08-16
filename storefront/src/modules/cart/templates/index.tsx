@@ -6,8 +6,11 @@ import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
 import { getProductionPaymentMode } from "@lib/data/made-to-order"
-import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
-import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
+import { readCommissionBrief } from "@lib/util/made-to-order"
+import { isCommissionLine } from "@lib/util/commission"
+import CartCommissionBlock, {
+  type CartCommissionLine,
+} from "@modules/cart/components/commission-block"
 
 import s from "./index.module.scss"
 
@@ -26,6 +29,17 @@ const CartTemplate = async ({
   const productionMode = cart?.id
     ? await getProductionPaymentMode(cart.id)
     : null
+
+  /* The commissioned lines, so the basket can collect their briefs — the description and
+     photos moved here from the product page. Either signal counts (category or metadata
+     marker), same as the checkout's detection. */
+  const commissionLines: CartCommissionLine[] = ((cart?.items ?? []) as any[])
+    .filter((item) => isCommissionLine(item) || item?.metadata?.made_to_order)
+    .map((item) => ({
+      id: item.id as string,
+      title: (item.product_title || item.title) as string,
+      brief: readCommissionBrief(item),
+    }))
 
   return (
     <div className={s.root}>
@@ -51,13 +65,12 @@ const CartTemplate = async ({
                 </>
               )}
               <ItemsTemplate cart={cart} />
-              {productionMode?.has_made_to_order && (
-                <ProductionPaymentModeChoice
-                  variant="cart"
-                  initial={productionMode}
-                  // Bound rather than wrapped in a fresh inline action: the cart id is the
-                  // only thing this side knows that the client side needs.
-                  onSelect={selectProductionPaymentMode.bind(null, cart.id)}
+              {(commissionLines.length > 0 ||
+                productionMode?.has_made_to_order) && (
+                <CartCommissionBlock
+                  cartId={cart.id}
+                  lines={commissionLines}
+                  productionMode={productionMode}
                 />
               )}
               </div>

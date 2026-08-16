@@ -32,10 +32,6 @@ export function variantAvailability(
     return "sold-out"
   }
 
-  if (variant.allow_backorder) {
-    return "made-to-order"
-  }
-
   if (!variant.manage_inventory) {
     // The shop does not count these — they are made or finished to order.
     return "made-to-order"
@@ -43,7 +39,13 @@ export function variantAvailability(
 
   const quantity = variant.inventory_quantity ?? 0
 
-  if (quantity <= 0) return "sold-out"
+  if (quantity <= 0) {
+    // Backorder means the sale continues past the last piece: sold out turns
+    // into "made to order" instead of a dead end. While pieces ARE on the
+    // shelf the customer sees the ordinary stock states — a piece being
+    // backorderable is not information until the shelf is empty.
+    return variant.allow_backorder ? "made-to-order" : "sold-out"
+  }
   if (quantity === 1) return "last-one"
 
   return "in-stock"

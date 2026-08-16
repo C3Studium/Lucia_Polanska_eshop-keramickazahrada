@@ -54,6 +54,7 @@ type NativeVariant = {
   id: string;
   title: string | null;
   sku: string | null;
+  allow_backorder?: boolean;
   prices?: { id?: string; currency_code: string; amount: number }[];
 };
 
@@ -318,24 +319,51 @@ const VariantRow = ({
         />
         {expert && <CopyId value={variant.id} />}
       </div>
-      <InlineText
-        value={variant.sku ?? ""}
-        placeholder="kód (nepovinný)"
-        onSave={(next) => save.mutateAsync({ sku: next || null })}
-      />
-      <InlineNumber
-        value={czkPrice(variant)}
-        unit="Kč"
-        allowEmpty={false}
-        placeholder="cena"
-        inputClassName="w-24"
-        onSave={(next) =>
-          save.mutateAsync({
-            prices: [{ currency_code: "czk", amount: Number(next) }],
-          })
-        }
-      />
+      <div>
+        <div className="mb-1 lg:hidden">
+          <FieldLabel>Kód</FieldLabel>
+        </div>
+        <InlineText
+          value={variant.sku ?? ""}
+          placeholder="kód (nepovinný)"
+          onSave={(next) => save.mutateAsync({ sku: next || null })}
+        />
+      </div>
+      <div>
+        <div className="mb-1 lg:hidden">
+          <FieldLabel>Cena</FieldLabel>
+        </div>
+        <InlineNumber
+          value={czkPrice(variant)}
+          unit="Kč"
+          allowEmpty={false}
+          placeholder="cena"
+          inputClassName="w-24"
+          onSave={(next) =>
+            save.mutateAsync({
+              // The price list replaces wholesale — foreign currencies are
+              // derived by the daily ČNB job and must ride along, or a CZK
+              // edit would wipe them until the next fixing.
+              prices: [
+                { currency_code: "czk", amount: Number(next) },
+                ...(variant.prices ?? [])
+                  .filter(
+                    (price) =>
+                      String(price.currency_code).toLowerCase() !== "czk"
+                  )
+                  .map((price) => ({
+                    currency_code: price.currency_code,
+                    amount: price.amount,
+                  })),
+              ],
+            })
+          }
+        />
+      </div>
       <div className="flex items-center gap-2">
+        <span className="lg:hidden">
+          <FieldLabel>Skladem</FieldLabel>
+        </span>
         <Text size="small" className="tabular-nums">
           {stock?.available ?? "—"}
         </Text>
@@ -345,10 +373,15 @@ const VariantRow = ({
           </Badge>
         )}
       </div>
-      <RestockCell
-        inventoryItemId={stock?.inventory_item_id ?? null}
-        onDone={invalidate}
-      />
+      <div>
+        <div className="mb-1 lg:hidden">
+          <FieldLabel>Naskladnit</FieldLabel>
+        </div>
+        <RestockCell
+          inventoryItemId={stock?.inventory_item_id ?? null}
+          onDone={invalidate}
+        />
+      </div>
       <div className="flex justify-end">
         {canDelete && (
           <Prompt>
@@ -406,6 +439,9 @@ const AddVariantRow = ({
           title: title.trim(),
           ...(optionTitle ? { options: { [optionTitle]: title.trim() } } : {}),
           prices: price ? [{ currency_code: "czk", amount: Number(price) }] : [],
+          // The shop default: a sold-out piece keeps selling (stock goes
+          // negative); the page's „Objednání bez skladu" switch turns it off.
+          allow_backorder: true,
         },
       });
     },
@@ -454,11 +490,13 @@ const ReadinessCard = ({
   const variants = product.variants ?? [];
   const hasPrice = variants.some((variant) => czkPrice(variant) !== null);
   const hasWeight = Boolean(product.weight);
+  const anyBackorder = variants.some((variant) => variant.allow_backorder);
   const allOut =
     detail !== undefined &&
     detail.variants.length > 0 &&
     detail.variants.every((variant) => (variant.available ?? 0) <= 0) &&
-    !detail.production?.enabled;
+    !detail.production?.enabled &&
+    !anyBackorder;
 
   const checks = [
     {
@@ -489,7 +527,7 @@ const ReadinessCard = ({
     {
       label: "Kusy skladem",
       ok: !allOut,
-      why: "Všechno je vyprodané a kus se nevyrábí na zakázku — zákazník nemá co koupit.",
+      why: "Všechno je vyprodané, kus se nevyrábí na zakázku a objednání bez skladu je vypnuté — zákazník nemá co koupit.",
     },
   ];
   const missing = checks.filter((check) => !check.ok);
@@ -609,6 +647,57 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
   });
 
+  // One switch for the whole piece: backorder is a per-variant fact in the
+  // catalog, but the merchant thinks per product — so the toggle writes every
+  // variant at once through the native batch endpoint.
+  const toggleBackorder = useMutation({
+    mutationFn: (next: boolean) =>
+      sdk.client.fetch(`/admin/products/${productId}/variants/batch`, {
+        method: "POST",
+        body: {
+          update: (product?.variants ?? []).map((variant) => ({
+            id: variant.id,
+            allow_backorder: next,
+          })),
+        },
+      }),
+    onSuccess: async () => {
+      await invalidate();
+      toast.success("Změna uložena.");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+  });
+
+  // Same two-step contract as the shared ArchiveToggle: the flag hides the
+  // piece from the working lists, draft status takes it off the shop — and
+  // restoring brings back a *draft* on purpose, so nothing returns to sale
+  // because somebody clicked twice.
+  const archive = useMutation({
+    mutationFn: async (next: boolean) => {
+      await sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+        method: "POST",
+        body: { archived: next },
+      });
+      if (next) {
+        await sdk.client.fetch(`/admin/products/${productId}`, {
+          method: "POST",
+          body: { status: "draft" },
+        });
+      }
+    },
+    onSuccess: async (_, next) => {
+      await invalidate();
+      toast.success(
+        next
+          ? "Archivováno — zmizelo z obchodu i ze seznamů."
+          : "Obnoveno jako koncept. Do obchodu ho vrátíte zveřejněním."
+      );
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
+  });
+
   const uploadImages = useMutation({
     mutationFn: async (files: File[]) => {
       const result = await sdk.admin.upload.create({ files });
@@ -672,6 +761,13 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     typeof product.metadata?.packaging_price === "number"
       ? (product.metadata.packaging_price as number)
       : null;
+  const backorderNote =
+    typeof product.metadata?.backorder_note === "string"
+      ? (product.metadata.backorder_note as string)
+      : null;
+  const backorderAll =
+    (product.variants ?? []).length > 0 &&
+    (product.variants ?? []).every((variant) => variant.allow_backorder);
   const variants = product.variants ?? [];
   const stockByVariant = new Map(
     (detail?.variants ?? []).map((variant) => [variant.id, variant])
@@ -715,7 +811,14 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
 
       {/* ————— Hlavička ————— */}
-      <header className="flex flex-wrap items-start justify-between gap-4 px-6 pb-4 pt-6">
+      <header className="px-6 pb-4 pt-4">
+        <Link
+          to="/produkty-workbench"
+          className="text-ui-fg-muted txt-small hover:text-ui-fg-subtle"
+        >
+          ← Produkty+
+        </Link>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <button
             type="button"
@@ -775,28 +878,54 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            size="small"
-            variant={isPublished ? "secondary" : "primary"}
-            isLoading={saveProduct.isPending}
-            onClick={() =>
-              saveProduct.mutate({ status: isPublished ? "draft" : "published" })
-            }
-          >
-            {isPublished ? "Skrýt z obchodu" : "Publikovat"}
-          </Button>
+          {isPublished ? (
+            // Hiding a live product is the misclick that must not happen
+            // silently — the same confirmation the eye uses in the lists.
+            <Prompt>
+              <Prompt.Trigger asChild>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  isLoading={saveProduct.isPending}
+                >
+                  Skrýt z obchodu
+                </Button>
+              </Prompt.Trigger>
+              <Prompt.Content>
+                <Prompt.Header>
+                  <Prompt.Title>
+                    Skrýt „{product.title}" z obchodu?
+                  </Prompt.Title>
+                  <Prompt.Description>
+                    Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase
+                    nezveřejníte.
+                  </Prompt.Description>
+                </Prompt.Header>
+                <Prompt.Footer>
+                  <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                  <Prompt.Action
+                    onClick={() => saveProduct.mutate({ status: "draft" })}
+                  >
+                    Skrýt
+                  </Prompt.Action>
+                </Prompt.Footer>
+              </Prompt.Content>
+            </Prompt>
+          ) : (
+            <Button
+              size="small"
+              variant="primary"
+              isLoading={saveProduct.isPending}
+              onClick={() => saveProduct.mutate({ status: "published" })}
+            >
+              Publikovat
+            </Button>
+          )}
           <Button
             size="small"
             variant="transparent"
-            isLoading={saveFlags.isPending}
-            onClick={() => {
-              if (archived) {
-                saveFlags.mutate({ archived: false });
-              } else {
-                saveFlags.mutate({ archived: true });
-                saveProduct.mutate({ status: "draft" });
-              }
-            }}
+            isLoading={archive.isPending}
+            onClick={() => archive.mutate(!archived)}
           >
             {archived ? "Obnovit z archivu" : "Archivovat"}
           </Button>
@@ -808,6 +937,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               </Link>
             </Button>
           )}
+        </div>
         </div>
       </header>
 
@@ -1007,12 +1137,12 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 při opuštění pole.
               </Text>
             </div>
-            <div className="text-ui-fg-muted mt-4 hidden gap-2 px-6 pb-1 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
-              <Text size="xsmall" weight="plus" className="uppercase">Název</Text>
-              <Text size="xsmall" weight="plus" className="uppercase">Kód</Text>
-              <Text size="xsmall" weight="plus" className="uppercase">Cena</Text>
-              <Text size="xsmall" weight="plus" className="uppercase">Skladem</Text>
-              <Text size="xsmall" weight="plus" className="uppercase">Naskladnit</Text>
+            <div className="mt-4 hidden gap-2 px-6 pb-1 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
+              <FieldLabel>Název</FieldLabel>
+              <FieldLabel>Kód</FieldLabel>
+              <FieldLabel>Cena</FieldLabel>
+              <FieldLabel>Skladem</FieldLabel>
+              <FieldLabel>Naskladnit</FieldLabel>
               <span />
             </div>
             <div className="divide-y border-t">
@@ -1072,7 +1202,14 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {categories.length === 0 && (
                     <Text size="small" className="text-ui-fg-subtle">
-                      Zatím žádné kategorie — založíte je v Rozdělení.
+                      Zatím žádné kategorie — založíte je v{" "}
+                      <Link
+                        to="/rozdeleni"
+                        className="text-ui-fg-interactive hover:underline"
+                      >
+                        Rozdělení
+                      </Link>
+                      .
                     </Text>
                   )}
                   {categories.map((category) => {
@@ -1153,6 +1290,46 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           </Section>
 
           <Section
+            title="Objednání bez skladu"
+            hint="Výchozí chování obchodu: po vyprodání se prodává dál a sklad jde do mínusu — vidíte, kolik kusů dlužíte."
+          >
+            <div className="divide-y">
+              <FlagRow
+                label="Objednat i bez kusů skladem"
+                description={'Zákazník koupí i vyprodaný kus; u něj se místo „Prodáno“ ukáže „Na objednávku“.'}
+                checked={backorderAll}
+                disabled={toggleBackorder.isPending || variants.length === 0}
+                onChange={(next) => toggleBackorder.mutate(next)}
+              />
+              <div className="flex flex-col gap-2 py-3">
+                <div>
+                  <Text size="small" weight="plus">
+                    Co uvidí zákazník
+                  </Text>
+                  <Text size="small" className="text-ui-fg-subtle mt-0.5">
+                    Vaše věta o čekání — ukáže se u vyprodaného kusu vedle „Na
+                    objednávku".
+                  </Text>
+                </div>
+                <InlineText
+                  value={backorderNote}
+                  placeholder="např. Vyrobíme pro vás do 3 týdnů."
+                  onSave={(next) =>
+                    saveFlags.mutateAsync({ backorder_note: next || null })
+                  }
+                />
+              </div>
+              {backorderAll && clearance && (
+                <Text size="small" className="text-ui-fg-error py-3">
+                  Pozor: kus je ve výprodeji — po vyprodání se sám skryje
+                  z obchodu, takže objednání bez skladu se neuplatní. Vypněte
+                  jedno z toho.
+                </Text>
+              )}
+            </div>
+          </Section>
+
+          <Section
             title="Zakázková výroba"
             hint={
               production?.enabled
@@ -1163,6 +1340,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               <ProductionProfileEditor
                 productId={product.id}
                 productTitle={product.title}
+                onSaved={() => void invalidate()}
                 trigger={
                   <Button size="small" variant="secondary">
                     {production?.enabled ? "Upravit podmínky" : "Nastavit zakázku"}

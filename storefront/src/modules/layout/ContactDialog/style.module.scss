@@ -182,9 +182,12 @@
 .panelBody {
   display: grid;
   min-height: 0;
-  gap: 16px;
-  padding: 16px;
-  grid-template-columns: minmax(0, 1.34fr) minmax(400px, 0.9fr);
+  /* 60 % formulář · 5 % mezera · 30 % mapa, s 2,5 % odsazením po stranách —
+     2fr:1fr přes zbylou šířku dává přesně ten poměr. */
+  row-gap: 16px;
+  column-gap: 5%;
+  padding: 16px 2.5%;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
 .formPanel {
@@ -521,95 +524,36 @@
   line-height: 1.55;
 }
 
-/* Flag off: no form at all, just the ways to reach the atelier directly. */
-.directContact {
-  display: grid;
-  margin-top: clamp(40px, 5vh, 64px);
-  gap: 18px;
-}
-
-.directContact p {
-  max-width: 46ch;
-  margin: 0;
-  color: var(--contact-secondary);
-  font-size: 16px;
-  line-height: 1.55;
-}
-
-.directContactList {
-  display: grid;
-  margin: 0;
-  gap: 14px;
-}
-
-.directContactList > div {
-  display: grid;
-  align-items: baseline;
-  gap: 14px;
-  grid-template-columns: 92px minmax(0, 1fr);
-}
-
-.directContactList dt {
-  color: var(--contact-secondary);
-  font-size: 13px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.directContactList dd {
-  margin: 0;
-  color: var(--contact-ink);
-  font-size: clamp(17px, 1.1vw, 19px);
-  font-weight: 300;
-}
-
-.directContactList a {
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
-
 .visualPanel {
   position: relative;
+  display: flex;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
+  flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 18px;
   background: #292b24;
   box-shadow: 0 20px 44px -30px rgba(20, 22, 17, 0.66);
 }
 
-.visualPanel > img {
-  filter: grayscale(0.06) brightness(0.82) saturate(0.86);
-  object-fit: cover;
-  transform: scale(1.015);
+/* Mapa vyplní všechno nad kontaktní kartou. */
+.mapFrame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
-.visualShade {
+.mapFrame iframe {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(20, 22, 17, 0.03) 36%, rgba(20, 22, 17, 0.78) 100%);
-}
-
-.visualMeta {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  left: 20px;
-  display: flex;
-  justify-content: space-between;
-  color: #fff8f1;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 .details {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
-  left: 18px;
+  margin: 12px;
   display: grid;
   padding: clamp(20px, 2vw, 28px);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -674,7 +618,7 @@
   }
 
   .panelBody {
-    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.8fr);
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   }
 
   .formPanel {
@@ -755,10 +699,10 @@
   }
 
   .visualPanel {
-    min-height: 570px;
+    min-height: 440px;
     margin-top: 8px;
 
-    /* The photo is the first thing to go when there is no height to spend. */
+    /* The map is the first thing to go when there is no height to spend. */
     @include phs-h {
       display: none;
     }

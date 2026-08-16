@@ -102,7 +102,7 @@ export default function CarouselButton({
     >
       <div className="image__bg">
         <div className="image__overlay" />
-        <Image src={src} alt="" fill sizes="125px" quality={60} />
+        <Image src={src} alt="" fill sizes="125px" quality={100} />
       </div>
       {/*
        * The arrow is a flex row anchored to the pill's still end — [chevron,

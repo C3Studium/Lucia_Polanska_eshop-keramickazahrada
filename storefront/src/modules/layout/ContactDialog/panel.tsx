@@ -3,7 +3,6 @@
 import WebButton from "@modules/common/components/Buttons/webButton"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { AnimatePresence, motion } from "framer-motion"
-import Image from "next/image"
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
@@ -45,12 +44,6 @@ type ContactDialogPanelProps = {
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
-/**
- * The contact endpoint is only wired once the backend route exists (D-S1). Until the flag is
- * set, the dialog shows the ways to reach the atelier directly — a dead form must never ship.
- */
-const isFormEnabled = process.env.NEXT_PUBLIC_CONTACT_FORM_ENABLED === "true"
 
 const contactEndpoint = () =>
   `${(process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "").replace(/\/+$/, "")}/store/contact`
@@ -139,7 +132,16 @@ export default function ContactDialogPanel({
     try {
       const response = await fetch(contactEndpoint(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // The /store namespace refuses requests without the publishable key.
+          ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+            ? {
+                "x-publishable-api-key":
+                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY,
+              }
+            : {}),
+        },
         body: JSON.stringify({
           name: read("name"),
           email: read("email"),
@@ -247,9 +249,7 @@ export default function ContactDialogPanel({
               </h2>
             </motion.div>
 
-            {!isFormEnabled ? (
-              <DirectContact merchant={merchant} />
-            ) : submitState.kind === "sent" ? (
+            {submitState.kind === "sent" ? (
               <SentMessage email={merchant.email} onClose={onClose} />
             ) : (
               <motion.form
@@ -388,17 +388,19 @@ export default function ContactDialogPanel({
             animate="visible"
             exit="exit"
           >
-            <Image
-              src="/assets/img/faq/FAQ2.png"
-              alt="Lucie Polanská při práci v keramickém ateliéru"
-              fill
-              sizes="(max-width: 760px) 100vw, 40vw"
-              priority
-            />
-            <div className={styles.visualShade} />
-            <div className={styles.visualMeta}>
-              <span>Ateliér Lucie Polanské</span>
-              <span>Putim · jižní Čechy</span>
+            {/* Google's classic key-less embed over the atelier address — the
+                interactive widget SDKs all want an API key and a billing
+                account for what is, here, one pin on one map. */}
+            <div className={styles.mapFrame}>
+              <iframe
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                  merchant.address
+                )}&z=14&hl=cs&output=embed`}
+                title="Mapa — ateliér Lucie Polanské, Putim"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
             </div>
 
             <motion.div
@@ -467,35 +469,6 @@ function SentMessage({ email, onClose }: { email: string; onClose: () => void })
         onClickAction={onClose}
         className={styles.submitButton}
       />
-    </div>
-  )
-}
-
-function DirectContact({ merchant }: { merchant: MerchantIdentity }) {
-  return (
-    <div className={styles.directContact}>
-      <p>
-        Napište nebo zavolejte přímo do ateliéru — ozvu se vám do dvou pracovních
-        dnů.
-      </p>
-      <dl className={styles.directContactList}>
-        <div>
-          <dt>E-mail</dt>
-          <dd>
-            <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
-          </dd>
-        </div>
-        <div>
-          <dt>Telefon</dt>
-          <dd>
-            <a href={`tel:${merchant.phoneDial}`}>{merchant.phone}</a>
-          </dd>
-        </div>
-        <div>
-          <dt>Adresa</dt>
-          <dd>{merchant.address}</dd>
-        </div>
-      </dl>
     </div>
   )
 }
