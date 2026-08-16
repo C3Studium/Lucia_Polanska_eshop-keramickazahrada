@@ -24,6 +24,7 @@ import { CopyId, ExpertToggle, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
 import { formatCount } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import { ViewSwitcher, useViewMode } from "../../lib/view-mode";
 
 /**
  * Sklad — the advanced inventory workbench (admin-advanced-plan.md).
@@ -277,6 +278,8 @@ const SkladStats = () => {
 const SkladInner = () => {
   const [active, setActive] = useState<"out" | "low" | "ok" | "statistiky">("out");
   const expert = useExpertMode();
+  /* Řádky / kompakt — mřížka tu není: skladová data nenesou fotky. */
+  const [view, changeView] = useViewMode("kz-view-sklad");
 
   const { data, isLoading, isError } = useQuery<WorkbenchInventoryResponse>({
     queryKey: ["workbench-inventory"],
@@ -309,7 +312,14 @@ const SkladInner = () => {
             mají v oblíbených. Doplnit kusy jde v Přehledu → Zásoby.
           </Text>
         </div>
-        <ExpertToggle />
+        <div className="flex flex-wrap items-center gap-3">
+          <ViewSwitcher
+            value={view}
+            onChange={changeView}
+            modes={["radky", "kompakt"]}
+          />
+          <ExpertToggle />
+        </div>
       </header>
 
       <SubTabs
@@ -355,7 +365,37 @@ const SkladInner = () => {
         />
       )}
 
-      {!isLoading && !isError && rows.length > 0 && (
+      {/* Kompaktní — jen kus, stav a naskladnění; ideální na telefonu u pece. */}
+      {!isLoading && !isError && rows.length > 0 && view === "kompakt" && (
+        <div className="divide-y">
+          {rows.map((row) => (
+            <div
+              key={row.variant_id}
+              className="flex flex-wrap items-center gap-2 px-6 py-1.5"
+            >
+              <div className="min-w-0 flex-1">
+                <Text size="small" className="truncate">
+                  {row.product_title || "—"}
+                  {row.variant_title ? (
+                    <span className="text-ui-fg-muted"> · {row.variant_title}</span>
+                  ) : null}
+                </Text>
+              </div>
+              <Text size="xsmall" className="text-ui-fg-subtle tabular-nums">
+                {row.available} ks
+              </Text>
+              {row.waiting_customers > 0 && (
+                <Badge size="2xsmall" color="orange">
+                  {row.waiting_customers} čeká
+                </Badge>
+              )}
+              <AddStock row={row} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && rows.length > 0 && view !== "kompakt" && (
         <div className="divide-y">
           {rows.map((row) => (
             <article

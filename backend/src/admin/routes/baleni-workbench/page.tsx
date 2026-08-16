@@ -21,6 +21,12 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "../../components/empty-state";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import {
+  ViewSwitcher,
+  gridClassName,
+  useViewMode,
+  type ViewMode,
+} from "../../lib/view-mode";
 
 /**
  * Balení+ — every product's packaging cost, editable where you can see them all.
@@ -70,7 +76,13 @@ const tabs = [
 type TabKey = (typeof tabs)[number]["key"];
 
 /** One row: the piece, whether it is fragile, and what wrapping it costs. */
-const Row = ({ product }: { product: PackagingProduct }) => {
+const Row = ({
+  product,
+  view = "radky",
+}: {
+  product: PackagingProduct;
+  view?: ViewMode;
+}) => {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(
     product.packaging_price === null ? "" : String(product.packaging_price)
@@ -109,6 +121,93 @@ const Row = ({ product }: { product: PackagingProduct }) => {
     value.trim() ===
     (product.packaging_price === null ? "" : String(product.packaging_price));
 
+  // One field, three coats: the input (with its save-on-blur contract) is
+  // identical in every view, only the wrapper changes.
+  const priceInput = (className: string) => (
+    <Input
+      size="small"
+      type="number"
+      min={0}
+      className={className}
+      placeholder="výchozí"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={() => !unchanged && save.mutate()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+      }}
+      disabled={save.isPending}
+    />
+  );
+
+  if (view === "mrizka") {
+    return (
+      <figure className="border-ui-border-base overflow-hidden rounded-lg border">
+        <div className="bg-ui-bg-subtle aspect-square w-full overflow-hidden">
+          {product.thumbnail ? (
+            <img
+              src={product.thumbnail}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="text-ui-fg-muted flex h-full w-full items-center justify-center">
+              <Text size="xsmall">—</Text>
+            </div>
+          )}
+        </div>
+        <figcaption className="flex flex-col gap-2 p-2">
+          <div className="flex items-center justify-between gap-1">
+            <Text size="small" className="truncate">
+              {product.title}
+            </Text>
+            {product.fragile && (
+              <Badge size="2xsmall" color="orange">
+                křehké
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {priceInput("flex-1")}
+            <Text size="xsmall" className="text-ui-fg-muted">
+              Kč
+            </Text>
+          </div>
+        </figcaption>
+      </figure>
+    );
+  }
+
+  if (view === "kompakt") {
+    return (
+      <div className="flex items-center gap-2 px-6 py-1.5">
+        <div className="bg-ui-bg-subtle h-6 w-6 shrink-0 overflow-hidden rounded">
+          {product.thumbnail ? (
+            <img
+              src={product.thumbnail}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+        <Text size="small" className="min-w-0 flex-1 truncate">
+          {product.title}
+        </Text>
+        {product.fragile && (
+          <Badge size="2xsmall" color="orange">
+            křehké
+          </Badge>
+        )}
+        {priceInput("w-24")}
+        <Text size="xsmall" className="text-ui-fg-muted">
+          Kč
+        </Text>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-3 px-6 py-3">
       {/* The picture, because she prices packaging by looking at the piece — the
@@ -137,22 +236,9 @@ const Row = ({ product }: { product: PackagingProduct }) => {
           </Badge>
         )}
       </div>
-      <Input
-        size="small"
-        type="number"
-        min={0}
-        className="w-28"
-        placeholder="výchozí"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        // Saved on blur and on Enter — she is going down a list, so leaving a
-        // field is the natural "done with this one".
-        onBlur={() => !unchanged && save.mutate()}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-        }}
-        disabled={save.isPending}
-      />
+      {/* Saved on blur and on Enter — she is going down a list, so leaving a
+          field is the natural "done with this one". */}
+      {priceInput("w-28")}
       <Text size="xsmall" className="text-ui-fg-muted w-10">
         Kč
       </Text>
@@ -163,6 +249,8 @@ const Row = ({ product }: { product: PackagingProduct }) => {
 const BaleniInner = () => {
   const [active, setActive] = useState<TabKey>("bezne");
   const [search, setSearch] = useState("");
+  /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
+  const [view, changeView] = useViewMode("kz-view-baleni");
 
   /* Filtered server-side, for the reason spelled out in Produkty+: the route slices to
      `limit` after filtering, so asking for everything and narrowing here silently loses
@@ -204,14 +292,17 @@ const BaleniInner = () => {
             obchodu. Zdraží-li materiál, stačí čísla tady zvednout.
           </Text>
         </div>
-        <Input
-          size="small"
-          type="search"
-          placeholder="Hledat název…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="w-56"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <ViewSwitcher value={view} onChange={changeView} />
+          <Input
+            size="small"
+            type="search"
+            placeholder="Hledat název…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-56"
+          />
+        </div>
       </header>
 
       <div className="flex flex-wrap items-center gap-2 px-6 py-4">
@@ -267,11 +358,19 @@ const BaleniInner = () => {
 
       {!isLoading && !isError && rows.length > 0 && (
         <>
-          <div className="divide-y">
-            {rows.map((product) => (
-              <Row key={product.id} product={product} />
-            ))}
-          </div>
+          {view === "mrizka" ? (
+            <div className={gridClassName}>
+              {rows.map((product) => (
+                <Row key={product.id} product={product} view="mrizka" />
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y">
+              {rows.map((product) => (
+                <Row key={product.id} product={product} view={view} />
+              ))}
+            </div>
+          )}
           {/* How far through she is, so a half-priced catalogue is visible rather
               than something she discovers from a wrong shipping total. */}
           <div className="px-6 py-4">

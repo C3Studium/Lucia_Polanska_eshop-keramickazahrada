@@ -1,7 +1,6 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import {
-  ArchiveBox, ExclamationCircle, EyeSlash, Folder, GridList, ListBullet,
-  ListTree, QueueList,
+  ArchiveBox, ExclamationCircle, EyeSlash, Folder, ListBullet, ListTree,
 } from "@medusajs/icons";
 import {
   Badge, Button, Container, Heading, Input, Prompt, Text, Toaster, toast,
@@ -14,6 +13,7 @@ import { Link } from "react-router-dom";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
+import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 
 /**
  * Rozdělení — kolekce → kategorie → produkty as three columns
@@ -36,26 +36,6 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 
 /* Thumb + ProductLightbox live in components/product-thumb.tsx — shared with
    Produkty+, so „the photo opens the photos" behaves the same everywhere. */
-
-/** Tři styly zobrazení produktů vpravo; volba přežívá reload (localStorage). */
-type ProductView = "radky" | "mrizka" | "kompakt";
-
-const VIEW_STORAGE_KEY = "kz-rozdeleni-view";
-
-const readProductView = (): ProductView => {
-  try {
-    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
-    return stored === "mrizka" || stored === "kompakt" ? stored : "radky";
-  } catch {
-    return "radky";
-  }
-};
-
-const viewOptions: { key: ProductView; label: string; Icon: typeof ListBullet }[] = [
-  { key: "radky", label: "Řádky — plná práce s přeřazením", Icon: ListBullet },
-  { key: "mrizka", label: "Mřížka — fotky vedle sebe", Icon: GridList },
-  { key: "kompakt", label: "Kompaktní — rychlé skenování", Icon: QueueList },
-];
 
 const Inner = () => {
   const queryClient = useQueryClient();
@@ -87,16 +67,8 @@ const Inner = () => {
   >({});
   /* Tři styly pravého sloupce: řádky (plná práce s přeřazením), mřížka
      (fotky — vizuální kontrola katalogu) a kompaktní (rychlé skenování,
-     nejlepší na telefonu). Volba se pamatuje jako u expertního režimu. */
-  const [view, setView] = useState<ProductView>(readProductView);
-  const changeView = (next: ProductView) => {
-    setView(next);
-    try {
-      localStorage.setItem(VIEW_STORAGE_KEY, next);
-    } catch {
-      // Private mode etc. — the choice just won't survive a reload.
-    }
-  };
+     nejlepší na telefonu). Sdílená komponenta, volba se pamatuje. */
+  const [view, changeView] = useViewMode("kz-rozdeleni-view");
   /* Klik na miniaturu otevře fotky v plné velikosti — kontrola detailů kusu
      bez odchodu ze stránky (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(
@@ -872,23 +844,7 @@ const Inner = () => {
                 </button>
               ))}
               <div className="flex-1" />
-              <div className="border-ui-border-base flex items-center gap-0.5 rounded-lg border p-0.5">
-                {viewOptions.map(({ key, label, Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    title={label}
-                    onClick={() => changeView(key)}
-                    className={
-                      view === key
-                        ? "bg-ui-bg-base-pressed text-ui-fg-base rounded-md p-1"
-                        : "text-ui-fg-muted hover:text-ui-fg-base rounded-md p-1"
-                    }
-                  >
-                    <Icon />
-                  </button>
-                ))}
-              </div>
+              <ViewSwitcher value={view} onChange={changeView} />
               {pendingCount > 0 && (
                 <>
                   <Button size="small"
@@ -1071,7 +1027,7 @@ const Inner = () => {
               selecty tu nejsou schválně: mřížka je na koukání a hromadný
               výběr, práce s kolonkami patří řádkům. */}
           {view === "mrizka" && listedProducts.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 2xl:grid-cols-4">
+            <div className={gridClassName}>
               {listedProducts.map((product) => (
                 <figure
                   key={product.id}

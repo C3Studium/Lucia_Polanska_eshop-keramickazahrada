@@ -32,6 +32,7 @@ import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
+import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
@@ -496,6 +497,8 @@ const ProductsInner = () => {
   const [active, setActive] = useState<TabKey>("produkty");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
+  const [view, changeView] = useViewMode("kz-view-produkty");
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   /* Rozpracované přepínače (Rozdělení pattern): flip nezapisuje, jen se drží
@@ -699,17 +702,124 @@ const ProductsInner = () => {
   });
   const pendingCount = Object.keys(pendingFlags).length;
 
-  const renderRow = (product: WorkbenchProduct) => {
-    // Best variant wins — „can I sell it at all?" Skladem beats Dochází
-    // beats Vyprodáno; a product is only Vyprodáno when EVERY variant is.
-    const worstStock = product.variants.reduce<"ok" | "low" | "out" | null>(
-      (best, variant) => {
-        if (variant.stock_state === "ok" || best === "ok") return "ok";
-        if (variant.stock_state === "low" || best === "low") return "low";
-        return variant.stock_state ?? best;
-      },
-      null
+  // Best variant wins — „can I sell it at all?" Skladem beats Dochází
+  // beats Vyprodáno; a product is only Vyprodáno when EVERY variant is.
+  const worstStockOf = (product: WorkbenchProduct) =>
+    product.variants.reduce<"ok" | "low" | "out" | null>((best, variant) => {
+      if (variant.stock_state === "ok" || best === "ok") return "ok";
+      if (variant.stock_state === "low" || best === "low") return "low";
+      return variant.stock_state ?? best;
+    }, null);
+
+  const toggleSelected = (productId: string, checked: boolean) => {
+    const next = new Set(selected);
+    if (checked) next.add(productId);
+    else next.delete(productId);
+    setSelected(next);
+  };
+
+  /* Mřížka — fotky vedle sebe, 2 sloupce na telefonu. Rychlé akce a rozbalení
+     patří řádkům; tady je vizuální kontrola, výběr a cesta na detail. */
+  const renderGridCard = (product: WorkbenchProduct) => {
+    const worstStock = worstStockOf(product);
+    return (
+      <figure
+        key={product.id}
+        className="border-ui-border-base overflow-hidden rounded-lg border"
+      >
+        <div className="relative">
+          <button
+            type="button"
+            title="Zvětšit fotku"
+            className="bg-ui-bg-subtle block aspect-square w-full"
+            onClick={() => setLightbox({ id: product.id, title: product.title })}
+          >
+            {product.thumbnail ? (
+              <img
+                src={product.thumbnail}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="text-ui-fg-muted flex h-full w-full items-center justify-center">
+                <Text size="xsmall">—</Text>
+              </div>
+            )}
+          </button>
+          <input
+            type="checkbox"
+            className="absolute left-2 top-2 size-4"
+            checked={selected.has(product.id)}
+            onChange={(e) => toggleSelected(product.id, e.target.checked)}
+          />
+        </div>
+        <figcaption className="flex flex-col gap-1 p-2">
+          <Link to={`/produkt/${product.id}`} className="block hover:underline">
+            <Text size="small" weight="plus" className="truncate">
+              {product.title}
+            </Text>
+          </Link>
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex flex-wrap items-center gap-1">
+              {product.status !== "published" && (
+                <Badge size="2xsmall" color="grey">
+                  koncept
+                </Badge>
+              )}
+              {worstStock && (
+                <Badge size="2xsmall" color={stockBadge[worstStock].color}>
+                  {stockBadge[worstStock].label}
+                </Badge>
+              )}
+            </div>
+            <PublishToggle product={product} />
+          </div>
+        </figcaption>
+      </figure>
     );
+  };
+
+  /* Kompaktní — hustý seznam pro dlouhé záložky a telefon. */
+  const renderCompactRow = (product: WorkbenchProduct) => {
+    const worstStock = worstStockOf(product);
+    return (
+      <div key={product.id} className="flex items-center gap-2 px-6 py-1.5">
+        <input
+          type="checkbox"
+          checked={selected.has(product.id)}
+          onChange={(e) => toggleSelected(product.id, e.target.checked)}
+        />
+        <Thumb
+          src={product.thumbnail}
+          title={product.title}
+          sizeClassName="size-6"
+          onZoom={() => setLightbox({ id: product.id, title: product.title })}
+        />
+        <Link
+          to={`/produkt/${product.id}`}
+          className="min-w-0 flex-1 hover:underline"
+        >
+          <Text size="small" className="truncate">
+            {product.title}
+          </Text>
+        </Link>
+        {product.status !== "published" && (
+          <Badge size="2xsmall" color="grey">
+            koncept
+          </Badge>
+        )}
+        {worstStock && (
+          <Badge size="2xsmall" color={stockBadge[worstStock].color}>
+            {stockBadge[worstStock].label}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const renderRow = (product: WorkbenchProduct) => {
+    const worstStock = worstStockOf(product);
     const priced = product.variants.filter(
       (variant) => variant.price_czk !== null
     );
@@ -1049,6 +1159,7 @@ const ProductsInner = () => {
               </Button>
             </>
           )}
+          <ViewSwitcher value={view} onChange={changeView} />
           <ExpertToggle />
           {/* Every kind starts in the one Nový produkt panel — the button just
               carries the tab's kind so the right card is preselected. Oblíbené,
@@ -1178,7 +1289,13 @@ const ProductsInner = () => {
           )}
 
           {!isLoading && !isError && rows.length > 0 && (
-            <div className="divide-y">{rows.map(renderRow)}</div>
+            view === "mrizka" ? (
+              <div className={gridClassName}>{rows.map(renderGridCard)}</div>
+            ) : (
+              <div className="divide-y">
+                {rows.map(view === "kompakt" ? renderCompactRow : renderRow)}
+              </div>
+            )
           )}
 
           {data?.truncated && (

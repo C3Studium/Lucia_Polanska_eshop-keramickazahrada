@@ -23,6 +23,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { VisibilityEye } from "../../../components/visibility-eye";
 import { sdk } from "../../../lib/sdk";
+import { ViewSwitcher, gridClassName, useViewMode } from "../../../lib/view-mode";
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -138,6 +139,8 @@ const DeleteProduct = ({ product }: { product: ProductRow }) => {
 const ProduktyInner = () => {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
+  const [view, changeView] = useViewMode("kz-view-prehled-produkty");
   const bulkArchive = useMutation({
     mutationFn: async () => {
       for (const id of selected) {
@@ -208,9 +211,12 @@ const ProduktyInner = () => {
             Úpravy se otevřou v editoru produktu.
           </Text>
         </div>
-        <Button size="small" variant="secondary" asChild>
-          <Link to="/novy-produkt">Nový produkt</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <ViewSwitcher value={view} onChange={changeView} />
+          <Button size="small" variant="secondary" asChild>
+            <Link to="/novy-produkt">Nový produkt</Link>
+          </Button>
+        </div>
       </header>
 
       <SubTabs
@@ -275,7 +281,115 @@ const ProduktyInner = () => {
         />
       )}
 
-      {!isLoading && !isError && products.length > 0 && (
+      {/* Mřížka — fotky vedle sebe, 2 sloupce na telefonu. */}
+      {!isLoading && !isError && products.length > 0 && view === "mrizka" && (
+        <div className={gridClassName}>
+          {products.map((product) => (
+            <figure
+              key={product.id}
+              className="border-ui-border-base overflow-hidden rounded-lg border"
+            >
+              <Link to={`/produkt/${product.id}`} className="block">
+                {product.thumbnail ? (
+                  <img
+                    src={product.thumbnail}
+                    alt=""
+                    loading="lazy"
+                    className="bg-ui-bg-subtle aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-ui-bg-subtle text-ui-fg-muted flex aspect-square w-full items-center justify-center">
+                    <Text size="xsmall">—</Text>
+                  </div>
+                )}
+              </Link>
+              <figcaption className="flex flex-col gap-1 p-2">
+                <Link
+                  to={`/produkt/${product.id}`}
+                  className="block hover:underline"
+                >
+                  <Text size="small" weight="plus" className="truncate">
+                    {product.title}
+                  </Text>
+                </Link>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex flex-wrap gap-1">
+                    {product.status !== "published" && (
+                      <Badge size="2xsmall" color="grey">Koncept</Badge>
+                    )}
+                    {product.stock_state === "low" && (
+                      <Badge size="2xsmall" color="orange">Dochází</Badge>
+                    )}
+                    {product.stock_state === "out" && (
+                      <Badge size="2xsmall" color="red">Vyprodáno</Badge>
+                    )}
+                  </div>
+                  <VisibilityEye
+                    visible={product.status === "published"}
+                    label={`produkt ${product.title}`}
+                    hideText="Zákazníci ho v obchodě neuvidí a nekoupí, dokud ho zase nezveřejníte."
+                    showText="Produkt se vrátí do obchodu a půjde koupit."
+                    onToggle={() =>
+                      sdk.client.fetch(`/admin/products/${product.id}`, {
+                        method: "POST",
+                        body: {
+                          status:
+                            product.status === "published"
+                              ? "draft"
+                              : "published",
+                        },
+                      })
+                    }
+                    onDone={async () => {
+                      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+                      await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
+                    }}
+                  />
+                </div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+
+      {/* Kompaktní — hustý seznam pro telefon a rychlou kontrolu. */}
+      {!isLoading && !isError && products.length > 0 && view === "kompakt" && (
+        <div className="divide-y">
+          {products.map((product) => (
+            <div key={product.id} className="flex items-center gap-2 px-6 py-1.5">
+              {product.thumbnail ? (
+                <img
+                  src={product.thumbnail}
+                  alt=""
+                  loading="lazy"
+                  className="h-6 w-6 shrink-0 rounded object-cover"
+                />
+              ) : (
+                <div className="bg-ui-bg-subtle h-6 w-6 shrink-0 rounded" />
+              )}
+              <Link
+                to={`/produkt/${product.id}`}
+                className="min-w-0 flex-1 hover:underline"
+              >
+                <Text size="small" className="truncate">
+                  {product.title}
+                </Text>
+              </Link>
+              {product.status !== "published" && (
+                <Badge size="2xsmall" color="grey">Koncept</Badge>
+              )}
+              {product.stock_state === "low" && (
+                <Badge size="2xsmall" color="orange">Dochází</Badge>
+              )}
+              {product.stock_state === "out" && (
+                <Badge size="2xsmall" color="red">Vyprodáno</Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && products.length > 0 && view === "radky" && (
         <div className="divide-y">
           {products.map((product) => (
             <article
