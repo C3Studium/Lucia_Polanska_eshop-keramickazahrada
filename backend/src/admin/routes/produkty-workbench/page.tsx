@@ -1009,7 +1009,7 @@ const ProductsInner = () => {
               </a>
             )}
             <Link
-              to={`/products/${product.id}`}
+              to={`/produkt/${product.id}`}
               className="text-ui-fg-interactive txt-small hover:underline"
             >
               Upravit

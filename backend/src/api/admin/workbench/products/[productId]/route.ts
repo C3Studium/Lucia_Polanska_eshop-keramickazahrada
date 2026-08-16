@@ -165,6 +165,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         reserved: alert?.reserved ?? null,
         stock_state: alert?.state ?? null,
         threshold: alert?.threshold ?? null,
+        // For the detail page's inline restock — the add-stock route wants
+        // the inventory item, not the variant.
+        inventory_item_id: alert?.inventory_item_id ?? null,
         waiting_customers: waitingByVariant.get(variant.id) ?? 0,
         wishlist_count: wishlistByVariant.get(variant.id) ?? 0,
       }

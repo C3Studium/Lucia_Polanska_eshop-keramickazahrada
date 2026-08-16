@@ -49,6 +49,13 @@ const PatchFlagsSchema = z
      * order history, and deleting it would take that with it.
      */
     archived: z.boolean().optional(),
+    /**
+     * Personalized piece: the price scales with the height × width the
+     * customer enters. Read by the cart workflows
+     * (`workflows/hooks/validate-personalized-product.ts`); until the product
+     * detail page grew a switch for it, nothing could set it.
+     */
+    is_personalized: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

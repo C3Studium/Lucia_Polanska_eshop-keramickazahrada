@@ -245,7 +245,7 @@ const ZasobyInner = () => {
                 </Text>
                 {row.product_id && (
                   <Link
-                    to={`/products/${row.product_id}`}
+                    to={`/produkt/${row.product_id}`}
                     className="text-ui-fg-interactive text-xs"
                   >
                     Otevřít produkt

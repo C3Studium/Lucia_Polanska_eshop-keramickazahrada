@@ -354,7 +354,7 @@ const ProduktyInner = () => {
                   }}
                 />
                 <Button size="small" variant="secondary" asChild>
-                  <Link to={`/products/${product.id}`}>Upravit</Link>
+                  <Link to={`/produkt/${product.id}`}>Upravit</Link>
                 </Button>
                 <DeleteProduct product={product} />
               </div>

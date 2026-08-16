@@ -1091,7 +1091,7 @@ const Inner = () => {
                 }
                 onDone={invalidate}
               />
-              <Link to={`/products/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
+              <Link to={`/produkt/${product.id}`} className="text-ui-fg-interactive txt-small hover:underline">
                 Upravit
               </Link>
             </div>

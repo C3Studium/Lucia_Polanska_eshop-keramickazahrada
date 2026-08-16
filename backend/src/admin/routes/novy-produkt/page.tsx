@@ -157,7 +157,7 @@ const NovyProduktInner = () => {
     },
     onSuccess: (productId, { kind }) => {
       toast.success(cards.find((card) => card.id === kind)?.toast ?? "Založeno.");
-      navigate(`/products/${productId}`);
+      navigate(`/produkt/${productId}`);
     },
     onError: (error) => {
       toast.error(
@@ -250,7 +250,7 @@ const NovyProduktInner = () => {
             trigger={<Button>Sestavit balíček</Button>}
             onCreated={(productId) => {
               if (productId) {
-                navigate(`/products/${productId}`);
+                navigate(`/produkt/${productId}`);
               }
             }}
           />
