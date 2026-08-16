@@ -1,12 +1,12 @@
 "use client"
 
 import { listStoreCatalogue } from "@lib/data/products"
-import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+// import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import type { HttpTypes } from "@medusajs/types"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import FilterPanel from "./components/FilterPanel"
 import ProductGrid from "./components/ProductGrid"
-import ShopHero from "./components/ShopHero"
+// import ShopHero from "./components/ShopHero"
 import ShopToolbar from "./components/ShopToolbar"
 import type { FilterChip, ShopCategory, ShopFilters, ShopNavCollection } from "./types"
 import styles from "./style.module.scss"
@@ -229,16 +229,29 @@ export default function ECom({
     }
   }, [allLoaded, countryCode, filters, loading, products])
 
+  /* Hero je schovaný — katalog teď stránku otevírá. Až se vrátí, vrátí se i tohle scrollování.
   const scrollToCatalogue = () => {
     if (catalogueRef.current) scrollWithLenis(catalogueRef.current)
   }
+  */
+
+  // Co přesně filtr právě vymezuje — jméno kategorie/kolekce pod titulkem sekce.
+  const activeCategoryName = categories.find(
+    (item) => item.id === filters.categoryId
+  )?.name
+  const activeCollectionTitle =
+    navCollections.find((item) => item.id === filters.collectionId)?.title ??
+    (filters.collectionId ? initialFilterLabel : undefined)
+  const filterScope =
+    [activeCollectionTitle, activeCategoryName].filter(Boolean).join(" · ") ||
+    "Vše"
 
   return (
     <main className={styles.root}>
-      <ShopHero
+      {/* <ShopHero
         productCount={totalCount || products.length}
         onExplore={scrollToCatalogue}
-      />
+      /> */}
 
       <section
         ref={catalogueRef}
@@ -249,7 +262,10 @@ export default function ECom({
         aria-label="Katalog produktů"
       >
         <header className={styles.introduction}>
-          <p>Co je právě k mání</p>
+          <p>
+            Co je právě k mání
+            <span className={styles.filterScope}>{filterScope}</span>
+          </p>
           <h2>
             Vyberte si něco,
             <br />

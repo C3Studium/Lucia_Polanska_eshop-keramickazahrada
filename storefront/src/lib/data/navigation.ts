@@ -8,9 +8,11 @@ import type {
 import { listCategories } from "./categories"
 import { listCollections } from "./collections"
 
-/** The mega-menu lays out expanding cards; more than six stop being readable. */
-const CARD_LIMIT = 6
-const CATEGORY_LINK_LIMIT = 6
+/* Every visible collection gets a card — a cap here meant a freshly added collection
+   silently never appeared in the menu. The flex layout narrows the idle cards to fit.
+   Links inside a card are still bounded: the card has fixed height and no scroll, so an
+   unbounded list would clip; twelve fills it without overflowing. */
+const CATEGORY_LINK_LIMIT = 12
 const FALLBACK_IMAGE = "/assets/img/img/home_image.png"
 
 /**
@@ -60,7 +62,7 @@ function toCollectionCards(
   collections: HttpTypes.StoreCollection[],
   categories: HttpTypes.StoreProductCategory[]
 ): NavigationCollection[] {
-  return collections.slice(0, CARD_LIMIT).map((collection) => {
+  return collections.map((collection) => {
     const productIds = new Set(collection.products?.map(({ id }) => id) ?? [])
 
     return {
@@ -93,7 +95,6 @@ function toCategoryCards(
     .filter((category) => !SEED_CATEGORY_HANDLES.has(category.handle ?? ""))
     // A card the customer can open onto an empty grid is a dead end, not a destination.
     .filter((category) => (category.products?.length ?? 0) > 0)
-    .slice(0, CARD_LIMIT)
     .map((category) => ({
       id: category.id,
       title: category.name,

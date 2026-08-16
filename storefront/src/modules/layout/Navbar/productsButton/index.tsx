@@ -55,8 +55,8 @@ const ease = [0.76, 0, 0.24, 1] as Easing
  * things can: a device that reports no hover at all never produces a genuine one, and a real
  * touch that happened moments ago explains any "mouse" event that follows it.
  *
- * Without this the menu shut 150ms after every tap: the backdrop appeared under the finger and
- * its hover-to-close fired on the tap's own echo.
+ * Only the button highlight rides on hover now (the menu itself is click-driven), but an
+ * ungated highlight would still stick on after every tap — lit by the tap's own echo.
  */
 function useIsRealHover() {
   const lastTouchAt = useRef(-Infinity)
@@ -136,18 +136,6 @@ export function ProductButton({
   const [isHovered, setIsHovered] = useState(false)
   const isRealHover = useIsRealHover()
   const highlighted = isActive || isHovered || isRouteActive
-  /* Which input is driving decides what a press means. A mouse has hover, so the menu can
-     preview itself on the way past and the click is free to do the obvious thing — go to the
-     shop. A finger has no hover, so its first tap has to *be* the preview; a second tap, with
-     the menu already open, goes through. Read from the event rather than sniffed from the
-     user agent, so a touchscreen laptop behaves like whichever one is actually in your hand. */
-  const pointerType = useRef("mouse")
-  /* Whether the menu was already open when the press started. `isActive` cannot be trusted
-     inside the click handler: the order is pointerdown → focus → click, and focus opens the
-     menu, so by click time the state has already flipped and a toggle reads it backwards —
-     which is exactly why the first tap opened and instantly re-closed. pointerdown lands
-     before any of that. */
-  const wasOpenAtPress = useRef(false)
 
   // With nothing to put in the menu, the label still has to lead somewhere: the
   // catalogue itself. A control that opens an empty panel is worse than a link.
@@ -170,41 +158,25 @@ export function ProductButton({
       className={styles.button}
       aria-expanded={isActive}
       aria-controls="collection-navigation"
-      onPointerDown={(event: React.PointerEvent<HTMLAnchorElement>) => {
-        pointerType.current = event.pointerType || "mouse"
-        wasOpenAtPress.current = isActive
-      }}
       onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
-        // Keyboard Enter reports no pointer type, and a keyboard has no hover either — but it
-        // has focus, which opens the menu below. So Enter is left to navigate.
-        const isTouch = pointerType.current === "touch" || pointerType.current === "pen"
+        // A modifier or middle click keeps the link's native meaning — /store in a new tab.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
 
-        /* A finger toggles, full stop. Making the second tap navigate instead read as a
-           shortcut, but it took the toggle away: the obvious way to shut the menu — tap the
-           thing you tapped to open it — walked you off the page instead, and nothing on
-           screen said it would. The shop is reached from the „Zobrazit celý e-shop" link
-           inside the menu, where it can be seen and read. */
-        if (isTouch) {
-          event.preventDefault()
-          onClickAction(!wasOpenAtPress.current)
-        }
+        /* One rule for every input — mouse, finger, Enter: a plain activation toggles the
+           menu, open shut, shut open. Nothing else opens it (hover used to, and a menu that
+           appears on a fly-by but hides on the very click that "opened" it reads as broken),
+           so `isActive` is stable by click time and the toggle can trust it. The shop itself
+           is reached from the „Zobrazit celý e-shop" link inside the menu, where it can be
+           seen and read. */
+        event.preventDefault()
+        onClickAction(!isActive)
       }}
-      /* Deliberately pointer- rather than mouse-events: a tap emits a synthetic mouseenter
-         *before* its click, which would open the menu and make the very first tap look like
-         the second one — straight to /store, no menu, every time. */
+      /* Hover only lights the button up — gated on real hover so a tap's synthetic
+         pointerenter doesn't leave the highlight stuck on after the finger lifts. */
       onPointerEnter={(event: React.PointerEvent<HTMLAnchorElement>) => {
-        if (!isRealHover(event)) return
-        setIsHovered(true)
-        onClickAction(true)
+        if (isRealHover(event)) setIsHovered(true)
       }}
       onPointerLeave={() => setIsHovered(false)}
-      /* Without this the menu is unreachable by keyboard: Enter would only ever navigate.
-         Gated on :focus-visible because a tap focuses too — and an unguarded open here beat
-         the click handler to it, so a finger opened the menu on focus and then toggled it
-         straight back shut on the very same tap. */
-      onFocus={(event: React.FocusEvent<HTMLAnchorElement>) => {
-        if (event.target.matches(":focus-visible")) onClickAction(true)
-      }}
     >
       <ProductButtonFace highlighted={highlighted} />
     </LocalizedClientLink>
@@ -246,7 +218,6 @@ export function CollectionList({
   onActiveIndexChange,
 }: CollectionListProps) {
   const items = collections
-  const isRealHover = useIsRealHover()
   const safeActiveIndex = Math.min(activeIndex, items.length - 1)
   const [cardsScope, animateCards] = useAnimate<HTMLDivElement>()
   const previousIndex = useRef(0)
@@ -269,6 +240,16 @@ export function CollectionList({
     if (!active) previousIndex.current = 0
   }, [active])
 
+  // The menu is click-driven, so it needs the keyboard's way out too.
+  useEffect(() => {
+    if (!active) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActive(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [active, setActive])
+
   return (
     <AnimatePresence initial={false}>
       {active && items.length > 0 && (
@@ -279,21 +260,14 @@ export function CollectionList({
           animate={menuFadeTo}
           exit={menuFadeFrom}
           transition={menuFadeTransition}
-          /* Closing on leave is a mouse idea — a pointer that has moved away has said it is
-             done. A finger emits the same events synthetically right after the tap. */
-          onPointerLeave={(event) => {
-            if (isRealHover(event)) setActive(false)
-          }}
         >
+          {/* The menu opens and closes by click only, so leaving with the pointer no longer
+              shuts it — clicking outside (this backdrop), Escape, the E-shop button again,
+              or any link inside are the ways out. */}
           <button
             type="button"
             className={styles.backdrop}
             aria-label="Zavřít nabídku produktů"
-            // Same story: the tap's echo landed here the instant the backdrop appeared under
-            // the finger. The click below is the touch way out, and stays unguarded.
-            onPointerEnter={(event) => {
-              if (isRealHover(event)) setActive(false)
-            }}
             onClick={() => setActive(false)}
           />
           <motion.div
