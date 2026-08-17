@@ -135,7 +135,7 @@ export default async function ProductPage(props: Props) {
     countryCode,
     queryParams: { 
       handle: params.handle, 
-      fields: "*bundle, *variants.calculated_price, +variants.inventory_quantity, +metadata, +tags",
+      fields: "*bundle, *variants.calculated_price, +variants.inventory_quantity, +variants.metadata, +metadata, +tags",
     },
   }).then(({ response }) => response.products[0])
 

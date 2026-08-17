@@ -516,6 +516,36 @@
   min-width: 0;
 }
 
+/* Fotky a poznámka zvoleného provedení — hned pod výběrem variant. */
+.product__variantMedia {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--pdp-line-dark);
+}
+
+.product__variantPhotos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  img {
+    width: clamp(56px, 5vw, 76px);
+    height: clamp(56px, 5vw, 76px);
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 232, 214, 0.14);
+  }
+}
+
+.product__variantNote {
+  margin: 0;
+  color: rgba(255, 232, 214, 0.6);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .product__buyBlock {
   margin-top: auto;
   padding-top: clamp(38px, 6vh, 64px);

@@ -95,6 +95,20 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     [product.variants, options]
   )
 
+  /* Per-variant photos and note ride on variant metadata — the admin's
+     „Varianty a ceny" writes them, this is the only place that reads them. */
+  const variantMeta = (selectedVariant?.metadata ?? null) as Record<
+    string,
+    unknown
+  > | null
+  const variantPhotos = Array.isArray(variantMeta?.images)
+    ? (variantMeta.images as unknown[]).filter(
+        (url): url is string => typeof url === "string"
+      )
+    : []
+  const variantNote =
+    typeof variantMeta?.note === "string" ? variantMeta.note.trim() : ""
+
   const availability = useMemo(
     () => variantAvailability(selectedVariant),
     [selectedVariant]
@@ -310,6 +324,30 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     setOptionValue={setOptionValue}
                   />
                 </div>
+
+                {/* The chosen provedení, shown as itself: a variant can carry its
+                    own photos and note (admin: Varianty a ceny), because a blue
+                    glaze sold by a photo of the green one is a return waiting
+                    to happen. */}
+                {(variantPhotos.length > 0 || variantNote) && (
+                  <div className="product__variantMedia">
+                    {variantPhotos.length > 0 && (
+                      <div className="product__variantPhotos">
+                        {variantPhotos.map((url) => (
+                          <img
+                            key={url}
+                            src={url}
+                            alt={`${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`}
+                            loading="lazy"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {variantNote && (
+                      <p className="product__variantNote">{variantNote}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="product__buyBlock">
                   {isMadeToOrder && productionProfile && (

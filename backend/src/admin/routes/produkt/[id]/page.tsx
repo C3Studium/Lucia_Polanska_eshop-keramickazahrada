@@ -21,7 +21,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { EmptyState, pieces } from "../../../components/empty-state";
 import {
   InlineNumber,
@@ -56,6 +56,8 @@ type NativeVariant = {
   title: string | null;
   sku: string | null;
   allow_backorder?: boolean;
+  /** Carries the variant's own photos (`images`) and customer note (`note`). */
+  metadata?: Record<string, unknown> | null;
   prices?: { id?: string; currency_code: string; amount: number }[];
 };
 
@@ -143,7 +145,7 @@ const PRODUCT_FIELDS = [
   "weight", "length", "height", "width", "material", "collection_id", "metadata",
   "created_at", "updated_at",
   "*collection", "*images", "*categories", "*options", "*variants",
-  "*variants.prices",
+  "*variants.prices", "variants.metadata",
 ].join(",");
 
 /** Section shell — heading + hint on the left rhythm of the page. */
@@ -313,10 +315,40 @@ const VariantRow = ({
       toast.error(error instanceof Error ? error.message : "Odstranění se nepodařilo."),
   });
 
+  /*
+   * A variant is a mini-product: its own photos and note live on its metadata.
+   * The storefront shows them the moment the customer picks this provedení —
+   * a blue glaze sold by a photo of the green one is a return waiting to happen.
+   */
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photos = Array.isArray(variant.metadata?.images)
+    ? (variant.metadata.images as unknown[]).filter(
+        (url): url is string => typeof url === "string"
+      )
+    : [];
+  const note =
+    typeof variant.metadata?.note === "string" ? variant.metadata.note : "";
+  const saveMeta = (patch: Record<string, unknown>) =>
+    save.mutateAsync({ metadata: { ...(variant.metadata ?? {}), ...patch } });
+
+  const uploadPhotos = useMutation({
+    mutationFn: async (files: File[]) => {
+      const result = await sdk.admin.upload.create({ files });
+      const urls = (result.files ?? [])
+        .map((file: { url?: string }) => file.url)
+        .filter(Boolean) as string[];
+      if (!urls.length) throw new Error("Fotky se nepodařilo nahrát.");
+      return saveMeta({ images: [...photos, ...urls] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Nahrání se nepodařilo."),
+  });
+
   const state = stock?.stock_state ? stockMeta[stock.stock_state] : null;
 
   return (
-    <div className="grid items-center gap-2 px-6 py-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
+    <div className="px-6 py-3">
+    <div className="grid items-center gap-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
       <div>
         <InlineText
           value={variant.title ?? ""}
@@ -439,6 +471,78 @@ const VariantRow = ({
         )}
       </div>
     </div>
+
+    <div className="mt-2 flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {photos.map((url, index) => (
+          <figure key={url} className="group relative m-0">
+            <button
+              type="button"
+              title={index === 0 ? "Hlavní fotka varianty" : "Nastavit jako hlavní"}
+              onClick={() => {
+                if (index === 0) return;
+                void saveMeta({
+                  images: [url, ...photos.filter((entry) => entry !== url)],
+                });
+              }}
+              className={`block size-12 overflow-hidden rounded-md ${
+                index === 0 ? "shadow-borders-interactive-with-active" : "shadow-borders-base"
+              }`}
+            >
+              <img src={url} alt="" className="size-full object-cover" />
+            </button>
+            <button
+              type="button"
+              title="Odebrat fotku"
+              onClick={() =>
+                void saveMeta({
+                  images: photos.filter((entry) => entry !== url),
+                })
+              }
+              className="bg-ui-bg-base text-ui-fg-muted hover:text-ui-fg-base shadow-borders-base absolute -right-1.5 -top-1.5 hidden size-4 items-center justify-center rounded-full text-[10px] leading-none group-hover:flex"
+            >
+              ×
+            </button>
+          </figure>
+        ))}
+        <input
+          ref={photoInput}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            if (files.length) uploadPhotos.mutate(files);
+            event.target.value = "";
+          }}
+        />
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={uploadPhotos.isPending}
+          onClick={() => photoInput.current?.click()}
+        >
+          <Plus /> Fotka varianty
+        </Button>
+        <Text size="xsmall" className="text-ui-fg-muted">
+          {photos.length
+            ? "Zákazník je uvidí po zvolení tohohle provedení."
+            : "Bez vlastních fotek platí fotky produktu."}
+        </Text>
+      </div>
+      <div className="flex items-center gap-2">
+        <FieldLabel>Poznámka</FieldLabel>
+        <div className="min-w-0 flex-1">
+          <InlineText
+            value={note}
+            placeholder="např. glazura kobalt, každý kus se liší — uvidí zákazník"
+            onSave={(next) => saveMeta({ note: next || null })}
+          />
+        </div>
+      </div>
+    </div>
+    </div>
   );
 };
 
@@ -547,6 +651,11 @@ const ReadinessCard = ({
       ok: !allOut,
       why: "Všechno je vyprodané, kus se nevyrábí na zakázku a objednání bez skladu je vypnuté — zákazník nemá co koupit.",
     },
+    {
+      label: "Hmotnost",
+      ok: Boolean(product.weight),
+      why: "Bez hmotnosti se cena dopravy počítá z výchozího odhadu.",
+    },
   ];
   const missing = checks.filter((check) => !check.ok);
 
@@ -593,8 +702,11 @@ const ReadinessCard = ({
 
 const ProduktDetailInner = ({ productId }: { productId: string }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const expert = useExpertMode();
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
+  const [discountPercent, setDiscountPercent] = useState("20");
+  const [discountClearance, setDiscountClearance] = useState(true);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const productQuery = useQuery<{ product: NativeProduct }>({
@@ -695,6 +807,67 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+  });
+
+  /*
+   * A quick price cut for a damaged or clearance piece: every variant's CZK
+   * price drops by the given percentage (foreign currencies re-derive from the
+   * daily ČNB job), the pre-discount prices are remembered in metadata, and by
+   * default the piece is flagged Výprodej — the same switch the workbenches use.
+   */
+  const applyDiscount = useMutation({
+    mutationFn: async (input: { percent: number; markClearance: boolean }) => {
+      const before: Record<string, number> = {};
+      for (const variant of product?.variants ?? []) {
+        const price = czkPrice(variant);
+        if (price === null) continue;
+        before[variant.id] = price;
+        const next = Math.max(1, Math.round((price * (100 - input.percent)) / 100));
+        await sdk.client.fetch(`/admin/products/${productId}/variants/${variant.id}`, {
+          method: "POST",
+          body: {
+            prices: [
+              { currency_code: "czk", amount: next },
+              ...(variant.prices ?? [])
+                .filter((entry) => String(entry.currency_code).toLowerCase() !== "czk")
+                .map((entry) => ({
+                  currency_code: entry.currency_code,
+                  amount: entry.amount,
+                })),
+            ],
+          },
+        });
+      }
+      await sdk.client.fetch(`/admin/products/${productId}`, {
+        method: "POST",
+        body: { metadata: { price_before_discount: before } },
+      });
+      if (input.markClearance) {
+        await sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+          method: "POST",
+          body: { clearance: true },
+        });
+      }
+    },
+    onSuccess: async (_, input) => {
+      await invalidate();
+      toast.success(`Cena snížena o ${input.percent} %.`);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Slevu se nepodařilo nastavit."),
+  });
+
+  // Deleting is forever — orders keep their snapshots, but the piece is gone
+  // from the catalogue. Archiv is the reversible sibling next door.
+  const removeProduct = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/products/${productId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      toast.success("Produkt smazán.");
+      navigate("/produkty-workbench");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Smazání se nepodařilo."),
   });
 
   // Same two-step contract as the shared ArchiveToggle: the flag hides the
@@ -993,6 +1166,106 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           >
             {archived ? "Obnovit z archivu" : "Archivovat"}
           </Button>
+          {/* Rychlá sleva — na poškozené a výprodejové kusy, přímo z lišty. */}
+          <Prompt>
+            <Prompt.Trigger asChild>
+              <Button
+                size="small"
+                variant="secondary"
+                isLoading={applyDiscount.isPending}
+                disabled={priceMin === null}
+              >
+                Zlevnit
+              </Button>
+            </Prompt.Trigger>
+            <Prompt.Content>
+              <Prompt.Header>
+                <Prompt.Title>Zlevnit „{product.title}"</Prompt.Title>
+                <Prompt.Description>
+                  Sníží cenu všech variant o zadaná procenta.
+                  {priceMin !== null && (
+                    <>
+                      {" "}Teď:{" "}
+                      {priceMin === priceMax
+                        ? formatCzk(priceMin)
+                        : `${formatCzk(priceMin)} – ${formatCzk(priceMax!)}`}
+                      .
+                    </>
+                  )}{" "}
+                  Původní ceny se zapamatují.
+                </Prompt.Description>
+              </Prompt.Header>
+              <div className="flex flex-col gap-3 px-6 py-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    size="small"
+                    type="number"
+                    min={1}
+                    max={99}
+                    className="w-20"
+                    value={discountPercent}
+                    onChange={(event) => setDiscountPercent(event.target.value)}
+                  />
+                  <Text size="small">% sleva</Text>
+                </div>
+                <label className="flex items-center gap-2">
+                  <Switch
+                    checked={discountClearance}
+                    onCheckedChange={setDiscountClearance}
+                  />
+                  <Text size="small">
+                    Zároveň označit jako výprodej (poškozený/jedinečný kus)
+                  </Text>
+                </label>
+              </div>
+              <Prompt.Footer>
+                <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                <Prompt.Action
+                  disabled={
+                    !Number.isFinite(Number(discountPercent)) ||
+                    Number(discountPercent) < 1 ||
+                    Number(discountPercent) > 99
+                  }
+                  onClick={() =>
+                    applyDiscount.mutate({
+                      percent: Math.round(Number(discountPercent)),
+                      markClearance: discountClearance,
+                    })
+                  }
+                >
+                  Zlevnit
+                </Prompt.Action>
+              </Prompt.Footer>
+            </Prompt.Content>
+          </Prompt>
+          <Prompt variant="danger">
+            <Prompt.Trigger asChild>
+              <Button
+                size="small"
+                variant="transparent"
+                className="text-ui-fg-error"
+                isLoading={removeProduct.isPending}
+              >
+                <Trash /> Smazat
+              </Button>
+            </Prompt.Trigger>
+            <Prompt.Content>
+              <Prompt.Header>
+                <Prompt.Title>Smazat „{product.title}" nadobro?</Prompt.Title>
+                <Prompt.Description>
+                  Tohle nejde vrátit. Objednávky si svoje údaje nechají, ale kus
+                  z katalogu zmizí. Když si nejste jistí, použijte radši
+                  Archivovat.
+                </Prompt.Description>
+              </Prompt.Header>
+              <Prompt.Footer>
+                <Prompt.Cancel>Zrušit</Prompt.Cancel>
+                <Prompt.Action onClick={() => removeProduct.mutate()}>
+                  Smazat
+                </Prompt.Action>
+              </Prompt.Footer>
+            </Prompt.Content>
+          </Prompt>
           <ExpertToggle />
           {expert && (
             <Button size="small" variant="transparent" asChild>
@@ -1113,68 +1386,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                       placeholder="např. ručně točená kamenina"
                       onSave={(next) =>
                         saveProduct.mutateAsync({ subtitle: next || null })
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Materiál</FieldLabel>
-                  <div className="mt-1">
-                    {addingMaterial ? (
-                      <InlineText
-                        value=""
-                        placeholder="nový materiál — Enter uloží"
-                        onSave={async (next) => {
-                          setAddingMaterial(false);
-                          if (next) {
-                            await saveProduct.mutateAsync({ material: next });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <Select
-                        value={product.material ?? "none"}
-                        onValueChange={(next) => {
-                          if (next === "__add") {
-                            setAddingMaterial(true);
-                            return;
-                          }
-                          saveProduct.mutate({
-                            material: next === "none" ? null : next,
-                          });
-                        }}
-                      >
-                        <Select.Trigger>
-                          <Select.Value placeholder="Bez materiálu" />
-                        </Select.Trigger>
-                        <Select.Content>
-                          <Select.Item value="none">Bez materiálu</Select.Item>
-                          {[
-                            ...new Set(
-                              [
-                                ...(materialsQuery.data?.materials ?? []),
-                                ...(product.material ? [product.material] : []),
-                              ].filter(Boolean)
-                            ),
-                          ].map((material) => (
-                            <Select.Item key={material} value={material}>
-                              {material}
-                            </Select.Item>
-                          ))}
-                          <Select.Item value="__add">+ Přidat nový…</Select.Item>
-                        </Select.Content>
-                      </Select>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Rozměry</FieldLabel>
-                  <div className="mt-1">
-                    <InlineText
-                      value={dimensions}
-                      placeholder="např. výška 12 cm, ø 9 cm"
-                      onSave={(next) =>
-                        saveFlags.mutateAsync({ dimensions: next || null })
                       }
                     />
                   </div>
@@ -1315,6 +1526,53 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           </Section>
 
           <Section
+            title="Zakázková výroba"
+            hint={
+              production?.enabled
+                ? "Kus se vyrábí na objednávku — zákazník platí zálohu a čeká na výrobu."
+                : "Běžný kus ze skladu. Zapnout zakázkovou výrobu můžete tady."
+            }
+            action={
+              <ProductionProfileEditor
+                productId={product.id}
+                productTitle={product.title}
+                onSaved={() => void invalidate()}
+                trigger={
+                  <Button size="small" variant="secondary">
+                    {production?.enabled ? "Upravit podmínky" : "Nastavit zakázku"}
+                  </Button>
+                }
+              />
+            }
+          >
+            {production?.enabled ? (
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <FieldLabel>Záloha minimálně</FieldLabel>
+                  <Text size="small" className="mt-1">
+                    {production.deposit_floor_percentage} %
+                  </Text>
+                </div>
+                <div>
+                  <FieldLabel>Platba předem celá</FieldLabel>
+                  <Text size="small" className="mt-1">
+                    {production.allow_full_prepayment ? "povolena" : "nepovolena"}
+                  </Text>
+                </div>
+              </div>
+            ) : (
+              <Text size="small" className="text-ui-fg-subtle">
+                Zákazník kupuje jen to, co je skladem.
+              </Text>
+            )}
+          </Section>
+        </div>
+
+        {/* ————— Pravý sloupec: nastavení kusu a jak se mu daří ————— */}
+        <div className="divide-y border-t xl:border-l xl:border-t-0">
+          <ReadinessCard product={product} detail={detail} />
+
+          <Section
             title="Vlastnosti prodeje"
             hint="Přepínače platí hned — žádné ukládání navíc."
           >
@@ -1374,6 +1632,94 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           </Section>
 
           <Section
+            title="Materiál a rozměry"
+            hint="Popisné údaje pro zákazníka; hmotnost počítá cenu dopravy."
+          >
+            <div className="flex flex-col gap-4">
+              <div>
+                <FieldLabel>Materiál</FieldLabel>
+                <div className="mt-1">
+                  {addingMaterial ? (
+                    <InlineText
+                      value=""
+                      placeholder="nový materiál — Enter uloží"
+                      onSave={async (next) => {
+                        setAddingMaterial(false);
+                        if (next) {
+                          await saveProduct.mutateAsync({ material: next });
+                        }
+                      }}
+                    />
+                  ) : (
+                    <Select
+                      value={product.material ?? "none"}
+                      onValueChange={(next) => {
+                        if (next === "__add") {
+                          setAddingMaterial(true);
+                          return;
+                        }
+                        saveProduct.mutate({
+                          material: next === "none" ? null : next,
+                        });
+                      }}
+                    >
+                      <Select.Trigger>
+                        <Select.Value placeholder="Bez materiálu" />
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Item value="none">Bez materiálu</Select.Item>
+                        {[
+                          ...new Set(
+                            [
+                              ...(materialsQuery.data?.materials ?? []),
+                              ...(product.material ? [product.material] : []),
+                            ].filter(Boolean)
+                          ),
+                        ].map((material) => (
+                          <Select.Item key={material} value={material}>
+                            {material}
+                          </Select.Item>
+                        ))}
+                        <Select.Item value="__add">+ Přidat nový…</Select.Item>
+                      </Select.Content>
+                    </Select>
+                  )}
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Rozměry</FieldLabel>
+                <div className="mt-1">
+                  <InlineText
+                    value={dimensions}
+                    placeholder="např. výška 12 cm, ø 9 cm"
+                    onSave={(next) =>
+                      saveFlags.mutateAsync({ dimensions: next || null })
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Hmotnost</FieldLabel>
+                <div className="mt-1">
+                  <InlineNumber
+                    value={product.weight}
+                    unit="g"
+                    placeholder="—"
+                    onSave={(next) =>
+                      saveProduct.mutateAsync({
+                        weight: next === null ? null : Math.round(Number(next)),
+                      })
+                    }
+                  />
+                </div>
+                <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                  Z hmotnosti se počítá cena dopravy u počítaných možností.
+                </Text>
+              </div>
+            </div>
+          </Section>
+
+          <Section
             title="Objednání bez skladu"
             hint="Výchozí chování obchodu: po vyprodání se prodává dál a sklad jde do mínusu — vidíte, kolik kusů dlužíte."
           >
@@ -1412,53 +1758,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               )}
             </div>
           </Section>
-
-          <Section
-            title="Zakázková výroba"
-            hint={
-              production?.enabled
-                ? "Kus se vyrábí na objednávku — zákazník platí zálohu a čeká na výrobu."
-                : "Běžný kus ze skladu. Zapnout zakázkovou výrobu můžete tady."
-            }
-            action={
-              <ProductionProfileEditor
-                productId={product.id}
-                productTitle={product.title}
-                onSaved={() => void invalidate()}
-                trigger={
-                  <Button size="small" variant="secondary">
-                    {production?.enabled ? "Upravit podmínky" : "Nastavit zakázku"}
-                  </Button>
-                }
-              />
-            }
-          >
-            {production?.enabled ? (
-              <div className="flex flex-wrap gap-6">
-                <div>
-                  <FieldLabel>Záloha minimálně</FieldLabel>
-                  <Text size="small" className="mt-1">
-                    {production.deposit_floor_percentage} %
-                  </Text>
-                </div>
-                <div>
-                  <FieldLabel>Platba předem celá</FieldLabel>
-                  <Text size="small" className="mt-1">
-                    {production.allow_full_prepayment ? "povolena" : "nepovolena"}
-                  </Text>
-                </div>
-              </div>
-            ) : (
-              <Text size="small" className="text-ui-fg-subtle">
-                Zákazník kupuje jen to, co je skladem.
-              </Text>
-            )}
-          </Section>
-        </div>
-
-        {/* ————— Pravý sloupec: jak se kusu daří ————— */}
-        <div className="divide-y border-t xl:border-l xl:border-t-0">
-          <ReadinessCard product={product} detail={detail} />
 
           <section className="px-6 py-5">
             <Heading level="h2">Prodeje za půl roku</Heading>

@@ -40,6 +40,8 @@ const LIMIT =
 const DRY = args.has("--dry-run")
 const WIPE = args.has("--wipe")
 const IMPORT = args.has("--import")
+const FIXPHOTOS = args.has("--fix-photos")
+const CREATECATS = args.has("--create-categories")
 
 // ---------------------------------------------------------------- .env pickup
 for (const envPath of [join(HERE, "../.env")]) {
@@ -138,7 +140,7 @@ const parseNumber = (value) => {
 // ----------------------------------------------------------------- API client
 let token = null
 
-async function api(path, init = {}) {
+async function api(path, init = {}, retried = false) {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -149,6 +151,11 @@ async function api(path, init = {}) {
       ...(init.headers ?? {}),
     },
   })
+  // The JWT outlives a coffee, not a 260-product photo import — refresh once.
+  if (response.status === 401 && !retried) {
+    await login()
+    return api(path, init, true)
+  }
   if (!response.ok) {
     const body = await response.text().catch(() => "")
     throw new Error(`${init.method ?? "GET"} ${path} → ${response.status}: ${body.slice(0, 400)}`)
@@ -225,7 +232,7 @@ for (const product of products) {
   if (count > 0) product.handle = `${product.handle}-${count + 1}`
 }
 
-if (DRY || (!WIPE && !IMPORT)) {
+if (DRY || (!WIPE && !IMPORT && !FIXPHOTOS && !CREATECATS)) {
   console.log(`CSV: ${CSV_PATH}`)
   console.log(`rows: ${rawRows.length} | simple: ${simple.length} | skipped (empty variation rows): ${skipped}`)
   const noPrice = products.filter((product) => product.price == null)
@@ -238,8 +245,98 @@ if (DRY || (!WIPE && !IMPORT)) {
   process.exit(0)
 }
 
+/* Photos: old site → this shop's storage. Filenames are folded to ASCII —
+   a Czech filename in the original URL broke the S3 signature (the provider
+   forwards it in an x-amz-meta header). A failed photo skips, not aborts. */
+const uploadPhotos = async (product) => {
+  const uploadedUrls = []
+  for (const url of product.images) {
+    try {
+      const download = await fetch(url)
+      if (!download.ok) throw new Error(`HTTP ${download.status}`)
+      const blob = await download.blob()
+      const rawName = decodeURIComponent(
+        url.split("/").pop()?.split("?")[0] || "photo.jpg"
+      )
+      const name =
+        slugify(rawName.replace(/\.[^.]+$/, "")) +
+        (rawName.match(/\.[^.]+$/)?.[0] ?? ".jpg")
+      const form = new FormData()
+      form.append("files", blob, name)
+      const { files } = await api(`/admin/uploads`, { method: "POST", body: form })
+      for (const file of files) uploadedUrls.push(file.url)
+    } catch (error) {
+      console.warn(`\n  foto se nepovedlo (${product.title}): ${url} — ${error.message}`)
+    }
+  }
+  return uploadedUrls
+}
+
 // --------------------------------------------------------------------- doing
 await login()
+
+if (CREATECATS) {
+  /* The old shop's own categories, as the starting set for sorting — Lucia
+     renames/merges in Rozdělení. „Výrobky se slevou nebo v akci" is skipped
+     (sales are seasonal actions here, not a shelf) and „Zakázková výroba" is
+     added because this shop treats it as the commission signal. */
+  const names = new Set(["Zakázková výroba"])
+  for (const row of simple) {
+    for (const raw of (row["Kategorie"] ?? "").split(",")) {
+      const name = raw.trim()
+      if (!name || /slevou nebo v akci/i.test(name)) continue
+      names.add(name[0].toLocaleUpperCase("cs") + name.slice(1))
+    }
+  }
+  const { product_categories: existing } = await api(
+    `/admin/product-categories?limit=100&fields=id,name`
+  )
+  const have = new Set(existing.map((category) => category.name))
+  for (const name of [...names].sort((a, b) => a.localeCompare(b, "cs"))) {
+    if (have.has(name)) {
+      console.log(`  existuje: ${name}`)
+      continue
+    }
+    await api(`/admin/product-categories`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        handle: name === "Zakázková výroba" ? "zakazkova-vyroba" : slugify(name),
+        is_active: true,
+      }),
+    })
+    console.log(`  založeno: ${name}`)
+  }
+}
+
+if (FIXPHOTOS) {
+  // Re-attach photos to products an earlier run created with missing images.
+  const byHandle = new Map(products.map((product) => [product.handle, product]))
+  let fixed = 0
+  for (let offset = 0; ; offset += 100) {
+    const { products: page } = await api(
+      `/admin/products?limit=100&offset=${offset}&fields=id,handle,title,images.id`
+    )
+    for (const item of page) {
+      const source = byHandle.get(item.handle)
+      if (!source) continue
+      if ((item.images?.length ?? 0) >= source.images.length) continue
+      const uploadedUrls = await uploadPhotos(source)
+      if (!uploadedUrls.length) continue
+      await api(`/admin/products/${item.id}`, {
+        method: "POST",
+        body: JSON.stringify({
+          thumbnail: uploadedUrls[0],
+          images: uploadedUrls.map((url) => ({ url })),
+        }),
+      })
+      fixed += 1
+      console.log(`opraveno: ${item.title} (${uploadedUrls.length} fotek)`)
+    }
+    if (page.length < 100) break
+  }
+  console.log(`Fix photos done: ${fixed} products updated.`)
+}
 
 if (WIPE) {
   let deleted = 0
@@ -284,26 +381,27 @@ if (IMPORT) {
   }
 
   let created = 0
+  let skipped = 0
   const failures = []
 
+  /* A re-run must not duplicate what an interrupted run already made — ask the
+     shop which handles exist and skip those BEFORE downloading their photos. */
+  const existingHandles = new Set()
+  for (let offset = 0; ; offset += 200) {
+    const { products: page } = await api(
+      `/admin/products?limit=200&offset=${offset}&fields=handle`
+    )
+    for (const item of page) existingHandles.add(item.handle)
+    if (page.length < 200) break
+  }
+
   for (const product of products) {
+    if (existingHandles.has(product.handle)) {
+      skipped += 1
+      continue
+    }
     try {
-      // Photos: old site → this shop's storage. A failed photo skips, not aborts.
-      const uploadedUrls = []
-      for (const url of product.images) {
-        try {
-          const download = await fetch(url)
-          if (!download.ok) throw new Error(`HTTP ${download.status}`)
-          const blob = await download.blob()
-          const name = url.split("/").pop()?.split("?")[0] || "photo.jpg"
-          const form = new FormData()
-          form.append("files", blob, name)
-          const { files } = await api(`/admin/uploads`, { method: "POST", body: form })
-          for (const file of files) uploadedUrls.push(file.url)
-        } catch (error) {
-          console.warn(`\n  foto se nepovedlo (${product.title}): ${url} — ${error.message}`)
-        }
-      }
+      const uploadedUrls = await uploadPhotos(product)
 
       const body = {
         title: product.title,
@@ -352,10 +450,22 @@ if (IMPORT) {
         },
       }
 
-      const { product: createdProduct } = await api(`/admin/products`, {
-        method: "POST",
-        body: JSON.stringify(body),
-      })
+      let createdProduct
+      try {
+        ;({ product: createdProduct } = await api(`/admin/products`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }))
+      } catch (error) {
+        // The old shop reused katalogová čísla — on a SKU clash retry without it.
+        if (!/sku.*already exists/i.test(error.message)) throw error
+        body.variants[0].sku = undefined
+        ;({ product: createdProduct } = await api(`/admin/products`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }))
+        console.warn(`\n  duplicitní SKU „${product.sku}" — ${product.title} založeno bez SKU`)
+      }
 
       // Stock: find the variant's inventory item and set the level at her location.
       if (product.stock > 0) {
@@ -393,6 +503,8 @@ if (IMPORT) {
     }
   }
 
-  console.log(`\n\nDone: ${created} created, ${failures.length} failed.`)
+  console.log(
+    `\n\nDone: ${created} created, ${skipped} already existed (skipped), ${failures.length} failed.`
+  )
   for (const failure of failures) console.log(`  ✗ ${failure.title}: ${failure.message}`)
 }

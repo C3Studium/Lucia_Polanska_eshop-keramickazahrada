@@ -29,6 +29,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
+import { ProductSortingGuide } from "../../components/product-sorting-guide";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
@@ -482,6 +483,7 @@ const StatsView = () => {
 /** Narrowed so the create button can be keyed off the tab without a cast. */
 type TabKey =
   | "produkty"
+  | "trideni"
   | "zakazky"
   | "balicky"
   | "poskozene"
@@ -491,6 +493,7 @@ type TabKey =
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "produkty", label: "Produkty" },
+  { key: "trideni", label: "Třídění" },
   { key: "zakazky", label: "Zakázky" },
   { key: "balicky", label: "Balíčky" },
   { key: "poskozene", label: "Poškozené" },
@@ -1258,6 +1261,10 @@ const ProductsInner = () => {
 
       {active === "statistiky" ? (
         <StatsView />
+      ) : active === "trideni" ? (
+        /* Guided pass over the imported catalogue — one piece at a time,
+           pre-filled from what the old shop knew. */
+        <ProductSortingGuide />
       ) : (
         <>
           <CatalogFilterBar

@@ -178,7 +178,12 @@ class MinioFileProviderService extends AbstractFileProviderService {
         content.length,
         {
           'Content-Type': file.mimeType,
-          'x-amz-meta-original-filename': file.filename,
+          // S3 signs metadata headers as ASCII — a Czech filename („růže.jpg")
+          // made every such upload fail with a signature mismatch.
+          'x-amz-meta-original-filename': file.filename
+            .normalize('NFD')
+            .replace(/[̀-ͯ]/g, '')
+            .replace(/[^\x20-\x7e]/g, '_'),
           'x-amz-acl': 'public-read'
         }
       )
