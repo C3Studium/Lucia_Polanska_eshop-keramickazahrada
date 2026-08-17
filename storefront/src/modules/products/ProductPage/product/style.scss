@@ -629,6 +629,17 @@
   color: #d9d7c9;
 }
 
+/* Dobírka up front — same quiet voice as the backorder note. */
+.product__details__cta__codNote {
+  width: 100%;
+  margin: 0;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  color: #d9d7c9;
+}
+
 /* Quantity stepper. 44px targets on the ink stage; cream text is 13.7:1 there. */
 .product__details__cta__quantity {
   display: flex;

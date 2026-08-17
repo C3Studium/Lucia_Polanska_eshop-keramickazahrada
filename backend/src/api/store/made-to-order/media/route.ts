@@ -128,9 +128,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     return {
       filename: safeName(file.filename),
       mimeType: file.mime_type,
-      // The provider does `Buffer.from(content, "binary")`, so it wants the
-      // bytes as a binary string rather than the base64 we were handed.
-      content: buffer.toString("binary"),
+      // The provider decodes `content` as base64 — the same contract Medusa's
+      // own /admin/uploads route uses.
+      content: buffer.toString("base64"),
       access: "public" as const,
     }
   })

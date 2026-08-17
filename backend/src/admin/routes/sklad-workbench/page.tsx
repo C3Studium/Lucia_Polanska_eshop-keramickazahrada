@@ -19,6 +19,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
@@ -374,12 +375,30 @@ const SkladInner = () => {
               className="flex flex-wrap items-center gap-2 px-6 py-1.5"
             >
               <div className="min-w-0 flex-1">
-                <Text size="small" className="truncate">
-                  {row.product_title || "—"}
-                  {row.variant_title ? (
-                    <span className="text-ui-fg-muted"> · {row.variant_title}</span>
-                  ) : null}
-                </Text>
+                {row.product_id ? (
+                  <Link
+                    to={`/produkt/${row.product_id}`}
+                    className="block w-fit max-w-full hover:underline"
+                    title="Otevřít detail produktu"
+                  >
+                    <Text size="small" className="truncate">
+                      {row.product_title || "—"}
+                      {row.variant_title ? (
+                        <span className="text-ui-fg-muted">
+                          {" "}
+                          · {row.variant_title}
+                        </span>
+                      ) : null}
+                    </Text>
+                  </Link>
+                ) : (
+                  <Text size="small" className="truncate">
+                    {row.product_title || "—"}
+                    {row.variant_title ? (
+                      <span className="text-ui-fg-muted"> · {row.variant_title}</span>
+                    ) : null}
+                  </Text>
+                )}
               </div>
               <Text size="xsmall" className="text-ui-fg-subtle tabular-nums">
                 {row.available} ks
@@ -403,9 +422,21 @@ const SkladInner = () => {
               className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_170px_220px_auto] lg:items-center"
             >
               <div className="min-w-0">
-                <Text size="small" weight="plus" className="truncate">
-                  {row.product_title || "—"}
-                </Text>
+                {row.product_id ? (
+                  <Link
+                    to={`/produkt/${row.product_id}`}
+                    className="block w-fit max-w-full hover:underline"
+                    title="Otevřít detail produktu"
+                  >
+                    <Text size="small" weight="plus" className="truncate">
+                      {row.product_title || "—"}
+                    </Text>
+                  </Link>
+                ) : (
+                  <Text size="small" weight="plus" className="truncate">
+                    {row.product_title || "—"}
+                  </Text>
+                )}
                 <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
                   {[row.variant_title, row.sku].filter(Boolean).join(" · ") ||
                     "bez varianty"}

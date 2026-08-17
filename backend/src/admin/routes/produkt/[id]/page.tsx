@@ -31,8 +31,9 @@ import {
 import { ProductLightbox } from "../../../components/product-thumb";
 import { ProductionProfileEditor } from "../../../components/production-profile-editor";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../../lib/expert-mode";
-import { formatDate } from "../../../lib/format";
+import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { formatCzk } from "../../../lib/workbench";
 
 /**
  * Detail produktu — jedna stránka místo nativní editace (Matěj, 2026-08-16).
@@ -73,6 +74,9 @@ type NativeProduct = {
   material: string | null;
   collection_id: string | null;
   metadata: Record<string, unknown> | null;
+  created_at?: string;
+  updated_at?: string;
+  collection?: { id: string; title: string } | null;
   images?: { id?: string; url: string }[];
   categories?: { id: string; name: string }[];
   options?: { id: string; title: string }[];
@@ -91,6 +95,7 @@ type StockVariant = {
 
 type WorkbenchDetail = {
   id: string;
+  store_url?: string | null;
   variants: StockVariant[];
   sales_by_month: { month: string; sold: number }[];
   reviews: {
@@ -136,7 +141,9 @@ const monthLabel = (month: string): string => {
 const PRODUCT_FIELDS = [
   "id", "title", "subtitle", "description", "handle", "status", "thumbnail",
   "weight", "length", "height", "width", "material", "collection_id", "metadata",
-  "*images", "*categories", "*options", "*variants", "*variants.prices",
+  "created_at", "updated_at",
+  "*collection", "*images", "*categories", "*options", "*variants",
+  "*variants.prices",
 ].join(",");
 
 /** Section shell — heading + hint on the left rhythm of the page. */
@@ -360,17 +367,34 @@ const VariantRow = ({
           }
         />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="lg:hidden">
-          <FieldLabel>Skladem</FieldLabel>
-        </span>
-        <Text size="small" className="tabular-nums">
-          {stock?.available ?? "—"}
-        </Text>
-        {state && (
-          <Badge size="2xsmall" color={state.color}>
-            {state.label}
-          </Badge>
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="lg:hidden">
+            <FieldLabel>Skladem</FieldLabel>
+          </span>
+          <Text size="small" className="tabular-nums">
+            {stock?.available ?? "—"}
+          </Text>
+          {state && (
+            <Badge size="2xsmall" color={state.color}>
+              {state.label}
+            </Badge>
+          )}
+        </div>
+        {(Number(stock?.reserved) > 0 ||
+          Number(stock?.waiting_customers) > 0 ||
+          Number(stock?.wishlist_count) > 0) && (
+          <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
+            {[
+              Number(stock?.reserved) > 0 && `${stock?.reserved} rezervováno`,
+              Number(stock?.waiting_customers) > 0 &&
+                `${stock?.waiting_customers} čeká`,
+              Number(stock?.wishlist_count) > 0 &&
+                `${stock?.wishlist_count}× v oblíbených`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
         )}
       </div>
       <div>
@@ -489,7 +513,6 @@ const ReadinessCard = ({
 }) => {
   const variants = product.variants ?? [];
   const hasPrice = variants.some((variant) => czkPrice(variant) !== null);
-  const hasWeight = Boolean(product.weight);
   const anyBackorder = variants.some((variant) => variant.allow_backorder);
   const allOut =
     detail !== undefined &&
@@ -518,11 +541,6 @@ const ReadinessCard = ({
       label: "Kategorie nebo kolekce",
       ok: Boolean((product.categories ?? []).length || product.collection_id),
       why: "Jinak ho zákazníci najdou jen přes vyhledávání.",
-    },
-    {
-      label: "Hmotnost",
-      ok: hasWeight,
-      why: "Podle hmotnosti se počítá doprava — bez ní může být špatně.",
     },
     {
       label: "Kusy skladem",
@@ -609,12 +627,22 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     staleTime: 5 * 60_000,
   });
 
+  // The material offer = every material the catalogue already uses; adding a
+  // new one on any product teaches it to the whole admin.
+  const materialsQuery = useQuery<{ materials: string[] }>({
+    queryKey: ["produkt-materials"],
+    queryFn: () => sdk.client.fetch(`/admin/workbench/materials`),
+    staleTime: 5 * 60_000,
+  });
+  const [addingMaterial, setAddingMaterial] = useState(false);
+
   const product = productQuery.data?.product;
   const detail = detailQuery.data;
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ["produkt", productId] });
     await queryClient.invalidateQueries({ queryKey: ["produkt-workbench", productId] });
+    await queryClient.invalidateQueries({ queryKey: ["produkt-materials"] });
   };
 
   // Native fields — title, description, zařazení, rozměry… One mutation, the
@@ -765,9 +793,18 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     typeof product.metadata?.backorder_note === "string"
       ? (product.metadata.backorder_note as string)
       : null;
+  const dimensions =
+    typeof product.metadata?.dimensions === "string"
+      ? (product.metadata.dimensions as string)
+      : null;
   const backorderAll =
     (product.variants ?? []).length > 0 &&
     (product.variants ?? []).every((variant) => variant.allow_backorder);
+  const pricedCzk = (product.variants ?? [])
+    .map(czkPrice)
+    .filter((price): price is number => price !== null);
+  const priceMin = pricedCzk.length ? Math.min(...pricedCzk) : null;
+  const priceMax = pricedCzk.length ? Math.max(...pricedCzk) : null;
   const variants = product.variants ?? [];
   const stockByVariant = new Map(
     (detail?.variants ?? []).map((variant) => [variant.id, variant])
@@ -874,10 +911,37 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               )}
               {expert && <CopyId value={product.id} />}
             </div>
+            {/* Where the piece lives and what it costs — the two facts she
+                checks first, without scrolling. */}
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
+              {[
+                product.collection?.title,
+                ...(product.categories ?? []).map((category) => category.name),
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Bez zařazení"}
+              {priceMin !== null && (
+                <>
+                  {" · "}
+                  <span className="text-ui-fg-base font-medium">
+                    {priceMin === priceMax
+                      ? formatCzk(priceMin)
+                      : `${formatCzk(priceMin)} – ${formatCzk(priceMax!)}`}
+                  </span>
+                </>
+              )}
+            </Text>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {detail?.store_url && (
+            <Button size="small" variant="transparent" asChild>
+              <a href={detail.store_url} target="_blank" rel="noreferrer">
+                Zobrazit v obchodě <ArrowUpRightOnBox />
+              </a>
+            </Button>
+          )}
           {isPublished ? (
             // Hiding a live product is the misclick that must not happen
             // silently — the same confirmation the eye uses in the lists.
@@ -944,113 +1008,6 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       <div className="grid xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         {/* ————— Levý sloupec: editace ————— */}
         <div className="divide-y">
-          <Section
-            title="Základní údaje"
-            hint="Píšete přímo do polí — opuštění pole uloží."
-          >
-            <div className="flex flex-col gap-4">
-              <div>
-                <FieldLabel>Popis</FieldLabel>
-                <div className="mt-1">
-                  <InlineTextarea
-                    value={product.description}
-                    placeholder="Pár vět o kousku — z čeho je, jak vznikl, jak o něj pečovat…"
-                    rows={5}
-                    onSave={(next) =>
-                      saveProduct.mutateAsync({ description: next || null })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <FieldLabel>Podtitulek</FieldLabel>
-                  <div className="mt-1">
-                    <InlineText
-                      value={product.subtitle}
-                      placeholder="např. ručně točená kamenina"
-                      onSave={(next) =>
-                        saveProduct.mutateAsync({ subtitle: next || null })
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Materiál</FieldLabel>
-                  <div className="mt-1">
-                    <InlineText
-                      value={product.material}
-                      placeholder="např. kamenina, glazura"
-                      onSave={(next) =>
-                        saveProduct.mutateAsync({ material: next || null })
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Hmotnost</FieldLabel>
-                  <div className="mt-1">
-                    <InlineNumber
-                      value={product.weight}
-                      unit="g"
-                      placeholder="—"
-                      onSave={(next) => saveProduct.mutateAsync({ weight: next })}
-                    />
-                  </div>
-                  <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                    Podle hmotnosti se počítá doprava.
-                  </Text>
-                </div>
-                <div>
-                  <FieldLabel>Rozměry (cm)</FieldLabel>
-                  <div className="mt-1 flex items-center gap-2">
-                    <InlineNumber
-                      value={product.length}
-                      placeholder="délka"
-                      inputClassName="w-20"
-                      onSave={(next) => saveProduct.mutateAsync({ length: next })}
-                    />
-                    <InlineNumber
-                      value={product.width}
-                      placeholder="šířka"
-                      inputClassName="w-20"
-                      onSave={(next) => saveProduct.mutateAsync({ width: next })}
-                    />
-                    <InlineNumber
-                      value={product.height}
-                      placeholder="výška"
-                      inputClassName="w-20"
-                      onSave={(next) => saveProduct.mutateAsync({ height: next })}
-                    />
-                  </div>
-                </div>
-                {expert && (
-                  <div>
-                    <FieldLabel>Adresa v obchodě</FieldLabel>
-                    <div className="mt-1">
-                      <InlineText
-                        value={product.handle}
-                        required
-                        placeholder="adresa-produktu"
-                        onSave={(next) =>
-                          saveProduct.mutateAsync({
-                            handle: next
-                              .toLowerCase()
-                              .replace(/[^a-z0-9-]+/g, "-")
-                              .replace(/^-+|-+$/g, ""),
-                          })
-                        }
-                      />
-                    </div>
-                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                      Změna rozbije staré odkazy na produkt.
-                    </Text>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Section>
-
           <Section
             title="Fotky"
             hint="První dojem. Hlavní fotka se ukazuje v seznamech a na kartě."
@@ -1127,6 +1084,126 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 })}
               </div>
             )}
+          </Section>
+
+          <Section
+            title="Základní údaje"
+            hint="Píšete přímo do polí — opuštění pole uloží."
+          >
+            <div className="flex flex-col gap-4">
+              <div>
+                <FieldLabel>Popis</FieldLabel>
+                <div className="mt-1">
+                  <InlineTextarea
+                    value={product.description}
+                    placeholder="Pár vět o kousku — z čeho je, jak vznikl, jak o něj pečovat…"
+                    rows={5}
+                    onSave={(next) =>
+                      saveProduct.mutateAsync({ description: next || null })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <FieldLabel>Podtitulek</FieldLabel>
+                  <div className="mt-1">
+                    <InlineText
+                      value={product.subtitle}
+                      placeholder="např. ručně točená kamenina"
+                      onSave={(next) =>
+                        saveProduct.mutateAsync({ subtitle: next || null })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Materiál</FieldLabel>
+                  <div className="mt-1">
+                    {addingMaterial ? (
+                      <InlineText
+                        value=""
+                        placeholder="nový materiál — Enter uloží"
+                        onSave={async (next) => {
+                          setAddingMaterial(false);
+                          if (next) {
+                            await saveProduct.mutateAsync({ material: next });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Select
+                        value={product.material ?? "none"}
+                        onValueChange={(next) => {
+                          if (next === "__add") {
+                            setAddingMaterial(true);
+                            return;
+                          }
+                          saveProduct.mutate({
+                            material: next === "none" ? null : next,
+                          });
+                        }}
+                      >
+                        <Select.Trigger>
+                          <Select.Value placeholder="Bez materiálu" />
+                        </Select.Trigger>
+                        <Select.Content>
+                          <Select.Item value="none">Bez materiálu</Select.Item>
+                          {[
+                            ...new Set(
+                              [
+                                ...(materialsQuery.data?.materials ?? []),
+                                ...(product.material ? [product.material] : []),
+                              ].filter(Boolean)
+                            ),
+                          ].map((material) => (
+                            <Select.Item key={material} value={material}>
+                              {material}
+                            </Select.Item>
+                          ))}
+                          <Select.Item value="__add">+ Přidat nový…</Select.Item>
+                        </Select.Content>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Rozměry</FieldLabel>
+                  <div className="mt-1">
+                    <InlineText
+                      value={dimensions}
+                      placeholder="např. výška 12 cm, ø 9 cm"
+                      onSave={(next) =>
+                        saveFlags.mutateAsync({ dimensions: next || null })
+                      }
+                    />
+                  </div>
+                </div>
+                {expert && (
+                  <div>
+                    <FieldLabel>Adresa v obchodě</FieldLabel>
+                    <div className="mt-1">
+                      <InlineText
+                        value={product.handle}
+                        required
+                        placeholder="adresa-produktu"
+                        onSave={(next) =>
+                          saveProduct.mutateAsync({
+                            handle: next
+                              .toLowerCase()
+                              .replace(/[^a-z0-9-]+/g, "-")
+                              .replace(/^-+|-+$/g, ""),
+                          })
+                        }
+                      />
+                    </div>
+                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                      Změna rozbije staré odkazy na produkt.
+                    </Text>
+                  </div>
+                )}
+              </div>
+            </div>
           </Section>
 
           <section className="py-5">
@@ -1251,10 +1328,17 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               />
               <FlagRow
                 label="Dobírka"
-                description="Dopravce smí vybrat peníze při předání."
+                description={'Dopravce smí vybrat peníze při předání. Zákazník na stránce produktu uvidí „Lze/Nelze doručit na dobírku".'}
                 checked={flagOf(product, "cod_allowed")}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ cod_allowed: next })}
+              />
+              <FlagRow
+                label="Mrazuvzdorný"
+                description="Kus vydrží mráz — důležité u květináčů a zahradních kousků."
+                checked={flagOf(product, "frost_resistant")}
+                disabled={saveFlags.isPending}
+                onChange={(next) => saveFlags.mutate({ frost_resistant: next })}
               />
               <FlagRow
                 label="Křehké"
@@ -1484,6 +1568,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
           </section>
 
           <section className="px-6 py-5">
+            <Text size="xsmall" className="text-ui-fg-muted mb-2">
+              Vytvořeno {formatDate(product.created_at)} · naposledy upraveno{" "}
+              {formatDateTime(product.updated_at)}
+            </Text>
             <RawData data={{ product, detail }} />
             {!expert && (
               <Text size="xsmall" className="text-ui-fg-muted">

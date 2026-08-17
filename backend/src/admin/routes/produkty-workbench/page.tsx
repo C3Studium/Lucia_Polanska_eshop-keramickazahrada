@@ -33,6 +33,12 @@ import { VisibilityEye } from "../../components/visibility-eye";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
+import {
+  CatalogFilterBar,
+  EMPTY_CATALOG_FILTER,
+  applyCatalogFilter,
+  type CatalogFilter,
+} from "../../components/catalog-filter";
 import { ProductionProfileEditor } from "../../components/production-profile-editor";
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
@@ -499,6 +505,8 @@ const ProductsInner = () => {
   const [expanded, setExpanded] = useState<string | null>(null);
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-produkty");
+  /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky. */
+  const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
   /* Rozpracované přepínače (Rozdělení pattern): flip nezapisuje, jen se drží
@@ -624,7 +632,7 @@ const ProductsInner = () => {
   // because an archived piece keeps whatever kind it had.
   const archivedRows = all;
 
-  const rows =
+  const tabRows =
     active === "produkty"
       ? byKind("bezne")
       : active === "zakazky"
@@ -640,6 +648,7 @@ const ProductsInner = () => {
               : active === "archivovane"
                 ? archivedRows
                 : [];
+  const rows = applyCatalogFilter(tabRows, catalog);
 
   type FlagKey = "cod_allowed" | "clearance";
   const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>
@@ -853,9 +862,15 @@ const ProductsInner = () => {
               }
             />
             <div className="min-w-0">
-              <Text size="small" weight="plus" className="truncate">
-                {product.title}
-              </Text>
+              <Link
+                to={`/produkt/${product.id}`}
+                className="block w-fit max-w-full hover:underline"
+                title="Otevřít detail produktu"
+              >
+                <Text size="small" weight="plus" className="truncate">
+                  {product.title}
+                </Text>
+              </Link>
               <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 truncate">
                 {[product.collection, ...product.categories]
                   .filter(Boolean)
@@ -1245,6 +1260,11 @@ const ProductsInner = () => {
         <StatsView />
       ) : (
         <>
+          <CatalogFilterBar
+            products={tabRows}
+            value={catalog}
+            onChange={setCatalog}
+          />
           {isLoading && (
             <div className="flex flex-col gap-y-3 px-6 py-5">
               <Skeleton className="h-14 rounded-lg" />

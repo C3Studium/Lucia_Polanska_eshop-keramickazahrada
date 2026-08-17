@@ -62,6 +62,14 @@ const PatchFlagsSchema = z
      * (`storefront/src/lib/util/backorder.ts`). `null` clears it.
      */
     backorder_note: z.string().trim().max(300).nullable().optional(),
+    /**
+     * Free-text dimensions („výška 12 cm, ø 9 cm") — ceramics don't fit three
+     * numeric boxes, a thrown vase has a height and a diameter. Replaces the
+     * native length/width/height on the product page. `null` clears it.
+     */
+    dimensions: z.string().trim().max(200).nullable().optional(),
+    /** Whether the piece survives frost — pots and garden pieces care. */
+    frost_resistant: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

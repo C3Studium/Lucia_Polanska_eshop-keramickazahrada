@@ -25,6 +25,11 @@ type LineLike = {
 export const lineAllowsDobirka = (item: LineLike) =>
   Boolean(item?.product?.metadata?.cod_allowed)
 
+/** The same fact read off the product itself — the PDP says it up front. */
+export const productAllowsDobirka = (
+  product?: { metadata?: Record<string, unknown> | null } | null
+) => Boolean(product?.metadata?.cod_allowed)
+
 /** One piece that forbids it forbids it for the basket — the carrier collects once. */
 export const cartAllowsDobirka = (cart: { items?: LineLike[] | null } | null) => {
   const items = cart?.items ?? []

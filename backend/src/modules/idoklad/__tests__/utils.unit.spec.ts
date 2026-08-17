@@ -104,13 +104,37 @@ describe("iDoklad utils", () => {
       expect(lines.map((line) => line.Name)).toEqual([
         "Váza Modrá",
         "Miska",
-        "Doprava — Balíkovna",
+        "Poštovné a balné — Balíkovna",
       ])
       expect(lines[0]).toMatchObject({ Amount: 2, UnitPrice: 500, Unit: "ks" })
       expect(lines[2]).toMatchObject({ Amount: 1, UnitPrice: 120 })
 
       const sum = lines.reduce((acc, line) => acc + line.Amount * line.UnitPrice, 0)
       expect(sum).toBe(1550)
+    })
+
+    it("unfolds shipping into Poštovné + Balné when the packaging share is known", () => {
+      const lines = buildInvoiceItems(order as any, false, { packagingCzk: 30 })
+
+      expect(lines.map((line) => line.Name)).toEqual([
+        "Váza Modrá",
+        "Miska",
+        "Poštovné — Balíkovna",
+        "Balné",
+      ])
+      expect(lines[2].UnitPrice).toBe(90)
+      expect(lines[3].UnitPrice).toBe(30)
+
+      const sum = lines.reduce((acc, line) => acc + line.Amount * line.UnitPrice, 0)
+      expect(sum).toBe(1550)
+    })
+
+    it("keeps one combined line when packaging would swallow the whole price", () => {
+      const lines = buildInvoiceItems(order as any, false, { packagingCzk: 120 })
+      expect(lines.map((line) => line.Name)).toContain(
+        "Poštovné a balné — Balíkovna"
+      )
+      expect(lines.map((line) => line.Name)).not.toContain("Balné")
     })
 
     it("absorbs per-unit rounding into a Zaokrouhlení line", () => {

@@ -24,6 +24,12 @@ import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { VisibilityEye } from "../../../components/visibility-eye";
 import { sdk } from "../../../lib/sdk";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../../lib/view-mode";
+import {
+  CatalogFilterBar,
+  EMPTY_CATALOG_FILTER,
+  applyCatalogFilter,
+  type CatalogFilter,
+} from "../../../components/catalog-filter";
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -141,6 +147,8 @@ const ProduktyInner = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-prehled-produkty");
+  /* Sekundární filtr podle zařazení — kolekce a kategorie z načtených řádků. */
+  const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
   const bulkArchive = useMutation({
     mutationFn: async () => {
       for (const id of selected) {
@@ -186,7 +194,8 @@ const ProduktyInner = () => {
       }),
   });
 
-  const products = data?.products ?? [];
+  const allProducts = data?.products ?? [];
+  const products = applyCatalogFilter(allProducts, catalog);
 
   return (
     <Container className="divide-y p-0">
@@ -255,6 +264,12 @@ const ProduktyInner = () => {
           className="max-w-sm"
         />
       </div>
+
+      <CatalogFilterBar
+        products={allProducts}
+        value={catalog}
+        onChange={setCatalog}
+      />
 
       {isLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
@@ -407,9 +422,15 @@ const ProduktyInner = () => {
                   <div className="bg-ui-bg-subtle h-10 w-10 shrink-0 rounded-md" />
                 )}
                 <div className="min-w-0">
-                  <Text size="small" weight="plus" className="truncate">
-                    {product.title}
-                  </Text>
+                  <Link
+                    to={`/produkt/${product.id}`}
+                    className="block w-fit max-w-full hover:underline"
+                    title="Otevřít detail produktu"
+                  >
+                    <Text size="small" weight="plus" className="truncate">
+                      {product.title}
+                    </Text>
+                  </Link>
                   <Text size="xsmall" className="text-ui-fg-muted">
                     {product.variant_count === 1
                       ? "1 provedení"

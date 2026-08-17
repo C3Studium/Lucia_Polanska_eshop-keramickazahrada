@@ -1171,12 +1171,10 @@ const Inner = () => {
               <Thumb src={product.thumbnail} title={product.title}
                 onZoom={() => setLightbox({ id: product.id, title: product.title })} />
               <div className="min-w-0 flex-1">
-                {/* Klik na název = Produkty+ se správnou záložkou a rozbaleným
-                    řádkem — rychlé akce (dobírka, poškozené, doprava…) jsou
-                    tam, ne tady. */}
+                {/* Klik na název = detail produktu, stejně jako všude jinde. */}
                 <Link
-                  to={`/produkty-workbench?produkt=${product.id}&druh=${product.kind}`}
-                  title="Otevřít v Produktech+ s rychlými akcemi"
+                  to={`/produkt/${product.id}`}
+                  title="Otevřít detail produktu"
                   className="block w-fit max-w-full hover:underline"
                 >
                   <Text size="small" weight="plus" className="truncate">{product.title}</Text>

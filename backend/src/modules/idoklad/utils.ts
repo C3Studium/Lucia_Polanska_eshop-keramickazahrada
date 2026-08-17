@@ -273,6 +273,7 @@ export type InvoiceOrderInput = {
   items?: Array<{
     title?: string | null
     product_title?: string | null
+    product_id?: string | null
     quantity?: unknown
     total?: unknown
   }> | null
@@ -371,10 +372,16 @@ const invoiceLine = (
  * `total / quantity` rounded to haléře — and because that rounding can drift a
  * few haléřů from the order total, a final "Zaokrouhlení" line absorbs the
  * difference. The invoice always says exactly what the customer paid.
+ *
+ * Shipping is split into „Poštovné" + „Balné" when the packaging share is
+ * known (checkout folds both into one shipping price — the invoice unfolds
+ * them so the customer sees what they were told). When it is not known, one
+ * honest combined line.
  */
 export const buildInvoiceItems = (
   order: InvoiceOrderInput,
-  vatPayer: boolean
+  vatPayer: boolean,
+  options: { packagingCzk?: number | null } = {}
 ): IdokladInvoiceItemPayload[] => {
   const lines: IdokladInvoiceItemPayload[] = []
 
@@ -395,14 +402,28 @@ export const buildInvoiceItems = (
   const shippingTotal = round2(toAmount(order.shipping_total))
   if (shippingTotal > 0) {
     const methodName = (order.shipping_methods ?? [])[0]?.name
-    lines.push(
-      invoiceLine(
-        methodName ? `Doprava — ${methodName}` : "Doprava",
-        1,
-        shippingTotal,
-        vatPayer
+    const packaging =
+      options.packagingCzk != null ? round2(options.packagingCzk) : null
+    if (packaging !== null && packaging > 0 && packaging < shippingTotal) {
+      lines.push(
+        invoiceLine(
+          methodName ? `Poštovné — ${methodName}` : "Poštovné",
+          1,
+          round2(shippingTotal - packaging),
+          vatPayer
+        )
       )
-    )
+      lines.push(invoiceLine("Balné", 1, packaging, vatPayer))
+    } else {
+      lines.push(
+        invoiceLine(
+          methodName ? `Poštovné a balné — ${methodName}` : "Poštovné a balné",
+          1,
+          shippingTotal,
+          vatPayer
+        )
+      )
+    }
   }
 
   const orderTotal = round2(toAmount(order.total))
@@ -425,6 +446,8 @@ type InvoicePayloadInput = {
   paymentOptionId?: number
   numericSequenceId?: number
   currencyId?: number
+  /** Balné share of the shipping price — splits Poštovné/Balné when known. */
+  packagingCzk?: number | null
 }
 
 export const buildInvoicePayload = (
@@ -444,7 +467,9 @@ export const buildInvoicePayload = (
     // EET has been abolished; the flag stays required by the API.
     IsEet: false,
     IsIncomeTax: defaults.IsIncomeTax ?? true,
-    Items: buildInvoiceItems(order, input.vatPayer),
+    Items: buildInvoiceItems(order, input.vatPayer, {
+      packagingCzk: input.packagingCzk,
+    }),
     NumericSequenceId: input.numericSequenceId ?? defaults.NumericSequenceId,
     OrderNumber: truncate(order.display_id ?? "", 25) || undefined,
     PartnerId: input.partnerId,

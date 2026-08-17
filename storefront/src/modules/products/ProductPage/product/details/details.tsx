@@ -13,6 +13,7 @@ import {
   variantAvailability,
 } from "@lib/util/availability"
 import { backorderNote } from "@lib/util/backorder"
+import { productAllowsDobirka } from "@lib/util/dobirka"
 import { addToCart } from "@lib/data/cart"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import type { AddToCartState } from "./Cta/Add"
@@ -333,6 +334,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     addState={addState}
                     availability={availability}
                     backorderNote={isMadeToOrder ? null : backorderNote(product)}
+                    codAllowed={productAllowsDobirka(product)}
                     quantity={quantity}
                     maxQuantity={maxQuantity}
                     onQuantityChange={setQuantity}

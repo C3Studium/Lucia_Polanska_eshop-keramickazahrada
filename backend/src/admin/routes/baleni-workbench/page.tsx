@@ -18,6 +18,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
@@ -27,6 +28,12 @@ import {
   useViewMode,
   type ViewMode,
 } from "../../lib/view-mode";
+import {
+  CatalogFilterBar,
+  EMPTY_CATALOG_FILTER,
+  applyCatalogFilter,
+  type CatalogFilter,
+} from "../../components/catalog-filter";
 
 /**
  * Balení+ — every product's packaging cost, editable where you can see them all.
@@ -56,6 +63,8 @@ type PackagingProduct = {
   kind: "bezne" | "zakazka" | "balicek" | "poskozene";
   fragile: boolean;
   packaging_price: number | null;
+  collection: string | null;
+  categories: string[];
 };
 
 type Response = {
@@ -159,9 +168,15 @@ const Row = ({
         </div>
         <figcaption className="flex flex-col gap-2 p-2">
           <div className="flex items-center justify-between gap-1">
-            <Text size="small" className="truncate">
-              {product.title}
-            </Text>
+            <Link
+              to={`/produkt/${product.id}`}
+              className="min-w-0 hover:underline"
+              title="Otevřít detail produktu"
+            >
+              <Text size="small" className="truncate">
+                {product.title}
+              </Text>
+            </Link>
             {product.fragile && (
               <Badge size="2xsmall" color="orange">
                 křehké
@@ -192,9 +207,15 @@ const Row = ({
             />
           ) : null}
         </div>
-        <Text size="small" className="min-w-0 flex-1 truncate">
-          {product.title}
-        </Text>
+        <Link
+          to={`/produkt/${product.id}`}
+          className="min-w-0 flex-1 hover:underline"
+          title="Otevřít detail produktu"
+        >
+          <Text size="small" className="truncate">
+            {product.title}
+          </Text>
+        </Link>
         {product.fragile && (
           <Badge size="2xsmall" color="orange">
             křehké
@@ -229,7 +250,13 @@ const Row = ({
         )}
       </div>
       <div className="min-w-48 flex-1">
-        <Text size="small">{product.title}</Text>
+        <Link
+          to={`/produkt/${product.id}`}
+          className="block w-fit max-w-full hover:underline"
+          title="Otevřít detail produktu"
+        >
+          <Text size="small">{product.title}</Text>
+        </Link>
         {product.fragile && (
           <Badge size="2xsmall" color="orange" className="mt-1">
             křehké
@@ -251,6 +278,8 @@ const BaleniInner = () => {
   const [search, setSearch] = useState("");
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-baleni");
+  /* Sekundární filtr podle zařazení — kolekce a kategorie z řádků záložky. */
+  const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
 
   /* Filtered server-side, for the reason spelled out in Produkty+: the route slices to
      `limit` after filtering, so asking for everything and narrowing here silently loses
@@ -267,12 +296,13 @@ const BaleniInner = () => {
   });
 
   const all = data?.products ?? [];
-  const rows = all
+  const searched = all
     .filter((product) =>
       search.trim()
         ? product.title.toLowerCase().includes(search.trim().toLowerCase())
         : true
     );
+  const rows = applyCatalogFilter(searched, catalog);
 
   const priced = rows.filter((product) => product.packaging_price !== null);
   const total = priced.reduce(
@@ -333,6 +363,12 @@ const BaleniInner = () => {
           );
         })}
       </div>
+
+      <CatalogFilterBar
+        products={searched}
+        value={catalog}
+        onChange={setCatalog}
+      />
 
       {isLoading && (
         <div className="flex flex-col gap-y-2 px-6 py-5">

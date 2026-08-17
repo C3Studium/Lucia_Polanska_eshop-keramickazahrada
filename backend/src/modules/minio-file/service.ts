@@ -161,7 +161,14 @@ class MinioFileProviderService extends AbstractFileProviderService {
     try {
       const parsedFilename = path.parse(file.filename)
       const fileKey = `${parsedFilename.name}-${ulid()}${parsedFilename.ext}`
-      const content = Buffer.from(file.content, 'binary')
+      /*
+       * Medusa's own /admin/uploads route hands `content` over base64-encoded —
+       * decoding it as 'binary' (latin1) stored the base64 TEXT verbatim, which
+       * is why every admin-uploaded image served as ASCII instead of JPEG.
+       * Internal callers (made-to-order media, iDoklad PDFs) follow the same
+       * contract and encode to base64 before calling createFiles.
+       */
+      const content = Buffer.from(file.content, 'base64')
 
       // Upload file with public-read access
       await this.client.putObject(

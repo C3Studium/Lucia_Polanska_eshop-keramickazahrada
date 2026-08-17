@@ -1,5 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { getOrderDetailWorkflow } from "@medusajs/medusa/core-flows"
 import { IDOKLAD_MODULE } from "../modules/idoklad"
 import type IdokladModuleService from "../modules/idoklad/service"
 import {
@@ -62,33 +63,82 @@ const ORDER_FIELDS = [
   "total",
   "shipping_total",
   "metadata",
-  "items.title",
-  "items.product_title",
-  "items.quantity",
-  "items.total",
-  "shipping_methods.name",
+  "items.*",
+  "shipping_methods.*",
   "billing_address.*",
   "shipping_address.*",
   "customer.first_name",
   "customer.last_name",
-  "payment_collections.amount",
-  "payment_collections.captured_amount",
-  "payment_collections.payments.id",
-  "payment_collections.payments.provider_id",
-  "payment_collections.payments.captured_at",
+  "payment_collections.*",
+  "payment_collections.payments.*",
 ]
 
+/**
+ * Loads the order THROUGH the detail workflow, not `query.graph`.
+ *
+ * The item and order totals are computed inside
+ * `getOrderDetailWorkflow` — a plain graph read hands back rows without
+ * them, which is how the first live invoice went out with zero-priced
+ * lines and one huge „Zaokrouhlení". The workflow is the same source the
+ * native order page and merchant-orders route read from, so the invoice
+ * can never disagree with the screen she checked.
+ */
 export const loadInvoiceOrder = async (
   container: MedusaContainer,
   orderId: string
 ): Promise<any | null> => {
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const { data } = await query.graph({
-    entity: "order",
-    fields: ORDER_FIELDS,
-    filters: { id: orderId },
-  })
-  return (data[0] as any) ?? null
+  try {
+    const { result } = await getOrderDetailWorkflow(container).run({
+      input: { order_id: orderId, fields: ORDER_FIELDS },
+    })
+    return (result as any) ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The order's balné in CZK — recomputed the same way checkout priced it:
+ * each line's `packaging_price` from product metadata × quantity (products
+ * without one cost 0 to pack; the shop sets no global default). `null` when
+ * the products cannot be read — the invoice then keeps shipping as one line
+ * instead of inventing a split.
+ */
+export const packagingCzkFor = async (
+  container: MedusaContainer,
+  order: any
+): Promise<number | null> => {
+  try {
+    const items = (order?.items ?? []) as any[]
+    const productIds = [
+      ...new Set(items.map((item) => item?.product_id).filter(Boolean)),
+    ]
+    if (!productIds.length) {
+      return null
+    }
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: products } = await query.graph({
+      entity: "product",
+      fields: ["id", "metadata"],
+      filters: { id: productIds },
+    })
+    const priceByProduct = new Map<string, number>()
+    for (const product of products as any[]) {
+      const raw = (product?.metadata as any)?.packaging_price
+      const parsed = typeof raw === "number" ? raw : Number(raw)
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        priceByProduct.set(product.id, parsed)
+      }
+    }
+    const total = items.reduce((sum, item) => {
+      const each = priceByProduct.get(item?.product_id) ?? 0
+      const quantity = Number(toAmount(item?.quantity)) || 1
+      return sum + each * quantity
+    }, 0)
+    return Math.round(total * 100) / 100
+  } catch {
+    return null
+  }
 }
 
 export const invoiceStateOf = (order: any): IdokladInvoiceState => {
@@ -231,9 +281,9 @@ const storeInvoicePdf = async (
       {
         filename: `faktura-${invoiceNumber || invoiceId}.pdf`,
         mimeType: "application/pdf",
-        // The provider does `Buffer.from(content, "binary")`, so it wants the
-        // bytes as a binary string (same contract as made-to-order media).
-        content: pdf.toString("binary"),
+        // The provider decodes `content` as base64 — the same contract Medusa's
+        // own /admin/uploads route uses (and made-to-order media follows).
+        content: pdf.toString("base64"),
         access: "public" as const,
       },
     ])
@@ -351,6 +401,10 @@ export const ensureInvoiceForOrder = async (
           ? undefined
           : await idoklad.findCurrencyIdByCode(currencyCode).catch(() => undefined)
 
+      // The balné share, so the invoice can unfold shipping the way the
+      // customer was told it: poštovné + balné.
+      const packagingCzk = await packagingCzkFor(container, order)
+
       // 3) Create, then stamp metadata immediately — the invoice id is the
       //    idempotency fact and must survive even if PDF or e-mail fail.
       const invoice = await idoklad.createInvoice(
@@ -362,6 +416,7 @@ export const ensureInvoiceForOrder = async (
           paymentOptionId,
           numericSequenceId: idoklad.numericSequenceId,
           currencyId,
+          packagingCzk,
         })
       )
 

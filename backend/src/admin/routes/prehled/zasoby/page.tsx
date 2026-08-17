@@ -236,9 +236,21 @@ const ZasobyInner = () => {
               className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.3fr)_repeat(3,80px)_minmax(220px,auto)] lg:items-center"
             >
               <div className="min-w-0">
-                <Text size="small" weight="plus" className="truncate">
-                  {row.product_title ?? "Produkt"}
-                </Text>
+                {row.product_id ? (
+                  <Link
+                    to={`/produkt/${row.product_id}`}
+                    className="block w-fit max-w-full hover:underline"
+                    title="Otevřít detail produktu"
+                  >
+                    <Text size="small" weight="plus" className="truncate">
+                      {row.product_title ?? "Produkt"}
+                    </Text>
+                  </Link>
+                ) : (
+                  <Text size="small" weight="plus" className="truncate">
+                    {row.product_title ?? "Produkt"}
+                  </Text>
+                )}
                 <Text size="small" className="text-ui-fg-subtle truncate">
                   {row.variant_title ?? "Varianta"}
                   {row.sku ? ` · ${row.sku}` : ""}

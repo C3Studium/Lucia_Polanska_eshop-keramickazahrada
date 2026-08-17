@@ -26,6 +26,8 @@ type CTAProps = {
   availability?: Availability
   /** Merchant's own sentence about the wait when buying a sold-out piece. */
   backorderNote?: string | null
+  /** Whether the carrier may collect cash for this piece — said up front. */
+  codAllowed?: boolean
   quantity?: number
   maxQuantity?: number
   onQuantityChange?: (next: number) => void
@@ -43,6 +45,7 @@ export default function CTA({
   isValidVariant,
   availability = "made-to-order",
   backorderNote = null,
+  codAllowed = false,
   quantity = 1,
   maxQuantity = 0,
   onQuantityChange,
@@ -128,6 +131,14 @@ export default function CTA({
       {availability === "made-to-order" && backorderNote && (
         <p className="product__details__cta__backorderNote">{backorderNote}</p>
       )}
+
+      {/* Dobírka, said before checkout — finding out at the payment step
+          feels like a trap, so the product page says it here. */}
+      <p className="product__details__cta__codNote">
+        {codAllowed
+          ? "Lze doručit na dobírku."
+          : "Nelze doručit na dobírku — platba předem."}
+      </p>
     </div>
   )
 }

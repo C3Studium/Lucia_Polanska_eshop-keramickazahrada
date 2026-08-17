@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getInventoryAlerts } from "../../../../../lib/inventory-alerts"
+import { productLink } from "../../../../../lib/storefront-url"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { MERCHANT_CATALOG_MODULE } from "../../../../../modules/merchant-catalog"
@@ -151,6 +152,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     id: product.id,
     title: product.title,
     status: product.status,
+    // The storefront address of a live piece — the detail page's „Zobrazit
+    // v obchodě". Draft pieces have no public page to offer.
+    store_url:
+      product.status === "published" ? productLink(product.handle) : null,
     variants: (product.variants ?? []).map((variant: any) => {
       const czk = (variant.prices ?? []).find(
         (price: any) => String(price.currency_code).toLowerCase() === "czk"
