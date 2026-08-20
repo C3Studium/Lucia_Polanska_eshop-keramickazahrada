@@ -1,6 +1,6 @@
 "use client"
 
-import { setAddresses } from "@lib/data/cart"
+import { applySavedAddressToCart, setAddresses } from "@lib/data/cart"
 import compareAddresses from "@lib/util/compare-addresses"
 import { CheckCircleSolid } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
@@ -10,7 +10,7 @@ import Divider from "@modules/common/components/divider"
 import Spinner from "@modules/common/icons/spinner"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState } from "react"
+import { useActionState, useEffect, useMemo, useState } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
@@ -44,6 +44,44 @@ const Addresses = ({
 
   const [message, formAction] = useActionState(setAddresses, null)
 
+  /* Logged-in with a saved address: the form does not open at all. The saved
+     address is written to the cart by an action (a mutation is not a render's
+     job), and meanwhile the customer already sees the collapsed summary card
+     they will keep — „Doručit na: …" — instead of a form asking what the
+     account knows. Fails → the ordinary form appears; nothing is ever lost. */
+  const savedAddress = useMemo(() => {
+    if (!customer) return null
+    const regionCountries = cart?.region?.countries?.map(
+      (country) => country.iso_2
+    )
+    const usable = (customer.addresses ?? []).filter(
+      (address) =>
+        address.country_code && regionCountries?.includes(address.country_code)
+    )
+    return (
+      usable.find((address) => address.is_default_shipping) ?? usable[0] ?? null
+    )
+  }, [customer, cart?.region])
+
+  const [prefill, setPrefill] = useState<"idle" | "applying" | "failed">("idle")
+  const shouldPrefill =
+    isOpen && !cart?.shipping_address && !!savedAddress && prefill !== "failed"
+
+  useEffect(() => {
+    if (!shouldPrefill || prefill !== "idle") return
+    setPrefill("applying")
+    applySavedAddressToCart()
+      .then((result) => {
+        if (result.success) {
+          // Address answered — carry straight on to delivery, silently.
+          router.replace(pathname + "?step=delivery", { scroll: false })
+        } else {
+          setPrefill("failed")
+        }
+      })
+      .catch(() => setPrefill("failed"))
+  }, [shouldPrefill, prefill, pathname, router])
+
   return (
     <div className={s.root}>
       <div className={s.headerRow}>
@@ -62,7 +100,47 @@ const Addresses = ({
           />
         )}
       </div>
-      {isOpen ? (
+      {isOpen && shouldPrefill && savedAddress ? (
+        <div className={s.summary} aria-busy="true">
+          <div className={s.row}>
+            <div
+              className={s.col + " shipping"}
+              data-testid="shipping-address-summary"
+            >
+              <Text className={s.label}>Doručit na</Text>
+              <Text className={s.value}>
+                {savedAddress.first_name} {savedAddress.last_name}
+              </Text>
+              <Text className={s.value}>
+                {savedAddress.address_1} {savedAddress.address_2}
+              </Text>
+              <Text className={s.value}>
+                {savedAddress.postal_code}, {savedAddress.city}
+              </Text>
+              <Text className={s.value}>
+                {savedAddress.country_code?.toUpperCase()}
+              </Text>
+            </div>
+            <div className={s.col + " contact"}>
+              <Text className={s.label}>Kontakt na vás</Text>
+              <Text className={s.value}>
+                {savedAddress.phone || customer?.phone || ""}
+              </Text>
+              <Text className={s.value}>{cart?.email || customer?.email}</Text>
+            </div>
+            <div className={s.col + " billing"}>
+              <Text className={s.label}>Fakturační údaje</Text>
+              <Text className={s.note}>
+                Použijeme stejnou adresu jako pro doručení.
+              </Text>
+            </div>
+          </div>
+          <Text className={s.note} role="status">
+            Používáme vaši uloženou adresu — změnit ji můžete tlačítkem
+            Upravit.
+          </Text>
+        </div>
+      ) : isOpen ? (
         <form action={formAction} className={s.form}>
           <div className={s.shippingAddress}>
             <ShippingAddress
@@ -75,7 +153,7 @@ const Addresses = ({
 
             {!sameAsBilling && (
               <div className={s.billingAddress}>
-                <h2 className={s.heading}>Doručovací adresa</h2>
+                <h2 className={s.heading}>Fakturační adresa</h2>
 
                 <BillingAddress cart={cart} countryCode={countryCode} />
               </div>

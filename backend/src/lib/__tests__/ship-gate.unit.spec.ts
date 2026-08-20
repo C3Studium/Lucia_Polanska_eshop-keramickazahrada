@@ -87,6 +87,73 @@ describe("evaluateShipGate — the happy path", () => {
   })
 })
 
+describe("evaluateShipGate — dobírka", () => {
+  const dobirkaOrder = (overrides: Record<string, unknown> = {}) => ({
+    currency_code: "czk",
+    total: 1890,
+    summary: { pending_difference: 1890 },
+    payment_collections: [
+      {
+        status: "pending",
+        amount: 1890,
+        captured_amount: 0,
+        refunded_amount: 0,
+        payments: [{ provider_id: "pp_dobirka_ceska-posta" }],
+      },
+    ],
+    order_changes: [],
+    production_order: null,
+    ...overrides,
+  })
+
+  it("allows dispatch with nothing captured — the carrier collects at the door", () => {
+    expect(evaluateShipGate(dobirkaOrder())).toEqual({
+      allowed: true,
+      code: null,
+      reason: null,
+    })
+  })
+
+  it("still blocks while an order change is open", () => {
+    const verdict = evaluateShipGate(
+      dobirkaOrder({ order_changes: [{ status: "pending" }] })
+    )
+    expect(verdict.allowed).toBe(false)
+    expect(verdict.code).toBe("order_change")
+  })
+
+  it("still blocks a commission whose deposit was never paid", () => {
+    const verdict = evaluateShipGate(
+      dobirkaOrder({
+        production_order: {
+          agreed_total: 1890,
+          payment_requests: [{ status: "pending", amount: 500 }],
+        },
+      })
+    )
+    expect(verdict.allowed).toBe(false)
+    expect(verdict.code).toBe("mto_outstanding")
+  })
+
+  it("a card order with empty payments list keeps the full gate", () => {
+    const verdict = evaluateShipGate(
+      dobirkaOrder({
+        payment_collections: [
+          {
+            status: "pending",
+            amount: 1890,
+            captured_amount: 0,
+            refunded_amount: 0,
+            payments: [{ provider_id: "pp_comgate_comgate" }],
+          },
+        ],
+      })
+    )
+    expect(verdict.allowed).toBe(false)
+    expect(verdict.code).toBe("unpaid")
+  })
+})
+
 describe("evaluateShipGate — money that never arrived", () => {
   it("blocks an unpaid order and names the missing amount", () => {
     const order = paidOrder({

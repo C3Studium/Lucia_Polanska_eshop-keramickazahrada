@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useSearchParams } from "next/navigation"
 import { useId, useState } from "react"
 
-import { initiatePaymentSession, updateCart } from "@lib/data/cart"
+import { initiatePaymentSession, mergeCartMetadata } from "@lib/data/cart"
 import {
   buildComgateSessionPayload,
   extractComgateRedirectUrl,
@@ -25,8 +25,7 @@ import OrderRecap from "./recap"
 import { contentVariants, errorVariants, headingTransition, rowVariants } from "./motion"
 import styles from "./style.module.scss"
 
-/** Bumped whenever the terms change, so a recorded consent can be traced to a wording. */
-const TERMS_VERSION = "2026-08"
+import { TERMS_VERSION } from "@lib/constants"
 
 const Review = ({
   cart,
@@ -80,12 +79,12 @@ const Review = ({
    * a session that is already in flight.
    */
   const recordConsent = async () => {
-    await updateCart({
-      metadata: {
-        ...(cart?.metadata ?? {}),
-        terms_accepted_at: new Date().toISOString(),
-        terms_version: TERMS_VERSION,
-      },
+    // Merge server-side against a FRESH cart — spreading the component's stale
+    // `cart.metadata` here could revert the production-payment amount the
+    // customer just chose, right before it is charged.
+    await mergeCartMetadata({
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: TERMS_VERSION,
     })
   }
 
@@ -260,6 +259,10 @@ const Review = ({
                   cart={cart}
                   data-testid="submit-order-button"
                   countryCode={countryCode}
+                  /* The consent record must exist for EVERY payment path —
+                     the ComGate flow writes it itself, the direct ones (osobní
+                     odběr, dobírka) get it here, before placing the order. */
+                  onBeforePlaceAction={recordConsent}
                 />
               ) : (
                 <p className={styles.gateHint}>

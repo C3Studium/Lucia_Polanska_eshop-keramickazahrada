@@ -176,6 +176,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="postal_code"
                   required
                   autoComplete="postal-code"
+                  inputMode="numeric"
                   defaultValue={address.postal_code || undefined}
                   data-testid="postal-code-input"
                 />
@@ -210,13 +211,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 variant="contact"
                 label="Telefon"
                 name="phone"
-                autoComplete="phone"
+                type="tel"
+                autoComplete="tel"
                 defaultValue={address.phone || undefined}
                 data-testid="phone-input"
               />
             </div>
             {formState.error && (
-              <div className={s.error}>{formState.error}</div>
+              <div className={s.error} role="alert">{formState.error}</div>
             )}
           </Modal.Body>
           <Modal.Footer>

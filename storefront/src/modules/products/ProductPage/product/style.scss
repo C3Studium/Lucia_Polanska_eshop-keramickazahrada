@@ -469,7 +469,7 @@
 
 .product__selection small {
   display: block;
-  color: rgba(255, 232, 214, 0.45);
+  color: rgba(255, 232, 214, 0.62);
   font: 400 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -505,7 +505,7 @@
 
 .product__details__subDetails__colors > p {
   margin: 0;
-  color: rgba(255, 232, 214, 0.46);
+  color: rgba(255, 232, 214, 0.62);
   font: 400 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -561,7 +561,7 @@
 
 .product__details__cta__price > p {
   margin: 5px 0 0;
-  color: rgba(255, 232, 214, 0.46);
+  color: rgba(255, 232, 214, 0.62);
   font: 400 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -601,13 +601,13 @@
 }
 
 .product__priceOriginalLabel {
-  color: rgba(255, 232, 214, .42);
+  color: rgba(255, 232, 214, .62);
 }
 
 .product__priceOriginal {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
-  text-decoration-color: rgba(255, 232, 214, .48);
+  text-decoration-color: rgba(255, 232, 214, .62);
 }
 
 .product__priceDiscount {
@@ -764,9 +764,11 @@
 }
 
 .product__details__cta__buy > p {
+  /* Availability, backorder and dobírka notes — the three sentences that
+     decide the purchase. Was .48 = 4.2:1 on the ink stage. */
   margin: 0;
-  color: rgba(255, 232, 214, 0.48);
-  font: 300 14px/1.35 "Sansation-Light", sans-serif;
+  color: rgba(255, 232, 214, 0.64);
+  font: 400 14px/1.35 "Sansation-Regular", sans-serif;
 }
 
 .product__serviceNotes {
@@ -777,8 +779,8 @@
   margin-top: 22px;
   padding: 15px 0;
   border-top: 1px solid var(--pdp-line-dark);
-  color: rgba(255, 232, 214, 0.4);
-  font: 400 12px/1.35 "Sansation-Regular", sans-serif;
+  color: rgba(255, 232, 214, 0.62);
+  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }

@@ -109,3 +109,21 @@ export const verifyEmailLink = (
     ? `${base}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
     : ""
 }
+
+/**
+ * Password reset — `app/[countryCode]/(main)/reset-password`.
+ *
+ * Used to be built off `configModule.admin.storefrontUrl` with a
+ * `https://storefront.com` fallback — a live reset token mailed to a domain
+ * nobody owns. Empty when unconfigured, so the caller can refuse to send
+ * instead of sending a wrong link.
+ */
+export const resetPasswordLink = (
+  token?: string | null,
+  email?: string | null
+): string => {
+  const base = storefrontBase()
+  return base && token && email
+    ? `${base}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+    : ""
+}

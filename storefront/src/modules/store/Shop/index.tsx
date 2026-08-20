@@ -294,6 +294,7 @@ export default function ECom({
               count={resultCount}
               search={filters.search}
               sort={filters.sort}
+              filtersOpen={filtersOpen}
               onOpenFilters={openFilters}
               onSearch={(search) => updateFilters({ search })}
               onSort={(sort) => updateFilters({ sort })}

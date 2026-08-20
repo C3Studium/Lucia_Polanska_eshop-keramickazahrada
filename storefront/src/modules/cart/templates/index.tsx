@@ -47,7 +47,7 @@ const CartTemplate = async ({
         {cart?.items?.length ? (
           <>
             <header className={s.intro}>
-              <p className={s.eyebrow}>Váš výběr · {itemCount} {itemCount === 1 ? "kus" : "kusy"}</p>
+              <p className={s.eyebrow}>Váš výběr · {itemCount} {itemCount === 1 ? "kus" : itemCount < 5 ? "kusy" : "kusů"}</p>
               <h1>Košík</h1>
               <div className={s.objectMark} aria-hidden="true">
                 <span />

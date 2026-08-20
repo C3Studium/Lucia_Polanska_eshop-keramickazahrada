@@ -9,12 +9,14 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface WelcomeEmailProps {
   customerName?: string;
 }
 
-function WelcomeEmailComponent({ customerName = "Vážený zákazník" }: WelcomeEmailProps) {
+function WelcomeEmailComponent({ customerName }: WelcomeEmailProps) {
+  const shopUrl = storeLink()
   return (
     <EmailLayout preview="Vítejte v Keramické zahradě — váš účet je připraven.">
       <Eyebrow>Váš účet</Eyebrow>
@@ -31,11 +33,11 @@ function WelcomeEmailComponent({ customerName = "Vážený zákazník" }: Welcom
         podívat.
       </Note>
 
-      <ButtonRow>
-        <EmailButton href="https://keramickazahrada.cz/store">
-          Prohlédnout objekty
-        </EmailButton>
-      </ButtonRow>
+      {shopUrl ? (
+        <ButtonRow>
+          <EmailButton href={shopUrl}>Prohlédnout objekty</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Tento e-mail vám posíláme, protože jste si vytvořili účet na

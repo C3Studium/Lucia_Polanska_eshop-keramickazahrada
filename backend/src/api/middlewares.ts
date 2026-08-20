@@ -33,31 +33,43 @@ import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-
 import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/discount/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
+import {
+  blockEmptyingConfirm,
+  blockMtoLineEdits,
+  blockMtoVariantAdds,
+} from "../lib/native-order-edit-guard";
 import { PostProductionPaymentModeSchema } from "./store/carts/[id]/production-payment-mode/route";
 import { PostStoreNewsletterSchema } from "./store/newsletter/validators";
 import { PostNewsletterCampaignSchema } from "./admin/newsletter/campaigns/route";
 import { PostAnnounceBundleSchema } from "./admin/newsletter/announce-bundle/route";
-
-// Debug middleware to log incoming requests
-const debugAuthMiddleware = () => {
-  return async (
-    req: MedusaRequest,
-    res: MedusaResponse,
-    next: MedusaNextFunction
-  ) => {
-    console.log("[Middleware Debug] Path:", req.path);
-    console.log("[Middleware Debug] Method:", req.method);
-    console.log(
-      "[Middleware Debug] Authorization header present:",
-      !!req.headers.authorization
-    );
-    console.log("[Middleware Debug] auth_context:", (req as any).auth_context);
-    next();
-  };
-};
+import { PostNewsletterPreviewSchema } from "./admin/newsletter/preview/route";
+import { PostNewsletterTestSchema } from "./admin/newsletter/test/route";
+import { PostNewsletterDraftSchema } from "./admin/newsletter/drafts/route";
 
 export default defineMiddlewares({
   routes: [
+    // The customer-route order-edit rules, on the native admin endpoints too —
+    // a rule enforced on one door only gets walked around (see the guard file).
+    {
+      matcher: "/admin/order-edits/:id/items/item/:item_id",
+      methods: ["POST", "DELETE"],
+      middlewares: [blockMtoLineEdits()],
+    },
+    {
+      matcher: "/admin/order-edits/:id/items",
+      methods: ["POST"],
+      middlewares: [blockMtoVariantAdds()],
+    },
+    {
+      matcher: "/admin/order-edits/:id/request",
+      methods: ["POST"],
+      middlewares: [blockEmptyingConfirm()],
+    },
+    {
+      matcher: "/admin/order-edits/:id/confirm",
+      methods: ["POST"],
+      middlewares: [blockEmptyingConfirm()],
+    },
     // The A2 payment invariant on the *native* fulfilment routes.
     //
     // The queue already refuses to dispatch an unpaid order, but it is not the
@@ -219,6 +231,27 @@ export default defineMiddlewares({
       ],
     },
     {
+      matcher: "/admin/newsletter/campaigns",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/newsletter/preview",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostNewsletterPreviewSchema),
+      ],
+    },
+    {
+      matcher: "/admin/newsletter/test",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostNewsletterTestSchema),
+      ],
+    },
+    {
       matcher: "/admin/newsletter/announce-bundle",
       methods: ["POST"],
       middlewares: [
@@ -228,6 +261,41 @@ export default defineMiddlewares({
     },
     {
       matcher: "/admin/newsletter/subscribers",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    // Delivery reports from the mail service. Public and token-free by
+    // design — the handler authenticates every request itself via the
+    // signature over the *raw* body, and that raw body only exists when this
+    // entry asks the body parser to keep it (same mechanism Medusa core uses
+    // for /hooks/payment/:provider).
+    {
+      matcher: "/hooks/newsletter-events",
+      methods: ["POST"],
+      bodyParser: { preserveRawBody: true },
+      middlewares: [],
+    },
+    // Composer drafts (autosave).
+    {
+      matcher: "/admin/newsletter/drafts",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/newsletter/drafts",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostNewsletterDraftSchema),
+      ],
+    },
+    {
+      matcher: "/admin/newsletter/drafts/:id",
+      methods: ["DELETE"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      matcher: "/admin/newsletter/campaigns/:key/stats",
       methods: ["GET"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },
@@ -335,23 +403,7 @@ export default defineMiddlewares({
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostAddCustomLineItemSchema)],
     },
-    // Wishlist routes - rely on Medusa's internal auth for /store/customers/me/*
-    // Added debug middleware to verify requests reach here
-    {
-      matcher: "/store/customers/me/wishlists",
-      methods: ["GET", "POST"],
-      middlewares: [debugAuthMiddleware()],
-    },
-    {
-      matcher: "/store/customers/me/wishlists/items",
-      methods: ["GET", "POST"],
-      middlewares: [debugAuthMiddleware()],
-    },
-    {
-      matcher: "/store/customers/me/wishlists/items/:id",
-      methods: ["DELETE"],
-      middlewares: [debugAuthMiddleware()],
-    },
+    // Wishlist routes rely on Medusa's internal auth for /store/customers/me/*.
     {
       // Batch moves read validatedBody — without this entry the handler
       // throws on first access, the restock lesson.
@@ -374,6 +426,40 @@ export default defineMiddlewares({
       matcher: "/store/orders/:id/progress",
       methods: ["GET"],
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    // Course reservations: auth is *optional* — a logged-in booker gets
+    // linked to their account (customer_id lands on the reservation), a guest
+    // passes through untouched. Validation is inline in the handler.
+    {
+      matcher: "/store/courses/reservations",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    // Self-service on one reservation (cancel, party-size edit): the signed
+    // token in the query is proof enough on its own, but a logged-in customer
+    // acting from their account may arrive without it — optional auth lets
+    // the handler accept either proof (see the routes' self-service helper).
+    {
+      matcher: "/store/courses/reservations/:id/cancel",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    {
+      matcher: "/store/courses/reservations/:id/edit",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
     },
     // Customer reviews are explicitly authenticated because this is a custom
     // route and its query contains private, customer-scoped review records.

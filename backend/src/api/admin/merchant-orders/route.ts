@@ -35,6 +35,8 @@ const ORDER_FIELDS = [
   "email",
   "currency_code",
   "total",
+  // `metadata.refund_due` drives the „Vrátit rozdíl" button in the queue.
+  "metadata",
   "items.*",
   // `summary` and the collection amounts are what the A2 ship gate compares —
   // the card must not offer an action the backend would refuse.
@@ -48,6 +50,7 @@ const ORDER_FIELDS = [
   "payment_collections.amount",
   "payment_collections.captured_amount",
   "payment_collections.refunded_amount",
+  "payment_collections.payments.provider_id",
   "fulfillments.id",
   "fulfillments.packed_at",
   "fulfillments.shipped_at",

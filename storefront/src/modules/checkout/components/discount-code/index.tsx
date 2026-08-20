@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Heading, Input, Label, Text } from "@medusajs/ui"
+import { Badge, Heading, Input, Text } from "@medusajs/ui"
 import React, { useActionState } from "react"
 
 import { applyPromotions, submitPromotionForm } from "@lib/data/cart"
@@ -23,31 +23,24 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const { items = [], promotions = [] } = cart
+  const [removeError, setRemoveError] = React.useState<string | null>(null)
+
+  /*
+   * Removal = re-apply everything EXCEPT the removed code. The original filter
+   * was inverted (`code === undefined`), which sent an empty list and wiped
+   * every promotion the moment any single one was removed.
+   */
   const removePromotionCode = async (code: string) => {
-    const validPromotions = promotions.filter(
-      (promotion) => promotion.code !== code
-    )
-
-    await applyPromotions(
-      validPromotions.filter((p) => p.code === undefined).map((p) => p.code!)
-    )
-  }
-
-  const addPromotionCode = async (formData: FormData) => {
-    const code = formData.get("code")
-    if (!code) {
-      return
-    }
-    const input = document.getElementById("promotion-input") as HTMLInputElement
-    const codes = promotions
-      .filter((p) => p.code === undefined)
-      .map((p) => p.code!)
-    codes.push(code.toString())
-
-    await applyPromotions(codes)
-
-    if (input) {
-      input.value = ""
+    setRemoveError(null)
+    try {
+      await applyPromotions(
+        promotions
+          .filter((promotion) => promotion.code !== undefined)
+          .filter((promotion) => promotion.code !== code)
+          .map((promotion) => promotion.code!)
+      )
+    } catch {
+      setRemoveError("Kód se nepodařilo odebrat. Zkuste to prosím znovu.")
     }
   }
 
@@ -57,7 +50,9 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
     <div className={styles.root}>
       <div className={styles.content}>
         <form action={formAction} className={styles.form}>
-          <Label className={styles.label}>
+          {/* A div, not <Label>: a label wrapping a button (with no control)
+              is a semantic misuse some screen readers announce twice. */}
+          <div className={styles.label}>
             <PremiumActionButton
               compact
               text="Mám slevový kód"
@@ -71,7 +66,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
             {/* <Tooltip content="You can add multiple promotion codes">
               <InformationCircleSolid color="var(--fg-muted)" />
             </Tooltip> */}
-          </Label>
+          </div>
 
           <AnimatePresence initial={false}>
             {isOpen && (
@@ -88,6 +83,8 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                     id="promotion-input"
                     name="code"
                     type="text"
+                    aria-label="Slevový kód"
+                    placeholder="Napište slevový kód"
                     autoFocus
                     data-testid="discount-input"
                   />
@@ -101,7 +98,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                 </div>
 
                 <ErrorMessage
-                  error={message}
+                  error={message || removeError}
                   data-testid="discount-error-message"
                 />
               </motion.div>
@@ -165,7 +162,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                             return
                           }
 
-                          removePromotionCode(promotion.code)
+                          void removePromotionCode(promotion.code)
                         }}
                         data-testid="remove-discount-button"
                       >

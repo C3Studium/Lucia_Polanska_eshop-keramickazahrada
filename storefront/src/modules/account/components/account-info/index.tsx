@@ -84,6 +84,7 @@ const AccountInfo = ({
             initial="closed"
             animate="open"
             exit="closed"
+            role="status"
             data-testid="success-message"
           >
             <p>{label} jsme uložili.</p>
@@ -96,6 +97,7 @@ const AccountInfo = ({
             initial="closed"
             animate="open"
             exit="closed"
+            role="alert"
             data-testid="error-message"
           >
             <p>{errorMessage}</p>

@@ -8,7 +8,7 @@
   position: relative;
   isolation: isolate;
   display: inline-flex;
-  min-height: 34px;
+  min-height: 40px;
   align-items: center;
   gap: 7px;
   padding: 0 11px;
@@ -51,6 +51,6 @@
 .label {
   position: relative;
   z-index: 1;
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  font: 400 14px/1 "Sansation-Regular", sans-serif;
   white-space: nowrap;
 }

@@ -357,7 +357,13 @@ const ZakazniciInner = () => {
     "uzivatele"
   );
   const [active, setActive] = useState("vse");
+  // Instant input, debounced query — one request per thought, not per keystroke.
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
   const expert = useExpertMode();
 
   const params = new URLSearchParams();
@@ -402,8 +408,8 @@ const ZakazniciInner = () => {
           size="small"
           type="search"
           placeholder="Hledat jméno nebo e-mail…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
           className="w-64"
         />
         </div>
@@ -607,6 +613,7 @@ const ZakazniciWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Zákazníci+",
   icon: Users,
+  rank: 60,
 });
 
 export default ZakazniciWorkbenchPage;

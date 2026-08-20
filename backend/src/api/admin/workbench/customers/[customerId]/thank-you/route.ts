@@ -6,6 +6,7 @@ import {
 } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import { storefrontBase } from "../../../../../../lib/customer-email"
+import { newsletterUnsubscribeUrl } from "../../../../../../lib/newsletter-link"
 
 /**
  * „Poděkovat" — a one-time code for someone who keeps coming back.
@@ -136,17 +137,28 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const name =
     [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
     undefined
+  // The promotional template's footer promises an unsubscribe link; without
+  // this it falls back to a dead placeholder. Signed for this recipient —
+  // if they are not on the newsletter list the handler shrugs politely.
+  const unsubscribeLink = newsletterUnsubscribeUrl(customer.email)
 
   await notifications.createNotifications({
     to: customer.email,
     channel: "email",
     template: "promotional",
     data: {
+      // A personal thank-you must not arrive under the generic campaign
+      // subject, and its legal reason line has to be truthful — the customer
+      // may never have subscribed to the newsletter.
+      subject: "Malé poděkování z ateliéru",
+      receivingReason:
+        "Tuto zprávu vám posíláme jednorázově jako poděkování za vaše nákupy v Keramické zahradě.",
       customerName: name,
       discountCode: code,
       discountPercentage: `${percentage} %`,
       expiryDate: czechDate(endsAt),
       ...(storefront ? { productLink: `${storefront}/store` } : {}),
+      ...(unsubscribeLink ? { unsubscribeLink } : {}),
     },
   })
 

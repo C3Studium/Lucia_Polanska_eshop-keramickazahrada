@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import CartButton from "./button/cart-button"
+import BuyNowButton from "./buy-now"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
 import {
   availabilityLabel,
@@ -35,11 +36,18 @@ type CTAProps = {
   options?: Record<string, string | undefined>
   wishlistItems?: any[]
   isAuthenticated?: boolean
+  /** Route country — the express flow the buy-now button opens is per-country. */
+  countryCode?: string
+  /** Product-side gate: not made-to-order, not a commission piece. */
+  showBuyNow?: boolean
+  /** Build-time hint (logged-in + saved address); the button re-probes live. */
+  buyNowEligible?: boolean
 }
 
 export default function CTA({
   inStock,
   selectedVariant,
+  product,
   isAdding,
   addState = { kind: "idle" },
   isValidVariant,
@@ -52,15 +60,18 @@ export default function CTA({
   handleAddToCart,
   wishlistItems,
   isAuthenticated,
+  countryCode,
+  showBuyNow = false,
+  buyNowEligible = false,
 }: CTAProps) {
   // A stepper only makes sense where more than one can be bought.
   const showStepper = Boolean(onQuantityChange) && isPurchasable(availability) && maxQuantity > 1
   const label = !selectedVariant
-    ? "Vyberte variantu"
+    ? "Vyberte provedení"
     : !inStock || !isValidVariant
       ? availabilityLabel["sold-out"]
       : addState.kind === "added"
-        ? "Přidáno ✓"
+        ? "Přidáno do košíku"
         : addState.kind === "adding"
           ? "Přidáváme…"
           : "Přidat do košíku"
@@ -111,6 +122,19 @@ export default function CTA({
         </CartButton>
       </div>
 
+      {/* One click from here to the express payment step — only for a
+          logged-in customer whose account already knows where to deliver. */}
+      {showBuyNow && countryCode && inStock && isValidVariant && (
+        <BuyNowButton
+          variantId={selectedVariant?.id}
+          quantity={quantity}
+          countryCode={countryCode}
+          handle={product.handle}
+          initialEligible={buyNowEligible}
+          disabled={!inStock || !selectedVariant || isAdding || !isValidVariant}
+        />
+      )}
+
       {addState.kind === "error" && (
         <p className="product__details__cta__error" role="alert">
           {addState.message}
@@ -137,7 +161,7 @@ export default function CTA({
       <p className="product__details__cta__codNote">
         {codAllowed
           ? "Lze doručit na dobírku."
-          : "Nelze doručit na dobírku — platba předem."}
+          : "Dobírka není možná, tento kus se platí předem."}
       </p>
     </div>
   )

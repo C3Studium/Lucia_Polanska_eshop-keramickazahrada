@@ -56,6 +56,13 @@ const navigation = [
     caption: "Uložené kousky",
     testId: "wishlist-link",
   },
+  {
+    index: "07",
+    href: "/account/kurzy",
+    title: "Kurzy",
+    caption: "Rezervovaná místa",
+    testId: "kurzy-link",
+  },
 ]
 
 type NavigationItem = (typeof navigation)[number]

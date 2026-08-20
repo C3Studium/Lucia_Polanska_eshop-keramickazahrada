@@ -87,7 +87,7 @@ export const useSanitySyncs = (
     UseQueryOptions<
       Record<any, any>,
       FetchError,
-      { workflow_executions: Record<any, any>[] },
+      { workflow_executions: Record<any, any>[]; studio_url?: string | null },
       QueryKey
     >,
     "queryKey" | "queryFn"

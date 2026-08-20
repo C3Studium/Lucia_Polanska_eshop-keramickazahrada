@@ -9,10 +9,10 @@
 
   position: relative;
   width: 100%;
-  /* 560, down from 720. The three process steps used to be three consecutive full-screen
-     chapters; as one strip inside the "O kurzech" scene they cost a screen and a half instead of
-     four, and every scene now gets about a screen and a half of scroll. */
-  height: 560svh;
+  /* 300, down from 560. Two scenes now — the hero and „Pro koho" — each with
+     about a screen and a half of scroll, the same physical pacing the four
+     scenes had before the last two moved into the audience blocks. */
+  height: 300svh;
   color: var(--kurzy-cream);
   background: var(--kurzy-charcoal);
 
@@ -52,7 +52,7 @@
     left: 4.5%;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 22px;
     color: rgba(255, 232, 214, 0.42);
     font-size: clamp(0.75rem, 0.56vw, 0.75rem);
@@ -65,7 +65,7 @@
       transition: opacity 0.45s ease, color 0.45s ease;
     }
 
-    @for $i from 1 through 4 {
+    @for $i from 1 through 2 {
       &--#{$i} > span:nth-child(#{$i}) {
         color: #fff;
         opacity: 1;
@@ -269,184 +269,13 @@
   }
 }
 
-.kurzyWorkshop {
-  color: var(--kurzy-charcoal);
-  transform-origin: center;
-
-  &__landscape,
-  &__portrait {
-    position: absolute;
-    margin: 0;
-    overflow: hidden;
-    background: #cfc4b8;
-  }
-
-  &__landscape {
-    top: 18%;
-    left: 7%;
-    width: 52%;
-    height: 58%;
-    will-change: clip-path;
-
-    img {
-      object-fit: cover;
-      transform: scale(1.04);
-    }
-
-    &::after {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        180deg,
-        transparent 64%,
-        rgba(24, 25, 20, 0.46)
-      );
-      content: "";
-    }
-
-    figcaption {
-      position: absolute;
-      right: 20px;
-      bottom: 17px;
-      left: 20px;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-
-      i {
-        flex: 1;
-        height: 1px;
-        background: currentColor;
-        opacity: 0.45;
-      }
-    }
-  }
-
-  &__portrait {
-    top: 29%;
-    left: 52%;
-    z-index: 3;
-    width: 14%;
-    height: 45%;
-    will-change: transform, opacity;
-
-    img {
-      object-fit: cover;
-    }
-  }
-
-  &__copy {
-    position: absolute;
-    top: 24%;
-    right: 6%;
-    z-index: 5;
-    width: min(27vw, 520px);
-
-    > span {
-      color: rgba(36, 37, 31, 0.5);
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      margin: clamp(18px, 2.2vh, 28px) 0 0;
-      font-family: "Sentient-Regular", serif;
-      font-size: clamp(3.7rem, 5.1vw, 6.4rem);
-      font-weight: 400;
-      line-height: 0.87;
-      letter-spacing: -0.058em;
-
-      em {
-        display: block;
-        /* Paper, not the old #74775b: this scene sits on the olive backdrop now that it comes
-           after "O kurzech", and olive-on-olive was barely there. */
-        color: var(--kurzy-paper);
-        font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-        font-weight: 300;
-      }
-    }
-
-    p {
-      max-width: 32rem;
-      margin: clamp(22px, 3vh, 36px) 0 0;
-      color: rgba(36, 37, 31, 0.66);
-      font-size: clamp(0.98rem, 1vw, 1.16rem);
-      font-weight: 300;
-      line-height: 1.55;
-    }
-  }
-
-  /* The school/group enquiry. Schools were the one audience the page named but gave no way to
-     reach — the only contact trigger was in the adults scene, four screens further down. */
-  &__action {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: clamp(22px, 3vh, 34px);
-    pointer-events: auto;
-
-    > span {
-      color: rgba(36, 37, 31, 0.56);
-      font-size: 0.8125rem;
-      line-height: 1.4;
-    }
-
-    .kurzyTimelineCtaButton {
-      border-color: rgba(36, 37, 31, 0.42);
-    }
-  }
-
-  &__facts {
-    position: absolute;
-    right: 6%;
-    bottom: 10%;
-    left: 7%;
-    z-index: 5;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid rgba(36, 37, 31, 0.24);
-    will-change: transform, opacity;
-
-    > div {
-      padding: 15px 18px 0;
-      border-left: 1px solid rgba(36, 37, 31, 0.16);
-
-      &:first-child {
-        padding-left: 0;
-        border-left: 0;
-      }
-    }
-
-    dt {
-      color: rgba(36, 37, 31, 0.48);
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    dd {
-      margin: 7px 0 0;
-      font-family: "Sentient-Regular", serif;
-      font-size: clamp(0.95rem, 1.08vw, 1.24rem);
-    }
-  }
-}
-
 /*
- * "O kurzech" — the scene that answers what a course actually is.
+ * „Pro koho" — the one scene after the hero.
  *
- * The three steps used to be three consecutive full-screen chapters, each with its own half-page
- * photograph and 5.6rem heading, spread over 290svh. Read in sequence they told the story three
- * times slower than it needed telling, and you could not see step 1 and step 3 at once — which is
- * the whole point of a "how it goes" section. One heading, one paragraph and a three-up strip.
+ * A short popisek (heading left, lede right — the layout the old "O kurzech"
+ * scene proved) and exactly three audience blocks: děti a školy, firmy a
+ * spolky, zájemci. The first two open the contact dialog, the third scrolls
+ * to the reservation section below the timeline.
  */
 .kurzyAbout {
   color: var(--kurzy-charcoal);
@@ -460,7 +289,7 @@
     will-change: transform;
 
     > span {
-      color: rgba(36, 37, 31, 0.5);
+      color: rgba(36, 37, 31, 0.66);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -476,7 +305,6 @@
 
       em {
         display: block;
-        /* Olive rather than paper: this scene reads on the paper backdrop now. */
         color: #74775b;
         font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
         font-weight: 300;
@@ -503,7 +331,7 @@
     }
   }
 
-  &__steps {
+  &__blocks {
     position: absolute;
     right: 6%;
     bottom: 11%;
@@ -515,23 +343,11 @@
   }
 }
 
-.kurzyStep {
+.kurzyAudience {
   min-width: 0;
+  padding-top: clamp(14px, 1.8vh, 22px);
+  border-top: 1px solid rgba(36, 37, 31, 0.24);
   will-change: transform, opacity;
-
-  > figure {
-    position: relative;
-    height: clamp(110px, 17vh, 190px);
-    margin: 0 0 clamp(14px, 1.8vh, 22px);
-    overflow: hidden;
-    background: #cfc4b8;
-    will-change: clip-path;
-
-    img {
-      object-fit: cover;
-      filter: saturate(0.9) contrast(1.02);
-    }
-  }
 
   &__number {
     display: flex;
@@ -553,7 +369,7 @@
   &__eyebrow {
     display: block;
     margin-top: clamp(10px, 1.4vh, 16px);
-    color: rgba(36, 37, 31, 0.54);
+    color: rgba(36, 37, 31, 0.66);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -562,7 +378,7 @@
   h3 {
     margin: 8px 0 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.6rem, 2.1vw, 2.6rem);
+    font-size: clamp(1.7rem, 2.3vw, 2.8rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.042em;
@@ -582,149 +398,32 @@
     font-weight: 300;
     line-height: 1.48;
   }
-}
 
-.kurzyTimelineAdults {
-  color: var(--kurzy-cream);
+  &__action {
+    margin-top: clamp(14px, 2vh, 24px);
+    pointer-events: auto;
 
-  &__image,
-  &__detail {
-    position: absolute;
-    margin: 0;
-    overflow: hidden;
-    background: #171814;
-  }
-
-  &__image {
-    top: 17%;
-    left: 9%;
-    width: 29%;
-    height: 64%;
-    will-change: clip-path;
-
-    img {
-      object-fit: cover;
-      filter: brightness(0.8) saturate(0.82);
-      transform: scale(1.04);
+    .kurzyTimelineCtaButton {
+      border-color: rgba(36, 37, 31, 0.42);
     }
-
-    &::after {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        180deg,
-        transparent 64%,
-        rgba(15, 16, 13, 0.56)
-      );
-      content: "";
-    }
-
-    figcaption {
-      position: absolute;
-      right: 16px;
-      bottom: 14px;
-      left: 16px;
-      z-index: 2;
-      color: rgba(255, 232, 214, 0.66);
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-  }
-
-  &__detail {
-    top: 31%;
-    left: 33%;
-    z-index: 3;
-    width: 14%;
-    height: 38%;
-    will-change: transform, opacity;
-
-    img {
-      object-fit: cover;
-      filter: brightness(0.68) saturate(0.72);
-    }
-  }
-
-  &__copy {
-    position: absolute;
-    top: 24%;
-    right: 8%;
-    width: min(39vw, 720px);
-    will-change: transform;
-
-    > span {
-      color: rgba(255, 232, 214, 0.46);
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      margin: clamp(18px, 2.2vh, 28px) 0 0;
-      font-family: "Sentient-Regular", serif;
-      font-size: clamp(4.3rem, 6.5vw, 8rem);
-      font-weight: 400;
-      line-height: 0.84;
-      letter-spacing: -0.062em;
-
-      em {
-        display: block;
-        color: var(--kurzy-ember);
-        font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-        font-weight: 300;
-      }
-    }
-
-    p {
-      max-width: 36rem;
-      margin: clamp(24px, 3.4vh, 40px) 0 0;
-      color: rgba(255, 232, 214, 0.62);
-      font-size: clamp(0.98rem, 1.05vw, 1.18rem);
-      font-weight: 300;
-      line-height: 1.55;
-    }
-
-    .CTA__block {
-      margin-top: clamp(26px, 3.8vh, 44px);
-      pointer-events: auto;
-    }
-
-  }
-
-  &__aside {
-    position: absolute;
-    right: 4.5%;
-    bottom: 9%;
-    margin: 0;
-    display: flex;
-    gap: 24px;
-    color: rgba(255, 232, 214, 0.44);
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
   }
 }
 
 /*
- * Hoisted out of `.kurzyTimelineAdults__copy`. Two scenes carry a contact trigger now — the school
- * enquiry in the children's scene and the waiting list in the adults' — and nesting the pill in one
- * of them meant the other rendered an unstyled WebButton.
- *
- * Qualified by `.kurzyTimeline` rather than left as a bare class: WebButton declares
- * `--web-button-label-size` on its own `.button` class, which is also a single class, so at equal
- * specificity a CSS module that happened to load later would win and the label would fall back to
- * 1.5rem — wide enough to run under the arrow and get cut by the pill's `overflow: hidden`.
+ * The CTA pill, qualified by `.kurzyTimeline` rather than left as a bare
+ * class: WebButton declares `--web-button-label-size` on its own `.button`
+ * class, also a single class, so at equal specificity a CSS module that
+ * happened to load later would win and the label would fall back to 1.5rem —
+ * wide enough to run under the arrow and get cut by the pill's overflow.
  */
 .kurzyTimeline .kurzyTimelineCtaButton {
   --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
   --web-button-label-padding: 0;
 
-  /* Was a fixed clamp() width. The label is what has to fit — at 250px it was cut off at
-     both ends and ran under the arrow — so the pill takes its own measure and the clamp
-     becomes the floor it will not shrink below. */
+  /* The label is what has to fit — the pill takes its own measure and the
+     clamp is the floor it will not shrink below. */
   width: fit-content;
-  min-width: clamp(210px, 15vw, 250px);
+  min-width: clamp(190px, 13vw, 240px);
   max-width: 100%;
   height: 52px;
   padding: 0;
@@ -762,12 +461,12 @@
 
   p {
     /*
-     * Each scene's own body copy sets a `p { color: … }`, and that bare descendant selector also
-     * caught the label inside this button — which is why it once read as empty cream-on-cream.
-     * WebButton animates its foreground as an inline style on the wrapping div, so a colour
-     * declared straight on the <p> beats it however the button is feeling. Inheriting hands the
-     * label back to that animation: charcoal at rest, cream once the dark fill has swept in.
-     * Equal specificity to those scene rules, so this has to stay below them in the file.
+     * The scene's own body copy sets a `p { color: … }`, and that bare
+     * descendant selector also catches the label inside this button.
+     * WebButton animates its foreground as an inline style on the wrapping
+     * div, so a colour declared straight on the <p> beats it however the
+     * button is feeling. Inheriting hands the label back to that animation.
+     * Equal specificity to those scene rules, so this stays below them.
      */
     color: inherit;
     line-height: 1;
@@ -810,26 +509,11 @@
       width: 36vw;
     }
   }
-
-  .kurzyWorkshop {
-    &__landscape {
-      width: 64%;
-    }
-
-    &__portrait {
-      left: 56%;
-      width: 22%;
-    }
-
-    &__copy {
-      width: 33vw;
-    }
-  }
 }
 
 @include below-px(720px) {
   .kurzyTimeline {
-    height: 600svh;
+    height: 330svh;
 
     &__stage {
       min-height: 660px;
@@ -854,14 +538,6 @@
 
         &:nth-child(2)::before {
           content: "02";
-        }
-
-        &:nth-child(3)::before {
-          content: "03";
-        }
-
-        &:nth-child(4)::before {
-          content: "04";
         }
       }
     }
@@ -921,52 +597,6 @@
     }
   }
 
-  .kurzyWorkshop {
-    &__landscape {
-      top: 15%;
-      left: 20px;
-      width: calc(100% - 40px);
-      height: 45%;
-    }
-
-    &__portrait {
-      top: 43%;
-      right: 32px;
-      left: auto;
-      width: 33%;
-      height: 29%;
-    }
-
-    &__copy {
-      top: auto;
-      right: 20px;
-      bottom: 15%;
-      left: 20px;
-      width: auto;
-
-      h2 {
-        font-size: clamp(3rem, 13.5vw, 4.5rem);
-      }
-
-      p {
-        display: none;
-      }
-    }
-
-    /* The school enquiry stays — it is the only action in this scene. */
-    &__action {
-      margin-top: 18px;
-
-      > span {
-        display: none;
-      }
-    }
-
-    &__facts {
-      display: none;
-    }
-  }
-
   .kurzyAbout {
     &__intro {
       top: 13%;
@@ -981,7 +611,7 @@
     &__lede {
       top: auto;
       right: 20px;
-      bottom: 56%;
+      bottom: 64%;
       left: 20px;
       width: auto;
 
@@ -993,83 +623,64 @@
       }
     }
 
-    /* Three columns cannot hold a photo and four lines of type on a phone. One per row, image
-       dropped, so the sequence still reads as a numbered list of what happens. */
-    &__steps {
+    /* Three columns cannot hold four lines of type and a pill on a phone.
+       One block per row, texts dropped — title and the action survive,
+       because on a phone the action is the whole point. */
+    &__blocks {
       right: 20px;
-      bottom: 11%;
+      bottom: 9%;
       left: 20px;
       grid-template-columns: minmax(0, 1fr);
-      gap: 14px;
+      gap: 12px;
     }
   }
 
-  .kurzyStep {
+  .kurzyAudience {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: baseline;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: 4px 14px;
     padding-top: 12px;
-    border-top: 1px solid rgba(36, 37, 31, 0.2);
 
-    > figure,
     &__eyebrow,
     p {
       display: none;
     }
 
     &__number {
-      i,
-      span:last-child {
+      grid-column: 1 / -1;
+
+      i {
         display: none;
       }
     }
 
     h3 {
       margin: 0;
-      font-size: clamp(1.5rem, 7vw, 2.1rem);
+      font-size: clamp(1.4rem, 6.4vw, 1.9rem);
 
       em {
         display: inline;
         margin-left: 0.32em;
       }
     }
-  }
 
-  .kurzyTimelineAdults {
-    &__image {
-      top: 15%;
-      left: 20px;
-      width: 56%;
-      height: 43%;
-    }
+    &__action {
+      margin-top: 0;
 
-    &__detail {
-      top: 33%;
-      right: 20px;
-      left: auto;
-      width: 34%;
-      height: 28%;
-    }
+      .kurzyTimelineCtaButton {
+        height: 44px;
+        min-width: 0;
 
-    &__copy {
-      top: auto;
-      right: 20px;
-      bottom: 12%;
-      left: 20px;
-      width: auto;
+        &::after {
+          width: 32px;
+          height: 32px;
+        }
 
-      h2 {
-        font-size: clamp(3.5rem, 15vw, 5.5rem);
+        > div {
+          padding: 3px 46px 3px 16px;
+        }
       }
-
-      p {
-        display: none;
-      }
-    }
-
-    &__aside {
-      display: none;
     }
   }
 }

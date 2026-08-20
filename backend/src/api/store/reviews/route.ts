@@ -34,9 +34,7 @@ export const POST = async (
 
   // Debug logs to trace creation
   // eslint-disable-next-line no-console
-  console.log("[Reviews][POST] incoming body:", input)
   // eslint-disable-next-line no-console
-  console.log("[Reviews][POST] actor_id:", actorId)
 
   if (!actorId) {
     return res.status(401).json({ message: "Unauthorized" })
@@ -59,7 +57,6 @@ export const POST = async (
       })
 
     // eslint-disable-next-line no-console
-    console.log("[Reviews][POST] created:", result)
     res.json(result)
   } catch (error: any) {
     // eslint-disable-next-line no-console

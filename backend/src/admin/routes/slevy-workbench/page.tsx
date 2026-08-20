@@ -678,6 +678,7 @@ const SlevyWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Slevy+",
   icon: ReceiptPercent,
+  rank: 50,
 });
 
 export default SlevyWorkbenchPage;

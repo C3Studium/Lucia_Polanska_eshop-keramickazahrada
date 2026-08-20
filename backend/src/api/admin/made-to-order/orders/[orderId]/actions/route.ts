@@ -1,6 +1,7 @@
 import {
   beginOrderEditOrderWorkflow,
   cancelBeginOrderEditWorkflow,
+  cancelOrderWorkflow,
   confirmOrderEditRequestWorkflow,
   createOrderPaymentCollectionWorkflow,
   createPaymentSessionsWorkflow,
@@ -618,6 +619,70 @@ export const POST = async (
       })
     }
     await setMerchantStage(req, req.params.orderId, "cancelled")
+
+    /*
+     * A cancelled commission has to SETTLE, not just change colour:
+     *
+     * 1. The native order is cancelled too — that fires `order.canceled`, and
+     *    the existing subscriber mails the customer. Before this, the event
+     *    below had no consumer and the customer heard nothing.
+     * 2. A captured deposit becomes `refund_due` on the merchant-order state,
+     *    so Objednávky+ shows „Vrátit rozdíl" and the money actually goes back.
+     */
+    await cancelOrderWorkflow(req.scope)
+      .run({ input: { order_id: req.params.orderId } as never })
+      .catch(() => {
+        // Already-cancelled or unfulfillable native state must not undo the
+        // production cancel above; the queue still shows the stage.
+      })
+
+    const cancelQuery = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: cancelledOrders } = await cancelQuery.graph({
+      entity: "order",
+      fields: [
+        "id",
+        "currency_code",
+        "metadata",
+        "payment_collections.payments.id",
+        "payment_collections.payments.captured_at",
+        "payment_collections.payments.canceled_at",
+        "payment_collections.payments.amount",
+        "payment_collections.payments.refunds.amount",
+      ],
+      filters: { id: req.params.orderId },
+    })
+    const cancelledOrder = cancelledOrders[0] as any
+    const capturedTotal = (cancelledOrder?.payment_collections ?? [])
+      .flatMap((collection: any) => collection?.payments ?? [])
+      .filter((payment: any) => payment?.captured_at && !payment?.canceled_at)
+      .reduce((sum: number, payment: any) => {
+        // `toNumber`, not bare Number() — query.graph hands amounts back
+        // BigNumber-shaped, and Number({value}) is NaN → a silently skipped refund.
+        const refunded = (payment?.refunds ?? []).reduce(
+          (part: number, refund: any) => part + (toNumber(refund?.amount) || 0),
+          0
+        )
+        return sum + Math.max(0, (toNumber(payment?.amount) || 0) - refunded)
+      }, 0)
+
+    if (capturedTotal > 0 && cancelledOrder) {
+      const orderModule = req.scope.resolve(Modules.ORDER) as any
+      await orderModule.updateOrders([
+        {
+          id: cancelledOrder.id,
+          metadata: {
+            ...((cancelledOrder.metadata as Record<string, unknown>) ?? {}),
+            refund_due: {
+              amount: Math.round(capturedTotal * 100) / 100,
+              currency_code: cancelledOrder.currency_code ?? "czk",
+              reason: "mto_cancelled",
+              created_at: new Date().toISOString(),
+            },
+          },
+        },
+      ])
+    }
+
     await eventBus.emit({
       name: "made-to-order.cancelled",
       data: { order_id: req.params.orderId, production_order_id: productionOrder.id },

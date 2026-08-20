@@ -843,8 +843,11 @@ const Inner = () => {
                   {label}
                 </button>
               ))}
-              <div className="flex-1" />
-              <ViewSwitcher value={view} onChange={changeView} />
+              {/* `ml-auto`, ne rozpěrka s `flex-1`: v zalamovacím řádku by
+                  rozpěrka spolkla celou další řádku a přepínač odsunula ještě
+                  o jednu níž — v úzkém třetím sloupci na Windows přesně to se
+                  dělo a vypadalo to, že tam přepínač není. */}
+              <ViewSwitcher value={view} onChange={changeView} className="ml-auto" />
               {pendingCount > 0 && (
                 <>
                   <Button size="small"
@@ -1267,5 +1270,9 @@ const queryClient = new QueryClient();
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({ label: "Rozdělení", icon: ListTree });
+export const config = defineRouteConfig({
+  label: "Rozdělení",
+  icon: ListTree,
+  rank: 40,
+});
 export default Page;

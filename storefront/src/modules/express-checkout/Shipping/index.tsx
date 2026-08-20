@@ -4,9 +4,11 @@ import { setShippingMethod } from "@lib/data/cart"
 import {
   setExpressAddress,
   setExpressCartMetadata,
+  type ExpressPrefillAddress,
 } from "@lib/data/express-cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
+import { withCount } from "@lib/util/plurals"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { AnimatePresence, motion } from "framer-motion"
@@ -20,6 +22,8 @@ type ShippingProps = {
   shippingMethods: HttpTypes.StoreCartShippingOption[]
   packetaApiKey?: string
   packetaShippingMethodId?: string
+  /** Saved address of a logged-in customer — fills empty fields, never overwrites the cart's. */
+  prefillAddress?: ExpressPrefillAddress | null
   onContinueAction: () => void
 }
 
@@ -40,17 +44,20 @@ export const Shipping = ({
   shippingMethods,
   packetaApiKey,
   packetaShippingMethodId,
+  prefillAddress,
   onContinueAction,
 }: ShippingProps) => {
   const current = cart.shipping_address
+  /* What the cart already knows wins; a logged-in customer's saved address
+     fills the rest — the account should never be asked to retype itself. */
   const [address, setAddress] = useState<AddressState>({
-    firstName: current?.first_name || "",
-    lastName: current?.last_name || "",
-    email: cart.email || "",
-    phone: current?.phone || "",
-    address: current?.address_1 || "",
-    postalCode: current?.postal_code || "",
-    city: current?.city || "",
+    firstName: current?.first_name || prefillAddress?.firstName || "",
+    lastName: current?.last_name || prefillAddress?.lastName || "",
+    email: cart.email || prefillAddress?.email || "",
+    phone: current?.phone || prefillAddress?.phone || "",
+    address: current?.address_1 || prefillAddress?.address || "",
+    postalCode: current?.postal_code || prefillAddress?.postalCode || "",
+    city: current?.city || prefillAddress?.city || "",
   })
   const [shippingMethodId, setShippingMethodId] = useState(
     cart.shipping_methods?.at(-1)?.shipping_option_id || ""
@@ -87,6 +94,16 @@ export const Shipping = ({
     (method) => method.id === shippingMethodId
   )
   const isPacketa = shippingMethodId === packetaShippingMethodId
+
+  /* A single offered delivery is no choice at all — preselect it (still shown,
+     still changeable). Packeta is exempt: preselecting it would pop the pickup
+     point widget at nobody's request. */
+  useEffect(() => {
+    if (shippingMethodId || shippingMethods.length !== 1) return
+    const only = shippingMethods[0]
+    if (only.id === packetaShippingMethodId) return
+    setShippingMethodId(only.id)
+  }, [shippingMethodId, shippingMethods, packetaShippingMethodId])
 
   const valid = useMemo(
     () =>
@@ -171,8 +188,17 @@ export const Shipping = ({
     )
   }
 
-  const submit = async () => {
-    if (!valid || isSubmitting) return
+  const submitWith = async (methodId: string) => {
+    const addressComplete = Object.values(address).every(
+      (value) => value.trim().length > 0
+    )
+    const needsPacketaPoint =
+      methodId === packetaShippingMethodId && !packetaPoint
+
+    if (!methodId || !addressComplete || needsPacketaPoint || isSubmitting) {
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -190,7 +216,7 @@ export const Shipping = ({
 
     const shippingResult = await setShippingMethod({
       cartId: cart.id,
-      shippingMethodId,
+      shippingMethodId: methodId,
     })
 
     setIsSubmitting(false)
@@ -202,12 +228,30 @@ export const Shipping = ({
     onContinueAction()
   }
 
+  const submit = () => submitWith(shippingMethodId)
+
+  /**
+   * Clicking a delivery option when the address is already complete is the last
+   * act this step needs — save and move on; a further „Pokračovat" click would
+   * buy nothing. With the address still unfinished (or Packeta, which first
+   * needs its pickup point), the click only selects and the button stays.
+   */
+  const chooseMethod = (methodId: string) => {
+    setShippingMethodId(methodId)
+    if (methodId === packetaShippingMethodId) {
+      openPacketa()
+      return
+    }
+    void submitWith(methodId)
+  }
+
   return (
     <div className={styles.deliveryStep}>
       <div className={styles.sectionIntro}>
         <span className={styles.eyebrow}>Kam to poslat</span>
         <p>
-          Sedm údajů a volba dopravy. Zemi máme z verze obchodu, kterou máte zvolenou.
+          Vyplňte prosím kontaktní údaje a vyberte způsob doručení. Zemi
+          doručení není třeba vybírat — je nastavená automaticky.
         </p>
       </div>
 
@@ -256,6 +300,7 @@ export const Shipping = ({
           label="PSČ"
           name="postal-code"
           autoComplete="postal-code"
+          inputMode="numeric"
           value={address.postalCode}
           onChangeAction={(value) => updateField("postalCode", value)}
         />
@@ -269,16 +314,22 @@ export const Shipping = ({
         <div className={`${styles.field} ${styles.countryField}`}>
           <span>Země doručení</span>
           <strong>{countryLabel}</strong>
-          <small>Nastaveno podle odkazu obchodu</small>
+          <small>Nastaveno automaticky</small>
         </div>
       </div>
 
       <div className={styles.methodSection}>
         <div className={styles.methodHeading}>
           <span className={styles.eyebrow}>Způsob doručení</span>
-          <span>{shippingMethods.length} možnosti</span>
+          <span>
+            {withCount(shippingMethods.length, "možnost", "možnosti", "možností")}
+          </span>
         </div>
-        <div className={styles.methodList}>
+        <div
+          className={styles.methodList}
+          role="group"
+          aria-label="Způsob doručení"
+        >
           {shippingMethods.map((method) => {
             const selected = method.id === shippingMethodId
             const amount =
@@ -289,10 +340,8 @@ export const Shipping = ({
                 key={method.id}
                 className={styles.method}
                 data-selected={selected}
-                onClick={() => {
-                  setShippingMethodId(method.id)
-                  if (method.id === packetaShippingMethodId) openPacketa()
-                }}
+                aria-pressed={selected}
+                onClick={() => chooseMethod(method.id)}
                 whileTap={whileTap}
               >
                 <span className={styles.methodFill} aria-hidden="true" />
@@ -365,6 +414,7 @@ const Field = ({
   type = "text",
   name,
   autoComplete,
+  inputMode,
   value,
   onChangeAction,
   wide = false,
@@ -373,6 +423,7 @@ const Field = ({
   type?: string
   name: string
   autoComplete: string
+  inputMode?: "numeric" | "tel" | "email"
   value: string
   onChangeAction: (value: string) => void
   wide?: boolean
@@ -384,6 +435,7 @@ const Field = ({
       type={type}
       name={name}
       autoComplete={autoComplete}
+      inputMode={inputMode}
       value={value}
       onChange={(event) => onChangeAction(event.target.value)}
     />

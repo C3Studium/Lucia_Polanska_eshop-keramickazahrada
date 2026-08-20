@@ -3,7 +3,11 @@
 .Mainfooter {
   --footer-surface: #bbb788;
   --footer-ink: #212222;
-  --footer-muted: rgba(33, 34, 34, 0.64);
+  /* .64 measured 3.5:1 on the sage default surface — below AA for the
+     newsletter copy, statement and legal lines. .78 clears 4.9:1 there
+     (and more on lighter surfaces). Dark tone keeps .64: cream on ink
+     already sits above 6:1 at that alpha. */
+  --footer-muted: rgba(33, 34, 34, 0.78);
   --footer-line: rgba(33, 34, 34, 0.22);
   --footer-soft: rgba(255, 255, 255, 0.12);
   --footer-button-ink: #ffe8d6;
@@ -228,7 +232,8 @@
 .newsletter__container > label {
   margin-bottom: 9px;
   color: var(--footer-muted);
-  font: 400 clamp(12px, 0.56vw, 12px)/1 "Sansation-Regular", sans-serif;
+  /* A form label, not an eyebrow — caption floor applies. */
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -268,7 +273,6 @@
   }
   border: 1px solid var(--footer-line);
   border-radius: 999px;
-  outline: 0;
   color: var(--footer-ink);
   background: var(--footer-soft);
   box-shadow: none;
@@ -280,11 +284,12 @@
     background-color 0.3s ease;
 }
 
+/* No `outline: 0` here: the global :focus-visible ring must survive —
+   a border-color shift alone is not a visible focus state. */
 .newsletter__input:hover,
 .newsletter__input:focus,
 .newsletter__input:focus-visible {
   border-color: var(--footer-ink);
-  outline: 0;
   background: var(--footer-soft);
   box-shadow: none;
 }
@@ -316,7 +321,7 @@
 .newsletter__container > p {
   margin: 8px 0 0;
   color: var(--footer-muted);
-  font: 300 clamp(12px, 0.66vw, 13px)/1.42 "Sansation-Light", sans-serif;
+  font: 300 13px/1.42 "Sansation-Light", sans-serif;
 }
 
 /* The error is set in ink, not a red the footer palette does not have —

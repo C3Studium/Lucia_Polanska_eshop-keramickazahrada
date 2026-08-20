@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: rgba(32, 33, 28, .55);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -42,7 +42,7 @@
 .intro p {
   max-width: 39ch;
   margin: 0;
-  color: rgba(32, 33, 28, .62);
+  color: rgba(32, 33, 28, .7);
   font: 400 17px/1.6 "Sansation-Regular", sans-serif;
   font-size: 16px;
 }
@@ -55,26 +55,70 @@
   border-bottom: 1px solid rgba(32, 33, 28, .2);
 }
 
-.progress span {
+.progressStep {
   position: relative;
-  padding: 14px 12px;
-  color: rgba(32, 33, 28, .4);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  padding-inline: 8px;
-  font-size: 13px;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 14px 8px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
-.progress span + span {
+.progressStep:disabled {
+  cursor: default;
+}
+
+.progressStep + .progressStep {
   border-left: 1px solid rgba(32, 33, 28, .16);
 }
 
-.progress span[data-active="true"] {
+.progressLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* .4 alpha was 2.4:1 — an inactive-but-reachable step still has to be
+     readable. Truly unreachable steps keep the faded look via :disabled. */
+  color: rgba(32, 33, 28, .66);
+  font: 600 13px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color .3s ease;
+}
+
+.progressStep:disabled .progressLabel {
+  color: rgba(32, 33, 28, .4);
+}
+
+.progressStep[data-active="true"] .progressLabel,
+.progressStep[data-done="true"] .progressLabel {
   color: #20211c;
 }
 
-.progress span[data-active="true"]::before {
+.progressStep:not(:disabled):hover .progressLabel {
+  color: #20211c;
+}
+
+.progressDone {
+  width: 13px;
+  height: 13px;
+  color: #596248;
+}
+
+.progressSummary {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(32, 33, 28, .66);
+  font: 400 13px/1.3 "Sansation-Regular", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressStep[data-active="true"]::before {
   position: absolute;
   right: 7px;
   top: 50%;
@@ -95,14 +139,55 @@
   }
 }
 
-.progress span[data-active="true"]::after {
+.progressIndicator {
   position: absolute;
   right: 0;
   bottom: -1px;
   left: 0;
   height: 2px;
   background: #7e896b;
-  content: "";
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  padding: 6px 0 4px;
+  transition: opacity .25s ease;
+}
+
+/* A mutation's refresh is in flight — the numbers on screen may be stale, so
+   the stage dims and stops taking clicks until the fresh cart arrives. */
+.stage[data-busy="true"] {
+  opacity: .55;
+  pointer-events: none;
+}
+
+.stepPanel {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+/* Aligned to the left edge of the 500px step column the panels centre on. */
+.stepBack {
+  display: inline-flex;
+  width: fit-content;
+  align-self: flex-start;
+  margin: 0 0 16px calc((100% - min(100%, 500px)) / 2);
+  padding: 3px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(32, 33, 28, .35);
+  color: rgba(32, 33, 28, .72);
+  background: transparent;
+  cursor: pointer;
+  font: 400 15px/1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: .04em;
+  transition: color .25s ease, border-color .25s ease;
+}
+
+.stepBack:hover {
+  border-color: #20211c;
+  color: #20211c;
 }
 
 .productStep,
@@ -159,7 +244,7 @@
 }
 
 .eyebrow {
-  color: rgba(32, 33, 28, .5);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -195,8 +280,8 @@
 .optionGroups legend {
   float: left;
   padding: 11px 0 0;
-  color: rgba(32, 33, 28, .55);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgba(32, 33, 28, .7);
+  font: 600 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -271,7 +356,7 @@
 }
 
 .quantity > span {
-  color: rgba(32, 33, 28, .5);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -279,9 +364,11 @@
 
 .quantity > div {
   display: grid;
-  width: 106px;
-  height: 43px;
-  grid-template-columns: 34px 1fr 34px;
+  /* −/+ columns widened 34→40px: a 34px strip is a mis-tap magnet for a
+     hand with tremor, and the touch floor only fixes height, not width. */
+  width: 118px;
+  height: 44px;
+  grid-template-columns: 40px 1fr 40px;
   align-items: center;
   border: 1px solid #20211c;
   border-radius: 999px;
@@ -399,15 +486,15 @@
 
 .sectionIntro p {
   margin: 0;
-  color: rgba(32, 33, 28, .62);
+  color: rgba(32, 33, 28, .7);
   font: 400 16px/1.55 "Sansation-Regular", sans-serif;
 }
 
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid rgba(32, 33, 28, .18);
-  border-left: 1px solid rgba(32, 33, 28, .18);
+  border-top: 1px solid rgba(32, 33, 28, .3);
+  border-left: 1px solid rgba(32, 33, 28, .3);
 }
 
 .field {
@@ -417,8 +504,8 @@
   flex-direction: column;
   justify-content: center;
   padding: 11px 12px 8px;
-  border-right: 1px solid rgba(32, 33, 28, .18);
-  border-bottom: 1px solid rgba(32, 33, 28, .18);
+  border-right: 1px solid rgba(32, 33, 28, .3);
+  border-bottom: 1px solid rgba(32, 33, 28, .3);
   background: rgba(255, 247, 236, .18);
 }
 
@@ -428,8 +515,8 @@
 
 .field span,
 .countryField small {
-  color: rgba(32, 33, 28, .5);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgba(32, 33, 28, .7);
+  font: 600 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -481,7 +568,7 @@
 }
 
 .methodHeading > span:last-child {
-  color: rgba(32, 33, 28, .45);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -502,7 +589,7 @@
   align-items: center;
   padding: 10px 14px;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, .32);
+  border: 1px solid rgba(32, 33, 28, .5);
   border-radius: 14px;
   color: #20211c;
   background: transparent;
@@ -567,7 +654,8 @@
 }
 
 .methodCopy small {
-  color: rgba(32, 33, 28, .57);
+  /* Carries the chosen pickup point — decision text, not atmosphere. */
+  color: rgba(32, 33, 28, .7);
   font: 400 13px/1.35 "Sansation-Regular", sans-serif;
 }
 
@@ -577,13 +665,13 @@
 
 .packetaEdit {
   align-self: flex-start;
-  padding: 3px 0;
+  padding: 8px 0;
   border: 0;
   border-bottom: 1px solid currentColor;
   color: #20211c;
   background: transparent;
   cursor: pointer;
-  font: 400 14px/1.25 "Sansation-Regular", sans-serif;
+  font: 400 15px/1.25 "Sansation-Regular", sans-serif;
 }
 
 .fullAction {
@@ -607,7 +695,7 @@
 }
 
 .orderMiniatureHeader > span:last-child {
-  color: rgba(32, 33, 28, .56);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -645,7 +733,7 @@
 
 .miniItem small,
 .miniItem > span {
-  color: rgba(32, 33, 28, .57);
+  color: rgba(32, 33, 28, .7);
   font: 400 13px/1.3 "Sansation-Regular", sans-serif;
 }
 
@@ -667,7 +755,7 @@
 }
 
 .totalRows small {
-  color: rgba(32, 33, 28, .58);
+  color: rgba(32, 33, 28, .7);
 }
 
 .grandTotal {
@@ -683,9 +771,23 @@
 }
 
 .paymentConsent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
   margin: 0 0 12px;
-  color: rgba(32, 33, 28, .62);
-  font: 400 14px/1.5 "Sansation-Regular", sans-serif;
+  color: rgba(32, 33, 28, .78);
+  cursor: pointer;
+  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+}
+
+/* The legal checkbox: browser default is ~13px — too small to hit and too
+   small to see whether it is checked. */
+.paymentConsent input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #20211c;
 }
 
 .payFooter {
@@ -696,7 +798,7 @@
 
 .payFooter p {
   margin: 0;
-  color: rgba(32, 33, 28, .55);
+  color: rgba(32, 33, 28, .66);
   font: 400 13px/1.5 "Sansation-Regular", sans-serif;
 }
 
@@ -719,7 +821,7 @@
 .trust span {
   min-width: 0;
   padding: 13px 5px;
-  color: rgba(32, 33, 28, .5);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: .1em;
   text-align: center;

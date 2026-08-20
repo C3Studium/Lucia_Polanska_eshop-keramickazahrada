@@ -13,7 +13,9 @@ export const convertToLocale = ({
   currency_code,
   minimumFractionDigits,
   maximumFractionDigits,
-  locale = "en-US",
+  // Czech shop, Czech formatting — the en-US default printed „€5.00" where
+  // a Slovak customer expects „5,00 €". Callers can still override.
+  locale = "cs-CZ",
 }: ConvertToLocaleParams) => {
   if (currency_code && !isEmpty(currency_code)) {
     const code = currency_code.toString().toUpperCase()

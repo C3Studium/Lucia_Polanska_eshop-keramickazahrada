@@ -2,9 +2,21 @@ import {
   SubscriberArgs,
   type SubscriberConfig,
 } from "@medusajs/medusa"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { isPasswordResetSilent, setPasswordResetToken } from "lib/password-reset-silencer"
+import { resetPasswordLink } from "lib/storefront-url"
+import { BACKEND_URL } from "lib/constants"
 
+/**
+ * Mails the password-reset link — to the storefront for customers, to the
+ * admin for users.
+ *
+ * The customer link comes from `lib/storefront-url` like every other
+ * customer-facing URL. It used to fall back to `https://storefront.com` when
+ * the env was missing — a live reset token, mailed to a domain nobody owns.
+ * Now a missing configuration refuses to send and says so in the log, which
+ * is the failure someone actually notices.
+ */
 export default async function resetPasswordTokenHandler({
   event: { data: {
     entity_id: email,
@@ -13,23 +25,8 @@ export default async function resetPasswordTokenHandler({
   } },
   container,
 }: SubscriberArgs<{ entity_id: string, token: string, actor_type: string }>) {
-  const notificationModuleService = container.resolve(
-    Modules.NOTIFICATION
-  )
-  const config = container.resolve("configModule")
-
-  let urlPrefix = config.admin.storefrontUrl || "https://storefront.com"
-  // WIP - add here the url prefix for the storefront or admin or add a config variable
-  // to the config module
-
-  if (actor_type === "customer") {
-    urlPrefix = config.admin.storefrontUrl || "https://storefront.com"
-  } else {
-    const backendUrl = config.admin.backendUrl !== "/" ? config.admin.backendUrl :
-      "http://localhost:9000"
-    const adminPath = config.admin.path
-    urlPrefix = `${backendUrl}${adminPath}`
-  }
+  const notificationModuleService = container.resolve(Modules.NOTIFICATION)
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
   // Always store token so internal flows can consume it
   if (token && email) {
@@ -41,12 +38,34 @@ export default async function resetPasswordTokenHandler({
     return
   }
 
+  let resetUrl: string
+
+  if (actor_type === "customer") {
+    resetUrl = resetPasswordLink(token, email)
+    if (!resetUrl) {
+      logger.error(
+        "Password-reset e-mail NOT sent: STOREFRONT_PUBLIC_URL is not configured, " +
+          "so there is no valid link to put in it."
+      )
+      return
+    }
+  } else {
+    const config = container.resolve("configModule")
+    const adminPath = config.admin?.path ?? "/app"
+    resetUrl =
+      `${BACKEND_URL.replace(/\/+$/, "")}${adminPath}` +
+      `/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+  }
+
   await notificationModuleService.createNotifications({
     to: email,
     channel: "email",
     template: "password-reset",
     data: {
-      reset_url: `${urlPrefix}/reset-password?token=${token}&email=${email}`,
+      reset_url: resetUrl,
+      // The template shows which account the reset belongs to — useful for
+      // anyone with more than one address in one inbox.
+      email,
     },
   })
 }

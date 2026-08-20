@@ -51,6 +51,12 @@ export type MerchantNotificationInput = {
    */
   urgent?: boolean
   email?: boolean
+  /**
+   * Reply-To for the e-mail delivery — the contact form sets the customer's
+   * address here so the owner's „Odpovědět" answers the person, not the shop.
+   * The Resend provider reads it from `data.reply_to`.
+   */
+  replyTo?: string
   /** Links the notification to an order/review/… in the notification table. */
   resource?: { id: string; type: string }
 }
@@ -126,6 +132,7 @@ export const buildEmailNotification = (
     subject: input.title,
     title: input.title,
     ...(input.description ? { description: input.description } : {}),
+    ...(input.replyTo ? { reply_to: input.replyTo } : {}),
     urgent: Boolean(input.urgent),
   },
   trigger_type: input.key.split(":")[1] ?? input.key,

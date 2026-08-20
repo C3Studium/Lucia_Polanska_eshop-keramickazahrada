@@ -67,6 +67,7 @@ const loadOwnOrder = async (req: AuthenticatedMedusaRequest, orderId: string) =>
     entity: "order",
     fields: [
       "id", "display_id", "customer_id", "email", "currency_code", "total",
+      "metadata",
       "items.id", "items.title", "items.quantity", "items.variant_id",
       "items.product_id", "items.unit_price", "items.metadata",
       "shipping_methods.shipping_option.provider_id",
@@ -311,6 +312,28 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
     await confirmOrderEditRequestWorkflow(req.scope).run({
       input: { order_id: order.id, confirmed_by: order.customer_id } as never,
     })
+
+    /*
+     * The promise „vrátíme vám rozdíl" needs a mechanism, not just a sentence:
+     * the owed amount is written onto the order's metadata, where the queue's
+     * projection reads it and offers „Vrátit rozdíl".
+     */
+    if (settlement.kind === "refund_due") {
+      await orderModule.updateOrders([
+        {
+          id: order.id,
+          metadata: {
+            ...((order.metadata as Record<string, unknown>) ?? {}),
+            refund_due: {
+              amount: settlement.amount,
+              currency_code: order.currency_code,
+              reason: "customer_edit",
+              created_at: new Date().toISOString(),
+            },
+          },
+        },
+      ])
+    }
 
     await notifyMerchant(req.scope, {
       key: `customer-edit:${(change as any).id ?? order.id}`,

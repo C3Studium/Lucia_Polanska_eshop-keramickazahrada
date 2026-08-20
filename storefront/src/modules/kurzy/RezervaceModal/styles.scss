@@ -1,0 +1,942 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * The reservation modal — the kurzy paper palette over a full-screen overlay.
+ *
+ * Shares the section's voice (Sentient serif, olive/ember accents) and its
+ * audited AA tokens: --kurzy-olive-text and --kurzy-ember-text are the
+ * caption-size shades (5.3–5.8:1 resp. 4.8–5.1:1 on these surfaces); display
+ * olive stays reserved for large type. Inputs keep the 16px floor so iOS
+ * never zooms on focus.
+ */
+.kurzyModal {
+  --kurzy-charcoal: #24251f;
+  --kurzy-cream: #ffe8d6;
+  --kurzy-paper: #f3e7da;
+  --kurzy-olive: #74775b;
+  --kurzy-ember: #d47a50;
+  --kurzy-olive-text: #5d6046;
+  --kurzy-ember-text: #a34f28;
+
+  position: fixed;
+  inset: 0;
+  /* Same layer as the contact dialog — one overlay family, nothing above it. */
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 2vh, 32px) clamp(10px, 2vw, 32px);
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(20, 21, 17, 0.55);
+    backdrop-filter: blur(3px);
+    cursor: pointer;
+  }
+
+  &__panel {
+    position: relative;
+    width: min(760px, 100%);
+    max-height: min(92svh, 1000px);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(22px, 3vh, 40px) clamp(18px, 3vw, 44px)
+      clamp(26px, 3.4vh, 44px);
+    border: 1px solid rgba(36, 37, 31, 0.24);
+    background: var(--kurzy-paper);
+    color: var(--kurzy-charcoal);
+    box-shadow: 0 40px 90px -40px rgba(10, 10, 8, 0.7);
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding-bottom: clamp(14px, 2vh, 22px);
+    border-bottom: 1px solid rgba(36, 37, 31, 0.16);
+
+    h2 {
+      margin: 10px 0 0;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.7rem, 2.6vw, 2.5rem);
+      font-weight: 400;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+
+      em {
+        display: block;
+        color: var(--kurzy-olive);
+        font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+        font-weight: 300;
+      }
+    }
+  }
+
+  &__eyebrow {
+    color: rgba(36, 37, 31, 0.66);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    height: 44px;
+    padding: 0 16px;
+    border: 1px solid rgba(36, 37, 31, 0.42);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--kurzy-charcoal);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background 0.25s ease;
+
+    i {
+      font-style: normal;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    &:hover {
+      border-color: var(--kurzy-charcoal);
+      background: rgba(255, 248, 241, 0.7);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Progress rail — the express-checkout stepper in the kurzy palette   */
+  /* ------------------------------------------------------------------ */
+
+  &__progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: clamp(14px, 2vh, 22px);
+  }
+
+  &__progressStep {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 4px 12px;
+    border: 0;
+    background: transparent;
+    color: rgba(36, 37, 31, 0.7);
+    text-align: left;
+    cursor: pointer;
+
+    &:disabled {
+      color: rgba(36, 37, 31, 0.38);
+      cursor: default;
+    }
+
+    &[data-active="true"] {
+      color: var(--kurzy-charcoal);
+    }
+
+    &[data-done="true"]:not([data-active="true"]) {
+      color: var(--kurzy-olive-text);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  &__progressLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__progressDone {
+    font-style: normal;
+    color: var(--kurzy-olive-text);
+  }
+
+  &__progressSummary {
+    overflow: hidden;
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.8125rem;
+    font-weight: 300;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__progressIndicator {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--kurzy-charcoal);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Stage                                                               */
+  /* ------------------------------------------------------------------ */
+
+  &__stage {
+    position: relative;
+    margin-top: clamp(14px, 2vh, 22px);
+  }
+
+  &__stepPanel {
+    width: 100%;
+  }
+
+  &__step {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__back {
+    align-self: flex-start;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--kurzy-charcoal);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.95rem;
+    font-weight: 300;
+  }
+
+  &__chosen {
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(36, 37, 31, 0.16);
+    color: rgba(36, 37, 31, 0.75);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* View switch (Kalendář / Seznam)                                     */
+  /* ------------------------------------------------------------------ */
+
+  &__viewSwitch {
+    display: inline-flex;
+    align-self: flex-start;
+    border: 1px solid rgba(36, 37, 31, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 248, 241, 0.6);
+    padding: 3px;
+
+    button {
+      min-height: 40px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(36, 37, 31, 0.7);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.25s ease, color 0.25s ease;
+
+      &[aria-pressed="true"] {
+        background: var(--kurzy-charcoal);
+        color: var(--kurzy-cream);
+      }
+
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Term cards (calendar day list + plain list)                         */
+  /* ------------------------------------------------------------------ */
+
+  &__dayTerms,
+  &__termList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__term {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: clamp(14px, 1.8vh, 20px) clamp(16px, 1.6vw, 24px);
+    border: 1px solid rgba(36, 37, 31, 0.18);
+    background: rgba(255, 248, 241, 0.55);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.3s ease, background 0.3s ease,
+      box-shadow 0.3s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(36, 37, 31, 0.42);
+      box-shadow: 0 16px 34px -28px rgba(24, 25, 20, 0.7);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    &.is-active {
+      border-color: var(--kurzy-charcoal);
+      background: var(--kurzy-cream);
+    }
+
+    &.is-soldout {
+      opacity: 0.72;
+    }
+
+    strong {
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.2rem, 1.5vw, 1.55rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+  }
+
+  &__termDate {
+    color: var(--kurzy-ember-text);
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__termMeta {
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+  &__termPrices {
+    color: rgba(36, 37, 31, 0.72);
+    font-size: 0.9rem;
+  }
+
+  &__termSeats {
+    color: var(--kurzy-olive-text);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    &.is-full {
+      color: rgba(36, 37, 31, 0.45);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Fields, price, payment — the section's form voice                   */
+  /* ------------------------------------------------------------------ */
+
+  &__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+
+    label,
+    .kurzyModal__count {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      > span {
+        color: rgba(36, 37, 31, 0.7);
+        font-size: var(--type-caption, 0.8125rem);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+    }
+
+    label:first-child {
+      grid-column: 1 / -1;
+    }
+
+    input {
+      height: 46px;
+      padding: 0 14px;
+      border: 1px solid rgba(36, 37, 31, 0.5);
+      border-radius: 0;
+      background: #fffdfa;
+      color: var(--kurzy-charcoal);
+      /* 16px: the body floor, and below it iOS zooms the page on focus. */
+      font-size: var(--type-body, 1rem);
+      transition: border-color 0.25s ease;
+
+      &:focus-visible {
+        border-color: var(--kurzy-charcoal);
+      }
+
+      &[aria-invalid="true"] {
+        border-color: #a33c25;
+      }
+    }
+  }
+
+  &__fieldError {
+    color: #a33c25;
+    font-size: 0.8125rem;
+    font-style: normal;
+  }
+
+  &__count > div {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid rgba(36, 37, 31, 0.26);
+    background: #fffdfa;
+
+    button {
+      width: 46px;
+      height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--kurzy-charcoal);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.25s ease;
+
+      &:hover:not(:disabled) {
+        background: rgba(36, 37, 31, 0.06);
+      }
+
+      &:disabled {
+        color: rgba(36, 37, 31, 0.3);
+        cursor: default;
+      }
+
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: -3px;
+      }
+    }
+
+    output {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      font-family: "Sentient-Regular", serif;
+      font-size: 1.15rem;
+    }
+  }
+
+  &__website {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  &__price {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid rgba(36, 37, 31, 0.16);
+
+    > span {
+      color: rgba(36, 37, 31, 0.7);
+      font-size: var(--type-caption, 0.8125rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.5rem, 1.9vw, 2rem);
+      font-weight: 400;
+      color: var(--kurzy-charcoal);
+    }
+
+    em {
+      color: var(--kurzy-olive-text);
+      font-size: 0.875rem;
+      font-style: normal;
+    }
+  }
+
+  &__recap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__payment {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    legend {
+      margin-bottom: 10px;
+      color: rgba(36, 37, 31, 0.7);
+      font-size: var(--type-caption, 0.8125rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(36, 37, 31, 0.2);
+      background: rgba(255, 253, 250, 0.6);
+      cursor: pointer;
+      transition: border-color 0.25s ease, background 0.25s ease;
+
+      &.is-active {
+        border-color: var(--kurzy-charcoal);
+        background: #fffdfa;
+      }
+
+      input {
+        /* A tremor-friendly radio: the browser default is ~13px. */
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        accent-color: #24251f;
+      }
+
+      strong {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      small {
+        display: block;
+        margin-top: 2px;
+        color: rgba(36, 37, 31, 0.7);
+        font-size: 0.8125rem;
+        font-weight: 300;
+      }
+    }
+  }
+
+  &__error {
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid rgba(163, 60, 37, 0.4);
+    background: rgba(163, 60, 37, 0.07);
+    color: #a33c25;
+    font-size: 0.9rem;
+  }
+
+  &__consent {
+    margin: 0;
+    /* 0.7 is the audited AA floor for secondary text on the cream ground. */
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.8125rem;
+    font-weight: 300;
+    line-height: 1.45;
+  }
+
+  &__stepActions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: min(280px, 100%);
+    height: 54px;
+    padding: 0 26px;
+    border: 1px solid var(--kurzy-charcoal);
+    border-radius: 999px;
+    background: var(--kurzy-charcoal);
+    color: var(--kurzy-cream);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+
+    i {
+      font-style: normal;
+    }
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px -24px rgba(0, 0, 0, 0.8);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 4px;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Waitlist                                                            */
+  /* ------------------------------------------------------------------ */
+
+  &__waitlist {
+    padding-top: 4px;
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+  }
+
+  &__waitlistIntro {
+    margin: 0;
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  &__waitlistDone {
+    strong {
+      display: block;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.3rem, 1.6vw, 1.7rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    p {
+      margin: 12px 0 0;
+      color: rgba(36, 37, 31, 0.7);
+      font-size: 0.95rem;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Souhrn                                                              */
+  /* ------------------------------------------------------------------ */
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: clamp(16px, 2.4vh, 26px);
+
+    h3 {
+      margin: 0;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.6rem, 2.2vw, 2.3rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+
+      em {
+        display: block;
+        color: var(--kurzy-olive);
+        font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+        font-weight: 300;
+      }
+    }
+
+    dl {
+      margin: 18px 0 0;
+      border-top: 1px solid rgba(36, 37, 31, 0.16);
+
+      > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(36, 37, 31, 0.1);
+      }
+
+      dt {
+        color: rgba(36, 37, 31, 0.7);
+        font-size: var(--type-caption, 0.8125rem);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        align-self: center;
+      }
+
+      dd {
+        margin: 0;
+        text-align: right;
+        font-size: 0.95rem;
+      }
+    }
+
+    > p {
+      margin: 14px 0 0;
+      color: rgba(36, 37, 31, 0.7);
+      font-size: 0.95rem;
+      font-weight: 300;
+      line-height: 1.55;
+    }
+
+    .kurzyModal__primary {
+      align-self: flex-end;
+      margin-top: 18px;
+    }
+  }
+
+  &__summaryEyebrow {
+    color: var(--kurzy-olive-text);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__summaryLink {
+    align-self: flex-start;
+    margin-top: 14px;
+    color: var(--kurzy-ember-text);
+    font-size: 0.9rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* Calendar                                                              */
+/* -------------------------------------------------------------------- */
+
+.kurzyCalendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    strong {
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.15rem, 1.4vw, 1.4rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      text-transform: capitalize;
+    }
+  }
+
+  &__nav {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(36, 37, 31, 0.36);
+    border-radius: 50%;
+    background: rgba(255, 248, 241, 0.6);
+    color: var(--kurzy-charcoal);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.25s ease, background 0.25s ease;
+
+    &:hover:not(:disabled) {
+      border-color: var(--kurzy-charcoal);
+      background: var(--kurzy-cream);
+    }
+
+    &:disabled {
+      color: rgba(36, 37, 31, 0.3);
+      border-color: rgba(36, 37, 31, 0.16);
+      cursor: default;
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+  }
+
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+
+    span {
+      color: rgba(36, 37, 31, 0.7);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  &__pad {
+    min-height: 48px;
+  }
+
+  &__day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 48px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(36, 37, 31, 0.45);
+    font-size: 0.95rem;
+    cursor: default;
+
+    &.has-terms {
+      border-color: rgba(36, 37, 31, 0.24);
+      background: rgba(255, 248, 241, 0.6);
+      color: var(--kurzy-charcoal);
+      cursor: pointer;
+      transition: border-color 0.25s ease, background 0.25s ease;
+
+      &:hover {
+        border-color: rgba(36, 37, 31, 0.5);
+        background: var(--kurzy-cream);
+      }
+    }
+
+    &.is-full {
+      background: transparent;
+      color: rgba(36, 37, 31, 0.55);
+
+      .kurzyCalendar__dot {
+        background: rgba(36, 37, 31, 0.35);
+      }
+    }
+
+    &.is-selected {
+      border-color: var(--kurzy-charcoal);
+      background: var(--kurzy-cream);
+      box-shadow: inset 0 0 0 1px var(--kurzy-charcoal);
+    }
+
+    &.is-today span {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  &__dot {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--kurzy-ember-text);
+
+    &[data-count]::after {
+      content: attr(data-count) "×";
+      position: absolute;
+      top: -3px;
+      left: 11px;
+      color: var(--kurzy-ember-text);
+      font-size: 0.65rem;
+      line-height: 1;
+    }
+  }
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.8125rem;
+    font-weight: 300;
+
+    i {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--kurzy-ember-text);
+    }
+  }
+}
+
+@include below-px(720px) {
+  .kurzyModal {
+    padding: 0;
+
+    &__panel {
+      width: 100%;
+      max-height: 100svh;
+      border: 0;
+    }
+
+    &__fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__progressSummary {
+      display: none;
+    }
+
+    &__stepActions {
+      justify-content: stretch;
+
+      .kurzyModal__primary {
+        width: 100%;
+      }
+    }
+  }
+}

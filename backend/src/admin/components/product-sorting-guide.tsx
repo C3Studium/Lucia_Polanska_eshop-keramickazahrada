@@ -129,7 +129,20 @@ export const ProductSortingGuide = () => {
     },
     onSuccess: async () => {
       toast.success(`Zařazeno: ${current?.title ?? ""}`);
-      await queryClient.invalidateQueries({ queryKey: ["sorting-guide-products"] });
+      /* Update the cached queue in place instead of re-downloading the whole
+         catalogue — the guide is „Enter, další kus", and a full refetch after
+         every piece made the pause between pieces self-inflicted. */
+      const sortedId = current?.id;
+      const savedIds = new Set(selectedCats);
+      if (isCommission && commissionCategory) savedIds.add(commissionCategory.id);
+      const sortedCats = [...savedIds].map((id) => ({ id }));
+      queryClient.setQueryData<GuideProduct[]>(
+        ["sorting-guide-products"],
+        (previous) =>
+          (previous ?? []).map((item) =>
+            item.id === sortedId ? { ...item, categories: sortedCats } : item
+          )
+      );
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
     },
     onError: (error) =>

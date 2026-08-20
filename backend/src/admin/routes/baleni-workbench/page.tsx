@@ -314,7 +314,7 @@ const BaleniInner = () => {
     <Container className="divide-y p-0">
       <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-        <div>
+        <div className="min-w-0">
           <Heading>Balení — ceny za kus</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Co vás stojí zabalit každý kus — bublinková fólie, papír, páska
@@ -437,6 +437,8 @@ const BaleniWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Balení+",
   icon: ArchiveBox,
+  // Nastavení nákladů, ne denní práce — proto až za pracovními stránkami.
+  rank: 110,
 });
 
 export default BaleniWorkbenchPage;

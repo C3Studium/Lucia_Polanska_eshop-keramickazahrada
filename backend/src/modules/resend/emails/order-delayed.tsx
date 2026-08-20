@@ -14,6 +14,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderDelayedEmailProps {
   customerName?: string;
@@ -33,16 +34,17 @@ interface OrderDelayedEmailProps {
  * domluvený, by byla slibem, který nikdo nedal.
  */
 function OrderDelayedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   originalDeliveryDate,
   newDeliveryDate = "co nevidět",
-  delayReason = "Ruční výroba si vyžádala více času",
+  delayReason,
   compensationOffer,
   trackingLink,
-  orderLink = "https://keramickazahrada.cz",
+  orderLink = "",
   supportEmail = CONTACT_EMAIL
 }: OrderDelayedEmailProps) {
+  const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
       preview={`Objednávka ${orderNumber} se zdrží — omlouváme se a děkujeme za trpělivost.`}
@@ -57,12 +59,12 @@ function OrderDelayedEmailComponent({
         najdete nový termín.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {originalDeliveryDate ? (
         <LedgerRow label="Původní termín" value={originalDeliveryDate} />
       ) : null}
       <LedgerRow label="Nový termín" value={newDeliveryDate} strong />
-      <LedgerRow label="Důvod" value={delayReason} />
+      {delayReason ? <LedgerRow label="Důvod" value={delayReason} /> : null}
       <LedgerEnd />
 
       <Note tone="clay">Za zdržení se vám omlouváme.</Note>
@@ -78,14 +80,18 @@ function OrderDelayedEmailComponent({
         {trackingLink ? (
           <>
             <EmailButton href={trackingLink}>Sledovat objednávku</EmailButton>
-            <span style={{ display: "inline-block", width: "12px" }} />
-            <EmailButton href={orderLink} variant="ghost">
-              Zobrazit objednávku
-            </EmailButton>
+            {orderUrl ? (
+              <>
+                <span style={{ display: "inline-block", width: "12px" }} />
+                <EmailButton href={orderUrl} variant="ghost">
+                  Zobrazit objednávku
+                </EmailButton>
+              </>
+            ) : null}
           </>
-        ) : (
-          <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-        )}
+        ) : orderUrl ? (
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        ) : null}
       </ButtonRow>
 
       <P small>

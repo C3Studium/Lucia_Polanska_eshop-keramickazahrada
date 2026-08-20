@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 
-import { placeOrder, capturePayment } from "@lib/data/cart"
+import { placeOrder } from "@lib/data/cart"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 
 /**
@@ -34,7 +34,9 @@ export default function PaymentConfirmed({
 
     const complete = async () => {
       try {
-        await Promise.all([placeOrder(id), capturePayment({ cartId: id })])
+        // Capture happens server-side via the ComGate webhook; the storefront
+        // used to also call a /store/payment/capture route that never existed.
+        await placeOrder(id)
       } catch (error) {
         if (isRedirectSignal(error)) {
           return

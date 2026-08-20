@@ -28,7 +28,7 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
     <div className={styles.root}>
       <header className={styles.masthead}>
         <div>
-          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : "výrobky"}</p>
+          <p className={styles.mastheadMeta}>Pokladna · {String(itemCount).padStart(2, "0")} {itemCount === 1 ? "výrobek" : itemCount < 5 ? "výrobky" : "výrobků"}</p>
           <h1>Ještě<br /><em>pár kroků.</em></h1>
         </div>
         <div className={styles.mastheadAside}>

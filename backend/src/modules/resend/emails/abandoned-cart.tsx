@@ -18,6 +18,8 @@ interface AbandonedCartEmailProps {
     first_name?: string;
   };
   cart_id?: string;
+  /** The cart's own currency — CZK when the caller predates the field. */
+  currency_code?: string;
   items?: Array<{
     thumbnail?: string;
     product_title?: string;
@@ -29,13 +31,14 @@ interface AbandonedCartEmailProps {
 function AbandonedCartEmailComponent({
   customer,
   cart_id = "sample-cart-id",
+  currency_code = "CZK",
   items = []
 }: AbandonedCartEmailProps) {
 
   const formatter = new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currencyDisplay: "narrowSymbol",
-    currency: "CZK",
+    currency: (currency_code || "CZK").toUpperCase(),
   })
 
   return (
@@ -132,7 +135,9 @@ function AbandonedCartEmailComponent({
                   margin: 0,
                 }}
               >
-                {formatter.format((item.unit_price || 0) / 100)}
+                {/* Medusa v2 prices are major units — the old `/ 100` showed
+                    a 450Kč plate as 4,50 Kč. */}
+                {formatter.format(item.unit_price || 0)}
               </Text>
             </Column>
           </Row>
@@ -170,13 +175,13 @@ const mockItems = [
     thumbnail: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
     product_title: "Keramický hrnek",
     quantity: 2,
-    unit_price: 25000 // 250 Kč
+    unit_price: 250 // 250 Kč — major units, like the real cart items
   },
   {
     thumbnail: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
     product_title: "Keramický talíř",
     quantity: 1,
-    unit_price: 45000 // 450 Kč
+    unit_price: 450 // 450 Kč
   }
 ];
 

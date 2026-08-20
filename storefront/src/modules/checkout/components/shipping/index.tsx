@@ -3,7 +3,7 @@
 import styles from "./style.module.scss"
 
 import { RadioGroup, Radio } from "@headlessui/react"
-import { setShippingMethod } from "@lib/data/cart"
+import { mergeCartMetadata, setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import {
@@ -28,7 +28,7 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 
 type ShippingProps = {
@@ -101,51 +101,11 @@ const Shipping: React.FC<ShippingProps> = ({
   const [balikovnaOpen, setBalikovnaOpen] = useState(false)
 
   async function onPointSelected(pickupPoint: string) {
-    const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(
-      /\/+$/,
-      ""
-    )
-    const url = `${base}/store/carts/${cart.id}`
-    const metadataUrl = `${base}/store/carts/${cart.id}/metadata`
-
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key":
-            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
-        },
-        body: JSON.stringify({
-          metadata: { packeta_pickup_point: pickupPoint },
-        }),
-      })
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "<unreadable>")
-        console.error(
-          "Failed to POST pickup metadata",
-          res.status,
-          res.statusText,
-          body
-        )
-        setError("Výdejní místo se nepovedlo uložit. Zkuste to prosím znovu.")
-        return
-      }
-
-      // optional: re-fetch metadata to confirm
-      const md = await fetch(metadataUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key":
-            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
-        },
-      })
-      if (!md.ok) {
-        console.warn("Metadata GET returned", md.status, md.statusText)
-      }
-
+      /* Server-side MERGE — a direct POST with partial metadata replaced the
+         whole object and erased whatever the other checkout steps had saved
+         (consent, zvolená záloha zakázky…). */
+      await mergeCartMetadata({ packeta_pickup_point: pickupPoint }, cart.id)
       setPacketaPickupPointSelected(true)
       setError(null)
     } catch (err: any) {
@@ -158,35 +118,17 @@ const Shipping: React.FC<ShippingProps> = ({
      ve čtyřech polích: štítek potřebuje ZIP a NAME zvlášť (PSČ z adresy bývá
      jiné než PSČ provozovny — viz lib/util/balikovna.ts). */
   async function saveBalikovnaPoint(point: BalikovnaPoint) {
-    const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").replace(
-      /\/+$/,
-      ""
-    )
     try {
-      const res = await fetch(`${base}/store/carts/${cart.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key":
-            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.toString() || "",
+      // Same merge contract as Packeta above — never replace cart metadata.
+      await mergeCartMetadata(
+        {
+          balikovna_point_id: point.id,
+          balikovna_point_zip: point.zip,
+          balikovna_point_name: point.name,
+          balikovna_point_address: point.address,
         },
-        body: JSON.stringify({
-          metadata: {
-            balikovna_point_id: point.id,
-            balikovna_point_zip: point.zip,
-            balikovna_point_name: point.name,
-            balikovna_point_address: point.address,
-          },
-        }),
-      })
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "<unreadable>")
-        console.error("Failed to save Balíkovna point", res.status, body)
-        setBalikovnaPoint(null)
-        setError("Balíkovnu se nepovedlo uložit. Zkuste to prosím znovu.")
-        return
-      }
+        cart.id
+      )
       setError(null)
     } catch (err) {
       console.error("Network error while saving Balíkovna point:", err)
@@ -263,19 +205,20 @@ const Shipping: React.FC<ShippingProps> = ({
 
   // (removed debug logging)
 
+  /* The Packeta widget script loads ONLY when a Packeta option is actually on
+     offer — it used to be injected for every checkout visitor, a third-party
+     script paid for by people who could never use it. */
+  const packetaOffered = useMemo(
+    () =>
+      Boolean(packetaShippingMethodId) &&
+      deliveryOptions.some(
+        (option: any) => option.id === packetaShippingMethodId?.toString()
+      ),
+    [deliveryOptions, packetaShippingMethodId]
+  )
   useEffect(() => {
-    if (typeof window === "undefined") {
-      console.warn(
-        "Window is not defined, skipping Packeta widget initialization"
-      )
-      return
-    }
-    if ((window as any).Packeta?.Widget) {
-      console.warn(
-        "Packeta Widget is already loaded, skipping script injection"
-      )
-      return
-    }
+    if (typeof window === "undefined" || !packetaOffered) return
+    if ((window as any).Packeta?.Widget) return
     let script = document.getElementById(
       "packeta-widget-script"
     ) as HTMLScriptElement | null
@@ -286,7 +229,7 @@ const Shipping: React.FC<ShippingProps> = ({
       script.async = true
       document.body.appendChild(script)
     }
-  }, [])
+  }, [packetaOffered])
 
   const handleEdit = () => {
     router.push(pathname + "?step=delivery", { scroll: false })
@@ -423,7 +366,10 @@ const Shipping: React.FC<ShippingProps> = ({
     open()
   }
 
-  const handleSetShippingMethod = async (id: string) => {
+  const handleSetShippingMethod = async (
+    id: string,
+    behavior?: { advance?: boolean }
+  ) => {
     setError(null)
 
     let currentId: string | null = null
@@ -456,7 +402,20 @@ const Shipping: React.FC<ShippingProps> = ({
         shippingMethodId: id,
       })
 
-      if (res?.success) return
+      if (res?.success) {
+        /* The pick was everything this option needed — advancing here spares
+           the „Pokračovat k platbě" click that would buy nothing. Widget
+           deliveries (Packeta, Balíkovna) still owe a pickup point, so they
+           stay; the existing gating on the continue button keeps holding. */
+        const chosen = deliveryOptions.find((option) => option.id === id)
+        const needsWidget =
+          id === packetaShippingMethodId?.toString() ||
+          isBalikovnaOption(chosen)
+        if (behavior?.advance && !needsWidget) {
+          handleSubmit()
+        }
+        return
+      }
 
       setShippingMethodId(currentId)
       setError(res?.message || "Dopravu se nepovedlo uložit. Zkuste to prosím znovu.")
@@ -467,6 +426,57 @@ const Shipping: React.FC<ShippingProps> = ({
       setIsLoading(false)
     }
   }
+
+  /* Auto-advance is a POINTER convenience only. headless-ui's RadioGroup fires
+     `onChange` for arrow-key navigation too, so without this flag the first
+     arrow press would throw a keyboard user to the payment step mid-browse.
+     A pointer press arms it; any key press disarms it before onChange runs. */
+  const advanceOnPick = useRef(false)
+
+  /* A single offered delivery is no decision: preselect it, once, so the step
+     needs one click (continue) instead of two. Still rendered, still
+     changeable. Never a widget option — preselecting Packeta/Balíkovna would
+     pop a modal nobody asked for — and never one the restriction blocks. */
+  const autoPicked = useRef(false)
+  useEffect(() => {
+    if (!isOpen || shippingMethodId || isLoading || autoPicked.current) return
+    const hasCalculated = deliveryOptions.some(
+      (option) => option.price_type === "calculated"
+    )
+    if (hasCalculated && isLoadingPrices) return
+
+    const enabled = deliveryOptions.filter((option) => {
+      const isPickup = getFulfillmentType(option) === "pickup"
+      const hasNoPrice =
+        option.price_type === "calculated" &&
+        typeof calculatedPricesMap[option.id] !== "number"
+      const blocked =
+        Boolean(restriction) && !deliveryAllowedUnder(option, isPickup)
+      return !hasNoPrice && !blocked && !option.insufficient_inventory
+    })
+    if (enabled.length !== 1) return
+
+    const only = enabled[0]
+    if (
+      only.id === packetaShippingMethodId?.toString() ||
+      isBalikovnaOption(only)
+    ) {
+      return
+    }
+
+    autoPicked.current = true
+    void handleSetShippingMethod(only.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isOpen,
+    shippingMethodId,
+    isLoading,
+    isLoadingPrices,
+    deliveryOptions,
+    calculatedPricesMap,
+    restriction,
+    packetaShippingMethodId,
+  ])
 
   useEffect(() => {
     setError(null)
@@ -515,11 +525,25 @@ const Shipping: React.FC<ShippingProps> = ({
                 {restrictionNotice[restriction]}
               </p>
             )}
-            <div data-testid="delivery-options-container">
+            <div
+              data-testid="delivery-options-container"
+              onPointerDownCapture={() => {
+                advanceOnPick.current = true
+              }}
+              onKeyDownCapture={() => {
+                advanceOnPick.current = false
+              }}
+            >
               <div className={styles.deliveryOptions}>
                 <RadioGroup
                   value={shippingMethodId}
-                  onChange={(v) => v && handleSetShippingMethod(v)}
+                  aria-label="Způsob dopravy"
+                  onChange={(v) => {
+                    if (!v) return
+                    const advance = advanceOnPick.current
+                    advanceOnPick.current = false
+                    void handleSetShippingMethod(v, { advance })
+                  }}
                 >
                   {deliveryOptions.map((option) => {
                     const isPickup = getFulfillmentType(option) === "pickup"
@@ -593,15 +617,21 @@ const Shipping: React.FC<ShippingProps> = ({
                               amount: option.amount!,
                               currency_code: cart?.currency_code,
                             })
-                          ) : calculatedPricesMap[option.id] ? (
+                          ) : typeof calculatedPricesMap[option.id] ===
+                            "number" ? (
+                            // `0` is a real price (doprava zdarma), not a
+                            // missing one — the old truthiness check showed „-".
                             convertToLocale({
                               amount: calculatedPricesMap[option.id],
                               currency_code: cart?.currency_code,
                             })
                           ) : isLoadingPrices ? (
-                            <Loader />
+                            <>
+                              <Loader aria-hidden="true" />
+                              <span className="sr-only">Počítáme cenu…</span>
+                            </>
                           ) : (
-                            "-"
+                            <span aria-label="Cena zatím není známa">-</span>
                           )}
                         </span>
                       </Radio>
@@ -611,8 +641,6 @@ const Shipping: React.FC<ShippingProps> = ({
               </div>
             </div>
           </div>
-
-          <div className={styles.packetaSelector}></div>
 
           {/* Balíkovna: bez vybraného místa se nedá pokračovat — štítek by
               neměl kam jet. Stejný vzor jako Packeta níže. */}

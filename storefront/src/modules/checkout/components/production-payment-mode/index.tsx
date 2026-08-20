@@ -41,6 +41,7 @@ export default function ProductionPaymentModeChoice({
 }: Props) {
   const [state, setState] = useState(initial)
   const [isPending, startTransition] = useTransition()
+  const [saveError, setSaveError] = useState(false)
   const bounds = state.custom
   // Tracks the handle while dragging; the cart is only told once the drag ends.
   const [draft, setDraft] = useState<number>(bounds?.amount ?? 0)
@@ -49,6 +50,10 @@ export default function ProductionPaymentModeChoice({
      entry impossible (the price filter learned the same lesson). */
   const [typed, setTyped] = useState<string | null>(null)
   const commitTimer = useRef<number | undefined>(undefined)
+  /* A slide followed by an immediate navigation used to lose the last 400 ms —
+     the unmount cleanup flushes the pending commit through these refs. */
+  const pendingAmount = useRef<number | null>(null)
+  const commitRef = useRef<(amount: number) => void>(() => {})
   const sliderId = useId()
 
   // The basket can change under it — a line added elsewhere moves the floor.
@@ -59,7 +64,14 @@ export default function ProductionPaymentModeChoice({
 
   useEffect(
     () => () => {
-      if (commitTimer.current) window.clearTimeout(commitTimer.current)
+      if (commitTimer.current) {
+        window.clearTimeout(commitTimer.current)
+        // Flush a slide the debounce never got to send — otherwise the cart
+        // keeps the PREVIOUS amount and that is what the customer pays.
+        if (pendingAmount.current !== null) {
+          commitRef.current(pendingAmount.current)
+        }
+      }
     },
     []
   )
@@ -86,18 +98,26 @@ export default function ProductionPaymentModeChoice({
         ? "deposit"
         : "custom"
 
+    pendingAmount.current = null
     startTransition(async () => {
       const updated = await onSelect(mode, amount)
       if (updated) {
+        setSaveError(false)
         setState(updated)
         if (updated.custom) setDraft(updated.custom.amount)
+      } else {
+        // A rejected save must not leave the slider quietly showing a number
+        // the server never accepted.
+        setSaveError(true)
       }
     })
   }
+  commitRef.current = commit
 
   const onSlide = (next: number) => {
     setTyped(null)
     setDraft(next)
+    pendingAmount.current = next
     if (commitTimer.current) window.clearTimeout(commitTimer.current)
     commitTimer.current = window.setTimeout(() => commit(next), 400)
   }
@@ -134,6 +154,12 @@ export default function ProductionPaymentModeChoice({
           do práce. Víc je jen na vás.
         </p>
       </header>
+
+      {saveError && (
+        <p className={styles.exactHint} role="alert" style={saveErrorStyle}>
+          Částku se nepodařilo uložit — zkuste posunout znovu.
+        </p>
+      )}
 
       <output className={styles.amount} htmlFor={sliderId}>
         <strong data-testid="production-payment-amount">{money(draft)}</strong>
@@ -234,3 +260,6 @@ export default function ProductionPaymentModeChoice({
     </section>
   )
 }
+
+/* Hoisted: static style object, no re-allocation per render. */
+const saveErrorStyle = { color: "#b3352b", opacity: 1 }

@@ -49,13 +49,14 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         <LocalizedClientLink
           href={`/products/${item.product_handle}`}
           className={s.thumbLink}
+          aria-label={item.product_title || item.title || "Detail produktu"}
         >
           <Thumbnail
             thumbnail={item.thumbnail}
             images={item.variant?.product?.images}
             size="square"
           />
-          {type === "full" && <span className={s.imageIndex}>01</span>}
+          {type === "full" && <span className={s.imageIndex} aria-hidden="true">01</span>}
         </LocalizedClientLink>
       </div>
 

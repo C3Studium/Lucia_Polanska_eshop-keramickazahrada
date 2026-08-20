@@ -119,9 +119,11 @@
                 }
 
 				.label {
+                    /* Was 10.2px at .52 alpha — the header of the address
+                       summary a customer proofreads. Caption floor + AA. */
                     margin: 0 0 .9rem;
-                    color: rgba(32, 33, 28, .52);
-                    font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+                    color: rgba(32, 33, 28, .68);
+                    font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
                     letter-spacing: 0.12em;
                     text-transform: uppercase;
 			    }
@@ -129,14 +131,14 @@
 			    .value {
                     margin: 0 0 .28rem;
 				    color: #20211c;
-                    font: 300 .92rem/1.4 "Sansation-Light", sans-serif;
+                    font: 400 1rem/1.4 "Sansation-Regular", sans-serif;
 			    }
 
 			    .note {
                     max-width: 260px;
                     margin: 0;
-				    color: rgba(32, 33, 28, .62);
-                    font: 300 .86rem/1.45 "Sansation-Light", sans-serif;
+				    color: rgba(32, 33, 28, .68);
+                    font: 300 .875rem/1.45 "Sansation-Light", sans-serif;
 			    }
 		    }
 	    }

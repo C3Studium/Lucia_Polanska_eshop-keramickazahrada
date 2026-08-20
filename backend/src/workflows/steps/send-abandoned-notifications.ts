@@ -34,6 +34,9 @@ export const sendAbandonedNotificationsStep = createStep(
           last_name: cart.customer?.last_name || cart.shipping_address?.last_name,
         },
         cart_id: cart.id,
+        // The template formats prices itself; without the currency it would
+        // have to guess. Cart prices are major units (no cents conversion).
+        currency_code: cart.currency_code,
         items: cart.items?.map((item) => ({
           product_title: item.title,
           quantity: item.quantity,

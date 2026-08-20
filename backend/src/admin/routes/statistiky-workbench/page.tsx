@@ -360,5 +360,9 @@ const queryClient = new QueryClient();
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({ label: "Statistiky+", icon: SquaresPlus });
+export const config = defineRouteConfig({
+  label: "Statistiky+",
+  icon: SquaresPlus,
+  rank: 90,
+});
 export default Page;

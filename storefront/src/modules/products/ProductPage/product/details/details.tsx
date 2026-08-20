@@ -13,6 +13,7 @@ import {
   variantAvailability,
 } from "@lib/util/availability"
 import { backorderNote } from "@lib/util/backorder"
+import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
 import { productAllowsDobirka } from "@lib/util/dobirka"
 import { addToCart } from "@lib/data/cart"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
@@ -37,6 +38,8 @@ type ProductTemplateProps = {
   categories?: HttpTypes.StoreProductCategory[]
   wishlistItems?: any[]
   isAuthenticated?: boolean
+  /** The account has at least one saved address — „Koupit ihned" needs it. */
+  hasSavedAddress?: boolean
   initialRating?: number
   initialCount?: number
   bundle?: BundleProduct
@@ -59,6 +62,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   categories,
   wishlistItems,
   isAuthenticated,
+  hasSavedAddress = false,
   initialRating = 0,
   initialCount = 0,
   bundle,
@@ -70,6 +74,12 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const [quantity, setQuantity] = useState(1)
 
   const isMadeToOrder = Boolean(productionProfile?.enabled)
+  /* Zakázka has two signals — the catalogue category today, the production
+     profile once profiles are filled in. Either one counts (they do not
+     overlap yet), so the category alone must also keep „Koupit ihned" away. */
+  const isCommissionCategory = (categories ?? []).some(
+    (category) => category.handle === COMMISSION_CATEGORY_HANDLE
+  )
   const resetTimer = useRef<number | undefined>(undefined)
   const isAdding = addState.kind === "adding"
 
@@ -382,6 +392,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     product={product}
                     wishlistItems={wishlistItems}
                     isAuthenticated={isAuthenticated}
+                    countryCode={countryCode}
+                    /* Zakázková výroba stays on the classic path — the express
+                       flow has no brief and no deposit slider. Auth + saved
+                       address are only a hint here: the prebuilt PDP is
+                       anonymous, so the button re-checks them in the browser. */
+                    showBuyNow={Boolean(!isMadeToOrder && !isCommissionCategory)}
+                    buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
                   />
                 </div>
               </>

@@ -20,7 +20,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
@@ -71,6 +71,8 @@ type WorkbenchOrder = {
   is_personal_pickup: boolean;
   shipped: boolean;
   delivered: boolean;
+  /** Packed, waiting for her to physically hand it to the carrier. */
+  awaiting_handover: boolean;
 };
 
 type WorkbenchOrdersResponse = {
@@ -84,6 +86,9 @@ const filterTabs = [
   { key: "received", label: "Nové" },
   { key: "working", label: "Připravujeme" },
   { key: "shipping", label: "K odeslání" },
+  /* Zabalené balíky, které čekají na fyzické předání — to, co dělá u přepážky
+     s telefonem v ruce. Velká tlačítka, hromadné potvrzení. */
+  { key: "naposta", label: "Na poštu" },
   { key: "payment_problem", label: "Problém s platbou" },
   { key: "dluzi", label: "Čeká na doplatek" },
   { key: "statistiky", label: "Statistiky" },
@@ -233,7 +238,7 @@ type OrderDetail = {
 type LabelResult = {
   available: boolean;
   reason?: string;
-  labels: { url: string }[];
+  labels: { url: string; tracking_number?: string | null }[];
   destination?: {
     type: "balikovna";
     zip: string | null;
@@ -265,8 +270,13 @@ const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: 
         return;
       }
       toast.success("Štítek je připravený — otevírám PDF.");
-      for (const label of result.labels) {
-        window.open(label.url, "_blank", "noreferrer");
+      /* Only the FIRST window.open survives on a phone — browsers block every
+         popup after the one tied to the tap. The rest render as links below. */
+      if (result.labels[0]) {
+        window.open(result.labels[0].url, "_blank", "noreferrer");
+      }
+      if (result.labels.length > 1) {
+        toast.info("Další štítky otevřete z odkazů pod tlačítky.");
       }
     },
     onError: (error) => {
@@ -313,9 +323,27 @@ const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: 
             </Text>
           ))}
           {last.available ? (
-            <Text size="xsmall" className="text-ui-tag-green-text">
-              Štítek od dopravce je k dispozici.
-            </Text>
+            <>
+              <Text size="xsmall" className="text-ui-tag-green-text">
+                Štítek od dopravce je k dispozici.
+              </Text>
+              {(last.labels ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {(last.labels ?? []).map((label, index) => (
+                    <a
+                      key={label.url}
+                      href={label.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ui-fg-interactive text-xs underline"
+                    >
+                      Štítek {index + 1}
+                      {label.tracking_number ? ` · ${label.tracking_number}` : ""}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             last.reason && (
               <Text size="xsmall" className="text-ui-fg-muted">
@@ -488,9 +516,170 @@ const OrderExpansion = ({ orderId, madeToOrder }: { orderId: string; madeToOrder
   );
 };
 
+/* ------------------------------------------------------- tisk lístků ---- */
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (ch) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        ch
+      ]!
+  );
+
+type PrintableOrder = {
+  display_id: number | string;
+  created_at: string;
+  email: string | null;
+  currency_code: string;
+  total: number;
+  shipping_address: {
+    first_name: string | null;
+    last_name: string | null;
+    company: string | null;
+    address_1: string | null;
+    address_2: string | null;
+    postal_code: string | null;
+    city: string | null;
+    country_code: string | null;
+    phone: string | null;
+  } | null;
+  items: {
+    quantity: number;
+    title: string | null;
+    product_title: string | null;
+    variant_title: string | null;
+  }[];
+  shipping_methods: { name: string | null }[];
+  payment_collections: {
+    payments: { provider_id: string | null }[] | null;
+  }[] | null;
+};
+
+/**
+ * One A4 sheet per order: the address block sized to work as a podací lístek
+ * (she copies or cuts it for ČP), the item list underneath as the balicí
+ * list for the box. Dobírka orders get the COD amount in a heavy box because
+ * that number must land on the post form — forgetting it means the parcel
+ * travels for free.
+ */
+const buildPrintDocument = (orders: PrintableOrder[]) => {
+  const sheets = orders
+    .map((order) => {
+      const addr = order.shipping_address;
+      const money = new Intl.NumberFormat("cs-CZ", {
+        style: "currency",
+        currency: order.currency_code?.toUpperCase() || "CZK",
+        maximumFractionDigits: 2,
+      });
+      const isDobirka = (order.payment_collections ?? []).some((collection) =>
+        (collection.payments ?? []).some((payment) =>
+          (payment.provider_id ?? "").startsWith("pp_dobirka")
+        )
+      );
+      const itemRows = order.items
+        .map((item) => {
+          const name = item.product_title || item.title || "";
+          const variant =
+            item.variant_title && item.variant_title !== "Default variant"
+              ? ` — ${item.variant_title}`
+              : "";
+          return `<tr><td>${escapeHtml(name)}${escapeHtml(variant)}</td><td class="qty">${item.quantity}&nbsp;ks</td></tr>`;
+        })
+        .join("");
+      const addressLines = addr
+        ? [
+            `${addr.first_name ?? ""} ${addr.last_name ?? ""}`.trim(),
+            addr.company,
+            addr.address_1,
+            addr.address_2,
+            `${addr.postal_code ?? ""} ${addr.city ?? ""}`.trim(),
+            (addr.country_code ?? "").toUpperCase() === "CZ"
+              ? null
+              : (addr.country_code ?? "").toUpperCase(),
+          ]
+            .filter(Boolean)
+            .map((line) => `<div>${escapeHtml(line)}</div>`)
+            .join("")
+        : "<div>Bez doručovací adresy (osobní odběr?)</div>";
+      return `
+  <section class="sheet">
+    <header>
+      <div>
+        <div class="shop">Keramická zahrada · Lucie Polanská</div>
+        <div class="doc">Balicí list</div>
+      </div>
+      <div class="order-no">
+        <div>Objednávka č. ${escapeHtml(order.display_id)}</div>
+        <div class="muted">${escapeHtml(
+          new Date(order.created_at).toLocaleDateString("cs-CZ")
+        )}</div>
+      </div>
+    </header>
+    <div class="address">
+      <div class="label">Adresát</div>
+      ${addressLines}
+      ${addr?.phone ? `<div class="muted">Tel.: ${escapeHtml(addr.phone)}</div>` : ""}
+    </div>
+    ${
+      isDobirka
+        ? `<div class="cod">DOBÍRKA — vybrat ${escapeHtml(money.format(order.total))}</div>`
+        : ""
+    }
+    <div class="meta">
+      ${order.shipping_methods?.[0]?.name ? `Doprava: ${escapeHtml(order.shipping_methods[0].name)} · ` : ""}${escapeHtml(order.email ?? "")}
+    </div>
+    <table>
+      <thead><tr><th>Položka</th><th class="qty">Množství</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <footer>Děkujeme za objednávku. Křehké — keramika!</footer>
+  </section>`;
+    })
+    .join("");
+  return `<!doctype html><html lang="cs"><head><meta charset="utf-8">
+<title>Balicí listy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 13px/1.5 -apple-system, "Segoe UI", sans-serif; color: #111; }
+  @page { size: A4; margin: 14mm; }
+  .sheet { page-break-after: always; padding: 8px 0; }
+  .sheet:last-child { page-break-after: auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 2px solid #111; padding-bottom: 8px; }
+  .shop { font-weight: 700; }
+  .doc { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #555; }
+  .order-no { text-align: right; font-weight: 700; }
+  .muted { color: #555; font-weight: 400; font-size: 12px; }
+  .address { border: 1.5px solid #111; padding: 12px 16px; margin: 16px 0 0;
+             font-size: 16px; line-height: 1.45; max-width: 420px; }
+  .address .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+                    color: #555; margin-bottom: 4px; }
+  .cod { border: 3px double #111; display: inline-block; padding: 8px 14px;
+         margin-top: 12px; font-size: 15px; font-weight: 700; }
+  .meta { margin: 14px 0 6px; color: #555; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #ccc; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+  .qty { text-align: right; white-space: nowrap; width: 90px; }
+  footer { margin-top: 18px; font-size: 11px; color: #555; }
+</style></head><body>${sheets}</body></html>`;
+};
+
 const OrdersInner = () => {
   const [active, setActive] = useState("vse");
+  /* The input updates instantly; the QUERY fires 350 ms after she stops
+     typing — one request per thought, not one per keystroke. */
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [pageLimit, setPageLimit] = useState(50);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPageLimit(50);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
   const expert = useExpertMode();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -531,25 +720,137 @@ const OrdersInner = () => {
   const params = new URLSearchParams();
   if (active === "dluzi") {
     params.set("owing", "true");
+  } else if (active === "naposta") {
+    // „Na poštu" is the handover subset of the shipping stage.
+    params.set("stage", "shipping");
   } else if (active !== "vse") {
     params.set("stage", active);
   }
-  if (search.trim()) {
-    params.set("q", search.trim());
+  if (search) {
+    params.set("q", search);
   }
+  params.set("limit", String(pageLimit));
   if (expert) {
     params.set("expert", "1");
   }
 
   const { data, isLoading, isError } = useQuery<WorkbenchOrdersResponse>({
-    queryKey: ["workbench-orders", active, search, expert],
+    queryKey: ["workbench-orders", active, search, expert, pageLimit],
     enabled: active !== "statistiky",
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/orders?${params.toString()}`),
     refetchOnWindowFocus: true,
   });
 
-  const rows = data?.orders ?? [];
+  const allRows = data?.orders ?? [];
+  const rows =
+    active === "naposta"
+      ? allRows.filter((order) => order.awaiting_handover)
+      : allRows;
+
+  /* Hromadné předání celé tašky u přepážky — jeden klik místo N. Sequential
+     on purpose: each confirm sends the customer's shipment e-mail. */
+  const bulkHandover = useMutation({
+    mutationFn: async () => {
+      const results: { id: string | number; ok: boolean; error?: string }[] = [];
+      for (const order of rows) {
+        try {
+          await sdk.client.fetch(`/admin/merchant-orders/${order.id}`, {
+            method: "PATCH",
+            body: { stage: "handover_confirmed" },
+          });
+          results.push({ id: order.display_id, ok: true });
+        } catch (error) {
+          results.push({
+            id: order.display_id,
+            ok: false,
+            error: error instanceof Error ? error.message : "neznámá chyba",
+          });
+        }
+      }
+      return results;
+    },
+    onSuccess: async (results) => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      const failed = results.filter((result) => !result.ok);
+      const okCount = results.length - failed.length;
+      if (okCount > 0) {
+        toast.success(
+          `Předáno dopravci: ${okCount} ${okCount === 1 ? "zásilka" : okCount <= 4 ? "zásilky" : "zásilek"}. Zákazníkům odešel e-mail.`
+        );
+      }
+      for (const failure of failed) {
+        toast.error(`#${failure.id} se nepodařilo předat: ${failure.error}`);
+      }
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Předání se nepodařilo."),
+  });
+
+  /* Tisk balicích/podacích lístků: fetch the full detail of each chosen
+     order (the worklist rows deliberately don't carry addresses), render one
+     printable HTML document, one sheet per order, and hand it to the
+     browser's print dialog in a new window — no PDF library, no server. */
+  const printSheets = useMutation({
+    mutationFn: async (orderIds: string[]) => {
+      const fields = [
+        "display_id",
+        "created_at",
+        "email",
+        "currency_code",
+        "total",
+        "*shipping_address",
+        "items.quantity",
+        "items.title",
+        "items.product_title",
+        "items.variant_title",
+        "shipping_methods.name",
+        "payment_collections.payments.provider_id",
+      ].join(",");
+      const detailed: PrintableOrder[] = [];
+      for (const id of orderIds) {
+        const { order } = await sdk.client.fetch<{ order: PrintableOrder }>(
+          `/admin/orders/${id}?fields=${encodeURIComponent(fields)}`
+        );
+        detailed.push(order);
+      }
+      return detailed;
+    },
+    onSuccess: (detailed) => {
+      const win = window.open("", "_blank");
+      if (!win) {
+        toast.error(
+          "Prohlížeč zablokoval nové okno — povolte vyskakovací okna a zkuste to znovu."
+        );
+        return;
+      }
+      win.document.write(buildPrintDocument(detailed));
+      win.document.close();
+      win.focus();
+      // Let the new window lay out before opening the print dialog.
+      win.setTimeout(() => win.print(), 300);
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Tisk se nepodařilo připravit."
+      ),
+  });
+
+  const rowHandover = useMutation({
+    mutationFn: (orderId: string) =>
+      sdk.client.fetch(`/admin/merchant-orders/${orderId}`, {
+        method: "PATCH",
+        body: { stage: "handover_confirmed" },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      toast.success("Zásilka předána dopravci — zákazník dostal e-mail.");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Předání se nepodařilo."),
+  });
 
   return (
     <Container className="divide-y p-0">
@@ -568,9 +869,9 @@ const OrdersInner = () => {
         <Input
           size="small"
           type="search"
-          placeholder="Hledat e-mail, jméno nebo číslo…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Hledat e-mail nebo číslo objednávky…"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
           className="w-64"
         />
         </div>
@@ -605,9 +906,41 @@ const OrdersInner = () => {
 
       {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
         <EmptyState
-          title="Nic tu není"
-          description="Žádná objednávka neodpovídá zvolenému filtru."
+          title={active === "naposta" ? "Nic nečeká na předání" : "Nic tu není"}
+          description={
+            active === "naposta"
+              ? "Všechny zabalené zásilky už jsou u dopravce."
+              : "Žádná objednávka neodpovídá zvolenému filtru."
+          }
         />
+      )}
+
+      {/* „Na poštu": jedna taška, jedno tlačítko. */}
+      {active === "naposta" && !isLoading && rows.length > 0 && (
+        <div className="bg-ui-bg-subtle flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+          <Text size="small" weight="plus">
+            {rows.length === 1
+              ? "1 zásilka čeká na předání dopravci."
+              : `${rows.length} ${rows.length <= 4 ? "zásilky čekají" : "zásilek čeká"} na předání dopravci.`}
+          </Text>
+          <div className="flex items-center gap-2">
+            <Button
+              size="base"
+              variant="secondary"
+              isLoading={printSheets.isPending}
+              onClick={() => printSheets.mutate(rows.map((order) => order.id))}
+            >
+              Vytisknout lístky
+            </Button>
+            <Button
+              size="base"
+              isLoading={bulkHandover.isPending}
+              onClick={() => bulkHandover.mutate()}
+            >
+              Předala jsem dopravci vše ({rows.length})
+            </Button>
+          </div>
+        </div>
       )}
 
       {selected.size > 0 && (
@@ -638,6 +971,14 @@ const OrdersInner = () => {
             onClick={() => batchMove.mutate()}
           >
             Přesunout
+          </Button>
+          <Button
+            size="small"
+            variant="secondary"
+            isLoading={printSheets.isPending}
+            onClick={() => printSheets.mutate([...selected])}
+          >
+            Vytisknout lístky ({selected.size})
           </Button>
           <Button
             size="small"
@@ -722,6 +1063,20 @@ const OrdersInner = () => {
                       doručeno
                     </Text>
                   )}
+                  {active === "naposta" && (
+                    <div className="mt-2">
+                      <Button
+                        size="small"
+                        isLoading={
+                          rowHandover.isPending &&
+                          rowHandover.variables === order.id
+                        }
+                        onClick={() => rowHandover.mutate(order.id)}
+                      >
+                        Předala jsem dopravci
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -793,6 +1148,28 @@ const OrdersInner = () => {
           })}
         </div>
       )}
+
+      {/* Stránkování: server teď posílá skutečný počet pro aktivní filtr. */}
+      {active !== "statistiky" &&
+        active !== "naposta" &&
+        !isLoading &&
+        (data?.count ?? 0) > allRows.length && (
+          <div className="flex items-center justify-center gap-3 px-6 py-4">
+            {pageLimit >= 200 ? (
+              <Text size="small" className="text-ui-fg-subtle">
+                Zobrazeno prvních 200 — zúžte výběr hledáním.
+              </Text>
+            ) : (
+              <Button
+                size="small"
+                variant="secondary"
+                onClick={() => setPageLimit((current) => Math.min(current + 50, 200))}
+              >
+                Načíst další ({allRows.length} z {data?.count})
+              </Button>
+            )}
+          </div>
+        )}
     </Container>
   );
 };
@@ -808,6 +1185,7 @@ const OrdersWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Objednávky+",
   icon: DocumentText,
+  rank: 10,
 });
 
 export default OrdersWorkbenchPage;

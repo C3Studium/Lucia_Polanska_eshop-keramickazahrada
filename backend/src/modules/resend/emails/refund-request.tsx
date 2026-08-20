@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface RefundRequestEmailProps {
   customerName?: string;
@@ -27,13 +28,14 @@ interface RefundRequestEmailProps {
  * konkrétní peníze.
  */
 function RefundRequestEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   refundAmount,
-  refundReason = "Požadavek zákazníka",
-  orderLink = "https://keramickazahrada.cz/orders/12345",
+  refundReason,
+  orderLink = "",
   estimatedProcessingTime = "3–5 pracovních dnů",
 }: RefundRequestEmailProps) {
+  const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
       preview={`Žádost o vrácení peněz k objednávce ${orderNumber} jsme přijali.`}
@@ -47,8 +49,8 @@ function RefundRequestEmailComponent({
         vyřizovat.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Důvod" value={refundReason} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {refundReason ? <LedgerRow label="Důvod" value={refundReason} /> : null}
       <LedgerRow label="Doba vyřízení" value={estimatedProcessingTime} />
       {refundAmount ? (
         <LedgerRow label="Částka k vrácení" value={refundAmount} strong tone="olive" />
@@ -59,9 +61,11 @@ function RefundRequestEmailComponent({
         Žádost je u nás — pracujeme na ní a o vyřízení vám dáme vědět.
       </Note>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Peníze vracíme stejnou cestou, jakou k nám platba přišla. Jakmile bude

@@ -176,7 +176,8 @@ const onBalanceRequested = async ({
       paymentAmount: formatMoney(request.amount, request.currency_code),
       paymentMethod: "Platební karta nebo převod",
       // The link she generated, or the signed one that works from any inbox.
-      orderLink: request.payment_url || balancePaymentUrl(order.id) || orderLink(order),
+      paymentLink:
+        request.payment_url || balancePaymentUrl(order.id) || orderLink(order),
       estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
       makingPhotoUrl: latestShared?.image_url ?? null,
     },
@@ -291,7 +292,9 @@ const onShipmentCreated = async ({
     orderId: order.id,
     data: {
       ...common(order),
-      carrierName: (order.shipping_methods || [])[0]?.name ?? "Česká pošta",
+      // The shipping method's own name, or nothing — the template omits the
+      // row rather than claiming a carrier the order never used.
+      carrierName: (order.shipping_methods || [])[0]?.name ?? "",
       trackingNumber: label?.tracking_number ?? "",
       trackingLink: label?.tracking_url ?? "",
     },

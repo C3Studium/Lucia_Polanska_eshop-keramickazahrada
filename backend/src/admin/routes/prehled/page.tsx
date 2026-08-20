@@ -626,6 +626,7 @@ const PrehledPage = () => (
 export const config = defineRouteConfig({
   label: "Přehled",
   icon: House,
+  // Sidebar reads as her workflow: Přehled first, technical pages last.
   rank: 0,
 });
 

@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderReadyPickupEmailProps {
   customerName?: string;
@@ -30,16 +31,17 @@ interface OrderReadyPickupEmailProps {
  * a vymyšlená výchozí hodnota v e-mailu by byla horší než žádná.
  */
 function OrderReadyPickupEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   pickupLocation = "Ateliér Keramická zahrada",
   pickupAddress = "Putim 229, 397 01 Písek",
   pickupHours,
   readyDate,
   pickupDeadline,
-  orderLink = "https://keramickazahrada.cz",
+  orderLink = "",
   pickupInstructions
 }: OrderReadyPickupEmailProps) {
+  const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
       preview={`Objednávka ${orderNumber} je zabalená a připravená k vyzvednutí.`}
@@ -67,9 +69,11 @@ function OrderReadyPickupEmailComponent({
 
       <Note tone="olive">Objednávka na vás čeká.</Note>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         {pickupInstructions

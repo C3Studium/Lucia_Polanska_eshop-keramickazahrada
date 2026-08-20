@@ -60,6 +60,7 @@ export default async function requestReviews(container: MedusaContainer) {
       "order.shipping_address.first_name",
       "order.shipping_address.last_name",
       "order.items.title",
+      "order.items.product_title",
       "order.items.thumbnail",
       "order.items.product_id",
       "order.items.variant.product.handle",
@@ -95,7 +96,9 @@ export default async function requestReviews(container: MedusaContainer) {
         customerName: customerName(order),
         orderNumber: orderNumber(order),
         orderLink: orderLink(order),
-        productName: item?.title ?? "váš kousek",
+        // `product_title` is the product's name; a line item's `title` is the
+        // variant („Ø 32 cm"), which reads like nonsense as a product name.
+        productName: item?.product_title ?? item?.title ?? "váš kousek",
         productImage: item?.thumbnail ?? "",
         productLink: link,
         reviewLink: link ? `${link}#hodnoceni` : "",

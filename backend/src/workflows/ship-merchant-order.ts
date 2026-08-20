@@ -75,6 +75,7 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         "payment_collections.amount",
         "payment_collections.captured_amount",
         "payment_collections.refunded_amount",
+  "payment_collections.payments.provider_id",
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",

@@ -68,10 +68,14 @@ async function getRegionMap(cacheId: string) {
       )
     }
 
-    // Create a map of country codes to regions.
+    // Create a map of country codes to regions. A country without an iso code
+    // must not create a "" key — a blank countryCode downstream turned the
+    // fallback response into a redirect to the very same URL.
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
-        regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+        if (c.iso_2) {
+          regionMapCache.regionMap.set(c.iso_2, region)
+        }
       })
     })
 
@@ -135,12 +139,31 @@ export async function middleware(request: NextRequest) {
 
   let cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
-  const regionMap = await getRegionMap(cacheId)
+  /*
+   * A backend hiccup must not take the whole site down. `getRegionMap` throws
+   * on any fetch failure, and an uncaught throw here is a 500 on EVERY route —
+   * static pages included. Degrade instead: pass the request through and let
+   * the page's own data layer (with its own error handling) deal with it.
+   */
+  let regionMap: Map<string, HttpTypes.StoreRegion> | null = null
+  try {
+    regionMap = await getRegionMap(cacheId)
+  } catch (error) {
+    console.error("Middleware: regions unavailable, passing request through.", error)
+    return NextResponse.next()
+  }
 
   const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
+  // Without a resolvable country there is nothing to redirect TO — pass the
+  // request through instead of bouncing it back at its own URL.
+  if (!countryCode) {
+    return NextResponse.next()
+  }
+
+  // Exact segment match — `includes` let „/czech-pottery" pass as „cz".
   const urlHasCountryCode =
-    countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
+    request.nextUrl.pathname.split("/")[1]?.toLowerCase() === countryCode
 
   // if one of the country codes is in the url and the cache id is set, return next
   if (urlHasCountryCode && cacheIdCookie) {

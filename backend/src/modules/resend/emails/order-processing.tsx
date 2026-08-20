@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderProcessingEmailProps {
   customerName?: string;
@@ -26,11 +27,12 @@ interface OrderProcessingEmailProps {
  * not a ledger value.
  */
 function OrderProcessingEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   estimatedProcessingTime = "Jakmile bude hotovo, dáme vám vědět a domluvíme se na odeslání.",
-  orderLink = "https://keramickazahrada.cz/orders/12345"
+  orderLink = ""
 }: OrderProcessingEmailProps) {
+  const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
       preview={`Zadání objednávky ${orderNumber} je potvrzené — v ateliéru začíná výroba.`}
@@ -45,16 +47,22 @@ function OrderProcessingEmailComponent({
         i glazura si žádají svůj čas.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} strong />
-      <LedgerEnd />
+      {orderNumber ? (
+        <>
+          <LedgerRow label="Objednávka" value={orderNumber} strong />
+          <LedgerEnd />
+        </>
+      ) : null}
 
       <Note tone="olive">Výroba právě začala.</Note>
 
       <P>{estimatedProcessingTime}</P>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <Signature />
     </EmailLayout>

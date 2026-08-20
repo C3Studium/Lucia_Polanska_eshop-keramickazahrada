@@ -31,7 +31,7 @@ export const BACKEND_URL = process.env.BACKEND_PUBLIC_URL ?? process.env.RAILWAY
  * have produced a plausible-looking link to the wrong place, in an e-mail,
  * where nobody would notice until a customer did. Removed rather than fixed,
  * so there stays exactly one way to build a customer-facing URL.
-
+ */
 
 /**
  * Database URL for Postgres instance used by the backend

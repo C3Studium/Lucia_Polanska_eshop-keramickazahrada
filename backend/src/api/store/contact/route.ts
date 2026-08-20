@@ -83,6 +83,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     ].join("\n"),
     audience: "owner",
     email: true,
+    // She answers from her inbox — Reply-To makes „Odpovědět" reach the
+    // customer instead of bouncing back to the shop's own address.
+    replyTo: input.email,
   })
 
   res.status(200).json({ ok: true })

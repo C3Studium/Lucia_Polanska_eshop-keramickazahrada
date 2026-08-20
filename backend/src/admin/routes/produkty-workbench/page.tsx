@@ -504,7 +504,14 @@ const tabs: { key: TabKey; label: string }[] = [
 
 const ProductsInner = () => {
   const [active, setActive] = useState<TabKey>("produkty");
+  /* Input je okamžitý, DOTAZ letí až 350 ms po dopsání — katalogový endpoint
+     je nejtěžší v adminu a pálit ho na každé písmeno bolí hlavně na mobilu. */
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
   const [expanded, setExpanded] = useState<string | null>(null);
   /* Tři styly seznamu — sdílený přepínač, volba se pamatuje per stránka. */
   const [view, changeView] = useViewMode("kz-view-produkty");
@@ -1154,7 +1161,7 @@ const ProductsInner = () => {
       <Toaster />
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-        <div>
+        <div className="min-w-0">
           <Heading>Produkty — pracovní přehled</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Každý druh zboží má svou záložku a své ovládání: běžné produkty,
@@ -1201,8 +1208,8 @@ const ProductsInner = () => {
             size="small"
             type="search"
             placeholder="Hledat název…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
             className="w-56"
           />
         </div>
@@ -1350,6 +1357,7 @@ const ProductsWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Produkty+",
   icon: TagSolid,
+  rank: 20,
 });
 
 export default ProductsWorkbenchPage;

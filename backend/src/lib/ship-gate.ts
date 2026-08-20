@@ -53,7 +53,12 @@ export type ShipGatePaymentCollection = {
   amount?: unknown
   captured_amount?: unknown
   refunded_amount?: unknown
+  /** Rides along when the caller's fields include it — the dobírka exemption reads it. */
+  payments?: Array<{ provider_id?: string | null }> | null
 }
+
+/** Cash on delivery: the carrier collects, so „zaplaceno" happens at the door. */
+export const DOBIRKA_PROVIDER_ID = "pp_dobirka_ceska-posta"
 
 export type ShipGateProductionOrder = {
   agreed_total?: unknown
@@ -163,6 +168,35 @@ export const evaluateShipGate = (order: ShipGateInput): ShipGateVerdict => {
 
   // (1) The money that actually arrived and stayed.
   const collections = order.payment_collections || []
+
+  /*
+   * Dobírka never captures before dispatch — the whole point is that the
+   * carrier collects at the door. Requiring `captured ≥ total` here made the
+   * feature undispatchable: the only way to ship was to falsely capture
+   * first. So a dobírka order skips the three card-money checks below; the
+   * open-order-change check above and the commission balance below still
+   * apply (a deposit is paid up front even when the rest is COD).
+   */
+  const isDobirka = collections.some((collection) =>
+    (collection.payments || []).some(
+      (payment) => payment?.provider_id === DOBIRKA_PROVIDER_ID
+    )
+  )
+  if (isDobirka) {
+    const outstandingDeposit = productionOutstanding(order.production_order)
+    if (outstandingDeposit > epsilon) {
+      return {
+        allowed: false,
+        code: "mto_outstanding",
+        reason: `Zakázka není doplacená — chybí ${formatMoney(
+          outstandingDeposit,
+          currency
+        )}. Odeslat ji půjde, jakmile peníze dorazí.`,
+      }
+    }
+    return { allowed: true, code: null, reason: null }
+  }
+
   const captured = collections.reduce(
     (sum, collection) => sum + toAmount(collection.captured_amount),
     0

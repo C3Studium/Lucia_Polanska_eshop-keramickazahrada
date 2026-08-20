@@ -4,6 +4,7 @@ import MouseAnim from "@modules/common/components/MouseAnim"
 import {
   motion,
   useMotionValueEvent,
+  useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
@@ -16,6 +17,7 @@ import { useRef, useState } from "react"
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types"
 import { urlFor } from "../../../../sanity/lib/image"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
+import WebButton from "@modules/common/components/Buttons/webButton"
 
 export type KurzyIntroData = {
   content?: string
@@ -23,292 +25,206 @@ export type KurzyIntroData = {
 } | null
 
 /*
- * Scene order: what a course is → courses for children → courses for adults.
+ * Scene order: what a course is → who it is for.
  *
- * It used to run hero → children → the three process steps → adults, which explained *who* a
- * course was for before it explained *what one is*, and buried the general description in a
- * 29vw column of the hero that only faded in halfway through the first scene's scroll and out
- * again a moment later. The three steps now sit together in one "O kurzech" scene as a strip,
- * which is both the answer to "what is this" and three screens shorter.
+ * The pinned timeline used to run four scenes (hero → O kurzech → děti →
+ * dospělí). The last two repeated what the audience blocks now say in one
+ * screen and ended on „připravujeme" — a dead end, when the page finally has
+ * a live reservation section below. So the timeline is two scenes: the hero,
+ * and one „Pro koho" scene with a short popisek and exactly three blocks —
+ * děti a školy, firmy a spolky, zájemci. The first two open the contact
+ * dialog; the third walks you down to the terms and the booking form.
  */
 const fallbackLede =
   "V ateliéru u Písku vedu keramické kurzy pro děti i dospělé. Malé skupiny, klidné tempo a výrobek, který si odnesete domů."
 
 const fallbackAbout =
-  "Na kurzu si hlínu osaháte pomalu a bez spěchu. Provedu vás celým procesem — od výběru hlíny přes modelování až po glazování a výpal. Nikomu nic nepředepisuju: každý si najde svůj vlastní způsob a odnese si kousek, který nikde jinde neseženete."
+  "Na kurzu si hlínu osaháte pomalu a bez spěchu. Provedu vás celým procesem — od výběru hlíny přes modelování až po glazování a výpal. Každý si najde svůj vlastní způsob a odnese si kousek, který nikde jinde neseženete."
 
-const courseSteps = [
+const audienceBlocks = [
   {
     number: "01",
-    eyebrow: "První setkání",
-    title: "Poznat materiál",
-    accent: "dotekem.",
-    text: "Hlína reaguje na tlak, vodu, nástroje i trpělivost. Napřed si zvyknete na ni, ona na vás.",
-    src: "/assets/img/roller/2h.jpg",
-    alt: "Keramický detail vzniklý ruční prací",
+    eyebrow: "Školy · Školky · Kroužky",
+    title: "Pro děti",
+    accent: "a školy.",
+    text: "Program a délku přizpůsobím věku skupiny. U hlíny se děti samy zklidní a odnesou si vlastní výrobek.",
+    action: "contact" as const,
+    cta: "Napište mi",
   },
   {
     number: "02",
-    eyebrow: "Vlastní rukopis",
-    title: "Najít vlastní tvar",
-    accent: "bez předlohy.",
-    text: "Na hotovém kusu je pak vidět, čí ruce ho dělaly — i s tou drobnou nedokonalostí.",
-    src: "/assets/img/roller/3v.jpg",
-    alt: "Ručně modelovaný keramický výrobek",
+    eyebrow: "Teambuilding · Společné tvoření",
+    title: "Pro firmy",
+    accent: "a spolky.",
+    text: "Pár klidných hodin u hlíny místo porady. Termín a náplň domluvíme podle vaší skupiny.",
+    action: "contact" as const,
+    cta: "Napište mi",
   },
   {
     number: "03",
-    eyebrow: "Po výpalu",
-    title: "Odnést si radost",
-    accent: "domů.",
-    text: "Po glazování a výpalu se z nápadu stane opravdová věc do domu nebo na zahradu.",
-    src: "/assets/img/roller/4h.jpg",
-    alt: "Hotový keramický výrobek v zahradě",
+    eyebrow: "Jednotlivci · Dvojice · Malé skupiny",
+    title: "Pro zájemce",
+    accent: "o kurz.",
+    text: "Vypsané termíny s cenami a volnými místy najdete níže — místo si rezervujete rovnou.",
+    action: "reserve" as const,
+    cta: "Vybrat termín",
   },
 ]
 
 /*
- * Beats of the pinned stage. Written down together because the handover between two scenes is the
- * one thing that has to be read as a pair: the outgoing scene is gone before the incoming one
- * starts. The previous version faded the hero out over 0.24–0.30 while the workshop faded in over
- * 0.235–0.30 — the same stretch — so the middle of every transition was two half-transparent
- * scenes stacked on top of each other, with the giant title lockup showing through the copy.
+ * Beats of the pinned stage. Two scenes now, so each gets roughly the same
+ * physical scroll it had before (the stage shrank from 560svh to 300svh):
+ * the hero holds, leaves as one piece, and only then does „Pro koho" arrive.
  */
-const HERO_HOLD = 0.11
-const HERO_OUT = 0.235
-const ABOUT_IN = 0.25
-const ABOUT_OUT = 0.5
-const KIDS_IN = 0.515
-const KIDS_OUT = 0.765
-const ADULTS_IN = 0.78
+const HERO_HOLD = 0.21
+const HERO_OUT = 0.44
+const ABOUT_IN = 0.47
 
-export default function Intro({ data }: { data?: KurzyIntroData }) {
+export default function Intro({
+  data,
+  onReserveAction,
+}: {
+  data?: KurzyIntroData
+  /** „Pro zájemce → Vybrat termín" — opens the reservation modal. */
+  onReserveAction: () => void
+}) {
   const timelineRef = useRef<HTMLElement>(null)
   const [activeScene, setActiveScene] = useState(0)
+
+  /* Reduced motion (layer 2 of the site's 3-layer scheme): the scenes still
+     swap with scroll, but purely as crossfades — no parallax, no sliding,
+     no scaling, no spring overshoot. Fades stay; movement goes. */
+  const reduceMotion = useReducedMotion()
 
   const { scrollYProgress: rawScrollYProgress } = useScroll({
     target: timelineRef,
     offset: ["start start", "end end"],
   })
-  const scrollYProgress = useSpring(rawScrollYProgress, {
+  const smoothedScrollYProgress = useSpring(rawScrollYProgress, {
     stiffness: 145,
     damping: 38,
     mass: 0.28,
     restDelta: 0.001,
   })
+  const scrollYProgress = reduceMotion
+    ? rawScrollYProgress
+    : smoothedScrollYProgress
 
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
-    const scene =
-      progress < 0.24 ? 0 : progress < 0.51 ? 1 : progress < 0.775 ? 2 : 3
+    const scene = progress < 0.455 ? 0 : 1
     setActiveScene((current) => (current === scene ? current : scene))
   })
 
   const background = useTransform(
     scrollYProgress,
-    [0, 0.17, 0.26, 0.45, 0.53, 0.71, 0.79, 1],
-    [
-      "#1d1e1a",
-      "#1d1e1a",
-      "#f3e7da",
-      "#f3e7da",
-      "#9b9a70",
-      "#9b9a70",
-      "#24251f",
-      "#24251f",
-    ]
+    [0, 0.32, 0.49, 1],
+    ["#1d1e1a", "#1d1e1a", "#f3e7da", "#f3e7da"]
   )
   const ambientX = useTransform(
     scrollYProgress,
-    [0, 0.32, 0.58, 0.82, 1],
-    ["24vw", "-18vw", "15vw", "30vw", "8vw"]
+    [0, 0.45, 1],
+    ["24vw", "-18vw", "15vw"]
   )
   const ambientY = useTransform(
     scrollYProgress,
-    [0, 0.35, 0.7, 1],
-    ["-12vh", "16vh", "-8vh", "12vh"]
+    [0, 0.5, 1],
+    ["-12vh", "16vh", "-8vh"]
   )
   const ambientColor = useTransform(
     scrollYProgress,
-    [0, 0.25, 0.38, 0.6, 0.78, 1],
+    [0, 0.42, 0.55, 1],
     [
       "rgba(211, 106, 57, .2)",
       "rgba(211, 106, 57, .12)",
       "rgba(255, 232, 214, .78)",
       "rgba(255, 232, 214, .32)",
-      "rgba(202, 113, 73, .22)",
-      "rgba(202, 113, 73, .1)",
     ]
   )
 
-  /* The hero leaves as one piece — no scene is fading in underneath it any more, so it can take
-     its time going rather than being rushed off in the 0.06 it used to share with the next one. */
+  /* The hero leaves as one piece — nothing fades in underneath it. */
   const heroOpacity = useTransform(
     scrollYProgress,
-    [0, HERO_HOLD + 0.06, HERO_OUT],
+    [0, HERO_HOLD + 0.11, HERO_OUT],
     [1, 1, 0]
   )
   const heroY = useTransform(
     scrollYProgress,
-    [0, HERO_HOLD + 0.06, HERO_OUT],
+    [0, HERO_HOLD + 0.11, HERO_OUT],
     ["0vh", "0vh", "-7vh"]
   )
   const heroScale = useTransform(
     scrollYProgress,
-    [0, HERO_HOLD + 0.06, HERO_OUT],
+    [0, HERO_HOLD + 0.11, HERO_OUT],
     [1, 1, 0.965]
   )
-  /* The lockup still steps aside for the copy, but over 0.09 of scroll instead of 0.035 — at the
-     old rate it crossed 16vw and lost a quarter of its size inside about a fifth of a screen. */
+  /* The lockup steps aside for the copy over a comfortable stretch of scroll. */
   const heroTitleX = useTransform(
     scrollYProgress,
-    [0, 0.045, 0.135, HERO_OUT],
+    [0, 0.08, 0.25, HERO_OUT],
     ["0vw", "0vw", "-15vw", "-17vw"]
   )
   const heroTitleY = useTransform(
     scrollYProgress,
-    [0, 0.045, 0.135, HERO_OUT],
+    [0, 0.08, 0.25, HERO_OUT],
     ["0vh", "0vh", "0vh", "-3vh"]
   )
   const heroTitleScale = useTransform(
     scrollYProgress,
-    [0, 0.045, 0.135, HERO_OUT],
+    [0, 0.08, 0.25, HERO_OUT],
     [1, 1, 0.76, 0.73]
   )
 
   const image1 = useTransform(
     scrollYProgress,
-    [0, 0.04, 0.085, 0.155, 0.205],
+    [0, 0.075, 0.16, 0.29, 0.38],
     ["0vw", "24vw", "24vw", "24vw", "0vw"]
   )
   const image2 = useTransform(
     scrollYProgress,
-    [0.02, 0.075, 0.12, 0.155, 0.205],
+    [0.035, 0.14, 0.225, 0.29, 0.38],
     ["0vw", "0vw", "24vw", "24vw", "0vw"]
   )
   const image3 = useTransform(
     scrollYProgress,
-    [0.055, 0.11, 0.155, 0.175, 0.205],
+    [0.1, 0.2, 0.29, 0.325, 0.38],
     ["0vw", "0vw", "24vw", "24vw", "0vw"]
   )
-  /* Arrives once the lockup has cleared its column and stays for the rest of the hero, rather
-     than the 0.07-wide window it used to flash through. */
+  /* Arrives once the lockup has cleared its column, stays for the rest of the hero. */
   const heroCopyOpacity = useTransform(
     scrollYProgress,
-    [0.09, 0.155, HERO_HOLD + 0.075, HERO_OUT - 0.01],
+    [0.165, 0.29, HERO_HOLD + 0.14, HERO_OUT - 0.02],
     [0, 1, 1, 0]
   )
   const heroCopyY = useTransform(
     scrollYProgress,
-    [0.09, 0.155, HERO_OUT - 0.01],
+    [0.165, 0.29, HERO_OUT - 0.02],
     [26, 0, -14]
   )
 
   const aboutOpacity = useTransform(
     scrollYProgress,
-    [ABOUT_IN, ABOUT_IN + 0.06, ABOUT_OUT, ABOUT_OUT + 0.04],
-    [0, 1, 1, 0]
+    [ABOUT_IN, ABOUT_IN + 0.11, 1],
+    [0, 1, 1]
   )
   const aboutY = useTransform(
     scrollYProgress,
-    [ABOUT_IN, ABOUT_IN + 0.06, ABOUT_OUT, ABOUT_OUT + 0.04],
-    ["4vh", "0vh", "0vh", "-4vh"]
+    [ABOUT_IN, ABOUT_IN + 0.11, 1],
+    ["4vh", "0vh", "0vh"]
   )
   const aboutHeadingX = useTransform(
     scrollYProgress,
-    [ABOUT_IN + 0.01, ABOUT_IN + 0.08, ABOUT_OUT, ABOUT_OUT + 0.04],
-    [-26, 0, 0, 14]
+    [ABOUT_IN + 0.02, ABOUT_IN + 0.15, 1],
+    [-26, 0, 0]
   )
   const aboutLedeY = useTransform(
     scrollYProgress,
-    [ABOUT_IN + 0.03, ABOUT_IN + 0.1, ABOUT_OUT, ABOUT_OUT + 0.04],
-    [24, 0, 0, -12]
+    [ABOUT_IN + 0.055, ABOUT_IN + 0.185, 1],
+    [24, 0, 0]
   )
   const aboutLedeOpacity = useTransform(
     scrollYProgress,
-    [ABOUT_IN + 0.03, ABOUT_IN + 0.1],
+    [ABOUT_IN + 0.055, ABOUT_IN + 0.185],
     [0, 1]
-  )
-
-  const workshopOpacity = useTransform(
-    scrollYProgress,
-    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
-    [0, 1, 1, 0]
-  )
-  const workshopX = useTransform(
-    scrollYProgress,
-    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
-    ["3vw", "0vw", "0vw", "-3vw"]
-  )
-  const workshopScale = useTransform(
-    scrollYProgress,
-    [KIDS_IN, KIDS_IN + 0.055, KIDS_OUT, KIDS_OUT + 0.04],
-    [0.985, 1, 1, 0.99]
-  )
-  const workshopClip = useTransform(
-    scrollYProgress,
-    [KIDS_IN, KIDS_IN + 0.055, 1],
-    ["inset(0% 100% 0% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
-  )
-  const workshopCopyX = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.015, KIDS_IN + 0.07, KIDS_OUT, KIDS_OUT + 0.035],
-    [24, 0, 0, -18]
-  )
-  const workshopCopyOpacity = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.015, KIDS_IN + 0.07, KIDS_OUT, KIDS_OUT + 0.035],
-    [0, 1, 1, 0]
-  )
-  const workshopPortraitY = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.015, KIDS_IN + 0.075, KIDS_OUT, KIDS_OUT + 0.035],
-    [30, 0, 0, -18]
-  )
-  const workshopPortraitOpacity = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.03, KIDS_IN + 0.09, KIDS_OUT, KIDS_OUT + 0.035],
-    [0, 1, 1, 0]
-  )
-  const workshopFactsY = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.045, KIDS_IN + 0.1, KIDS_OUT, KIDS_OUT + 0.035],
-    [18, 0, 0, -12]
-  )
-  const workshopFactsOpacity = useTransform(
-    scrollYProgress,
-    [KIDS_IN + 0.07, KIDS_IN + 0.12, KIDS_OUT, KIDS_OUT + 0.03],
-    [0, 1, 1, 0]
-  )
-
-  const adultsOpacity = useTransform(
-    scrollYProgress,
-    [ADULTS_IN, ADULTS_IN + 0.06, 1],
-    [0, 1, 1]
-  )
-  const adultsY = useTransform(
-    scrollYProgress,
-    [ADULTS_IN, ADULTS_IN + 0.06, 1],
-    ["6vh", "0vh", "0vh"]
-  )
-  const adultsImageClip = useTransform(
-    scrollYProgress,
-    [ADULTS_IN, ADULTS_IN + 0.06, 1],
-    ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
-  )
-  const adultsCopyX = useTransform(
-    scrollYProgress,
-    [ADULTS_IN + 0.025, ADULTS_IN + 0.08, 1],
-    [30, 0, 0]
-  )
-  const adultsDetailX = useTransform(
-    scrollYProgress,
-    [ADULTS_IN + 0.025, ADULTS_IN + 0.08, 1],
-    [-20, 0, 0]
-  )
-  const adultsDetailOpacity = useTransform(
-    scrollYProgress,
-    [ADULTS_IN + 0.035, ADULTS_IN + 0.09, 1],
-    [0, 1, 1]
   )
 
   const progressScale = useTransform(scrollYProgress, [0, 1], [0.03, 1])
@@ -333,7 +249,11 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
       >
         <motion.div
           className="kurzyTimeline__ambient"
-          style={{ x: ambientX, y: ambientY, backgroundColor: ambientColor }}
+          style={
+            reduceMotion
+              ? { backgroundColor: ambientColor }
+              : { x: ambientX, y: ambientY, backgroundColor: ambientColor }
+          }
           aria-hidden="true"
         />
 
@@ -341,7 +261,11 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           className={`kurzyScene kurzyHero${
             activeScene === 0 ? " is-active" : ""
           }`}
-          style={{ opacity: heroOpacity, y: heroY, scale: heroScale }}
+          style={
+            reduceMotion
+              ? { opacity: heroOpacity }
+              : { opacity: heroOpacity, y: heroY, scale: heroScale }
+          }
           aria-labelledby="kurzy-hero-title"
         >
           <SceneMeta
@@ -351,13 +275,17 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
 
           <motion.div
             className="kurzyHero__title"
-            style={{ x: heroTitleX, y: heroTitleY, scale: heroTitleScale }}
+            style={
+              reduceMotion
+                ? undefined
+                : { x: heroTitleX, y: heroTitleY, scale: heroTitleScale }
+            }
             aria-hidden="true"
           >
             <HeroTitleRow
               before="Ku"
               after="rzy"
-              width={image1}
+              width={reduceMotion ? "24vw" : image1}
               src={images[0]}
               alt=""
               label="01 · Materiál"
@@ -365,7 +293,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             <HeroTitleRow
               before="Kur"
               after="zy"
-              width={image2}
+              width={reduceMotion ? "24vw" : image2}
               src={images[1]}
               alt=""
               label="02 · Vlastní tvar"
@@ -373,7 +301,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             <HeroTitleRow
               before="Kurz"
               after="y"
-              width={image3}
+              width={reduceMotion ? "24vw" : image3}
               src={images[2]}
               alt=""
               label="03 · Radost"
@@ -382,13 +310,17 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
 
           <motion.div
             className="kurzyHero__copy"
-            style={{ opacity: heroCopyOpacity, y: heroCopyY }}
+            style={
+              reduceMotion
+                ? { opacity: heroCopyOpacity }
+                : { opacity: heroCopyOpacity, y: heroCopyY }
+            }
           >
             {/* Entrance on the children, not this element: its opacity and y are scroll-driven
                 motion values, and those win over `animate` for the same property. */}
             <motion.span
               variants={heroReveal}
-              initial="hidden"
+              initial={reduceMotion ? false : "hidden"}
               animate="show"
               custom={heroBeat.eyebrow}
             >
@@ -397,7 +329,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             <motion.h1
               id="kurzy-hero-title"
               variants={heroReveal}
-              initial="hidden"
+              initial={reduceMotion ? false : "hidden"}
               animate="show"
               custom={heroBeat.heading}
             >
@@ -406,7 +338,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             </motion.h1>
             <motion.p
               variants={heroReveal}
-              initial="hidden"
+              initial={reduceMotion ? false : "hidden"}
               animate="show"
               custom={heroBeat.lede}
             >
@@ -418,7 +350,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
             className="kurzyHero__scrollCue"
             aria-hidden="true"
             variants={heroReveal}
-            initial="hidden"
+            initial={reduceMotion ? false : "hidden"}
             animate="show"
             custom={heroBeat.chrome}
           >
@@ -431,16 +363,20 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           className={`kurzyScene kurzyAbout${
             activeScene === 1 ? " is-active" : ""
           }`}
-          style={{ opacity: aboutOpacity, y: aboutY }}
+          style={
+            reduceMotion
+              ? { opacity: aboutOpacity }
+              : { opacity: aboutOpacity, y: aboutY }
+          }
           aria-labelledby="kurzy-about-title"
         >
-          <SceneMeta left="02 · O kurzech" right="Pro děti i dospělé" />
+          <SceneMeta left="02 · Pro koho" right="Děti · Firmy · Zájemci" />
 
           <motion.header
             className="kurzyAbout__intro"
-            style={{ x: aboutHeadingX }}
+            style={reduceMotion ? undefined : { x: aboutHeadingX }}
           >
-            <span>Jak to na kurzu vypadá</span>
+            <span>Kurzy pro každého</span>
             <h2 id="kurzy-about-title">
               Nejdřív hlína.
               <em>Potom nápad.</em>
@@ -449,170 +385,27 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
 
           <motion.div
             className="kurzyAbout__lede"
-            style={{ y: aboutLedeY, opacity: aboutLedeOpacity }}
+            style={
+              reduceMotion
+                ? { opacity: aboutLedeOpacity }
+                : { y: aboutLedeY, opacity: aboutLedeOpacity }
+            }
           >
             <p>{data?.content || fallbackAbout}</p>
           </motion.div>
 
-          <div className="kurzyAbout__steps">
-            {courseSteps.map((step, index) => (
-              <CourseStep
-                key={step.number}
-                step={step}
+          <div className="kurzyAbout__blocks">
+            {audienceBlocks.map((block, index) => (
+              <AudienceBlock
+                key={block.number}
+                block={block}
                 progress={scrollYProgress}
                 index={index}
+                onReserve={onReserveAction}
               />
             ))}
           </div>
         </motion.section>
-
-        <motion.article
-          className={`kurzyScene kurzyWorkshop${
-            activeScene === 2 ? " is-active" : ""
-          }`}
-          style={{
-            opacity: workshopOpacity,
-            x: workshopX,
-            scale: workshopScale,
-          }}
-          aria-labelledby="kurzy-workshop-title"
-        >
-          <SceneMeta
-            left="03 · Kurzy pro děti"
-            right="Rukama · Pomalu · Společně"
-          />
-
-          <motion.figure
-            className="kurzyWorkshop__landscape"
-            style={{ clipPath: workshopClip }}
-          >
-            <Image
-              src="/assets/img/roller/1h.jpg"
-              alt="Děti poznávají keramiku prostřednictvím práce rukama"
-              fill
-              sizes="64vw"
-            />
-            <figcaption>
-              <span>Ateliér · Písek</span>
-              <i />
-              <span>Každý výsledek je originál</span>
-            </figcaption>
-          </motion.figure>
-
-          <motion.figure
-            className="kurzyWorkshop__portrait"
-            style={{ opacity: workshopPortraitOpacity, y: workshopPortraitY }}
-          >
-            <Image
-              src="/assets/img/roller/1v.jpg"
-              alt="Detail ručně vytvořeného keramického výrobku"
-              fill
-              sizes="20vw"
-            />
-          </motion.figure>
-
-          <motion.div
-            className="kurzyWorkshop__copy"
-            style={{ opacity: workshopCopyOpacity, x: workshopCopyX }}
-          >
-            <span>Klid · Soustředění · Radost</span>
-            <h2 id="kurzy-workshop-title">
-              Práce rukama
-              <em>děti baví.</em>
-            </h2>
-            <p>
-              U hlíny se dítě samo zklidní, zapojí fantazii a má radost z toho,
-              co mu vzniklo pod rukama. Nikomu nic nepředepisuju — každý si
-              najde svůj způsob.
-            </p>
-            <div className="kurzyWorkshop__action">
-              <ContactTrigger
-                text="Kurz pro školu"
-                topic="Kurzy"
-                className="kurzyTimelineCtaButton"
-              />
-              <span>
-                Pro školy i kroužky — program a délku přizpůsobím věku skupiny.
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.dl
-            className="kurzyWorkshop__facts"
-            style={{ opacity: workshopFactsOpacity, y: workshopFactsY }}
-          >
-            <div>
-              <dt>Pro koho</dt>
-              <dd>Děti a malé skupiny</dd>
-            </div>
-            <div>
-              <dt>Školy a kroužky</dt>
-              <dd>Po domluvě</dd>
-            </div>
-            <div>
-              <dt>Od hlíny po</dt>
-              <dd>Glazování a výpal</dd>
-            </div>
-          </motion.dl>
-        </motion.article>
-
-        <motion.article
-          className={`kurzyScene kurzyTimelineAdults${
-            activeScene === 3 ? " is-active" : ""
-          }`}
-          style={{ opacity: adultsOpacity, y: adultsY }}
-          aria-labelledby="kurzy-adults-title"
-        >
-          <SceneMeta left="04 · Kurzy pro dospělé" right="Připravujeme" />
-
-          <motion.figure
-            className="kurzyTimelineAdults__image"
-            style={{ clipPath: adultsImageClip }}
-          >
-            <Image
-              src="/assets/img/roller/2v.jpg"
-              alt="Keramický detail v zahradě"
-              fill
-              sizes="34vw"
-            />
-            <figcaption>Ateliér · Písek</figcaption>
-          </motion.figure>
-
-          <motion.figure
-            className="kurzyTimelineAdults__detail"
-            style={{ opacity: adultsDetailOpacity, x: adultsDetailX }}
-            aria-hidden="true"
-          >
-            <Image src="/assets/img/roller/4h.jpg" alt="" fill sizes="22vw" />
-          </motion.figure>
-
-          <motion.div
-            className="kurzyTimelineAdults__copy"
-            style={{ x: adultsCopyX }}
-          >
-            <span>Zase si něco udělat rukama</span>
-            <h2 id="kurzy-adults-title">
-              Chystám kurzy
-              <em>i pro dospělé.</em>
-            </h2>
-            <p>
-              Malá skupina, pár klidných hodin u hlíny a výrobek, který
-              si odnesete domů. Dejte vědět, ať vám můžu napsat, až budu mít
-              termíny.
-            </p>
-            <ContactTrigger
-              text="Dejte mi vědět"
-              topic="Kurzy"
-              className="kurzyTimelineCtaButton"
-            />
-          </motion.div>
-
-          <p className="kurzyTimelineAdults__aside">
-            Malé skupiny
-            <span>Osobní vedení</span>
-            <span>Ateliér u Písku</span>
-          </p>
-        </motion.article>
 
         <footer
           className={`kurzyTimeline__rail kurzyTimeline__rail--${
@@ -620,9 +413,7 @@ export default function Intro({ data }: { data?: KurzyIntroData }) {
           }`}
         >
           <span>01 · Kurzy</span>
-          <span>02 · O kurzech</span>
-          <span>03 · Děti</span>
-          <span>04 · Dospělí</span>
+          <span>02 · Pro koho</span>
           <i>
             <motion.b style={{ scaleX: progressScale }} />
           </i>
@@ -652,7 +443,8 @@ function HeroTitleRow({
 }: {
   before: string
   after: string
-  width: MotionValue<string>
+  /** A scroll-driven motion value, or a fixed width under reduced motion. */
+  width: MotionValue<string> | string
   src: string
   alt: string
   label: string
@@ -669,52 +461,56 @@ function HeroTitleRow({
   )
 }
 
-function CourseStep({
-  step,
+function AudienceBlock({
+  block,
   progress,
   index,
+  onReserve,
 }: {
-  step: (typeof courseSteps)[number]
+  block: (typeof audienceBlocks)[number]
   progress: MotionValue<number>
   index: number
+  onReserve: () => void
 }) {
-  /* All three are on screen together now, so the only per-step value is when it arrives: a beat
-     apart, left to right, inside the scene's own entrance. */
-  const start = ABOUT_IN + 0.015 + index * 0.025
-  const settled = start + 0.055
+  /* All three arrive a beat apart, left to right, inside the scene's entrance. */
+  const reduceMotion = useReducedMotion()
+  const start = ABOUT_IN + 0.03 + index * 0.045
+  const settled = start + 0.1
 
-  const opacity = useTransform(
-    progress,
-    [start, settled, ABOUT_OUT, ABOUT_OUT + 0.035],
-    [0, 1, 1, 0]
-  )
-  const y = useTransform(
-    progress,
-    [start, settled, ABOUT_OUT, ABOUT_OUT + 0.035],
-    [30, 0, 0, -14]
-  )
-  const clip = useTransform(
-    progress,
-    [start, settled, 1],
-    ["inset(0% 0% 100% 0%)", "inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
-  )
+  const opacity = useTransform(progress, [start, settled, 1], [0, 1, 1])
+  const y = useTransform(progress, [start, settled, 1], [30, 0, 0])
 
   return (
-    <motion.article className="kurzyStep" style={{ opacity, y }}>
-      <motion.figure style={{ clipPath: clip }}>
-        <Image src={step.src} alt={step.alt} fill sizes="30vw" />
-      </motion.figure>
-      {/* No "of 03" counter: all three are on screen at once, so the total is already visible. */}
-      <div className="kurzyStep__number">
-        <span>{step.number}</span>
+    <motion.article
+      className="kurzyAudience"
+      style={reduceMotion ? { opacity } : { opacity, y }}
+    >
+      <div className="kurzyAudience__number">
+        <span>{block.number}</span>
         <i />
       </div>
-      <span className="kurzyStep__eyebrow">{step.eyebrow}</span>
+      <span className="kurzyAudience__eyebrow">{block.eyebrow}</span>
       <h3>
-        {step.title}
-        <em>{step.accent}</em>
+        {block.title}
+        <em>{block.accent}</em>
       </h3>
-      <p>{step.text}</p>
+      <p>{block.text}</p>
+      <div className="kurzyAudience__action">
+        {block.action === "contact" ? (
+          <ContactTrigger
+            text={block.cta}
+            topic="Kurzy"
+            className="kurzyTimelineCtaButton"
+          />
+        ) : (
+          <WebButton
+            Kind="Button"
+            title={block.cta}
+            className="kurzyTimelineCtaButton"
+            onClickAction={onReserve}
+          />
+        )}
+      </div>
     </motion.article>
   )
 }

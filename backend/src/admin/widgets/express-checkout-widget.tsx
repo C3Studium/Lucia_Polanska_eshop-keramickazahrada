@@ -2,11 +2,12 @@ import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { Button, Container, Heading, Text } from "@medusajs/ui"
 import { ArrowUpRightOnBox, PaperClip, Plus } from "@medusajs/icons";
 
-import { 
-  DetailWidgetProps, 
+import {
+  DetailWidgetProps,
   AdminProduct,
 } from "@medusajs/framework/types"
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { sdk } from "../lib/sdk";
 
 const ExpressCheckoutWidget = ({ 
   data: product,
@@ -14,10 +15,29 @@ const ExpressCheckoutWidget = ({
     const [copied, setCopied] = useState(false)
     const [ isOpen, setIsOpen ] = useState(false)
 
-   const handle = product.handle || product.id
-   const expressURL = `http://localhost:8000/express-checkout/${handle}`
+   /* The link must point at the real storefront, wherever it runs — the
+      backend knows (`store_url` comes from STOREFRONT_PUBLIC_URL), the admin
+      bundle does not, and a hardcoded localhost was a broken link in prod. */
+   const [storeUrl, setStoreUrl] = useState<string | null>(null)
+   useEffect(() => {
+       let cancelled = false
+       sdk.client
+           .fetch<{ store_url?: string | null }>(`/admin/workbench/products/${product.id}`)
+           .then((detail) => {
+               if (!cancelled) setStoreUrl(detail?.store_url ?? null)
+           })
+           .catch(() => {})
+       return () => {
+           cancelled = true
+       }
+   }, [product.id])
+
+   const expressURL = storeUrl
+       ? storeUrl.replace("/products/", "/express-checkout/")
+       : null
 
    const copyToClipboard = () => {
+       if (!expressURL) return
        navigator.clipboard.writeText(expressURL)
        setCopied(true)
        setTimeout(() => setCopied(false), 3500)
@@ -31,12 +51,22 @@ const ExpressCheckoutWidget = ({
                 <Text> Link pro Sociální sítě</Text>
             </div>
             <div className="flex gap-2">
-                <a href={expressURL} target="_blank" rel="noreferrer">
-                    <Button variant="transparent">
-                    <ArrowUpRightOnBox /> Zobrazit Stránku
-                    </Button>
-                </a>
-                <Button variant="secondary" onClick={copyToClipboard}>
+                {expressURL ? (
+                    <a href={expressURL} target="_blank" rel="noreferrer">
+                        <Button variant="transparent">
+                        <ArrowUpRightOnBox /> Zobrazit Stránku
+                        </Button>
+                    </a>
+                ) : (
+                    <Text size="small" className="text-ui-fg-subtle self-center">
+                        Odkaz bude po zveřejnění produktu.
+                    </Text>
+                )}
+                <Button
+                    variant="secondary"
+                    onClick={copyToClipboard}
+                    disabled={!expressURL}
+                >
                     <PaperClip /> {copied ? "Zkopírováno!" : "Zkopírovat odkaz"}
                 </Button>
             </div>

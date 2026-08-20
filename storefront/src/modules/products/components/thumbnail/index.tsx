@@ -46,7 +46,9 @@ const ImageOrPlaceholder = ({
   return image ? (
     <Image
       src={image}
-      alt="Thumbnail"
+      // Decorative: the product name always stands beside it (or names the
+      // wrapping link) — "Thumbnail" only added English noise for readers.
+      alt=""
       className={styles.image}
       draggable={false}
       quality={100}

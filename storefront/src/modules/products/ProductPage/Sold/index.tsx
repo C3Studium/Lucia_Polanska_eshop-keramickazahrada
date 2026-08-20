@@ -6,6 +6,7 @@ import {
   motion,
   useAnimationFrame,
   useMotionValue,
+  useReducedMotion,
   wrap,
   type PanInfo,
 } from "framer-motion"
@@ -39,6 +40,9 @@ function ProductRail({ products }: ProductRailProps) {
   const resetBufferRef = useRef(0)
   const hasInitialPositionRef = useRef(false)
   const usesNativeScrollRef = useRef(false)
+  /* The global reduced-motion CSS layer cannot stop this JS-driven marquee —
+     it has to opt out itself. Dragging stays; the perpetual drift stops. */
+  const reduceMotion = useReducedMotion()
   const lastFocusUpdateRef = useRef(0)
   const directionRef = useRef(-1)
   const isDraggingRef = useRef(false)
@@ -152,8 +156,9 @@ function ProductRail({ products }: ProductRailProps) {
     const frameSeconds = Math.min(delta / 1000, 0.05)
 
     if (!isDraggingRef.current) {
-      const automaticMovement =
-        directionRef.current * (BASE_SPEED + scrollBoost.get()) * frameSeconds
+      const automaticMovement = reduceMotion
+        ? 0
+        : directionRef.current * (BASE_SPEED + scrollBoost.get()) * frameSeconds
       const momentumMovement = dragVelocity.get() * frameSeconds
       const nextX = baseX.get() + automaticMovement + momentumMovement
       const resetBuffer = resetBufferRef.current

@@ -43,6 +43,12 @@ import { RefundRequestEmail } from "./emails/refund-request";
 import { ReturnRejectedEmail } from "./emails/return-rejected";
 import { PriceDropEmail } from "./emails/price-drop";
 import { InvoiceIssuedEmail } from "./emails/invoice-issued";
+import { CourseReservationConfirmedEmail } from "./emails/course-reservation-confirmed";
+import { CourseTermCancelledEmail } from "./emails/course-term-cancelled";
+import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
+import { CourseReminderEmail } from "./emails/course-reminder";
+import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
+import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -84,6 +90,17 @@ enum Templates {
   // iDoklad (FINISHINGTODOLIST §1): sent with a link to our own copy of the
   // invoice PDF once the invoice is issued.
   INVOICE_ISSUED = "invoice-issued",
+  // Kurzy (docs/kurzy-system.md): the reservation confirmation (paid online /
+  // pay on site variants) and the term-cancelled notice.
+  COURSE_RESERVATION_CONFIRMED = "course-reservation-confirmed",
+  COURSE_TERM_CANCELLED = "course-term-cancelled",
+  // Kurzy completion features: the 24h unpaid-expiry notice, the 3-days-out
+  // reminder and the waitlist „uvolnilo se místo" notification.
+  COURSE_PAYMENT_EXPIRED = "course-payment-expired",
+  COURSE_REMINDER = "course-reminder",
+  COURSE_WAITLIST_SPOT = "course-waitlist-spot",
+  // …and the single-reservation cancellation notice (refund story included).
+  COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -101,8 +118,9 @@ enum Templates {
   // - payment-cancelled — deliberately NOT wired: a cancelled checkout
   //   payment never completes the cart (no order exists; abandoned-cart
   //   covers it) and failed balance payments already send payment-failed.
-  // - order-refunded — deliberately NOT wired: payment-refunded covers the
-  //   whole refund story (a ComGate refund is a single step).
+  // - order-refunded — wired since 2026-08-18: the „Vrátit rozdíl" action
+  //   (/admin/merchant-orders/:id/refund-difference) sends it after settling
+  //   a customer-edit or cancelled-commission refund.
 }
 
 // WIP: Create a type for the templates - for all needed emails that will be send to customers
@@ -142,6 +160,12 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
   [Templates.PRICE_DROP]: PriceDropEmail,
   [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
+  [Templates.COURSE_RESERVATION_CONFIRMED]: CourseReservationConfirmedEmail,
+  [Templates.COURSE_TERM_CANCELLED]: CourseTermCancelledEmail,
+  [Templates.COURSE_PAYMENT_EXPIRED]: CoursePaymentExpiredEmail,
+  [Templates.COURSE_REMINDER]: CourseReminderEmail,
+  [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
+  [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
 }
 
 export enum EmailTemplates {
@@ -179,6 +203,12 @@ export enum EmailTemplates {
   RETURN_REJECTED = "return-rejected",
   PRICE_DROP = "price-drop",
   INVOICE_ISSUED = "invoice-issued",
+  COURSE_RESERVATION_CONFIRMED = "course-reservation-confirmed",
+  COURSE_TERM_CANCELLED = "course-term-cancelled",
+  COURSE_PAYMENT_EXPIRED = "course-payment-expired",
+  COURSE_REMINDER = "course-reminder",
+  COURSE_WAITLIST_SPOT = "course-waitlist-spot",
+  COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
 }
 
 /**
@@ -303,7 +333,9 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.PAYMENT_FAILED:
         return "Platba se nezdařila"
       case Templates.PAYMENT_PENDING:
-        return "Odkaz k platbě objednávky"
+        // The one send site is the made-to-order balance request — the subject
+        // says what is wanted, not a vague „odkaz k platbě".
+        return "Prosíme o doplatek — odkaz k platbě"
       case Templates.PAYMENT_REFUNDED:
         return "Vracíme peníze"
       case Templates.ORDER_SHIPMENT:
@@ -317,9 +349,12 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.ORDER_REVIEW:
         return "Jak se vám líbí nový kousek?"
       case Templates.ORDER_READY_PICKUP:
-        return "Zásilka připravena k vyzvednutí"
+        // Personal pickup at the atelier — nothing was posted, so no „zásilka".
+        return "Objednávka je připravena k vyzvednutí"
       case Templates.ORDER_DELIVERED:
-        return "Zásilka doručena"
+        // Sent on the personal-pickup handover (delivery.created) — the
+        // customer just carried the objects home themselves.
+        return "Objekty jsou u vás — děkujeme"
       case Templates.ORDER_DELAYED:
         return "Výroba se protáhne"
       case Templates.WELCOME:
@@ -344,6 +379,18 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Objekt změnil cenu"
       case Templates.INVOICE_ISSUED:
         return "Faktura k vaší objednávce"
+      case Templates.COURSE_RESERVATION_CONFIRMED:
+        return "Rezervace kurzu potvrzena"
+      case Templates.COURSE_TERM_CANCELLED:
+        return "Termín kurzu se bohužel ruší"
+      case Templates.COURSE_PAYMENT_EXPIRED:
+        return "Platba nedorazila — rezervaci kurzu jsme uvolnili"
+      case Templates.COURSE_REMINDER:
+        return "Připomínáme: váš kurz keramiky se blíží"
+      case Templates.COURSE_WAITLIST_SPOT:
+        return "Na kurzu se uvolnilo místo"
+      case Templates.COURSE_RESERVATION_CANCELLED:
+        return "Vaše rezervace kurzu byla zrušena"
       // WIP: Add more cases for other templates as needed
       default:
         return "Zpráva z Keramické zahrady"
@@ -377,6 +424,38 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     // behave exactly as before.
     const providedSubject = (notification.data as Record<string, unknown> | undefined)?.subject
 
+    // Optional per-send Reply-To: the contact form routes the customer's own
+    // address here, so the owner answers the person by hitting „Odpovědět"
+    // instead of replying to her own shop.
+    const providedReplyTo = (notification.data as Record<string, unknown> | undefined)?.reply_to
+
+    // Optional per-send Resend tags (`data.__resendTags`): the newsletter
+    // fan-out stamps each campaign e-mail with its campaign tag so delivery
+    // reports can be matched back (`lib/newsletter-events.ts`). The field is
+    // transport metadata, not content — it is lifted out here and never
+    // reaches the template's props.
+    const providedTags = (notification.data as Record<string, unknown> | undefined)?.__resendTags
+    const resendTags = Array.isArray(providedTags)
+      ? providedTags.filter(
+          (tag): tag is { name: string; value: string } =>
+            !!tag &&
+            typeof (tag as { name?: unknown }).name === "string" &&
+            typeof (tag as { value?: unknown }).value === "string"
+        )
+      : []
+    let templateData = notification.data
+    if (
+      notification.data &&
+      typeof notification.data === "object" &&
+      "__resendTags" in (notification.data as Record<string, unknown>)
+    ) {
+      const { __resendTags: _resendTags, ...rest } = notification.data as Record<
+        string,
+        unknown
+      >
+      templateData = rest
+    }
+
     const commonOptions = {
       from: this.options.from,
       to: [notification.to],
@@ -384,6 +463,10 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         typeof providedSubject === "string" && providedSubject.trim().length
           ? providedSubject
           : this.getTemplateSubject(notification.template as Templates),
+      ...(typeof providedReplyTo === "string" && providedReplyTo.trim().length
+        ? { replyTo: providedReplyTo.trim() }
+        : {}),
+      ...(resendTags.length ? { tags: resendTags } : {}),
     }
 
     let emailOptions: CreateEmailOptions
@@ -395,7 +478,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     } else {
       emailOptions = {
         ...commonOptions,
-        react: template(notification.data),
+        react: template(templateData),
       }
     }
 

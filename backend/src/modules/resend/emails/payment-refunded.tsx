@@ -11,30 +11,47 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface PaymentRefundedEmailProps {
   customerName?: string;
   orderNumber?: string;
   refundAmount?: string;
   originalPaymentAmount?: string;
+  /** Only when somebody actually stated one — no fabricated default. */
   refundReason?: string;
   refundMethod?: string;
+  /** Whole sentence — the subscriber sends „Peníze se obvykle vrátí do…". */
   estimatedRefundTime?: string;
   orderLink?: string;
 }
 
+/**
+ * Důvod se vykreslí jen s reálnou hodnotou — vymyšlený výchozí důvod
+ * („částečné vrácení zboží") by u plného refundu tvrdil něco jiného, než se
+ * stalo. `estimatedRefundTime` je celá věta: dřívější interpolace do „objeví
+ * do {…}" vyráběla rozbitou větu, protože subscriber posílá celé souvětí.
+ */
 function PaymentRefundedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  refundAmount = "1 250 Kč",
-  originalPaymentAmount = "2 450 Kč",
-  refundReason = "Částečné vrácení zboží",
-  refundMethod = "Původní platební metoda",
-  estimatedRefundTime = "3-5 pracovních dnů",
-  orderLink = "https://keramickazahrada.cz/orders/12345"
+  customerName,
+  orderNumber = "",
+  refundAmount,
+  originalPaymentAmount,
+  refundReason,
+  refundMethod = "Zpět na účet, ze kterého platba přišla",
+  estimatedRefundTime = "Peníze by se na vašem účtu měly objevit do 3–5 pracovních dnů.",
+  orderLink = "",
 }: PaymentRefundedEmailProps) {
+  const orderUrl = orderLink || storeLink()
+
   return (
-    <EmailLayout preview={`Vracíme vám ${refundAmount} za objednávku ${orderNumber}.`}>
+    <EmailLayout
+      preview={
+        refundAmount
+          ? `Vracíme vám ${refundAmount} za objednávku ${orderNumber}.`
+          : `Vracíme vám platbu za objednávku ${orderNumber}.`
+      }
+    >
       <Eyebrow>Platba</Eyebrow>
       <EmailH1 accent="vracíme.">Platbu</EmailH1>
 
@@ -44,20 +61,26 @@ function PaymentRefundedEmailComponent({
         vracejí stejnou cestou, jakou k nám přišly.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Důvod vrácení" value={refundReason} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {refundReason ? (
+        <LedgerRow label="Důvod vrácení" value={refundReason} />
+      ) : null}
       <LedgerRow label="Způsob vrácení" value={refundMethod} />
-      <LedgerRow label="Původní částka" value={originalPaymentAmount} />
-      <LedgerRow label="Vráceno" value={refundAmount} strong tone="olive" />
+      {originalPaymentAmount ? (
+        <LedgerRow label="Původní částka" value={originalPaymentAmount} />
+      ) : null}
+      {refundAmount ? (
+        <LedgerRow label="Vráceno" value={refundAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
-      <Note tone="olive">
-        Peníze by se na vašem účtu měly objevit do {estimatedRefundTime}.
-      </Note>
+      <Note tone="olive">{estimatedRefundTime}</Note>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Rychlost připsání se liší podle banky a platební metody. Pokud se
@@ -79,9 +102,9 @@ const mockPaymentRefunded: PaymentRefundedEmailProps = {
   refundAmount: "1 250 Kč",
   originalPaymentAmount: "2 450 Kč",
   refundReason: "Částečné vrácení zboží",
-  refundMethod: "Původní platební metoda",
-  estimatedRefundTime: "3-5 pracovních dnů",
-  orderLink: "https://keramickazahrada.cz/orders/12345"
+  refundMethod: "Zpět na účet, ze kterého platba přišla",
+  estimatedRefundTime: "Peníze se obvykle vrátí do několika pracovních dnů.",
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed"
 }
 
 export default () => <PaymentRefundedEmailComponent {...mockPaymentRefunded} />

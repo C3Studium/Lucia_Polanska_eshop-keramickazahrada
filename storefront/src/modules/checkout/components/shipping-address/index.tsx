@@ -210,6 +210,7 @@ const ShippingAddress = ({
           label="PSČ"
           name="shipping_address.postal_code"
           autoComplete="postal-code"
+          inputMode="numeric"
           value={formData["shipping_address.postal_code"]}
           onChange={handleChange}
           required
@@ -276,6 +277,7 @@ const ShippingAddress = ({
         <Input
           label="Telefon"
           name="shipping_address.phone"
+          type="tel"
           autoComplete="tel"
           value={formData["shipping_address.phone"]}
           onChange={handleChange}

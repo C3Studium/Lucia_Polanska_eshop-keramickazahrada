@@ -9,21 +9,29 @@ type Options = {
 type InjectedDependencies = {}
 
 class SegmentAnalyticsProviderService extends AbstractAnalyticsProviderService {
-  private client: Analytics
+  /**
+   * `null` when SEGMENT_WRITE_KEY is not set. The provider registers
+   * unconditionally in medusa-config, so throwing here crashed the whole boot
+   * over a missing ANALYTICS key — analytics must degrade, never take the
+   * shop down. Without a client every call is a no-op.
+   */
+  private client: Analytics | null
   static identifier = "segment"
 
   constructor(container: InjectedDependencies, options: Options) {
     super()
     if (!options.writeKey) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Segment write key is required"
+      console.warn(
+        "[segment] SEGMENT_WRITE_KEY is not set — analytics events will be dropped."
       )
+      this.client = null
+      return
     }
     this.client = new Analytics({ writeKey: options.writeKey })
   }
 
   async identify(data: ProviderIdentifyAnalyticsEventDTO): Promise<void> {
+    if (!this.client) return
     const anonymousId = data.properties && "anonymousId" in data.properties ? 
       data.properties.anonymousId : undefined
     const traits = data.properties && "traits" in data.properties ? 
@@ -48,6 +56,7 @@ class SegmentAnalyticsProviderService extends AbstractAnalyticsProviderService {
   }
 
   async track(data: ProviderTrackAnalyticsEventDTO): Promise<void> {
+    if (!this.client) return
     const userId = "group" in data ? data.actor_id || data.group?.id : data.actor_id
     const anonymousId = data.properties && "anonymousId" in data.properties ? 
       data.properties.anonymousId : undefined
@@ -70,6 +79,7 @@ class SegmentAnalyticsProviderService extends AbstractAnalyticsProviderService {
   }
 
   async shutdown(): Promise<void> {
+    if (!this.client) return
     await this.client.flush({
       close: true
     })

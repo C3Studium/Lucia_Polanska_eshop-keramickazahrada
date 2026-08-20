@@ -5,9 +5,10 @@
   box-sizing: border-box;
   flex: 0 0 auto;
   min-width: 58px;
-  height: 38px;
-  min-height: 38px;
-  max-height: 38px;
+  height: 40px;
+  min-height: 40px;
+  /* No max-height: it capped the pill at 38px even on touch, defeating the
+     global 44px touch floor on the one control a PDP cannot be used without. */
   padding: 0 14px;
   place-items: center;
   overflow: hidden;

@@ -12,12 +12,22 @@ import {
   Signature,
 } from "../components/email-ui"
 import { CarrierDamageClaim } from "../components/carrier-damage"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderDeliveredEmailProps {
   /** Storefront page with the claim block and the downloadable document. */
   claimUrl?: string;
   customerName?: string;
   orderNumber?: string;
+  /**
+   * True only when the objects travelled with a carrier. The one live send
+   * site (`delivery.created` in subscribers/customer-emails.ts) fires for
+   * personal pickups — the customer held the piece in their hands, so a
+   * „poškozená zásilka" claim block would talk about a parcel that never
+   * existed. The carrier-damage flow stays available for a future
+   * courier-delivery send site via this flag.
+   */
+  shippedByCarrier?: boolean;
 }
 
 /**
@@ -25,10 +35,12 @@ interface OrderDeliveredEmailProps {
  * been handed over, the order is complete. No address talk: nothing was posted.
  */
 function OrderDeliveredEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   claimUrl,
+  shippedByCarrier = false,
 }: OrderDeliveredEmailProps) {
+  const shopUrl = storeLink()
   return (
     <EmailLayout
       preview={`Objednávka ${orderNumber} je vyřízená — objekty jsou u vás.`}
@@ -42,8 +54,12 @@ function OrderDeliveredEmailComponent({
         rukou. Věříme, že vám budou dělat radost — v zahradě i doma.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} strong />
-      <LedgerEnd />
+      {orderNumber ? (
+        <>
+          <LedgerRow label="Objednávka" value={orderNumber} strong />
+          <LedgerEnd />
+        </>
+      ) : null}
 
       <Note tone="olive">Děkujeme za důvěru.</Note>
 
@@ -52,15 +68,16 @@ function OrderDeliveredEmailComponent({
         s kousky potřebovali cokoli poradit, stačí odpovědět na tento e-mail.
       </P>
 
-      <ButtonRow>
-        <EmailButton href="https://keramickazahrada.cz">
-          Prohlédnout další kousky
-        </EmailButton>
-      </ButtonRow>
-      {/* The two working days are running from today, so the claim route belongs here
-          rather than only in the terms. */}
-      <CarrierDamageClaim orderNumber={orderNumber} claimUrl={claimUrl} />
-
+      {shopUrl ? (
+        <ButtonRow>
+          <EmailButton href={shopUrl}>Prohlédnout další kousky</EmailButton>
+        </ButtonRow>
+      ) : null}
+      {/* Carrier deliveries only: the two working days for a ČP damage claim
+          run from today. A personal pickup has no parcel to claim about. */}
+      {shippedByCarrier ? (
+        <CarrierDamageClaim orderNumber={orderNumber} claimUrl={claimUrl} />
+      ) : null}
 
       <Signature />
     </EmailLayout>
@@ -75,6 +92,8 @@ export const OrderDeliveredEmail = (props: OrderDeliveredEmailProps) => (
 const mockOrderDelivered: OrderDeliveredEmailProps = {
   customerName: "Jana Nováková",
   orderNumber: "#12345",
+  shippedByCarrier: true,
+  claimUrl: "https://keramickazahrada.cz/cz/reklamacni-protokol",
 };
 
 export default () => <OrderDeliveredEmailComponent {...mockOrderDelivered} />;

@@ -857,6 +857,84 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.error(error instanceof Error ? error.message : "Slevu se nepodařilo nastavit."),
   });
 
+  /*
+   * She throws series — six mugs from one glaze test. „Duplikovat" copies
+   * everything describable (texts, zařazení, flags, photos, variants with
+   * prices) into a DRAFT with no SKUs and no stock, and jumps straight to it.
+   */
+  const duplicateProduct = useMutation({
+    mutationFn: async () => {
+      if (!product) throw new Error("Produkt se ještě načítá.")
+      const metadata = (product.metadata ?? {}) as Record<string, unknown>
+      const copiedFlags: Record<string, unknown> = {}
+      for (const key of [
+        "cod_allowed",
+        "fragile",
+        "frost_resistant",
+        "is_personalized",
+        "packaging_price",
+        "dimensions",
+        "backorder_note",
+      ]) {
+        if (metadata[key] !== undefined) copiedFlags[key] = metadata[key]
+      }
+      const optionTitle = product.options?.[0]?.title ?? "Provedení"
+      const created = await sdk.client.fetch<{ product: { id: string } }>(
+        `/admin/products`,
+        {
+          method: "POST",
+          body: {
+            title: `${product.title} (kopie)`,
+            subtitle: product.subtitle ?? undefined,
+            description: product.description ?? undefined,
+            material: product.material ?? undefined,
+            weight: product.weight ?? undefined,
+            length: product.length ?? undefined,
+            height: product.height ?? undefined,
+            width: product.width ?? undefined,
+            status: "draft",
+            collection_id: product.collection_id ?? undefined,
+            categories: (product.categories ?? []).map((category) => ({
+              id: category.id,
+            })),
+            ...(product.thumbnail ? { thumbnail: product.thumbnail } : {}),
+            images: (product.images ?? []).map((image) => ({ url: image.url })),
+            options: [
+              {
+                title: optionTitle,
+                values: (product.variants ?? []).map(
+                  (variant) => variant.title ?? "Standardní"
+                ),
+              },
+            ],
+            variants: (product.variants ?? []).map((variant) => ({
+              title: variant.title ?? "Standardní",
+              options: { [optionTitle]: variant.title ?? "Standardní" },
+              manage_inventory: true,
+              prices: (variant.prices ?? []).map((price) => ({
+                currency_code: price.currency_code,
+                amount: price.amount,
+              })),
+              ...(variant.metadata ? { metadata: variant.metadata } : {}),
+            })),
+            ...(Object.keys(copiedFlags).length
+              ? { metadata: copiedFlags }
+              : {}),
+          },
+        }
+      )
+      return created.product.id
+    },
+    onSuccess: (newId) => {
+      toast.success("Kopie založena jako koncept — jste na ní.")
+      navigate(`/produkt/${newId}`)
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Kopii se nepodařilo založit."
+      ),
+  })
+
   // Deleting is forever — orders keep their snapshots, but the piece is gone
   // from the catalogue. Archiv is the reversible sibling next door.
   const removeProduct = useMutation({
@@ -1165,6 +1243,14 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
             onClick={() => archive.mutate(!archived)}
           >
             {archived ? "Obnovit z archivu" : "Archivovat"}
+          </Button>
+          <Button
+            size="small"
+            variant="secondary"
+            isLoading={duplicateProduct.isPending}
+            onClick={() => duplicateProduct.mutate()}
+          >
+            Duplikovat
           </Button>
           {/* Rychlá sleva — na poškozené a výprodejové kusy, přímo z lišty. */}
           <Prompt>

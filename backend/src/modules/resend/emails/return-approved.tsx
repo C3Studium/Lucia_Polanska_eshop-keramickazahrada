@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface ReturnApprovedEmailProps {
   customerName?: string;
@@ -30,17 +31,18 @@ interface ReturnApprovedEmailProps {
  * výchozí hodnota by v ostrém e-mailu tvrdila, že se vrací něco jiného.
  */
 function ReturnApprovedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   returnNumber,
   approvedItems,
-  returnReason = "Požadavek zákazníka",
+  returnReason,
   returnMethod = "Zásilka na adresu ateliéru",
   returnDeadline = "30 dní od schválení",
-  returnAddress = "Ateliér Keramická zahrada, Písek",
+  returnAddress = "Keramická zahrada, Putim 229, 397 01 Písek",
   returnInstructions = "Přiložte prosím doklad o nákupu a objekty vraťte v původním balení",
-  orderLink = "https://keramickazahrada.cz",
+  orderLink = "",
 }: ReturnApprovedEmailProps) {
+  const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
       preview={`Vrácení k objednávce ${orderNumber} jsme schválili.`}
@@ -54,10 +56,10 @@ function ReturnApprovedEmailComponent({
         které kousky se vracejí, kam je poslat a dokdy.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
       {approvedItems ? <LedgerRow label="Objekty" value={approvedItems} /> : null}
-      <LedgerRow label="Důvod" value={returnReason} />
+      {returnReason ? <LedgerRow label="Důvod" value={returnReason} /> : null}
       <LedgerRow label="Způsob vrácení" value={returnMethod} />
       <LedgerRow label="Adresa" value={returnAddress} />
       <LedgerRow label="Lhůta" value={returnDeadline} strong tone="clay" />
@@ -68,9 +70,11 @@ function ReturnApprovedEmailComponent({
         na původní platební metodu.
       </Note>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         {returnInstructions}. Kousky prosím pečlivě zabalte, ať cestu zpět

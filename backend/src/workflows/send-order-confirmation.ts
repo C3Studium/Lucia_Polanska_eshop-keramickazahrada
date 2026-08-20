@@ -33,6 +33,11 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
         "item_subtotal",
         "item_total",
         "item_tax_total",
+        // How the order is being paid — the confirmation's „Platba" row.
+        // Dobírka in particular must say „zaplatíte při převzetí", or the
+        // customer stands at the door not knowing they owe money.
+        "payment_collections.payment_sessions.provider_id",
+        "payment_collections.payment_sessions.status",
       ],
       filters: {
         id
@@ -58,25 +63,48 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
 
     const notificationData = transform(
       { id, orders, balance },
-      ({ id, orders, balance }) => [
-        {
-          to: orders[0].email,
-          channel: "email",
-          template: "order-placed",
-          idempotency_key: `order-placed:${id}`,
-          data: {
-            order: orders[0],
-            balance_due: balance.outstanding,
-            balance_currency: balance.currency_code,
-            // Signed, so the customer can pay from the e-mail without an
-            // account. Absent when nothing is owed.
-            edit_order_url: accountOrderLink(id),
-            balance_payment_url: balance.outstanding > 0
-              ? balancePaymentUrl(id)
-              : null,
+      ({ id, orders, balance }) => {
+        // The payment sessions carry the provider id; the e-mail needs the
+        // customer's words for it. Cancelled sessions are leftovers of a
+        // switched payment method and say nothing about how this order pays.
+        const sessions = ((orders[0] as any).payment_collections ?? []).flatMap(
+          (collection: any) => collection?.payment_sessions ?? []
+        )
+        const providerIds = sessions
+          .filter((session: any) => session?.status !== "canceled")
+          .map((session: any) => String(session?.provider_id ?? ""))
+
+        const payment_method = providerIds.some((providerId: string) =>
+          providerId.startsWith("pp_dobirka")
+        )
+          ? "Dobírka — zaplatíte při převzetí"
+          : providerIds.some((providerId: string) =>
+                providerId.startsWith("pp_comgate")
+              )
+            ? "Online platba kartou"
+            : undefined
+
+        return [
+          {
+            to: orders[0].email,
+            channel: "email",
+            template: "order-placed",
+            idempotency_key: `order-placed:${id}`,
+            data: {
+              order: orders[0],
+              balance_due: balance.outstanding,
+              balance_currency: balance.currency_code,
+              ...(payment_method ? { payment_method } : {}),
+              // Signed, so the customer can pay from the e-mail without an
+              // account. Absent when nothing is owed.
+              edit_order_url: accountOrderLink(id),
+              balance_payment_url: balance.outstanding > 0
+                ? balancePaymentUrl(id)
+                : null,
+            },
           },
-        },
-      ]
+        ]
+      }
     )
 
     const notification = sendNotificationStep(notificationData)

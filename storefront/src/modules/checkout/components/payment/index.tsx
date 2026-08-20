@@ -14,6 +14,10 @@ import {
   toComgateOptionId,
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
+import {
+  readLastPaymentMethod,
+  rememberLastPaymentMethod,
+} from "@lib/util/payment-preference"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Text, clx } from "@medusajs/ui"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
@@ -114,6 +118,36 @@ const Payment = ({
     isComgate(method.id)
   )
 
+  /* The method this browser paid with last time, restored as a preselection
+     after mount (localStorage is client-only; gating the selector's render on
+     `restored` keeps server and client HTML identical). Only restored when the
+     stored method is actually on offer right now — dobírka/pickup ids pass
+     through `nonComgatePaymentMethods`, which already encodes their rules.
+     A session in flight always wins over the memory. */
+  const [restored, setRestored] = useState(false)
+  useEffect(() => {
+    setSelectedPaymentMethod((current: string) => {
+      if (current) return current
+      const stored = readLastPaymentMethod()
+      if (!stored) return current
+      if (isComgate(stored)) return hasComgate ? stored : current
+      return nonComgatePaymentMethods.some((provider) => provider.id === stored)
+        ? stored
+        : current
+    })
+    setRestored(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* No ComGate and exactly one other way to pay → no decision to make;
+     preselect it. The tile stays visible and the customer still confirms. */
+  useEffect(() => {
+    if (!restored || hasComgate || selectedPaymentMethod) return
+    if (nonComgatePaymentMethods.length === 1) {
+      setSelectedPaymentMethod(nonComgatePaymentMethods[0].id)
+    }
+  }, [restored, hasComgate, selectedPaymentMethod, nonComgatePaymentMethods])
+
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
   const paymentReady =
@@ -145,6 +179,8 @@ const Payment = ({
 
     setSelectedPaymentMethod(optionId)
     setError(null)
+    // The choice carried through to the recap — remember it for next time.
+    rememberLastPaymentMethod(optionId)
 
     const params = new URLSearchParams(searchParams)
     params.set("step", "review")
@@ -198,6 +234,7 @@ const Payment = ({
         }
       }
 
+      rememberLastPaymentMethod(selectedPaymentMethod)
       router.push(pathname + "?" + createQueryString("step", "review"), {
         scroll: false,
       })
@@ -257,16 +294,18 @@ const Payment = ({
                   ComGate's three as the fourth tile — and only when collection is the chosen
                   delivery, so a carrier shipment still sees exactly three. */}
               {hasComgate ? (
-                <ComgatePaymentSelector
-                  methods={comgateMethods}
-                  selectedOptionId={selectedPaymentMethod}
-                  onSelect={selectComgate}
-                  onConfirm={() => continueToReview(selectedPaymentMethod)}
-                  extraOptions={extraPaymentOptions}
-                  onSelectExtra={(id) => void setPaymentMethod(id)}
-                  disabled={isLoading}
-                  isSubmitting={isLoading}
-                />
+                restored && (
+                  <ComgatePaymentSelector
+                    methods={comgateMethods}
+                    selectedOptionId={selectedPaymentMethod}
+                    onSelect={selectComgate}
+                    onConfirm={() => continueToReview(selectedPaymentMethod)}
+                    extraOptions={extraPaymentOptions}
+                    onSelectExtra={(id) => void setPaymentMethod(id)}
+                    disabled={isLoading}
+                    isSubmitting={isLoading}
+                  />
+                )
               ) : (
                 nonComgatePaymentMethods.length > 0 && (
                   /* Fallback for a shop with no ComGate configured at all. */
@@ -304,11 +343,13 @@ const Payment = ({
                 Připravujeme platbu a otevíráme Comgate…
               </p>
             )}
-            <ErrorMessage
-              error={error}
-              data-testid="payment-method-error-message"
-            />
           </div>
+          {/* Outside the aria-live wrapper: ErrorMessage is its own
+              role="alert" region — nesting the two double-announced errors. */}
+          <ErrorMessage
+            error={error}
+            data-testid="payment-method-error-message"
+          />
 
           {(paidByGiftcard ||
             (selectedPaymentMethod && !isComgate(selectedPaymentMethod))) && (

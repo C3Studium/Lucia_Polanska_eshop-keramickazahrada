@@ -92,6 +92,21 @@ describe("notification payloads", () => {
     // other's retry.
     expect(email.idempotency_key).toBe("mn:new-order:order_1:email")
   })
+
+  it("routes the contact form's Reply-To through data.reply_to", () => {
+    // The Resend provider reads `data.reply_to` and sets the header, so the
+    // owner's „Odpovědět" answers the customer, not her own shop address.
+    const withReply = buildEmailNotification(
+      { ...input, replyTo: "jana@example.com" },
+      "owner@example.com"
+    )
+    expect((withReply.data as Record<string, unknown>).reply_to).toBe(
+      "jana@example.com"
+    )
+
+    const withoutReply = buildEmailNotification(input, "owner@example.com")
+    expect(withoutReply.data).not.toHaveProperty("reply_to")
+  })
 })
 
 describe("notifyMerchant", () => {

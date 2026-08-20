@@ -6,9 +6,10 @@ import {
 } from "@lib/data/express-cart"
 import { BundleProduct } from "@lib/data/products"
 import { convertToLocale } from "@lib/util/money"
+import { withCount } from "@lib/util/plurals"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import styles from "../style.module.scss"
@@ -54,6 +55,7 @@ export const Product = ({
   countryCode,
   onContinueAction,
 }: ProductProps) => {
+  const reduceMotion = useReducedMotion()
   const [quantity, setQuantity] = useState(1)
   const [selection, setSelection] = useState<Record<string, string>>({})
   const [bundleSelections, setBundleSelections] = useState<
@@ -140,7 +142,7 @@ export const Product = ({
     <div className={styles.productStep}>
       <motion.div
         className={styles.productPortrait}
-        initial={{ clipPath: "inset(0 0 100% 0)" }}
+        initial={reduceMotion ? false : { clipPath: "inset(0 0 100% 0)" }}
         animate={{ clipPath: "inset(0 0 0% 0)" }}
         transition={transition}
       >
@@ -162,7 +164,9 @@ export const Product = ({
       <div className={styles.productIdentity}>
         <div>
           <span className={styles.eyebrow}>
-            {bundle ? `${bundle.items.length} kusy dohromady` : "Váš výběr"}
+            {bundle
+              ? `${withCount(bundle.items.length, "kus", "kusy", "kusů")} dohromady`
+              : "Váš výběr"}
           </span>
           <h2>{bundle?.title || product.title}</h2>
         </div>
@@ -178,12 +182,19 @@ export const Product = ({
 
       {bundle ? (
         <div className={styles.bundleConfigurator}>
-          <div className={styles.bundleTabs} role="tablist">
+          {/* aria-pressed buttons, not tablist/tab: real tabs promise arrow-key
+              navigation + tabpanel wiring these don't have. The name comes from
+              the product title — the visible content is only a photo + number. */}
+          <div
+            className={styles.bundleTabs}
+            role="group"
+            aria-label="Kusy v sadě"
+          >
             {bundle.items.map((item, index) => (
               <button
                 type="button"
-                role="tab"
-                aria-selected={activeBundleItem === index}
+                aria-pressed={activeBundleItem === index}
+                aria-label={`${index + 1}. ${item.product.title || "kus sady"}`}
                 data-active={activeBundleItem === index}
                 onClick={() => setActiveBundleItem(index)}
                 key={item.id}
@@ -209,9 +220,9 @@ export const Product = ({
               <motion.div
                 className={styles.bundleItem}
                 key={activeItem.id}
-                initial={bundleItemInitial}
+                initial={reduceMotion ? reducedInitial : bundleItemInitial}
                 animate={animate}
-                exit={exit}
+                exit={reduceMotion ? reducedExit : exit}
                 transition={transition2}
               >
                 <span className={styles.eyebrow}>Upravujete</span>
@@ -338,6 +349,9 @@ const transition = { duration: .8, ease: [0.76, 0, 0.24, 1] as [number, number, 
 const bundleItemInitial = { opacity: 0, x: 14 }
 const animate = { opacity: 1, x: 0 }
 const exit = { opacity: 0, x: -10 }
+/* Reduced motion: crossfade without the sideways travel. */
+const reducedInitial = { opacity: 0 }
+const reducedExit = { opacity: 0 }
 const transition2 = { duration: .35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
 const initial2 = { opacity: 0, y: -4 }
 const animate2 = { opacity: 1, y: 0 }

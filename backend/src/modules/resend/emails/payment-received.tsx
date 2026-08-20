@@ -10,6 +10,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface PaymentReceivedEmailProps {
   customerName?: string;
@@ -19,13 +20,19 @@ interface PaymentReceivedEmailProps {
   orderLink?: string;
 }
 
+/**
+ * Řádky se vykreslí jen s reálnými daty — vymyšlená výchozí částka by
+ * v ostrém e-mailu potvrzovala jiné peníze, než dorazily.
+ */
 function PaymentReceivedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  paymentAmount = "2 450 Kč",
-  paymentMethod = "Kreditní karta",
-  orderLink = "https://keramickazahrada.cz"
+  customerName,
+  orderNumber = "",
+  paymentAmount,
+  paymentMethod,
+  orderLink = ""
 }: PaymentReceivedEmailProps) {
+  const orderUrl = orderLink || storeLink()
+
   return (
     <EmailLayout preview={`Platbu za objednávku ${orderNumber} jsme v pořádku přijali.`}>
       <Eyebrow>Platba</Eyebrow>
@@ -38,14 +45,20 @@ function PaymentReceivedEmailComponent({
         další zprávu.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Způsob platby" value={paymentMethod} />
-      <LedgerRow label="Částka" value={paymentAmount} strong tone="olive" />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {paymentMethod ? (
+        <LedgerRow label="Způsob platby" value={paymentMethod} />
+      ) : null}
+      {paymentAmount ? (
+        <LedgerRow label="Částka" value={paymentAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderUrl ? (
+        <ButtonRow>
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Stav objednávky můžete kdykoli sledovat ve svém účtu na našem webu.

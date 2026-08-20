@@ -8,6 +8,12 @@ type OrderStateShellProps = {
   accent?: string
   description: string
   status?: "pending" | "success" | "canceled"
+  /**
+   * The small uppercase line above the heading. Defaults to the order-flow
+   * copy this shell was born with; pages that are not about an order (the
+   * newsletter landing) pass their own.
+   */
+  kicker?: string
   primary?: {
     href: string
     label: string
@@ -25,6 +31,7 @@ export default function OrderStateShell({
   accent,
   description,
   status = "success",
+  kicker,
   primary,
   secondary,
   children,
@@ -46,11 +53,12 @@ export default function OrderStateShell({
 
         <div className={s.copy}>
           <p className={s.kicker}>
-            {status === "pending"
-              ? "Objednávku právě dokončujeme"
-              : status === "success"
-                ? "Objednávku máme"
-                : "Objednávka se nedokončila"}
+            {kicker ??
+              (status === "pending"
+                ? "Objednávku právě dokončujeme"
+                : status === "success"
+                  ? "Objednávku máme"
+                  : "Objednávka se nedokončila")}
           </p>
           <h1>
             {title}

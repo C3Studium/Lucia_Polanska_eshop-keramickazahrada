@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { client } from "../../../../sanity/lib/client"
 import { listCollections } from "@lib/data/collections"
+import { listCourseTerms } from "@lib/data/courses"
 import { getRegion } from "@lib/data/regions"
 
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
@@ -21,10 +22,11 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const [region, { collections }, kurzyIntroData] = await Promise.all([
+  const [region, { collections }, kurzyIntroData, terms] = await Promise.all([
     getRegion(countryCode),
     listCollections({ fields: "id, handle, title" }),
     client.fetch<KurzyIntroData>('*[_type == "kurzyIntro"][0]'),
+    listCourseTerms(),
   ])
 
   if (!collections || !region) {
@@ -34,7 +36,7 @@ export default async function Home(props: {
   return (
     <>
       <ScrollToTopOnReload />
-      <Kurzy introData={kurzyIntroData} />
+      <Kurzy introData={kurzyIntroData} terms={terms} />
     </>
   )
 }

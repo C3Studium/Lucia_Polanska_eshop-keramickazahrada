@@ -146,5 +146,9 @@ const queryClient = new QueryClient();
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );
-export const config = defineRouteConfig({ label: "Dovolená a oznámení", icon: Calendar });
+export const config = defineRouteConfig({
+  label: "Dovolená a oznámení",
+  icon: Calendar,
+  rank: 100,
+});
 export default Page;

@@ -124,9 +124,11 @@
 
 .kicker,
 .controlLabel {
+  /* Column headings of the price table (Množství / Cena za kus / Celkem) —
+     .46 was 4:1 on the dark stage at 12px. */
   display: block;
   margin: 0 0 12px;
-  color: rgba(255,232,214,.46);
+  color: rgba(255,232,214,.62);
   font: 400 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -155,7 +157,7 @@
   flex-wrap: wrap;
   gap: 6px 18px;
   margin-top: 16px;
-  color: rgba(255,232,214,.5);
+  color: rgba(255,232,214,.62);
   font: 300 13px/1.4 "Sansation-Light", sans-serif;
 }
 
@@ -243,11 +245,11 @@
 .previewQtyRow {
   display: flex;
   gap: 5px;
-  color: rgba(255,232,214,.5);
+  color: rgba(255,232,214,.62);
   font-size: 13px;
 }
 
-.muted { color: rgba(255,232,214,.5); }
+.muted { color: rgba(255,232,214,.62); }
 .mobileControls { display: none; }
 
 .previewRow {

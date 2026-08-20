@@ -129,6 +129,9 @@ export default async function ProductPage(props: Props) {
   // Check if user is authenticated
   const customer = await retrieveCustomer()
   const isAuthenticated = !!customer
+  /* Address presence decides whether „Koupit ihned" may appear — the express
+     buy-now path needs somewhere to deliver before it can skip the form. */
+  const hasSavedAddress = (customer?.addresses?.length ?? 0) > 0
 
    // @ts-ignore 
   const pricedProduct = await listProducts({
@@ -226,6 +229,7 @@ export default async function ProductPage(props: Props) {
         categories={productCategories}
         wishlistItems={wishlistItems}
         isAuthenticated={isAuthenticated}
+        hasSavedAddress={hasSavedAddress}
         productionProfile={productionProfile}
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}

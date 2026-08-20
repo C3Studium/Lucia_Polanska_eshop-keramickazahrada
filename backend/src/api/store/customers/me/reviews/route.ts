@@ -63,7 +63,6 @@ export async function GET(
       }
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.log("[Reviews][GET me] failed to fetch products for enrichment", e)
     }
   }
 
@@ -73,6 +72,5 @@ export async function GET(
   }))
 
   // eslint-disable-next-line no-console
-  console.log("[Reviews][GET me] actor:", customerId, "count:", count, "returned:", enriched.length)
   return res.json({ reviews: enriched, count, limit: take, offset: skip })
 }

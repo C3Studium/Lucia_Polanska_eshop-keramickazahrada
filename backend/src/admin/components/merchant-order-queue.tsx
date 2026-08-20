@@ -61,6 +61,9 @@ export type MerchantOrder = {
 
   /** Collected in person at the workshop, paid at the counter. */
   is_personal_pickup: boolean;
+
+  /** Money owed back after a customer edit — the „Vrátit rozdíl" button. */
+  refund_due: { amount: number; currency_code: string; reason?: string } | null;
 };
 
 export type MerchantOrdersResponse = {
@@ -339,6 +342,28 @@ export const OrderRow = ({
     },
   });
 
+  // The one click the customer-edit flow promised: card money goes back via
+  // ComGate, cash flows get recorded for a manual return — either way the debt
+  // clears and the customer gets the e-mail.
+  const refundDifference = useMutation<{ message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(
+        `/admin/merchant-orders/${order.order_id}/refund-difference`,
+        { method: "POST" }
+      ),
+    onSuccess: async (result) => {
+      setLastFailure(null);
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      toast.success(result?.message ?? "Rozdíl byl vrácen.");
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Vrácení se nepodařilo";
+      setLastFailure(message);
+      toast.error(message);
+    },
+  });
+
   const pickup = useMutation({
     mutationFn: () =>
       sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
@@ -423,6 +448,24 @@ export const OrderRow = ({
           <Text size="small" className="text-ui-fg-subtle mt-1">
             Čeká na ruční podání zásilky.
           </Text>
+        )}
+        {order.refund_due && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Text size="small" className="text-ui-tag-orange-text">
+              K vrácení: {order.refund_due.amount}{" "}
+              {order.refund_due.currency_code === "czk"
+                ? "Kč"
+                : order.refund_due.currency_code.toUpperCase()}
+            </Text>
+            <Button
+              size="small"
+              variant="secondary"
+              isLoading={refundDifference.isPending}
+              onClick={() => refundDifference.mutate()}
+            >
+              Vrátit rozdíl
+            </Button>
+          </div>
         )}
         {lastFailure && (
           <Text size="small" className="text-ui-fg-error mt-1">

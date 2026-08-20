@@ -1,12 +1,16 @@
 "use client"
 
-import { isManual, isComgate } from "@lib/constants"
+import {
+  isComgate,
+  isDobirkaPayment,
+  isManual,
+  isPickupPayment,
+} from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 // Button from @medusajs/ui replaced with local ClickButton
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
-import { redirect } from "next/navigation"
 import styles from "./style.module.scss"
 import { useFormStatus } from "react-dom"
 
@@ -16,12 +20,16 @@ type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
   "data-testid": string,
   countryCode: string
+  /** Runs right before the order is placed — the consent record, for paths
+      that never touch the gateway. */
+  onBeforePlaceAction?: () => Promise<void>
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   countryCode,
   "data-testid": dataTestId,
+  onBeforePlaceAction,
 }) => {
   const notReady =
     !cart ||
@@ -34,9 +42,35 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   switch (true) {
     case isManual(paymentSession?.provider_id):
       return (
-        <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
+        <DirectPlaceOrderButton
+          notReady={notReady}
+          label="Potvrdit objednávku"
+          onBeforePlaceAction={onBeforePlaceAction}
+          data-testid={dataTestId}
+        />
       )
-      case isComgate(paymentSession?.provider_id):
+    /* Osobní odběr and dobírka collect the money at the counter / at the door —
+       the order simply completes here. Before this branch existed both fell
+       into `default` and the checkout dead-ended on „Nejdřív vyberte platbu". */
+    case isPickupPayment(paymentSession?.provider_id):
+      return (
+        <DirectPlaceOrderButton
+          notReady={notReady}
+          label="Potvrdit — zaplatíte při vyzvednutí"
+          onBeforePlaceAction={onBeforePlaceAction}
+          data-testid={dataTestId}
+        />
+      )
+    case isDobirkaPayment(paymentSession?.provider_id):
+      return (
+        <DirectPlaceOrderButton
+          notReady={notReady}
+          label="Potvrdit — zaplatíte při převzetí"
+          onBeforePlaceAction={onBeforePlaceAction}
+          data-testid={dataTestId}
+        />
+      )
+    case isComgate(paymentSession?.provider_id):
       return (
         <ComgatePaymentButton
           notReady={notReady}
@@ -52,39 +86,48 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   }
 }
 
-const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
+const DirectPlaceOrderButton = ({
+  notReady,
+  label,
+  onBeforePlaceAction,
+  "data-testid": dataTestId,
+}: {
+  notReady: boolean
+  label: string
+  onBeforePlaceAction?: () => Promise<void>
+  "data-testid"?: string
+}) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const onPaymentCompleted = async () => {
-    await placeOrder()
-      .catch((err) => {
-        setErrorMessage(err.message)
-      })
-      .finally(() => {
-        setSubmitting(false)
-      })
-  }
-
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (submitting) return
     setSubmitting(true)
-
-    onPaymentCompleted()
+    setErrorMessage(null)
+    try {
+      await onBeforePlaceAction?.()
+      await placeOrder()
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Objednávku se nepodařilo dokončit."
+      )
+      setSubmitting(false)
+    }
   }
 
   return (
     <div className={styles.root} style={styleObj}>
       <ClickButton
         className={styles.button}
-        text="Potvrdit objednávku"
+        text={submitting ? "Odesíláme…" : label}
         onClickAction={handlePayment}
-        disabled={notReady}
-        data-testid="submit-order-button"
+        disabled={notReady || submitting}
+        data-testid={dataTestId ?? "submit-order-button"}
       />
       <div className={styles.errorWrap}>
         <ErrorMessage
           error={errorMessage}
-          data-testid="manual-payment-error-message"
+          data-testid="direct-payment-error-message"
         />
       </div>
     </div>
@@ -100,18 +143,17 @@ const ComgatePaymentButton = ({
   notReady: boolean
   "data-testid"?: string
 }) => {
-  const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const session = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
-  const country_code = cart?.shipping_address?.country_code?.toLowerCase?.()
 
+  /* Only a real gateway URL counts. The old fallback used `session.provider_id`
+     as the redirect target — the customer's browser navigated to the literal
+     string „pp_comgate_comgate". */
   const redirectUrl: string | undefined =
     typeof session?.data?.redirectUrl === "string"
       ? session.data.redirectUrl
-      : typeof session?.provider_id === "string"
-      ? session.provider_id
       : undefined
 
   const handlePayment = () => {
@@ -121,20 +163,9 @@ const ComgatePaymentButton = ({
       )
       return
     }
-
-    // Otevře URL v novém okně, nebo můžeš redirectnout přímo
+    // The gateway takes over from here; it returns the customer to the
+    // cart/[id]/confirmed|canceled|pending pages by itself.
     window.location.href = redirectUrl
-
-    if (window.addEventListener) {
-        window.addEventListener('message', async function (e) {
-            // validace, že message obsahuje data
-            if (!e || !(e !== null && e !== void 0 && e.data)) return;
-            const { status } = e.data;
-            if (!['PAID', 'AUTHORIZED'].includes(status)) {
-                redirect(`/${country_code}/cart/${cart.id}/canceled`)
-            }
-        }, false);
-    }
   }
 
   return (

@@ -42,7 +42,7 @@ const getCartMetadataStep = createStep(
 
       return new StepResponse(updatedMetadata)
     } catch (error: any) {
-      console.log("error ve workflow:", error)
+      console.warn("packeta-workflow: metadata write failed", error)
       throw error
     }
   }

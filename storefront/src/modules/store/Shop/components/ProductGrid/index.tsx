@@ -34,9 +34,9 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
   if (loadError && !products.length) {
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo} role="alert">
-        <span>Něco se zaseklo</span>
-        <h2>Výrobky se nepovedlo načíst.</h2>
-        <p>Co jste si nastavili, jsme nezahodili. Zkuste to načíst znovu, nebo se vraťte na celou nabídku.</p>
+        <span>Načítání se nepovedlo</span>
+        <h2>Výrobky se nepodařilo načíst.</h2>
+        <p>Vaše nastavené filtry zůstávají. Zkuste stránku načíst znovu, nebo se vraťte na celou nabídku.</p>
         <div className={styles.emptyActions}>
           <button type="button" onClick={onRetry}>Načíst znovu <i>↻</i></button>
           <button type="button" onClick={onReset}>Zrušit filtry <i>→</i></button>
@@ -49,8 +49,8 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo}>
         <span>Nic jsme nenašli</span>
-        <h2>Zkuste to s méně filtry.</h2>
-        <p>Takhle úzkému zadání nic neodpovídá. Zrušte filtry a podívejte se na všechno.</p>
+        <h2>Zkuste ubrat filtry.</h2>
+        <p>Tomuto výběru neodpovídá žádný výrobek. Zrušte filtry a podívejte se na celou nabídku.</p>
         <button type="button" onClick={onReset}>Zobrazit všechno <i>→</i></button>
       </motion.div>
     )

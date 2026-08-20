@@ -4,7 +4,9 @@
    checkout shows it as the decision being made. Only the framing differs. */
 .root,
 .rootCart {
-  --commission-accent: #c2601f;
+  /* Was #c2601f — 3.6:1 as 12px text on cream and 4.2:1 under the white
+     label of the selected preset. Same burnt-orange voice, AA on both. */
+  --commission-accent: #a04e18;
 
   display: flex;
   flex-direction: column;
@@ -137,8 +139,8 @@
   display: flex;
   justify-content: space-between;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.78rem;
-  opacity: 0.62;
+  font-size: 0.8125rem;
+  opacity: 0.78;
 }
 
 .exact {
@@ -148,10 +150,10 @@
 
 .exact > label {
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.62;
+  opacity: 0.78;
 }
 
 .exactField {
@@ -172,8 +174,9 @@
   text-align: right;
 
   &:focus-visible {
+    /* No `outline: none`: the global focus ring stays — this is the field
+       where the customer types an exact amount of money. */
     border-color: rgba(32, 33, 28, 0.6);
-    outline: none;
   }
 
   &:disabled {
@@ -189,8 +192,8 @@
 .exactHint {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.78rem;
-  opacity: 0.62;
+  font-size: 0.8125rem;
+  opacity: 0.78;
 }
 
 .presets {
@@ -201,14 +204,14 @@
 
 .preset,
 .presetActive {
-  padding: 0.45rem 0.95rem;
+  padding: 0.6rem 1.05rem;
   border: 1px solid rgba(32, 33, 28, 0.28);
   border-radius: 999px;
   background: transparent;
   color: inherit;
   cursor: pointer;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.9375rem;
   transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 
   &:hover:not(:disabled) {

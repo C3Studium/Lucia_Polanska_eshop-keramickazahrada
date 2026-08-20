@@ -31,6 +31,46 @@ export interface MinioFileProviderOptions {
 const DEFAULT_BUCKET = 'medusa-media'
 
 /**
+ * Undo a UTF-8 name that was read as latin1 — „dárkový" arriving as „dÃ¡rkovÃ½".
+ *
+ * Medusa's /admin/uploads parses the multipart body with busboy's default
+ * charset, so every filename with a Czech letter reaches the provider mangled.
+ * Re-reading those bytes as UTF-8 restores the name; if the result does not
+ * round-trip (the name was never mojibake), the original is kept untouched.
+ */
+const repairMojibake = (name: string): string => {
+  if (!/[\u00c0-\u00ff]/.test(name)) return name
+  try {
+    const repaired = Buffer.from(name, 'latin1').toString('utf8')
+    if (repaired.includes('\ufffd')) return name
+    return Buffer.from(repaired, 'utf8').toString('latin1') === name
+      ? repaired
+      : name
+  } catch {
+    return name
+  }
+}
+
+/** Diacritics folded away, everything else that is not ASCII replaced. */
+const toAscii = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7e]/g, '_')
+
+/**
+ * A filename an S3 key, a URL and a human can all live with: ASCII, lowercase,
+ * single dashes, no spaces. Names that fold away to nothing (all-emoji, all-CJK)
+ * still get a key, because the ulid that follows makes it unique either way.
+ */
+const slugifyFilename = (value: string): string =>
+  toAscii(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'soubor'
+
+/**
  * Service to handle file storage using MinIO.
  */
 class MinioFileProviderService extends AbstractFileProviderService {
@@ -159,8 +199,19 @@ class MinioFileProviderService extends AbstractFileProviderService {
     }
 
     try {
-      const parsedFilename = path.parse(file.filename)
-      const fileKey = `${parsedFilename.name}-${ulid()}${parsedFilename.ext}`
+      const originalName = repairMojibake(file.filename)
+      const parsedFilename = path.parse(originalName)
+      /*
+       * The object key is built from a slug, not from the name as typed. Two
+       * things went wrong when it was not: Medusa's upload route decodes the
+       * multipart filename as latin1, so „dárkový poukaz.jpg" reached us as
+       * „dÃ¡rkovÃ½ poukaz.jpg" and that mojibake became the key; and the spaces
+       * survived into the URL we hand back, which then has to be percent-encoded
+       * by every consumer to work at all. Both were visible on the collection
+       * photos uploaded in admin Rozdělení. `repairMojibake` above undoes the
+       * latin1 misread first, so the slug comes out of the real Czech name.
+       */
+      const fileKey = `${slugifyFilename(parsedFilename.name)}-${ulid()}${parsedFilename.ext.toLowerCase()}`
       /*
        * Medusa's own /admin/uploads route hands `content` over base64-encoded —
        * decoding it as 'binary' (latin1) stored the base64 TEXT verbatim, which
@@ -180,16 +231,15 @@ class MinioFileProviderService extends AbstractFileProviderService {
           'Content-Type': file.mimeType,
           // S3 signs metadata headers as ASCII — a Czech filename („růže.jpg")
           // made every such upload fail with a signature mismatch.
-          'x-amz-meta-original-filename': file.filename
-            .normalize('NFD')
-            .replace(/[̀-ͯ]/g, '')
-            .replace(/[^\x20-\x7e]/g, '_'),
+          'x-amz-meta-original-filename': toAscii(originalName),
           'x-amz-acl': 'public-read'
         }
       )
 
-      // Generate URL using the endpoint and bucket
-      const url = `https://${this.config_.endPoint}/${this.bucket}/${fileKey}`
+      // Generate URL using the endpoint and bucket. The key is already
+      // URL-safe, but encoding it keeps the promise explicit: what we return
+      // is a URL that can be used as-is.
+      const url = `https://${this.config_.endPoint}/${this.bucket}/${encodeURIComponent(fileKey)}`
 
       this.logger_.info(`Successfully uploaded file ${fileKey} to MinIO bucket ${this.bucket}`)
 

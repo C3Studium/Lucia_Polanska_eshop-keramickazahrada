@@ -40,6 +40,7 @@ const ORDER_FIELDS = [
   "payment_collections.status",
   "payment_collections.amount",
   "payment_collections.captured_amount",
+  "payment_collections.payments.provider_id",
   "payment_collections.refunded_amount",
 ]
 

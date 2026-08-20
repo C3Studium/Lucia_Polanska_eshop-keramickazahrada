@@ -14,13 +14,14 @@ type ProductTemplateProps = {
   categories?: HttpTypes.StoreProductCategory[]
   wishlistItems?: any[]
   isAuthenticated?: boolean
+  hasSavedAddress?: boolean
   initialRating?: number
   initialCount?: number
   bundle?: BundleProduct
   isBundlePreview?: boolean
 }
 
-const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, initialRating, initialCount, bundle, isBundlePreview, productionProfile }) => {
+const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, hasSavedAddress, initialRating, initialCount, bundle, isBundlePreview, productionProfile }) => {
 
     // If the product is not found return not found page
     if (!product || !product.id) {
@@ -35,7 +36,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
             data-scroll-section
             data-scroll-label="Výrobek"
         >
-            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} />
+            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} hasSavedAddress={hasSavedAddress} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} />
         </section>
     )
 }

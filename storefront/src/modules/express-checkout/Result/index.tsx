@@ -3,7 +3,7 @@
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import styles from "./style.module.scss"
@@ -60,6 +60,7 @@ export default function ExpressResult({
   order?: HttpTypes.StoreOrder
 }) {
   const router = useRouter()
+  const reduceMotion = useReducedMotion()
   const content = copy[status]
   const retryPath = productHandle
     ? `/${countryCode}/express-checkout/${productHandle}?step=payment`
@@ -69,7 +70,7 @@ export default function ExpressResult({
     <main className={styles.root} data-status={status}>
       <motion.div
         className={styles.mark}
-        initial={initial}
+        initial={reduceMotion ? false : initial}
         animate={animate}
         transition={transition}
       >
@@ -81,7 +82,7 @@ export default function ExpressResult({
 
       <motion.div
         className={styles.copy}
-        initial={initial2}
+        initial={reduceMotion ? false : initial2}
         animate={animate2}
         transition={transition2}
       >
@@ -96,7 +97,7 @@ export default function ExpressResult({
       {order && (
         <motion.section
           className={styles.receipt}
-          initial={initial3}
+          initial={reduceMotion ? false : initial3}
           animate={animate2}
           transition={transition3}
         >

@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import CreateBundledProduct from "../../components/create-bundled-product";
 import DeleteBundledProduct from "../../components/delete-bundled-product";
 import UpdateBundledProduct from "../../components/update-bundled-product";
+import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
 type BundledProduct = {
@@ -62,18 +63,6 @@ const ItemThumb = ({
     )}
   </div>
 );
-
-const formatDate = (value?: string) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return new Intl.DateTimeFormat("cs-CZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-};
 
 const getAdminProductHref = (productId: string) => {
   if (typeof window === "undefined") {

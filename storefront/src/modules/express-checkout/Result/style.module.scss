@@ -40,13 +40,13 @@
   place-items: center;
   border-radius: 50%;
   color: #fff1e5;
-  background: #7e896b;
+  background: #596248; /* was #7e896b — 3.3:1 with the glyph; now 5.8:1 */
   font: 400 16px/1 "Sansation-Regular", sans-serif;
 }
 
 .root[data-status="failed"] .mark strong,
 .root[data-status="canceled"] .mark strong {
-  background: #9d6258;
+  background: #8a5147; /* was #9d6258 — 4.4:1; now 5.7:1 */
 }
 
 .copy {
@@ -54,7 +54,7 @@
 }
 
 .eyebrow {
-  color: rgba(32, 33, 28, .52);
+  color: rgba(32, 33, 28, .66);
   font: 600 12px/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -80,8 +80,10 @@
 .copy p {
   max-width: 42ch;
   margin: 0 auto;
-  color: rgba(32, 33, 28, .62);
-  font: 400 14px/1.55 "Sansation-Regular", sans-serif;
+  /* The one sentence that says what happened to the customer's money —
+     body floor and AA contrast, not caption-and-atmosphere. */
+  color: rgba(32, 33, 28, .7);
+  font: 400 16px/1.55 "Sansation-Regular", sans-serif;
 }
 
 .receipt {
@@ -103,7 +105,7 @@
 }
 
 .receiptHeader span:last-child {
-  color: rgba(32, 33, 28, .5);
+  color: rgba(32, 33, 28, .66);
 }
 
 .item {
@@ -133,7 +135,7 @@
 }
 
 .item small {
-  color: rgba(32, 33, 28, .55);
+  color: rgba(32, 33, 28, .66);
   font: 400 13px/1.3 "Sansation-Regular", sans-serif;
 }
 
@@ -162,11 +164,11 @@
 }
 
 .secondary {
-  padding: 3px;
+  padding: 8px 3px;
   border: 0;
   border-bottom: 1px solid currentColor;
-  color: rgba(32, 33, 28, .65);
+  color: rgba(32, 33, 28, .72);
   background: transparent;
   cursor: pointer;
-  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 15px/1.2 "Sansation-Regular", sans-serif;
 }

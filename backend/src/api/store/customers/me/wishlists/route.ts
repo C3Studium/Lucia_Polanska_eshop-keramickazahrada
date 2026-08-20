@@ -7,18 +7,12 @@ export async function POST(
   res: MedusaResponse
 ) {
   // Debug logging
-  console.log("[Wishlist POST] auth_context:", req.auth_context)
-  console.log("[Wishlist POST] actor_id:", req.auth_context?.actor_id)
-  console.log("[Wishlist POST] publishable_key_context:", req.publishable_key_context)
-  console.log("[Wishlist POST] sales_channel_ids:", req.publishable_key_context?.sales_channel_ids)
 
   if (!req.auth_context?.actor_id) {
-    console.log("[Wishlist POST] No actor_id, returning 401")
     return res.status(401).json({ message: "Unauthorized" })
   }
 
   if (!req.publishable_key_context?.sales_channel_ids.length) {
-    console.log("[Wishlist POST] No sales_channel_ids")
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
       "At least one sales channel ID is required to be associated with the publishable API key in the request header."
@@ -32,7 +26,6 @@ export async function POST(
       }
     })
 
-  console.log("[Wishlist POST] Success, created wishlist")
   res.json({
     wishlist: result.wishlist
   })
@@ -43,12 +36,8 @@ export async function GET(
   res: MedusaResponse
 ) {
   // Debug logging
-  console.log("[Wishlist GET] auth_context:", req.auth_context)
-  console.log("[Wishlist GET] actor_id:", req.auth_context?.actor_id)
-  console.log("[Wishlist GET] Authorization header:", req.headers.authorization?.substring(0, 30) + "...")
 
   if (!req.auth_context?.actor_id) {
-    console.log("[Wishlist GET] No actor_id, returning 401")
     return res.status(401).json({ message: "Unauthorized" })
   }
 
@@ -63,14 +52,12 @@ export async function GET(
   })
 
   if (!data.length) {
-    console.log("[Wishlist GET] No wishlist found for customer:", req.auth_context.actor_id)
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "No wishlist found for customer"
     )
   }
 
-  console.log("[Wishlist GET] Success, found wishlist with", data[0]?.items?.length || 0, "items")
   return res.json({
     wishlist: data[0]
   })

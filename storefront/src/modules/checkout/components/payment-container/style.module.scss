@@ -88,7 +88,7 @@
 
   .category {
     margin: 0 0 0.28rem;
-    color: rgba(32, 33, 28, 0.48);
+    color: rgba(32, 33, 28, 0.66);
     font: 600 0.75rem/1 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -104,9 +104,11 @@
   }
 
   .detail {
+    /* "Visa, Mastercard a další…" / "Zaplatíte na místě" — decides the
+       method choice, so caption size and AA alpha. */
     margin: 0;
-    color: rgba(32, 33, 28, 0.58);
-    font: 300 0.82rem/1.35 "Sansation-Light", sans-serif;
+    color: rgba(32, 33, 28, 0.68);
+    font: 300 0.875rem/1.35 "Sansation-Light", sans-serif;
   }
 
   .aside {

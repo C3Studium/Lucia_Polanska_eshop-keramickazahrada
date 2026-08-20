@@ -45,6 +45,13 @@ const sections: LegalSectionData[] = [
     ],
   },
   {
+    id: "novinky-e-mailem",
+    title: "Novinky e-mailem",
+    paragraphs: [
+      "Pokud jste se přihlásili k odběru novinek, u rozeslaných e-mailů měříme jejich otevření a kliknutí na odkazy, abychom zlepšovali jejich obsah — odhlášením z odběru toto měření končí.",
+    ],
+  },
+  {
     id: "sdileni",
     title: "Sdílíme vaše údaje?",
     paragraphs: [

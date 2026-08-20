@@ -12,29 +12,37 @@ import {
   Signature,
 } from "../components/email-ui"
 import { CarrierDamageWarning } from "../components/carrier-damage"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderShipmentEmailProps {
   customerName?: string;
   orderNumber?: string;
   trackingNumber?: string;
   carrierName?: string;
+  /** Only when somebody actually promised one — no fabricated estimate. */
   estimatedDelivery?: string;
   trackingLink?: string;
   orderLink?: string;
 }
 
+/**
+ * Sledování, dopravce i odhad doručení se vykreslí jen s reálnými daty —
+ * dřívější výchozí hodnoty („CZ123456789", „2-3 pracovní dny") by v ostrém
+ * e-mailu tvrdily číslo zásilky a termín, které nikdo neslíbil.
+ */
 function OrderShipmentEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  trackingNumber = "CZ123456789",
-  carrierName = "Česká pošta",
-  estimatedDelivery = "2-3 pracovní dny",
-  trackingLink = "https://www.postaonline.cz/trackandtrace/-/zasilka/cislo?parcelNumbers=CZ123456789",
-  orderLink = "https://keramickazahrada.cz/orders/12345"
+  customerName,
+  orderNumber = "",
+  trackingNumber,
+  carrierName,
+  estimatedDelivery,
+  trackingLink = "",
+  orderLink = ""
 }: OrderShipmentEmailProps) {
   // Subscriber may pass empty strings when the carrier runs in record-only
   // mode — then the e-mail goes without the tracking row and button.
   const hasTracking = Boolean(trackingLink)
+  const orderUrl = orderLink || storeLink()
 
   return (
     <EmailLayout
@@ -49,12 +57,14 @@ function OrderShipmentEmailComponent({
         ručně, aby k vám dorazil tak, jak opustil ateliér.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Dopravce" value={carrierName} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {carrierName ? <LedgerRow label="Dopravce" value={carrierName} /> : null}
       {trackingNumber ? (
         <LedgerRow label="Číslo zásilky" value={trackingNumber} strong />
       ) : null}
-      <LedgerRow label="Odhad doručení" value={estimatedDelivery} />
+      {estimatedDelivery ? (
+        <LedgerRow label="Odhad doručení" value={estimatedDelivery} />
+      ) : null}
       <LedgerEnd />
 
       <Note tone="olive">Křehké objekty cestují v ochranném balení.</Note>
@@ -67,14 +77,18 @@ function OrderShipmentEmailComponent({
         {hasTracking ? (
           <>
             <EmailButton href={trackingLink}>Sledovat zásilku</EmailButton>
-            <span style={{ display: "inline-block", width: "12px" }} />
-            <EmailButton href={orderLink} variant="ghost">
-              Zobrazit objednávku
-            </EmailButton>
+            {orderUrl ? (
+              <>
+                <span style={{ display: "inline-block", width: "12px" }} />
+                <EmailButton href={orderUrl} variant="ghost">
+                  Zobrazit objednávku
+                </EmailButton>
+              </>
+            ) : null}
           </>
-        ) : (
-          <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-        )}
+        ) : orderUrl ? (
+          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        ) : null}
       </ButtonRow>
 
       <P small>

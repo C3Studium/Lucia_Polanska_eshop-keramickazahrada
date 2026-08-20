@@ -7,6 +7,7 @@ import { z } from "@medusajs/framework/zod"
 import { productLink } from "../../../../lib/customer-email"
 import { sendCampaign } from "../../../../lib/newsletter-campaign"
 import { presentBundle } from "../../../../modules/bundled-product/presentation"
+import { requireWorkingUnsubscribe } from "../campaigns/route"
 
 /**
  * Announces one bundle to every active subscriber.
@@ -38,6 +39,11 @@ export async function POST(
   res: MedusaResponse
 ) {
   const payload = (req.validatedBody || req.body) as PostAnnounceBundle
+
+  // A bundle announcement to the subscriber list is obchodní sdělení like any
+  // other campaign — without a working unsubscribe link it must not exist.
+  requireWorkingUnsubscribe()
+
   const query = req.scope.resolve("query")
 
   // The shop sells in CZK; prefer the CZK region, fall back to the first.

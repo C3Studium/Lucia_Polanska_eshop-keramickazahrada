@@ -1,4 +1,4 @@
-import { Column, Img, Row, Section, Text } from "@react-email/components"
+import { Column, Img, Link, Row, Section, Text } from "@react-email/components"
 import {
   brand,
   ButtonRow,
@@ -13,6 +13,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { NEWSLETTER_SENDER } from "./newsletter-blocks"
 
 type BundlePublishedEmailProps = {
   bundle: {
@@ -36,9 +37,17 @@ type BundlePublishedEmailProps = {
     first_name?: string
     email: string
   }
+  /**
+   * Per-recipient signed unsubscribe URL. Present on every newsletter fan-out
+   * (`lib/newsletter-campaign.ts` builds it and the announce route refuses to
+   * send without it) — a bundle announcement to the subscriber list is
+   * obchodní sdělení under zák. č. 480/2004 Sb. like any other campaign, so
+   * it carries the same legal footer: unsubscribe, sender identity, reason.
+   */
+  unsubscribeLink?: string
 }
 
-function BundlePublishedEmailComponent({ bundle, customer }: BundlePublishedEmailProps) {
+function BundlePublishedEmailComponent({ bundle, customer, unsubscribeLink }: BundlePublishedEmailProps) {
   const formatter = new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currencyDisplay: "narrowSymbol",
@@ -209,6 +218,30 @@ function BundlePublishedEmailComponent({ bundle, customer }: BundlePublishedEmai
       <P small>
         Označení balíčku pro případnou komunikaci: {bundle.id}
       </P>
+
+      {unsubscribeLink ? (
+        <Section
+          style={{ borderTop: `1px solid ${brand.line}`, margin: "32px 0 0" }}
+        >
+          <P small style={{ margin: "16px 0 0" }}>
+            Tento e-mail dostáváte, protože jste se přihlásili k odběru novinek
+            na keramickazahrada.cz a odběr potvrdili. Odhlásit se můžete
+            kdykoli{" "}
+            <Link
+              href={unsubscribeLink}
+              style={{ color: brand.ink, textDecoration: "underline" }}
+            >
+              zde
+            </Link>
+            .
+          </P>
+          <P small style={{ margin: "8px 0 0" }}>
+            Odesílatel: {NEWSLETTER_SENDER.name}, se sídlem{" "}
+            {NEWSLETTER_SENDER.address}, IČO{" "}
+            {NEWSLETTER_SENDER.registrationNumber}.
+          </P>
+        </Section>
+      ) : null}
       <Signature />
     </EmailLayout>
   )

@@ -43,38 +43,110 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const limit = Math.min(Number(req.query.limit) || 50, 200)
   const offset = Math.max(Number(req.query.offset) || 0, 0)
+  const stageParam =
+    typeof req.query.stage === "string" ? req.query.stage : null
+  const searchParam =
+    typeof req.query.q === "string" ? req.query.q.trim() : ""
 
-  const { data: orders } = await query.graph({
-    entity: "order",
-    fields: [
-      "id",
-      "display_id",
-      "status",
-      "email",
-      "currency_code",
-      "created_at",
-      "total",
-      "customer.id",
-      "customer.first_name",
-      "customer.last_name",
-      "items.id",
-      "items.quantity",
-      "shipping_methods.name",
-      "shipping_methods.shipping_option.provider_id",
-      "fulfillments.id",
-      "fulfillments.shipped_at",
-      "fulfillments.delivered_at",
-      "payment_collections.payments.amount",
-      "payment_collections.payments.captured_at",
-      "payment_collections.payments.refunds.amount",
-    ],
-    filters: { id: { $ne: null } } as never,
-    pagination: {
-      take: limit,
-      skip: offset,
-      order: { created_at: "DESC" },
-    },
-  })
+  const ORDER_FIELDS = [
+    "id",
+    "display_id",
+    "status",
+    "email",
+    "currency_code",
+    "created_at",
+    "total",
+    "customer.id",
+    "customer.first_name",
+    "customer.last_name",
+    "items.id",
+    "items.quantity",
+    "shipping_methods.name",
+    "shipping_methods.shipping_option.provider_id",
+    "fulfillments.id",
+    "fulfillments.shipped_at",
+    "fulfillments.delivered_at",
+    "fulfillments.canceled_at",
+    "payment_collections.payments.amount",
+    "payment_collections.payments.captured_at",
+    "payment_collections.payments.refunds.amount",
+  ]
+
+  /*
+   * Filtering happens IN the database, not on one page of results. The first
+   * version paginated first (newest 50) and filtered after — searching for an
+   * order from three months ago silently returned „nic", and the tab counts
+   * described one page of the shop, not the shop.
+   *
+   * Search matches the order number exactly and the e-mail as a substring —
+   * the two things she actually has in hand when a customer calls.
+   */
+  const searchFilters = () => {
+    if (!searchParam) return {}
+    const conditions: Record<string, unknown>[] = [
+      { email: { $ilike: `%${searchParam}%` } },
+    ]
+    const numeric = Number(searchParam.replace(/^#/, ""))
+    if (Number.isInteger(numeric) && numeric > 0) {
+      conditions.push({ display_id: numeric })
+    }
+    return { $or: conditions }
+  }
+
+  let orders: any[] = []
+  let totalCount = 0
+
+  if (stageParam && stageParam !== "dluzi") {
+    // Stage lives on the merchant-order state table — paginate THERE, then
+    // fetch exactly those orders (same pattern as /admin/merchant-orders).
+    const [states, stateCount] =
+      await merchantOrders.listAndCountMerchantOrderStates(
+        { stage: stageParam } as never,
+        searchParam
+          ? { take: 1000, order: { created_at: "DESC" } }
+          : { take: limit, skip: offset, order: { created_at: "DESC" } }
+      )
+    const stageOrderIds = (states as any[]).map((state) => state.order_id)
+    totalCount = stateCount
+    if (stageOrderIds.length) {
+      const result = (await query.graph({
+        entity: "order",
+        fields: ORDER_FIELDS,
+        filters: { id: stageOrderIds, ...searchFilters() } as never,
+        ...(searchParam
+          ? {
+              pagination: {
+                take: limit,
+                skip: offset,
+                order: { created_at: "DESC" },
+              },
+            }
+          : {}),
+      })) as any
+      orders = result.data
+      if (searchParam) {
+        totalCount = result.metadata?.count ?? orders.length
+      }
+    } else {
+      orders = []
+    }
+  } else {
+    // „Vše" and „dluzi": newest-first over every order, search applied in-DB.
+    const result = (await query.graph({
+      entity: "order",
+      fields: ORDER_FIELDS,
+      filters: { ...searchFilters() } as never,
+      pagination: {
+        // The owing filter needs the money computed first — scan a wider
+        // window so it has something real to filter (MTO orders are few).
+        take: req.query.owing === "true" ? 500 : limit,
+        skip: req.query.owing === "true" ? 0 : offset,
+        order: { created_at: "DESC" },
+      },
+    })) as any
+    orders = result.data
+    totalCount = result.metadata?.count ?? orders.length
+  }
 
   const orderIds = (orders as any[]).map((order) => order.id)
 
@@ -126,10 +198,6 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
   const round = (value: number) => Math.round(value * 100) / 100
 
-  const stageFilter =
-    typeof req.query.stage === "string" ? req.query.stage : null
-  const search =
-    typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null
   const owingOnly = req.query.owing === "true"
 
   const mappedAll = (orders as any[])
@@ -197,36 +265,74 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         is_personal_pickup: isPickup,
         shipped: fulfillments.some((f: any) => f?.shipped_at),
         delivered: fulfillments.some((f: any) => f?.delivered_at),
+        /* Packed but not handed over — the „Na poštu" pile. */
+        awaiting_handover:
+          state?.stage === "shipping" &&
+          fulfillments.some((f: any) => !f?.shipped_at && !f?.canceled_at),
       }
     })
+
+  /*
+   * Real counts from the state table, not from one page of rows. „dluzi" is
+   * computed from the production orders already in hand (MTO orders are few).
+   */
+  const stageCountEntries = await Promise.all(
+    (["received", "working", "shipping", "payment_problem"] as const).map(
+      async (stage) => {
+        const [, stageCount] =
+          await merchantOrders.listAndCountMerchantOrderStates(
+            { stage } as never,
+            { take: 1 }
+          )
+        return [stage, stageCount] as const
+      }
+    )
+  )
+  const allProduction = (await madeToOrder.listProductionOrders(
+    {} as never
+  )) as any[]
+  const allProductionIds = allProduction.map((production) => production.id)
+  const allRequests = allProductionIds.length
+    ? ((await madeToOrder.listProductionPaymentRequests({
+        production_order_id: allProductionIds,
+      } as never)) as any[])
+    : []
+  const allRequestsByProduction = new Map<string, any[]>()
+  for (const request of allRequests) {
+    const list = allRequestsByProduction.get(request.production_order_id) ?? []
+    list.push(request)
+    allRequestsByProduction.set(request.production_order_id, list)
+  }
+  const dluziCount = allProduction.filter(
+    (production) =>
+      outstandingFor(
+        production,
+        allRequestsByProduction.get(production.id) ?? []
+      ) > 0
+  ).length
+
+  // The „Vše" badge counts the whole shop regardless of the active filter.
+  const allOrdersResult = (await query.graph({
+    entity: "order",
+    fields: ["id"],
+    pagination: { take: 1, skip: 0 },
+  })) as any
   const counts = {
-    vse: mappedAll.length,
-    received: mappedAll.filter((r) => r.stage === "received").length,
-    working: mappedAll.filter((r) => r.stage === "working").length,
-    shipping: mappedAll.filter((r) => r.stage === "shipping").length,
-    payment_problem: mappedAll.filter((r) => r.stage === "payment_problem")
-      .length,
-    dluzi: mappedAll.filter((r) => r.outstanding > 0).length,
+    vse: allOrdersResult.metadata?.count ?? totalCount,
+    ...Object.fromEntries(stageCountEntries),
+    dluzi: dluziCount,
   }
 
   const rows = mappedAll.filter((row) => {
-      if (stageFilter && row.stage !== stageFilter) return false
       if (owingOnly && row.outstanding <= 0) return false
-      if (
-        search &&
-        !String(row.email ?? "").toLowerCase().includes(search) &&
-        !String(row.display_id ?? "").includes(search) &&
-        !String(row.customer_name ?? "").toLowerCase().includes(search)
-      ) {
-        return false
-      }
       return true
     })
 
   res.status(200).json({
     counts,
     orders: rows,
-    count: rows.length,
+    /* Total matching the ACTIVE filter — the UI can page beyond this response. */
+    count: totalCount,
     limit,
     offset,
   })

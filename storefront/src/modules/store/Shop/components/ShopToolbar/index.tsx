@@ -8,12 +8,13 @@ type ShopToolbarProps = {
   count: number
   search: string
   sort: ShopSort
+  filtersOpen?: boolean
   onOpenFilters: () => void
   onSearch: (value: string) => void
   onSort: (value: ShopSort) => void
 }
 
-export default function ShopToolbar({ chips, count, search, sort, onOpenFilters, onSearch, onSort }: ShopToolbarProps) {
+export default function ShopToolbar({ chips, count, search, sort, filtersOpen = false, onOpenFilters, onSearch, onSort }: ShopToolbarProps) {
   return (
     <header className={styles.root}>
       <div className={styles.topline}>
@@ -37,7 +38,12 @@ export default function ShopToolbar({ chips, count, search, sort, onOpenFilters,
           />
         </label>
 
-        <button type="button" className={styles.filterButton} onClick={onOpenFilters}>
+        <button
+          type="button"
+          className={styles.filterButton}
+          onClick={onOpenFilters}
+          aria-expanded={filtersOpen}
+        >
           Filtry{chips.length ? <b>{chips.length}</b> : null}
         </button>
 

@@ -1,0 +1,317 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * The reservation teaser below the Kurzy timeline.
+ *
+ * Continues the paper backdrop the timeline ends on, with the same serif
+ * voice (heading + olive italic accent). The booking form moved into the
+ * reservation modal (RezervaceModal/styles.scss owns the form voice now);
+ * what remains here is the landing spot: the copy, the nearest terms as
+ * read-only cards and the button that opens the modal.
+ */
+.kurzyRezervace {
+  --kurzy-charcoal: #24251f;
+  --kurzy-cream: #ffe8d6;
+  --kurzy-paper: #f3e7da;
+  --kurzy-olive: #74775b;
+  --kurzy-ember: #d47a50;
+  /* Text-safe shades of the accents: the display olive/ember stay for large
+     type, these carry the same voice at caption sizes with AA contrast
+     (olive-text 5.3–5.8:1, ember-text 4.8–5.1:1 on every surface here). */
+  --kurzy-olive-text: #5d6046;
+  --kurzy-ember-text: #a34f28;
+
+  position: relative;
+  padding: clamp(84px, 12vh, 160px) 6% clamp(96px, 14vh, 180px);
+  color: var(--kurzy-charcoal);
+  background: var(--kurzy-paper);
+
+  &__head {
+    max-width: 720px;
+
+    > span {
+      color: rgba(36, 37, 31, 0.66);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 20px 0 0;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(2.8rem, 4.2vw, 5.2rem);
+      font-weight: 400;
+      line-height: 0.9;
+      letter-spacing: -0.052em;
+
+      em {
+        display: block;
+        color: var(--kurzy-olive);
+        font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
+        font-weight: 300;
+      }
+    }
+
+    > p {
+      max-width: 34rem;
+      margin: clamp(18px, 2.4vh, 28px) 0 0;
+      color: rgba(36, 37, 31, 0.68);
+      font-size: clamp(0.95rem, 1vw, 1.12rem);
+      font-weight: 300;
+      line-height: 1.55;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Teaser — nearest terms + the modal button                           */
+  /* ------------------------------------------------------------------ */
+
+  &__teaser {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(28px, 3.5vw, 64px);
+    margin-top: clamp(36px, 5vh, 64px);
+    align-items: start;
+  }
+
+  &__teaserList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__term {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: clamp(16px, 2vh, 24px) clamp(18px, 1.8vw, 28px);
+    border: 1px solid rgba(36, 37, 31, 0.18);
+    background: rgba(255, 248, 241, 0.55);
+    text-align: left;
+
+    &--static {
+      cursor: default;
+    }
+
+    /* Full terms only dim — the modal still lets you join the waitlist. */
+    &.is-soldout {
+      opacity: 0.72;
+    }
+
+    strong {
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.35rem, 1.7vw, 1.9rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+  }
+
+  &__termDate {
+    color: var(--kurzy-ember-text);
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__termMeta {
+    color: rgba(36, 37, 31, 0.7);
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+  &__termPrices {
+    margin-top: 4px;
+    color: rgba(36, 37, 31, 0.72);
+    font-size: 0.9rem;
+  }
+
+  &__termSeats {
+    margin-top: 2px;
+    color: var(--kurzy-olive-text);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    &.is-full {
+      color: rgba(36, 37, 31, 0.45);
+    }
+  }
+
+  &__teaserAction {
+    position: sticky;
+    top: clamp(84px, 12vh, 140px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: clamp(22px, 2.6vh, 34px) clamp(20px, 2vw, 32px);
+    border: 1px solid rgba(36, 37, 31, 0.2);
+    background: rgba(255, 248, 241, 0.72);
+
+    p {
+      margin: 0;
+      color: rgba(36, 37, 31, 0.7);
+      font-size: 0.95rem;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+  }
+
+  &__teaserButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 54px;
+    border: 1px solid var(--kurzy-charcoal);
+    border-radius: 999px;
+    background: var(--kurzy-charcoal);
+    color: var(--kurzy-cream);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    i {
+      font-style: normal;
+      transition: transform 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px -24px rgba(0, 0, 0, 0.8);
+
+      i {
+        transform: translate(2px, -2px);
+      }
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 4px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Empty state                                                         */
+  /* ------------------------------------------------------------------ */
+
+  &__empty {
+    max-width: 640px;
+    margin-top: clamp(36px, 5vh, 64px);
+    padding: clamp(26px, 3.2vh, 40px) clamp(22px, 2.4vw, 36px);
+    border: 1px solid rgba(36, 37, 31, 0.2);
+    background: rgba(255, 248, 241, 0.65);
+
+    h3 {
+      margin: 0;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1.6rem, 2.2vw, 2.3rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+    }
+
+    p {
+      margin: 14px 0 0;
+      color: rgba(36, 37, 31, 0.66);
+      font-size: 0.95rem;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    .kurzyRezervaceCtaButton {
+      margin-top: 20px;
+    }
+  }
+
+  /* The dialog-opening pill inside the empty state — same family as the
+     timeline CTA, scoped here because the timeline's rule cannot reach it. */
+  .kurzyRezervaceCtaButton {
+    --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
+    --web-button-label-padding: 0;
+
+    width: fit-content;
+    min-width: clamp(190px, 13vw, 240px);
+    height: 52px;
+    padding: 0;
+    border: 1px solid rgba(36, 37, 31, 0.42);
+    border-radius: 999px;
+    background: var(--kurzy-cream);
+    color: var(--kurzy-charcoal);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      0 13px 30px -22px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.35s ease, box-shadow 0.35s ease,
+      transform 0.35s ease;
+
+    &::after {
+      position: absolute;
+      top: 50%;
+      right: 7px;
+      z-index: 8;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--kurzy-charcoal);
+      color: var(--kurzy-cream);
+      content: "↗";
+      font-family: "Sansation-Light", sans-serif;
+      font-size: 0.9rem;
+      transform: translateY(-50%);
+      transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    > div {
+      padding: 3px 54px 3px 22px;
+    }
+
+    p {
+      color: inherit;
+      line-height: 1;
+      white-space: nowrap;
+
+      span {
+        display: none;
+      }
+    }
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-2px);
+
+      &::after {
+        transform: translate(-3px, -50%) rotate(45deg);
+      }
+    }
+
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 4px;
+    }
+  }
+}
+
+@include below-px(980px) {
+  .kurzyRezervace {
+    &__teaser {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__teaserAction {
+      position: static;
+    }
+  }
+}
+
+@include below-px(720px) {
+  .kurzyRezervace {
+    padding-inline: 20px;
+  }
+}

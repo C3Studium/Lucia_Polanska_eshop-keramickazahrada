@@ -21,11 +21,16 @@ interface InvoiceIssuedEmailProps {
   orderLink?: string;
 }
 
+/**
+ * Bez PDF (upload se nepovedl) e-mail nesmí tvrdit „posíláme fakturu"
+ * a neposlat nic — místo tlačítka řekne, že doklad pošleme, a nabídne
+ * odpověď na e-mail.
+ */
 function InvoiceIssuedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  invoiceNumber = "20260001",
-  totalAmount = "2 450 Kč",
+  customerName,
+  orderNumber = "",
+  invoiceNumber = "",
+  totalAmount,
   invoicePdfUrl = "",
   orderLink = ""
 }: InvoiceIssuedEmailProps) {
@@ -35,26 +40,50 @@ function InvoiceIssuedEmailComponent({
       <EmailH1 accent="k vaší objednávce.">Faktura</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        posíláme fakturu k vaší objednávce. Nic dalšího od vás nepotřebujeme —
-        doklad si jen uložte pro případ, že ho budete někdy potřebovat.
-      </P>
+      {invoicePdfUrl ? (
+        <P>
+          posíláme fakturu k vaší objednávce. Nic dalšího od vás
+          nepotřebujeme — doklad si jen uložte pro případ, že ho budete
+          někdy potřebovat.
+        </P>
+      ) : (
+        <P>
+          k vaší objednávce jsme vystavili fakturu. Kdybyste doklad
+          potřebovali v PDF, stačí odpovědět na tento e-mail a pošleme
+          vám ho.
+        </P>
+      )}
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Číslo faktury" value={invoiceNumber} />
-      <LedgerRow label="Částka" value={totalAmount} strong tone="olive" />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {invoiceNumber ? (
+        <LedgerRow label="Číslo faktury" value={invoiceNumber} />
+      ) : null}
+      {totalAmount ? (
+        <LedgerRow label="Částka" value={totalAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
-      {invoicePdfUrl ? (
+      {invoicePdfUrl || orderLink ? (
         <ButtonRow>
-          <EmailButton href={invoicePdfUrl}>Stáhnout fakturu (PDF)</EmailButton>
+          {invoicePdfUrl ? (
+            <EmailButton href={invoicePdfUrl}>
+              Stáhnout fakturu (PDF)
+            </EmailButton>
+          ) : null}
+          {orderLink ? (
+            <>
+              {invoicePdfUrl ? (
+                <span style={{ display: "inline-block", width: "12px" }} />
+              ) : null}
+              <EmailButton
+                href={orderLink}
+                variant={invoicePdfUrl ? "ghost" : "primary"}
+              >
+                Zobrazit objednávku
+              </EmailButton>
+            </>
+          ) : null}
         </ButtonRow>
-      ) : null}
-
-      {orderLink ? (
-        <P small>
-          Stav objednávky můžete kdykoli sledovat ve svém účtu na našem webu.
-        </P>
       ) : null}
       <Signature />
     </EmailLayout>

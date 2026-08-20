@@ -1,5 +1,7 @@
 "use server"
 
+import { revalidateTag } from "next/cache"
+import { getCacheTag } from "./cookies"
 import { setProductionPaymentMode } from "./made-to-order"
 import type {
   ProductionPaymentMode,
@@ -19,5 +21,10 @@ export async function selectProductionPaymentMode(
   mode: ProductionPaymentModeKind,
   amount?: number
 ): Promise<ProductionPaymentMode | null> {
-  return setProductionPaymentMode(cartId, mode, amount)
+  const result = await setProductionPaymentMode(cartId, mode, amount)
+  // Without this the review step keeps rendering a STALE cart — and anything
+  // that later merges metadata would base itself on the old amount.
+  const cartCacheTag = await getCacheTag("carts")
+  if (cartCacheTag) revalidateTag(cartCacheTag)
+  return result
 }

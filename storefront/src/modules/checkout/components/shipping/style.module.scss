@@ -161,7 +161,10 @@
       gap: 1rem;
       justify-content: flex-start;
 
-      .radioLabel {
+      /* The JSX renders the method name as .methodSummary > .methodLabel —
+         the old `.radioLabel` selector here never matched anything, so the
+         name fell back to the row's 14px. */
+      .methodLabel {
         font-size: 1rem;
         font-weight: 400;
         color: var(--blackText);
@@ -169,41 +172,44 @@
             md: (font-size: 0.9rem),
             mdt: (font-size: 0.9rem),
             sm: (white-space: nowrap, font-size: 0.9rem),
-            xs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
-            xxs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
+            xs: (white-space: nowrap, font-size: 0.875rem),
+            xxs: (white-space: nowrap, font-size: 0.875rem),
         ));
         @include vb((
             lg: (font-size: 0.9rem),
             md: (white-space: nowrap, font-size: 0.9rem),
-            s: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
-            sm: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
-            xs: (white-space: nowrap, font-size: 0.8125rem, font-weight: 300),
+            s: (white-space: nowrap, font-size: 0.875rem),
+            sm: (white-space: nowrap, font-size: 0.875rem),
+            xs: (white-space: nowrap, font-size: 0.875rem),
         ));
       }
+    }
 
-      .radioPrice {
-        justify-self: end;
-        font-size: 1rem;
-        font-weight: 400;
-        font-family: "Sansation-Regular";
-        color: var(--blackText);
+    /* Direct child of .radioRow in the JSX (sibling of .radioContent) —
+       nested one level too deep before, so the delivery price never got
+       these sizes. */
+    .radioPrice {
+      justify-self: end;
+      font-size: 1rem;
+      font-weight: 400;
+      font-family: "Sansation-Regular";
+      color: var(--blackText);
 
-        @include hb((
-            md: (font-size: 0.9rem),
-            mdt: (font-size: 0.9rem),
-            sm: (font-size: 0.9rem),
-            xs: (font-size: 0.8125rem, font-weight: 300),
-            xxs: (font-size: 0.8125rem, font-weight: 300),
-        ));
+      @include hb((
+          md: (font-size: 0.9rem),
+          mdt: (font-size: 0.9rem),
+          sm: (font-size: 0.9rem),
+          xs: (font-size: 0.875rem),
+          xxs: (font-size: 0.875rem),
+      ));
 
-        @include vb((
-            lg: (font-size: 0.9rem),
-            md: (font-size: 0.9rem),
-            s: (font-size: 0.8125rem, font-weight: 300),
-            sm: (font-size: 0.8125rem, font-weight: 300),
-            xs: (font-size: 0.8125rem, font-weight: 300),
-        ));
-      }
+      @include vb((
+          lg: (font-size: 0.9rem),
+          md: (font-size: 0.9rem),
+          s: (font-size: 0.875rem),
+          sm: (font-size: 0.875rem),
+          xs: (font-size: 0.875rem),
+      ));
     }
 
   }
@@ -307,8 +313,8 @@
       grid-row: 1 / span 2;
       align-self: start;
       padding-top: .2rem;
-      color: rgba(32, 33, 28, .52);
-      font: 600 .64rem/1 "Sansation-Regular", sans-serif;
+      color: rgba(32, 33, 28, .68);
+      font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -326,15 +332,15 @@
 
       span {
         color: #20211c;
-        font: 400 .92rem/1 "Sansation-Regular", sans-serif;
+        font: 400 1rem/1 "Sansation-Regular", sans-serif;
         white-space: nowrap;
       }
     }
 
     p {
       margin: 0;
-      color: rgba(32, 33, 28, .55);
-      font: 300 .8rem/1.4 "Sansation-Light", sans-serif;
+      color: rgba(32, 33, 28, .68);
+      font: 300 .875rem/1.4 "Sansation-Light", sans-serif;
     }
   }
 
@@ -482,12 +488,14 @@
 
 .balikovnaChange {
   margin-top: 0.5rem;
-  padding: 0;
+  /* Padding gives the text link a real hit area (~40px) without changing
+     its look — it was a 19px-tall text run. */
+  padding: 10px 4px;
   border: 0;
   background: none;
   color: var(--blackText);
-  font-family: "Sansation-Light";
-  font-size: 0.85rem;
+  font-family: "Sansation-Regular";
+  font-size: 0.9375rem;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -534,6 +542,10 @@
   font-family: "Sansation-Regular";
 
   button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
     border: 0;
     background: none;
     color: inherit;

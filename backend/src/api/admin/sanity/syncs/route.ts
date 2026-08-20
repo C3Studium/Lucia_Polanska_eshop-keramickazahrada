@@ -22,5 +22,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     { order: { created_at: "DESC" } },
   );
 
-  res.json({ workflow_executions: executions, count });
+  res.json({
+    workflow_executions: executions,
+    count,
+    // The Studio lives on the storefront; the admin bundle cannot know where
+    // that is, so the server says (a hardcoded localhost was a broken link).
+    studio_url: process.env.SANITY_STUDIO_URL || null,
+  });
 };

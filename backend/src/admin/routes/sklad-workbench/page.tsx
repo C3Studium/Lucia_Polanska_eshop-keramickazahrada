@@ -23,7 +23,7 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, useExpertMode } from "../../lib/expert-mode";
 import { SubTabs } from "../../components/work-tabs";
-import { formatCount } from "../../lib/workbench";
+import { formatCount, formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, useViewMode } from "../../lib/view-mode";
 
@@ -254,11 +254,7 @@ const SkladStats = () => {
     <div className="flex flex-col gap-y-2 px-6 py-5">
       <Text size="small" weight="plus">
         {data.pieces_in_stock} kusů na skladě · hodnota{" "}
-        {new Intl.NumberFormat("cs-CZ", {
-          style: "currency",
-          currency: "CZK",
-          maximumFractionDigits: 0,
-        }).format(data.stock_value_czk)}
+        {formatCzk(Math.round(data.stock_value_czk))}
       </Text>
       <Text size="xsmall" className="text-ui-fg-subtle">
         {data.variants.out} variant vyprodáno · {data.variants.low} dochází ·{" "}
@@ -294,7 +290,7 @@ const SkladInner = () => {
     <Container className="divide-y p-0">
       <Toaster />
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-4 pt-6">
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2">
             <Heading>Sklad — co vyrábět dřív</Heading>
             {data && data.waiting_total > 0 && (
@@ -498,6 +494,7 @@ const SkladWorkbenchPage = () => (
 export const config = defineRouteConfig({
   label: "Sklad+",
   icon: CubeSolid,
+  rank: 30,
 });
 
 export default SkladWorkbenchPage;

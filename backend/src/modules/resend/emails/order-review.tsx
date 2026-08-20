@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderReviewEmailProps {
   customerName?: string;
@@ -22,15 +23,21 @@ interface OrderReviewEmailProps {
   orderLink?: string;
 }
 
+/**
+ * Fotka i tlačítka se vykreslí jen s reálnými daty — job posílá prázdné
+ * řetězce, když produkt nemá fotku či handle, a prázdný `src` se v poště
+ * ukazuje jako rozbitý obrázek, prázdný `href` jako mrtvé tlačítko.
+ */
 function OrderReviewEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  productName = "Keramický hrnek - modrý",
-  productImage = "https://via.placeholder.com/200x200?text=Product",
-  productLink = "https://keramickazahrada.cz/products/hrnek-modry",
-  reviewLink = "https://keramickazahrada.cz/reviews/write?product=hrnek-modry&order=12345",
-  orderLink = "https://keramickazahrada.cz/orders/12345"
+  customerName,
+  orderNumber = "",
+  productName = "váš kousek",
+  productImage = "",
+  productLink = "",
+  reviewLink = "",
+  orderLink = ""
 }: OrderReviewEmailProps) {
+  const reviewUrl = reviewLink || productLink || storeLink()
   return (
     <EmailLayout preview="Jak se vám líbí váš nový kousek z ateliéru?">
       <Eyebrow>Vaše dojmy</Eyebrow>
@@ -52,17 +59,28 @@ function OrderReviewEmailComponent({
               verticalAlign: "top",
             }}
           >
-            <Img
-              src={productImage}
-              alt={productName}
-              width="56"
-              height="66"
-              style={{
-                borderRadius: "10px",
-                objectFit: "cover",
-                backgroundColor: brand.stone,
-              }}
-            />
+            {productImage ? (
+              <Img
+                src={productImage}
+                alt={productName}
+                width="56"
+                height="66"
+                style={{
+                  borderRadius: "10px",
+                  objectFit: "cover",
+                  backgroundColor: brand.stone,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "56px",
+                  height: "66px",
+                  borderRadius: "10px",
+                  backgroundColor: brand.stone,
+                }}
+              />
+            )}
           </Column>
           <Column style={{ padding: "14px 0", verticalAlign: "top" }}>
             <Text
@@ -93,11 +111,17 @@ function OrderReviewEmailComponent({
       </Section>
 
       <ButtonRow>
-        <EmailButton href={reviewLink}>Napsat recenzi</EmailButton>
-        <span style={{ display: "inline-block", width: "12px" }} />
-        <EmailButton href={productLink} variant="ghost">
-          Zobrazit objekt
-        </EmailButton>
+        {reviewUrl ? (
+          <EmailButton href={reviewUrl}>Napsat recenzi</EmailButton>
+        ) : null}
+        {productLink && reviewUrl !== productLink ? (
+          <>
+            <span style={{ display: "inline-block", width: "12px" }} />
+            <EmailButton href={productLink} variant="ghost">
+              Zobrazit objekt
+            </EmailButton>
+          </>
+        ) : null}
       </ButtonRow>
 
       <P small>

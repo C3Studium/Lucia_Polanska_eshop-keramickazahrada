@@ -13,6 +13,7 @@ import {
   removeCartId,
   setCartId,
 } from "./cookies"
+import { retrieveCustomer } from "./customer"
 import { getRegion } from "./regions"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 
@@ -433,13 +434,47 @@ export async function removeGiftCard(
   //   }
 }
 
+/**
+ * Merges a metadata patch into the cart WITHOUT trusting the caller's copy.
+ *
+ * Cart updates replace `metadata` wholesale, and client components hold stale
+ * carts — spreading `cart.metadata` from a prop could resurrect an old
+ * `production_payment_amount` seconds before the customer is charged by it.
+ * So the merge base is always a fresh server-side read.
+ */
+export async function mergeCartMetadata(
+  patch: Record<string, unknown>,
+  cartId?: string
+) {
+  const id = cartId || (await getCartId())
+  if (!id) {
+    throw new Error("Košík se nepodařilo najít.")
+  }
+  const fresh = await retrieveCart(id)
+  return updateCart(
+    { metadata: { ...((fresh?.metadata as Record<string, unknown>) ?? {}), ...patch } },
+    id
+  )
+}
+
 export async function submitPromotionForm(
   currentState: unknown,
   formData: FormData
 ) {
   const code = formData.get("code") as string
   try {
-    const cart = await applyPromotions([code])
+    /*
+     * `applyPromotions` REPLACES the cart's promotion list wholesale — sending
+     * just the new code silently dropped every code already applied. Union
+     * with the fresh server-side list, so a second code adds instead of swaps.
+     */
+    const currentCart = await retrieveCart()
+    const existingCodes = (currentCart?.promotions ?? [])
+      .map((promotion: any) => promotion?.code)
+      .filter((value: unknown): value is string => typeof value === "string")
+    const cart = await applyPromotions(
+      Array.from(new Set([...existingCodes, code]))
+    )
 
     // If the backend accepted the update but did not apply a promotion for the
     // provided code, surface a user-friendly message so the UI can show it.
@@ -451,6 +486,93 @@ export async function submitPromotionForm(
     }
   } catch (e: any) {
     return e.message
+  }
+}
+
+/**
+ * Fills the cart's addresses from the logged-in customer's saved address —
+ * the checkout's address step collapses into a summary instead of opening as
+ * a form the account could already answer.
+ *
+ * Deliberately narrow: only fires when the cart has NO shipping address yet
+ * (never overwrites anything the customer typed), only uses an address inside
+ * the cart's region, and prefers the default shipping address. Idempotent, so
+ * a re-render firing it twice changes nothing.
+ */
+export async function applySavedAddressToCart(): Promise<{
+  success: boolean
+  message?: string
+}> {
+  try {
+    const cartId = await getCartId()
+    if (!cartId) {
+      return { success: false, message: "Košík se nepodařilo najít." }
+    }
+
+    const cart = await retrieveCart(cartId)
+    if (!cart) {
+      return { success: false, message: "Košík se nepodařilo najít." }
+    }
+    if (cart.shipping_address) {
+      // Someone (or a parallel tab) already answered — nothing to do.
+      return { success: true }
+    }
+
+    const customer = await retrieveCustomer()
+    if (!customer) {
+      return { success: false, message: "Nejste přihlášeni." }
+    }
+
+    const regionCountries = new Set(
+      (cart.region?.countries ?? [])
+        .map((country) => country.iso_2?.toLowerCase())
+        .filter(Boolean)
+    )
+    const usable = (customer.addresses ?? []).filter(
+      (address) =>
+        !!address.country_code &&
+        regionCountries.has(address.country_code.toLowerCase())
+    )
+    const saved =
+      usable.find((address) => address.is_default_shipping) ?? usable[0]
+
+    if (
+      !saved ||
+      !saved.first_name ||
+      !saved.last_name ||
+      !saved.address_1 ||
+      !saved.postal_code ||
+      !saved.city
+    ) {
+      return { success: false, message: "Uložená adresa není kompletní." }
+    }
+
+    const email = cart.email || customer.email
+    if (!email) {
+      return { success: false, message: "Chybí e-mail." }
+    }
+
+    const address = {
+      first_name: saved.first_name,
+      last_name: saved.last_name,
+      address_1: saved.address_1,
+      address_2: saved.address_2 || "",
+      company: saved.company || "",
+      postal_code: saved.postal_code,
+      city: saved.city,
+      country_code: saved.country_code!,
+      province: saved.province || "",
+      phone: saved.phone || customer.phone || "",
+    }
+
+    await updateCart(
+      { shipping_address: address, billing_address: address, email },
+      cartId
+    )
+
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, message: toCzechErrorMessage(e?.message) }
   }
 }
 
@@ -574,10 +696,21 @@ export async function placeOrder(cartId?: string) {
     const countryCode =
       cartRes.order.shipping_address?.country_code?.toLowerCase()
 
-  const orderCacheTag = await getCacheTag("orders")
-  if (orderCacheTag) revalidateTag(orderCacheTag)
+    const orderCacheTag = await getCacheTag("orders")
+    if (orderCacheTag) revalidateTag(orderCacheTag)
 
-    removeCartId()
+    /*
+     * Clear the cart cookie only when the cart just completed IS the one the
+     * cookie points to. Express checkout completes its own separate cart —
+     * unconditionally deleting here threw away the customer's main basket as
+     * a side effect of an express purchase.
+     */
+    const cookieCartId = await getCartId()
+    if (!cookieCartId || cookieCartId === id) {
+      // Awaited — `redirect()` throws on the next line, and an un-awaited
+      // cookie write may never make it into the response.
+      await removeCartId()
+    }
     redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
   }
 

@@ -3,7 +3,7 @@
 /* Checkout sits on cream, the order page on ink — same control, two grounds. */
 .root,
 .rootOrder {
-  --brief-accent: #c2601f;
+  --brief-accent: #a04e18; /* was #c2601f — below AA as small text on cream */
 
   display: flex;
   flex-direction: column;

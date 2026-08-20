@@ -52,6 +52,13 @@ export type MerchantOrderRow = {
    * card can never offer a button the backend would refuse.
    */
   ship_block_reason: string | null
+
+  /**
+   * Money owed BACK to the customer — written when a customer edit lowered the
+   * total or a paid commission was cancelled, cleared by „Vrátit rozdíl".
+   * Lives on the order's metadata under `refund_due`.
+   */
+  refund_due: { amount: number; currency_code: string; reason?: string } | null
 }
 
 const customerName = (order: any): string | null => {
@@ -146,5 +153,18 @@ export const toMerchantOrderRow = (
     production_stage: productionOrder?.stage ?? null,
 
     ship_block_reason: gate.allowed ? null : gate.reason,
+
+    refund_due:
+      order?.metadata?.refund_due &&
+      typeof order.metadata.refund_due === "object" &&
+      Number(order.metadata.refund_due.amount) > 0
+        ? {
+            amount: Number(order.metadata.refund_due.amount),
+            currency_code: String(
+              order.metadata.refund_due.currency_code || order?.currency_code || "czk"
+            ),
+            reason: order.metadata.refund_due.reason,
+          }
+        : null,
   }
 }

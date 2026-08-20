@@ -1,5 +1,6 @@
 import { Column, Img, Row, Section, Text } from "@react-email/components"
 import { BigNumberValue, CustomerDTO, OrderDTO } from "@medusajs/framework/types"
+import { orderLink } from "../../../lib/storefront-url"
 import {
   brand,
   ButtonRow,
@@ -28,6 +29,13 @@ type OrderPlacedEmailProps = {
   balance_currency?: string
   /** Signed „doplatit" link; absent when nothing is owed. */
   balance_payment_url?: string | null
+  /**
+   * Human label of how the order is paid, built by the caller from the
+   * payment session's provider id — „Dobírka — zaplatíte při převzetí",
+   * „Online platba kartou". Absent when the caller could not tell; the row
+   * is simply omitted rather than guessed.
+   */
+  payment_method?: string
 }
 
 function OrderPlacedEmailComponent({
@@ -36,6 +44,7 @@ function OrderPlacedEmailComponent({
   balance_due,
   balance_payment_url,
   balance_currency,
+  payment_method,
 }: OrderPlacedEmailProps) {
   const owes = typeof balance_due === "number" && balance_due > 0
   const balanceText = owes
@@ -66,6 +75,31 @@ function OrderPlacedEmailComponent({
 
   const greetingName =
     order.customer?.first_name || order.shipping_address?.first_name
+
+  // Personal pickup carries `personal_pickup: true` in the shipping method's
+  // data — then the address block would talk about a delivery that will never
+  // happen, so the pickup line renders instead.
+  const isPickup = (order.shipping_methods ?? []).some(
+    (method) => (method?.data as Record<string, unknown> | null)?.personal_pickup === true
+  )
+  const address = order.shipping_address
+  const addressNode = address ? (
+    <>
+      {[address.first_name, address.last_name].filter(Boolean).join(" ")}
+      <br />
+      {address.address_1}
+      {address.address_2 ? (
+        <>
+          <br />
+          {address.address_2}
+        </>
+      ) : null}
+      <br />
+      {[address.postal_code, address.city].filter(Boolean).join(" ")}
+    </>
+  ) : null
+
+  const trackUrl = orderLink(order)
 
   return (
     <EmailLayout preview="Objednávku jsme zaznamenali — děkujeme.">
@@ -180,10 +214,37 @@ function OrderPlacedEmailComponent({
             value={formatPrice(method.total)}
           />
         ))}
-        <LedgerRow label="Daň" value={formatPrice(order.tax_total || 0)} />
+        {/* No tax row on purpose: the seller is not a VAT payer, so a „Daň"
+            line — even a zero one — would be a claim the invoice contradicts. */}
         <LedgerRow label="Celkem" value={formatPrice(order.total)} strong />
         <LedgerEnd />
       </Section>
+
+      {/* Doručení a platba — the two answers every confirmation gets asked
+          for: kam to přijde a jak se to platí. Rows render only from real
+          data; nothing here is guessed. */}
+      {(payment_method || isPickup || addressNode) && (
+        <Section style={{ margin: "32px 0 0" }}>
+          <Eyebrow index="04">Doručení a platba</Eyebrow>
+          {isPickup ? (
+            <LedgerRow label="Doručení" value="Osobní odběr v ateliéru" />
+          ) : addressNode ? (
+            <LedgerRow label="Doručovací adresa" value={addressNode} />
+          ) : null}
+          {payment_method ? (
+            <LedgerRow label="Platba" value={payment_method} />
+          ) : null}
+          <LedgerEnd />
+        </Section>
+      )}
+
+      {/* The one click the mail offers: where the order lives. The link is
+          built by lib/storefront-url — no configured storefront, no button. */}
+      {trackUrl && (
+        <ButtonRow>
+          <EmailButton href={trackUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      )}
 
       {/*
         Outstanding balance on a commission. Shown only when something is
@@ -240,7 +301,9 @@ function OrderPlacedEmailComponent({
       <Signature />
 
       <P small style={{ margin: "28px 0 0", color: brand.faint }}>
-        Číslo objednávky pro případnou komunikaci: {order.id}
+        {/* The display number, not the internal `order_01…` id — the internal
+            id reads as computer noise and the admin finds the order by number. */}
+        Číslo objednávky pro případnou komunikaci: {`#${order.display_id}`}
       </P>
     </EmailLayout>
   )
@@ -572,4 +635,10 @@ const mockOrder = {
   }
 }
 // @ts-ignore
-export default () => <OrderPlacedEmailComponent {...mockOrder} />
+export default () => (
+  // @ts-ignore
+  <OrderPlacedEmailComponent
+    {...mockOrder}
+    payment_method="Dobírka — zaplatíte při převzetí"
+  />
+)

@@ -16,16 +16,21 @@ interface OrderRefundedEmailProps {
   customerName?: string;
   orderNumber?: string;
   refundAmount?: string;
+  /** Only when somebody actually stated one — no fabricated default. */
   refundReason?: string;
   orderLink?: string;
 }
 
+/**
+ * Důvod a částka se vykreslí jen s reálnými daty — vymyšlená výchozí částka
+ * („1 250 Kč") by v ostrém e-mailu slibovala jiné peníze, než se vracejí.
+ */
 function OrderRefundedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  refundAmount = "1 250 Kč",
-  refundReason = "Požadavek zákazníka",
-  orderLink = "https://keramickazahrada.cz/orders/12345"
+  customerName,
+  orderNumber = "",
+  refundAmount,
+  refundReason,
+  orderLink = ""
 }: OrderRefundedEmailProps) {
   return (
     <EmailLayout preview={`Vrácení peněz za objednávku ${orderNumber} je zpracováno.`}>
@@ -34,22 +39,28 @@ function OrderRefundedEmailComponent({
 
       <Greeting name={customerName} />
       <P>
-        žádost o vrácení peněz za vaši objednávku jsme zpracovali. Částka se
+        vrácení peněz za vaši objednávku jsme zpracovali. Částka se
         k vám vrací stejnou cestou, jakou k nám přišla.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Důvod vrácení" value={refundReason} />
-      <LedgerRow label="Částka" value={refundAmount} strong tone="olive" />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {refundReason ? (
+        <LedgerRow label="Důvod vrácení" value={refundReason} />
+      ) : null}
+      {refundAmount ? (
+        <LedgerRow label="Částka" value={refundAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
       <Note tone="olive">
         Peníze se na vašem účtu objeví zpravidla do 3–5 pracovních dnů.
       </Note>
 
-      <ButtonRow>
-        <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
-      </ButtonRow>
+      {orderLink ? (
+        <ButtonRow>
+          <EmailButton href={orderLink}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Přesná doba připsání závisí na vaší bance. Máte-li jakýkoli dotaz,
@@ -69,8 +80,8 @@ const mockOrderRefunded: OrderRefundedEmailProps = {
   customerName: "Jan Novák",
   orderNumber: "#12345",
   refundAmount: "1 250 Kč",
-  refundReason: "Požadavek zákazníka",
-  orderLink: "https://keramickazahrada.cz/orders/12345"
+  refundReason: "Vrácení rozdílu po úpravě objednávky",
+  orderLink: "https://keramickazahrada.cz/cz/order/order_12345/confirmed"
 }
 
 export default () => <OrderRefundedEmailComponent {...mockOrderRefunded} />

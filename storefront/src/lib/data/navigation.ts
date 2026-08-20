@@ -39,11 +39,27 @@ export const listNavigationCollections = async (): Promise<
   NavigationCollection[]
 > => {
   const [collectionResult, categories] = await Promise.all([
-    listCollections({ fields: "*products" }).catch(() => ({
+    /* `fields` musí vyjmenovat i to, co Medusa vrací ve výchozím stavu: hvězdička
+       u relace defaulty nepřepisuje, ale `metadata` mezi nimi NENÍ (defaulty jsou
+       id, title, handle, external_id, created_at, updated_at). S pouhým
+       "*products" se tedy metadata nikdy nevrátila — a s nimi mizela i fotka
+       kolekce nastavená v adminu Rozdělení a očko „skrytá". Stejný seznam už
+       používá stránka /store. */
+    listCollections({
+      fields: "id,title,handle,metadata,*products",
+    }).catch(() => ({
       collections: [],
       count: 0,
     })),
-    listCategories({ limit: 100, fields: "id,name,handle,metadata,*products" }).catch(() => []),
+    /* Totéž o řádek níž: toCategoryCards se ptá na parent_category_id (aby vzalo
+       jen kořenové kategorie) a na category_children (odkazy uvnitř karty) —
+       obojí je potřeba vyjmenovat, jinak přijde undefined a záložní menu bez
+       kolekcí vypíše i podkategorie jako hlavní karty, každou bez odkazů. */
+    listCategories({
+      limit: 100,
+      fields:
+        "id,name,handle,metadata,parent_category_id,*category_children,*products",
+    }).catch(() => []),
   ])
 
   // Kolekce skryté očkem v adminu (metadata.hidden) do menu nepatří; když

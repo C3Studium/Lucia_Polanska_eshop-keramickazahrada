@@ -173,8 +173,10 @@
   justify-content: flex-start;
   margin: 0;
   padding: 0;
-  color: rgba(38, 40, 32, .56);
-  font-size: 0.75rem;
+  /* Every form label on the site rests in this state — it has to be
+     readable before focus, not after. .56 was 3.5:1 at 12px. */
+  color: rgba(38, 40, 32, .7);
+  font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1;
   letter-spacing: .09em;

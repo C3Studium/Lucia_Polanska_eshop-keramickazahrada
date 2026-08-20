@@ -68,5 +68,4 @@ export default async function abandonedCartJob(
 export const config = {
   name: "abandoned-cart-notification",
   schedule: "0 0 * * *" // Run at midnight every day
-  // schedule: "* * * * *" // Run every minute for testing
 }

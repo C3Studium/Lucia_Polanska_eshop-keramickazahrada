@@ -120,6 +120,7 @@ const AddAddress = ({
                   name="postal_code"
                   required
                   autoComplete="postal-code"
+                  inputMode="numeric"
                   data-testid="postal-code-input"
                 />
                 <Input
@@ -150,12 +151,13 @@ const AddAddress = ({
                 variant="contact"
                 label="Telefon"
                 name="phone"
-                autoComplete="phone"
+                type="tel"
+                autoComplete="tel"
                 data-testid="phone-input"
               />
             </div>
             {formState.error && (
-              <div className={s.error} data-testid="address-error">
+              <div className={s.error} role="alert" data-testid="address-error">
                 {formState.error}
               </div>
             )}

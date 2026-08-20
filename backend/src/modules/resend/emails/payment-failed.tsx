@@ -19,17 +19,23 @@ interface PaymentFailedEmailProps {
   customerName?: string;
   orderNumber?: string;
   paymentAmount?: string;
+  /** Only when the payment provider actually said one — no guessed default. */
   failureReason?: string;
   retryLink?: string;
   supportEmail?: string;
 }
 
+/**
+ * Důvod, částka i tlačítko se vykreslí jen s reálnými daty — vymyšlený
+ * výchozí důvod („nedostatečné prostředky") by obviňoval kartu zákazníka
+ * za něco, co se třeba vůbec nestalo.
+ */
 function PaymentFailedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
-  paymentAmount = "2 450 Kč",
-  failureReason = "Nedostatečné finanční prostředky na kartě",
-  retryLink = "https://keramickazahrada.cz/checkout/retry/12345",
+  customerName,
+  orderNumber = "",
+  paymentAmount,
+  failureReason,
+  retryLink = "",
   supportEmail = CONTACT_EMAIL
 }: PaymentFailedEmailProps) {
   return (
@@ -43,18 +49,22 @@ function PaymentFailedEmailComponent({
         objednávka na vás počká a platbu můžete v klidu zopakovat.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
-      <LedgerRow label="Důvod" value={failureReason} />
-      <LedgerRow label="Částka" value={paymentAmount} strong tone="danger" />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {failureReason ? <LedgerRow label="Důvod" value={failureReason} /> : null}
+      {paymentAmount ? (
+        <LedgerRow label="Částka" value={paymentAmount} strong tone="danger" />
+      ) : null}
       <LedgerEnd />
 
       <Note tone="danger">
         Platba neproběhla — z vašeho účtu nebylo nic strženo.
       </Note>
 
-      <ButtonRow>
-        <EmailButton href={retryLink}>Zkusit platbu znovu</EmailButton>
-      </ButtonRow>
+      {retryLink ? (
+        <ButtonRow>
+          <EmailButton href={retryLink}>Zkusit platbu znovu</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Pokud se platba nedaří opakovaně, napište nám na{" "}

@@ -83,7 +83,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
 
         <div
           className={s.products}
-          aria-label={`${numberOfItems} kusů v objednávce`}
+          aria-label={`${numberOfItems} ${numberOfItems === 1 ? "kus" : numberOfItems < 5 ? "kusy" : "kusů"} v objednávce`}
         >
           <span className={s.label}>Co jste objednali</span>
           <div className={s.productIcons} data-testid="order-items-preview">

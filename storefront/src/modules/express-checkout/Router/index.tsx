@@ -1,10 +1,18 @@
 "use client"
 
 import { BundleProduct } from "@lib/data/products"
+import type { ExpressPrefillAddress } from "@lib/data/express-cart"
+import { withCount } from "@lib/util/plurals"
 import { HttpTypes } from "@medusajs/types"
-import { motion } from "framer-motion"
+import { CheckCircle } from "@medusajs/icons"
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Card } from "../Card"
+import { useEffect, useState, useTransition } from "react"
 import { Payment } from "../Payment"
 import { Product } from "../Product"
 import { Shipping } from "../Shipping"
@@ -12,6 +20,8 @@ import styles from "../style.module.scss"
 import type { ComgatePaymentMethod } from "@lib/util/comgate"
 
 type ActiveStep = "selection" | "delivery" | "payment"
+
+const STEP_ORDER: ActiveStep[] = ["selection", "delivery", "payment"]
 
 type RouterProps = {
   product: HttpTypes.StoreProduct
@@ -25,8 +35,16 @@ type RouterProps = {
   countryCode: string
   packetaApiKey?: string
   packetaShippingMethodId?: string
+  /** Logged-in customer's saved address — the delivery form starts filled. */
+  prefillAddress?: ExpressPrefillAddress | null
 }
 
+/**
+ * The whole express purchase as ONE stepper: a progress rail on top, a single
+ * animated stage below it. The URL still carries `?step=…` so refresh and
+ * deep-links land on the right step — but it is written silently with
+ * `history.replaceState`, never by navigating; the animation runs in place.
+ */
 export const Router = ({
   product,
   bundle,
@@ -39,9 +57,12 @@ export const Router = ({
   countryCode,
   packetaApiKey,
   packetaShippingMethodId,
+  prefillAddress,
 }: RouterProps) => {
   const router = useRouter()
   const searchParams = useSearchParams()
+  /* Reduced motion: steps swap as instant crossfades instead of sliding. */
+  const reduceMotion = useReducedMotion()
   const basePath = `/${countryCode}/express-checkout/${handle}`
   const bundleProductIds = new Set(
     bundle?.items.map((item) => item.product.id) || []
@@ -58,39 +79,101 @@ export const Router = ({
   const hasAddress = !!cart?.shipping_address && !!cart?.email
   const hasShipping = !!cart?.shipping_methods?.length
 
-  const requested = searchParams.get("step")
-  let active: ActiveStep =
-    requested === "delivery" || requested === "payment"
-      ? requested
+  /* The step lives in client state; the URL only seeds it (deep-link, refresh)
+     and silently follows it. Never above what the data allows. */
+  const requestedParam = searchParams.get("step")
+  const [requested, setRequested] = useState<ActiveStep>(
+    requestedParam === "delivery" || requestedParam === "payment"
+      ? requestedParam
       : "selection"
+  )
+  const [direction, setDirection] = useState(1)
 
+  let active: ActiveStep = requested
   if (!hasSelection) active = "selection"
   else if (active === "payment" && (!hasAddress || !hasShipping)) {
     active = "delivery"
   }
 
+  // Silent URL sync — refresh/deep-links keep working, history stays clean.
+  useEffect(() => {
+    const suffix = active === "selection" ? "" : `?step=${active}`
+    const url = `${basePath}${suffix}`
+    if (`${window.location.pathname}${window.location.search}` !== url) {
+      window.history.replaceState(null, "", url)
+    }
+  }, [active, basePath])
+
   const go = (step: ActiveStep) => {
     if (step === "delivery" && !hasSelection) return
     if (step === "payment" && (!hasAddress || !hasShipping)) return
-    const suffix = step === "selection" ? "" : `?step=${step}`
-    router.push(`${basePath}${suffix}`, { scroll: false })
+    setDirection(STEP_ORDER.indexOf(step) >= STEP_ORDER.indexOf(active) ? 1 : -1)
+    setRequested(step)
   }
 
+  /* A step finished a mutation: move on AND refetch the server data the next
+     step reads (totals, shipping price, ComGate method list). The refresh runs
+     in a transition so the stage can show a busy state until the fresh cart
+     arrives — otherwise the next panel opens over stale numbers, or (first
+     time through) nothing visibly happens until the gates unlock. */
+  const [isRefreshing, startRefresh] = useTransition()
   const advance = (step: ActiveStep) => {
-    go(step)
-    router.refresh()
+    setDirection(1)
+    setRequested(step)
+    startRefresh(() => router.refresh())
   }
 
   const selectedTitle =
     cart?.items?.length === 1
       ? cart.items[0].product_title || cart.items[0].title
-      : `${cart?.items?.length || 0} kusů dohromady`
+      : `${withCount(cart?.items?.length || 0, "kus", "kusy", "kusů")} dohromady`
+
+  const steps: {
+    id: ActiveStep
+    label: string
+    done: boolean
+    reachable: boolean
+    summary?: string
+  }[] = [
+    {
+      id: "selection",
+      label: "Výběr",
+      done: hasSelection,
+      reachable: true,
+      summary: hasSelection ? selectedTitle ?? undefined : undefined,
+    },
+    {
+      id: "delivery",
+      label: "Doručení",
+      done: hasAddress && hasShipping,
+      reachable: hasSelection,
+      summary: hasAddress
+        ? `${cart?.shipping_address?.city ?? ""} · ${
+            cart?.shipping_methods?.at(-1)?.name || "vyberte dopravu"
+          }`
+        : undefined,
+    },
+    {
+      id: "payment",
+      label: "Platba",
+      done: false,
+      reachable: hasSelection && hasAddress && hasShipping,
+      summary: undefined,
+    },
+  ]
+
+  const backTarget: { step: ActiveStep; label: string } | null =
+    active === "delivery"
+      ? { step: "selection", label: "Zpět na výběr" }
+      : active === "payment"
+        ? { step: "delivery", label: "Zpět na doručení" }
+        : null
 
   return (
     <>
       <motion.header
         className={styles.intro}
-        initial="hidden"
+        initial={reduceMotion ? false : "hidden"}
         animate="visible"
         variants={variants}
       >
@@ -115,75 +198,101 @@ export const Router = ({
       </motion.header>
 
       <nav className={styles.progress} aria-label="Postup rychlého nákupu">
-        <span data-active={active === "selection"}>01 Výběr</span>
-        <span data-active={active === "delivery"}>02 Doručení</span>
-        <span data-active={active === "payment"}>03 Platba</span>
+        {steps.map((step, index) => (
+          <button
+            type="button"
+            key={step.id}
+            className={styles.progressStep}
+            data-active={active === step.id}
+            data-done={step.done}
+            disabled={!step.reachable}
+            aria-current={active === step.id ? "step" : undefined}
+            onClick={() => go(step.id)}
+          >
+            <span className={styles.progressLabel}>
+              {String(index + 1).padStart(2, "0")} {step.label}
+              {step.done && (
+                <CheckCircle className={styles.progressDone} aria-hidden="true" />
+              )}
+            </span>
+            {step.summary && active !== step.id && (
+              <span className={styles.progressSummary}>{step.summary}</span>
+            )}
+            {active === step.id && (
+              <motion.span
+                className={styles.progressIndicator}
+                layoutId="express-progress-indicator"
+                transition={reduceMotion ? instantTransition : indicatorTransition}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        ))}
       </nav>
 
-      <main>
-        <Card
-          step="01"
-          title="Co kupujete"
-          isActive={active === "selection"}
-          isDone={hasSelection}
-          summary={hasSelection ? selectedTitle : undefined}
-          onOpenAction={() => go("selection")}
-        >
-          <Product
-            product={product}
-            bundle={bundle}
-            region={region}
-            countryCode={countryCode}
-            onContinueAction={() => advance("delivery")}
-          />
-        </Card>
+      <motion.main
+        className={styles.stage}
+        layout
+        transition={reduceMotion ? instantLayoutTransition : stageTransition}
+        data-busy={isRefreshing || undefined}
+        aria-busy={isRefreshing || undefined}
+      >
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.section
+            key={active}
+            className={styles.stepPanel}
+            custom={direction}
+            variants={reduceMotion ? reducedPanelVariants : panelVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            aria-label={steps.find((step) => step.id === active)?.label}
+          >
+            {backTarget && (
+              <button
+                type="button"
+                className={styles.stepBack}
+                onClick={() => go(backTarget.step)}
+              >
+                ← {backTarget.label}
+              </button>
+            )}
 
-        <Card
-          step="02"
-          title="Doručení"
-          isActive={active === "delivery"}
-          isDone={hasAddress && hasShipping}
-          summary={
-            hasAddress
-              ? `${cart?.shipping_address?.city} · ${
-                  cart?.shipping_methods?.at(-1)?.name || "vyberte dopravu"
-                }`
-              : undefined
-          }
-          onOpenAction={() => go("delivery")}
-        >
-          {cart && (
-            <Shipping
-              cart={cart}
-              region={region}
-              countryCode={countryCode}
-              shippingMethods={shippingMethods}
-              packetaApiKey={packetaApiKey}
-              packetaShippingMethodId={packetaShippingMethodId}
-              onContinueAction={() => advance("payment")}
-            />
-          )}
-        </Card>
+            {active === "selection" && (
+              <Product
+                product={product}
+                bundle={bundle}
+                region={region}
+                countryCode={countryCode}
+                onContinueAction={() => advance("delivery")}
+              />
+            )}
 
-        <Card
-          step="03"
-          title="Platba"
-          isActive={active === "payment"}
-          isDone={false}
-          summary="Bezpečné dokončení objednávky"
-          onOpenAction={() => go("payment")}
-        >
-          {cart && (
-            <Payment
-              cart={cart}
-              paymentMethods={paymentMethods}
-              comgateMethods={comgateMethods}
-              countryCode={countryCode}
-              handle={handle}
-            />
-          )}
-        </Card>
-      </main>
+            {active === "delivery" && cart && (
+              <Shipping
+                cart={cart}
+                region={region}
+                countryCode={countryCode}
+                shippingMethods={shippingMethods}
+                packetaApiKey={packetaApiKey}
+                packetaShippingMethodId={packetaShippingMethodId}
+                prefillAddress={prefillAddress}
+                onContinueAction={() => advance("payment")}
+              />
+            )}
+
+            {active === "payment" && cart && (
+              <Payment
+                cart={cart}
+                paymentMethods={paymentMethods}
+                comgateMethods={comgateMethods}
+                countryCode={countryCode}
+                handle={handle}
+              />
+            )}
+          </motion.section>
+        </AnimatePresence>
+      </motion.main>
 
       <footer className={styles.trust}>
         <span>Bezpečná platba</span>
@@ -225,3 +334,30 @@ const variants4 = {
               transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
             },
           }
+
+/* The stage: one panel at a time, sliding in the direction of travel while the
+   container's height follows — the same easing family the flow already uses. */
+const panelVariants: Variants = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
+  center: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: (dir: number) => ({
+    opacity: 0,
+    x: dir * -30,
+    transition: { duration: 0.32, ease: [0.76, 0, 0.24, 1] },
+  }),
+}
+const stageTransition = { layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
+const indicatorTransition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
+
+/* Reduced-motion variants: same states, no travel — a brief crossfade only. */
+const reducedPanelVariants: Variants = {
+  enter: { opacity: 0 },
+  center: { opacity: 1, transition: { duration: 0.15 } },
+  exit: { opacity: 0, transition: { duration: 0.1 } },
+}
+const instantTransition = { duration: 0 }
+const instantLayoutTransition = { layout: { duration: 0 } }

@@ -29,13 +29,13 @@ interface ReturnRejectedEmailProps {
  * výchozí hodnota by v ostrém e-mailu tvrdila, že se zamítá něco jiného.
  */
 function ReturnRejectedEmailComponent({
-  customerName = "Vážený zákazník",
-  orderNumber = "#12345",
+  customerName,
+  orderNumber = "",
   returnNumber,
   rejectedItems,
-  rejectionReason = "Objekt nese stopy používání",
+  rejectionReason,
   appealInstructions = "Ozvat se nám můžete do 14 dní od obdržení tohoto e-mailu",
-  orderLink = "https://keramickazahrada.cz/orders/12345",
+  orderLink = "",
   supportEmail = CONTACT_EMAIL,
 }: ReturnRejectedEmailProps) {
   return (
@@ -51,10 +51,12 @@ function ReturnRejectedEmailComponent({
         tentokrát jí nemůžeme vyhovět — důvod uvádíme níže.
       </P>
 
-      <LedgerRow label="Objednávka" value={orderNumber} />
+      {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
       {rejectedItems ? <LedgerRow label="Objekty" value={rejectedItems} /> : null}
-      <LedgerRow label="Důvod zamítnutí" value={rejectionReason} tone="danger" />
+      {rejectionReason ? (
+        <LedgerRow label="Důvod zamítnutí" value={rejectionReason} tone="danger" />
+      ) : null}
       <LedgerEnd />
 
       <P>
@@ -69,10 +71,14 @@ function ReturnRejectedEmailComponent({
 
       <ButtonRow>
         <EmailButton href={`mailto:${supportEmail}`}>Napsat nám</EmailButton>
-        <span style={{ display: "inline-block", width: "12px" }} />
-        <EmailButton href={orderLink} variant="ghost">
-          Zobrazit objednávku
-        </EmailButton>
+        {orderLink ? (
+          <>
+            <span style={{ display: "inline-block", width: "12px" }} />
+            <EmailButton href={orderLink} variant="ghost">
+              Zobrazit objednávku
+            </EmailButton>
+          </>
+        ) : null}
       </ButtonRow>
 
       <P small>

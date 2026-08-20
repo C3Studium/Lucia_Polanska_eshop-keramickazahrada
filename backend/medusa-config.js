@@ -27,7 +27,6 @@ import {
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
   JWT_EXPIRES_IN,
-  STOREFRONT_URL,
   SANITY_API_TOKEN,
   SANITY_PROJECT_ID,
   SANITY_STUDIO_URL,
@@ -92,7 +91,9 @@ const medusaConfig = {
     }
   },
   admin: {
-    storefrontUrl: STOREFRONT_URL,
+    // The storefront origin, straight from env — `lib/constants` deliberately
+    // stopped exporting a STOREFRONT_URL (see the comment there).
+    storefrontUrl: process.env.STOREFRONT_PUBLIC_URL,
     backendUrl: BACKEND_URL,
 
     disable: SHOULD_DISABLE_ADMIN,
@@ -230,6 +231,10 @@ const medusaConfig = {
     },
     {
       resolve: "./src/modules/made-to-order",
+    },
+    {
+      // Course terms and reservations (kurzy) — see docs/kurzy-system.md.
+      resolve: "./src/modules/course",
     },
     // iDoklad invoicing (FINISHINGTODOLIST §1) — registered only with
     // credentials in hand; without them every invoicing entry point degrades

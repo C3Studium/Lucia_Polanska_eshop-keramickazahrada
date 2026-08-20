@@ -75,10 +75,11 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding-bottom: 7px;
+  /* Symmetric padding: the escape hatch back to the cart was a 19px strip. */
+  padding: 10px 0 10px;
   border-bottom: 1px solid rgba(255,232,214,.4);
   color: rgba(255,232,214,.82);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 13px/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
   transition: color 220ms ease, border-color 220ms ease;

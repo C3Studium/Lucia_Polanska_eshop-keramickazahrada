@@ -1,0 +1,79 @@
+@use "../../../../../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * „Koupit ihned" — the secondary buy action on the PDP's ink stage.
+ * Same pill geometry as the primary CartButton beside it, but outline instead
+ * of filled: the primary action stays primary, this one reads as the shortcut.
+ * Cream tones are measured against --pdp-ink (#20211c), same as the CTA notes.
+ */
+
+.root {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.button {
+  position: relative;
+  display: grid;
+  width: clamp(210px, 14vw, 250px);
+  height: 46px;
+  padding: 0 24px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 232, 214, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 232, 214, 0.06);
+  color: var(--pdp-cream, #ffe8d6);
+  cursor: pointer;
+  transition:
+    color 160ms ease 140ms,
+    border-color 280ms ease,
+    opacity 280ms ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  border-color: var(--pdp-cream, #ffe8d6);
+  color: #20211c;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.indicator {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--pdp-cream, #ffe8d6);
+  transform-origin: left center;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+}
+
+.hint {
+  margin: 0;
+  /* .48 was 4.2:1 on the ink stage — this line is the only place that says
+     where a one-click purchase ships. .64 clears 6:1. */
+  color: rgba(255, 232, 214, 0.64);
+  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
+  text-align: right;
+}
+
+.error {
+  margin: 0;
+  color: #f3b3a4;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}

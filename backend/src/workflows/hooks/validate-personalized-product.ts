@@ -16,13 +16,17 @@ addToCartWorkflow.hooks.validate(
       if (!variant?.product?.metadata?.is_personalized) {
         continue
       }
+      const height = Number(item.metadata?.height)
+      const width = Number(item.metadata?.width)
+      // Same bounds as the price route — the price is derived from these
+      // numbers, so a negative or absurd dimension is a self-served discount.
       if (
-        !item.metadata?.height || !item.metadata.width ||
-        isNaN(Number(item.metadata.height)) || isNaN(Number(item.metadata.width))
+        !Number.isFinite(height) || !Number.isFinite(width) ||
+        height <= 0 || width <= 0 || height > 300 || width > 300
       ) {
         throw new MedusaError(
           MedusaError.Types.INVALID_DATA,
-          "Please set height and width metadata for each item."
+          "Zadejte prosím výšku a šířku v centimetrech (1–300)."
         )
       }
     }

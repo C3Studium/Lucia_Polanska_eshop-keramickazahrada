@@ -100,7 +100,12 @@ const Title: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <Dialog.Title className={styles.title}>
       <div className={styles.text}>{children}</div>
-      <button onClick={close} data-testid="close-modal-button" className={styles.closeBtn}>
+      <button
+        onClick={close}
+        aria-label="Zavřít"
+        data-testid="close-modal-button"
+        className={styles.closeBtn}
+      >
         <X size={20} />
       </button>
     </Dialog.Title>

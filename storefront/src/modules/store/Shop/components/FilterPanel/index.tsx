@@ -52,6 +52,8 @@ export default function FilterPanel({
   ].filter(Boolean).length
   const closeRef = useRef<HTMLButtonElement>(null)
 
+  /* Focus moves to the close button on open; Escape and focus restore are
+     handled by the Shop parent (closeFilters refocuses the trigger). */
   useEffect(() => {
     if (!isOpen) return
     const timer = window.setTimeout(() => closeRef.current?.focus(), 120)
@@ -196,7 +198,7 @@ export default function FilterPanel({
         </FilterGroup>
 
         <div className={styles.footer}>
-          <span>{activeCount ? `${activeCount} aktivní` : "Zatím bez filtrů"}</span>
+          <span>{activeCount ? `${activeCount} ${activeCount < 5 ? "aktivní" : "aktivních"}` : "Zatím bez filtrů"}</span>
           <button type="button" onClick={onReset} disabled={!activeCount}>Zrušit filtry</button>
         </div>
       </motion.aside>

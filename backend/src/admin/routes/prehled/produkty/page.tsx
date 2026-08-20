@@ -213,7 +213,7 @@ const ProduktyInner = () => {
       )}
 
       <header className="flex flex-wrap items-start justify-between gap-3 px-6 pb-2 pt-6">
-        <div>
+        <div className="min-w-0">
           <Heading>Produkty</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Co máte v nabídce, kde to zákazník najde a jestli je to zveřejněné.

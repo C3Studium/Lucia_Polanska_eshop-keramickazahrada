@@ -6,7 +6,7 @@ import type { MerchantIdentity } from "@lib/data/merchant"
 import { subscribeToNewsletter } from "@lib/data/newsletter"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { paymentIcons } from "constants/icons"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
@@ -66,6 +66,7 @@ const reveal = {
 
 export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
   const pathname = usePathname()
+  const reduceMotion = useReducedMotion()
   const footerRef = useRef<HTMLElement>(null)
   const [surface, setSurface] = useState(DEFAULT_SURFACE)
   const [tone, setTone] = useState<FooterTone>("light")
@@ -150,7 +151,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
     >
       <motion.div
         className="footer__frame"
-        initial="hidden"
+        initial={reduceMotion ? false : "hidden"}
         whileInView="visible"
         viewport={viewport}
         variants={reveal}
@@ -340,10 +341,13 @@ function FooterIcon({
 
 /**
  * A real form again: it posts to the backend's newsletter list
- * (`POST /store/newsletter` via the `subscribeToNewsletter` server action),
- * which stores the address and sends the welcome e-mail. The mailto interlude
- * existed because the old form discarded addresses silently — the one failure
- * a made-to-order atelier cannot afford. This one reports what happened.
+ * (`POST /store/newsletter` via the `subscribeToNewsletter` server action).
+ * Double opt-in: the backend stores the address as *pending* and sends a
+ * confirmation e-mail — nothing arrives until its link is clicked, so the
+ * success line says "check your inbox" rather than "you're in". The mailto
+ * interlude existed because the old form discarded addresses silently — the
+ * one failure a made-to-order atelier cannot afford. This one reports what
+ * happened.
  */
 function Newsletter() {
   const [status, setStatus] = useState<"idle" | "done" | "error">("idle")
@@ -360,7 +364,8 @@ function Newsletter() {
   if (status === "done") {
     return (
       <p className="newsletter__success" role="status">
-        Děkujeme! Ozveme se, až bude co nového.
+        Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě
+        poslali.
       </p>
     )
   }
@@ -390,7 +395,10 @@ function Newsletter() {
           Nepovedlo se to uložit, zkuste to prosím znovu.
         </p>
       ) : null}
-      <p>Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek.</p>
+      <p>
+        Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání
+        novinek. Odběr ještě potvrdíte kliknutím v e-mailu.
+      </p>
     </form>
   )
 }

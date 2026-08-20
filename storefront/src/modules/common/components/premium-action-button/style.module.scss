@@ -63,7 +63,8 @@
 
 .label {
   white-space: nowrap;
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  /* The CTA for the whole purchase flow — the 15px UI floor applies. */
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
 }
 
 .arrow {
@@ -86,6 +87,6 @@
   padding: 0 8px 0 16px;
 }
 
-.compact .label { font-size: 13px; }
+.compact .label { font-size: 14px; }
 .compact .arrow { width: 24px; height: 24px; font-size: 13px; }
 

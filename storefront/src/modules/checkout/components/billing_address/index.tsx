@@ -78,6 +78,7 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
           label="PSČ"
           name="billing_address.postal_code"
           autoComplete="postal-code"
+          inputMode="numeric"
           value={formData["billing_address.postal_code"]}
           onChange={handleChange}
           required
@@ -117,6 +118,7 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
         <Input
           label="Telefon"
           name="billing_address.phone"
+          type="tel"
           autoComplete="tel"
           value={formData["billing_address.phone"]}
           onChange={handleChange}

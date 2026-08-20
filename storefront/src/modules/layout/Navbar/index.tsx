@@ -162,7 +162,7 @@ export default function Navbar({
             className="navbar__brand"
             Kind="Link"
             img="/assets/links/home_img.png"
-            alt="bg__image"
+            alt=""
             title=""
             href="/"
             icon1="/assets/icons/logo.svg"
@@ -176,7 +176,7 @@ export default function Navbar({
             className="navbar__nav-link"
             Kind="Link"
             img="/assets/links/home_img.png"
-            alt="bg__image"
+            alt=""
             title="Dotazy"
             href="/dotazy"
             index={1}
@@ -203,7 +203,7 @@ export default function Navbar({
               className="navbar__nav-link"
               Kind="Link"
               img="/assets/links/home_img.png"
-              alt="bg__image"
+              alt=""
               title="Výroba"
               href="/vyroba"
               index={2}
@@ -215,7 +215,7 @@ export default function Navbar({
               className="navbar__nav-link"
               Kind="Link"
               img="/assets/links/home_img.png"
-              alt="bg__image"
+              alt=""
               title="Kurzy"
               href="/kurzy"
               index={3}
@@ -240,7 +240,7 @@ export default function Navbar({
               className="navbar__nav-link"
               Kind="Link"
               img="/assets/links/home_img.png"
-              alt="bg__image"
+              alt=""
               title="O mně"
               href="/o-mne"
               index={4}

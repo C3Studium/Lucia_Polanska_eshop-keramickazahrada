@@ -8,6 +8,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storefrontBase } from "../../../lib/storefront-url"
 
 interface NewsletterUnsubscribeEmailProps {
   customerName?: string;
@@ -15,9 +16,12 @@ interface NewsletterUnsubscribeEmailProps {
 }
 
 function NewsletterUnsubscribeEmailComponent({
-  customerName = "Vážený zákazník",
-  email = "vas@email.cz"
+  customerName,
+  email = ""
 }: NewsletterUnsubscribeEmailProps) {
+  // The storefront's newsletter page — where re-subscribing actually happens.
+  const base = storefrontBase()
+  const newsletterUrl = base ? `${base}/newsletter` : ""
   return (
     <EmailLayout preview="Odhlášení z newsletteru jsme potvrdili.">
       <Eyebrow>Newsletter</Eyebrow>
@@ -25,8 +29,9 @@ function NewsletterUnsubscribeEmailComponent({
 
       <Greeting name={customerName} />
       <P>
-        adresu {email} jsme právě vyřadili ze seznamu odběratelů. Žádné
-        další zprávy z ateliéru už vám chodit nebudou.
+        {email ? `adresu ${email}` : "vaši adresu"} jsme právě vyřadili ze
+        seznamu odběratelů. Žádné další zprávy z ateliéru už vám chodit
+        nebudou.
       </P>
       <P>
         Vaše rozhodnutí respektujeme — a děkujeme za čas, který jste našim
@@ -34,14 +39,13 @@ function NewsletterUnsubscribeEmailComponent({
         zůstávají otevřené.
       </P>
 
-      <ButtonRow>
-        <EmailButton
-          href="https://keramickazahrada.cz/newsletter"
-          variant="ghost"
-        >
-          Přihlásit se znovu
-        </EmailButton>
-      </ButtonRow>
+      {newsletterUrl ? (
+        <ButtonRow>
+          <EmailButton href={newsletterUrl} variant="ghost">
+            Přihlásit se znovu
+          </EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Vaše údaje zůstávají chráněny podle zásad ochrany osobních údajů.

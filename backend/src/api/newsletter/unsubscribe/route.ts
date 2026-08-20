@@ -43,7 +43,10 @@ const bounce = (res: MedusaResponse, status: string) => {
     res.status(200).send(FALLBACK_TEXT[status] ?? FALLBACK_TEXT.chyba)
     return
   }
-  res.redirect(302, `${base}?newsletter=${status}`)
+  // The storefront's newsletter landing page renders each status in the
+  // shop's own voice. (Used to be `?newsletter=…` on the homepage, which no
+  // page ever read — the person just landed on the homepage unacknowledged.)
+  res.redirect(302, `${base}/newsletter?stav=${status}`)
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -76,12 +79,24 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       } as never)
 
       const day = new Date().toISOString().slice(0, 10)
+      /* The goodbye mail is a courtesy — the unsubscribe itself already
+         happened above. If the provider refuses it, the page must still say
+         „odhlášeno": telling an unsubscribed person the opposite is exactly
+         the GDPR complaint this link exists to prevent. */
       await sendCustomerEmail(req.scope, {
         template: "newsletter-unsubscribe",
         to: email,
         key: `nl-unsub:${email}:${day}`,
         data: { email },
-      })
+      }).catch((error) =>
+        req.scope
+          .resolve(ContainerRegistrationKeys.LOGGER)
+          .error(
+            `[newsletter] Rozlučkový e-mail pro ${email} se nepodařilo odeslat: ${
+              error instanceof Error ? error.message : "neznámá chyba"
+            }`
+          )
+      )
     }
 
     bounce(res, "odhlaseno")

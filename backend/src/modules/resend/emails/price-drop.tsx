@@ -12,6 +12,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { storeLink } from "../../../lib/storefront-url"
 
 interface PriceDropEmailProps {
   customerName?: string;
@@ -25,16 +26,21 @@ interface PriceDropEmailProps {
   expiryDate?: string;
 }
 
+/**
+ * `timeLimited` je výchoze vypnuté: sleva bez known konce nesmí slibovat
+ * datum z mock dat. Poznámka o platnosti se ukáže jen s reálným datem.
+ */
 function PriceDropEmailComponent({
-  customerName = "Vážený zákazník",
-  productName = "Keramický hrnek - modrý",
+  customerName,
+  productName = "Objekt z ateliéru",
   productImage,
-  originalPrice = "450 Kč",
-  newPrice = "360 Kč",
-  productLink = "https://keramickazahrada.cz/products/hrnek-modry",
-  timeLimited = true,
-  expiryDate = "31. října 2025"
+  originalPrice = "",
+  newPrice = "",
+  productLink = "",
+  timeLimited = false,
+  expiryDate = ""
 }: PriceDropEmailProps) {
+  const productUrl = productLink || storeLink()
   return (
     <EmailLayout preview={`${productName} je nyní k mání za ${newPrice}.`}>
       <Eyebrow>Změna ceny</Eyebrow>
@@ -130,13 +136,15 @@ function PriceDropEmailComponent({
         <LedgerEnd />
       </Section>
 
-      {timeLimited ? (
+      {timeLimited && expiryDate ? (
         <Note tone="olive">Tato cena platí do {expiryDate}.</Note>
       ) : null}
 
-      <ButtonRow>
-        <EmailButton href={productLink}>Zobrazit objekt</EmailButton>
-      </ButtonRow>
+      {productUrl ? (
+        <ButtonRow>
+          <EmailButton href={productUrl}>Zobrazit objekt</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         Tuto zprávu dostáváte, protože jste si objekt prohlíželi nebo
