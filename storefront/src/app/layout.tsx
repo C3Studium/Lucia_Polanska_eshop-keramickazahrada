@@ -1,4 +1,5 @@
 import LenisProvider from "@lib/context/LenisContext"
+import MotionPreferenceProvider from "@lib/context/MotionPreferenceProvider"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
@@ -20,11 +21,13 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="cs" data-mode="light">
       <body>
-        <StateProvider>
-          <LenisProvider>
-            <main className="relative">{props.children}</main>
-          </LenisProvider>
-        </StateProvider>
+        <MotionPreferenceProvider>
+          <StateProvider>
+            <LenisProvider>
+              <main className="pageFrame relative">{props.children}</main>
+            </LenisProvider>
+          </StateProvider>
+        </MotionPreferenceProvider>
       </body>
     </html>
   )

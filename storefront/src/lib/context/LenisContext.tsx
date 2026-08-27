@@ -8,11 +8,13 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Reduced-motion visitors get the browser's own scrolling: smooth-scroll hijacking is
-    // exactly the kind of motion the preference asks us to drop.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    // The reduced-motion early return is switched off for now, with the other two layers —
+    // see lib/context/MotionPreferenceProvider.tsx. It read:
+    //
+    //   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    //
+    // Smooth-scroll hijacking is exactly the kind of motion that preference asks us to drop, so
+    // this is the first thing to restore when the proper mechanism lands.
 
     const lenis = new Lenis({
       duration: 1.2,

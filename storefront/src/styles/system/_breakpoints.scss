@@ -37,10 +37,19 @@ $h-constraints: (
   ),
   // 520px clears the tallest phone in landscape (430px) with room for browser chrome,
   // while staying well under the shortest tablet in landscape (768px).
+  //
+  // The max-width matters as much as the height. Height alone let these two claim a laptop: a
+  // 1280x720 screen leaves ~510px of viewport once Chrome's tab strip, omnibox and bookmarks bar
+  // are subtracted, so a 1220x510 laptop matched `phl` and got the phone-landscape composition —
+  // headline down from 84px to 51px, secondary labels dropped. The largest phone in landscape is
+  // 932px wide, so 1199.98px is generous for a phone and still stops exactly where `lt` begins
+  // (min-width: 1200px). The two now partition the short-viewport range instead of overlapping.
   phs: (
+    max-width: 1199.98px,
     max-height: 520px
   ),
   phl: (
+    max-width: 1199.98px,
     max-height: 520px
   ),
   lt: (

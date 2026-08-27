@@ -44,14 +44,14 @@
 
   @include h(sm) {
     min-height: 100svh;
-    padding-right: 5vw;
-    padding-left: 5vw;
+    padding-right: calc(5 * var(--fvw));
+    padding-left: calc(5 * var(--fvw));
   }
 
   @include v(lg) {
     min-height: 100svh;
-    padding-right: 5vw;
-    padding-left: 5vw;
+    padding-right: calc(5 * var(--fvw));
+    padding-left: calc(5 * var(--fvw));
   }
 
   /* Sideways on a phone there is no room for a full-height chapter. */
@@ -100,15 +100,16 @@
       line-height: 0.82;
       letter-spacing: -0.055em;
 
-      @include h(sm) { font-size: clamp(4.8rem, 9vw, 10rem); }
-      @include v(lg) { font-size: clamp(4.8rem, 9vw, 10rem); }
+      /* Height-aware for the same reason as the hero headline — see IntroHero/style.scss. */
+      @include h(sm) { font-size: clamp(4.8rem, min(9vw, 15vh), 10rem); }
+      @include v(lg) { font-size: clamp(4.8rem, min(9vw, 15vh), 10rem); }
 
       &:last-child {
         align-self: flex-end;
         padding-right: 0;
 
-        @include h(sm) { padding-right: 7vw; }
-        @include v(lg) { padding-right: 7vw; }
+        @include h(sm) { padding-right: calc(7 * var(--fvw)); }
+        @include v(lg) { padding-right: calc(7 * var(--fvw)); }
       }
 
       .precise__char {
@@ -125,8 +126,8 @@
       gap: clamp(1rem, 2.5vw, 3rem);
       margin: 0.8rem 0 1rem 0;
 
-      @include h(sm) { margin-left: 10vw; }
-      @include v(lg) { margin-left: 10vw; }
+      @include h(sm) { margin-left: calc(10 * var(--fvw)); }
+      @include v(lg) { margin-left: calc(10 * var(--fvw)); }
 
       /* The inline image beside the title has no room until the wide composition. */
       .Hero__Intro__Img_Wrapper,
@@ -140,7 +141,7 @@
       h2 {
         color: #747e62;
         font-family: "Sentient-LightItalic";
-        font-size: clamp(4.2rem, 7.8vw, 8.8rem);
+        font-size: clamp(4.2rem, min(7.8vw, 13vh), 8.8rem);
         letter-spacing: -0.045em;
       }
 
@@ -213,3 +214,95 @@
   }
 }
 
+
+/*
+ * Laptops with a short viewport — see the same stop in Hero/IntroHero/style.scss.
+ *
+ * This chapter is a 100svh panel whose every vertical value is a clamp with a rem floor:
+ * `clamp(9rem, 17vh, 14rem)` of top padding resolves to 17vh only above ~847px of viewport, so
+ * on a 600px laptop screen it is a flat 144px — and so is every other one. Measured at 1280x600
+ * the section stood 814px tall inside a 600px viewport: the title alone filled the screen and the
+ * paragraph it introduces never appeared above the fold.
+ *
+ * The type comes down and the vertical padding is re-cut against the height that actually exists.
+ * The composition — rail, stepped two-line title with the inline plate, then the two-column body —
+ * is untouched.
+ */
+@include lt-h {
+  .ECom__Intro {
+    /*
+     * The chapter is a forced 100svh panel, and its three parts — rail, title, body — were
+     * stacked from the top with fixed gaps. On a 562px screen that packed everything into the
+     * upper 420px and left a quarter of the frame empty underneath, which read as the section
+     * having been cut short rather than composed.
+     *
+     * Distributing them instead pins the rail to the top and the body to the bottom, with the
+     * title floating between: the same three-part structure, but it now fills whatever height
+     * the browser leaves. The fixed gaps below are zeroed so they do not fight the distribution.
+     */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-top: 5.5rem;
+    padding-bottom: 4rem;
+
+    .ECom__Intro__Rail {
+      margin-bottom: 0;
+    }
+
+    /*
+     * The title is a diagonal: "Vítejte" at the left edge, the italic middle line indented and
+     * paired with a plate, "Zahradě" thrown to the right. Over 467px of desktop title that reads
+     * as one descending gesture. Shrunk to 227px it does not — the same horizontal spread across
+     * a third of the height leaves the three lines as unrelated fragments with a hole in the
+     * middle, which is what this looked like before.
+     *
+     * Bounding the block is what fixes it: the stagger keeps its shape but spans 62rem instead of
+     * the full 72rem column, so the descent stays legible as one shape. The indents come in to
+     * match, and the plate is sized off the line box beside it so it reads as a companion to the
+     * type rather than a stray thumbnail.
+     */
+    .ECom__Intro__Title {
+      /*
+       * A proportion, not a rem. This was `62rem` — a fixed box — while the type above it scales
+       * with viewport height. The two diverged: at 1600x742 the headline had grown to 111px but
+       * the box had not, so a line wrapped and the title jumped from 271px tall at 1536x706 to
+       * 358px, which is the opposite of the smooth curve the rest of this pass is for. As a
+       * percentage the bound grows with the column, so the diagonal keeps its shape at every width.
+       * At 1280 this still resolves to ~992px, exactly what 62rem gave.
+       */
+      max-width: 86%;
+
+      h2 {
+        /* Size comes from the continuous height-aware rule above; only the stagger is tuned here. */
+        &:last-child {
+          padding-right: calc(4 * var(--fvw));
+        }
+      }
+
+      .Hero__Intro__Container {
+        /* Not `margin: … 0`: that shorthand silently reset the 10vw left indent this line is
+           built on, which is what dropped the plate under "Vítejte" at the far left. */
+        margin-top: 0.5rem;
+        margin-right: 0;
+        margin-bottom: 0.6rem;
+        margin-left: calc(5 * var(--fvw));
+        gap: clamp(0.9rem, 1.8vw, 1.8rem);
+
+        .Hero__Intro__Img__Container {
+          width: clamp(8rem, 13vw, 15rem);
+          height: clamp(3.4rem, 5.2vw, 6rem);
+        }
+      }
+    }
+
+    .ECom__Intro__Content {
+      margin-top: 0;
+      gap: 3rem;
+
+      p {
+        font-size: clamp(1rem, 1.05vw, 1.15rem);
+      }
+    }
+  }
+}

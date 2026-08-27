@@ -18,7 +18,7 @@
     align-items: flex-end;
     justify-content: center;
     overflow: hidden;
-    padding: clamp(4.8rem, 8vh, 7rem) 4vw 4vh;
+    padding: clamp(4.8rem, 8vh, 7rem) calc(4 * var(--fvw)) 4vh;
     isolation: isolate;
     will-change: clip-path;
 
@@ -53,7 +53,7 @@
       width: min(100%, 96rem);
       min-height: 30%;
       grid-template-columns: minmax(32rem, 1.5fr) minmax(15rem, 0.5fr);
-      column-gap: 4vw;
+      column-gap: calc(4 * var(--fvw));
       align-content: center;
       padding-bottom: clamp(1.5rem, 3vh, 3rem);
 
@@ -299,7 +299,9 @@
 @include lt-h {
   .Collections {
     .sticky {
-      padding-top: clamp(4rem, 6.5vh, 5rem);
+      /* 6.5vh sat under its own 4rem floor on a short screen, so the eyebrow landed 8px below the
+         navbar pill, against 52px of air at 1920. Raised so the chapter still opens with a gap. */
+      padding-top: clamp(4.6rem, 9vh, 6rem);
       padding-bottom: 4.2vh;
 
       .header {

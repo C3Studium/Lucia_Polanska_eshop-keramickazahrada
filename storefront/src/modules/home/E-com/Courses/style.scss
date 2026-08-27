@@ -82,7 +82,8 @@
 
       img {
         object-fit: cover;
-        filter: saturate(0.78) brightness(0.94);
+        /* No filter. The base frame is the same photograph the shader samples, so grading it here
+           put the still and the animated layer at different exposures. */
       }
     }
 
@@ -108,15 +109,15 @@
     height: 100%;
     flex-direction: column;
     justify-content: flex-end;
-    padding: clamp(5rem, 10vh, 8rem) 5vw clamp(4rem, 7vh, 6rem);
+    padding: clamp(5rem, 10vh, 8rem) calc(5 * var(--fvw)) clamp(4rem, 7vh, 6rem);
     color: #ffe8d6;
     pointer-events: none;
 
     .Courses__meta {
       position: absolute;
       top: clamp(5rem, 9vh, 7rem);
-      left: 5vw;
-      right: 5vw;
+      left: calc(5 * var(--fvw));
+      right: calc(5 * var(--fvw));
       display: grid;
       grid-template-columns: max-content 1fr max-content;
       align-items: center;
@@ -194,7 +195,7 @@
     position: absolute;
     inset: 0;
     z-index: 7;
-    padding: clamp(5rem, 9vh, 7rem) 5vw;
+    padding: clamp(5rem, 9vh, 7rem) calc(5 * var(--fvw));
     color: var(--blackText);
     pointer-events: none;
     will-change: clip-path;
@@ -272,7 +273,7 @@
     .Courses__cta {
       position: absolute;
       top: 50%;
-      left: 7vw;
+      left: calc(7 * var(--fvw));
       z-index: 2;
       width: min(62rem, 54vw);
       transform: translateY(-50%);
@@ -372,7 +373,7 @@
 
     .Courses__ctaIndex {
       position: absolute;
-      right: 5vw;
+      right: calc(5 * var(--fvw));
       bottom: clamp(2rem, 4vh, 3rem);
       z-index: 2;
       display: flex;

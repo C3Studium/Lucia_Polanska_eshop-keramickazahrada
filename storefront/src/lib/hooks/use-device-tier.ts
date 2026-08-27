@@ -9,16 +9,17 @@ import { useEffect, useState } from "react"
  * window; a 932px one is a phone lying on its side. Both need different animation from a laptop
  * at the same width, and only these queries can tell them apart.
  *
- * Mirrors the `touch` / `fine-pointer` / `reduced-motion` mixins in styles/system/_mixins.scss,
- * so CSS and JS branch on the same facts.
+ * Mirrors the `touch` / `fine-pointer` mixins in styles/system/_mixins.scss, so CSS and JS
+ * branch on the same facts.
+ *
+ * `reducedMotion` used to be the third field here. Motion reductions are switched off site-wide
+ * for now — see lib/context/MotionPreferenceProvider.tsx — so nothing consumed it any more.
  */
 export type DeviceTier = {
   /** No hover, coarse pointer. Mouse-driven animation must not run. */
   isTouch: boolean
   /** Small touch screen: the quality budget for anything GPU-bound is much lower. */
   isPhone: boolean
-  /** The OS motion preference. */
-  reducedMotion: boolean
 }
 
 const QUERIES = {
@@ -28,7 +29,6 @@ const QUERIES = {
      exactly this reason. */
   phone:
     "(hover: none) and (pointer: coarse) and ((max-width: 900px) or (max-height: 520px))",
-  reduced: "(prefers-reduced-motion: reduce)",
 } as const
 
 /**
@@ -36,7 +36,7 @@ const QUERIES = {
  * mounting the expensive path on a phone and only then tearing it down, which is the cost we are
  * trying to avoid.
  */
-const INITIAL: DeviceTier = { isTouch: false, isPhone: false, reducedMotion: false }
+const INITIAL: DeviceTier = { isTouch: false, isPhone: false }
 
 export function useDeviceTier(): DeviceTier {
   const [tier, setTier] = useState<DeviceTier>(INITIAL)
@@ -44,13 +44,11 @@ export function useDeviceTier(): DeviceTier {
   useEffect(() => {
     const touch = window.matchMedia(QUERIES.touch)
     const phone = window.matchMedia(QUERIES.phone)
-    const reduced = window.matchMedia(QUERIES.reduced)
 
     const sync = () =>
       setTier({
         isTouch: touch.matches,
         isPhone: phone.matches,
-        reducedMotion: reduced.matches,
       })
 
     sync()
@@ -59,12 +57,10 @@ export function useDeviceTier(): DeviceTier {
     // once on mount.
     touch.addEventListener("change", sync)
     phone.addEventListener("change", sync)
-    reduced.addEventListener("change", sync)
 
     return () => {
       touch.removeEventListener("change", sync)
       phone.removeEventListener("change", sync)
-      reduced.removeEventListener("change", sync)
     }
   }, [])
 

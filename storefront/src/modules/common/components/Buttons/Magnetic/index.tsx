@@ -9,7 +9,7 @@ const RELATIVE = { zIndex: 50, position: 'relative' } as const;
 
 export default function Magnetic({ children, sensitivity = 0.1 }: { children: React.ReactNode; sensitivity?: number }) {
     const ref = useRef<HTMLDivElement | null>(null);
-    const { isTouch, reducedMotion } = useDeviceTier();
+    const { isTouch } = useDeviceTier();
 
     /*
      * Motion values rather than state. This used to call setState on every mousemove, which
@@ -39,7 +39,7 @@ export default function Magnetic({ children, sensitivity = 0.1 }: { children: Re
      * The whole effect is the element leaning toward the cursor. On a touch device there is no
      * cursor, so there is nothing to lean toward — it is dead weight, not a degraded experience.
      */
-    if (isTouch || reducedMotion) {
+    if (isTouch) {
         return <div className='magnetic' style={RELATIVE}>{children}</div>;
     }
 

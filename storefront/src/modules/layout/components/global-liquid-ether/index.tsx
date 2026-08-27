@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useMemo, type CSSProperties } from "react"
 
 import { useDeviceTier } from "@lib/hooks/use-device-tier"
+import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
 import styles from "./style.module.scss"
 
 type AmbientPreset = {
@@ -86,7 +87,8 @@ function getPreset(pathname: string): AmbientPreset {
 
 export default function GlobalLiquidEther() {
   const pathname = usePathname()
-  const { isTouch, isPhone, reducedMotion } = useDeviceTier()
+  const { isTouch, isPhone } = useDeviceTier()
+  const shadersEnabled = useShadersEnabled()
   const pathSegments = pathname.split("/").filter(Boolean)
   const isHomepage = pathSegments.length <= 1
   const preset = getPreset(pathname)
@@ -118,10 +120,24 @@ export default function GlobalLiquidEther() {
     }
   }, [preset, isTouch, isPhone])
 
-  // The one case where it should not run at all: the visitor asked for less motion.
-  if (reducedMotion) {
+  /* Unlike the image shaders, this one has nothing underneath it — it is an ambient overlay, so
+     rendering nothing is the fallback. A full-screen fragment shader running behind every page is
+     also the single most expensive thing on the site, which is why the stuttering machine gets it
+     removed rather than merely downgraded. */
+  if (!shadersEnabled) {
     return null
   }
+
+  // Shader/cursor reduced-motion fallback is intentionally disabled for now, matching
+  // IntroHero, omne/main and dotazy/main. This used to be `if (reducedMotion) return null`,
+  // which meant the effect never mounted for anyone browsing with the OS motion preference on
+  // — a setting plenty of people have enabled without knowing it, and one that took the site's
+  // signature effect with it. Restore the gate (or swap it for a still render: autoSpeed 0 and
+  // mouseForce 0 keep the look without the movement) when the reduced-motion pass comes round.
+  //
+  // The other two layers still honour the preference: LenisProvider does not initialise, and
+  // the `@include reduced-motion` block in globals.scss collapses transitions and stops the
+  // infinite keyframes. This is the ambient canvas only.
 
   return (
     <div

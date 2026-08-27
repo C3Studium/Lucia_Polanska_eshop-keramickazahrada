@@ -604,9 +604,15 @@ export default function LiquidImageCarousel({
 
 			float wetHighlight = wetEdge * (0.16 + speed * 0.24);
 			color += (1.0 - color) * vec3(0.92, 0.9, 0.76) * wetHighlight;
-			color = mix(color, color * vec3(0.9, 1.04, 0.94), revealField * 0.12);
-			float shade = mix(0.52, 0.18, smoothstep(0.0, 1.0, uv.x));
-			color *= 1.0 - shade;
+
+			/*
+			 * The photograph is left as it was authored. Two lines used to sit here: a green
+			 * re-tint applied wherever the fluid was moving, and a horizontal ramp that
+			 * multiplied the whole frame by 0.48-0.82 — the left third of every course photo
+			 * was being darkened by half. The section still reads over its type: the legibility
+			 * scrim is the ::after gradient in Courses/style.scss, which was doing the same job
+			 * a second time on top of this one.
+			 */
 
 			vec3 stageColor = vec3(0.733, 0.718, 0.533);
 			vec3 finalColor = mix(stageColor, color, shapeMask);

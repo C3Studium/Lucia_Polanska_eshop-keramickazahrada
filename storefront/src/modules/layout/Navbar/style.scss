@@ -24,12 +24,13 @@
     inset -2px 0 4px rgba(83, 92, 68, 0.055);
   position: fixed;
   top: clamp(10px, 0.8vw, 16px);
-  left: clamp(12px, 1.4vw, 28px);
+  /* + --page-inset so the pill sits inside the 16:10 frame on ultrawide (see globals.scss). */
+  left: calc(var(--page-inset, 0px) + clamp(12px, 1.4vw, 28px));
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: calc(100vw - clamp(24px, 2.8vw, 56px));
+  width: calc(var(--page-max-w, 100vw) - clamp(24px, 2.8vw, 56px));
   height: var(--nav-height);
   color: var(--nav-ink);
   transition: filter 0.4s ease;

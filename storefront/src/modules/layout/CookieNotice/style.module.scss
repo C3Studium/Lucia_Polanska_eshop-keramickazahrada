@@ -9,17 +9,14 @@
   position: fixed;
   z-index: 400;
   bottom: clamp(16px, 2vw, 28px);
-  left: clamp(16px, 2vw, 28px);
+  left: calc(var(--page-inset, 0px) + clamp(16px, 2vw, 28px));
   display: flex;
-  max-width: min(560px, calc(100vw - 32px));
   align-items: center;
-  padding: 16px 18px;
   border: 1px solid rgba(32, 33, 28, 0.2);
   border-radius: 16px;
   background: #f6f1e6;
   box-shadow: 0 22px 48px -30px rgba(24, 26, 20, 0.62);
   color: #20211c;
-  gap: 18px;
 }
 
 .text {
@@ -62,7 +59,7 @@
 
 @include below-px(760px) {
   .root {
-    right: clamp(16px, 2vw, 28px);
+    right: calc(var(--page-inset, 0px) + clamp(16px, 2vw, 28px));
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;
@@ -71,4 +68,25 @@
   .button {
     width: 100%;
   }
+}
+
+/*
+ * The card is a fixed overlay, so it costs a share of the screen rather than a fixed number of
+ * pixels, and every section on this site puts its supporting copy in the bottom-left — exactly
+ * where the card lands. At three lines it measures 99px and covers the intro paragraph, the
+ * courses lede and the footer's payment badges.
+ *
+ * This used to sit behind `@include lt-h`, which is capped at 800px of height, so it only helped
+ * short laptops: a 1680x1050 screen leaves 892px of viewport in Chrome and missed the rule by 92px,
+ * getting the full three-line card. The trade-off it makes is not height-specific, so it is now
+ * the default at every size — widening the card sets the copy in two lines instead of three and
+ * takes it from 99px to ~74px everywhere.
+ *
+ * The 14px type floor and the 48px action are deliberately untouched; they are accessibility
+ * floors, not spacing. Width is the only lever that buys height back without crossing them.
+ */
+.root {
+  max-width: min(720px, calc(100vw - 32px));
+  padding: 12px 16px;
+  gap: 16px;
 }

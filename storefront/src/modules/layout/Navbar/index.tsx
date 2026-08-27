@@ -232,6 +232,7 @@ export default function Navbar({
           />
           <div className="navbar__center-side navbar__center-side--right">
             <ContactTrigger
+              className="navbar__nav-link"
               text="Kontakt"
               img="/assets/links/home_img.png"
               alt=""

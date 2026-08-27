@@ -41,6 +41,23 @@
 }
 
 .footer__topline {
+  /*
+   * Dropped on short viewports. The footer is 598px tall; on a 1366x768 laptop in Chrome the
+   * viewport is 610px, so the whole footer fits and the page comes to rest with this rail sitting
+   * at y[46,58] — inside the navbar pills, which end at y=59. The result is the last thing on the
+   * page being two clipped word-fragments ("...ADA", "ATELIÉR LUCIE") under the nav.
+   *
+   * Padding cannot fix it: the rail is anchored to the footer's top, and the footer is anchored to
+   * the bottom of the page, so adding height above the rail moves the footer up by exactly as much
+   * as it moves the rail down and the rail stays at y=46. Only removing it, or cutting ~25px from
+   * the footer's total height, changes anything — and both spans are duplicates. The wordmark is
+   * the brand lockup directly below, and "Ateliér Lucie Polanské · Písek" is repeated verbatim in
+   * the PRODÁVAJÍCÍ / SÍDLO legal row. Nothing is lost.
+   */
+  @include lt-h {
+    display: none;
+  }
+
   display: flex;
   min-height: 36px;
   align-items: center;

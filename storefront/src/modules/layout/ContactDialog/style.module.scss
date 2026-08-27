@@ -709,12 +709,7 @@
   }
 }
 
-@include reduced-motion {
-  .formPanel,
-  .formPanel::before {
-    animation: none;
-  }
-}
+/* reduced-motion stop for .formPanel / .formPanel::before (animation: none) removed for now */
 
 @keyframes creamDrift {
   0% {

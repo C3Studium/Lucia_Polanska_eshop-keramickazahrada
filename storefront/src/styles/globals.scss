@@ -228,37 +228,87 @@ body::-webkit-scrollbar {
   height: 0;
 }
 
+/*
+ * ---------------------------------------------------------------------------------------------
+ * 16:10 page frame.
+ *
+ * Up to and including 1920px wide the page is full-bleed and nothing here applies — 1920x1080 is
+ * the reference desktop and it is left exactly as it was. Past that the content is capped to a
+ * 16:10 block and centred, so an ultrawide shows a composed frame rather than a layout stretched
+ * across a metre of glass. Because the cap is an aspect ratio, the width follows the viewport
+ * height: 2560x1080 gives a 1728px frame, 3440x1440 gives 2304px.
+ *
+ * Two variables carry it. `--page-max-w` sizes the frame; `--page-inset` is the band beside it.
+ * The inset exists because `position: fixed` resolves against the viewport, not against the
+ * wrapper — the navbar, the cookie card, the ambient canvas and the scroll rail would each shoot
+ * out to the screen edges and break the frame. (Making body a containing block with a transform
+ * would capture them in one line, but it also turns `fixed` into `absolute`, and the navbar would
+ * scroll away with the page.) So each of those four adds `--page-inset` to its own offset; there
+ * are no other fixed, full-width elements on the page.
+ * ---------------------------------------------------------------------------------------------
+ */
+:root {
+  --page-max-w: 100vw;
+  --page-inset: 0px;
+
+  /*
+   * "One percent of the frame", for the horizontal rhythm inside it.
+   *
+   * Plain vw measures the screen, not the frame, so a 2560x1440 and a 3440x1440 display — both
+   * capped to the same 2304px frame — were laying that frame out differently: a 5vw gutter came
+   * out 128px on one and 172px on the other, 5.6% against 7.5% of an identical frame. Same frame,
+   * two compositions, which is the opposite of what capping it was for.
+   *
+   * Below 1921px `--page-max-w` is exactly 100vw, so this resolves to exactly 1vw and every
+   * substitution below is a no-op. Nothing under the threshold moves by a pixel.
+   */
+  --fvw: calc(var(--page-max-w) / 100);
+}
+
+@media (min-width: 1921px) {
+  :root {
+    --page-max-w: min(100vw, calc(100svh * 1.6));
+    --page-inset: calc((100vw - var(--page-max-w)) / 2);
+  }
+
+  /* The band behind the frame. Darker than the brand's #212222 so the frame reads as a frame
+     even where the page itself is dark. */
+  body {
+    background: #141513;
+  }
+}
+
+/* The frame itself, on the wrapper that holds navbar, page and footer. */
+.pageFrame {
+  max-width: var(--page-max-w);
+  margin-inline: auto;
+}
+
 [data-scroll-section] {
   scroll-margin-top: clamp(72px, 9vh, 112px);
 }
 
 
 /*
- * Reduced motion, layer 1 of 3 (spec §8.5).
+ * The site-wide reduced-motion layer used to live here and is switched off for now, along with
+ * the other two layers (see lib/context/MotionPreferenceProvider.tsx). It collapsed transitions
+ * to 0.15s, capped the 19 infinite keyframe animations at one iteration, and stopped anything
+ * marked [data-marquee] or [data-ambient] where it stood.
  *
- * Layer 2 is `useReducedMotion` inside the motion-heavy components; layer 3 is LenisProvider,
- * which does not initialise at all under this preference so the browser's native scrolling
- * takes over.
+ * Putting it back is this block, restored verbatim:
  *
- * This layer kills the 19 infinite keyframe animations and collapses transitions, without
- * removing any content: reduced-motion visitors get the same composed pages, settled.
+ *   @include reduced-motion {
+ *     *, *::before, *::after {
+ *       animation-duration: 0.01ms !important;
+ *       animation-iteration-count: 1 !important;
+ *       transition-duration: 0.15s !important;
+ *       scroll-behavior: auto !important;
+ *     }
+ *     [data-marquee], [data-ambient] { animation: none !important; }
+ *   }
+ *
+ * The `reduced-motion` mixin itself stays in styles/system/_mixins.scss, unused but intact.
  */
-@include reduced-motion {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.15s !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* Perpetual ambience has no settled state worth animating to — stop it where it stands. */
-  [data-marquee],
-  [data-ambient] {
-    animation: none !important;
-  }
-}
 
 /*
  * The target floor for controls, applied where it matters: a finger. Scoped to real buttons so

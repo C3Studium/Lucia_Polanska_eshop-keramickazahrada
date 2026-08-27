@@ -10,7 +10,7 @@
   position: fixed;
   z-index: 20000;
   top: 50%;
-  right: 7px;
+  right: calc(var(--page-inset, 0px) + 7px);
   display: flex;
   justify-content: flex-end;
   color: #ffe8d6;
@@ -18,12 +18,14 @@
   pointer-events: none;
   transform: translateY(-50%);
 
+  /* Both stops re-declare `right`, so the --page-inset on the base rule was being overridden and
+     the rail sat against the screen edge outside the 16:10 frame on ultrawide. */
   @include v(md) {
-    right: clamp(10px, 1.2vw, 24px);
+    right: calc(var(--page-inset, 0px) + clamp(10px, 1.2vw, 24px));
   }
 
   @include h(xs) {
-    right: clamp(10px, 1.2vw, 24px);
+    right: calc(var(--page-inset, 0px) + clamp(10px, 1.2vw, 24px));
   }
 }
 
