@@ -313,7 +313,11 @@ export const listStoreCatalogue = async ({
 
   const queryParams: StoreProductListQuery = {
     limit: needsLocalAssembly ? 100 : normalizedLimit,
-    fields: "*bundle,*type,*categories,*images",
+    // `inventory_quantity` is a computed field Medusa only returns when it is
+    // asked for by name. Without it every tracked variant read as quantity 0,
+    // so the grid called in-stock pieces „Prodáno" and never showed „Poslední
+    // kus" at all — the cards contradicted the product page they linked to.
+    fields: "*bundle,*type,*categories,*images,+variants.inventory_quantity",
   }
 
   if (searchTerm) {

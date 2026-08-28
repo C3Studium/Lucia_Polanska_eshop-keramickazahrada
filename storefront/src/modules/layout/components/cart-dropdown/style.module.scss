@@ -194,6 +194,78 @@
         width: auto;
         max-height: calc(100svh - 84px);
       }
+
+      /*
+       * Opens upward when the cart button is in the phone bottom bar. Anchored downward from
+       * there the panel would start below the fold and grow off the bottom of the screen;
+       * upward it fills the space that is actually free.
+       *
+       * Keyed off the ancestor rather than a breakpoint, so the direction always follows where
+       * the button actually is. MobileBar owns the two custom properties, and appears only at
+       * the phone stops, so there is one place to change if the bar's height ever does.
+       *
+       * `svh`, not `vh` or `dvh`: the panel has to fit while Chrome's URL bar is showing, and
+       * must not resize under a thumb when that bar collapses mid-scroll.
+       */
+      :global(.navbar__bottomBar) & {
+        position: fixed;
+        top: auto;
+        right: 12px;
+        bottom: calc(
+          var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 10px
+        );
+        left: 12px;
+
+        /*
+         * A sheet, not a dropdown. Anchored to the viewport rather than to the button: the cart
+         * button is the third of four slots, so a panel hung off its right edge sat off-centre
+         * over the page with a hard edge on one side and a gutter on the other. Full width
+         * between the same 12px insets the bar itself uses, and it grows upward from there.
+         */
+        width: auto;
+        /* Full width between the insets on a phone; capped and centred in landscape, where the
+           screen is 800px+ and a sheet that wide stops reading as a panel. */
+        max-width: 460px;
+        max-height: calc(
+          100svh - var(--nav-bottom-height, 56px) - var(--nav-bottom-inset, 12px) - 34px
+        );
+        margin-inline: auto;
+        transform-origin: bottom center;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+
+        /*
+         * "Košík" at 28px plus the "ATELIÉROVÝ VÝBĚR" eyebrow at .14em tracking wants ~308px of
+         * header on a sheet that is 296px wide at 320px — which is why the eyebrow was breaking
+         * across two lines beside the title. Both come down; below 400px the eyebrow goes, since
+         * it is a flourish and the title is the thing that has to be read.
+         */
+        .panelHeader {
+          padding: 0.95rem 1.1rem;
+
+          h3 {
+            font-size: 1.4rem;
+          }
+
+          &::after {
+            font-size: 0.6875rem;
+            letter-spacing: 0.1em;
+          }
+
+          @include below-px(400px) {
+            &::after {
+              display: none;
+            }
+          }
+        }
+
+        /* 4rem top and bottom around an empty-cart message made the sheet nearly full-height to
+           say that nothing is in it. */
+        .empty .emptyContent {
+          padding-top: 1.75rem;
+          padding-bottom: 1.75rem;
+        }
+      }
       .empty {
         .emptyContent {
           display: flex;

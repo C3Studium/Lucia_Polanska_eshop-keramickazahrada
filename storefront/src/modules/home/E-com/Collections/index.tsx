@@ -1,6 +1,7 @@
 "use client"
 import { HorizontalItem, VerticalItem } from "./item"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import {
   useScroll,
   motion,
@@ -109,12 +110,14 @@ function CollectionCardMotion({
   progress,
   index,
   total,
+  isPhone,
 }: {
   collection: CollectionType
   spread: SpreadConfig
   progress: MotionValue<number>
   index: number
   total: number
+  isPhone: boolean
 }) {
   const segment = CARDS_SETTLED / total
   const overlap = segment * 0.42
@@ -159,7 +162,10 @@ function CollectionCardMotion({
   return (
     <motion.div
       className="collection__cardMotion"
-      style={{ x, y, rotate, scale, opacity }}
+      /* On a phone the cards are a plain column, so there is nothing for a scroll-linked spread
+         and rotation to spread against — and five cards each running five springs off the scroll
+         position is the most expensive thing on the page for no visible result. */
+      style={isPhone ? undefined : { x, y, rotate, scale, opacity }}
     >
       <collection.item collection={collection} />
     </motion.div>
@@ -170,6 +176,15 @@ export default function Collections() {
   const ref = useRef(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const railRef = useRef<HTMLDivElement>(null)
+
+  /*
+   * The whole section is one scroll-driven scene: 210vh of page pins a viewport-high stage and
+   * walks a four-column rail sideways through it. That is a composition for a wide window — on a
+   * phone the rail is ~2030px of grid behind a 390px hole, so most of the collections cannot be
+   * reached at any scroll position, and the sideways travel fights the vertical scroll that
+   * drives it. Here it is a plain column instead.
+   */
+  const { isPhone } = useDeviceTier()
   const [travel, setTravel] = useState({ from: 0, to: 0 })
   const { scrollYProgress: localScrollYProgress } = useScroll({
     target: ref,
@@ -295,21 +310,33 @@ export default function Collections() {
       className="Collections"
       ref={ref}
       id="home-collections"
+      /*
+       * Layout and motion branch on the same flag rather than on a media query beside it. Keyed
+       * separately they could disagree — a vertical column still being walked sideways by a
+       * scroll-linked `x` — and there is no width at which that is a layout anyone chose.
+       */
+      data-phone={isPhone || undefined}
       data-scroll-section
       data-scroll-label="Kolekce"
     >
-      <motion.div className="sticky" style={{ clipPath: sceneClipRaw }}>
+      <motion.div
+        className="sticky"
+        style={isPhone ? undefined : { clipPath: sceneClipRaw }}
+      >
         <motion.div
           className="Collections__exitCurtain"
-          style={{ clipPath: exitCurtain, scale: curtainScale }}
+          style={isPhone ? undefined : { clipPath: exitCurtain, scale: curtainScale }}
           aria-hidden="true"
         />
         <motion.div
           ref={stageRef}
           className="sticky__Wrapper"
-          style={{ y, scale: wrapperScale, opacity: sceneOpacity }}
+          style={isPhone ? undefined : { y, scale: wrapperScale, opacity: sceneOpacity }}
         >
-          <motion.div className="header" style={{ y: headerY }}>
+          <motion.div
+            className="header"
+            style={isPhone ? undefined : { y: headerY }}
+          >
             <div className="header__meta">
               <span>03 · Kolekce</span>
               <span>Ručně tvořeno v Písku</span>
@@ -319,7 +346,11 @@ export default function Collections() {
             </h2>
             <p>Pracuju bez formy, takže se mi dva stejné kusy udělat ani nepodaří.</p>
           </motion.div>
-          <motion.div ref={railRef} className="Collecion__wrapper" style={{ x }}>
+          <motion.div
+            ref={railRef}
+            className="Collecion__wrapper"
+            style={isPhone ? undefined : { x }}
+          >
             {collections.map((collection, index) => (
               <CollectionCardMotion
                 key={collection.id}
@@ -328,6 +359,7 @@ export default function Collections() {
                 index={index}
                 total={collections.length}
                 spread={itemSpread[index] ?? itemSpread[0]}
+                isPhone={isPhone}
               />
             ))}
           </motion.div>

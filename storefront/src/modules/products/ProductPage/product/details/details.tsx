@@ -12,7 +12,7 @@ import {
   maxPurchasableQuantity,
   variantAvailability,
 } from "@lib/util/availability"
-import { backorderNote } from "@lib/util/backorder"
+import { backorderWaitNote } from "@lib/util/backorder"
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
 import { productAllowsDobirka } from "@lib/util/dobirka"
 import { addToCart } from "@lib/data/cart"
@@ -381,7 +381,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     isAdding={isAdding}
                     addState={addState}
                     availability={availability}
-                    backorderNote={isMadeToOrder ? null : backorderNote(product)}
+                    backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
                     codAllowed={productAllowsDobirka(product)}
                     quantity={quantity}
                     maxQuantity={maxQuantity}

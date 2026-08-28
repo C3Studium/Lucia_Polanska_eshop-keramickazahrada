@@ -568,3 +568,125 @@
     }
   }
 }
+
+/*
+ * ─── Phone ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * The stage's bottom padding is `clamp(4rem, 7vh, 6rem)` — 64px at the floor, which on a phone
+ * put the title and its footer rail almost on the bottom edge, under the fixed bottom bar. 5vh
+ * with a rem floor lifts it clear and keeps the proportion on a taller screen.
+ *
+ * The overlap that was drawing this section across the last of the Collections cards is not here
+ * — it is the negative `stageLead` in index.tsx, which is positive on a phone now.
+ */
+@mixin courses-phone {
+  .courses__section {
+    .Courses__content {
+      padding-bottom: max(5vh, 3.25rem);
+    }
+  }
+}
+
+@include below-px(600px) {
+  @include courses-phone;
+}
+
+/* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
+@include phs-h {
+  @include courses-phone;
+}
+
+/*
+ * ─── Phone: the closing panel ───────────────────────────────────────────────────────────────
+ *
+ * Three things have to agree here and did not.
+ *
+ * The ring is only a border and a caption; the actual window is a hole punched through
+ * `.Courses__ctaSurface` with a mask, and the courses photograph shows through it. They are
+ * positioned by two separate sets of numbers — `top/left/width/height` on one, an ellipse in the
+ * mask on the other — so at phone width they had drifted into an 84vw × 30vh ellipse whose top
+ * was cut off by the bar and whose hole no longer sat under it.
+ *
+ * Both are now built from one radius at one centre, so they cannot come apart: the hole is
+ * `circle 7rem at 50% 26%`, and the ring is the 14rem box around that same point.
+ */
+@mixin courses-cta-phone($r, $cy) {
+  .courses__section .Courses__footerCurtain {
+    padding-inline: 1.25rem;
+
+    .Courses__ctaSurface {
+      -webkit-mask-image: radial-gradient(
+        circle #{$r} at 50% #{$cy},
+        transparent 0%,
+        transparent 97%,
+        #000 100%
+      );
+      mask-image: radial-gradient(
+        circle #{$r} at 50% #{$cy},
+        transparent 0%,
+        transparent 97%,
+        #000 100%
+      );
+    }
+
+    /* A circle rather than an ellipse, and small enough to be an object on the page instead of
+       the page itself — 14rem against the 84vw it was. */
+    .Courses__ctaWindow {
+      top: calc(#{$cy} - #{$r});
+      left: calc(50% - #{$r});
+      width: #{$r * 2};
+      height: #{$r * 2};
+      padding-bottom: 1rem;
+    }
+
+    /*
+     * Anchored to the floor instead of hung from the middle. The base sets `top: 50%` with a
+     * `translateY(-50%)`; the 760px rule below already set `top: auto` but left the transform in
+     * place, so the block was being shifted up by half its own height from a static position —
+     * which is the gap between the ring and the heading.
+     */
+    .Courses__cta {
+      top: auto;
+      right: 1.25rem;
+      bottom: max(5vh, 3.25rem);
+      left: 1.25rem;
+      width: auto;
+      transform: none;
+
+      h2 {
+        font-size: clamp(2.4rem, 11vw, 3.4rem);
+        line-height: 0.92;
+
+        em {
+          margin-left: 0;
+          /* 11vw of „hledá svoje místo." does not fit one line at 320px, and `nowrap` there sent
+             the whole panel into horizontal scroll. */
+          white-space: normal;
+        }
+      }
+
+      .Courses__ctaFooter {
+        grid-template-columns: minmax(0, 1fr);
+        margin-top: 1.25rem;
+      }
+    }
+
+    /* „05 · Pokračujte do e-shopu" would sit under the bottom bar, on top of the CTA it repeats. */
+    .Courses__ctaIndex {
+      display: none;
+    }
+  }
+}
+
+@include below-px(600px) {
+  @include courses-cta-phone(7rem, 26%);
+}
+
+/* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
+/*
+ * Sideways the stage is ~430px tall in total, so a 14rem circle at 26% would start at the very
+ * top edge and leave the heading nowhere to go. Half the radius, and centred a little lower.
+ */
+@include phs-h {
+  @include courses-cta-phone(4.4rem, 34%);
+}

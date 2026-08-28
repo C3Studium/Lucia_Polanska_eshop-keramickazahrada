@@ -11,6 +11,7 @@ $layer-h: (
   lg: bp-lg,
   xl: bp-xl,
   huge: bp-huge,
+  qhd: bp-qhd,
 
   // Device-qualified stops. Last in the cascade so they win over the width-only stop they
   // overlap — a phone in landscape matches `sm` on width alone.
@@ -112,7 +113,7 @@ $layer-v: (
     $query: "(min-width: #{$min})";
 
     @if $constraints {
-      @each $feature in (max-width, min-height, max-height) {
+      @each $feature in (max-width, min-height, max-height, min-aspect-ratio) {
         $value: map.get($constraints, $feature);
 
         @if $value != null {
@@ -196,6 +197,42 @@ $layer-v: (
 /// Mouse or trackpad. The only place hover affordances are safe to rely on.
 @mixin fine-pointer {
   @media (hover: hover) and (pointer: fine) {
+    @content;
+  }
+}
+
+/// Machines that have been judged unable to afford expensive effects.
+///
+/// This is the CSS half of the WebGL switch in lib/hooks/use-shaders-enabled.ts, which stamps
+/// `data-fx="full" | "reduced"` on <html> as soon as it has an answer. A stylesheet can already
+/// ask whether it is on a touch device — that is `touch` — but it cannot ask any of the rest:
+/// whether the GPU is a software rasteriser, whether it is an integrated part below the memory
+/// line, or whether the machine has been measured dropping frames while the page was open.
+///
+/// Use it for the CSS that costs what a shader costs — `backdrop-filter`, a large `filter:
+/// blur()`, a full-viewport gradient animation, anything on an infinite keyframe loop. Ordinary
+/// hover transitions and short entrance animations do not belong here; they are not what makes a
+/// thin machine stutter, and removing them makes the site feel broken rather than cheap.
+///
+/// Write the expensive version as the default and the cheap one inside this block. The attribute
+/// is absent during server render and until the probe resolves, so anything gated the other way
+/// round would flash on every load.
+///
+/// No `:global()` around the prefix, deliberately. CSS Modules only rewrites class and id
+/// selectors, so `html[...]` passes through a .module.scss untouched while the `&` still picks
+/// up its hash — and the same mixin stays valid in the plain .scss files, where `:global()` is
+/// not a selector at all and would ship verbatim into the stylesheet.
+@mixin reduced-fx {
+  html[data-fx="reduced"] & {
+    @content;
+  }
+}
+
+/// The counterpart, for the rare case where an effect should only ever be added on a machine
+/// known to be able to afford it. Prefer `reduced-fx` — a default that degrades is safer than
+/// one that upgrades, because the unstamped first paint gets the safe version either way.
+@mixin full-fx {
+  html[data-fx="full"] & {
     @content;
   }
 }

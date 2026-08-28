@@ -2,6 +2,8 @@ import { Metadata } from "next"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import styles from "./notfound.module.scss"
+
 export const metadata: Metadata = {
   title: "Stránka nenalezena",
   description: "Tuhle stránku jsme nenašli.",
@@ -9,12 +11,12 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col gap-4 items-center justify-center min-h-[calc(100dvh-64px)]">
-      <h1 className="text-2xl-semi text-ui-fg-base">Stránka nenalezena</h1>
-      <p className="text-small-regular text-ui-fg-base">
+    <div className={styles.root}>
+      <h1 className={styles.heading}>Stránka nenalezena</h1>
+      <p className={styles.message}>
         Tuhle stránku jsme nenašli. Možná se přesunula, nebo tu nikdy nebyla.
       </p>
-      <LocalizedClientLink className="underline" href="/">
+      <LocalizedClientLink className={styles.link} href="/">
         Zpět na úvodní stránku
       </LocalizedClientLink>
     </div>

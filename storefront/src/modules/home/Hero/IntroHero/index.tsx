@@ -341,6 +341,10 @@ export default function IntroHero({
                             pointerX={pointerX}
                             pointerY={pointerY}
                         />
+                        {/* Flat scrim over the whole frame. The wrapper's gradient handles the
+                            edge the copy sits against, but on a phone the copy runs across the
+                            middle of the picture too, where a gradient has already faded out. */}
+                        <div className="Hero__Intro__Cover__Overlay" aria-hidden="true" />
                     </motion.div>
                 </motion.div>
             </motion.div>

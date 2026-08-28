@@ -1,0 +1,167 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * The (main) 404 — src/app/[countryCode]/(main)/not-found.tsx.
+ *
+ * Reached by an explicit notFound() from inside a (main) segment: a dead product handle, a
+ * removed collection or category, a stale course reservation. Unlike the root 404 it renders
+ * INSIDE the (main) layout, so a fixed navbar sits over the top of it and the footer follows it
+ * in flow.
+ *
+ * Ported from raw Tailwind utilities in this pass. What that replaced, measured on the running
+ * page at all six viewports checked: `text-2xl-semi` = a flat 30px heading and
+ * `text-small-regular` = a flat 12px message at every width from 320px to 2552px, an untouched
+ * 169x24 link, and text running edge to edge at 320px.
+ *
+ * The same caveat as the root 404 applies to every `@include font()` here: the tokens in
+ * styles/system/_typography.scss declare "Helvetica" / "Arimo", which the project does not load
+ * (it loads Sentient, Sansation and Oooh Baby). Each call takes the token's responsive size
+ * ladder and restores the inherited brand face on the next line.
+ */
+
+.root {
+  /*
+   * Was `calc(100dvh - 64px)`. The navbar is `position: fixed`, so it never occupied flow height
+   * and the 64px was subtracted from nothing — it only shortened the block. `box-sizing:
+   * border-box` (globals.scss) keeps the padding inside the 100dvh, so the block stays exactly
+   * one viewport tall and the footer does not move.
+   *
+   * The padding is symmetric on purpose. A centred stack on a viewport this tall is nowhere near
+   * the navbar, and an asymmetric top allowance here only pushed the content down into the cookie
+   * card at 320x568. The navbar clearance belongs at `phs`/`phl`, where it is actually needed.
+   */
+  min-height: 100dvh;
+  padding-block: 2rem;
+  padding-inline: 1.25rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+
+  /*
+   * Above 1921px globals.scss caps the page to a 16:10 frame and paints the band behind it
+   * #141513. The frame takes its colour from the page, and this page had none — at 2552x1351 the
+   * whole 404 rendered as near-black text on the near-black band. Below 1921px the body is
+   * transparent over UA white, so this is a no-op at every other viewport.
+   */
+  background: var(--bgWhite, #fff);
+
+  @include vb((
+    sm: (gap: 1.15rem),
+    md: (gap: 1.35rem, padding-inline: 2.5rem),
+    lg: (gap: 1.6rem, padding-inline: 3rem)
+  ));
+
+  @include hb((
+    xs: (gap: 1.25rem, padding-inline: 2rem),
+    md: (gap: 1.5rem, padding-inline: 3rem),
+    huge: (gap: 1.75rem),
+    qhd: (gap: 2.75rem, padding-inline: 4rem)
+  ));
+
+  /*
+   * Phone in landscape — 320-430px tall, with a fixed navbar over the top and, on a first visit,
+   * the cookie card over the bottom. There is no room to centre here: measured at 568x320, a
+   * centred stack lands at y=128 and the cookie card starts at y~130, so the whole message and
+   * the link sat behind it. The stack is anchored to the top of the band instead, immediately
+   * under the navbar pill, which is the only part of a 320px-tall viewport reliably visible.
+   */
+  @include h(phs) {
+    justify-content: flex-start;
+    gap: 0.4rem;
+    padding-block: 4.25rem 1rem;
+    padding-inline: 2rem;
+  }
+
+  @include h(phl) {
+    justify-content: flex-start;
+    gap: 0.6rem;
+    padding-block: 4.5rem 1.25rem;
+    padding-inline: 2.5rem;
+  }
+
+  @include h(lt) {
+    gap: 1.2rem;
+  }
+}
+
+.heading {
+  font-size: 1.875rem; /* the 30px the Tailwind `text-2xl-semi` resolved to, as the base */
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ui-fg-base, #111827);
+  text-wrap: balance;
+
+  @include font(h2);
+
+  /* Wrapped in `&` so it is not a bare declaration sitting after the media queries the token
+     emits — Sass deprecated that ordering (mixed-decls) and warns on every build. */
+  & {
+    font-family: inherit;
+  }
+
+  @include h(phs) {
+    font-size: 1.75rem;
+  }
+
+  @include h(phl) {
+    font-size: 2.1rem;
+  }
+}
+
+.message {
+  font-size: 1rem;
+  color: var(--ui-fg-base, #111827);
+  line-height: var(--type-leading-body, 1.55);
+
+  /* The Tailwind version left this at 12px everywhere — the absolute floor globals.scss reserves
+     for the uppercase archival eyebrow, not for the one sentence explaining what went wrong. */
+  max-width: 46ch;
+  text-wrap: pretty;
+
+  @include font(SBody);
+
+  & {
+    font-family: inherit;
+  }
+
+  @include h(phs) {
+    font-size: 0.95rem;
+  }
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+
+  font-size: 1rem;
+  color: var(--ui-fg-base, #111827);
+
+  @include font(SCTA);
+
+  & {
+    font-family: inherit;
+  }
+
+  /* globals.scss sets the 44px floor for `button` and friends under `touch` but deliberately not
+     for `<a>`. This link measured 169x24 on every touch viewport. */
+  @include touch {
+    min-height: 44px;
+    padding-inline: 0.75rem;
+  }
+
+  @include fine-pointer {
+    transition: opacity 0.15s ease;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+}

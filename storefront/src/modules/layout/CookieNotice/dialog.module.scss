@@ -1,0 +1,424 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+/*
+ * „Upravit" — the per-category switches, in the same cream card as the banner.
+ * Ink #20211c on #f6f1e6 measures 14.8:1; the muted description is #4a4b42 at 8.1:1.
+ * Nothing below 14px; every action is 48px and every switch has a 48px row to be hit in.
+ */
+
+.backdrop {
+  position: fixed;
+  z-index: 500; /* above the banner (400), which stays underneath until a choice is stored */
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: rgba(20, 22, 17, 0.58);
+  backdrop-filter: blur(6px);
+}
+
+/*
+ * dvh, not vh: on a phone the address bar is part of `vh` until it retracts, so a `86vh` panel is
+ * taller than the screen it is measured against and the save button starts below the fold.
+ */
+.panel {
+  display: flex;
+  width: min(640px, 100%);
+  max-height: min(86dvh, 760px);
+  flex-direction: column;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid rgba(32, 33, 28, 0.2);
+  border-radius: 20px;
+  background: #f6f1e6;
+  box-shadow: 0 40px 90px -50px rgba(16, 18, 12, 0.8);
+  color: #20211c;
+  gap: 18px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.18em;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font: 400 clamp(22px, 3vw, 28px) / 1.1 "Sansation-Regular", sans-serif;
+}
+
+.close {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(32, 33, 28, 0.28);
+  border-radius: 999px;
+  background: transparent;
+  color: #20211c;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  place-items: center;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.close:hover {
+  border-color: #20211c;
+  background: rgba(32, 33, 28, 0.08);
+}
+
+.close:focus-visible,
+.checkbox:focus-visible + .switch {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.lede {
+  margin: 0;
+  font: 400 14px/1.6 "Sansation-Regular", sans-serif;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+/* The list is the only part that scrolls, so the title and the save button never leave the screen.
+   `flex: 1 1 auto` with `min-height: 0` is what lets it both take the leftover height and shrink
+   below its content — without the min-height a flex item refuses to go under its content size and
+   the panel grows past its own max-height instead. */
+.categories {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 6px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.category {
+  border-top: 1px solid rgba(32, 33, 28, 0.14);
+}
+
+.category:first-child {
+  border-top: 0;
+}
+
+/* Positioned so the off-screen checkbox is anchored to its own row: focusing it must not scroll the
+   list to wherever an unpositioned absolute would have landed. */
+.categoryLabel {
+  position: relative;
+  display: flex;
+  min-height: 48px;
+  align-items: flex-start;
+  padding: 14px 2px;
+  cursor: pointer;
+  gap: 14px;
+}
+
+.categoryLabel:has(.checkbox:disabled) {
+  cursor: default;
+}
+
+/* Off-screen but focusable — the switch beside it is only paint. */
+.checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.switch {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(32, 33, 28, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  margin-top: 2px;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.switchKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #20211c;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.checkbox:checked + .switch {
+  border-color: #20211c;
+  background: #20211c;
+}
+
+.checkbox:checked + .switch .switchKnob {
+  background: #ffe8d6;
+  transform: translateX(20px);
+}
+
+/* Necessary cookies: shown on, and shown to be not a choice. */
+.checkbox:disabled + .switch {
+  opacity: 0.55;
+}
+
+.categoryText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  font: 400 16px/1.3 "Sansation-Regular", sans-serif;
+  gap: 8px;
+}
+
+.badge {
+  padding: 3px 8px;
+  border: 1px solid rgba(32, 33, 28, 0.28);
+  border-radius: 999px;
+  font: 400 11px/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  text-transform: uppercase;
+}
+
+.categoryDescription {
+  color: #4a4b42;
+  font: 400 14px/1.55 "Sansation-Regular", sans-serif;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+  border-top: 1px solid rgba(32, 33, 28, 0.14);
+  gap: 12px;
+}
+
+/* Draft helpers, not decisions: they move the switches, and „Uložit nastavení" still has to be
+   pressed. Hence the quiet treatment — they must not read as the accept. */
+.quickActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quickAction {
+  min-height: 48px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: #4a4b42;
+  cursor: pointer;
+  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.quickAction:hover {
+  color: #20211c;
+}
+
+.quickAction:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.decisions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@mixin action {
+  min-height: 48px;
+  flex: 0 0 auto;
+  padding: 0 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  transition:
+    background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+.buttonPrimary {
+  @include action;
+
+  border: 1px solid #20211c;
+  background: #20211c;
+  color: #ffe8d6;
+
+  &:hover {
+    background: transparent;
+    color: #20211c;
+  }
+}
+
+.buttonSecondary {
+  @include action;
+
+  border: 1px solid rgba(32, 33, 28, 0.45);
+  background: transparent;
+  color: #20211c;
+
+  &:hover {
+    border-color: #20211c;
+    background: rgba(32, 33, 28, 0.08);
+  }
+}
+
+/*
+ * Below 560px the footer's two halves stop fitting side by side. They stack in DOM order rather
+ * than reversed: Tab runs Odznačit → Označit → Zrušit → Uložit, and a visual order that disagrees
+ * with the focus order is what WCAG 2.4.3 forbids. „Uložit nastavení" lands at the bottom of the
+ * stack, nearest the thumb, which is where the deciding action wants to be anyway.
+ */
+@include below-px(560px) {
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quickActions {
+    justify-content: space-between;
+  }
+
+  .decisions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary {
+    width: 100%;
+  }
+}
+
+/*
+ * Narrow portrait phones: the 46px switch and its 14px gutter cost a fifth of a 320px screen before
+ * a word of the description is set, so the gutter and the panel's own padding tighten. The 48px
+ * rows and the 14px type stay — they are the floor, not the slack.
+ */
+@include below-px(400px) {
+  .panel {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+
+  .categoryLabel {
+    gap: 10px;
+  }
+
+  .categoryTitle {
+    flex-wrap: wrap;
+  }
+}
+
+/*
+ * A phone in landscape leaves ~335px for the whole panel. Header, lede and footer alone would eat
+ * that and leave the list a few pixels of scrollable height, so the lede goes — it points at the
+ * cookies page, and the same link sits in the footer of every page and in the banner — and the
+ * paddings tighten around it.
+ *
+ * phs alone, as in the banner: it already spans 480–1199px wide at 520px or shorter, and phl would
+ * repeat it from 800px up with nothing different to say.
+ */
+@include phs-h {
+  .backdrop {
+    padding: 10px;
+  }
+
+  .panel {
+    max-height: calc(100dvh - 20px);
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .lede {
+    display: none;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .categoryLabel {
+    padding: 10px 2px;
+  }
+
+  /* Undo the stacked footer from the 560px rule above: height is the scarce axis here, not width.
+     Side by side the footer is 48px instead of 154px, and it wraps to two rows on the narrowest
+     landscape phones rather than overflowing. */
+  .footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .decisions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary {
+    width: auto;
+  }
+}
+
+
+@include reduced-motion {
+  .switch,
+  .switchKnob,
+  .close,
+  .buttonPrimary,
+  .buttonSecondary {
+    transition: none;
+  }
+}

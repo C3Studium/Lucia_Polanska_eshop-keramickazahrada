@@ -4,6 +4,7 @@ import WebButton from "@modules/common/components/Buttons/webButton"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, useScroll, useSpring, useTransform } from "framer-motion"
 import { useRef } from "react"
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import VerticalImageCarousel, {
   VerticalCarouselImage,
 } from "./VerticalImageCarousel"
@@ -45,6 +46,7 @@ const RAIL_END = 0.8
 
 export default function Courses() {
   const sectionRef = useRef<HTMLElement>(null)
+  const { isPhone } = useDeviceTier()
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"],
@@ -79,7 +81,21 @@ export default function Courses() {
    *    photo 0.03–0.18 with its own settle-scale · shader from 0.10 · content
    *    0.20–0.50.
    */
-  const stageLead = useTransform(entry, [0, 0.6], ["-26%", "0%"])
+  /*
+   * The stage runs ahead of the scroll on its way in, climbing over the grey curtain the
+   * Collections scene leaves behind as it departs. A negative lead is what does the climbing —
+   * and on a phone there is no curtain to climb over: Collections is a plain column of cards
+   * there, so -26% of a viewport of dark stage was simply drawn across the last two of them.
+   *
+   * Positive instead, so the parallax survives: the stage still arrives late and settles into
+   * place, it just does so from below its own box rather than from above it, and never covers
+   * anything but itself.
+   */
+  const stageLead = useTransform(
+    entry,
+    [0, 0.6],
+    [isPhone ? "8%" : "-26%", "0%"]
+  )
   const entryCoverClip = useTransform(
     entry,
     [0.02, 0.18],

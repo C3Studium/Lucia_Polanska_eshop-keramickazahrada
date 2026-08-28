@@ -16,6 +16,22 @@ export default function LenisProvider({ children }: { children: React.ReactNode 
     // Smooth-scroll hijacking is exactly the kind of motion that preference asks us to drop, so
     // this is the first thing to restore when the proper mechanism lands.
 
+    // Touch devices skip Lenis entirely, and lose nothing by it.
+    //
+    // Without `syncTouch` — which is not set, deliberately — Lenis does not smooth touch
+    // scrolling at all; the finger drives the native scroller exactly as it would on any other
+    // site. What it does do on a phone is keep a requestAnimationFrame loop running for the
+    // lifetime of the page, calling raf() on every frame to animate nothing. That is a frame
+    // callback per frame, on a battery, for no visible return.
+    //
+    // Anchor navigation still works: scrollWithLenis (lib/helpers) checks for `window.lenis`
+    // and falls back to a native scrollTo with `behavior: "smooth"`, honouring the same
+    // scroll-margin-top offset. The legal pages' chapter index is the main caller and behaves
+    // identically either way.
+    if (window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
+      return
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),

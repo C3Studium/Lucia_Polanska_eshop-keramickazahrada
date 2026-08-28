@@ -6,8 +6,11 @@
 // - sizes-h: map of sizes per landscape breakpoint
 // - sizes-v: optional map for portrait (if you want)
 $font-scale: (
-  transition: (family: ("Helvetica", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif),
-    sizes-h: (huge: 3rem,
+  transition: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 1.3rem,
+      phl: 1.5rem,
+      qhd: 3.75rem,
+      huge: 3rem,
       xl: 3rem,
       lg: 2.5rem,
       md: 2rem,
@@ -23,8 +26,12 @@ $font-scale: (
       sm: 1.5rem,
       xs: 1.4rem)),
 
-  404: (family: ("Helvetica", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif),
-    sizes-h: (huge: 30rem,
+  404: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 6rem,
+      phl: 8rem,
+      lt: 14rem,
+      qhd: 38rem,
+      huge: 30rem,
       xl: 25rem,
       lg: 20rem,
       md: 18rem,
@@ -40,8 +47,12 @@ $font-scale: (
       sm: 12rem,
       xs: 10rem)),
 
-  h1: (family: ("Helvetica", "Inter", system-ui, sans-serif),
-    sizes-h: (huge: 8rem,
+  h1: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 2.5rem,
+      phl: 3rem,
+      lt: 4.5rem,
+      qhd: 10rem,
+      huge: 8rem,
       xl: 8rem,
       lg: 6rem,
       md: 5.5rem,
@@ -57,16 +68,19 @@ $font-scale: (
       sm: 4rem,
       xs: 3.5rem)),
 
-  h2: (family: ("Helvetica", system-ui, sans-serif),
-    sizes-h: (huge: 5rem,
+  h2: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 1.8rem,
+      phl: 2rem,
+      qhd: 6.25rem,
+      huge: 5rem,
       xl: 5rem,
       lg: 4rem,
       md: 3rem,
-      sm: 3.5rem,
+      sm: 3rem,
       xs: 2.5rem,
       xxs: 2rem,
 
-      mdt: 4.5rem,
+      mdt: 3.5rem,
       smt: 3rem),
     sizes-v: (lg: 3.5rem,
       md: 3rem,
@@ -74,8 +88,11 @@ $font-scale: (
       sm: 2.2rem,
       xs: 2rem)),
 
-  h3: (family: ("Helvetica", system-ui, sans-serif),
-    sizes-h: (huge: 3rem,
+  h3: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 1.5rem,
+      phl: 1.8rem,
+      qhd: 3.75rem,
+      huge: 3rem,
       xl: 3rem,
       lg: 2.5rem,
       md: 2rem,
@@ -90,8 +107,11 @@ $font-scale: (
       s: 1.5rem,
       sm: 1.5rem,
       xs: 1.3rem)),
-  h4: (family: ("Helvetica", system-ui, sans-serif),
-    sizes-h: (huge: 2.5rem,
+  h4: (family: ("Sentient-Regular", "Sentient-Variable", Georgia, "Times New Roman", serif),
+    sizes-h: (phs: 1.3rem,
+      phl: 1.5rem,
+      qhd: 3rem,
+      huge: 2.5rem,
       xl: 2.5rem,
       lg: 2rem,
       md: 2rem,
@@ -107,8 +127,11 @@ $font-scale: (
       sm: 1.3rem,
       xs: 1.2rem)),
 
-  BCTA: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 2rem,
+  BCTA: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (phs: 1.1rem,
+      phl: 1.2rem,
+      qhd: 2.4rem,
+      huge: 2rem,
       xl: 2rem,
       lg: 1.8rem,
       md: 1.8rem,
@@ -124,8 +147,9 @@ $font-scale: (
       sm: 1.3rem,
       xs: 1.2rem)),
 
-  SCTA: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1.3rem,
+  SCTA: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.55rem,
+      huge: 1.3rem,
       xl: 1.3rem,
       lg: 1.2rem,
       md: 1.2rem,
@@ -140,8 +164,9 @@ $font-scale: (
       s: 1.1rem,
       sm: 1rem,
       xs: 1rem)),
-  Nav: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1.5rem,
+  Nav: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.75rem,
+      huge: 1.5rem,
       xl: 1.3rem,
       lg: 1.15rem,
       md: 1.15rem,
@@ -156,8 +181,9 @@ $font-scale: (
       s: 1.1rem,
       sm: 1.1rem,
       xs: 1.1rem)),
-  SBody: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1.3rem,
+  SBody: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.55rem,
+      huge: 1.3rem,
       xl: 1.3rem,
       lg: 1.2rem,
       md: 1.2rem,
@@ -172,14 +198,15 @@ $font-scale: (
       s: 1.1rem,
       sm: 1rem,
       xs: 1rem)),
-  XSBody: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1rem,
+  XSBody: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.2rem,
+      huge: 1rem,
       xl: 1rem,
       lg: 0.9rem,
       md: 0.8rem,
       sm: 0.75rem,
-      xs: 0.7rem,
-      xxs: 0.65rem,
+      xs: 0.75rem,
+      xxs: 0.75rem,
 
       mdt: 0.8rem,
       smt: 0.75rem),
@@ -187,9 +214,12 @@ $font-scale: (
       md: 0.9rem,
       s: 0.8rem,
       sm: 0.8rem,
-      xs: 0.7rem)),
-  MBody: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 2rem,
+      xs: 0.75rem)),
+  MBody: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (phs: 1.05rem,
+      phl: 1.15rem,
+      qhd: 2.4rem,
+      huge: 2rem,
       xl: 1.8rem,
       lg: 1.5rem,
       md: 1.35rem,
@@ -204,40 +234,43 @@ $font-scale: (
       s: 1.2rem,
       sm: 1.15rem,
       xs: 1.1rem)),
-  SLinks: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1rem,
+  SLinks: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.2rem,
+      huge: 1rem,
       xl: 1rem,
       lg: 0.9rem,
       md: 0.9rem,
       sm: 0.8rem,
       xs: 0.8rem,
-      xxs: 0.7rem,
+      xxs: 0.75rem,
 
       mdt: 0.8rem,
-      smt: 0.7rem),
+      smt: 0.75rem),
     sizes-v: (lg: 0.9rem,
       md: 0.9rem,
       s: 0.8rem,
       sm: 0.8rem,
-      xs: 0.7rem)),
-  legal: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1rem,
+      xs: 0.75rem)),
+  legal: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.2rem,
+      huge: 1rem,
       xl: 1rem,
       lg: 0.9rem,
       md: 0.9rem,
       sm: 0.8rem,
       xs: 0.8rem,
-      xxs: 0.7rem,
+      xxs: 0.75rem,
 
       mdt: 0.8rem,
-      smt: 0.7rem),
+      smt: 0.75rem),
     sizes-v: (lg: 0.9rem,
       md: 0.9rem,
       s: 0.8rem,
       sm: 0.8rem,
-      xs: 0.7rem)),
-  label: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1.3rem,
+      xs: 0.75rem)),
+  label: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.55rem,
+      huge: 1.3rem,
       xl: 1.3rem,
       lg: 1.2rem,
       md: 1.15rem,
@@ -253,8 +286,9 @@ $font-scale: (
       sm: 1.1rem,
       xs: 1rem)),
 
-  input: (family: ("Arimo", system-ui, sans-serif),
-    sizes-h: (huge: 1.15rem,
+  input: (family: ("Sansation-Regular", system-ui, -apple-system, "Segoe UI", sans-serif),
+    sizes-h: (qhd: 1.35rem,
+      huge: 1.15rem,
       xl: 1.15rem,
       lg: 1.05rem,
       md: 1.05rem,
@@ -270,89 +304,95 @@ $font-scale: (
       sm: 1rem,
       xs: 0.9rem)),
 );
-
-// Public mixin.
+// Public mixins.
+//
+// `font($token)` sets the face and the responsive size ladder. `font-size($token)` sets the
+// ladder alone, for a component that owns its own face.
 //
 // NOTE: this used to set `height` equal to `font-size` at every breakpoint, which clips Czech
 // diacritics on capitals and breaks any text that wraps. The audit flagged it as a trap on the
 // assumption that layouts depended on it — verified 2026-08-04 that the mixin has **zero call
 // sites**, so the height lines were removed with no visual consequence anywhere.
+//
+// The families were a second, quieter version of the same trap. Every token declared Helvetica,
+// Inter or Arimo; the site loads Sentient, Sansation and Oooh Baby and nothing else. Calling
+// `font()` therefore swapped the brand face for a system fallback, which is why the scale still
+// had zero call sites two years on and why every component hand-wrote its own ladder beside it.
+// Corrected 2026-08-27 to the faces globals.scss actually loads: Sentient for display, Sansation
+// for UI and body. There were no call sites to migrate.
+//
+// CAVEAT — Sass `mixed-decls`: these mixins emit nested media queries, so any plain declaration
+// written AFTER the `@include` in the same rule triggers the deprecation warning. Either put the
+// include last, or wrap the trailing declarations:
+//
+//   .thing {
+//     @include font(h2);
+//     & { color: var(--fg); }   // <- own rule, no warning
+//   }
+
+/// The size ladder only. No `font-family`.
+@mixin font-size($token) {
+  $cfg: map.get($font-scale, $token);
+
+  @if $cfg ==null {
+    @warn "Unknown type token: #{$token}";
+  } @else {
+    $sizesH: map.get($cfg, sizes-h);
+    $sizesV: map.get($cfg, sizes-v);
+
+    // Mobile-first: start at the smallest stop, then scale up with min-width breakpoints.
+    // Emission order IS cascade order here — every rung has the same specificity, so the last
+    // one that matches wins. It mirrors the layer order in _layers.scss.
+    @each $key in (xxs, xs, sm, smt, md, mdt, lg, xl, huge, qhd) {
+      $size: map.get($sizesH, $key);
+
+      @if $size !=null {
+        @include m.h-layer($key) {
+          font-size: $size;
+        }
+      }
+    }
+
+    // The device-qualified stops come last so they beat the width-only stop they overlap.
+    //
+    // Without these a phone in landscape took its type from whichever width rung it happened to
+    // clear: 932x430 matched `sm` (900px) and rendered an h1 at 5rem/80px on a 430px-tall
+    // screen. Only the display tokens define them — on a short screen it is the headline that
+    // eats the viewport, and dropping body copy to the same rung would push it under 12px.
+    @each $key in (phs, phl, lt) {
+      $size: map.get($sizesH, $key);
+
+      @if $size !=null {
+        @include m.h-layer($key) {
+          font-size: $size;
+        }
+      }
+    }
+
+    // Portrait overrides.
+    @if $sizesV !=null {
+      @each $key in (xs, sm, s, md, lg) {
+        $size: map.get($sizesV, $key);
+
+        @if $size !=null {
+          @include m.v-layer($key) {
+            font-size: $size;
+          }
+        }
+      }
+    }
+  }
+}
+
+/// The face and the ladder.
 @mixin font($token) {
   $cfg: map.get($font-scale, $token);
 
   @if $cfg ==null {
     @warn "Unknown type token: #{$token}";
-    $cfg: (
-    );
-}
+  } @else {
+    font-family: map.get($cfg, family);
 
-$family: map.get($cfg, family);
-$sizesH: map.get($cfg, sizes-h);
-$sizesV: map.get($cfg, sizes-v);
-
-font-family: $family;
-
-// Mobile-first: start at smallest layer, then scale up with min-width breakpoints.
-@include m.h-layer(xxs) {
-  font-size: map.get($sizesH, xxs);
-}
-
-@include m.h-layer(xs) {
-  font-size: map.get($sizesH, xs);
-}
-
-@include m.h-layer(sm) {
-  font-size: map.get($sizesH, sm);
-}
-
-@if map.get($sizesH, smt) !=null {
-  @include m.h-layer(smt) {
-    font-size: map.get($sizesH, smt);
+    @include font-size($token);
   }
-}
-
-@include m.h-layer(md) {
-  font-size: map.get($sizesH, md);
-}
-
-@if map.get($sizesH, mdt) !=null {
-  @include m.h-layer(mdt) {
-    font-size: map.get($sizesH, mdt);
-  }
-}
-
-@include m.h-layer(lg) {
-  font-size: map.get($sizesH, lg);
-}
-
-@include m.h-layer(xl) {
-  font-size: map.get($sizesH, xl);
-}
-
-@include m.h-layer(huge) {
-  font-size: map.get($sizesH, huge);
-}
-
-// Portrait overrides (optional but supported)
-@if $sizesV !=null {
-  @include m.v-layer(xs) {
-    font-size: map.get($sizesV, xs);
-  }
-
-  @include m.v-layer(sm) {
-    font-size: map.get($sizesV, sm);
-  }
-
-  @include m.v-layer(s) {
-    font-size: map.get($sizesV, s);
-  }
-
-  @include m.v-layer(md) {
-    font-size: map.get($sizesV, md);
-  }
-
-  @include m.v-layer(lg) {
-    font-size: map.get($sizesV, lg);
-  }
-}
 }

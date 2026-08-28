@@ -2,7 +2,7 @@
 // side-effect-free so component and CSS Module builds do not repeat this CSS.
 // Width ladder first, then the device-qualified stops that must override the width-only stop
 // they overlap (a phone in landscape matches bp-sm on width alone).
-@layer bp-xxs, bp-xs, bp-sm, bp-smt, bp-md, bp-mdt, bp-lg, bp-xl, bp-huge, bp-phs, bp-phl, bp-lt;
+@layer bp-xxs, bp-xs, bp-sm, bp-smt, bp-md, bp-mdt, bp-lg, bp-xl, bp-huge, bp-qhd, bp-phs, bp-phl, bp-lt;
 @layer vp-xs, vp-sm, vp-s, vp-md, vp-lg;
 
 // Capability layers come last: whether a device has a mouse is independent of how wide it is,

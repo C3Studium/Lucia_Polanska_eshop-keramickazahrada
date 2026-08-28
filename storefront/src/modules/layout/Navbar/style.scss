@@ -609,6 +609,30 @@
     .navbar__row {
       gap: 6px;
     }
+
+    /*
+     * The menu toggle gets a pill of its own on the right, matching the search pill on the left.
+     * It is styled here rather than in the base because above this stop the toggle inside it is
+     * display:none — an empty pill would be a floating blank capsule in the middle of the bar.
+     */
+    .navbar__menu {
+      display: flex;
+      height: var(--nav-height);
+      flex: 0 0 auto;
+      align-items: center;
+      padding: 5px;
+      border: 1px solid var(--nav-border);
+      border-radius: 999px;
+      background: var(--nav-surface);
+      box-shadow: var(--nav-shadow);
+      backdrop-filter: blur(18px) saturate(1.08);
+      -webkit-backdrop-filter: blur(18px) saturate(1.08);
+      transition:
+        height 0.5s cubic-bezier(0.76, 0, 0.24, 1),
+        background-color 0.4s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease;
+    }
   }
 }
 
@@ -722,10 +746,156 @@
   }
 }
 
+/*
+ * Phone: the bar splits in two.
+ *
+ * One row could not hold the shop's controls at the 44px floor. Even compacted it wanted a
+ * wordmark, a search that opens to a real field, the E-shop button, a menu toggle, a cart and an
+ * account link — ~330px of controls plus gaps in 336px of usable bar on a 360px screen, which is
+ * why the search used to paint over the E-shop button and the account icon used to fall off the
+ * right edge.
+ *
+ * So the row is now three openers — search, E-shop, menu — and the shop's own controls move to a
+ * bar at the bottom, where a thumb reaches them without crossing the screen. The markup is
+ * unchanged: `.navbar__right` is the same element in the same place in the DOM, positioned
+ * differently, so the cart keeps one instance and one dropdown.
+ *
+ * Portrait phones and phones held sideways. `md` (600px) is the ceiling: above it the viewport is
+ * a tablet and the single row fits again.
+ */
+@mixin navbar-phone {
+  .navbar {
+    /* The wordmark's job moves into the menu as "Úvod" — see mobileNav/index.tsx. Nothing else
+       in the left pill survives at this width, so the pill is the search field and nothing more. */
+    .navbar__brand {
+      display: none;
+    }
+
+    /*
+     * The country list and the cart panel both hang off controls that now sit at the bottom of
+     * the screen, so both open upward. Left-aligned as well: the country control is the
+     * left-most thing in the bottom bar, and a list anchored to its right edge would run off
+     * the far side of a 320px screen.
+     */
+    .navbar__bottomBar .countryOptions {
+      top: auto;
+      right: auto;
+      bottom: calc(100% + 10px);
+      left: 0;
+      max-height: min(
+        420px,
+        calc(100svh - var(--nav-bottom-height, 56px) - var(--nav-bottom-inset, 12px) - 40px)
+      );
+      transform-origin: bottom left;
+    }
+
+    /*
+     * The cap that used to hold the pill to half the bar comes off: with the wordmark gone the
+     * field is the only thing in here, and it is measured against the viewport in JS. `1 1 auto`
+     * rather than `0 0 auto` so the closed 36px pill does not reserve the open width, which is
+     * what pushes the E-shop button rightward as the field grows instead of under it.
+     */
+    .navbar__left {
+      max-width: none;
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    /*
+     * The top-right pill is gone entirely — its controls are in MobileBar at the bottom of the
+     * screen, which carries its own markup and gets the country selector and the wishlist back
+     * alongside the cart and the account link.
+     */
+    .navbar__right {
+      display: none;
+    }
+
+    /* Down in MobileBar there is room for both, so the 760px stop's width cuts are lifted. */
+    .navbar__bottomBar .regions__select,
+    .navbar__bottomBar .navbar__utility-link:not(.Navbar__Icons__User) {
+      display: inline-flex;
+    }
+
+    /*
+     * Three pills, one shape. The compact mixin strips the centre's pill so the E-shop button can
+     * float between the two others on a tablet; on a phone the bar reads as three deliberate
+     * controls, so the surface comes back and the button sits inside it exactly as search and the
+     * menu toggle sit inside theirs.
+     */
+    .navbar__center {
+      height: var(--nav-height);
+
+      /*
+       * `stretch`, not `center`. The E-shop button carries its own height — 35px from a vb()
+       * block, raised to 44px by the touch floor in globals.scss — and centred inside a 56px
+       * pill that left an uneven band of the button's own photographic backdrop above and below
+       * it. Stretched, the button is exactly the pill's inner box and the two edges agree.
+       */
+      align-items: stretch;
+      padding: 5px;
+      border: 1px solid var(--nav-border);
+      border-radius: 999px;
+      background: var(--nav-surface);
+      box-shadow: var(--nav-shadow);
+      backdrop-filter: blur(18px) saturate(1.08);
+      -webkit-backdrop-filter: blur(18px) saturate(1.08);
+      transition:
+        height 0.5s cubic-bezier(0.76, 0, 0.24, 1),
+        background-color 0.4s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease;
+    }
+
+    /*
+     * E-shop gets its word back. It was reduced to a 44px icon at the 760px stop because the bar
+     * held six controls; it now holds three, and at 320px the labelled button, the closed search
+     * and the menu come to 202px in 308px of bar. An icon whose only label is an aria-label is a
+     * poor thing to make the shop's main entrance.
+     */
+    .navbar__center > button,
+    .navbar__center > a {
+      width: auto;
+      height: 100%;
+      min-width: 44px;
+      padding-inline: 12px;
+    }
+
+    .navbar__center > button span,
+    .navbar__center > a span {
+      font-size: 15px;
+    }
+
+    /*
+     * …and gives it up again while the field is open — this is the squish. The open field is
+     * measured to leave room for a 44px button, so the word is what yields, and it yields by
+     * moving the button right rather than by being painted over. `~` because the search state
+     * lives on the left pill, which precedes the centre in the DOM.
+     */
+    .navbar__left--search ~ .navbar__center > button,
+    .navbar__left--search ~ .navbar__center > a {
+      width: 44px;
+      padding-inline: 0;
+    }
+
+    .navbar__left--search ~ .navbar__center > button span,
+    .navbar__left--search ~ .navbar__center > a span {
+      font-size: 0;
+    }
+  }
+}
+
 @include below-px(900px) {
   @include navbar-compact;
 }
 
 @include phs-h {
   @include navbar-compact;
+}
+
+@include below-px(600px) {
+  @include navbar-phone;
+}
+
+@include phs-h {
+  @include navbar-phone;
 }

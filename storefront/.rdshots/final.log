@@ -1,0 +1,124 @@
+
+=== final — 126 captures ===
+
+All viewports matched their expected breakpoint.
+
+SHADER VERDICT
+   78  reduced / touch / canvas=false
+    3  (unset) / (unset) / canvas=false
+   45  reduced / no-webgl2 / canvas=false
+
+HORIZONTAL OVERFLOW: 0 of 126
+
+TEXT UNDER 12px: 40 captures
+  cookies @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  doprava-a-platba @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  ochrana-osobnich-udaju @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  odstoupeni-od-smlouvy @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  smluvni-podminky @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  reklamacni-protokol @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  newsletter @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  newsletter-odhlaseno @ p-320x568
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  cookies @ p-390x844
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  doprava-a-platba @ p-390x844
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  ochrana-osobnich-udaju @ p-390x844
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+  odstoupeni-od-smlouvy @ p-390x844
+      10px  p.style_cartCount__I6nSN  "0"
+      11px  dt.  "Prodávající"
+      11px  dt.  "Sídlo"
+
+TAP TARGETS UNDER 44px: 71 captures
+  cookies @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  doprava-a-platba @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  ochrana-osobnich-udaju @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  odstoupeni-od-smlouvy @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  smluvni-podminky @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  reklamacni-protokol @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  newsletter @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  newsletter-odhlaseno @ p-320x568
+      127x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      153x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      113x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      50x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  cookies @ p-390x844
+      136x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      164x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      121x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      54x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  doprava-a-platba @ p-390x844
+      136x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      164x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      121x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      54x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  ochrana-osobnich-udaju @ p-390x844
+      136x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      164x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      121x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      54x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+  odstoupeni-od-smlouvy @ p-390x844
+      136x41  a.styles_root__MQbFo footer__animatedLink  "Obchodní podmínky"
+      164x41  a.styles_root__MQbFo footer__animatedLink  "Ochrana osobních údajů"
+      121x41  a.styles_root__MQbFo footer__animatedLink  "Používání cookies"
+      54x41  a.styles_root__MQbFo footer__animatedLink  "Obchod"
+

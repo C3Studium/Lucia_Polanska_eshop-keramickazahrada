@@ -426,3 +426,132 @@
     }
   }
 }
+
+/*
+ * ─── Phone ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * Keyed off `data-phone`, which the component sets from the same `useDeviceTier` flag that turns
+ * off the scroll-linked transforms — see the note on the section element. A media query here and
+ * a JS check there could disagree, and a vertical column still being walked sideways by a
+ * leftover `x` is not a layout anyone chose.
+ *
+ * Everything the wide composition is made of comes off: the 210vh of scroll runway, the pinned
+ * viewport-high stage, the four-column rail and its per-card spread. What is left is the header
+ * and the collections under it, one after another, scrolled by the page like anything else.
+ */
+/*
+ * The `!important`s below are not a specificity fight — they undo inline styles.
+ *
+ * `useDeviceTier` reports `isPhone: false` on the server and on first paint, so framer-motion
+ * mounts with the scroll-driven values attached and writes them straight to the elements'
+ * `style`. A frame later the flag flips and the component stops passing them — but framer does
+ * not clear what it has already written. The stage keeps the `clip-path: inset(...)` it was given
+ * at scroll position zero, which is fully closed, and the rail keeps its `transform`. The result
+ * is a section that occupies its space and shows nothing at all.
+ *
+ * Anything the wide scene animates has to be reset here, and only a `!important` outranks an
+ * inline style.
+ */
+.Collections[data-phone] {
+  height: auto;
+  min-height: 0;
+  align-items: stretch;
+  /* `clip` on a section that no longer clips anything would still cut the cards' shadows. */
+  overflow: visible;
+
+  .sticky,
+  .sticky__Wrapper,
+  .Collecion__wrapper,
+  .collection__cardMotion {
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .sticky {
+    position: static;
+    height: auto;
+    align-items: stretch;
+    padding: clamp(3rem, 7vh, 4.5rem) 1.3rem clamp(2.5rem, 6vh, 4rem);
+    overflow: visible;
+    will-change: auto;
+  }
+
+  /* A curtain for a pinned scene to exit behind. There is no pinned scene. */
+  .Collections__exitCurtain {
+    display: none;
+  }
+
+  .sticky__Wrapper {
+    height: auto;
+    min-height: 0;
+  }
+
+  /*
+   * One column. The wide header is `minmax(32rem, 1.5fr) minmax(15rem, 0.5fr)` — 512px and 240px
+   * of minimum track against a 390px screen, so the lede was pushed a long way off the right
+   * edge and the whole page scrolled sideways to reach it.
+   */
+  .header {
+    width: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    /* It sat over the rail on purpose in the wide scene; in a column that is what put „výsledek"
+       behind the first card. */
+    margin-bottom: clamp(1.6rem, 4vh, 2.4rem);
+
+    h2 {
+      max-width: 100%;
+      font-size: clamp(2rem, 9vw, 2.9rem);
+    }
+
+    > p {
+      max-width: 100%;
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+  }
+
+  /*
+   * The rail becomes the column. Every explicit grid placement goes with it — those are what
+   * made two cards share a column and two others span both rows, and in a single track they
+   * would put five cards into rows 1 and 2 on top of each other.
+   */
+  .Collecion__wrapper {
+    display: flex;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    gap: 0.9rem;
+    grid-template-columns: none;
+    grid-template-rows: none;
+    transform: none;
+    will-change: auto;
+
+    > * {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    /*
+     * A ratio, not `auto`. The card's picture is an absolutely positioned layer, so it
+     * contributes no height — left to size itself the card would collapse to the height of its
+     * caption and the photograph would become a strip behind it. 4:3 keeps five of them to a
+     * scroll a thumb can get through, where the 3:4 of the wide composition would not.
+     */
+    .collection__cardMotion {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      will-change: auto;
+    }
+
+    /*
+     * Those are shares of a card that was a share of a pinned stage. Against this box they would
+     * hand 36% and 55% of every card to a caption that needs neither.
+     */
+    .Item__content {
+      min-height: 0;
+    }
+  }
+}

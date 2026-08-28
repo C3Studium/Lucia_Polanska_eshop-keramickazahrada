@@ -2,21 +2,50 @@
 /*
  * Cream card over whatever surface the page happens to be showing.
  * Ink #20211c on #f6f1e6 measures 14.8:1; the link inherits it.
- * Nothing below 14px; the action is 48px.
+ * Nothing below 14px; every action is 48px.
+ *
+ * The card is a fixed overlay, so it costs a share of the screen rather than a fixed number of
+ * pixels, and every section on this site puts its supporting copy in the bottom-left — exactly
+ * where the card lands. It used to be one sentence and one button, tuned to ~74px by widening it;
+ * a consent gate cannot be that small, and four actions plus the sentence that makes them
+ * meaningful come to ~154px. The width is pushed to 880px so the copy still sets in two lines at
+ * desktop sizes, and every rule below is about giving that height back on smaller screens.
+ *
+ * The 14px type floor and the 48px actions are deliberately untouched; they are accessibility
+ * floors, not spacing.
+ *
+ * (The base declarations and the size tuning used to live in two `.root` blocks, the second at the
+ * end of the file. Anything the responsive rules set had to avoid the properties in that trailing
+ * block, because a later unlayered rule beats an earlier media query at equal specificity — a
+ * `gap` inside `@include phs-h` would simply not apply. One block now, so that trap is gone.)
  */
 
 .root {
+  --notice-inset: clamp(16px, 2vw, 28px);
+
   position: fixed;
   z-index: 400;
-  bottom: clamp(16px, 2vw, 28px);
-  left: calc(var(--page-inset, 0px) + clamp(16px, 2vw, 28px));
+  bottom: var(--notice-inset);
+  left: calc(var(--page-inset, 0px) + var(--notice-inset));
   display: flex;
-  align-items: center;
+  max-width: min(880px, calc(100vw - 32px));
+  flex-direction: column;
+
+  /*
+   * The card can never be taller than the screen it sits on. This is the floor under every rule
+   * below it, so no combination of long copy, large text settings and a short viewport can push an
+   * action off the screen where it cannot be reached.
+   */
+  max-height: calc(100dvh - var(--notice-inset) * 2);
+  padding: 14px 16px;
   border: 1px solid rgba(32, 33, 28, 0.2);
   border-radius: 16px;
   background: #f6f1e6;
   box-shadow: 0 22px 48px -30px rgba(24, 26, 20, 0.62);
   color: #20211c;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .text {
@@ -32,61 +61,145 @@
   white-space: nowrap;
 }
 
-.button {
+/*
+ * Four answers, one row. They wrap rather than shrink: a reject squeezed narrower than the accept
+ * beside it is the nudge the whole banner exists to avoid, so the row breaks before the buttons do.
+ */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+@mixin action {
   min-height: 48px;
   flex: 0 0 auto;
-  padding: 0 22px;
-  border: 1px solid #20211c;
+  padding: 0 20px;
   border-radius: 999px;
-  background: #20211c;
-  color: #ffe8d6;
   cursor: pointer;
   font: 400 15px/1 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+  }
 }
 
-.button:hover {
+.buttonPrimary {
+  @include action;
+
+  border: 1px solid #20211c;
+  background: #20211c;
+  color: #ffe8d6;
+
+  &:hover {
+    background: transparent;
+    color: #20211c;
+  }
+}
+
+/* The two refusals. Same height, same type, same padding as the accept — only the fill differs. */
+.buttonSecondary {
+  @include action;
+
+  border: 1px solid rgba(32, 33, 28, 0.45);
   background: transparent;
   color: #20211c;
+
+  &:hover {
+    border-color: #20211c;
+    background: rgba(32, 33, 28, 0.08);
+  }
 }
 
-.button:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 3px;
+/* „Upravit" opens the switches; it is a door, not an answer, so it reads as a link that happens to
+   carry a 48px target. */
+.buttonGhost {
+  @include action;
+
+  padding: 0 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #20211c;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+
+  &:hover {
+    opacity: 0.68;
+  }
 }
 
-@include below-px(760px) {
+/*
+ * The four buttons measure ~523px together, so the single row survives down to a ~590px viewport.
+ * Below that they stack, full width, in DOM order — not column-reverse: reversing would put
+ * „Přijmout vše" at the top of the stack while Tab still reached „Upravit" first, and a focus order
+ * that disagrees with the visual order is what WCAG 2.4.3 is about. Reading order stays
+ * Upravit → Zamítnout → Přijmout jen důležité → Přijmout vše, which leaves the accept nearest the
+ * thumb without putting either refusal further away than it was.
+ */
+@include below-px(620px) {
   .root {
-    right: calc(var(--page-inset, 0px) + clamp(16px, 2vw, 28px));
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
+    right: calc(var(--page-inset, 0px) + var(--notice-inset));
   }
 
-  .button {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary,
+  .buttonGhost {
     width: 100%;
   }
 }
 
 /*
- * The card is a fixed overlay, so it costs a share of the screen rather than a fixed number of
- * pixels, and every section on this site puts its supporting copy in the bottom-left — exactly
- * where the card lands. At three lines it measures 99px and covers the intro paragraph, the
- * courses lede and the footer's payment badges.
+ * A phone in landscape is the one case where the stack does not fit: 320px of viewport against
+ * four 48px buttons, the copy and the padding — ~372px, more than the screen. This comes after the
+ * stack rule and undoes it; two buttons per row inside the same 536px is ~190px. The parenthetical
+ * goes with it, as it does on narrow portrait phones.
  *
- * This used to sit behind `@include lt-h`, which is capped at 800px of height, so it only helped
- * short laptops: a 1680x1050 screen leaves 892px of viewport in Chrome and missed the rule by 92px,
- * getting the full three-line card. The trade-off it makes is not height-specific, so it is now
- * the default at every size — widening the card sets the copy in two lines instead of three and
- * takes it from 99px to ~74px everywhere.
- *
- * The 14px type floor and the 48px action are deliberately untouched; they are accessibility
- * floors, not spacing. Width is the only lever that buys height back without crossing them.
+ * phs alone: it spans the whole landscape-phone range (480–1199px wide, 520px or shorter), so phl
+ * — the same query from 800px up — would only repeat these declarations. A second stop earns its
+ * place when the larger phones want different values, and here they do not.
  */
-.root {
-  max-width: min(720px, calc(100vw - 32px));
-  padding: 12px 16px;
-  gap: 16px;
+@include phs-h {
+  .root {
+    --notice-inset: 12px;
+
+    gap: 8px;
+  }
+
+  .actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary,
+  .buttonGhost {
+    width: auto;
+  }
+
+  .detail {
+    display: none;
+  }
+}
+
+/*
+ * Portrait phones narrower than the iPhone SE's 375px: the copy runs to five lines there, and the
+ * parenthetical is the part that can go without changing what the visitor is agreeing to — the
+ * sentence still names all three optional categories and still links to the full page.
+ */
+@include below-px(420px) {
+  .detail {
+    display: none;
+  }
 }

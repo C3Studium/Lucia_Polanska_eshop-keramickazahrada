@@ -1,0 +1,256 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * The phone bottom bar. Same pill as the three at the top — same surface, border, shadow and
+ * blur — so the two ends of the screen read as one bar that has been split, not as two designs.
+ *
+ * Hidden by default and shown only at the phone stops. That direction matters: the desktop bar
+ * carries these controls itself, and a bottom bar that had to be switched off on every wider
+ * viewport would be one forgotten stop away from sitting over the footer of a desktop page.
+ */
+.root {
+  /*
+   * Declared here, read by two things outside this file: the cart panel and the country list,
+   * which both hang off controls in this bar and so must size themselves against it. Both are
+   * descendants, so they inherit these; this stays the one place the bar's dimensions live.
+   */
+  --nav-bottom-inset: 12px;
+  --nav-bottom-height: 56px;
+
+  display: none;
+  position: fixed;
+  z-index: 2;
+  right: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
+  bottom: var(--nav-bottom-inset);
+  left: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
+
+  /*
+   * Four equal columns rather than four flex items. A flex row distributes leftover space, so a
+   * slot whose contents happen to be wider than the rest — the cart, whose count is a sibling of
+   * its icon — takes the difference out of its neighbours and nothing lines up. Equal grid tracks
+   * cannot do that: each control gets exactly a quarter of the bar and is centred in it, whatever
+   * it contains.
+   */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  /*
+   * Four 44px controls need 176px; stretched across the whole screen the bar was mostly empty
+   * capsule with the icons drifting apart. Sized to its contents and centred instead — `left`
+   * and `right` both set with `margin-inline: auto` centres a fixed element without a transform,
+   * which matters because a transform here would become the containing block for the cart panel
+   * and the country list and break both of them.
+   */
+  width: min(288px, calc(100vw - 32px));
+  height: var(--nav-bottom-height);
+  align-items: center;
+  margin-inline: auto;
+  padding: 0 6px;
+  border: 1px solid var(--nav-border);
+  border-radius: 999px;
+  box-shadow: var(--nav-shadow);
+}
+
+/*
+ * The surface and its blur live on a pseudo-element, not on `.root`.
+ *
+ * `backdrop-filter` creates a containing block for fixed-position descendants — and the cart
+ * panel is a descendant. With the filter on `.root`, the panel's `left: 12px; right: 12px`
+ * resolved against this 288px bar instead of the viewport, so the sheet opened 264px wide on a
+ * 430px screen. Moved down here the bar looks identical, `.root` is no longer a containing
+ * block, and the panel measures itself against the screen again.
+ *
+ * `z-index: -1` keeps it behind the four controls; `.root` has its own stacking context, so it
+ * cannot fall behind the page.
+ */
+.root::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--nav-surface);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.slot {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+}
+
+/*
+ * One 44px target and one 24px mark, for every control in the bar. Sized here rather than
+ * inherited: the top bar's marks are 36px, which is right for a dense row read left to right and
+ * too heavy in four equal slots where the eye compares them to each other.
+ */
+.link {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: inherit;
+  place-items: center;
+}
+
+.icon {
+  width: 27px;
+  height: 27px;
+  opacity: 0.78;
+  transition: opacity 0.25s ease;
+}
+
+.link:hover .icon {
+  opacity: 1;
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/*
+ * The counters sit above their mark rather than on it. Small enough to read as an annotation to
+ * the icon and not a second control competing with it: 14px against a 27px mark, where the badge
+ * was previously 16px against 24 and close to half the size of the thing it was counting.
+ *
+ * `top: 1px` clears the icon's top edge, which in a 44px box sits at (44 − 27) / 2 ≈ 8px.
+ */
+.count,
+.cartSlot [data-testid="nav-cart-link"] p {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  display: grid;
+  min-width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0 3px;
+  border: 0;
+  background: none;
+  color: var(--nav-ink, #25271f);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  place-items: center;
+}
+
+/*
+ * The cart trigger belongs to the cart-dropdown module, so its classes are hashed and out of
+ * reach from here. `data-testid` and the bare elements are not — and they are enough, because
+ * all this needs to do is put the icon in a 44px box and lift the count out of the row it sits
+ * in. Left alone, `.cartLink` is `flex-direction: row; gap: 2.5px`, so the count renders *beside*
+ * the icon and makes this slot half again as wide as its neighbours.
+ */
+.cartSlot [data-testid="nav-cart-link"] {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  gap: 0;
+  place-items: center;
+}
+
+/*
+ * `<Magnetic>` sits between the trigger and its contents, wrapping the icon and the count
+ * together in a `<div class="magnetic" style="position: relative">`. That inline style makes it
+ * the containing block for anything absolute inside it, so the count was being positioned
+ * against a box only as wide as the icon — not against the 44px target above — and, since the
+ * count is a block element, it was flowing underneath the icon rather than over its corner.
+ *
+ * Making it the 44px box itself fixes both: the icon centres in it and the count resolves
+ * against its corners.
+ */
+.cartSlot :global(.magnetic) {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+}
+
+/* `<Cart size={40}/>` sets width and height as attributes, which any CSS rule outranks. */
+.cartSlot svg {
+  width: 27px;
+  height: 27px;
+}
+
+/*
+ * Colour and size, at four classes plus an element. The cart module reaches its own count as
+ * `.root .popover .cartLink .cartCount` — four classes — and sets both there, so the shared rule
+ * above wins on layout but loses on these two. This is the one selector in the file written for
+ * specificity rather than for reading, and that is why.
+ */
+.root .cartSlot [data-testid="nav-cart-link"] :global(.magnetic) p {
+  color: var(--nav-ink, #25271f);
+  font-size: 10px;
+}
+
+/*
+ * The country control is the one thing here that has to keep its own global classes — the
+ * component sets them, and its dropdown is styled as a descendant of `.navbar`. So it is the one
+ * that needs undoing rather than defining: in the top bar it is a filled pill with an asymmetric
+ * `padding: 0 7px 0 5px` and a ↗ beside the flag. Both are right in a row of labelled controls
+ * and wrong as the only ornament in a row of bare icons.
+ */
+.regionSlot :global(.regions__select),
+.regionSlot :global(.regions__select__button) {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+}
+
+.regionSlot :global(.regions__select__button) {
+  background: transparent;
+}
+
+.regionSlot :global(.regionArrow) {
+  display: none;
+}
+
+/*
+ * Kept a touch under the line icons: a saturated disc reads larger than a drawn outline at the
+ * same measure, so 24 against their 27 is what makes the four look equal.
+ *
+ * `!important` only because the rule it answers is itself `!important` — the flag's inner span
+ * is sized that way in Navbar/style.scss to beat react-country-flag's inline styles.
+ */
+.regionSlot :global(.countryButton__flag) {
+  width: 24px;
+  height: 24px;
+}
+
+.regionSlot :global(.countryButton__flag) > span,
+.regionSlot :global(.countryButton__flag) svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.regionSlot :global(.countryButton__surface) {
+  background: transparent;
+}
+
+/* It does get a surface once it is actually open — that is state, not decoration. */
+.regionSlot :global(.regions__select[data-open] .countryButton__surface) {
+  background: rgba(116, 126, 98, 0.14);
+}
+
+@mixin bottom-bar-visible {
+  .root {
+    display: grid;
+  }
+}
+
+@include below-px(600px) {
+  @include bottom-bar-visible;
+}
+
+/*
+ * Phones held sideways. `phs` alone spans the whole landscape-phone range (480–1199px wide at
+ * 520px or shorter), so `phl` would repeat it from 800px up with nothing different to say.
+ */
+@include phs-h {
+  @include bottom-bar-visible;
+}

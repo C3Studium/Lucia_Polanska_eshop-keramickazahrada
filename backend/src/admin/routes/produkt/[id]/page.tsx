@@ -911,6 +911,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               title: variant.title ?? "Standardní",
               options: { [optionTitle]: variant.title ?? "Standardní" },
               manage_inventory: true,
+              // A copy has to sell the way the original does — without this the
+              // duplicate stops at zero. The subscriber would fix it a moment
+              // later anyway; saying it here keeps the payload honest.
+              allow_backorder: true,
               prices: (variant.prices ?? []).map((price) => ({
                 currency_code: price.currency_code,
                 amount: price.amount,

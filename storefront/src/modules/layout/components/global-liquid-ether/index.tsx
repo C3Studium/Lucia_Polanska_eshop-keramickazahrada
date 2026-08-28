@@ -4,7 +4,6 @@ import LiquidEther from "@modules/home/E-com/Courses/VerticalImageCarousel/Liqui
 import { usePathname } from "next/navigation"
 import { useMemo, type CSSProperties } from "react"
 
-import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
 import styles from "./style.module.scss"
 
@@ -87,7 +86,6 @@ function getPreset(pathname: string): AmbientPreset {
 
 export default function GlobalLiquidEther() {
   const pathname = usePathname()
-  const { isTouch, isPhone } = useDeviceTier()
   const shadersEnabled = useShadersEnabled()
   const pathSegments = pathname.split("/").filter(Boolean)
   const isHomepage = pathSegments.length <= 1
@@ -96,29 +94,29 @@ export default function GlobalLiquidEther() {
     preset.name === "showcase" && isHomepage ? 0.1 : preset.opacity
 
   /*
-   * The effect stays everywhere — it is ambient, and it drives itself through autoSpeed and
-   * autoIntensity without any pointer input. What changes by device is what it costs:
+   * The effect drives itself through autoSpeed and autoIntensity; the pointer only ever adds to
+   * it, on the presets that ask for it.
    *
-   * - touch: no pointer forces at all. There is no cursor to follow, and a finger dragging the
-   *   page should not be read as one.
-   * - phone: the simulation grid and the pressure solve come right down. At this size the fine
-   *   structure those buy is simply not visible, and this is a full-screen fragment shader
-   *   running behind every page on a battery.
+   * This used to carry a second set of numbers for touch and for phones — no pointer forces, a
+   * coarser simulation grid, a shorter pressure solve. Those are gone because the case they
+   * covered is gone with them: useShadersEnabled now fails every touch device outright, so by
+   * the time this renders the machine has a mouse, a GPU that cleared the capability probe, and
+   * a frame rate the watchdog is still watching. Keeping a `isPhone ? 0.12 : …` here would only
+   * have described a device that can no longer reach this line.
    */
-  const quality = useMemo(() => {
-    const interactive = preset.interactive && !isTouch
-
-    return {
-      mouseForce: interactive ? 18 : 0,
-      cursorSize: interactive ? 82 : 0,
-      iterationsPoisson: isPhone ? 6 : preset.interactive ? 14 : 10,
-      resolution: isPhone ? 0.12 : preset.interactive ? 0.28 : 0.2,
-      takeoverDuration: interactive ? 0.25 : 0,
-      autoResumeDelay: interactive ? 1400 : 0,
-      autoRampDuration: interactive ? 0.6 : 1.8,
-      autoSpeed: isPhone ? preset.speed * 0.6 : preset.speed,
-    }
-  }, [preset, isTouch, isPhone])
+  const quality = useMemo(
+    () => ({
+      mouseForce: preset.interactive ? 18 : 0,
+      cursorSize: preset.interactive ? 82 : 0,
+      iterationsPoisson: preset.interactive ? 14 : 10,
+      resolution: preset.interactive ? 0.28 : 0.2,
+      takeoverDuration: preset.interactive ? 0.25 : 0,
+      autoResumeDelay: preset.interactive ? 1400 : 0,
+      autoRampDuration: preset.interactive ? 0.6 : 1.8,
+      autoSpeed: preset.speed,
+    }),
+    [preset]
+  )
 
   /* Unlike the image shaders, this one has nothing underneath it — it is an ambient overlay, so
      rendering nothing is the fallback. A full-screen fragment shader running behind every page is
@@ -148,7 +146,7 @@ export default function GlobalLiquidEther() {
       style={{ "--ambient-opacity": opacity } as CSSProperties}
     >
       <LiquidEther
-        key={`${preset.name}-${isPhone ? "phone" : "full"}-${isTouch ? "touch" : "pointer"}`}
+        key={preset.name}
         mouseForce={quality.mouseForce}
         cursorSize={quality.cursorSize}
         iterationsPoisson={quality.iterationsPoisson}

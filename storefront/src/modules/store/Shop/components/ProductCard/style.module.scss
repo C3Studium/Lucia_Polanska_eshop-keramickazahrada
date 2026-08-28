@@ -139,3 +139,10 @@
   background: #9a6f65 !important;
   color: #fff8f1 !important;
 }
+
+/* Quieter than the other two: „Na objednávku" is not a warning, it is a lead
+   time. It should read as available, just not immediately. */
+.badgeMade {
+  background: rgba(58, 59, 52, .08) !important;
+  color: #3a3b34 !important;
+}

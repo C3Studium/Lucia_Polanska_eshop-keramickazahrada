@@ -9,6 +9,7 @@ import { AnimatePresence, Easing, motion, useAnimate, type AnimationSequence } f
 import Image from "next/image"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { withCount } from "@lib/util/plurals"
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 import styles from "./styles.module.scss"
 
 export type NavigationCategory = {
@@ -104,6 +105,33 @@ const crumbInitial = { opacity: 0, y: -8 }
 const crumbAnimate = { opacity: 1, y: 0 }
 const crumbTransition = { delay: 0.18, duration: 0.35, ease }
 const titleTransition = { duration: 0.2, delay: 0.12 }
+/*
+ * The site's micro curve — the same [0.22, 1, 0.36, 1] as `easeMicro` in lib/motion-tokens.
+ * A size change wants to arrive rather than depart: the reveal curve this file uses everywhere
+ * else is symmetrical, so it accelerates into the opening and lands hard, which on a row that
+ * grows by 200px reads as a snap.
+ */
+const easeSoft = [0.22, 1, 0.36, 1] as Easing
+
+/* The accordion row opening and closing. Long enough to read as one continuous movement, and
+   `layout` re-measures every card on every frame of it, so it does not get to be longer. */
+const cardLayoutTransition = { duration: 0.36, ease: easeSoft }
+
+/*
+ * The categories arrive one after another rather than as a block.
+ *
+ * `cardContentVariants` already staggers the panel's own three children — eyebrow, title, and
+ * this list — but the links are a level below that, so they all shared the list's single beat.
+ * This gives them their own.
+ */
+const categoryListVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, ease, delayChildren: 0.04, staggerChildren: 0.04 },
+  },
+}
 const cardContentVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -222,6 +250,13 @@ export function CollectionList({
   const [cardsScope, animateCards] = useAnimate<HTMLDivElement>()
   const previousIndex = useRef(0)
 
+  /*
+   * Read once here rather than per card — seven cards would mean seven matchMedia listeners for
+   * one answer. It decides how a card animates, not how it looks: the stylesheet turns the rail
+   * into an accordion on its own, and this makes the height change animate instead of jump.
+   */
+  const { isPhone } = useDeviceTier()
+
   useEffect(() => {
     if (!active || previousIndex.current === safeActiveIndex) return
 
@@ -256,6 +291,10 @@ export function CollectionList({
         <motion.div
           id="collection-navigation"
           className={styles.collectionList}
+          /* This element is the menu's scroller. Lenis handles the wheel on a document-level
+             listener and scrolls programmatically, so without this the page behind the open menu
+             moved instead of the menu — the same reason the mobile drawer carries it. */
+          data-lenis-prevent
           initial={menuFadeFrom}
           animate={menuFadeTo}
           exit={menuFadeFrom}
@@ -312,6 +351,7 @@ export function CollectionList({
                   collection={collection}
                   index={index}
                   isActive={safeActiveIndex === index}
+                  isAccordion={isPhone}
                   onActivate={() => onActiveIndexChange(index)}
                   onNavigate={() => setActive(false)}
                 />
@@ -360,6 +400,7 @@ type CollectionCardProps = {
   collection: NavigationCollection
   index: number
   isActive: boolean
+  isAccordion: boolean
   onActivate: () => void
   onNavigate: () => void
 }
@@ -368,6 +409,7 @@ function CollectionCard({
   collection,
   index,
   isActive,
+  isAccordion,
   onActivate,
   onNavigate,
 }: CollectionCardProps) {
@@ -385,10 +427,38 @@ function CollectionCard({
       className={styles.collectionCard}
       data-collection-index={index}
       style={index === 0 ? flexGrowLead : flexGrowRest}
-      onMouseEnter={() => {
-        if (!isActive) onActivate()
-      }}
-      onFocus={onActivate}
+      /*
+       * As an accordion the card's height changes when it opens, and nothing was animating that:
+       * the rail's motion comes from writing `flexGrow` to these cards, which does nothing once
+       * the stylesheet takes them out of flex context. `layout` measures the box before and after
+       * and tweens the difference, which is the whole animation here.
+       *
+       * Off on the rail, where flexGrow is already doing the work and this would animate the same
+       * change a second time.
+       */
+      layout={isAccordion}
+      transition={isAccordion ? cardLayoutTransition : undefined}
+      /*
+       * Hover activation is for a mouse only, and switching it off on touch is what makes the
+       * accordion work at all.
+       *
+       * A tap fires `pointerover` → `mouseenter` → `focus` → `click`, in that order and in
+       * separate renders. So the card became active on the synthetic `mouseenter`, and by the
+       * time `click` ran, `isActive` was already `true` — the handler below took that as "second
+       * tap", navigated, and the menu closed on the very tap that was meant to open the card.
+       * The card looked like it opened for a frame and then the whole menu went away.
+       *
+       * Without these two the only thing that activates a card on touch is the click, so the
+       * first tap opens and the second one goes.
+       */
+      onMouseEnter={
+        isAccordion
+          ? undefined
+          : () => {
+              if (!isActive) onActivate()
+            }
+      }
+      onFocus={isAccordion ? undefined : onActivate}
     >
       <div className={`${styles.cardImage} ${isActive ? styles.cardImageActive : ""}`}>
         <Image src={collection.image} alt="" fill sizes="44vw" priority={index === 0} />
@@ -400,8 +470,31 @@ function CollectionCard({
       <LocalizedClientLink
         href={collection.href}
         className={styles.cardHitArea}
-        aria-label={`Otevřít ${collection.title}`}
-        onClick={onNavigate}
+        aria-label={
+          isActive ? `Otevřít ${collection.title}` : `Rozbalit ${collection.title}`
+        }
+        aria-expanded={isActive}
+        onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+          /*
+           * A card opens on the first activation and navigates on the second.
+           *
+           * Cards used to become active on `mouseenter` and `focus` alone, which is no event a
+           * finger produces: on a phone the first tap went straight through this link to the
+           * collection page, so the categories inside a card could not be reached at all and the
+           * whole menu was a list of five links. Under a mouse nothing changes — hover has
+           * already made the card active by the time it can be clicked, so the click still
+           * navigates on the first try.
+           */
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+
+          if (!isActive) {
+            event.preventDefault()
+            onActivate()
+            return
+          }
+
+          onNavigate()
+        }}
       >
         {isActive && (
           <span className={styles.openLabel}>
@@ -410,7 +503,13 @@ function CollectionCard({
         )}
       </LocalizedClientLink>
 
-      <AnimatePresence mode="sync" initial={false}>
+      {/*
+        `popLayout` takes the outgoing child out of flow while it fades. In the rail both children
+        are absolutely positioned, so it changes nothing there — but in the accordion they are in
+        flow, and `sync` meant the collapsing title and the arriving panel briefly occupied the
+        same card. The row doubled in height for a frame and the whole list jumped.
+      */}
+      <AnimatePresence mode={isAccordion ? "popLayout" : "sync"} initial={false}>
         {!isActive ? (
           <motion.h3
             key="vertical-title"
@@ -435,7 +534,7 @@ function CollectionCard({
               {String(index + 1).padStart(2, "0")}
             </motion.span>
             <motion.h3 variants={contentItemVariants}>{collection.title}</motion.h3>
-            <motion.div className={styles.categoryLinks} variants={contentItemVariants}>
+            <motion.div className={styles.categoryLinks} variants={categoryListVariants}>
               {links.length > 0 ? (
                 links.map((link) => (
                   <motion.div key={link.id} variants={categoryVariants}>

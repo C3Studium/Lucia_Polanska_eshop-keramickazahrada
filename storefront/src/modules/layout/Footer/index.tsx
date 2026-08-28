@@ -4,6 +4,7 @@ import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/Catego
 import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { MerchantIdentity } from "@lib/data/merchant"
 import { subscribeToNewsletter } from "@lib/data/newsletter"
+import { openCookiePreferences } from "@lib/util/cookie-consent"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { paymentIcons } from "constants/icons"
 import { motion, useReducedMotion } from "framer-motion"
@@ -23,6 +24,9 @@ const importantLinks = [
   { label: "Obchodní podmínky", href: "/smluvni-podminky" },
   { label: "Ochrana osobních údajů", href: "/ochrana-osobnich-udaju" },
   { label: "Používání cookies", href: "/cookies" },
+  // Not a page either: it reopens the consent dialog. Withdrawing consent has to be as easy as
+  // giving it was, and the banner that gave it is gone the moment it is answered.
+  { label: "Nastavení cookies", action: "cookies" as const },
 ]
 
 const discoverLinks = [
@@ -268,7 +272,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
 
 type FooterEntry =
   | { label: string; href: string; action?: never }
-  | { label: string; action: "contact"; href?: never }
+  | { label: string; action: "contact" | "cookies"; href?: never }
 
 function FooterLinkGroup({
   title,
@@ -284,12 +288,14 @@ function FooterLinkGroup({
       <p className="footer__groupTitle">{title}</p>
       <div>
         {links.map((link) =>
-          link.action === "contact" ? (
+          link.action ? (
             <button
               key={link.label}
               type="button"
               className="footer__dialogLink"
-              onClick={() => open()}
+              onClick={() =>
+                link.action === "contact" ? open() : openCookiePreferences()
+              }
             >
               {link.label}
             </button>

@@ -1,8 +1,7 @@
 "use client"
 
 import { AnimatePresence, motion } from "framer-motion"
-import { usePathname } from "next/navigation"
-import { useCallback, useEffect, useId, useState } from "react"
+import { useCallback, useEffect, useId } from "react"
 import { createPortal } from "react-dom"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -16,9 +15,15 @@ import styles from "./style.module.scss"
  * are shortcuts people reach for directly — burying them behind a menu would cost a tap on the
  * two things the shop is actually for.
  *
+ * Úvod is here because the phone bar no longer carries the wordmark: at 360px the bar could not
+ * hold a brand link, a search that opens to a real input, the E-shop button and a menu toggle at
+ * the 44px floor, and of those four the brand link is the one with a home everywhere else — this
+ * menu, the footer logo, and every logo convention a visitor already knows.
+ *
  * Kontakt is not a route: it opens the site-wide contact dialog (D-S5), so it is a button here.
  */
 const LINKS = [
+  { label: "Úvod", href: "/" },
   { label: "Výroba", href: "/vyroba" },
   { label: "Kurzy", href: "/kurzy" },
   { label: "Dotazy", href: "/dotazy" },
@@ -42,19 +47,24 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeReveal } },
 }
 
-export default function MobileNav() {
-  const [isOpen, setIsOpen] = useState(false)
-  const pathname = usePathname()
+type MobileNavProps = {
+  isOpen: boolean
+  onOpenChange: (next: boolean) => void
+}
+
+/**
+ * Controlled, rather than owning its own open state.
+ *
+ * The bar has three things that cover the page — this menu, the E-shop menu and the search panel
+ * — and only one of them can be the answer to a tap. While this component held its own state the
+ * Navbar could not know it was open, so opening the E-shop menu left the menu underneath it and
+ * the two overlays stacked. One owner for all three settles it.
+ */
+export default function MobileNav({ isOpen, onOpenChange }: MobileNavProps) {
   const panelId = useId()
   const contact = useContactDialog()
 
-  const close = useCallback(() => setIsOpen(false), [])
-
-  // Following a link navigates the page behind the overlay; it must not stay open over the
-  // route it just left.
-  useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
+  const close = useCallback(() => onOpenChange(false), [onOpenChange])
 
   useEffect(() => {
     if (!isOpen) {
@@ -63,7 +73,7 @@ export default function MobileNav() {
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false)
+        close()
       }
     }
 
@@ -75,7 +85,7 @@ export default function MobileNav() {
       document.body.style.overflow = previous
       window.removeEventListener("keydown", onKey)
     }
-  }, [isOpen])
+  }, [isOpen, close])
 
   return (
     <>
@@ -85,7 +95,7 @@ export default function MobileNav() {
         aria-expanded={isOpen}
         aria-controls={panelId}
         aria-label={isOpen ? "Zavřít nabídku" : "Otevřít nabídku"}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => onOpenChange(!isOpen)}
         data-open={isOpen || undefined}
       >
         <span aria-hidden="true" />
@@ -139,7 +149,7 @@ export default function MobileNav() {
                       <button
                         type="button"
                         onClick={() => {
-                          setIsOpen(false)
+                          close()
                           contact.open()
                         }}
                       >

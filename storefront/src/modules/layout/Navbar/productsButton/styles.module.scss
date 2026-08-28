@@ -416,3 +416,203 @@
   font-size: 14px;
   letter-spacing: 0.02em;
 }
+
+/*
+ * ─── Phone: a vertical accordion ────────────────────────────────────────────────────────────
+ *
+ * The desktop menu is a horizontal rail of cards that grow sideways as you move across them, and
+ * the collapsed ones set their titles in `writing-mode: vertical-rl`. That is a mouse idiom: it
+ * needs width to spend and a pointer that can sweep. On a phone it became seven 54px slivers of
+ * sideways text scrolling off the right edge, and — because cards only ever became active on
+ * `mouseenter` — nothing a finger did could open one.
+ *
+ * Here it is a list instead: one row per collection, tap to expand it downward onto its
+ * categories, the way the FAQ list works. Same markup, same components; the row is the header and
+ * the categories sit underneath it.
+ */
+@mixin collection-accordion {
+  /*
+   * `display: block` rather than a column flex. The open card is animated by writing `flexGrow`
+   * to each card's inline style, and inline styles beat stylesheets — in a column that would
+   * hand the open card a share of the container's *height* and stretch the collapsed rows to
+   * fill what was left. Out of flex context those inline values simply do not apply, so the
+   * animation goes quiet on its own instead of being fought with `!important`.
+   */
+  /*
+   * 106px of top padding holds space for the tabs and breadcrumb bar that are commented out of
+   * the JSX; what it actually has to do is clear the navbar, which is 66px to its lower edge on
+   * a phone. The rest is a screenful of nothing above the first row.
+   */
+  .menuPanel {
+    padding: 84px 10px 9px;
+  }
+
+  .collectionCards {
+    display: block;
+    height: auto;
+    /* 84px of panel padding, 66px of „Zobrazit celý e-shop" and footer below the list, and 76px
+       for the bottom bar the list would otherwise scroll underneath. */
+    max-height: calc(100dvh - 226px);
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .collectionCard {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+
+    /*
+     * `will-change: flex-grow` promotes all seven cards to their own compositing layer for a
+     * property that does not exist outside flex context — which this is not. `translateZ(0)` did
+     * the same. Both are paid for on every frame of the open animation and buy nothing here.
+     */
+    transform: none;
+    will-change: auto;
+
+    & + & {
+      margin-top: 6px;
+    }
+  }
+
+  /*
+   * The stutter. Every card is a full-bleed photograph under a `blur(1.5px)` filter with a 0.48s
+   * transition on it, and a shade with another. While the list animates its height, the browser
+   * re-rasterises seven blurred images per frame — on a phone GPU that is the whole frame budget
+   * and then some.
+   *
+   * The blur is a depth effect for a card the size of a poster. At 52px of row it is not visible
+   * at all, so it costs a frame rate to show nothing.
+   */
+  .cardImage img,
+  .cardImageActive img {
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+
+  .imageShade {
+    transition: none;
+  }
+
+  /* The image was a fixed-width strip centred in a tall card; here it is the row's background. */
+  .cardImage {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+  }
+
+  /*
+   * Text sits on the photograph at every state now, so the shade cannot drop to 0.18 the way it
+   * does on a card the size of a poster.
+   */
+  .imageShade {
+    opacity: 0.66;
+  }
+
+  .imageShadeActive {
+    opacity: 0.58;
+  }
+
+  /*
+   * The collapsed title is the row. It comes out of absolute positioning so that it — and not a
+   * fixed height — is what gives the row its height.
+   */
+  .verticalTitle {
+    position: static;
+    padding: 13px 52px 14px 16px;
+    font-size: 19px;
+    white-space: normal;
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  /* Likewise the expanded panel: in flow, so the row grows to hold it. */
+  .expandedContent {
+    position: static;
+    inset: auto;
+    bottom: auto;
+    padding: 12px 16px 14px;
+
+    h3 {
+      margin: 2px 0 6px;
+      font-size: 19px;
+      line-height: 1.05;
+    }
+  }
+
+  .cardEyebrow {
+    font-size: 11px;
+  }
+
+  /*
+   * The category links are sized off `--animated-link-font-size`, which their own module reads
+   * with a `clamp(20px, 1.55vw, 28px)` fallback — a display size, meant for a card the width of
+   * a screen. Set from here, so CategoryLink keeps one definition and this stays a decision
+   * about the accordion.
+   *
+   * The rows are set tight rather than at the 44px target. These are a second level of
+   * navigation inside a row the reader has already opened, not primary controls — and „Do bytu"
+   * alone has seven of them, which at a 44px row is 300px of list before the next collection.
+   *
+   * Most of the row was never text. CategoryLink is a column of the label and a 5px underline
+   * mask, and the mask holds an underline that only ever slides in on hover — so on a phone it
+   * was 5px of dead space per link. It is hidden on touch in that component now, along with the
+   * label's `min-height`, which leaves the row at its line box: ~18px plus this padding.
+   *
+   * Seven categories under „Do bytu" go from ~320px to ~180px. 4px keeps the row at 26px, just
+   * over the 24px WCAG 2.5.8 floor — these are a second level of navigation inside a row the
+   * reader has already opened, not primary controls.
+   */
+  .categoryLinks {
+    --animated-link-font-size: 16px;
+
+    width: 100%;
+    gap: 0;
+    line-height: 1;
+
+    /*
+     * `display: flex`, not the component's own `inline-flex`. That was the gap.
+     *
+     * An inline-level box sits on a text baseline, so the block wrapping it builds a line box
+     * around it and reserves room under the baseline for descenders — leading that belongs to no
+     * element, cannot be reached with padding, and does not go away when you take the padding to
+     * zero. Which is why three passes of trimming padding did nothing. Block-level flex creates
+     * no line box, so the row is exactly the link.
+     */
+    a {
+      display: flex;
+      width: 100%;
+      padding-block: 4px;
+    }
+  }
+
+  /*
+   * Bounded to the header. Full-bleed it would sit over the categories it just revealed, and
+   * every tap meant for one of them would open the collection instead.
+   */
+  .cardHitArea {
+    bottom: auto;
+    height: 52px;
+  }
+
+  /* Moved into the header row, where the tap that uses it happens. */
+  .openLabel {
+    top: 13px;
+    right: 12px;
+    bottom: auto;
+  }
+}
+
+@include below-px(600px) {
+  @include collection-accordion;
+}
+
+/* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
+@include phs-h {
+  @include collection-accordion;
+}

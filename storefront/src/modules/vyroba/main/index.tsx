@@ -17,9 +17,11 @@ import {
   ProcessImageVisual,
 } from "@modules/vyroba/gallery"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { useDeviceTier } from "@lib/hooks/use-device-tier"
 
 export default function MainVyroba() {
   const timelineRef = useRef<HTMLDivElement>(null)
+  const { isPhone } = useDeviceTier()
   const { scrollYProgress } = useScroll({
     target: timelineRef,
     offset: ["start start", "end end"],
@@ -51,21 +53,34 @@ export default function MainVyroba() {
     progress >= 0.985 ? "none" : "auto"
   )
 
+  /*
+   * The growing image, in the two proportions it has to work in.
+   *
+   * Wide, it starts as a 19vw thumbnail low on the left and opens into a 61vw plate — a move
+   * across a stage that is half again as wide as it is tall. A phone's stage is the other way up,
+   * so the same numbers give a 74px stamp at 390px that grows into something still short of half
+   * the screen: technically the animation, visually nothing. Portrait it starts larger, ends
+   * nearly full-bleed, and travels mostly vertically, which is the axis that exists here.
+   */
   const previewLeft = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    ["8%", "4.5%"]
+    isPhone ? ["17%", "9%"] : ["8%", "4.5%"]
   )
-  const previewTop = useTransform(scrollYProgress, [0.58, 0.99], ["56%", "15%"])
+  const previewTop = useTransform(
+    scrollYProgress,
+    [0.58, 0.99],
+    isPhone ? ["60%", "19%"] : ["56%", "15%"]
+  )
   const previewWidth = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    ["19vw", "61vw"]
+    isPhone ? ["36vw", "82vw"] : ["19vw", "61vw"]
   )
   const previewHeight = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    ["29%", "70%"]
+    isPhone ? ["17%", "52%"] : ["29%", "70%"]
   )
   const previewClip = useTransform(
     scrollYProgress,
@@ -123,9 +138,25 @@ export default function MainVyroba() {
       <div ref={timelineRef} className="main__vyrobaTimeline">
         <motion.div
           className="main__vyrobaSticky"
+          /*
+           * The handoff fade is desktop-only, and it is the seam.
+           *
+           * Wide, the gallery is pulled up under this stage by `margin-top: -104vh`, so the stage
+           * has to dissolve to reveal what is already sitting behind it. On a phone that pull-up
+           * is off — it would hide the mobile gallery's first chapter, which is flow content
+           * there rather than a sticky lead-in — so there is nothing behind the stage to reveal.
+           * Fading it out just emptied the screen, and then a whole viewport of charcoal scrolled
+           * by before the gallery arrived.
+           *
+           * Left at full opacity, the stage simply scrolls away and the gallery follows it up.
+           * Both sections are the same charcoal, so the join is the scroll itself.
+           *
+           * A plain `1` rather than dropping the property: framer does not clear a value it has
+           * already written, and the first paint happens before `isPhone` is known.
+           */
           style={{
-            opacity: handoffOpacity,
-            pointerEvents: handoffPointerEvents,
+            opacity: isPhone ? 1 : handoffOpacity,
+            pointerEvents: isPhone ? "auto" : handoffPointerEvents,
           }}
         >
           <motion.div

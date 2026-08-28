@@ -327,6 +327,16 @@
 }
 
 @include below-px(760px) {
+  /*
+   * `margin-top: 0` — no pull-up here, deliberately. The -104vh of the wide layout slides this
+   * section under the hero's sticky stage, which works because the first 104vh of the wide
+   * gallery is its own pinned lead-in and there is nothing in it to miss. On a phone this is
+   * `atelierProcessMobile`: ordinary flow content, starting with a chapter. Pulled up by a
+   * viewport, that chapter would scroll past behind the stage and be gone before it was seen.
+   *
+   * The hero compensates on its side by not fading its stage out — see main/index.tsx. The two
+   * sections share a background, so the join reads as one continuous scroll.
+   */
   .Gallery {
     height: auto;
     margin-top: 0;

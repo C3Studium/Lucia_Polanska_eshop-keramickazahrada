@@ -5,12 +5,15 @@ import { HttpTypes } from "@medusajs/types"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { useParams, usePathname } from "next/navigation"
 import {
+  useCallback,
   useMemo,
   useState,
   useTransition,
   type ComponentType,
   type CSSProperties,
 } from "react"
+
+import { useDismiss } from "@lib/hooks/use-dismiss"
 import ReactCountryFlag from "react-country-flag"
 
 type CountryOption = {
@@ -50,6 +53,17 @@ export default function RegionsSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSwitching, startSwitching] = useTransition()
+
+  /* Stable, so the dismiss listeners bind once per open rather than once per render. */
+  const closeList = useCallback(() => setIsOpen(false), [])
+
+  /*
+   * Closed on `mouseleave` and on Escape, and Escape only while the focus was still inside it —
+   * so on a phone the country list stayed open over the page with nothing able to dismiss it.
+   * This closes it on any press outside and on Escape from anywhere, and it replaces the local
+   * keydown handler that used to sit on this element.
+   */
+  const dismissRef = useDismiss<HTMLDivElement>(isOpen, closeList)
   const { countryCode } = useParams<{ countryCode: string }>()
   const pathname = usePathname()
 
@@ -97,15 +111,13 @@ export default function RegionsSelect({
 
   return (
     <div
+      ref={dismissRef}
       className="regions__select"
       aria-busy={isSwitching || undefined}
       data-switching={isSwitching || undefined}
       data-open={isOpen || undefined}
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") setIsOpen(false)
-      }}
     >
       <motion.button
         type="button"

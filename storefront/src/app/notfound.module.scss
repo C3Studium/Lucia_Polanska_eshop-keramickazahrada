@@ -1,42 +1,188 @@
 @use "../styles/system/_shortcuts.scss" as *;
-/* NotFound page styles - SASS nesting */
+
+/*
+ * The root 404 — src/app/not-found.tsx.
+ *
+ * This is the page an unmatched URL actually lands on. It renders OUTSIDE the (main) layout:
+ * no navbar, no footer, no cookie card, no ambient shader. The whole viewport is the
+ * composition and there is no chrome to work around.
+ *
+ * Before this pass the file had no responsive rules at all — a flat `font-size: 2rem` heading
+ * and a flat `1rem` message from 320px to 2552px, and a `min-height` that subtracted a navbar
+ * that is not on this page.
+ *
+ * A note that applies to every `@include font()` below: the type tokens in
+ * styles/system/_typography.scss declare families the project does not load — "Helvetica" and
+ * "Arimo", where globals.scss loads Sentient, Sansation and Oooh Baby. Taking a token verbatim
+ * therefore swaps the brand face for system-ui. Each call site here takes the token for its
+ * responsive size ladder and restores the inherited face on the next line. Flagged to the lead;
+ * the fix belongs in _typography.scss, not here.
+ */
+
 .root {
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	align-items: center;
-	justify-content: center;
-	min-height: calc(100dvh - 64px);
+  /*
+   * Was `calc(100dvh - 64px)`. The 64px was a guess at navbar height — but nothing renders
+   * above this page, so all it did was push the stack 32px above centre at all fourteen
+   * viewports. Full height, genuinely centred.
+   */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-inline: 1.25rem;
+  text-align: center;
 
-	.heading {
-		font-size: 2rem;
-		font-weight: 600;
-		color: var(--ui-fg-base, #111827);
-	}
+  /*
+   * Above 1921px globals.scss caps the page to a 16:10 frame and paints the band behind it
+   * #141513, so the frame reads as a frame. The frame takes its colour from the page — and this
+   * page had none, so at 2552x1351 the entire 404 rendered as near-black text on the near-black
+   * band, with only the blue link legible. Painting the page is what every other page inside the
+   * frame already does. Below 1921px the body is transparent over UA white, so this is a no-op
+   * at every other viewport.
+   */
+  background: var(--bgWhite, #fff);
 
-	.message {
-		font-size: 1rem;
-		color: var(--ui-fg-base, #111827);
-	}
+  @include vb((
+    sm: (gap: 1.15rem),
+    md: (gap: 1.35rem, padding-inline: 2.5rem),
+    lg: (gap: 1.6rem, padding-inline: 3rem)
+  ));
 
-	.link {
-		display: flex;
-		gap: 0.25rem;
-		align-items: center;
-		cursor: pointer;
-		// .group handled by React logic if needed
-	}
+  @include hb((
+    xs: (gap: 1.25rem, padding-inline: 2rem),
+    md: (gap: 1.5rem, padding-inline: 3rem),
+    huge: (gap: 1.75rem),
+    qhd: (gap: 2.75rem, padding-inline: 4rem)
+  ));
 
-	.linkText {
-		color: var(--ui-fg-interactive, #2563EB);
-		transition: color 0.15s;
-	}
+  /*
+   * Phone in landscape — 568x320 and 932x430. Only 320-430px tall, and the link carries a 44px
+   * touch floor, so the stack is tightened to keep heading, message and link inside the viewport
+   * without a scroll.
+   */
+  @include h(phs) {
+    gap: 0.5rem;
+    padding-inline: 2rem;
+  }
 
-	.arrow {
-		transition: transform 0.15s ease-in-out;
-		// .group-hover:rotate-45
-		&:hover {
-			transform: rotate(45deg);
-		}
-	}
+  @include h(phl) {
+    gap: 0.7rem;
+    padding-inline: 2.5rem;
+  }
+
+  /* Short laptop (1220x660, 1366x768) — 660px of height does not want the `md` gap. */
+  @include h(lt) {
+    gap: 1.2rem;
+  }
+}
+
+.heading {
+  /* Base is the old flat value, which is also what the token resolves to at 320px portrait. */
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ui-fg-base, #111827);
+
+  /*
+   * "Stránka nenalezena" measured 291px at 32px — in a 320px viewport that left 14px of air on
+   * each side and touched the edge. With the padding above it now wraps to two centred lines,
+   * which is what the balance is for: Czech compounds badly and an unbalanced break here reads
+   * as a bug.
+   */
+  text-wrap: balance;
+
+  @include font(h2);
+
+  /* Wrapped in `&` so it is not a bare declaration sitting after the media queries the token
+     emits — Sass deprecated that ordering (mixed-decls) and warns on every build. */
+  & {
+    font-family: inherit;
+  }
+
+  /* Phone landscape has width to spare and no height, so the headline comes down rather than up. */
+  @include h(phs) {
+    font-size: 1.75rem;
+  }
+
+  @include h(phl) {
+    font-size: 2.1rem;
+  }
+}
+
+.message {
+  font-size: 1rem;
+  color: var(--ui-fg-base, #111827);
+  line-height: var(--type-leading-body, 1.55);
+
+  /*
+   * A measure, so the line does not run the full width of a 2K frame. The copy is short enough
+   * that this only ever bites at `qhd` and on landscape tablets.
+   */
+  max-width: 46ch;
+  text-wrap: pretty;
+
+  @include font(SBody);
+
+  & {
+    font-family: inherit;
+  }
+
+  /*
+   * SBody lands on 0.85rem at 568x320 — legible, but this is the one line the visitor has to
+   * read, so it is nudged back over the 14px mark.
+   */
+  @include h(phs) {
+    font-size: 0.95rem;
+  }
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+
+  /*
+   * globals.scss sets the 44px target floor for `button` and friends under `touch` but
+   * deliberately not for `<a>`, so this link measured 188x24 on all nine touch viewports in the
+   * baseline — the only finding the baseline reported on this route. Fixed here, as brief §6.5
+   * asks, rather than by widening the global rule.
+   */
+  @include touch {
+    min-height: 44px;
+    padding-inline: 0.75rem;
+  }
+}
+
+.linkText {
+  font-size: 1rem;
+  color: var(--ui-fg-interactive, #2563eb);
+  transition: color 0.15s;
+
+  @include font(SCTA);
+
+  & {
+    font-family: inherit;
+  }
+}
+
+.arrow {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease-in-out;
+
+  /*
+   * The original was `.arrow:hover` with a comment reading "// .group-hover:rotate-45" — the
+   * intent was the whole link, but as written the rotation only fired when the cursor was on the
+   * icon itself. Restored to the documented intent, and gated to fine pointers because a hover
+   * transform sticks after a tap on touch.
+   */
+  @include fine-pointer {
+    .link:hover & {
+      transform: rotate(45deg);
+    }
+  }
 }

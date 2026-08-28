@@ -14,6 +14,7 @@ import { useParams, usePathname } from "next/navigation"
 import Button from "../../common/components/Buttons/button"
 import SearchButton from "./searchButton"
 import MobileNav from "./mobileNav"
+import MobileBar from "./mobileBar"
 import {
   CollectionList,
   NavigationCollection,
@@ -65,6 +66,7 @@ export default function Navbar({
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [activeCollectionIndex, setActiveCollectionIndex] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -96,7 +98,24 @@ export default function Navbar({
   useEffect(() => {
     setIsSearchOpen(false)
     setIsOpen(false)
+    setIsMenuOpen(false)
   }, [pathname])
+
+  /*
+   * The bar's three overlays are mutually exclusive: search, the E-shop menu, and the links menu
+   * each cover the page, so opening one has to put the others away. Routed through one place
+   * rather than each opener remembering to close the other two — the E-shop button already
+   * closed search and knew nothing about the hamburger, so the two could sit stacked.
+   */
+  const openExclusively = (panel: "search" | "products" | "menu" | null) => {
+    setIsSearchOpen(panel === "search")
+    setIsOpen(panel === "products")
+    setIsMenuOpen(panel === "menu")
+
+    if (panel === "products") {
+      setActiveCollectionIndex(0)
+    }
+  }
 
   useEffect(() => {
     const updateNavbarSurface = () => setIsScrolled(window.scrollY > 28)
@@ -107,11 +126,11 @@ export default function Navbar({
   }, [])
 
   const handleProductsOpenChange = (next: boolean) => {
-    setIsOpen(next)
-    if (next) {
-      setIsSearchOpen(false)
-      setActiveCollectionIndex(0)
-    }
+    openExclusively(next ? "products" : null)
+  }
+
+  const handleMenuOpenChange = (next: boolean) => {
+    openExclusively(next ? "menu" : null)
   }
 
   useEffect(() => {
@@ -188,14 +207,8 @@ export default function Navbar({
             isActive={isSearchOpen}
             value={searchQuery}
             onValueChange={setSearchQuery}
-            onClick={() => {
-              setIsOpen(false)
-              setIsSearchOpen((open) => !open)
-            }}
+            onClick={() => openExclusively(isSearchOpen ? null : "search")}
           />
-          {/* Carries the links only, and only where the bar cannot hold them. Search above and
-              the Produkty menu keep their own buttons. */}
-          <MobileNav />
         </div>
         <div className="navbar__center">
           <div className="navbar__center-side navbar__center-side--left">
@@ -251,6 +264,18 @@ export default function Navbar({
             />
           </div>
         </div>
+        {/*
+          Its own pill, sitting where a phone's thumb expects a menu: top right, opposite the
+          search. It used to ride inside the left pill next to the wordmark, which put both of
+          the bar's two openers on the same side and left nothing on the right once the utility
+          icons moved to the bottom bar. Above the compact stops the toggle is display:none, so
+          this element collapses to nothing and the desktop bar is unchanged.
+        */}
+        <div className="navbar__menu">
+          <MobileNav isOpen={isMenuOpen} onOpenChange={handleMenuOpenChange} />
+        </div>
+
+        {/* Phones get MobileBar below instead — this whole pill is display:none there. */}
         <div className="navbar__right">
           <RegionsSelect regions={regions} />
           <Suspense
@@ -305,6 +330,13 @@ export default function Navbar({
             </LocalizedClientLink>
           </Magnetic>
         </div>
+
+        {/* Phones only, and hidden by its own stylesheet everywhere else. */}
+        <MobileBar
+          cart={cart}
+          regions={regions}
+          wishlistItems={wishlistItems}
+        />
       </nav>
       <NavbarSearch
         countryCode={countryCode}

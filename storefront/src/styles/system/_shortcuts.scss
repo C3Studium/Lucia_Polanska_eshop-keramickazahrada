@@ -20,6 +20,10 @@
 @mixin fine-pointer   { @include sys.fine-pointer   { @content; } }
 @mixin reduced-motion { @include sys.reduced-motion { @content; } }
 
+// Effect budget — set from JS by the shader probe, see _mixins.scss
+@mixin reduced-fx { @include sys.reduced-fx { @content; } }
+@mixin full-fx    { @include sys.full-fx    { @content; } }
+
 // Horizontal per-breakpoint helpers (compact)
 @mixin xxs-h  { @include h(xxs)  { @content; } }
 @mixin xs-h   { @include h(xs)   { @content; } }
@@ -30,6 +34,7 @@
 @mixin lg-h   { @include h(lg)   { @content; } }
 @mixin xl-h   { @include h(xl)   { @content; } }
 @mixin huge-h { @include h(huge) { @content; } }
+@mixin qhd-h  { @include h(qhd)  { @content; } }  // 2K desktop, 16:9 — from 2200px wide
 
 // Device-qualified landscape stops (height-constrained; see _breakpoints.scss)
 @mixin phs-h  { @include h(phs)  { @content; } }  // phone landscape, from 568×320

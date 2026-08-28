@@ -2,6 +2,10 @@
 /*
  * Sits inside a LegalDocument chapter, on its cream surface.
  * Ink #24251f on that surface measures 13.9:1; the eyebrow tone #565845 measures 6.1:1.
+ *
+ * Smallest-first, like the document it sits in. The only stops it needs are the ones where the
+ * surrounding measure changes: phone landscape, where the chapter column is short of height, and
+ * qhd, where the chapter body grows to 880px and a box still sized for 720px reads as a leftover.
  */
 
 .placeholder,
@@ -10,11 +14,32 @@
   max-width: 62ch;
   flex-direction: column;
   margin-top: clamp(24px, 2.4vw, 36px);
-  padding: clamp(20px, 2vw, 28px);
+  padding: 18px;
   border: 1px solid rgba(36, 37, 31, 0.24);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.44);
   gap: 12px;
+
+  @include h(md) {
+    padding: clamp(20px, 2vw, 28px);
+  }
+
+  @include h(qhd) {
+    margin-top: 48px;
+    padding: 36px;
+    border-radius: 18px;
+    gap: 18px;
+  }
+
+  @include h(phs) {
+    margin-top: 18px;
+    padding: 14px;
+    gap: 9px;
+  }
+
+  @include v(md) {
+    padding: 22px;
+  }
 }
 
 .eyebrow {
@@ -23,6 +48,10 @@
   font-size: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+
+  @include h(qhd) {
+    font-size: 17px;
+  }
 }
 
 .placeholder p:not(.eyebrow) {
@@ -30,6 +59,18 @@
   color: #24251f;
   font-size: 16px;
   line-height: 1.6;
+
+  @include h(qhd) {
+    font-size: 22px;
+  }
+
+  @include h(phs) {
+    font-size: 15px;
+  }
+
+  @include v(md) {
+    font-size: 17px;
+  }
 }
 
 .placeholder a {
@@ -37,6 +78,26 @@
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+  /* info@keramickazahrada.cz is 24 unbroken characters and the chapter column is 198px wide at
+     320px. Without this it is the one thing on the page that can push it sideways. */
+  overflow-wrap: anywhere;
+}
+
+/*
+ * globals.scss sets the 44px touch floor for button and friends but deliberately not for <a>, so
+ * inline prose links keep their natural line box. This one is the only way to start a claim while
+ * the PDF does not exist, so it earns the target: inline-flex makes the anchor itself the box the
+ * finger has to hit, and max-width keeps it wrapping inside the column rather than becoming an
+ * atomic inline that cannot break.
+ */
+@include touch {
+  .placeholder a {
+    display: inline-flex;
+    max-width: 100%;
+    min-height: 44px;
+    align-items: center;
+    vertical-align: middle;
+  }
 }
 
 .button {
@@ -45,7 +106,8 @@
   align-items: center;
   justify-content: space-between;
   align-self: flex-start;
-  padding: 0 24px;
+  max-width: 100%;
+  padding: 0 20px;
   border: 1px solid #24251f;
   border-radius: 999px;
   color: #24251f;
@@ -55,6 +117,17 @@
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @include h(md) {
+    padding: 0 24px;
+  }
+
+  @include h(qhd) {
+    min-height: 64px;
+    padding: 0 34px;
+    font-size: 22px;
+    gap: 22px;
+  }
 }
 
 .button:hover,

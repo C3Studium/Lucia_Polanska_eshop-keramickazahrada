@@ -124,6 +124,22 @@
       will-change: clip-path, transform;
     }
 
+    /*
+     * Sits above the shader canvas, which is z-index 2 inside this same box. The wrapper's
+     * ::before gradient stays — it darkens the edge the copy is anchored to — and this covers the
+     * middle, where the gradient has already faded to nothing and the headline still has to be
+     * read over whatever the photograph is doing there.
+     */
+    .Hero__Intro__Cover__Overlay {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
     .homeHeroShader {
       overflow: hidden;
       background: #171816;
@@ -629,3 +645,85 @@
     display: block;
     will-change: transform;
   }
+
+/*
+ * ─── Phone ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * The wide composition places three things independently against one frame: the lockup on the
+ * left at optical centre, the lede low and right as a counterweight, the rail along the bottom.
+ * Each is absolutely positioned, which is what lets them be balanced against the picture rather
+ * than stacked in a column.
+ *
+ * On a phone there is no left and right to balance — and because *both* of the header's children
+ * are absolute, the header itself measures zero and each child is anchored to the same point near
+ * the bottom of it. The headline and the lede were therefore drawn on top of each other, which is
+ * what the screenshot shows: „Za každým mým výrobkem je příběh" running straight through the
+ * „Prohlédnout výrobky" button.
+ *
+ * Here they are one column, in flow, from the top of the frame down. Written as its own block
+ * rather than as a change to the base, because the base is also what a tablet gets up to the
+ * `sm`/`lg` stops, and the balanced composition still works there.
+ */
+/*
+ * Anchored to the bottom, not the top: the lede and the button sit `$bottom` up from the floor of
+ * the frame and everything above them stacks upward from there. Read from the bottom the two
+ * masses are the action and, a clear gap above it, the promise — which is the order the eye takes
+ * them in on a phone, where the picture is behind the copy rather than beside it.
+ *
+ * `$gap` is deliberately large. At a normal column gap the headline and the lede read as one
+ * block of text; at ~7.5vh they read as two things, which is what they are.
+ */
+@mixin hero-intro-phone($bottom, $gap) {
+  .Hero__Intro {
+    .Hero__Intro__Header {
+      top: auto;
+      right: 1.3rem;
+      bottom: $bottom;
+      left: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $gap;
+    }
+
+    /* In flow. The `top: 50%` / `translateY(-54%)` that optically centres it against the picture
+       has nothing to centre against once the header is a column anchored to the top. */
+    .Hero__Intro__Lockup {
+      position: static;
+      max-width: 100%;
+      transform: none;
+    }
+
+    /*
+     * Same, and it stops being a counterweight: right-aligned text under a left-aligned headline
+     * reads as two unrelated blocks when they are in one column rather than on opposite sides of
+     * a frame. The rule above it does the separating that its position used to.
+     */
+    .Hero__Intro__Lede {
+      position: static;
+      right: auto;
+      bottom: auto;
+      max-width: 100%;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .Hero__Intro__Lede > p {
+      max-width: 34ch;
+    }
+  }
+}
+
+@include below-px(600px) {
+  @include hero-intro-phone(7.5vh, 7.5vh);
+}
+
+/*
+ * phs alone spans the landscape-phone range; phl would only repeat it from 800px up.
+ *
+ * 7.5vh of a 390px-tall screen is 29px, and 5vh is 20 — the proportions that separate two masses
+ * on a tall screen just crowd them on a short one, so both are floored in rem here.
+ */
+@include phs-h {
+  @include hero-intro-phone(max(7.5vh, 2.4rem), max(7.5vh, 2.6rem));
+}

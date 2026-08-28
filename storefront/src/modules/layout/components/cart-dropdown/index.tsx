@@ -18,7 +18,8 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Cart from "@modules/common/icons/cart"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
-import { Fragment, useEffect, useRef, useState, type WheelEvent } from "react"
+import { useDismiss } from "@lib/hooks/use-dismiss"
+import { Fragment, useCallback, useEffect, useRef, useState, type WheelEvent } from "react"
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 
@@ -33,7 +34,19 @@ const CartDropdown = ({
   const [cartDropdownOpen, setCartDropdownOpen] = useState(false)
 
   const open = () => setCartDropdownOpen(true)
-  const close = () => setCartDropdownOpen(false)
+  /* Stable, so the dismiss listeners bind once per open rather than once per render. */
+  const close = useCallback(() => setCartDropdownOpen(false), [])
+
+  /*
+   * The panel is rendered `static`, so Headless UI hands its open state to us and stops managing
+   * dismissal with it — including its own outside-click handling. `onMouseLeave` below covered
+   * that on a desktop and nowhere else: a finger sends no `mouseleave`, so on a phone the cart
+   * stayed open over the page until something inside it was tapped.
+   *
+   * The ref goes on the wrapper, which holds the button as well as the panel, so pressing the
+   * cart icon still toggles instead of counting as a press outside.
+   */
+  const dismissRef = useDismiss<HTMLDivElement>(cartDropdownOpen, close)
 
   const totalItems =
     cartState?.items?.reduce((acc, item) => {
@@ -110,6 +123,7 @@ const CartDropdown = ({
 
   return (
     <div
+      ref={dismissRef}
       className={styles.root}
       onMouseEnter={openAndCancel}
       onMouseLeave={close}

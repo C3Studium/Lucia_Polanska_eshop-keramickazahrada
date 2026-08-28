@@ -1,9 +1,70 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * LegalDocument — the shared composition behind /cookies, /smluvni-podminky, /doprava-a-platba,
+ * /ochrana-osobnich-udaju, /odstoupeni-od-smlouvy and /reklamacni-protokol.
+ *
+ * Written smallest-first: the unqueried rules are the 320px portrait phone, and every stop above
+ * is an override. The two orientation-blind below-px() blocks this file used to end with are
+ * gone — a 932x430 phone on its side and a 768x1024 tablet were both "below 1024px" and neither
+ * wanted the same layout.
+ *
+ * Three compositions, chosen by what the viewport actually has:
+ *
+ *   phone, either orientation  — one column, chapter index as a full-bleed chip rail
+ *   tablet / short landscape   — index sidebar + column of text, status rail dropped
+ *   desktop from md            — index sidebar + text + status rail
+ *
+ * phs/phl are 320-430px TALL, so they get their own hero: two columns, using the width they
+ * have instead of the height they do not.
+ */
+
+/*
+ * The archival micro-labels. 12px is the floor globals.scss documents as --type-eyebrow, and
+ * this is uppercase with 0.12em tracking, so it never goes below it at any stop.
+ *
+ * Deliberately not @include font(legal): that token would also set font-family to Arimo, and
+ * these pages are set in Sansation. See the note at the foot of this file.
+ */
+@mixin micro-label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  @include h(lg) {
+    font-size: 13px;
+  }
+
+  @include h(huge) {
+    font-size: 14px;
+  }
+
+  @include h(qhd) {
+    font-size: 17px;
+  }
+
+  @include v(md) {
+    font-size: 13px;
+  }
+}
+
 .page {
   --legal-ink: #24251f;
   --legal-muted: rgba(36, 37, 31, 0.58);
   --legal-rule: rgba(36, 37, 31, 0.2);
   --legal-accent: #747b5f;
+  --legal-surface: #f6f1e0;
+
+  /*
+   * The chapter indent, in its two halves: the column the "01" number sits in, and the gap after
+   * it. The heading grid uses them as two tracks and the body uses their sum as its left margin,
+   * so the body copy starts on exactly the same vertical as the h2 above it at every stop. Set as
+   * one ladder here because the previous pair of independent ladders only actually lined up above
+   * 1800px — everywhere else the body sat 3-15px off the heading.
+   */
+  --legal-num: 34px;
+  --legal-num-gap: 12px;
+
   position: relative;
   z-index: 1;
   min-height: 100vh;
@@ -11,16 +72,108 @@
   background:
     radial-gradient(circle at 79% 7%, rgba(255, 232, 214, 0.62), transparent 31rem),
     linear-gradient(180deg, rgba(244, 239, 221, 0.88), rgba(255, 232, 214, 0.74));
+
+  @include h(xs) {
+    --legal-num: 44px;
+    --legal-num-gap: clamp(20px, 3vw, 48px);
+  }
+
+  @include h(md) {
+    --legal-num: 52px;
+    --legal-num-gap: clamp(20px, 4vw, 72px);
+  }
+
+  @include h(qhd) {
+    --legal-num: 72px;
+    --legal-num-gap: 90px;
+  }
+
+  @include h(phs) {
+    --legal-num: 30px;
+    --legal-num-gap: 12px;
+  }
+
+  @include h(phl) {
+    --legal-num: 38px;
+    --legal-num-gap: 16px;
+  }
+
+  @include v(md) {
+    --legal-num: 40px;
+    --legal-num-gap: 18px;
+  }
+}
+
+/*
+ * Hero and document share one measure so the rules across the top of each line up.
+ *
+ * At qhd the frame opens out: 1840px inside a 2552px viewport left 356px of gutter on each side
+ * and made the whole composition read as a screenshot of the 1400px layout pasted into a bigger
+ * frame. 2180px is still a deliberate margin — 186px a side — but it gives the three columns
+ * enough room to be re-proportioned rather than merely scaled.
+ */
+.hero,
+.document {
+  width: min(1840px, calc(100% - clamp(36px, 7vw, 140px)));
+  margin: 0 auto;
+
+  @include h(qhd) {
+    width: min(2180px, calc(100% - 220px));
+  }
 }
 
 .hero {
-  width: min(1840px, calc(100% - clamp(36px, 7vw, 140px)));
-  min-height: max(680px, 92vh);
-  margin: 0 auto;
-  padding: clamp(112px, 13vh, 168px) 0 clamp(54px, 7vh, 96px);
+  min-height: 640px;
+  padding: 104px 0 44px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  @include h(xs) {
+    min-height: 700px;
+    padding: clamp(104px, 12vh, 140px) 0 clamp(44px, 6vh, 72px);
+  }
+
+  @include h(md) {
+    min-height: max(680px, 92vh);
+    padding: clamp(112px, 13vh, 168px) 0 clamp(54px, 7vh, 96px);
+  }
+
+  @include h(qhd) {
+    min-height: max(900px, 84vh);
+    padding: 200px 0 120px;
+  }
+
+  /*
+   * Phone landscape: 320px and 430px of height. A hero with min-height 820px cost two full
+   * screens of scrolling before the first line of the document, so the height floor goes away
+   * entirely and the padding does nothing but clear the navbar.
+   */
+  @include h(phs) {
+    min-height: 0;
+    padding: 74px 0 24px;
+  }
+
+  @include h(phl) {
+    min-height: 0;
+    padding: 88px 0 30px;
+  }
+
+  /* Short laptops. 92vh of 660px is 607px, so the old max(680px, 92vh) floor overshot the very
+     viewport it was written for. 86vh keeps the hero to one screen at 1220x660 and 1366x768. */
+  @include h(lt) {
+    min-height: max(560px, 86vh);
+    padding: clamp(92px, 12vh, 130px) 0 clamp(40px, 6vh, 72px);
+  }
+
+  @include v(md) {
+    min-height: 780px;
+    padding: clamp(104px, 11vh, 132px) 0 clamp(44px, 5vh, 64px);
+  }
+
+  @include v(lg) {
+    min-height: 880px;
+  }
 }
 
 .heroMeta,
@@ -29,90 +182,317 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 12px;
+  gap: 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--legal-rule);
   color: var(--legal-muted);
-  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+
+  @include micro-label;
+
+  @include h(md) {
+    gap: 24px;
+    padding-bottom: 12px;
+  }
+
+  @include h(qhd) {
+    gap: 32px;
+    padding-bottom: 18px;
+  }
+}
+
+.contentHeader {
+  margin-bottom: 12px;
+
+  @include h(md) {
+    margin-bottom: 0;
+  }
 }
 
 .heroGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(270px, 0.55fr);
-  align-items: end;
-  gap: clamp(64px, 10vw, 190px);
-  padding: clamp(54px, 8vh, 108px) 0;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 42px;
+  padding: 40px 0;
+
+  @include h(xs) {
+    gap: 58px;
+    padding: clamp(40px, 6vh, 72px) 0;
+  }
+
+  @include h(md) {
+    grid-template-columns: minmax(0, 1.45fr) minmax(270px, 0.55fr);
+    align-items: end;
+    gap: clamp(64px, 10vw, 190px);
+    padding: clamp(54px, 8vh, 108px) 0;
+  }
+
+  @include h(qhd) {
+    grid-template-columns: minmax(0, 1.42fr) minmax(400px, 0.58fr);
+    gap: 170px;
+    padding: 120px 0;
+  }
+
+  /* Two columns on a phone in landscape: it has 568-932px of width and almost no height, so the
+     stacked composition is exactly the wrong way round here. */
+  @include h(phs) {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 0.82fr);
+    align-items: end;
+    gap: 24px;
+    padding: 18px 0;
+  }
+
+  @include h(phl) {
+    grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.8fr);
+    align-items: end;
+    gap: 40px;
+    padding: 24px 0;
+  }
+
+  @include h(lt) {
+    gap: clamp(56px, 7vw, 120px);
+    padding: clamp(40px, 6vh, 72px) 0;
+  }
+
+  @include v(md) {
+    gap: 58px;
+    padding: 56px 0;
+  }
+
+  @include v(lg) {
+    gap: 70px;
+    padding: 72px 0;
+  }
 }
 
 .heroTitle {
   max-width: 1050px;
 
+  @include h(qhd) {
+    max-width: 1400px;
+  }
+
   > p {
-    margin: 0 0 22px;
+    margin: 0 0 16px;
     color: var(--legal-muted);
-    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+
+    @include micro-label;
+
+    @include h(md) {
+      margin-bottom: 22px;
+    }
+
+    @include h(qhd) {
+      margin-bottom: 30px;
+    }
   }
 
   h1 {
     max-width: 12ch;
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(62px, 8.2vw, 150px);
+    /* 44px keeps "Odstoupení" — the longest unbreakable word in any of the six titles — inside
+       the 284px measure a 320px viewport leaves. */
+    font-size: clamp(44px, 13.5vw, 74px);
     font-weight: 400;
     line-height: 0.86;
     letter-spacing: -0.055em;
     text-wrap: balance;
+
+    @include h(xs) {
+      font-size: clamp(56px, 7.6vw, 104px);
+    }
+
+    @include h(md) {
+      font-size: clamp(76px, 8.2vw, 150px);
+    }
+
+    @include h(qhd) {
+      font-size: 190px;
+    }
+
+    @include h(phs) {
+      font-size: 40px;
+    }
+
+    @include h(phl) {
+      font-size: 56px;
+    }
+
+    @include h(lt) {
+      font-size: clamp(62px, 6.2vw, 92px);
+    }
+
+    @include v(md) {
+      font-size: clamp(64px, 9.5vw, 96px);
+    }
   }
 
   em {
     display: block;
     max-width: 15ch;
-    margin: 0.08em 0 0 clamp(28px, 7vw, 120px);
+    margin: 0.08em 0 0 clamp(16px, 5vw, 40px);
     color: var(--legal-accent);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
-    font-size: clamp(38px, 5vw, 88px);
+    font-size: clamp(30px, 9vw, 48px);
     font-weight: 400;
     line-height: 0.92;
+
+    @include h(xs) {
+      margin-left: clamp(28px, 5vw, 80px);
+      font-size: clamp(36px, 4.6vw, 64px);
+    }
+
+    @include h(md) {
+      margin-left: clamp(40px, 7vw, 120px);
+      font-size: clamp(48px, 5vw, 88px);
+    }
+
+    @include h(qhd) {
+      margin-left: 150px;
+      font-size: 112px;
+    }
+
+    @include h(phs) {
+      margin-left: 14px;
+      font-size: 25px;
+    }
+
+    @include h(phl) {
+      margin-left: 22px;
+      font-size: 34px;
+    }
+
+    @include h(lt) {
+      margin-left: clamp(32px, 4vw, 64px);
+      font-size: clamp(40px, 3.9vw, 58px);
+    }
+
+    @include v(md) {
+      margin-left: clamp(32px, 6vw, 72px);
+      font-size: clamp(42px, 6.2vw, 64px);
+    }
   }
 }
 
 .heroIntro {
   align-self: end;
-  max-width: 410px;
   padding-top: 16px;
   border-top: 1px solid var(--legal-rule);
 
+  @include h(xs) {
+    width: min(100%, 520px);
+    justify-self: end;
+  }
+
+  @include h(md) {
+    width: auto;
+    max-width: 410px;
+    justify-self: auto;
+  }
+
+  @include h(qhd) {
+    max-width: 620px;
+    padding-top: 24px;
+  }
+
+  @include h(phs) {
+    width: 100%;
+    justify-self: stretch;
+    padding-top: 10px;
+  }
+
+  @include h(phl) {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  @include v(md) {
+    width: min(100%, 520px);
+    justify-self: end;
+  }
+
   > span {
     display: block;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     color: var(--legal-muted);
-    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+
+    @include micro-label;
+
+    @include h(md) {
+      margin-bottom: 30px;
+    }
+
+    @include h(qhd) {
+      margin-bottom: 38px;
+    }
+
+    @include h(phs) {
+      margin-bottom: 12px;
+    }
   }
 
   > p {
     margin: 0;
-    font-size: clamp(17px, 1.25vw, 21px);
-    line-height: 1.5;
+    font-size: 17px;
+    line-height: 1.55;
+
+    @include h(md) {
+      font-size: clamp(17px, 1.25vw, 21px);
+      line-height: 1.5;
+    }
+
+    @include h(qhd) {
+      font-size: 26px;
+    }
+
+    @include h(phs) {
+      font-size: 14px;
+    }
+
+    @include h(phl) {
+      font-size: 15px;
+    }
   }
 
+  /*
+   * "Aktuální znění" / "N kapitol". These are <small>, and the UA shrinks <small> to 0.8em — on
+   * a 12px parent that landed at 9.6px at every viewport including 2K, which the baseline caught.
+   * font-size: inherit puts them back on the micro-label scale.
+   */
   > div {
     display: flex;
     justify-content: space-between;
-    gap: 20px;
-    margin-top: 44px;
+    gap: 16px;
+    margin-top: 28px;
     color: var(--legal-muted);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+
+    @include micro-label;
+
+    small {
+      font-size: inherit;
+      letter-spacing: inherit;
+    }
+
+    @include h(md) {
+      gap: 20px;
+      margin-top: 44px;
+    }
+
+    @include h(qhd) {
+      margin-top: 56px;
+    }
+
+    @include h(phs) {
+      margin-top: 14px;
+    }
+
+    @include h(phl) {
+      margin-top: 20px;
+    }
   }
 }
 
@@ -121,29 +501,133 @@
 }
 
 .document {
-  width: min(1840px, calc(100% - clamp(36px, 7vw, 140px)));
-  margin: 0 auto;
-  padding: clamp(80px, 11vh, 150px) 0 clamp(120px, 16vh, 220px);
-  display: grid;
-  grid-template-columns: minmax(210px, 0.62fr) minmax(0, 1.55fr) minmax(110px, 0.35fr);
-  align-items: start;
-  gap: clamp(48px, 7vw, 130px);
+  padding: 40px 0 clamp(90px, 12vh, 140px);
+  display: block;
   border-top: 1px solid var(--legal-rule);
+
+  @include h(xs) {
+    padding: clamp(56px, 8vh, 96px) 0 clamp(110px, 14vh, 180px);
+  }
+
+  /* Tablet landscape: index sidebar and text. The status rail stays out — 1024px is not wide
+     enough to spend a third column on decoration. */
+  @include h(smt) {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.3fr) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(44px, 5vw, 72px);
+  }
+
+  /*
+   * The status track was minmax(110px, 0.35fr), which resolves to 150px at 1366px wide — narrower
+   * than "DATA · 05" set at 36px, so the code broke after the middot at every stop below 1730px.
+   * 0.42fr costs the text column under 3% and lets the longest of the six codes, "SERVIS · 04",
+   * hold one line from 1200px up.
+   */
+  @include h(md) {
+    padding: clamp(80px, 11vh, 150px) 0 clamp(120px, 16vh, 220px);
+    display: grid;
+    grid-template-columns: minmax(210px, 0.62fr) minmax(0, 1.55fr) minmax(130px, 0.42fr);
+    align-items: start;
+    gap: clamp(48px, 7vw, 130px);
+  }
+
+  /*
+   * 2K. The old ratios held all the way up, so at 2552px the text column was still 720px — a
+   * ribbon with 1.55fr of grid around it — while the index and status rails shrank into the
+   * margins. The content track roughly doubles here and the two rails grow with it, so the split
+   * reads as a decision rather than a scale factor.
+   */
+  @include h(qhd) {
+    padding: 190px 0 280px;
+    grid-template-columns: minmax(320px, 0.66fr) minmax(0, 2.05fr) minmax(300px, 0.56fr);
+    gap: 150px;
+  }
+
+  @include h(phs) {
+    padding: 30px 0 64px;
+  }
+
+  @include h(phl) {
+    padding: 38px 0 80px;
+  }
+
+  @include h(lt) {
+    padding: clamp(72px, 10vh, 110px) 0 clamp(110px, 15vh, 170px);
+  }
+
+  /*
+   * Portrait tablets. The index track has to stay wide enough for a chapter title to survive:
+   * below about 190px the number, the rule and the gaps eat it down to fourteen characters and
+   * every entry ellipsises into "JAK POUŽÍVÁM…".
+   */
+  @include v(md) {
+    padding: 64px 0 120px;
+    display: grid;
+    grid-template-columns: minmax(196px, 0.32fr) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(32px, 4.5vw, 56px);
+  }
+
+  @include v(lg) {
+    grid-template-columns: minmax(230px, 0.3fr) minmax(0, 1fr);
+    gap: 60px;
+  }
 }
 
+/*
+ * The chapter index.
+ *
+ * Base is the phone form: a full-bleed rail of chips that scrolls sideways and costs no vertical
+ * room. It stays the form for phones in landscape too — phs/phl never reach smt, which needs
+ * 720px of height, nor md, which needs 1200px of width — so neither has to undo anything here.
+ *
+ * The -18px bleed is exactly the gutter a 320px viewport leaves, and every wider viewport has a
+ * larger one, so the rail can never push the page sideways.
+ */
 .index {
   position: sticky;
-  top: 118px;
-  max-height: calc(100vh - 150px);
-  overflow-y: auto;
+  z-index: 2;
+  top: 82px;
+  margin: 0 -18px 28px;
+  padding: 12px 18px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
+  background: rgba(246, 241, 224, 0.94);
+  backdrop-filter: blur(14px);
+
+  /* Blur over a scrolling document is the expensive kind of effect the budget is about. */
+  @include reduced-fx {
+    backdrop-filter: none;
+    background: var(--legal-surface);
+  }
 
   &::-webkit-scrollbar {
     display: none;
   }
 
+  /* 320px of viewport height cannot afford a 44px bar pinned to the top of it on top of the
+     navbar, so on the smallest landscape phone the rail scrolls away with the page. */
+  @include h(phs) {
+    position: relative;
+    top: auto;
+  }
+
+  @include h(phl) {
+    position: sticky;
+    top: 86px;
+  }
+
+  .indexHeading {
+    display: none;
+  }
+
   ol {
-    margin: 24px 0 0;
+    width: max-content;
+    display: flex;
+    gap: 8px;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -159,14 +643,14 @@
   }
 
   button {
-    width: 100%;
-    min-height: 43px;
-    display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) 24px;
+    width: auto;
+    min-height: 44px;
+    display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0;
-    border: 0;
+    padding: 6px 14px;
+    border: 1px solid var(--legal-rule);
+    border-radius: 999px;
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -179,6 +663,7 @@
     }
 
     strong {
+      max-width: 22ch;
       overflow: hidden;
       font-size: 12px;
       font-weight: 500;
@@ -189,6 +674,51 @@
     }
 
     i {
+      display: none;
+    }
+  }
+}
+
+/* The sidebar form, for anything with both the width and the height to hold it. Emitted at the
+   three stops that qualify: tablet landscape, desktop, and portrait from 600px. */
+@mixin index-sidebar {
+  position: sticky;
+  z-index: auto;
+  top: 118px;
+  max-height: calc(100vh - 150px);
+  margin: 0;
+  padding: 0;
+  overflow-x: visible;
+  overflow-y: auto;
+  background: none;
+  backdrop-filter: none;
+
+  .indexHeading {
+    display: flex;
+  }
+
+  ol {
+    width: auto;
+    display: block;
+    margin: 24px 0 0;
+  }
+
+  button {
+    width: 100%;
+    min-height: 43px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 24px;
+    gap: 8px;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 0;
+
+    strong {
+      max-width: none;
+    }
+
+    i {
+      display: block;
       height: 1px;
       background: currentColor;
       transform: scaleX(0.25);
@@ -203,17 +733,107 @@
   }
 }
 
+.index {
+  @include h(smt) {
+    @include index-sidebar;
+  }
+
+  @include h(md) {
+    @include index-sidebar;
+  }
+
+  @include h(qhd) {
+    top: 150px;
+    max-height: calc(100vh - 200px);
+
+    ol {
+      margin-top: 34px;
+    }
+
+    button {
+      min-height: 54px;
+      grid-template-columns: 42px minmax(0, 1fr) 32px;
+      gap: 12px;
+      padding: 11px 0;
+
+      span {
+        font-size: 16px;
+      }
+
+      strong {
+        font-size: 16px;
+      }
+    }
+  }
+
+  @include v(md) {
+    @include index-sidebar;
+  }
+}
+
 .content {
   min-width: 0;
-  max-width: 920px;
+
+  @include h(md) {
+    max-width: 920px;
+  }
+
+  @include h(qhd) {
+    max-width: 1240px;
+  }
 }
 
 .chapter {
-  scroll-margin-top: 120px;
-  padding: clamp(58px, 8vh, 106px) 0;
+  scroll-margin-top: 150px;
+  padding: 46px 0;
 
   &:first-of-type {
-    padding-top: clamp(44px, 6vh, 78px);
+    padding-top: 32px;
+  }
+
+  @include h(xs) {
+    padding: clamp(48px, 7vh, 72px) 0;
+  }
+
+  @include h(smt) {
+    scroll-margin-top: 120px;
+  }
+
+  @include h(md) {
+    scroll-margin-top: 120px;
+    padding: clamp(58px, 8vh, 106px) 0;
+
+    &:first-of-type {
+      padding-top: clamp(44px, 6vh, 78px);
+    }
+  }
+
+  @include h(qhd) {
+    scroll-margin-top: 160px;
+    padding: 132px 0;
+
+    &:first-of-type {
+      padding-top: 96px;
+    }
+  }
+
+  @include h(phs) {
+    scroll-margin-top: 96px;
+    padding: 30px 0;
+
+    &:first-of-type {
+      padding-top: 22px;
+    }
+  }
+
+  @include h(phl) {
+    scroll-margin-top: 130px;
+    padding: 38px 0;
+  }
+
+  @include v(md) {
+    scroll-margin-top: 120px;
+    padding: 60px 0;
   }
 }
 
@@ -234,38 +854,155 @@
 
 .chapterHeading {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: clamp(20px, 4vw, 72px);
+  grid-template-columns: var(--legal-num) minmax(0, 1fr);
+  gap: var(--legal-num-gap);
   align-items: start;
-  padding: 28px 0 clamp(42px, 6vh, 72px);
+  padding: 28px 0 38px;
+
+  @include h(xs) {
+    padding-bottom: clamp(36px, 5vh, 56px);
+  }
+
+  @include h(md) {
+    padding: 28px 0 clamp(42px, 6vh, 72px);
+  }
+
+  @include h(qhd) {
+    padding: 36px 0 92px;
+  }
+
+  @include h(phs) {
+    padding: 18px 0 24px;
+  }
+
+  @include h(phl) {
+    padding: 22px 0 30px;
+  }
+
+  @include v(md) {
+    padding-bottom: 46px;
+  }
 
   > span {
-    padding-top: 10px;
+    padding-top: 8px;
     color: var(--legal-muted);
     font-size: 13px;
     letter-spacing: 0.14em;
+
+    @include h(md) {
+      padding-top: 10px;
+    }
+
+    @include h(qhd) {
+      padding-top: 16px;
+      font-size: 17px;
+    }
   }
 
   h2 {
     max-width: 16ch;
     margin: 0;
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(34px, 4vw, 68px);
+    font-size: clamp(30px, 9vw, 46px);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.035em;
     text-wrap: balance;
+
+    @include h(xs) {
+      font-size: clamp(34px, 4.4vw, 56px);
+    }
+
+    @include h(md) {
+      font-size: clamp(40px, 4vw, 68px);
+    }
+
+    @include h(qhd) {
+      font-size: 88px;
+    }
+
+    @include h(phs) {
+      font-size: 26px;
+    }
+
+    @include h(phl) {
+      font-size: 34px;
+    }
+
+    @include h(lt) {
+      font-size: clamp(38px, 3.4vw, 52px);
+    }
+
+    @include v(md) {
+      font-size: clamp(40px, 5.4vw, 58px);
+    }
   }
 }
 
 .chapterBody {
-  max-width: 720px;
-  margin-left: clamp(72px, 8vw, 124px);
+  /* Same sum the heading grid is built from, so the two left edges agree at every stop. */
+  margin-left: calc(var(--legal-num) + var(--legal-num-gap));
+
+  @include h(xs) {
+    max-width: 660px;
+  }
+
+  @include h(md) {
+    max-width: 720px;
+  }
+
+  /* 880px at 22px is roughly 80 characters — the measure the 1400px layout already reads at,
+     rather than the 720px ribbon the fixed max-width left stranded at 2K. */
+  @include h(qhd) {
+    max-width: 880px;
+  }
+
+  @include h(phs) {
+    max-width: none;
+  }
+
+  @include h(phl) {
+    max-width: 620px;
+  }
+
+  @include v(md) {
+    max-width: 620px;
+  }
+
+  @include v(lg) {
+    max-width: 680px;
+  }
 
   p,
   li {
-    font-size: clamp(16px, 1.08vw, 19px);
+    font-size: 16px;
     line-height: 1.68;
+    /*
+     * /odstoupeni-od-smlouvy is a fill-in form: it carries runs of 25+ U+2026 ellipses and 46
+     * consecutive full stops, and neither character offers a line-break opportunity. Left alone
+     * they push a 400px unbreakable box through a 238px column.
+     */
+    overflow-wrap: anywhere;
+
+    @include h(md) {
+      font-size: clamp(16px, 1.08vw, 19px);
+    }
+
+    @include h(qhd) {
+      font-size: 22px;
+    }
+
+    @include h(phs) {
+      font-size: 15px;
+    }
+
+    @include v(md) {
+      font-size: 17px;
+    }
+
+    @include v(lg) {
+      font-size: 18px;
+    }
   }
 
   p {
@@ -273,14 +1010,22 @@
   }
 
   ul {
-    margin: 28px 0 36px;
+    margin: 24px 0 30px;
     padding: 0;
     list-style: none;
+
+    @include h(md) {
+      margin: 28px 0 36px;
+    }
+
+    @include h(qhd) {
+      margin: 38px 0 48px;
+    }
   }
 
   li {
     position: relative;
-    padding: 15px 0 15px 34px;
+    padding: 13px 0 13px 30px;
     border-top: 1px solid var(--legal-rule);
 
     &::before {
@@ -293,32 +1038,64 @@
     &:last-child {
       border-bottom: 1px solid var(--legal-rule);
     }
+
+    @include h(md) {
+      padding: 15px 0 15px 34px;
+    }
+
+    @include h(qhd) {
+      padding: 20px 0 20px 44px;
+    }
   }
 }
 
+/*
+ * The status rail. Hidden below md — under 1200px there is no third column to spare, which is
+ * what the old below-px(1024px) block did and is kept.
+ */
 .status {
-  position: sticky;
-  top: 118px;
-  min-height: 240px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  color: var(--legal-muted);
-  text-align: right;
-  text-transform: uppercase;
+  display: none;
+
+  @include h(md) {
+    position: sticky;
+    top: 118px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    color: var(--legal-muted);
+    text-align: right;
+    text-transform: uppercase;
+  }
+
+  @include h(qhd) {
+    top: 150px;
+    min-height: 320px;
+  }
 
   span,
   small {
     font-size: 13px;
     letter-spacing: 0.16em;
+
+    @include h(qhd) {
+      font-size: 17px;
+    }
   }
 
+  /* Scaled with the track it sits in, so the code holds one line rather than breaking after the
+     middot. 36px stays the size from 1730px up, which is where it was first drawn. */
   strong {
     margin-top: 12px;
     color: var(--legal-ink);
     font-family: "Sentient-Regular", serif;
-    font-size: 36px;
+    font-size: clamp(26px, 1.9vw, 36px);
     font-weight: 400;
+
+    @include h(qhd) {
+      margin-top: 20px;
+      font-size: 50px;
+    }
   }
 
   i {
@@ -326,6 +1103,11 @@
     height: 92px;
     margin: 24px 12px;
     background: var(--legal-rule);
+
+    @include h(qhd) {
+      height: 140px;
+      margin: 34px 16px;
+    }
   }
 }
 
@@ -333,9 +1115,19 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 18px;
-  padding-top: 60px;
+  gap: 14px;
+  padding-top: 44px;
   color: var(--legal-accent);
+
+  @include h(md) {
+    gap: 18px;
+    padding-top: 60px;
+  }
+
+  @include h(qhd) {
+    gap: 26px;
+    padding-top: 88px;
+  }
 
   span {
     height: 1px;
@@ -345,125 +1137,24 @@
   i {
     font-size: 13px;
     font-style: normal;
+
+    @include h(qhd) {
+      font-size: 17px;
+    }
   }
 }
 
-@include below-px(1024px) {
-  .hero {
-    min-height: 820px;
-  }
-
-  .heroGrid {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 58px;
-  }
-
-  .heroIntro {
-    width: min(100%, 520px);
-    justify-self: end;
-  }
-
-  .document {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .status {
-    display: none;
-  }
-}
-
-@include below-px(720px) {
-  .hero,
-  .document {
-    width: calc(100% - 36px);
-  }
-
-  .hero {
-    min-height: 690px;
-    padding-top: 104px;
-  }
-
-  .heroGrid {
-    gap: 42px;
-    padding: 40px 0;
-  }
-
-  .heroTitle h1 {
-    font-size: clamp(50px, 17vw, 76px);
-  }
-
-  .heroTitle em {
-    margin-left: 18px;
-    font-size: clamp(34px, 11vw, 52px);
-  }
-
-  .document {
-    display: block;
-    padding-top: 42px;
-  }
-
-  .index {
-    position: sticky;
-    z-index: 2;
-    top: 82px;
-    max-height: none;
-    margin: 0 -18px 28px;
-    padding: 12px 18px;
-    overflow-x: auto;
-    background: rgba(244, 239, 221, 0.92);
-    backdrop-filter: blur(14px);
-
-    .indexHeading {
-      display: none;
-    }
-
-    ol {
-      width: max-content;
-      display: flex;
-      gap: 8px;
-      margin: 0;
-    }
-
-    button {
-      width: auto;
-      min-height: 36px;
-      display: flex;
-      padding: 6px 12px;
-      border: 1px solid var(--legal-rule);
-      border-radius: 999px;
-
-      strong {
-        max-width: 22ch;
-      }
-
-      i {
-        display: none;
-      }
-    }
-  }
-
-  .contentHeader {
-    margin-bottom: 12px;
-  }
-
-  .chapter {
-    scroll-margin-top: 150px;
-    padding: 54px 0;
-  }
-
-  .chapterHeading {
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 12px;
-    padding-bottom: 38px;
-  }
-
-  .chapterHeading h2 {
-    font-size: clamp(32px, 10vw, 48px);
-  }
-
-  .chapterBody {
-    margin-left: 46px;
-  }
-}
-
+/*
+ * Two notes for the owner of src/styles/system, per BRIEF section 7.
+ *
+ * 1. @include font() sets font-family as well as the size ladder, and every token is Arimo,
+ *    Helvetica or Sentient. This component inherits Sansation-Regular from globals.scss, so there
+ *    is no way to adopt a token's fourteen-stop size ladder without also changing the typeface on
+ *    six pages. The ladders above are therefore written by hand through h()/v(). Splitting a
+ *    font-size-only mixin out of font($token) would remove the choice.
+ *
+ * 2. The legal, XSBody and SLinks tokens all bottom out at 0.7rem = 11.2px at xxs and v-xs —
+ *    below the 12px floor globals.scss documents as --type-eyebrow, and below the floor
+ *    .rdshots/shoot.cjs enforces. Applying font(legal) to the micro-labels here would have traded
+ *    9.6px text for 11.2px text at 320x568 and 568x320. Those two rungs want raising to 0.75rem.
+ */

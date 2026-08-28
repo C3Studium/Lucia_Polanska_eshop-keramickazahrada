@@ -1,5 +1,6 @@
 import LenisProvider from "@lib/context/LenisContext"
 import MotionPreferenceProvider from "@lib/context/MotionPreferenceProvider"
+import EffectBudgetFlag from "@modules/layout/components/effect-budget-flag"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
@@ -21,6 +22,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="cs" data-mode="light">
       <body>
+        {/* Stamps the effect budget on <html> for every page, including the ones that render
+            outside the (main) layout and have no shader of their own. */}
+        <EffectBudgetFlag />
         <MotionPreferenceProvider>
           <StateProvider>
             <LenisProvider>

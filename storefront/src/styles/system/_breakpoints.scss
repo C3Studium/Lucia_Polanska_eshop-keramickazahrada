@@ -16,6 +16,12 @@ $h: (
   xl:  1500px,
   huge: 1730px,
 
+  // 2K / QHD desktop. A 2560x1440 monitor presents a 2552x1351 viewport once the scrollbar and
+  // the browser's own chrome are subtracted, which is the size this stop was measured against.
+  // 2200px sits far enough above `huge` (1730px) that a maximised 1920 window never reaches it,
+  // and far enough below 2552px that a 2K window does not have to be edge-to-edge to qualify.
+  qhd: 2200px,
+
   // Phone, landscape. Smallest target 568×320, largest 932×430.
   phs: 480px,
   phl: 800px,
@@ -54,6 +60,21 @@ $h-constraints: (
   ),
   lt: (
     max-height: 800px
+  ),
+  // Width alone would hand this stop to an ultrawide as readily as to a 16:9 panel, and a
+  // 3440x1440 monitor is a different composition problem from a 2560x1440 one — it is wider
+  // without being taller, so a layout tuned for the extra vertical room does not fit it.
+  //
+  // 2552x1351 is 1.889:1, comfortably past 16/9 (1.778), so a real 2K browser window clears this
+  // with room to spare. A 2K window shortened past 1436px tall drops below the ratio and falls
+  // back to `huge`, which is the correct behaviour: at that point it is no longer the viewport
+  // this stop describes.
+  //
+  // Quoted so Sass emits the ratio verbatim. Unquoted, `16 / 9` is a division and the query
+  // would ship as `min-aspect-ratio: 1.7777777778` — legal in Media Queries 4, but not what
+  // anyone reading the compiled CSS expects to find.
+  qhd: (
+    min-aspect-ratio: "16 / 9"
   )
 );
 

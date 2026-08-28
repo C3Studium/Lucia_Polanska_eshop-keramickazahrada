@@ -403,8 +403,21 @@
     z-index: auto;
   }
 
+  /*
+   * This is the whole scene, and it was switched off here.
+   *
+   * `useScroll({ target: timelineRef, offset: ["start start", "end end"] })` measures this
+   * element: progress is 0 when its top meets the top of the viewport and 1 when its bottom
+   * meets the bottom. The sticky stage inside is `100vh`, so at `height: 100vh` those two
+   * moments are the same moment — the timeline has no travel, `scrollYProgress` never leaves 0,
+   * and every beat keyed to it holds its first frame forever. The image that grows out of the
+   * corner is keyed to 0.58–0.99, so on a phone it simply never happened.
+   *
+   * 190vh rather than the 200 of the wide layout: the beats are the same, scrubbed over slightly
+   * less page so the hold between them does not feel long on a screen you scroll with a thumb.
+   */
   .main__vyrobaTimeline {
-    height: 100vh;
+    height: 190vh;
   }
 }
 
@@ -414,5 +427,61 @@
   }
   to {
     transform: translate3d(7%, 3%, 0) scale(1.06);
+  }
+}
+
+/*
+ * ─── Phone ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * The copy that arrives over the grown image shares `atelierProcess__copyStage` with the gallery
+ * section further down the page, and that block is written for a column standing beside a plate:
+ * `width: 26vw; height: 70vh; min-height: 520px`, pinned to the right. At 390px that is a 101px
+ * ribbon of text 520px tall. The gallery never shows it on a phone — it is `display: none` below
+ * 760px — so nothing had to make it work here.
+ *
+ * Under the image instead, full width. Both classes in the selector: this has to outrank the
+ * shared block from the other stylesheet whichever order the two are emitted in.
+ */
+@mixin vyroba-hero-phone {
+  .vyrobaHero__processCopyStage.atelierProcess__copyStage {
+    top: auto;
+    right: 1.25rem;
+    bottom: max(6vh, 3.5rem);
+    left: 1.25rem;
+    width: auto;
+    height: auto;
+    min-height: 0;
+
+    /* `inset: 0` on a stage that no longer has a height of its own collapses it to nothing. */
+    .atelierProcess__copy {
+      position: relative;
+      inset: auto;
+      justify-content: flex-end;
+    }
+
+    .atelierProcess__lead {
+      font-size: 1.05rem;
+    }
+
+    .atelierProcess__body {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+@include below-px(600px) {
+  @include vyroba-hero-phone;
+}
+
+/*
+ * Sideways the stage is ~430px tall and the grown image already takes half of it, so the copy
+ * sits tighter to the floor and the timeline gives up some of its scroll — 190vh of a 390px
+ * viewport is a long way to travel for one reveal.
+ */
+@include phs-h {
+  @include vyroba-hero-phone;
+
+  .main__vyrobaTimeline {
+    height: 150vh;
   }
 }

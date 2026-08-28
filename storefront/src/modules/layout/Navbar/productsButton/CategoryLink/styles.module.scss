@@ -51,6 +51,24 @@
   overflow: hidden;
 }
 
+/*
+ * The link is a column: the label, and this mask under it holding an underline that slides in on
+ * hover. On a touch device that underline can never play — there is no hover to trigger it — so
+ * the mask is 5px of permanently empty space under every link, in a component used for the
+ * E-shop menu's category lists and the footer's link columns alike. Seven categories under one
+ * collection pay 35px for an animation that will not run.
+ */
+@include touch {
+  .underlineMask {
+    display: none;
+  }
+
+  /* 1.2em of floor on a 1.15 line-height box adds a fraction of a line per row and nothing else. */
+  .label {
+    min-height: 0;
+  }
+}
+
 .underline {
   display: block;
   width: 100%;

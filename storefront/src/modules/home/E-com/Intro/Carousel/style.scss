@@ -276,3 +276,92 @@
   }
 }
 
+
+/*
+ * ─── Phone ──────────────────────────────────────────────────────────────────────────────────
+ *
+ * The section is built as two columns that each carry a carousel running in opposite directions,
+ * with a header row of heading + hint + arrows above the left one. At phone width that header row
+ * has no width to share: the heading takes what it needs and the arrows are pushed off the right
+ * edge, which is where they were in the screenshot.
+ *
+ * So the row wraps into two stacked bands — heading, then the arrows — the scroll-wheel hint
+ * between them goes, and only one of the two carousels runs. Two counter-scrolling rails on a
+ * 390px screen is two animations competing for the same glance and twice the images decoded to
+ * say one thing.
+ */
+@mixin intro-carousel-phone {
+  .Intro__Carousel {
+    .Left__section {
+      .Content {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1.4rem;
+      }
+
+      /* Full rows rather than columns sharing one line — `flex-wrap` alone would leave the two
+         side by side for as long as they happen to fit and only break at some arbitrary width. */
+      .Content > .text,
+      .Content .right__content {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+
+      .Content .right__content {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1.1rem;
+      }
+
+      /*
+       * The scroll-wheel hint goes. The file already meant it to — there is a `display: none` on
+       * it up in `.Left__section` with the note "the mouse hint is meaningless without a mouse" —
+       * but a later rule of equal specificity sets `display: flex` again and wins on source
+       * order, so it has been showing on phones all along. This is that rule finally applying,
+       * from the end of the file where nothing outranks it.
+       */
+      .Content .right__content .mouse__anim {
+        display: none;
+      }
+
+      .Content .right__content .buttons {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+
+      /* No longer holding a lane for a pill that grows leftward — there is a whole row now. */
+      .Content .right__content .buttons {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    /* One rail. `.Custom__orders` below it stays — it is the section's other action. */
+    .Right__section .Images {
+      display: none;
+    }
+
+    /*
+     * That padding exists to drop the right column's carousel below the left one — it is what
+     * makes the two rails read as staggered rather than as a pair. With the rail hidden it was
+     * 8–14rem of nothing between the images and the „Zakázková tvorba" button, which is the gap
+     * in the screenshot. The 8rem floor on the block below it was doing the same.
+     */
+    .Right__section {
+      padding-top: 1.75rem;
+    }
+
+    .Right__section .Custom__orders {
+      min-height: 0;
+    }
+  }
+}
+
+@include below-px(600px) {
+  @include intro-carousel-phone;
+}
+
+/* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
+@include phs-h {
+  @include intro-carousel-phone;
+}

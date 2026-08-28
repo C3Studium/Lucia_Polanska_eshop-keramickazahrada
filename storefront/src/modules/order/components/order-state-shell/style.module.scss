@@ -1,10 +1,42 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* -------------------------------------------------------------------------------------------
+ * Order / newsletter state shell.
+ *
+ * Shared by five pages: /newsletter (six status variants), the order-confirmed fallback and the
+ * three cart payment states. Nothing here may assume a particular length of copy or the presence
+ * of `children` — payment-pending passes a reference list, order-confirmed a balance notice.
+ *
+ * Written smallest-first. The base rules ARE the 320px portrait phone; every h()/v() block below
+ * is an upward override. The old `@include below-px(760)` block that used to carry the small
+ * layout has been folded into the base, and the two-column composition it undid is re-applied
+ * from `h(xs)` in landscape and `v(lg)` in portrait — a phone on its side and a tablet held
+ * upright are no longer the same case.
+ * ------------------------------------------------------------------------------------------- */
+
+/* The three-across state line. Applied wherever there is width for it; the base stacks. */
+@mixin state-row {
+  grid-template-columns: repeat(3, 1fr);
+
+  span:nth-child(2) { text-align: center; }
+  span:last-child { text-align: right; }
+}
+
 .root {
   --state-accent: #7d8769;
   position: relative;
   isolation: isolate;
+
+  /* Header / content / footer as a column, so the two rules sit at the top and bottom of the
+     100dvh block. Before this the content carried a `min-height: 66vh` floor and the footer
+     stopped wherever that ran out — on a 1024x1366 tablet that left ~280px of dead ground below
+     it, and on a 320px-tall phone in landscape the same floor forced the panel to 2.7 screens.
+     `flex: 1 0 auto` on the content does both jobs: it fills whatever room is left, and it asks
+     for none that is not there. */
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
-  padding: clamp(6rem, 12vh, 9rem) clamp(1.25rem, 5vw, 6rem) clamp(2rem, 5vh, 4rem);
+  padding: clamp(6rem, 12vh, 9rem) 1rem clamp(2rem, 5vh, 4rem);
   overflow: hidden;
   color: #20211d;
   background:
@@ -25,6 +57,26 @@
     mix-blend-mode: multiply;
     pointer-events: none;
   }
+
+  @include h(xs) { padding-inline: clamp(1.25rem, 5vw, 6rem); }
+
+  /* 2K. The page is capped to a 16:10 frame past 1920px (globals.scss), so at 2552x1351 this
+     panel is laid out inside ~2162px, not 2552px — the gutter is widened against the frame
+     rather than the screen. */
+  @include h(qhd) { padding: 10rem 7rem 5rem; }
+
+  /* Phone landscape: 320-430px of height, all of it. The clamp above resolves to its 6rem
+     minimum there (12vh of 320px is 38px), which is a sixth of the screen spent on air.
+     5.25rem is the floor, not a taste: the navbar is fixed and 56px tall on touch, sitting
+     10px down, so anything under ~76px puts the eyebrow rule behind the search pill. */
+  @include h(phs) { padding: 5.25rem 1.5rem 1.5rem; }
+  @include h(phl) { padding: 5.25rem clamp(1.5rem, 4vw, 3rem) 1.75rem; }
+
+  /* Short laptop. Enough room, but not once a consumer passes `children` — payment-pending adds
+     a reference list and a note, which is what pushed 1220x660 into a scroll. */
+  @include h(lt) { padding-block: 4.5rem 2.25rem; }
+
+  @include v(md) { padding-inline: clamp(1.25rem, 5vw, 6rem); }
 }
 
 .header,
@@ -35,9 +87,19 @@
   gap: 1rem;
   padding-block: .8rem;
   border-block: 1px solid rgba(32, 33, 29, .22);
-  font: .7rem/1.2 "Sansation-Regular", sans-serif;
+  /* 0.75rem, not 0.7rem: 11.2px sat under the 12px legibility floor at every viewport. */
+  font: .75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+
+  @include h(qhd) {
+    gap: 2rem;
+    padding-block: 1.4rem;
+    font-size: 1.15rem;
+  }
+
+  /* Two rules bracketing a 320px-tall screen; every millimetre back is worth having. */
+  @include h(phs) { padding-block: .5rem; }
 }
 
 .header span:last-child {
@@ -46,21 +108,77 @@
 
 .content {
   display: grid;
-  grid-template-columns: minmax(12rem, .75fr) minmax(18rem, 1.25fr);
+  grid-template-columns: 1fr;
+  align-content: center;
   align-items: center;
-  gap: clamp(3rem, 9vw, 11rem);
+  justify-items: start;
+  gap: 1.5rem;
+  /* Takes the room the header and footer do not, and none that is not there. Replaces the old
+     `min-height: 66vh`, which was a floor no short viewport could pay. */
+  flex: 1 0 auto;
   width: min(78rem, 100%);
-  min-height: 66vh;
   margin-inline: auto;
+  padding-block: 3rem;
+
+  /* The mark beside the copy, from the width where both have a measure worth reading. */
+  @include h(xs) {
+    grid-template-columns: minmax(12rem, .75fr) minmax(18rem, 1.25fr);
+    justify-items: stretch;
+    gap: clamp(3rem, 9vw, 11rem);
+    padding-block: 0;
+  }
+
+  @include h(qhd) {
+    width: min(104rem, 100%);
+    gap: 9rem;
+  }
+
+  /* 568x320. Two columns here too, but sized off the mark rather than a fraction: side by side
+     the pair costs ~120px of height instead of ~450px stacked, which is most of the screen. */
+  @include h(phs) {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 1.5rem;
+    padding-block: 0;
+  }
+
+  @include h(phl) {
+    grid-template-columns: minmax(9rem, .75fr) minmax(18rem, 1.25fr);
+    gap: 3.5rem;
+    padding-block: 0;
+  }
+
+  /* Portrait keeps one column through the 768 tablet: the two-column split there gave the mark a
+     250px lane to hold a 160px circle and squeezed the copy into 355px. From 1000px up there is
+     room for both. */
+  @include v(lg) {
+    grid-template-columns: minmax(12rem, .75fr) minmax(18rem, 1.25fr);
+    justify-items: stretch;
+    gap: clamp(3rem, 9vw, 11rem);
+    padding-block: 0;
+  }
 }
 
 .mark {
+  /* One variable so the glyph tracks the rings at every stop instead of drifting: the old
+     `clamp(1.1rem, 2vw, 1.8rem)` bottomed out at 17.6px inside a 28px disc on a phone while
+     sitting at 28.8px inside a 70px disc on a desktop. */
+  --mark-size: 8rem;
   position: relative;
-  width: clamp(11rem, 21vw, 20rem);
+  width: var(--mark-size);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   color: #20211d;
+
+  @include h(xs) { --mark-size: clamp(11rem, 21vw, 20rem); }
+  @include h(qhd) { --mark-size: 24rem; }
+  @include h(phs) { --mark-size: 7rem; }
+  @include h(phl) { --mark-size: 9rem; }
+  @include h(lt) { --mark-size: clamp(9rem, 16vw, 15rem); }
+
+  @include v(md) { --mark-size: 11rem; }
+  @include v(lg) { --mark-size: clamp(11rem, 21vw, 20rem); }
 }
 
 .mark span {
@@ -69,6 +187,9 @@
   border: 1px solid color-mix(in srgb, var(--state-accent) 42%, transparent);
   border-radius: 50%;
   animation: state-pulse 7s ease-in-out infinite;
+
+  /* Three infinite keyframe loops, which is the shape of thing the effect budget is for. */
+  @include reduced-fx { animation: none; }
 }
 
 .mark span:nth-child(1) { --ring: 0; }
@@ -83,25 +204,42 @@
   border-radius: 50%;
   background: var(--state-accent);
   color: #fff5ea;
-  font: 400 clamp(1.1rem, 2vw, 1.8rem)/1 "Sentient", serif;
+  /* 0.8rem floor keeps the glyph off the 12px legibility line on the smallest mark. */
+  font: 400 max(.8rem, calc(var(--mark-size) * .088))/1 "Sentient", serif;
 }
 
 .copy {
   max-width: 42rem;
+
+  @include h(qhd) { max-width: 58rem; }
 }
 
 .kicker {
   margin: 0 0 clamp(1rem, 2.5vh, 1.8rem);
-  font: .72rem/1.2 "Sansation-Regular", sans-serif;
+  font: .75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(32, 33, 29, .58);
+
+  @include h(qhd) { font-size: 1.15rem; }
+  @include h(phs) { margin-bottom: .6rem; }
+  @include h(phl) { margin-bottom: .8rem; }
 }
 
 .copy h1 {
   margin: 0;
-  font: 400 clamp(3.4rem, 7vw, 7.5rem)/.82 "Sentient", Georgia, serif;
+  font: 400 clamp(3rem, 16vw, 5.4rem)/.82 "Sentient", Georgia, serif;
   letter-spacing: -.055em;
+  /* Czech compounds and the longest word in the deck ("neztratilo.", "Objednávku") sit close to
+     the 288px a 320px phone offers. A break is better than a clip. */
+  overflow-wrap: break-word;
+
+  @include h(xs) { font-size: clamp(3.4rem, 7vw, 7.5rem); }
+  @include h(qhd) { font-size: 10rem; }
+  @include h(phs) { font-size: clamp(2.4rem, 7vw, 3rem); }
+  @include h(phl) { font-size: clamp(2.8rem, 5.5vw, 3.6rem); }
+
+  @include v(lg) { font-size: clamp(3.4rem, 7vw, 7.5rem); }
 }
 
 .copy h1 em {
@@ -110,6 +248,8 @@
   color: var(--state-accent);
   font-style: italic;
   font-weight: 400;
+
+  @include h(qhd) { margin-left: 8rem; }
 }
 
 .description {
@@ -117,6 +257,17 @@
   margin: clamp(1.6rem, 4vh, 3rem) 0 0;
   font: 1.05rem/1.55 "Sansation-Regular", sans-serif;
   color: rgba(32, 33, 29, .67);
+  /* order-confirmed and payment-confirmed drop a support e-mail into this paragraph. */
+  overflow-wrap: break-word;
+
+  @include h(qhd) {
+    max-width: 44rem;
+    margin-top: 3.5rem;
+    font-size: 1.5rem;
+  }
+
+  @include h(phs) { margin-top: 1rem; }
+  @include h(phl) { margin-top: 1.25rem; }
 }
 
 .actions {
@@ -125,6 +276,14 @@
   align-items: center;
   gap: .75rem;
   margin-top: 2rem;
+
+  @include h(qhd) {
+    gap: 1.25rem;
+    margin-top: 3.25rem;
+  }
+
+  @include h(phs) { margin-top: 1.25rem; }
+  @include h(phl) { margin-top: 1.5rem; }
 }
 
 .primary,
@@ -139,6 +298,17 @@
   padding: .75rem 1.1rem .75rem 1.3rem;
   font: .9rem/1 "Sansation-Regular", sans-serif;
   transition: color .28s ease, background .28s ease, transform .28s ease;
+
+  /* These are <a>, and globals.scss floors <button> at 44px on touch but deliberately not links.
+     3.15rem already clears it; max() states the floor so no stop below can undercut it. */
+  @include touch { min-height: max(3.15rem, 44px); }
+
+  @include h(qhd) {
+    min-height: 4.5rem;
+    gap: 1.4rem;
+    padding: 1rem 1.8rem 1rem 2.1rem;
+    font-size: 1.35rem;
+  }
 }
 
 .primary {
@@ -155,58 +325,32 @@
   color: #20211d;
   background: #fff1e4;
   font-style: normal;
+
+  @include h(qhd) { width: 2.7rem; }
 }
 
-.primary:hover,
-.secondary:hover {
-  transform: translateY(-2px);
-}
+/* Hover only where there is a pointer to hover with — on touch the lift sticks after a tap. */
+@include fine-pointer {
+  .primary:hover,
+  .secondary:hover {
+    transform: translateY(-2px);
+  }
 
-.secondary:hover {
-  background: rgba(255, 255, 255, .38);
+  .secondary:hover {
+    background: rgba(255, 255, 255, .38);
+  }
 }
 
 .footer {
-  grid-template-columns: repeat(3, 1fr);
-}
+  grid-template-columns: 1fr;
 
-.footer span:nth-child(2) { text-align: center; }
-.footer span:last-child { text-align: right; }
+  @include h(xs) { @include state-row; }
+  @include h(phs) { @include state-row; }
+
+  @include v(md) { @include state-row; }
+}
 
 @keyframes state-pulse {
   0%, 75%, 100% { transform: scale(1); opacity: .5; }
   88% { transform: scale(1.035); opacity: .9; }
 }
-
-@include below-px(760px) {
-  .root {
-    padding-inline: 1rem;
-  }
-
-  .content {
-    grid-template-columns: 1fr;
-    align-content: center;
-    justify-items: start;
-    gap: 1.5rem;
-    padding-block: 3rem;
-  }
-
-  .mark {
-    width: 8rem;
-  }
-
-  .copy h1 {
-    font-size: clamp(3rem, 16vw, 5.4rem);
-  }
-
-  .footer {
-    grid-template-columns: 1fr;
-  }
-
-  .footer span,
-  .footer span:nth-child(2),
-  .footer span:last-child {
-    text-align: left;
-  }
-}
-

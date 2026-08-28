@@ -712,3 +712,290 @@ p.newsletter__error {
     align-items: center;
   }
 }
+
+/*
+ * ─── Phone, portrait ────────────────────────────────────────────────────────────────────────
+ *
+ * The footer is re-read top to bottom as a single column: identity, then the one thing we ask
+ * for (the newsletter), then where to go, then who we are, then how you pay, then the small
+ * print. Everything decorative that carried the desktop composition — the standfirst, the
+ * running head, the big wordmark — comes out, because at 390px each of those costs a fifth of a
+ * screen to say something the page has already said.
+ *
+ * `md` (600px) is the ceiling: above it the two-column composition fits again.
+ */
+@include below-px(600px) {
+  .footer__frame {
+    width: min(92vw, 520px);
+    padding: 14px 0 16px;
+  }
+
+  /* The running head repeats the wordmark that sits 40px below it in the brand block. */
+  .footer__topline {
+    display: none;
+  }
+
+  /*
+   * Logo and socials share the top row — they are the same statement, and side by side they cost
+   * 44px instead of 128px. The small wordmark sits under them as the only text in the block.
+   */
+  .footer__brand {
+    display: grid;
+    padding: 18px 0;
+    grid-template-areas:
+      "logo socials"
+      "mark mark";
+    grid-template-columns: auto 1fr;
+    gap: 10px 12px;
+    align-items: center;
+  }
+
+  .footer__brandMeta {
+    margin-bottom: 0;
+    grid-area: logo;
+  }
+
+  .footer__brandMeta img {
+    width: 54px;
+  }
+
+  /* "00 · PATIČKA" is a compositional marker for a composition that no longer exists here. */
+  .footer__brandMeta span {
+    display: none;
+  }
+
+  .footer__socials {
+    margin-top: 0;
+    grid-area: socials;
+    justify-self: end;
+  }
+
+  .footer__wordmark {
+    grid-area: mark;
+    font-size: 21px;
+    letter-spacing: -0.02em;
+    white-space: normal;
+  }
+
+  /* Said better by the pages it links to; here it is 70px of a 740px screen. */
+  .footer__statement {
+    display: none;
+  }
+
+  .footer__utility {
+    padding: 20px 0;
+  }
+
+  .footer__newsletter {
+    padding-bottom: 20px;
+    gap: 14px;
+  }
+
+  .footer__newsletterCopy > .footer__newsletterTitle {
+    margin: 6px 0 0;
+    font-size: 21px;
+  }
+
+  /* The title already says it. */
+  .footer__newsletterCopy > p:not(.footer__newsletterTitle) {
+    display: none;
+  }
+
+  /*
+   * Two columns of links, with Pomoc across the foot of them — and Pomoc's own three links in
+   * two columns rather than a third stacked run, which is 45px of the same screen.
+   */
+  .footer__navigation {
+    padding-top: 22px;
+    gap: 20px 16px;
+  }
+
+  .footer__linkGroup:last-child > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    column-gap: 16px;
+  }
+
+  .footer__animatedLink {
+    --animated-link-font-size: 15px;
+  }
+
+  .footer__identity {
+    padding: 14px 0;
+    gap: 10px 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer__identity dt {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .footer__identity dd {
+    font-size: 14px;
+  }
+
+  .footer__bottom {
+    gap: 16px;
+    padding-top: 14px;
+  }
+
+  .footer__payments {
+    gap: 8px;
+  }
+
+  .payment__logos {
+    gap: 5px;
+  }
+
+  /* One row of five rather than two rows of three: 44px instead of 94px. */
+  .footer__paymentLink {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .footer__legal {
+    padding-top: 12px;
+    gap: 3px;
+  }
+
+  /*
+   * Clearance for the bottom bar the navbar puts here — 56px of controls at a 12px inset. Without
+   * it the bar sits over the copyright line, which is the same defect the shop banner has.
+   */
+  .Mainfooter {
+    padding-bottom: 80px;
+  }
+}
+
+/*
+ * 320px-class phones. The two link columns stay — collapsing them to one is the intuitive move
+ * and it is the wrong one: side by side the two groups share their rows, so even when a label as
+ * long as "Odstoupení od smlouvy" wraps to two lines the pair costs ~264px, against ~360px for
+ * the same eight links stacked in a single column. The type comes down instead, which buys the
+ * width back without buying it out of the height.
+ */
+@include below-px(360px) {
+  .footer__animatedLink {
+    --animated-link-font-size: 14px;
+  }
+
+  .footer__dialogLink {
+    font-size: 14px;
+  }
+
+  .footer__navigation {
+    gap: 16px 12px;
+  }
+
+  .footer__identity {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * ─── Phone, landscape ───────────────────────────────────────────────────────────────────────
+ *
+ * ~800px of width against ~300px of height inverts the problem: the single column above would be
+ * three screens of scrolling, while the width is there for the desktop composition. So the two
+ * halves come back side by side and the link groups return to three columns — the whole footer
+ * reads in roughly one and a half screens instead of three, with nothing hidden that the
+ * portrait layout keeps.
+ */
+@include phs-h {
+  .footer__frame {
+    width: 94vw;
+    padding: 12px 0 14px;
+  }
+
+  .footer__main {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  }
+
+  .footer__brand {
+    display: grid;
+    padding: 16px 24px 16px 0;
+    border-right: 1px solid var(--footer-line);
+    border-bottom: 0;
+    grid-template-areas:
+      "logo socials"
+      "mark mark";
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .footer__wordmark {
+    font-size: 26px;
+  }
+
+  .footer__utility {
+    padding: 16px 0 16px 24px;
+  }
+
+  /* Copy and form side by side again — at this width the form is ~300px and the copy fills the
+     rest, which is what the desktop rule assumes. */
+  .footer__newsletter {
+    grid-template-columns: minmax(0, 0.9fr) minmax(240px, 1.1fr);
+    gap: 20px;
+    padding-bottom: 14px;
+  }
+
+  .newsletter__controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .newsletter__button,
+  .newsletter__button > button {
+    width: auto;
+    min-width: 0;
+  }
+
+  .footer__navigation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-top: 18px;
+    gap: 18px;
+  }
+
+  .footer__linkGroup:last-child {
+    grid-column: auto;
+  }
+
+  .footer__linkGroup:last-child > div {
+    grid-template-columns: 1fr;
+  }
+
+  .footer__identity {
+    padding: 12px 0;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px 18px;
+  }
+
+  .footer__bottom {
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    padding-top: 12px;
+  }
+
+  .footer__payments {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .footer__paymentLink {
+    flex: 0 0 auto;
+  }
+
+  .footer__legal {
+    align-items: flex-end;
+    padding-top: 0;
+    border-top: 0;
+    text-align: right;
+  }
+
+  /* Same bottom-bar clearance as portrait; the bar is there in landscape too. */
+  .Mainfooter {
+    padding-bottom: 76px;
+  }
+}

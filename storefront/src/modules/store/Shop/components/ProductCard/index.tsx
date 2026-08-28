@@ -172,6 +172,14 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
             {availability === "last-one" && (
               <span className={styles.badgeLast}>{availabilityLabel["last-one"]}</span>
             )}
+            {/* Buyable, but not from a shelf — the wait is spelled out on the
+                product page. Saying it here too stops the grid from reading as
+                „ready to ship" for a piece that still has to be made. */}
+            {availability === "made-to-order" && (
+              <span className={styles.badgeMade}>
+                {availabilityLabel["made-to-order"]}
+              </span>
+            )}
             {isNew && <span>Novinka</span>}
             {hasSale && <span>−{Math.round(Number(cheapestPrice!.percentage_diff))} %</span>}
           </div>

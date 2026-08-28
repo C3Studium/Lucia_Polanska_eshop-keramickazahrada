@@ -1,22 +1,23 @@
 import type { ExecArgs } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
-import type MadeToOrderModuleService from "../modules/made-to-order/service"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import {
+  applyBackorderDefault,
+  BACKORDER_PRODUCT_FIELDS,
+  loadBackorderExclusions,
+} from "../lib/backorder-default"
 
 /**
  * One-time default flip: „objednání bez skladu" for the existing catalog
  * (Matěj, 2026-08-16).
  *
- * New variants are created with `allow_backorder: true` (novy-produkt, the
- * product page, the variants drawer); this script brings the pieces that
- * already exist to the same default, so a sold-out piece keeps selling and
- * stock goes negative instead of stopping the shop.
+ * New products no longer need this — `subscribers/default-backorder.ts` applies
+ * the same rule on every product write. This script remains for the catalog as
+ * it stands today and as a way to re-assert the default by hand after a bulk
+ * import that ran with the worker off.
  *
- * Deliberately skipped:
- * - clearance pieces (`metadata.clearance`) — a damaged one-off has no second
- *   piece to make, and the retire job hides it at sell-out anyway;
- * - products with an enabled production profile — the zakázka flow owns them;
- * - bundle composites — their availability derives from the components.
+ * The rule itself, including which products are deliberately skipped (výprodej,
+ * zakázka, balíčky), lives in `lib/backorder-default.ts` so this script and the
+ * subscriber cannot drift apart.
  *
  * Run with:  npx medusa exec ./src/scripts/enable-backorder-default.ts
  * Idempotent — variants already allowing backorder are left alone.
@@ -24,66 +25,50 @@ import type MadeToOrderModuleService from "../modules/made-to-order/service"
 export default async function enableBackorderDefault({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const productModule = container.resolve(Modules.PRODUCT)
-  const madeToOrder = container.resolve<MadeToOrderModuleService>(
-    MADE_TO_ORDER_MODULE
-  )
 
-  const [{ data: products }, profiles, { data: bundles }] = await Promise.all([
-    query.graph({
-      entity: "product",
-      fields: ["id", "title", "metadata", "variants.id", "variants.allow_backorder"],
-      pagination: { take: 1000, skip: 0 },
-    }),
-    madeToOrder.listProductProductionProfiles({} as never) as Promise<any[]>,
-    query
-      .graph({ entity: "bundle", fields: ["id", "product.id"] })
-      .catch(() => ({ data: [] as any[] })),
-  ])
+  const exclusions = await loadBackorderExclusions(container)
 
-  const productionProductIds = new Set(
-    (profiles as any[])
-      .filter((profile) => profile.enabled)
-      .map((profile) => profile.product_id)
-  )
-  const bundleProductIds = new Set(
-    (bundles as any[]).flatMap((bundle) =>
-      (Array.isArray(bundle.product) ? bundle.product : [bundle.product])
-        .filter(Boolean)
-        .map((linked: any) => linked.id)
-    )
-  )
-
-  const variantIds: string[] = []
+  const pageSize = 200
+  let skip = 0
+  let updated = 0
   let skipped = 0
-  for (const product of products as any[]) {
-    const isClearance = Boolean(product.metadata?.clearance)
-    const isProduction = productionProductIds.has(product.id)
-    const isBundle = bundleProductIds.has(product.id)
-    if (isClearance || isProduction || isBundle) {
-      skipped += 1
-      continue
+
+  // Paged: the previous version took the first 1000 products and silently
+  // ignored anything past them, which is the kind of cap that reads as
+  // "the whole catalog is done" right up until it isn't.
+  for (;;) {
+    const { data: products } = await query.graph({
+      entity: "product",
+      fields: BACKORDER_PRODUCT_FIELDS,
+      pagination: { take: pageSize, skip },
+    })
+
+    if (!products.length) {
+      break
     }
-    for (const variant of product.variants ?? []) {
-      if (!variant.allow_backorder) {
-        variantIds.push(variant.id)
-      }
+
+    const result = await applyBackorderDefault(
+      container,
+      products as any[],
+      exclusions
+    )
+    updated += result.updatedVariantIds.length
+    skipped += result.skippedProducts
+
+    if (products.length < pageSize) {
+      break
     }
+    skip += pageSize
   }
 
-  if (!variantIds.length) {
+  if (!updated) {
     logger.info(
       `[backorder-default] Nic ke změně — všechny běžné varianty už objednání bez skladu povolují (${skipped} produktů vynecháno záměrně).`
     )
     return
   }
 
-  await productModule.updateProductVariants(
-    { id: variantIds } as never,
-    { allow_backorder: true } as never
-  )
-
   logger.info(
-    `[backorder-default] Hotovo: ${variantIds.length} variant nově povoluje objednání bez skladu; ${skipped} produktů vynecháno (výprodej / zakázka / balíček).`
+    `[backorder-default] Hotovo: ${updated} variant nově povoluje objednání bez skladu; ${skipped} produktů vynecháno (výprodej / zakázka / balíček).`
   )
 }
