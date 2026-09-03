@@ -13,7 +13,7 @@ import {
 
 import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { galleryUrl, type CopyBlock, type CopyImage } from "@lib/util/site-copy"
 import { editable } from "@c3studium/valecms/edit"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
@@ -163,6 +163,43 @@ export default function Intro({
      swap with scroll, but purely as crossfades — no parallax, no sliding,
      no scaling, no spring overshoot. Fades stay; movement goes. */
   const reduceMotion = useReducedMotion()
+
+  /*
+   * Svislé telefony (rozsah v-stopů xs/sm/s: portrait pod 600px) pinned
+   * scénu nedostanou vůbec. Na malém stojatém skle byla dvouscénová
+   * choreografie víc matoucí než působivá — proužky fotek trhaly slovo
+   * „Kurzy" vejpůl a obsah se pral o výšku jednoho viewportu. Místo toho
+   * tečou sekce normálně pod sebou (CSS v-stopy na konci styles.scss ruší
+   * sticky a absolutní kompozici) a zůstává jen vstupní animace: hero texty
+   * jedou přes heroReveal při příchodu, další sekce se přiznají přes
+   * whileInView, jednou, až na ně člověk doscrolluje.
+   *
+   * Media query je záměrně tatáž hranice jako CSS stopy — JS a CSS se musí
+   * přepnout spolu, jinak by scroll-styl jel proti statickému layoutu.
+   * SSR renderuje pinned variantu (false); na telefonu se po mountu jen
+   * odeberou scroll styly a pustí entry — bez skoku layoutu, ten drží CSS.
+   */
+  const [staticFlow, setStaticFlow] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia(
+      "(orientation: portrait) and (max-width: 599.98px)"
+    )
+    const sync = () => setStaticFlow(query.matches)
+    sync()
+    query.addEventListener("change", sync)
+    return () => query.removeEventListener("change", sync)
+  }, [])
+
+  /* Vstupní přiznání sekce ve statickém toku — jednou, při najetí do okna. */
+  const flowEntry = (delay = 0) =>
+    staticFlow
+      ? {
+          initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 26 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, amount: 0.22 } as const,
+          transition: { delay, duration: 0.65, ease: [0.22, 0.61, 0.36, 1] as const },
+        }
+      : {}
 
   const { scrollYProgress: rawScrollYProgress } = useScroll({
     target: timelineRef,
@@ -327,7 +364,9 @@ export default function Intro({
     >
       <motion.div
         className="kurzyTimeline__stage"
-        style={{ backgroundColor: background }}
+        /* Ve statickém toku barvy vlastní CSS (hero tmavá, Pro koho papír) —
+           jedna scrollem míchaná barva nemá přes dvě volně jedoucí sekce smysl. */
+        style={staticFlow ? undefined : { backgroundColor: background }}
       >
         <motion.div
           className="kurzyTimeline__ambient"
@@ -343,10 +382,14 @@ export default function Intro({
           className={`kurzyScene kurzyHero${
             activeScene === 0 ? " is-active" : ""
           }`}
+          /* I tady vypsaná jednička — prohlížeč umí obnovit scroll doprostřed
+             stránky a lingering opacity ze scroll režimu by hero schovala. */
           style={
-            reduceMotion
-              ? { opacity: heroOpacity }
-              : { opacity: heroOpacity, y: heroY, scale: heroScale }
+            staticFlow
+              ? { opacity: 1 }
+              : reduceMotion
+                ? { opacity: heroOpacity }
+                : { opacity: heroOpacity, y: heroY, scale: heroScale }
           }
           aria-labelledby="kurzy-hero-title"
         >
@@ -360,10 +403,20 @@ export default function Intro({
           <motion.div
             className="kurzyHero__title"
             style={
-              reduceMotion
+              staticFlow || reduceMotion
                 ? undefined
                 : { x: heroTitleX, y: heroTitleY, scale: heroTitleScale }
             }
+            /* Ve statickém toku je lockup první, co člověk vidí — přizná se
+               stejným gestem jako texty pod ním, jen o beat dřív. */
+            {...(staticFlow
+              ? {
+                  variants: heroReveal,
+                  initial: reduceMotion ? false : "hidden",
+                  animate: "show",
+                  custom: heroBeat.eyebrow,
+                }
+              : {})}
             aria-hidden="true"
           >
             {/* Slovo „Kurzy" je značka stránky a jeho řezy drží typografii — v kódu.
@@ -371,7 +424,7 @@ export default function Intro({
             <HeroTitleRow
               before="Ku"
               after="rzy"
-              width={reduceMotion ? "24vw" : image1}
+              width={reduceMotion || staticFlow ? "24vw" : image1}
               src={images[0]}
               alt=""
               label={rowLabels[0]}
@@ -381,7 +434,7 @@ export default function Intro({
             <HeroTitleRow
               before="Kur"
               after="zy"
-              width={reduceMotion ? "24vw" : image2}
+              width={reduceMotion || staticFlow ? "24vw" : image2}
               src={images[1]}
               alt=""
               label={rowLabels[1]}
@@ -391,7 +444,7 @@ export default function Intro({
             <HeroTitleRow
               before="Kurz"
               after="y"
-              width={reduceMotion ? "24vw" : image3}
+              width={reduceMotion || staticFlow ? "24vw" : image3}
               src={images[2]}
               alt=""
               label={rowLabels[2]}
@@ -402,10 +455,17 @@ export default function Intro({
 
           <motion.div
             className="kurzyHero__copy"
+            /* Ve statickém toku žádný scroll-fade — texty si entry řídí samy
+               (heroReveal na dětech níž) a pak prostě stojí na stránce.
+               Opacity je tu NAPSANÁ, ne vynechaná: framer po odebrání motion
+               hodnoty nechá na prvku poslední inline stav — u scrollu na
+               nule je to opacity 0 a texty by zmizely nadobro. */
             style={
-              reduceMotion
-                ? { opacity: heroCopyOpacity }
-                : { opacity: heroCopyOpacity, y: heroCopyY }
+              staticFlow
+                ? { opacity: 1 }
+                : reduceMotion
+                  ? { opacity: heroCopyOpacity }
+                  : { opacity: heroCopyOpacity, y: heroCopyY }
             }
           >
             {/* Entrance on the children, not this element: its opacity and y are scroll-driven
@@ -457,10 +517,13 @@ export default function Intro({
             activeScene === 1 ? " is-active" : ""
           }`}
           style={
-            reduceMotion
-              ? { opacity: aboutOpacity }
-              : { opacity: aboutOpacity, y: aboutY }
+            staticFlow
+              ? undefined
+              : reduceMotion
+                ? { opacity: aboutOpacity }
+                : { opacity: aboutOpacity, y: aboutY }
           }
+          {...flowEntry()}
           aria-labelledby="kurzy-about-title"
         >
           <SceneMeta
@@ -472,7 +535,7 @@ export default function Intro({
 
           <motion.header
             className="kurzyAbout__intro"
-            style={reduceMotion ? undefined : { x: aboutHeadingX }}
+            style={staticFlow || reduceMotion ? undefined : { x: aboutHeadingX }}
           >
             <span {...editable(about, "accent.2")}>{aboutEyebrow}</span>
             {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
@@ -484,10 +547,14 @@ export default function Intro({
 
           <motion.div
             className="kurzyAbout__lede"
+            /* Stejný důvod jako u hero copy: bez vypsané jedničky by po
+               přepnutí zůstala viset scrollová opacity 0. */
             style={
-              reduceMotion
-                ? { opacity: aboutLedeOpacity }
-                : { y: aboutLedeY, opacity: aboutLedeOpacity }
+              staticFlow
+                ? { opacity: 1 }
+                : reduceMotion
+                  ? { opacity: aboutLedeOpacity }
+                  : { y: aboutLedeY, opacity: aboutLedeOpacity }
             }
           >
             <p {...editable(about, "body")}>{aboutText}</p>
@@ -512,6 +579,7 @@ export default function Intro({
                 }}
                 progress={scrollYProgress}
                 index={index}
+                staticFlow={staticFlow}
                 onReserve={onReserveAction}
               />
             ))}
@@ -596,6 +664,7 @@ function AudienceBlock({
   editTexts,
   progress,
   index,
+  staticFlow = false,
   onReserve,
 }: {
   block: (typeof audienceBlocks)[number]
@@ -613,6 +682,8 @@ function AudienceBlock({
   }
   progress: MotionValue<number>
   index: number
+  /** Svislý telefon: žádné scroll transformy, jen whileInView přiznání. */
+  staticFlow?: boolean
   onReserve: () => void
 }) {
   /* All three arrive a beat apart, left to right, inside the scene's entrance. */
@@ -627,7 +698,23 @@ function AudienceBlock({
   return (
     <motion.article
       className="kurzyAudience"
-      style={reduceMotion ? { opacity } : { opacity, y }}
+      style={
+        staticFlow ? undefined : reduceMotion ? { opacity } : { opacity, y }
+      }
+      /* Stejný beat-apart nástup jako v pinned režimu, jen ho místo scrollu
+         spouští viewport — jednou, zleva… tedy shora, jak bloky stojí. */
+      {...(staticFlow
+        ? {
+            initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 22 },
+            whileInView: { opacity: 1, y: 0 },
+            viewport: { once: true, amount: 0.3 } as const,
+            transition: {
+              delay: index * 0.09,
+              duration: 0.55,
+              ease: [0.22, 0.61, 0.36, 1] as const,
+            },
+          }
+        : {})}
     >
       {/* Above the rule, so the number still reads as the start of the block's text. */}
       <div className="kurzyAudience__figure" {...edit}>

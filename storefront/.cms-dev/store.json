@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "tables": {
+    "cms_document": [],
+    "cms_media": [],
+    "cms_user": [],
+    "cms_session": []
+  }
+}

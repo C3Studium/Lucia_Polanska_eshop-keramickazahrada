@@ -460,3 +460,60 @@
     .questionTitle { min-height: 68px; }
     .faqAnswer p { padding-right: 20px; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Svislé telefony — hledání a kategorie jako dva samostatné komponenty */
+/* ------------------------------------------------------------------ */
+/* Na desktopu je toolbar jedna pilulka s podkladem, do které je vsazené
+   pole i čipy. Na stojatém telefonu ta matrjoška vypadala jako omyl —
+   komponent v komponentu. Obal tu proto opticky mizí: jeho krémový
+   podklad, rám i stín přebírá samotné pole hledání na plné šířce a čipy
+   kategorií stojí pod ním jako vlastní řádek bez podkladu. */
+
+@include v(xs) {
+    .faqToolbar {
+        gap: 1rem;
+        /* below-px(800) dává -8px, aby pilulka opticky lícovala se
+           sloupcem — rozpadlý obal žádnou pilulku nemá. */
+        margin-inline: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        /* Vstupní animace (FAQ/index.tsx, searchInView) nechává na obalu
+           trvale viset inline `clip-path: inset(0 round 999px)`. Na
+           desktopu přesně kopíruje pilulku obalu, takže není vidět; tady
+           obal pilulka není a ořez zakuloval horní rohy pole hledání na
+           tvar, který v žádném CSS nenajdeš. Inline styl prohrává jen
+           s !important. Opacity/y nástup animace zůstává. */
+        clip-path: none !important;
+    }
+
+    .faqSearch {
+        width: 100%;
+        height: 3rem;
+        padding: 0 3rem 0 1.25rem;
+        border: 1px solid rgb(var(--ink-06-rgb) / .2);
+        /* Bez zaoblení (Matěj 2026-09-03). */
+        border-radius: 0;
+        background: rgb(var(--cream-10-rgb) / .48);
+        box-shadow: inset 0 2px 3px rgb(var(--white-rgb) / .36), 0 10px 24px -20px rgb(var(--ink-02-rgb) / .48);
+        /* Blur podkladu na jednolité zelené není vidět a na telefonu
+           jen pálí GPU. */
+        backdrop-filter: none;
+    }
+
+    .faqCategories {
+        /* Čipy si při vodorovném scrollu nechávají kousek místa, aby
+           aktivní pilulka nelízala okraj. */
+        padding-inline: 0.25rem;
+    }
+}
+
+@include v(s) {
+    .faqSearch {
+        height: 3.25rem;
+    }
+}

@@ -901,3 +901,203 @@
     }
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Svislé telefony — v-stopy: pinned jeviště se rozpouští do toku      */
+/* ------------------------------------------------------------------ */
+/* Na stojatém telefonu se dvouscénová scroll-choreografie neujala:
+   proužky fotek trhaly slovo „Kurzy" vejpůl a dvě absolutně skládané
+   scény se praly o výšku jednoho viewportu. Tady se jeviště rozpouští:
+   timeline ztrácí svých 300svh, stage přestává být sticky a obě scény
+   tečou jako obyčejné sekce pod sebou — s Rezervací níž jsou to tři
+   komponenty stránky, jedna za druhou. Druhá půlka téhle úmluvy žije
+   v index.tsx (`staticFlow`, stejná media hranice): scroll-styly se
+   nevykreslí a místo nich jede jednorázová vstupní animace.
+
+   Psáno proti svislým stopám (v = min-width + orientation: portrait),
+   mobile-first: xs nese celou přestavbu, sm a s jen povolují typografii
+   a vzduch. Sekce je poslední v souboru schválně — přebíjí below-px()
+   pravidla výš zdrojovým pořadím při stejné specificitě. */
+
+@include v(xs) {
+  .kurzyTimeline {
+    height: auto;
+
+    &__stage {
+      position: static;
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+      /* JS barvu jeviště ve statickém toku neřídí — tmavou drží CSS a
+         scéna „Pro koho" si níž stele vlastní papír. */
+      background: var(--kurzy-charcoal);
+    }
+
+    /* Ambientní záře je kalibrovaná na pinned kompozici; progress lišta
+       měří scroll, který už nic neměří. */
+    &__ambient,
+    &__rail {
+      display: none;
+    }
+  }
+
+  .kurzyScene {
+    position: static;
+    height: auto;
+    padding: 1.75rem 20px 3rem;
+    overflow: visible;
+    /* Obě sekce jsou teď prostě na stránce — aktivní scéna neexistuje. */
+    pointer-events: auto;
+  }
+
+  .kurzySceneMeta {
+    position: static;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── 1. Hero: meta → lockup → texty, v toku ── */
+
+  /* Jen první sekce: při načtení stojí pod plovoucím navbarem (bubliny do
+     ~70px), tak jí meta řádka nesmí začínat ve 28px jako ostatním. Složený
+     selektor schválně — sm/s stopy níž přepisují `.kurzyScene { padding }`
+     a při stejné specificitě by pozdější zápis tuhle výjimku smazal. */
+  .kurzyScene.kurzyHero {
+    padding-top: 5.75rem;
+  }
+
+  .kurzyHero {
+    &__title {
+      position: static;
+      height: auto;
+      margin-top: 0.5rem;
+      justify-content: flex-start;
+      /* Krok stranou (heroTitleX) patří pinned režimu; SSR ho stihne
+         otisknout do HTML, než se staticFlow přepne — proto !important. */
+      transform: none !important;
+    }
+
+    &__titleRow {
+      justify-content: flex-start;
+
+      /* Fotopruhy mezi písmeny na svislém telefonu nejsou — řádky se
+         složí zpět na celé slovo „Kurzy". */
+      figure {
+        display: none;
+      }
+    }
+
+    &__copy {
+      position: static;
+      width: 100%;
+      margin-top: 2rem;
+      transform: none !important;
+
+      /* V toku není o výšku nouze — popisek se vrací celý (720-blok ho
+         střihal na tři řádky kvůli 100svh jevišti). */
+      p {
+        display: block;
+        overflow: visible;
+        max-width: none;
+      }
+    }
+  }
+
+  /* ── 2. Pro koho: titulek → popisek → tři bloky pod sebou ── */
+
+  .kurzyAbout {
+    background: var(--kurzy-paper);
+
+    &__intro {
+      position: static;
+      width: 100%;
+      transform: none !important;
+
+      h2 {
+        margin-top: 0.5rem;
+        font-size: 2.2rem;
+      }
+    }
+
+    &__lede {
+      position: static;
+      width: 100%;
+      margin-top: 1.25rem;
+      transform: none !important;
+
+      p {
+        display: block;
+        overflow: visible;
+      }
+    }
+
+    &__blocks {
+      position: static;
+      margin-top: 1.75rem;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  /* Blok publika zpátky jako karta pod sebou: fotka, číslo, titulek,
+     text i tlačítko. Dvousloupcový gridový střih z below-px(720) byl
+     krizová úspora výšky pinned jeviště — tady výška nic nestojí. */
+  .kurzyAudience {
+    display: block;
+    padding-top: 0.75rem;
+
+    &__eyebrow {
+      display: block;
+    }
+
+    p {
+      display: block;
+      overflow: visible;
+      margin-top: 0.5rem;
+    }
+
+    h3 {
+      margin-top: 0.25rem;
+    }
+
+    &__action {
+      margin-top: 0.875rem;
+    }
+  }
+}
+
+@include v(sm) {
+  .kurzyScene {
+    padding: 2rem 20px 3.5rem;
+  }
+
+  .kurzyAbout {
+    &__intro h2 {
+      font-size: 2.6rem;
+    }
+
+    &__lede {
+      margin-top: 1.5rem;
+    }
+  }
+}
+
+@include v(s) {
+  .kurzyScene {
+    padding: 2.25rem 22px 4rem;
+  }
+
+  .kurzyHero__copy {
+    margin-top: 2.5rem;
+  }
+
+  .kurzyAbout {
+    &__intro h2 {
+      font-size: 3rem;
+    }
+
+    &__blocks {
+      margin-top: 2rem;
+      gap: 1.75rem;
+    }
+  }
+}

@@ -379,3 +379,100 @@
     .faqHeroScrollCue { display: none; }
 
 }
+
+/* ------------------------------------------------------------------ */
+/* Svislé telefony — v-stopy: těsná koláž, texty výš                   */
+/* ------------------------------------------------------------------ */
+/* Sonda (use-shaders-enabled → touch) na telefonech WebGL nikdy
+   nepustí, takže tu vždycky stojí fallback fotky — pravidla níž to
+   jen pojišťují pro netypický případ stojatého okna s myší a hlavně
+   přeskládávají kompozici: below-px(640) výš roztahoval fotky přes
+   22–60 % z 820px hera a texty tlačil pod ohyb. Tady se koláž semkne
+   do horní poloviny, hero se vejde do 100svh a caption s tlačítkem
+   vyjede nahoru, i s popiskem, který 640-blok schovával.
+
+   Mobile-first přes svislé stopy: xs nese kompozici, sm a s jen
+   povolují vzduch. Poslední v souboru schválně — přebíjí below-px()
+   bloky výš zdrojovým pořadím při stejné specificitě. */
+
+@include v(xs) {
+    .DotazyMain {
+        /* 820px minimum bylo pro roztaženou koláž — semknutá se musí
+           vejít do jedné obrazovky, jinak texty zase spadnou pod ohyb. */
+        min-height: 0;
+    }
+
+    /* Pojistka „jen fallback": plátno pryč a fotky viditelné, i kdyby
+       se shader někde stihl ohlásit jako ready. */
+    .faqShaderCanvas canvas {
+        display: none;
+    }
+
+    .faqShaderCanvas.is-ready .faqShaderFallback {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* Koláž těsně u sebe v horní polovině — fotky se překrývají jako
+       na desktopu, jen kaskáda končí u 55 % místo za ohybem. */
+    .faqShaderFallbackImage,
+    .faqShaderShadows i {
+        /* 15 %, ne 12: na 568px vysokém skle sedí meta lišta na 64px
+           a fotka na 12 % (68px) jí podlézala do textu. */
+        &:nth-child(1) { top: 15%; left: 4%; width: 58vw; }
+        &:nth-child(2) { top: 22%; left: 50%; width: 31vw; }
+        &:nth-child(3) { top: 32%; left: 13%; width: 60vw; }
+    }
+
+    .travellingFAQ {
+        top: 5.25rem;
+        /* Slovo jinak jede se scrollem až 97vh dolů a na telefonu se
+           zastaví za nadpisem druhé sekce. Tady zůstává v heru — inline
+           transform od frameru prohrává s !important, opacity fade mu
+           zůstává. */
+        transform: none !important;
+    }
+
+    /* Texty a tlačítko hned pod koláží, ne přišpendlené ke dnu. Plná
+       šířka a zarovnání vlevo čte se líp než pravý sloupek 330px. */
+    /* Rozpočet diktuje spodní plovoucí dock (~55px nad dnem): tlačítko
+       musí skončit nad ním, na 320×568 tedy do ~495px — proto na xs
+       zůstává popisek schovaný (jako v below-px(640)). */
+    .faqHeroCaption {
+        top: 56%;
+        right: 20px;
+        bottom: auto;
+        left: 20px;
+        width: auto;
+    }
+}
+
+@include v(sm) {
+    .faqShaderFallbackImage,
+    .faqShaderShadows i {
+        &:nth-child(2) { top: 21%; }
+        &:nth-child(3) { top: 30%; }
+    }
+
+    /* 52.5 %: na 380×667 končí tlačítko u ~591px a spodní dock začíná
+       na 599 — měřeno, ne odhadem. Vyšší telefony mají rezervu větší. */
+    .faqHeroCaption {
+        top: 52.5%;
+
+        /* Od 380 nahoru se pod nadpis vejde i věta popisku — dvě
+           řádky, dock ji nedožene. */
+        p {
+            display: block;
+        }
+    }
+}
+
+@include v(s) {
+    .travellingFAQ {
+        top: 6rem;
+    }
+
+    .faqHeroCaption {
+        top: 59%;
+    }
+}
