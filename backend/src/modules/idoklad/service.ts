@@ -26,7 +26,7 @@ type InjectedDependencies = {
 /**
  * The iDoklad API v3 client (FINISHINGTODOLIST §1).
  *
- * A plain service module like `sanity` — it owns no data. Everything the shop
+ * A plain service module — it owns no data. Everything the shop
  * remembers about an invoice lives in `order.metadata.idoklad_*`; this class
  * only speaks HTTP: OAuth2 client-credentials with the token cached until
  * shortly before expiry, and the handful of v3 endpoints the shop needs

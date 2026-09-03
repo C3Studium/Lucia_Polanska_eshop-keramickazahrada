@@ -1,0 +1,83 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+//
+// One skin for the two address modals.
+//
+// add-address.tsx and edit-address-modal.tsx render the same nine-field form inside the
+// same Modal, and both stylesheets used to carry their own copy of every number: the title
+// font was written three times, .form and .addressForm were the same rule under two names,
+// .actions and .actionsRow likewise. Every shared value now lives here once and the two
+// sheets pull it in with @include, so a clamp cannot be fixed in one copy and missed in
+// the other.
+//
+// Axis rule: vertical members hang on vh, horizontal on vw. This form is the tallest thing
+// on the route, so on a 768-tall laptop the vertical rhythm has to give way by itself --
+// that is what keeps the low-laptop stop free of its own rules.
+//
+
+@mixin modal-title-content {
+  display: grid;
+  /* Heading over rule: vertical, so vh. 16px at 1080, ~11px at 768. */
+  gap: clamp(.6rem, 1.5vh, 1rem);
+  width: 100%;
+}
+
+@mixin modal-title {
+  margin: 0;
+  font: 400 clamp(2.8rem, 5vw, 4.8rem)/.86 "Sentient-Regular", serif;
+  letter-spacing: -.055em;
+}
+
+@mixin form-grid {
+  display: grid;
+  /* Eight rows of fields means seven of these gaps -- the single number with the most
+     leverage over whether the form clears a short laptop. 12px at 860 tall and up,
+     ~10.7px at 768, ~9.2px at 660. Live 571-971 tall. */
+  gap: clamp(.5rem, 1.4vh, .85rem);
+}
+
+@mixin form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@mixin form-row-postal {
+  grid-template-columns: minmax(7.5rem, .45fr) minmax(0, 1fr);
+}
+
+// Phone: the two-up rows stack. Owned by the portrait pass -- kept here only so the
+// two sheets state it once; the value itself is unchanged.
+@mixin form-row-stacked {
+  grid-template-columns: 1fr;
+}
+
+@mixin form-error {
+  /* Vertical spacing on vh, the inline padding on the horizontal axis. */
+  margin-top: clamp(.6rem, 1.6vh, .875rem);
+  padding: clamp(.5rem, 1.2vh, .75rem) 1rem;
+  border-left: 2px solid var(--clay-21);
+  background: rgb(var(--clay-21-rgb) / .09);
+  color: var(--clay-01);
+  /* 14px was frozen at every viewport; it must not get smaller on a laptop, so the
+     floor holds it at 14 and the ceiling lets the ramp lift it: 14 -> 15.2px,
+     live 1400-1520, 20.2px at 2552. */
+  font-size: clamp(.875rem, 1.167vw, 1.021rem);
+}
+
+@mixin button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  align-items: center;
+  /* One gesture -- a row of buttons closing a block -- had three numbers (24/28/32px)
+     under three names. One clamp, on vh because it is vertical: 20px at 768,
+     ~28px at 1080, 30.4px ceiling. Live 769-1169 tall. */
+  margin-top: clamp(1.25rem, 2.6vh, 1.9rem);
+}
+
+@mixin button-row-end {
+  @include button-row;
+  justify-content: flex-end;
+  width: 100%;
+}

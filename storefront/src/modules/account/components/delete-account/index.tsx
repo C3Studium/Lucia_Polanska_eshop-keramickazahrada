@@ -29,10 +29,13 @@ const backdropVariants: Variants = {
   },
 }
 
+// Vstupní posuny ve vh, ne v px — na 720px vysokém laptopu je nadzdvižení
+// úměrně menší. Obě strany mají stejný tvar výrazu ("3.5vh" ↔ "0vh"),
+// jinak framer přestane interpolovat.
 const panelVariants: Variants = {
   closed: {
     opacity: 0,
-    y: 38,
+    y: "3.5vh",
     scale: 0.975,
     transition: {
       duration: 0.3,
@@ -42,7 +45,7 @@ const panelVariants: Variants = {
   },
   open: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     scale: 1,
     transition: {
       duration: 0.62,
@@ -56,12 +59,12 @@ const panelVariants: Variants = {
 const contentVariants: Variants = {
   closed: {
     opacity: 0,
-    y: 16,
+    y: "1.5vh",
     transition: { duration: 0.18, ease: "easeIn" },
   },
   open: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     transition: { duration: 0.48, ease: accountEase },
   },
 }
@@ -90,11 +93,11 @@ const closeIconVariants: Variants = {
 }
 
 const statusVariants: Variants = {
-  hidden: { opacity: 0, height: 0, y: -6 },
+  hidden: { opacity: 0, height: 0, y: "-0.55vh" },
   visible: {
     opacity: 1,
     height: "auto",
-    y: 0,
+    y: "0vh",
     transition: {
       height: { duration: 0.42, ease: accountSweepEase },
       opacity: { duration: 0.24, delay: 0.12, ease: "easeOut" },
@@ -104,7 +107,7 @@ const statusVariants: Variants = {
   exit: {
     opacity: 0,
     height: 0,
-    y: -4,
+    y: "-0.37vh",
     transition: {
       height: { duration: 0.28, ease: accountSweepEase },
       opacity: { duration: 0.16, ease: "easeIn" },
@@ -251,6 +254,10 @@ const DeleteAccountModal = ({
           <motion.div
             ref={panelRef}
             className={styles.panel}
+            /* Panel je vlastní scroll kontejner (max-height: 100svh - clamp).
+               body{overflow:hidden} výše blokuje jen uživatelský scroll — Lenis
+               scrolluje programově a jinak by spolkl wheel nad panelem. */
+            data-lenis-prevent
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}

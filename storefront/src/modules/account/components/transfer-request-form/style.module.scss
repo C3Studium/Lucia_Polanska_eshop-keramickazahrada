@@ -26,7 +26,7 @@
 
 .desc {
   margin: 0;
-  color: rgba(32, 33, 29, .62);
+  color: rgb(var(--ink-05-rgb) / .62);
   font: 15px/1.5 "Sansation-Light", sans-serif;
 }
 
@@ -55,9 +55,9 @@
 .error {
   margin: 0;
   padding: 12px 16px;
-  border-left: 2px solid #a85042;
-  background: rgba(168, 80, 66, .09);
-  color: #743c34;
+  border-left: 2px solid var(--clay-21);
+  background: rgb(var(--clay-21-rgb) / .09);
+  color: var(--clay-01);
   font-size: 14px;
 }
 
@@ -67,8 +67,8 @@
   gap: 18px;
   align-items: center;
   padding: 16px;
-  border-left: 2px solid #7e896a;
-  background: rgba(126, 137, 106, .09);
+  border-left: 2px solid var(--olive-19);
+  background: rgb(var(--olive-19-rgb) / .09);
 }
 
 .successLeft {
@@ -79,7 +79,7 @@
 
 .iconSuccess {
   flex: 0 0 auto;
-  color: #7e896a;
+  color: var(--olive-19);
 }
 
 .successTextWrap {
@@ -97,7 +97,7 @@
 }
 
 .successDesc {
-  color: rgba(32, 33, 29, .6);
+  color: rgb(var(--ink-05-rgb) / .6);
   font-size: 13px;
 }
 

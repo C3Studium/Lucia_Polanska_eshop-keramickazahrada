@@ -1,42 +1,46 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * Same rule as style.module.scss: rem ends on every clamp so the >=1921px root ramp lifts the
+ * ceilings, vh for anything that competes with the window height, vw for anything that competes
+ * with its width. No size lives in a breakpoint here any more.
+ */
 .container {
   width: 100%;
   min-width: 0;
-  color: #20211c;
-  max-width: 680px;
+  color: var(--ink-05);
+  /* rem, not 680px — a px cap is the one thing the root ramp cannot lift. */
+  max-width: 42.5rem;
 }
 
 .rail {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 14px;
-  margin-bottom: clamp(34px, 5vh, 58px);
-  color: rgba(32, 33, 28, 0.48);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  gap: 0.875rem;
+  margin-bottom: clamp(2.125rem, 5vh, 3.625rem);
+  color: rgb(var(--ink-05-rgb) / .48);
+  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .rail i {
   height: 1px;
-  background: rgba(32, 33, 28, 0.22);
+  background: rgb(var(--ink-05-rgb) / .22);
 }
 
+/*
+ * The seal column used to be 76px here and clamp(82px, 7vw, 118px) again in v(md) and h(xxs) —
+ * the same property, two values, which is a clamp that was never written. One clamp covers the
+ * whole range now. The floor is the old 76px, so nothing below 400px moves; from there up it
+ * ramps instead of stepping. Live band 1086 … 1686px.
+ */
 .invitation {
   display: grid;
-  grid-template-columns: 1fr 76px;
-  gap: clamp(22px, 3vw, 46px);
+  grid-template-columns: 1fr clamp(4.75rem, 7vw, 7.375rem);
+  gap: clamp(1.375rem, 3vw, 2.875rem);
   align-items: center;
-
-  @include v(md) {
-    grid-template-columns: 1fr clamp(82px, 7vw, 118px);
-  }
-
-  @include h(xxs) {
-    grid-template-columns: 1fr clamp(82px, 7vw, 118px);
-  }
 }
 
 .invitationCopy {
@@ -45,34 +49,38 @@
 
 .eyebrow {
   display: block;
-  margin-bottom: 14px;
-  color: rgba(32, 33, 28, 0.5);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  margin-bottom: 0.875rem;
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+/*
+ * One size, one place. A font-size: clamp(32px, 10vw, 44px) used to sit three lines under this
+ * shorthand and beat it: 10vw is a phone number, so from 440px up the heading was hard 44px and
+ * the ramp to 52 never ran. Live band 1067 … 1733px.
+ */
 .invitation h2 {
   margin: 0;
-  font: 400 clamp(32px, 2.8vw, 52px) / 0.94 "Sentient-Regular", serif;
+  font: 400 clamp(2rem, 3vw, 3.25rem) / 0.94 "Sentient-Regular", serif;
   letter-spacing: -0.045em;
   text-wrap: balance;
-  font-size: clamp(32px, 10vw, 44px);
 }
 
 .invitation h2 em {
   display: block;
-  margin-top: 3px;
-  color: #747e62;
+  margin-top: 0.1875rem;
+  color: var(--olive-15);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 400;
 }
 
 .invitationCopy > p {
   max-width: 37ch;
-  margin: 24px 0 0;
-  color: rgba(32, 33, 28, 0.62);
-  font: 300 clamp(15px, 0.94vw, 17px) / 1.52 "Sansation-Light", sans-serif;
+  margin: clamp(1.125rem, 2.2vh, 1.5rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 300 clamp(0.9375rem, 1.15vw, 1.0625rem) / 1.52 "Sansation-Light", sans-serif;
 }
 
 .reviewSeal {
@@ -80,7 +88,7 @@
   display: grid;
   aspect-ratio: 1;
   place-items: center;
-  border: 1px solid rgba(32, 33, 28, 0.22);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
   border-radius: 50%;
 }
 
@@ -88,7 +96,7 @@
 .reviewSeal::after,
 .reviewSeal i {
   position: absolute;
-  border: 1px solid rgba(32, 33, 28, 0.14);
+  border: 1px solid rgb(var(--ink-05-rgb) / .14);
   border-radius: 50%;
   content: "";
 }
@@ -103,13 +111,26 @@
 
 .reviewSeal i:first-child {
   inset: -7%;
-  border-color: rgba(116, 126, 98, 0.18);
+  border-color: rgb(var(--olive-15-rgb) / .18);
   animation: reviewSealBreath 7s ease-in-out infinite alternate;
+
+  /*
+   * An infinite keyframe on a decorative ring, and `use-shaders-enabled` stamps
+   * data-fx="reduced" on every phone measured here (5/5 stops: reduced / touch / canvas=false),
+   * so this ran forever on exactly the hardware that can least afford it. The seal is
+   * aria-hidden decoration — it loses nothing by standing still.
+   *
+   * Not the clip-path timeline the brief protects: that one is the gallery/chapter/restock/bundle
+   * reveal in TSX, and none of it lives in this file.
+   */
+  @include reduced-fx {
+    animation: none;
+  }
 }
 
 .reviewSeal i:nth-child(2) {
   inset: 34%;
-  background: rgba(187, 183, 136, 0.34);
+  background: rgb(var(--sage-01-rgb) / .34);
 }
 
 .reviewSeal span,
@@ -119,14 +140,14 @@
 }
 
 .reviewSeal span {
-  margin-top: -8px;
-  font: 400 clamp(24px, 2vw, 34px) / 1 "Sentient-Regular", serif;
+  margin-top: -0.5rem;
+  font: 400 clamp(1.5rem, 2.1vw, 2.125rem) / 1 "Sentient-Regular", serif;
 }
 
 .reviewSeal small {
   position: absolute;
   bottom: 22%;
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -147,39 +168,44 @@
 .memberPrompt,
 .formSection,
 .loadingState {
-  margin-top: clamp(38px, 6vh, 68px);
-  padding-top: 18px;
-  border-top: 1px solid rgba(32, 33, 28, 0.22);
+  margin-top: clamp(2.375rem, 6vh, 4.25rem);
+  padding-top: clamp(0.875rem, 1.9vh, 1.125rem);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .22);
 }
 
 .authPrompt > p,
 .memberPrompt > p {
   max-width: 36ch;
   margin: 0;
-  color: rgba(32, 33, 28, 0.66);
-  font: 300 16px/1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 300 clamp(1rem, 1.25vw, 1.125rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
+/*
+ * A row, not a column. flex-direction: column plus width: 100% on both actions was a phone
+ * layout that leaked into landscape: two full-bleed pills stacked on each other even inside the
+ * 680px form column on 1920. They size to their content now, and flex-wrap still stacks them
+ * where the column really is too narrow.
+ */
 .authActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 0.625rem;
+  margin-top: clamp(1.125rem, 2.2vh, 1.5rem);
   align-items: stretch;
-  flex-direction: column;
 }
 
 .primaryAction,
 .secondaryAction {
   display: flex;
-  min-height: 48px;
+  min-height: 3rem;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  padding: 0 22px;
-  border: 1px solid #20211c;
+  gap: 1.25rem;
+  padding: 0 1.375rem;
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.875rem, 1.1vw, 1rem) / 1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   transition:
     color 350ms ease,
@@ -188,49 +214,59 @@
 }
 
 .primaryAction {
-  color: #ffe8d6;
-  background: #20211c;
-  width: 100%;
+  color: var(--cream-06);
+  background: var(--ink-05);
 }
 
 .secondaryAction {
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
-  width: 100%;
-}
-
-.primaryAction:hover,
-.secondaryAction:hover {
-  transform: translateY(-2px);
-}
-
-.secondaryAction:hover {
-  color: #ffe8d6;
-  background: #20211c;
 }
 
 .primaryAction span {
   transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.primaryAction:hover span {
-  transform: translate(2px, -2px);
+/*
+ * Every hover in this file, in one place, behind the only pointer that can leave it. The two
+ * pills are the sign-in / sign-up pair a guest meets instead of the form; `.secondaryAction`
+ * inverts onto the ink background and the arrow slides. On touch `:hover` stays applied after
+ * the tap, so the outline pill stayed filled and the arrow stayed offset until something else
+ * was touched. Measured on all five phone stops: (hover: hover) and (pointer: fine) is false.
+ *
+ * Scoped, not overridden: a `touch` block resetting the same three declarations would be a
+ * second set of rules saying the opposite of the first.
+ */
+@include fine-pointer {
+  .primaryAction:hover,
+  .secondaryAction:hover {
+    transform: translateY(-2px);
+  }
+
+  .secondaryAction:hover {
+    color: var(--cream-06);
+    background: var(--ink-05);
+  }
+
+  .primaryAction:hover span {
+    transform: translate(2px, -2px);
+  }
 }
 
 .loadingState {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: rgba(32, 33, 28, 0.48);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  gap: 0.75rem;
+  color: rgb(var(--ink-05-rgb) / .48);
+  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .loadingState i {
-  width: 34px;
+  width: 2.125rem;
   height: 1px;
-  background: #747e62;
+  background: var(--olive-15);
   transform-origin: left center;
   animation: reviewLoading 1.4s ease-in-out infinite alternate;
 }
@@ -255,111 +291,156 @@
 }
 
 .formSection {
-  gap: 20px;
+  gap: clamp(1rem, 2.2vh, 1.25rem);
 }
 
 .formHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .formHeader > span {
-  font: 400 clamp(27px, 2.1vw, 38px) / 1 "Sentient-Regular", serif;
+  font: 400 clamp(1.6875rem, 2.3vw, 2.375rem) / 1 "Sentient-Regular", serif;
 }
 
 .formHeader button {
-  padding: 0 0 3px;
+  padding: 0 0 0.1875rem;
   border: 0;
   border-bottom: 1px solid currentColor;
-  color: rgba(32, 33, 28, 0.6);
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .6);
+  font: 400 clamp(0.8125rem, 1.02vw, 0.925rem) / 1 "Sansation-Regular", sans-serif;
   background: transparent;
   cursor: pointer;
+
+  /*
+   * The second half of the same miss the stars had: the global `button { min-height: 44px }` in
+   * globals.scss gives this one its height for free, and nothing gives it width. Measured 33.9x44
+   * on both tablets — "Zavřít" at its 13px floor is simply a short word.
+   *
+   * `min-width` is wrong here, though, where it was right on `.starBtn`: the visible affordance
+   * IS the border-bottom, so widening the box would leave 5px of underline hanging past the word
+   * on each side. The hit area grows instead, and only leftward — the button is the right-hand
+   * item of a `space-between` row, so growing right would push the target into the page gutter,
+   * while the 1.25rem gap on the left has room to spare. 33.9 + 12 = 45.9px, 8px of gap left over,
+   * and the label beside it is a plain span with nothing to hit.
+   */
+  @include touch {
+    position: relative;
+
+    &::after {
+      position: absolute;
+      inset: 0 0 0 -0.75rem;
+      content: "";
+    }
+  }
 }
 
 .form {
-  gap: 18px;
+  gap: clamp(0.875rem, 1.9vh, 1.125rem);
 }
 
 .field {
-  gap: 7px;
+  gap: 0.4375rem;
 }
 
 .label {
-  color: rgba(32, 33, 28, 0.56) !important;
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif !important;
+  color: rgb(var(--ink-05-rgb) / .56) !important;
+  font: 400 clamp(0.75rem, 0.95vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif !important;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .field input,
 .field textarea {
-  min-height: 48px;
+  min-height: 3rem;
   padding-right: 0 !important;
   padding-left: 0 !important;
   border: 0 !important;
-  border-bottom: 1px solid rgba(32, 33, 28, 0.28) !important;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .28) !important;
   border-radius: 0 !important;
-  color: #20211c !important;
+  color: var(--ink-05) !important;
   background: transparent !important;
   box-shadow: none !important;
-  font: 300 16px/1.4 "Sansation-Light", sans-serif !important;
+  /* Floor stays at 1rem: under 16px iOS zooms the field on focus. */
+  font: 300 clamp(1rem, 1.25vw, 1.125rem) / 1.4 "Sansation-Light", sans-serif !important;
 }
 
 .field textarea {
-  min-height: 120px;
+  min-height: clamp(6rem, 14vh, 7.5rem);
   resize: vertical;
 }
 
 .field input:focus,
 .field textarea:focus {
-  border-bottom-color: #20211c !important;
+  border-bottom-color: var(--ink-05) !important;
 }
 
 .starsRow {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 0.5625rem;
 }
 
 .stars {
   display: flex;
-  gap: 3px;
+  gap: 0.1875rem;
 }
 
 .starBtn {
   display: grid !important;
-  width: 38px !important;
-  min-width: 38px !important;
-  height: 38px !important;
+  width: 2.375rem !important;
+  min-width: 2.375rem !important;
+  height: 2.375rem !important;
   padding: 0 !important;
   place-items: center !important;
-  color: #747e62 !important;
+  color: var(--olive-15) !important;
   background: transparent !important;
   box-shadow: none !important;
+
+  /*
+   * The rating stars are the form's main control and they measured 38x44 on a finger: the height
+   * already came from the global touch floor in globals.scss (`button { min-height: 44px }`,
+   * which clamps the `height: 2.375rem` above it whatever the !important), but nothing was
+   * holding the WIDTH, and 38px is under the 44px target floor.
+   *
+   * Only min-width is written here. Repeating min-height would be a second copy of a rule the
+   * system already applies to every button — measured 44px tall before this block existed.
+   *
+   * `!important` has to stay: the declarations above are !important, so nothing without it can
+   * reach them. Five 44px stars plus four 3px gaps is 232px, inside the 288px column a 320px
+   * phone leaves and inside the 360px form column on 932x430.
+   */
+  @include touch {
+    min-width: 2.75rem !important;
+  }
 }
 
 .starBtn svg {
-  width: 22px;
-  height: 22px;
+  width: 1.375rem;
+  height: 1.375rem;
 }
 
 .ClickButton {
   display: flex;
-  margin-top: 12px;
+  margin-top: 0.75rem;
 }
 
+/*
+ * The slider underneath is percentage geometry — slider 200% of this box, each face 50% of the
+ * slider, travel -50% — so one face is exactly one button height whatever this box measures.
+ * Moving the box to rem rescales the animation with it; there is nothing to recompute.
+ */
 .button {
   position: relative;
-  width: 196px;
-  height: 48px;
+  width: 12.25rem;
+  height: 3rem;
   overflow: hidden;
   padding: 0;
-  border: 1px solid #20211c;
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  background: #ffe8d6;
+  background: var(--cream-06);
   cursor: pointer;
 }
 
@@ -384,16 +465,15 @@
   height: 50%;
   flex: 0 0 50%;
   place-items: center;
-  color: #20211c;
-  background: #ffe8d6;
+  color: var(--ink-05);
+  background: var(--cream-06);
 }
 
 .el:nth-child(2) {
-  color: #ffe8d6;
-  background: #20211c;
+  color: var(--cream-06);
+  background: var(--ink-05);
 }
 
 .perspectiveText {
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.875rem, 1.1vw, 1rem) / 1 "Sansation-Regular", sans-serif;
 }
-

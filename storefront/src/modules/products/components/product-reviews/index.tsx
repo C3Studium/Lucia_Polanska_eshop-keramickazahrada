@@ -346,6 +346,9 @@ export default function ProductReviews({
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
-const initial = { opacity: 0, y: 18 }
-const whileInView = { opacity: 1, y: 0 }
+/* Entrance offset in vh, not px. 18px measured at 1080 is 1.7vh, so the card now lifts by the
+   same fraction of the window on a 1280x720 laptop (12px) as on a 2552x1351 monitor (23px).
+   Both ends of the tween carry the unit so framer keeps one interpolable shape. */
+const initial = { opacity: 0, y: "1.7vh" }
+const whileInView = { opacity: 1, y: "0vh" }
 const viewport = { once: true, amount: 0.45 }

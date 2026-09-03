@@ -1,37 +1,119 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 .productOptionButton {
+  /* One geometry, one place: height and min-height are the same pill, so the
+     expression lives once. vh, not vw — the pill queues for screen height in the
+     buy column, and on 1220×660 that column was measured with 2px of slack. The
+     floor holds the control comfortable (38px) on every short laptop, 3.7vh is
+     exactly 40px at 1080 so the reference viewport is unchanged, and above 1921
+     the rem floor/ceiling ride the root ramp instead of freezing at 40px.
+
+     Portrait tablet, round 3: the vh middle term stays even though a tablet has
+     height to spare, because on a tablet it never decides anything. Measured
+     with a finger, the global 44px touch floor wins at both stops, so the clamp
+     is inert: 768×1024 → 3.7vh = 37.9px → floor 38px → beaten to 44px, and
+     1024×1366 → 50.5px → ceiling 44px, also 44px. Retuning it would only move
+     the laptop, which round 1 measured and signed off.
+
+     The one case where it does decide is a tablet with a POINTER but a touch
+     screen — an iPad on a Magic Keyboard trackpad, which reports (hover: hover)
+     and (pointer: fine), so `@include touch` in globals.scss does not match.
+     Measured with touch emulation off: 1024×1366 → 44px (the ceiling happens to
+     land there), but 768×1024 → 38px, under the target floor on a screen that
+     is still tapped. Not fixable here: the query that means "has a touch screen
+     at all" is `any-pointer: coarse`, which is not in the project's mixin set,
+     and system/*.scss is out of bounds. Reported to the lead instead — it is a
+     hole in the `touch` policy, not in this pill. */
+  --pill-h: clamp(2.375rem, 3.7vh, 2.75rem);
+
   position: relative;
   display: grid;
   box-sizing: border-box;
   flex: 0 0 auto;
-  min-width: 58px;
-  height: 40px;
-  min-height: 40px;
+  /* This is the tap floor on the OTHER axis, and it is the only one there is.
+     globals.scss gives `min-height: 44px !important` under @include touch and
+     nothing at all for width, so without this a one-character option value would
+     be as wide as its glyph plus padding. Measured on the tablet with the floor
+     lifted (`min-width: 0` injected live): "S" collapses to 35.5px at both
+     768×1024 and 1024×1366 — under the 44px target — and returns to 58.0×44.0
+     with the floor in place. It is a control minimum, not a size that should
+     scale, so it stays a plain rem floor and rides the ramp above 1921. */
+  min-width: 3.625rem;
+  /* The pill never grows past the row it sits in. Option values are free text
+     (ProductOptions renders every option a product declares, whatever it is
+     called), and `white-space: nowrap` on the label turns a long one into a
+     wide pill: "Matná lomená bílá" measured 152.9px against a 104px row in the
+     buy column at 932×430. Without this it left its parent and `.product`'s
+     `overflow: clip` swallowed it silently — no scrollbar, no warning. */
+  max-width: 100%;
+  height: var(--pill-h);
+  min-height: var(--pill-h);
   /* No max-height: it capped the pill at 38px even on touch, defeating the
-     global 44px touch floor on the one control a PDP cannot be used without. */
-  padding: 0 14px;
+     global 44px touch floor on the one control a PDP cannot be used without.
+     Still none — min-height wins over height, so the touch floor keeps winning.
+     Measured, not assumed: with touch emulated the pill is 44px tall on every
+     phone stop — portrait 320×568, 380×800, 390×844, 400×850, 430×932, 600×900,
+     1000×1400 and landscape 480×320, 568×320, 800×400, 932×430 — computed
+     min-height 44px, i.e. the `button` floor in globals.scss beating `height`;
+     with a mouse the same pill is 38px, which is `--pill-h`'s own floor. The
+     global floor reaches this element, so no local `@include touch` floor is
+     written here — it would only restate the rule that already wins.
+
+     Re-measured on the portrait tablet, because a tablet is a finger device and
+     the list above was phones only: 768×1024 and 1024×1366 with touch emulated
+     both report (hover: none) and (pointer: coarse) true, computed min-height
+     44px, computed height 44px, box 82.0×44.0 for a colour pill and 58.0×44.0
+     for a size pill. The global floor reaches the tablet exactly as it reaches
+     the phone, so there is still nothing to add here. */
+  padding: 0 clamp(0.75rem, 1vw, 1.0625rem);
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 232, 214, 0.64);
+  border: 1px solid rgb(var(--cream-06-rgb) / .64);
   border-radius: 999px;
-  background: rgba(255, 232, 214, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: rgba(255, 232, 214, 0.9);
+  background: rgb(var(--cream-06-rgb) / .1);
+  box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .08);
+  color: rgb(var(--cream-06-rgb) / .9);
   cursor: pointer;
   transition:
     color 260ms ease,
     border-color 260ms ease,
     background-color 260ms ease;
 
-  &:hover,
   &:focus-visible,
   &.productOptionButton--active {
-    border-color: rgba(255, 232, 214, 0.9);
-    color: #fff8f1;
+    border-color: rgb(var(--cream-06-rgb) / .9);
+    color: var(--cream-10);
   }
 
   &.productOptionButton--active {
-    background: #747e62;
+    background: var(--olive-15);
+  }
+
+  /* Hover left the shared block above on purpose. On a touch screen the hover
+     state latches after a tap and does not let go, so a pill that is merely the
+     last one touched wore the chosen pill's lighter border and text — measured
+     on 932×430 with touch emulated: after tapping the second pill it reported
+     :hover true, border-color .64 → .9 and colour → cream-10, i.e. the look of
+     the selection, on a control whose entire job is to say which variant is
+     selected. Written after the two rules it shares values with, so nothing
+     about the chosen pill changes; the chosen pill's `background: olive-15`
+     stays where it is, and hover never had it.
+
+     Re-proved on the portrait tablet, where it matters more than on the phone —
+     a tablet is wide enough that the layout around it is desktop-shaped, so the
+     latch would look like an ordinary mouse hover rather than an obvious bug.
+     A real CDP tap on the second (unselected) pill at 768×1024 and again at
+     1024×1366: `el.matches(":hover")` comes back TRUE both times, i.e. the
+     browser does latch, and every measured value is identical before and after
+     — border still cream-06 at .64 (not the .9 of the chosen pill), colour still
+     cream-06 at .9 (not cream-10), background still cream-06 at .1. Rule
+     enumeration on the live page confirms
+     why: the only :hover rule reaching `.productOptionButton` anywhere in the
+     document sits under `(hover: hover) and (pointer: fine)`. */
+  @include fine-pointer {
+    &:hover {
+      border-color: rgb(var(--cream-06-rgb) / .9);
+      color: var(--cream-10);
+    }
   }
 
   &:disabled {
@@ -44,19 +126,86 @@
     inset: 0;
     z-index: 0;
     border-radius: inherit;
-    background: #747e62;
+    background: var(--olive-15);
     transform-origin: left center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .2);
   }
 
   .productOptionButton__label {
     position: relative;
     z-index: 1;
+    /* The label stays on one line — a pill is not a paragraph — but it is
+       allowed to give up its ends rather than push the pill out of the row.
+       `min-width: 0` because a grid item's automatic minimum size is its
+       longest word, which is what kept the pill wide.
+
+       `justify-self: stretch` is what makes `text-overflow` mean anything here.
+       Under the pill's `place-items: center` the label is a centred grid item,
+       so it is sized to max-content and hangs out of BOTH ends of its track
+       instead of shortening. Measured at 932×430, where the buy column squeezes
+       the pill row to 104px: label 126.9px wide, scrollWidth 127 = clientWidth
+       127 (nothing for the ellipsis to shorten) and a left edge outside the
+       pill's padding box, so `overflow: hidden` cut a glyph off at each end.
+       Stretched to the track the same label shortens and ends in an ellipsis.
+       `text-align: center` keeps every label that fits exactly where it was,
+       and the pill's width does not move: the track is still sized by the
+       label's max-content, so 82px stays 82px. Real colour and size values
+       (Zelená, Okrová, XXL: 25–50px measured) never reach this — it only bites
+       on a long free-text option value in a narrow column.
+
+       The narrowest column in the whole responsive range turned out to be the
+       portrait tablet, not the phone: the pill rail measures 162px at 1024×1366
+       and 214px at 768×1024, against 301.6px on the widest phone (430×932).
+       Re-measured there with the real vocabulary: "Zelená" 56/56, "Okrová"
+       56/56, "Bílá" 56/56, "XXL: 25–50px" 94/94 — scrollWidth equals
+       clientWidth, no ellipsis on either tablet stop. The 17-character glaze
+       name "Matná lomená bílá" needs 152.9px and therefore still fits both
+       tablet rails whole; it did ellipsize (127/100) at the 125.7px rail the
+       iPad Pro had before the tablet fold widened the buy column, which is the
+       measurement that shows the guard is live here and not merely inherited
+       from the phone. Ellipsis on free text only, as intended. */
+    min-width: 0;
+    justify-self: stretch;
+    overflow: hidden;
     white-space: nowrap;
-    font: 400 15px/1 "Sansation-Regular", sans-serif;
+    text-align: center;
+    text-overflow: ellipsis;
+    /* rem, not a vw clamp: the label is the pill's content and the pill's width
+       floor is rem, so the two have to scale together. The ramp above 1921 grows
+       it (15px → 19.9px at 2552) — which is the whole defect this file had. */
+    font: 400 0.9375rem/1 "Sansation-Regular", sans-serif;
   }
 }
 
+/* A colour value is a word, not a token, so its pill gets a wider floor than the
+   size pill's 3.625rem — otherwise "Bílá" and "Antracit" would be visibly
+   different widths in one row.
+
+   DO NOT SHRINK THIS TO FIT MORE PILLS ON A LINE. Round 3 measured the portrait
+   tablet and found the colour rail holds exactly one pill at 1024×1366: buy
+   column content 256px, minus the caption column 82px and the grid gap 12px,
+   leaves a 162px rail, while two pills at this floor need 82 + 8.8 + 82 =
+   172.8px. Four colours therefore stack four rows, 224.4px tall, where the
+   430×932 phone (rail 301.6px) puts two per row in 118.8px — the tablet coming
+   off worse than the phone, which is the one thing this round exists to catch.
+   768×1024 is fine (rail 214px, two per row, 118.8px).
+
+   Lowering this floor does cure it — measured live, 5.125rem → 4.5rem gives a
+   73.1px pill, two per row and 118.8px at 1024×1366 — and it is still the wrong
+   fix, for three measured reasons:
+     · The pill's own content is 73.1px, so the floor adds 8.9px while the rail
+       is 10.8px short. It is not slack, it is the whole margin the control has.
+     · The floor is load-bearing for touch on the other axis (see the note on
+       `min-width` above) and it is what keeps a row of colour names one width.
+     · It cannot be scoped to the tablet: written here it shrinks the pill on
+       the desktop too (82 → 73.1px at 1366×768), reversing round 1, and writing
+       it into `v(md)`/`v(lg)` would be a breakpointed size, which rule 1 and the
+       round-3 brief both forbid for this file.
+   The slack is next door: that 82px caption column carries 54.5px of text at
+   every stop measured (320 → 1366). The division of the container is where this
+   belongs — `.product__details__subDetails__colors`'s `grid-template-columns` in
+   product/style.scss — not in the control. Attribution table:
+   .rdshots/_optbtn-tb-whatif.cjs, geometry: .rdshots/_optbtn-tb.cjs. */
 .productOptionButton--color {
-  min-width: 82px;
+  min-width: 5.125rem;
 }

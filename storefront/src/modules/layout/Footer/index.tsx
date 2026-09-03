@@ -1,5 +1,8 @@
 "use client"
 
+import { editable, editableLink } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock, CopyBlocks } from "@lib/util/site-copy"
 import CollectionCategoryLink from "@modules/layout/Navbar/productsButton/CategoryLink"
 import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { MerchantIdentity } from "@lib/data/merchant"
@@ -11,10 +14,11 @@ import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
+import { palette } from "styles/palette.generated"
 
 type FooterTone = "light" | "dark"
 
-const DEFAULT_SURFACE = "#bbb788"
+const DEFAULT_SURFACE = palette.sage01
 
 const currentYear = new Date().getFullYear()
 
@@ -43,6 +47,12 @@ const helpLinks = [
   { label: "Doprava a platba", href: "/doprava-a-platba" },
 ]
 
+/*
+ * Záloha sociálních sítí pro případ, že by blok `global.socialni-site` nešel načíst.
+ *
+ * Spravují se v CMS jako seznam (dá se do něj přidat třetí síť); tohle je jen to, co se
+ * ukáže, dokud odtamtud nic nepřijde — patička bez odkazů vypadá jako závada.
+ */
 const socialLinks = [
   {
     label: "Facebook",
@@ -56,11 +66,28 @@ const socialLinks = [
   },
 ]
 
+/*
+ * 26px is 2.4vh of the 1080px reference screen, and animation coordinates belong on vh so the
+ * gesture keeps its share of the window instead of shrinking to nothing on a 2K monitor.
+ *
+ * A previous pass reverted this to px with a comment claiming framer-motion types `y` as px and
+ * never completes a variant that carries a unit. That is not true, and the note is removed rather
+ * than left to warn the next reader off: framer-motion 12.23.12 was run in Chromium against its
+ * own runtime (.rdshots/zz-lead-vh-motion.cjs) and `y: "-1.8vh" → "0vh"` interpolates cleanly —
+ * mid-flight matrix -7.24px of the -13.82px start at 1366x768, final transform `none`, and
+ * `mix("-1.8vh", "0vh")(0.5)` returns "-0.9vh". The footer sitting at opacity 0 was the dev
+ * server failing to hydrate (the same "Loading chunk (main)/layout failed" that pass reported
+ * separately), not the unit. cart-mismatch-banner, CookieNotice, ContactDialog and the shipping
+ * nudge all ship vh coordinates today and animate correctly, which is the same evidence.
+ *
+ * Both sides carry the unit — `"0vh"`, not a bare `0` — because framer only interpolates
+ * reliably when the two ends have the same shape of expression.
+ */
 const reveal = {
-  hidden: { opacity: 0, y: 26 },
+  hidden: { opacity: 0, y: "2.4vh" },
   visible: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     transition: {
       duration: 0.72,
       ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
@@ -68,11 +95,81 @@ const reveal = {
   },
 }
 
-export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
+export default function Footer({
+  merchant,
+  copy,
+}: {
+  merchant: MerchantIdentity
+  /**
+   * Globální bloky (`global.*`) — texty patičky, newsletteru a seznam sítí.
+   *
+   * Sociální odkazy dřív chodily jako dva dokumenty tlačítek (`footer.facebook`,
+   * `footer.instagram`) a prop `buttons`. Nahradil je seznam `global.socialni-site`,
+   * do kterého jde síť přidat, takže pevná dvojice ani prop k ní už nejsou potřeba.
+   */
+  copy?: CopyBlocks
+}) {
+  /* Patička visí pod každou stránkou a hýbe se jen při odhalení; bez tohohle by se po
+     zapnutí režimu editace nepřekreslila a `editable()` by zůstalo prázdné. Viz hook. */
+  useEditRerender()
+
+  const footerCopy = copy?.["global.paticka"]
+  const socialBlock = copy?.["global.socialni-site"]
+  const newsletterCopy = copy?.["global.newsletter"]
+
+  const newsletterEyebrow = newsletterCopy?.accent?.[0]?.trim() || "Novinky · 01"
+  const newsletterTitle =
+    newsletterCopy?.title?.trim() || "Ozveme se, když bude co říct."
+  const newsletterLede =
+    newsletterCopy?.bodyText?.trim() ||
+    "Novinky z ateliéru a termíny kurzů. Nic víc."
+
+  const toplineLeft = footerCopy?.accent?.[0]?.trim() || "Keramická zahrada"
+  const toplineRight =
+    footerCopy?.accent?.[1]?.trim() || "Ateliér Lucie Polanské · Písek"
+  const footerEyebrow = footerCopy?.accent?.[2]?.trim() || "00 · PATIČKA"
+  const wordmarkLead = footerCopy?.title?.trim() || "Keramická"
+  const wordmarkAccent = footerCopy?.headline?.trim() || "zahrada."
+  const statement =
+    footerCopy?.bodyText?.trim() ||
+    "Keramika pro zahradu i domov. Všechno vzniká rukama v píseckém ateliéru."
+
+  /*
+   * Sociální sítě jako seznam, ne dva zapsané odkazy.
+   *
+   * Řádek nese jméno (`label`), adresu (`value`) a klíč ikony (`lead`), podle kterého se
+   * vezme soubor z `/assets/icons/`. Přidat třetí síť tedy znamená přidat řádek, ne sáhnout
+   * do kódu. Nahraná ikona v „Sadě obrázků" na témž pořadí má přednost — je to jediná cesta,
+   * jak dostat do patičky logo, které v `/assets/icons/` není.
+   *
+   * Zálohou je původní dvojice, aby patička nezůstala bez odkazů, dokud blok nikdo nevyplní.
+   */
+  const socials = (() => {
+    const rows = (socialBlock?.items ?? []).filter(
+      (row) => row.label?.trim() && row.value?.trim()
+    )
+    if (!rows.length) {
+      return socialLinks.map((link) => ({
+        label: link.label,
+        href: link.href,
+        icon: link.icon,
+      }))
+    }
+    return rows.map((row, index) => ({
+      label: row.label.trim(),
+      href: row.value.trim(),
+      icon:
+        socialBlock?.gallery?.[index]?.url ||
+        `/assets/icons/${row.lead?.trim() || "instagram"}.svg`,
+    }))
+  })()
   const pathname = usePathname()
   const reduceMotion = useReducedMotion()
   const footerRef = useRef<HTMLElement>(null)
-  const [surface, setSurface] = useState(DEFAULT_SURFACE)
+  /* Typ se píše ručně, protože paleta je `as const` a `DEFAULT_SURFACE` je tím
+     doslovný literál — bez toho by stav uměl držet jen tu jednu barvu, kterou
+     začíná, a přiřazení jakékoli jiné by neprošlo překladem. */
+  const [surface, setSurface] = useState<string>(DEFAULT_SURFACE)
   const [tone, setTone] = useState<FooterTone>("light")
 
   useLayoutEffect(() => {
@@ -161,8 +258,8 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
         variants={reveal}
       >
         <div className="footer__topline">
-          <span>Keramická zahrada</span>
-          <span>Ateliér Lucie Polanské · Písek</span>
+          <span {...editable(footerCopy, "accent.0")}>{toplineLeft}</span>
+          <span {...editable(footerCopy, "accent.1")}>{toplineRight}</span>
         </div>
 
         <div className="footer__main">
@@ -179,28 +276,34 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
                 height={48}
                 priority={false}
               />
-              <span>00 · PATIČKA</span>
+              <span {...editable(footerCopy, "accent.2")}>{footerEyebrow}</span>
             </div>
 
             {/* Styled as a heading, but not one: the footer repeats on every page and used
-                to inject an h2 + two h3s into each page's outline (spec §6). */}
+                to inject an h2 + two h3s into each page's outline (spec §6).
+                Obě půlky jsou vlastní pole — `editable` píše celé pole, takže v jednom by
+                šly změnit jen obě naráz. */}
             <p className="footer__wordmark">
-              Keramická <em>zahrada.</em>
+              <span {...editable(footerCopy, "title")}>{wordmarkLead}</span>{" "}
+              <em {...editable(footerCopy, "headline")}>{wordmarkAccent}</em>
             </p>
 
-            <p className="footer__statement">
-              Keramika pro zahradu i domov. Všechno vzniká rukama
-              v píseckém ateliéru.
+            <p className="footer__statement" {...editable(footerCopy, "body")}>
+              {statement}
             </p>
 
             <div className="footer__socials" aria-label="Sociální sítě">
-              {socialLinks.map((link) => (
+              {socials.map((social, index) => (
                 <FooterIcon
-                  key={link.label}
-                  href={link.href}
-                  icon={link.icon}
-                  alt={link.label}
+                  key={`${social.label}-${index}`}
+                  href={social.href}
+                  icon={social.icon}
+                  alt={social.label}
                   className="footer__socialLink"
+                  /* Anotace míří na adresu v řádku seznamu. Jméno a ikona se mění tamtéž,
+                     jen ve formuláři bloku — na stránce je ikona obrázek bez textu, takže
+                     není co psát v místě. */
+                  edit={editable(socialBlock, `items.${index}.value`)}
                 />
               ))}
             </div>
@@ -212,11 +315,19 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
               aria-labelledby="newsletter-title"
             >
               <div className="footer__newsletterCopy">
-                <span>Novinky · 01</span>
-                <p id="newsletter-title" className="footer__newsletterTitle">Ozveme se, když bude co říct.</p>
-                <p>Novinky z ateliéru a termíny kurzů. Nic víc.</p>
+                <span {...editable(newsletterCopy, "accent.0")}>
+                  {newsletterEyebrow}
+                </span>
+                <p
+                  id="newsletter-title"
+                  className="footer__newsletterTitle"
+                  {...editable(newsletterCopy, "title")}
+                >
+                  {newsletterTitle}
+                </p>
+                <p {...editable(newsletterCopy, "body")}>{newsletterLede}</p>
               </div>
-              <Newsletter />
+              <Newsletter block={newsletterCopy} />
             </section>
 
             <nav className="footer__navigation" aria-label="Navigace v patičce">
@@ -232,7 +343,7 @@ export default function Footer({ merchant }: { merchant: MerchantIdentity }) {
             one bordered row the difference showed up as a hole under the link groups. Across the
             full width the two columns come out within ~35px of each other, and the merchant details
             get a line of their own instead of a 270px gutter that broke the e-mail mid-word. */}
-        <MerchantBlock merchant={merchant} />
+        <MerchantBlock merchant={merchant} block={footerCopy} />
 
         <div className="footer__bottom">
           <div className="footer__payments">
@@ -326,15 +437,19 @@ function FooterIcon({
   icon,
   alt,
   className,
+  edit,
 }: {
   href: string
   icon: string
   alt: string
   className: string
+  /** Atributy překryvu z `editableLink`. Mimo náhled je to prázdný objekt. */
+  edit?: Record<string, string | undefined>
 }) {
   return (
     <a
       href={href}
+      {...edit}
       className={className}
       target="_blank"
       rel="noreferrer"
@@ -355,7 +470,7 @@ function FooterIcon({
  * one failure a made-to-order atelier cannot afford. This one reports what
  * happened.
  */
-function Newsletter() {
+function Newsletter({ block }: { block?: CopyBlock }) {
   const [status, setStatus] = useState<"idle" | "done" | "error">("idle")
 
   const submit = async (formData: FormData) => {
@@ -378,7 +493,9 @@ function Newsletter() {
 
   return (
     <form className="newsletter__container" action={submit}>
-      <label htmlFor="footer-newsletter-email">Váš e-mail</label>
+      <label htmlFor="footer-newsletter-email" {...editable(block, "accent.1")}>
+        {block?.accent?.[1]?.trim() || "Váš e-mail"}
+      </label>
       <div className="newsletter__controls">
         <input
           id="footer-newsletter-email"
@@ -389,21 +506,25 @@ function Newsletter() {
           autoComplete="email"
           required
         />
-        <PremiumActionButton
-          type="submit"
-          text="Odebírat"
-          compact
-          className="newsletter__button"
-        />
+        {/* Obal, ne tlačítko: `PremiumActionButton` si vykresluje vlastní vnitřek a
+            datové atributy by skončily na prvku, který se při animaci přepisuje. */}
+        <span {...editable(block, "accent.2")}>
+          <PremiumActionButton
+            type="submit"
+            text={block?.accent?.[2]?.trim() || "Odebírat"}
+            compact
+            className="newsletter__button"
+          />
+        </span>
       </div>
       {status === "error" ? (
         <p className="newsletter__error" role="alert">
           Nepovedlo se to uložit, zkuste to prosím znovu.
         </p>
       ) : null}
-      <p>
-        Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání
-        novinek. Odběr ještě potvrdíte kliknutím v e-mailu.
+      <p {...editable(block, "accent.3")}>
+        {block?.accent?.[3]?.trim() ||
+          "Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek. Odběr ještě potvrdíte kliknutím v e-mailu."}
       </p>
     </form>
   )
@@ -414,33 +535,87 @@ function Newsletter() {
  * Ink on the footer surface (7.8:1 on sage) rather than the muted token — this is
  * information to be read, not atmosphere.
  */
-function MerchantBlock({ merchant }: { merchant: MerchantIdentity }) {
+function MerchantBlock({
+  merchant,
+  block,
+}: {
+  merchant: MerchantIdentity
+  block?: CopyBlock
+}) {
+  /*
+   * Z CMS jdou POPISKY, ne hodnoty.
+   *
+   * Jméno, sídlo, IČO, e-mail a telefon nesou `getMerchantIdentity()` a proměnné prostředí,
+   * a čtou je i obchodní podmínky, checkout, potvrzení objednávky a reklamační protokol.
+   * Kdyby se přepisovaly tady, mohla by patička tvrdit něco jiného než doklad, který ze
+   * stejných údajů vzniká — a to je rozpor, který se pozná až u reklamace.
+   */
+  const labels = block?.items ?? []
+  const labelAt = (index: number, fallback: string) =>
+    labels[index]?.label?.trim() || fallback
+
+  /*
+   * E-mail a telefon jdou z CMS včetně cíle odkazu.
+   *
+   * Řádek nese vypsaný tvar (`value`) a adresu odkazu (`note`), takže `editableLink` otevře
+   * popup s obojím — jinak by šlo změnit číslo, ale ne to, kam volá. Prázdné pole spadne na
+   * `getMerchantIdentity()`.
+   *
+   * POZOR: tytéž údaje čtou i obchodní podmínky, ochrana údajů, odstoupení od smlouvy,
+   * doprava a platba, checkout a reklamační protokol — ty berou dál `getMerchantIdentity()`.
+   * Změna tady se tedy projeví v patičce, ne v dokladech.
+   */
+  const textAt = (index: number, fallback: string) =>
+    labels[index]?.value?.trim() || fallback
+  const hrefAt = (index: number, fallback: string) =>
+    labels[index]?.note?.trim() || fallback
+
+  const rows: {
+    label: string
+    value: React.ReactNode
+    labelField: string
+  }[] = [
+    { label: labelAt(0, "Prodávající"), value: merchant.name, labelField: "items.0.label" },
+    { label: labelAt(1, "Sídlo"), value: merchant.address, labelField: "items.1.label" },
+    {
+      label: labelAt(2, "IČO"),
+      value: merchant.registrationNumber,
+      labelField: "items.2.label",
+    },
+    {
+      label: labelAt(3, "E-mail"),
+      labelField: "items.3.label",
+      value: (
+        <a
+          href={hrefAt(3, `mailto:${merchant.email}`)}
+          {...editableLink(block, { text: "items.3.value", href: "items.3.note" })}
+        >
+          {textAt(3, merchant.email)}
+        </a>
+      ),
+    },
+    {
+      label: labelAt(4, "Telefon"),
+      labelField: "items.4.label",
+      value: (
+        <a
+          href={hrefAt(4, `tel:${merchant.phoneDial}`)}
+          {...editableLink(block, { text: "items.4.value", href: "items.4.note" })}
+        >
+          {textAt(4, merchant.phone)}
+        </a>
+      ),
+    },
+  ]
+
   return (
     <dl className="footer__identity">
-      <div>
-        <dt>Prodávající</dt>
-        <dd>{merchant.name}</dd>
-      </div>
-      <div>
-        <dt>Sídlo</dt>
-        <dd>{merchant.address}</dd>
-      </div>
-      <div>
-        <dt>IČO</dt>
-        <dd>{merchant.registrationNumber}</dd>
-      </div>
-      <div>
-        <dt>E-mail</dt>
-        <dd>
-          <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
-        </dd>
-      </div>
-      <div>
-        <dt>Telefon</dt>
-        <dd>
-          <a href={`tel:${merchant.phoneDial}`}>{merchant.phone}</a>
-        </dd>
-      </div>
+      {rows.map((row, index) => (
+        <div key={row.label}>
+          <dt {...editable(block, row.labelField)}>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
     </dl>
   )
 }

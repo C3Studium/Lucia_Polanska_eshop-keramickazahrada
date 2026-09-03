@@ -1,12 +1,49 @@
 "use client"
 
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { editable, editableSet } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock, FaqCategory, FaqQuestion } from "@lib/util/site-copy"
+import { shaderImages } from "@lib/util/site-copy"
 import FAQBody from "@modules/dotazy/FAQ"
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion"
 import { useRef, type PointerEvent } from "react"
-import FAQImageShader from "./FAQImageShader"
+import FAQImageShader, { faqImages } from "./FAQImageShader"
+import { alpha, palette } from "styles/palette.generated"
 
-export default function DotazyMain () {
+export default function DotazyMain ({
+    block,
+    texts,
+    hero,
+    cmsQuestions,
+    cmsCategories,
+}: {
+    /** `dotazy.galerie` — fotky shaderu i u kontaktní výzvy. */
+    block?: CopyBlock
+    /** `dotazy.otazky` — znění otázek a odpovědí + texty kolem seznamu. */
+    texts?: CopyBlock
+    /** `dotazy.hero` — texty úvodní obrazovky. */
+    hero?: CopyBlock
+    /** Dokumenty typu `qna` — otázky, jedna = jeden dokument. */
+    cmsQuestions?: FaqQuestion[]
+    /** Dokumenty `qnaKategorie` — čipy filtru. */
+    cmsCategories?: FaqCategory[]
+}) {
+    /* Stránka se hýbe jen hodnotami ze scrollu — bez tohohle by se po zapnutí režimu
+       editace nepřekreslila a `editable()` by zůstalo prázdné. Viz hook. */
+    useEditRerender()
+
+    const railLeft = hero?.accent?.[0]?.trim() || "Pomoc & informace"
+    const railRight = hero?.accent?.[1]?.trim() || "Ateliér Lucie Polanské · 01"
+    const kicker = hero?.accent?.[2]?.trim() || "Nejčastější otázky · 01"
+    const ctaText = hero?.accent?.[3]?.trim() || "Přejít na odpovědi"
+    const scrollCue = hero?.accent?.[4]?.trim() || "Pokračovat"
+    const titleLead = hero?.title?.trim() || "Zeptejte se"
+    const titleAccent = hero?.headline?.trim() || "na cokoliv."
+    const lede =
+        hero?.bodyText?.trim() ||
+        "Objednávky, péče o keramiku, zakázková výroba i kurzy — všechno na jednom místě."
+
     const heroRef = useRef<HTMLDivElement>(null)
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
     // const reduceMotion = useReducedMotion()
@@ -16,7 +53,7 @@ export default function DotazyMain () {
     const cursorY = useSpring(pointerY, { stiffness: 105, damping: 15, mass: 0.42 })
     const glowX = useTransform(cursorX, [-0.5, 0.5], ["54%", "74%"])
     const glowY = useTransform(cursorY, [-0.5, 0.5], ["34%", "68%"])
-    const heroLight = useMotionTemplate`radial-gradient(circle at ${glowX} ${glowY}, rgba(255, 232, 214, 0.34) 0%, rgba(255, 232, 214, 0.14) 24%, rgba(255, 232, 214, 0) 58%)`
+    const heroLight = useMotionTemplate`radial-gradient(circle at ${glowX} ${glowY}, ${alpha("cream06", 0.34)} 0%, ${alpha("cream06", 0.14)} 24%, ${alpha("cream06", 0)} 58%)`
     const { scrollYProgress } = useScroll({
         target: heroRef,
         offset: ["start start", "end start"],
@@ -89,8 +126,8 @@ export default function DotazyMain () {
                         animate={animate}
                         transition={transition}
                     >
-                        <span>Pomoc &amp; informace</span>
-                        <span>Ateliér Lucie Polanské · 01</span>
+                        <span {...editable(hero, "accent.0")}>{railLeft}</span>
+                        <span {...editable(hero, "accent.1")}>{railRight}</span>
                     </motion.div>
                 </motion.div>
                 <motion.div
@@ -100,7 +137,31 @@ export default function DotazyMain () {
                     transition={transition2}
                     style={{ opacity: heroChromeOpacity, y: heroChromeY }}
                 >
-                    <FAQImageShader pointerX={pointerX} pointerY={pointerY} />
+                    {/* Textury shaderu z CMS. Bucket posílá CORS hlavičky
+                        a `THREE.TextureLoader` si `crossOrigin` nastavuje sám,
+                        takže se načtou stejně jako soubory z `public/`.
+                        Poměr stran jde s nimi — shader ho potřebuje dřív, než
+                        se obrázek stáhne, jinak by karty po načtení poskočily.
+
+                        Anotace je `editableSet` na celé sadě: fotky žijí ve WebGL
+                        plátně, takže jednotlivě chytit nejdou — kliknutí na scénu
+                        otevře editor celé „Sady obrázků" bloku `dotazy.galerie`,
+                        odkud jdou vyměnit po jedné. */}
+                    {/* Cíl pro editaci musí mít PLOCHU: holý div tu měl nulovou výšku
+                        (karty shaderu se pozicují vůči scéně, ne vůči němu), takže anotace
+                        byla, ale nebylo kam kliknout. Mimo editor je vrstva neklikatelná
+                        jako celá scéna — atribut, na který míří globální pravidlo
+                        `[data-cms-field] { pointer-events: auto }`, existuje jen v editoru. */}
+                    <div
+                        className="faqShaderEditTarget"
+                        {...editableSet(block, "gallery")}
+                    >
+                        <FAQImageShader
+                            pointerX={pointerX}
+                            pointerY={pointerY}
+                            imageSet={shaderImages(block, faqImages)}
+                        />
+                    </div>
                 </motion.div>
                 <motion.div
                     className="faqHeroCaption"
@@ -112,16 +173,23 @@ export default function DotazyMain () {
                         animate={animate}
                         transition={transition3}
                     >
-                        <span className="faqHeroKicker">Nejčastější otázky · 01</span>
+                        <span className="faqHeroKicker" {...editable(hero, "accent.2")}>
+                            {kicker}
+                        </span>
                         {/* The page started its outline at h2 — screen-reader users navigating
-                            by heading landed nowhere. This is the page's h1. */}
+                            by heading landed nowhere. This is the page's h1.
+                            Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
                         <h1>
-                            Zeptejte se
-                            <em> na cokoliv.</em>
+                            <span {...editable(hero, "title")}>{titleLead}</span>
+                            <em {...editable(hero, "headline")}> {titleAccent}</em>
                         </h1>
-                        <p>Objednávky, péče o keramiku, zakázková výroba i kurzy — všechno na jednom místě.</p>
-                        <a href="#faq-section-title" onClick={scrollToAnswers}>
-                            Přejít na odpovědi
+                        <p {...editable(hero, "body")}>{lede}</p>
+                        <a
+                            href="#faq-section-title"
+                            onClick={scrollToAnswers}
+                            {...editable(hero, "accent.3")}
+                        >
+                            {ctaText}
                             <span aria-hidden="true">↓</span>
                         </a>
                     </motion.div>
@@ -134,7 +202,7 @@ export default function DotazyMain () {
                     transition={transition4}
                     aria-hidden="true"
                 >
-                    <span>Pokračovat</span>
+                    <span {...editable(hero, "accent.4")}>{scrollCue}</span>
                     <i />
                 </motion.div>
             </motion.div>
@@ -152,7 +220,12 @@ export default function DotazyMain () {
                 FAQ
             </motion.p>
 
-            <FAQBody />
+            <FAQBody
+                block={block}
+                texts={texts}
+                cmsQuestions={cmsQuestions}
+                cmsCategories={cmsCategories}
+            />
         </section>
     )
 }

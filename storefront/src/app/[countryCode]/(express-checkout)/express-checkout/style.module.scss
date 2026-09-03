@@ -1,87 +1,320 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * The whole express-checkout shell: .shell > .frame > (.brandHeader + .flow > <main>).
+ * The routed <main> is drawn by modules/express-checkout/Result — this file owns the
+ * window height, that one owns its content.
+ *
+ * The chrome above and below the routed slot used to be a number counted by hand in the
+ * other file (calc(100svh - 160px), while the real chrome was 210 — 28+28 gutter, 76
+ * header, 38+38 flow, 2 border, which is where the 50px overflow came from). Here it is
+ * named once and derived everywhere:
+ *   --x-pad-y      the shell's gutter, one side
+ *   --x-head-h     the brand header
+ *   --x-flow-pad-y the flow's vertical padding, one side
+ * There is deliberately no --x-chrome totalling those up. Nothing needs it: the frame
+ * subtracts 2 × --x-pad-y from 100svh and the flow (flex: 1) hands the rest to the slot,
+ * so no box anywhere has to know the sum. A variable holding it would only be the same
+ * hand-counted constant with a nicer name, waiting to drift the moment a border moves —
+ * the first draft of it was already 2px short, having forgotten the frame's own edge.
+ */
 .shell {
+  /* Below 400px the card is edge to edge, so the gutter is zero and the frame's
+     min-height subtracts nothing. v(s)/h(xxs) turn the gutter on — see below. */
+  --x-pad-y: 0rem;
+  --x-pad-x: 0rem;
+  /* 54.4 -> 76px, live 680-950 tall: 76 from a 950px-tall screen up (what the design
+     asked for), and 54 on a 1220x660 laptop, where those 22px are height nobody has.
+     Round 2 asked whether that floor should drop to 2.75rem, on the reading that a
+     320px-tall phone spends 17% of its screen on a logo bar. Measured rather than
+     guessed, by forcing the floor to 2.75rem at run time: the header moved 0.00px on
+     all five phone viewports (63.16 / 72 / 74.81 / 55.22 / 58.75, before and after)
+     and -1.59px on the 1220x660 laptop (54.39 -> 52.80). The floor is no longer what
+     sets the header on a phone; the 44px touch target on .brand is. 44 + 2 x padding
+     + 1px border is 55.24 at 568x320, already over 54.4, so the header is content
+     driven there and the floor only ever binds on the laptop. Lowering it would buy
+     the phone nothing and move the one screen that must not move. Stays 3.4rem. */
+  --x-head-h: clamp(3.4rem, 8vh, 4.75rem);
+  /* Vertical, so vh: 17.6 -> 38px, live 518-1118 tall. It was clamp(22px, 5vw, 38px) —
+     one clamp for both axes, so window WIDTH drove the top and bottom padding and a
+     1366x768 laptop got the full 38px top and bottom on the axis it can least afford.
+     Round 2 lowered the floor 1.1 -> .65rem (17.6 -> 10.4px), which moves the live band
+     from 518-1118 to 306-1118 tall. A vh floor is by definition only ever active on a
+     SHORT screen, and below 518 there is nothing but a phone held sideways — the lowest
+     laptop in the matrix is 660 — so the old floor froze a laptop-calibrated 17.6px onto
+     the one screen that has 320px of height in total. At 320 tall 3.4vh = 10.9px, so the
+     phone gets 2 x 6.7 = 13.4px of document back and nothing above 1200 wide moves. */
+  --x-flow-pad-y: clamp(.65rem, 3.4vh, 2.375rem);
+  /* The axis that measures the CARD, as opposed to the field around it.
+     .frame is width: min(100%, 40rem), so above roughly 690px of window the card stops
+     growing and the window's width stops being a description of it. Everything that is a
+     proportion of the card — its corner, the gutter inside it, the space between the mark
+     and the wordmark — was nevertheless written in vw, and vw kept moving after the thing
+     it measures had stopped. Measured on one device rotated (.rdshots/_xr3-rot.cjs), the
+     identical 640px card:
+         1024x768 sideways   radius 26.62  gutter 30.72  brand gap 8.70
+          768x1024 upright   radius 20.00  gutter 23.04  brand gap 8.00
+     and that upright column is, to the pixel, what a 430x932 phone gets (20 / 22 / 8) on a
+     card 58% narrower. Turning the tablet on its side made its card less round.
+     One name, switched once in v(md) below, rather than three overrides: the ratios stay
+     written in one place with rem ends, so the >=1921 root-rem ramp still lifts them and
+     nothing about landscape or the phone can move. */
+  --x-axis: 1vw;
+
   box-sizing: border-box;
   position: relative;
   z-index: 1;
   width: 100%;
   min-height: 100svh;
-  padding: 0;
-  color: #212222;
+  padding: var(--x-pad-y) var(--x-pad-x);
+  color: var(--black-03);
   background:
-    radial-gradient(circle at 78% 2%, rgba(199,152,121,.18), transparent 24rem),
-    #eee8d6;
+    radial-gradient(circle at 78% 2%, rgb(var(--clay-32-rgb) / .18), transparent 24rem),
+    var(--cream-03);
 
+  /* Both stops carry the same thing on purpose: ≥400px in either orientation is where
+     the layout changes KIND — full-bleed sheet becomes a floating card with a gutter.
+     Only the gutter is switched here; every size in it is a clamp in the base rule.
+     Vertical 12 -> 28px (live 545-1273 tall), horizontal 12 -> 28px (live 400-933). */
   @include v(s) {
-    padding: clamp(12px, 3vw, 28px);
+    --x-pad-y: clamp(.75rem, 2.2vh, 1.75rem);
+    --x-pad-x: clamp(.75rem, 3vw, 1.75rem);
   }
 
   @include h(xxs) {
-    padding: clamp(12px, 3vw, 28px);
+    --x-pad-y: clamp(.75rem, 2.2vh, 1.75rem);
+    --x-pad-x: clamp(.75rem, 3vw, 1.75rem);
+  }
+
+  /* Kind, not size, and it stands AFTER h(xxs) because that is the rule it overrides.
+     On a 320px-tall screen the 2 x 12px gutter is 7.5% of the whole viewport height, so
+     the card goes back to being the full-bleed sheet the base state already uses below
+     400px — the same switch, decided on the other axis. --x-pad-x deliberately stays:
+     3vw is live at both 568 and 932 wide, and the side gutter is the only thing keeping
+     the card off the edge. Written into phs only: phs is >=480 / <=520 tall, so 932x430
+     matches it as well as phl, and a phl copy would be a second set of the same rule. */
+  @include h(phs) {
+    --x-pad-y: 0rem;
+  }
+
+  /* The other half of the height cap in .frame below, and it belongs here rather than
+     there: the frame centres itself with margin: 0 auto, which is horizontal only — an
+     auto vertical margin computes to 0 in a block formatting context — so a card that
+     stops filling the window drops to the top of it instead of sitting in it. The shell
+     has exactly one child, so a grid with align-content: center puts the single row in
+     the middle of whatever height is left over. Kind, not size: the gutter above is
+     untouched and 100svh keeps its job as the floor.
+     align-content on the container, not place-items: center on it — that one is a named
+     trap, because it fails once the item is taller than its cell. The overflow case is
+     safe here because the shell has min-height, not height, so it grows with its content
+     and the free space it centres can never be negative. Measured on the state that
+     actually overflows, the 1264.7px loading skeleton: at 1024x1366 the shell grows to
+     1476px, the frame's top stays at 28px — which is --x-pad-y, not a negative offset —
+     and the document scrolls. Nothing is pushed above the origin.
+     Left at v(md) although only v(lg) caps the frame: at 768x1024 the frame still fills
+     the window, so the free space is 0 and centring is a no-op there (measured, the frame
+     does not move by a pixel). Keeping the wider stop costs nothing and means any express
+     route whose content is shorter than the window sits in it rather than at the top. */
+  @include v(md) {
+    display: grid;
+    align-content: center;
+    /* The other half of --x-axis, and it is a change of KIND, not a size: no number below
+       moves, the axis they are measured on does. Upright and at least 600px wide is the one
+       shape where the card is width-capped AND the window has more height than width, so the
+       long axis — the one that actually says how big the screen is — is vh. Every coefficient
+       (2.6 for the corner, 3 for the gutter, .85 for the brand gap) is untouched, which is
+       what makes the result checkable: rotating a device must now leave the card's own
+       geometry alone. Measured after, on the same 640px card:
+           1024x768 sideways / 768x1024 upright    26.62 / 30.72 / 8.70 on both
+          1366x1024 sideways / 1024x1366 upright   34.00 / 38.00 / 11.61 on both
+       Nothing else can reach this: the stop is (min-width: 600px) and (orientation:
+       portrait), so no landscape viewport matches it and no phone is 600px wide upright.
+       The two tablets are the whole of its audience, which is the point. */
+    --x-axis: 1vh;
   }
 }
 
 .frame {
   box-sizing: border-box;
-  width: min(100%, 640px);
-  min-height: 100svh;
+  /* A column flex box, so the height contract belongs to the shell: the header takes
+     what it needs and .flow takes the rest. Before this the frame was a block, the flow
+     stopped at its content and the card carried a 409px dead band at the bottom on a
+     2552x1351 screen. */
+  display: flex;
+  /* 40rem, not 640px. 640px is 40rem at the default root size, so nothing moves below
+     1921 — and above it the root-rem ramp in globals.scss lifts the cap on its own
+     (851px at 2552 wide, where a px cap left the card the same width as on a 1366). */
+  width: min(100%, 40rem);
+  min-height: calc(100svh - 2 * var(--x-pad-y));
   margin: 0 auto;
   overflow: hidden;
+  flex-direction: column;
   border: 0;
   border-radius: 0;
-  background: rgba(255,248,238,.38);
-  box-shadow: 0 38px 80px -58px rgba(33,34,34,.8);
+  background: rgb(var(--cream-10-rgb) / .38);
+  /* The same numbers the card always had (38/80/58px are 2.375/5/3.625rem at the
+     default root size), written so the ramp carries them: the card is 1.33x wider
+     above 1921 and its shadow grows with it instead of staying a 1920-sized smudge.
+     The blur below stays in px on purpose — that is how thick the glass is, not how
+     big the layout is, the same bucket as the hairline borders. */
+  box-shadow: 0 2.375rem 5rem -3.625rem rgb(var(--black-03-rgb) / .8);
   backdrop-filter: blur(12px);
+  /* The effect budget, which this blur had no guard for. Every phone in the matrix
+     reports data-fx="reduced" (touch), and the ambient shader canvas is off there, so
+     the blur is paying GPU to smear a static gradient and nothing else. The panel keeps
+     its own surface — rgb(var(--cream-10-rgb) / .38) above — so dropping the filter
+     changes the paint cost, not the colour. */
+  @include reduced-fx {
+    backdrop-filter: none;
+  }
 
+  /* Kind, not size: the sheet becomes a card, so it gets an edge and corners.
+     20 -> 34px, live 769-1308 along --x-axis. The corner is a proportion of the card, not
+     of the window, so the coefficient rides the shared axis rather than vw directly — see
+     --x-axis in .shell. In landscape the axis IS vw and this is the value it always had;
+     upright on a tablet it is vh, which is what stops a rotated iPad losing 6.6px of
+     corner on a card that did not change width. A percentage would have been the obvious
+     alternative and is wrong here: border-radius resolves a percentage against width for
+     the horizontal radius and height for the vertical one, so on an 640x800 card it would
+     draw an ellipse. */
   @include v(s) {
-    min-height: calc(100svh - clamp(24px, 6vw, 56px));
-    border: 1px solid rgba(33,34,34,.18);
-    border-radius: clamp(20px, 4vw, 34px);
+    border: 1px solid rgb(var(--black-03-rgb) / .18);
+    border-radius: clamp(1.25rem, calc(2.6 * var(--x-axis)), 2.125rem);
   }
 
   @include h(xxs) {
-    min-height: calc(100svh - clamp(24px, 6vw, 56px));
-    border: 1px solid rgba(33,34,34,.18);
-    border-radius: clamp(20px, 4vw, 34px);
+    border: 1px solid rgb(var(--black-03-rgb) / .18);
+    border-radius: clamp(1.25rem, calc(2.6 * var(--x-axis)), 2.125rem);
+  }
+
+  /* Consequence of --x-pad-y: 0rem on phs, and it stands AFTER h(xxs) for the same reason
+     that one does. With the vertical gutter gone the card's top edge is the screen's top
+     edge, and the shot showed exactly what that looks like: two curved notches at y=0
+     with a sliver of shell cream outside them, a card jammed against the top rather than
+     a decision. Straight block edges instead — the same sheet the base state draws below
+     400px, only here it keeps its side border, because --x-pad-x is still live and there
+     is still a gutter for that border to sit in. Kind only; no size in this block. */
+  @include h(phs) {
+    border-block: 0;
+    border-radius: 0;
+  }
+
+  /* Kind, not size, and last in the rule because the thing it overrides is the base
+     min-height — the contract that says the card is at least as tall as the window.
+     That contract is the phone's: there the card IS the screen, full bleed below 400px,
+     because a phone has neither the width nor the height to be anything else. A tablet
+     held upright has both, and v(s) three blocks up already declares the change of kind
+     that follows from it — the sheet becomes a card. Only the card never stopped
+     stretching, and nobody asked whether the height contract survived the change.
+     On a 1024x1366 iPad Pro it does not. This route shows one status message — badge,
+     eyebrow, headline, two lines, CTA, back link — 570.4px of it, and all three states
+     (pending / failed / canceled) are the same height. Stretched to the window that is a
+     640x1310 card, 1:2.05, carrying 292.3px of dead cream above the content and 292.3px
+     below: 45% of the card, and the exact proportions of a phone screen, enlarged. It
+     reads as something that failed to load rather than as a decision.
+     A cap, not min-height: 0. Hugging the content gives 640x725.4, 1:1.13, with zero
+     slack inside — the content touching the card's own edge. 50rem is 800px: 37.3px of
+     slack inside the card, 283px of field above and below it, 1:1.25. Measured across
+     the range (.rdshots/_xr3-cap-sweep.cjs): 46rem leaves 5.3px and is visibly cramped;
+     58rem is 1:1.45, the desktop's shape, but puts 101.3px of dead cream back inside.
+     min-height and not max-height, and no overflow: this same box carries the loading
+     state, and that skeleton is 1264.7px tall — nearly twice the cap. A ceiling would
+     guillotine it. As a floor the cap simply stops binding and the card grows to 1419.7px,
+     which is what it does today.
+     v(lg), not v(md), and this replaces a `@include v(md) { min-height: 0 }` that the
+     confirmation-route pass left here — one sheet, four routes, so that rule reached this
+     one too. 600px is too low a stop for it: at 768x1024 the card is 640x978.9, 1:1.53,
+     which is the shape the 1512x982 desktop already draws (640x938.8, 1:1.47) and is
+     right. min-height: 0 pulled it to 640x695.6, 1:1.09. v(lg) is >=1000 and portrait, so
+     of the whole matrix only 1024x1366 matches and only 1024x1366 moves. */
+  @include v(lg) {
+    min-height: min(calc(100svh - 2 * var(--x-pad-y)), 50rem);
   }
 }
 
 .brandHeader {
   box-sizing: border-box;
   display: flex;
-  min-height: 68px;
-  padding: 16px clamp(18px, 5vw, 32px);
+  /* Was written three times — 68px here, 76px in v(s), 76px in h(xxs). One clamp, and
+     the two breakpoint blocks are gone. */
+  min-height: var(--x-head-h);
+  /* Split axes: 9.6 -> 16px on height (live 600-1000), 18 -> 32px on width.
+     Round 2 lowered the vertical floor .6 -> .3rem (9.6 -> 4.8px), live band now
+     300-1000 tall. Reason: the 44px touch target on .brand below pushes this header from
+     54 to 63px, and it does that exactly on the phone held sideways, where height is the
+     scarcest thing on the page. The floor was only ever active below 600px tall, so the
+     lowest laptop we ship (1220x660, 1.6vh = 10.6px) is on the live member and does not
+     move. The horizontal member is untouched. Measured after: header 55px @568x320,
+     59px @932x430, 63px @320x568 — portrait has the height and the document stays 568. */
+  padding: clamp(.3rem, 1.6vh, 1rem) clamp(1.125rem, 5vw, 2rem);
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid rgba(33,34,34,.16);
-
-  @include v(s) {
-    min-height: 76px;
-  }
-
-  @include h(xxs) {
-    min-height: 76px;
-  }
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .16);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  color: #20211c;
+  /* 8 -> 13.6px, live 941-1600 along --x-axis. The half of the masthead that the round
+     which rescaled the mark and the wordmark did not reach: both of those went onto
+     max(vw, vh) and grew on an upright tablet, and the space between them stayed on vw and
+     did not, so a 1024x1366 iPad Pro was drawing a 39.2px mark and a 21.86px wordmark —
+     desktop sizes — separated by the 8.70px gap a 1024x768 tablet uses for a 33.6px mark.
+     On the shared axis it is 11.61px there, which is what the same device sideways draws.
+     It cannot be max(vw, vh) like the two members it separates: their floors (1.2/2.1rem)
+     are high enough that a 932px-tall phone stays under them, and .5rem is not — an
+     unguarded vh member would have moved the phone by .76px, and the phone round is
+     finished. --x-axis carries the same idea through a stop the phone cannot match. */
+  gap: clamp(.5rem, calc(.85 * var(--x-axis)), .85rem);
+  color: var(--ink-05);
   text-decoration: none;
+  /* The 44px floor in globals.scss:414 covers button / [role=button] / input, and leaves
+     <a> out on purpose ("inline text links keep their natural line box"). This one is not
+     prose: it is the header's only control, and it measured 186x23 on all five phone
+     viewports. 2.75rem, not 44px, so the root-rem ramp lifts it like everything else. */
+  @include touch {
+    min-height: 2.75rem;
+  }
 
+  /* Both members below are max(vw, vh) inside the same clamp, and it is one idea, so it
+     is written down once here rather than twice underneath.
+     A single vw member asks "how wide is the window", and in portrait the answer is
+     always "not very" — so both of these sat on their floors at 19.2 and 33.6px on a
+     430x932 phone, a 768x1024 iPad and a 1024x1366 iPad Pro alike. Three screens, one
+     header, the smallest one's. A 1024x1366 viewport has a longer diagonal than the
+     1366x768 laptop below it in the matrix (1707 against 1567) and was still wearing the
+     phone's masthead.
+     The size of a screen is its LONGER axis, so max(vw, vh) asks that instead. The floor
+     and the ceiling stay in rem, so the >=1921 root-rem ramp still lifts both ends.
+     Crossover is 1.45vw = 1.6vh, i.e. an aspect ratio of 1.10: every landscape viewport
+     is wider than that and keeps the vw member untouched (1512x982: 21.92vw against
+     15.71vh), and every phone lands under the floor and keeps the floor (430x932: 14.91).
+     The one screen with enough height for the vh member to win is 1024x1366, which is the
+     screen that was wrong. Measured over the whole matrix, exactly one row moves:
+     19.2 -> 21.86px and 33.6 -> 39.20px, landing beside the 1512x982 desktop's 21.92 /
+     39.31 — the right neighbour for a 1707px diagonal.
+     Both stay clear of their limits by design. 768x1024 is the near miss to watch, since
+     1366x1024 is exactly as tall and must not move: the vh member would have to reach
+     1.875 to lift 768x1024 off its floor and 1.934 to overtake 1366x1024's vw member, so
+     1.6 keeps a 17% margin below the first and never approaches the second. */
   img {
-    width: 42px;
+    /* Was a flat 42px, so the mark stayed 42px on a 2552 screen where the rem is
+       21.27 — optically half the size of everything around it. 33.6 -> 44px,
+       live 1292-1692 wide, and the ramp lifts both ends above 1921.
+       2.87vh is 2.6vw x (2.6 / 1.45), so the mark and the wordmark keep the proportion
+       they have on every other screen: 39.20 / 21.86 is 1.79, and so is 2.6 / 1.45. */
+    width: clamp(2.1rem, max(2.6vw, 2.87vh), 2.75rem);
     height: auto;
   }
 
   span {
-    font: 400 22px/1 "Times New Roman", serif;
+    /* Same story as the mark: 22px flat became 19.2 -> 24px, live 1324-1655. */
+    font: 400 clamp(1.2rem, max(1.45vw, 1.6vh), 1.5rem)/1 "Times New Roman", serif;
     letter-spacing: -.035em;
   }
 
   em {
-    color: #7e896b;
+    color: var(--olive-19);
     font-weight: 400;
   }
 }
@@ -90,25 +323,61 @@
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  padding: clamp(22px, 5vw, 38px);
+  /* Horizontal 22 -> 38px, live 733-1267 along --x-axis; vertical from the shared name.
+     This is the gutter INSIDE the card, so it is a proportion of the card and rides the
+     shared axis — the visible half of the bug --x-axis exists for. On vw the upright iPad
+     put 23.04px between the CTA and the card's edge, on an identical 640px card where the
+     same device sideways puts 30.72px and a desktop puts 38px: the button ran 591.9px wide
+     instead of 562.0, i.e. the card was the desktop's and the margin inside it was the
+     phone's (22px at 430x932). The content column is the thing a reader actually sees
+     move, which is why this member matters more than the corner above it. */
+  padding: var(--x-flow-pad-y) clamp(1.375rem, calc(3 * var(--x-axis)), 2.375rem);
+  /* Takes every pixel the header leaves, and min-height: 0 so it is the flex layout,
+     not an automatic minimum, that decides. */
+  flex: 1 1 auto;
+  min-height: 0;
   flex-direction: column;
-  gap: 10px;
+  /* No breakpoint: on a tall screen the slot is taller than its content and the content
+     sits optically in the middle instead of leaving 373px of empty cream under it
+     (1920x1080) or 637px (2552x1351); on a short one free space is zero and this does
+     nothing at all. Flexbox works out which case it is. */
+  justify-content: center;
+  gap: clamp(.4rem, 1vh, .7rem);
 }
 
-.flow :global(button:focus-visible),
-.flow :global(a:focus-visible),
-.flow :global(input:focus-visible),
-.flow :global([role="radio"]:focus-visible),
-.flow :global([role="combobox"]:focus-visible) {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 3px;
+/*
+ * Override, so it stands AFTER the rule it overrides — same specificity would otherwise
+ * be decided by source order, and that is the mistake this system warns about.
+ *
+ * The routed slot is the flow's only child. min-height: 0 is the contract: whatever height
+ * the module thinks the window has, the slot's height comes from here. It is what
+ * neutralises a hand-counted calc(100svh - N) inside the module — the one that overflowed
+ * every landscape viewport by 50px — and it keeps doing so if one ever comes back.
+ *
+ * flex: 0 1 auto (the initial value, written down because it is a decision): the slot is
+ * as tall as its content and .flow centres it. Stretching it with flex: 1 would put the
+ * dead band back, because the module's own box aligns its children to the start.
+ *
+ * Two components land here, not one: modules/express-checkout/Result and — on every one of
+ * the three express routes, this one included — the loading state,
+ * modules/skeletons/templates/skeleton-express-checkout, whose root is also a <main>. Both
+ * want exactly this, so the selector is right; it is the "reaches Result only" reading that
+ * was wrong, and acting on it (say, by moving a Result-specific rule in here) would silently
+ * hit the skeleton too.
+ */
+.flow > :global(main) {
+  flex: 0 1 auto;
+  min-height: 0;
 }
+
+/* The focus ring lives in globals.scss (`:focus-visible`, --focus-ring*). The block that
+   used to be here repeated it for five selectors and wrote outline-offset: 3px by hand,
+   which is exactly what --focus-ring-offset already holds. */
 
 .flow :global(input),
 .flow :global(button[role="combobox"]) {
-  border-color: rgba(33,34,34,.2);
-  border-radius: 12px;
-  background: rgba(255,248,238,.5);
+  border-color: rgb(var(--black-03-rgb) / .2);
+  border-radius: .75rem;
+  background: rgb(var(--cream-10-rgb) / .5);
   box-shadow: none;
 }
-

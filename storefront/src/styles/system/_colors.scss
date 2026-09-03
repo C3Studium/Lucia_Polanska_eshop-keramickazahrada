@@ -1,29 +1,265 @@
-// Styly pro stránku 
+// Paleta webu — jediné místo, kde se mění barvy.
+//
+// Vygenerováno z barev, které ve stylech doopravdy byly: 2 347 literálů, 245 zápisů,
+// které se po sloučení variant téže barvy (ΔE < 2.3) scvrkly na tento seznam. Osm
+// zápisů skoro černé (#20211c, #20211d, #24251f, #22231f …) bylo osm překlepů téhož
+// odstínu, ne osm rozhodnutí — proto je z nich jeden token.
+//
+// Tokeny s `-rgb` drží barvu jako trojici složek, aby se dala použít s průhledností:
+//     background: rgb(var(--ink-01-rgb) / .6);
+// Barva se mění na tom `-rgb` řádku; `--ink-01` z něj vzniká, takže je vždy v souladu.
+//
+// Skupiny jsou seřazené od tmavé po světlou v rámci rodiny (ink, olive, sage, cream …).
+
 :root {
-  --bgWhite: #fff;
-  --bgPrimary: #BBB788;
-  --bgBlack: #212222;
-  --iconsPink: #FFA5A2;
-  --iconsWhite: #fff;
-  --iconsBlack: #212222;
-  --iconsBlackFilter:
-    brightness(0)
-    saturate(100%)
-    invert(11%)
-    sepia(5%)
-    saturate(285%)
-    hue-rotate(24deg)
-    brightness(94%)
-    contrast(90%);
-  --darkOlive: #747E62;
-  --whiteText: #fff;
-  --blackText: #212222;
-  --pinkBg: #FFA5A2;
-  --orangeGradient: #ff7000bf;
-  --shadows: #21222299;
-  --whiteBoarder: #ffffff99;
-  --Placeholder: #ffffff6a;
-  --disabled: #21222230;
+
+  /* ── black ───────────────────────────────────────────────────────── */
+  --black-01-rgb: 0 0 0;            /* #000000 — 60×, 4 variant sloučeno */
+  --black-01: rgb(var(--black-01-rgb));
+  --black-02-rgb: 24 24 27;            /* #18181b — 3× */
+  --black-02: rgb(var(--black-02-rgb));
+  --black-03-rgb: 33 34 34;            /* #212222 — 178× */
+  --black-03: rgb(var(--black-03-rgb));
+  --black-04: #2b2b28;                   /* 4× */
+
+  /* ── blue ────────────────────────────────────────────────────────── */
+  --blue-01: #2b4c9b;                   /* 1× */
+  --blue-02: #6b7280;                   /* 4× */
+  --blue-03: #2563eb;                   /* 1× */
+  --blue-04: #e5e7eb;                   /* 3× */
+
+  /* ── blush ───────────────────────────────────────────────────────── */
+  --blush-01-rgb: 255 165 162;            /* #ffa5a2 — 1× */
+  --blush-01: rgb(var(--blush-01-rgb));
+  --blush-02-rgb: 255 236 228;            /* #ffece4 — 3× */
+  --blush-02: rgb(var(--blush-02-rgb));
+
+  /* ── clay ────────────────────────────────────────────────────────── */
+  --clay-01: #743c34;                   /* 3× */
+  --clay-02-rgb: 116 82 56;            /* #745238 — 2× */
+  --clay-02: rgb(var(--clay-02-rgb));
+  --clay-03: #704c46;                   /* 1× */
+  --clay-04: #a04e18;                   /* 2× */
+  --clay-05: #7f4139;                   /* 1× */
+  --clay-06-rgb: 140 62 48;            /* #8c3e30 — 13×, 5 variant sloučeno */
+  --clay-06: rgb(var(--clay-06-rgb));
+  --clay-07-rgb: 126 93 65;            /* #7e5d41 — 1× */
+  --clay-07: rgb(var(--clay-07-rgb));
+  --clay-08: #75574f;                   /* 1× */
+  --clay-09: #954e2f;                   /* 1× */
+  --clay-10-rgb: 163 60 37;            /* #a33c25 — 12× */
+  --clay-10: rgb(var(--clay-10-rgb));
+  --clay-11: #6e675b;                   /* 1× */
+  --clay-12: #8d493d;                   /* 2× */
+  --clay-14-rgb: 154 61 49;            /* #9a3d31 — 4×, 2 variant sloučeno */
+  --clay-14: rgb(var(--clay-14-rgb));
+  --clay-13: #a34f28;                   /* 3× */
+  --clay-15: #8a5147;                   /* 1× */
+  --clay-16: #a63d34;                   /* 1× */
+  --clay-17-rgb: 194 96 31;            /* #c2601f — 6× */
+  --clay-17: rgb(var(--clay-17-rgb));
+  --clay-18-rgb: 154 86 75;            /* #9a564b — 5×, 2 variant sloučeno */
+  --clay-18: rgb(var(--clay-18-rgb));
+  --clay-19: #8c6259;                   /* 1× */
+  --clay-20: #ad5e3c;                   /* 1× */
+  --clay-21-rgb: 168 80 66;            /* #a85042 — 8× */
+  --clay-21: rgb(var(--clay-21-rgb));
+  --clay-22-rgb: 152 95 86;            /* #985f56 — 3×, 2 variant sloučeno */
+  --clay-22: rgb(var(--clay-22-rgb));
+  --clay-23: #a8664e;                   /* 1× */
+  --clay-24-rgb: 154 111 101;            /* #9a6f65 — 12× */
+  --clay-24: rgb(var(--clay-24-rgb));
+  --clay-25: #8a8375;                   /* 1× */
+  --clay-26-rgb: 217 111 59;            /* #d96f3b — 5× */
+  --clay-26: rgb(var(--clay-26-rgb));
+  --clay-27: #d47a50;                   /* 5× */
+  --clay-28-rgb: 204 127 96;            /* #cc7f60 — 1× */
+  --clay-28: rgb(var(--clay-28-rgb));
+  --clay-29-rgb: 223 131 86;            /* #df8356 — 14×, 2 variant sloučeno */
+  --clay-29: rgb(var(--clay-29-rgb));
+  --clay-30: #a79c8e;                   /* 1× */
+  --clay-31-rgb: 204 149 112;            /* #cc9570 — 1× */
+  --clay-31: rgb(var(--clay-31-rgb));
+  --clay-32-rgb: 199 152 121;            /* #c79879 — 1× */
+  --clay-32: rgb(var(--clay-32-rgb));
+  --clay-33: #df8b75;                   /* 2× */
+  --clay-34: #b7b1a4;                   /* 1× */
+  --clay-35: #f0a882;                   /* 1× */
+  --clay-36: #e6a493;                   /* 2× */
+  --clay-37: #cfc4b6;                   /* 2× */
+  --clay-38: #f0b39b;                   /* 1× */
+  --clay-39-rgb: 231 198 169;            /* #e7c6a9 — 1× */
+  --clay-39: rgb(var(--clay-39-rgb));
+  --clay-40-rgb: 226 207 177;            /* #e2cfb1 — 1× */
+  --clay-40: rgb(var(--clay-40-rgb));
+  --clay-41: #f3b3a4;                   /* 3× */
+
+  /* ── cream ───────────────────────────────────────────────────────── */
+  --cream-01: #d8d5cd;                   /* 1× */
+  --cream-02-rgb: 222 217 203;            /* #ded9cb — 13×, 7 variant sloučeno */
+  --cream-02: rgb(var(--cream-02-rgb));
+  --cream-03-rgb: 238 232 214;            /* #eee8d6 — 9×, 3 variant sloučeno */
+  --cream-03: rgb(var(--cream-03-rgb));
+  --cream-04-rgb: 255 224 201;            /* #ffe0c9 — 1× */
+  --cream-04: rgb(var(--cream-04-rgb));
+  --cream-05: #f3e7da;                   /* 6×, 3 variant sloučeno */
+  --cream-06-rgb: 255 232 214;            /* #ffe8d6 — 434×, 8 variant sloučeno */
+  --cream-06: rgb(var(--cream-06-rgb));
+  --cream-07-rgb: 247 240 228;            /* #f7f0e4 — 31×, 15 variant sloučeno */
+  --cream-07: rgb(var(--cream-07-rgb));
+  --cream-08: #f5f2ec;                   /* 7×, 4 variant sloučeno */
+  --cream-09-rgb: 255 241 231;            /* #fff1e7 — 7×, 5 variant sloučeno */
+  --cream-09: rgb(var(--cream-09-rgb));
+  --cream-10-rgb: 255 248 241;            /* #fff8f1 — 49×, 13 variant sloučeno */
+  --cream-10: rgb(var(--cream-10-rgb));
+
+  /* ── green ───────────────────────────────────────────────────────── */
+  --green-01-rgb: 47 82 51;            /* #2f5233 — 3× */
+  --green-01: rgb(var(--green-01-rgb));
+  --green-02: #4ade80;                   /* 1× */
+
+  /* ── grey ────────────────────────────────────────────────────────── */
+  --grey-01: #41423d;                   /* 1× */
+  --grey-02: #5c5e54;                   /* 8× */
+  --grey-03: #7d7d78;                   /* 1× */
+  --grey-04: #a8a8a2;                   /* 4× */
+  --grey-05: #c9c9c3;                   /* 2× */
+
+  /* ── ink ─────────────────────────────────────────────────────────── */
+  --ink-01-rgb: 20 21 17;            /* #141511 — 74×, 27 variant sloučeno */
+  --ink-01: rgb(var(--ink-01-rgb));
+  --ink-02-rgb: 24 27 20;            /* #181b14 — 18×, 4 variant sloučeno */
+  --ink-02: rgb(var(--ink-02-rgb));
+  --ink-03: #111827;                   /* 9× */
+  --ink-04-rgb: 31 35 25;            /* #1f2319 — 12× */
+  --ink-04: rgb(var(--ink-04-rgb));
+  --ink-05-rgb: 32 33 28;            /* #20211c — 732×, 10 variant sloučeno */
+  --ink-05: rgb(var(--ink-05-rgb));
+  --ink-06-rgb: 38 40 32;            /* #262820 — 57×, 8 variant sloučeno */
+  --ink-06: rgb(var(--ink-06-rgb));
+  --ink-07-rgb: 44 41 31;            /* #2c291f — 1× */
+  --ink-07: rgb(var(--ink-07-rgb));
+  --ink-08-rgb: 45 45 34;            /* #2d2d22 — 1× */
+  --ink-08: rgb(var(--ink-08-rgb));
+  --ink-09-rgb: 43 48 35;            /* #2b3023 — 24×, 3 variant sloučeno */
+  --ink-09: rgb(var(--ink-09-rgb));
+  --ink-10: #30322b;                   /* 5×, 3 variant sloučeno */
+  --ink-11: #33362b;                   /* 1× */
+  --ink-12-rgb: 58 59 52;            /* #3a3b34 — 3× */
+  --ink-12: rgb(var(--ink-12-rgb));
+
+  /* ── olive ───────────────────────────────────────────────────────── */
+  --olive-01-rgb: 69 74 54;            /* #454a36 — 2× */
+  --olive-01: rgb(var(--olive-01-rgb));
+  --olive-02-rgb: 80 84 61;            /* #50543d — 4×, 2 variant sloučeno */
+  --olive-02: rgb(var(--olive-02-rgb));
+  --olive-03: #4a5140;                   /* 1× */
+  --olive-04: #4f5147;                   /* 11×, 3 variant sloučeno */
+  --olive-05: #565845;                   /* 2×, 2 variant sloučeno */
+  --olive-06: #4c6b33;                   /* 1× */
+  --olive-07-rgb: 85 93 72;            /* #555d48 — 17×, 2 variant sloučeno */
+  --olive-07: rgb(var(--olive-07-rgb));
+  --olive-08-rgb: 93 96 70;            /* #5d6046 — 5× */
+  --olive-08: rgb(var(--olive-08-rgb));
+  --olive-09: #596248;                   /* 2× */
+  --olive-10: #686b4f;                   /* 2× */
+  --olive-11: #647052;                   /* 5×, 4 variant sloučeno */
+  --olive-12: #6b7156;                   /* 1× */
+  --olive-13-rgb: 116 119 91;            /* #74775b — 7×, 3 variant sloučeno */
+  --olive-13: rgb(var(--olive-13-rgb));
+  --olive-14: #6f785d;                   /* 2×, 2 variant sloučeno */
+  --olive-15-rgb: 116 126 98;            /* #747e62 — 46×, 5 variant sloučeno */
+  --olive-15: rgb(var(--olive-15-rgb));
+  --olive-16: #7b8069;                   /* 1× */
+  --olive-17-rgb: 128 126 113;            /* #807e71 — 3× */
+  --olive-17: rgb(var(--olive-17-rgb));
+  --olive-18: #85866b;                   /* 1× */
+  --olive-19-rgb: 126 137 106;            /* #7e896a — 51×, 4 variant sloučeno */
+  --olive-19: rgb(var(--olive-19-rgb));
+  --olive-20: #9b9a70;                   /* 1× */
+  --olive-21: #aaa77b;                   /* 1× */
+
+  /* ── red ─────────────────────────────────────────────────────────── */
+  --red-01-rgb: 120 40 20;            /* #782814 — 1× */
+  --red-01: rgb(var(--red-01-rgb));
+  --red-02: #9a3b13;                   /* 1× */
+  --red-03-rgb: 224 102 47;            /* #e0662f — 1× */
+  --red-03: rgb(var(--red-03-rgb));
+
+  /* ── sage ────────────────────────────────────────────────────────── */
+  --sage-01-rgb: 187 183 136;            /* #bbb788 — 60× */
+  --sage-01: rgb(var(--sage-01-rgb));
+  --sage-02-rgb: 199 196 154;            /* #c7c49a — 11×, 4 variant sloučeno */
+  --sage-02: rgb(var(--sage-02-rgb));
+  --sage-03: #bcd0a8;                   /* 1× */
+  --sage-04: #e0d9b4;                   /* 1× */
+  --sage-05: #e8f0e4;                   /* 1× */
+
+  /* ── white ───────────────────────────────────────────────────────── */
+  --white-rgb: 255 255 255;            /* #ffffff — 159×, 5 variant sloučeno */
+  --white: rgb(var(--white-rgb));
+
+  /* ── dřívější názvy ──────────────────────────────────────────────
+     Komponenty je používají (var(--blackText) na 47 místech, var(--whiteText) na 39).
+     Zůstávají jako aliasy, aby se nic nerozbilo; nová pravidla ať sahají po tokenech
+     výše. Barvu měň nahoře, ne tady. */
+  --bgWhite: var(--white);
+  --iconsWhite: var(--white);
+  --whiteText: var(--white);
+  --bgPrimary: var(--sage-01);
+  --bgBlack: var(--black-03);
+  --iconsBlack: var(--black-03);
+  --blackText: var(--black-03);
+  --iconsPink: var(--blush-01);
+  --pinkBg: var(--blush-01);
+  --darkOlive: var(--olive-15);
   --danger: #ae0202;
-  --handle: #212222cc;
+
+  /* Odstíny s průhledností, které měly vlastní jméno. */
+  --shadows: rgb(var(--ink-02-rgb) / .6);
+  --whiteBoarder: rgb(var(--white-rgb) / .6);
+  --Placeholder: rgb(var(--white-rgb) / .42);
+  --disabled: rgb(var(--ink-02-rgb) / .19);
+  --handle: rgb(var(--ink-02-rgb) / .8);
+  --orangeGradient: #ff7000bf;
+
+  /* ── ambientní plátno ───────────────────────────────────────────────────
+     Barvy, které kreslí WebGL pozadí za stránkou, a gradienty, které vznikají
+     v JavaScriptu. Do palety se dostaly až teď: refaktor barev sahal jen na
+     .scss, takže těchhle dvacet pět výskytů zůstalo napsaných natvrdo v TSX
+     a měnit se musely zvlášť. Čte je `styles/palette.generated.ts`.
+
+     Každý řádek je jeden odstín jedné nálady pozadí — mění se po trojicích. */
+  --ambient-showcase-1: #ffe8d6;
+  --ambient-showcase-2: #f4cdb2;
+  --ambient-showcase-3: #fff4ea;
+
+  --ambient-legal-1: #eee4c9;
+  --ambient-legal-2: #d4d1a7;
+  --ambient-legal-3: #f8ead8;
+
+  --ambient-commerce-1: #f4dfcd;
+  --ambient-commerce-2: #c79879;
+  --ambient-commerce-3: #ead7c2;
+
+  --ambient-account-1: #c7c49a;
+  --ambient-account-2: #ebe0c8;
+  --ambient-account-3: #676a52;
+
+  /* Gradient na /o-mne a na domovské — vzniká interpolací v JS, ne v CSS. */
+  --gradient-omne-1: #c9c397;
+  --gradient-omne-2: #ead5bf;
+  --gradient-home-1: #c8c39a;
+
+  /* Zbytek, co v paletě chyběl: tmavá kurzů, jejich akcent, krémová selectu
+     a chybová červená v platebním režimu. */
+  --kurzy-ink: #1d1e1a;
+  --kurzy-accent: #d36a39;
+  --select-cream: #fff8ee;
+  --state-error: #b3352b;
+
+  /* Filtr pro ikony — není to barva, jen sem patří. */
+  --iconsBlackFilter:
+    brightness(0) saturate(100%) invert(11%) sepia(5%)
+    saturate(285%) hue-rotate(24deg) brightness(94%) contrast(90%);
 }

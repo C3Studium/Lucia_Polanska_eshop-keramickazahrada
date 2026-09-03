@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { retrieveCustomer } from "@lib/data/customer"
+import { backendUrl } from "@lib/config"
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +33,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 1) deleguj na backend: /store/customers/me/password (nový flow)
-    const res = await fetch(`${process.env.MEDUSA_BACKEND_URL || process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"}/store/customers/me/password`, {
+    // `backendUrl` a ne `process.env`: adresa se čte z jednoho místa, kde už
+    // má useknuté koncové lomítko. Backend na `//store/…` odpovídá 404, ne
+    // přesměrováním — takže lomítko navíc v proměnné je tichá chyba.
+    const res = await fetch(`${backendUrl}/store/customers/me/password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

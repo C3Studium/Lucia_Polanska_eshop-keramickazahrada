@@ -1,4 +1,18 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+@use "./address-modal-shared.module" as shared;
+
+/*
+  Two things live in this sheet.
+
+  1. The address card (.card/.cardContent/.name/.company/.addressLines/.actions) and the
+     edit + delete modals of edit-address-modal.tsx.
+  2. The skin of the shared Modal: src/modules/common/components/modal/index.tsx imports
+     THIS file for .modal/.backdrop/.container/.panel/.small/.medium/.large/.title/
+     .closeBtn/.description/.body/.footer. Modal is used only by add-address.tsx and
+     edit-address-modal.tsx, so the blast radius stays inside this route -- but that is
+     why .panel cannot be treated as an address-only rule.
+*/
+
 .modal {
   position: relative;
   z-index: 1200;
@@ -8,8 +22,17 @@
 .deleteModal {
   position: fixed;
   inset: 0;
-  background: rgba(20, 21, 18, 0.72);
+  background: rgb(var(--ink-01-rgb) / .72);
   backdrop-filter: blur(12px);
+}
+
+/* One inset for every modal overlay, and .panel takes its height budget from the same
+   custom property. The two numbers used to be hand-written twice (20px here, a doubled
+   40px in .panel) and would have drifted apart at the first edit. */
+.container,
+.deleteModal {
+  --modal-inset: clamp(.75rem, 2.2vh, 1.25rem);
+  padding: var(--modal-inset);
 }
 
 .container {
@@ -19,8 +42,9 @@
   display: grid;
   place-items: center;
   min-height: 100svh;
-  padding: 20px;
   overflow-y: auto;
+  /* Explicit: a lone overflow-y: auto makes the browser compute overflow-x: auto too. */
+  overflow-x: clip;
 }
 
 .container.search {
@@ -29,37 +53,45 @@
 
 .panel {
   position: relative;
-  width: min(100%, 720px);
-  max-height: calc(100svh - 40px);
-  padding: clamp(28px, 4vw, 54px);
+  /* rem, not px: above 1921 the root-rem ramp runs, the type inside grows 1.33x and a
+     px box would stand still while the heading outgrew it. */
+  width: min(100%, 45rem);
+  max-height: calc(100svh - 2 * var(--modal-inset));
+  /* Split axes. One value for both with a vw middle left 54px above and below the
+     nine-field form on a 1366x768 laptop and pushed Save 102px past the fold.
+     Vertical now hangs on vh -- ~26px at 768, ~37px at 1080, the 54.4px ceiling from
+     1600 tall up, live 541-1600. Horizontal stays on vw, live 706-1600. */
+  padding: clamp(1.15rem, 3.4vh, 3.4rem) clamp(1.5rem, 3.4vw, 3.4rem);
   overflow-y: auto;
-  border: 1px solid rgba(32, 33, 29, 0.22);
+  /* Same trap as .container: name the other axis or the browser invents a scrollbar. */
+  overflow-x: clip;
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
   background: linear-gradient(
       125deg,
-      rgba(255, 255, 255, 0.16),
+      rgb(var(--white-rgb) / .16),
       transparent 35%
     ),
-    #f5eddf;
-  color: #20211d;
-  box-shadow: 0 36px 100px -48px rgba(0, 0, 0, 0.8);
+    var(--cream-07);
+  color: var(--ink-05);
+  box-shadow: 0 36px 100px -48px rgb(var(--black-01-rgb) / .8);
 }
 
 .panel::before {
   position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(32, 33, 29, 0.12);
+  inset: .75rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
   content: "";
   pointer-events: none;
 }
 
 .small {
-  max-width: 480px;
+  max-width: 30rem;
 }
 .medium {
-  max-width: 720px;
+  max-width: 45rem;
 }
 .large {
-  max-width: 960px;
+  max-width: 60rem;
 }
 .transparent {
   border: 0;
@@ -72,9 +104,10 @@
   z-index: 1;
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 1.5rem;
   align-items: flex-start;
-  margin-bottom: 30px;
+  /* Vertical, so vh: 30px from 1071 tall up, ~21.5px on a 768 laptop. */
+  margin-bottom: clamp(1.25rem, 2.8vh, 1.875rem);
 }
 
 .text {
@@ -84,13 +117,13 @@
 .closeBtn {
   display: grid;
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   place-items: center;
-  border: 1px solid #20211d;
+  border: 1px solid var(--ink-05);
   border-radius: 50%;
   background: transparent;
-  color: #20211d;
+  color: var(--ink-05);
   cursor: pointer;
 }
 
@@ -102,8 +135,10 @@
 }
 
 .description {
-  color: rgba(32, 33, 29, 0.64);
-  font-size: 15px;
+  color: rgb(var(--ink-05-rgb) / .64);
+  /* 15px was frozen at every width; now 13.6 -> 16.8px, live 1295-1600, and the ramp
+     carries the ceiling to 22.3px at 2552. */
+  font-size: clamp(.875rem, 1.1vw, 1.05rem);
   line-height: 1.55;
 }
 
@@ -121,16 +156,21 @@
 }
 
 .card {
-  min-height: 300px;
-  border: 1px solid rgba(32, 33, 29, 0.2);
-  background: rgba(255, 248, 238, 0.2);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  background: rgb(var(--cream-10-rgb) / .2);
 }
 
 .cardContent {
   display: grid;
   grid-template-rows: 1fr auto;
-  min-height: 300px;
-  padding: clamp(24px, 3vw, 38px);
+  /* The 300px floor was written twice, here and on .card. It belongs on the element
+     that lays the card out; .card is its parent and takes the height through it. */
+  min-height: 18.75rem;
+  /* Split axes, the same repair .panel got -- one clamp with a vw middle was being
+     asked to answer a question about height. Horizontal 22.4 -> 38.4px, live
+     862-1477. Vertical hangs on vh: 38.3px at 1080 (the old value to within a
+     rounding), 27.3px at 768, 23.4px at 660, live 563-1081. */
+  padding: clamp(1.25rem, 3.55vh, 2.4rem) clamp(1.4rem, 2.6vw, 2.4rem);
 }
 
 .cardDetails {
@@ -139,12 +179,12 @@
 }
 
 .cardActive {
-  border-color: #7e896a;
-  background: rgba(126, 137, 106, 0.08);
+  border-color: var(--olive-19);
+  background: rgb(var(--olive-19-rgb) / .08);
 }
 
 .name {
-  margin: 0 0 10px;
+  margin: 0 0 .625rem;
   font: 400 clamp(2rem, 2.8vw, 3.2rem) / 0.95 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
@@ -152,26 +192,20 @@
 .company,
 .addressLines {
   margin: 0;
-  color: rgba(32, 33, 29, 0.62);
-  font: 15px/1.55 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  /* Measured at a flat 15px on all ten landscape viewports, next to a name that ramps
+     to 68px at 2552. Same clamp as .description so the two read as one voice. */
+  font: clamp(.875rem, 1.1vw, 1.05rem)/1.55 "Sansation-Light", sans-serif;
 }
 
 .addressLines {
   display: grid;
-  margin-top: 20px;
+  margin-top: 1.25rem;
 }
 
 .actions,
-.actionsRow,
 .modalActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.actions {
-  margin-top: 32px;
+  @include shared.button-row;
 }
 
 .linkBtn,
@@ -182,89 +216,74 @@
 }
 
 .deleteBtn {
-  --premium-button-ink: #9a3d31;
-  --premium-button-active-ink: #fff;
-  --premium-button-fill: #9a3d31;
+  --premium-button-ink: var(--clay-14);
+  --premium-button-active-ink: var(--white);
+  --premium-button-fill: var(--clay-14);
 }
 
 .modalTitleContent {
-  display: grid;
-  gap: 16px;
-  width: 100%;
+  @include shared.modal-title-content;
 }
 
 .modalTitle {
-  margin: 0;
-  font: 400 clamp(2.8rem, 5vw, 4.8rem) / 0.86 "Sentient-Regular", serif;
-  letter-spacing: -0.055em;
+  @include shared.modal-title;
 }
 
 .addressForm {
-  display: grid;
-  gap: 12px;
+  @include shared.form-grid;
 }
 
 .rowTwo,
 .rowPostal {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  @include shared.form-row;
 }
 
 .rowPostal {
-  grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr);
+  @include shared.form-row-postal;
 }
 
 .error {
-  margin-top: 14px;
-  padding: 12px 16px;
-  border-left: 2px solid #a85042;
-  background: rgba(168, 80, 66, 0.09);
-  color: #743c34;
-  font-size: 14px;
+  @include shared.form-error;
 }
 
 .actionsRow {
-  justify-content: flex-end;
-  width: 100%;
-  margin-top: 24px;
+  @include shared.button-row-end;
 }
 
 .deleteModal {
   z-index: 1300;
   display: grid;
   place-items: center;
-  padding: 20px;
 }
 
 .deleteModal .modal {
-  width: min(100%, 540px);
-  padding: clamp(30px, 5vw, 56px);
-  border: 1px solid rgba(32, 33, 29, 0.22);
-  background: #f5eddf;
-  color: #20211d;
+  /* 540px in rem. At 2552 this is 718px wide instead of a frozen 540, which is what
+     put Zrusit and Odstranit back on one line: the buttons ramp with the root rem and
+     540 - 2 x 56 = 428px of inner width no longer held two of them. */
+  width: min(100%, 33.75rem);
+  /* Axes split the same way as .panel: 20 -> 56px vertical on vh, 25.6 -> 56px
+     horizontal on vw. */
+  padding: clamp(1.25rem, 3.6vh, 3.5rem) clamp(1.6rem, 4vw, 3.5rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
+  background: var(--cream-07);
+  color: var(--ink-05);
 }
 
 .deleteModal h2 {
-  margin: 0 0 18px;
-  font: 400 clamp(2.8rem, 5vw, 4.8rem) / 0.86 "Sentient-Regular", serif;
-  letter-spacing: -0.055em;
+  @include shared.modal-title;
+  margin-bottom: clamp(.75rem, 1.7vh, 1.125rem);
 }
 
 .deleteModal p {
   max-width: 31rem;
-  color: rgba(32, 33, 29, 0.65);
+  color: rgb(var(--ink-05-rgb) / .65);
   line-height: 1.55;
-}
-
-.modalActions {
-  margin-top: 28px;
 }
 
 @include below-px(560px) {
   .rowTwo,
   .rowPostal {
-    grid-template-columns: 1fr;
+    @include shared.form-row-stacked;
   }
 
   .panel {

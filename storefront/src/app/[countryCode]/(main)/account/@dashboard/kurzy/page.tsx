@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 import { retrieveCustomer } from "@lib/data/customer"
 import { listMyCourseReservations } from "@lib/data/courses"
@@ -21,8 +21,13 @@ export const metadata: Metadata = {
 export default async function KurzyPage() {
   const customer = await retrieveCustomer()
 
+    /*
+   * Signed out is a redirect, not a 404 — telling someone their account does not exist because
+   * their session expired is both wrong and a dead end. No country code needed: the middleware
+   * resolves `/account` to the visitor's region and lands them on the login form.
+   */
   if (!customer) {
-    notFound()
+    redirect("/account")
   }
 
   const reservations = await listMyCourseReservations()

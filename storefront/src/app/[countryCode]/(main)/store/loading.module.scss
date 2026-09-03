@@ -1,11 +1,11 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.root { min-height:100svh; padding:clamp(10px,.8vw,16px); background:#f2eee5; }
+.root { min-height:100svh; padding:clamp(10px,.8vw,16px); background:var(--cream-07); }
 .hero,
 .catalogue span,
 .catalogue i,
 .products div {
   overflow:hidden;
-  background:linear-gradient(100deg,#d8d3c4 24%,#ffe8d6 42%,#d8d3c4 60%);
+  background:linear-gradient(100deg,var(--cream-02) 24%,var(--cream-06) 42%,var(--cream-02) 60%);
   background-size:220% 100%;
   animation:storeLoading 1.7s ease-in-out infinite;
 }
@@ -14,7 +14,7 @@
   min-height:80svh;
   overflow:hidden;
   border-radius:32px;
-  background-color:#34362c;
+  background-color:var(--ink-10);
 
   span { position:absolute; bottom:22%; left:5%; width:min(58%,720px); height:clamp(62px,8vw,124px); border-radius:8px; }
   i { position:absolute; bottom:13%; left:5%; width:min(32%,440px); height:18px; border-radius:5px; }

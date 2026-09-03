@@ -3,9 +3,9 @@
 /* The vyroba gallery's animation grammar, recut for the two O mně chapters.
    Same charcoal room, same wipe-and-crossfade — a shorter walk through it. */
 .AboutStory {
-  --story-charcoal: #1d1e1a;
-  --story-cream: #ffe8d6;
-  --story-ember: #df8356;
+  --story-charcoal: var(--ink-05);
+  --story-cream: var(--cream-06);
+  --story-ember: var(--clay-29);
 
   position: relative;
   z-index: 2;
@@ -16,15 +16,34 @@
 }
 
 .aboutStory {
+  /* One geometry, one place.
+
+     `--story-copy-w` is the only width actually authored; the stage is what is left of the
+     frame after it, so the 5% gutter between photo and copy is structural and the two can
+     never overlap at any width. The middle term reads `--fvw` (one percent of `.pageFrame`)
+     rather than plain vw: above 1921 the frame is capped to 100svh*1.6 while vw still
+     measures the screen, and 4.5% + 58vw + 28vw + 5% came to 2400px inside a 2162px frame.
+     Below 1921 `--fvw` is exactly 1vw, so nothing under the threshold moves.
+
+     `--story-top` and `--story-h` are shared by stage and copy so one composition is not
+     described by two coordinate systems. With the 720px floor gone the panel is exactly
+     100svh, which is also what `--story-h` measures against, so the 15% and the vh finally
+     refer to the same box. That floor was what pushed `&__progress` off a 660px screen. */
+  --story-top: 15%;
+  --story-h: clamp(20rem, 70vh, 46rem);
+  /* left 4.5% + gutter 5% + right 5% */
+  --story-side: 14.5%;
+  --story-copy-w: clamp(20.8rem, calc(28 * var(--fvw)), 34rem);
+  --story-stage-w: calc(100% - var(--story-copy-w) - var(--story-side));
+
   position: sticky;
   top: 0;
   width: 100%;
   height: 100svh;
-  min-height: 720px;
   overflow: hidden;
   background: radial-gradient(
       circle at 72% 48%,
-      rgba(217, 111, 59, 0.05),
+      rgb(var(--clay-26-rgb) / .05),
       transparent 27%
     ),
     var(--story-charcoal);
@@ -32,14 +51,14 @@
 
   &__header {
     position: absolute;
-    top: clamp(64px, 7vh, 98px);
+    top: clamp(4.75rem, 7vh, 6.2rem);
     left: 4.5%;
     right: 4.5%;
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: clamp(14px, 1.5vw, 24px);
-    color: rgba(255, 232, 214, 0.46);
+    gap: clamp(0.875rem, calc(1.5 * var(--fvw)), 1.5rem);
+    color: rgb(var(--cream-06-rgb) / .46);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -47,20 +66,19 @@
     i {
       flex: 1;
       height: 1px;
-      background: rgba(255, 232, 214, 0.18);
+      background: rgb(var(--cream-06-rgb) / .18);
     }
   }
 
   &__stage {
     position: absolute;
-    top: 15%;
+    top: var(--story-top);
     left: 4.5%;
     z-index: 2;
-    width: 58vw;
-    height: 70vh;
-    min-height: 500px;
+    width: var(--story-stage-w);
+    height: var(--story-h);
     overflow: hidden;
-    background: #181915;
+    background: var(--ink-01);
   }
 
   &__image {
@@ -68,7 +86,7 @@
     inset: 0;
     margin: 0;
     overflow: hidden;
-    background: #181915;
+    background: var(--ink-01);
     will-change: clip-path;
 
     &Inner {
@@ -89,22 +107,22 @@
       pointer-events: none;
       background: linear-gradient(
           90deg,
-          rgba(15, 16, 13, 0.12),
+          rgb(var(--ink-01-rgb) / .12),
           transparent 34%
         ),
-        linear-gradient(180deg, transparent 64%, rgba(15, 16, 13, 0.52));
+        linear-gradient(180deg, transparent 64%, rgb(var(--ink-01-rgb) / .52));
     }
 
     figcaption {
       position: absolute;
-      left: clamp(18px, 1.7vw, 30px);
-      right: clamp(18px, 1.7vw, 30px);
-      bottom: clamp(16px, 1.5vw, 26px);
+      left: clamp(1.125rem, calc(1.7 * var(--fvw)), 1.875rem);
+      right: clamp(1.125rem, calc(1.7 * var(--fvw)), 1.875rem);
+      bottom: clamp(1rem, 2vh, 1.625rem);
       z-index: 3;
       display: flex;
       align-items: center;
-      gap: 14px;
-      color: rgba(255, 255, 255, 0.7);
+      gap: clamp(0.625rem, var(--fvw), 1.125rem);
+      color: rgb(var(--white-rgb) / .7);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -112,19 +130,18 @@
       i {
         flex: 1;
         height: 1px;
-        background: rgba(255, 255, 255, 0.28);
+        background: rgb(var(--white-rgb) / .28);
       }
     }
   }
 
   &__copyStage {
     position: absolute;
-    top: 15%;
+    top: var(--story-top);
     right: 5%;
     z-index: 12;
-    width: 28vw;
-    height: 70vh;
-    min-height: 500px;
+    width: var(--story-copy-w);
+    height: var(--story-h);
   }
 
   &__copy {
@@ -137,10 +154,10 @@
     will-change: opacity, transform;
 
     h2 {
-      margin: clamp(20px, 2.5vh, 34px) 0 0;
+      margin: clamp(1.25rem, 2.5vh, 2.125rem) 0 0;
       color: var(--story-cream);
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(3.8rem, 5.5vw, 7rem);
+      font-size: clamp(3.8rem, calc(5.5 * var(--fvw)), 7rem);
       font-weight: 400;
       line-height: 0.84;
       letter-spacing: -0.055em;
@@ -150,8 +167,8 @@
   &__index {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: rgba(255, 232, 214, 0.45);
+    gap: clamp(0.5rem, calc(0.75 * var(--fvw)), 0.875rem);
+    color: rgb(var(--cream-06-rgb) / .45);
     font-size: 0.8125rem;
     letter-spacing: 0.15em;
 
@@ -160,15 +177,15 @@
     }
 
     i {
-      width: clamp(34px, 4vw, 70px);
+      width: clamp(2.125rem, calc(4 * var(--fvw)), 4.375rem);
       height: 1px;
-      background: rgba(255, 232, 214, 0.22);
+      background: rgb(var(--cream-06-rgb) / .22);
     }
   }
 
   &__label {
-    margin: clamp(28px, 3.2vh, 44px) 0 0;
-    color: rgba(255, 232, 214, 0.5);
+    margin: clamp(1.75rem, 3.2vh, 2.75rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .5);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -176,10 +193,10 @@
 
   &__lead {
     max-width: 16ch;
-    margin: clamp(26px, 3.2vh, 44px) 0 0;
-    color: rgba(255, 232, 214, 0.9);
+    margin: clamp(1.625rem, 3.2vh, 2.75rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .9);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(1.55rem, 2vw, 2.65rem);
+    font-size: clamp(1.55rem, calc(2 * var(--fvw)), 2.65rem);
     line-height: 1.02;
     letter-spacing: -0.032em;
 
@@ -191,10 +208,10 @@
   }
 
   &__body {
-    max-width: 440px;
-    margin: clamp(18px, 2.3vh, 30px) 0 0;
-    color: rgba(255, 232, 214, 0.56);
-    font-size: clamp(0.9rem, 0.94vw, 1.06rem);
+    max-width: 27.5rem;
+    margin: clamp(1.125rem, 2.3vh, 1.875rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .56);
+    font-size: clamp(0.9rem, calc(0.94 * var(--fvw)), 1.06rem);
     font-weight: 300;
     line-height: 1.52;
   }
@@ -203,21 +220,21 @@
     position: absolute;
     left: 4.5%;
     right: 4.5%;
-    bottom: clamp(22px, 3.5vh, 44px);
+    bottom: clamp(1.375rem, 3.5vh, 2.75rem);
     z-index: 20;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: clamp(8px, 0.8vw, 14px);
+    gap: clamp(0.5rem, calc(0.8 * var(--fvw)), 0.875rem);
 
     button {
       min-width: 0;
-      padding: 7px 0;
+      padding: clamp(0.375rem, 0.9vh, 0.625rem) 0;
       display: grid;
       grid-template-columns: auto 1fr;
       align-items: center;
-      gap: 9px;
+      gap: clamp(0.5rem, calc(0.7 * var(--fvw)), 0.75rem);
       border: 0;
-      color: rgba(255, 232, 214, 0.3);
+      color: rgb(var(--cream-06-rgb) / .3);
       background: transparent;
       cursor: pointer;
       font: inherit;
@@ -239,7 +256,7 @@
       &:hover,
       &:focus-visible,
       &.is-active {
-        color: rgba(255, 232, 214, 0.88);
+        color: rgb(var(--cream-06-rgb) / .88);
       }
 
       &.is-active span {
@@ -256,18 +273,6 @@
 
 .aboutStoryMobile {
   display: none;
-}
-
-@include below-px(980px) {
-  .aboutStory {
-    &__stage {
-      width: 54vw;
-    }
-
-    &__copyStage {
-      width: 34vw;
-    }
-  }
 }
 
 @include below-px(760px) {
@@ -289,7 +294,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      color: rgba(255, 232, 214, 0.48);
+      color: rgb(var(--cream-06-rgb) / .48);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -297,7 +302,7 @@
       i {
         flex: 1;
         height: 1px;
-        background: rgba(255, 232, 214, 0.2);
+        background: rgb(var(--cream-06-rgb) / .2);
       }
     }
 
@@ -323,7 +328,7 @@
           background: linear-gradient(
             180deg,
             transparent 64%,
-            rgba(15, 16, 13, 0.52)
+            rgb(var(--ink-01-rgb) / .52)
           );
         }
 
@@ -332,7 +337,7 @@
           left: 20px;
           bottom: 18px;
           z-index: 2;
-          color: rgba(255, 255, 255, 0.72);
+          color: rgb(var(--white-rgb) / .72);
           font-size: 0.75rem;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -359,7 +364,7 @@
         > p:last-child {
           max-width: 36rem;
           margin: 20px 0 0;
-          color: rgba(255, 232, 214, 0.58);
+          color: rgb(var(--cream-06-rgb) / .58);
           font-size: 0.96rem;
           line-height: 1.5;
         }
@@ -369,7 +374,7 @@
     &__lead {
       max-width: 16ch;
       margin: 24px 0 0;
-      color: rgba(255, 232, 214, 0.9);
+      color: rgb(var(--cream-06-rgb) / .9);
       font-family: "Sentient-Regular", serif;
       font-size: clamp(1.7rem, 8vw, 2.5rem);
       line-height: 1.02;

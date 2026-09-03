@@ -213,17 +213,31 @@ export default AccountNav
 
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
-   render only gave framer-motion new references to re-diff. Values are unchanged. */
+   render only gave framer-motion new references to re-diff.
+
+   Travel is viewport-relative, never px. The arrow nudge is horizontal, so it
+   rides vw; the chapter swap competes for screen height, so it rides vh and
+   shrinks by itself on a 1366x768 laptop along with the row it moves in.
+   One reference viewport, 1440x900, and the rest is derived:
+     ARROW_VW = 6 / 1440  -> 0.42vw
+     ENTER_VH = 18 / 900  -> 2vh
+     EXIT_VH  = ENTER_VH / 1.5   (the original 18:12 enter/exit ratio)
+   Both ends of every interpolation keep the same expression shape ("0vw", not
+   0), or framer stops interpolating the pair and the value jumps. */
+const ARROW_VW = "-0.42vw"
+const ENTER_VH = "2vh"
+const EXIT_VH = "-1.333vh"
+
 const variants = {
           rest: { scaleX: 0.12, opacity: 0.35 },
           active: { scaleX: 1, opacity: 0.68 },
         }
 const transition = { duration: 0.55, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
 const variants2 = {
-          rest: { opacity: 0, x: -6, rotate: 0 },
-          active: { opacity: 1, x: 0, rotate: 8 },
+          rest: { opacity: 0, x: ARROW_VW, rotate: 0 },
+          active: { opacity: 1, x: "0vw", rotate: 8 },
         }
-const initial = { opacity: 0, y: 18 }
-const animate = { opacity: 1, y: 0 }
-const exit = { opacity: 0, y: -12 }
+const initial = { opacity: 0, y: ENTER_VH }
+const animate = { opacity: 1, y: "0vh" }
+const exit = { opacity: 0, y: EXIT_VH }
 const transition2 = { duration: 0.42, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

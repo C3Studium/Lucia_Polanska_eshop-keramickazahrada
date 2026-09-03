@@ -1,12 +1,12 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .product {
-  --pdp-ink: #20211c;
-  --pdp-cream: #ffe8d6;
-  --pdp-olive: #bbb788;
-  --pdp-green: #747e62;
-  --pdp-clay: #e47e4f;
-  --pdp-line-dark: rgba(255, 232, 214, 0.2);
-  --pdp-line-light: rgba(32, 33, 28, 0.2);
+  --pdp-ink: var(--ink-05);
+  --pdp-cream: var(--cream-06);
+  --pdp-olive: var(--sage-01);
+  --pdp-green: var(--olive-15);
+  --pdp-clay: var(--clay-29);
+  --pdp-line-dark: rgb(var(--cream-06-rgb) / .2);
+  --pdp-line-light: rgb(var(--ink-05-rgb) / .2);
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -30,25 +30,25 @@
   background:
     radial-gradient(
       circle at 82% 12%,
-      rgba(228, 126, 79, 0.34) 0,
-      rgba(228, 126, 79, 0.12) 16rem,
+      rgb(var(--clay-29-rgb) / .34) 0,
+      rgb(var(--clay-29-rgb) / .12) 16rem,
       transparent 34rem
     ),
     radial-gradient(
       ellipse at 18% 35%,
-      rgba(255, 232, 214, 0.22) 0,
-      rgba(255, 232, 214, 0.08) 24rem,
+      rgb(var(--cream-06-rgb) / .22) 0,
+      rgb(var(--cream-06-rgb) / .08) 24rem,
       transparent 48rem
     ),
     radial-gradient(
       ellipse at 76% 68%,
-      rgba(187, 183, 136, 0.3) 0,
-      rgba(187, 183, 136, 0.08) 28rem,
+      rgb(var(--sage-01-rgb) / .3) 0,
+      rgb(var(--sage-01-rgb) / .08) 28rem,
       transparent 56rem
     ),
     radial-gradient(
       circle at 28% 88%,
-      rgba(255, 232, 214, 0.16) 0,
+      rgb(var(--cream-06-rgb) / .16) 0,
       transparent 42rem
     );
   opacity: 0.1;
@@ -80,12 +80,15 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(300px, 1.05fr) minmax(420px, 1.2fr) minmax(300px, 1.05fr);
+  grid-template-columns:
+    minmax(clamp(13.125rem, 23.5vw, 18rem), 1.05fr)
+    minmax(clamp(19rem, 37.5vw, 28.125rem), 1.2fr)
+    minmax(clamp(13.125rem, 23.5vw, 18rem), 1.05fr);
   align-items: start;
-  gap: clamp(44px, 4vw, 86px);
-  width: min(94vw, 1880px);
+  gap: clamp(1.75rem, 4vw, 5.375rem);
+  width: min(calc(94 * var(--fvw)), 117.5rem);
   margin-inline: auto;
-  padding: clamp(82px, 8.5vh, 105px) 0 clamp(180px, 24vh, 270px);
+  padding: clamp(5.125rem, 8.5vh, 6.5625rem) 0 clamp(4rem, 9vh, 9rem);
   border-radius: 0 !important;
 }
 
@@ -98,24 +101,24 @@
 .product__identity,
 .product__purchase {
   position: sticky;
-  top: clamp(82px, 8.5vh, 105px);
+  top: clamp(5.125rem, 8.5vh, 6.5625rem);
   z-index: 3;
   box-sizing: border-box;
   min-width: 0;
 }
 
 .product__identity {
-  padding-left: clamp(28px, 2.8vw, 58px);
+  padding-left: clamp(1.75rem, 2.8vw, 3.625rem);
 }
 
 .product__purchase {
-  padding-right: clamp(28px, 2.8vw, 58px);
+  padding-right: clamp(1.75rem, 2.8vw, 3.625rem);
 }
 
 .product__identityInner,
 .product__purchaseInner {
   display: flex;
-  min-height: min(76vh, 780px);
+  min-height: min(76vh, 32rem);
   flex-direction: column;
 }
 
@@ -125,36 +128,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 30px;
-  padding-bottom: 10px;
+  gap: 1rem;
+  min-height: 1.875rem;
+  padding-bottom: 0.625rem;
   border-bottom: 1px solid var(--pdp-line-dark);
-  color: rgba(255, 232, 214, 0.5);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .5);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .product__identity h1 {
   max-width: 9ch;
-  margin: clamp(52px, 8vh, 88px) 0 0;
-  font: 400 clamp(44px, 4vw, 76px) / 0.9 "Sentient-Regular", serif;
+  margin: clamp(3.25rem, 8vh, 5.5rem) 0 0;
+  font: 400 clamp(2.75rem, 4vw, 4.75rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
   text-wrap: balance;
 }
 
 .product__signature {
   max-width: 9em;
-  margin: 12px 0 clamp(44px, 6vh, 66px) clamp(24px, 2.4vw, 46px);
+  margin: 0.75rem 0 clamp(2.75rem, 6vh, 4.125rem) clamp(1.5rem, 2.4vw, 2.875rem);
   color: var(--pdp-olive);
-  font: 400 clamp(20px, 1.7vw, 30px) / 1.02 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.25rem, 1.7vw, 1.875rem) / 1.02 "Sentient-LightItalic", "Sentient-Regular", serif;
 }
 
 .product__lead {
   max-width: 36ch;
   margin: 0;
-  color: rgba(255, 232, 214, 0.62);
-  font: 300 clamp(15px, 0.92vw, 17px) / 1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 300 clamp(0.9375rem, 1.05vw, 1.0625rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .product__leadMore {
@@ -169,8 +172,13 @@
   transition: opacity 220ms ease;
 }
 
-.product__leadMore:hover {
-  opacity: 0.58;
+/* Hover jen tam, kde je ukazovátko. Na dotyku zůstane :hover po tapnutí viset
+   a „více" by dál svítilo ztlumeně, i když už je popis otevřený. AŽ ZA
+   pravidlem, které přebíjí. */
+@include fine-pointer {
+  .product__leadMore:hover {
+    opacity: 0.58;
+  }
 }
 
 .product__leadMore:focus-visible {
@@ -182,15 +190,15 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 11px;
-  margin-top: clamp(32px, 6vh, 64px);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  gap: 0.6875rem;
+  margin-top: clamp(2rem, 6vh, 4rem);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
 .product__ratingValue {
-  font: 400 20px/1 "Sentient-Regular", serif;
+  font: 400 clamp(1.25rem, 1.667vw, 1.459rem)/1 "Sentient-Regular", serif;
   letter-spacing: 0;
 }
 
@@ -205,13 +213,25 @@
   transition: opacity 220ms ease;
 }
 
-.product__rating a:hover {
-  opacity: 0.55;
+@include fine-pointer {
+  .product__rating a:hover {
+    opacity: 0.55;
+  }
+}
+
+/* „N recenzí" je <a>, a globals.scss vynucuje dotykovou podlahu 44 px jen na
+   <button>. Odkaz měl na dotyku výšku svého řádku (16 px), tedy třetinu cíle. */
+@include touch {
+  .product__rating a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+  }
 }
 
 .product__detailsSlot {
   margin-top: auto;
-  padding-top: clamp(38px, 7vh, 72px);
+  padding-top: clamp(2.375rem, 7vh, 4.5rem);
 }
 
 .product__media {
@@ -222,33 +242,33 @@
 .product__gallery {
   display: flex;
   flex-direction: column;
-  gap: clamp(28px, 3.5vh, 42px);
+  gap: clamp(1.75rem, 3.5vh, 2.625rem);
 }
 
 .product__galleryIntro {
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
 }
 
 .product__mediaFrame {
   position: relative;
   width: 100%;
-  height: min(64vh, 700px);
+  height: min(64vh, 43.75rem);
   margin: 0;
   overflow: hidden;
-  background: #efefed;
+  background: var(--cream-08);
   border-radius: 0;
   transform: translateZ(0);
 }
 
 .product__mediaFrame:nth-of-type(even) {
-  height: min(56vh, 620px);
+  height: min(56vh, 38.75rem);
 }
 
 .product__bundleFrame {
-  height: min(68vh, 740px);
+  height: min(68vh, 46.25rem);
   background:
-    radial-gradient(circle at 52% 42%, rgba(187, 183, 136, 0.2), transparent 40%),
-    #f2f0eb;
+    radial-gradient(circle at 52% 42%, rgb(var(--sage-01-rgb) / .2), transparent 40%),
+    var(--cream-08);
 }
 
 .product__bundleComposition {
@@ -259,7 +279,7 @@
 .product__bundleObject {
   position: absolute;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.56);
+  background: rgb(var(--white-rgb) / .56);
 }
 
 .product__bundleObject[data-index="0"] {
@@ -298,10 +318,10 @@
 .product__bundleObject > span {
   position: absolute;
   z-index: 2;
-  right: 10px;
-  bottom: 8px;
-  color: rgba(32, 33, 28, 0.54);
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  right: 0.625rem;
+  bottom: 0.5rem;
+  color: rgb(var(--ink-05-rgb) / .54);
+  font: 400 clamp(0.8125rem, 1.083vw, 0.948rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
 }
 
@@ -317,35 +337,35 @@
 .product__mediaFrame figcaption {
   position: absolute;
   z-index: 2;
-  right: 18px;
-  bottom: 16px;
-  left: 18px;
+  right: 0.5rem;
+  bottom: 0.625rem;
+  left: 0.5rem;
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(255, 255, 255, 0.42);
-  color: rgba(255, 255, 255, 0.82);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgb(var(--white-rgb) / .42);
+  color: rgb(var(--white-rgb) / .82);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 8px rgb(var(--black-01-rgb) / .4);
 }
 
 .product__galleryOutro {
   position: relative;
   display: grid;
   grid-template-columns: 0.7fr 1.3fr;
-  gap: clamp(44px, 5vw, 84px);
+  gap: clamp(2.75rem, 5vw, 5.25rem);
   align-items: start;
   min-height: 42vh;
-  padding: clamp(70px, 11vh, 120px) 0 clamp(126px, 17vh, 190px);
+  padding: clamp(4.375rem, 11vh, 7.5rem) 0 clamp(3.5rem, 7vh, 7rem);
   border-top: 1px solid var(--pdp-line-dark);
 }
 
 .product__galleryOutro span {
-  color: rgba(255, 232, 214, 0.46);
-  font: 400 12px/1.3 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .46);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -354,21 +374,21 @@
   max-width: 15ch;
   margin: 0 0 0 auto;
   text-align: right;
-  font: 400 clamp(26px, 2.45vw, 44px) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.625rem, 2.45vw, 2.75rem) / 0.98 "Sentient-LightItalic", "Sentient-Regular", serif;
   letter-spacing: -0.035em;
 }
 
 .product__galleryOutroGraphic {
   position: absolute;
   right: 0;
-  bottom: clamp(38px, 5vh, 58px);
+  bottom: clamp(1.75rem, 4.5vh, 3.625rem);
   left: 0;
   display: grid;
-  grid-template-columns: auto minmax(36px, 1fr) 18px minmax(36px, 1fr) auto;
+  grid-template-columns: auto minmax(2.25rem, 1fr) 1.125rem minmax(2.25rem, 1fr) auto;
   align-items: center;
-  gap: clamp(10px, 1.1vw, 18px);
-  color: rgba(255, 232, 214, 0.38);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  gap: clamp(0.625rem, 1.1vw, 1.125rem);
+  color: rgb(var(--cream-06-rgb) / .38);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -378,8 +398,8 @@
   height: 1px;
   background: linear-gradient(
     90deg,
-    rgba(255, 232, 214, 0.1),
-    rgba(255, 232, 214, 0.48)
+    rgb(var(--cream-06-rgb) / .1),
+    rgb(var(--cream-06-rgb) / .48)
   );
   transform-origin: right center;
 }
@@ -387,8 +407,8 @@
 .product__galleryOutroGraphic > i:nth-of-type(2) {
   background: linear-gradient(
     90deg,
-    rgba(255, 232, 214, 0.48),
-    rgba(255, 232, 214, 0.1)
+    rgb(var(--cream-06-rgb) / .48),
+    rgb(var(--cream-06-rgb) / .1)
   );
   transform-origin: left center;
 }
@@ -396,10 +416,10 @@
 .product__galleryOutroGraphic > b {
   position: relative;
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   place-items: center;
-  border: 1px solid rgba(255, 232, 214, 0.44);
+  border: 1px solid rgb(var(--cream-06-rgb) / .44);
   border-radius: 50%;
 }
 
@@ -411,23 +431,23 @@
 }
 
 .product__galleryOutroGraphic > b::before {
-  width: 7px;
-  height: 20px;
+  width: 0.4375rem;
+  height: 1.25rem;
 }
 
 .product__galleryOutroGraphic > b::after {
-  width: 20px;
-  height: 7px;
+  width: 1.25rem;
+  height: 0.4375rem;
 }
 
 .product__galleryOutroGraphic > b em {
   position: relative;
   z-index: 1;
-  width: 4px;
-  height: 4px;
+  width: 0.25rem;
+  height: 0.25rem;
   border-radius: 50%;
   background: var(--pdp-cream);
-  box-shadow: 0 0 0 3px rgba(255, 232, 214, 0.1);
+  box-shadow: 0 0 0 0.1875rem rgb(var(--cream-06-rgb) / .1);
 }
 
 .product__purchaseInner {
@@ -436,67 +456,78 @@
 }
 
 .product__purchase[data-bundle="true"] .product__purchaseInner {
-  min-height: min(82vh, 860px);
+  min-height: min(82vh, 35rem);
 }
 
 .product__purchase[data-bundle="true"] .product__purchaseHeader {
-  font-size: 13px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
 }
 
 .product__purchase[data-bundle="true"] .product__selection {
-  padding: clamp(46px, 6vh, 66px) 0 clamp(34px, 4.5vh, 46px);
+  padding: clamp(2.875rem, 6vh, 4.125rem) 0 clamp(2.125rem, 4.5vh, 2.875rem);
 }
 
 .product__purchase[data-bundle="true"] .product__selection small {
-  font-size: 13px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
 }
 
 .product__purchase[data-bundle="true"] .product__selection span {
-  margin-top: 13px;
-  font-size: clamp(27px, 2vw, 35px);
+  margin-top: 0.8125rem;
+  font-size: clamp(1.6875rem, 2vw, 2.1875rem);
 }
 
 .product__purchase[data-bundle="true"] .product__serviceNotes {
-  margin-top: 28px;
-  padding: 18px 0;
-  font-size: 13px;
+  margin-top: 1.75rem;
+  padding: 1.125rem 0;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
 }
 
 .product__selection {
-  padding: clamp(40px, 6vh, 62px) 0 30px;
+  padding: clamp(2.5rem, 6vh, 3.875rem) 0 1.875rem;
   border-bottom: 1px solid var(--pdp-line-dark);
 }
 
 .product__selection small {
   display: block;
-  color: rgba(255, 232, 214, 0.62);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .product__selection span {
   display: block;
-  margin-top: 10px;
+  margin-top: 0.625rem;
   color: var(--pdp-olive);
-  font: 400 clamp(22px, 1.8vw, 31px) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
+  font: 400 clamp(1.375rem, 1.8vw, 1.9375rem) / 1.05 "Sentient-LightItalic", "Sentient-Regular", serif;
 }
 
 .product__optionPanel {
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 1.25rem 0;
   border-bottom: 1px solid var(--pdp-line-dark);
+}
+
+/*
+ * Jednovariantní produkt nevykreslí ani jednu volbu — a v tomhle katalogu je
+ * takový každý. Panel se ale sázel dál: naměřeno 41 px prázdna plus hairline
+ * navíc v nákupním sloupci, tedy 6 % okna na 1220×660, kde je místa nejmíň.
+ * Řeší se to tady a ne v renderu, protože je to sazba, ne data. AŽ ZA
+ * pravidlem, které přebíjí.
+ */
+.product__optionPanel:empty {
+  display: none;
 }
 
 .product__details__subDetails__colors {
   display: grid;
-  grid-template-columns: clamp(82px, 6vw, 112px) minmax(0, 1fr);
+  grid-template-columns: clamp(5.125rem, 6vw, 7rem) minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  min-height: 62px;
-  padding: 11px 0;
-  border-bottom: 1px solid rgba(255, 232, 214, 0.1);
+  gap: 0.75rem;
+  min-height: 3.875rem;
+  padding: 0.6875rem 0;
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .1);
 }
 
 .product__details__subDetails__colors:last-child {
@@ -505,8 +536,8 @@
 
 .product__details__subDetails__colors > p {
   margin: 0;
-  color: rgba(255, 232, 214, 0.62);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -520,49 +551,49 @@
 .product__variantMedia {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 0;
+  gap: 0.625rem;
+  padding: 1rem 0;
   border-bottom: 1px solid var(--pdp-line-dark);
 }
 
 .product__variantPhotos {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
 
   img {
-    width: clamp(56px, 5vw, 76px);
-    height: clamp(56px, 5vw, 76px);
+    width: clamp(3.5rem, 5vw, 4.75rem);
+    height: clamp(3.5rem, 5vw, 4.75rem);
     object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 232, 214, 0.14);
+    border-radius: 0.625rem;
+    border: 1px solid rgb(var(--cream-06-rgb) / .14);
   }
 }
 
 .product__variantNote {
   margin: 0;
-  color: rgba(255, 232, 214, 0.6);
-  font-size: 13px;
+  color: rgb(var(--cream-06-rgb) / .6);
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
   line-height: 1.45;
 }
 
 .product__buyBlock {
   margin-top: auto;
-  padding-top: clamp(38px, 6vh, 64px);
+  padding-top: clamp(2.375rem, 6vh, 4rem);
 }
 
 .product__details__cta__price {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  gap: 10px;
-  padding-bottom: 20px;
+  gap: 0.625rem;
+  padding-bottom: 1.25rem;
 }
 
 .product__details__cta__price > p {
-  margin: 5px 0 0;
-  color: rgba(255, 232, 214, 0.62);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  margin: 0.3125rem 0 0;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 400 clamp(0.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -572,54 +603,87 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 0.375rem;
   text-align: right;
 }
 
 .product__details__cta__price__main > span:first-child {
   color: var(--pdp-cream);
-  font: 400 clamp(34px, 2.8vw, 52px) / 0.9 "Sentient-Regular", serif;
+  font: 400 clamp(2.125rem, 2.8vw, 3.25rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
 
 .product__details__cta__price__main > .product__priceUnavailable {
   max-width: 8ch;
-  font-size: clamp(21px, 1.45vw, 28px);
+  font-size: clamp(1.3125rem, 1.6vw, 1.75rem);
   line-height: 1;
   letter-spacing: -0.025em;
 }
 
 .product__priceCurrent--sale,
 .product__priceDiscount {
-  color: #bbb788 !important;
+  color: var(--sage-01) !important;
 }
 
 .product__details__cta__price__main > p {
   margin: 0;
-  color: rgba(255, 232, 214, .62);
-  font: 300 13px/1.35 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 300 clamp(0.8125rem, 1.083vw, 0.948rem)/1.35 "Sansation-Light", sans-serif;
 }
 
 .product__priceOriginalLabel {
-  color: rgba(255, 232, 214, .62);
+  color: rgb(var(--cream-06-rgb) / .62);
 }
 
 .product__priceOriginal {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
-  text-decoration-color: rgba(255, 232, 214, .62);
+  text-decoration-color: rgb(var(--cream-06-rgb) / .62);
 }
 
 .product__priceDiscount {
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.8125rem, 1.083vw, 0.948rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
 }
 
+/*
+ * Jedna geometrie pilulky, jedno místo — tady, na jediném předkovi, který drží
+ * OBĚ tlačítka („Přidat do košíku" i „Koupit ihned").
+ *
+ * Sady čísel byly tři: cart-button.module.scss, buy-now/style.module.scss a
+ * `> div:nth-child(2)` s `!important`em pár řádků níž. Ten !important přebíjel
+ * jen tu první — BuyNow je sourozenec `.buy`, ne položka `.buy__buttons`, takže
+ * na něj nikdy nedosáhl a pilulky se lišily šířkou i výškou (na 1220 měl
+ * primární 195 px a sekundární 210 px, na 660 vysokém okně 50 vs 44 px).
+ * Obě teď čtou tyhle dvě proměnné; jejich vlastní fallbacky platí jen tam, kde
+ * komponenta stojí mimo PDP (sada v bundle-actions).
+ *
+ * Šířka na vw, výška na vh. Podlaha 12rem = 192 px není vkus: řádek je kroužek
+ * 2.75rem + mezera 0.75rem + pilulka a musí se vejít do nákupního sloupce, který
+ * má na md stopu naměřených 257.4 px (192 + 56 = 248, rezerva 9.4 px; při 210px
+ * podlaze přeteče). 4.63vh je přesně 50 px při výšce 1080, takže referenční
+ * viewport je beze změny, a na 660/768px vysokém laptopu se pilulka sevře na
+ * dotykovou podlahu 2.75rem = 44 px — což ploché `3.125rem !important` neumělo
+ * a co je přesně ten důvod, proč nízký laptop nepotřebuje pravidlo v `lt`.
+ * Nad 1921 zvedne oba stropy ramp.
+ *
+ * Přeměřeno po foldu telefonu (below-with-phone(sm) níž): nejužší skutečný
+ * nákupní sloupec je 288 px obsahu na 320 px širokém telefonu v portrétu,
+ * tedy 288 − 44 (kroužek) − 12 (mezera) = 232 px na pilulku. Podlaha 192 px
+ * se do toho vejde s rezervou 40 px a řádek je na VŠECH pěti telefonních
+ * stopách jednořádkový (naměřeno 44 px vysoký, ne 100). Podlaha se proto
+ * nezvedá: platí pro celé pásmo pod 1200 px (16vw = 192 px právě na 1200),
+ * takže by ji nesl i tablet, kde má sloupec naměřených 183–248 px — tam už by
+ * pilulka sama sloupec přetekla a její popisek (podlaha 0.875rem, `overflow:
+ * hidden`) by se ořízl. Pod 1160 px zůstává rozvržením `flex-wrap` níž.
+ */
 .product__details__cta__buy {
+  --cta-pill-w: clamp(12rem, 16vw, 15.625rem);
+  --cta-pill-h: clamp(2.75rem, 4.63vh, 3.125rem);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 9px;
+  gap: 0.5625rem;
 }
 
 /*
@@ -631,17 +695,17 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 14px;
+  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
   line-height: 1.5;
   text-align: right;
 }
 
 .product__details__cta__confirm {
-  color: #bcd0a8;
+  color: var(--sage-03);
 }
 
 .product__details__cta__error {
-  color: #f3b3a4;
+  color: var(--clay-41);
 }
 
 /*
@@ -653,10 +717,10 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
   line-height: 1.5;
   text-align: right;
-  color: #d9d7c9;
+  color: var(--cream-02);
 }
 
 /* Dobírka up front — same quiet voice as the backorder note. */
@@ -664,10 +728,10 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
   line-height: 1.5;
   text-align: right;
-  color: #d9d7c9;
+  color: var(--cream-02);
 }
 
 /* Quantity stepper. 44px targets on the ink stage; cream text is 13.7:1 there. */
@@ -676,13 +740,13 @@
   width: 100%;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 0.875rem;
 }
 
 .product__details__cta__quantity > span {
-  color: var(--pdp-cream, #ffe8d6);
+  color: var(--pdp-cream, var(--cream-06));
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -690,25 +754,27 @@
 .product__details__cta__quantity > div {
   display: flex;
   align-items: center;
-  border: 1px solid rgba(255, 232, 214, 0.58);
+  border: 1px solid rgb(var(--cream-06-rgb) / .58);
   border-radius: 999px;
 }
 
 .product__details__cta__quantity button {
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--pdp-cream, #ffe8d6);
+  color: var(--pdp-cream, var(--cream-06));
   cursor: pointer;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1;
   transition: background-color 320ms ease;
 }
 
-.product__details__cta__quantity button:hover:not(:disabled) {
-  background: rgba(255, 232, 214, 0.13);
+@include fine-pointer {
+  .product__details__cta__quantity button:hover:not(:disabled) {
+    background: rgb(var(--cream-06-rgb) / .13);
+  }
 }
 
 .product__details__cta__quantity button:disabled {
@@ -718,79 +784,124 @@
 
 .product__details__cta__quantity output {
   min-width: 2ch;
-  color: var(--pdp-cream, #ffe8d6);
+  color: var(--pdp-cream, var(--cream-06));
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: center;
 }
 
+/*
+ * Řádek je kroužek 2.75rem + mezera 0.75rem + pilulka --cta-pill-w, tedy
+ * 44 + 12 + 192 = 248 px v nejužším bodě pásma. Nákupní sloupec je ale užší,
+ * než se čekalo: naměřeno 191 px při 901 px šířky okna, 220 px na 1024×768
+ * (iPad na šířku) a 249 px teprve při 1160 px. Do 1155 px se řádek nevejde a
+ * `.product { overflow: clip }` kroužek TIŠE UŘÍZNE — bez scrollbaru, takže
+ * to žádný test přetečení stránky nechytí.
+ *
+ * `flex-wrap: wrap` je pojistka, ne rozvržení: zapne se výhradně tehdy, když
+ * se řádek nevejde, takže nad 1155 px se nikdy neuplatní a referenční viewport
+ * je beze změny. Pod tím kroužek sjede na vlastní řádek místo pod okraj.
+ * Šířku pilulky to nesnižuje — ta je jedna geometrie na jednom místě níž.
+ */
 .product__details__cta__buy__buttons {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 0.75rem;
   width: 100%;
 }
 
 .product__details__cta__buy__button__add {
   display: grid;
-  width: 44px;
-  height: 44px;
+  /* Kruh drží kruh. Bez tohohle na něj padne část smrštění řádku, jakmile je
+     sloupec užší než kroužek + mezera + pilulka, a `border-radius: 50%` z něj
+     udělá elipsu. Rezervu má nést pilulka, ne kolečko. */
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
   place-items: center;
-  border: 1px solid rgba(255, 232, 214, 0.58);
+  border: 1px solid rgb(var(--cream-06-rgb) / .58);
   border-radius: 50%;
-  background: rgba(255, 232, 214, 0.06);
+  background: rgb(var(--cream-06-rgb) / .06);
   transition:
     background-color 320ms ease,
     border-color 320ms ease,
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.product__details__cta__buy__button__add:hover {
-  border-color: var(--pdp-cream);
-  background: rgba(255, 232, 214, 0.13);
-  transform: translateY(-2px);
+/* translateY(-2px) po tapnutí visí, dokud se prst nedotkne něčeho jiného —
+   kroužek pak sedí o dva pixely výš než jeho řádek. Hover patří ukazovátku. */
+@include fine-pointer {
+  .product__details__cta__buy__button__add:hover {
+    border-color: var(--pdp-cream);
+    background: rgb(var(--cream-06-rgb) / .13);
+    transform: translateY(-2px);
+  }
 }
 
-.product__details__cta__buy__button__add button {
-  width: 40px;
-  height: 40px;
+/* Přihlášený stav je <button>, nepřihlášený <a> na přihlášení. Selektor mířil
+   jen na <button>, takže odkaz si bral 100 % obsahového boxu obalu (42 px) a
+   glyf v něm vyšel o 1.1 px větší než v tlačítku vedle. Jeden kruh, jedno
+   číslo, ať už je uvnitř cokoli. */
+.product__details__cta__buy__button__add button,
+.product__details__cta__buy__button__add > a {
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
-.product__details__cta__buy__buttons > div:nth-child(2),
-.product__details__cta__buy__buttons > div:nth-child(2) > button {
-  width: clamp(210px, 14vw, 250px) !important;
-  height: 50px !important;
+/* Dotyková podlaha zvedne ovládací prvek uvnitř kroužku na 44 px
+   (wishlist-toggle.module.scss, `@include touch`), jenže obsahový box obalu je
+   42 px — 2.75 rem mínus dva 1px rámečky. 44 se do 42 nevejde, a Chromium při
+   přetečení sráží `place-items: center` na start, takže prvek vylezl o 1 px
+   doprava a dolů: naměřeno inset 1/1 nahoře a vlevo proti −1/−1 vpravo a dole
+   a scrollWidth 44 proti clientWidth 42 na všech čtyřech telefonních stopách.
+   Obal má `overflow: visible`, takže se nic neuřízne — jen je kruh nesouměrný,
+   a v přihlášeném stavu (`<button>` + olivový disk `.surface` s `inset: 0`)
+   by ten disk koukal o 1 px z krémového kroužku.
+
+   Záporný okraj je právě šířka toho rámečku, a ta je zapsaná O ČTYŘI ŘÁDKY VÝŠ,
+   v tomhle souboru — proto oprava patří sem a ne do wishlist-toggle, kde by to
+   byla táž geometrie na druhém místě. Marginový box prvku je pak 42 px, přesně
+   obsahový box obalu: přetečení mizí, `place-items: center` zase centruje
+   a 44px kruh sedí souměrně na 44px kroužku. Kroužek si nechává svých 44 px
+   a dotykový cíl taky — na myši se nic nemění, tam je prvek 40 px a blok
+   neplatí. Psáno AŽ ZA pravidlem, které přebíjí. */
+@include touch {
+  .product__details__cta__buy__button__add button,
+  .product__details__cta__buy__button__add > a {
+    margin: -1px;
+  }
 }
 
 .product__details__cta__buy > p {
   /* Availability, backorder and dobírka notes — the three sentences that
      decide the purchase. Was .48 = 4.2:1 on the ink stage. */
   margin: 0;
-  color: rgba(255, 232, 214, 0.64);
-  font: 400 14px/1.35 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .64);
+  font: 400 clamp(0.875rem, 1.167vw, 1.021rem)/1.35 "Sansation-Regular", sans-serif;
 }
 
 .product__serviceNotes {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 7px 12px;
-  margin-top: 22px;
-  padding: 15px 0;
+  gap: clamp(0.4375rem, 0.6vh, 0.6rem) clamp(0.5rem, 0.62vw, 0.75rem);
+  margin-top: 1.375rem;
+  padding: 0.9375rem 0;
   border-top: 1px solid var(--pdp-line-dark);
-  color: rgba(255, 232, 214, 0.62);
-  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 400 clamp(0.75rem, 0.85vw, 0.83rem)/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .productChapter {
-  --pdp-ink: #20211c;
-  --pdp-cream: #ffe8d6;
-  --pdp-green: #747e62;
-  --pdp-line-dark: rgba(255, 232, 214, 0.2);
-  --pdp-line-light: rgba(32, 33, 28, 0.2);
+  --pdp-ink: var(--ink-05);
+  --pdp-cream: var(--cream-06);
+  --pdp-green: var(--olive-15);
+  --pdp-line-dark: rgb(var(--cream-06-rgb) / .2);
+  --pdp-line-light: rgb(var(--ink-05-rgb) / .2);
   position: relative;
   // Keep the chapter in the normal hit-testing stack. A negative layer made
   // the CTA visible but placed its link behind the page surface.
@@ -805,13 +916,25 @@
   isolation: isolate;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(400px, 0.92fr) minmax(520px, 1.08fr);
-  gap: clamp(70px, 8vw, 150px);
+  /*
+   * Minima byla 400 + 520 = 920 px, k tomu mezera 8vw. Telefon na šířku má po
+   * paddingu `max(5vw, …)` k dispozici 838 px obsahu, takže mřížka přetekla
+   * o 82 px a `.productChapter { overflow: hidden }` to TIŠE uřízlo — bez
+   * scrollbaru, takže to žádný test přetečení stránky nechytí. Stejný přetok
+   * má tabletová šířka 900 px (810 px obsahu).
+   *
+   * `minmax(0, .92fr)` je na referenční šířce beze změny: minima drží jen
+   * dokud je obsah užší než 920 + mezera ≈ 995 px, nad tím rozhoduje výhradně
+   * poměr fr (na 1800 px obsahu 759 / 891 px v obou zápisech). Pod tím se
+   * sloupce smrští místo aby vylezly z okna.
+   */
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(4.375rem, 8vw, 9.375rem);
   align-items: center;
   width: 100%;
   min-height: 72vh;
   margin-top: 0;
-  padding: clamp(80px, 10vh, 120px) max(5vw, calc((100vw - 1800px) / 2));
+  padding: clamp(5rem, 10vh, 7.5rem) max(5vw, calc((100vw - 112.5rem) / 2));
   border-radius: 0;
   color: var(--pdp-ink);
   background: var(--pdp-cream);
@@ -822,7 +945,7 @@
   max-width: 12ch;
   margin: 0 0 0 auto;
   text-align: right;
-  font: 400 clamp(52px, 5.8vw, 104px) / 0.84 "Sentient-Regular", serif;
+  font: 400 clamp(3.25rem, 5.8vw, 6.5rem) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.055em;
 }
 
@@ -844,10 +967,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-  color: rgba(32, 33, 28, 0.52);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  gap: 0.875rem;
+  margin-bottom: 0.875rem;
+  color: rgb(var(--ink-05-rgb) / .52);
+  font: 400 0.75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -859,14 +982,14 @@
 
 .product__chapterPreview {
   position: relative;
-  height: clamp(330px, 43vh, 490px);
+  height: clamp(20.625rem, 43vh, 30.625rem);
 }
 
 .product__chapterPreview figure {
   position: absolute;
   margin: 0;
   overflow: hidden;
-  background: #d8d5cd;
+  background: var(--cream-01);
 }
 
 .product__chapterPreviewMain {
@@ -894,38 +1017,44 @@
   inset: 0;
   pointer-events: none;
   content: "";
-  background: linear-gradient(180deg, transparent 54%, rgba(20, 21, 17, 0.52));
+  background: linear-gradient(180deg, transparent 54%, rgb(var(--ink-01-rgb) / .52));
 }
 
 .product__chapterPreviewMain figcaption,
 .product__chapterPreviewDetail span {
   position: absolute;
   z-index: 2;
-  color: rgba(255, 232, 214, 0.82);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .82);
+  font: 400 0.75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .product__chapterPreviewMain figcaption {
-  right: 14px;
-  bottom: 12px;
-  left: 14px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 232, 214, 0.35);
+  right: 0.875rem;
+  bottom: 0.75rem;
+  left: 0.875rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .35);
 }
 
 .product__chapterPreviewDetail span {
-  right: 9px;
-  bottom: 8px;
+  right: 0.5625rem;
+  bottom: 0.5rem;
 }
 
-.product__chapterCta:hover .product__chapterPreviewMain .product__chapterPreviewImage {
-  transform: scale(1.025);
-}
+/* scale(1.025) po tapnutí visí, dokud se prst nedotkne něčeho jiného — obrázek
+   pak zůstane zvětšený a kapitola vypadá rozostřeně. Hover patří ukazovátku.
+   AŽ ZA pravidlem, které přebíjí (`transition` na .product__chapterPreviewImage
+   výše zůstává, takže na myši je přechod beze změny). */
+@include fine-pointer {
+  .product__chapterCta:hover .product__chapterPreviewMain .product__chapterPreviewImage {
+    transform: scale(1.025);
+  }
 
-.product__chapterCta:hover .product__chapterPreviewDetail .product__chapterPreviewImage {
-  transform: scale(1.04);
+  .product__chapterCta:hover .product__chapterPreviewDetail .product__chapterPreviewImage {
+    transform: scale(1.04);
+  }
 }
 
 .product__chapterAction {
@@ -934,19 +1063,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-top: 18px;
+  gap: 1.5rem;
+  margin-top: 1.125rem;
 }
 
 .product__chapterAction > p {
   max-width: 28ch;
   margin: 0;
-  color: rgba(32, 33, 28, 0.7);
-  font: 300 clamp(15px, 0.95vw, 18px) / 1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 300 clamp(0.9375rem, 0.95vw, 1.125rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
 .product__chapterButton {
-  min-width: 168px;
+  min-width: 10.5rem;
 }
 
 .product__mediaEmpty {
@@ -955,25 +1084,49 @@
   place-items: center;
   border: 1px solid var(--pdp-line-dark);
   border-radius: 0;
-  color: rgba(255, 232, 214, 0.55);
+  color: rgb(var(--cream-06-rgb) / .55);
 }
 
-@include below-px(1180px) {
-  .product__story {
-    grid-template-columns: minmax(230px, 1fr) minmax(380px, 1.16fr) minmax(240px, 1fr);
-    gap: 28px;
-    width: 96vw;
-  }
-}
-
-@include below-px(900px) {
+/*
+ * Složený tok telefonu.
+ *
+ * `below-with-phone(sm)` místo `below-px(900px)`: telefon na šířku je 932 px
+ * široký, takže ho žádná max-width neodliší od tabletu. Mixin (_mixins.scss
+ * r. 195) emituje `(max-width: 899.98px), <h-query(phs)>` v JEDNOM čárkou
+ * odděleném seznamu — obě poloviny tedy nemůže rozdělit pravidlo, které by
+ * mezi ně spadlo — a fold se pustí i na 932×430.
+ *
+ * Co tam do teď zůstávalo: trojsloupcová desktopová mřížka v okně vysokém
+ * 430 px. Naměřeno před zásahem — nákupní sloupec 198 px obsahu, řádek CTA
+ * (kroužek 44 + mezera 12 + pilulka 192 = 248 px) se do něj vešel jedině
+ * zalomením na dva řádky (`.product__details__cta__buy__buttons` 198×100),
+ * `.product__identity` přetékal textem o 26 px (scrollW 252 / clientW 226)
+ * a mřížka `.product__chapterEnd` o 82 px. Všechny tři přetoky tiše ořezával
+ * `overflow: clip` / `hidden`, takže je žádný test přetečení stránky nechytil.
+ *
+ * Jediný rozdíl proti původnímu zápisu je hranice: below-px(900) byla
+ * inkluzivní na 900 px, below(sm) je 899.98. Portrétový tablet přesně 900 px
+ * široký proto fold ztrácí — dopad změřen, viz report: mřížka se do 846 px
+ * obsahu vejde (832.5 px), nic nepřetéká.
+ */
+@include below-with-phone(sm) {
   .product__story {
     display: flex;
-    width: min(92vw, 720px);
+    width: min(92vw, 45rem);
     flex-direction: column;
     margin-right: auto;
     margin-left: auto;
-    padding: 135px 0 110px;
+    /*
+     * Svisle na vh. 135 + 110 px byl na okně vysokém 320 px 77 % viewportu —
+     * tři čtvrtiny obrazovky prázdného paddingu.
+     * Podlaha 5.125rem = 82 px není vkus: `nav.navbar` je fixed a končí na
+     * 66 px, takže pod ~76 px mizí eyebrow pod lištou. Je to táž podlaha,
+     * jakou má základní pravidlo výše, a proto se drží i na 320 px vysokém
+     * okně. Strop 8.4375rem = 135 px je původní hodnota, živá od výšky okna
+     * ≈ 1038 px. Naměřeno po zásahu: 320 → 82/44 (126 px, 39 %),
+     * 568 → 82/51, 932 → 121/84.
+     */
+    padding: clamp(5.125rem, 13vh, 8.4375rem) 0 clamp(2.75rem, 9vh, 6.875rem);
     transform: none;
   }
 
@@ -995,29 +1148,63 @@
     max-width: none;
   }
 
+  /*
+   * Harmonika „Popisek / Rozměry a materiál / Doprava a vrácení" má jediné
+   * místo renderu (details/details.tsx r. 260). `display: none` tady tedy
+   * nebyla úspora místa, ale ZTRÁTA OBSAHU: na svislém telefonu se popis
+   * produktu ani rozměry nedaly přečíst nijak.
+   *
+   * `order: 4` ji ve složeném toku posílá na konec sourozenců — a POZOR na to,
+   * kam až order dosáhne: slot je vnořený v `.product__identityInner`, ne
+   * v `.product__story`, takže ho řadí uvnitř identity, kde už poslední je.
+   * Za nákupní sloupec (order 3) by se dostal jedině přesunem v TSX, a ten by
+   * přepsal ověřený desktop — tam slot drží `margin-top: auto` u paty lepivého
+   * sloupce. Ve složeném toku proto sedí za perexem a hodnocením, hned před
+   * galerií. Odsazení nese základní pravidlo výše
+   * (`padding-top: clamp(2.375rem, 7vh, 4.5rem)`, tedy 38 px na 320 px vysokém
+   * okně) — druhá sada čísel se sem nepíše.
+   */
   .product__detailsSlot {
-    display: none;
+    order: 4;
   }
 
   .product__media {
     order: 2;
     width: 100%;
-    margin-top: 48px;
+    /* Mezera mezi sloupci složeného toku soupeří o výšku, tedy vh.
+       48 px bylo 15 % okna vysokého 320 px. */
+    margin-top: clamp(2rem, 5vh, 3.5rem);
   }
 
   .product__purchase {
     order: 3;
-    margin-top: 28px;
+    margin-top: clamp(1.25rem, 3vh, 1.75rem);
   }
 
+  /*
+   * Výška rámu galerie byla psaná dvakrát — `min(74vh, 720px)` tady
+   * a `62vh; min-height: 450px` ve foldu na 560 px. Táž vlastnost ve dvou
+   * media query s jinou hodnotou je clamp, který nikdo nenapsal.
+   * Prostřední člen je 62vh, takže 380×800 (496 px) i 430×932 (578 px)
+   * zůstávají přesně na hodnotě, kterou měly. Na 320×568 padá min-height
+   * 450 px (79 % okna) na 352 px a na 568×320 se rám sevře na 198 px místo
+   * 237. Podlaha 11.25rem = 180 px je krajní člen v rem podle pravidla 2;
+   * živá je až pod výškou okna 290 px, tedy pod nejmenší stopou.
+   * Strop 45rem = 720 px je původní strop foldu.
+   *
+   * clip-path animace galerie (Gallery/gallery.tsx r. 20–21,
+   * inset(7% 0 7% 0) → inset(0), whileInView) je zapsaná v procentech, takže
+   * se s výškou rámu přeškáluje sama; `overflow` rámu se nemění.
+   */
   .product__mediaFrame,
   .product__mediaFrame:nth-of-type(even) {
-    height: min(74vh, 720px);
+    height: clamp(11.25rem, 62vh, 45rem);
   }
 
   .product__chapterEnd {
     grid-template-columns: 1fr;
-    gap: 64px;
+    /* Jednosloupcová mřížka → mezera je svislá, tedy vh. */
+    gap: clamp(2.5rem, 6vh, 4rem);
   }
 
   .product__chapterEnd > p {
@@ -1026,21 +1213,21 @@
   }
 }
 
+/*
+ * Telefon v portrétu. Pozor: 568×320 je 568 px ŠIROKÝ, takže tenhle fold na
+ * telefon na šířku NEPLATÍ — tam sedí jen ten výše.
+ */
 @include below-px(560px) {
   .product__story {
     width: 100%;
-    padding: 115px 16px 78px;
+    /* Vodorovně na vw. Svislý padding nese clamp ve foldu výše — táž vlastnost
+       nesmí stát ve dvou media query s jinou hodnotou, a proto se tady píše
+       jen `padding-inline`. AŽ ZA foldem, který přebíjí. */
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
   }
 
   .product__identity h1 {
-    font-size: clamp(48px, 17vw, 72px);
-  }
-
-  .product__mediaFrame,
-  .product__mediaFrame:nth-of-type(even) {
-    height: 62vh;
-    min-height: 450px;
-    border-radius: 0;
+    font-size: clamp(3rem, 17vw, 4.5rem);
   }
 
   .product__galleryOutro {
@@ -1048,7 +1235,7 @@
   }
 
   .product__galleryOutroGraphic {
-    grid-template-columns: minmax(36px, 1fr) 18px minmax(36px, 1fr);
+    grid-template-columns: minmax(2.25rem, 1fr) 1.125rem minmax(2.25rem, 1fr);
   }
 
   .product__galleryOutroGraphic > span {
@@ -1057,8 +1244,7 @@
 
   .product__chapterEnd {
     min-height: 36vh;
-    padding-right: 16px;
-    padding-left: 16px;
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
   }
 
   .product__chapterEnd > p {
@@ -1071,11 +1257,286 @@
   }
 
   .product__chapterPreview {
-    height: min(64vw, 440px);
+    height: min(64vw, 27.5rem);
   }
 
   .product__chapterAction {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SVISLÝ TABLET, 600–999 px. DVA sloupce — ne jeden jako telefon, ne tři jako
+ * desktop.
+ *
+ * Tablet není širší telefon. 768×1024 má 1024 px VÝŠKY, tedy víc svislého
+ * místa než noťas 1366×768, na kterém tatáž stránka nese tři sloupce. Telefon
+ * skládá všechno pod sebe proto, že nemá ani šířku, ani výšku; tablet má obojí
+ * dost a ten důvod u něj neplatí.
+ *
+ * Fold výše je `below-with-phone(sm)`, tedy max-width 899.98 px BEZ orientace,
+ * takže svislý tablet do teď dostával DOSLOVA telefonní tok, ne „velký
+ * telefon". Naměřeno před zásahem na 768×1024: `.product__story` flex column
+ * 707 px, identita / galerie / nákup pod sebou (order 0/2/3), lepivé sloupce
+ * zrušené, všechny tři bloky 707 px široké a obsah v nich zarovnaný doprava
+ * k prázdnu (`.product__details__cta__price__main` začínal na x=684 ze 707).
+ * Stránka byla o 913 px VYŠŠÍ než tatáž stránka na 1024×1366, přitom užší.
+ *
+ * Naměřeno stejnou metodou před i po (.rdshots/_tb-pdp-beforeafter.cjs vrací
+ * telefonní tok přes nový tvar, takže jsou obě čísla z téhož načtení stránky):
+ * `.product__story` 707×2534 → 722×2102, stránka 4729 → 4297 px, prázdno vlevo
+ * od řádku CTA 459 → 60 px, h1 707×40 při 44 px → 376×155 při 57.6 px.
+ *
+ * AŽ ZA `below-with-phone(sm)` i `below-px(560px)`: oba mixiny emitují obyčejné
+ * vnořené media query, ne @layer, takže při stejné specificitě rozhoduje pořadí
+ * v souboru a `v(md)` musí přebít složený tok telefonu.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+@include v(md) {
+  /*
+   * Identita a nákup vedle sebe v prvním řádku, galerie pod nimi přes celou
+   * šířku. Galerie tím na 768 dostane 722 px — skoro dvakrát víc než 384 px,
+   * které má v třísloupcové mřížce na 1024×1366.
+   *
+   * Tři stopy se sem nevejdou a není to odhad: podlahy 210 + 304 + 210 px
+   * a dvě mezery po 30.7 px dají 785 px proti kontejneru 722 px. Zkusmo
+   * nasazeno živě (.rdshots/_tb-pdp-claims.cjs): mřížka přeteče o 63 px, stopy
+   * spadnou na 210 / 304 / 210 a h1 se uřízne o 83 px (scrollWidth 293 proti
+   * clientWidth 210) — tiše, protože `.product { overflow: clip }` to ustřihne
+   * bez scrollbaru.
+   *
+   * Podlaha nákupní stopy 17rem = 272 px není vkus: řádek CTA měří kroužek
+   * 2.75rem + mezera 0.75rem + pilulka 12rem = 44 + 12 + 192 = 248 px.
+   * Geometrie pilulky je výš na `.product__details__cta__buy` a nesahá se na ni
+   * — nese ji i telefon (288px sloupec na 320px telefonu). Poměr 0.82fr drží
+   * nákup užší než identitu, dokud se podlaha nezapne. Naměřeno živě:
+   * 600 → 260/272 (rezerva 24 px nad řádkem CTA), 700 → 342/281 (33 px),
+   * 768 → 376/308 (60 px), 999 → 488/401 (153 px).
+   *
+   * Šířka je základní `min(94vw, 117.5rem)`, ne 92vw z foldu. Není to třetí
+   * hodnota téže vlastnosti, je to NÁVRAT k základní: strop 117.5rem je v celém
+   * pásmu mimo hru (94vw = 939 px při 999 px), takže v 600–999 zůstává 94vw.
+   * Zároveň tím levý okraj h1 sedne na levý okraj galerie pod ním.
+   */
+  .product__story {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.82fr);
+    /* Vodorovná mezera soutěží o šířku (vw), svislá o výšku (vh). Row-gap
+       nahrazuje `margin-top` z foldu, proto se ten níž nuluje. */
+    column-gap: clamp(2rem, 5vw, 3.5rem);
+    row-gap: clamp(2rem, 4vh, 3.5rem);
+    width: min(calc(94 * var(--fvw)), 117.5rem);
+    align-items: start;
+  }
+
+  /*
+   * `position: relative` a nulový boční padding nese fold, jenže ten končí na
+   * 899.98 px — v pásmu 900–999 (912×1368 Surface Pro v portrétu je reálný kus)
+   * by se vrátil lepivý sloupec i 28px padding a tabletový tvar by se uprostřed
+   * vlastního pásma zlomil.
+   *
+   * U sticky nejde o to, že by nefungovalo, ale že by fungovalo jen JEDNOMU
+   * ze dvou: blok obtékání lepivé položky je její buňka mřížky, a ta je vysoká
+   * jako celý řádek. Naměřeno na 900×1440 identita 696 px, nákup 541 px —
+   * identita je přesně řádek a nehnula by se vůbec, nákup by po něm při
+   * scrollování sjel až o 155 px. Dva sloupce jednoho řádku by se rozešly.
+   * Padding zase rozvede levý okraj h1 s levým okrajem galerie pod ním
+   * (na 768 sedí obojí na x=23).
+   */
+  .product__identity,
+  .product__purchase {
+    position: relative;
+    top: auto;
+    grid-row: 1;
+  }
+
+  .product__identity {
+    grid-column: 1;
+    padding-left: 0;
+  }
+
+  .product__purchase {
+    grid-column: 2;
+    /* Svislý odstup složeného toku teď nese row-gap mřížky. */
+    margin-top: 0;
+    padding-right: 0;
+  }
+
+  .product__media {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0;
+  }
+
+  /* `min-height: min(76vh, 32rem)` je patka lepivého sloupce — drží
+     `margin-top: auto` u `.product__buyBlock` a `.product__detailsSlot` dole.
+     Bez sticky by z toho bylo jen prázdno; fold to nuluje pod 900 px, tady to
+     platí pro celé pásmo. */
+  .product__identityInner,
+  .product__purchaseInner {
+    min-height: 0;
+  }
+
+  /*
+   * TITULEK — jiná TYPOGRAFICKÁ ROLE v jiném TVARU, ne druhá hodnota téže věci.
+   *
+   * Na desktopu je h1 nadpis jednoho ze TŘÍ sloupců, na telefonu nadpis
+   * JEDINÉHO sloupce přes celou stránku, tady nadpis LEVÉHO ze DVOU. Prostřední
+   * člen clampu je podíl toho sloupce na okně, a ten podíl se mění POČTEM
+   * SLOUPCŮ, ne velikostí okna — proto tři různé členy, a proto v poměru
+   * k vlastnímu sloupci vyjde pokaždé skoro totéž:
+   *
+   *     tvar        sloupec / okno      člen     výsledek   / šířka sloupce
+   *     3 sloupce   324/1366 = 23.7 %   4vw      54.6 px    = 16.9 %
+   *     2 sloupce   376/768  = 48.9 %   7.5vw    57.6 px    = 15.3 %
+   *     1 sloupec   396/430  = 92.1 %   17vw     72.0 px    = 18.2 %
+   *
+   * Jedním clampem to napsat nejde: při TÉŽE šířce okna je sloupec v landscape
+   * jiný (na 1024×768 má identita 220 px obsahu), a landscape je hotový
+   * z prvního kola. To je pravidlo 4 — portrét je jiný TVAR, ne jiná velikost.
+   *
+   * Bez tohohle se nadpis při přechodu telefon → tablet ZMENŠIL: 72 px na 430,
+   * ale jen 44 px na 768, protože 17vw z `below-px(560px)` už neplatí
+   * a základní `clamp(2.75rem, 4vw, 4.75rem)` sedí při 4vw = 30.7 px na
+   * podlaze. Naměřený box byl 707×40 px na sloupci 1.8× širším než telefonní.
+   *
+   * Podlaha 3rem = 48 px je táž jako u telefonu a je změřená na nejužším
+   * sloupci pásma: na 600×960 má identita 260 px a nejdelší slovo
+   * („Dekorativní") se do něj při 48 px vejde přesně (scrollWidth 260 =
+   * clientWidth 260). Při 3.25rem = 52 px je scrollWidth 265 proti 260 —
+   * `.product { overflow: clip }` by slovo TIŠE uřízl o 5 px, bez scrollbaru,
+   * takže by to žádný test přetečení stránky nechytil (naměřeno oběma
+   * variantami, .rdshots/_tb-pdp-claims.cjs).
+   * S 7.5vw se podlaha potkává přesně na 640 px šířky, přechod je spojitý.
+   * Strop 5rem je pojistka v rem podle pravidla 2; v pásmu se nezapne
+   * (7.5vw = 80 px až při 1066 px, kde už platí v(lg) níž).
+   *
+   * `max-width: none` má fold jen pod 900 px, takže bez tohohle řádku by se
+   * v pásmu 900–999 vrátila devítiznaková míra. Naměřeno na 900×1440: h1 by
+   * měla 382 px místo 440 px, tedy 87 % sloupce. U tohohle titulku by se výška
+   * nezměnila (182.3 px v obou případech, stejné zalomení) — píše se to sem
+   * kvůli tomu, aby měl celý tabletový tvar JEDNU míru; u delšího názvu by ten
+   * skok uprostřed pásma vidět byl.
+   */
+  .product__identity h1 {
+    max-width: none;
+    font-size: clamp(3rem, 7.5vw, 5rem);
+  }
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SVISLÝ TABLET OD 1000 px — iPad Pro 1024×1366 a portrétové monitory.
+ *
+ * Dvě věci najednou:
+ *
+ * 1) `v(md)` výše je min-width, takže platí i na 1024. Tady se mu tvar bere
+ *    zpátky: na 1024 se třísloupcová mřížka vejde, kdežto na 768 přeteče o
+ *    63 px (změřeno, viz `v(md)` výš), a je to ověřený desktopový tvar.
+ *
+ * 2) Stopy se ZÁROVEŇ vyvažují, protože ty současné na 1024 nesedí. Naměřeno
+ *    před zásahem: sloupce 248.3 / 384 / 248.3 px, po odečtení paddingu 220 px
+ *    obsahu. Řádek CTA přitom potřebuje 44 + 12 + 192 = 248 px, takže se
+ *    ZALAMOVAL — `.product__details__cta__buy__buttons` 220×106 (srdíčko samo
+ *    nad pilulkou) proti 324×44 na desktopu. A `.product__identity h1` měla
+ *    scrollWidth 224 proti clientWidth 220: slovo „Dekorativní" při 44 px
+ *    přetékalo o 4 px a `.product { overflow: clip }` to tiše uřízlo — bez
+ *    scrollbaru, takže to žádný test přetečení stránky nechytil.
+ *
+ *    Je to změna USPOŘÁDÁNÍ, ne velikosti: 220 px obsahu proti 248 px, které
+ *    řádek potřebuje, je vada v tom, JAK SE KONTEJNER DĚLÍ. Řeší se poměrem
+ *    stop, ne zmenšením pilulky — ta je jedna geometrie na jednom místě výš
+ *    a nese ji i telefon.
+ *
+ *    Zaplatila to mezera: 4vw = 41 px se v portrétu zužuje na 2.2vw = 22.5 px.
+ *    Není to kosmetika — se základní mezerou by se širší krajní stopy do
+ *    kontejneru nevešly: naměřeno živě (.rdshots/_tb-pdp-claims.cjs) galerie
+ *    327.7 px a `.product__story` PŘETEČENÁ o 16 px, zase tiše pod
+ *    `overflow: clip`. S 2.2vw má galerie 348 px a přetečení je nula.
+ *    Jedním clampem to napsat nejde — na 1024 na ŠÍŘKU (iPad landscape) musí
+ *    zůstat mezera i stopy z prvního kola, a `v()` je portrait-only právě
+ *    proto (pravidlo 4).
+ *
+ * ODKUD SE TA KOMPOZICE ZTRATILA (aby ji nikdo „nevracel" zpátky): svislý
+ * tablet svůj vlastní tvar na 1024 kdysi měl — blok `below-px(1180px)`, který
+ * byl bez orientace, takže 1024×1366 spadalo pod něj:
+ * `minmax(230px,1fr) minmax(380px,1.16fr) minmax(240px,1fr)`, mezera 28 px,
+ * šířka 96vw. První (landscape) kolo ho složilo do základních clampů. Změřeno
+ * jeho vrácením naživo (.rdshots/_tb-pdp-old1180.cjs): dával stopy
+ * 273.5 / 380 / 273.5 a 244.8 px obsahu — h1 se do toho ještě vešla (245 proti
+ * 224), ale řádek CTA se zalamoval už tehdy (rezerva −3.2 px). Po jeho
+ * zrušení spadl obsah na 220 px, takže se ke stále zalomenému CTA přidalo
+ * ještě ořezání h1. Tenhle blok je tedy první tvar, ve kterém 1024 v portrétu
+ * doopravdy vychází, ne návrat starého.
+ *
+ * Naměřeno po zásahu: 1000×1500 → stopy 284 / 328 / 284, obsah 256 px, řádek
+ * CTA 256×50 na JEDNOM řádku; 1024×1366 → 284.7 / 348.2 / 284.7, obsah 256 px,
+ * REZERVA 8 px nad 248, galerie 348 px místo 384 px se zalomeným CTA, h1 44 px
+ * se scrollWidth == clientWidth (249/249); 1051 → tamtéž, odtud přebírá fr;
+ * 1180 → rezerva 39 px; 1366 v portrétu → 85 px. Nikde ani px vodorovného
+ * přetečení stránky.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+@include v(lg) {
+  .product__story {
+    /*
+     * Podlaha krajní stopy je NAPSANÁ POTŘEBA, ne odhad ve vw: 15.5rem = 248 px
+     * je řádek CTA (44 + 12 + 192), 0.5rem navíc je rezerva a `clamp(…)` je týž
+     * padding, jaký sloupec dostává o pár řádků níž — mění-li se jeden, musí se
+     * změnit oba. Obsah sloupce tím vyjde na 16rem = 256 px v CELÉM pásmu,
+     * ne jen na 1024; s jediným členem ve vw (28vw) by na 1000 px zbyly
+     * 4 px místo 8. Nad 1051 px šířky je fr podíl větší než podlaha a rozvržení
+     * přebírá poměr 1 : 1.3 : 1; pod tím drží podlaha a zbytek dostane galerie.
+     *
+     * Prostřední podlaha je nezávazná pojistka — fr jí v celém pásmu dá víc
+     * (na 1024 je 32vw = 328 px proti přiděleným 348 px) —, ale drží součet
+     * podlah pod kontejnerem, aby mřížka nikdy nepřetekla do `overflow: clip`.
+     */
+    grid-template-columns:
+      minmax(calc(16rem + clamp(1.75rem, 2.8vw, 3.625rem)), 1fr)
+      minmax(clamp(17rem, 32vw, 26rem), 1.3fr)
+      minmax(calc(16rem + clamp(1.75rem, 2.8vw, 3.625rem)), 1fr);
+    gap: clamp(1.25rem, 2.2vw, 2.25rem);
+  }
+
+  /* Zpátky na automatické umístění: v třístopé mřížce dá pořadí v DOM
+     (identita, galerie, nákup) přesně sloupce 1/2/3. `margin-top: 0` z v(md)
+     se nevrací — základní pravidlo žádný margin-top na `.product__media` ani
+     `.product__purchase` nemá, ten margin je výhradně z foldu telefonu pod
+     900 px, takže je tady nula bez účinku. */
+  .product__identity,
+  .product__media,
+  .product__purchase {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  /* Lepivé sloupce, jejich patka a boční padding — všechno hodnoty základního
+     pravidla výše, které vzalo `v(md)`. Nejsou to druhé hodnoty téže
+     vlastnosti, je to návrat k první. */
+  .product__identity,
+  .product__purchase {
+    position: sticky;
+    top: clamp(5.125rem, 8.5vh, 6.5625rem);
+  }
+
+  .product__identity {
+    padding-left: clamp(1.75rem, 2.8vw, 3.625rem);
+  }
+
+  .product__purchase {
+    padding-right: clamp(1.75rem, 2.8vw, 3.625rem);
+  }
+
+  .product__identityInner,
+  .product__purchaseInner {
+    min-height: min(76vh, 32rem);
+  }
+
+  .product__identity h1 {
+    max-width: 9ch;
+    font-size: clamp(2.75rem, 4vw, 4.75rem);
   }
 }

@@ -1,44 +1,91 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .vyrobaCta {
-    --vyroba-cta-ink: #212222;
-    --vyroba-cta-olive: #686b4f;
-    --vyroba-cta-cream: #ffe8d6;
-    --vyroba-cta-background: #bbb788;
+    --vyroba-cta-ink: var(--black-03);
+    --vyroba-cta-olive: var(--olive-10);
+    --vyroba-cta-cream: var(--cream-06);
+    --vyroba-cta-background: var(--sage-01);
+
+    /*
+     * ─── Geometrie kompozice: jedno místo, ze kterého se počítá všechno ────────────────────
+     *
+     * Hlavní fotka, detailní dlaždice a jejich přesah byla tři nezávislá čísla:
+     * `min(40vw,760px)` proti `clamp(170px,16vw,300px)` proti `right:-1%`, kde to procento
+     * měřilo `fr` sloupec, tedy něco úplně jiného. Přesah pak vyšel 137 px na 1280, 192 px
+     * na 1920 a 285 px z 300px dlaždice na 1921 — tam dlaždice ležela skoro celá na hlavní
+     * fotce a pohřbila její popisek „Hotový kus ——— Keramická zahrada".
+     *
+     * Teď je přesah JEDNO číslo — podíl z dlaždice — a poloha detailu i pravý inset popisku
+     * se z něj odvozují. Přesah je proto stejných 65 % dlaždice na každé šířce a popisek
+     * vždycky končí tam, kde dlaždice začíná.
+     *
+     * `--fvw` je jedno procento RÁMU (nad 1921 `min(100vw, 100svh*1.6)`), ne obrazovky.
+     * Do 1920 se rovná přesně 1vw, takže se pod prahem nehne ani pixel; nad ním fotky
+     * konečně měří totéž, co měří `left`/`right` v procentech rámu.
+     */
+    --cta-main-inset: 1%;
+    --cta-main-w: min(40 * var(--fvw), 47.5rem);
+    --cta-detail-w: clamp(10.625rem, calc(16 * var(--fvw)), 18.75rem);
+    --cta-detail-overlap: calc(var(--cta-detail-w) * .65);
+    --cta-caption-inset: clamp(0.875rem, 1.3vw, 1.5rem);
+
+    /* Výška meta řádku. Kompozice si ji odečítá z vlastní výšky, proto jedna hodnota
+       na obou místech — jinak se ta dvě čísla dřív nebo později rozejdou. */
+    --cta-meta-h: 1.125rem;
 
     position: relative;
-    height: clamp(610px, 70svh, 820px);
-    padding: clamp(30px, 3.8vw, 66px) 4.5%;
+    /*
+     * Kraje v rem, ne v px: nad 1921 je zvedne ramp, takže pás roste spolu s typem uvnitř sebe.
+     *
+     * Podlaha je 26.25rem, ne původních 38.125rem (610 px). S tou vyšší podlahou byl prostřední
+     * člen na nízkém notebooku MRTVÝ: 70svh je pod 610 px až do okna vysokého 871 px, takže
+     * 1220×660, 1280×720, 1366×768 i 1440×800 dostaly všechny plochých 610 px — tedy 92 %, 85 %,
+     * 79 % a 76 % obrazovky, zatímco 1920×1080 dostalo 70 %. Čím míň výšky stroj měl, tím větší
+     * díl obrazovky pás zabral, což je přesně naopak, než k čemu je `vh` v clampu. Teď je živé
+     * pásmo 600–1171 px výšky okna, tedy celé landscape kontinuum, a pás je všude 70 % okna.
+     *
+     * Podlaha 420 px je pořád o 55 px víc, než kolik potřebuje nejtěsnější naměřená kompozice
+     * (meta 18 + obsah 293 + dva paddingy 2×30 = 371 px na 1220 px šířky), takže se nemá co
+     * tisknout; hlídá jen okna nižší než 600 px, kam landscape nedosáhne. Poměr strop/podlaha
+     * je 1.95×, jak artefakt u výšek předepisuje.
+     *
+     * Na 1920×1080 (756 px) ani na 1366×1024 (716.8 px) se tím nehnulo nic — tam podlaha nikdy
+     * aktivní nebyla.
+     */
+    height: clamp(26.25rem, 70svh, 51.25rem);
+    /* Svisle na vh — tohle je to, čím se řeší nízký laptop. 1366×1024 dostane 43 px,
+       1366×768 jen 32 px; dřív dostaly obě 52 px do různě vysokého pásu. */
+    padding: clamp(1.875rem, 4.2vh, 4.125rem) 4.5%;
     overflow: hidden;
     color: var(--vyroba-cta-ink);
     background:
-        radial-gradient(circle at 66% 42%, rgba(255, 232, 214, .12), transparent 31%),
+        radial-gradient(circle at 66% 42%, rgb(var(--cream-06-rgb) / .12), transparent 31%),
         var(--vyroba-cta-background);
 
     &__meta {
-        height: 18px;
+        height: var(--cta-meta-h);
         display: flex;
         align-items: center;
-        gap: clamp(12px, 1.4vw, 24px);
-        color: rgba(33, 34, 34, .5);
-        font-size: clamp(0.75rem, .62vw, 0.75rem);
+        gap: clamp(0.75rem, 1.4vw, 1.5rem);
+        color: rgb(var(--black-03-rgb) / .5);
+        font-size: 0.75rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
 
         i {
             flex: 1;
             height: 1px;
-            background: rgba(33, 34, 34, .22);
+            background: rgb(var(--black-03-rgb) / .22);
             transform-origin: left center;
         }
     }
 
     &__composition {
         position: relative;
-        height: calc(100% - 18px);
+        height: calc(100% - var(--cta-meta-h));
         display: grid;
-        grid-template-columns: minmax(0, 1.06fr) minmax(440px, .94fr);
+        grid-template-columns: minmax(0, 1.06fr) minmax(27.5rem, .94fr);
         align-items: center;
-        gap: clamp(48px, 5.5vw, 110px);
+        gap: clamp(3rem, calc(5.5 * var(--fvw)), 6.875rem);
     }
 
     &__visuals {
@@ -66,18 +113,18 @@
         figcaption {
             position: absolute;
             z-index: 2;
-            color: rgba(255, 255, 255, .76);
-            font-size: clamp(0.75rem, .58vw, 0.75rem);
+            color: rgb(var(--white-rgb) / .76);
+            font-size: 0.75rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            text-shadow: 0 2px 12px rgba(18, 18, 15, .46);
+            text-shadow: 0 2px 12px rgb(var(--ink-01-rgb) / .46);
         }
 
         &--main {
             top: 14%;
-            left: 1%;
+            left: var(--cta-main-inset);
             z-index: 1;
-            width: min(40vw, 760px);
+            width: var(--cta-main-w);
             height: 72%;
 
             &::after {
@@ -85,35 +132,52 @@
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
-                background: linear-gradient(180deg, transparent 55%, rgba(20, 20, 16, .38));
+                background: linear-gradient(180deg, transparent 55%, rgb(var(--ink-01-rgb) / .38));
             }
 
             figcaption {
-                left: clamp(14px, 1.3vw, 24px);
-                right: clamp(14px, 1.3vw, 24px);
-                bottom: clamp(12px, 1.2vw, 20px);
+                left: var(--cta-caption-inset);
+                /* Pravý inset uhýbá dlaždici: popisek končí přesně tam, kde detail začíná,
+                   takže „Keramická zahrada" zůstane celá čitelná na každé šířce. Stejný
+                   přesah, stejné jedno číslo. */
+                right: calc(var(--cta-caption-inset) + var(--cta-detail-overlap));
+                bottom: clamp(0.75rem, 1.6vh, 1.25rem);
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 0.75rem;
 
                 i {
                     flex: 1;
                     height: 1px;
-                    background: rgba(255, 255, 255, .4);
+                    background: rgb(var(--white-rgb) / .4);
                 }
             }
         }
 
         &--detail {
-            right: -1%;
+            /*
+             * Poloha z krabice hlavní fotky, ne z šířky sloupce: levá hrana dlaždice leží
+             * o `--cta-detail-overlap` vlevo od pravé hrany hlavní fotky. Rozepsáno:
+             *   levá hrana dlaždice = --cta-main-inset + --cta-main-w - --cta-detail-overlap
+             *   right               = 100% - levá hrana - --cta-detail-w
+             *
+             * Psáno přes `right`, ne přes `left`, ze dvou důvodů: dlaždice přečnívá sloupec
+             * doprava (o 3.7 px na 1920, 12.8 px na 1921×1080 — do mezery 95-106 px, tedy
+             * nikdy do textu), a pravidla pro telefon ji přebíjejí jedinou deklarací
+             * `right: -5%`, což by nešlo, kdyby tu stálo `left` i `width`.
+             */
+            right: calc(
+                100% - var(--cta-main-inset) - var(--cta-main-w)
+                - var(--cta-detail-w) + var(--cta-detail-overlap)
+            );
             bottom: 5%;
             z-index: 2;
-            width: clamp(170px, 16vw, 300px);
+            width: var(--cta-detail-w);
             aspect-ratio: .8;
 
             figcaption {
-                left: 12px;
-                bottom: 11px;
+                left: 0.75rem;
+                bottom: 0.6875rem;
             }
         }
     }
@@ -121,13 +185,14 @@
     &__content {
         position: relative;
         z-index: 3;
-        width: min(100%, 820px);
+        width: min(100%, 51.25rem);
     }
 
     &__eyebrow {
-        margin: 0 0 clamp(16px, 1.65vw, 26px);
-        color: rgba(33, 34, 34, .56);
-        font-size: clamp(0.75rem, .67vw, .76rem);
+        /* Svislá mezera → vh: živá 800-1300 px výšky okna. */
+        margin: 0 0 clamp(1rem, 2vh, 1.625rem);
+        color: rgb(var(--black-03-rgb) / .56);
+        font-size: 0.75rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
     }
@@ -148,7 +213,7 @@
 
         &--accent {
             max-width: 9ch;
-            margin: .08em 0 0 clamp(40px, 5vw, 96px);
+            margin: .08em 0 0 clamp(2.5rem, 5vw, 6rem);
             color: var(--vyroba-cta-olive);
             font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
             font-size: .92em;
@@ -175,15 +240,17 @@
     }
 
     &__action {
-        margin-top: clamp(34px, 3.4vw, 54px);
+        /* Svisle → vh: živá 756-1200 px výšky. Na 1280×720 se sevře na 34 px sama,
+           bez jediného pravidla v `lt`. */
+        margin-top: clamp(2.125rem, 4.5vh, 3.375rem);
         display: flex;
         align-items: center;
-        gap: clamp(20px, 2.3vw, 36px);
+        gap: clamp(1.25rem, 2.3vw, 2.25rem);
 
         > p {
-            width: min(26vw, 370px);
+            width: min(26 * var(--fvw), 23.125rem);
             margin: 0;
-            color: rgba(33, 34, 34, .6);
+            color: rgb(var(--black-03-rgb) / .6);
             font-size: clamp(.82rem, .86vw, .98rem);
             font-weight: 300;
             line-height: 1.45;
@@ -193,7 +260,17 @@
 
 @include below-px(980px) {
     .vyrobaCta {
-        height: clamp(580px, 66svh, 720px);
+        /*
+         * Kratší pás pro úzké okno — ale rozdíl je v POMĚRU, ne v podlaze.
+         *
+         * Kraje byly v px (rule 2) a podlaha 580 px byla druhé, vyšší číslo než podlaha
+         * základního pravidla: po jejím srovnání na 26.25rem by na hraně 980 px vznikl skok
+         * 420 → 580 px, tedy o 160 px vyšší pás na užším okně než na širším. Rozdíl, kvůli
+         * kterému to pravidlo existuje, nese prostřední člen (66svh proti 70svh) a strop
+         * (45rem proti 51.25rem); podlaha je stejná jako v základu, takže hrana 980 px je
+         * spojitá a na krátkém okně dostanou obě strany hranice totéž.
+         */
+        height: clamp(26.25rem, 66svh, 45rem);
 
         &__composition {
             grid-template-columns: minmax(0, .9fr) minmax(400px, 1.1fr);
@@ -238,7 +315,7 @@
             height: 76%;
 
             &::after {
-                background: linear-gradient(90deg, var(--vyroba-cta-background) 0%, rgba(187, 183, 136, .2) 66%);
+                background: linear-gradient(90deg, var(--vyroba-cta-background) 0%, rgb(var(--sage-01-rgb) / .2) 66%);
             }
         }
 
@@ -273,3 +350,43 @@
     }
 }
 
+
+/*
+ * ─── Portrait phones ────────────────────────────────────────────────────────────────────────
+ *
+ * The 720px rule keeps both photographs — a big one behind the copy and a small one hung off the
+ * bottom-right corner. That is a composition for a frame with two halves; on a phone the second
+ * is a thumbnail overhanging the edge, competing with the button beside it and adding a second
+ * image to decode for nothing. One picture, and the copy sits lower on it.
+ */
+@include v(xs) {
+    .vyrobaCta {
+        &__image--detail {
+            display: none;
+        }
+
+        /* With the corner image gone the main one can take the whole frame rather than leaning
+           off the right edge to leave room for it. */
+        &__image--main {
+            top: 6%;
+            right: auto;
+            left: 0;
+            width: 100%;
+            height: 82%;
+
+            &::after {
+                background: linear-gradient(
+                    180deg,
+                    var(--vyroba-cta-background) 0%,
+                    rgb(var(--sage-01-rgb) / .24) 58%
+                );
+            }
+        }
+
+        /* Down from 18%: the eyebrow and the three headline lines were sitting high on the frame
+           with the picture reading as a band above them rather than behind them. */
+        &__content {
+            top: 30%;
+        }
+    }
+}

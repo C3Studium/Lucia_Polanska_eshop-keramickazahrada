@@ -1,22 +1,42 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .searchControl {
+    /*
+     * The closed control's size, written once.
+     *
+     * 36px was typed eight times in this file — the disc, the button inside it, and the framed
+     * variant — for a shape that has to stay square or it stops being a circle. It is the bar's
+     * own number: `--nav-control-height` is clamp(2.25rem, 3.6vh, 2.75rem), and its floor,
+     * 2.25rem, IS the old 36px. So nothing moves below 1000px of viewport height — 1366x768 and
+     * 1280x720 keep exactly today's control without a rule in `lt` — and above that it tracks the
+     * bar instead of sitting at its 1920 size on a 2K screen, where the ramp lifts both ends with
+     * the root rem.
+     *
+     * The fallback is that same floor, for the case where this renders outside `.navbar`, which
+     * is where the variable is declared. When Navbar lifts it to `:root` the fallback goes dead
+     * rather than wrong.
+     */
+    --search-control-size: var(--nav-control-height);
+
     position: relative;
-    width: 36px;
-    height: 36px;
+    width: var(--search-control-size);
+    height: var(--search-control-size);
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    border-radius: 25px;
+    /* Saturated, not measured: a flat 25px was already past half of a 36px control, but once the
+       control follows the bar it passes 50px on a 2560x1440 desktop and 25px would quietly turn
+       the disc into a squircle. 999px is what the bar's own pills use. */
+    border-radius: 999px;
     overflow: hidden;
-    border: 1px solid rgba(47, 51, 41, 0.09);
-    box-shadow: 0 4px 12px -8px rgba(31, 35, 25, 0.48);
-    background: rgba(255, 255, 255, 0.48);
+    border: 1px solid rgb(var(--ink-09-rgb) / .09);
+    box-shadow: 0 4px 12px -8px rgb(var(--ink-04-rgb) / .48);
+    background: rgb(var(--white-rgb) / .48);
     will-change: width;
 
     &.active {
-        border-color: rgba(116, 126, 98, 0.26);
-        box-shadow: inset 0 0 0 1px rgba(116, 126, 98, 0.08), 0 5px 16px -10px rgba(31, 35, 25, 0.5);
+        border-color: rgb(var(--olive-15-rgb) / .26);
+        box-shadow: inset 0 0 0 1px rgb(var(--olive-15-rgb) / .08), 0 5px 16px -10px rgb(var(--ink-04-rgb) / .5);
     }
 
     @include vb((
@@ -53,8 +73,8 @@
         box-shadow: none;
 
         &.active {
-            border-color: rgba(116, 126, 98, 0.26);
-            background: rgba(255, 255, 255, 0.52);
+            border-color: rgb(var(--olive-15-rgb) / .26);
+            background: rgb(var(--white-rgb) / .52);
         }
     }
 
@@ -73,11 +93,39 @@
     }
 }
 
-@include below-px(600px) {
-    @include phone-search-control;
+/*
+ * The phone treatment is the base — a phone is the smallest case — and the pill's own border and
+ * fill come back upward, at 600px of portrait and 750px of landscape, where the bar is dense
+ * enough again for the control to need an edge of its own.
+ *
+ * `phs` last: a phone on its side clears `h(xs)` on width, and it is still a phone.
+ */
+@include phone-search-control;
+
+@mixin search-control-framed {
+    .searchControl {
+        /* Restores the sized control the phone base above traded for `height: 100%`. Same
+           variable, so the two regimes cannot drift apart. */
+        height: var(--search-control-size);
+        border-color: rgb(var(--ink-09-rgb) / .09);
+        background: rgb(var(--white-rgb) / .48);
+        box-shadow: 0 4px 12px -8px rgb(var(--ink-04-rgb) / .48);
+    }
+
+    .button {
+        flex: 0 0 var(--search-control-size);
+        width: var(--search-control-size);
+    }
 }
 
-/* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
+@include v(md) {
+    @include search-control-framed;
+}
+
+@include h(xs) {
+    @include search-control-framed;
+}
+
 @include phs-h {
     @include phone-search-control;
 }
@@ -86,11 +134,21 @@
     position: relative;
     display: grid;
     place-items: center;
-    flex: 0 0 36px;
-    width: 36px;
-    height: 36px;
+    /*
+     * Same variable as the disc around it — the button IS the closed control, so if it kept a
+     * flat 36px while the wrapper followed the bar, the icon would sit in a 36px box pinned to
+     * the left of a taller circle.
+     *
+     * Inherited from `.searchControl`, which is this element's parent in the DOM even though the
+     * framed mixin writes the two as sibling selectors.
+     */
+    flex: 0 0 var(--search-control-size);
+    width: var(--search-control-size);
+    height: var(--search-control-size);
     cursor: pointer;
-    border-radius: 25px;
+    /* Saturated for the same reason as the wrapper: 25px stops being a full round once the
+       control clears 50px. */
+    border-radius: 999px;
     overflow: hidden;
     border: 0;
     background: transparent;
@@ -99,7 +157,7 @@
 
     &:hover,
     &:focus-visible {
-        background-color: rgba(116, 126, 98, 0.14);
+        background-color: rgb(var(--olive-15-rgb) / .14);
 
         img { transform: scale(0.9); }
     }
@@ -127,8 +185,12 @@
 
 .searchIcon {
     display: block;
-    width: 19px;
-    height: 19px;
+    /* 19px, so the glyph is unchanged below 1921 and the ramp lifts it from there — it was the
+       one part of the control that would otherwise have stayed at its 1920 size while the disc
+       around it grew. Against the control it stays between 0.49 and 0.53 of the disc across
+       1366x768, 1920x1080 and 2560x1440, so it never crowds the circle. */
+    width: 1.1875rem;
+    height: 1.1875rem;
     opacity: 0.76;
     transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
 }
@@ -137,15 +199,23 @@
     width: 100%;
     min-width: 0;
     height: 100%;
-    padding: 0 20px 0 10px;
+    padding: 0 1.25rem 0 0.625rem;
     border: 0;
     background: transparent;
     color: var(--bgBlack);
-    font-size: clamp(16px, 1vw, 18px);
+    /*
+     * The 16px floor is deliberate and has to survive the conversion: iOS zooms the page when a
+     * focused input is under 16px. 1rem IS 16px everywhere below 1921, so the protection is
+     * unchanged, and above 1921 the ramp only ever raises it.
+     *
+     * Live band 1600-1800px; left at 1vw rather than retuned to the usual 1200-1500, because the
+     * whole travel here is 16 -> 18px and moving it down would put 18px text on every laptop.
+     */
+    font-size: clamp(1rem, 1vw, 1.125rem);
     font-weight: 300;
 
     &::placeholder {
-        color: rgba(43, 48, 35, 0.48);
+        color: rgb(var(--ink-09-rgb) / .48);
     }
 
     &::-webkit-search-cancel-button {

@@ -8,10 +8,166 @@
     align-items: center;
     justify-content: center;
     position: relative;
+
+    /* Jednorázová typografická mezera uvnitř řádku, ne pás soutěžící o obrazovku
+       — proto zůstává jedním číslem a nejde do clampu. Napsaná je jen jednou,
+       takže tu není žádná velikost schovaná v breakpointu (pravidlo 1).
+       POZOR na rozdíl proti sourozenci: Sizes/Select nese
+       `clamp(0.25rem, 0.75vw, 0.55rem)`, protože tam ta mezera byla zapsaná
+       dvakrát a clamp ty dvě hodnoty spojil. Na telefonu tím obě řady jednoho
+       panelu dostanou jinou mezeru — tady 8.8px, tam 4px. Nesjednoceno
+       záměrně, je to rozhodnutí vedoucího, ne opomenutí. */
     gap: 0.55rem;
 
+    /* Portrét je jiný tvar: řádek pilulek se musí umět zalomit.
+       Barevná pilulka je `flex: 0 0 auto` s `min-width: 5.125rem` (82px) a
+       `white-space: nowrap`, takže se nezmenší. Výběrový sloupec je úzký —
+       mřížka `.product__details__subDetails__colors` mu nechává jen to, co
+       zbude po popisce `clamp(5.125rem, 6vw, 7rem)` a mezeře 0.75rem.
+
+       Katalog má dnes 263 z 263 produktů jednovariantních, takže
+       `.product__optionPanel:empty { display: none }` tenhle komponent nikde
+       nevykreslí. Měřeno proto na vloženém, jinak reálném markupu uvnitř
+       skutečného nákupního sloupce (.rdshots/_colorsel-probe.cjs), se čtyřmi
+       barvami, před zásahem:
+
+         320×568  sloupec 194px  ·  scrollWidth 274  → 80px ven
+         380×800  sloupec 254px  ·  scrollWidth 304  → 50px ven
+         390×844  sloupec 264px  ·  scrollWidth 309  → 45px ven
+         430×932  sloupec 302px  ·  scrollWidth 328  → 26px ven
+
+       A protože základ je `justify-content: center`, přetečený řádek utíká na
+       OBĚ strany naráz: na 320 začínala první pilulka na x=30, zatímco sloupec
+       začíná na 110; se šesti barvami dokonce na x=-61. `.product` má
+       `overflow: clip`, takže se to uřízne bez scrollbaru a rig o tom nikdy
+       neřekne — hlásí nula vodorovného přetečení stránky i ve chvíli, kdy je
+       polovina voleb mimo obraz. Po zásahu je na všech čtyřech stopách
+       scrollWidth = clientWidth a nula pilulek mimo sloupec.
+
+       Stopa je v(xs) 320, ne v(md) 600: dřív tu stály `md` a `lg` s týmž
+       `flex-wrap: wrap`, jenže obě začínají nad každým skutečným telefonem
+       v portrétu — právě to byla ta díra. v(xs) je min-width 320 + portrait,
+       takže jednou stopou pokrývá i všechno, co dřív psaly md a lg; ty dvě
+       proto zmizely ne jako zrušené pravidlo, ale jako její podmnožina, která
+       by emitovala tentýž řádek CSS ještě dvakrát.
+
+       `flex-start` místo zděděného `center`: na zalomeném výběru drží obě řady
+       stejnou levou hranu a poslední osamělá pilulka sedí pod první, ne mezi
+       nimi. Ověřeno se třemi barvami na 320 a 380 — oba řádky začínají na
+       x=110, tedy na vlastní hraně sloupce. Sizes/Select dělá v portrétu totéž;
+       dva sourozenci v jednom panelu nesmí mít různé zarovnání.
+       `align-items` se schválně nepřepisuje: všechny pilulky mají tutéž výšku
+       (`--pill-h`, na dotyku 44px) a `.Select` je content-height (naměřeno 44px
+       v řádku s min-height 62px, po zalomení 97px), takže by to byl mrtvý
+       zápis.
+
+       SVISLÝ TABLET — v(md) 600 i v(lg) 1000 padnou dovnitř téhle stopy, a je
+       to tu doslova naopak, než zní obvyklá poučka: tablet je pro tenhle
+       výběr UŽŠÍ než telefon. Telefon skládá `.product__story` na jeden
+       sloupec, takže nákupní blok dostane celou šířku obsahu; svislý tablet
+       má na dva sloupce (a na 1000+ na tři) dost místa, takže nákupní sloupec
+       je zlomek stránky a řádek pilulek se láme VÍC, ne míň. Šířku buňky
+       nedává tenhle soubor — dává ji mřížka `.product__story`
+       v product/style.scss, která v tomhle kole dostala vlastní tabletový
+       tvar; všechna čísla níž jsou naměřená až po něm. Do
+       `.rdshots/_colorsel-probe.cjs` přibyly viewporty p-768x1024
+       a p-1024x1366, zbytek měřily `_colorsel-tb.cjs` (řetěz rodičů),
+       `_colorsel-tb2.cjs` (3/4/5/6 barev a šev v(lg)) a `_colorsel-tb3.cjs`
+       (dvojice před/po).
+
+         430×932   telefon  nákupní sloupec 395.6  ·  buňka 301.6  → 3 pilulky
+         600×900   tablet   sloupec 272            ·  buňka 178    → 2
+         768×1024  tablet   sloupec 308            ·  buňka 214    → 2
+         999×1400  tablet   sloupec 400.6          ·  buňka 306.6  → 3
+         1000×1400 tablet   sloupec 256            ·  buňka 162    → 1
+         1024×1366 tablet   sloupec 256            ·  buňka 162    → 1
+
+       Buňka je sloupec zmenšený o popisku: `clamp(5.125rem, 6vw, 7rem)` stojí
+       na celém tabletu na podlaze 82px (6vw dá 46px při 768, 61px při 1024)
+       a s mezerou 0.75rem ubere 94px. Dvě pilulky na řádek potřebují
+       2×82 + 8.8 = 172.8px, tři 262.6px — proto ta tabulka.
+
+       Před / po na obou skutečných zařízeních (scrollWidth × clientWidth;
+       „před" = tentýž uzel vrácený na základní řádek nowrap + center, tedy co
+       by tablet vykreslil, kdyby ho portrétní stopa nepokrývala):
+
+         768×1024   buňka 214, hrana 531…745
+           4 barvy  před 284×214, dvě pilulky ven, řada 461…815
+                    po   214×214, 2 řádky po 2, výška 96.8
+           6 barev  před 375×214, čtyři ven, řada 370…906
+                    po   214×214, 3 řádky po 2, výška 149.6
+         1024×1366  buňka 162, hrana 803…965
+           4 barvy  před 258×162, VŠECHNY čtyři ven, řada 706…1061 — vlevo
+                    až za popisku (ta začíná na 707), vpravo za pravý okraj
+                    story (993)
+                    po   162×162, 4 řádky po 1, výška 202.4
+           6 barev  před 349×162, všech šest ven, řada 616…1152; poslední
+                    pilulka končí 128px ZA pravým okrajem 1024px okna
+                    po   162×162, 6 řádků po 1, výška 308
+
+       V každém „před" hlásí `documentElement` nula vodorovného přetečení
+       stránky: `.product { overflow: clip }` to uřízne mlčky i na tabletu,
+       takže rig by ani tady nic neřekl.
+
+       `flex-start` má na tabletu VĚTŠÍ cenu než na telefonu, protože řádků je
+       víc: na 768 vychází pět barev 2+2+1 a osamělá pátá pilulka sedí na
+       x=531, tedy pod první — zděděné `center` by ji odsadilo o
+       (214−82)/2 = 66px. Na 1024 je na řádku pilulka jediná, takže by `center`
+       odsunulo celý seznam o (162−82)/2 = 40px doprava od popisky i od CTA
+       pod ním. Naměřené levé hrany řádků: 768 → 531/531/531,
+       1024 → 803 šestkrát.
+
+       Dotyk: pilulka je na obou tabletech vysoká 44px (globální podlaha pro
+       `button`, ověřeno se zapnutým dotykem) a rozteč řádků 53px, tedy 8.8px
+       mezi sousedními cíli. Vlastní tabletová stopa se nepřidává: v(xs) je
+       min-width 320 + portrait, takže v(md) i v(lg) jsou její podmnožina
+       a druhý zápis téhož řádku by byl tentýž druh napsaný dvakrát
+       (pravidlo 1). Rovněž se nepřidává nic, co by dvě pilulky na řádek
+       vynutilo na 1024: 172.8 proti 162 je 10.8px, které chybí v šířce
+       sloupce, ne v tomhle souboru. Poznámka pro vedoucího mimo tenhle
+       komponent: na hraně v(lg) skočí buňka 306.6 → 162 (999 vs 1000), tedy
+       ze tří pilulek na řádek na jednu, a šest barev z 96.8px na 308px výšky.
+       Pilulku ani mezeru zmenšit nejde (obojí je jedna geometrie výš), takže
+       to je poměr stop, ne velikost tady. */
     @include vb((
-        lg: (flex-wrap: wrap),
-        md: (flex-wrap: wrap),
+        xs: (
+            flex-wrap: wrap,
+            justify-content: flex-start
+        ),
+    ));
+
+    /* Telefon na šířku. Od chvíle, co se fold přepsal z `below-px(900px)` na
+       `below-with-phone(sm)`, skládá se story na jeden sloupec i na 932×430,
+       takže výběr tu má 626px a čtyři barvy se do něj vejdou. Tenhle blok tedy
+       neopravuje mřížku — drží mez, kterou na šířku nikdo jiný nedrží:
+       portrétní pravidlo výš na landscape neplatí a zalomení je jediné, co
+       brání tichému uříznutí, až bude barev víc.
+
+       Změřeno, kde to začíná bolet (6 barev, před zásahem):
+         568×320  sloupec 429px  ·  scrollWidth 482  → dvě pilulky ven,
+                  poslední na x=517..599, tedy mimo 568px široké okno
+         932×430  sloupec 626px  ·  vejde se; přetéká až od sedmé barvy
+                  (7×82 + 6×8.8 = 626.8)
+       Po zásahu se na 568×320 šest barev zalomí na dva řádky a nula pilulek je
+       mimo sloupec.
+
+       `phs` je min-width 480 + max-height 520, takže jedním pravidlem pokrývá
+       phs i phl — phl (min-width 800 + max-height 520) je jeho podmnožina.
+       Mění se jen druh (řádek se smí zalomit); zarovnání zůstává na středu jako
+       na desktopu, protože kompozice sloupce se na šířku nemění — a Sizes to má
+       na landscape stejně. Psáno AŽ ZA portrétním blokem.
+
+       Co tenhle blok NEPOKRÝVÁ: tablet na šířku. Otočený iPad je 1024×768 —
+       portrétní stopa výš tam neplatí a `phs` má max-height 520, takže na něm
+       stojí základní řádek nowrap + center. Naměřeno ve třetím kole:
+       nákupní sloupec 219.7, buňka 125.7, čtyři barvy scrollWidth 240 proti
+       clientWidth 126 a všechny čtyři pilulky mimo buňku; šest barev 331 proti
+       126. Totéž vyjde i na landscape desktopu, kde buňka na celý řádek
+       nestačí: 1366×768 čtyři barvy 292×230, 1440×900 305×255. Třetí kolo je
+       svislý tablet a Sizes/Select má úplně tentýž tvar, takže tohle patří do
+       jednoho rozhodnutí pro oba sourozence — nahlášeno vedoucímu, tady
+       schválně nezapsáno. */
+    @include hb((
+        phs: (flex-wrap: wrap),
     ));
 }

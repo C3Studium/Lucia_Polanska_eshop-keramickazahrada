@@ -1,6 +1,8 @@
 "use client"
 
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { editable } from "@c3studium/valecms/edit"
+import type { CopyBlock } from "@lib/util/site-copy"
 import Image from "next/image"
 import {
   motion,
@@ -42,14 +44,30 @@ const storySteps = [
 
 type StoryStep = (typeof storySteps)[number]
 
+/**
+ * Odkud v `o-mne.galerie` začínají fotky příběhu.
+ *
+ * Blok drží čtyři fotky stránky „O mně" v pořadí, v jakém na ní stojí: první
+ * dvě kreslí hero shader nahoře (`AboutHeroShader`), další dvě tenhle příběh.
+ * Jedna galerie, dva konzumenti — a offset je to jediné, co je od sebe dělí.
+ *
+ * Kdyby měl každý vlastní blok, editor by v „Texty na webu" viděl dvě položky
+ * pro jednu stránku a musel by vědět, která je která. Takhle vidí jednu
+ * galerii v pořadí, v jakém fotky na stránce potká.
+ */
+const STORY_OFFSET = 2
+
 function ImageLayer({
   item,
   index,
   progress,
+  edit,
 }: {
   item: StoryStep
   index: number
   progress: MotionValue<number>
+  /** Atributy překryvu pro tuhle fotku. Mimo náhled prázdný objekt. */
+  edit?: Record<string, string | undefined>
 }) {
   const count = storySteps.length
   const segment = 1 / count
@@ -79,6 +97,7 @@ function ImageLayer({
     <motion.figure
       className="aboutStory__image"
       style={{ clipPath, zIndex: index + 1 }}
+      {...edit}
     >
       <motion.div
         className="aboutStory__imageInner"
@@ -133,7 +152,16 @@ function CopyLayer({
       start + segment * 0.16,
       Math.min(1, end),
     ],
-    [18, 0, -12]
+    /*
+     * Sesuv textu při přebalu kapitoly ve vh, ne v px.
+     *
+     * Referenční 1920x1080: 18px je 1.667vh, 12px je 1.11vh. Zaokrouhleno na
+     * 1.6vh / -1.1vh, tedy 17.3 / -11.9 px na 1080 — v podstatě původní dráha.
+     * Na 1220x660 z toho vyjde 10.6 / -7.3 px, na 2552x1351 pak 21.6 / -14.9:
+     * sesuv drží stejný podíl okna jako zbytek kompozice, která visí na 70vh.
+     * Všechny tři členy nesou stejnou jednotku, aby zůstaly interpolovatelné.
+     */
+    ["1.6vh", "0vh", "-1.1vh"]
   )
 
   return (
@@ -193,7 +221,22 @@ function ProgressStep({
   )
 }
 
-export default function AboutStory() {
+export default function AboutStory({ block }: { block?: CopyBlock }) {
+  /*
+   * Fotky z bloku `o-mne.galerie`, texty z kódu — stejné rozdělení jako
+   * u galerie výroby: příběh má dvě kapitoly a na tom stojí scrollování,
+   * takže se v CMS mění obrázky, ne jejich počet. Chybějící fotka v bloku
+   * znamená tu z kódu.
+   */
+  const steps = storySteps.map((item, index) => {
+    const photo = block?.gallery?.[STORY_OFFSET + index]
+    return {
+      ...item,
+      src: photo?.url ?? item.src,
+      alt: photo?.alt?.trim() || item.alt,
+    }
+  })
+
   const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const { scrollYProgress } = useScroll({
@@ -236,11 +279,12 @@ export default function AboutStory() {
         </header>
 
         <div className="aboutStory__stage">
-          {storySteps.map((item, index) => (
+          {steps.map((item, index) => (
             <ImageLayer
               item={item}
               index={index}
               progress={scrollYProgress}
+              edit={editable(block, `gallery.${STORY_OFFSET + index}`, "image")}
               key={item.number}
             />
           ))}

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import s from "./style.module.scss"
+import { alpha, palette } from "styles/palette.generated"
 
 type RadioProps = {
   checked: boolean
@@ -31,18 +32,18 @@ const Radio = ({
         animate={state}
         variants={{
           unchecked: {
-            borderColor: "rgba(32, 33, 28, .48)",
-            backgroundColor: "rgba(255, 232, 214, 0)",
+            borderColor: alpha("ink05", .48),
+            backgroundColor: alpha("ambientShowcase1", 0),
             scale: 1,
           },
           checked: {
-            borderColor: "#20211c",
-            backgroundColor: "rgba(187, 183, 136, .18)",
+            borderColor: palette.ink05,
+            backgroundColor: alpha("sage01", .18),
             scale: 1,
           },
           disabled: {
-            borderColor: "rgba(32, 33, 28, .18)",
-            backgroundColor: "rgba(32, 33, 28, .04)",
+            borderColor: alpha("ink05", .18),
+            backgroundColor: alpha("ink05", .04),
             scale: 0.94,
           },
         }}

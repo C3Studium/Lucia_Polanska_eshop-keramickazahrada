@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
 import { useRef } from "react"
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 type ShopHeroProps = {
   productCount: number
@@ -76,7 +77,7 @@ export default function ShopHero({ productCount, onExplore }: ShopHeroProps) {
         </motion.p>
         <motion.button custom={0.28} variants={reveal} initial="hidden" animate="show" type="button" onClick={onExplore}>
           Prohlédnout {productCount} kusů
-          <ArrowRight size={18} color="#212222" />
+          <ArrowRight size={18} color={palette.black03} />
         </motion.button>
       </motion.div>
       <div className={styles.facts} aria-label="Hodnoty kolekce">

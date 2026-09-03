@@ -1,69 +1,107 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-/* Login styles converted from Tailwind to Sass module (exact mapping) */
+/*
+ * Login - atelier passport, shared auth language with register.
+ *
+ * One rule per selector. The file used to describe the component twice: a Tailwind-era
+ * block (plus hb() overrides for sm/xs/xxs) followed by the passport block. Both passes
+ * carried the same specificity, so the later one won on order and the hb() media queries
+ * never applied on any width - dead code that read like live code.
+ *
+ * Vertical rhythm hangs on vh, horizontal type on vw. Field height, field padding, the
+ * gap between fields and every margin on the vertical axis shrink with the window, which
+ * is what carries 1280x720 / 1366x768 instead of a rule in lt.
+ */
 
 .root {
-  /* max-w-sm w-full flex flex-col items-center */
-  max-width: 24rem;
-  width: 100%;
   display: flex;
+  width: 100%;
+  max-width: 31rem;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 .title {
-  /* text-large-semi uppercase mb-6 -> text-base leading-6 font-semibold */
-  font-size: 2rem;
-  line-height: 1.5rem;
+  margin: 0 0 .65rem;
+  font-family: "Sentient-Regular", serif;
+  /* floor 28.8px below 1280px wide, ceiling 41.6px above 1849px */
+  font-size: clamp(1.8rem, 2.25vw, 2.6rem);
   font-weight: 400;
-  text-transform: capitalize;
-  font-family: "Sansation-Regular";
-  margin-bottom: 1.5rem; /* mb-6 */
-
-  @include hb((
-    sm: (font-size: 1.8rem),
-    xs: (font-size: 1.8rem),
-    xxs: (font-size: 1.8rem),
-  ));
+  letter-spacing: -.025em;
+  line-height: 1;
+  text-transform: none;
 }
 
 .desc {
-  /* text-center text-base-regular text-ui-fg-base mb-8 */
-  text-align: center;
-  font-size: 1.1rem;
-  line-height: 1.5rem;
-  font-weight: 300;
+  max-width: 23rem;
+  /* floor 24px at 800px tall, ceiling 36px at 1200px */
+  margin-bottom: clamp(1.5rem, 3vh, 2.25rem);
   color: var(--blackText);
   font-family: "Sansation-Light";
-  margin-bottom: 2rem; /* mb-8 */
-
-  @include hb((
-    sm: (font-size: 1rem),
-    xs: (font-size: 1rem),
-    xxs: (font-size: 1rem),
-  ));
+  font-size: .96rem;
+  font-weight: 300;
+  line-height: 1.45;
+  text-align: left;
 }
 
 .form {
-  /* w-full */
   width: 100%;
-  // WIP: Finish input styles
 }
 
 .fields {
-  /* flex flex-col w-full gap-y-2 */
   display: flex;
-  flex-direction: column;
   width: 100%;
-  row-gap: 0.5rem; /* gap-y-2 */
+  flex-direction: column;
+  /* 11.2px at 622px tall, 17.6px at 978px - one gap, so it only has to stay readable */
+  row-gap: clamp(.7rem, 1.8vh, 1.1rem);
+}
+
+.fields :global(input) {
+  /* One control, one value: the same numbers run in register/style.module.scss.
+     41.6px at 640px tall, 54.4px at 837px; 49.9px on 1366x768, 46.8px on 1280x720.
+     The padding follows the height down, otherwise the text line stops fitting the
+     box at 660px. */
+  height: clamp(2.6rem, 6.5vh, 3.4rem) !important;
+  padding: clamp(.75rem, 2vh, 1.05rem) 2.8rem clamp(.2rem, .6vh, .35rem) 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .42) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--black-03) !important;
+  font-size: 1.02rem !important;
+  box-shadow: none !important;
+}
+
+.fields :global(label) {
+  left: -.25rem !important;
+  margin-left: 0 !important;
+  color: rgb(var(--black-03-rgb) / .54) !important;
+  /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility
+     floor; same caption size as register */
+  font-size: clamp(.8rem, .85vw, .9rem) !important;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.fields :global(input:focus) {
+  border-color: var(--olive-07) !important;
+  box-shadow: none !important;
+}
+
+.fields :global(input:-webkit-autofill),
+.fields :global(input:-webkit-autofill:hover),
+.fields :global(input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: var(--black-03) !important;
+  box-shadow: 0 0 0 1000px var(--cream-07) inset !important;
+  transition: background-color 9999s ease-out 0s;
 }
 
 .submit {
-  /* w-full mt-6 */
   width: 100%;
-  margin-top: 1.5rem;
+  /* 14.4px at 554px tall, 24px at 923px - same step as register */
+  margin-top: clamp(.9rem, 2.6vh, 1.5rem);
   --premium-button-surface: transparent;
-  --premium-button-fill: #20211d;
+  --premium-button-fill: var(--ink-05);
 }
 
 .submit > button {
@@ -72,107 +110,34 @@
 }
 
 .note {
-  /* text-center text-ui-fg-base text-small-regular mt-6 */
-  text-align: center;
+  /* 11.2px at 560px tall, 18.4px at 920px */
+  margin-top: clamp(.7rem, 2vh, 1.15rem);
   color: var(--blackText);
-  font-size: 1rem;
-  line-height: 1.25rem;
-  font-weight: 300;
-  margin-top: 1.5rem;
   font-family: "Sansation-Light";
-
-  .underline{
-    font-size: 1rem;
-    line-height: 1.25rem;
-    font-weight: 400;
-    font-family: "Sansation-Regular";
-  }
-}
-
-.forgotWrap {
-  /* text-center text-ui-fg-base text-small-regular mt-2 */
-  text-align: center;
-  color: var(--blackText);
-  font-size: 1rem;
+  font-size: .9rem;
+  font-weight: 300;
   line-height: 1.25rem;
-  font-weight: 400;
-  margin-top: 0.5rem;
-  font-family: "Sansation-Regular";
-}
-
-.underline {
-  /* underline */
-  text-decoration: underline;
-}
-
-
-/* Atelier passport — shared auth language */
-.root {
-  max-width: 31rem;
-  align-items: stretch;
-}
-
-.title {
-  margin: 0 0 .65rem;
-  font-family: "Sentient-Regular", serif;
-  font-size: clamp(1.8rem, 2.25vw, 2.6rem);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -.025em;
-  text-transform: none;
-}
-
-.desc {
-  max-width: 23rem;
-  margin-bottom: clamp(1.5rem, 3vh, 2.25rem);
   text-align: left;
-  font-size: .96rem;
-  line-height: 1.45;
-}
-
-.fields { row-gap: 1rem; }
-
-.fields :global(input) {
-  height: 3.5rem !important;
-  padding: 1.15rem 2.8rem .35rem 0 !important;
-  border: 0 !important;
-  border-bottom: 1px solid rgba(33, 34, 34, .42) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #212222 !important;
-  font-size: 1.05rem !important;
-  box-shadow: none !important;
-}
-
-.fields :global(label) {
-  left: -.25rem !important;
-  margin-left: 0 !important;
-  color: rgba(33, 34, 34, .54) !important;
-  font-size: .78rem !important;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
-
-.fields :global(input:focus) {
-  border-color: #555d48 !important;
-  box-shadow: none !important;
-}
-
-.note,
-.forgotWrap { text-align: left; }
-
-.note {
-  margin-top: 1.1rem;
-  font-size: .9rem;
 }
 
 .forgotWrap {
-  margin-top: .7rem;
+  /* 7.2px at 600px tall, 12px at 1000px */
+  margin-top: clamp(.45rem, 1.2vh, .75rem);
+  color: var(--blackText);
+  font-family: "Sansation-Regular";
   font-size: .9rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  text-align: left;
 }
 
+/* Links inherit the size of the line they sit in (tailwind preflight gives the button
+   font-size: 100%), so the switch-to-register button and the forgot-password link read
+   at the same scale as their text instead of the 1rem the Tailwind-era block forced. */
 .underline {
   position: relative;
+  font-family: "Sansation-Regular";
+  font-weight: 400;
   text-decoration: none;
 }
 
@@ -192,12 +157,4 @@
 .underline:hover::after,
 .underline:focus-visible::after {
   transform: scaleX(1);
-}
-
-.fields :global(input:-webkit-autofill),
-.fields :global(input:-webkit-autofill:hover),
-.fields :global(input:-webkit-autofill:focus) {
-  -webkit-text-fill-color: #212222 !important;
-  box-shadow: 0 0 0 1000px #f7f0e4 inset !important;
-  transition: background-color 9999s ease-out 0s;
 }

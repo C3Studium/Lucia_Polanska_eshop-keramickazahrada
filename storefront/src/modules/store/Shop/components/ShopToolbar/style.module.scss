@@ -1,66 +1,71 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 .root {
-  padding: 0 0 18px;
-  border-bottom: 1px solid rgba(33, 34, 34, .2);
+  padding: 0 0 clamp(.7rem, 1.8vh, 1.2rem);
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .2);
 }
 
 .topline {
   display: grid;
-  grid-template-columns: minmax(120px, .75fr) minmax(280px, 1.45fr) auto auto;
+  grid-template-columns: minmax(7.5rem, .75fr) minmax(17.5rem, 1.45fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: clamp(.5rem, 1vw, 1rem);
 }
 
 .title {
-  span { display: block; margin-bottom: 3px; color: #5c5e54; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
-  p { margin: 0; font-size: 14px; }
-  strong { font-family: "Sentient-Regular", serif; font-size: 26px; font-weight: 400; }
+  span { display: block; margin-bottom: .2rem; color: var(--grey-02); font-size: clamp(.75rem, .93vw, .9rem); letter-spacing: .12em; text-transform: uppercase; }
+  p { margin: 0; font-size: clamp(.8rem, 1.05vw, 1rem); }
+  /* Počet výrobků. Byl 1.4rem/1.6vw/2rem, jenže to je živé pásmo 1400–2000 — nad tím, co
+     řád chce (1200–1500), a hlavně to drží 22.4px na 1280 i 1366 a 23.04 na 1440 proti
+     zmrazeným 26px. Clamp má na laptopu velikost dorovnávat, ne ji ubírat: podlaha je proto
+     těch 26px (1.625rem) a pásmo se posune na 1300–1600. 1280 → 26 · 1512 → 30.2 ·
+     1920 → 32 · qhd → 42.5, kam ho zvedne ramp. */
+  strong { font-family: "Sentient-Regular", serif; font-size: clamp(1.625rem, 2vw, 2rem); font-weight: 400; }
 }
 
 .search {
   display: flex;
   align-items: center;
-  min-height: 48px;
-  padding: 0 17px;
-  border: 1px solid rgba(33, 34, 34, .18);
+  min-height: clamp(2.75rem, 5.2vh, 3.4rem);
+  padding: 0 clamp(.75rem, 1.2vw, 1.25rem);
+  border: 1px solid rgb(var(--black-03-rgb) / .18);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .72);
+  background: rgb(var(--white-rgb) / .72);
   transition: border-color .25s ease, background-color .25s ease, box-shadow .25s ease;
 
-  &:focus-within { border-color: #7b8069; background: #fff; box-shadow: 0 8px 24px rgba(33,34,34,.07); }
-  svg { flex: 0 0 auto; width: 17px; height: 17px; color: #555849; }
-  input { width: 100%; padding: 0 11px; border: 0;  background: transparent; color: #212222; font: inherit; font-size: 16px; }
-  input::placeholder { color: #5c5e54; }
+  &:focus-within { border-color: var(--olive-16); background: var(--white); box-shadow: 0 8px 24px rgb(var(--black-03-rgb) / .07); }
+  svg { flex: 0 0 auto; width: clamp(.9rem, 1.2vw, 1.3rem); height: clamp(.9rem, 1.2vw, 1.3rem); color: var(--olive-05); }
+  input { width: 100%; padding: 0 clamp(.5rem, .75vw, .8rem); border: 0;  background: transparent; color: var(--black-03); font: inherit; font-size: clamp(1rem, .85vw, 1.15rem); }
+  input::placeholder { color: var(--grey-02); }
   input::-webkit-search-cancel-button { cursor: pointer; }
 }
 
 .sort {
   display: flex;
   align-items: center;
-  gap: 7px;
-  min-height: 48px;
-  padding: 0 13px 0 16px;
-  border: 1px solid rgba(33,34,34,.18);
+  gap: clamp(.35rem, .5vw, .55rem);
+  min-height: clamp(2.75rem, 5.2vh, 3.4rem);
+  padding: 0 clamp(.6rem, .9vw, .95rem) 0 clamp(.7rem, 1.1vw, 1.2rem);
+  border: 1px solid rgb(var(--black-03-rgb) / .18);
   border-radius: 999px;
-  background: rgba(255,255,255,.55);
+  background: rgb(var(--white-rgb) / .55);
 
-  span { color: #5c5e54; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
-  select { border: 0;  background: transparent; color: #212222; font: inherit; font-size: 16px; cursor: pointer; }
+  span { color: var(--grey-02); font-size: clamp(.75rem, .93vw, .9rem); letter-spacing: .1em; text-transform: uppercase; }
+  select { border: 0;  background: transparent; color: var(--black-03); font: inherit; font-size: clamp(1rem, .85vw, 1.15rem); cursor: pointer; }
 }
 
 .filterButton {
   display: none;
   align-items: center;
-  gap: 7px;
-  min-height: 48px;
-  padding: 0 18px;
+  gap: clamp(.35rem, .5vw, .55rem);
+  min-height: clamp(2.75rem, 5.2vh, 3.4rem);
+  padding: 0 clamp(.8rem, 1.25vw, 1.35rem);
   border: 0;
   border-radius: 999px;
-  background: #24251f;
-  color: #fff;
+  background: var(--ink-05);
+  color: var(--white);
   cursor: pointer;
 
-  b { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #ffe8d6; color: #212222; font-size: 13px; font-weight: 400; }
+  b { display: grid; place-items: center; width: clamp(1rem, 1.32vw, 1.45rem); height: clamp(1rem, 1.32vw, 1.45rem); border-radius: 50%; background: var(--cream-06); color: var(--black-03); font-size: clamp(.75rem, .95vw, .9rem); font-weight: 400; }
 }
 
 .filterButton:focus-visible,
@@ -71,20 +76,26 @@
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 13px;
+  gap: clamp(.35rem, .5vw, .55rem);
+  margin-top: clamp(.6rem, 1.3vh, .95rem);
 
-  button { display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 12px; border: 1px solid rgba(33,34,34,.16); border-radius: 999px; background: transparent; color: #41423d; font-size: 13px; cursor: pointer; transition: background-color .2s ease; }
-  button:hover { background: #ffe8d6; }
-  span { font-size: 14px; line-height: .7; }
+  button { display: flex; align-items: center; gap: clamp(.4rem, .55vw, .6rem); padding: clamp(.35rem, .8vh, .5rem) clamp(.5rem, .7vw, .7rem) clamp(.35rem, .8vh, .5rem) clamp(.6rem, .85vw, .8rem); border: 1px solid rgb(var(--black-03-rgb) / .16); border-radius: 999px; background: transparent; color: var(--grey-01); font-size: clamp(.75rem, .95vw, .9rem); cursor: pointer; transition: background-color .2s ease; }
+  button:hover { background: var(--cream-06); }
+  span { font-size: clamp(.8rem, 1.05vw, 1rem); line-height: .7; }
 }
 
-@include below-px(1100px) {
-  .topline { grid-template-columns: auto minmax(220px, 1fr) auto; }
+// Jedno rozhodnutí, jeden stop: layout Shopu, tohle tlačítko a šuplík FilterPanelu se
+// lámou na témž místě. Dřív tu bylo below-px(1100px) proti below-px(900px) v panelu,
+// takže mezi 900 a 1100 svítilo tlačítko Filtry a sticky lišta zároveň jela přes karty.
+@include below(md) {
+  // Čtvrtá stopa patří .filterButton — přidává se až tady, kde se tlačítko ukáže.
+  // V base pravidle držela prázdnou stopu a jednu mezeru navíc (naměřeno 0px na 1440).
+  .topline { grid-template-columns: auto minmax(13.75rem, 1fr) auto auto; }
   .filterButton { display: flex; }
   .sort span { display: none; }
 }
 
+// TELEFON — druhé kolo, nesahat. Patří sem below(xs).
 @include below-px(700px) {
   .topline { grid-template-columns: 1fr auto; }
   .title { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; }

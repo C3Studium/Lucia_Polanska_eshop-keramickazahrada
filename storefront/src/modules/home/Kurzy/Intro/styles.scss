@@ -1,11 +1,11 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .kurzyTimeline {
-  --kurzy-charcoal: #24251f;
-  --kurzy-cream: #ffe8d6;
-  --kurzy-paper: #f3e7da;
-  --kurzy-olive: #9b9a70;
-  --kurzy-ember: #d47a50;
+  --kurzy-charcoal: var(--ink-05);
+  --kurzy-cream: var(--cream-06);
+  --kurzy-paper: var(--cream-05);
+  --kurzy-olive: var(--olive-20);
+  --kurzy-ember: var(--clay-27);
 
   position: relative;
   width: 100%;
@@ -21,14 +21,18 @@
     top: 0;
     width: 100%;
     height: 100svh;
-    min-height: 700px;
+    /*
+     * 700px cannot be honoured in a 430px or 660px window, and `height: 100svh` above already
+     * carries the intent — so the floor is capped BY the window instead of being switched off in
+     * two stops. It used to read `min-height: 700px` with `@include phs-h { min-height: 0 }` and
+     * `@include lt-h { min-height: 0 }` under it, which is a size living in two breakpoints. The
+     * `phs` half was dead on top of that: `below-px(720px)` at the foot of this file re-raises
+     * min-height, and being later it beat the phs override on every landscape phone ≤720px wide.
+     */
+    min-height: min(43.75rem, 100svh);
     overflow: hidden;
     isolation: isolate;
     will-change: background-color;
-
-    /* 700px cannot be honoured in a 430px or 660px window; 100svh already carries the intent. */
-    @include phs-h { min-height: 0; }
-    @include lt-h  { min-height: 0; }
   }
 
   &__ambient {
@@ -36,7 +40,10 @@
     top: -28%;
     left: 48%;
     z-index: 0;
-    width: min(62vw, 1120px);
+    /* Ceiling in rem, not the literal 1120px it was: above 1921 the root ramp lifts every other
+       measure on this stage by 1.33× while a px cap stands still, so the glow behind a 2552px
+       composition was shrinking relative to everything in front of it. */
+    width: min(62vw, 70rem);
     aspect-ratio: 1;
     border-radius: 50%;
     filter: blur(90px);
@@ -53,9 +60,12 @@
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 22px;
-    color: rgba(255, 232, 214, 0.42);
-    font-size: clamp(0.75rem, 0.56vw, 0.75rem);
+    gap: 1.375rem;
+    color: rgb(var(--cream-06-rgb) / .42);
+    /* Was `clamp(0.75rem, 0.56vw, 0.75rem)` — floor equal to ceiling, so the middle term never
+       applied and this was 12px from 1200 to 2552. A real band instead: floor holds to 1333px,
+       ceiling from 1600px, and above 1921 the root ramp carries both ends up with it. */
+    font-size: clamp(0.75rem, 0.9vw, 0.9rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     mix-blend-mode: difference;
@@ -67,7 +77,7 @@
 
     @for $i from 1 through 2 {
       &--#{$i} > span:nth-child(#{$i}) {
-        color: #fff;
+        color: var(--white);
         opacity: 1;
       }
     }
@@ -75,17 +85,17 @@
     > i {
       position: absolute;
       right: 0;
-      bottom: -11px;
+      bottom: -0.6875rem;
       left: 0;
       height: 1px;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.16);
+      background: rgb(var(--white-rgb) / .16);
 
       b {
         position: absolute;
         inset: 0;
         display: block;
-        background: rgba(255, 255, 255, 0.74);
+        background: rgb(var(--white-rgb) / .74);
         transform-origin: left center;
       }
     }
@@ -96,7 +106,7 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  padding: clamp(72px, 8vh, 104px) 4.5% clamp(72px, 8vh, 104px);
+  padding: clamp(4.5rem, 8vh, 6.5rem) 4.5%;
   overflow: hidden;
   pointer-events: none;
   will-change: transform, opacity;
@@ -108,15 +118,16 @@
 
 .kurzySceneMeta {
   position: absolute;
-  top: clamp(72px, 8vh, 104px);
+  top: clamp(4.5rem, 8vh, 6.5rem);
   right: 4.5%;
   left: 4.5%;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: clamp(14px, 1.5vw, 24px);
-  color: rgba(255, 232, 214, 0.5);
-  font-size: clamp(0.75rem, 0.62vw, 0.75rem);
+  gap: clamp(0.875rem, 1.5vw, 1.5rem);
+  color: rgb(var(--cream-06-rgb) / .5);
+  /* Same dead clamp as the rail's, same band — the two are one grade of micro-type. */
+  font-size: clamp(0.75rem, 0.9vw, 0.9rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   mix-blend-mode: difference;
@@ -164,11 +175,16 @@
 
     figure {
       position: relative;
-      height: clamp(96px, 14.5vh, 168px);
-      margin: 0 clamp(8px, 1vw, 18px);
+      /* Ceiling in rem, like the lockup's own `font-size` two rules up. It used to stop at a
+         literal 168px while the type it sits inside kept climbing on the root ramp, so the
+         photo strips shrank against the letters exactly as the screen got bigger: 111 against
+         213 at 1366, 168 against 398 at 2552. In rem the two rise together.
+         Width is left alone on purpose — framer interpolates it between "0vw" and "24vw". */
+      height: clamp(5.75rem, 14.5vh, 10.5rem);
+      margin: 0 clamp(0.5rem, 1vw, 1.125rem);
       overflow: hidden;
       flex: 0 0 auto;
-      background: #323329;
+      background: var(--ink-10);
       will-change: width;
 
       img {
@@ -182,19 +198,19 @@
         inset: 0;
         background: linear-gradient(
           90deg,
-          rgba(29, 30, 26, 0.26),
+          rgb(var(--ink-05-rgb) / .26),
           transparent 38%,
-          rgba(29, 30, 26, 0.16)
+          rgb(var(--ink-05-rgb) / .16)
         );
         content: "";
       }
 
       figcaption {
         position: absolute;
-        right: 10px;
-        bottom: 7px;
+        right: 0.625rem;
+        bottom: 0.4375rem;
         z-index: 2;
-        color: rgba(255, 248, 241, 0.74);
+        color: rgb(var(--cream-10-rgb) / .74);
         font-family: "Sansation-Light", sans-serif;
         font-size: 0.75rem;
         letter-spacing: 0.12em;
@@ -210,13 +226,13 @@
     bottom: auto;
     z-index: 6;
     width: min(35rem, 29vw);
-    padding-top: 17px;
-    border-top: 1px solid rgba(255, 232, 214, 0.22);
+    padding-top: 1.0625rem;
+    border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
     will-change: transform, opacity;
 
     > span,
     p {
-      color: rgba(255, 232, 214, 0.56);
+      color: rgb(var(--cream-06-rgb) / .56);
     }
 
     > span {
@@ -226,7 +242,7 @@
     }
 
     h1 {
-      margin: clamp(15px, 1.8vh, 22px) 0 0;
+      margin: clamp(0.9375rem, 1.8vh, 1.375rem) 0 0;
       font-family: "Sentient-Regular", serif;
       font-size: clamp(2.7rem, 3.35vw, 4.5rem);
       font-weight: 400;
@@ -243,7 +259,7 @@
 
     p {
       max-width: 33rem;
-      margin: clamp(16px, 2vh, 24px) 0 0;
+      margin: clamp(1rem, 2vh, 1.5rem) 0 0;
       font-size: clamp(0.9rem, 0.91vw, 1.04rem);
       font-weight: 300;
       line-height: 1.48;
@@ -256,16 +272,20 @@
     left: 4.5%;
     display: flex;
     align-items: center;
-    gap: 13px;
-    color: rgba(255, 232, 214, 0.5);
+    gap: 0.8125rem;
+    color: rgb(var(--cream-06-rgb) / .5);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
-    > div {
-      width: 42px;
-      height: 42px;
-    }
+    /*
+     * No size for the cue's own element here.
+     *
+     * There used to be `> div { width: 42px; height: 42px }`. At (0,1,1) it beat every rung of
+     * MouseAnim's own `hb()` ladder on `.mouse-anim` (0,1,0), and this scene is the only place
+     * MouseAnim is used — so the component's whole responsive scale was dead code and the cue
+     * measured 42×42 on every landscape width. The size belongs to MouseAnim.
+     */
   }
 }
 
@@ -278,25 +298,86 @@
  * to the reservation section below the timeline.
  */
 .kurzyAbout {
+  /*
+   * Real flow inside an absolute scene.
+   *
+   * The three children used to be three independent absolute layers — heading `top: 17%`, lede
+   * `top: 19%`, cards `bottom: 11%`. Their vertical POSITION was a function of window height;
+   * the cards' own HEIGHT came from window width (three 4/3 figures in three tracks). The two
+   * never had to agree, and mostly did not: the cards' top edge cut into the heading by 142px
+   * at 1280×720, 137px at 1366×768, 47px at 1512×982, 84px at 1990×1120 and 308px at
+   * 2552×1351. Only 1366×1024 happened to come out clean, which is the layout the design meant.
+   *
+   * The scene itself stays absolute — hero and „Pro koho" crossfade, so both have to occupy the
+   * same square of screen. Inside it the children are grid rows and the browser measures them
+   * instead of us guessing. Heading and lede share the first row as two columns; the cards take
+   * the second across both; the third row is whatever is left over. Nothing can overlap because
+   * nothing is placed by hand any more, which is why this needs no breakpoint: it is one kind of
+   * layout everywhere from 1200 to 2552, it was only ever arithmetic that was wrong.
+   */
+  display: grid;
+  /* Column one is the old `min(38vw, 640px)` with its ceiling in rem, so the heading column
+     grows past 1921 instead of sticking at 640px and breaking a 107px h2 onto three lines. */
+  grid-template-columns: min(38vw, 40rem) minmax(0, 1fr);
+  /*
+   * Two rows, and the slack between them rather than after them.
+   *
+   * `space-between` is what the old `top: 17%` / `bottom: 11%` pair was reaching for: heading
+   * anchored to the top of the scene, cards anchored to the bottom above the progress rail, and
+   * the air in the middle. The difference is that this cannot go negative — when the leftover
+   * space runs out, `space-between` falls back to `start` by definition, so the two rows pack
+   * against the top with only `row-gap` between them and nothing overlaps. That fallback is the
+   * whole short-laptop case: at 720 and 768 the leftover is a handful of pixels and the scene
+   * simply closes up.
+   */
+  grid-template-rows: auto auto;
+  align-content: space-between;
+  /* The gutter that used to be baked into the lede's `left: calc(…)`. */
+  column-gap: clamp(2rem, 4vw, 5rem);
+  row-gap: clamp(0.75rem, 3vh, 4rem);
+  height: 100%;
+
+  /*
+   * Both on vh, and this pair is what makes the short laptop fit without a rule of its own.
+   * The top clears the scene meta, which is absolutely positioned on the scene's own padding
+   * edge and would otherwise be sat on by the eyebrow.
+   *
+   * The bottom is the progress rail's room, and it is derived rather than picked. The rail sits
+   * `3.6%` up from the stage floor, is one line of its own type tall, and carries a hairline
+   * `0.6875rem` below itself, so it claims `0.036H + railH + 0.6875rem` plus a little air:
+   *   660 → 23.8 + 17.9 + 11 + 8 = 60.7 = 9.2vh      1080 → 38.9 + 20 + 11 + 8 = 77.9 = 7.2vh
+   *   768 → 27.6 + 18.4 + 11 + 8 = 65.0 = 8.5vh      1351 → 48.6 + 28.7 + 14.6 + 10 = 101.9 = 7.5vh
+   * The binding case is the SHORTEST window, so the coefficient is 9.2vh, not the 8.5vh this
+   * started at — 8.5 was fitted to 720 and left 1220×660 (an `lt` target in the breakpoint table)
+   * with the cards 6px INTO the rail.
+   *
+   * Floors sit under the vh term at 660, or the clamp locks on its floor exactly where the
+   * window is tightest and the scene stops shrinking: 12.5vh·660 = 82.5 > 5rem, 9.2vh·660 = 60.7
+   * > 3.375rem. That is the whole reason there is no `lt` rule in this file.
+   * Measured: 82/61 at 660, 90/66 at 720, 96/71 at 768, 128/94 at 1024, 169/124 at 1351.
+   */
+  padding-top: clamp(5rem, 12.5vh, 10.5rem);
+  padding-bottom: clamp(3.375rem, 9.2vh, 7rem);
+
   color: var(--kurzy-charcoal);
 
   &__intro {
-    position: absolute;
-    top: 17%;
-    left: 6%;
+    grid-row: 1;
+    grid-column: 1;
+    align-self: start;
     z-index: 7;
-    width: min(38vw, 640px);
+    min-width: 0;
     will-change: transform;
 
     > span {
-      color: rgba(36, 37, 31, 0.66);
+      color: rgb(var(--ink-05-rgb) / .66);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     h2 {
-      margin: 20px 0 0;
+      margin: 1.25rem 0 0;
       font-family: "Sentient-Regular", serif;
       font-size: clamp(3.2rem, 4.5vw, 5.6rem);
       font-weight: 400;
@@ -305,26 +386,42 @@
 
       em {
         display: block;
-        color: #74775b;
+        color: var(--olive-13);
         font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
         font-weight: 300;
       }
     }
   }
 
+  /*
+   * Beside the heading rather than banished to the far edge.
+   *
+   * It used to be `right: 6%` at `min(30vw, 460px)`, which on a 1440px screen put a 430px column
+   * of body copy a clear 800px away from the sentence it belongs to — two things on one line with
+   * a hole between them, and the narrow measure made it seven lines deep to boot.
+   *
+   * Then it was anchored to the heading with `left: calc(6% + min(38vw, 640px) + gutter)`, which
+   * is the same relationship this grid states directly: it is the second column of the heading's
+   * own row, so the two halves cannot drift apart and the gutter has one home (`column-gap`).
+   * The measure caps in rem rather than at 760px, so on the ramp it opens to about 1000px instead
+   * of sitting as a 760px column in 1182px of free space.
+   */
   &__lede {
-    position: absolute;
-    top: 19%;
-    right: 6%;
+    grid-row: 1;
+    grid-column: 2;
+    align-self: start;
     z-index: 7;
-    width: min(30vw, 460px);
-    padding-top: 16px;
-    border-top: 1px solid rgba(36, 37, 31, 0.22);
+    min-width: 0;
+    max-width: 47rem;
+    /* The rule used to start 2% of the window below the eyebrow. Vertical offset, so vh. */
+    margin-top: clamp(0.5rem, 1.6vh, 1.75rem);
+    padding-top: 1rem;
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .22);
     will-change: transform, opacity;
 
     p {
       margin: 0;
-      color: rgba(36, 37, 31, 0.7);
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: clamp(0.96rem, 1.02vw, 1.16rem);
       font-weight: 300;
       line-height: 1.58;
@@ -332,34 +429,96 @@
   }
 
   &__blocks {
-    position: absolute;
-    right: 6%;
-    bottom: 11%;
-    left: 6%;
+    grid-row: 2;
+    grid-column: 1 / -1;
     z-index: 6;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(18px, 2.2vw, 44px);
+    gap: clamp(1.125rem, 2.2vw, 2.75rem);
   }
 }
 
 .kurzyAudience {
+  /*
+   * The distance the rule stands off the text, written once. The figure's negative margin has to
+   * be exactly this and no other number — two literals here would be two chances to drift — and
+   * `calc(-1 * …)` on the same custom property cannot.
+   *
+   * 1.8vh·660 = 11.88px, so the floor is 0.6875rem and not the 0.875rem it was: at 660 every
+   * vertical clamp in this card was sitting on its floor at once, which is how the scene stopped
+   * shrinking on the shortest laptop in the table.
+   */
+  --kurzy-audience-rule: clamp(0.6875rem, 1.8vh, 1.375rem);
+
   min-width: 0;
-  padding-top: clamp(14px, 1.8vh, 22px);
-  border-top: 1px solid rgba(36, 37, 31, 0.24);
+  padding-top: var(--kurzy-audience-rule);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .24);
   will-change: transform, opacity;
+
+  /*
+   * The photograph belonging to this audience, above the rule that opens the block.
+   *
+   * A ratio rather than a height: the three sit in equal grid tracks, so a fixed height would
+   * give three different crops of the same shape at different widths, and `auto` gives nothing
+   * at all — the image is `fill`, which contributes no height of its own.
+   *
+   * Negative top margin pulls it above the block's own border, so the rule still reads as the
+   * start of the text rather than as a frame around the picture.
+   *
+   * The ratio alone made this the one thing in the scene whose height came from width and from
+   * nothing else — three tracks of 4/3 in a 91vw grid is 277px of photo at 1280 and 737px at
+   * 2552, which is what used to shove the cards up through the heading. A ceiling on vh puts it
+   * back on the axis it actually competes on; `object-fit: cover` on the image below means the
+   * only consequence is a tighter crop.
+   */
+  &__figure {
+    position: relative;
+    width: 100%;
+    margin-top: calc(-1 * var(--kurzy-audience-rule));
+    margin-bottom: clamp(0.75rem, 2vh, 1.625rem);
+    aspect-ratio: 4 / 3;
+    /*
+     * 16vh, and the coefficient is solved for, not chosen.
+     *
+     * The scene's budget at the shortest laptop in the table (1220×660) is
+     *   660 − 12.5vh − 9.2vh = 516.8px,
+     * the heading row measures 148.9 and the row-gap 19.8, so the cards may be 348.1 tall. Take
+     * the card apart: everything except the photo is 238.6 once the floors below are under their
+     * vh terms, which leaves the photo 109.5px — 16.6vh of 660. 16vh with 3.9px to spare.
+     *
+     * It was 18vh with an 8rem floor, fitted to 720 and never checked at 660, where 18vh is
+     * 118.8px but 8rem is 128px: the floor won, the photo grew instead of shrinking, and the
+     * cards ran 24px past the scene's padding and 6px into the progress rail. `.kurzyScene`
+     * clips, so the third row of CTAs went under the fold with nothing said.
+     * Floor 6.5rem = 104px stays under 16vh·660 = 105.6px, which is what keeps the band live
+     * exactly where it is needed. Measured 106 at 660, 115 at 720, 123 at 768, 216 at 1351.
+     */
+    max-height: clamp(6.5rem, 16vh, 13rem);
+    overflow: hidden;
+    border-radius: 4px;
+    background: rgb(var(--ink-05-rgb) / .06);
+
+    img {
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  &:hover &__figure img {
+    transform: scale(1.03);
+  }
 
   &__number {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: rgba(36, 37, 31, 0.46);
+    gap: 0.625rem;
+    color: rgb(var(--ink-05-rgb) / .46);
     font-size: 0.75rem;
     letter-spacing: 0.13em;
 
     i {
       flex: 1;
-      max-width: 60px;
+      max-width: 3.75rem;
       height: 1px;
       background: currentColor;
       opacity: 0.5;
@@ -368,15 +527,15 @@
 
   &__eyebrow {
     display: block;
-    margin-top: clamp(10px, 1.4vh, 16px);
-    color: rgba(36, 37, 31, 0.66);
+    margin-top: clamp(0.5rem, 1.4vh, 1rem);
+    color: rgb(var(--ink-05-rgb) / .66);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   h3 {
-    margin: 8px 0 0;
+    margin: 0.5rem 0 0;
     font-family: "Sentient-Regular", serif;
     font-size: clamp(1.7rem, 2.3vw, 2.8rem);
     font-weight: 400;
@@ -385,26 +544,28 @@
 
     em {
       display: block;
-      color: #74775b;
+      color: var(--olive-13);
       font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
       font-weight: 300;
     }
   }
 
   p {
-    margin: clamp(10px, 1.4vh, 16px) 0 0;
-    color: rgba(36, 37, 31, 0.66);
+    /* Floors under the vh term at 660 across the whole card, so the rhythm keeps shrinking on the
+       shortest laptop instead of locking: 1.4vh·660 = 9.24px, 2vh·660 = 13.2px. */
+    margin: clamp(0.5rem, 1.4vh, 1rem) 0 0;
+    color: rgb(var(--ink-05-rgb) / .66);
     font-size: clamp(0.88rem, 0.94vw, 1.04rem);
     font-weight: 300;
     line-height: 1.48;
   }
 
   &__action {
-    margin-top: clamp(14px, 2vh, 24px);
+    margin-top: clamp(0.75rem, 2vh, 1.5rem);
     pointer-events: auto;
 
     .kurzyTimelineCtaButton {
-      border-color: rgba(36, 37, 31, 0.42);
+      border-color: rgb(var(--ink-05-rgb) / .42);
     }
   }
 }
@@ -423,15 +584,22 @@
   /* The label is what has to fit — the pill takes its own measure and the
      clamp is the floor it will not shrink below. */
   width: fit-content;
-  min-width: clamp(190px, 13vw, 240px);
+  min-width: clamp(11.875rem, 13vw, 15rem);
   max-width: 100%;
-  height: 52px;
+  /*
+   * The pill in rem, not px. Every dimension here used to be a literal, so it measured 52px on
+   * 1280 and 52px on 2552 while the h3 beside it went 31px → 59px and the body under it 15px →
+   * 25px — a control from another page. 3.25rem is the same 52px at a 16px root and rides the
+   * ramp from there; it cannot fall under the 44px touch target, because the root never goes
+   * below 16px.
+   */
+  height: 3.25rem;
   padding: 0;
-  border: 1px solid rgba(255, 232, 214, 0.72);
+  border: 1px solid rgb(var(--cream-06-rgb) / .72);
   border-radius: 999px;
   background: var(--kurzy-cream);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 13px 30px -22px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .7),
+    0 13px 30px -22px rgb(var(--black-01-rgb) / .8);
   color: var(--kurzy-charcoal);
   transition: border-color 0.35s ease, box-shadow 0.35s ease,
     transform 0.35s ease;
@@ -439,10 +607,10 @@
   &::after {
     position: absolute;
     top: 50%;
-    right: 7px;
+    right: 0.4375rem;
     z-index: 8;
-    width: 38px;
-    height: 38px;
+    width: 2.375rem;
+    height: 2.375rem;
     display: grid;
     place-items: center;
     border-radius: 50%;
@@ -455,8 +623,16 @@
     transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
+  /*
+   * Right inset clears the arrow disc (0.4375 + 2.375 = 2.8125rem) with room to spare.
+   *
+   * These four numbers ARE `.kurzyRezervaceCtaButton` in kurzy/Rezervace/styles.scss, which says
+   * in its own comment that the two are one component wearing two class names. They were
+   * 0.44 / 0.19 / 3.4 / 1.4 here against 0.4375 / 0.1875 / 3.375 / 1.375 there — close enough to
+   * read as intended, far enough apart to be two components. Both files now say the same thing.
+   */
   > div {
-    padding: 3px 54px 3px 22px;
+    padding: 0.1875rem 3.375rem 0.1875rem 1.375rem;
   }
 
   p {
@@ -480,8 +656,8 @@
   &:hover,
   &:focus-visible {
     border-color: var(--kurzy-cream);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72),
-      0 18px 34px -24px rgba(0, 0, 0, 0.9);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .72),
+      0 18px 34px -24px rgb(var(--black-01-rgb) / .9);
     transform: translateY(-2px);
 
     &::after {
@@ -501,12 +677,42 @@
   }
 
   .kurzyAbout {
+    /*
+     * Below 980 the scene is still shaped by hand — the `below-px(720px)` block underneath
+     * places all three children by offset, and the phone pass owns that. The grid flow above is
+     * the landscape layout, so it is undone here and the original absolute geometry restated,
+     * which keeps every viewport ≤980 exactly as it measured before this pass. Everything in
+     * this block below this point is the shaping that was already here.
+     */
+    display: block;
+
+    &__intro,
+    &__lede,
+    &__blocks {
+      position: absolute;
+    }
+
     &__intro {
+      top: 17%;
+      left: 6%;
       width: 44vw;
     }
 
+    /* The heading is 44vw here, so the lede's left edge follows it. `width: auto` because it is
+       now set by both offsets — a width as well would fight the `right` and win. */
     &__lede {
-      width: 36vw;
+      top: 19%;
+      right: 6%;
+      left: calc(6% + 44vw + clamp(24px, 3vw, 48px));
+      width: auto;
+      max-width: 760px;
+      margin-top: 0;
+    }
+
+    &__blocks {
+      right: 6%;
+      bottom: 11%;
+      left: 6%;
     }
   }
 }
@@ -515,8 +721,11 @@
   .kurzyTimeline {
     height: 330svh;
 
+    /* Capped by the window, like the base rule. As a bare 660px this forced a 660px stage into a
+       320px viewport on a small landscape phone — and, sitting later in the file, it silently
+       beat the `phs` override that was written to prevent exactly that. */
     &__stage {
-      min-height: 660px;
+      min-height: min(41.25rem, 100svh);
     }
 
     &__rail {
@@ -641,6 +850,14 @@
     align-items: center;
     gap: 4px 14px;
     padding-top: 12px;
+
+    /* The card is two columns here — title beside its button — so the picture takes both, and
+       stays what it is everywhere else: the thing above the block it belongs to. */
+    &__figure {
+      margin-bottom: 12px;
+      grid-column: 1 / -1;
+      aspect-ratio: 16 / 9;
+    }
 
     &__eyebrow,
     p {

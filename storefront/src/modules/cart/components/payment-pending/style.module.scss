@@ -1,50 +1,215 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 /*
- * Sits inside OrderStateShell's cream surface. Ink #20211d measures 15.4:1 there;
- * the label tone #4f5147 measures 7.4:1. Money-adjacent copy gets solid, measured tones.
+ * Sits inside OrderStateShell's cream surface. `--ink-05` measures 15.4:1 on it; the label
+ * tone `--olive-04` measures 7.4:1. Money-adjacent copy gets solid, measured tones.
+ *
+ * One media query in this file, and it is not a width: `@include touch`. The clamps still carry
+ * ALL the size — floors in rem, middles in vw/vh — so the card stands on its floors at 320 and
+ * gives height back on a short laptop without an `lt` rule, and above 1921 the root ramp lifts
+ * every rem ceiling, which is why there is nothing to write for qhd or xxl. The touch block
+ * carries KIND, not size: a finger needs 44px of target and a mouse does not. globals.scss gives
+ * that floor to <button> only, deliberately, "so inline text links keep their natural line box"
+ * — so a component whose only way off the page is two inline links has to give it here. That is
+ * a pointer fact, not a width fact, which is why it hangs on (hover: none) and (pointer: coarse)
+ * rather than on a breakpoint. On a tablet that block is LIVE, and it is right that it is: a
+ * tablet is a touch device with the same finger. Measured on 768x1024 and on 1024x1366, both
+ * links come out 44px tall, side by side on one line and not overlapping.
+ *
+ * phs, phl and the whole v() axis stay empty, and after the tablet pass the reason is measured
+ * arrangement rather than the phone it used to be argued from:
+ *
+ *   The <dl> stays one column because two do not fit, and the arithmetic is not close. At the
+ *   tablet's own type the two max-contents are 349.6px (the 28-character cart id, which has no
+ *   break opportunity in it) and 382.3px (mail + separator + phone) — 731.9px of content against
+ *   an inner track of 568.1px on 768x1024 and 555.5px on 1024x1366. The card is the full 608px
+ *   cap on both; the track is what is left of it after the padding and the hairline. Even down
+ *   on the phone floor it is 304 + 332.5 = 636.5px against a 360.8px track. Over before a single
+ *   pixel of column gap is counted — and forcing it proves it: set grid-template-columns to
+ *   1fr 1fr and each column is 276px, the id goes to two lines and the contact to four, on both
+ *   tablets. The id would break across its own overflow-wrap: anywhere, and it is the one string
+ *   on this page a customer reads out loud down a phone line. One column is the right tablet
+ *   arrangement, not a phone leftover carried over by accident.
+ *
+ *   The contact line is already horizontal on a tablet with no rule asking for it: mail 220.9x44
+ *   and tel 134.5x44 on the same y, 12.5px apart, one fragment each on 768x1024; 229.5x44 and
+ *   139.8x44, 13px apart, on 1024x1366. It folds to two lines only where the track really runs
+ *   out, which on this page is the phone.
+ *
+ * What was actually wrong was wrapping, and wrapping is true at every width and therefore owed no
+ * stop of its own — a machine-generated number that must be breakable (a 28-character cart id
+ * offers no break opportunity, and its min-content was stretching the shell's shrink-to-fit
+ * column past the window edge) and a phone number that must not be. Only the first of those two
+ * is a phone fix; the second turns out to protect a narrow mouse window, for the reason recorded
+ * on it.
+ *
+ * Where the portrait tablet did need help was SIZE, and it got clamps, not stops. `vw` alone is
+ * the smaller axis on a 768x1024 or a 1024x1366 screen, so every portrait width from 600 to 1024
+ * was resolving to the exact phone floor — dt 12px, dd 16px, note 13px, bit for bit what 430x932
+ * gets, with the card inset 17.6px horizontally against 25.6px vertically. Three clamps below
+ * take that back without moving a single phone or landscape stop; only dt stays on the phone's
+ * value, for the reason written where it stands.
  */
 
 .reference {
   display: grid;
-  max-width: 54ch;
-  margin: clamp(20px, 2vw, 28px) 0 0;
-  padding: clamp(18px, 1.8vw, 24px);
-  border: 1px solid rgba(32, 33, 29, 0.22);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.42);
-  gap: 14px;
+  max-width: min(100%, 38rem);
+  margin: clamp(.9rem, 2.6vh, 1.9rem) 0 0;
+  /* Vertical inset on vh, horizontal NOT on vw alone. The height term is not here because the
+     card competes for height — it does not, the page scrolls either way — it is here because on
+     a portrait tablet `vw` IS the smaller axis, and 1.6vw on its own parks every screen from 320
+     to 1100 wide on the same 17.6px floor. That left the iPad Pro inset MORE vertically (25.6px)
+     than horizontally (17.6px), the exact reverse of the 1366x768 laptop, which reads 18.4
+     vertical against 21.9 horizontal. Same idiom the shell already uses on .mark's
+     min(30vw, 16vh): max() lets the height term speak, and min(2.6vw, ...) is the guard that
+     stops a narrow-but-tall device — a phone — from ever winning with it. No stop, continuous.
+     Measured: every phone and landscape stop from 320x568 through qhd 2552x1351 is unchanged to
+     the pixel; only portrait tablets move, 768x1024 17.6 -> 18.9 and 1024x1366 17.6 -> 25.3,
+     which squares the horizontal inset with the vertical one. 600x960 stays on 17.6 — 600px wide
+     is a phone by width and belongs on the floor. */
+  padding: clamp(.85rem, 2.4vh, 1.6rem) clamp(1.1rem, max(1.6vw, min(2.6vw, 1.85vh)), 1.6rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
+  border-radius: .875rem;
+  background: rgb(var(--white-rgb) / .42);
+  gap: clamp(.55rem, 1.5vh, 1.05rem);
 }
 
 .reference > div {
   display: grid;
-  gap: 5px;
+  gap: clamp(.2rem, .55vh, .4rem);
 }
 
 .reference dt {
-  color: #4f5147;
-  font-size: 13px;
+  color: var(--olive-04);
+  /* The floor is the same 12px legibility line the shell's own .header and .kicker stand on.
+     At .92vw it was not reached until 1304px, so 1220-1300 sat exactly ON it; 1vw puts the
+     live band at 1200-1440 and keeps a margin above the floor where the laptops are.
+
+     No height term here, deliberately, and this is the one place the tablet gets nothing. Those
+     two shell rules are a FLAT .75rem font shorthand at every viewport — not a clamp — so on a
+     portrait tablet the page's own eyebrow is 12px. Giving this label a vh term would lift it off
+     that shared line while the eyebrow stayed put, which reads as a misprint rather than as
+     hierarchy. The label is the small half of a label/value pair anyway: the value is what gained
+     a height term below, and the contrast between them is what the tablet actually needed. */
+  font-size: clamp(.75rem, 1vw, .9rem);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .reference dd {
   margin: 0;
-  color: #20211d;
-  font-size: 17px;
+  color: var(--ink-05);
+  /* The number the customer reads out on the phone, so it must not fall under the prose above
+     it (.description is a flat 1.05rem = 16.8px). 1.2vw left it at 16px against 16.8px
+     everywhere below 1333; 1.3vw clears the description from 1292px up — on the WIDTH axis,
+     which is why it never cleared it on a tablet at all. Measured before: 16px against 16.8px on
+     600x960, 768x1024, 820x1180, 834x1194, 912x1368, 1000x1300 and 1024x1366 alike, i.e. the
+     contract this comment claims held on laptops only. The height term restores it: max() lets
+     it speak where the screen is tall, min(2.8vw, ...) keeps a phone from reaching it.
+     1.73vh, not 1.75 — at 1.75 the mdt 1366x1024 stop moves 17.758 -> 17.92px, and that is a
+     landscape number already settled; at 1.73 it stays 17.758 to the pixel. Measured after: all
+     four phone stops still 16px, every landscape stop through qhd 2552 unchanged, 768x1024 reads
+     17.7 and 820 upward sits on the 18.4 ceiling. The crossover is a height fact, not a width
+     one: the height term takes the lead once 1.73vh clears the 1rem FLOOR (925px tall) and 2.8vw
+     clears it as well (572px wide) — which is every real portrait tablet, 600x960 included, and
+     there it lands on 16.608px, between the phone's 16 and the paragraph's 16.8. That is the
+     right answer for a 600px-wide portrait screen, which is neither one nor the other. Lifting
+     the floor to 1.05rem would read better still and is safe, but it moves the phone
+     (16 -> 16.8px) and that round is closed; recorded here so nobody re-derives it. */
+  font-size: clamp(1rem, max(1.3vw, min(2.8vw, 1.73vh)), 1.15rem);
   line-height: 1.4;
+  /* A real cart id (cart_01JQ8ZK4M6VN2P7RXW3TDHB59Y, 28 characters) has no break opportunity in
+     it, so its min-content was the full 304px string. The shell lays .copy out with
+     justify-items: start, which makes it shrink-to-fit — min(max(min-content, available),
+     max-content) — so that one word widened the whole column to 341px inside a 288px viewport
+     and the shell's overflow: hidden cut it off silently, with no scrollbar to show for it.
+     `anywhere`, not `break-word`: only `anywhere` shrinks min-content, and min-content is
+     precisely what was doing the stretching. A machine number is meant to be breakable. */
+  overflow-wrap: anywhere;
 }
 
 .reference a {
   color: inherit;
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  text-underline-offset: .18em;
+}
+
+/* Left to itself the contact line broke inside the number: '+420' kept the first line and
+   '775 211 578' fell to the second.
+
+   Where that still happens is NOT the phone. The touch block below makes each link an
+   inline-flex, which is an atomic inline box and cannot break across lines at all, so on a
+   touch device this rule is inert — measured with nowrap forced off, 320x568 and 568x320 both
+   stay at one fragment and 121.5px. It earns its keep on the fine-pointer path, where the
+   anchor is left as display: inline: a mouse window 360px wide breaks the number into two
+   fragments without it (121.5px on one line becomes 278.2px over two) and keeps one with it.
+   Keep the two facts together — the rule reads like a portrait fix and is not one.
+
+   The number measures 121.5px and the narrowest track on any stop we serve is 250.8px (320
+   portrait), so nowrap can never overflow — it just moves the break onto the ' · ' separator,
+   where it belongs. The e-mail above it stays breakable on purpose: at 199.6px it is the one
+   string here that may genuinely need to fold. */
+.reference a[href^="tel:"] {
+  white-space: nowrap;
+}
+
+/* The 44px finger floor. These two links are the only way off this page on a phone, and inline
+   they are 17px tall. globals.scss floors <button> only, on purpose, so it has to be done here —
+   same shape the Footer uses for its identity list. Not a stretched ::after hit-area: BEFORE this
+   rule the two links sat on 22.4px line boxes in portrait, so a 44px invisible box on the e-mail
+   would have reached 8.2px into the phone number's own text and stolen taps meant for it. Growing
+   the real box instead makes them exact neighbours rather than overlapping ones — measured after,
+   at 320 portrait they stack at 769.4..813.4 and 813.4..857.4: 44px each, touching, no overlap in
+   either direction.
+
+   inline-flex makes each link an atomic inline box, so it no longer breaks across a line the way
+   an inline anchor does — it shrink-to-fits its containing block instead and wraps inside. That
+   is the same fold for this layout, because the e-mail is first on its line: measured at 320
+   portrait, a 45-character address takes the 250.8px track and goes to two rows (44 -> 44.8px)
+   with the <dl> still 288px and the document still 320px. The dd's overflow-wrap: anywhere is
+   what carries that, which is the second reason it belongs on the dd and not on the id alone. */
+@include touch {
+  .reference a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
 
 .note {
-  max-width: 54ch;
-  margin: 14px 0 0;
-  color: #4f5147;
-  font-size: 14px;
+  /* Same measure as the card above, so both edges line up and the sentence keeps to one line.
+     38rem against the .95rem ceiling is 40em, and the 87 characters fit at every stop from the
+     ceiling up - qhd included, where width and type are lifted by the same ramp factor.
+
+     The cap is not what the SIZE is up against on a tablet, though — the LANE is, and the lane
+     is whatever the shell hands this paragraph. Measured on the live page after the shell had
+     its own tablet pass: 398px at 430x932, 540px at 600x960, 608px (the cap) at 768x1024,
+     820x1180 and 912x1368, 595px at 1000x1300 — the narrowest lane above v(lg), where the shell
+     splits off the mark column and the copy keeps 0.595 of the width — 608px again at
+     1024x1366, and 608px on the 1366x768 laptop. From 768px of portrait the tablet therefore
+     has EXACTLY the laptop's lane, and holding it on the phone's 13px floor was a size the
+     tablet had no reason to be given. (An earlier reading of 506/518px here was the LANDSCAPE
+     1024x768 lane, not a portrait one.) Measured widths of the sentence: 505.6px at 13px,
+     549.6px at 14.13px, 560.1px at 14.4px, 591.2px at 15.2px.
+
+     max(1.05vw, min(2vw, 1.38vh, .9rem)) — three guards, one job each:
+       2vw    keeps phones out: 8.6px at 430 wide, 12px at 600, both under the 13px floor. They
+              have to stay out — a 540px lane cannot hold this sentence above 13.88px, so
+              600x960 sits on its floor by arithmetic and not by taste.
+       1.38vh keeps landscape out: 10.6px at 768 tall, so 1024x768 and 1220x660 keep the floor
+              and 1366x768 keeps its 14.343px. 1.38 and not 1.42 — at 1.42 the mdt 1366x1024
+              stop moves 14.343 -> 14.4px, and that is a landscape number already settled.
+       .9rem  caps the band, and it is what keeps 1000x1300 honest: the .95rem ceiling would put
+              591.2px into a 595px lane, 3.8px short of a second line. At 14.4px there are
+              34.9px to spare there and 47.9px at 1024x1366. In rem, so the ramp above 1921
+              lifts it with everything else — not that it leads up there, 1.05vw being 20.2px
+              by 2552.
+     Result: 13px on every phone and on 600x960, 14.131px at 768x1024, 14.4px from 820 up, and
+     not one landscape stop moved. Below 600 it is two lines and always was — a 430px phone has
+     no 505px lane to give it. */
+  max-width: min(100%, 38rem);
+  margin: clamp(.55rem, 1.5vh, 1.05rem) 0 0;
+  color: var(--olive-04);
+  font-size: clamp(.8125rem, max(1.05vw, min(2vw, 1.38vh, .9rem)), .95rem);
   line-height: 1.55;
 }

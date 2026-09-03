@@ -1,119 +1,22 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-/* Register styles converted from Tailwind to Sass module (exact mapping) */
+/*
+ * Register - atelier passport, shared auth language with login.
+ *
+ * One rule per selector. The file used to describe the component twice: a Tailwind-era
+ * block (plus hb() overrides for sm/xs/xxs) that was dead on every width, because the
+ * later ".root .title" / ".root .desc" rules carry the same specificity and win by order.
+ *
+ * Vertical rhythm hangs on vh, horizontal type on vw. Six fields in a 660-720px tall
+ * window is exactly the low-laptop case, so gaps, field height and vertical padding
+ * shrink with the viewport instead of asking for a rule in lt.
+ */
 
 .root {
-	/* max-w-sm flex flex-col items-center */
-	max-width: 24rem;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-
-    .title {
-        /* text-large-semi uppercase mb-6 -> text-base leading-6 font-semibold */
-        font-size: 2rem;
-        line-height: 1.5rem;
-        font-weight: 400;
-        text-transform: capitalize;
-        font-family: "Sansation-Regular";
-        margin-bottom: 1.5rem; /* mb-6 */
-
-        @include hb((
-            sm: (font-size: 1.8rem),
-            xs: (font-size: 1.8rem),
-            xxs: (font-size: 1.8rem),
-        ));
-        }
-
-        .desc {
-        /* text-center text-base-regular text-ui-fg-base mb-8 */
-        text-align: center;
-        font-size: 1.1rem;
-        line-height: 1.5rem;
-        font-weight: 300;
-        color: var(--blackText);
-        font-family: "Sansation-Light";
-        margin-bottom: 2rem; /* mb-8 */
-        @include hb((
-            sm: (font-size: 1rem),
-            xs: (font-size: 1rem),
-            xxs: (font-size: 1rem),
-        ));
-    }
-
-    .form {
-        /* w-full flex flex-col */
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-
-        .fields {
-            /* flex flex-col w-full gap-y-2 */
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            row-gap: 0.5rem; /* gap-y-2 */
-        }
-        .note {
-            /* text-center text-ui-fg-base text-small-regular mt-6 */
-            text-align: center;
-            color: var(--blackText);
-            font-size: 1rem;
-            line-height: 1.25rem;
-            font-weight: 300;
-            margin-top: 1.5rem;
-            font-family: "Sansation-Light";
-
-            .underline{
-                font-size: 1rem;
-                line-height: 1.25rem;
-                font-weight: 400;
-                font-family: "Sansation-Regular";
-            }
-        }
-        .submit {
-            /* w-full mt-6 */
-            width: 100%;
-            margin-top: 1.5rem;
-            --premium-button-surface: transparent;
-            --premium-button-fill: #20211d;
-
-            > button {
-              width: 100%;
-              min-width: 0;
-            }
-        }
-    }
-}
-
-
-.note {
-  /* text-center text-ui-fg-base text-small-regular mt-6 */
-  text-align: center;
-  color: var(--blackText);
-  font-size: 1rem;
-  line-height: 1.25rem;
-  font-weight: 300;
-  margin-top: 1.5rem;
-  font-family: "Sansation-Light";
-
-  .underline{
-    font-size: 1rem;
-    line-height: 1.25rem;
-    font-weight: 400;
-    font-family: "Sansation-Regular";
-  }
-}
-
-.underline {
-	/* underline */
-	text-decoration: underline;
-}
-
-/* Atelier passport — shared auth language */
-.root {
+  display: flex;
   width: 100%;
   max-width: 31rem;
+  flex-direction: column;
   align-items: stretch;
 }
 
@@ -122,29 +25,47 @@
   font-family: "Sentient-Regular", serif;
   font-size: clamp(1.8rem, 2.25vw, 2.6rem);
   font-weight: 400;
-  line-height: 1;
   letter-spacing: -.025em;
+  line-height: 1;
   text-transform: none;
 }
 
 .root .desc {
   max-width: 23rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
+  /* floor 14.4px at 554px tall, ceiling 25.6px at 985px - live across every laptop */
+  margin-bottom: clamp(.9rem, 2.6vh, 1.6rem);
+  color: var(--blackText);
+  font-family: "Sansation-Light";
   font-size: .96rem;
+  font-weight: 300;
   line-height: 1.45;
+  text-align: left;
 }
 
-.root .form .fields { row-gap: .75rem; }
+.root .form {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.root .form .fields {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  /* 9.6px at 600px tall, 15.2px at 950px - five gaps, so this is 48px of the card */
+  row-gap: clamp(.6rem, 1.6vh, .95rem);
+}
 
 .root .form .fields :global(input) {
-  height: 3.25rem !important;
-  padding: 1rem 2.8rem .3rem 0 !important;
+  /* one control, one value: the same clamp runs in login.module.scss.
+     41.6px at 640px tall, 54.4px at 837px; 49.9px on 1366x768, 46.8px on 1280x720 */
+  height: clamp(2.6rem, 6.5vh, 3.4rem) !important;
+  padding: clamp(.75rem, 2vh, 1.05rem) 2.8rem clamp(.2rem, .6vh, .35rem) 0 !important;
   border: 0 !important;
-  border-bottom: 1px solid rgba(33, 34, 34, .42) !important;
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .42) !important;
   border-radius: 0 !important;
   background: transparent !important;
-  color: #212222 !important;
+  color: var(--black-03) !important;
   font-size: 1.02rem !important;
   box-shadow: none !important;
 }
@@ -152,29 +73,62 @@
 .root .form .fields :global(label) {
   left: -.25rem !important;
   margin-left: 0 !important;
-  color: rgba(33, 34, 34, .54) !important;
-  font-size: .76rem !important;
+  color: rgb(var(--black-03-rgb) / .54) !important;
+  /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility floor */
+  font-size: clamp(.8rem, .85vw, .9rem) !important;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
 
 .root .form .fields :global(input:focus) {
-  border-color: #555d48 !important;
+  border-color: var(--olive-07) !important;
   box-shadow: none !important;
 }
 
-.root .form .note,
-.root + .note { text-align: left; }
-
-.root .form .note,
-.root > .note {
-  margin-top: 1rem;
-  font-size: .88rem;
-  line-height: 1.45;
+.root .form .fields :global(input:-webkit-autofill),
+.root .form .fields :global(input:-webkit-autofill:hover),
+.root .form .fields :global(input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: var(--black-03) !important;
+  box-shadow: 0 0 0 1000px var(--cream-07) inset !important;
+  transition: background-color 9999s ease-out 0s;
 }
 
+/*
+ * Both notes: the consent line inside the form and the "Mate uz ucet?" line after it.
+ * The second one is a child of .root, not a sibling - ".root + .note" matched nothing,
+ * which left that single line centred while the rest of the card sat left.
+ */
+.root .form .note,
+.root > .note {
+  /* 11.2px at 560px tall, 17.6px at 880px */
+  margin-top: clamp(.7rem, 2vh, 1.1rem);
+  color: var(--blackText);
+  font-family: "Sansation-Light";
+  font-size: .88rem;
+  font-weight: 300;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.root .form .submit {
+  width: 100%;
+  /* 14.4px at 554px tall, 24px at 923px */
+  margin-top: clamp(.9rem, 2.6vh, 1.5rem);
+  --premium-button-surface: transparent;
+  --premium-button-fill: var(--ink-05);
+}
+
+.root .form .submit > button {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Links inherit the note's size (tailwind preflight gives the button font-size: 100%),
+   so the anchor and the view-switch button read at the same scale as the text. */
 .underline {
   position: relative;
+  font-family: "Sansation-Regular";
+  font-weight: 400;
   text-decoration: none;
 }
 
@@ -194,12 +148,4 @@
 .underline:hover::after,
 .underline:focus-visible::after {
   transform: scaleX(1);
-}
-
-.root .form .fields :global(input:-webkit-autofill),
-.root .form .fields :global(input:-webkit-autofill:hover),
-.root .form .fields :global(input:-webkit-autofill:focus) {
-  -webkit-text-fill-color: #212222 !important;
-  box-shadow: 0 0 0 1000px #f7f0e4 inset !important;
-  transition: background-color 9999s ease-out 0s;
 }

@@ -1,7 +1,7 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .row {
   width: 100%;
-  border-bottom: 1px solid rgba(32, 33, 29, .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
   background: transparent;
 }
 
@@ -29,8 +29,8 @@
   width: 68px;
   aspect-ratio: 4 / 5;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, .12);
-  background: rgba(255, 255, 255, .42);
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  background: rgb(var(--white-rgb) / .42);
 
   @include v(md) {
     width: 88px;
@@ -56,7 +56,7 @@
   display: grid;
   gap: 2px;
   margin-top: 8px;
-  color: rgba(32, 33, 29, .55);
+  color: rgb(var(--ink-05-rgb) / .55);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -88,7 +88,7 @@
 }
 
 .unitWrap {
-  color: rgba(32, 33, 29, .55);
+  color: rgb(var(--ink-05-rgb) / .55);
   font-size: 14px;
   display: none;
 }
@@ -96,11 +96,11 @@
 .divider {
   width: 80px;
   height: 1px;
-  background: rgba(32, 33, 29, .16);
+  background: rgb(var(--ink-05-rgb) / .16);
 }
 
 .totalLabel {
-  color: rgba(32, 33, 29, .5);
+  color: rgb(var(--ink-05-rgb) / .5);
   font: 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;

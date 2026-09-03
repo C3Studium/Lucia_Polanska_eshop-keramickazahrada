@@ -1,27 +1,39 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/* Rozměry v rem, ne v px. Kolečko není fyzická věc (není to kurzor ani vlasová
+   linka), takže patří do měřítka stránky: v px zůstávalo nad 1921 na 17 px,
+   zatímco popisek vedle něj vyrostl s rampem o třetinu — poměr kolečko/popisek
+   klesal ze 121 % na 70 % a ovladač přestával být závazný. Převod je 1:1 při
+   základním rootu, takže do 1920 se nemění ani pixel. Stopa 1.375rem je táž,
+   jakou pro svoji značku výběru drží payment-container, aby obě sekce v jednom
+   sloupci pokladny nesly stejně velký ovladač.
+   Rámeček zůstává 1px — ten fyzický JE. */
 .root {
   display: grid;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: 0 0 1.375rem;
   place-items: center;
   pointer-events: none;
 }
 
 .outer {
   display: grid;
-  width: 17px;
-  height: 17px;
+  width: 1.0625rem;
+  height: 1.0625rem;
   place-items: center;
-  border: 1px solid rgba(32, 33, 28, 0.48);
+  border: 1px solid rgb(var(--ink-05-rgb) / .48);
   border-radius: 50%;
 }
 
 .inner {
-  width: 7px;
-  height: 7px;
+  width: .4375rem;
+  height: .4375rem;
   border-radius: 50%;
-  background: #20211c;
-  box-shadow: 0 0 0 3px rgba(32, 33, 28, 0.07);
+  background: var(--ink-05);
+  /* Prstenec roste s tečkou, jinak by se poměr uvnitř kolečka převracel.
+     Vůle proti obsahové ploše .outer je na základním rootu 1px na stranu a nad
+     rampem se zvětšuje (rámeček zůstává 1px, zatímco plocha roste), takže
+     prstenec nikde nepřeteče. */
+  box-shadow: 0 0 0 .1875rem rgb(var(--ink-05-rgb) / .07);
 }

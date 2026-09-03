@@ -3,16 +3,21 @@
   position: relative;
   top: 0;
   width: 100%;
-  color: #f4efe4;
+  color: var(--cream-07);
+
+  // Odstup od navbaru, když souhrn drží. VELIKOST patří sem na základ, do
+  // breakpointu jde už jen DRUH (sticky). 9vh je živé mezi 711 a 1244 px výšky:
+  // na 1366×768 sedne na 69px místo pevných 92, na 1080 vyroste na 97.
+  --summary-sticky-top: clamp(4rem, 9vh, 7rem);
 
   @include v(lg) {
     position: sticky;
-    top: 92px;
+    top: var(--summary-sticky-top);
   }
 
   @include h(sm) {
     position: sticky;
-    top: 92px;
+    top: var(--summary-sticky-top);
   }
 }
 
@@ -20,25 +25,28 @@
   display: flex;
   width: 100%;
   flex-direction: column;
-  padding: 0 0 28px;
-  border-top: 1px solid rgba(255,232,214,.2);
-  border-bottom: 1px solid rgba(255,232,214,.2);
+
+  // Byl základ 28px a k němu v(md) i h(xs) se shodnou hodnotou — jedna vlastnost,
+  // dvě media query. Jeden clamp: podlaha 28px je původní základ, 4vh je živé mezi
+  // 700 a 1200 px výšky, tedy přes celé pásmo nízkých laptopů. Na 1080 vychází
+  // 43.2px, přesně jako zrušená media query.
+  padding: 0 0 clamp(1.75rem, 4vh, 3rem);
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
   background: transparent;
-
-  @include v(md) {
-    padding: 0 0 clamp(30px, 4vh, 48px);
-  }
-
-  @include h(xs) {
-    padding: 0 0 clamp(30px, 4vh, 48px);
-  }
 }
 
 .eyebrow {
-  margin: 0 0 18px;
-  padding: 11px 0;
-  border-bottom: 1px solid rgba(255,232,214,.2);
-  font-size: 12px;
+  margin: 0 0 clamp(.875rem, 1.8vh, 1.375rem);
+  padding: clamp(.5rem, 1.1vh, .875rem) 0;
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
+
+  // Podlaha 12px se nesmí podkročit. .6vw tu byl mrtvý prostředek: pod podlahou až
+  // do 2000px, a nad 1921 ho podlaha v rem předběhne úplně (na 2552 je .6vw 15.3px
+  // proti podlaze 15.95px), takže by clamp nikdy nerostl plynule — jen skokem
+  // podlahy. 1.02vw je živý 1176…1275, tedy uvnitř laptopového pásma; nad 1921
+  // zvedá strop ramp (15.95 → 17.3px na 2552).
+  font-size: clamp(.75rem, 1vw, 0.875rem);
   font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -47,16 +55,20 @@
 
 .heading {
   width: 100%;
-  margin: clamp(42px, 6vh, 66px) 0 26px;
+  margin: clamp(2.625rem, 6vh, 4.125rem) 0 clamp(1.25rem, 2.4vh, 2rem);
   font-family: "Sentient-Regular",serif;
-  font-size: clamp(38px,3vw,54px);
+
+  // Jen kraje z px do rem — 3vw zůstává, pod 1921 je hodnota identická s původní.
+  // Nad 1921 roste strop 3.375rem s rampem na 71.8px při 2552, takže nadpis souhrnu
+  // už nepřetlačí h1 stránky (76px); až h1 dostane rem strop, hierarchie sedne.
+  font-size: clamp(2.375rem, 3vw, 3.375rem);
   font-weight: 400;
   line-height: .94;
   letter-spacing: -.04em;
 }
 
 .divider {
-  margin: 22px 0;
+  margin: clamp(1.125rem, 2vh, 1.75rem) 0;
   background: currentColor;
   opacity: .18;
 }
@@ -65,7 +77,7 @@
   display: flex;
   width: 100%;
   justify-content: flex-start;
-  margin-top: 26px;
+  margin-top: clamp(1.25rem, 2.4vh, 2rem);
 }
 
 .root :global(button:focus-visible),
@@ -74,4 +86,3 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
-

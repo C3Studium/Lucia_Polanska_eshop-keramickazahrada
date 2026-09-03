@@ -1,5 +1,8 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
+import { button } from "@lib/util/site-copy"
+import type { CopyBlocks } from "@lib/util/site-copy"
 import Image from "next/image"
 import {
     motion,
@@ -120,7 +123,10 @@ function TitleCharacter({ character, index }: { character: string; index: number
     )
 }
 
-export default function AboutCta() {
+export default function AboutCta({ copy }: { copy?: CopyBlocks }) {
+    // Vede dovnitř webu — z CMS se bere jen název, cíl `/store` drží kód.
+    const cta = button(copy, "o-mne.vyrobky")
+
     const pointerX = useMotionValue(0)
     const pointerY = useMotionValue(0)
     const imageX = useSpring(pointerX, { stiffness: 110, damping: 24, mass: .6 })
@@ -246,12 +252,14 @@ export default function AboutCta() {
                             Podívejte se na keramiku pro zahradu i domov. Všechno
                             vzniká pomalu a jen v malém počtu.
                         </p>
-                        <WebButton
-                            Kind="Link"
-                            href="/store"
-                            title="Prohlédnout výrobky"
-                            className="aboutCta__button"
-                        />
+                        <span {...editable(cta, "label")}>
+                            <WebButton
+                                Kind="Link"
+                                href="/store"
+                                title={cta?.label?.trim() || "Prohlédnout výrobky"}
+                                className="aboutCta__button"
+                            />
+                        </span>
                     </motion.div>
                 </div>
             </div>

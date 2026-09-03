@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 
 import { getRegion } from "@lib/data/regions"
@@ -20,7 +20,17 @@ export default async function Addresses(props: {
   const customer = await retrieveCustomer()
   const region = await getRegion(countryCode)
 
-  if (!customer || !region) {
+  /*
+   * Signed out is a redirect, not a 404 — telling someone their account does not exist because
+   * their session expired is both wrong and a dead end. No country code needed: the middleware
+   * resolves `/account` to the visitor's region and lands them on the login form.
+   */
+  if (!customer) {
+    redirect("/account")
+  }
+
+  /* A missing region is a real failure, and stays one. */
+  if (!region) {
     notFound()
   }
 

@@ -1,29 +1,49 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
+  /* Jedna svisla mira radku pro obe vrstvy (.summaryRow = obal, .headerRow = grid
+     uvnitr AccountInteractiveSurface). Vh, protoze radek soupezi o vysku okna:
+     660 -> 82.5px, 768 -> 96px, 1080 -> 135px, 1351 -> 169px (strop 8.6rem zvedne
+     ramp nad 1921, takze vh clen zustane zivy i na 2K). */
+  --row-min: clamp(5rem, 12.5vh, 8.6rem);
+
+  /* Jedna sirka popiskoveho sloupce pro OBE mrizky (.headerRow i .editContent).
+     Driv mel kazdy grid vlastni .3fr ze sveho zbytku - jenze .headerRow odecita
+     jeste tlacitkovy track, takze formular zacinal jinde nez hodnota nad nim:
+     +25px na 1366, +43px na 1920, +57px na 2552 (mereno). Pevna sdilena mira
+     lici obe vrstvy na 0.00px na vsech ctyrech viewportech. Namereno po zmene:
+     152px @1220 (beze zmeny), 161.2 @1366 (bylo 152), 192 @1920 (bylo 227.3 -
+     o tech 35px se rozsiril sloupec s hodnotou), 255.2 @2552 (bylo 255.25).
+     Zive pasmo 1288-1627px; nad 1921 zvedne oba kraje ramp (202-255px).
+     Nejdelsi popisek "Fakturační adresa" meri 152.3px pri rem 16 a 202.3px
+     na 2552, takze se do sloupce vejde vsude (na 1220 na doraz, viz report). */
+  --label-col: clamp(9.5rem, 11.8vw, 12rem);
+
   position: relative;
   width: 100%;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 
   .summaryRow {
-    min-height: 124px;
+    min-height: var(--row-min);
   }
 
   .headerRow {
     display: grid;
-    grid-template-columns:
-      minmax(150px, 0.3fr)
-      minmax(0, 1fr)
-      auto;
+    grid-template-columns: var(--label-col) minmax(0, 1fr) auto;
     align-items: center;
-    gap: clamp(20px, 4vw, 54px);
-    min-height: 124px;
-    padding: clamp(24px, 3vw, 38px) clamp(4px, 0.7vw, 12px);
+    gap: clamp(1.25rem, 4vw, 3.4rem);
+    min-height: var(--row-min);
+    padding: clamp(1rem, 2.6vh, 2.4rem) clamp(.25rem, .7vw, .75rem);
   }
 
   .labelUpper {
-    color: rgba(32, 33, 29, 0.5);
-    font: 12px/1.2 "Sansation-Regular", sans-serif;
+    color: rgb(var(--ink-05-rgb) / .5);
+    /* Drz IDENTICKE s .eyebrow v templates/styles/profile.module.scss - opticky
+       tentyz label. Podlaha .75rem je 12px, kterou kontroluje rig; nad 1921 ji
+       ramp zvedne sam na ~16px. */
+    font-family: "Sansation-Regular", sans-serif;
+    font-size: clamp(.75rem, .62vw, .9rem);
+    line-height: 1.2;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     white-space: nowrap;
@@ -36,7 +56,7 @@
   .valueText {
     display: block;
     overflow-wrap: anywhere;
-    color: #20211d;
+    color: var(--ink-05);
     font: 400 clamp(1.12rem, 1.25vw, 1.36rem) / 1.4 "Sansation-Light",
       sans-serif;
   }
@@ -62,23 +82,29 @@
 
   .successPanel p,
   .errorPanel p {
-    margin: 0 0 18px;
-    padding: 12px 16px;
-    border-left: 2px solid #7e896a;
-    background: rgba(126, 137, 106, 0.09);
-    font-size: 14px;
+    margin: 0 0 clamp(.7rem, 1.6vh, 1.3rem);
+    padding: clamp(.55rem, 1.2vh, .85rem) clamp(.75rem, 1.1vw, 1.2rem);
+    /* 2px zustava v px - fyzicky akcentovy prouzek, ne mira layoutu. */
+    border-left: 2px solid var(--olive-19);
+    background: rgb(var(--olive-19-rgb) / .09);
+    font-size: clamp(.85rem, .78vw, 1rem);
   }
 
   .errorPanel p {
-    border-left-color: #a85042;
-    background: rgba(168, 80, 66, 0.09);
+    border-left-color: var(--clay-21);
+    background: rgb(var(--clay-21-rgb) / .09);
   }
 
   .editContent {
     display: grid;
-    grid-template-columns: minmax(150px, 0.3fr) minmax(0, 1fr) auto;
-    gap: 1.6rem clamp(20px, 4vw, 54px);
-    padding: 10px clamp(4px, 0.7vw, 12px) 36px;
+    /* Treti sloupec (auto) meril 0px na vsech viewportech - obe deti maji
+       grid-column: 2 / -1, takze se do nej nikdy nedalo nic vlozit. Prvni
+       sloupec je TENTYZ --label-col jako v .headerRow (jedna mira na jednom
+       miste), takze formular zacina presne pod hodnotou nad nim. */
+    grid-template-columns: var(--label-col) minmax(0, 1fr);
+    gap: clamp(1.1rem, 2.4vh, 1.8rem) clamp(1.25rem, 4vw, 3.4rem);
+    padding: clamp(.4rem, 1vh, .8rem) clamp(.25rem, .7vw, .75rem)
+      clamp(1.4rem, 3.4vh, 2.6rem);
 
     > div:first-child {
       grid-column: 2 / -1;
@@ -92,7 +118,7 @@
       margin-top: 0.4rem;
 
       .saveBtn {
-        width: min(100%, 220px);
+        width: min(100%, 13.75rem);
       }
     }
   }

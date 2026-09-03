@@ -1,19 +1,29 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   display: inline-flex;
-  color: var(--delete-button-ink, rgba(32, 33, 29, .62));
+  color: var(--delete-button-ink, rgb(var(--ink-05-rgb) / .62));
 }
 
 .button {
   position: relative;
   isolation: isolate;
   display: inline-flex;
-  min-height: 40px;
+  /* Height, so vh - this control sits inside vertically crowded lists (the cart
+     dropdown panel, the cart item rows), and on a 1366x768 laptop those lists are
+     what runs out of room first. Floor 36px holds below 973px of viewport height
+     (720 / 768 / 800 laptops all land there), the 2.5rem cap takes over above
+     1081px, so a 1080 screen keeps exactly the 40px it had. Above 1921 the root
+     ramp lifts the cap with everything else. */
+  min-height: clamp(2.25rem, 3.7vh, 2.5rem);
   align-items: center;
-  gap: 7px;
-  padding: 0 11px;
+  /* Both horizontal, so vw. gap is live 1200-1600 (7px at 1400, the old value),
+     the inline padding 1125-1500 (11.2px at 1400, also the old value). */
+  gap: clamp(0.375rem, 0.5vw, 0.5rem);
+  padding: 0 clamp(0.5625rem, 0.8vw, 0.75rem);
   overflow: hidden;
-  border: 1px solid var(--delete-button-border, rgba(32, 33, 29, .25));
+  /* Physical: a hairline and a pill radius large enough to always be the half-height.
+     Neither is a size that should grow with the page. */
+  border: 1px solid var(--delete-button-border, rgb(var(--ink-05-rgb) / .25));
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
@@ -31,26 +41,35 @@
   z-index: -1;
   inset: 0;
   border-radius: inherit;
-  background: var(--delete-button-fill, rgba(187, 183, 136, .3));
+  background: var(--delete-button-fill, rgb(var(--sage-01-rgb) / .3));
   transform-origin: left center;
 }
 
 .icon,
 .icon > span {
   display: grid;
-  width: 15px;
-  height: 15px;
+  /* The glyph tracks the label: same live band (1300-1500), one step larger, so the
+     two never drift apart. 15px at 1400, as before. Square, so one value both ways. */
+  width: clamp(0.875rem, 1.07vw, 1rem);
+  height: clamp(0.875rem, 1.07vw, 1rem);
   place-items: center;
 }
 
 .icon svg {
-  width: 15px;
-  height: 15px;
+  width: clamp(0.875rem, 1.07vw, 1rem);
+  height: clamp(0.875rem, 1.07vw, 1rem);
 }
 
 .label {
   position: relative;
   z-index: 1;
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  /* Split out of the `font` shorthand only so the size can be a clamp without
+     relying on shorthand parsing of clamp()/line-height. Live 1300-1500: 13px on a
+     1280 laptop, 14px at 1400 (the old fixed value), 15px from 1500 up, and the
+     ramp carries the cap past 1921. */
+  font-family: "Sansation-Regular", sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.8125rem, 1vw, 0.9375rem);
+  line-height: 1;
   white-space: nowrap;
 }

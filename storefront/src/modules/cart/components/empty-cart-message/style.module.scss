@@ -6,31 +6,50 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: clamp(70px,10vw,150px) 24px;
+  /* Svislá mezera mezi popiskem, titulkem, větou a CTA soupeří o výšku okna, ne o šířku.
+     Živé pásmo 600–1000 px výšky: na 660 dá 13.2, na 900 přesně dnešních 18, od 1000 nahoru
+     strop 20. Nad 1921 strop zvedne ramp (1.25rem = 26.6 px na 2552×1351). */
+  gap: clamp(.75rem, 2vh, 1.25rem);
+  /* Osová oprava: svislý padding visel na ŠÍŘCE okna (10vw), takže na 1220×660 držel
+     122 px nahoře i dole a rozevřel kořen na 445.7 px — víc než min-height 64svh (422.4).
+     Svisle teď 6vh (živé 667–1867 px výšky; na 660 podlaha 40, na 900 54, na 1351 81),
+     vodorovně 2vw (živé 800–1600 px šířky; na 1200 dnešních 24, od 1600 strop 32).
+     Krajní členy v rem, aby je ramp nad 1921 zvedl. */
+  padding: clamp(2.5rem, 6vh, 7rem) clamp(1rem, 2vw, 2rem);
   text-align: center;
 }
 .root::before {
   content: "VÁŠ VÝBĚR · 00";
-  color: #9a6f65;
-  font-size: 13px;
+  color: var(--clay-24);
+  /* Bylo 13px natvrdo — na 2552 zůstávalo 13px, zatímco titulek vedle vyrostl na 76.
+     Tentýž popisek („Váš výběr") nese i plný košík v cart/templates/index.module.scss,
+     takže má i tentýž clamp: jedna geometrie, jedno místo. Podlaha .75rem = 12px (ne
+     .72rem = 11.52px, což je pod hranicí, kterou shoot.cjs hlásí jako vadu), živé pásmo
+     1200–1520, nad 1921 nese strop .95rem ramp (2552: 20.2px). */
+  font-size: clamp(.75rem, 1vw, .95rem);
   letter-spacing: .14em;
 }
 
 .title {
   margin: 0;
   font-family: "Sentient-Regular",serif;
-  font-size: clamp(44px,4vw,76px);
+  /* Stejná čísla jako dřív (44/76 px), jen v rem — v px se strop nad 1921 nezvedal.
+     Živé pásmo 1100–1900 px; na 2552 dá ramp 101 px místo dnešních 76. */
+  font-size: clamp(2.75rem, 4vw, 4.75rem);
   font-weight: 400;
   line-height: .88;
   letter-spacing: -.05em;
 }
 
 .desc {
-  max-width: 520px;
-  margin: 4px 0 14px;
-  color: rgba(255,232,214,.62);
-  font-size: clamp(15px,1.1vw,18px);
+  /* 520px → 32.5rem: nad 1921 poroste míra řádku s typem, ne proti němu. */
+  max-width: 32.5rem;
+  /* Spodní mezera k tlačítku je svislá, takže visí na výšce (živé 571–1029 px výšky;
+     na 660 dá 9.2, od 1029 strop 14.4 ≈ dnešních 14). */
+  margin: .25rem 0 clamp(.5rem, 1.4vh, .9rem);
+  color: rgb(var(--cream-06-rgb) / .62);
+  /* 15/18 px v rem; živé pásmo 1367–1636 px, nad 1921 zvedne strop ramp. */
+  font-size: clamp(.94rem, 1.1vw, 1.125rem);
   font-weight: 300;
   line-height: 1.55;
 }

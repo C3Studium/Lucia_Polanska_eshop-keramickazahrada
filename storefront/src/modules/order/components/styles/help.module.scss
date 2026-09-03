@@ -5,8 +5,8 @@
   gap: clamp(28px, 7vw, 100px);
   align-items: center;
   padding: clamp(34px, 5vw, 66px);
-  background: #20221d;
-  color: #f7e5d5;
+  background: var(--ink-05);
+  color: var(--cream-06);
 
   @include v(md) {
     grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
@@ -35,14 +35,14 @@
   display: grid;
   gap: 7px;
   margin: 0;
-  color: rgba(247, 229, 213, .5);
+  color: rgb(var(--cream-06-rgb) / .5);
   font: 12px/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .contactInfo {
-  color: rgba(247, 229, 213, .74);
+  color: rgb(var(--cream-06-rgb) / .74);
   font: 15px/1.45 "Sansation-Light", sans-serif;
   letter-spacing: 0;
   text-transform: none;
@@ -50,7 +50,7 @@
 
 .link {
   display: inline-block;
-  color: #f7e5d5;
+  color: var(--cream-06);
   font-size: 15px;
   text-decoration: underline;
   text-underline-offset: 6px;

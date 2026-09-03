@@ -29,18 +29,31 @@
   padding: 8rem 1.25rem 6rem;
   background: transparent;
 
+  /*
+   * The `min-height: 116svh` that used to sit here reserved more than the two rails ever
+   * filled: measured natural height was 1218.8px at 1920x1080 and 1534.6px at 2552x1351,
+   * against a 1252.8/1567.2px reservation — 34px and 32.6px of nothing, and because the
+   * right column is `justify-content: flex-end` that slack was pushed above its photo,
+   * widening the stagger gap instead of closing it. The content already runs to ~113svh on
+   * its own, so the floor bought height the section did not need. `min-height` stays `auto`
+   * from the base rule.
+   *
+   * Vertical padding is on `vh` so a short laptop closes it itself — floors low enough that
+   * 660px of viewport is still inside the live band, not sitting on a rem floor:
+   *   14vh live 571…1257px of height   (80px floor / 176px ceiling)
+   *   13vh live 492…1354px of height   (64px floor / 176px ceiling)
+   * Horizontal padding stays on `--fvw`, one percent of the frame, not of the screen.
+   */
   @include h(sm) {
     display: grid;
     grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
-    min-height: 116svh;
-    padding: clamp(8rem, 14vh, 11rem) calc(5 * var(--fvw)) clamp(7rem, 13vh, 11rem);
+    padding: clamp(5rem, 14vh, 11rem) calc(5 * var(--fvw)) clamp(4rem, 13vh, 11rem);
   }
 
   @include v(lg) {
     display: grid;
     grid-template-columns: minmax(0, 1.72fr) minmax(18rem, 0.72fr);
-    min-height: 116svh;
-    padding: clamp(8rem, 14vh, 11rem) calc(5 * var(--fvw)) clamp(7rem, 13vh, 11rem);
+    padding: clamp(5rem, 14vh, 11rem) calc(5 * var(--fvw)) clamp(4rem, 13vh, 11rem);
   }
 
   .Intro__Carousel__Rail {
@@ -52,9 +65,19 @@
     grid-template-columns: max-content 1fr;
     align-items: center;
     gap: 1rem;
-    color: rgba(33, 34, 34, 0.54);
+    color: rgb(var(--black-03-rgb) / .54);
     font-family: "Sansation-Regular";
-    font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+    /*
+     * Was `clamp(0.75rem, 0.68vw, 0.76rem)` — a live band of 1765…1788px, 23px wide, which
+     * is a constant with three numbers.
+     *
+     * It is not the same label as the eyebrow in `.Content .text span` below: that one sits
+     * inside the copy and does stay a flat 0.75rem. This is the section rail, the strip that
+     * also runs across the hero, the e-shop intro, Kolekce and Kurzy — one label repeated down
+     * the page — so it carries the page's one rail step. Live 1263…1474px, floor on the 12px
+     * readability line for 0.12em uppercase, ceiling lifted by the root ramp above 1921.
+     */
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -79,7 +102,7 @@
 
     .rail__line {
       height: 1px;
-      background: rgba(33, 34, 34, 0.2);
+      background: rgb(var(--black-03-rgb) / .2);
     }
   }
 
@@ -98,14 +121,6 @@
     @include h(sm) { padding-top: 2vh; }
     @include v(lg) { padding-top: 2vh; }
 
-    /* The mouse hint is meaningless without a mouse. */
-    .Content .right__content .mouse__anim {
-      display: none;
-
-      @include h(sm) { display: revert; }
-      @include v(lg) { display: revert; }
-    }
-
     .Content {
       display: flex;
       align-items: flex-end;
@@ -119,7 +134,7 @@
         span {
           display: block;
           margin-bottom: 0.4rem;
-          color: rgba(33, 34, 34, 0.52);
+          color: rgb(var(--black-03-rgb) / .52);
           font-family: "Sansation-Regular";
           font-size: 0.75rem;
           letter-spacing: 0.12em;
@@ -141,19 +156,32 @@
         align-items: center;
         gap: 2rem;
 
+        /*
+         * The mouse hint is meaningless without a mouse, so it is hidden by default and
+         * brought back from the first landscape stop up. That intent used to live in a
+         * second `.Left__section .Content .right__content .mouse__anim` block written
+         * ABOVE this one — same specificity, so `display: flex` here won on source order
+         * and both the `none` and its `h(sm)` companion were dead (ARTEFAKT trap #1, and
+         * the phone mixin at the end of this file describes the same collision). One rule
+         * now carries the whole decision, so no ordering can undo it. `flex`, not
+         * `revert`: reverting a div lands on `display: block` and drops the row.
+         */
         .mouse__anim {
-          display: flex;
+          display: none;
           align-items: center;
           gap: 0.75rem;
-          color: rgba(33, 34, 34, 0.68);
+          color: rgb(var(--black-03-rgb) / .68);
           font-family: "Sansation-Regular";
           font-size: 0.85rem;
+
+          @include h(sm) { display: flex; }
+          @include v(lg) { display: flex; }
 
           .mouse {
             position: relative;
             width: 1.4rem;
             height: 2.25rem;
-            border: 1px solid rgba(33, 34, 34, 0.48);
+            border: 1px solid rgb(var(--black-03-rgb) / .48);
             border-radius: 999px;
 
             .wheel {
@@ -172,13 +200,23 @@
         }
 
         .buttons {
+          /* One gap, written once: the row uses it and the reserve below adds it. */
+          --buttons-gap: 0.7rem;
+
           display: flex;
-          gap: 0.7rem;
-          /* Reserved for one grown pill (250 % = 125px) + one resting circle,
-             right-anchored — so hover growth extends leftward into this box
-             instead of shoving the whole header row. Sizes mirror
-             Button/index.tsx. */
-          width: calc(125px + 50px + 0.7rem);
+          gap: var(--buttons-gap);
+          /*
+           * Reserved for one grown pill + one resting circle, right-anchored — so hover
+           * growth extends leftward into this box instead of shoving the whole header row.
+           *
+           * The two pill widths are physical px owned by Button/index.tsx (framer animates
+           * them inline and the border radius is drawn in px). This box used to restate
+           * them as `calc(125px + 50px + 0.7rem)`; `--buttons-reserve` is now handed down
+           * from those same constants in Carousel/index.tsx, so the reserve cannot drift
+           * from the thing it reserves for. The literal is only the fallback for a render
+           * without the variable.
+           */
+          width: calc(var(--buttons-reserve, 175px) + var(--buttons-gap));
           justify-content: flex-end;
         }
       }
@@ -193,20 +231,36 @@
       border-radius: 0.35rem;
       perspective: 1200px;
 
+      /*
+       * `min-height` in plain rem is what breaks a short screen: 34rem is 544px whatever the
+       * window is, so at 1220x660 this photo was 82% of the viewport while at 1080 the same
+       * rule left it at 70%. Capping the floor with `62vh` keeps the floor for tall windows
+       * and lets it stand down on short ones — at 660px it resolves to 409px, below the
+       * 70vh height, so the height wins and the photo is 70% of the screen at every laptop.
+       * That is the whole reason this component needs no `lt` block.
+       */
       @include h(sm) {
         height: min(70vh, 52rem);
-        min-height: 34rem;
+        min-height: min(34rem, 62vh);
       }
 
       @include v(lg) {
         height: min(70vh, 52rem);
-        min-height: 34rem;
-      }}
+        min-height: min(34rem, 62vh);
+      }
+    }
   }
 
   .Right__section {
     justify-content: flex-end;
-    padding-top: clamp(8rem, 17vh, 14rem);
+    /*
+     * The offset that makes the two rails read as staggered rather than as a pair. On `vh`
+     * already, but the 8rem floor swallowed it below ~750px of viewport: 128px flat at both
+     * 1220x660 and 1280x720. 4rem puts the floor at 376px, so 17vh is live across every
+     * laptop (live 376…1318px of height, 64px floor / 224px ceiling) and the stagger scales
+     * with the screen instead of eating it.
+     */
+    padding-top: clamp(4rem, 17vh, 14rem);
 
     .Images .ImageCarousel {
       position: relative;
@@ -217,15 +271,18 @@
       border-radius: 0.35rem;
       perspective: 1200px;
 
+      /* Same floor cap as the left rail: 30rem is 480px flat, which was 73% of a 660px
+         window; `56vh` stands the floor down to 370px there and the 57vh height carries. */
       @include h(sm) {
         height: min(57vh, 43rem);
-        min-height: 30rem;
+        min-height: min(30rem, 56vh);
       }
 
       @include v(lg) {
         height: min(57vh, 43rem);
-        min-height: 30rem;
-      }}
+        min-height: min(30rem, 56vh);
+      }
+    }
 
     .Custom__orders {
       display: flex;
@@ -234,29 +291,52 @@
       justify-content: space-between;
       gap: 1rem;
       min-height: 8rem;
-      align-items: flex-start;
-      flex-direction: column;
       padding-top: 1.5rem;
-      border-top: 1px solid rgba(33, 34, 34, 0.2);
+      border-top: 1px solid rgb(var(--black-03-rgb) / .2);
 
+      > p {
+        max-width: 15rem;
+        margin: 0;
+        color: rgb(var(--black-03-rgb) / .68);
+        font-family: "Sansation-Light";
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+
+      /*
+       * Row, but only while a row actually fits. `flex-direction: row` alone was a promise
+       * this column cannot keep: the track is 311px at 1220, 349px at 1366 and 548px at
+       * 2552, and the CTA next to it is 256–381px wide, so the paragraph was handed whatever
+       * was left — 83px, four ragged lines of about nine characters, at 1220, 1280, 1366 and
+       * on a landscape phone too.
+       *
+       * The condition is width, and `flex-wrap` states it in the layout instead of guessing
+       * it as another breakpoint (ARTEFAKT rule 7). `10rem` is the basis at which the two
+       * halves stop fitting: at 1920 the track is 490px and 160 + 16 + 287 = 463px still
+       * fits, so the row stays a row there and the paragraph keeps its 187px; everywhere
+       * narrower the sum exceeds the track and the paragraph takes a full line of its own —
+       * 311px at 1220, which is one line of 38 characters, or two of ~19 once the 15rem
+       * measure cap applies. Never the ~9 it was getting, never below the 14 asked for.
+       *
+       * The cap stays: `max-width: none` would let the paragraph run the full 548px track at
+       * 2552, and 15rem is the measure this text was set to.
+       */
       @include h(sm) {
         align-items: center;
         flex-direction: row;
+        flex-wrap: wrap;
+
+        > p { flex: 1 1 10rem; }
       }
 
       @include v(lg) {
         align-items: center;
         flex-direction: row;
-      }
+        flex-wrap: wrap;
 
-      > p {
-        max-width: 15rem;
-        margin: 0;
-        color: rgba(33, 34, 34, 0.68);
-        font-family: "Sansation-Light";
-        font-size: 0.9rem;
-        line-height: 1.35;
-      }}
+        > p { flex: 1 1 10rem; }
+      }
+    }
   }
 
   .ImageCarousel__slide,

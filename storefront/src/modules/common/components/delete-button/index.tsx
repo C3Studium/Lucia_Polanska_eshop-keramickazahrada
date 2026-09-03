@@ -4,11 +4,12 @@ import { clx } from "@medusajs/ui"
 import { AnimatePresence, motion } from "framer-motion"
 import { useState } from "react"
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 const buttonVariants = {
   rest: { color: "var(--delete-button-ink, currentColor)" },
-  hover: { color: "var(--delete-button-active-ink, #20211d)" },
-  pending: { color: "var(--delete-button-active-ink, #20211d)" },
+  hover: { color: `var(--delete-button-active-ink, ${palette.ink05})` },
+  pending: { color: `var(--delete-button-active-ink, ${palette.ink05})` },
 }
 
 const fillVariants = {

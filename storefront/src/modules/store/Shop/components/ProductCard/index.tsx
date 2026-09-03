@@ -26,8 +26,23 @@ const cardExit = { opacity: 0, scale: 0.985, transition: { duration: 0.25 } }
 
 const NEW_FOR_MS = 30 * 86400000
 
+/* Re-derived, not patched. ProductGrid moved to `repeat(auto-fill, minmax(min(100%,
+   clamp(16rem, 19vw, 20rem)), 1fr))`, so the column count is no longer a breakpoint at all —
+   it is whatever fits — and the old 1520/1101/701 stops matched no CSS stop of this route
+   (between 1500 and 1520 the browser pulled a 28vw source into a 20vw slot).
+   Measured slot width across the sweep, not estimated:
+     540 → 92.6vw (1 col) · 600 → 45.7 · 700 → 46.3 · 800 → 46.0 (2 cols)
+     900 → 30.3 · 1024 → 30.4 · 1100 → 30.5 (3 cols) · 1199 → 22.5 (4, rail folded away)
+     1200 → 23.07 · 1512 → 23.07 · 1730 → 23.17 · 1866 → 23.32 (3 cols beside the rail)
+     1900 → 17.3 (4 cols) · 1921+ → 19.57, because the ramp lifts the 20rem column floor and
+     the fourth column drops back out — 2552 → 499px.
+   Each declared stop is a real CSS stop of this route (1921 = the ramp, 1200 = where the rail
+   comes back, 900 and 600 = sm and v(md)) and sits at or above the width where the slot
+   narrows, so any mismatch over-fetches by one step instead of dropping a low-res source into
+   a wide slot. The vw figures carry ~3 % headroom over the measurement for the same reason;
+   Next's device ladder is coarse enough that it costs nothing. */
 const IMAGE_SIZES =
-  "(min-width: 1520px) 20vw, (min-width: 1101px) 28vw, (min-width: 701px) 46vw, 94vw"
+  "(min-width: 1921px) 21vw, (min-width: 1200px) 24vw, (min-width: 900px) 32vw, (min-width: 600px) 48vw, 94vw"
 
 const imageAnim: Variants = {
   initial: {
@@ -50,24 +65,33 @@ const imageAnim: Variants = {
   },
 }
 
+/* The wipe used to be written here as `inset(0px 0px 0px 102px)` — 146 pill width − 32 icon
+   − 2×6 inset, three numbers copied out of the stylesheet. Once those three are clamped the
+   copy is wrong at every width but one, and clamping them into the keyframe is not an option
+   either: framer needs both sides of an interpolation to be the same shape of expression, and
+   `inset(… calc(…))` against `inset(… 0px)` stops interpolating and jumps.
+   So the geometry stays in CSS (--discover-clip-k multiplies width − height there) and the only
+   thing that travels through framer is that bare 1 → 0. Same shape on both sides, and the
+   distance is re-derived by the browser at every viewport.
+   `x` is a percentage of the pill's own width for the same reason: 6px was 4% of 146. */
 const buttonAnim: Variants = {
   initial: {
     opacity: 0,
-    clipPath: "inset(0px 0px 0px 102px)",
-    x: 6,
+    "--discover-clip-k": 1,
+    x: "4%",
     transition: {
       opacity: { duration: 0.14, ease: "easeOut" },
-      clipPath: { duration: 0.28, ease: [0.76, 0, 0.24, 1] },
+      "--discover-clip-k": { duration: 0.28, ease: [0.76, 0, 0.24, 1] },
       x: { duration: 0.24, ease: [0.76, 0, 0.24, 1] },
     },
   },
   hover: {
     opacity: 1,
-    clipPath: "inset(0px 0px 0px 0px)",
-    x: 0,
+    "--discover-clip-k": 0,
+    x: "0%",
     transition: {
       opacity: { delay: 0.18, duration: 0.24, ease: "easeOut" },
-      clipPath: {
+      "--discover-clip-k": {
         delay: 0.18,
         duration: 0.62,
         ease: [0.16, 1, 0.3, 1],

@@ -9,12 +9,12 @@
   gap: 24px;
   align-items: baseline;
   padding: 24px 0;
-  border-bottom: 1px solid rgba(32, 33, 29, .16);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .accountOrderConfirmation > span,
 .accountOrderMetaGrid dt {
-  color: rgba(32, 33, 29, .5);
+  color: rgb(var(--ink-05-rgb) / .5);
   font: 12px/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
   gap: 12px;
   min-height: 116px;
   padding: 24px 20px;
-  border-right: 1px solid rgba(32, 33, 29, .16);
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .accountOrderMetaGrid > div:first-child {
@@ -67,7 +67,7 @@
   }
 
   .accountOrderMetaGrid > div:nth-child(n + 3) {
-    border-top: 1px solid rgba(32, 33, 29, .16);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
   }
 }
 
@@ -80,7 +80,7 @@
   .accountOrderMetaGrid > div {
     min-height: 0;
     padding-left: 0;
-    border-top: 1px solid rgba(32, 33, 29, .16);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
     border-right: 0;
   }
 }

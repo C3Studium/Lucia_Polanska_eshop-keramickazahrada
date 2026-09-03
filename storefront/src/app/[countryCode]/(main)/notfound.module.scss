@@ -47,7 +47,7 @@
    * whole 404 rendered as near-black text on the near-black band. Below 1921px the body is
    * transparent over UA white, so this is a no-op at every other viewport.
    */
-  background: var(--bgWhite, #fff);
+  background: var(--bgWhite, var(--white));
 
   @include vb((
     sm: (gap: 1.15rem),
@@ -92,7 +92,7 @@
   font-size: 1.875rem; /* the 30px the Tailwind `text-2xl-semi` resolved to, as the base */
   font-weight: 600;
   line-height: 1.15;
-  color: var(--ui-fg-base, #111827);
+  color: var(--ui-fg-base, var(--ink-03));
   text-wrap: balance;
 
   @include font(h2);
@@ -114,7 +114,7 @@
 
 .message {
   font-size: 1rem;
-  color: var(--ui-fg-base, #111827);
+  color: var(--ui-fg-base, var(--ink-03));
   line-height: var(--type-leading-body, 1.55);
 
   /* The Tailwind version left this at 12px everywhere — the absolute floor globals.scss reserves
@@ -142,7 +142,7 @@
   cursor: pointer;
 
   font-size: 1rem;
-  color: var(--ui-fg-base, #111827);
+  color: var(--ui-fg-base, var(--ink-03));
 
   @include font(SCTA);
 

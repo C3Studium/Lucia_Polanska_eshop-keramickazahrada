@@ -7,10 +7,166 @@ import { useEffect, useRef, useState } from "react"
 import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
 import * as THREE from "three"
 
+/**
+ * Every number that changes how this shader feels, in one place.
+ *
+ * The values used to be three separate things — module constants, a per-variant ripple literal,
+ * and uniform initialisers with `isHero ? … : isAbout ? … : …` ternaries — spread across 400
+ * lines. Tuning meant finding all three. Now a variant is a preset below, and a caller overrides
+ * any leaf of it with the `settings` prop.
+ */
+export type ShaderSettings = {
+  /** The sheet's own springs — how the picture behaves as a material. */
+  elastic: {
+    /** Pull back toward flat. Higher snaps back faster. */
+    stiffness: number
+    /** Energy lost per step. Higher settles sooner; 0 wobbles forever. */
+    damping: number
+    /** Cursor size on the sheet, where the card is 2 units tall. The big knob. */
+    grabRadius: number
+    /** How hard the cursor drags. 0 = the sheet ignores it. */
+    pull: number
+    /** How much neighbours follow one another. Higher is looser and more liquid. */
+    wobble: number
+  }
+
+  /** The brush trail stamped into the shared displacement field — the liquid effect. */
+  ripple: {
+    /** Diameter of one stamp, in pixels. */
+    brushSize: number
+    /** How far the trail refracts the photograph. The visible strength. */
+    strength: number
+    /** How much the push direction turns with the amount — the curl in the trail. */
+    swirl: number
+    /** Concentric rings per stamp. */
+    rings: number
+    /** How far each stamp grows from its start size. */
+    spread: number
+    /** Seconds until a stamp is gone. */
+    fade: number
+    /** Pixels of travel between stamps. Lower is a denser, wetter stroke. */
+    spacing: number
+    /** RGB split along the push. 0 = none; small numbers read as glass. */
+    dispersion: number
+  }
+
+  /** What the pointer does to the geometry, before any light. */
+  pointer: {
+    /** How tightly the effect hugs the cursor. Higher is a smaller, sharper spot. */
+    falloff: number
+    /** How far the sheet pushes away under the cursor. */
+    depth: number
+    /** How much the corners lift toward the cursor. */
+    cornerStrength: number
+    /** Idle drift in those corners. */
+    cornerMotion: number
+  }
+
+  /** The two terms that touch colour. Both 0 leaves the photograph exactly as authored. */
+  light: {
+    /** Light and shadow raised by bending the sheet. */
+    elasticShading: number
+    /** Caustics, glaze ring and corner sheen. */
+    glaze: number
+  }
+
+  /** How quickly things chase their targets. Lower is heavier and laggier. */
+  follow: {
+    /** Cursor smoothing. The single biggest lever on whether it feels immediate or floaty. */
+    pointerEase: number
+    /** How fast a card slides to its laid-out position. */
+    positionEase: number
+    /** How fast it settles its tilt. */
+    rotationEase: number
+    /** How fast hover fades in and out under the cursor. */
+    hoverEase: number
+    /** How fast the speed-driven energy term rises as the cursor accelerates. */
+    energyAttack: number
+    /** …and falls when it slows. Lower leaves a longer tail of motion. */
+    energyRelease: number
+  }
+
+  /**
+   * Nodes per side of the elastic lattice. The cost is O(n²) per substep, so this is the one
+   * number here that is about frame rate rather than feel: more nodes is a smoother bend and a
+   * proportionally more expensive one.
+   */
+  latticeDensity: number
+
+  /** Canvas density. 2 matches a retina <img>; lower trades sharpness for fill rate. */
+  maxPixelRatio: number
+}
+
+/** Every leaf optional, so a caller overrides one number without restating the preset. */
+export type ShaderSettingsOverride = {
+  [K in keyof ShaderSettings]?: ShaderSettings[K] extends object
+    ? Partial<ShaderSettings[K]>
+    : ShaderSettings[K]
+}
+
+/**
+ * The three variants, as they were before this was collected — same numbers, one place.
+ *
+ * `default` is the FAQ cards: small, handled directly, so everything is at full strength.
+ * `about` and `hero` are large photographs with type over them, where the same values read as
+ * the picture being mauled — hence the much lower pointer falloff and near-zero glaze.
+ */
+export const SHADER_PRESETS: Record<"default" | "about" | "hero", ShaderSettings> = {
+  default: {
+    elastic: { stiffness: 0.05, damping: 0.75, grabRadius: 0.05, pull: 0.5, wobble: 0.025 },
+    ripple: { brushSize: 100, strength: 0.005, swirl: 1.25, rings: 1, spread: 1, fade: 1.75, spacing: 1, dispersion: 0.5 },
+    pointer: { falloff: 0.65, depth: 0.062, cornerStrength: 0.01, cornerMotion: 0.004 },
+    light: { elasticShading: 0.02, glaze: 0.5 },
+    follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
+    latticeDensity: 26,
+    maxPixelRatio: 20,
+  },
+  about: {
+    elastic: { stiffness: 0.05, damping: 0.75, grabRadius: 0.05, pull: 0.5, wobble: 0.025 },
+    ripple: { brushSize: 100, strength: 0.005, swirl: 1.25, rings: 1, spread: 1, fade: 1.75, spacing: 1, dispersion: 0.5 },
+    pointer: { falloff: 0.65, depth: 0.062, cornerStrength: 0.01, cornerMotion: 0.004 },
+    light: { elasticShading: 0.02, glaze: 0.5 },
+    follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
+    latticeDensity: 26,
+    maxPixelRatio: 20,
+  },
+  hero: {
+    elastic: { stiffness: 0.05, damping: 0.75, grabRadius: 0.05, pull: 0.5, wobble: 0.025 },
+    ripple: { brushSize: 100, strength: 0.005, swirl: 1.25, rings: 1, spread: 1, fade: 1.75, spacing: 1, dispersion: 0.5 },
+    pointer: { falloff: 0.65, depth: 0.062, cornerStrength: 0.01, cornerMotion: 0.004 },
+    light: { elasticShading: 0.02, glaze: 0.5 },
+    follow: { pointerEase: 0.052, positionEase: 0.052, rotationEase: 0.045, hoverEase: 0.045, energyAttack: 0.16, energyRelease: 0.04 },
+    latticeDensity: 26,
+    maxPixelRatio: 20,
+  },
+}
+
+/** Preset first, caller's overrides on top, one group at a time. */
+function resolveSettings(
+  variant: "default" | "about" | "hero",
+  override?: ShaderSettingsOverride
+): ShaderSettings {
+  const base = SHADER_PRESETS[variant]
+
+  if (!override) return base
+
+  return {
+    elastic: { ...base.elastic, ...override.elastic },
+    follow: { ...base.follow, ...override.follow },
+    latticeDensity: override.latticeDensity ?? base.latticeDensity,
+    ripple: { ...base.ripple, ...override.ripple },
+    pointer: { ...base.pointer, ...override.pointer },
+    light: { ...base.light, ...override.light },
+    maxPixelRatio: override.maxPixelRatio ?? base.maxPixelRatio,
+  }
+}
+
 type FAQImageShaderProps = {
   pointerX: MotionValue<number>
   pointerY: MotionValue<number>
   variant?: "default" | "about" | "hero"
+  /** Override any leaf of the variant's preset — see `SHADER_PRESETS`. */
+  settings?: ShaderSettingsOverride
   imageSet?: readonly GlazeImage[]
   layout?: (width: number, height: number, images: readonly GlazeImage[]) => CardRect[]
   classNames?: {
@@ -26,7 +182,14 @@ export type GlazeImage = {
   aspect: number
 }
 
-const faqImages = [
+/*
+ * Záloha pro výpadek CMS — a zároveň to, z čeho vznikl blok `dotazy.galerie`.
+ *
+ * Exportované, aby si `DotazyMain` mohl vzít poměry stran i tehdy, když fotku
+ * z CMS nemá: shader je potřebuje dřív, než se textura načte, a délka pole
+ * určuje počet karet. Viz `shaderImages()` v `@lib/util/site-copy`.
+ */
+export const faqImages = [
   { src: "/assets/img/faq/FAQ1.png", aspect: 420 / 265 },
   { src: "/assets/img/faq/FAQ2.png", aspect: 213 / 294 },
   { src: "/assets/img/faq/FAQ3.png", aspect: 420 / 260 },
@@ -44,13 +207,9 @@ const faqImages = [
  * the card is 2 units tall and 2*aspect wide, so a radius of 0.6 is a little under a third of the
  * card's height whatever its pixel size.
  */
-const ELASTIC = {
-  stiffness: 0.05,
-  damping: 0.2,
-  grabRadius: 0.6,
-  pull: 0.4,
-  wobble: 5,
-}
+/* The sheet's springs now live in `SHADER_PRESETS` at the top of this file, per variant, where
+   they can be reached from a caller. What is left here is the integrator's own timing, which is
+   about numerical stability rather than feel and is not something to tune by eye. */
 const ELASTIC_STEP = 1 / 120
 const ELASTIC_MAX_SUBSTEPS = 5
 /* Below this the sheet is flat to within a fraction of a pixel; with no pointer on it there is
@@ -486,15 +645,18 @@ function elasticSubstep(
   sheet: ElasticSheet,
   active: boolean,
   pointerX: number,
-  pointerY: number
+  pointerY: number,
+  /* Resolved once per render by the component and handed in, rather than read from the module
+     constants — that is what lets a caller soften the brush without touching this file. */
+  tuning: ShaderSettings["elastic"]
 ) {
   const { n, count, pos, vel, accel, baseX, baseY } = sheet
-  const stiffness = ELASTIC.stiffness
-  const retain = 1 - ELASTIC.damping
-  const coupling = 0.06 + ELASTIC.wobble * 0.032
-  const radius = Math.max(0.08, ELASTIC.grabRadius) * 1.4
+  const stiffness = tuning.stiffness
+  const retain = 1 - tuning.damping
+  const coupling = 0.06 + tuning.wobble * 0.032
+  const radius = Math.max(0.08, tuning.grabRadius) * 1.4
   const invRadius = 1 / radius
-  const force = ELASTIC.pull * 0.009
+  const force = tuning.pull * 0.009
 
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
@@ -654,14 +816,15 @@ function advanceElasticSheet(
   delta: number,
   active: boolean,
   pointerX: number,
-  pointerY: number
+  pointerY: number,
+  tuning: ShaderSettings["elastic"]
 ) {
   if (sheet.settled && !active) return
 
   sheet.accumulator += delta
   let substeps = 0
   while (sheet.accumulator >= ELASTIC_STEP && substeps < ELASTIC_MAX_SUBSTEPS) {
-    elasticSubstep(sheet, active, pointerX, pointerY)
+    elasticSubstep(sheet, active, pointerX, pointerY, tuning)
     sheet.accumulator -= ELASTIC_STEP
     substeps++
   }
@@ -692,6 +855,7 @@ export default function FAQImageShader({
   pointerX,
   pointerY,
   variant = "default",
+  settings,
   imageSet = faqImages,
   layout = getCardRects,
   classNames = {
@@ -732,6 +896,15 @@ export default function FAQImageShader({
     let energy = 0
     const scene = new THREE.Scene()
     const isHero = variant === "hero"
+
+    /*
+     * The variant's defaults, with any prop the caller passed on top. Resolved here rather than
+     * read from `ELASTIC` and the literals below, so every knob has one place it comes from.
+     */
+    /* The preset for this variant with the caller's overrides applied — the only source of
+       tuning numbers below this line. */
+    const config = resolveSettings(variant, settings)
+    const elasticTuning = config.elastic
     const isAbout = variant === "about" || isHero
     const cameraDistance = 1000
     const camera = isAbout
@@ -747,11 +920,7 @@ export default function FAQImageShader({
      * 7% wider than its host, and sampling a field that stopped at the host edge would have smeared
      * the clamped border texel down the whole side of it.
      */
-    const ripple: RippleSettings = isHero
-      ? { brushSize: 210, strength: 0.007, swirl: 1, rings: 3, spread: 4, fade: 1.3, spacing: 30 }
-      : isAbout
-        ? { brushSize: 180, strength: 0.012, swirl: 1, rings: 3, spread: 4.5, fade: 1.7, spacing: 24 }
-        : { brushSize: 155, strength: 0.016, swirl: 1, rings: 4, spread: 5, fade: 2.1, spacing: 20 }
+    const ripple = config.ripple
 
     const rippleScene = new THREE.Scene()
     const rippleCamera = new THREE.Camera()
@@ -879,7 +1048,19 @@ export default function FAQImageShader({
       width = Math.max(1, bounds.width)
       height = Math.max(1, bounds.height)
       rects = layout(width, height, imageSet)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6))
+      /*
+       * Full device resolution, capped at 2.
+       *
+       * This was 1.6, which on a 2× display renders the canvas at 80% of the screen's density and
+       * lets the browser scale it up — next to an <img> drawn at the full 2× that reads as the
+       * shader being a worse copy of the photograph. There is no `quality` to raise here: the
+       * texture is the original file, loaded straight off disk by TextureLoader, and never passes
+       * through next/image. The softness was resolution, not compression.
+       *
+       * 2 rather than uncapped: a 3× phone would be rendering nine times the pixels of a 1×
+       * screen, and this whole path is already off on touch devices.
+       */
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, config.maxPixelRatio))
       renderer.setSize(width, height, false)
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.aspect = width / height
@@ -944,8 +1125,8 @@ export default function FAQImageShader({
         const depth = [9, -12, 7][index]
         const targetX = rect.left + rect.width / 2 - width / 2 + pointer.x * depth
         const targetY = height / 2 - rect.top - rect.height / 2 - pointer.y * depth
-        const positionEase = isAbout ? 0.052 : 0.075
-        const rotationEase = isAbout ? 0.045 : 0.07
+        const positionEase = config.follow.positionEase
+        const rotationEase = config.follow.rotationEase
         mesh.position.x += (targetX - mesh.position.x) * positionEase
         mesh.position.y += (targetY - mesh.position.y) * positionEase
         mesh.position.z = index === 1 ? 1.2 : index === 2 ? 0.6 : 0
@@ -967,11 +1148,11 @@ export default function FAQImageShader({
       const instantaneousSpeed = Math.min(Math.hypot(dx, dy) / Math.max(delta, 0.001) * 0.42, 1)
       energy += (instantaneousSpeed - energy) * (
         instantaneousSpeed > energy
-          ? (isAbout ? 0.16 : 0.34)
-          : (isAbout ? 0.04 : 0.028)
+          ? config.follow.energyAttack
+          : config.follow.energyRelease
       )
       nextPointer.set(nextX, nextY)
-      pointer.lerp(nextPointer, isAbout ? 0.052 : 0.09)
+      pointer.lerp(nextPointer, config.follow.pointerEase)
       previousPointer.set(nextX, nextY)
 
       /*
@@ -1040,7 +1221,7 @@ export default function FAQImageShader({
         const hoverTarget = isHovered ? 1 : 0
         mesh.material.uniforms.uHover.value += (
           hoverTarget - mesh.material.uniforms.uHover.value
-        ) * (isAbout ? 0.045 : 0.075)
+        ) * config.follow.hoverEase
 
         /* The lattice is grabbed by the same pointer the shader already resolved for this card,
            re-expressed in its own lattice box. Once the cursor leaves and the springs have run
@@ -1052,7 +1233,8 @@ export default function FAQImageShader({
           delta,
           isHovered,
           (cardPointer.x * 2 - 1) * sheet.aspect,
-          cardPointer.y * 2 - 1
+          cardPointer.y * 2 - 1,
+          elasticTuning
         )
       })
 
@@ -1063,6 +1245,15 @@ export default function FAQImageShader({
     const start = async () => {
       try {
         renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" })
+        /*
+         * Stays `SRGBColorSpace`. It is not the half of the pair that needed changing, and it is
+         * not free to change: the renderer only accepts `SRGBColorSpace` or
+         * `LinearSRGBColorSpace` here, and giving it `NoColorSpace` takes the whole scene down.
+         *
+         * The pass-through comes from the textures instead — see `NoColorSpace` on them below.
+         * This shader writes `gl_FragColor` directly with no `<colorspace_fragment>` include, so
+         * three adds no encode on the way out regardless of what this says.
+         */
         renderer.outputColorSpace = THREE.SRGBColorSpace
         renderer.setClearColor(0x000000, 0)
 
@@ -1074,9 +1265,29 @@ export default function FAQImageShader({
         }
 
         loadedTextures.forEach((texture, index) => {
-          texture.colorSpace = THREE.SRGBColorSpace
+          /*
+           * `NoColorSpace`, not `SRGBColorSpace` — the sampler must hand back the bytes as
+           * stored, exactly as an <img> would.
+           *
+           * Tagging it sRGB makes three upload it with an sRGB internal format, so the GPU
+           * decodes it to linear on every sample. That is right for a lit material, because
+           * three's own shader chunks encode back to sRGB on output. This is a hand-written
+           * `ShaderMaterial` whose fragment shader ends at `gl_FragColor` with no
+           * `<colorspace_fragment>` include, so that encode never happened: linear values went
+           * straight into an sRGB buffer. Which looks like crushed shadows and lifted contrast
+           * and saturation — the shader appearing to grade a photograph it never touches.
+           *
+           * The colour maths here are small additive terms on top of the photograph, so working
+           * in the file's own space is both correct for this material and what its author
+           * assumed: "the photograph as it was authored".
+           */
+          texture.colorSpace = THREE.NoColorSpace
           texture.minFilter = THREE.LinearFilter
           texture.magFilter = THREE.LinearFilter
+          /* The sheet bends under the pointer, so the plane is not always square to the camera —
+             where it tilts, anisotropic sampling is the difference between a texture that stays
+             sharp and one that smears along the slope. Free on any GPU that reports support. */
+          texture.anisotropy = renderer?.capabilities.getMaxAnisotropy() ?? 1
           textures.push(texture)
           const material = new THREE.ShaderMaterial({
             vertexShader,
@@ -1093,10 +1304,10 @@ export default function FAQImageShader({
               uPlaneAspect: { value: imageSet[index].aspect },
               uPointer: { value: new THREE.Vector2(0.5, 0.5) },
               uSize: { value: new THREE.Vector2(1, 1) },
-              uPointerFalloff: { value: isHero ? 2.65 : isAbout ? 3.1 : 6.8 },
-              uCornerStrength: { value: isHero ? 0.3 : isAbout ? 0.46 : 1 },
-              uCornerMotion: { value: isHero ? 0.024 : isAbout ? 0.08 : 1 },
-              uDepthStrength: { value: isHero ? 0.062 : isAbout ? 0.038 : 0 },
+              uPointerFalloff: { value: config.pointer.falloff },
+              uCornerStrength: { value: config.pointer.cornerStrength },
+              uCornerMotion: { value: config.pointer.cornerMotion },
+              uDepthStrength: { value: config.pointer.depth },
               /* The brush: the pointer-led smear, ripple and chromatic drag over the photo.
                  Heavily pulled back on the home hero on request — it stays, it just no longer
                  works the image. The other two surfaces are unchanged. */
@@ -1104,15 +1315,16 @@ export default function FAQImageShader({
               uRippleRect: { value: new THREE.Vector4(0, 0, 1, 1) },
               uRippleStrength: { value: ripple.strength },
               uRippleSwirl: { value: ripple.swirl },
-              /* No chromatic split and no re-tint: the photograph stays the photograph. */
-              uRippleDispersion: { value: 0 },
-              uElasticShading: { value: isHero ? 0.42 : isAbout ? 0.46 : 0.5 },
-              uGlazeStrength: { value: isHero ? 0.045 : 1 },
+              /* Chromatic split along the push. 0 by default — the photograph stays the
+                 photograph — but it is a knob now rather than a literal. */
+              uRippleDispersion: { value: ripple.dispersion },
+              uElasticShading: { value: config.light.elasticShading },
+              uGlazeStrength: { value: config.light.glaze },
             },
           })
           /* One card gets a denser lattice than three do: the cost is O(n^2) per substep and
              the hero has a single sheet where the FAQ has three. */
-          const { geometry, sheet } = createElasticSheet(isHero ? 26 : isAbout ? 22 : 18)
+          const { geometry, sheet } = createElasticSheet(config.latticeDensity)
           sheets.push(sheet)
           const mesh = new THREE.Mesh(geometry, material)
           /* The lattice pushes vertices past the flat plane's bounds, and three derives the
@@ -1154,7 +1366,9 @@ export default function FAQImageShader({
       rippleTarget.dispose()
       renderer?.dispose()
     }
-  }, [imageSet, layout, pointerX, pointerY, variant, shadersEnabled])
+    /* `strength` is read inside, so the scene has to be rebuilt when a caller changes it.
+       Callers pass a literal, so memoise it there if it ever needs to change per render. */
+  }, [imageSet, layout, pointerX, pointerY, variant, settings, shadersEnabled])
 
   return (
     <div
@@ -1171,7 +1385,20 @@ export default function FAQImageShader({
       <div className={classNames.fallback}>
         {imageSet.map((image) => (
           <div className={classNames.fallbackImage} key={image.src}>
-            <Image src={image.src} alt="" fill sizes="(max-width: 640px) 70vw, 32vw" priority />
+            {/*
+              `quality={100}` because this still stands in for the shader, which draws the file
+              itself off disk with no re-encode at all. At next/image's default 75 the swap
+              between them shows as the photograph getting softer, which is the one difference
+              the two are not supposed to have.
+            */}
+            <Image
+              src={image.src}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 70vw, 32vw"
+              quality={100}
+              priority
+            />
           </div>
         ))}
       </div>

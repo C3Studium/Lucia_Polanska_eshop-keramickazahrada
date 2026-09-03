@@ -2,28 +2,18 @@
 /* LineItemOptions component styles - SASS nesting */
 .root {
   display: inline-block;
-  font-size: 1rem;
+  // Typ = vodorovná osa, tedy vw. Podlaha 13.6px končí na 1236px, strop 16px
+  // začíná na 1455px — živé pásmo 1236…1455, uprostřed reálných laptopů.
+  // Oba krajní členy v rem, takže nad 1921 je zvedne ramp z globals.scss
+  // (na 2552 vyjde strop 21.27px). Předchozí hb()/vb() mapy byly tiše mrtvé:
+  // h-layer už neemituje @layer, jen vnořené min-width media query v pořadí
+  // mapy, takže poslední klíč (xxs, 400px) přebil všechny ostatní a na každé
+  // landscape šířce platilo 0.85rem — ani základní 1rem, ani lg: 1rem nikdy.
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   font-weight: 300;
   font-family: "Sansation-Light";
   color: var(--handle);
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  @include hb((
-    lg: (font-size: 1rem),
-    md: (font-size: 0.95rem),
-    mdt: (font-size: 0.95rem),
-    sm: (font-size: 0.95rem),
-    xs: (font-size: 0.85rem),
-    xxs: (font-size: 0.85rem),
-  ));
-
-  @include vb((
-    lg: (font-size: 0.95rem),
-    md: (font-size: 0.95rem),
-    s: (font-size: 0.85rem),
-    sm: (font-size: 0.85rem),
-    xs: (font-size: 0.85rem),
-  ));
 }

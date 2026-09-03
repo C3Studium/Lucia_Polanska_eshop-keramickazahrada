@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 
+import { getPageCopy } from "@lib/data/site-copy"
 import RequestResetPassword from "@modules/account/templates/forgot-password-page"
 
 export const metadata: Metadata = {
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   description: "Obnovte si heslo ke svému účtu v Keramické zahradě.",
 }
 
-export default function ForgotPassword() {
-  return <RequestResetPassword />
+export default async function ForgotPassword() {
+  const copy = await getPageCopy("global")
+  return <RequestResetPassword block={copy["global.prihlaseni"]} />
 }

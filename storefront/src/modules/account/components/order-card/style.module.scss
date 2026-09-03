@@ -1,36 +1,40 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+/* The row is constrained by the account content column, not by the window: the same
+   card renders in the orders list and in the narrower dashboard overview. Sizing stops
+   therefore read the container, exactly like order-details.module.scss (account-order). */
 .root {
+  container: account-order-row / inline-size;
   width: 100%;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
-  color: #20211d;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
+  color: var(--ink-05);
 }
 
 .interactiveRow {
-  min-height: 150px;
+  min-height: clamp(8rem, 17vh, 11rem);
 }
 
 .rowContent {
   display: grid;
   grid-template-columns:
-    minmax(140px, 0.42fr)
-    minmax(400px, 1.22fr)
-    minmax(190px, 0.72fr)
+    minmax(0, 0.42fr)
+    minmax(0, 1.22fr)
+    minmax(0, 0.72fr)
     auto;
-  gap: clamp(22px, 2.8vw, 48px);
+  gap: clamp(1.375rem, 2.8vw, 3rem);
   align-items: center;
-  min-height: 150px;
-  padding: clamp(24px, 2.3vw, 36px) clamp(6px, 0.6vw, 10px);
+  min-height: clamp(8rem, 17vh, 11rem);
+  padding: clamp(1.4rem, 3vh, 2.25rem) clamp(.4rem, .6vw, .625rem);
 }
 
 .identity {
   display: grid;
-  gap: 12px;
+  gap: .75rem;
 }
 
 .label,
 .meta dt {
-  color: rgba(32, 33, 29, 0.48);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .48);
+  font: clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -49,10 +53,10 @@
 
 .meta > div {
   display: grid;
-  gap: 11px;
+  gap: .6875rem;
   min-width: 0;
-  padding: 4px clamp(16px, 2vw, 30px);
-  border-left: 1px solid rgba(32, 33, 29, 0.16);
+  padding: .25rem clamp(1rem, 2vw, 1.875rem);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .meta > div:first-child {
@@ -63,24 +67,24 @@
 .meta dd {
   margin: 0;
   overflow-wrap: anywhere;
-  color: rgba(32, 33, 29, 0.78);
-  font: 400 clamp(14px, 1vw, 17px) / 1.35 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .78);
+  font: 400 clamp(.875rem, 1vw, 1.06rem) / 1.35 "Sansation-Regular", sans-serif;
 }
 
 .meta .metaAmount {
-  color: #20211d;
-  font-size: clamp(16px, 1.15vw, 19px);
+  color: var(--ink-05);
+  font-size: clamp(1rem, 1.15vw, 1.19rem);
 }
 
 .products {
   display: grid;
-  gap: 12px;
+  gap: .75rem;
   min-width: 0;
 }
 
 .productIcons {
   display: flex;
-  gap: 8px;
+  gap: .5rem;
   align-items: center;
   overflow-x: auto;
   scrollbar-width: none;
@@ -92,12 +96,12 @@
 
 .productIcon {
   position: relative;
-  width: 56px;
-  height: 64px;
+  width: clamp(3rem, 4vw, 3.75rem);
+  aspect-ratio: 56 / 64;
   flex: 0 0 auto;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, 0.12);
-  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  background: rgb(var(--white-rgb) / .56);
 }
 
 .productIcon > :first-child {
@@ -107,17 +111,17 @@
 
 .productIcon > .quantityBadge {
   position: absolute;
-  right: 3px;
-  bottom: 3px;
+  right: .1875rem;
+  bottom: .1875rem;
   display: grid;
-  min-width: 19px;
-  height: 19px;
-  padding-inline: 4px;
+  min-width: 1.1875rem;
+  height: 1.1875rem;
+  padding-inline: .25rem;
   place-items: center;
   border-radius: 999px;
-  background: #20211d;
-  color: #f7e5d5;
-  font: 13px/1 "Sansation-Regular", sans-serif;
+  background: var(--ink-05);
+  color: var(--cream-06);
+  font: .8125rem/1 "Sansation-Regular", sans-serif;
 }
 
 .visuallyHidden {
@@ -133,28 +137,45 @@
 
 .moreItems {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(32, 33, 29, 0.28);
+  border: 1px solid rgb(var(--ink-05-rgb) / .28);
   border-radius: 50%;
-  color: rgba(32, 33, 29, 0.7);
-  font-size: 13px;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font-size: .8125rem;
 }
 
 .detailsLink {
-  min-width: 11.5rem;
+  min-width: clamp(9rem, 12vw, 11.5rem);
   min-height: 44px;
-  --premium-link-ink: #20211d;
-  --premium-link-active-ink: #f7e5d5;
-  --premium-link-border: #20211d;
-  --premium-link-fill: #20211d;
+  --premium-link-ink: var(--ink-05);
+  --premium-link-active-ink: var(--cream-06);
+  --premium-link-border: var(--ink-05);
+  --premium-link-fill: var(--ink-05);
 }
 
-@include below-px(1180px) {
+/*
+ * Prahy v rem, ne v px — a je to tentýž důvod, proč jsou v rem krajní členy clampů.
+ *
+ * Uvnitř těchhle bloků je po převodu všechno v rem (minmax(9.375rem), minmax(7.1875rem)),
+ * takže nad 1921 celý obsah karty vyroste rampem 1.33x. Práh v px ale nevyroste — pak
+ * karta hlásí „na 1030px se mi to ještě vejde" o obsahu, který mezitím potřebuje 1370px.
+ * Změřeno na 2552x1351: sloupec obsahu je 1270.6px, karta zůstala ve čtyřsloupcovém
+ * režimu a `#1001` (209px při fontu 82.9px) se cpalo do stopy široké 135.5px — číslo
+ * objednávky leželo přes datum a třetí ikona produktu byla useknutá.
+ *
+ * 64.375rem / 45rem / 29.375rem je při rem 16 přesně 1030 / 720 / 470 px, takže pod 1921
+ * se nezmění ani pixel. Nad 1921 se práh zvedne spolu s obsahem, který měří: na 2552 je
+ * 1369.7px, sloupec 1270.6px je pod ním a karta správně přepne do třísloupcového režimu.
+ *
+ * Container query počítá `rem` proti kořenovému fontu (na rozdíl od `em`, které by tu
+ * četlo font kontejneru) — tedy přesně proti rampu z globals.scss.
+ */
+@container account-order-row (max-width: 64.375rem) {
   .rowContent {
-    grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(9.375rem, 0.4fr) minmax(0, 1fr) auto;
   }
 
   .products {
@@ -169,9 +190,9 @@
   }
 }
 
-@include below-px(780px) {
+@container account-order-row (max-width: 45rem) {
   .rowContent {
-    grid-template-columns: minmax(115px, 0.35fr) minmax(0, 1fr);
+    grid-template-columns: minmax(7.1875rem, 0.35fr) minmax(0, 1fr);
   }
 
   .meta {
@@ -180,7 +201,7 @@
 
   .meta > div:first-child {
     grid-column: 1 / -1;
-    padding: 0 0 16px;
+    padding: 0 0 1rem;
   }
 
   .meta > div:nth-child(2) {
@@ -204,7 +225,7 @@
   }
 }
 
-@include below-px(520px) {
+@container account-order-row (max-width: 29.375rem) {
   .rowContent {
     grid-template-columns: 1fr;
   }
@@ -215,8 +236,8 @@
 
   .meta > div,
   .meta > div:nth-child(2) {
-    padding: 13px 0;
-    border-top: 1px solid rgba(32, 33, 29, 0.12);
+    padding: .8125rem 0;
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .12);
     border-left: 0;
   }
 

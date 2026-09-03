@@ -12,6 +12,15 @@
  * layout has been folded into the base, and the two-column composition it undid is re-applied
  * from `h(xs)` in landscape and `v(lg)` in portrait — a phone on its side and a tablet held
  * upright are no longer the same case.
+ *
+ * `phl` is `phs` plus a width bound — ≥800 against ≥480, the same ≤520 of height, the same
+ * orientation — so EVERY viewport that matches phl matches phs first. Anything phl restates that
+ * phs already said is dead weight, and anything phl states with a second value is a clamp that was
+ * not written. Five of those pairs are gone (root padding, mark size, and the three vertical gaps
+ * in the copy column, all of which turned out to lie on one vh line); three declarations are left
+ * on phl and each one is a value that genuinely will not fold — `.content`'s gap, `.copy h1`'s
+ * size and `.description`'s measure. The arithmetic is written beside each of them, so the next
+ * pass can check the claim rather than repeat the attempt.
  * ------------------------------------------------------------------------------------------- */
 
 /* The three-across state line. Applied wherever there is width for it; the base stacks. */
@@ -23,7 +32,14 @@
 }
 
 .root {
-  --state-accent: #7d8769;
+  --state-accent: var(--olive-19);
+  /* Reserve for `layout/Navbar/mobileBar`, which is `position: fixed`, 56px tall and sits 12px
+     above the edge — 68px of the viewport that is not ours, plus 12px of air. The bar's own
+     cascade is: shown in the base, hidden from `v(md)` and `h(xs)`, put back by `phs` (which a
+     phone on its side matches at both 568x320 and 932x430). This variable mirrors that cascade
+     exactly, so the reserve exists on precisely the stops where the bar does. Purely a measure —
+     no colour is stated here. */
+  --bar-safe: 5rem;
   position: relative;
   isolation: isolate;
 
@@ -36,15 +52,18 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: clamp(6rem, 12vh, 9rem) 1rem clamp(2rem, 5vh, 4rem);
+  /* The 6rem floor is the PORTRAIT one and it stays. 12vh of a 568px-tall phone is 68px, which
+     is under the fixed navbar's 66px bottom edge; 6rem holds the eyebrow rule 30px clear of it.
+     The short laptop needs the opposite and gets it on its own axis, in the h(xs) block below. */
+  padding: clamp(6rem, 12vh, 9rem) 1rem calc(clamp(2rem, 5vh, 4rem) + var(--bar-safe));
   overflow: hidden;
-  color: #20211d;
+  color: var(--ink-05);
   background:
     radial-gradient(circle at 76% 43%, color-mix(in srgb, var(--state-accent) 18%, transparent), transparent 30%),
-    linear-gradient(135deg, rgba(255, 232, 214, .94), rgba(244, 238, 226, .97));
+    linear-gradient(135deg, rgb(var(--cream-06-rgb) / .94), rgb(var(--cream-07-rgb) / .97));
 
   &[data-status="canceled"] {
-    --state-accent: #a8664e;
+    --state-accent: var(--clay-23);
   }
 
   &::before {
@@ -58,48 +77,76 @@
     pointer-events: none;
   }
 
-  @include h(xs) { padding-inline: clamp(1.25rem, 5vw, 6rem); }
+  @include h(xs) {
+    /* The bottom bar is gone from here up, so the reserve goes with it. */
+    --bar-safe: 0rem;
+    padding-inline: clamp(1.25rem, 5vw, 6rem);
 
-  /* 2K. The page is capped to a 16:10 frame past 1920px (globals.scss), so at 2552x1351 this
-     panel is laid out inside ~2162px, not 2552px — the gutter is widened against the frame
-     rather than the screen. */
-  @include h(qhd) { padding: 10rem 7rem 5rem; }
+    /* 4.5rem, not 6rem, and only in landscape: 96px beat 12vh at every height under 800px —
+       exactly the short-laptop band, and exactly why `lt` used to restate this padding. Dropping
+       the floor to 72px hands the whole band back to the vh term (it leads from 600px of height
+       up), so 1220x660 resolves to 79.2px and 1280x720 to 86.4px against a nav pill whose bottom
+       edge sits at ~56px. The floor itself never resolves here — landscape shorter than 600px is
+       phone landscape, and phs restates the whole shorthand below. */
+    padding-top: clamp(4.5rem, 12vh, 9rem);
+  }
 
-  /* Phone landscape: 320-430px of height, all of it. The clamp above resolves to its 6rem
-     minimum there (12vh of 320px is 38px), which is a sixth of the screen spent on air.
+  /* Phone landscape: 320-430px of height, all of it. 12vh of 320px is 38px, so every clamp above
+     is sitting on its floor there — 72px or 96px of air out of 320. Both are restated away here.
      5.25rem is the floor, not a taste: the navbar is fixed and 56px tall on touch, sitting
-     10px down, so anything under ~76px puts the eyebrow rule behind the search pill. */
-  @include h(phs) { padding: 5.25rem 1.5rem 1.5rem; }
-  @include h(phl) { padding: 5.25rem clamp(1.5rem, 4vw, 3rem) 1.75rem; }
+     10px down, so anything under ~76px puts the eyebrow rule behind the search pill.
 
-  /* Short laptop. Enough room, but not once a consumer passes `children` — payment-pending adds
-     a reference list and a note, which is what pushed 1220x660 into a scroll. */
-  @include h(lt) { padding-block: 4.5rem 2.25rem; }
+     `phs` is also where the bottom bar comes back, so the reserve comes back with it — and it has
+     to be spelled into this shorthand, which would otherwise overwrite the bottom outright.
 
-  @include v(md) { padding-inline: clamp(1.25rem, 5vw, 6rem); }
+     ONE block for the whole landscape-phone band. `phl` is `phs` plus a width bound (≥800 against
+     ≥480, same ≤520 of height, same orientation), so every viewport that matches phl matches this
+     too — which is why it never had to restate `justify-items` on `.content` either. It used to
+     restate this shorthand with two values 4px and 0-13px apart; both are clamps here instead, and
+     both are exact at the two stops that were measured:
+       inline  4vw is under 1.5rem below 600px of width, so 568x320 keeps its 24px to the pixel and
+               only the wider phones open up (26.7 at 667, 32 at 800, 37.3 at 932 — unchanged).
+       bottom  7.5vh is 24px at 320 tall, reaches the 1.75rem ceiling at 373, and holds it to the
+               top of the stop — so 568x320 keeps 24 and 932x430 keeps 28, both to the pixel. */
+  @include h(phs) {
+    --bar-safe: 5rem;
+    padding:
+      5.25rem
+      clamp(1.5rem, 4vw, 3rem)
+      calc(clamp(1.5rem, 7.5vh, 1.75rem) + var(--bar-safe));
+  }
+
+  @include v(md) {
+    /* 600px of portrait is a tablet; the bar is hidden from here up. */
+    --bar-safe: 0rem;
+    padding-inline: clamp(1.25rem, 5vw, 6rem);
+  }
 }
 
 .header,
 .footer {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* A shape change, not a size one, and the only place in this file that earns a new v() stop.
+     Two equal columns of a 320px phone are 136px each, and "KERAMICKÁ ZAHRADA" set at .75rem with
+     .12em of tracking measures ~145px — the rule broke onto a second line and cost 14.4px of a
+     568px screen. `auto` gives the right-hand mark exactly what it asks for and hands the rest to
+     the eyebrow; the halves come back at 380px, where 1fr is already wide enough. */
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 1rem;
   padding-block: .8rem;
-  border-block: 1px solid rgba(32, 33, 29, .22);
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .22);
   /* 0.75rem, not 0.7rem: 11.2px sat under the 12px legibility floor at every viewport. */
   font: .75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 
-  @include h(qhd) {
-    gap: 2rem;
-    padding-block: 1.4rem;
-    font-size: 1.15rem;
-  }
-
   /* Two rules bracketing a 320px-tall screen; every millimetre back is worth having. */
   @include h(phs) { padding-block: .5rem; }
+
+  /* `.footer` restates its own columns further down and wins there by order, so this lands on
+     the header alone in practice. */
+  @include v(sm) { grid-template-columns: 1fr 1fr; }
 }
 
 .header span:last-child {
@@ -118,7 +165,12 @@
   flex: 1 0 auto;
   width: min(78rem, 100%);
   margin-inline: auto;
-  padding-block: 3rem;
+  /* Was a flat 3rem — 96px of pure air on a 568px-tall phone, spent before a word is read. The vh
+     term hands it back where the screen is short: 22.72px a side at 568, 33.76 at 844, 37.28 at
+     932, and it does not reach the old 3rem again until 1200px of height, which is a tablet held
+     upright. The 1rem floor never resolves on a phone — 4vh clears 16px from 400px of height up.
+     The h()/v() blocks below zero it. */
+  padding-block: clamp(1rem, 4vh, 3rem);
 
   /* The mark beside the copy, from the width where both have a measure worth reading. */
   @include h(xs) {
@@ -128,34 +180,110 @@
     padding-block: 0;
   }
 
-  @include h(qhd) {
-    width: min(104rem, 100%);
-    gap: 9rem;
-  }
-
   /* 568x320. Two columns here too, but sized off the mark rather than a fraction: side by side
      the pair costs ~120px of height instead of ~450px stacked, which is most of the screen. */
   @include h(phs) {
     grid-template-columns: auto minmax(0, 1fr);
     justify-items: stretch;
-    gap: 1.5rem;
+    /* 1rem, not 1.5rem, and the mark drops to 6.5rem alongside it: the two CTAs need 392.8px on
+       one line and the copy lane was 384. Eight pixels of gap were breaking the row onto a second
+       line and costing 62.4px — a fifth of a 320px screen. 568 − 48 padding − 104 mark − 16 gap
+       leaves 400, and the buttons fit with room to spare. */
+    gap: 1rem;
     padding-block: 0;
   }
 
-  @include h(phl) {
-    grid-template-columns: minmax(9rem, .75fr) minmax(18rem, 1.25fr);
-    gap: 3.5rem;
-    padding-block: 0;
-  }
+  /* The shape is already right from `phs` — phl is phs plus a width bound, so the columns, the
+     stretch and the zeroed padding above all reach here and are NOT restated. The gap is the one
+     value that genuinely differs, and it is the one pair in this file that will not fold into a
+     single clamp: 16px at 568 is 2.82vw, 37.28px at 932 is 4.00vw, and the 568 value is not a
+     point on that line — it is a hard fit. The two CTAs need 392.8px on one row and the lane is
+     568 − 48 padding − 104 mark − gap, so any gap over 23.2px breaks the row and costs 62.4px of a
+     320px screen. A shared 4vw would put 22.7px there, 0.5px inside that limit. Kept as two values
+     on purpose; see the note at the head of the file. */
+  @include h(phl) { gap: clamp(1.5rem, 4vw, 3.5rem); }
 
-  /* Portrait keeps one column through the 768 tablet: the two-column split there gave the mark a
-     250px lane to hold a 160px circle and squeezed the copy into 355px. From 1000px up there is
-     room for both. */
-  @include v(lg) {
-    grid-template-columns: minmax(12rem, .75fr) minmax(18rem, 1.25fr);
+  /* Portrait keeps one column through the 768 tablet, and that part is now measured rather than
+     assumed: the lane is 691px at 768x1024 and the mark is 164px of it, so a second column would
+     leave the copy ~489px — under the 514px the widest newsletter heading ("Zůstaňte blízko /
+     ateliéru.", the DEFAULT state, the one reached without a query string) needs on one line, and
+     nowhere near the 668px the shared payment-pending title asks for. At 600x960 the lane is 540
+     and the split leaves ~350. Do not try it again; the earlier attempt gave the mark a 250px lane
+     for a 160px circle and squeezed the copy into 355px.
+
+     But one column is not the same as the phone's column. `justify-items: start` in the base is a
+     320px-phone rule, and in portrait 600-999 it was the ONLY thing from this rule set that landed
+     — h(xs), h(phs) and v(lg) all overrode it with `stretch`, v(md) alone did not. `.copy` was
+     therefore shrink-to-fitting to its longest line: measured 514px inside a 691px lane at
+     768x1024, so 177px of the panel was dead, 224px at 820x1180, 307 at 912x1368, 350 at 960x1280
+     — the wider the tablet, the bigger the hole. It is the same trap payment-pending already
+     documented beside its `.reference dd`, where a 28-character cart id stretched the whole
+     column. `stretch` hands `.copy` its own `max-width: 42rem`, so it opens to 672px and the dead
+     strip falls to 19px. `.mark` is unaffected — it has an explicit `width: var(--mark-size)`.
+
+     `padding-block: 0` for the reason the other three stops zero it: the content is already
+     centred vertically (`align-content: center` inside `flex: 1 0 auto`), so clamp(1rem, 4vh, 3rem)
+     is 41px a side of pure lengthening on a 1024px-tall screen. With a payment-pending payload the
+     shell drops from 1170px to 1088px at 768x1024, and at 820x1180 that is the difference between
+     scrolling and not.
+
+     The `gap` is the third thing, and it is the last measure in this stop that was still the
+     phone's to the pixel. In one column it is the ROW gap — the only statement of how the mark
+     relates to the copy — and 1.5rem was written for a 117px mark on a 390px phone. The mark is
+     184px here and the panel is 691px wide, but the space under it had not moved: 24px, against
+     40.96px between the heading and the paragraph INSIDE the copy. The boundary between the two
+     blocks of the composition was tighter than the rhythm within one of them, so the circle read
+     as attached to the kicker.
+
+     `vh`, not `vw`, and that is measured rather than assumed. This gap really does compete for
+     height here: with the payment-pending payload the content has 36px of slack at 820x1180
+     (895 available against 860 natural) and none at all at 768x1024 (-60) or 600x960 (-129). The
+     ceiling is set by that 36px and by nothing else — 2.75rem resolves at 1222px of height, so
+     820x1180 spends 18.5 of its 36 and still fits in one screen, which is the fit v(md)'s zeroed
+     padding won for it two paragraphs up. Floor 1.5rem is the base value kept intact: 3.6vh only
+     overtakes 24px at 667px of height, so nothing shorter than a tablet ever sees this change.
+     Resolved: 34.6 at 600x960, 36.9 at 768x1024, 42.5 at 820x1180, 44 from 1222px of height up. */
+  @include v(md) {
     justify-items: stretch;
-    gap: clamp(3rem, 9vw, 11rem);
     padding-block: 0;
+    gap: clamp(1.5rem, 3.6vh, 2.75rem);
+  }
+
+  /* From 1000px of portrait there is room for both, but the fractions this used to borrow from the
+     landscape grid are a desktop composition made narrow, which is the one thing a tablet must not
+     get. Measured at 1024x1366: `minmax(12rem, .75fr)` handed the mark a 311px lane for a 219px
+     circle and then added a 92px gap, so 185px of white sat between the circle and the text and
+     the mark hung alone against the left edge — and the copy was left with 518px, into which the
+     widest heading (514px) fitted with FOUR pixels to spare. That was the tightest number on the
+     whole route.
+
+     Sizing the mark column off the mark, the same way `h(phs)` already does, is the fix. Measured
+     with the width-led mark below in place: 246 + 67 of gap + 609 of copy at 1024x1366. The white
+     band collapses 185 -> 67 and the widest heading's reserve grows 4 -> 95px. Checked at
+     1024x1366, 1180x1600 and 1440x2560 (a rotated monitor, where `.content` is capped at 78rem and
+     the mark at its own 20rem ceiling): no heading gains a line anywhere, and at 1180x1600 the
+     payment-pending title drops one — 668px now fits the 672px column, where 597px used to break
+     it. Nothing overflows.
+
+     The type is deliberately NOT lifted with the column. `clamp(5.4rem, 9vw, 6.5rem)` was tried
+     here and rejected on measurement: it buys 6px at 1024x1366 but pushes the payment-pending
+     title back to four lines at 1180x1600 (804px wanted against a 672px column) and takes the
+     newsletter reserve from 95px to 61. `.rdshots/_nltab-pet-probe.cjs` reproduces both columns.
+
+     `justify-items: stretch` and `padding-block: 0` are NOT restated here on purpose: v(lg) is
+     v(md) plus a width bound, so every viewport that matches this matched the block above first,
+     exactly as `h(phl)` inherits its columns from `h(phs)`. Only the two values that genuinely
+     differ are written.
+
+     The `gap` IS one of them, and it changes axis rather than magnitude: above it is the vertical
+     distance between two stacked blocks, so it is written in vh and capped by the payment-pending
+     payload's height budget; here the two blocks are side by side and the same declaration is a
+     horizontal distance, which puts it back on vw with no height budget to answer to. 66.56px at
+     1024x1366 against the 44px this replaces — a wider gap in a composition that has the width to
+     pay for it. This block must therefore stay AFTER the v(md) one, or the vh value would win. */
+  @include v(lg) {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: clamp(3rem, 6.5vw, 9rem);
   }
 }
 
@@ -163,22 +291,56 @@
   /* One variable so the glyph tracks the rings at every stop instead of drifting: the old
      `clamp(1.1rem, 2vw, 1.8rem)` bottomed out at 17.6px inside a 28px disc on a phone while
      sitting at 28.8px inside a 70px disc on a desktop. */
-  --mark-size: 8rem;
+  /* One size, written once. This used to be a flat 8rem here plus 11rem at `v(md)` plus a clamp at
+     `v(lg)` — the same property in three places with three values, which is a clamp that had not
+     been written. The mark is the tallest thing in the column, so it competes on both axes and
+     `min()` answers to both, exactly as the landscape clamp below it does: 90.9px at 320x568,
+     117 at 390x844, 129 at 430x932, 153.6 at 600x960, 208 at 1000x1300. Continuous, no stop in it. */
+  --mark-size: clamp(5rem, min(30vw, 16vh), 20rem);
   position: relative;
   width: var(--mark-size);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  color: #20211d;
+  color: var(--ink-05);
 
-  @include h(xs) { --mark-size: clamp(11rem, 21vw, 20rem); }
-  @include h(qhd) { --mark-size: 24rem; }
-  @include h(phs) { --mark-size: 7rem; }
-  @include h(phl) { --mark-size: 9rem; }
-  @include h(lt) { --mark-size: clamp(9rem, 16vw, 15rem); }
+  /* The tallest object in the content, so it competes on both axes and its ideal term has to
+     answer to both. 21vw alone overran the height budget on 1366x768 — that is what the old
+     short-laptop override was restating — and 30vh alone would push it out of the 250px lane on a
+     narrow tall landscape window (750x1000). `min()` of the two satisfies both in one rule:
+     216px at 720 tall, 230 at 768, 240 at 800, 270 at 900, 287 at 1366x1024 (vw leading there),
+     320 at 1080, 405 at 1351. Continuous, and no breakpoint anywhere in it. */
+  @include h(xs) { --mark-size: clamp(9rem, min(21vw, 30vh), 20rem); }
 
-  @include v(md) { --mark-size: 11rem; }
-  @include v(lg) { --mark-size: clamp(11rem, 21vw, 20rem); }
+  /* Was 6.5rem here and 9rem at `phl` — the same property in two stops with two flat values, which
+     is a clamp nobody had written. The two values do lie on one line, and it is a HEIGHT line, not
+     a width one: 104px is 32.50vh of a 320px-tall phone and 144px is 33.49vh of a 430px-tall one.
+     The mark is the only fixed-size object in the row and a landscape phone has 320-430px of
+     height in total, so height is the axis it actually competes on — the base clamp already says
+     so with its `min(30vw, 16vh)`.
+
+     32vh, and the floor is what makes it exact where it has to be: 32vh of 320 is 102.4, under the
+     6.5rem floor, so 568x320 resolves to 104px to the pixel and the CTA row keeps the 400px lane
+     it was tuned for. Above that it is continuous instead of jumping 40px at a width no single
+     device crosses — 115.2 at 800x360 and 137.6 at 932x430, where the old flat 9rem was 144 and
+     the 6.4px it gives back go to the copy lane, which is what runs out of room at phl. The
+     ceiling holds 9rem from 450px of height up, which is the top of the stop, not a phone. */
+  @include h(phs) { --mark-size: clamp(6.5rem, 32vh, 9rem); }
+
+  /* A breakpoint changes the KIND, and the kind that changes here is which axis the object is
+     answering to — not its magnitude. The base's `min(30vw, 16vh)` is the right expression for a
+     phone, where both axes are scarce, and on every upright tablet the `16vh` term wins: 153.6px
+     at 600x960, 163.8 at 768x1024, 188.8 at 820x1180, 218.6 at 1024x1366. So the mark is driven by
+     the one dimension a portrait tablet has a surplus of, and the visible result is that it
+     shrinks in proportion — 117px of a 390x844 phone is 30% of the width, 164px of a 768px iPad is
+     21%, and between 912x1368 and 1024x1366 it does not move at all (219 either way) although the
+     screen got 112px wider. Reading the width instead holds it at a constant 24%: 144 / 184 / 197 /
+     219 / 230 / 246 / 283 across the seven portrait sizes measured. Ceiling unchanged from the base
+     at 20rem, floor the same 9rem `h(xs)` already uses.
+
+     This is the one rule the phone pass removed that had to come back, and it comes back as one
+     width-led clamp rather than the two flat values it used to be (11rem here, 11-20rem at v(lg)). */
+  @include v(md) { --mark-size: clamp(9rem, 24vw, 20rem); }
 }
 
 .mark span {
@@ -203,15 +365,15 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--state-accent);
-  color: #fff5ea;
+  color: var(--cream-10);
   /* 0.8rem floor keeps the glyph off the 12px legibility line on the smallest mark. */
   font: 400 max(.8rem, calc(var(--mark-size) * .088))/1 "Sentient", serif;
 }
 
 .copy {
+  /* Stays in rem on purpose: past 1714px the measure is frozen, and the ramp lifts it and the
+     type it holds by the same factor — 893px at 2552. Composition identical, only larger. */
   max-width: 42rem;
-
-  @include h(qhd) { max-width: 58rem; }
 }
 
 .kicker {
@@ -219,11 +381,17 @@
   font: .75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(32, 33, 29, .58);
+  color: rgb(var(--ink-05-rgb) / .58);
 
-  @include h(qhd) { font-size: 1.15rem; }
-  @include h(phs) { margin-bottom: .6rem; }
-  @include h(phl) { margin-bottom: .8rem; }
+  /* A landscape phone has 320-430px of height in total and the fixed bottom bar owns 68 of them,
+     so the three vertical gaps in this column ride on vh rather than standing flat. This clamp was
+     already here, one stop too high: it sat on `phl` while `phs` held a flat .6rem, so the SHORTER
+     phone — the one that can least afford the air — was the one getting the larger gap. Moved up
+     to phs, which is the stop that covers the whole band; every phl viewport still resolves to
+     exactly what it resolved to before (5.04px at 360 tall, 6.02 at 430), and 568x320 drops from
+     9.6px to the 4.8px floor. 1.4vh leads from 343px of height up, so the term is live across the
+     whole band and only the shortest phone sits on the floor. */
+  @include h(phs) { margin-bottom: clamp(.3rem, 1.4vh, .5rem); }
 }
 
 .copy h1 {
@@ -234,12 +402,28 @@
      the 288px a 320px phone offers. A break is better than a clip. */
   overflow-wrap: break-word;
 
+  /* The 7.5rem ceiling stays where it is. `.copy` is capped at 42rem, so above 1714px the measure
+     and the type are both frozen in rem and the ramp lifts them together. Raising the ceiling to
+     revive the 7vw term would grow the type faster than its measure and break long headings back
+     into four lines — which is what the old 2K 10rem override did to ?stav=neplatny-odkaz. */
   @include h(xs) { font-size: clamp(3.4rem, 7vw, 7.5rem); }
-  @include h(qhd) { font-size: 10rem; }
+
+  /* The second pair this file keeps on purpose. Type belongs on the vw axis, and on that axis
+     these two are not one line: 39.76px at 568 is 7.00vw, 51.26px at 932 is 5.50vw, and the phs
+     band tops out at 3rem from 686px of width up. A shared 7vw would set a 932x430 phone's heading
+     at 56px — 5px over its own ceiling and 25% taller than it is now, on the screen with 430px of
+     height to spend; a shared 5.5vw would take 568x320 down to its 2.4rem floor and cost 667x375
+     8.3px (46.69 measured, 38.4 on that line). A landscape phone is not 1.64x the device its
+     narrower sibling is just because it is 1.64x as wide, which is the whole reason `phl` exists
+     as a stop. */
   @include h(phs) { font-size: clamp(2.4rem, 7vw, 3rem); }
   @include h(phl) { font-size: clamp(2.8rem, 5.5vw, 3.6rem); }
 
-  @include v(lg) { font-size: clamp(3.4rem, 7vw, 7.5rem); }
+  /* The floor is 5.4rem, not 3.4rem, and that is the base's own ceiling: `clamp(3rem, 16vw, 5.4rem)`
+     is frozen at 86.4px from 338px of width up, so a 3.4rem floor here made the heading SHRINK to
+     70px as portrait crossed 1000px and it did not climb back to 86.4 until 1234px. The ceiling
+     stays at 7.5rem for the reason given above. */
+  @include v(lg) { font-size: clamp(5.4rem, 7vw, 7.5rem); }
 }
 
 .copy h1 em {
@@ -248,26 +432,29 @@
   color: var(--state-accent);
   font-style: italic;
   font-weight: 400;
-
-  @include h(qhd) { margin-left: 8rem; }
 }
 
 .description {
   max-width: 32rem;
   margin: clamp(1.6rem, 4vh, 3rem) 0 0;
   font: 1.05rem/1.55 "Sansation-Regular", sans-serif;
-  color: rgba(32, 33, 29, .67);
+  color: rgb(var(--ink-05-rgb) / .67);
   /* order-confirmed and payment-confirmed drop a support e-mail into this paragraph. */
   overflow-wrap: break-word;
 
-  @include h(qhd) {
-    max-width: 44rem;
-    margin-top: 3.5rem;
-    font-size: 1.5rem;
-  }
+  /* Same move as the kicker's: the clamp was written on `phl` and the flat 1rem it replaces sat on
+     `phs`, so the 320px-tall phone paid 16px while the 430px one paid 10.32. One expression on the
+     stop that covers both — phl viewports are unchanged to the pixel (9.6px at 360, 10.32 at 430)
+     and 568x320 falls to the 9.6px floor. */
+  @include h(phs) { margin-top: clamp(.6rem, 2.4vh, 1rem); }
 
-  @include h(phs) { margin-top: 1rem; }
-  @include h(phl) { margin-top: 1.25rem; }
+  /* The 32rem measure is a reading aid on a page that has height to spare. On a 932x430 phone it
+     is the opposite: the copy lane is 683px wide after the phl grid stopped wasting a column, and
+     holding the paragraph at 512 kept it three lines deep and pushed the primary CTA under the
+     fixed bottom bar. Let it use the lane and it falls to two. Width, not height — which is why
+     this one really does belong to phl and not to phs: at 568 the lane is 400px and the 32rem cap
+     is already inert there. */
+  @include h(phl) { max-width: none; }
 }
 
 .actions {
@@ -275,15 +462,21 @@
   flex-wrap: wrap;
   align-items: center;
   gap: .75rem;
-  margin-top: 2rem;
+  /* The last flat vertical measure in the text column — the kicker and the description already
+     ride on vh, and this one has to give way with them: 22px at 768, 31px at 1080, 39px at 1351. */
+  margin-top: clamp(1.25rem, 2.9vh, 2.6rem);
 
-  @include h(qhd) {
-    gap: 1.25rem;
-    margin-top: 3.25rem;
-  }
-
-  @include h(phs) { margin-top: 1.25rem; }
-  @include h(phl) { margin-top: 1.5rem; }
+  /* Same 2.9vh coefficient as the base, banded for a landscape phone, and moved up from `phl` to
+     the stop that covers the whole band — it was the third of the three gaps in this column that
+     gave the shorter phone the bigger number. Getting the primary CTA out from under the fixed
+     bottom bar at 932x430 was the one thing that pass had to do: measured at scrollY 0, the CTA's
+     bottom edge clears the bar's top edge by 8.8px, and phl viewports do not move by a pixel here.
+     Read the floor, not the vh term: 2.9vh only overtakes .85rem at 469px of height, so every
+     phone in this stop resolves to 13.6px and the term leads for the short landscape WINDOW at the
+     tall edge of the stop (1024x500 matches it too). Raising the coefficient to make the term live
+     on a phone is the wrong direction — it would add 4.7px at 932x430 and eat more than half of
+     the 8.8px clearance this rule exists to protect. */
+  @include h(phs) { margin-top: clamp(.85rem, 2.9vh, 1.25rem); }
 }
 
 .primary,
@@ -293,7 +486,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  border: 1px solid rgba(32, 33, 29, .55);
+  border: 1px solid rgb(var(--ink-05-rgb) / .55);
   border-radius: 999px;
   padding: .75rem 1.1rem .75rem 1.3rem;
   font: .9rem/1 "Sansation-Regular", sans-serif;
@@ -302,18 +495,11 @@
   /* These are <a>, and globals.scss floors <button> at 44px on touch but deliberately not links.
      3.15rem already clears it; max() states the floor so no stop below can undercut it. */
   @include touch { min-height: max(3.15rem, 44px); }
-
-  @include h(qhd) {
-    min-height: 4.5rem;
-    gap: 1.4rem;
-    padding: 1rem 1.8rem 1rem 2.1rem;
-    font-size: 1.35rem;
-  }
 }
 
 .primary {
-  color: #fff1e4;
-  background: #20211d;
+  color: var(--cream-09);
+  background: var(--ink-05);
 }
 
 .primary i {
@@ -322,11 +508,9 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #20211d;
-  background: #fff1e4;
+  color: var(--ink-05);
+  background: var(--cream-09);
   font-style: normal;
-
-  @include h(qhd) { width: 2.7rem; }
 }
 
 /* Hover only where there is a pointer to hover with — on touch the lift sticks after a tap. */
@@ -337,12 +521,21 @@
   }
 
   .secondary:hover {
-    background: rgba(255, 255, 255, .38);
+    background: rgb(var(--white-rgb) / .38);
   }
 }
 
 .footer {
   grid-template-columns: 1fr;
+  /* The `gap: 1rem` this line inherits is a COLUMN gap — it was written for the three-across state
+     row, and it leaks into the rows the moment that row stacks. That is portrait under 600px and
+     nowhere else: h(xs), h(phs) and v(md) all put the row back, and in a single-row grid a row gap
+     is inert, so nothing outside the small portrait phone sees this. Two leaked gaps cost 32px of a
+     568px screen — more than the three labels measure between them (3 x 14.4px) — and the group
+     stopped reading as a group. 4px is the tight end of a list rhythm (18.4px baseline to baseline,
+     1.53x the type) and it is deliberately the tight end: this stack exists only on the shortest
+     screens the page ever gets, which is where the height is worth more than the air. */
+  row-gap: .25rem;
 
   @include h(xs) { @include state-row; }
   @include h(phs) { @include state-row; }

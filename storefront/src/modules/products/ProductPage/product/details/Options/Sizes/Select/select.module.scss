@@ -7,20 +7,100 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 0.55rem;
 
+    /* Mezera mezi pilulkami byla dvě čísla na dvou místech: 0.55rem v základu a
+       0.25rem v portrétních stopách. To je velikost napsaná do breakpointu
+       (pravidlo 1), a jeden clamp ji nese plynule. Strop 0.55rem je aktivní od
+       1173 px výš (0.75vw = 8.8px), takže landscape nad 1200 se nemění ani
+       o pixel; podlaha 0.25rem sedí přesně na hodnotě, kterou psaly stopy,
+       a platí na celém telefonu (≤533 px). Nad 1921 jedou obě krajní hodnoty
+       v rem s rampou, jak to žádá pravidlo 2. Breakpointy níž pak nesou už jen
+       druh — zalomení a zarovnání.
+
+       Svislý tablet padne doprostřed pásma, tedy do plynulé části, ne na
+       podlahu ani na strop: naměřeno 5.76 px na 768 a 7.68 px na 1024, přesně
+       0.75vw. Pro tablet se tu proto nepíše nic — velikost je hotová, tablet
+       mění jen to, co je níž. */
+    gap: clamp(0.25rem, 0.75vw, 0.55rem);
+
+    /* Portrét je jiný tvar: řádek pilulek se musí umět zalomit na sloupec.
+       Pilulky jsou `flex: 0 0 auto` s min-width 3.625rem (58px), takže se
+       ve výběrovém sloupci — na 320px okně vychází 194px — bez wrapu nezalomí
+       a `.product { overflow: clip }` je tiše uřízne.
+
+       Stopa je v(xs) 320, ne v(md) 600: dřív začínalo zalomení až na 600 px,
+       tedy nad každým skutečným telefonem v portrétu (320 / 380 / 430), což
+       byla přesně ta díra. Jedna stopa místo tří — v(xs) je min-width 320 +
+       portrait, takže pokrývá i to, co dřív psaly md a lg naprosto stejnou
+       sadou.
+
+       SVISLÝ TABLET: tatáž stopa, ale VĚTŠÍ práce — proto tu nestojí vlastní
+       v(md)/v(lg). „Tablet není širší telefon" tady platí OBRÁCENĚ, než se
+       čeká: výběrový sloupec je na tabletu UŽŠÍ než na telefonu. Telefon má
+       nákup přes celou stránku, tablet ho má v pravém sloupci mřížky
+       (product/style.scss: v(md) dva sloupce, v(lg) tři). Naměřeno na živé
+       stránce se čtyřmi velikostmi S/M/L/XL (.rdshots/_sizes-tb-geom.cjs):
+
+         320×568    sloupec 194.0 px   3+1 pilulky   telefon, 1 sloupec
+         430×932    sloupec 301.6 px   4             telefon, 1 sloupec
+         600×900    sloupec 178.0 px   2+2           tablet, 2 sloupce
+         768×1024   sloupec 214.0 px   3+1           tablet, 2 sloupce
+         820×1180   sloupec 234.8 px   3+1
+         912×1368   sloupec 271.7 px   4
+         1024×1366  sloupec 162.0 px   2+2           tablet, 3 sloupce
+
+       Šířka okna tedy nerozhoduje: iPad Pro 1024 px má na výběr o 46 % míň
+       místa než 430px telefon (162 proti 301.6), protože na 1000 px se vrací
+       třísloupcová mřížka. Zalomení je proto na tabletu potřebnější, ne míň:
+       čtyři pilulky měří 4 × 58 + 3 × mezera, tj. 249.3 px na 768 (sloupec
+       214 → o 35 px ven) a 255.0 px na 1024 (sloupec 162 → o 93 px ven).
+       `.product { overflow: clip }` by je uřízl bez scrollbaru a rig by mlčel.
+
+       Po zásahu naměřeno na všech portrétních stopách výše: scrollWidth =
+       clientWidth, nula pilulek mimo sloupec, první pilulka přesně na levé
+       hraně sloupce a pilulka 58×44 px — 44px podlahu drží na dotyku globals
+       (`button`), takže se sem žádná nepíše.
+
+       Sourozenec v témž panelu: Colors/Select má v portrétu totéž
+       `justify-content: flex-start` a naměřenou tutéž levou hranu na
+       600 / 768 / 820 / 912 / 1024. `align-items` u něj chybí schválně a
+       nerozejde se to: všechny pilulky jsou na dotyku 44 px vysoké, takže
+       flex-start a center vysází řádek stejně — ověřeno oběma řadami vloženými
+       naráz do jednoho panelu (.rdshots/_sizes-select-probe.cjs). */
     @include vb((
-        lg: (
-            align-items: flex-start,
-            flex-wrap: wrap,
-            justify-content: flex-start,
-            gap: 0.25rem
-        ),
-        md: (
+        xs: (
             flex-wrap: wrap,
             align-items: flex-start,
-            justify-content: flex-start,
-            gap: 0.25rem
+            justify-content: flex-start
         ),
+    ));
+
+    /* Telefon na šířku. Šířku téhle buňky nedává tenhle soubor, dává ji
+       kompozice v product/style.scss — a ta se od telefonního kola zase hnula,
+       takže tohle je stav po tabletovém kole, přeměřený, ne opsaný:
+
+       Fold `below-with-phone(sm)` (max-width 899.98 px BEZ orientace) už není
+       poslední slovo. V portrétu ho od 600 px výš přebíjí `v(md)`/`v(lg)`
+       a výběrový sloupec tam neměří 626 ani 707, ale 178–271.7 px (600–999)
+       a 162 px (≥1000) — čísla jsou v tabulce u portrétního bloku výš. Číslo
+       626 px zůstává platné jen tam, o čem tenhle blok je, tedy na LANDSCAPE,
+       kde fold platí dál: přeměřeno dnes, 932×430 → sloupec 626 px, jedna
+       řada, nic mimo sloupec; 568×320 → 428.5 px, taky jedna řada. Historie
+       pro kontext: dokud byl fold na `below-px(900px)`, míjel 932px telefon
+       úplně a sloupec měřil 104 px — pět pilulek na pěti řádcích.
+
+       Pravidlo proto zůstává jako DRUH, ne jako pojistka jedné cizí hodnoty,
+       a mez se dá spočítat bez ohledu na to, co kompozice udělá příště: do
+       sloupce se vejde N pilulek, dokud N × 58 + (N−1) × mezera ≤ šířka
+       sloupce — na 932×430 (mezera 6.99 px) tedy devět, na 568×320 (4.26 px)
+       šest. Nad tím se řádek zalomí, místo aby ho `overflow: clip` na
+       `.product` tiše uřízl; dokud se vejde, `flex-wrap: wrap` nezmění nic.
+
+       `h(phs)` je min-width 480 + max-height 520 + landscape, takže jedním
+       pravidlem pokrývá phs i phl a svislého tabletu se nedotkne (`v()` i
+       `h()` jsou orientačně vyhraněné, pravidlo 4). Zarovnání zůstává na
+       středu jako v základu, protože svislou osu sloupce tahle stopa nemění. */
+    @include hb((
+        phs: (flex-wrap: wrap),
     ));
 }

@@ -4,17 +4,32 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: clamp(190px, 16vw, 250px) minmax(250px, 1fr) clamp(205px, 17vw, 255px);
-  grid-template-rows: repeat(3, minmax(92px, auto));
+  /* Tři sloupce, tři různé úlohy. Krajní členy v rem, aby je ramp nad 1921 zvedl — v px
+     zamrzla miniatura na 250 a ceník na 255 i na 2552, tedy z 16 % šířky na 9.8 %.
+     Třetí sloupec nesl 205px podlahu, do které se stepper (114) + mezera + Odebrat nikdy
+     nevešly: přetékalo 17–34 px na KAŽDÉ landscape šířce a `overflow: hidden` to ustřihlo.
+     Podlaha 15.5rem (248) a strmější 20vw ho nechají růst ve stejném pásmu, ve kterém roste
+     jeho obsah (tlačítko Odebrat jde 90 → 106 px mezi 1200 a 1600). Živé pásmo 1240–1400.
+     Prostřední sloupec má podlahu 14.5rem, ne 15.625rem: na 1200 zbývá po odečtení souhrnu
+     jen 679 px řádku, takže 192 + 250 + 248 by řádek přetekl o dvacet pixelů. */
+  grid-template-columns:
+    clamp(11.875rem, 16vw, 15.625rem)
+    minmax(14.5rem, 1fr)
+    clamp(15.5rem, 20vw, 17.5rem);
+  /* Výška řádku soupeří s výškou okna, ne s její šířkou. 92px natvrdo × 3 dělalo na
+     1366×768 z jednoho řádku 42 % obrazovky. */
+  grid-template-rows: repeat(3, minmax(clamp(4rem, 9vh, 6.5rem), auto));
   width: 100%;
-  min-height: 320px;
+  /* 320px natvrdo: na 1366×768 čtyři řádky = 1280 px, celá stránka 3.6 obrazovky.
+     34vh drží stejný podíl obrazovky všude — 261 px na 768, 306 na 900, 367 na 1080. */
+  min-height: clamp(15rem, 34vh, 24rem);
   overflow: hidden;
-  border-top: 1px solid rgba(255, 232, 214, .22);
-  border-bottom: 1px solid rgba(255, 232, 214, .11);
-  color: #ffe8d6;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .11);
+  color: var(--cream-06);
   background:
-    radial-gradient(circle at 72% 18%, rgba(187,183,136,.06), transparent 18rem),
-    linear-gradient(105deg, rgba(255,232,214,.042), transparent 58%);
+    radial-gradient(circle at 72% 18%, rgb(var(--sage-01-rgb) / .06), transparent 18rem),
+    linear-gradient(105deg, rgb(var(--cream-06-rgb) / .042), transparent 58%);
   animation: itemReveal .75s cubic-bezier(.22, 1, .36, 1) both;
 }
 
@@ -25,8 +40,8 @@
   content: "";
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255,232,214,.018), rgba(255,232,214,.12)),
-    rgba(187,183,136,.025);
+    linear-gradient(90deg, rgb(var(--cream-06-rgb) / .018), rgb(var(--cream-06-rgb) / .12)),
+    rgb(var(--sage-01-rgb) / .025);
   transform: translateX(101%);
   transition: transform .58s cubic-bezier(.76, 0, .24, 1);
   will-change: transform;
@@ -35,14 +50,14 @@
 .row::after {
   position: absolute;
   z-index: 2;
-  right: 15px;
-  bottom: 14px;
-  width: 5px;
-  height: 5px;
+  right: .9375rem;
+  bottom: .875rem;
+  width: .3125rem;
+  height: .3125rem;
   content: "";
   border-radius: 50%;
-  background: #bbb788;
-  box-shadow: 0 0 0 5px rgba(187,183,136,.1);
+  background: var(--sage-01);
+  box-shadow: 0 0 0 .3125rem rgb(var(--sage-01-rgb) / .1);
   opacity: 0;
   transform: scale(.5);
   transition: opacity 300ms ease, transform 500ms cubic-bezier(.22,1,.36,1);
@@ -68,7 +83,9 @@
   grid-row: 1 / -1;
   display: flex;
   align-items: stretch;
-  padding: 22px 28px 22px 0;
+  /* Svisle na vh (soupeří o výšku řádku), vodorovně na vw — mezera mezi fotkou a linkou
+     titulku. 2vw dá dnešních 28 px od 1400 nahoru, na 1200 o čtyři méně. */
+  padding: clamp(1rem, 2.4vh, 1.5rem) clamp(1.25rem, 2vw, 1.75rem) clamp(1rem, 2.4vh, 1.5rem) 0;
 }
 
 .thumbLink {
@@ -77,8 +94,8 @@
   width: 100%;
   min-height: 100%;
   overflow: hidden;
-  background: #ded9cb;
-  box-shadow: 18px 22px 55px -36px rgba(0,0,0,.95);
+  background: var(--cream-02);
+  box-shadow: 1.125rem 1.375rem 3.4375rem -2.25rem rgb(var(--black-01-rgb) / .95);
 
   > div { width: 100%; height: 100%; }
   img {
@@ -92,7 +109,7 @@
   inset: 54% 0 0;
   content: "";
   pointer-events: none;
-  background: linear-gradient(transparent, rgba(20,21,17,.3));
+  background: linear-gradient(transparent, rgb(var(--ink-01-rgb) / .3));
 }
 
 .row:hover .thumbLink img { transform: scale(1.04); }
@@ -100,13 +117,17 @@
 .imageIndex {
   position: absolute;
   z-index: 2;
-  right: 12px;
-  bottom: 11px;
-  left: 12px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,.42);
-  color: rgba(255,255,255,.86);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  right: .75rem;
+  bottom: .6875rem;
+  left: .75rem;
+  padding-top: .5rem;
+  border-top: 1px solid rgb(var(--white-rgb) / .42);
+  color: rgb(var(--white-rgb) / .86);
+  /* Bylo 12px, takže na 2552 pořád 12px vedle 76px nadpisu. Podlaha zůstává na 12px
+     (.75rem) — pod ni se s tímhle kontrastem jít nemá. Prostředek je .96vw, ne .62vw:
+     .75rem je nad rampem .625vw, takže .62vw byl mrtvý člen a popisek stál na podlaze
+     od 1200 až po ramp. Živé pásmo 1250–1417. */
+  font: 400 clamp(.75rem, .96vw, .85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -118,8 +139,11 @@
   align-items: flex-start;
   justify-content: center;
   flex-direction: column;
-  padding: clamp(34px, 4vw, 58px);
-  border-left: 1px solid rgba(255,232,214,.1);
+  /* Jedna hodnota na všechny čtyři strany znamenala, že SVISLÝ padding visel na šířce okna:
+     54.6 px nahoře i dole na 1366×768, kde je výšky nejmíň. Rozdělené osy — svisle 3.4vh
+     (26 px na 768, 37 na 1080), vodorovně 3vw (dnešních 58 px od 1933, 41 na 1366). */
+  padding: clamp(1.4rem, 3.4vh, 3.25rem) clamp(1.5rem, 3vw, 3.625rem);
+  border-left: 1px solid rgb(var(--cream-06-rgb) / .1);
 }
 
 .kicker,
@@ -127,27 +151,31 @@
   /* Column headings of the price table (Množství / Cena za kus / Celkem) —
      .46 was 4:1 on the dark stage at 12px. */
   display: block;
-  margin: 0 0 12px;
-  color: rgba(255,232,214,.62);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  margin: 0 0 clamp(.5rem, 1.1vh, .75rem);
+  color: rgb(var(--cream-06-rgb) / .62);
+  /* Podlaha .75rem = dnešních 12px; níž ne, kontrast .62 je počítaný na 12px.
+     Prostředek .96vw (ne .62vw, který je pod podlahou .75 × .8333 = .625vw, a tedy
+     nikdy nesvítí): živé pásmo 1250–1417, pak strop .85rem, který nad 1921 nese ramp. */
+  font: 400 clamp(.75rem, .96vw, .85rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .title {
-  max-width: 13ch;
-  margin: 0 0 13px;
-  color: #ffe8d6;
+  /* 13ch drtilo titulek na 471 px uvnitř 750px buňky a vynucovalo 3–4 řádky. */
+  max-width: min(20ch, 100%);
+  margin: 0 0 clamp(.5rem, 1.2vh, .8125rem);
+  color: var(--cream-06);
   font: 400 clamp(2.2rem, 3vw, 3.6rem)/.92 "Sentient-Regular", serif;
   letter-spacing: -.04em;
   transition: color 240ms ease;
 }
 
-.row:hover .title { color: #bbb788; }
+.row:hover .title { color: var(--sage-01); }
 
 .options {
-  color: rgba(255,232,214,.68);
-  font: 300 15px/1.45 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .68);
+  font: 300 .9375rem/1.45 "Sansation-Light", sans-serif;
 }
 
 .options :global(*) { color: inherit !important; }
@@ -155,10 +183,11 @@
 .dimensions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 18px;
-  margin-top: 16px;
-  color: rgba(255,232,214,.62);
-  font: 300 13px/1.4 "Sansation-Light", sans-serif;
+  /* Řádková mezera je svislá (vh), sloupcová vodorovná (vw). */
+  gap: clamp(.25rem, .8vh, .375rem) clamp(.75rem, 1.4vw, 1.125rem);
+  margin-top: clamp(.625rem, 1.5vh, 1rem);
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 300 .8125rem/1.4 "Sansation-Light", sans-serif;
 }
 
 .cellActions,
@@ -167,9 +196,13 @@
   grid-column: 3;
   display: flex;
   justify-content: center;
-  padding: 20px clamp(18px, 2vw, 28px);
-  border-left: 1px solid rgba(255,232,214,.13);
-  border-bottom: 1px solid rgba(255,232,214,.11);
+  /* Svisle na vh (20px natvrdo × 3 řádky bylo 120 px na 768). Vodorovně je to jediná
+     rezerva, kterou stepper + Odebrat mají: 1.1vw dá 13 px na 1200, 21 na 1920 a strop
+     1.25rem zvedne ramp na 26.6 na 2552. Se sloupcem clamp(15.5rem, 20vw, 17.5rem)
+     zbývá uvnitř 222 px na 1200 (obsah 214) až 319 na 2552 (obsah 288). */
+  padding: clamp(.9rem, 2.2vh, 1.4rem) clamp(.75rem, 1.1vw, 1.25rem);
+  border-left: 1px solid rgb(var(--cream-06-rgb) / .13);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .11);
 }
 
 .cellActions {
@@ -178,12 +211,12 @@
   grid-template-columns: 1fr auto;
   align-content: center;
   align-items: center;
-  gap: 12px;
-  --delete-button-ink: rgba(255, 232, 214, .66);
-  --delete-button-active-ink: #20211d;
-  --delete-button-border: rgba(255, 232, 214, .28);
-  --delete-button-fill: #ffe8d6;
-  --delete-button-focus: #bbb788;
+  gap: clamp(.5rem, .85vw, .75rem);
+  --delete-button-ink: rgb(var(--cream-06-rgb) / .66);
+  --delete-button-active-ink: var(--ink-05);
+  --delete-button-border: rgb(var(--cream-06-rgb) / .28);
+  --delete-button-fill: var(--cream-06);
+  --delete-button-focus: var(--sage-01);
 }
 
 .cellActions .controlLabel { grid-column: 1 / -1; }
@@ -191,32 +224,45 @@
 .actionsRow {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: .5625rem;
 }
 
 .actionsRow select {
-  min-width: 58px;
-  height: 36px;
-  padding-inline: 12px;
-  border: 1px solid rgba(255,232,214,.32);
+  min-width: 3.625rem;
+  height: 2.25rem;
+  padding-inline: .75rem;
+  border: 1px solid rgb(var(--cream-06-rgb) / .32);
   border-radius: 999px;
-  color: #ffe8d6;
-  background: rgba(255,232,214,.05);
+  color: var(--cream-06);
+  background: rgb(var(--cream-06-rgb) / .05);
 }
 
-.cellActions button {
-  color: rgba(255,232,214,.62);
-  font-size: 13px;
-  text-decoration-color: rgba(255,232,214,.24);
-  transition: color 220ms ease;
-}
-
-.cellActions button:hover { color: #ffe8d6; }
+/* Tady stával `.cellActions button { color/font-size/text-decoration-color/transition }`
+   a `:hover`. Zbytek po starším „Odebrat“ psaném jako odkaz — dnes je z něj pilulka
+   (DeleteButton) a ten blok už nedělal nic z toho, co měl:
+     · color   — DeleteButton si barvu píše INLINE přes framer variantu
+                 (`rest: { color: "var(--delete-button-ink, currentColor)" }`), a inline
+                 styl přebije každý stylesheet. Token `--delete-button-ink` mu ho ostatně
+                 podává o pár řádků výš.
+     · font-size — popisek uvnitř je `.label` s vlastním clampem (0,1,0) v jeho sešitu,
+                 takže se ho tohle pravidlo netýkalo.
+     · text-decoration-color — pilulka nemá podtržení.
+   Trefovalo to ale +/− stepperu (`.cellActions button` je (0,1,1), `.control` (0,1,0)),
+   takže cizí soubor přebíjel stepperu jeho vlastní clamp: glyfy měřily 13px místo
+   17–20px a svítily na 62 %. Jedna vlastnost, dvě čísla ve dvou souborech — pryč. */
 
 .cellUnit {
   grid-row: 2;
-  align-items: center;
-  justify-content: space-between;
+  /* Flex se `space-between` smrskl popisek na min-content: „CENA ZA KUS" se lámalo na dva
+     řádky (78×32 na každé šířce, i na 2552) a cena pak visela svisle mezi nimi, zatímco
+     sousední „CELKEM 190,-" byla jednořádková. Grid dá popisku celou volnou stopu, cena si
+     vezme svoje max-content a obojí sedí na jedné účaří. */
+  display: grid;
+  /* `max-content`, ne `auto`: 1fr spolkne všechno volné místo, takže auto stopa spadne na
+     min-content a cena (LineItemUnitPrice má `width: 100%`) se zlomí na 32 px do tří řádků.
+     max-content ji drží na šířce textu a procento se pak počítá z hotové stopy. */
+  grid-template-columns: 1fr max-content;
+  align-items: baseline;
 }
 
 .cellPrice {
@@ -225,13 +271,24 @@
   border-bottom: 0;
 }
 
-.cellUnit .controlLabel,
-.cellPrice .controlLabel { margin: 0; }
-
 .cellUnit :global(*),
 .cellPrice :global(*) {
-  color: #ffe8d6 !important;
-  font-size: 16px;
+  /* Jen barva. Stával tu i font-size: clamp(.9rem, .85vw, 1.1rem) — jenže tenhle selektor
+     má (0,1,0) přesně jako `.root` obou cenových komponent, takže o vítězi nerozhodoval
+     záměr, ale pořadí souborů v bundlu: jedna vlastnost, dvě různá čísla ve dvou souborech.
+     Navíc byla podlaha .9rem živá až do 1694 px, tedy zamrzlá přes celý desktop. Velikost
+     si řídí line-item-unit-price a line-item-price samy — jedna geometrie, jedno místo. */
+  color: var(--cream-06) !important;
+}
+
+/* Až ZA `:global(*)`: specificitou (0,2,0) by vyhrálo i shora, ale override patří za
+   pravidlo, které přebíjí. Popisek ceníku je popisek, ne cena — proto zpátky na velikost
+   ostatních popisků, a nowrap, aby se „CENA ZA KUS" nelámalo. */
+.cellUnit .controlLabel,
+.cellPrice .controlLabel {
+  margin: 0;
+  font-size: clamp(.75rem, .96vw, .85rem);
+  white-space: nowrap;
 }
 
 .priceWrap {
@@ -239,48 +296,51 @@
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: .75rem;
 }
 
 .previewQtyRow {
   display: flex;
-  gap: 5px;
-  color: rgba(255,232,214,.62);
-  font-size: 13px;
+  gap: .3125rem;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font-size: .8125rem;
 }
 
-.muted { color: rgba(255,232,214,.62); }
+.muted { color: rgb(var(--cream-06-rgb) / .62); }
 .mobileControls { display: none; }
 
+/* Náhled v rozbalovacím košíku. Proporce zůstávají, jen v rem, aby je ramp nad 1921 zvedl
+   — v px byl řádek náhledu 104 px vysoký i na 2552, kde je rem 21.27. Je to malý panel,
+   ne pás stránky, takže se o výšku obrazovky nepere a vh sem nepatří. */
 .previewRow {
-  grid-template-columns: 76px minmax(0, 1fr) auto;
-  grid-template-rows: 104px;
-  min-height: 104px;
-  border-color: rgba(255,232,214,.14);
+  grid-template-columns: 4.75rem minmax(0, 1fr) auto;
+  grid-template-rows: 6.5rem;
+  min-height: 6.5rem;
+  border-color: rgb(var(--cream-06-rgb) / .14);
   background: transparent;
 
   &::before { display: none; }
   &::after { display: none; }
-  &:hover { background: rgba(255,255,255,.025); }
+  &:hover { background: rgb(var(--white-rgb) / .025); }
   .cellThumb {
     grid-column: 1;
     grid-row: 1;
-    padding: 12px 14px 12px 0;
+    padding: .75rem .875rem .75rem 0;
   }
   .thumbLink { min-height: 0; box-shadow: none; }
   .kicker, .dimensions { display: none; }
   .cellTitle {
     grid-column: 2;
     grid-row: 1;
-    padding: 15px 12px 15px 0;
+    padding: .9375rem .75rem .9375rem 0;
     border-left: 0;
   }
-  .title { max-width: 14ch; margin-bottom: 6px; font-size: 1.18rem; }
-  .options { font-size: 13px; }
+  .title { max-width: 14ch; margin-bottom: .375rem; font-size: 1.18rem; }
+  .options { font-size: .8125rem; }
   .cellPrice {
     grid-column: 3;
     grid-row: 1;
-    padding: 14px 0 14px 10px;
+    padding: .875rem 0 .875rem .625rem;
     border: 0;
   }
   .priceWrap {
@@ -289,15 +349,17 @@
     justify-content: center;
     flex-direction: column;
   }
-  .cellPrice :global(*) { font-size: 13px; }
+  .cellPrice :global(*) { font-size: .8125rem; }
 }
 
 .row:nth-child(2) { animation-delay: 60ms; }
 .row:nth-child(3) { animation-delay: 120ms; }
 .row:nth-child(4) { animation-delay: 180ms; }
 
+/* Dráha nájezdu je svislá, takže se měří výškou okna, ne pixely: 1.6vh je 12.3 px na 768,
+   17.3 na 1080 a 21.6 na 1351 — stejný podíl obrazovky, jaký mělo 18px na 1125. */
 @keyframes itemReveal {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(1.6vh); }
   to { opacity: 1; transform: translateY(0); }
 }
 

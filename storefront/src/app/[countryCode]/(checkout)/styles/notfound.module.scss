@@ -3,29 +3,35 @@
 .root {
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	/* 18px na návrhové výšce 1080 = 1.67vh. Svislá mezera → vh. */
+	gap: clamp(.75rem, 1.67vh, 1.25rem);
 	align-items: center;
 	justify-content: center;
-	min-height: calc(100dvh - 64px);
-	padding: 80px 20px;
-	background: #f2eee5;
-	color: #212222;
+	min-height: calc(100dvh - 4rem);
+	/* Svisle vh (7.4vh je 80px na 1080, 53px na 720 — na nízkém laptopu se stránka
+	   sevře sama), vodorovně vw. Kraje v rem, aby je nad 1921 zvedl ramp. */
+	padding: clamp(3rem, 7.4vh, 6rem) clamp(1.25rem, 2vw, 1.75rem);
+	background: var(--cream-07);
+	color: var(--black-03);
 	text-align: center;
 
 	.heading {
 		margin: 0;
 		font-family: "Sentient-Regular",serif;
-		font-size: clamp(46px,7vw,90px);
+		/* Kraje z px do rem — v px se nadpis nad 1921 zastavil na 90px, zatímco
+		   všechno kolem něj ramp zvedl. 2.875rem/5.625rem je přesně 46/90px při
+		   základním rootu, takže do 1920 se nemění nic. */
+		font-size: clamp(2.875rem, 7vw, 5.625rem);
 		font-weight: 400;
 		line-height: .92;
 		letter-spacing: -.045em;
 	}
 
 	.message {
-		max-width: 480px;
+		max-width: 30rem;
 		margin: 0 0 10px;
 		font-size: 1rem;
-		color: rgba(33,34,34,.62);
+		color: rgb(var(--black-03-rgb) / .62);
 	}
 
 	a:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }

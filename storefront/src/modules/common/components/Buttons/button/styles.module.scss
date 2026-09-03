@@ -2,10 +2,14 @@
 
 .button{
     position: relative;
-    max-width: 250px;
-    height: 40px;
+    /* Vodorovný strop na vw (živé pásmo 1196–1522 px), výška na vh (živé pásmo 973–1297 px
+       na výšku). Podlaha 2.25rem je to, co usadí 1280×720 i 1366×768 samo, takže tenhle
+       komponent nepotřebuje ani jedno pravidlo v lt. Stejná rodina jako --nav-control-height
+       v Navbaru, který výšku u svých instancí přebíjí. */
+    max-width: clamp(13.75rem, 18.4vw, 17.5rem);
+    height: clamp(2.25rem, 3.7vh, 3rem);
     cursor: pointer;
-    border-radius: 25px;
+    border-radius: 999px;
     overflow: hidden;
     pointer-events: all;
 
@@ -20,8 +24,8 @@
         position: relative;
         width: 100%;
         height: 100%;   
-        border-radius: 25px;
-        padding: 2.5px 25px;
+        border-radius: 999px;
+        padding: clamp(0.125rem, 0.23vh, 0.1875rem) clamp(1.25rem, 1.8vw, 1.75rem);
         pointer-events: all;
         cursor: pointer;
 
@@ -37,7 +41,6 @@
             &:nth-of-type(2){
                 p{
                     color: var(--whiteText);
-                    // white-space: none;
                 }
             }
         }
@@ -50,9 +53,9 @@
             top:0;
             left:0;
             z-index: 0;
-            padding: 2px 4px;
+            padding: 0.125rem 0.25rem;
             background-color: var(--darkOlive);
-            border-radius: 25px;
+            border-radius: 999px;
             overflow: hidden;
             
             .perspectiveImage{
@@ -61,7 +64,7 @@
                 position: relative;
                 overflow: hidden;
                 border: 1px solid var(--whiteBoarder);
-                border-radius: 25px;
+                border-radius: 999px;
                 
                 .img__wrapper{
                     width: 100%;
@@ -91,10 +94,12 @@
 
 .buttonIcon{
     position: relative;
-    max-width: 120px;
-    height: 40px;
+    /* Užší strop (živé pásmo 1182–1545 px), výška je táž sazba ovládacího prvku jako
+       u .button — jedna výška, dvě šířky. */
+    max-width: clamp(6.5rem, 8.8vw, 8.5rem);
+    height: clamp(2.25rem, 3.7vh, 3rem);
     cursor: pointer;
-    border-radius: 25px;
+    border-radius: 999px;
     overflow: hidden;
     pointer-events: all;
 
@@ -109,8 +114,8 @@
         position: relative;
         width: 100%;
         height: 100%;   
-        border-radius: 25px;
-        padding: 2.5px 10px;
+        border-radius: 999px;
+        padding: clamp(0.125rem, 0.23vh, 0.1875rem) clamp(0.5rem, 0.73vw, 0.75rem);
         pointer-events: all;
         cursor: pointer;
 
@@ -125,7 +130,6 @@
             &:nth-of-type(2){
                 p{
                     color: var(--whiteText);
-                    // white-space: none;
                 }
             }
         }
@@ -138,9 +142,9 @@
             top:0;
             left:0;
             z-index: 0;
-            padding: 2px 4px;
+            padding: 0.125rem 0.25rem;
             background-color: var(--darkOlive);
-            border-radius: 25px;
+            border-radius: 999px;
             overflow: hidden;
             
             .perspectiveImage{
@@ -149,7 +153,7 @@
                 position: relative;
                 overflow: hidden;
                 border: 1px solid var(--whiteBoarder);
-                border-radius: 25px;
+                border-radius: 999px;
                 
                 .img__wrapper{
                     width: 100%;

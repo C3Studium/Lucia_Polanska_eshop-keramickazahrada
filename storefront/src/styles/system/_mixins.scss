@@ -11,6 +11,7 @@ $layer-h: (
   lg: bp-lg,
   xl: bp-xl,
   huge: bp-huge,
+  xxl: bp-xxl,
   qhd: bp-qhd,
 
   // Device-qualified stops. Last in the cascade so they win over the width-only stop they
@@ -98,31 +99,39 @@ $layer-v: (
   }
 }
 
-// Low-level landscape query. Layer ownership stays in h-layer().
+// The query text for a horizontal stop, as a string.
 //
 // Constraints are composed from whatever the stop declares rather than being hardcoded, so a
 // stop may specify any subset of them. The previous version always emitted both max-width and
 // min-height, which produced `(max-width: null)` for a stop that only constrains height.
-@mixin h($key) {
+//
+// A function rather than the body of h() because below-with-phone() has to place this exact
+// text beside another condition in one comma-separated media list, and a device-qualified stop
+// retyped by hand is precisely the drift this table exists to prevent.
+@function h-query($key) {
   $min: map.get(bp.$h, $key);
+  $constraints: map.get(bp.$h-constraints, $key);
+  $query: "(min-width: #{$min})";
 
-  @if $min == null {
-    @warn "Unknown horizontal breakpoint: #{$key}";
-  } @else {
-    $constraints: map.get(bp.$h-constraints, $key);
-    $query: "(min-width: #{$min})";
+  @if $constraints {
+    @each $feature in (max-width, min-height, max-height, min-aspect-ratio) {
+      $value: map.get($constraints, $feature);
 
-    @if $constraints {
-      @each $feature in (max-width, min-height, max-height, min-aspect-ratio) {
-        $value: map.get($constraints, $feature);
-
-        @if $value != null {
-          $query: "#{$query} and (#{$feature}: #{$value})";
-        }
+      @if $value != null {
+        $query: "#{$query} and (#{$feature}: #{$value})";
       }
     }
+  }
 
-    @media #{$query} and (orientation: landscape) {
+  @return "#{$query} and (orientation: landscape)";
+}
+
+// Low-level landscape query. Layer ownership stays in h-layer().
+@mixin h($key) {
+  @if map.get(bp.$h, $key) == null {
+    @warn "Unknown horizontal breakpoint: #{$key}";
+  } @else {
+    @media #{h-query($key)} {
       @content;
     }
   }
@@ -142,6 +151,10 @@ $layer-v: (
 // what the device work needs. Use below() to bring an existing max-width rule into the system.
 @mixin below($key) {
   $w: map.get(bp.$h, $key);
+
+  @if $w == null {
+    $w: map.get(bp.$h-max, $key);
+  }
 
   @if $w == null {
     $w: map.get(bp.$v, $key);
@@ -166,6 +179,42 @@ $layer-v: (
   @media (max-width: #{$w}) {
     @content;
   }
+}
+
+/// below(), plus the phone that is too wide for it.
+///
+/// This is the one query a chrome-heavy surface actually wants, and no single width expresses
+/// it. A phone in landscape is 932px across — wider than `sm`, wider than every tablet stop in
+/// the table — so `below(sm)` gives it the desktop layout and `below(md)` would take the phone
+/// layout away from a real 1024px tablet. The header of _breakpoints.scss names this exact
+/// case; `phs` is the stop that answers it, and it is taken from the table here rather than
+/// retyped, so the height bound stays in one place.
+///
+/// Emitted as one comma-separated list, not two blocks, so the two halves cannot be separated
+/// by a later rule landing between them.
+@mixin below-with-phone($key) {
+  @media (max-width: #{width-of($key) - 0.02px}), #{h-query(phs)} {
+    @content;
+  }
+}
+
+/// The width a named stop stands at, wherever it is declared.
+@function width-of($key) {
+  $w: map.get(bp.$h, $key);
+
+  @if $w == null {
+    $w: map.get(bp.$h-max, $key);
+  }
+
+  @if $w == null {
+    $w: map.get(bp.$v, $key);
+  }
+
+  @if $w == null {
+    @error "Unknown breakpoint: #{$key}";
+  }
+
+  @return $w;
 }
 
 /// Orientation-agnostic min-width, for existing rules whose width does not sit on a stop.
@@ -201,45 +250,28 @@ $layer-v: (
   }
 }
 
-/// Machines that have been judged unable to afford expensive effects.
-///
-/// This is the CSS half of the WebGL switch in lib/hooks/use-shaders-enabled.ts, which stamps
-/// `data-fx="full" | "reduced"` on <html> as soon as it has an answer. A stylesheet can already
-/// ask whether it is on a touch device — that is `touch` — but it cannot ask any of the rest:
-/// whether the GPU is a software rasteriser, whether it is an integrated part below the memory
-/// line, or whether the machine has been measured dropping frames while the page was open.
-///
-/// Use it for the CSS that costs what a shader costs — `backdrop-filter`, a large `filter:
-/// blur()`, a full-viewport gradient animation, anything on an infinite keyframe loop. Ordinary
-/// hover transitions and short entrance animations do not belong here; they are not what makes a
-/// thin machine stutter, and removing them makes the site feel broken rather than cheap.
-///
-/// Write the expensive version as the default and the cheap one inside this block. The attribute
-/// is absent during server render and until the probe resolves, so anything gated the other way
-/// round would flash on every load.
-///
-/// No `:global()` around the prefix, deliberately. CSS Modules only rewrites class and id
-/// selectors, so `html[...]` passes through a .module.scss untouched while the `&` still picks
-/// up its hash — and the same mixin stays valid in the plain .scss files, where `:global()` is
-/// not a selector at all and would ship verbatim into the stylesheet.
-@mixin reduced-fx {
-  html[data-fx="reduced"] & {
-    @content;
-  }
-}
-
-/// The counterpart, for the rare case where an effect should only ever be added on a machine
-/// known to be able to afford it. Prefer `reduced-fx` — a default that degrades is safer than
-/// one that upgrades, because the unstamped first paint gets the safe version either way.
-@mixin full-fx {
-  html[data-fx="full"] & {
-    @content;
-  }
-}
-
 /// The OS-level motion preference.
 @mixin reduced-motion {
   @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+/// The effect budget: this machine cannot afford expensive paint.
+///
+/// Not the same question as `reduced-motion`, which asks what the person
+/// prefers. This one asks what the hardware can carry — touch devices, weak
+/// GPUs, machines measured as slow — and `lib/hooks/use-shaders-enabled.ts`
+/// answers it by stamping `data-fx="full" | "reduced"` on `<html>`. The
+/// shaders read that verdict in JavaScript; this mixin is how a stylesheet
+/// reads the same one, for the expensive work CSS owns by itself:
+/// `backdrop-filter`, large `filter: blur()`, infinite keyframes.
+///
+/// Nested inside a rule, always — the content lands on the current selector:
+///
+///   .bar { backdrop-filter: blur(14px); @include reduced-fx { backdrop-filter: none; } }
+@mixin reduced-fx {
+  :root[data-fx="reduced"] & {
     @content;
   }
 }

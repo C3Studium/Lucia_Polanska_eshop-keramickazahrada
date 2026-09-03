@@ -2,20 +2,17 @@
 .Hero__Intro__Journey {
   position: relative;
   width: 100%;
-  /* Mobile-first: the compact composition is the base, the wide one is applied upward. */
-  height: 142svh;
-  background: #212222;
-
-  @include h(sm) {
-    height: 148svh;
-  }
-
-  @include v(lg) {
-    height: 148svh;
-  }
+  /*
+   * One scroll length for every viewport that is not a phone held sideways. It used to be
+   * 142svh on the base and 148svh in both h(sm) and v(lg) — one property, two media queries,
+   * and no change of layout between them, which is the definition of a size written into a
+   * breakpoint. `svh` already scales it with the screen; the stops carried nothing else.
+   */
+  height: 148svh;
+  background: var(--black-03);
 
   /* A phone held sideways is ~430px tall; the tall journey would leave the hero scrolling
-     for three screens. Overrides h(sm), which it also matches on width. */
+     for three screens. */
   @include phl-h {
     height: 128svh;
   }
@@ -27,24 +24,18 @@
   z-index: 1;
   width: 100%;
   height: 100svh;
-  min-height: 42rem;
+  /*
+   * The floor may ask for 43rem, but never for more than the screen has. Written four times
+   * before — 42rem base, 43rem in h(sm) and v(lg), 0 in phl-h and 0 again in lt-h — and the
+   * two zeroes existed only to undo the first two. `min()` says the same thing once: a 688px
+   * composition on a 1080px screen, and exactly the viewport on a 660px or a 430px one, with
+   * nothing left to cut off past the 688th row.
+   */
+  min-height: min(43rem, 100svh);
   overflow: hidden;
-  color: #ffe8d6;
-  background: #212222;
+  color: var(--cream-06);
+  background: var(--black-03);
   isolation: isolate;
-
-  @include h(sm) {
-    min-height: 43rem;
-  }
-
-  @include v(lg) {
-    min-height: 43rem;
-  }
-
-  /* No 42rem minimum on a 430px-tall viewport — it would force the hero to scroll. */
-  @include phl-h {
-    min-height: 0;
-  }
 
   .Hero__Intro__Image__wrapper {
     position: absolute;
@@ -52,14 +43,20 @@
     z-index: 0;
     overflow: hidden;
     border-radius: 0.45rem;
-    background: #161715;
+    background: var(--ink-01);
 
     @include h(sm) {
-      inset: clamp(5.8rem, 10vh, 7.5rem) calc(1.4 * var(--fvw)) clamp(3.9rem, 6.5vh, 5.5rem);
+      /* Bottom floor lowered 3.9rem → 3.4rem, which is what the lt-h stop used to write by
+         hand. 6.5vh reaches 3.4rem at 837px tall and 5.5rem at 1354px, so a 660px or 768px
+         viewport now lands on that floor by itself. */
+      inset: clamp(5.8rem, 10vh, 7.5rem) calc(1.4 * var(--fvw)) clamp(3.4rem, 6.5vh, 5.5rem);
     }
 
     @include v(lg) {
-      inset: clamp(5.8rem, 10vh, 7.5rem) calc(1.4 * var(--fvw)) clamp(3.9rem, 6.5vh, 5.5rem);
+      /* Bottom floor lowered 3.9rem → 3.4rem, which is what the lt-h stop used to write by
+         hand. 6.5vh reaches 3.4rem at 837px tall and 5.5rem at 1354px, so a 660px or 768px
+         viewport now lands on that floor by itself. */
+      inset: clamp(5.8rem, 10vh, 7.5rem) calc(1.4 * var(--fvw)) clamp(3.4rem, 6.5vh, 5.5rem);
     }
 
     @include phl-h {
@@ -79,24 +76,24 @@
       /* Narrow: the copy sits over the bottom of the image, so the scrim runs bottom-up.
          Wide: the copy sits left, so it runs left-to-right. */
       background:
-        linear-gradient(0deg, rgba(12, 13, 12, 0.72) 0%, rgba(12, 13, 12, 0.06) 68%),
-        linear-gradient(90deg, rgba(12, 13, 12, 0.32), transparent 72%);
+        linear-gradient(0deg, rgb(var(--black-01-rgb) / .72) 0%, rgb(var(--black-01-rgb) / .06) 68%),
+        linear-gradient(90deg, rgb(var(--black-01-rgb) / .32), transparent 72%);
 
       @include h(sm) {
         background:
-          linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
-          linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
+          linear-gradient(90deg, rgb(var(--black-01-rgb) / .58) 0%, rgb(var(--black-01-rgb) / .1) 38%, transparent 66%),
+          linear-gradient(0deg, rgb(var(--black-01-rgb) / .52) 0%, transparent 42%);
       }
 
       @include v(lg) {
         background:
-          linear-gradient(90deg, rgba(12, 13, 12, 0.58) 0%, rgba(12, 13, 12, 0.1) 38%, transparent 66%),
-          linear-gradient(0deg, rgba(12, 13, 12, 0.52) 0%, transparent 42%);
+          linear-gradient(90deg, rgb(var(--black-01-rgb) / .58) 0%, rgb(var(--black-01-rgb) / .1) 38%, transparent 66%),
+          linear-gradient(0deg, rgb(var(--black-01-rgb) / .52) 0%, transparent 42%);
       }
     }
 
     &::after {
-      box-shadow: inset 0 0 0 1px rgba(255, 232, 214, 0.1);
+      box-shadow: inset 0 0 0 1px rgb(var(--cream-06-rgb) / .1);
     }
 
     .Hero__Intro__Cover {
@@ -125,10 +122,13 @@
     }
 
     /*
-     * Sits above the shader canvas, which is z-index 2 inside this same box. The wrapper's
-     * ::before gradient stays — it darkens the edge the copy is anchored to — and this covers the
-     * middle, where the gradient has already faded to nothing and the headline still has to be
-     * read over whatever the photograph is doing there.
+     * Sits above the shader canvas, which is z-index 2 inside this same box, and above the still
+     * underneath it — so both get it and the headline reads the same either way.
+     *
+     * Back at every size. It came off the wide layout while the shader was rendering the
+     * photograph a transfer function too dark, where this scrim on top of that was what made the
+     * image look crushed. With the colour space fixed the picture is the file again, and a flat
+     * scrim over it is a deliberate 40% rather than an accident stacked on a bug.
      */
     .Hero__Intro__Cover__Overlay {
       position: absolute;
@@ -136,13 +136,28 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgb(var(--black-01-rgb) / .4);
       pointer-events: none;
     }
 
     .homeHeroShader {
       overflow: hidden;
-      background: #171816;
+      background: var(--ink-01);
+
+      /*
+       * The grade, on the wrapper — so the canvas and the still underneath it get exactly one
+       * identical treatment and cannot drift apart.
+       *
+       * It used to sit on the fallback's `img` alone. The shader canvas got nothing, so the two
+       * were never the same picture: the still was 20% brighter and slightly desaturated, the
+       * shader was the file as authored, and the swap between them read as the shader having
+       * cranked the contrast and saturation. Nothing in the shader touches colour — its own
+       * comment says so, and both the texture and the renderer are correctly tagged sRGB.
+       *
+       * On the wrapper it applies once to whichever of the two is visible, so the only difference
+       * left between them is the animation, which is the point of having a shader at all.
+       */
+      filter: brightness(1.2) saturate(0.96) contrast(0.98);
 
       canvas {
         z-index: 2;
@@ -172,7 +187,8 @@
       img {
         object-fit: cover;
         object-position: center 44%;
-        filter: brightness(1.2) saturate(0.96) contrast(0.98);
+        /* The grade moved up to `.homeHeroShader`, so it lands on the canvas too. Left here it
+           would be applied twice to the still and not at all to the shader. */
       }
     }
 
@@ -192,9 +208,20 @@
     grid-template-columns: max-content 1fr max-content;
     align-items: center;
     gap: 1rem;
-    color: rgba(255, 232, 214, 0.62);
+    color: rgb(var(--cream-06-rgb) / .62);
     font-family: "Sansation-Regular";
-    font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+    /*
+     * Was clamp(0.75rem, 0.64vw, 0.75rem) — min equal to max, so the middle term never
+     * decided anything and the label was a constant 12px wearing a clamp's clothes.
+     *
+     * The replacement is the page's ONE rail step. The same uppercase, 0.12em-tracked label
+     * runs across the hero (here and at the footer rail), the e-shop intro, the carousel,
+     * Kolekce and Kurzy — six sections down one page. Retuned section by section it came out
+     * 12 / 13.12 / 13.76 / 14px at 1920, which is four sizes for one label. Live 1263…1474px,
+     * the middle of the range people actually use; the 0.75rem floor is the readability line
+     * this label cannot go under, and above 1921 the root ramp lifts the ceiling.
+     */
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -234,7 +261,7 @@
 
     .line {
       height: 1px;
-      background: rgba(255, 232, 214, 0.25);
+      background: rgb(var(--cream-06-rgb) / .25);
       transform-origin: left center;
     }
   }
@@ -264,18 +291,49 @@
     width: auto;
     z-index: 5;
 
-    color: #ffe8d6;
+    color: var(--cream-06);
     pointer-events: none;
     will-change: transform, opacity;
 
+    /*
+     * The frame, minus the two bands that are already spoken for.
+     *
+     * The lockup used to be `top: 50%` against the whole frame, so its clearance from the
+     * topline was whatever its own height happened to leave: 25px at 1920x1080, and an
+     * overlap at 1366x768 and 1220x660. Vertical padding on this box cannot fix that on its
+     * own — an absolutely positioned child is laid out against the *padding* box, so padding
+     * here would move neither the lockup nor the lede by a single pixel. So the header
+     * becomes a column and the lockup joins the flow (below); then the padding is the band
+     * the lockup is centred in, and the topline and the footer rail are outside it by
+     * construction rather than by luck.
+     *
+     * The lede stays absolute and therefore stays exactly where it was — it is positioned
+     * against the padding box, which is still the full frame.
+     *
+     * padding-top: 11vh crosses 7rem at 1018px tall and 8.5rem at 1236px.
+     * padding-bottom: 7vh crosses 4rem at 914px and 5.5rem at 1257px.
+     * Measured clearance between the topline's last row and the top of the lockup: 22px at
+     * 1220x660, 20px at 1366x768, 20px at 1512x945, 17px at 1920x1080, 20px at 2552x1351.
+     * It is a floor, not an average — see the note on `margin-block` at the lockup.
+     */
     @include h(sm) {
+      display: flex;
       inset: 0 calc(5 * var(--fvw));
       width: revert;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: clamp(7rem, 11vh, 8.5rem);
+      padding-bottom: clamp(4rem, 7vh, 5.5rem);
     }
 
     @include v(lg) {
+      display: flex;
       inset: 0 calc(5 * var(--fvw));
       width: revert;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: clamp(7rem, 11vh, 8.5rem);
+      padding-bottom: clamp(4rem, 7vh, 5.5rem);
     }
 
     @include phl-h {
@@ -297,13 +355,52 @@
     align-items: flex-start;
     /* Slightly above true centre — optically centred once the eyebrow's rule is counted. */
     transform: translateY(-54%);
+
+    /*
+     * In the flow of the header's padded band. `margin-block: auto` centres it while there is
+     * room and collapses to zero when there is not, which puts the block at the top of the
+     * band rather than overflowing it symmetrically the way `justify-content: center` would —
+     * that is the floor the old `top: 50%` never had.
+     *
+     * The optical nudge is gone rather than carried over, and that is deliberate. `-54%` was
+     * `-50%` centring plus `-4%` of the lockup's *own height*, so the taller the lockup grew
+     * the further it climbed: measured at 1920 it was a 986px block being lifted 39px, which
+     * put it back over the topline and made the floor above worthless. A percentage of an
+     * unbounded quantity cannot be a correction. It also is not needed any more — the band is
+     * now cut against the topline and the rail, and the picture behind it is inset by the same
+     * kind of clamps, so the two centres land together: at 1920 the band centres at y=562 and
+     * `.Hero__Intro__Image__wrapper` centres at y=559.
+     *
+     * The width cap is derived from the lede rather than guessed against it: the lockup gets
+     * whatever the frame has left once the counterweight's own column and a gutter are taken
+     * out. That is what the lt-h stop used to approximate with `min(52rem, 60%)` — a width
+     * decision keyed off the viewport's *height*, which is why it was wrong even when the
+     * number was right. At 1920 this still resolves to the 64rem the design is drawn at.
+     */
+    @include h(sm) {
+      position: static;
+      max-width: min(64rem, calc(100% - clamp(22rem, 30vw, 26rem) - clamp(2rem, 4vw, 4rem)));
+      margin-block: auto;
+      transform: none;
+    }
+
+    @include v(lg) {
+      position: static;
+      max-width: min(64rem, calc(100% - clamp(22rem, 30vw, 26rem) - clamp(2rem, 4vw, 4rem)));
+      margin-block: auto;
+      transform: none;
+    }
   }
 
   .Hero__Intro__Eyebrow {
-    margin-bottom: clamp(0.8rem, 1.5vh, 1.3rem);
-    padding-bottom: 0.8rem;
-    border-bottom: 1px solid rgba(255, 232, 214, 0.32);
-    color: #f1e3d6;
+    /* Floors dropped to what lt-h used to write (0.7rem / 0.55rem) so the short laptop lands
+       on them by itself: 1.5vh reaches 0.7rem at 747px tall, 1.1vh reaches 0.55rem at 800px.
+       The font-size is deliberately NOT part of this — lt-h set it to 0.7rem, which is 11.2px
+       and under the 12px legibility floor the rig flags. 0.75rem holds everywhere. */
+    margin-bottom: clamp(0.7rem, 1.5vh, 1.3rem);
+    padding-bottom: clamp(0.55rem, 1.1vh, 0.8rem);
+    border-bottom: 1px solid rgb(var(--cream-06-rgb) / .32);
+    color: var(--cream-05);
     font-family: "Sansation-Regular", sans-serif;
     font-size: 0.75rem;
     letter-spacing: 0.12em;
@@ -313,6 +410,17 @@
   .Hero__Intro__Headline {
     display: flex;
     margin: 0;
+    /*
+     * The headline may not size the composition. As a flex item its fit-content width floors
+     * at its own min-content, and one glued 22-character word (see the note in index.tsx —
+     * the HTML→text conversion drops the separator between elements) put that min-content at
+     * ~1250px inside a lockup capped at 1024px, so the type ran across the whole photograph
+     * at every resolution. `overflow-wrap: anywhere` is the term that actually lowers
+     * min-content — `break-word` does not — and the two caps stop it climbing back out.
+     */
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     flex-direction: column;
     color: inherit;
     font-family: "Sentient-Regular", serif;
@@ -320,7 +428,7 @@
     font-weight: 400;
     letter-spacing: -0.045em;
     line-height: 0.92;
-    text-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+    text-shadow: 0 12px 36px rgb(var(--black-01-rgb) / .34);
 
     /*
      * Sized off whichever axis is scarcer. `6.6vw` alone knew nothing about height, so a
@@ -345,22 +453,23 @@
     }
   }
 
-  .Hero__Intro__Headline .precise-blended-text {
-    display: block;
-  }
-
-  /* The staircase: each line starts further right, so the block reads as a descent. */
-  .Hero__Intro__Headline .precise-blended-text:nth-child(2) {
+  /*
+   * The staircase: each line starts further right, so the block reads as a descent.
+   *
+   * Addressed to `.maskedLine`, which is what the markup renders. These three rules used to
+   * name `.precise-blended-text` and `.precise-char` — a per-character split this component
+   * stopped using when the masked-line reveal replaced it (see MaskedLine in index.tsx). They
+   * matched zero elements, so the staircase the design describes has never once been drawn.
+   * `.Hero__Intro__Signature` carries the same clamp as the third step and so keeps sitting
+   * under the last line's start; the pair is written twice on purpose only because the
+   * signature is a sibling of the headline, not a line inside it.
+   */
+  .Hero__Intro__Headline .maskedLine:nth-child(2) {
     margin-left: clamp(2rem, 5.5vw, 6rem);
   }
 
-  .Hero__Intro__Headline .precise-blended-text:nth-child(3) {
+  .Hero__Intro__Headline .maskedLine:nth-child(3) {
     margin-left: clamp(4rem, 11vw, 12rem);
-  }
-
-  .Hero__Intro__Headline .precise-char {
-    display: inline-block;
-    color: inherit;
   }
 
   /* Hangs off the end of the last headline line rather than under its start. */
@@ -368,7 +477,7 @@
   .Hero__Intro__Signature {
     margin: 0;
     margin-left: clamp(4rem, 11vw, 12rem);
-    color: #cbc69d;
+    color: var(--sage-02);
     font-family: "ooohBaby-Regular", cursive;
     font-size: clamp(1.6rem, 6vw, 2.2rem);
     font-weight: 300;
@@ -389,14 +498,19 @@
   .Hero__Intro__Lede {
     position: absolute;
     right: 0;
+    /* 8vh is 61.4px at 768px tall, and the lt-h stop wrote 57.6px against it — a 3.8px
+       override, which is no override at all. It is gone; the base clamp already lands there. */
     bottom: clamp(3.5rem, 8vh, 6.5rem);
     display: flex;
-    max-width: 26rem;
+    /* 30vw crosses 22rem at 1173px wide and 26rem at 1387px, so the column narrows across the
+       laptop range instead of stepping from 26rem to 22rem at a height boundary. */
+    max-width: clamp(22rem, 30vw, 26rem);
     flex-direction: column;
     align-items: flex-end;
-    padding-top: clamp(1rem, 2vh, 1.6rem);
-    border-top: 1px solid rgba(255, 232, 214, 0.32);
-    gap: clamp(1rem, 1.8vh, 1.5rem);
+    /* Floors dropped to lt-h's 0.85rem: 2vh reaches it at 680px tall, 1.8vh at 756px. */
+    padding-top: clamp(0.85rem, 2vh, 1.6rem);
+    border-top: 1px solid rgb(var(--cream-06-rgb) / .32);
+    gap: clamp(0.85rem, 1.8vh, 1.5rem);
     text-align: right;
     will-change: transform, opacity;
   }
@@ -406,32 +520,39 @@
      the label sat cream on a cream fill and never turned over. */
   .Hero__Intro__Lede > p {
     margin: 0;
-    color: #f4ece4;
+    color: var(--cream-07);
     font-family: "Sentient-Light", serif;
     max-width: 28rem;
     font-size: 1rem;
-    line-height: 1.45;
+    line-height: 1.42;
 
+    /* Sized off whichever axis is scarcer, the same trick the headline already uses. 1vw alone
+       knew nothing about height, so lt-h had to snap this to 0.95rem below 800px tall; the vh
+       term reaches the 0.95rem floor at 894px on its own and the step is gone. */
     @include h(sm) {
       max-width: none;
-      font-size: clamp(1rem, 1vw, 1.16rem);
+      font-size: clamp(0.95rem, min(1vw, 1.7vh), 1.16rem);
     }
 
     @include v(lg) {
       max-width: none;
-      font-size: clamp(1rem, 1vw, 1.16rem);
+      font-size: clamp(0.95rem, min(1vw, 1.7vh), 1.16rem);
     }
   }
 
   .Hero__Intro__Header__Cta {
     display: flex;
-    min-height: 3.25rem;
+    /* 4.8vh crosses 2.7rem at 900px tall and 3.25rem at 1083px; 4.6vh crosses 2.6rem at 904px
+       and 3.1rem at 1078px. The measured 52px → 43.2px step at the 800px boundary becomes one
+       curve. min-width is the horizontal half of the same pair — 13vw crosses 10rem at 1231px
+       wide and 11rem at 1354px — and belongs on width, not on the height stop that carried it. */
+    min-height: clamp(2.7rem, 4.8vh, 3.25rem);
     justify-content: flex-start;
 
     > a,
     > button {
-      min-width: 11rem;
-      min-height: 3.1rem;
+      min-width: clamp(10rem, 13.333vw, 15rem);
+      min-height: clamp(2.6rem, 4.6vh, 3.1rem);
     }
   }
 
@@ -440,30 +561,34 @@
   .Hero__Intro__FooterRail {
     position: absolute;
     right: 1.3rem;
-    bottom: 1.2rem;
+    /* One inset for three that disagreed: 1.2rem base, 1.35rem in h(sm) and v(lg), 1rem in
+       lt-h. 1.9vh reaches 1rem at 842px tall and 1.4rem at 1179px. */
+    bottom: clamp(1rem, 1.9vh, 1.4rem);
     left: 1.3rem;
     z-index: 5;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 2rem;
-    color: rgba(255, 232, 214, 0.62);
+    color: rgb(var(--cream-06-rgb) / .62);
     font-family: "Sansation-Regular";
-    font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+    /* Same dead clamp as the topline, and the same replacement — the two labels are one
+       type size and have to stay one. See the note at .Hero__Intro__Topline. */
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     will-change: opacity;
 
+    /* Width only. The three-up rail is a different arrangement, which is what a breakpoint is
+       for; the height it sits at is the clamp's business. */
     @include h(sm) {
       right: calc(4.7 * var(--fvw));
-      bottom: 1.35rem;
       left: calc(4.7 * var(--fvw));
       grid-template-columns: 1fr auto 1fr;
     }
 
     @include v(lg) {
       right: calc(4.7 * var(--fvw));
-      bottom: 1.35rem;
       left: calc(4.7 * var(--fvw));
       grid-template-columns: 1fr auto 1fr;
     }
@@ -478,6 +603,13 @@
     }
   }
 
+  /*
+   * Pás oznámení: dovolená a novinka, dokola.
+   *
+   * Dřív tu byl jeden statický odstavec. Teď je to smyčka, a proto má tvar:
+   * tlačítko stojí mimo posuvnou část, protože cíl, který ujíždí, se nedá
+   * trefit — zvlášť na dotyku.
+   */
   .Hero__Intro__Updates {
     overflow: hidden;
 
@@ -487,6 +619,125 @@
       font: inherit;
       letter-spacing: inherit;
     }
+  }
+
+  .Hero__Intro__Updates__Rail {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: clamp(0.6rem, 1.1vw, 1rem);
+  }
+
+  /*
+   * Tlačítko je `WebButton` — tentýž komponent, který nese pilulky na kurzech, takže i tady
+   * najede stejná výplň zpod popisku a stejná šipka. Nekreslí se tu znovu; tenhle blok jen
+   * mění MÍRU, ne vzhled.
+   *
+   * Menší na výšku, protože pás je jednořádkový: plná pilulka (44–56px) by ho rozrazila.
+   * Popisek a nejmenší šířka jdou přes proměnné, které si `WebButton` vystavuje sám — na
+   * `.slider` uvnitř jeho CSS modulu se odsud dosáhnout nedá.
+   *
+   * Selektor je dvojtřídní (přes `__Rail`) schválně: `WebButton` deklaruje ty proměnné na
+   * `.button`, což je jedna třída, a při shodné váze by rozhodovalo pořadí načtení stylů.
+   * Stejnou opatrnost si u téhož tlačítka poznamenaly i kurzy.
+   */
+  .Hero__Intro__Updates__Rail .Hero__Intro__Updates__Cta {
+    --web-button-label-size: clamp(0.8125rem, 0.9vw, 1rem);
+    /*
+     * Svisle nula, vodorovně plná míra.
+     *
+     * Nula na obou osách popisek ustřihla: `WebButton` má `overflow: hidden` (kvůli
+     * najíždějící výplni), takže text bez vodorovného odsazení dolehl na okraje pilulky a
+     * konce písmen zmizely pod obrysem. Výšku sráží svislý člen, ne vodorovný — ten tu tedy
+     * zůstává v původní hodnotě komponentu.
+     */
+    --web-button-label-padding: 0 clamp(0.9rem, 1.3vw, 1.6rem);
+    --web-button-min-width: clamp(5rem, 6vw, 6.5rem);
+    /* Pás leží na tmavé fotce, takže obrys i popisek jsou světlé. */
+    --web-button-ink: var(--cream-08);
+    --web-button-fill: var(--cream-08);
+
+    flex: 0 0 auto;
+    height: clamp(2rem, 3.2vh, 2.4rem);
+
+    /* Dotyková podlaha 44px platí dál — tlačítko se smí zmenšit očím, ne prstu. */
+    @include touch {
+      height: 2.75rem;
+    }
+  }
+
+  /* Maska. Bez `min-width: 0` by ji obsah roztlačil a pás by rozšířil stránku —
+     flexový potomek se implicitně nesmršťuje pod svůj obsah. */
+  .Hero__Intro__Updates__Viewport {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 92%, transparent);
+  }
+
+  .Hero__Intro__Updates__Track {
+    display: flex;
+    width: max-content;
+    /*
+     * −50 %, protože obsah je v DOMu dvakrát. Ve chvíli, kdy první kopie odjede
+     * přesně celá, stojí druhá na jejím místě, takže návrat na nulu je tentýž
+     * obraz a skok není vidět.
+     *
+     * Doba běhu roste s délkou textu, ne s obrazovkou: kdyby byla pevná, dlouhé
+     * oznámení by uhánělo a krátké by se plazilo. `--notices-speed` nastaví
+     * komponenta, když bude potřeba; 28s je klidné tempo pro dvě věty.
+     */
+    animation: heroNoticesLoop var(--notices-speed, 28s) linear infinite;
+
+    @include reduced-motion {
+      animation: none;
+    }
+
+    /* Slabý stroj má na hlavním vlákně důležitější práci než nekonečnou smyčku. */
+    @include reduced-fx {
+      animation: none;
+    }
+  }
+
+  .Hero__Intro__Updates__Line {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: clamp(1.5rem, 3vw, 3rem);
+    padding-right: clamp(1.5rem, 3vw, 3rem);
+    white-space: nowrap;
+  }
+
+  .Hero__Intro__Updates__Item {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(0.4rem, 0.8vw, 0.6rem);
+  }
+
+  /* Popisek nese, o co jde, a odlišuje dovolenou od novinky — dovolená je
+     provozní zpráva, novinka pozvánka. */
+  .Hero__Intro__Updates__Kind {
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    background: rgb(var(--ink-05-rgb) / 0.08);
+    font-weight: 600;
+
+    &[data-kind="vacation"] {
+      background: rgb(var(--clay-24-rgb, var(--ink-05-rgb)) / 0.16);
+    }
+  }
+
+  /* Den návratu. Tišší než vzkaz — je to údaj, ne sdělení; `tabular-nums`
+     drží číslice v jedné šířce, aby datum v jedoucím pásu nepulzovalo. */
+  .Hero__Intro__Updates__Date {
+    opacity: 0.72;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  @keyframes heroNoticesLoop {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
   }
 
   .Hero__Intro__ScrollCue {
@@ -500,13 +751,13 @@
       width: clamp(3.5rem, 5vw, 6rem);
       height: 1px;
       overflow: hidden;
-      background: rgba(255, 232, 214, 0.2);
+      background: rgb(var(--cream-06-rgb) / .2);
 
       &::after {
         content: "";
         position: absolute;
         inset: 0;
-        background: #cbc69d;
+        background: var(--sage-02);
         transform: translateX(-100%);
         animation: heroRailTravel 3.4s cubic-bezier(0.76, 0, 0.24, 1) infinite;
       }
@@ -532,7 +783,7 @@
       width: 1.9rem;
       height: 1.9rem;
       place-items: center;
-      border: 1px solid rgba(255, 232, 214, 0.28);
+      border: 1px solid rgb(var(--cream-06-rgb) / .28);
       border-radius: 50%;
     }
   }
@@ -543,84 +794,42 @@
 }
 
 /*
- * Laptops with a short viewport — 1280x720, 1366x768, 1220x660 — measured after the browser
- * takes its share. Chrome's tab strip, omnibox and bookmarks bar cost ~120px, so a 1280x720
- * screen is a 1280x600 viewport and a 1366x768 one is 1366x625.
+ * Laptops with a short viewport — 1280x720, 1366x768, 1220x660 — used to need a stop of their
+ * own here. They no longer do, and the block is gone.
  *
- * The hero was a fixed 688px composition on every one of them. `min-height: 43rem` set that
- * floor, and because each vh clamp here (10vh, 6.5vh, 8vh) sits below its own rem floor until
- * the viewport passes ~928px tall, nothing else scaled with height either — the measured
- * geometry at 1280x600 and 1280x540 was identical to the pixel. Everything past the 688th row
- * was simply cut off: the CTA by 32px and the footer rail by 66px at 600px, 92px and 126px at
- * 540px. The hero read as if it had no call to action.
+ * What it was for: the hero was a fixed 688px composition on every one of them. `min-height:
+ * 43rem` set that floor, and because each vh clamp in this file (10vh, 6.5vh, 8vh) sat below
+ * its own rem floor until the viewport passed ~928px tall, nothing else scaled with height
+ * either — the measured geometry at 1280x600 and 1280x540 was identical to the pixel, and
+ * everything past the 688th row was cut off. The stop answered that with fourteen hand-written
+ * sizes, every one of them the same design at a smaller scale.
  *
- * So this stop drops the floor and re-cuts the vertical rhythm against height rather than width.
- * The composition itself is unchanged — heavy lockup left, lede and action low right — it is the
- * same design at a scale that fits. The lockup is also held to 60% of the frame so it clears the
- * lede's column outright, which is what keeps the two masses apart once there is no slack left
- * to give them.
+ * Each of those fourteen is now the floor of a clamp whose middle term is `vh`, so a short
+ * viewport reaches it by arithmetic instead of by media query — that is the whole substitution:
+ *
+ *   min-height          43rem / 0            → min(43rem, 100svh)
+ *   image wrapper       3.4rem bottom        → clamp(3.4rem, 6.5vh, 5.5rem)
+ *   eyebrow margin      0.7rem               → clamp(0.7rem, 1.5vh, 1.3rem)
+ *   eyebrow padding     0.55rem              → clamp(0.55rem, 1.1vh, 0.8rem)
+ *   lede padding / gap  0.85rem              → clamp(0.85rem, 2vh|1.8vh, 1.6rem|1.5rem)
+ *   lede paragraph      0.95rem              → clamp(0.95rem, min(1vw, 1.7vh), 1.16rem)
+ *   CTA heights         2.7rem / 2.6rem      → clamp(…, 4.8vh|4.6vh, …)
+ *   footer rail bottom  1rem                 → clamp(1rem, 1.9vh, 1.4rem)
+ *
+ * Three of the fourteen were not sizes at all and did not come back:
+ *
+ *   `font-size: 0.7rem` on the eyebrow was 11.2px, under the 12px legibility floor, and it was
+ *   this stop that wrote it — the base 0.75rem is fine at every height.
+ *
+ *   `bottom: 3.6rem` on the lede was 57.6px against a base clamp that already resolves to
+ *   61.4px at 768px tall. A 3.8px override is not an override.
+ *
+ *   `max-width: min(52rem, 60%)` and `translateY(-58%)` on the lockup were both compensating
+ *   for the absence of a band to sit in. The lockup is now centred in the header's padded
+ *   content box with `margin-block: auto`, and its width is derived from the lede's column,
+ *   so neither the horizontal clearance nor the vertical one depends on the viewport's height
+ *   any more — which is right, because one of them never should have.
  */
-@include lt-h {
-  .Hero__Intro {
-    /* The 43rem floor is the whole bug: it outranks 100svh on any viewport shorter than 688px. */
-    min-height: 0;
-
-    /* The top inset is left as the wide composition sets it. The navbar is a fixed 48px pill
-       ending at y=59, and the topline's own clamp floor puts it at y=72 — already clear. Pulling
-       either upward to buy height hides the topline behind the navbar, which is what the first
-       attempt at this stop did. Only the bottom was ever the problem. */
-    .Hero__Intro__Image__wrapper {
-      inset: clamp(5.8rem, 10vh, 7.5rem) calc(1.4 * var(--fvw)) 3.4rem;
-    }
-
-    .Hero__Intro__Lockup {
-      /* 60% rather than 72%: the lede's column starts at 75% of the frame, so this guarantees
-         horizontal clearance between the two masses instead of relying on vertical luck. */
-      max-width: min(52rem, 60%);
-      transform: translateY(-58%);
-    }
-
-    .Hero__Intro__Eyebrow {
-      margin-bottom: 0.7rem;
-      padding-bottom: 0.55rem;
-      font-size: 0.7rem;
-    }
-
-    /* The headline and signature are no longer overridden here. The `min(6.6vw, 11vh)` rule
-       above already resolves to ~62px at 562px tall and grows with the height, which is what
-       this block used to fake with a fixed ceiling — and it stays continuous across the 800px
-       boundary where this stop ends. */
-
-    .Hero__Intro__Lede {
-      /* Clears the footer rail, which sits ~46px off the bottom edge at this height. */
-      bottom: 3.6rem;
-      max-width: 22rem;
-      padding-top: 0.85rem;
-      gap: 0.85rem;
-    }
-
-    .Hero__Intro__Lede > p {
-      max-width: none;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
-    .Hero__Intro__Header__Cta {
-      min-height: 2.7rem;
-
-      > a,
-      > button {
-        min-width: 10rem;
-        min-height: 2.6rem;
-      }
-    }
-
-    .Hero__Intro__FooterRail {
-      bottom: 1rem;
-    }
-  }
-}
-
 
 @keyframes heroRailTravel {
   0%,
@@ -684,6 +893,10 @@
       flex-direction: column;
       align-items: flex-start;
       gap: $gap;
+      /* The wide composition pads this box to carve the band its lockup is centred in. A
+         landscape phone matches h(sm) on width alone, and here the header is bottom-anchored
+         with an auto height, so that padding would just push the copy 64px up off the floor. */
+      padding: 0;
     }
 
     /* In flow. The `top: 50%` / `translateY(-54%)` that optically centres it against the picture
@@ -691,6 +904,8 @@
     .Hero__Intro__Lockup {
       position: static;
       max-width: 100%;
+      /* Same reason as the padding above: nothing to centre in, so no auto margins. */
+      margin-block: 0;
       transform: none;
     }
 

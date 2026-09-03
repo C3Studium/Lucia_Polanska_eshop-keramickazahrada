@@ -133,11 +133,16 @@ export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 export const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM;
 
 /**
- * (optional) Sanity API Key - for CMS tool for the project
+ * Adresa redakčního systému — Studio ValeCMS ve storefrontu.
+ *
+ * Nahradilo Sanity. Backend do CMS nesynchronizuje nic a nemá tam přístup:
+ * produkty, ceny, sklad, objednávky, kurzy i recenze drží Medusa, redakční
+ * texty a fotky drží CMS, a ta hranice je celý důvod, proč se sem po Sanity
+ * vrátila jediná proměnná místo tří. Slouží jen k odkazu z administrace.
+ *
+ * Bez ní se položka v menu nezobrazí — viz `src/admin/routes/obsah`.
  */
-export const SANITY_API_TOKEN = process.env.SANITY_API_TOKEN;
-export const SANITY_PROJECT_ID = process.env.SANITY_PROJECT_ID;
-export const SANITY_STUDIO_URL = process.env.SANITY_STUDIO_URL;
+export const CMS_STUDIO_URL = process.env.CMS_STUDIO_URL;
 
 /**
  * (optional) Segment Writing API Key - For tracking user events and important data for the commerce
@@ -242,3 +247,15 @@ export const IDOKLAD_NUMERIC_SEQUENCE_ID = process.env.IDOKLAD_NUMERIC_SEQUENCE_
  * place so the admin widget labels invoices as going to the test agenda.
  */
 export const IDOKLAD_TEST_MODE = process.env.IDOKLAD_TEST_MODE
+
+/**
+ * Shared secret for the „Otevřít web jako admin" handover
+ * (`lib/admin-bridge-token.ts`).
+ *
+ * Must hold the SAME value in the storefront's own `ADMIN_BRIDGE_SECRET` —
+ * one side signs, the other verifies. Unset on either side means the bridge
+ * is simply off: the admin endpoint answers 503 and the storefront trusts no
+ * token, which is the correct failure. Never falls back to a default; a
+ * shipped default secret would let anyone mint an admin bar for themselves.
+ */
+export const ADMIN_BRIDGE_SECRET = process.env.ADMIN_BRIDGE_SECRET

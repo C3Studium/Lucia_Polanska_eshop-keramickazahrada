@@ -9,14 +9,15 @@ import { isManual } from "@lib/constants"
 import SkeletonCardDetails from "@modules/skeletons/components/skeleton-card-details"
 import PaymentTest from "../payment-test"
 import styles from "./style.module.scss"
+import { alpha, palette } from "styles/palette.generated"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
 const optionVariants: Variants = {
-  rest: { color: "#20211c" },
-  hover: { color: "#20211c" },
-  selected: { color: "#20211c" },
-  disabled: { color: "rgba(32, 33, 28, .38)" },
+  rest: { color: palette.ink05 },
+  hover: { color: palette.ink05 },
+  selected: { color: palette.ink05 },
+  disabled: { color: alpha("ink05", .38) },
 }
 
 const surfaceVariants: Variants = {
@@ -126,12 +127,12 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                 animate={selected ? "selected" : "rest"}
                 variants={{
                   rest: {
-                    borderColor: "rgba(32, 33, 28, .5)",
-                    backgroundColor: "rgba(255, 232, 214, 0)",
+                    borderColor: alpha("ink05", .5),
+                    backgroundColor: alpha("ambientShowcase1", 0),
                   },
                   selected: {
-                    borderColor: "#20211c",
-                    backgroundColor: "rgba(187, 183, 136, .2)",
+                    borderColor: palette.ink05,
+                    backgroundColor: alpha("sage01", .2),
                   },
                 }}
                 transition={transition3}
@@ -167,12 +168,12 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
                 animate={
                   selected
                     ? {
-                        borderColor: "rgba(32, 33, 28, .58)",
-                        backgroundColor: "rgba(255, 232, 214, .5)",
+                        borderColor: alpha("ink05", .58),
+                        backgroundColor: alpha("ambientShowcase1", .5),
                       }
                     : {
-                        borderColor: "rgba(32, 33, 28, .18)",
-                        backgroundColor: "rgba(255, 232, 214, 0)",
+                        borderColor: alpha("ink05", .18),
+                        backgroundColor: alpha("ambientShowcase1", 0),
                       }
                 }
                 transition={transition4}

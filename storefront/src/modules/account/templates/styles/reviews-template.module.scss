@@ -1,16 +1,34 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
+// Geometrie karty na jednom místě. Stopa a to, co v ní stojí, sahají po TÉMŽE výrazu —
+// dřív se rozešly (kolečko šipky 34px stálo v 32px stopě) a náhled výrobku měl stopu,
+// ale `display: none`, takže se šipka autoplacla do stopy po obrázku a poslední stopa
+// zůstala prázdná. 112 + 32 + 3 mezery braly z 419px karty 262px.
+$card-index: clamp(1.6rem, 2.1vw, 2.4rem);
+$card-arrow: clamp(2rem, 2.6vw, 2.9rem);
+$card-gap: clamp(1rem, 2.2vw, 1.9rem);
+$card-photo: clamp(6rem, 12vw, 9rem);
+// Strop náhledu na úvodní kartě je dopočítaný, ne odhadnutý: na 1200 má úvodní karta
+// 638.6px uvnitř paddingu, index 25.6 + šipka 32 + tři mezery 79.2 = 136.8, takže na
+// text ≥ 22rem (352px) zbývá pro náhled nejvýš 149.8px. 11.5vw dává na 1200 138px.
+$card-photo-lead: clamp(8.5rem, 11.5vw, 15.5rem);
+// Podlahy sedí na dnešní hodnotě (12px, 15px), aby na 1200–1300 nic nezmenšily;
+// prostřední člen je dopočítaný na živé pásmo 1330–1460.
+$micro: clamp(0.75rem, 1vw, 0.875rem);
+$star: clamp(0.94rem, 1.12vw, 1.05rem);
+
 .accountReviewsRoot {
   display: grid;
-  gap: clamp(40px, 6vh, 72px);
+  gap: clamp(2.5rem, 6vh, 4.5rem);
   width: 100%;
-  color: #20211d;
+  color: var(--ink-05);
 }
 
 .accountReviewsHeader {
   display: grid;
-  gap: 22px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  gap: clamp(1.1rem, 2.4vh, 1.9rem);
+  padding-bottom: clamp(1.4rem, 3.1vh, 2.6rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountReviewsHeader > p:first-child,
@@ -18,8 +36,8 @@
 .accountReviewIndex,
 .accountReviewProduct {
   margin: 0;
-  color: rgba(32, 33, 29, 0.5);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: #{$micro}/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -27,7 +45,7 @@
 .accountReviewsHeading {
   display: grid;
   justify-content: space-between;
-  gap: 24px;
+  gap: clamp(0.8rem, 1.6vh, 1.3rem) clamp(1.1rem, 1.8vw, 2rem);
   align-items: end;
   grid-template-columns: 1fr;
 
@@ -49,7 +67,7 @@
 .accountReviewsHeading h1 em {
   display: block;
   margin-left: 16%;
-  color: #7e896a;
+  color: var(--olive-19);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
@@ -57,22 +75,24 @@
 .accountReviewsDescription {
   max-width: 38rem;
   margin: 0 0 0 auto;
-  color: rgba(32, 33, 29, 0.62);
-  font: clamp(15px, 1vw, 18px) / 1.55 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  // 1vw byl živý až od 1500 do 1800, takže na celém pásmu notebooků stál na podlaze
+  // 15px vedle h1, které rostlo dál. 1.15vw je živý 1308–1572.
+  font: clamp(0.94rem, 1.15vw, 1.13rem) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountReviewsBody {
   display: grid;
-  gap: 24px;
+  gap: clamp(1.2rem, 2.6vh, 2.1rem);
 }
 
 .accountPreviewNotice {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: clamp(0.7rem, 1.4vh, 1.1rem) clamp(1.1rem, 1.8vw, 2rem);
   align-items: baseline;
-  padding: 16px 0;
-  border-block: 1px solid rgba(126, 137, 106, 0.35);
+  padding: clamp(0.8rem, 1.7vh, 1.4rem) 0;
+  border-block: 1px solid rgb(var(--olive-19-rgb) / .35);
 
   @include v(md) {
     grid-template-columns: auto minmax(0, 1fr);
@@ -84,16 +104,16 @@
 }
 
 .accountPreviewNotice span {
-  color: #647052;
-  font: 12px/1.2 "Sansation-Bold", sans-serif;
+  color: var(--olive-11);
+  font: #{$micro}/1.2 "Sansation-Bold", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .accountPreviewNotice p {
   margin: 0;
-  color: rgba(32, 33, 29, 0.65);
-  font-size: 14px;
+  color: rgb(var(--ink-05-rgb) / .65);
+  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
 }
 
 .accountReviewsList {
@@ -101,8 +121,8 @@
   grid-template-columns: 1fr;
   margin: 0;
   padding: 0;
-  border-top: 1px solid rgba(32, 33, 29, 0.22);
-  border-left: 1px solid rgba(32, 33, 29, 0.22);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .22);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .22);
   list-style: none;
 
   @include v(lg) {
@@ -116,8 +136,8 @@
 
 .accountReviewCard {
   min-width: 0;
-  border-right: 1px solid rgba(32, 33, 29, 0.22);
-  border-bottom: 1px solid rgba(32, 33, 29, 0.22);
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .22);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .22);
 }
 
 .accountReviewSurface,
@@ -137,48 +157,72 @@
   }
 }
 
+// Základ: pořadové číslo · text · šipka. Náhled výrobku tu stopu nemá.
 .accountReviewSurfaceContent > a {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 30px;
-  gap: clamp(16px, 2.2vw, 30px);
+  grid-template-columns: $card-index minmax(0, 1fr) $card-arrow;
+  gap: $card-gap;
   align-items: start;
-  min-height: 232px;
-  padding: clamp(22px, 2.5vw, 34px);
+  // Řetěz `height: 100%` končil o patro výš (.accountReviewSurface a
+  // .accountReviewSurfaceContent ho měly, odkaz ne), takže kotva byla vysoká
+  // podle svého obsahu, ne podle řádku mřížky. Nižší karta v páru pak nechávala
+  // pod sebou mrtvý pruh a `margin-top: auto` v patičce neměl co rozdělit —
+  // naměřeno 221.5px prázdna na 2552, 83.9 na 1920, 60 na 1366, 53.7 na 1220,
+  // a hvězdy dvou sousedních karet se míjely o 58px. Není to velikost, ale
+  // dopočet výšky, proto `height`, ne clamp; `min-height` zůstává podlahou.
+  height: 100%;
+  min-height: clamp(9.5rem, 22vh, 15rem);
+  padding: clamp(1.2rem, 2.6vh, 2rem) clamp(1.4rem, 2.5vw, 2.1rem);
   color: inherit;
 
+  // DRUH: seznam je tu ještě jednosloupcový, karta drží celou šířku — náhled se vejde.
   @include v(md) {
-    grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+    grid-template-columns: $card-index minmax(0, 1fr) $card-photo $card-arrow;
   }
 
   @include h(xs) {
-    grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
+    grid-template-columns: $card-index minmax(0, 1fr) $card-photo $card-arrow;
   }
-}
 
-.accountReviewCard:first-child .accountReviewSurfaceContent > a {
-  grid-template-columns: 28px minmax(0, 1fr) 112px 32px;
-  min-height: 232px;
-
+  // DRUH: odtud má seznam dva sloupce a běžná karta se půlí. Na 1200 jí zbývá 289px
+  // uvnitř paddingu; náhled 138px by z toho vzal skoro polovinu, proto stopa mizí.
+  // Musí stát AŽ ZA v(md)/h(xs) — mixiny emitují obyčejné media query a při stejné
+  // specificitě rozhoduje pořadí v souboru.
   @include v(lg) {
-    grid-template-columns: 36px minmax(0, 1fr) minmax(180px, 250px) 34px;
-    min-height: 286px;
+    grid-template-columns: $card-index minmax(0, 1fr) $card-arrow;
   }
 
   @include h(sm) {
-    grid-template-columns: 36px minmax(0, 1fr) minmax(180px, 250px) 34px;
-    min-height: 286px;
+    grid-template-columns: $card-index minmax(0, 1fr) $card-arrow;
   }
 }
 
+// Úvodní karta zůstává i ve dvousloupcovém seznamu přes celou šířku, takže si náhled drží.
+.accountReviewCard:first-child .accountReviewSurfaceContent > a {
+  min-height: clamp(11.5rem, 27vh, 18rem);
+
+  @include v(lg) {
+    grid-template-columns: $card-index minmax(0, 1fr) $card-photo-lead $card-arrow;
+  }
+
+  @include h(sm) {
+    grid-template-columns: $card-index minmax(0, 1fr) $card-photo-lead $card-arrow;
+  }
+}
+
+// Flex, ne grid s align-content: start. V gridu `margin-top: auto` na patičce nedělalo
+// nic, takže hvězdy a datum seděly hned pod odstavcem a zbytek vyhrazené výšky
+// (na 1920 u úvodní karty asi 100px) zůstal pod nimi prázdný.
 .accountReviewCopy {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   height: 100%;
 }
 
 .accountReviewCopy h2 {
-  margin: 10px 0 8px;
+  margin: clamp(0.5rem, 1.1vh, 0.85rem) 0 clamp(0.4rem, 0.9vh, 0.7rem);
+  overflow-wrap: break-word;
   font: 400 clamp(1.65rem, 2.25vw, 2.75rem) / 0.96 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
@@ -188,8 +232,8 @@
   max-width: 37rem;
   margin: 0;
   overflow: hidden;
-  color: rgba(32, 33, 29, 0.62);
-  font: clamp(14px, 0.95vw, 16px) / 1.55 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(0.875rem, 1.1vw, 1rem) / 1.55 "Sansation-Light", sans-serif;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -197,49 +241,66 @@
 .accountReviewFooter {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 22px;
+  gap: clamp(0.55rem, 1.2vh, 0.95rem) clamp(1.1rem, 1.7vw, 1.8rem);
   align-items: center;
   margin-top: auto;
-  padding-top: 22px;
+  padding-top: clamp(1.1rem, 2.4vh, 1.9rem);
 }
 
 .accountReviewFooter time {
-  color: rgba(32, 33, 29, 0.52);
-  font-size: 13px;
+  color: rgb(var(--ink-05-rgb) / .52);
+  font-size: clamp(0.81rem, 0.98vw, 0.9rem);
 }
 
 .accountReviewStars {
   display: flex;
-  gap: 4px;
+  gap: clamp(0.2rem, 0.3vw, 0.3rem);
 }
 
 .accountReviewStars span,
 .accountReviewStars svg {
-  width: 15px;
-  height: 15px;
+  width: $star;
+  height: $star;
 }
 
 .accountReviewImage {
-  width: 112px;
-  height: 154px;
-  overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, 0.12);
-  background: rgba(255, 255, 255, 0.4);
   display: none;
-}
+  width: $card-photo;
+  height: clamp(8.5rem, 20vh, 13.5rem);
+  overflow: hidden;
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
+  background: rgb(var(--white-rgb) / .4);
 
-.accountReviewCard:first-child .accountReviewImage {
-  width: 112px;
-  height: 154px;
+  // DRUH: stopa pro náhled existuje, takže se náhled ukazuje.
+  @include v(md) {
+    display: block;
+  }
 
+  @include h(xs) {
+    display: block;
+  }
+
+  // DRUH: dvousloupcový seznam, běžná karta stopu ztratila — náhled zase mizí.
   @include v(lg) {
-    width: 100%;
-    height: 220px;
+    display: none;
   }
 
   @include h(sm) {
+    display: none;
+  }
+}
+
+// Jediné, co se tu mění, je DRUH šířky: pevná stopa → výplň stopy. Výška zůstává
+// v základním pravidle jedním clampem (dřív dvojice 154px / 220px v media query).
+.accountReviewCard:first-child .accountReviewImage {
+  @include v(lg) {
+    display: block;
     width: 100%;
-    height: 220px;
+  }
+
+  @include h(sm) {
+    display: block;
+    width: 100%;
   }
 }
 
@@ -251,22 +312,23 @@
 
 .accountReviewCard i {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: $card-arrow;
+  aspect-ratio: 1;
   place-items: center;
-  border: 1px solid #20211d;
+  border: 1px solid var(--ink-05);
   border-radius: 50%;
+  font-size: clamp(0.95rem, 1.25vw, 1.15rem);
   font-style: normal;
 }
 
 .accountReviewsEmpty {
   display: grid;
   justify-content: space-between;
-  gap: 30px;
+  gap: clamp(1rem, 2vh, 1.7rem) clamp(1.4rem, 2.4vw, 2.6rem);
   align-items: center;
-  min-height: 210px;
-  padding: 36px 0;
-  border-block: 1px solid rgba(32, 33, 29, 0.2);
+  min-height: clamp(8.5rem, 20vh, 14rem);
+  padding: clamp(1.5rem, 3.6vh, 3rem) 0;
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .2);
 
   @include v(md) {
     display: flex;
@@ -277,21 +339,32 @@
   }
 }
 
+// Inline span s line-height: 0.9 nechával odstavec nasednout na dotazníky písmen
+// (naměřeno +8.9px na 1280 až +19.1px na 2552). Blok + vlastní odsazení to rozvede.
 .accountReviewsEmpty > div > span {
+  display: block;
   font: 400 clamp(2.5rem, 4vw, 4.8rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
 .accountReviewsEmpty > div > p {
-  color: rgba(32, 33, 29, 0.62);
+  margin: clamp(0.6rem, 1.2vh, 1.1rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .62);
 }
 
 .accountReviewsAction {
-  min-width: 14rem;
   font-size: 0.9rem;
-  --premium-link-ink: #20211d;
-  --premium-link-active-ink: #f7e5d5;
-  --premium-link-border: #20211d;
-  --premium-link-fill: #20211d;
+  --premium-link-ink: var(--ink-05);
+  --premium-link-active-ink: var(--cream-06);
+  --premium-link-border: var(--ink-05);
+  --premium-link-fill: var(--ink-05);
 }
 
+// Vyšší specificita schválně: premium-action-link má na svém .root `width: 100%` se
+// stejnou specificitou jako .accountReviewsAction, takže o výsledku rozhodovalo pořadí
+// souborů v bundlu. Ve flexu se space-between z tlačítka stalo 948px široké pole (2552).
+.accountReviewsEmpty .accountReviewsAction {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: clamp(11rem, 14vw, 16rem);
+}

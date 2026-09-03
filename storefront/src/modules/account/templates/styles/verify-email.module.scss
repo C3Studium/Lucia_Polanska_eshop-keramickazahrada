@@ -124,8 +124,8 @@
   width: 100%;
   padding: clamp(7rem, 12vh, 10rem) 1.25rem 5rem;
   background:
-    radial-gradient(circle at 78% 18%, rgba(116,121,96,.18), transparent 26rem),
-    #eee8d6;
+    radial-gradient(circle at 78% 18%, rgb(var(--olive-13-rgb) / .18), transparent 26rem),
+    var(--cream-03);
 
   .ImageContainer { display: none; }
 
@@ -134,10 +134,10 @@
     height: auto;
     min-height: 520px;
     padding: clamp(2rem, 5vw, 4.5rem);
-    border-top: 1px solid rgba(33,34,34,.22);
-    border-bottom: 1px solid rgba(33,34,34,.22);
+    border-top: 1px solid rgb(var(--black-03-rgb) / .22);
+    border-bottom: 1px solid rgb(var(--black-03-rgb) / .22);
     border-radius: 0;
-    background: rgba(255,248,238,.3);
+    background: rgb(var(--cream-10-rgb) / .3);
     box-shadow: none;
 
     .title {
@@ -311,7 +311,7 @@
 
 .eyebrow {
   margin: 0 0 .9rem;
-  color: rgba(33, 34, 34, .5);
+  color: rgb(var(--black-03-rgb) / .5);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -325,7 +325,7 @@
   em {
     display: block;
     margin-left: 12%;
-    color: #778064;
+    color: var(--olive-15);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
     font-size: .76em;
     font-weight: 300;
@@ -334,7 +334,7 @@
 
 .desc {
   max-width: 27rem;
-  color: rgba(33, 34, 34, .64);
+  color: rgb(var(--black-03-rgb) / .64);
   font-size: 1rem;
   line-height: 1.5;
   text-align: left;
@@ -358,7 +358,7 @@
     width: 100%;
     min-width: 0;
     height: 48px;
-    border: 1px solid rgba(33, 34, 34, .7);
+    border: 1px solid rgb(var(--black-03-rgb) / .7);
     border-radius: 999px;
   }
 }

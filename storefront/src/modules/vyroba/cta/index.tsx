@@ -1,5 +1,9 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { button } from "@lib/util/site-copy"
+import type { CopyBlocks } from "@lib/util/site-copy"
 import Image from "next/image"
 import {
     motion,
@@ -12,7 +16,14 @@ import {
 import WebButton from "@modules/common/components/Buttons/webButton"
 
 const ease = [.22, 1, .36, 1] as const
-const titleWords = ["Takhle", "to vzniká."]
+/*
+ * Jedno slovo = jedna položka. Mezera uvnitř položky se ztratí: každý znak dostane svůj
+ * `display: inline-block` span (kvůli postupnému odkrývání) a span, ve kterém je jenom mezera,
+ * se zúží na nulu. Nadpis se proto sázel jako „Takhle tovzniká." — mezeru mezi slovy dělá
+ * `margin-left: .22em` na `.vyrobaCta__word`, ne znak.
+ *
+ * Samotné znění nadpisu je v komponentě (`titleText`) — z CMS, se zálohou v kódu.
+ */
 
 const ruleReveal: Variants = {
     hidden: { scaleX: 0 },
@@ -78,7 +89,32 @@ const fadeUp: Variants = {
     },
 }
 
-export default function VyrobaCta() {
+export default function VyrobaCta({ copy }: { copy?: CopyBlocks }) {
+    /* Sekce se odhaluje jen přes whileInView — bez tohohle by po zapnutí režimu
+       editace zůstaly anotace prázdné. Viz hook. */
+    useEditRerender()
+
+    // Vede dovnitř webu — z CMS se bere jen název, cíl `/store` drží kód.
+    const cta = button(copy, "vyroba.vyrobky")
+
+    const block = copy?.["vyroba.cta"]
+    const railLeft = block?.accent?.[0]?.trim() || "08 · Výsledek"
+    const railRight = block?.accent?.[1]?.trim() || "Ručně vytvořeno v Písku"
+    const eyebrow = block?.accent?.[2]?.trim() || "Z mých rukou k vám domů"
+    const captionLeft = block?.accent?.[3]?.trim() || "Hotový kus"
+    const captionRight = block?.accent?.[4]?.trim() || "Keramická zahrada"
+    const detailCaption = block?.accent?.[5]?.trim() || "Připraveno na cestu"
+    /* Nadpis se sází po znacích, tak se slova z CMS jen rozdělí — animace si
+       je rozporcuje stejně jako dřív ta zapsaná. */
+    const titleText = block?.title?.trim() || "Takhle to vzniká."
+    const cmsTitleWords = titleText.split(/\s+/)
+    const titleAccentText = block?.headline?.trim() || "Zbytek je na vás."
+    const actionText =
+        block?.bodyText?.trim() ||
+        "Podívejte se na keramiku, která tímhle vším prošla — ručně, pomalu a jen v malém počtu."
+    const mainPhoto = block?.gallery?.[0]
+    const detailPhoto = block?.gallery?.[1]
+
     const pointerX = useMotionValue(0)
     const pointerY = useMotionValue(0)
     const mainX = useSpring(pointerX, { stiffness: 105, damping: 25, mass: .65 })
@@ -116,9 +152,9 @@ export default function VyrobaCta() {
             onPointerLeave={resetPointer}
         >
             <header className="vyrobaCta__meta">
-                <span>08 · Výsledek</span>
+                <span {...editable(block, "accent.0")}>{railLeft}</span>
                 <motion.i variants={ruleReveal} />
-                <span>Ručně vytvořeno v Písku</span>
+                <span {...editable(block, "accent.1")}>{railRight}</span>
             </header>
 
             <div className="vyrobaCta__composition">
@@ -128,18 +164,22 @@ export default function VyrobaCta() {
                         variants={imageReveal}
                         style={{ x: mainX, y: mainY }}
                     >
-                        <motion.div className="vyrobaCta__imageScale" variants={imageScale}>
+                        <motion.div
+                            className="vyrobaCta__imageScale"
+                            variants={imageScale}
+                            {...editable(block, "gallery.0", "image")}
+                        >
                             <Image
-                                src="/assets/img/img/10.jpg"
-                                alt=""
+                                src={mainPhoto?.url ?? "/assets/img/img/10.jpg"}
+                                alt={mainPhoto?.alt ?? ""}
                                 fill
                                 sizes="(max-width: 720px) 80vw, 40vw"
                             />
                         </motion.div>
                         <figcaption>
-                            <span>Hotový kus</span>
+                            <span {...editable(block, "accent.3")}>{captionLeft}</span>
                             <i />
-                            <span>Keramická zahrada</span>
+                            <span {...editable(block, "accent.4")}>{captionRight}</span>
                         </figcaption>
                     </motion.figure>
 
@@ -148,26 +188,41 @@ export default function VyrobaCta() {
                         variants={detailReveal}
                         style={{ x: detailX, y: detailY }}
                     >
-                        <motion.div className="vyrobaCta__imageScale" variants={imageScale}>
+                        <motion.div
+                            className="vyrobaCta__imageScale"
+                            variants={imageScale}
+                            {...editable(block, "gallery.1", "image")}
+                        >
                             <Image
-                                src="/assets/img/vyroba/6.png"
-                                alt=""
+                                src={detailPhoto?.url ?? "/assets/img/vyroba/6.png"}
+                                alt={detailPhoto?.alt ?? ""}
                                 fill
                                 sizes="(max-width: 720px) 35vw, 16vw"
                             />
                         </motion.div>
-                        <figcaption>Připraveno na cestu</figcaption>
+                        <figcaption {...editable(block, "accent.5")}>{detailCaption}</figcaption>
                     </motion.figure>
                 </div>
 
                 <div className="vyrobaCta__content">
-                    <motion.p className="vyrobaCta__eyebrow" variants={fadeUp}>
-                        Z mých rukou k vám domů
+                    <motion.p
+                        className="vyrobaCta__eyebrow"
+                        variants={fadeUp}
+                        {...editable(block, "accent.2")}
+                    >
+                        {eyebrow}
                     </motion.p>
 
-                    <h2 id="vyroba-cta-title" aria-label="Takhle to vzniká. Zbytek je na vás.">
-                        <span className="vyrobaCta__line" aria-hidden="true">
-                            {titleWords.map((word) => {
+                    <h2
+                        id="vyroba-cta-title"
+                        aria-label={`${titleText} ${titleAccentText}`}
+                    >
+                        <span
+                            className="vyrobaCta__line"
+                            aria-hidden="true"
+                            {...editable(block, "title")}
+                        >
+                            {cmsTitleWords.map((word) => {
                                 const startIndex = characterIndex
                                 characterIndex += word.length
 
@@ -188,23 +243,26 @@ export default function VyrobaCta() {
                             })}
                         </span>
                         <span className="vyrobaCta__line vyrobaCta__line--accent">
-                            <motion.span variants={accentReveal} aria-hidden="true">
-                                Zbytek je na vás.
+                            <motion.span
+                                variants={accentReveal}
+                                aria-hidden="true"
+                                {...editable(block, "headline")}
+                            >
+                                {titleAccentText}
                             </motion.span>
                         </span>
                     </h2>
 
                     <motion.div className="vyrobaCta__action" variants={fadeUp}>
-                        <p>
-                            Podívejte se na keramiku, která tímhle vším prošla —
-                            ručně, pomalu a jen v malém počtu.
-                        </p>
-                        <WebButton
-                            Kind="Link"
-                            href="/store"
-                            title="Prohlédnout výrobky"
-                            className="vyrobaCta__button"
-                        />
+                        <p {...editable(block, "body")}>{actionText}</p>
+                        <span {...editable(cta, "label")}>
+                            <WebButton
+                                Kind="Link"
+                                href="/store"
+                                title={cta?.label?.trim() || "Prohlédnout výrobky"}
+                                className="vyrobaCta__button"
+                            />
+                        </span>
                     </motion.div>
                 </div>
             </div>

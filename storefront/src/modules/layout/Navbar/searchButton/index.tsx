@@ -23,7 +23,14 @@ const MAX_OPEN_WIDTH = 420
  */
 const RESERVED_FOR_SIBLINGS = 148
 
-/** Collapsed: a dense control in the desktop bar, a 44px target on a phone. */
+/**
+ * Collapsed: a dense control in the desktop bar, a 44px target on a phone.
+ *
+ * {@link CLOSED_WIDTH} is only the pre-layout fallback now. The closed control is a circle, so
+ * its width is whatever its height is, and that height is a clamp on viewport height in CSS
+ * (`--search-control-size`, which reads the bar's `--nav-control-height`). 36 is that clamp's
+ * floor, so it is also what the server render and the first client render agree on.
+ */
 const CLOSED_WIDTH = 36
 const CLOSED_WIDTH_PHONE = 44
 
@@ -37,6 +44,17 @@ export default function SearchButton({
   value = "",
 }: SearchButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+
+  /*
+   * The disc, read back rather than copied. Its size is a clamp on viewport height in the
+   * stylesheet, which is not a number that can be handed to JS, and the closed width has to
+   * equal it exactly or the circle turns into an ellipse. Measuring keeps the size in one place.
+   *
+   * The button rather than the wrapper: the wrapper's width is the value being animated here, so
+   * measuring it would feed its own output back in, and on a phone its height is `100%` of the
+   * pill. The button's height is the size variable in every regime.
+   */
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   /*
    * A hard 420 here was wider than the pill it lives in on every phone: the left pill is capped
@@ -61,12 +79,47 @@ export default function SearchButton({
       setOpenWidth(
         Math.max(180, Math.min(MAX_OPEN_WIDTH, window.innerWidth - RESERVED_FOR_SIBLINGS))
       )
-      setClosedWidth(window.innerWidth <= PHONE_WIDTH ? CLOSED_WIDTH_PHONE : CLOSED_WIDTH)
     }
 
     measure()
     window.addEventListener("resize", measure)
     return () => window.removeEventListener("resize", measure)
+  }, [])
+
+  /*
+   * The closed width follows the disc's own height, so the circle stays a circle while the height
+   * tracks the bar (`--search-control-size` is a clamp on viewport height).
+   *
+   * A ResizeObserver rather than the resize listener above, for two reasons: the button has no
+   * box yet on the first commit — measuring there returned 0 and the control stayed pinned at the
+   * fallback 36 for the life of the page — and the height answers to viewport *height* and to the
+   * root rem above 1921, so it can move without a layout the window listener would catch.
+   *
+   * It cannot feed itself: this reads the button's height, and the value it sets is the wrapper's
+   * width. Where the phone rules make the button `width: 100%`, a width change re-runs this and
+   * reads the same height back, so React bails on the identical number.
+   */
+  useEffect(() => {
+    const el = buttonRef.current
+    if (!el) return
+
+    const sync = () => {
+      if (window.innerWidth <= PHONE_WIDTH) {
+        setClosedWidth(CLOSED_WIDTH_PHONE)
+        return
+      }
+      const measured = Math.round(el.getBoundingClientRect().height)
+      if (measured > 0) setClosedWidth(measured)
+    }
+
+    sync()
+    const observer = new ResizeObserver(sync)
+    observer.observe(el)
+    window.addEventListener("resize", sync)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", sync)
+    }
   }, [])
 
   useEffect(() => {
@@ -89,6 +142,7 @@ export default function SearchButton({
       style={styleObj}
     >
       <button
+        ref={buttonRef}
         type="button"
         className={styles.button}
         aria-label={isActive ? "Zavřít vyhledávání" : "Otevřít vyhledávání"}

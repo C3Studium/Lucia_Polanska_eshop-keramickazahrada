@@ -1,15 +1,77 @@
 @use "../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * TENHLE CHECKOUT JE JEN PRO MOBIL.
+ *
+ * Nikde v kódu to není vynucené — žádný redirect, žádná podmínka. Vede sem jediné
+ * tlačítko, „Koupit hned" na detailu produktu (products/…/Cta/Add/buy-now), a záměr je,
+ * že tudy nakupuje telefon. Napsané to ale nebylo nikde, a to se vymstilo: responzivní
+ * průchod ho vzal jako běžnou stránku a sloučil dvojice `v(sm)` + `h(xxs)` do clampů
+ * vyladěných na desktop. Ty dvojice přitom nebyly dvě různé hodnoty — byl to dvakrát
+ * zapsaný týž rozměr pro telefon. Výsledek: ovládání množství spadlo z 50 na 44px a tečka
+ * kroku z 12 na 7px, právě na tom jediném zařízení, které to má vidět.
+ *
+ * Takže pravidlo pro každého, kdo sem sáhne: prostřední člen clampu musí být živý mezi
+ * 320–430px šířky a 568–932px výšky. Když se strop zapíná až nad tím, je to konstanta
+ * napsaná složitě.
+ */
+
+/* ONE GEOMETRY, ONE PLACE.
+   The step column, the back-link's indent and the panel slide all measure
+   themselves against $step. 31.25rem is exactly 500px at the base root size,
+   so nothing moves below 1921 — above it the ≥1921 ramp lifts the column with
+   the frame instead of leaving a dead strip down the middle.
+
+   DECIDED, not overlooked: a tablet in portrait keeps the same 500px. It is the
+   one viewport where a wider column looks free — 1024x1366 leaves 192px of cream
+   down each side — but that emptiness is the same on the desktop (1920 leaves it
+   too) and it is the narrow-shopping-list intent rather than slack. Measured
+   500.0px at 600, 720, 768, 800, 1024, 1366 and 1920: a constant, not a curve
+   that happens to flatten. Widening it on the tablet alone would make the tablet
+   the single viewport whose list is a different width from every other and break
+   what is otherwise one continuous composition from the landscape phone up.
+   Not to be moved without the lead: .stepBack's indent is calc((100% - $step)/2)
+   off this, and so is the distance a panel slides between steps. */
+$step: min(100%, 31.25rem);
+/* The radio mark and the grid column that holds it: derived, not copied. */
+$radio: clamp(1rem, 1.333vw, 1.167rem);
+/* Order-miniature thumbnail — square, so one value feeds column and both sides. */
+$mini: clamp(3rem, 4.4vw, 3.625rem);
+/* The active-step dot and how far it sits off the cell's right edge. Named
+   because the step label has to leave it a lane, and that lane must be the
+   dot's real size and offset rather than a number that happens to match them
+   today — the same reason $radio and $mini exist. */
+$dot: .375rem;
+
+/*
+ * Živé pásmo patří do rozměrů TELEFONU, ne desktopu — tenhle checkout jinam nevede.
+ *
+ * Bylo `clamp(.44rem, 1vw, .75rem)`: strop 12px se zapne až od 1200px šířky, takže na
+ * telefonu (320–430) hodnota vždycky seděla na podlaze 7.04px. Před sloučením dvojice
+ * `v(sm)` + `h(xxs)` do clampu tu bylo natvrdo 12px, takže se tečka posunula o 5px blíž
+ * k textu na jediném zařízení, které tuhle stránku vidí.
+ *
+ * 3vw je živé od 235 do 400px šířky: 320 → 9.6px, 390 → 11.7px, 430 → strop 12px.
+ */
+$dot-inset: clamp(.44rem, 3vw, .75rem);
+/* The legal checkbox, and the slack a finger needs around it to reach the 44px
+   floor. Derived from the box rather than typed beside it, for the same reason
+   $radio and $dot exist: retune the box and the target follows by itself.
+   2.75rem is the 44px floor written so the ≥1921 ramp lifts it. */
+$consent: clamp(1.15rem, 1.5vw, 1.3rem);
+$consent-slack: calc((2.75rem - #{$consent}) / 2);
+$consent-pull: calc((#{$consent} - 2.75rem) / 2);
+
 .intro {
-  padding: 4px 0 30px;
+  padding: .25rem 0 clamp(1rem, 3vh, 1.875rem);
 }
 
 .introLine {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  gap: clamp(.55rem, .95vw, .75rem);
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -17,52 +79,59 @@
 .introLine::after {
   height: 1px;
   flex: 1;
-  background: rgba(32, 33, 28, .18);
+  background: rgb(var(--ink-05-rgb) / .18);
   content: "";
 }
 
+/* The headline wraps. The ceiling alone fits THIS Czech string inside the
+   562px content box, but a longer translation would run past it again — and
+   `overflow: hidden` on the frame cuts silently, so the wrap is the real fix. */
 .intro h1 {
   display: flex;
   max-width: none;
-  margin: 22px 0 12px;
+  margin: clamp(.85rem, 2vh, 1.375rem) 0 clamp(.5rem, 1.1vh, .75rem);
   gap: .18em;
+  flex-wrap: wrap;
   align-items: baseline;
-  font: 400 clamp(25px, 8vw, 50px)/.92 "Times New Roman", serif;
+  font: 400 clamp(1.55rem, 3.6vw, 2.6rem)/.92 "Times New Roman", serif;
   letter-spacing: -.055em;
-  white-space: nowrap;
 }
 
 .intro h1 em {
   display: inline;
   margin: 0;
-  color: #7e896b;
+  color: var(--olive-19);
   font-weight: 400;
 }
 
 .intro p {
   max-width: 39ch;
   margin: 0;
-  color: rgba(32, 33, 28, .7);
-  font: 400 17px/1.6 "Sansation-Regular", sans-serif;
-  font-size: 16px;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.9rem, 1.1vw, 1.08rem)/1.6 "Sansation-Regular", sans-serif;
 }
 
 .progress {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 0 0 26px;
-  border-top: 1px solid rgba(32, 33, 28, .2);
-  border-bottom: 1px solid rgba(32, 33, 28, .2);
+  margin: 0 0 clamp(1rem, 3vh, 1.625rem);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .progressStep {
+  /* Named because the active-step dot has to land on the label's first line
+     when the cell is too narrow to hold dot and text side by side, and that is
+     this padding — not a number that happens to match it today. */
+  --x-step-pad-y: clamp(.6rem, 1.35vh, .875rem);
+
   position: relative;
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: .25rem;
   align-items: flex-start;
-  padding: 14px 8px;
+  padding: var(--x-step-pad-y) clamp(.35rem, .65vw, .5rem);
   border: 0;
   background: transparent;
   text-align: left;
@@ -74,68 +143,103 @@
 }
 
 .progressStep + .progressStep {
-  border-left: 1px solid rgba(32, 33, 28, .16);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .progressLabel {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: clamp(.28rem, .48vw, .375rem);
+  /* The dot's lane, kept clear. Photographed at 430x932, where the cell is
+     119.41px and "02 DORUČENÍ" is 103.45px of it: the label ended at 265.34 and
+     the dot began at 261.66, so 3.68px of olive sat on the Í (7.68px counting
+     the halo). Reserving the lane makes that label wrap to 02 / DORUČENÍ
+     instead — which is what 320 and 390 already do — and the dot has the row to
+     itself. Derived from the dot, not copied: $dot-inset is the same clamp the
+     ::before uses for `right`, so the two can never drift apart.
+     Deliberately in the base rule rather than beside the two shape overrides:
+     it is one value everywhere and it changes nothing where the label is
+     already short of the lane. Measured before and after across the matrix —
+     the only rail that gains a line is 430 (46 -> 52.75px on a 932-tall
+     screen); 320 (46.78) and 390 (50.38) are already two lines so their height
+     is unmoved, and from 568 up — phones sideways, 1220, 1512, 1920, 2552 —
+     every text and dot coordinate is identical to the pixel, because there the
+     label is far shorter than what the lane leaves it. */
+  padding-right: calc(#{$dot-inset} + #{$dot});
   /* .4 alpha was 2.4:1 — an inactive-but-reachable step still has to be
      readable. Truly unreachable steps keep the faded look via :disabled. */
-  color: rgba(32, 33, 28, .66);
-  font: 600 13px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
   transition: color .3s ease;
 }
 
 .progressStep:disabled .progressLabel {
-  color: rgba(32, 33, 28, .4);
+  color: rgb(var(--ink-05-rgb) / .4);
 }
 
 .progressStep[data-active="true"] .progressLabel,
 .progressStep[data-done="true"] .progressLabel {
-  color: #20211c;
+  color: var(--ink-05);
 }
 
-.progressStep:not(:disabled):hover .progressLabel {
-  color: #20211c;
+/* Hover only where there is a pointer that can leave again. On touch the state
+   latches after a tap and the step reads as active when it is not — and the
+   active step already has the dot, the indicator and the full-ink label to say
+   so. Written after the [data-active] / [data-done] rules it shares a colour
+   with, so source order cannot decide it the wrong way round. */
+@include fine-pointer {
+  .progressStep:not(:disabled):hover .progressLabel {
+    color: var(--ink-05);
+  }
 }
 
 .progressDone {
-  width: 13px;
-  height: 13px;
-  color: #596248;
+  width: clamp(.75rem, 1vw, .875rem);
+  height: clamp(.75rem, 1vw, .875rem);
+  color: var(--olive-09);
 }
 
 .progressSummary {
   max-width: 100%;
   overflow: hidden;
-  color: rgba(32, 33, 28, .66);
-  font: 400 13px/1.3 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.3 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* The dot competes with the label for the same row, and on the narrowest phone
+   the label wins: the cell is 92px, "Doručení" is one 79.5px word that cannot
+   be hyphenated or shrunk (12px is the legibility floor), and the label wraps
+   to "02" / "Doručení". Measured, the dot then sat 7.15px inside the second
+   line — reserving space with padding-right does not help, because an
+   unbreakable word overflows the padding rather than moving.
+   So the base rule parks it against the top edge, level with the short first
+   line, where the row is empty; the wider shape centres it again. Kind, not
+   size: `right` is the same clamp in both, and `top` is the step's own vertical
+   padding rather than a second copy of that number. */
 .progressStep[data-active="true"]::before {
   position: absolute;
-  right: 7px;
-  top: 50%;
-  width: 6px;
-  height: 6px;
+  right: $dot-inset;
+  top: var(--x-step-pad-y);
+  width: $dot;
+  height: $dot;
   border-radius: 50%;
-  background: #7e896b;
-  box-shadow: 0 0 0 4px rgba(126, 137, 107, .14);
+  background: var(--olive-19);
+  box-shadow: 0 0 0 .25rem rgb(var(--olive-19-rgb) / .14);
   content: "";
-  transform: translateY(-50%);
+  transform: none;
 
   @include v(sm) {
-    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   @include h(xxs) {
-    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 
@@ -145,13 +249,13 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: #7e896b;
+  background: var(--olive-19);
 }
 
 .stage {
   position: relative;
   overflow: hidden;
-  padding: 6px 0 4px;
+  padding: .375rem 0 .25rem;
   transition: opacity .25s ease;
 }
 
@@ -168,26 +272,30 @@
   flex-direction: column;
 }
 
-/* Aligned to the left edge of the 500px step column the panels centre on. */
+/* Aligned to the left edge of the $step column the panels centre on. */
 .stepBack {
   display: inline-flex;
   width: fit-content;
   align-self: flex-start;
-  margin: 0 0 16px calc((100% - min(100%, 500px)) / 2);
-  padding: 3px 0;
+  margin: 0 0 clamp(.6rem, 1.6vh, 1.1rem) calc((100% - #{$step}) / 2);
+  padding: .2rem 0;
   border: 0;
-  border-bottom: 1px solid rgba(32, 33, 28, .35);
-  color: rgba(32, 33, 28, .72);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .35);
+  color: rgb(var(--ink-05-rgb) / .72);
   background: transparent;
   cursor: pointer;
-  font: 400 15px/1.3 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.3 "Sansation-Regular", sans-serif;
   letter-spacing: .04em;
   transition: color .25s ease, border-color .25s ease;
 }
 
-.stepBack:hover {
-  border-color: #20211c;
-  color: #20211c;
+/* Same reason as the step label: on touch this is a latched state, not a
+   response. After the rule it overrides, so the cascade cannot flip it. */
+@include fine-pointer {
+  .stepBack:hover {
+    border-color: var(--ink-05);
+    color: var(--ink-05);
+  }
 }
 
 .productStep,
@@ -195,26 +303,38 @@
 .paymentStep {
   display: flex;
   box-sizing: border-box;
-  width: min(100%, 500px);
+  width: $step;
   margin-inline: auto;
   flex-direction: column;
 }
 
 .productStep {
-  gap: 22px;
+  gap: clamp(.85rem, 2.4vh, 1.375rem);
 }
 
+/* Competes on both axes: aspect-ratio owns the shape, the vh cap owns how much
+   of the fold it is allowed to eat. object-fit: cover takes the difference.
+   The floor was 11rem = 176px, which on a phone held sideways is 55% of a
+   320px screen — and it was the floor that was in charge there, not the vh
+   member (34vh = 108.8px at 320 tall), so the one viewport with no height to
+   spare was the one getting a laptop-sized photo. 8rem hands the decision back
+   to vh below ~377px tall: measured 176 -> 128px at 568x320 and 176 -> 146px
+   at 932x430, with 320x568, 390x844, 430x932, 1220x660, 1512x982 and 1920x1080
+   unmoved (there the box is bound by width/aspect-ratio or by the vh member
+   already). The clip-path reveal is in percentages of this box, so it rescales
+   with it and keeps running. */
 .productPortrait {
   position: relative;
   aspect-ratio: 1.55;
+  max-height: clamp(8rem, 34vh, 20rem);
   overflow: hidden;
-  background: #d8d4c6;
+  background: var(--cream-02);
 }
 
 .productPortrait::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 50%, rgba(25, 25, 20, .46));
+  background: linear-gradient(180deg, transparent 50%, rgb(var(--ink-01-rgb) / .46));
   content: "";
   pointer-events: none;
 }
@@ -228,38 +348,38 @@
 .productPortrait > span {
   position: absolute;
   z-index: 1;
-  left: 14px;
-  bottom: 12px;
-  color: #fff4ea;
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  left: clamp(.65rem, 1.15vw, .875rem);
+  bottom: clamp(.5rem, 1.1vh, .75rem);
+  color: var(--cream-10);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .productIdentity {
   display: flex;
-  gap: 18px;
+  gap: clamp(.75rem, 1.4vw, 1.125rem);
   align-items: end;
   justify-content: space-between;
 }
 
 .eyebrow {
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1.25 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .productIdentity h2,
 .bundleItem h3 {
-  margin: 7px 0 0;
-  font: 400 clamp(30px, 8vw, 44px)/.92 "Times New Roman", serif;
+  margin: .4375rem 0 0;
+  font: 400 clamp(1.5rem, 2.6vw, 2.75rem)/.92 "Times New Roman", serif;
   letter-spacing: -.035em;
 }
 
 .productIdentity strong {
   flex: 0 0 auto;
-  font: 400 18px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.05rem, 1.36vw, 1.2rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .optionGroups {
@@ -267,21 +387,43 @@
   flex-direction: column;
 }
 
+/* Label beside the pills is a two-column shape, and the narrowest phone has no
+   room for it: minmax() floors the label column at 4.5rem = 72px, "PROVEDENÍ"
+   needs 88, so 16px spilled and 6.4px of that ran under the first pill. The
+   break is exactly at v(sm): 87.2/88 at 390, 124/124 at 568, 127/127 at 932.
+   So the base rule is the phone's shape — label above, pills below — and the
+   two-column shape is the override, which is how .purchaseBar, .quantity and
+   .sectionIntro in this file are already written. No size moves either way. */
 .optionGroups fieldset {
   display: grid;
-  grid-template-columns: minmax(72px, .35fr) 1fr;
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: clamp(.6rem, 1.1vw, .875rem);
   align-items: start;
-  padding: 15px 0;
+  padding: clamp(.6rem, 1.4vh, .9375rem) 0;
   border: 0;
-  border-top: 1px solid rgba(32, 33, 28, .16);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
+
+  @include v(sm) {
+    grid-template-columns: minmax(4.5rem, .35fr) 1fr;
+  }
+
+  @include h(xxs) {
+    grid-template-columns: minmax(4.5rem, .35fr) 1fr;
+  }
 }
 
+/* `float` is load-bearing and stays in both shapes. A <legend> is a rendered
+   legend by default: it is placed into the fieldset's block-start border, is
+   not a grid item, and punches a hole in the border it sits on. Floating it
+   makes it an ordinary box — which, inside a grid container, makes it a grid
+   item and the float itself inert. Dropping the float for the stacked shape
+   was tried and photographed: the hairline moved down to the middle of
+   "PROVEDENÍ" and broke around the word. */
 .optionGroups legend {
   float: left;
-  padding: 11px 0 0;
-  color: rgba(32, 33, 28, .7);
-  font: 600 13px/1 "Sansation-Regular", sans-serif;
+  padding: clamp(.45rem, 1vh, .6875rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -289,18 +431,18 @@
 .optionGroups fieldset > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: clamp(.3rem, .55vw, .4375rem);
 }
 
 .optionGroups button {
   position: relative;
-  min-width: 54px;
-  min-height: 40px;
-  padding: 0 16px;
+  min-width: 3.375rem;
+  min-height: 2.5rem;
+  padding: 0 clamp(.75rem, 1.3vw, 1rem);
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, .55);
+  border: 1px solid rgb(var(--ink-05-rgb) / .55);
   border-radius: 999px;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
   cursor: pointer;
 }
@@ -309,28 +451,48 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #20211c;
+  background: var(--ink-05);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform .52s cubic-bezier(.76, 0, .24, 1);
 }
 
 .optionGroups button[data-active="true"] {
-  color: #fff0e3;
+  color: var(--cream-09);
 }
 
 .optionGroups button[data-active="true"] span {
   transform: scaleX(1);
 }
 
+/* The stepper and the CTA sit side by side only where both fit whole.
+   The portrait stop is v(md), not v(sm), and that is measured rather than
+   chosen: the CTA's label is `white-space: nowrap`, so .primaryAction has a
+   min-content width of ~220px that the 1fr track cannot go below, and .stage
+   clips whatever sticks out — silently, which is why no document-level
+   scrollWidth check ever reported it. Stage width against what the row needs
+   (126 quantity + 8.8 gap + the CTA's min-content):
+
+     320  276  stacked, fits          412  341  CTA cut by 14.1px
+     380  336  CTA cut by 19.4px      430  358  fits, with 0.0px to spare
+     390  346  CTA cut by  9.4px      480  405  fits
+     400  330  CTA cut by 25.4px      600  518  fits, ~18px slack
+
+   Stage width is NOT monotonic in window width — the card takes its gutter at
+   400 — so 400 is the WORST case, not a safer one, and v(s) would have been
+   exactly the wrong stop. 430 fits only by rounding to the pixel, so the honest
+   reading is that a phone in portrait has no room for the row at all: it stacks,
+   the way 320 already did. v(md) is the stop in the table that says so; nothing
+   at or above 600 portrait moves, and no landscape viewport is touched.
+   Landscape keeps h(xxs): the stage is 488px at 568x320 and 582px at 932x430. */
 .purchaseBar {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: clamp(.55rem, .95vw, .75rem);
   align-items: end;
-  padding-top: 2px;
+  padding-top: .125rem;
 
-  @include v(sm) {
+  @include v(md) {
     grid-template-columns: auto 1fr;
   }
 
@@ -339,14 +501,17 @@
   }
 }
 
+/* Follows .purchaseBar exactly — the stacked label-over-box shape is only ever
+   right when this is the narrow first column of a two-column row. In the
+   full-width stacked bar it is a row: caption left, stepper right. */
 .quantity {
   display: flex;
   flex-direction: row;
-  gap: 7px;
+  gap: clamp(.3rem, .55vw, .4375rem);
   align-items: center;
   justify-content: space-between;
 
-  @include v(sm) {
+  @include v(md) {
     flex-direction: column;
   }
 
@@ -356,8 +521,8 @@
 }
 
 .quantity > span {
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -365,20 +530,36 @@
 .quantity > div {
   display: grid;
   /* −/+ columns widened 34→40px: a 34px strip is a mis-tap magnet for a
-     hand with tremor, and the touch floor only fixes height, not width. */
-  width: 118px;
-  height: 44px;
-  grid-template-columns: 40px 1fr 40px;
+     hand with tremor, and the touch floor only fixes height, not width.
+     2.5rem is the same 40px — it just grows now instead of standing still. */
+  width: 7.375rem;
+
+  /*
+   * Táž oprava jako u $dot-inset: 5.2vh potřebovalo 961px výšky, aby doteklo na strop
+   * 50px — a takový telefon není. Naměřeno: 375×667 i 390×844 dávaly 44px, tedy podlahu,
+   * ačkoli před sloučením dvojice tu bylo natvrdo 50px.
+   *
+   * 6.6vh je živé od 667 do 758px výšky: iPhone SE (667) drží podlahu 44px, iPhone 14
+   * (844) a Pro Max (932) dostávají strop 50px. Na telefonu na šířku (430 vysoko) zůstává
+   * 44px, což je správně — tam je výška to, čeho je málo.
+   */
+  height: clamp(2.75rem, 6.6vh, 3.125rem);
+  grid-template-columns: 2.5rem 1fr 2.5rem;
   align-items: center;
-  border: 1px solid #20211c;
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
 
-  @include v(sm) {
-    height: 50px;
-  }
-
-  @include h(xxs) {
-    height: 50px;
+  /* The other half of the 44px floor. globals.scss gives every button a
+     min-height on touch and stops there, which is why the rig measured these
+     two at 40×44 on all five phone viewports — tall enough, still too narrow.
+     2.75rem is 44px and rides the ramp; the box grows by the same 2 × 4px
+     (7.375 → 7.875rem) so the readout keeps its 36px and the row still fits:
+     at 320 the step column is 276px and this box goes 118 → 126 beside a
+     ~74px label. A capability query, not a width — a touch laptop needs the
+     same 44px a phone does. */
+  @include touch {
+    width: 7.875rem;
+    grid-template-columns: 2.75rem 1fr 2.75rem;
   }
 }
 
@@ -387,19 +568,19 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-size: 18px;
+  font-size: clamp(1.05rem, 1.36vw, 1.2rem);
 }
 
 .quantity output {
   text-align: center;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .primaryAction {
   width: 100%;
   --premium-button-surface: transparent;
-  --premium-button-fill: #20211c;
-  --premium-button-ink: #20211c;
+  --premium-button-fill: var(--ink-05);
+  --premium-button-ink: var(--ink-05);
 }
 
 .primaryAction button {
@@ -407,28 +588,28 @@
 }
 
 .bundleConfigurator {
-  border-top: 1px solid rgba(32, 33, 28, .16);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .bundleTabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 12px 0;
+  gap: clamp(.35rem, .65vw, .5rem);
+  padding: clamp(.5rem, 1.1vh, .75rem) 0;
 }
 
 .bundleTabs button {
   position: relative;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, .17);
-  background: rgba(255, 255, 255, .28);
+  border: 1px solid rgb(var(--ink-05-rgb) / .17);
+  background: rgb(var(--white-rgb) / .28);
   cursor: pointer;
 }
 
 .bundleTabs button[data-active="true"] {
-  border-color: #7e896b;
-  box-shadow: inset 0 -3px 0 #7e896b;
+  border-color: var(--olive-19);
+  box-shadow: inset 0 -3px 0 var(--olive-19);
 }
 
 .bundleTabs img {
@@ -440,73 +621,74 @@
 
 .bundleTabs span {
   position: absolute;
-  right: 5px;
-  bottom: 5px;
+  right: clamp(.2rem, .4vw, .3125rem);
+  bottom: clamp(.2rem, .4vw, .3125rem);
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: clamp(1.15rem, 1.5vw, 1.3rem);
+  height: clamp(1.15rem, 1.5vw, 1.3rem);
   place-items: center;
   border-radius: 50%;
-  color: #fff4ea;
-  background: #20211c;
-  font-size: 13px;
+  color: var(--cream-10);
+  background: var(--ink-05);
+  font-size: clamp(.75rem, 3.75vw, 0.825rem);
 }
 
 .bundleItem {
-  padding-top: 8px;
+  padding-top: clamp(.35rem, .78vh, .5rem);
 }
 
 .error {
   margin: 0;
-  color: #9d4238;
-  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+  color: var(--clay-14);
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .deliveryStep,
 .paymentStep {
-  gap: 24px;
+  gap: clamp(.9rem, 2.6vh, 1.5rem);
 }
 
 .sectionIntro {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: clamp(.5rem, 1.4vh, 1rem);
   align-items: start;
 
   @include v(sm) {
     grid-template-columns: .5fr 1fr;
-    gap: 16px;
   }
 
   @include h(xxs) {
     grid-template-columns: .5fr 1fr;
-    gap: 16px;
   }
 }
 
 .sectionIntro p {
   margin: 0;
-  color: rgba(32, 33, 28, .7);
-  font: 400 16px/1.55 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.95rem, 1.22vw, 1.06rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid rgba(32, 33, 28, .3);
-  border-left: 1px solid rgba(32, 33, 28, .3);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .3);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .3);
 }
 
+/* Seven of these stack on the delivery step, so their height is the single
+   biggest thing standing between a 720px laptop and the fold: min-height and
+   both vertical paddings ride vh, the horizontal padding rides vw. */
 .field {
   position: relative;
   display: flex;
-  min-height: 65px;
+  min-height: clamp(3.4rem, 6.2vh, 4.06rem);
   flex-direction: column;
   justify-content: center;
-  padding: 11px 12px 8px;
-  border-right: 1px solid rgba(32, 33, 28, .3);
-  border-bottom: 1px solid rgba(32, 33, 28, .3);
-  background: rgba(255, 247, 236, .18);
+  padding: clamp(.5rem, 1.05vh, .7rem) clamp(.55rem, .95vw, .75rem) clamp(.35rem, .78vh, .5rem);
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .3);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .3);
+  background: rgb(var(--cream-10-rgb) / .18);
 }
 
 .fieldWide {
@@ -515,61 +697,71 @@
 
 .field span,
 .countryField small {
-  color: rgba(32, 33, 28, .7);
-  font: 600 13px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 600 clamp(.8rem, 4vw, 0.88rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .field input {
   width: 100%;
-  height: 30px;
-  padding: 3px 0 0;
+  height: clamp(1.5rem, 3.4vh, 1.875rem);
+  padding: .1875rem 0 0;
   border: 0;
   border-radius: 0;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent !important;
   box-shadow: none !important;
-  font: 400 17px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.2 "Sansation-Regular", sans-serif;
 }
 
 .field:focus-within {
-  background: rgba(255, 236, 217, .54);
-  box-shadow: inset 0 -2px 0 #7e896b;
+  background: rgb(var(--cream-06-rgb) / .54);
+  box-shadow: inset 0 -2px 0 var(--olive-19);
 }
 
 .field input:-webkit-autofill,
 .field input:-webkit-autofill:hover,
 .field input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #20211c;
-  box-shadow: 0 0 0 1000px #eee8d6 inset !important;
+  -webkit-text-fill-color: var(--ink-05);
+  box-shadow: 0 0 0 1000px var(--cream-03) inset !important;
   transition: background-color 99999s ease-out 0s;
 }
 
 .countryField {
   grid-column: 1 / -1;
-  gap: 5px;
+  gap: .3125rem;
 }
 
 .countryField strong {
-  font: 400 17px/1.15 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.15 "Sansation-Regular", sans-serif;
 }
 
 .methodSection {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: clamp(.42rem, .95vh, .625rem);
 }
 
+/* space-between with no gap and no wrap is a promise the row cannot keep: at
+   320 the column is 276px, and "JAK ZAPLATÍTE" / "ŠIFROVANĚ A BEZPEČNĚ" each
+   broke into two lines that then touched in the middle. wrap lets the second
+   label drop to its own line instead of splitting, and the gap is the minimum
+   space between them either way — 6.4 → 16px, live 320-800 wide. Above that
+   the row has 200px of slack, so space-between still decides and the gap is
+   inert; the delivery heading ("ZPŮSOB DORUČENÍ / 4 MOŽNOSTI", 207px of the
+   276) keeps its single line. */
 .methodHeading {
   display: flex;
+  gap: clamp(.4rem, 2vw, 1rem);
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
 }
 
 .methodHeading > span:last-child {
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -577,21 +769,23 @@
 .methodList {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: clamp(.3rem, .68vh, .4375rem);
 }
 
+/* Four carriers in a row under the address form — same story as .field: the
+   height hangs on vh so a short laptop gets a shorter list, not a longer scroll. */
 .method {
   position: relative;
   display: grid;
-  min-height: 68px;
-  grid-template-columns: 20px 1fr auto;
-  gap: 12px;
+  min-height: clamp(3.5rem, 6.4vh, 4.25rem);
+  grid-template-columns: $radio 1fr auto;
+  gap: clamp(.55rem, .95vw, .75rem);
   align-items: center;
-  padding: 10px 14px;
+  padding: clamp(.42rem, .95vh, .625rem) clamp(.65rem, 1.15vw, .875rem);
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, .5);
-  border-radius: 14px;
-  color: #20211c;
+  border: 1px solid rgb(var(--ink-05-rgb) / .5);
+  border-radius: .875rem;
+  color: var(--ink-05);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -601,7 +795,7 @@
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: #e0d9b4;
+  background: var(--sage-04);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform .58s cubic-bezier(.76, 0, .24, 1);
@@ -620,18 +814,18 @@
 
 .radioMark {
   display: grid;
-  width: 17px;
-  height: 17px;
+  width: $radio;
+  height: $radio;
   place-items: center;
-  border: 1px solid rgba(32, 33, 28, .65);
+  border: 1px solid rgb(var(--ink-05-rgb) / .65);
   border-radius: 50%;
 }
 
 .radioMark span {
-  width: 7px;
-  height: 7px;
+  width: clamp(.38rem, .5vw, .44rem);
+  height: clamp(.38rem, .5vw, .44rem);
   border-radius: 50%;
-  background: #20211c;
+  background: var(--ink-05);
   opacity: 0;
   transform: scale(.4);
   transition: opacity .25s ease, transform .3s ease;
@@ -646,32 +840,32 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: .25rem;
 }
 
 .methodCopy strong {
-  font: 400 17px/1.15 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.15 "Sansation-Regular", sans-serif;
 }
 
 .methodCopy small {
   /* Carries the chosen pickup point — decision text, not atmosphere. */
-  color: rgba(32, 33, 28, .7);
-  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.35 "Sansation-Regular", sans-serif;
 }
 
 .methodPrice {
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .packetaEdit {
   align-self: flex-start;
-  padding: 8px 0;
+  padding: clamp(.35rem, .78vh, .5rem) 0;
   border: 0;
   border-bottom: 1px solid currentColor;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
   cursor: pointer;
-  font: 400 15px/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.25 "Sansation-Regular", sans-serif;
 }
 
 .fullAction {
@@ -683,36 +877,36 @@
 }
 
 .orderMiniature {
-  border: 1px solid rgba(32, 33, 28, .2);
-  background: rgba(255, 247, 236, .22);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  background: rgb(var(--cream-10-rgb) / .22);
 }
 
 .orderMiniatureHeader {
   display: flex;
   justify-content: space-between;
-  padding: 13px;
-  border-bottom: 1px solid rgba(32, 33, 28, .18);
+  padding: clamp(.55rem, 1.25vh, .8125rem) clamp(.6rem, 1.05vw, .8125rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
 }
 
 .orderMiniatureHeader > span:last-child {
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .miniItem {
   display: grid;
-  grid-template-columns: 58px 1fr auto;
-  gap: 12px;
+  grid-template-columns: $mini 1fr auto;
+  gap: clamp(.55rem, .95vw, .75rem);
   align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid rgba(32, 33, 28, .14);
+  padding: clamp(.5rem, 1.1vh, .75rem) clamp(.55rem, .95vw, .75rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .14);
 }
 
 .miniItem img {
-  width: 58px;
-  height: 58px;
+  width: $mini;
+  height: $mini;
   border-radius: 2px;
   object-fit: cover;
 }
@@ -721,114 +915,153 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: .25rem;
 }
 
 .miniItem strong {
   overflow: hidden;
-  font: 400 17px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1rem, 1.28vw, 1.12rem)/1.2 "Sansation-Regular", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .miniItem small,
 .miniItem > span {
-  color: rgba(32, 33, 28, .7);
-  font: 400 13px/1.3 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.3 "Sansation-Regular", sans-serif;
 }
 
 .totalRows {
   display: flex;
-  padding: 7px 12px 12px;
+  padding: clamp(.3rem, .68vh, .4375rem) clamp(.55rem, .95vw, .75rem) clamp(.5rem, 1.1vh, .75rem);
   flex-direction: column;
 }
 
 .totalRows > span {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: clamp(.25rem, .58vh, .375rem) 0;
 }
 
 .totalRows small,
 .totalRows strong {
-  font: 400 15px/1.25 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.25 "Sansation-Regular", sans-serif;
 }
 
 .totalRows small {
-  color: rgba(32, 33, 28, .7);
+  color: rgb(var(--ink-05-rgb) / .7);
 }
 
 .grandTotal {
-  margin-top: 5px;
-  padding-top: 12px !important;
-  border-top: 1px solid rgba(32, 33, 28, .18);
+  margin-top: .3125rem;
+  padding-top: clamp(.5rem, 1.1vh, .75rem) !important;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
 }
 
 .grandTotal small,
 .grandTotal strong {
-  color: #20211c;
-  font-size: 18px;
+  color: var(--ink-05);
+  font-size: clamp(1.05rem, 1.36vw, 1.2rem);
 }
 
 .paymentConsent {
   display: flex;
-  gap: 10px;
+  gap: clamp(.42rem, .78vw, .625rem);
   align-items: flex-start;
-  margin: 0 0 12px;
-  color: rgba(32, 33, 28, .78);
+  margin: 0 0 clamp(.5rem, 1.1vh, .75rem);
+  color: rgb(var(--ink-05-rgb) / .78);
   cursor: pointer;
-  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 /* The legal checkbox: browser default is ~13px — too small to hit and too
-   small to see whether it is checked. */
+   small to see whether it is checked. The floor keeps it above 18px. */
 .paymentConsent input {
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
+  width: $consent;
+  height: $consent;
+  margin-top: .125rem;
   flex-shrink: 0;
-  accent-color: #20211c;
+  accent-color: var(--ink-05);
+}
+
+/* The finger's half of the 44px floor, for the one control on this page that
+   nothing else catches. globals.scss floors buttons on touch and stops there,
+   on purpose — an inline link in a sentence has to keep its line box. But a
+   checkbox is neither, and this one gates payment.
+   The drawn box does NOT grow: 1.5vw is under the 1.15rem floor until the
+   window is ~1226px, so it renders 18.4px on 390x844, 768x1024 AND 1024x1366
+   alike, and a 44px tick beside 14.4px type would read as a button, not a
+   consent. What grows is the lane the <label> already toggles. Measured with
+   elementFromPoint plus real taps: that lane is 108x43px around the box on all
+   three, with the box flush in its TOP-LEFT corner — a tap 14px below or right
+   of centre toggled, one 14px above landed on .methodSection and one 14px left
+   on .stepPanel, both dead. So the slack goes exactly there, and the pull gives
+   the space straight back: content x and y are unchanged to the pixel, the
+   label's outer height is unchanged, and its content box keeps its width so the
+   sentence does not re-wrap. Re-measured after: scrollW, scrollH and every step
+   height identical on 390x844, 768x1024 and 1024x1366. Only the hit box grows —
+   lane 108x43 -> 121x56 at 768 and 109x43 -> 122x56 at 1024, and all six probe
+   taps around the tick now toggle where three of them were dead.
+   The phone gets the vertical half only (43 -> 56) and that is correct rather
+   than a shortfall: .stage is `overflow: hidden`, and at 390 the stage is the
+   346px step column exactly, so the leftward overhang is clipped there. On a
+   tablet the stage is 592/577px against the same 500px column, which is where
+   the sideways room comes from — the phone has none to give and its box is
+   already flush against the panel edge.
+   Padding on the input itself was tried first and photographed: Chromium
+   discards it on a native checkbox (computed padding stayed 0px through
+   !important), so the label is the only place this can live.
+   The border box overhangs the column by the slack on the left; nothing paints
+   there, which is why it is invisible — do not give this label a background
+   without revisiting it. A capability query, not a width: the .quantity stepper
+   above takes its 44px the same way, and a touch laptop needs it too. */
+@include touch {
+  .paymentConsent {
+    margin-top: $consent-pull;
+    margin-left: $consent-pull;
+    padding-top: $consent-slack;
+    padding-left: $consent-slack;
+  }
 }
 
 .payFooter {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: clamp(.6rem, 1.3vh, .875rem);
 }
 
 .payFooter p {
   margin: 0;
-  color: rgba(32, 33, 28, .66);
-  font: 400 13px/1.5 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 400 clamp(.8rem, 4vw, 0.88rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .paymentUnavailable {
   margin: 0;
-  padding: 16px;
-  border: 1px solid rgba(157, 66, 56, .32);
-  border-radius: 14px;
-  color: #8f3f36;
-  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+  padding: clamp(.7rem, 1.5vh, 1rem) clamp(.75rem, 1.3vw, 1rem);
+  border: 1px solid rgb(var(--clay-14-rgb) / .32);
+  border-radius: .875rem;
+  color: var(--clay-06);
+  font: 400 clamp(.9rem, 1.15vw, 1rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .trust {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin-top: 26px;
-  border-top: 1px solid rgba(32, 33, 28, .18);
+  margin-top: clamp(1rem, 3vh, 1.625rem);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
 }
 
 .trust span {
   min-width: 0;
-  padding: 13px 5px;
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1.35 "Sansation-Regular", sans-serif;
+  padding: clamp(.55rem, 1.25vh, .8125rem) clamp(.2rem, .4vw, .3125rem);
+  color: rgb(var(--ink-05-rgb) / .66);
+  font: 600 clamp(.75rem, 3.75vw, 0.825rem)/1.35 "Sansation-Regular", sans-serif;
   letter-spacing: .1em;
   text-align: center;
   text-transform: uppercase;
 }
 
 .trust span + span {
-  border-left: 1px solid rgba(32, 33, 28, .15);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .15);
 }
-

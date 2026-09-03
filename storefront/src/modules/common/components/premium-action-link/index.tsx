@@ -4,6 +4,7 @@ import { motion, type Variants } from "framer-motion"
 import { useState, type FocusEvent } from "react"
 import LocalizedClientLink from "../localized-client-link"
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 type PremiumActionLinkProps = {
   href: string
@@ -26,11 +27,11 @@ const fillVariants: Variants = {
 
 const foregroundVariants: Variants = {
   rest: {
-    color: "var(--premium-link-ink, #ffe8d6)",
+    color: `var(--premium-link-ink, ${palette.cream06})`,
     transition: { duration: 0.18, delay: 0.15, ease: "easeOut" },
   },
   active: {
-    color: "var(--premium-link-active-ink, #20211c)",
+    color: `var(--premium-link-active-ink, ${palette.ink05})`,
     transition: { duration: 0.18, delay: 0.15, ease: "easeOut" },
   },
 }

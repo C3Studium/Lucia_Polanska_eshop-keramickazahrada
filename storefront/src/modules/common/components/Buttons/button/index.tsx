@@ -179,18 +179,10 @@ function PerspectiveText({
       <motion.p variants={frontText} style={{ color }}>
         {label}
       </motion.p>
-      <motion.p
-        variants={backText}
-        style={{
-          color: "var(--whiteText)",
-          position: "absolute",
-          transformOrigin: "bottom center",
-          transform: "rotateX(-90deg) translateY(12px)",
-        }}
-      >
+      <motion.p variants={backText} style={backFace}>
         {label}
         <span>
-            <ArrowRight size={15} color="white"/>
+            <ArrowRight size={15} color="var(--whiteText)"/>
         </span>
       </motion.p>
     </motion.div>
@@ -219,15 +211,7 @@ function PerspectiveIcon({
       <motion.div variants={frontText} className={styles.image__wrapper}>
         <Image src={icon1} alt={alt} width={50} height={25} />
       </motion.div>
-      <motion.div
-        variants={backText}
-        style={{
-          color: "var(--whiteText)",
-          position: "absolute",
-          transformOrigin: "bottom center",
-          transform: "rotateX(-90deg) translateY(12px)",
-        }}
-      >
+      <motion.div variants={backText} style={backFace}>
         <Image src={icon2} alt={alt} width={40} height={20}  />
       </motion.div>
     </motion.div>
@@ -247,6 +231,21 @@ function PerspectiveImage({img, alt}: {img: string, alt: string}) {
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
-const styleObj = { perspective: 800 }
+
+/* Geometrie překlopení — jedno místo pro obě zadní stěny. Odvozená od výšky tlačítka
+   ze styles.module.scss, clamp(2.25rem, 3.7vh, 3rem), dvěma koeficienty:
+     perspektiva = 20x výška (800px u staré pevné výšky 40px) -> clamp(45rem, 74vh, 60rem)
+     hloubka     = 0.3x výška (12px u téže výšky)             -> clamp(0.675rem, 1.11vh, 0.9rem)
+   Všechny tři clampy lámou na týchž prazích (972.97px a 1297.3px na výšku okna), takže poměr
+   1 : 20 : 0.3 drží na každém viewportu, ne jen na 1080. V px se překlopení nad 1921 plošti:
+   tlačítko roste s rampou, hloubka ne. */
+const FLIP_DEPTH = "clamp(0.675rem, 1.11vh, 0.9rem)"
+const styleObj = { perspective: "clamp(45rem, 74vh, 60rem)" }
 const styleObj2 = { transformStyle: "preserve-3d" as const }
 const styleObj3 = {objectFit: 'cover' as const}
+const backFace = {
+  color: "var(--whiteText)",
+  position: "absolute" as const,
+  transformOrigin: "bottom center",
+  transform: `rotateX(-90deg) translateY(${FLIP_DEPTH})`,
+}

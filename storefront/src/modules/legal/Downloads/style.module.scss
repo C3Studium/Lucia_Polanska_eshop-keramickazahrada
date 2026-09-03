@@ -1,0 +1,261 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/* Dokumenty ke stažení pod právním textem.
+
+   Drží se typografie dokumentu kolem sebe — je to jeho poslední kapitola,
+   ne samostatný blok, který by si říkal o pozornost jinou barvou.
+
+   ## Proč jsou krajní členy v rem a ne v px
+
+   Nad 1921 běží v `globals.scss` ramp `:root { font-size: clamp(16px, 0.8333vw,
+   21.5px) }`. Zvedne každý strop zapsaný v `rem` — a žádný zapsaný v `px`.
+   Dokud tu stálo `clamp(48px, 6vw, 88px)`, zamrzl celý blok na 1467 px a nad
+   tím se nezvětšil ani o pixel; naměřeno 88.00 px shodně na 1921 i na 2552,
+   přestože root font-size je tam 21.27 px.
+
+   ## Proč svisle vh a vodorovně vw
+
+   Svislé mezery soupeří o výšku okna, ne o jeho šířku. Na `vh` se na nízkém
+   notebooku (1280×720, 1366×768) sevřou samy — proto tenhle soubor nepotřebuje
+   ani jedno pravidlo v `lt`. Vodorovné mezery a typ zůstávají na `vw`. */
+.downloads {
+  /*
+   * Značka typu souboru — velikost písma a vodorovné odsazení uvnitř ní.
+   *
+   * Stojí tady, a ne na `.kind`, protože blok na konci souboru z nich počítá,
+   * o kolik odsadit velikost, když se zalomí pod název. Dokud tam stálo
+   * `calc(0.64rem + 18px)`, byla to opsaná kopie obou čísel — a když se
+   * `font-size` změnil z pevných 0.64rem na clamp, kopie zůstala na staré
+   * hodnotě a odsazení přestalo sedět pod značku. Jedna míra, jedno místo.
+   */
+  --dl-kind-fs: clamp(0.75rem, 0.96vw, 0.9rem);
+  --dl-kind-pad-x: 0.5625rem;
+
+  /* Odluka bloku od dokumentu. Zůstává na `vh`, i když tablet na výšku má výšky
+     dost — je to mezera sekce, tedy přesně ten případ, pro který je `vh`.
+     Naměřeno (margin/padding):
+
+       1366×768 notas   48.00 / 28.00 px   ← obojí stojí na podlaze (3rem / 1.75rem)
+       1920×1080        64.80 / 32.40
+       768×1024 tablet  61.44 / 30.72
+       1024×1366 tablet 81.96 / 40.98
+
+     Není to na tabletu dvojnásobek notasu, jak to vypadá z holého 6vh: pod
+     ~800px výšky se rozhoduje podlaha, ne prostřední člen. Proti notasu je to
+     1.28× (768) a 1.71× (1024) — a 1024×1366 má 1.78× jeho výšky, takže poměr
+     jen sleduje obrazovku. Jako zlomek okna je mezera všude stejná: 6.25 % na
+     notasu, 6 % na obou tabletech.
+
+     Ve `vw` by to bylo obráceně a hůř: 768px široký tablet by dostal menší
+     odluku než 1366px široký notas, přestože má o třetinu víc svislého místa.
+     Živé pásmo 800–1467 px výšky okna (margin), 933–1467 px (padding). */
+  margin-top: clamp(3rem, 6vh, 5.5rem);
+  padding-top: clamp(1.75rem, 3vh, 2.75rem);
+  border-top: 1px solid rgb(var(--black-03-rgb) / .14);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  /* V rem, ne v px: 6 px při 16px kořeni je totéž, ale nad 1921 to ramp zvedne
+     spolu se vším ostatním. V px by tahle mezera na 2552 zůstala doslovná,
+     zatímco všechno kolem ní je 1.33×. Totéž platí pro .list a .text níž. */
+  gap: 0.375rem;
+  /* mezera nadpisu je svislá jako každá jiná — živé pásmo 833–1333 px výšky */
+  margin-bottom: clamp(1.25rem, 2.4vh, 2rem);
+
+  span {
+    /* stálo 0.72rem = 11.5 px, tedy pod hranicí čitelnosti;
+       podlaha 0.78rem = 12.5 px, živé pásmo 1248–1520 px šířky */
+    font-size: clamp(0.78rem, 1vw, 0.95rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+    font-weight: 500;
+  }
+}
+
+/* Jeden sloupec na všech šířkách — i na tabletu na výšku.
+
+   Pravidlo „dva sloupce tam, kde má telefon jeden a desktop tři" se sem
+   nevztahuje: desktop tu má taky jeden. Není z čeho ubírat.
+
+   Vyzkoušeno a změřeno (grid 1fr 1fr, column-gap 16px, tři soubory):
+
+     768×1024   .text 358 → 103 px, titulek z 1 řádku na 2/4/3, řádek 81 → 145/193 px
+                celý seznam 245 → 310 px, tedy o 65 px VYŠŠÍ než jednosloupcový
+     1024×1366  .text 549 → 198 px, titulek z 1 řádku na 1/2/2, řádek 89 → 132 px
+                seznam 268 → 232 px, ušetří 36 px výšky
+
+   Na 768 jsou dva sloupce horší na obou osách zároveň. Na 1024 ušetří 36 px
+   výšky za to, že se textový sloupec zúží 2.8×, a to je v kole, které říká, že
+   tablet má výšky dost, přesně obrácený obchod. Navíc `.text` 103 px na tabletu
+   je užší než 307 px, které má tentýž sloupec na telefonu 430×932 — dva sloupce
+   by z tabletu udělaly něco horšího než telefon.
+
+   Třetí důvod je počet: souborů bývají dva až tři, takže sudá mřížka nechá
+   poslední buňku prázdnou (vidět na .rdshots/out/cook3/whatif-2col-768x1024.png). */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Celý řádek je odkaz, ne jen jeho název: na dotykovém displeji je cíl
+   o šířku sloupce místo o šířku slova.
+
+   ## Dotyková podlaha drží sama, `min-height` tu není schválně
+
+   `.item` je `<a>`, a `globals.scss` dává `min-height: 44px` jen tlačítkům, ne
+   odkazům — takže tenhle cíl si podlahu musí uhlídat sám. Uhlídá:
+
+     výška = 2 × svislý padding + výška `.kind`
+           = 2 × 0.875rem (podlaha) + 28 px  =  56 px
+
+   `.kind` má 28 px z 12px písma (podlaha `--dl-kind-fs`) a 2 × 0.3125rem
+   vlastního paddingu; nižší být nemůže, protože je to nejvyšší dítě řádku.
+   Nejnižší naměřený řádek přes všechny viewporty je 58 px (1280×720, tedy
+   myš), na dotykových tabletech 63 px (768×1024), 68 px (834×1194), 70 px
+   (1024×1366) a 79 px (600×900).
+
+   Explicitní `min-height: 44px` v `@include touch` proto nepřidávám: 56 > 44
+   plyne z hodnot v tomhle souboru, pravidlo by nikdy nesepnulo a příští kolo by
+   jen hádalo, co drží. Kdyby některá z těch dvou podlah klesla, spadne s ní
+   i tenhle výpočet — to je ta vazba, kterou má komentář hlídat. */
+.item {
+  display: flex;
+  /* vodorovná mezera → vw; živé pásmo 1143–1905 px šířky */
+  gap: clamp(0.75rem, 1.05vw, 1.25rem);
+  align-items: center;
+  /* svisle podle výšky okna (875–1250 px), vodorovně podle šířky (1167–1667 px) */
+  padding: clamp(0.875rem, 1.6vh, 1.25rem) clamp(0.875rem, 1.2vw, 1.25rem);
+  color: inherit;
+  text-decoration: none;
+  background: rgb(var(--black-03-rgb) / .035);
+  border: 1px solid rgb(var(--black-03-rgb) / .08);
+  /* 0.625rem = 10 px, ne `10px`. Fyzická konstanta v px je podle provozního řádu
+     jen to, co se nemá zvětšovat vůbec — kurzor a vlasová linka; `border` nad
+     tímhle řádkem proto v px zůstává. Rádius je ale tvar rámečku, ne vlasová
+     linka: roste s paddingem a s písmem uvnitř. V px by nad 1921 zamrzl,
+     zatímco ramp zvedá všechno kolem něj až na 1.33× (na 2552 je root 21.27 px),
+     a rohy by se opticky utáhly. Totéž zdůvodnění jako u `gap` na `.heading`. */
+  border-radius: 0.625rem;
+  transition: background 0.24s ease, border-color 0.24s ease;
+
+  /* Rozsvícení řádku má dvě půlky a každá patří jinam.
+   *
+   * `:focus-visible` je bez brány: klávesnice potřebuje vidět, kde stojí, na
+   * každém zařízení — i na tabletu s připojenou klávesnicí, který žádnou
+   * ukazovací podmínku nesplní.
+   *
+   * `:hover` je afordance myši. Na dotyku ho tapnutí zapne a nechá viset,
+   * dokud se nesáhne jinam: řádek je celý odkaz, takže po projití seznamu
+   * zůstane zasvícený ten, který si nikdo nevybral, a vedle něj se rozsvítí
+   * další. Proto jde do `fine-pointer`.
+   *
+   * Oba bloky jsou AŽ ZA deklaracemi, které přebíjejí — mixin emituje obyčejné
+   * media query, ne @layer, a o stejné specificitě rozhoduje pořadí v souboru. */
+  &:focus-visible {
+    background: rgb(var(--black-03-rgb) / .07);
+    border-color: rgb(var(--black-03-rgb) / .18);
+  }
+
+  @include fine-pointer {
+    &:hover {
+      background: rgb(var(--black-03-rgb) / .07);
+      border-color: rgb(var(--black-03-rgb) / .18);
+    }
+  }
+}
+
+.kind {
+  flex: none;
+  padding: 0.3125rem var(--dl-kind-pad-x);
+  /* stálo 0.64rem = 10.2 px; podlaha zvednuta na 12 px, pásmo 1250–1500 px.
+     Hodnota je v `--dl-kind-fs` na `.downloads` — viz poznámka tam. */
+  font-size: var(--dl-kind-fs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  background: rgb(var(--black-03-rgb) / .1);
+  /* 0.3125rem = 5 px — v rem ze stejného důvodu jako rádius na `.item`, viz tam. */
+  border-radius: 0.3125rem;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1875rem;
+  min-width: 0;
+
+  strong {
+    font-weight: 500;
+  }
+
+  small {
+    /* pásmo 1250–1524 px */
+    font-size: clamp(0.82rem, 1.05vw, 1rem);
+    opacity: 0.6;
+  }
+}
+
+.size {
+  flex: none;
+  /* pásmo 1255–1537 px */
+  font-size: clamp(0.8rem, 1.02vw, 0.98rem);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.5;
+}
+
+/* Pod 560px se velikost skládá pod název — na úzkém displeji je třísloupcový
+   řádek užší, než aby se do něj vešel název formuláře na jeden řádek.
+   Naměřeno replikou na 320×568: `.text` má po zalomení 165–197px a název se
+   láme nejvýš na dva řádky.
+
+   560 není číslo odsud, je to stop `ph` z `system/_breakpoints.scss` — telefon
+   na výšku jako TVAR, nad nejširším telefonem (430px) a pod nejužším tabletem
+   na výšku (600px). `below(ph)` emituje max-width: 559.98px; ten dvousetinový
+   rozdíl neleží na žádném skutečném viewportu.
+
+   Ne `below-with-phone(ph)`: telefon na šířku má 568–932px šířky a třísloupcový
+   řádek se tam vejde s rezervou (naměřeno `.text` 363px na 568×320 a 702px na
+   932×430, název na jeden řádek), takže skládat ho tam pod sebe by bylo
+   zbytečné.
+
+   ## Na tabletu na výšku se to neskládá — a to je celý rozdíl proti telefonu
+
+   Jediný breakpoint v souboru je tenhle, a leží pod tabletem. Tablet na výšku
+   tedy čte základní pravidla, tedy `flex-wrap: nowrap`, a vodorovná jízda
+   zůstává vodorovná. Naměřeno na živé replice:
+
+     430×932  telefon   wrap    `.size` je 364px přes celou šířku na vlastním
+                                řádku, odsazený pod značku; řádek 110 px
+     600×900  tablet    nowrap  značka 45 | `.text` 208 | velikost 38, řádek 97 px
+     768×1024 tablet    nowrap  značka 45 | `.text` 358 | velikost 38, řádek 81 px
+     1024×1366 tablet   nowrap  značka 45 | `.text` 549 | velikost 38, řádek 89 px
+
+   Telefon skládá proto, že mu na tři stopy nezbývá šířka. Tabletu zbývá:
+   i nejužší z nich (600×900) dá textu 208 px a řádek se udrží na jedné lince.
+   Velikost souboru tak zůstává tam, kde se čte — v pravém sloupci proti sobě,
+   ne pod názvem — a řádek je na 768 o 29 px nižší než na telefonu, přestože
+   tablet má víc místa; ušetřenou výšku spotřebuje seznam, ne jedna položka. */
+@include below(ph) {
+  .item {
+    flex-wrap: wrap;
+  }
+
+  /* Odsazení pod značku: její písmo plus obě její vnitřní mezery. Odvozeno,
+     ne opsáno — obě míry stojí na `.downloads`. */
+  .size {
+    width: 100%;
+    padding-left: calc(var(--dl-kind-fs) + 2 * var(--dl-kind-pad-x));
+  }
+}

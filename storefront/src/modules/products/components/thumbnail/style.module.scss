@@ -4,19 +4,24 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, .1);
+  border: 1px solid rgb(var(--ink-05-rgb) / .1);
   border-radius: inherit;
   background:
-    radial-gradient(circle at 70% 12%, rgba(187, 183, 136, .16), transparent 48%),
-    #f4f1ec;
+    radial-gradient(circle at 70% 12%, rgb(var(--sage-01-rgb) / .16), transparent 48%),
+    var(--cream-08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .6),
-    0 18px 38px -34px rgba(32, 33, 29, .72);
+    inset 0 1px 0 rgb(var(--white-rgb) / .6),
+    0 18px 38px -34px rgb(var(--ink-05-rgb) / .72);
 }
 
-.small { width: min(180px, 100%); }
-.medium { width: min(290px, 100%); }
-.large { width: min(440px, 100%); }
+/* Size caps in rem, not px: above 1921 the root ramp lifts rem, so a
+   thumbnail grows with the card around it instead of staying at its
+   1366 size on a 2K screen. 180/290/440px at a 16px root = below.
+   The ratios stay unitless on purpose - cap one axis, let the
+   aspect-ratio derive the other. */
+.small { width: min(11.25rem, 100%); }
+.medium { width: min(18.125rem, 100%); }
+.large { width: min(27.5rem, 100%); }
 .full { width: 100%; height: 100%; }
 .square { aspect-ratio: 1; }
 
@@ -42,5 +47,5 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(32, 33, 29, .42);
+  color: rgb(var(--ink-05-rgb) / .42);
 }

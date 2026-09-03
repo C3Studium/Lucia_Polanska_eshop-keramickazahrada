@@ -1,44 +1,64 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
 .FAQBody {
+    /*
+     * Geometrie radku otazky na jednom miste. Odsazeni odpovedi neni opsane cislo, ale
+     * soucet techto tri clenu (padding + sloupec s cislem + gap) — viz `.faqAnswer p`.
+     * Drive to byla ctyri nezavisla cisla (8 + 42 + 12 proti 62, a 8 + 32 + 12 proti 52
+     * v uzkem bloku), ktera se musela shodovat rucne.
+     */
+    --faq-num-col: 2.625rem;
+    --faq-title-gap: 0.75rem;
+    --faq-title-pad: 0.5rem;
+
     position: relative;
     z-index: 3;
     width: 100%;
-    min-height: 120vh;
-    padding: clamp(150px, 18vh, 230px) clamp(22px, 3vw, 56px) clamp(90px, 12vh, 160px);
-    background: linear-gradient(180deg, rgba(255, 232, 214, 0.035), transparent 18%);
+    /*
+     * Svisle paddingy visi na vh, vodorovny na vw. Puvodni podlaha 150px byla psana pro
+     * telefon a na 1280x720 kousala: 18vh je tam 129.6, takze se aktivovala podlaha a
+     * hlavicka byla VETSI nez ideal. Podlaha 6.5rem (104px) se zapne az pod ~578px vysky.
+     * `min-height: 120vh` je v landscape mrtve — obsah je vsude vyssi (na qhd 1679 proti
+     * 1621, na 1280x720 1387 proti 864) — proto je pryc.
+     */
+    padding: clamp(6.5rem, 18vh, 14.375rem) clamp(1.375rem, 3vw, 3.5rem) clamp(4rem, 12vh, 10rem);
+    background: linear-gradient(180deg, rgb(var(--cream-06-rgb) / .035), transparent 18%);
     color: var(--blackText);
 }
 
 .faqIntro {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+    grid-template-columns: minmax(0, 1.35fr) minmax(17.5rem, 0.65fr);
     align-items: end;
-    gap: clamp(36px, 7vw, 130px);
-    padding-bottom: clamp(50px, 7vh, 90px);
+    /* Rozdelene na dve osy: vodorovna mezera mezi sloupci na vw, svisla (az se mrizka
+       zlomi na jeden sloupec) na vh. Jedno `gap` by pri zlomu neslo prepsat bez dalsiho
+       breakpointu. */
+    column-gap: clamp(2.25rem, 7vw, 8.125rem);
+    row-gap: clamp(1.625rem, 3.4vh, 2.75rem);
+    padding-bottom: clamp(2.25rem, 7vh, 5.625rem);
 
     h2 {
-        max-width: 900px;
-        margin: 10px 0 0;
+        max-width: 56.25rem;
+        margin: 0.625rem 0 0;
         font-family: "Sentient-Regular", serif;
-        font-size: clamp(52px, 6.2vw, 112px);
+        font-size: clamp(3.25rem, 6.2vw, 7rem);
         font-weight: 400;
         line-height: 0.88;
         letter-spacing: -0.055em;
     }
 
     > p {
-        max-width: 520px;
-        margin: 0 0 6px;
-        font-size: clamp(16px, 1.18vw, 21px);
+        max-width: 32.5rem;
+        margin: 0 0 0.375rem;
+        font-size: clamp(1rem, 1.18vw, 1.3125rem);
         font-weight: 300;
         line-height: 1.38;
     }
 }
 
 .faqEyebrow {
-    color: rgba(38, 40, 32, 0.58);
-    font-size: 12px;
+    color: rgb(var(--ink-06-rgb) / .58);
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -47,12 +67,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    padding: 10px;
-    border: 1px solid rgba(38, 40, 32, 0.2);
+    gap: clamp(1rem, 1.4vw, 1.75rem);
+    padding: clamp(0.5rem, 0.7vw, 0.875rem);
+    border: 1px solid rgb(var(--ink-06-rgb) / .2);
     border-radius: 999px;
-    background: rgba(250, 247, 240, 0.48);
-    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.36), 0 10px 24px -20px rgba(24, 27, 20, 0.48);
+    background: rgb(var(--cream-10-rgb) / .48);
+    box-shadow: inset 0 2px 3px rgb(var(--white-rgb) / .36), 0 10px 24px -20px rgb(var(--ink-02-rgb) / .48);
     backdrop-filter: blur(12px);
 }
 
@@ -60,15 +80,28 @@
     position: relative;
     display: flex;
     align-items: center;
-    width: min(390px, 32vw);
-    height: 42px;
-    padding: 0 44px 0 16px;
-    border: 1px solid rgba(38, 40, 32, 0.12);
+    /*
+     * Puvodni `min(390px, 32vw)` bylo od 1220 nahoru natvrdo 390px, takze v pruhu zbylo
+     * 900px prazdna na 1920 a 1160px na qhd. Pole ted vul absorbuje samo: roste s pruhem
+     * az po strop, ktery uz je v rem, takze ho nad 1921 zvedne rampa. Zadny breakpoint.
+     */
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: clamp(15rem, 34vw, 42rem);
+    /* Vyska byla plochych 42px. Prostredni clen je dopocitany z referencniho desktopu:
+       3.9vh je na 1080 presne 42.1, na 768 uz 30 a tedy na podlaze 38 — nizky notebook
+       dostane uvolneni, 1920 zustava tam, kde bylo. (3.6vh davalo 38.9 na 1080 i 38 na
+       720: o 3px min nez dnes a temer zadny rozdil mezi vysokym a nizkym oknem.) */
+    height: clamp(2.375rem, 3.9vh, 3.25rem);
+    padding: 0 2.75rem 0 1rem;
+    border: 1px solid rgb(var(--ink-06-rgb) / .12);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.56);
+    background: rgb(var(--white-rgb) / .56);
 
     > span:first-child {
         position: absolute;
+        /* Fyzicky 1px — schovavaci trik pro odecitac, ne velikost. */
         width: 1px;
         height: 1px;
         overflow: hidden;
@@ -80,30 +113,31 @@
         border: 0;
         background: transparent;
         color: var(--blackText);
-        font-size: 16px;
+        font-size: clamp(1rem, 1.15vw, 1.125rem);
         font-weight: 300;
 
-        &::placeholder { color: rgba(38, 40, 32, 0.48); }
+        &::placeholder { color: rgb(var(--ink-06-rgb) / .48); }
         &::-webkit-search-cancel-button { display: none; }
     }
 }
 
 .faqSearchIcon {
     position: absolute;
-    right: 15px;
-    width: 16px;
-    height: 16px;
-    border: 1px solid rgba(38, 40, 32, 0.68);
+    right: 0.9375rem;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid rgb(var(--ink-06-rgb) / .68);
     border-radius: 50%;
 
     &::after {
         content: "";
         position: absolute;
-        right: -4px;
-        bottom: -2px;
-        width: 6px;
+        right: -0.25rem;
+        bottom: -0.125rem;
+        width: 0.375rem;
+        /* Vlasova linka — fyzicka, zustava v px. */
         height: 1px;
-        background: rgba(38, 40, 32, 0.68);
+        background: rgb(var(--ink-06-rgb) / .68);
         transform: rotate(45deg);
     }
 }
@@ -111,26 +145,29 @@
 .faqCategories {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 0.1875rem;
 
     button {
         position: relative;
-        height: 38px;
-        padding: 0 16px;
+        /* Plochych 38px prepsano stejnou metodou jako vyska pole: 3.5vh = 37.8 na 1080. */
+        height: clamp(2.125rem, 3.5vh, 2.875rem);
+        /* Podlaha 1rem je puvodnich 16px — pod 1524 se pilulka nezuzi, jen prestane byt
+           nad 1921 zamrzla. Svisly clen zustava 0, vysku nese `height` na vh. */
+        padding: 0 clamp(1rem, 1.05vw, 1.25rem);
         overflow: hidden;
         border: 0;
         border-radius: 999px;
         background: transparent;
-        color: rgba(38, 40, 32, 0.66);
-        font-size: 13px;
+        color: rgb(var(--ink-06-rgb) / .66);
+        font-size: clamp(0.8125rem, 1vw, 0.9375rem);
         white-space: nowrap;
         cursor: pointer;
         transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 
-        &:hover { color: var(--blackText); background: rgba(255, 232, 214, 0.46); }
+        &:hover { color: var(--blackText); background: rgb(var(--cream-06-rgb) / .46); }
 
         &.active {
-            color: #fff8f1;
+            color: var(--cream-10);
             background: transparent;
         }
     }
@@ -141,8 +178,8 @@
     inset: 0;
     z-index: 0;
     border-radius: inherit;
-    background: #555d48;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 10px -7px rgba(24, 27, 20, 0.6);
+    background: var(--olive-07);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .25), 0 4px 10px -7px rgb(var(--ink-02-rgb) / .6);
 }
 
 .faqCategoryLabel {
@@ -152,27 +189,29 @@
 
 .faqLayout {
     display: grid;
-    grid-template-columns: minmax(0, 1.62fr) minmax(330px, 0.78fr);
-    gap: clamp(34px, 5vw, 90px);
+    grid-template-columns: minmax(0, 1.62fr) minmax(20.625rem, 0.78fr);
+    /* Vodorovna mezera sloupcu na vw, svisly odstup od pruhu na vh. */
+    column-gap: clamp(2.125rem, 5vw, 5.625rem);
+    row-gap: clamp(2.125rem, 4vh, 5.625rem);
     align-items: start;
-    padding-top: clamp(36px, 5vh, 64px);
+    padding-top: clamp(2.25rem, 5vh, 4rem);
 }
 
 .faqList {
-    border-top: 1px solid rgba(38, 40, 32, 0.36);
+    border-top: 1px solid rgb(var(--ink-06-rgb) / .36);
 }
 
 .question {
     position: relative;
     overflow: hidden;
-    border-bottom: 1px solid rgba(38, 40, 32, 0.3);
+    border-bottom: 1px solid rgb(var(--ink-06-rgb) / .3);
 
     &::before {
         content: "";
         position: absolute;
         inset: 0;
         z-index: -1;
-        background: rgba(255, 232, 214, 0.42);
+        background: rgb(var(--cream-06-rgb) / .42);
         transform: translateX(-101%);
         transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1);
     }
@@ -183,12 +222,15 @@
 
 .questionTitle {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 30px;
+    grid-template-columns: var(--faq-num-col) minmax(0, 1fr) 1.875rem;
     align-items: center;
-    gap: 12px;
+    gap: var(--faq-title-gap);
     width: 100%;
-    min-height: 74px;
-    padding: 12px 14px 12px 8px;
+    /* Radek soupezi o vysku obrazovky, proto vh: na 1366x768 se sam sevre na podlahu
+       4.25rem (68px) — presne na hodnotu, kterou pro uzky viewport predepisuje blok
+       na konci souboru — a zadne pravidlo v `lt` k tomu neni potreba. */
+    min-height: clamp(4.25rem, 7vh, 5.75rem);
+    padding: 0.75rem 0.875rem 0.75rem var(--faq-title-pad);
     border: 0;
     background: transparent;
     color: var(--blackText);
@@ -197,13 +239,13 @@
 }
 
 .questionNumber {
-    color: rgba(38, 40, 32, 0.48);
-    font-size: 13px;
+    color: rgb(var(--ink-06-rgb) / .48);
+    font-size: clamp(0.8125rem, 1vw, 0.9375rem);
     letter-spacing: 0.08em;
 }
 
 .questionLabel {
-    font-size: clamp(17px, 1.28vw, 22px);
+    font-size: clamp(1.0625rem, 1.28vw, 1.375rem);
     font-weight: 300;
     line-height: 1.2;
 }
@@ -212,9 +254,11 @@
     position: relative;
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    border: 1px solid rgba(38, 40, 32, 0.28);
+    /* Kolecko soupezi o obe osy, takze clamp jde jen na sirku a vysku drzi pomer —
+       `min(...)` na obou rozmerech by procenta pocital z jine osy a vysel by ovál. */
+    width: 1.75rem;
+    aspect-ratio: 1;
+    border: 1px solid rgb(var(--ink-06-rgb) / .28);
     border-radius: 50%;
     /* Paced against the 1.05s panel in index.tsx. The colour swap stays quick — that is the click
        acknowledgement — while the rotation travels with the answer it is opening. */
@@ -222,7 +266,8 @@
 
     i {
         position: absolute;
-        width: 10px;
+        width: 0.625rem;
+        /* Vlasova linka — fyzicka, zustava v px. */
         height: 1px;
         background: currentColor;
 
@@ -230,8 +275,8 @@
     }
 
     .active & {
-        color: #fff8f1;
-        background: #555d48;
+        color: var(--cream-10);
+        background: var(--olive-07);
         transform: rotate(45deg);
     }
 }
@@ -240,11 +285,14 @@
     overflow: hidden;
 
     p {
-        max-width: 780px;
+        max-width: 48.75rem;
         margin: 0;
-        padding: 0 58px 28px 62px;
-        color: rgba(38, 40, 32, 0.76);
-        font-size: clamp(15px, 1.05vw, 18px);
+        /* Levy odsazeni NENI cislo — je to soucet geometrie `.questionTitle`, aby odpoved
+           zacinala presne pod popiskem otazky. Kdyz se zmeni sloupec s cislem, dopocita
+           se samo (drzi to i v uzkem bloku na konci souboru). */
+        padding: 0 3.625rem 1.75rem calc(var(--faq-title-pad) + var(--faq-num-col) + var(--faq-title-gap));
+        color: rgb(var(--ink-06-rgb) / .76);
+        font-size: clamp(0.9375rem, 1.05vw, 1.125rem);
         font-weight: 300;
         line-height: 1.48;
     }
@@ -252,19 +300,25 @@
 
 .faqEmpty {
     margin: 0;
-    padding: 40px 8px;
-    border-bottom: 1px solid rgba(38, 40, 32, 0.3);
-    font-size: 17px;
+    padding: 2.5rem 0.5rem;
+    border-bottom: 1px solid rgb(var(--ink-06-rgb) / .3);
+    font-size: clamp(1rem, 1.12vw, 1.25rem);
 }
 
 .faqContact {
     position: sticky;
-    top: 88px;
+    top: 5.5rem;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgb(var(--white-rgb) / .3);
+    /*
+     * 18px zustava v px zamerne. index.tsx animuje kartu pres
+     * `clipPath: "inset(… round 18px)"` (asideInitial/asideInView) — je to jedna geometrie
+     * na dvou mistech. Kdyby se polomer rozclampoval, clip-path by se s ramem karty rozesel
+     * a behem odhaleni by rohy nesedely.
+     */
     border-radius: 18px;
-    background: #fbfaf6;
-    box-shadow: 0 18px 42px -26px rgba(22, 24, 18, 0.58);
+    background: var(--white);
+    box-shadow: 0 18px 42px -26px rgb(var(--ink-01-rgb) / .58);
 }
 
 .faqContactImage {
@@ -282,29 +336,34 @@
     span {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, transparent 42%, rgba(20, 22, 17, 0.28));
+        background: linear-gradient(180deg, transparent 42%, rgb(var(--ink-01-rgb) / .28));
     }
 }
 
 .faqContact:hover .faqContactImage img { transform: scale(1.055); }
 
 .faqContactCopy {
-    padding: clamp(22px, 2.4vw, 38px);
+    /* Svisla pulka na vh, vodorovna na vw — karta je sticky a na 720px vysokem laptopu
+       soupezi o vysku s obsahem vedle sebe. Puvodne bylo clamp(22px, 2.4vw, 38px) na vsech
+       ctyrech stranach, tedy 38 na 1920. Doslovne prepsane 2.4vh by tam dalo 25.9 — pri
+       zmene osy se koeficient dopocitava, ne opisuje; 3.5vh vraci 37.8 na 1080 a 26.9 na
+       768, takze karta ubere na vysku jen tam, kde je vysky nedostatek. */
+    padding: clamp(1.375rem, 3.5vh, 2.375rem) clamp(1.375rem, 2.4vw, 2.375rem);
 
     h3 {
-        margin: 12px 0 10px;
+        margin: 0.75rem 0 0.625rem;
         font-family: "Sentient-Regular", serif;
-        font-size: clamp(34px, 3.2vw, 58px);
+        font-size: clamp(2.125rem, 3.2vw, 3.625rem);
         font-weight: 400;
         line-height: 0.95;
         letter-spacing: -0.045em;
     }
 
     > p {
-        max-width: 430px;
+        max-width: 26.875rem;
         margin: 0;
-        color: rgba(38, 40, 32, 0.68);
-        font-size: 16px;
+        color: rgb(var(--ink-06-rgb) / .68);
+        font-size: clamp(0.9375rem, 1.06vw, 1.125rem);
         font-weight: 300;
         line-height: 1.4;
     }
@@ -314,37 +373,53 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 28px;
+    gap: 1rem;
+    margin-top: clamp(1.25rem, 2.6vh, 2rem);
 
-    .CTA__block > button {
-        width: 172px;
-        max-width: 172px;
-        height: 42px;
+    /*
+     * Puvodne tu bylo `.CTA__block > button { width: 172px; … }`. To pravidlo uz nikdy
+     * nesedlo: `ContactTrigger` sazi `<div class="[ContactDialog].trigger">`, `.CTA__block`
+     * v repu zbyla jen v Navbaru. Tlacitko proto rostlo na svou prirozenou sirku (232px)
+     * a radek pretekal — `.faqContact` ma `overflow: hidden`, takze se konec telefonniho
+     * cisla odstrihl (scrollWidth 355 pri sirce 307 na 1280).
+     *
+     * Hook ted jde z naseho vlastniho markupu: `className="faqContactButton"` v index.tsx,
+     * ktery WebButton pripoji primo na `<button>`. Selektor je dvouclenny schvalne —
+     * `.button` v CSS modulu ma specificitu (0,1,0) a poradi chunku neni zarucene.
+     *
+     * Popisek a jeho padding se nastavuji pres promenne, ktere webButton vystavuje prave
+     * pro tenhle pripad (viz komentar u `--web-button-label-size`) — do cizi komponenty se
+     * nesaha. Rozpocet sirky na 1280: text 6.61em × 14px = 92.5 + 2×0.85vw = 21.8
+     *  + rezerva na sipku 2.11vw = 27  →  141 z 166.4 (13vw). Na 1920 stropy: 119 + 32 + 39.2
+     *  = 190 z 208 (13rem). Vejde se v celem pasmu.
+     */
+    .faqContactButton {
+        --web-button-label-size: clamp(0.875rem, 1.05vw, 1.125rem);
+        --web-button-label-padding: clamp(0.2rem, 0.4vh, 0.5rem) clamp(0.625rem, 0.85vw, 1rem);
 
-        > div { padding-inline: 14px; }
+        width: clamp(9.5rem, 13vw, 13rem);
 
-        p {
-            width: 100% !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 5px !important;
-            white-space: nowrap;
+        /*
+         * Vysku tady NEPREPISUJEME. Nese ji webButton na `.button`:
+         * `clamp(2.75rem, 4.7vh, 3.5rem)` — podlaha 2.75rem je dotykovy cil 44px, vh clen
+         * pilulku sam sevre na 720/768 vysokem laptopu — a v portretu ji jeste prepisuje
+         * `@include vb(... height: 45px)`. Tenhle selektor ma specificitu (0,2,0), takze
+         * by porazil OBOJI vcetne toho media query: vlastni `height: clamp(2.375rem, 4vh,
+         * 3.25rem)` tu srazila pilulku na 38px na kazdem landscape notebooku i na svislem
+         * telefonu, tedy pod dotykovy cil. Sirka je nase geometrie, vyska je webButtonu.
+         */
 
-            span {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex: 0 0 auto;
-            }
-        }
+        /* `.slider` uvnitr je `fit-content`; kdyz tlacitku predepiseme sirku, musi ji prevzit,
+           jinak by se vypln (`.solidFill` sedi v `inset: 0` slideru) pri hoveru natahla jen
+           pod popisek a ne pres celou pilulku. */
+        > div { width: 100%; }
     }
 
     > a {
-        padding-bottom: 2px;
-        border-bottom: 1px solid rgba(38, 40, 32, 0.48);
+        padding-bottom: 0.125rem;
+        border-bottom: 1px solid rgb(var(--ink-06-rgb) / .48);
         color: var(--blackText);
-        font-size: 14px;
+        font-size: clamp(0.8125rem, 0.88vw, 1rem);
         white-space: nowrap;
         transition: opacity 0.25s ease;
 
@@ -359,13 +434,20 @@
         flex-direction: column;
     }
 
-    .faqSearch { width: 100%; }
+    /* Pruh je tu sloupec, ne radek — pole uz nema vodorovnou vul, kterou by absorbovalo,
+       takze se `flex`/`max-width` z landscape pravidla vypina a pole je proste na sirku. */
+    .faqSearch { width: 100%; flex: none; max-width: none; }
     .faqCategories { overflow-x: auto; }
     .faqLayout { grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.8fr); }
 }
 
 @include below-px(800px) {
-    .FAQBody { padding-top: 120px; }
+    .FAQBody {
+        padding-top: 120px;
+        /* Uzsi sloupec s cislem. Odsazeni odpovedi se z nej dopocita samo
+           (8 + 32 + 12 = 52px, drive opsane rucne do `.faqAnswer p`). */
+        --faq-num-col: 32px;
+    }
 
     .faqIntro,
     .faqLayout { grid-template-columns: 1fr; }
@@ -375,6 +457,6 @@
     .faqToolbar { margin-inline: -8px; }
     .faqCategories button { padding-inline: 13px; }
     .faqContact { position: relative; top: auto; }
-    .questionTitle { grid-template-columns: 32px minmax(0, 1fr) 30px; min-height: 68px; }
-    .faqAnswer p { padding-left: 52px; padding-right: 20px; }
+    .questionTitle { min-height: 68px; }
+    .faqAnswer p { padding-right: 20px; }
 }

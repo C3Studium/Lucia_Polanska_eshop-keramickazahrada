@@ -187,10 +187,16 @@ export default DiscountCode
 
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
-   render only gave framer-motion new references to re-diff. Values are unchanged. */
-const initial = { height: 0, opacity: 0, y: -8 }
-const animate = { height: "auto" as const, opacity: 1, y: 0 }
-const exit = { height: 0, opacity: 0, y: -6 }
+   render only gave framer-motion new references to re-diff.
+   Dráha je svislá, takže vh místo px: dosavadních 8px na 900px vysokém okně je
+   .89vh (8 / 900 * 100). Výstupní posun byl 6px, tedy 3/4 vstupního — odvozuje se
+   z jednoho čísla, neopisuje se druhé: .89 * .75 = .67vh. Na 660px notebooku je
+   z toho 5.9px, na 1351 12.0px, tedy pořád tentýž podíl obrazovky.
+   Obě strany interpolace musí mít stejný tvar výrazu, proto "0vh" a ne 0. */
+const REVEAL_VH = 0.89
+const initial = { height: 0, opacity: 0, y: `-${REVEAL_VH}vh` }
+const animate = { height: "auto" as const, opacity: 1, y: "0vh" }
+const exit = { height: 0, opacity: 0, y: `-${(REVEAL_VH * 0.75).toFixed(2)}vh` }
 const transition = {
                   height: { duration: 0.48, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] },
                   opacity: { duration: 0.24, delay: 0.08 },

@@ -6,6 +6,7 @@ import { useMemo, type CSSProperties } from "react"
 
 import { useShadersEnabled } from "@lib/hooks/use-shaders-enabled"
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 type AmbientPreset = {
   name: "showcase" | "legal" | "commerce" | "account"
@@ -19,7 +20,7 @@ type AmbientPreset = {
 const presets: Record<AmbientPreset["name"], AmbientPreset> = {
   showcase: {
     name: "showcase",
-    colors: ["#FFE8D6", "#F4CDB2", "#FFF4EA"],
+    colors: [palette.ambientShowcase1, palette.ambientShowcase2, palette.ambientShowcase3],
     opacity: 0.2,
     interactive: true,
     speed: 0.22,
@@ -27,7 +28,7 @@ const presets: Record<AmbientPreset["name"], AmbientPreset> = {
   },
   legal: {
     name: "legal",
-    colors: ["#eee4c9", "#d4d1a7", "#f8ead8"],
+    colors: [palette.ambientLegal1, palette.ambientLegal2, palette.ambientLegal3],
     opacity: 0.085,
     interactive: false,
     speed: 0.075,
@@ -35,7 +36,7 @@ const presets: Record<AmbientPreset["name"], AmbientPreset> = {
   },
   commerce: {
     name: "commerce",
-    colors: ["#f4dfcd", "#c79879", "#ead7c2"],
+    colors: [palette.ambientCommerce1, palette.ambientCommerce2, palette.ambientCommerce3],
     opacity: 0.06,
     interactive: false,
     speed: 0.065,
@@ -43,7 +44,7 @@ const presets: Record<AmbientPreset["name"], AmbientPreset> = {
   },
   account: {
     name: "account",
-    colors: ["#c7c49a", "#ebe0c8", "#676a52"],
+    colors: [palette.ambientAccount1, palette.ambientAccount2, palette.ambientAccount3],
     opacity: 0.1,
     interactive: false,
     speed: 0.07,
@@ -106,11 +107,11 @@ export default function GlobalLiquidEther() {
    */
   const quality = useMemo(
     () => ({
-      mouseForce: preset.interactive ? 18 : 0,
-      cursorSize: preset.interactive ? 82 : 0,
-      iterationsPoisson: preset.interactive ? 14 : 10,
-      resolution: preset.interactive ? 0.28 : 0.2,
-      takeoverDuration: preset.interactive ? 0.25 : 0,
+      mouseForce: preset.interactive ? 52 : 0,
+      cursorSize: preset.interactive ? 50 : 0,
+      iterationsPoisson: preset.interactive ? 24 : 10,
+      resolution: preset.interactive ? 0.35 : 0.2,
+      takeoverDuration: preset.interactive ? 0.35 : 0,
       autoResumeDelay: preset.interactive ? 1400 : 0,
       autoRampDuration: preset.interactive ? 0.6 : 1.8,
       autoSpeed: preset.speed,

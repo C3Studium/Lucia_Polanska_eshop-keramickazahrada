@@ -1,5 +1,8 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import { motion, useInView } from "framer-motion"
@@ -21,7 +24,21 @@ type LegalDocumentProps = {
   accent: string
   description: string
   updated?: string
+  /** Znění zabudované v kódu — záloha pro výpadek CMS. */
   sections: LegalSectionData[]
+  /**
+   * Blok `<stránka>.text` z CMS. Nese nadpisy, odstavce a odrážky kapitol
+   * v pořadí, v jakém stojí v `sections`.
+   */
+  block?: CopyBlock
+  /**
+   * Dokumenty ke stažení pod poslední kapitolou.
+   *
+   * Slot, ne komponenta vykreslená za `<LegalDocument>`: ta vrací `<main>`,
+   * takže seznam za ní by skončil mimo hlavní obsah stránky — pro odečítač
+   * obrazovky i pro osnovu dokumentu je to jiné místo, než kam patří.
+   */
+  downloads?: ReactNode
   supplements?: Record<string, ReactNode>
 }
 
@@ -29,10 +46,15 @@ function Chapter({
   section,
   index,
   supplement,
+  editTitle,
+  editBody,
 }: {
   section: LegalSectionData
   index: number
   supplement?: ReactNode
+  /** Atributy překryvu pro nadpis kapitoly a její text. Mimo náhled prázdné. */
+  editTitle?: Record<string, string | undefined>
+  editBody?: Record<string, string | undefined>
 }) {
   const ref = useRef<HTMLElement>(null)
   const isInView = useInView(ref, { once: true, margin: "0px 0px -12% 0px" })
@@ -61,10 +83,14 @@ function Chapter({
 
       <div className={styles.chapterHeading}>
         <span>{String(index + 1).padStart(2, "0")}</span>
-        <h2 id={`${section.id}-title`}>{section.title}</h2>
+        <h2 id={`${section.id}-title`} {...editTitle}>{section.title}</h2>
       </div>
 
-      <div className={styles.chapterBody}>
+      {/* Překryv sedí na celém těle kapitoly, ne na jednotlivých odstavcích:
+          v CMS je to jedno pole, kde odstavce dělí prázdný řádek. Anotovat
+          každý `<p>` zvlášť by nabízelo úpravu něčeho, co samostatně
+          uloženo není. */}
+      <div className={styles.chapterBody} {...editBody}>
         {section.paragraphs?.filter(Boolean).map((paragraph, paragraphIndex) => (
           <p key={paragraphIndex}>{paragraph}</p>
         ))}
@@ -90,9 +116,68 @@ export default function LegalDocument({
   accent,
   description,
   updated = "Aktuální znění",
-  sections,
+  sections: fallbackSections,
+  downloads,
+  block,
   supplements,
 }: LegalDocumentProps) {
+  /* Stránka se po zapnutí režimu editace sama nepřekreslí — viz hook. */
+  useEditRerender()
+
+  /*
+   * Okolní texty stránky z CMS, s hodnotami z kódu jako zálohou.
+   *
+   * Jsou v témže bloku jako kapitoly (`<stránka>.text`), ne ve druhém: redaktor otevře
+   * jeden dokument a má v něm celou stránku. Fungují tím pro všech šest právních stránek
+   * naráz — komponent je jeden.
+   */
+  /* `accent` má ve schématu strop ŠESTI položek — víc by Studio odmítlo uložit.
+     Slova „kapitol" a „Obsah" proto zůstávají v kódu; jsou to obecné popisky
+     rozhraní, ne texty stránky. */
+  const eyebrowText = block?.accent?.[0]?.trim() || eyebrow
+  const codeText = block?.accent?.[1]?.trim() || code
+  const ownerText = block?.accent?.[2]?.trim() || "Keramická zahrada · Písek"
+  const documentLabel = block?.accent?.[3]?.trim() || "Dokument"
+  const updatedText = block?.accent?.[4]?.trim() || updated
+  const ctaText = block?.accent?.[5]?.trim() || "Číst dokument"
+  const chaptersWord = "kapitol"
+  const indexHeading = "Obsah"
+  const titleText = block?.title?.trim() || title
+  const accentText = block?.headline?.trim() || accent
+  const descriptionText = block?.bodyText?.trim() || description
+
+  /*
+   * Znění z CMS, struktura z kódu.
+   *
+   * `id` se z bloku NEČTE, i když v něm (jako `lead`) je: visí na něm kotva
+   * v adrese, boční navigace a `aria-labelledby`. Odkaz, který si někdo
+   * uložil nebo poslal v e-mailu, nesmí přestat platit tím, že redaktor
+   * přepsal nadpis kapitoly.
+   *
+   * Sekce, kterou blok nemá, si nechá znění z kódu — dokument se tak nikdy
+   * nezkrátí ani nezprázdní, ať je v CMS cokoliv. U právního textu je to
+   * podstatnější než jinde: chybějící odstavec obchodních podmínek není
+   * kosmetická vada.
+   */
+  const sections = fallbackSections.map((section, index) => {
+    const item = block?.items?.[index]
+    if (!item) return section
+    const paragraphs = (item.value ?? "")
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+    const bullets = (item.note ?? "")
+      .split(/\n+/)
+      .map((b) => b.trim())
+      .filter(Boolean)
+    return {
+      ...section,
+      title: item.label?.trim() || section.title,
+      paragraphs: paragraphs.length ? paragraphs : section.paragraphs,
+      bullets: bullets.length ? bullets : section.bullets,
+    }
+  })
+
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "")
 
   useEffect(() => {
@@ -131,40 +216,56 @@ export default function LegalDocument({
     <main className={styles.page} aria-labelledby="legal-document-title">
       <header className={styles.hero}>
         <div className={styles.heroMeta}>
-          <span>{eyebrow}</span>
-          <span>{code}</span>
+          <span {...editable(block, "accent.0")}>{eyebrowText}</span>
+          <span {...editable(block, "accent.1")}>{codeText}</span>
         </div>
 
         <div className={styles.heroGrid}>
           <div className={styles.heroTitle}>
-            <p>Keramická zahrada · Písek</p>
-            <h1 id="legal-document-title">{title}</h1>
-            <em>{accent}</em>
+            <p {...editable(block, "accent.2")}>{ownerText}</p>
+            <h1 id="legal-document-title" {...editable(block, "title")}>
+              {titleText}
+            </h1>
+            <em {...editable(block, "headline")}>{accentText}</em>
           </div>
 
           <div className={styles.heroIntro}>
-            <span>Dokument</span>
-            <p>{description}</p>
+            <span {...editable(block, "accent.3")}>{documentLabel}</span>
+            <p {...editable(block, "body")}>{descriptionText}</p>
             <div>
-              <small>{updated}</small>
-              <small>{sections.length} kapitol</small>
+              <small {...editable(block, "accent.4")}>{updatedText}</small>
+              {/* Počet kapitol se počítá; slovo za ním je v kódu (strop accent). */}
+              <small>
+                {sections.length} {chaptersWord}
+              </small>
             </div>
           </div>
         </div>
 
         <div className={styles.continue}>
-          <WebButton
-            Kind="Button"
-            title="Číst dokument"
-            onClickAction={() => goToChapter(sections[0]?.id)}
-          />
+          {/* Obal, ne `WebButton`: ten si vykresluje vlastní vnitřek a datové atributy
+              by skončily na prvku, který se při animaci přepisuje. */}
+          <span {...editable(block, "accent.5")}>
+            <WebButton
+              Kind="Button"
+              title={ctaText}
+              onClickAction={() => goToChapter(sections[0]?.id)}
+            />
+          </span>
         </div>
       </header>
 
       <div className={styles.document}>
-        <aside className={styles.index} aria-label="Obsah dokumentu">
+        {/* data-lenis-prevent: v boční podobě má rejstřík max-height 100vh minus lepicí
+            odsazení, takže je to skutečný scroll kontejner — na 1280x720 zbývá 570px na
+            seznam, který na /smluvni-podminky přeteče. Bez toho Lenis spolkne wheel nad
+            seznamem a odroluje stránku místo něj. */}
+        <aside className={styles.index} aria-label="Obsah dokumentu" data-lenis-prevent>
           <div className={styles.indexHeading}>
-            <span>Obsah</span>
+            {/* Názvy položek pod tím jsou `section.title`, tedy popisky kapitol z CMS —
+                přejmenovaná kapitola se v rejstříku přejmenuje sama. Kotva zůstává, ta
+                visí na `id` z kódu, aby uložený odkaz nepřestal platit. */}
+            <span>{indexHeading}</span>
             <span>{String(sections.length).padStart(2, "0")}</span>
           </div>
 
@@ -200,8 +301,12 @@ export default function LegalDocument({
               section={section}
               index={index}
               supplement={supplements?.[section.id]}
+              editTitle={editable(block, `items.${index}.label`)}
+              editBody={editable(block, `items.${index}.value`)}
             />
           ))}
+
+          {downloads}
 
           <div className={styles.documentEnd} aria-hidden="true">
             <span />

@@ -6,6 +6,7 @@ import { z } from "zod"
 import { COURSE_MODULE } from "../../../../modules/course"
 import {
   normalizeUntilDayKey,
+  planMultiDayOccurrences,
   planWeeklyOccurrences,
 } from "../../../../modules/course/recurrence"
 import type CourseModuleService from "../../../../modules/course/service"
@@ -37,7 +38,19 @@ export const PostCourseTermSchema = z
   .object({
     title: z.string().trim().min(1, "Vyplňte název termínu.").max(200),
     location: z.string().trim().min(1, "Vyplňte místo konání.").max(200),
-    starts_at: z.string().datetime({ offset: true }),
+    /**
+     * Two ways to say when. `starts_at` is the single-instant form the edit
+     * path and older callers use; `days` + `time` is what the calendar
+     * produces — the owner clicks the days and names one wall-clock time for
+     * all of them.
+     */
+    starts_at: z.string().datetime({ offset: true }).optional(),
+    days: z
+      .array(z.string().trim())
+      .min(1, "Vyberte v kalendáři aspoň jeden den.")
+      .max(60)
+      .optional(),
+    time: z.string().trim().optional(),
     duration_minutes: z.number().int().min(15).max(24 * 60).nullable().optional(),
     capacity: z.number().int().min(1).max(500),
     price_single: z.number().min(0),
@@ -47,12 +60,12 @@ export const PostCourseTermSchema = z
     status: z.enum(["draft", "published"]).default("draft"),
     note: z.string().trim().max(2000).nullable().optional(),
     /**
-     * Optional weekly repetition: create a term every week (same Prague
-     * weekday and wall-clock time as `starts_at`) through `until` inclusive.
-     * `until` is a Prague calendar day "YYYY-MM-DD" (what the drawer sends)
+     * Optional weekly repetition: from every picked day, a term every week
+     * (same Prague weekday and wall-clock time) through `until` inclusive.
+     * `until` is a Prague calendar day "YYYY-MM-DD" (what the calendar sends)
      * or a full ISO instant; the server re-generates the occurrence list
      * itself (`modules/course/recurrence.ts`) — it never trusts a client
-     * count — and caps it at 60.
+     * count — and caps the union at 60.
      */
     repeat: z
       .object({
@@ -61,7 +74,16 @@ export const PostCourseTermSchema = z
       })
       .optional(),
   })
-  .superRefine(groupPricingRefinement)
+  .superRefine((value, ctx) => {
+    groupPricingRefinement(value, ctx)
+    if (!value.starts_at && !(value.days?.length && value.time)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["days"],
+        message: "Vyberte v kalendáři dny a čas začátku.",
+      })
+    }
+  })
 
 export const PatchCourseTermSchema = z
   .object({
@@ -106,6 +128,52 @@ export async function GET(
   res.json({ terms: terms.map(serializeAdminTerm) })
 }
 
+/**
+ * The instants to create, whichever way the request named them.
+ *
+ * Returns a Czech message instead of a list when the request cannot be read —
+ * the caller turns that straight into a 400.
+ */
+const resolveOccurrences = (
+  input: z.infer<typeof PostCourseTermSchema>
+): { occurrences: string[]; truncated: boolean } | { error: string } => {
+  const untilKey = input.repeat ? normalizeUntilDayKey(input.repeat.until) : null
+  if (input.repeat && !untilKey) {
+    return { error: "Datum konce opakování není platné." }
+  }
+
+  if (input.days?.length && input.time) {
+    const plan = planMultiDayOccurrences(input.days, input.time, untilKey)
+    if (!plan.ok) {
+      return {
+        error:
+          plan.reason === "invalid_time"
+            ? "Čas začátku není platný — zadejte ho ve tvaru 17:00."
+            : plan.reason === "no_days"
+              ? "Vyberte v kalendáři aspoň jeden den."
+              : "Některý z vybraných dnů není platné datum.",
+      }
+    }
+    return { occurrences: plan.occurrences, truncated: plan.truncated }
+  }
+
+  // Single-instant form. Without repetition it is simply one occurrence.
+  const startsAt = input.starts_at as string
+  if (!untilKey) {
+    return { occurrences: [new Date(startsAt).toISOString()], truncated: false }
+  }
+  const plan = planWeeklyOccurrences(startsAt, untilKey)
+  if (!plan.ok) {
+    return {
+      error:
+        plan.reason === "until_before_start"
+          ? "Konec opakování je dřív než první termín — posuňte ho na pozdější datum."
+          : "Datum začátku není platné.",
+    }
+  }
+  return { occurrences: plan.occurrences, truncated: plan.truncated }
+}
+
 export async function POST(
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
@@ -141,38 +209,17 @@ export async function POST(
     note: input.note || null,
   })
 
-  if (!input.repeat) {
-    const term = await courseService.createCourseTerms(
-      termFields(new Date(input.starts_at)) as never
-    )
-    res
-      .status(201)
-      .json({ term: serializeAdminTerm({ ...term, reservations: [] }) })
-    return
-  }
-
   /*
-   * Weekly repetition. The server re-derives the occurrence list itself from
-   * starts_at + until with the same pure function the drawer preview uses
-   * (`planWeeklyOccurrences`) — the client's count is display-only. Each
-   * occurrence is inserted independently: a duplicate (same title + same
-   * instant, any status except cancelled) is skipped, an insert error stops
-   * only that one date — partial creation with honest reporting is the
-   * intended behavior, not all-or-nothing.
+   * The server re-derives the occurrence list itself with the same pure
+   * functions the calendar preview uses (`modules/course/recurrence.ts`) — the
+   * client's count is display-only. Each occurrence is inserted independently:
+   * a duplicate (same title + same instant, any status except cancelled) is
+   * skipped, an insert error stops only that one date — partial creation with
+   * honest reporting is the intended behavior, not all-or-nothing.
    */
-  const untilKey = normalizeUntilDayKey(input.repeat.until)
-  if (!untilKey) {
-    res.status(400).json({ message: "Datum konce opakování není platné." })
-    return
-  }
-  const plan = planWeeklyOccurrences(input.starts_at, untilKey)
-  if (!plan.ok) {
-    res.status(400).json({
-      message:
-        plan.reason === "until_before_start"
-          ? "Konec opakování je dřív než první termín — posuňte ho na pozdější datum."
-          : "Datum začátku není platné.",
-    })
+  const resolved = resolveOccurrences(input)
+  if ("error" in resolved) {
+    res.status(400).json({ message: resolved.error })
     return
   }
 
@@ -197,7 +244,7 @@ export async function POST(
   const createdTerms: any[] = []
   const skippedDates: string[] = []
   const failedDates: string[] = []
-  for (const occurrence of plan.occurrences) {
+  for (const occurrence of resolved.occurrences) {
     if (occupied.has(occurrence)) {
       skippedDates.push(occurrence)
       continue
@@ -213,16 +260,20 @@ export async function POST(
     }
   }
 
+  const serialized = createdTerms.map((term) =>
+    serializeAdminTerm({ ...term, reservations: [] })
+  )
+
   res.status(201).json({
-    terms: createdTerms.map((term) =>
-      serializeAdminTerm({ ...term, reservations: [] })
-    ),
+    terms: serialized,
+    /** First created term — kept so a single-term caller can still read `.term`. */
+    term: serialized[0] ?? null,
     created: createdTerms.length,
     skipped: skippedDates.length,
     skipped_dates: skippedDates,
     failed: failedDates.length,
     failed_dates: failedDates,
-    /** True when the horizon held more than 60 weeks and was cut short. */
-    truncated: plan.truncated,
+    /** True when the plan held more than 60 occurrences and was cut short. */
+    truncated: resolved.truncated,
   })
 }

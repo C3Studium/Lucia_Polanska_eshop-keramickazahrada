@@ -35,12 +35,28 @@
     flex: 0 0 1.15em;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+
+    /* Spacing and artwork, not a hairline, so both ride the type instead of standing still.
+       The label size is the parent's `clamp(0.8125rem, 0.95vw, 1rem)` on `.footerLink`, and above
+       1921 the rem ramp lifts that ceiling; a flat 14px arrow would have stayed 14px there while
+       the word next to it grew a third — the same freeze the rest of the chrome has. `em`, not a
+       clamp of its own: a second clamp would carry its own live band and the arrow would drift
+       against the label rather than track it. One geometry, one place. */
+    gap: 0.2em;
     width: 100%;
     color: currentColor;
     white-space: nowrap;
 
-    svg { flex: 0 0 auto; }
+    /* Beats the `size={14}` width/height attributes on the SVG — presentation attributes lose to
+       CSS. 0.875em is exactly 14px at the 1rem ceiling, so every window from 1684px up renders
+       what it rendered before; below that the arrow shrinks with the 13px text it sits beside,
+       where it used to stand taller than the cap height. Still well inside the 1.15em window, so
+       `.linkFace` keeps its height and the track stays exactly two faces tall. */
+    svg {
+        flex: 0 0 auto;
+        width: 0.875em;
+        height: 0.875em;
+    }
 }
 
 .Line {

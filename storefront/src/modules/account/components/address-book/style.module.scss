@@ -1,18 +1,32 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
 .root {
   display: grid;
-  gap: clamp(28px, 4vw, 48px);
+
+  // .root je jednosloupcová mřížka (řádek „Vaše adresy:" a pod ním mřížka karet),
+  // takže tenhle gap je čistě SVISLÁ mezera — soupeří o výšku okna, ne o šířku.
+  // Proto vh. Živé pásmo 824–1412px vysoko: na 1920x1080 vyjde ~36.7px,
+  // na 1366x768 spadne na podlahu 28px sám. Nízký laptop tím nepotřebuje
+  // vlastní pravidlo v lt. Krajní členy v rem, aby je nad 1921 zvedl ramp.
+  gap: clamp(1.75rem, 3.4vh, 3rem);
   width: 100%;
 
   .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(16px, 2vw, 28px);
+
+    // Tady je vw správně — mezera dělí SLOUPCE. Živé pásmo 842–1473px široko,
+    // tedy přesně tam, kde je většina uživatelů. Dřív krajní členy v px stály
+    // od ~1400 natvrdo na stropu 28px a ramp na ně nedosáhl.
+    gap: clamp(1rem, 1.9vw, 1.75rem);
     flex: 1 1 auto;
   }
 }
 
-@include below-px(760px) {
+// Dva sloupce → jeden je změna DRUHU layoutu, takže breakpoint sem patří.
+// Podle pravidla 7 vzat z tabulky: below(xs) je <750px a dělá totéž, co dřívější
+// ruční below-px(760px), který v system/_breakpoints.scss žádný stop nemá.
+@include below(xs) {
   .root .grid {
     grid-template-columns: 1fr;
   }

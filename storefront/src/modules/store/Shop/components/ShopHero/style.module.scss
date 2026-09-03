@@ -5,8 +5,8 @@
   margin: 0 16px;
   overflow: hidden;
   border-radius: 32px;
-  background: #25261f;
-  color: #fff;
+  background: var(--ink-05);
+  color: var(--white);
 
   /* 80svh of hero is a fair trade on a tall screen. On a short laptop it is most of the window
      before a single product appears, and on a phone held sideways nearly all of it — the two
@@ -32,8 +32,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(20, 21, 17, 0.76) 0%, rgba(20, 21, 17, 0.34) 49%, rgba(20, 21, 17, 0.08) 76%),
-    linear-gradient(0deg, rgba(20, 21, 17, 0.52) 0%, transparent 45%);
+    linear-gradient(90deg, rgb(var(--ink-01-rgb) / .76) 0%, rgb(var(--ink-01-rgb) / .34) 49%, rgb(var(--ink-01-rgb) / .08) 76%),
+    linear-gradient(0deg, rgb(var(--ink-01-rgb) / .52) 0%, transparent 45%);
 }
 
 .copy {
@@ -60,13 +60,13 @@
     padding: 13px 18px 13px 22px;
     border: 0;
     border-radius: 999px;
-    background: #ffe8d6;
-    color: #212222;
+    background: var(--cream-06);
+    color: var(--black-03);
     cursor: pointer;
     transition: gap 0.35s cubic-bezier(0.76, 0, 0.24, 1), background-color 0.25s ease;
 
     &:hover,
-    &:focus-visible { gap: 36px; background: #fff4eb; }
+    &:focus-visible { gap: 36px; background: var(--cream-10); }
   }
 }
 
@@ -117,7 +117,7 @@
 @include below-px(760px) {
   .root { min-height: 84svh; margin: 0 8px; border-radius: 0 0 22px 22px; }
   .image img { object-position: 62% center; }
-  .veil { background: linear-gradient(0deg, rgba(20,21,17,.82), rgba(20,21,17,.12) 85%); }
+  .veil { background: linear-gradient(0deg, rgb(var(--ink-01-rgb) / .82), rgb(var(--ink-01-rgb) / .12) 85%); }
   .copy { bottom: 110px; width: calc(100% - 48px); }
   /* 17vw set the longest Czech word wider than the screen and it was clipped at the right
      edge. Sized off the longest word rather than the viewport, and allowed to break. */

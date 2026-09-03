@@ -6,26 +6,68 @@
  * Cream tones are measured against --pdp-ink (#20211c), same as the CTA notes.
  */
 
+/*
+ * Svislý stoh (pilulka / popisek / chyba) není telefonní kompozice, která by
+ * na tabletu měla čím povolit — je to táž kompozice jako na 1920, protože
+ * nákupní sloupec je úzký na KAŽDÉ šířce: naměřeno 219.7 px obsahu na
+ * 1024×1366 a 324.2 px na 1366×768 proti 192 px samotné pilulky. Vedle sebe
+ * se pilulka a věta „Doručíme na vaši uloženou adresu." nevejdou nikde.
+ *
+ * `width: 100%` + `align-items: flex-end` je to jediné, co drží pravou hranu
+ * této pilulky na pravé hraně té nad ní: CartButton sedí v
+ * `.product__details__cta__buy__buttons` (`width: 100%`, `justify-content:
+ * flex-end`), tenhle blok je jeho sourozenec ve sloupci, ne jeho položka.
+ * Přeměřeno na obou svislých tabletech: 768×1024 obě pilulky 192×47.4 px
+ * s pravou hranou na x=737.3, 1024×1366 obě 192×50 px na x=964.6, rozdíl
+ * pravých hran 0.0 px — a to i na 1024, kde se řádek nad tím láme na dva.
+ */
 .root {
   display: flex;
   width: 100%;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  /* Svislá mezera, tedy vh: na telefonu 320×568 je 4 px, na 768×1024 už
+     6.1 px a na 1024×1366 strop 8 px. Výšku má tablet, tak ji dostane. */
+  gap: clamp(0.25rem, 0.6vh, 0.5rem);
 }
 
 .button {
   position: relative;
   display: grid;
-  width: clamp(210px, 14vw, 250px);
-  height: 46px;
-  padding: 0 24px;
+  /*
+   * Geometry comes from ONE place. The CTA stage publishes --cta-pill-w / -h for
+   * both pills, so this outline button can never disagree with the filled one
+   * above it (it used to say 46px while the primary said 50px). The fallbacks
+   * are that same geometry written properly: ends in rem, so the >=1921 ramp
+   * lifts them, and the height on vh, so a 720px-tall laptop tightens itself
+   * without a single rule in `lt`. Only the skin below is this button's own.
+   *
+   * Kontrakt pilulky má čtyři proměnné (cart-button.module.scss r. 10–13), ale
+   * tenhle soubor četl jen dvě: vodorovný padding a velikost popisku si držel
+   * sám. Dokud je předek nenastaví, je to bez následku — proto jsou jeho vlastní
+   * hodnoty doslova ty dosavadní, jako fallback (přeměřeno: 768×1024 i 1024×1366
+   * dávají tutéž pilulku 192×47.4 / 192×50 px a popisek 13 px jako předtím).
+   * Následek by nastal ve chvíli, kdy předek pilulku přeladí pro užší tabletový
+   * sloupec — na 1024×1366 má nákupní sloupec 219.7 px obsahu a řádek
+   * 44 + 12 + 192 = 248 px se v něm láme na dva (naměřeno 219.7×106) — protože
+   * by přeladil jen tu primární a pilulky by se rozešly potřetí. Teď na jeden
+   * zápis u `.product__details__cta__buy` reagují obě.
+   */
+  width: var(--cta-pill-w, clamp(13.125rem, 14vw, 15.625rem));
+  max-width: 100%;
+  height: var(--cta-pill-h, clamp(2.75rem, 4.63vh, 3.125rem));
+  padding: 0 var(--cta-pill-px, clamp(1.25rem, 1.6vw, 1.625rem));
+  /* Popisek se pak měří touhle pilulkou, ne oknem — kdyby předek poslal do
+     --cta-pill-label `cqw` (primární pilulka to tak má), musí být na co se
+     ptát. Šířka výše je určitá, takže inline-size kontejnment nemá co zacyklit,
+     a `.indicator` je absolutní v už tak `position: relative` rodiči. */
+  container-type: inline-size;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 232, 214, 0.58);
+  border: 1px solid rgb(var(--cream-06-rgb) / .58);
   border-radius: 999px;
-  background: rgba(255, 232, 214, 0.06);
-  color: var(--pdp-cream, #ffe8d6);
+  background: rgb(var(--cream-06-rgb) / .06);
+  color: var(--pdp-cream, var(--cream-06));
   cursor: pointer;
   transition:
     color 160ms ease 140ms,
@@ -33,10 +75,41 @@
     opacity 280ms ease;
 }
 
-.button:hover,
+/*
+ * Hover je afordance myši, ne stav zařízení. Na dotyku :hover po tapnutí VISÍ,
+ * a tady to stojí popisek: ink-05 na rgb(cream/.06) nad inkoustovým jevištěm je
+ * tmavé na tmavém. Čitelným ho dělá teprve .indicator, který kremově vyplní
+ * pilulku — jenže ten jede na framer whileHover (index.tsx r. 105), a ten si
+ * touch odfiltruje sám (motion-dom hover.mjs ignoruje pointerType touch).
+ * Po tapnutí tedy zůstal viset jen ten tmavý text, bez výplně pod ním.
+ *
+ * Proto jde :hover do fine-pointer a :focus-visible zůstává bez brány: framer
+ * pouští whileFocus taky až přes matches(:focus-visible) (focus.mjs), takže
+ * výplň a barva textu se přepínají spolu — na dotyku ani na klávesnici se
+ * nerozejdou. Blok je AŽ ZA pravidlem, které přebíjí: mixin emituje obyčejné
+ * media query, a o stejné specificitě rozhoduje pořadí v souboru.
+ *
+ * Přeměřeno na svislém tabletu (`node .rdshots/_tb-buynow.cjs`, 768×1024,
+ * 834×1112 a 1024×1366 s emulovaným dotykem), protože tablet je dotykový
+ * stejně jako telefon, jen s myšovitou šířkou. Po skutečném tapnutí je
+ * `matches(":hover")` TRUE — CSS :hover tedy visí i tady — ale pravidlo sedí
+ * v `(hover: hover) and (pointer: fine)`, takže se neuplatní: popisek zůstává
+ * krémový (rgb(255,232,214)) na rgb(45.4,44.9,39.2) pod ním, tedy 11.71:1
+ * v klidu i po tapnutí, a `.indicator` zůstává na scaleX(0). Popisek je proto
+ * čitelný BEZ výplně, což je celý požadavek na dotykovém zařízení. Kontrolní
+ * vzorek myší (1366×768): tam :hover platí, popisek ztmavne na 1.17:1 vůči
+ * holé pilulce — a čitelným ho dělá právě ta výplň, kterou tam framer pustí.
+ */
 .button:focus-visible {
-  border-color: var(--pdp-cream, #ffe8d6);
-  color: #20211c;
+  border-color: var(--pdp-cream, var(--cream-06));
+  color: var(--ink-05);
+}
+
+@include fine-pointer {
+  .button:hover {
+    border-color: var(--pdp-cream, var(--cream-06));
+    color: var(--ink-05);
+  }
 }
 
 .button:disabled {
@@ -49,7 +122,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: var(--pdp-cream, #ffe8d6);
+  background: var(--pdp-cream, var(--cream-06));
   transform-origin: left center;
 }
 
@@ -57,23 +130,35 @@
   position: relative;
   z-index: 1;
   white-space: nowrap;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  /* Rozepsáno ze zkratky `font:` schválně, stejně jako u primární pilulky:
+     kdyby předek poslal do --cta-pill-label neplatnou hodnotu, zkratka by
+     spadla celá i s rodinou písma. Takhle spadne nanejvýš velikost.
+     Hodnota je beze změny ta dosavadní — podlaha 0.8125rem = 13 px drží nad
+     hranicí čitelnosti 12 px a platí na všech telefonech i na obou svislých
+     tabletech (1.05vw je 8.1 px na 768 a 10.8 px na 1024, tedy pod podlahou);
+     strop 1rem veze nad 1921 ramp. Do pilulky se vejde s velkou rezervou:
+     obsahový box 150 px proti 75.8 px inkoustu „Koupit ihned" a 85.3 px
+     u „Připravujeme…", takže `overflow: hidden` výše nemá co uříznout. */
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: var(--cta-pill-label, clamp(0.8125rem, 1.05vw, 1rem));
+  font-weight: 400;
+  line-height: 1;
 }
 
 .hint {
   margin: 0;
   /* .48 was 4.2:1 on the ink stage — this line is the only place that says
      where a one-click purchase ships. .64 clears 6:1. */
-  color: rgba(255, 232, 214, 0.64);
-  font: 400 13px/1.35 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .64);
+  font: 400 clamp(0.75rem, 0.95vw, 0.875rem) / 1.35 "Sansation-Regular", sans-serif;
   text-align: right;
 }
 
 .error {
   margin: 0;
-  color: #f3b3a4;
+  color: var(--clay-41);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 0.95vw, 0.875rem);
   line-height: 1.5;
   text-align: right;
 }

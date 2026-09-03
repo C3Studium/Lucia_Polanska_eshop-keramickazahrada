@@ -2,7 +2,11 @@
 /* Shipping component styles - SASS nesting */
 .root {
   position: relative;
-  padding: 34px 0 42px 58px;
+  /* Svisle na vh — 3.15vh je 34px na 1080, 3.9vh je 42px na 1080; na 720/768 se to
+     sevře samo (22.7 / 24.2 px nahoře), takže nízký laptop nepotřebuje pravidlo v lt.
+     Vodorovně 3.625rem = 58px — levá lišta pro číslo kroku, sdílená s addresses,
+     payment a review; v rem, aby ji ramp nad 1921 zvedl stejně jako sourozencům. */
+  padding: clamp(1.4rem, 3.15vh, 2.6rem) 0 clamp(1.75rem, 3.9vh, 3.2rem) 3.625rem;
   background: transparent;
 
   .header {
@@ -14,6 +18,12 @@
     .heading {
       display: flex;
       flex-direction: row;
+      /* Živé pásmo 1164…1891 px šířky. Nahradilo hb/vb mapu, jejíž poslední klíč
+         (xxs = min-width 400) přebíjel všechny ostatní a držel nadpis na 25.6px
+         od 1280 až po 1920. Příčka je SDÍLENÁ se všemi čtyřmi kroky (01 addresses,
+         03 payment, 04 review stojí na témž clampu) — krok 02 na ní byl jediný o 18 %
+         níž, takže aktivní krok byl vizuálně nejmenší ze čtyř.
+         od 1280 až po 1920. */
       font-size: clamp(2rem, 2.8vw, 3.15rem);
       font-weight: 400;
       gap: 0.5rem;
@@ -22,22 +32,6 @@
       line-height: .98;
       letter-spacing: -.025em;
 
-      @include hb((
-        lg: (font-size: 1.8rem),
-        md: (font-size: 1.8rem),
-        mdt: (font-size: 1.8rem),
-        sm: (font-size: 1.8rem),
-        xs: (font-size: 1.6rem),
-        xxs: (font-size: 1.6rem),
-      ));
-
-      @include vb((
-        lg: (font-size: 1.8rem),
-        md: (font-size: 1.8rem),
-        s: (font-size: 1.6rem),
-        sm: (font-size: 1.6rem),
-        xs: (font-size: 1.6rem),
-      ));
       &.inactive {
         opacity: 0.5;
         pointer-events: none;
@@ -72,50 +66,21 @@
 
       .radioLabel{
         font-family: "Sansation-Regular";
-        font-size: 1.1rem;
+        /* Živé pásmo 1371…1752. Váha zpět na 400 — 300 prosákla z xs položky mapy,
+           která přes min-width 400 platila i na 1920. */
+        font-size: clamp(.9rem, 1.05vw, 1.15rem);
 				font-weight: 400;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
-
-        @include hb((
-            md: (font-size: 1rem),
-            mdt: (font-size: 1rem),
-            sm: (font-size: 1rem),
-            xs: (font-size: 0.9rem, font-weight: 300),
-            xxs: (font-size: 0.9rem, font-weight: 300),
-        ));
-
-        @include vb((
-            lg: (font-size: 1rem),
-            md: (font-size: 1rem),
-            s: (font-size: 0.9rem, font-weight: 300),
-            sm: (font-size: 0.9rem, font-weight: 300),
-            xs: (font-size: 0.9rem, font-weight: 300),
-        ));
       }
       .radioAddress{
         margin: 0 !important;
-        font-size: 0.9rem;
+        /* Živé pásmo 1333…1752. */
+        font-size: clamp(.875rem, 1.05vw, 1.15rem);
 				font-weight: 300;
 				color: var(--blackText);
 				margin-bottom: 0.25rem;
         font-family: "Sansation-Light";
-
-        @include hb((
-            md: (font-size: 0.85rem),
-            mdt: (font-size: 0.85rem),
-            sm: (font-size: 0.85rem),
-            xs: (font-size: 0.8125rem, font-weight: 300),
-            xxs: (font-size: 0.8125rem, font-weight: 300),
-        ));
-
-        @include vb((
-            lg: (font-size: 0.85rem),
-            md: (font-size: 0.85rem),
-            s: (font-size: 0.8125rem, font-weight: 300),
-            sm: (font-size: 0.8125rem, font-weight: 300),
-            xs: (font-size: 0.8125rem, font-weight: 300),
-        ));
       }
     }
   }
@@ -126,24 +91,19 @@
     justify-content: space-between;
     font-size: 0.875rem;
     cursor: pointer;
-    padding: 1rem 2rem 1rem 2rem;
-    border: 1px solid rgba(33,34,34,.18);
-    border-radius: 12px;
-    background: rgba(255,248,238,.35);
+    /* Svisle vh (na 1080 vyjde 18.4px = strop, na 768 pak 14.6px — řádky se na
+       nízkém laptopu sevřou samy), vodorovně vw (na 1280 vyjde 28.2px, na 1454+
+       původní 2rem). */
+    padding: clamp(.7rem, 1.9vh, 1.15rem) clamp(1rem, 2.2vw, 2rem);
+    /* gap nesla hb/vb mapa, jejíž klíč xxs (min-width 400) platil i na desktopu —
+       naměřená hodnota 1rem je tady zachovaná: 1.25vw je přesně 16px na 1280. */
+    gap: clamp(.85rem, 1.25vw, 1.5rem);
+    border: 1px solid rgb(var(--black-03-rgb) / .18);
+    border-radius: .75rem;
+    background: rgb(var(--cream-10-rgb) / .35);
     margin-bottom: 0.5rem;
     transition: box-shadow 0.15s;
-    
-    @include hb((
-      sm: (gap: 0.5rem),
-      xs: (gap: 1rem),
-      xxs: (gap: 1rem),
-    ));
-    @include vb((
-      md: (gap: 1rem),
-      s: (gap: 1rem),
-      sm: (gap: 1rem),
-      xs: (gap: 1rem),
-    ));
+
     &:hover {
       box-shadow: 0 0 0 2px var(--bgPrimary);
     }
@@ -165,23 +125,12 @@
          the old `.radioLabel` selector here never matched anything, so the
          name fell back to the row's 14px. */
       .methodLabel {
-        font-size: 1rem;
+        /* Živé pásmo 1333…1752. `white-space: nowrap` z xs/xxs položky mapy bylo
+           naměřeno činné na 1920 — na desktopu jen bránilo zalomení dlouhých jmen
+           dopravců, proto je pryč. */
+        font-size: clamp(.875rem, 1.05vw, 1.15rem);
         font-weight: 400;
         color: var(--blackText);
-        @include hb((
-            md: (font-size: 0.9rem),
-            mdt: (font-size: 0.9rem),
-            sm: (white-space: nowrap, font-size: 0.9rem),
-            xs: (white-space: nowrap, font-size: 0.875rem),
-            xxs: (white-space: nowrap, font-size: 0.875rem),
-        ));
-        @include vb((
-            lg: (font-size: 0.9rem),
-            md: (white-space: nowrap, font-size: 0.9rem),
-            s: (white-space: nowrap, font-size: 0.875rem),
-            sm: (white-space: nowrap, font-size: 0.875rem),
-            xs: (white-space: nowrap, font-size: 0.875rem),
-        ));
       }
     }
 
@@ -190,33 +139,18 @@
        these sizes. */
     .radioPrice {
       justify-self: end;
-      font-size: 1rem;
+      /* Živé pásmo 1333…1752. */
+      font-size: clamp(.875rem, 1.05vw, 1.15rem);
       font-weight: 400;
       font-family: "Sansation-Regular";
       color: var(--blackText);
-
-      @include hb((
-          md: (font-size: 0.9rem),
-          mdt: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.875rem),
-          xxs: (font-size: 0.875rem),
-      ));
-
-      @include vb((
-          lg: (font-size: 0.9rem),
-          md: (font-size: 0.9rem),
-          s: (font-size: 0.875rem),
-          sm: (font-size: 0.875rem),
-          xs: (font-size: 0.875rem),
-      ));
     }
 
   }
 
   .radioAddress {
     font-size: 1rem;
-    color: var(--ui-fg-muted, #6B7280);
+    color: var(--ui-fg-muted, var(--blue-02));
   }
 
   .packetaSelector {
@@ -237,56 +171,26 @@
     width: 100%;
     margin-top: 0.75rem;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--ui-border-muted, #E5E7EB);
+    border: 1px solid var(--ui-border-muted, var(--blue-04));
     border-radius: 0.5rem;
     background: var(--bgPrimary);
 
     .packetaConfirmationLabel{
-      font-size: 1rem;
+      /* Živé pásmo 1333…1752. */
+      font-size: clamp(.875rem, 1.05vw, 1.15rem);
       font-weight: 500;
       color: var(--blackText);
       margin-bottom: 0.25rem;
       font-family: "Sansation-Regular";
-
-      @include hb((
-          md: (font-size: 0.9rem),
-          mdt: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.8125rem, font-weight: 300),
-          xxs: (font-size: 0.8125rem, font-weight: 300),
-      ));
-
-      @include vb((
-          lg: (font-size: 0.9rem),
-          md: (font-size: 0.9rem),
-          s: (font-size: 0.8125rem, font-weight: 300),
-          sm: (font-size: 0.8125rem, font-weight: 300),
-          xs: (font-size: 0.8125rem, font-weight: 300),
-      ));
     }
 
     .packetaConfirmationValue{
-      font-size: 0.9rem;
+      /* Živé pásmo 1333…1752. */
+      font-size: clamp(.875rem, 1.05vw, 1.15rem);
       color: var(--blackText);
       word-break: break-word;
       font-family: "Sansation-Light";
       font-weight: 300;
-
-      @include hb((
-          md: (font-size: 0.9rem),
-          mdt: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.8125rem, font-weight: 300),
-          xxs: (font-size: 0.8125rem, font-weight: 300),
-      ));
-
-      @include vb((
-          lg: (font-size: 0.9rem),
-          md: (font-size: 0.9rem),
-          s: (font-size: 0.8125rem, font-weight: 300),
-          sm: (font-size: 0.8125rem, font-weight: 300),
-          xs: (font-size: 0.8125rem, font-weight: 300),
-      ));
     }
   }
 
@@ -297,23 +201,25 @@
   }
 
   .divider {
-    margin-top: 2rem;
+    /* 3vh je 32px na 1080; na 768 se stáhne na 23px, na 720 na 21.6px. */
+    margin-top: clamp(1.2rem, 3vh, 2.4rem);
   }
 
   .completedSummary {
     display: grid;
-    grid-template-columns: minmax(150px, .65fr) minmax(0, 1.35fr);
+    /* 9.375rem = původních 150px, ale stopa se hne s rampem místo aby na 2K uvázla. */
+    grid-template-columns: minmax(9.375rem, .65fr) minmax(0, 1.35fr);
     align-items: center;
     gap: .65rem 1.5rem;
     padding: 1.25rem 0;
-    border-top: 1px solid rgba(32, 33, 28, .18);
-    border-bottom: 1px solid rgba(32, 33, 28, .18);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
 
     .completedLabel {
       grid-row: 1 / span 2;
       align-self: start;
       padding-top: .2rem;
-      color: rgba(32, 33, 28, .68);
+      color: rgb(var(--ink-05-rgb) / .68);
       font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -326,12 +232,12 @@
       gap: 1.5rem;
 
       strong {
-        color: #20211c;
+        color: var(--ink-05);
         font: 400 1.05rem/1.25 "Sansation-Regular", sans-serif;
       }
 
       span {
-        color: #20211c;
+        color: var(--ink-05);
         font: 400 1rem/1 "Sansation-Regular", sans-serif;
         white-space: nowrap;
       }
@@ -339,7 +245,7 @@
 
     p {
       margin: 0;
-      color: rgba(32, 33, 28, .68);
+      color: rgb(var(--ink-05-rgb) / .68);
       font: 300 .875rem/1.4 "Sansation-Light", sans-serif;
     }
   }
@@ -347,8 +253,8 @@
   .commissionNotice {
     margin: 0 0 1rem;
     padding: 0.75rem 0.9rem;
-    border-left: 2px solid rgba(194, 96, 31, 0.55);
-    background: rgba(194, 96, 31, 0.07);
+    border-left: 2px solid rgb(var(--clay-17-rgb) / .55);
+    background: rgb(var(--clay-17-rgb) / .07);
     color: var(--blackText);
     font-family: "Sansation-Light", sans-serif;
     font-size: 0.9rem;
@@ -363,14 +269,16 @@
     min-width: 0;
     flex: 1;
     .methodLabel {
-      font-size: 1rem;
+      /* Stejný clamp jako u .radioContent .methodLabel výš — tenhle zápis má nižší
+         specificitu a je pro tenhle JSX vždy přebitý, ale ať se ty dvě neliší. */
+      font-size: clamp(.875rem, 1.05vw, 1.15rem);
       font-weight: 500;
-      color: var(--ui-fg-base, #111827);
+      color: var(--ui-fg-base, var(--ink-03));
       margin-bottom: 0.25rem;
     }
     .methodText {
       font-size: 1rem;
-      color: var(--ui-fg-subtle, #6B7280);
+      color: var(--ui-fg-subtle, var(--blue-02));
     }
   }
 }
@@ -378,9 +286,14 @@
 .root::before {
   content: "02";
   position: absolute;
-  top: 48px;
+  /* Sleduje svislý padding .root — 4.45vh je 48px na 1080, 32px na 720. */
+  top: clamp(2rem, 4.45vh, 3.7rem);
   left: 0;
-  font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+  /* Jedna značka pro všechny čtyři kroky. Podlaha .75rem je čitelnostní dno,
+     které si projekt drží (page.module.scss ho tak pojmenoval); původních .68rem
+     = 10.88px bylo pod ním, a krok 04 měl přitom natvrdo 0.8125rem, takže
+     v jednom sloupci stály dvě velikosti. Živé pásmo 1176…1373. */
+  font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }
@@ -396,88 +309,10 @@
 }
 
 
-.ClickButton{
-  width: auto;
-  height: auto;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  @include vb((
-    md: (justify-content: flex-start),
-  ));
-
-  .button{
-    position: relative;
-    width: 250px;
-    height: 40px;
-    cursor: pointer;
-    border-radius: 25px;
-    overflow: hidden;
-    border: none;
-    box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
-    background-color: transparent;
-
-    .slider{
-        position: relative;
-        width: 100%;
-        height: 100%;
-
-        .el{
-            width: 100%;
-            height: 100%;
-            p{
-              margin: 0px;
-              font-size: 0.9rem;
-              color: var(--whiteText);
-            }
-            &:nth-of-type(2){
-                p{
-                  color: var(--whiteText);
-                }
-            }
-            &:hover{
-                .perspectiveText{
-                    transform: rotateX(90deg);
-                    p{
-                        &:nth-of-type(1){
-                            transform: translateY(-100%);
-                            opacity: 0;
-                        }
-                        &:nth-of-type(2){
-                            opacity: 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-      
-  }
-}
-
-.perspectiveText{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-  p{
-      transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-      pointer-events: none;
-      text-transform: capitalize;
-      &:nth-of-type(2){
-          position: absolute;
-          transform-origin: bottom center;
-          transform: rotateX(-90deg) translateY(10px);
-          opacity: 0;
-      }
-  }
-}
+/* Blok .ClickButton / .button / .slider / .el / .perspectiveText tady byl znak po znaku
+   stejný jako v addresses, payment a payment-button, ale index.tsx tohohle komponentu
+   žádnou z těch tříd nepoužívá (jediný importér stylu je checkout-form → shipping/index.tsx).
+   Smazáno jako mrtvý kód — spolu s ním padla poslední vb mapa v souboru. */
 
 /* ── Balíkovna — výběr výdejního místa ─────────────────────────────────── */
 .carrierIcon {
@@ -514,7 +349,7 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(20, 21, 17, 0.55);
+  background: rgb(var(--ink-01-rgb) / .55);
   backdrop-filter: blur(4px);
   cursor: pointer;
 }
@@ -523,13 +358,15 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Manuál ČP: doporučené minimum dialogu je 360 × 800 px. */
-  width: min(430px, 94vw);
-  height: min(820px, 88vh);
+  /* Manuál ČP: doporučené minimum dialogu je 360 × 800 px.
+     27rem = 432px a 51rem = 816px při základním rootu, ale nad 1921 je ramp zvedne
+     s okolím, místo aby dialog zůstal v px trčet. */
+  width: min(27rem, 94vw);
+  height: min(51rem, 88vh);
   overflow: hidden;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+  border-radius: 1rem;
+  background: var(--white);
+  box-shadow: 0 1.875rem 5rem -1.875rem rgb(var(--black-01-rgb) / .5);
 }
 
 .balikovnaPanelHeader {
@@ -537,7 +374,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgb(var(--black-01-rgb) / .08);
   color: var(--blackText);
   font-family: "Sansation-Regular";
 

@@ -19,19 +19,36 @@
   display: inline-flex;
   align-items: center;
   min-height: 1.2em;
-  font-size: var(--animated-link-font-size, clamp(20px, 1.55vw, 28px));
+  /*
+   * Fallback only: the footer and the phone accordion each set `--animated-link-font-size`
+   * themselves. Its ends are rem so the fallback rides the >=1921px root ramp exactly like the
+   * two values that override it — in px it would have sat at 28px on a 2552px screen while the
+   * page around it grew a third. Live band 1290-1806px (20/0.0155 … 28/0.0155).
+   */
+  font-size: var(--animated-link-font-size, clamp(1.25rem, 1.55vw, 1.75rem));
   font-weight: 300;
   line-height: 1.15;
   letter-spacing: -0.012em;
-  text-shadow: 0 1px 10px rgba(13, 15, 12, 0.16);
+  text-shadow: 0 1px 10px rgb(var(--ink-01-rgb) / .16);
   white-space: nowrap;
 }
 
+/*
+ * One geometry, one place. `--arrow-w` is the icon box; the wrapper is a window that opens to
+ * exactly that box, and `--arrow-reveal` — a unitless 0→1 the component animates — is what
+ * carries the reveal. The width the animation used to name in px (18) is gone from the JS, so
+ * the window and the box can never disagree, at any root font size.
+ */
 .arrow {
+  --arrow-w: 1.125rem;
+  --arrow-gap: 0.4375rem;
+
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-start;
+  width: calc(var(--arrow-reveal, 0) * var(--arrow-w));
+  margin-left: calc(var(--arrow-reveal, 0) * var(--arrow-gap));
   overflow: hidden;
 }
 
@@ -39,24 +56,32 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  min-width: 18px;
+  width: var(--arrow-w);
+  min-width: var(--arrow-w);
+
+  /* The icon carries a px `size` prop; the box it sits in decides the drawn size instead. */
+  svg {
+    width: 100%;
+    height: auto;
+  }
 }
 
 .underlineMask {
   display: block;
   width: 100%;
-  height: 3px;
-  padding-top: 2px;
+  /* Border-box: 3px at base rem is 2px of gap over the 1px rule. In rem so it follows the ramp. */
+  height: 0.1875rem;
+  padding-top: 0.125rem;
   overflow: hidden;
 }
 
 /*
  * The link is a column: the label, and this mask under it holding an underline that slides in on
  * hover. On a touch device that underline can never play — there is no hover to trigger it — so
- * the mask is 5px of permanently empty space under every link, in a component used for the
- * E-shop menu's category lists and the footer's link columns alike. Seven categories under one
- * collection pay 35px for an animation that will not run.
+ * the mask is 3px of permanently empty space under every link (border-box: the 2px of padding
+ * sits inside the 3px), in a component used for the E-shop menu's category lists and the footer's
+ * link columns alike. Seven categories under one collection pay 21px for an animation that will
+ * not run.
  */
 @include touch {
   .underlineMask {

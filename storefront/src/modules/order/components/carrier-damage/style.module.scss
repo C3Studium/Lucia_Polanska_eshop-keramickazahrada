@@ -1,24 +1,31 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Clay-edged rather than red: this is a caution the customer must actually read, not an
-   error state. A red panel on a successful order reads as "something went wrong". */
+   error state. A red panel on a successful order reads as "something went wrong".
+
+   Ink on cream, not cream on ink. Both mounts are light: oder-complete's `.root` paints two
+   faint radials over var(--cream-06) and `.commission` adds only a margin, and in
+   order-details the notice is a sibling of <Help/>, outside any inked aside. The panel was
+   written cream-on-cream — the same token for text and ground, 1.00:1, unreadable. The
+   accent drops from clay-17 to clay-04 for the same reason the brief's did: 3.6:1 against
+   4.9:1 as small text on this ground. */
 .root {
-  --damage-accent: #c2601f;
+  --damage-accent: var(--clay-04);
 
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding: clamp(18px, 2vw, 26px);
-  border: 1px solid rgba(255, 232, 214, 0.2);
+  padding: clamp(1rem, 2.2vh, 1.6rem) clamp(1.125rem, 1.6vw, 1.625rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
   border-left: 2px solid var(--damage-accent);
-  background: rgba(255, 232, 214, 0.05);
-  color: #ffe8d6;
+  background: rgb(var(--clay-17-rgb) / .05);
+  color: var(--blackText);
 }
 
 .eyebrow {
   margin: 0;
   color: var(--damage-accent);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -34,7 +41,7 @@
 .lede {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.94rem;
+  font-size: clamp(0.88rem, 1.12vw, 1.05rem);
   line-height: 1.55;
   opacity: 0.82;
 }
@@ -46,7 +53,7 @@
   flex-direction: column;
   gap: 0.45rem;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.92rem;
+  font-size: clamp(0.86rem, 1.1vw, 1rem);
   line-height: 1.5;
 
   strong {
@@ -62,14 +69,14 @@
 
 .document {
   margin-top: 0.35rem;
-  padding: 0.75rem 0.9rem;
-  border: 1px dashed rgba(255, 232, 214, 0.28);
+  padding: clamp(0.6rem, 1.3vh, 0.9rem) clamp(0.75rem, 1vw, 1.05rem);
+  border: 1px dashed rgb(var(--ink-05-rgb) / .28);
   border-radius: 4px;
 }
 
 .documentLabel {
   margin: 0 0 0.2rem;
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.66;
@@ -78,7 +85,7 @@
 .documentNote {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.88rem;
+  font-size: clamp(0.82rem, 1.05vw, 0.95rem);
   line-height: 1.5;
   opacity: 0.78;
 }
@@ -86,7 +93,7 @@
 .more {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.88rem;
+  font-size: clamp(0.82rem, 1.05vw, 0.95rem);
   opacity: 0.72;
 
   a {
@@ -95,8 +102,143 @@
   }
 }
 
-@include below-px(560px) {
+/* ── Portrait tablet ─────────────────────────────────────────────────────────
+   A tablet is not a wider phone. 768×1024 has more vertical room than most
+   laptops (1366×768 has 768), so the reason a phone folds this panel into one
+   column — no width AND no height — does not hold here. What the panel lacked
+   was a use for the width: measured before this block, `.lede` ran 698.3px at
+   14.08px = 99 characters per line on 768 and 134 on 1024, steps 1, 3 and 4 left
+   40–60 % of their line empty, and `.document` was a full-bleed band around one
+   sentence.
+
+   The fold hangs on the panel's own content box, not on another stop, because
+   the component has two mounts whose widths run in opposite directions at the
+   same viewport. On 768 the panel is 698.3px wide on the confirmation, and the
+   same panel in the account (order-details, beside the 280px nav column) is
+   333.7px. One viewport-keyed rule would give the account two 157px columns.
+   `repeat(auto-fit, …)` asks the box instead: the account panel folds itself and
+   the confirmation one opens. Measured tracks — confirmation: 1 at 600 (529px of
+   content), 2 at 768, 834 and 1024. Account: 1 at every stop, because even on
+   1024 the panel only gets 573.3px there.
+
+   Two departures from the obvious two-column reading, both because the panel was
+   measured either way:
+
+   `.lede` keeps both columns and takes its measure from a ceiling rather than
+   from a column. Inside the left track it reads 48 characters on 768 — too
+   narrow — and it would leave the cell beside it empty, because auto-placement
+   puts `.document` next to `.steps`, not next to the paragraph above them.
+
+   `.more` joins `.document` in the right column instead of running under both.
+   Its own row cost 24.6px of height and, with it, the split was a wash: 394.2px
+   against 390.5 on 768 and 379.7 against 378.2 on 1024, i.e. wider lines paid
+   for with a taller panel. In the rail — the two pieces of paperwork, the form
+   and the reklamační řád, one under the other — the panel measures 369.6 on 768
+   (was 390.5), 352.8 on 834 (396.6) and 355.1 on 1024 (378.2), with `.steps`
+   spanning both rail rows so the two columns end level. */
+@include v(md) {
+  .root {
+    display: grid;
+    /* min() so the track never demands more than the box has — that is what keeps
+       the narrow end (600px, and the account mount at every width) from spilling. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    column-gap: clamp(1.25rem, 2.6vw, 2.25rem);
+  }
+
+  .eyebrow,
+  .heading,
+  .lede {
+    grid-column: 1 / -1;
+  }
+
   .steps {
-    font-size: 0.88rem;
+    grid-row: span 2;
+  }
+
+  .lede,
+  .steps,
+  .documentNote,
+  .more {
+    /* A measure, not a width — so it is written in characters and each of the
+       three type sizes in the panel gets the same line out of it. Well under the
+       familiar 65ch because Sansation's `0` is 0.705em, far wider than its
+       average letter, so a `ch` here buys more running text than it does in a
+       normal face: 48ch is 476.8px at 14.08px type.
+
+       48 and not 52. The 52 it replaces was justified as "73 characters", but
+       that figure came from width / (font-size × 0.5) — a rule of thumb, not a
+       measurement. Counted off the real line boxes (.rdshots/zz-tb-measure-sweep.cjs,
+       every character bucketed by the top of its own one-character Range), 52ch
+       puts 81 characters on the longest line of `.lede`, past the 75 the measure
+       exists to hold. The sweep also says the correction is free where this round
+       lives: 47ch through 50ch all render the same 75 characters over the same
+       three lines, and the panel measures 369.6px on 768 and 355.1 on 1024 at
+       every one of them — identical to what 52ch produced. 48 sits a step inside
+       that plateau rather than on its edge, so a font-metric change of a pixel or
+       two cannot tip it back to four lines.
+
+       The one place it costs anything is 600×960, where the panel is a single
+       track and the cap reaches `.steps` too: 77 characters over 5 lines becomes
+       72 over 7, and the panel grows 427.5 → 468.8px. That is the trade the
+       measure is for, and 960px of height is not where this panel is short.
+
+       At 768, 834 and 1024 only `.lede` is ever capped — it spans both columns,
+       and the other three sit in a track (339.1 / 370 / 458.7px) narrower than
+       their own cap. The cap only bites where the track is wider than the line
+       wants to be. */
+    max-width: 48ch;
+  }
+
+  /* `-2 / -1` is the last column whether auto-fit made one or two. Written as `2`
+     it would conjure an implicit second column in the folded state and the panel
+     would overflow the account's 333.7px. */
+  .document,
+  .more {
+    grid-column: -2 / -1;
+  }
+
+  .document {
+    align-self: start;
+  }
+
+  .more {
+    align-self: end;
+  }
+}
+
+/* ── Touch ───────────────────────────────────────────────────────────────────
+   A tablet is a touch device, and the 44px floor in globals.scss is deliberately
+   scoped to real buttons "so inline text links keep their natural line box". The
+   two links here are not decoration — eReklamace and the reklamační řád are the
+   whole claim procedure — and measured on a touch tablet they were 70.6×15 and
+   104.8×15 px.
+
+   Block padding on the link itself, not an absolutely positioned `::after`. On a
+   non-replaced inline, vertical padding does not enter the line box, so nothing
+   visible moves — measured, the panel is the same height to the tenth of a pixel
+   at all five viewports with this rule on and off. The pseudo-element was tried
+   first and fails on a wrapped link: its containing block is the box from the
+   first fragment's left edge to the last fragment's right edge, which for a link
+   broken across two lines is degenerate, and the strip measured 76×16 and 27×16
+   instead of 44. Padding is applied per fragment, so both halves of "reklamačním
+   řádu" get the full target — 76×44 and 27×44 on 768.
+
+   `position: relative` is what makes the strip win the hit test: it moves the
+   link into the positioned paint layer, above the neighbouring lines of the same
+   paragraph. Without it the sweep found 33px, not 44 — the line above eats the
+   top of the target.
+
+   14.5px, flat, because a finger is a physical size and not a typographic one —
+   the same reasoning globals.scss gives for its 44px floor. The link's line box
+   measures 15px at every size in this panel, so 15 + 2 × 14.5 = 44.
+
+   Checked for collisions: the panel holds exactly these two links, `.document`
+   sits between them and has none, and the strips never meet — 55.6px apart at
+   the closest measured point (834 and 1024, confirmation, two columns). */
+@include touch {
+  .steps a,
+  .more a {
+    position: relative;
+    padding-block: 14.5px;
   }
 }

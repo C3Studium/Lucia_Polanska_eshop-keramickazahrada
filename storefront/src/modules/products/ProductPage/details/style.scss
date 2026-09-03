@@ -1,9 +1,50 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
+// Rozbalovací „Detaily" v levém sloupci. Nula breakpointů — a nula jich sem
+// přibylo: v celém komponentu se nemění DRUH ničeho, jen velikost, a tu nese
+// clamp a ramp.
+//
+// Dvě pravidla, podle kterých jsou dole spočítané všechny členy:
+//
+// 1. Krajní členy v rem. Nad 1921 zvedá globals.scss root font-size na
+//    clamp(16px, 0.8333vw, 21.5px), takže na 2552×1351 je rem 21.27px, tedy
+//    přesně 1.329×. Každý strop v rem se o tolik zvedne sám — proto tenhle
+//    soubor nemá jediné pravidlo v xxl ani v qhd.
+//
+// 2. Prostřední člen tak, aby strop platil už na 1920×1080. Svislé členy jsou
+//    ve vh a dosáhnou stropu při výšce 900px; vodorovný při šířce 1500px.
+//    Důsledek: na 1920×1080 vrací clamp přesně tu hodnotu, která tu byla v px,
+//    takže se pod 1921 nezmění ani pixel — a nad 1921 roste všechno s rampem.
+//    Živé pásmo tím padne pod 900px výšky, což je přesně nízký laptop
+//    (1220×660, 1280×720, 1366×768, 1440×800). Ten se proto sevře sám a
+//    nepotřebuje v `lt` ani jedno pravidlo.
+//
+// Svislý tablet: taky nula pravidel, a tady je proč. Ta dvě pravidla výše se
+// na portrétním tabletu potkají v opačných polohách a přesně to je celý rozdíl
+// proti telefonu:
+//
+//   - Svislé členy (vh) sedí na STROPU. Strop je dosažen při 900px výšky a
+//     tablet má 1024 i 1366, takže dostane plnou rytmiku 1920×1080: řádková
+//     mezera 10px, padding li 8px, pata panelu 18px, odstup bloků dopravy
+//     18px. Malý telefon (320×568) má na týchž členech 6.31 / 5.05 / 11.36 /
+//     11.36px, tedy o 37 % míň. Kdyby ty členy visely na vw, tablet by při
+//     768px šířky spadl na 8.5px a byl by SEVŘENĚJŠÍ než desktop — na
+//     zařízení, které má víc svislého místa než každý noťas. Proto vh.
+//   - Vodorovný člen (vw) je naopak nízko: mezera mezi sloupci popisného
+//     seznamu vyjde 5.12px na 768 a 6.83px na 1024 proti 10px na 1500+.
+//     Sloupec je tu nejužší, tak si gap bere nejmíň — správný směr.
+//
+// Šířka bloku po tabletové kompozici v `product/style.scss` (v(md) dvě stopy,
+// v(lg) tři): změřeno 375.55px na 768×1024 a 258.05px na 1024×1366 proti
+// 395.63px na telefonu 430×932. Na větším tabletu je tedy blok o 137.6px
+// UŽŠÍ než na telefonu — komponenta se tam vrací do role postranního sloupce.
+// Zvládne to bez pravidla, viz měření u `ul` níž.
+
 .detailsProduct {
   width: 100%;
   height: fit-content;
   margin: 0;
-  color: #ffe8d6;
+  color: var(--cream-06);
   background: transparent;
   // display: flex;
   // flex-direction: column;
@@ -14,15 +55,21 @@
 .details__content{
   width: 100%;
 }
+
 .details__title {
   width: 100%;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 232, 214, 0.2);
+  // 10px. Strop 0.625rem, vh dosáhne stropu při 900px výšky (10/900·100).
+  // Živé pásmo 450–900px výšky: 660 → 7.33px, 768 → 8.53px, 1080 → 10px.
+  padding-bottom: clamp(0.3125rem, 1.111vh, 0.625rem);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
 }
 
 .details__title h2 {
   margin: 0;
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  // 12px → 0.75rem. Typ zůstává v čistém rem, ne ve vw: 12px je zároveň
+  // spodní mez čitelnosti celé stránky, takže tenhle nadpis nesmí klesnout —
+  // a vw člen by ho na 1220 stáhl pod ni. Nad 1921 ho ramp zvedne na 15.95px.
+  font: 400 0.75rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -34,7 +81,7 @@
 }
 
 .details__content__list__item {
-  border-bottom: 1px solid rgba(255, 232, 214, 0.13);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .13);
 }
 
 .details__content__list__item__main {
@@ -42,8 +89,21 @@
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
-  padding: 10px 0;
+
+  // Dotykový cíl 44px je PODLAHA, ne strop. `max()` je ta podlaha zapsaná
+  // doslova: pod 1921 je rem 16px, takže max(44px, 44px) = 44px — přesně to,
+  // co tu bylo. Nad 1921 je rem 21.27px a 2.75rem = 58.5px, takže cíl roste
+  // s rampem stejně jako titulek v něm. A kdyby si uživatel zmenšil písmo
+  // prohlížeče, 2.75rem klesne pod 44px a druhý člen ho zachytí — dotykový
+  // cíl se pod 44px nedostane ani tak.
+  min-height: max(2.75rem, 44px);
+
+  // 10px svisle. Pod 1921 je tenhle padding schovaný pod podlahou nahoře:
+  // obsah řádku měří 22px (ikona) + 20px = 42px < 44px, takže o výšce
+  // rozhoduje min-height a řádek je 44px na 1220 i na 1920 — změřeno.
+  // Clamp je tu proto, že se stane živým ve chvíli, kdy obsah podlahu
+  // přeroste — nad 1921, nebo když se titulek zalomí.
+  padding: clamp(0.3125rem, 1.111vh, 0.625rem) 0;
   border: 0;
   color: inherit;
   background: transparent;
@@ -52,27 +112,49 @@
 
 .details__content__list__item__main:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 5px;
+  outline-offset: 0.3125rem; // 5px, ať odsazení prstence roste s prvkem
 }
 
 .details__content__list__item__main h3 {
   margin: 0;
-  font: 300 14px/1.2 "Sansation-Light", sans-serif;
+  font: 300 0.875rem/1.2 "Sansation-Light", sans-serif; // 14px
 }
 
 .details__content__list__item__main__button {
   display: grid;
-  width: 20px;
-  height: 20px;
+  // 20px → 1.25rem. Kruh i jeho ryska visí na stejné jednotce, takže si
+  // poměr 8:20 drží samy a nad 1921 vyrostou spolu (26.59px / 10.64px).
+  width: 1.25rem;
+  height: 1.25rem;
+
+  // `place-items: center` tu není dekorace — obě rysky jsou `position:
+  // absolute` BEZ top/left, takže je grid usadí jejich statickou pozicí, tedy
+  // do středu buňky. Drží to v obou stavech: zavřeno má framer `transform:
+  // none` (span pak není containing block, ale statická pozice na tom
+  // nezávisí), otevřeno matrix(0.735…) = rotate(45°) scale(1.04). Změřeno na
+  // obou tabletech: střed span i střed obou rysek 307.44 / 389.05 px, shoda.
+  //
+  // Pozor na jedno měření, které vypadá jako přetečení a není: v otevřeném
+  // stavu má orámovaný čtverec po rotaci o 45° opsaný box 20·1.04·√2 =
+  // 29.42px, tedy o 4.71px na každou stranu víc. Proto `.detailsProduct`
+  // hlásí scrollWidth 263 proti clientWidth 258 na 1024×1366 (a 380/376 na
+  // 768×1024), zatímco zavřený je 258/258. Nakreslený kruh měří 20.8px a
+  // rohy jsou průhledné; celý předek až po `.product` (jediný s `overflow:
+  // clip`) je `overflow: visible` a má vpravo 701.85px volna na 1024 a
+  // 364.7px na 768, takže se nic neořízne a stránka vodorovně nepřetéká.
   place-items: center;
-  border: 1px solid rgba(255, 232, 214, .34);
+  border: 1px solid rgb(var(--cream-06-rgb) / .34);
   border-radius: 50%;
   opacity: 0.62;
 }
 
 .details__content__list__item__main__button i {
   position: absolute;
-  width: 8px;
+  width: 0.5rem; // 8px
+  // Tloušťka zůstává v px. Je to vlásek — tentýž, jakým je orámovaný kruh
+  // kolem ní i oba oddělovače v seznamu. Kdyby ryska rostla na 1.33px a
+  // border vedle ní zůstal na 1px, přestaly by si odpovídat; ARTEFAKT tuhle
+  // výjimku jmenuje (pravidlo 3: px jen tam, kde je věc fyzická).
   height: 1px;
   background: currentColor;
 }
@@ -87,28 +169,90 @@
 
 .details__content__list__item__inner .info,
 .details__content__list__item__inner .details__desc,
-.details__content__list__item__inner .details__shipment {
-  padding: 8px 0 18px;
+.details__content__list__item__inner .shipment {
+  // 8px / 18px. Tady clamp opravdu pracuje — nic tu není přišpendlené
+  // podlahou, takže se panel na nízkém laptopu sevře: spodní mezera
+  // 18 → 13.2px na 660, 15.36px na 768. Nad 1921 naopak 23.93px.
+  //
+  // Třetí selektor zněl `.details__shipment` — třída, kterou nikdo
+  // nerenderuje: delivery.tsx sází `.shipment`. Panel „Doprava a vrácení"
+  // proto neměl padding vůbec. Změřeno na živé stránce: 0px/0px proti
+  // 5.05/11.36px u obou sousedních panelů na 320×568 a proti 4/9px na
+  // 568×320 i 932×430, takže nadpis „Jak to k vám dorazí" seděl natěsno
+  // na vlásku tlačítka nad sebou (mezera 0.00px). Tohle není nové
+  // pravidlo — je to týž clamp, který tu byl celou dobu napsaný a jen se
+  // netrefil do svého prvku.
+  padding: clamp(0.25rem, 0.889vh, 0.5rem) 0 clamp(0.5625rem, 2vh, 1.125rem);
 }
 
 .details__content__list__item__inner p,
 .details__content__list__item__inner h4 {
-  color: rgba(255, 232, 214, 0.62);
+  color: rgb(var(--cream-06-rgb) / .62);
   font-family: "Sansation-Light", sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem; // 13px
   line-height: 1.45;
 }
 
 .details__content__list__item__inner ul {
   display: grid;
+  // Dva sloupce zůstávají. Změřeno na 1220×660: sloupec 280.44px, buňka
+  // 135.22px. Titulky (14px) mají nejdelší „Hmotnost" 58.2px, hodnoty
+  // („12 cm", „1250 g") 29–39px — obojí na jeden řádek s velkou rezervou.
+  // Jediná buňka, která se zalomí, je „Materiál: glazovaná kamenina"
+  // (171.98px změřeno na 1920) — zalomí se na dva řádky, nejdelší slovo
+  // „glazovaná" měří ~55px, tedy 0 přetečení, 0 ořezu. Dva řádky v popisném
+  // seznamu jsou sazba, ne rozbitý layout, takže přechod na jeden sloupec
+  // sem nepatří: byl by to breakpoint na změnu DRUHU, kterou měření
+  // neospravedlňuje.
+  //
+  // Přeměřeno na svislém tabletu, protože ten je tu UŽŠÍ než telefon: buňka
+  // 185.22px na 768×1024 a 125.61px na 1024×1366 proti 195.31px na telefonu
+  // 430×932 (a 230.81px na 1920). 125.61px je nejužší buňka, jakou tenhle
+  // seznam kdekoli dostane. Rozbaleno na živé stránce, všechny tři panely:
+  //   nejdelší titulek „Hmotnost" 58.2px  → 67px rezervy
+  //   nejdelší reálná hodnota „1600 g" 30.12px (nejdelší slovo „1600")
+  //   material je v celém katalogu null, takže se sází „N/A" (25.28px)
+  // Dosazen i vymyšlený nejhorší materiál „Materiál: vysokopálená glazovaná
+  // kamenina": nejdelší slovo „vysokopálená" 81.17px < 125.61px, buňka
+  // naroste na tři řádky (91.38px), přetečení 0 — `li.scrollWidth` se rovná
+  // `clientWidth` ve všech pěti buňkách na obou tabletech. Podmínka pro jeden
+  // sloupec ve `v(lg)` (hodnota se zalomí tak, že řádek přeteče) tedy nenastala
+  // ani v nejhorším případě, který jde do dat dostat.
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+
+  // gap se rozpadá na dvě osy, protože každá měří něco jiného. Řádkový je
+  // svislý → vh (10px, stejný člen jako výše). Sloupcový je vodorovný → vw
+  // se stropem na 1500px šířky; na 1220 vyjde 8.14px, což buňce naopak
+  // ~1px přidá — správný směr přesně tam, kde je sloupec nejužší.
+  gap: clamp(0.3125rem, 1.111vh, 0.625rem) clamp(0.3125rem, 0.667vw, 0.625rem);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .details__content__list__item__inner li {
-  padding: 8px 0;
+  padding: clamp(0.25rem, 0.889vh, 0.5rem) 0; // 8px
   border: 0;
+}
+
+// „Doprava a vrácení" je jediný panel, který nesází seznam — jsou to tři
+// bloky <h4> + <p> pod sebou a globální reset jim bere margin, takže se
+// slévaly v jeden odstavec: změřeno gap 0.00px mezi všemi třemi na 320×568,
+// 568×320 i 932×430. Dohromady 226px souvislého textu na svislém telefonu a
+// 301px v okně vysokém 430px, přitom na telefonu je tenhle panel po odkrytí
+// `.product__detailsSlot` JEDINÉ místo, kde se podmínky dopravy dají přečíst.
+// Odsazení bere týž svislý člen, jakým se panel odděluje zdola — žádné nové
+// číslo, jen rytmika, kterou tenhle soubor už má: 18px nad 900px výšky,
+// 11.36px na 320×568, podlaha 9px na telefonu na šířku. Uvnitř bloku zůstává
+// nadpis nalepený na svém odstavci schválně: blízkost je to, co je páruje.
+//
+// Ověřeno i na širším sloupci svislého tabletu, kde je tenhle panel pořád
+// jediné místo s podmínkami dopravy: rozbalí se (aria-expanded=true, panel
+// 375.55×250.44px na 768×1024 a 258.05×306.97px na 1024×1366) a odsazení sedí
+// na stropu 18px na obou — změřená mezera mezi textem předchozího odstavce a
+// dalším nadpisem je 18.00px, tedy padding se opravdu projeví a nesloučí se
+// s ničím. Na desktopu 1366×768 je týž člen 15.36px, takže tablet dostane
+// VÍC odstupu než noťas: má na něj výšku.
+.details__content__list__item__inner .shipment__item + .shipment__item {
+  padding-top: clamp(0.5625rem, 2vh, 1.125rem);
 }

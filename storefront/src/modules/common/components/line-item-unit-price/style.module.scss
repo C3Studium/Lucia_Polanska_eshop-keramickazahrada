@@ -4,34 +4,31 @@
 .root {
   display: flex;
   flex-direction: column;
-  color: var(--blackText);
   justify-content: center;
   height: 100%;
   width: 100%;
-  padding-bottom: 0.25rem;
 
-  font-size: 1rem;
-  line-height: 1.5rem;
+  /* Svisle — soupeří o výšku řádku košíku, proto vh, ne vw.
+     Živé pásmo výšky 800…1400: na 1366x768 sedí na podlaze (3.2px),
+     na 1080 dává 4.32px. Nízký laptop se sevře sám, bez pravidla v lt. */
+  padding-bottom: clamp(0.2rem, 0.4vh, 0.35rem);
+
+  /* Byl tu žebřík hb((lg: 1rem, md/mdt/sm: .95rem, xs/xxs: .85rem)) + vb dvojče.
+     h-block() emituje obyčejné vnořené @media v pořadí mapy, takže xxs (min-width 400)
+     šel poslední a vyhrával na každé šířce; lg: 1rem byl mrtvý kód.
+     Jeden clamp místo jedenácti breakpointů:
+       podlaha .85rem = 13.6px končí na 13.6 / 0.0108 = 1259px
+       strop   1rem   = 16px   začíná na 16   / 0.0108 = 1481px
+     Živé pásmo 1259…1481. Nad 1921 zvedá strop ramp z globals.scss
+     (2552 → 21.27px) — to px override v cart/item nikdy neuměl. */
+  font-size: clamp(0.85rem, 1.08vw, 1rem);
+
+  /* Bylo 1.5rem natvrdo. S proměnnou velikostí písma by poměr ujel z 1.5 na 1.76
+     na podlaze; bezrozměrné číslo drží proporci samo. */
+  line-height: 1.45;
   font-weight: 300; /* medium-plus analog */
   color: var(--blackText);
   font-family: "Sansation-Light";
-
-  @include hb((
-    lg: (font-size: 1rem),
-    md: (font-size: 0.95rem),
-    mdt: (font-size: 0.95rem),
-    sm: (font-size: 0.95rem),
-    xs: (font-size: 0.85rem),
-    xxs: (font-size: 0.85rem),
-  ));
-
-  @include vb((
-    lg: (font-size: 0.95rem),
-    md: (font-size: 0.95rem),
-    s: (font-size: 0.85rem),
-    sm: (font-size: 0.85rem),
-    xs: (font-size: 0.85rem),
-  ));
 
   .originalLabel {
     color: var(--blackText);
@@ -39,7 +36,7 @@
 
   .originalPrice {
     text-decoration: line-through;
-    color: var(--handle)
+    color: var(--handle);
   }
 
   .discount {
@@ -47,28 +44,19 @@
   }
 
   .price {
-    font-size: 1.1rem;  
+    /* Totéž podruhé: hb((md/sm: 1rem, xs/xxs: .9rem)) přebíjelo základních 1.1rem,
+       takže cena měřila 14.4px od 1200 do 1920 — méně než text kolem sebe.
+         podlaha .95rem = 15.2px končí na 15.2 / 0.0125 = 1216px
+         strop  1.15rem = 18.4px začíná na 18.4 / 0.0125 = 1472px
+       Živé pásmo 1216…1472. Poměr k .root drží 1.12…1.15 přes celé kontinuum,
+       takže cena je vždy větší než popisky kolem ní. */
+    font-size: clamp(0.95rem, 1.25vw, 1.15rem);
     font-weight: 400;
     font-family: "Sansation-Light";
     color: var(--blackText);
+
     &.discounted {
       color: var(--blackText);
     }
-
-
-    @include hb((
-      md: (font-size: 1rem),
-      sm: (font-size: 1rem),
-      xs: (font-size: 0.9rem),
-      xxs: (font-size: 0.9rem),
-    ));
-
-    @include vb((
-      lg: (font-size: 1rem),
-      md: (font-size: 1rem),
-      s: (font-size: 0.9rem),
-      sm: (font-size: 0.9rem),
-      xs: (font-size: 0.9rem),
-    ));
   }
 }

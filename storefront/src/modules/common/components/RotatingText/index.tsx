@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import Magnetic from "../Buttons/Magnetic";
 import { motion, useAnimationFrame, useMotionValue, useScroll, useSpring, useTransform, useVelocity, wrap } from 'framer-motion';
+import { palette } from "styles/palette.generated"
 
-export default function RotatingText({text, textColor = "#212222"}:{ text: string; textColor?: string }) {
+export default function RotatingText({text, textColor = palette.black03}:{ text: string; textColor?: string }) {
     const [currentRadius, setCurrentRadius] = useState(90); // Default radius
 
     // Performance
@@ -78,7 +79,7 @@ export default function RotatingText({text, textColor = "#212222"}:{ text: strin
     )
 }
 
-const circleText = ({ text, textColor = "#212222", currentRadius  }: { text: string; textColor?: string; currentRadius: number}) => {
+const circleText = ({ text, textColor = palette.black03, currentRadius  }: { text: string; textColor?: string; currentRadius: number}) => {
    const letters = text.split('');
    const totalLetters = letters.length;
 

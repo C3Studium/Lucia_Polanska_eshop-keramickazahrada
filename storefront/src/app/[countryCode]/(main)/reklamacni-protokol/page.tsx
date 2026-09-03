@@ -1,6 +1,8 @@
 import { Metadata } from "next"
 
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { getFiles, getPageCopy } from "@lib/data/site-copy"
+import LegalDownloads from "@modules/legal/Downloads"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
@@ -74,7 +76,13 @@ const sections: LegalSectionData[] = [
   },
 ]
 
-export default function Page() {
+export default async function Page() {
+  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
+  const [copy, files] = await Promise.all([
+    getPageCopy("reklamacni-protokol"),
+    getFiles("reklamacni-protokol"),
+  ])
+
   return (
     <LegalDocument
       code="06"
@@ -83,6 +91,8 @@ export default function Page() {
       accent="Když něco není v pořádku."
       description="Jak reklamaci podat a co k ní potřebujete. Napište nám dřív, než zboží pošlete — často se domluvíme rychleji."
       sections={sections}
+      block={copy["reklamacni-protokol.text"]}
+      downloads={<LegalDownloads files={files} />}
       supplements={{ postup: <ProtocolDownload /> }}
     />
   )

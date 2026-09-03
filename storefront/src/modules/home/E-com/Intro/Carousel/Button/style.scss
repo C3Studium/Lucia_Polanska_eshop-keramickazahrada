@@ -15,7 +15,11 @@
     display: block;
     flex-shrink: 0;
     border: 2px solid var(--iconsPink);
-    border-radius: 25px;
+    // 999px, not 25px and not 50%: the width animates to 125px while the height
+    // stays 50px, so 50% would draw a 62.5×25 ellipse at hover. A radius larger
+    // than the box clamps itself to half the shorter side, so the pill stays a
+    // pill at every width and nothing has to be recomputed if 50px ever moves.
+    border-radius: 999px;
     overflow: hidden;
     background: transparent;
     cursor: pointer;

@@ -3,15 +3,18 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 
+import type { CopyBlocks } from "@lib/util/site-copy"
+
 // import AboutInfo from "@modules/omne/about"
 import AboutCta from "@modules/omne/cta"
 import AboutMe from "@modules/omne/main"
 import AboutStory from "@modules/omne/story"
+import { palette } from "styles/palette.generated"
 // import ProcessAbout from "@modules/omne/process"
 
 const phaseEase = (value: number) => 1 - Math.pow(1 - value, 3)
 
-export default function AboutPageExperience() {
+export default function AboutPageExperience({ copy }: { copy?: CopyBlocks }) {
     const backgroundTriggerRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
         target: backgroundTriggerRef,
@@ -21,7 +24,7 @@ export default function AboutPageExperience() {
     const backgroundColor = useTransform(
         scrollYProgress,
         [0, .3, .68, 1],
-        ["#BBB788", "#c9c397", "#ead5bf", "#FFE8D6"],
+        [palette.sage01, palette.gradientOmne1, palette.gradientOmne2, palette.ambientShowcase1],
         { ease: phaseEase }
     )
     const glazeOpacity = useTransform(
@@ -64,17 +67,17 @@ export default function AboutPageExperience() {
                 aria-hidden="true"
             />
 
-            <AboutMe />
+            <AboutMe block={copy?.["o-mne.galerie"]} />
             <div
                 ref={backgroundTriggerRef}
                 className="aboutPage__phaseTrigger"
                 aria-hidden="true"
             />
             {/* Vyroba-gallery variant carrying the old AboutInfo copy (no icons). */}
-            <AboutStory />
+            <AboutStory block={copy?.["o-mne.galerie"]} />
             {/* <AboutInfo />
             <ProcessAbout /> */}
-            <AboutCta />
+            <AboutCta copy={copy} />
         </motion.main>
     )
 }

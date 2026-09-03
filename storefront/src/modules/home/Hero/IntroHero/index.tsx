@@ -4,9 +4,13 @@ import { useMemo, useRef } from "react";
 
 import { easeReveal } from "@lib/motion-tokens";
 import { useStateContext } from "@lib/context/StateContext";
-import { urlFor } from "../../../../sanity/lib/image";
+import { paragraphs } from "@lib/util/site-copy";
+import type { CopyBlock, CopyButton } from "@lib/util/site-copy";
+import { editable } from "@c3studium/valecms/edit";
 import WebButton from "@modules/common/components/Buttons/webButton";
 import HeroImageShader from "./HeroImageShader";
+import HeroNotices from "./HeroNotices";
+import type { Notice } from "@lib/util/notices";
 
 const maskedHidden = { y: "115%" }
 const maskedRest = { y: "0%" }
@@ -25,6 +29,48 @@ const ledeTransition = { duration: 0.9, delay: 0.9, ease: easeReveal }
 
 const DEFAULT_CONTENT =
     "Za každým výrobkem je příběh\nKaždý výrobek tvořím ručně s respektem k materiálu, času i lidem.";
+
+/*
+ * The promise, and what follows it.
+ *
+ * Normally that is the block's first paragraph against the rest, which is what `paragraphs()`
+ * hands over. The copy on this site currently arrives as ONE paragraph — the CMS body has no
+ * block-level break in it — and giving the whole of it to the display type is what made the
+ * lockup 986px tall inside an 886px band at 1920x1080, 710 inside 592 at 1366x768 and 552
+ * inside 484 at 1220x660. The headline ran over the footer rail at every landscape size and
+ * the lede, which is the composition's counterweight on the right, was empty.
+ *
+ * The author's own mannerism is the separator. The promise is written wrapped in ellipses —
+ * "..za každým mým výrobkem je příběh.." — which is the same convention `headlineStripped`
+ * below already knows about and already trims off the ends. Applied consistently it also says
+ * where the promise ENDS: the first interior run of ellipsis. Everything after it is the lede.
+ *
+ * No interior run, or more than one paragraph, and nothing here changes.
+ */
+const ELLIPSIS_RUN = /\.{2,}|\u2026+/;
+
+function splitPromise(lines: string[]): [string, string] {
+    if (lines.length > 1) {
+        return [lines[0], lines.slice(1).join(" ")];
+    }
+
+    const only = lines[0] ?? "";
+    const body = only.replace(/^[.\u2026\s]+/, "");
+    const at = body.search(ELLIPSIS_RUN);
+
+    if (at <= 0) {
+        return [only, ""];
+    }
+
+    return [
+        body.slice(0, at),
+        body
+            .slice(at)
+            .replace(ELLIPSIS_RUN, "")
+            .replace(/(?:\.{2,}|\u2026+)\s*$/, "")
+            .trim(),
+    ];
+}
 
 /**
  * Breaks the headline into two or three display lines at word boundaries, so the lockup stays
@@ -46,11 +92,19 @@ function splitIntoLines(text: string) {
 }
 
 export default function IntroHero({
-    data,
-    newsText = "Dovolená | Novinky",
+    block,
+    notices = [],
+    cta,
 }: {
-    data?: any
-    newsText?: string
+    /** Blok `index.hero` z CMS; chybí-li, sekce se vykreslí se zálohami níž. */
+    block?: CopyBlock
+    /** Dovolená a novinka z administrace. Prázdné pole = pás se nevykreslí. */
+    notices?: Notice[]
+    /**
+     * Tlačítko `index.hero`. Vede dovnitř webu, takže se z CMS bere jen název —
+     * cíl `/store` je routa téhle aplikace a mění se s kódem, ne s obsahem.
+     */
+    cta?: CopyButton
 }) {
     const { firstLoad } = useStateContext();
     const ref = useRef<HTMLElement>(null);
@@ -58,9 +112,29 @@ export default function IntroHero({
     const pointerY = useMotionValue(0);
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
     // const reduceMotion = useReducedMotion();
-    const heroImage = data?.images?.[0]
-        ? urlFor(data.images[0]).width(2400).quality(100).url()
-        : "/assets/img/img/2.jpg";
+    // Z CMS přichází hotová adresa v úložišti — žádný builder jako u Sanity,
+    // kde se rozměr a kvalita skládaly do URL. Velikosti řeší `next/image`.
+    const heroImage = block?.gallery?.[0]?.url ?? "/assets/img/img/2.jpg";
+
+    /*
+     * Krátké texty hera z CMS, s dosavadním zněním jako záložní hodnotou.
+     *
+     * `accent` je v `siteCopy` pole krátkých řetězců — přesně tři popisky, které
+     * hero nese kolem nadpisu, takže je drží v pořadí, v jakém se čtou: obočí nad
+     * lockupem, pak levá a pravá půlka horní lišty. `items` je dvojice, a proto v
+     * něm sedí číslo a jeho popisek pohromadě: v editoru to je jeden řádek se
+     * dvěma poli, ne dva nesouvisející texty.
+     *
+     * Záložní hodnoty tu nejsou z opatrnosti — dokud majitelka blok nevyplní,
+     * vrací CMS prázdno a hero by mělo tři díry. S nimi vypadá stránka stejně
+     * jako předtím a naplnění CMS je pak změna, ne oprava.
+     */
+    const eyebrow = block?.accent?.[0]?.trim() || "Keramika z píseckého ateliéru";
+    const topLeft = block?.accent?.[1]?.trim() || "Autorská keramika";
+    const topRight = block?.accent?.[2]?.trim() || "Písek · od roku 2014";
+    const countIndex = block?.items?.[0]?.lead?.trim() || "01";
+    const countLabel =
+        block?.items?.[0]?.label?.trim() || "Ručně · pomalu · v malém počtu";
     const { scrollYProgress } = useScroll({
         target: ref,
         offset: ["start start", "end start"]
@@ -73,14 +147,21 @@ export default function IntroHero({
         restDelta: 0.0005,
     });
     const journeyProgress = localJourneyProgress;
-    // The `content` field is authored with line breaks. Its first line is the promise, so it
-    // becomes the display headline; whatever follows stays as the quiet lede. This keeps the
-    // headline editable in Sanity without adding a field the CMS does not have yet.
-    const contentLines = (data?.content ?? DEFAULT_CONTENT)
-        .split("\n")
-        .map((line: string) => line.trim())
-        .filter(Boolean);
-    const headlineSource = contentLines[0] ?? DEFAULT_CONTENT.split("\n")[0];
+    // Text bloku je psaný po odstavcích. První je slib, takže se z něj stane
+    // displejový nadpis; co následuje, zůstává tichým podtitulkem.
+    //
+    // Odstavce se čtou přes `paragraphs()`, tedy z `body` (autorské HTML), NE
+    // přes `bodyText.split("\n")`. `plainText()` v CMS nahrazuje `</p>` mezerou,
+    // takže `bodyText` nikdy žádné zalomení nemá: tohle vracelo jednu položku,
+    // celý text bloku se stal displejovým nadpisem (naměřeno 986 px lockupu na
+    // 1920 proti 886 px pásma) a `ledeText` bylo vždycky prázdné.
+    const contentLines = (() => {
+        const fromCms = paragraphs(block);
+        return fromCms.length
+            ? fromCms
+            : DEFAULT_CONTENT.split("\n").map((line) => line.trim()).filter(Boolean);
+    })();
+    const [headlineSource, ledeText] = splitPromise(contentLines);
     // Authors write the promise as "..za každým mým výrobkem je příběh.." — the leading and
     // trailing ellipses are a body-copy mannerism that reads as a typo at display size.
     const headlineStripped = headlineSource.replace(/^[.\u2026\s]+|[.\u2026\s]+$/g, "");
@@ -88,10 +169,23 @@ export default function IntroHero({
     const headlineText =
         headlineStripped.charAt(0).toLocaleUpperCase("cs") + headlineStripped.slice(1);
     const headlineLines = splitIntoLines(headlineText);
-    const ledeText = contentLines.slice(1).join(" ");
-    const signature = [data?.title1 ?? "Lucie", data?.title2 ?? "Polanská"]
+    // Jméno a příjmení jsou v CMS dvě pole (`title` a `headline`), ne jedno —
+    // hero je sází jako podpis a slepené by se nedaly rozdělit zpátky.
+    const signature = [block?.title || "Lucie", block?.headline || "Polanská"]
         .filter(Boolean)
         .join(" ");
+
+    /*
+     * Slib pod nadpisem — vlastní pole, se `splitPromise` jako zálohou.
+     *
+     * Bydlel v `body` za výpustkou, tedy ve stejném poli jako nadpis. To ho dělalo
+     * neupravitelným: `editable` píše vždycky CELÉ pole, takže označit šlo jen jednoho ze
+     * dvou sourozenců — a byl to nadpis. V editoru se na slib nedalo kliknout.
+     *
+     * `accent.3` je jeho vlastní pole. Když je prázdné, spadne se zpátky na půlku `body`,
+     * takže starý obsah nikde nezmizí a stránka se chová jako dřív.
+     */
+    const promise = block?.accent?.[3]?.trim() || ledeText;
 
     const y = useTransform(journeyProgress, [0, 1], ["-1.5%", "2.5%"]);
     const imageScale = useTransform(journeyProgress, [0, 1], [1.035, 1.09]);
@@ -209,25 +303,25 @@ export default function IntroHero({
             }
         }
     }
-    const PreloaderAnimButton = {
-        initial: {
-            opacity: 0,
-            y: 20,
-        },
-        start: {
-            opacity: 0,
-            y: 20,
-        },
-        enter: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5,
-                delay: !firstLoad ? 1.35 : 0.5,
-                ease: [0.76, 0, 0.24, 1] as Easing,
-            }
-        }
-    }
+    // const PreloaderAnimButton = {
+    //     initial: {
+    //         opacity: 0,
+    //         y: 20,
+    //     },
+    //     start: {
+    //         opacity: 0,
+    //         y: 20,
+    //     },
+    //     enter: {
+    //         opacity: 1,
+    //         y: 0,
+    //         transition: {
+    //             duration: 0.5,
+    //             delay: !firstLoad ? 1.35 : 0.5,
+    //             ease: [0.76, 0, 0.24, 1] as Easing,
+    //         }
+    //     }
+    // }
 
     return (
         <section
@@ -253,9 +347,9 @@ export default function IntroHero({
                 transition={eyebrowTransition}
                 style={chromeStyle}
             >
-                <span>Autorská keramika</span>
+                <span {...editable(block, "accent.1")}>{topLeft}</span>
                 <span className="line" />
-                <span>Písek · od roku 2014</span>
+                <span {...editable(block, "accent.2")}>{topRight}</span>
             </motion.div>
             <div className="Hero__Intro__Img">
                 {/* <motion.div 
@@ -279,12 +373,17 @@ export default function IntroHero({
                 style={nameStyle}
             >
                 <div className="Hero__Intro__Lockup">
-                <span className="Hero__Intro__Eyebrow">Keramika z píseckého ateliéru</span>
+                <span className="Hero__Intro__Eyebrow" {...editable(block, "accent.0")}>{eyebrow}</span>
 
                 {/* One h1, and it carries the promise rather than the name: a visitor arrives
-                    looking for ceramics, not for a person. The first line of the Sanity `content`
-                    field is the headline, so Lucia still edits it; the rest becomes the lede. */}
-                <motion.h1 className="Hero__Intro__Headline" style={headlineStyle}>
+                    looking for ceramics, not for a person. The first paragraph of the block's
+                    text is the headline, so Lucia still edits it; the rest becomes the lede.
+                    Proto je `editable` na celém `body` — obojí je jedno pole. */}
+                <motion.h1
+                    className="Hero__Intro__Headline"
+                    style={headlineStyle}
+                    {...editable(block, "body")}
+                >
                     {headlineLines.map((line, index) => (
                         <MaskedLine
                             key={line + index}
@@ -295,7 +394,9 @@ export default function IntroHero({
                 </motion.h1>
 
                 <motion.p className="Hero__Intro__Signature" style={headlineStyle}>
-                    <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
+                    <span {...editable(block, "title")}>
+                        <MaskedLine text={`— ${signature}`} delay={0.35 + headlineLines.length * 0.14} />
+                    </span>
                 </motion.p>
                 </div>
 
@@ -306,11 +407,25 @@ export default function IntroHero({
                     animate={ledeAnimate}
                     transition={ledeTransition}
                 >
-                    {ledeText && <p>{ledeText}</p>}
-                    <div className="Hero__Intro__Header__Cta">
+                    {/* Vlastní pole, ne druhá půlka `body`.
+                        `editable` píše VŽDY celé pole, takže dokud tahle věta bydlela v `body`
+                        spolu s nadpisem, mohl být označený jen jeden z nich — a byl to nadpis.
+                        Kliknutí na slib v editoru tedy nedělalo nic. `accent.3` je jeho vlastní
+                        pole, takže jde upravit sám a nezávisle na nadpisu.
+                        `ledeText` (rozdělený `body`) zůstává jako záloha, aby se nic neztratilo,
+                        kdyby bylo pole prázdné. */}
+                    {promise && <p {...editable(block, "accent.3")}>{promise}</p>}
+                    {/* Anotace sedí na obalu, ne na `WebButton`: ten si vykresluje
+                        vlastní vnitřek (maska, přejezd výplně) a datové atributy
+                        by skončily na prvku, který se při animaci přepisuje.
+                        Překryv potřebuje stabilní element. */}
+                    <div
+                        className="Hero__Intro__Header__Cta"
+                        {...editable(cta, "label")}
+                    >
                         <WebButton
                             href="/store"
-                            title="Prohlédnout výrobky"
+                            title={cta?.label?.trim() || "Prohlédnout výrobky"}
                             Kind="Link"
                             tone="dark"
                         />
@@ -336,11 +451,19 @@ export default function IntroHero({
                         variants={PreloaderAnimImage2}
                         style={mediaInnerStyle}
                     >
-                        <HeroImageShader
-                            src={heroImage}
-                            pointerX={pointerX}
-                            pointerY={pointerY}
-                        />
+                        {/* Fotka hero je první položka galerie bloku — proto
+                            `gallery.0`, ne `image`. Obal, protože atributy musí
+                            sedět na elementu, který překryv najde v DOM. */}
+                        <div
+                            className="Hero__Intro__Media__Editable"
+                            {...editable(block, "gallery.0", "image")}
+                        >
+                            <HeroImageShader
+                                src={heroImage}
+                                pointerX={pointerX}
+                                pointerY={pointerY}
+                            />
+                        </div>
                         {/* Flat scrim over the whole frame. The wrapper's gradient handles the
                             edge the copy sits against, but on a phone the copy runs across the
                             middle of the picture too, where a gradient has already faded out. */}
@@ -349,16 +472,30 @@ export default function IntroHero({
                 </motion.div>
             </motion.div>
             <motion.div className="Hero__Intro__FooterRail" style={chromeStyle}>
-                <motion.div
-                    className="Hero__Intro__Updates"
-                    initial="initial"
-                    animate="enter"
-                    exit="exit"
-                    variants={PreloaderAnimUpdates}
-                    custom={2}
-                >
-                    <p>{newsText || "Dovolena | Novinky"}</p>
-                </motion.div>
+                {/*
+                  * Pás oznámení. Je tu jen tehdy, když je co oznámit.
+                  *
+                  * Dřív tu stál nápis „Dovolená | Novinky" pořád — i když dílna
+                  * jela normálně a žádná novinka nebyla. Prázdný stav je většina
+                  * roku, takže výchozí je nevykreslit nic; hero tím nic neztratí,
+                  * protože pás nikdy nenesl vlastní sdělení.
+                  *
+                  * Data jdou z `getHeroNotices()` (nastavení obchodu v administraci
+                  * přes `/store/shop-status`), takže se to zapíná a vypíná tam, kde
+                  * majitelka dovolenou zadává — ne v CMS a ne v kódu.
+                  */}
+                {notices.length > 0 && (
+                    <motion.div
+                        className="Hero__Intro__Updates"
+                        initial="initial"
+                        animate="enter"
+                        exit="exit"
+                        variants={PreloaderAnimUpdates}
+                        custom={2}
+                    >
+                        <HeroNotices notices={notices} />
+                    </motion.div>
+                )}
                 <motion.div
                     className="Hero__Intro__ScrollCue"
                     initial={chromeInitial}
@@ -374,8 +511,8 @@ export default function IntroHero({
                     animate={chromeAnimate}
                     transition={railEarlyTransition}
                 >
-                    <span>01</span>
-                    <span>Ručně · pomalu · v malém počtu</span>
+                    <span {...editable(block, "items.0.lead")}>{countIndex}</span>
+                    <span {...editable(block, "items.0.label")}>{countLabel}</span>
                 </motion.div>
             </motion.div>
           </div>

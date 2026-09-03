@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { getPageCopy } from "@lib/data/site-copy"
 import LoginTemplate from "@modules/account/templates/login-template"
 
 export const metadata: Metadata = {
@@ -16,5 +17,6 @@ export default async function Login({ params, searchParams }: LoginPageProps) {
   const redirectTo =
     query.redirectTo === "/cart" ? `/${countryCode}/cart` : undefined
 
-  return <LoginTemplate redirectTo={redirectTo} />
+  const copy = await getPageCopy("global")
+  return <LoginTemplate redirectTo={redirectTo} block={copy["global.prihlaseni"]} />
 }

@@ -1,6 +1,8 @@
 import { Metadata } from "next"
 
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { getFiles, getPageCopy } from "@lib/data/site-copy"
+import LegalDownloads from "@modules/legal/Downloads"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
@@ -114,7 +116,13 @@ const sections: LegalSectionData[] = [
   },
 ]
 
-export default function Page() {
+export default async function Page() {
+  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
+  const [copy, files] = await Promise.all([
+    getPageCopy("ochrana-osobnich-udaju"),
+    getFiles("ochrana-osobnich-udaju"),
+  ])
+
   return (
     <LegalDocument
       code="GDPR · 02"
@@ -123,6 +131,8 @@ export default function Page() {
       accent="Vaše údaje zůstávají vaše."
       description="Jaké údaje o vás máme, k čemu je potřebujeme a co s nimi můžete udělat."
       sections={sections}
+      block={copy["ochrana-osobnich-udaju.text"]}
+      downloads={<LegalDownloads files={files} />}
     />
   )
 }

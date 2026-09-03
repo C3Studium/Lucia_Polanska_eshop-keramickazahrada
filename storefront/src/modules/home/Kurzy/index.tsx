@@ -6,7 +6,8 @@ import type { CourseTerm } from "@lib/data/courses"
 import Rezervace from "@modules/kurzy/Rezervace"
 import RezervaceModal from "@modules/kurzy/RezervaceModal"
 
-import Intro, { type KurzyIntroData } from "./Intro"
+import Intro from "./Intro"
+import type { CopyBlocks } from "@lib/util/site-copy"
 
 /**
  * The kurzy page: the pinned timeline, the reservation teaser, and — over
@@ -15,10 +16,11 @@ import Intro, { type KurzyIntroData } from "./Intro"
  * focus back when it closes, the ContactDialog contract.
  */
 export default function Kurzy({
-  introData,
+  copy,
   terms,
 }: {
-  introData?: KurzyIntroData
+  /** Bloky stránky `kurzy` z CMS; termíny níž jsou z Medusy. */
+  copy: CopyBlocks
   terms: CourseTerm[]
 }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -39,8 +41,17 @@ export default function Kurzy({
 
   return (
     <main className="kurzy">
-      <Intro data={introData} onReserveAction={openModal} />
-      <Rezervace terms={terms} onReserveAction={openModal} />
+      <Intro
+        block={copy["kurzy.intro"]}
+        gallery={copy["kurzy.galerie"]}
+        about={copy["kurzy.about"]}
+        onReserveAction={openModal}
+      />
+      <Rezervace
+        terms={terms}
+        onReserveAction={openModal}
+        block={copy["kurzy.rezervace"]}
+      />
       <RezervaceModal
         open={modalOpen}
         onCloseAction={closeModal}

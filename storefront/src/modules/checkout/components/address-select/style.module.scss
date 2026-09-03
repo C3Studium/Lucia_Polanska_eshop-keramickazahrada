@@ -1,5 +1,11 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
 .accountAddressSelectRoot {
+  /* Hloubka dekorativní římsy pod tlačítkem. Jedno místo, dva odběratelé:
+     ::after ji kreslí, .accountAddressOptionsClip se o ni odsazuje (+1px je
+     její spodní linka). Svislý rozměr → vh; živá 722–929 px výšky okna. */
+  --address-ledge-depth: clamp(.7rem, 1.55vh, .9rem);
+
   position: relative;
   width: 100%;
 }
@@ -8,57 +14,49 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
+  gap: clamp(1.25rem, 1.9vw, 2rem);
   align-items: center;
   width: 100%;
-  min-height: 96px;
-  padding: 16px;
-  border: 1px solid rgba(32, 33, 29, .26);
+  /* dřív 96px / 108px ve dvou media query — jedna vlastnost, dvě hodnoty = clamp.
+     Svisle na vh, takže se 1280×720 sevře samo a lt nepotřebuje pravidlo. */
+  min-height: clamp(6rem, 13vh, 7rem);
+  padding: clamp(1rem, 2.4vh, 1.35rem) clamp(1rem, 1.5vw, 1.4rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .26);
   border-radius: 0;
   background: transparent;
-  color: #20211d;
+  color: var(--ink-05);
   text-align: left;
   cursor: pointer;
-
-  @include v(md) {
-    min-height: 108px;
-    padding: 20px 22px;
-  }
-
-  @include h(xs) {
-    min-height: 108px;
-    padding: 20px 22px;
-  }
 }
 
 .accountAddressSelectButton::after {
   position: absolute;
-  right: 12px;
-  bottom: -12px;
-  left: 12px;
+  right: clamp(.6rem, .95vw, .9rem);
+  bottom: calc(-1 * var(--address-ledge-depth));
+  left: clamp(.6rem, .95vw, .9rem);
   z-index: -1;
-  height: 12px;
-  border: 1px solid rgba(126, 137, 106, .36);
+  height: var(--address-ledge-depth);
+  border: 1px solid rgb(var(--olive-19-rgb) / .36);
   border-top: 0;
   content: "";
 }
 
 .accountAddressSelectButton:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 4px;
+  outline-offset: .25rem;
 }
 
 .accountAddressSelectedCopy {
   display: grid;
   min-width: 0;
-  gap: 5px;
+  gap: clamp(.25rem, .5vh, .4rem);
 }
 
 .accountAddressSelectedCopy small,
 .accountAddressOptionIndex,
 .accountAddressOptionState {
-  color: rgba(32, 33, 29, .5);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: clamp(.75rem, .95vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -73,53 +71,59 @@
 
 .accountAddressSelectedCopy > span {
   overflow: hidden;
-  color: rgba(32, 33, 29, .62);
-  font: 14px/1.4 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(.8rem, 1.1vw, 1.05rem)/1.4 "Sansation-Light", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .accountAddressSelectControl {
   display: grid;
-  width: 38px;
-  height: 38px;
+  /* kruh soupeří o obě osy → clamp jen na šířku, výšku drží aspect-ratio */
+  width: clamp(2.1rem, 2.9vw, 2.75rem);
+  aspect-ratio: 1;
   place-items: center;
-  border: 1px solid #20211d;
+  border: 1px solid var(--ink-05);
   border-radius: 50%;
 }
 
 .accountAddressSelectControl svg {
-  width: 16px;
-  height: 16px;
+  width: clamp(.9rem, 1.25vw, 1.15rem);
+  aspect-ratio: 1;
 }
 
 .accountAddressOptionsClip {
   position: absolute;
-  top: calc(100% + 13px);
+  top: calc(100% + var(--address-ledge-depth) + 1px);
   right: 0;
   left: 0;
   z-index: 40;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, .26);
+  border: 1px solid rgb(var(--ink-05-rgb) / .26);
   border-top: 0;
-  background: #f8e2d1;
-  box-shadow: 0 28px 55px -36px rgba(32, 33, 29, .72);
+  background: var(--cream-06);
+  box-shadow: 0 1.75rem 3.45rem -2.25rem rgb(var(--ink-05-rgb) / .72);
   transform-origin: top center;
 }
 
 .accountAddressOptions {
-  max-height: 330px;
+  /* na 720px vysokém laptopu 273px, na 1080 strop 384px — seznam se vejde
+     pod tlačítko, aniž by přerostl ohyb */
+  max-height: clamp(15rem, 38vh, 24rem);
   margin: 0;
   padding: 0;
+  /* výslovně: ze samotného overflow-y: auto by prohlížeč dopočítal
+     overflow-x taky na auto a vyrobil vodorovný scroll */
+  overflow-x: hidden;
   overflow-y: auto;
   list-style: none;
-  scrollbar-color: rgba(32, 33, 29, .35) transparent;
+  scrollbar-color: rgb(var(--ink-05-rgb) / .35) transparent;
   scrollbar-width: thin;
 }
 
 .accountAddressOption {
   padding: 0;
-  border-bottom: 1px solid rgba(32, 33, 29, .16);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
   cursor: pointer;
 }
 
@@ -130,28 +134,21 @@
 .accountAddressOptionInner {
   position: relative;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 10px 14px;
+  /* První stopa = box Radia, které si svoji velikost drží samo (22px ve vlastním
+     modulu) — proto auto, ne opsané číslo. Index a stav mají display: none,
+     takže pro ně grid žádnou stopu nedrží. */
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(.6rem, 1.3vh, .9rem) clamp(.75rem, 1.15vw, 1.1rem);
   align-items: start;
-  min-height: 118px;
-  padding: 20px;
-
-  @include v(md) {
-    grid-template-columns: 28px 20px minmax(0, 1fr) auto;
-    gap: 14px;
-  }
-
-  @include h(xs) {
-    grid-template-columns: 28px 20px minmax(0, 1fr) auto;
-    gap: 14px;
-  }
+  min-height: clamp(6.5rem, 15vh, 8rem);
+  padding: clamp(1rem, 2.3vh, 1.5rem) clamp(1rem, 1.6vw, 1.5rem);
 }
 
 .accountAddressOptionHighlight {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(126, 137, 106, .12);
+  background: rgb(var(--olive-19-rgb) / .12);
   transform-origin: left center;
   pointer-events: none;
 }
@@ -162,31 +159,30 @@
 }
 
 .accountAddressOptionIndex {
-  padding-top: 3px;
+  padding-top: .2rem;
   display: none;
 }
 
 .accountAddressOptionCopy {
   display: grid;
   min-width: 0;
-  gap: 3px;
+  gap: clamp(.2rem, .4vh, .35rem);
   grid-column: 2;
 }
 
 .accountAddressOptionCopy strong {
-  margin-bottom: 3px;
-  font: 400 17px/1.2 "Sansation-Regular", sans-serif;
+  margin-bottom: clamp(.2rem, .4vh, .35rem);
+  font: 400 clamp(.95rem, 1.3vw, 1.25rem)/1.2 "Sansation-Regular", sans-serif;
 }
 
 .accountAddressOptionCopy small,
 .accountAddressOptionCopy span {
-  color: rgba(32, 33, 29, .62);
-  font: 13px/1.4 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(.8rem, 1.02vw, 1rem)/1.4 "Sansation-Light", sans-serif;
 }
 
 .accountAddressOptionState {
-  padding-top: 3px;
-  color: #6d755d;
+  padding-top: .2rem;
+  color: var(--olive-14);
   display: none;
 }
-

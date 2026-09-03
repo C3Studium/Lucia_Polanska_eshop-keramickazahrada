@@ -1,44 +1,112 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
-.root { min-height: 100vh; overflow: clip; background: #f2eee5; color: #212222; padding: clamp(10px, 0.8vw, 16px); }
+
+.root { min-height: 100vh; overflow: clip; background: var(--cream-07); color: var(--black-03); padding: clamp(.625rem, .8vw, 1rem); }
 
 .catalogue {
-  scroll-margin-top: 65px;
-  padding: clamp(78px, 10vw, 150px) clamp(16px, 2vw, 32px) clamp(80px, 10vw, 145px);
+  // Jediné místo, kde je napsaná šířka obsahu téhle routy. Dřív stálo 1860px
+  // dvakrát — na .introduction i na .layout — a v px ho ramp nad 1921 nezvedl,
+  // takže na 2552 zbývalo 298px mrtvého krému na každé straně. 116rem je
+  // 1856px při rem 16 (pod 1921 tedy prakticky beze změny) a 2467px na qhd,
+  // kde je rem 21.27px. Proto se do qhd ani xxl nic psát nemusí: šířka je
+  // velikost a o velikost se stará ramp.
+  --shop-max: min(116rem, 100%);
+
+  // Spodní hrana navbaru plus vzduch. Odvozené z tokenů v globals.scss —
+  // navbar je publikuje na :root právě proto, že se proti nim kreslí i něco
+  // jiného než on sám (`top: var(--nav-top-inset)`, `height: var(--nav-height)`).
+  //
+  // Tahle routa měla tutéž výšku napsanou třikrát a pokaždé jinak: 65px tady,
+  // clamp(4.5rem, 8vh, 6rem) ve FilterPanelu a clamp(3.5rem, 8vh, 5.75rem)
+  // jako „fallback" v ProductGridu. A protože `.refreshing` NENÍ potomek
+  // panelu, nedědilo se nic a platil pro něj vždycky ten fallback — dvě
+  // odsazení od jednoho navbaru, lišící se na krátkém laptopu o 14px.
+  // Teď je to jedna proměnná na společném předkovi obou; čte ji lišta filtru,
+  // hláška „Aktualizuji" i scroll-margin téhle sekce.
+  // 720 → 68px · 768 → 69 · 900 → 73 · 1080 → 82 · 1351 (qhd) → 103.
+  --rail-top: calc(
+    var(--nav-top-inset) + var(--nav-height) + clamp(.75rem, 1.6vh, 1.25rem)
+  );
+
+  scroll-margin-top: var(--rail-top);
+
+  // Svislá osa visí na vh, vodorovná na vw. Dřív bylo obojí na vw:
+  // clamp(78px, 10vw, 150px) / clamp(80px, 10vw, 145px) dalo na 1280x720
+  // 128px nahoře i dole, dohromady 36 % výšky okna, a první produktová fotka
+  // začínala na y=540 ze 720. 9vh na 720 = 65px, 8vh = 58px — nízký laptop se
+  // sevře sám a v lt nepotřebuje ani jedno vlastní pravidlo.
+  // živá pásma: top 604–1422px výšky · bottom 640–1500px výšky
+  //             inline 800–1600px šířky
+  padding-block: clamp(3.4rem, 9vh, 8rem) clamp(3.2rem, 8vh, 7.5rem);
+  padding-inline: clamp(1rem, 2vw, 2rem);
 }
 
 .introduction {
   display: grid;
   grid-template-columns: 1fr 1.7fr 1fr;
   align-items: end;
-  gap: 30px;
-  max-width: 1860px;
-  margin: 0 auto clamp(58px, 7vw, 100px);
+  gap: clamp(1.25rem, 2vw, 2.25rem);          // 20–36px, živé 1000–1800
+  max-width: var(--shop-max);
+  // Mezera pod hlavičkou soupeří o výšku okna, ne o šířku. Na vw dávala na
+  // 1280 devadesát pixelů jen proto, že je okno široké; na vh dá na 720
+  // 43px a na 1351 osmdesát. živé 640–1467px výšky.
+  margin: 0 auto clamp(2.4rem, 6vh, 5.5rem);
 
-  > p { align-self: start; margin: 10px 0 0; color: #8c6259; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
-  .filterScope { display: block; margin-top: 12px; color: #212222; font-size: 13px; letter-spacing: 0.08em; }
-  h2 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(44px, 6vw, 92px); font-weight: 400; line-height: .91; letter-spacing: -.045em; }
-  h2 em { color: #85866b; font-style: italic; }
-  > span { max-width: 390px; color: rgba(33,34,34,.68); font-size: 15px; line-height: 1.55; }
+  // 12–14.4px, živé 1263–1516. Podlaha zůstává na 12px — pod ni nesmí
+  // žádný zákaznický text.
+  > p { align-self: start; margin: .625rem 0 0; color: var(--clay-19); font-size: clamp(.75rem, .95vw, .9rem); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  // 13–15.5px, živé 1238–1478.
+  .filterScope { display: block; margin-top: .75rem; color: var(--black-03); font-size: clamp(.8125rem, 1.05vw, .97rem); letter-spacing: 0.08em; }
+
+  // 44–92px při rem 16, tedy pod 1921 na pixel totéž co dřív (živé 733–1533).
+  // Rozdíl je nad rampem: strop v px zamrzal na 92px i na 2552, strop v rem
+  // se zvedne na 122px sám a do qhd/xxl se nic psát nemusí.
+  h2 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(2.75rem, 6vw, 5.75rem); font-weight: 400; line-height: .91; letter-spacing: -.045em; }
+  h2 em { color: var(--olive-18); font-style: italic; }
+
+  // font-size 14.4–17px, živé 1252–1475. Prostřední člen je 1.15vw, ne .85vw:
+  // při .85vw by podlaha držela až do 1694px a na celém laptopovém pásmu by se
+  // nehnul ani o pixel — clamp by byl jen složitěji napsaná konstanta.
+  //
+  // max-width: podlaha 20rem, ne 18rem — na 1280 měří sloupec 1fr stejně jen
+  // ~312px, takže tam max-width vůbec nesvírá, a nižší podlaha by jen
+  // roztáhla živé pásmo mimo laptopy. 320–416px, živé 1255–1631; na 1512
+  // vyjde 386, což jsou dnešní 390 na tři pixely, a na qhd 553 místo 390.
+  > span { max-width: clamp(20rem, 25.5vw, 26rem); color: rgb(var(--black-03-rgb) / .68); font-size: clamp(.9rem, 1.15vw, 1.06rem); line-height: 1.55; }
 }
 
 .layout {
+  // Jediné místo, kde je šířka filtrační lišty. Dřív bylo 290px napsané
+  // podruhé ve FilterPanel/.root; ta si teď přečte tuhle proměnnou.
+  // 224–352px, živé 1179–1853. Na 1512 vyjde 287 (dnes 290, ale karta jen
+  // 256 — lišta byla širší než produkt), na qhd 468 místo pořád stejných 290.
+  --rail: clamp(14rem, 19vw, 22rem);
+
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
+  grid-template-columns: var(--rail) minmax(0, 1fr);
   align-items: start;
-  gap: 64px;
-  max-width: 1860px;
+  gap: clamp(1.75rem, 3.4vw, 4.5rem);         // 28–72px, živé 824–2118
+  max-width: var(--shop-max);
   margin: 0 auto;
 }
 
 .results { min-width: 0; }
-.results > :last-child { margin-top: 24px; }
+.results > :last-child { margin-top: clamp(1rem, 2vh, 2rem); }  // 16–32px, živé 800–1600px výšky
 
-@include below-px(1100px) {
+// Bylo below-px(1100px) — ad-hoc šířka mimo tabulku, a hlavně se neshodovala
+// s below-px(900px) ve FilterPanelu: mezi 900 a 1100 byl .layout už složený
+// na block, ale panel zůstával sticky rail 290px a jel přes karty (ověřeno na
+// 1024x768). below(md) je max-width 1199.98px, tedy přesně pod stopem, kde
+// ProductGrid mění počet sloupců, a landscape telefon (932px) spadne do
+// stejného pásma. Stejný stop patří i do ShopToolbaru a FilterPanelu.
+@include below(md) {
   .introduction { grid-template-columns: 1fr 2fr; }
   .introduction > span { grid-column: 2; }
   .layout { display: block; }
 }
 
+// Telefonní pásmo — druhé kolo. Sem patří below(xs) místo below-px(700px)
+// a krajní členy toho clampu na h2 do rem. Teď nesahat.
 @include below-px(700px) {
   .catalogue { padding-inline: 10px; }
   .introduction { display: block; margin-bottom: 55px; }

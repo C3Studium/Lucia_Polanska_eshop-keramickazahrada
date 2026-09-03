@@ -1,49 +1,79 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 .root {
+  /* Výška navbaru byla v téhle routě napsaná třikrát: top 88px tady, −108px
+     v max-height o řádek níž a 74/92px v `.refreshing` v ProductGridu. Teď
+     ji nese jedna `--rail-top` na `.catalogue` v Shop/style.module.scss,
+     odvozená z --nav-top-inset a --nav-height (globals.scss), a čtou ji
+     všichni tři. Zdejší kopie musela zmizet: `.refreshing` není potomkem
+     panelu, takže by se z ní stejně nikdy nedědila — a nedědila.
+     Je svislá, takže roste s výškou okna: 68px na 720, 82 na 1080, 103 na
+     1351, bez jediného pravidla v `lt`. */
   position: sticky;
-  top: 88px;
+  top: var(--rail-top);
   align-self: start;
-  width: 290px;
-  max-height: calc(100dvh - 108px);
+  /* Stopu určuje `.layout` v Shop/style.module.scss. Dřív tu stálo 290px
+     podruhé — dvě kopie téhož čísla, které spolu musely souhlasit. */
+  width: 100%;
+  max-height: calc(100dvh - var(--rail-top) - clamp(.75rem, 2vh, 1.5rem));
+  /* Explicitně: `overflow-y: auto` samo dopočítá `overflow-x` taky na auto
+     a lišta by dostala vodorovný scrollbar, jakmile se dovnitř něco nevejde. */
+  overflow-x: hidden;
   overflow-y: auto;
-  border: 1px solid rgba(33, 34, 34, 0.15);
-  border-radius: 24px;
-  background: #24251f;
-  color: #f7f3ea;
+  border: 1px solid rgb(var(--black-03-rgb) / .15);
+  border-radius: clamp(1.1rem, 1.6vw, 1.5rem);
+  background: var(--ink-05);
+  color: var(--cream-07);
   scrollbar-width: none;
 
   &::-webkit-scrollbar { display: none; }
 }
 
+/* Svislý rytmus celé lišty visí na vh, vodorovný na vw. Obsah panelu měřil
+   862px natvrdo, takže se na 1280x720 ukázalo 610 z nich a patička byla mimo;
+   teď se sekce na krátkém okně samy sevřou.
+   Každý STROP je původní návrhová hodnota v rem (25px = 1.55rem, 22px =
+   1.375rem, …), ne víc. Změřeno: se stropy nad návrhem obsah panelu na
+   1512x982 narostl z 862 na 911px a začal přetékat tam, kde dřív nepřetékal —
+   ta výška se sčítá přes dvanáct řádků kategorií a tři sekce. Takhle žádné
+   okno pod 1921 nedostane víc, než mělo, krátká okna dostanou míň a nad 1921
+   všechny stropy zvedne ramp. */
 .heading {
   display: flex;
   justify-content: space-between;
-  padding: 25px 22px 20px;
-  border-bottom: 1px solid rgba(255,255,255,.16);
+  padding: clamp(1rem, 2.48vh, 1.55rem) clamp(1rem, 1.54vw, 1.375rem) clamp(.8rem, 2vh, 1.25rem);
+  border-bottom: 1px solid rgb(var(--white-rgb) / .16);
 
-  span { color: #ffe8d6; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
-  h2 { margin: 5px 0 0; font-family: "Sentient-Regular", serif; font-size: 29px; font-weight: 400; }
+  /* Verzálkový mikropopisek („Filtry") byl 12px a clamp mu dal podlahu .68rem,
+     tedy 10.9px na 1220 a 11.5px na 1366 — naměřeno rigem. 12px je v tomhle
+     projektu absolutní minimum zákaznického textu (--type-eyebrow v globals),
+     ne výchozí bod, od kterého se dolů clampuje. Podlaha i strop jsou proto
+     .75rem: plochých 12px pod 1921 a ramp je nad tím zvedne sám. */
+  span { color: var(--cream-06); font-size: .75rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  h2 { margin: clamp(.2rem, .5vh, .3125rem) 0 0; font-family: "Sentient-Regular", serif; font-size: clamp(1.5rem, 2vw, 1.8125rem); font-weight: 400; }
 }
 
 .close {
   display: none;
-  width: 44px;
-  height: 44px;
+  /* 44px je dotykové minimum, ne libovolná velikost — proto rem, aby ho ramp
+     nad 1921 zvedl s ostatním, a ne vw, aby nikdy neklesl pod práh. */
+  width: 2.75rem;
+  height: 2.75rem;
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 28px;
+  font-size: clamp(1.4rem, 1.85vw, 1.75rem);
   cursor: pointer;
 }
 .root button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 3px; }
 
 .group {
-  padding: 20px 22px;
-  border-bottom: 1px solid rgba(255,255,255,.16);
+  padding: clamp(.85rem, 2vh, 1.25rem) clamp(1rem, 1.54vw, 1.375rem);
+  border-bottom: 1px solid rgb(var(--white-rgb) / .16);
 
-  header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
-  small { color: #a8a8a2; font-size: 12px; }
-  h3 { margin: 0; font-size: 14px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
+  header { display: flex; align-items: baseline; gap: clamp(.45rem, .7vw, .625rem); margin-bottom: clamp(.5rem, 1.4vh, .875rem); }
+  // Pořadové číslo sekce („00", „01") — týž 12px mikropopisek, táž podlaha.
+  small { color: var(--grey-04); font-size: .75rem; }
+  h3 { margin: 0; font-size: clamp(.8rem, 1.067vw, 0.934rem); font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
 }
 
 .categoryList {
@@ -55,47 +85,54 @@
     align-items: center;
     justify-content: space-between;
     // 8px se s rostoucím seznamem sčítalo do „strašně daleko od sebe" —
-    // filtr má být přehled, ne rozcestník přes celou obrazovku.
-    padding: 4px 0;
+    // filtr má být přehled, ne rozcestník přes celou obrazovku. Svisle proto
+    // na vh: seznam je nejdelší část panelu a na krátkém okně platí za všechny.
+    padding: clamp(.16rem, .4vh, .25rem) 0;
     border: 0;
     background: transparent;
-    color: #c9c9c3;
-    font-size: 15px;
+    color: var(--grey-05);
+    font-size: clamp(.85rem, 1.05vw, .9375rem);
     text-align: left;
     cursor: pointer;
     transition: color .25s ease;
 
-    i { width: 0; height: 1px; background: #ffe8d6; transition: width .35s cubic-bezier(.76,0,.24,1); }
-    &:hover { color: #fff; }
+    i { width: 0; height: 1px; background: var(--cream-06); transition: width .35s cubic-bezier(.76,0,.24,1); }
+    &:hover { color: var(--white); }
   }
 
   .activeCategory {
-    color: #ffe8d6;
-    i { width: 28px; }
+    color: var(--cream-06);
+    // Podtržítko vyjíždí z 0; cíl v rem, aby ho ramp nad 1921 zvedl s typem,
+    // pod který se kreslí. Obě strany transition jsou obyčejná délka.
+    i { width: 1.75rem; }
   }
 
   // Kolekce = rozbalovací řádek; ± místo podtržítka říká, že se rozbalí.
   .collectionRow {
     width: 100%;
 
-    &.activeCategory .plusIcon i { background: #ffe8d6; }
+    &.activeCategory .plusIcon i { background: var(--cream-06); }
   }
 
   // Dva proužky tvořící +. Svislý se otočí o 90° na vodorovný, takže se
   // + „stočí" do − — stejný easing jako vyjíždění seznamu pod ním.
   .plusIcon {
+    // Délka proužku JE strana rámečku — jedno číslo, které spolu musí souhlasit
+    // na dvou místech, takže proměnná a ne druhý opis. Tloušťka zůstává 1px:
+    // hairline je fyzická věc (pravidlo 3).
+    --plus: .6875rem;
     position: relative;
-    width: 11px;
-    height: 11px;
+    width: var(--plus);
+    height: var(--plus);
     flex-shrink: 0;
 
     i {
       position: absolute;
       inset: 0;
-      width: 11px;
+      width: var(--plus);
       height: 1px;
       margin: auto;
-      background: #a8a8a2;
+      background: var(--grey-04);
       transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1), background-color 0.25s ease;
     }
 
@@ -113,11 +150,13 @@
   .subListInner {
     display: flex;
     flex-direction: column;
-    margin: 1px 0 4px;
-    padding-left: 13px;
-    border-left: 1px solid rgba(255, 255, 255, 0.14);
+    margin: 1px 0 clamp(.15rem, .4vh, .25rem);
+    padding-left: clamp(.6rem, .91vw, .8125rem);
+    border-left: 1px solid rgb(var(--white-rgb) / .14);
 
-    button { padding: 3px 0; font-size: 14px; }
+    // Subkategorie jedou o stupeň pod kategoriemi: .98vw je 1.05vw × 14/15,
+    // takže poměr obou velikostí drží na každé šířce, ne jen na 1366.
+    button { padding: clamp(.12rem, .3vh, .1875rem) 0; font-size: clamp(.8rem, 1.067vw, 0.934rem); }
   }
 }
 
@@ -127,13 +166,18 @@
 .priceFilter {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: clamp(.55rem, 1.3vh, .8125rem);
 }
 
+/* Dráha i palce zůstávají v px: je to kurzorová věc (pravidlo 3) — palec musí
+   být chytitelný myší stejně na 1280 jako na 2K a nesmí se s oknem smršťovat.
+   Boční margin je poloviční palec, aby palec v krajní poloze nevyčníval —
+   odvozeno z --thumb, ne opsáno jako 7. */
 .priceSlider {
+  --thumb: 14px;
   position: relative;
   height: 18px;
-  margin: 4px 7px 0;
+  margin: 4px calc(var(--thumb) / 2) 0;
 
   input[type="range"] {
     position: absolute;
@@ -146,11 +190,11 @@
     pointer-events: none;
 
     &::-webkit-slider-thumb {
-      width: 14px;
-      height: 14px;
-      border: 1px solid #212222;
+      width: var(--thumb);
+      height: var(--thumb);
+      border: 1px solid var(--black-03);
       border-radius: 50%;
-      background: #ffe8d6;
+      background: var(--cream-06);
       cursor: grab;
       appearance: none;
       -webkit-appearance: none;
@@ -162,11 +206,11 @@
     }
 
     &::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border: 1px solid #212222;
+      width: var(--thumb);
+      height: var(--thumb);
+      border: 1px solid var(--black-03);
       border-radius: 50%;
-      background: #ffe8d6;
+      background: var(--cream-06);
       cursor: grab;
       pointer-events: auto;
     }
@@ -189,37 +233,38 @@
 .priceSliderTrack {
   right: 0;
   left: 0;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgb(var(--white-rgb) / .18);
 }
 
 .priceSliderFill {
-  background: #ffe8d6;
+  background: var(--cream-06);
 }
 
 .priceInputs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #a8a8a2;
-  font-size: 13px;
+  gap: clamp(.35rem, .56vw, .5rem);
+  color: var(--grey-04);
+  // Podlaha .75rem, ne .72rem: 13px text nesmí spadnout na 11.5px. Živé 1348–1461.
+  font-size: clamp(.75rem, 1vw, 0.875rem);
 
   label {
     display: flex;
     flex: 1;
     align-items: center;
-    gap: 7px;
+    gap: clamp(.3rem, .49vw, .4375rem);
     min-width: 0;
   }
 
   input {
     width: 100%;
     min-width: 0;
-    padding: 6px 9px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 9px;
+    padding: clamp(.3rem, .6vh, .375rem) clamp(.45rem, .63vw, .5625rem);
+    border: 1px solid rgb(var(--white-rgb) / .2);
+    border-radius: clamp(.45rem, .63vw, .5625rem);
     background: transparent;
-    color: #f7f3ea;
-    font-size: 14px;
+    color: var(--cream-07);
+    font-size: clamp(.8rem, 1.067vw, 0.934rem);
     appearance: textfield;
     -moz-appearance: textfield;
     transition: border-color 0.25s ease;
@@ -228,8 +273,8 @@
     &::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
     /* No `outline: 0`: its :focus specificity beat the global :focus-visible
        ring, leaving keyboard focus as a faint border shift only. */
-    &:focus { border-color: rgba(255, 232, 214, 0.65); }
-    &::placeholder { color: #7d7d78; }
+    &:focus { border-color: rgb(var(--cream-06-rgb) / .65); }
+    &::placeholder { color: var(--grey-03); }
   }
 
   i { font-style: normal; }
@@ -237,55 +282,78 @@
 
 .priceUnit { flex-shrink: 0; }
 
+/* Přepínač je odvozená geometrie, a proto se nesmí opisovat. Dráha knoflíku
+   byla napsaná jako holých 16px, což je 35 − 3 − 3 − 11 − 2 (dva bordery):
+   jakmile se kterýkoli z těch rozměrů hne, 16 přestane platit a knoflík buď
+   přeteče, nebo nedojede. Teď je dráha spočítaná z týchž proměnných, ze
+   kterých se kreslí rámeček i knoflík.
+   Rozměry v rem, ne ve vw: je to fyzický přepínač pod prstem/kurzorem, na
+   laptopech má zůstat stejný — a nad 1921 ho ramp zvedne i s dráhou, protože
+   všechny členy kromě borderů jsou rem. */
 .toggle {
+  --sw-w: 2.1875rem;
+  --sw-h: 1.1875rem;
+  --sw-border: 1px;
+  --knob: .6875rem;
+  --knob-inset: .1875rem;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 0;
+  padding: clamp(.35rem, .8vh, .5rem) 0;
   border: 0;
   background: transparent;
-  color: #c9c9c3;
+  color: var(--grey-05);
+  /* Tlačítko nedědí velikost písma a UA default 13.3px ramp nezvedne — jediné
+     místo v panelu, které by na 2K zůstalo stát. Žebřík subkategorií: na 1280
+     dá 12.8px místo 13.3, od 1429 rovných 14 a na 2K 18.6. */
+  font-size: clamp(.8rem, 1.067vw, 0.934rem);
   cursor: pointer;
 
   > span {
     position: relative;
-    width: 35px;
-    height: 19px;
-    border: 1px solid rgba(255,255,255,.35);
+    width: var(--sw-w);
+    height: var(--sw-h);
+    border: var(--sw-border) solid rgb(var(--white-rgb) / .35);
     border-radius: 999px;
   }
 
   i {
     position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 11px;
-    height: 11px;
+    top: var(--knob-inset);
+    left: var(--knob-inset);
+    width: var(--knob);
+    height: var(--knob);
     border-radius: 50%;
-    background: rgba(255,255,255,.55);
+    background: rgb(var(--white-rgb) / .55);
     transition: transform .3s cubic-bezier(.76,0,.24,1), background-color .3s ease;
   }
 
-  &[aria-pressed="true"] { color: #ffe8d6; }
-  &[aria-pressed="true"] i { transform: translateX(16px); background: #ffe8d6; }
+  &[aria-pressed="true"] { color: var(--cream-06); }
+  &[aria-pressed="true"] i {
+    // Šířka rámečku bez obou borderů, bez obou odsazení a bez knoflíku samého.
+    transform: translateX(calc(var(--sw-w) - 2 * var(--knob-inset) - var(--knob) - 2 * var(--sw-border)));
+    background: var(--cream-06);
+  }
 }
 
 .footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 17px 22px 20px;
-  color: #a8a8a2;
-  font-size: 13px;
+  padding: clamp(.7rem, 1.7vh, 1.0625rem) clamp(1rem, 1.54vw, 1.375rem) clamp(.8rem, 2vh, 1.25rem);
+  color: var(--grey-04);
+  // Táž podlaha jako u cenových polí — 13px text má dno na 12px.
+  font-size: clamp(.75rem, 1vw, 0.875rem);
 
   button {
-    padding: 10px 4px;
+    padding: clamp(.4rem, 1vh, .625rem) clamp(.2rem, .28vw, .25rem);
     border: 0;
     background: transparent;
-    color: #ffe8d6;
+    color: var(--cream-06);
     cursor: pointer;
-    font-size: 14px;
+    font-size: clamp(.8rem, 1.067vw, 0.934rem);
     text-decoration: underline;
   }
   button:disabled { opacity: .3; cursor: default; }
@@ -294,7 +362,13 @@
 .mobileBackdrop { display: none; }
 
 
-@include below-px(900px) {
+/* Šuplík. Dřív se zapínal na vlastní ad-hoc šířce 900px, zatímco Shop skládá
+   `.layout` na display:block a ShopToolbar zapíná tlačítko Filtry jinde —
+   mezi tím byla díra: na 1024x768 byl layout blokový, tlačítko Filtry
+   viditelné, ale panel pořád sticky, 290px široký a přes celou stránku, takže
+   se překresloval přes první řadu karet. Jedno rozhodnutí („rail se skládá
+   pod obsah"), jeden pojmenovaný stop pro všechny tři soubory. */
+@include below(md) {
   .mobileBackdrop {
     position: fixed;
     inset: 0;
@@ -303,7 +377,7 @@
     width: 100%;
     height: 100%;
     border: 0;
-    background: rgba(20,21,17,.48);
+    background: rgb(var(--ink-01-rgb) / .48);
     backdrop-filter: blur(7px);
   }
 

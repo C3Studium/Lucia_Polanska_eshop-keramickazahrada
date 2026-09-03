@@ -9,7 +9,37 @@
   /* 2 viewports of pin, down from 2.5. At 350vh the middle of the stage was a viewport and a half
      of held frame; the beats in index.tsx are spread across what is left. */
   height: 300vh;
-  background: #212222;
+  background: var(--black-03);
+
+  /*
+   * Mikrotypografie obou lišt a obou popisků v kruhu. Vysázely se čtyřmi různými
+   * clampy — 0.68vw / 0.62vw / 0.64vw mezi 0.75rem a 0.76rem — které všechny
+   * vracely týchž 12 px: živý pás byl 1764–1788 px, tedy 24 px široký, a dva
+   * z nich měly podlahu rovnou stropu. Jeden skutečný pás místo nich — a je to
+   * týž pás, jaký nese lišta hera, úvodu e-shopu, karuselu a Kolekcí, protože je
+   * to týž popisek v pěti sekcích pod sebou. Živý 1263–1474 px, podlaha 12 px na
+   * čitelnostní čáře verzálek s prostrkáním 0.12em, strop zvedá rampa nad 1921.
+   */
+  --courses-rail-type: clamp(0.75rem, 0.95vw, 0.875rem);
+
+  /*
+   * Výška obou lišt — meta ve scéně a lišta v závěsu stojí v jedné rovině.
+   *
+   * Podlaha 5rem je na 660 i 768 plochá (9vh je 59 a 69, obojí pod ní) a vypadá
+   * proto jako zaseknutá podlaha, kterou stačí snížit. Není. Meta lišta jede na
+   * `contentY` — obsah scény při driftu stoupá o 2.4vh — takže se kreslí výš,
+   * než kde leží. Změřeno na 1220x660 (fixní navbar končí na y=56):
+   *
+   *   podlaha 4rem = 64 → při plném driftu 48.2, tedy 7.8 px ZA pilulkou navbaru
+   *   podlaha 5rem = 80 → při plném driftu 64.2, tedy 8.2 px pod ní
+   *
+   * Na 1366x768 (navbar 56.9) totéž: 4rem dá 61.6−18.4 = 43.2, 5rem dá 61.6.
+   * Podlahu tady tedy nediktuje vkus, ale navbar plus dráha animace, a 5rem je
+   * nejnižší, která projde. Škálovat začne od výšky 889 px, kde 9vh podlahu
+   * přeroste. Kdyby měl Navbar `--nav-height` a `--nav-top-inset` na `:root`,
+   * dala by se místo téhle konstanty napsat jeho skutečná spodní hrana.
+   */
+  --courses-rail-top: clamp(5rem, 9vh, 7rem);
 
   .courses__wrapper {
     position: sticky;
@@ -20,7 +50,7 @@
     align-items: flex-end;
     justify-content: center;
     overflow: hidden;
-    background: #212222;
+    background: var(--black-03);
   }
 
   /* Pokračování šedého závěsu Kolekcí — stejný povrch (radial + #212222),
@@ -32,10 +62,10 @@
     z-index: 6;
     background: radial-gradient(
         circle at 72% 24%,
-        rgba(116, 126, 98, 0.22),
+        rgb(var(--olive-15-rgb) / .22),
         transparent 32%
       ),
-      #212222;
+      var(--black-03);
     pointer-events: none;
     will-change: clip-path;
   }
@@ -55,11 +85,11 @@
       pointer-events: none;
       background: linear-gradient(
           90deg,
-          rgba(18, 19, 18, 0.78),
-          rgba(18, 19, 18, 0.14) 60%,
-          rgba(18, 19, 18, 0.44)
+          rgb(var(--ink-01-rgb) / .78),
+          rgb(var(--ink-01-rgb) / .14) 60%,
+          rgb(var(--ink-01-rgb) / .44)
         ),
-        linear-gradient(0deg, rgba(18, 19, 18, 0.74), transparent 58%);
+        linear-gradient(0deg, rgb(var(--ink-01-rgb) / .74), transparent 58%);
     }
 
     .CoursesCarousel,
@@ -74,11 +104,20 @@
 
     .CoursesCarousel {
       isolation: isolate;
-      background: #212222;
+      background: var(--black-03);
     }
 
     .CoursesCarousel__base {
       z-index: 0;
+      /*
+       * Záložní fotka je pozadí, ne obsah — kurzor o ni nesmí zavadit.
+       *
+       * `<img>` je ve výchozím stavu tažitelný, takže tah myší přes text nad fotkou začal
+       * nativní přetažení obrázku místo toho, co člověk chtěl udělat. Ve Studiu to navíc
+       * ubíralo z plochy, kterou má chytat překryv pro editaci. Vrstva se shaderem
+       * (`__liquidEther`) to má vypnuté z téhož důvodu už dřív.
+       */
+      pointer-events: none;
 
       img {
         object-fit: cover;
@@ -109,34 +148,39 @@
     height: 100%;
     flex-direction: column;
     justify-content: flex-end;
-    padding: clamp(5rem, 10vh, 8rem) calc(5 * var(--fvw)) clamp(4rem, 7vh, 6rem);
-    color: #ffe8d6;
+    /* Podlahy 5rem/4rem stály na 768 i na 660 na témž místě (10vh je 76.8 a 66,
+       7vh je 53.8 a 46.2 — všechno pod nimi), takže krátká obrazovka dostávala
+       stejných 80/64 px jako vysoká. Sníženo tak, aby vh dál škálovalo. */
+    padding: clamp(3.6rem, 10vh, 8rem) calc(5 * var(--fvw)) clamp(3rem, 7vh, 6rem);
+    color: var(--cream-06);
     pointer-events: none;
 
     .Courses__meta {
       position: absolute;
-      top: clamp(5rem, 9vh, 7rem);
+      top: var(--courses-rail-top);
       left: calc(5 * var(--fvw));
       right: calc(5 * var(--fvw));
       display: grid;
       grid-template-columns: max-content 1fr max-content;
       align-items: center;
       gap: 1rem;
-      color: rgba(255, 232, 214, 0.62);
+      color: rgb(var(--cream-06-rgb) / .62);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+      font-size: var(--courses-rail-type);
       letter-spacing: 0.12em;
       text-transform: uppercase;
 
       .meta__line {
         height: 1px;
-        background: rgba(255, 232, 214, 0.28);
+        background: rgb(var(--cream-06-rgb) / .28);
       }
     }
 
     .title {
       display: flex;
-      width: min(90vw, 92rem);
+      /* Šířka scény bez okrajů, tedy 90 % RÁMU — plain 90vw měřilo nad 1921
+         okno (2552), ne rám (2162), a lockup tak byl širší než místo, kde stojí. */
+      width: min(90 * var(--fvw), 92rem);
       max-width: none;
       flex-direction: column;
       gap: 0;
@@ -146,7 +190,10 @@
         width: max-content;
         max-width: 100%;
         margin: 0;
-        font-size: clamp(3.7rem, 5.75vw, 7rem);
+        /* Výškově vědomý jako hero: řádky jsou `nowrap`, takže na 660px obrazovce
+           soupeřily 70px litery se 144 px paddingu ve stejném rámu. min() sráží
+           velikost tam, kde chybí výška, aniž by se psalo pravidlo do lt. */
+        font-size: clamp(3rem, min(5.75vw, 10vh), 7rem);
         font-weight: 400;
         line-height: 0.9;
         letter-spacing: -0.048em;
@@ -154,13 +201,13 @@
       }
 
       h2 {
-        color: #d47a50;
+        color: var(--clay-27);
         font-family: "Sentient-Regular";
       }
 
       em {
-        margin-left: clamp(3rem, 9vw, 11rem);
-        color: #c8c39a;
+        margin-left: clamp(3rem, 9 * var(--fvw), 11rem);
+        color: var(--sage-02);
         font-family: "Sentient-LightItalic";
       }
     }
@@ -173,12 +220,12 @@
       gap: 3rem;
       margin-top: clamp(2rem, 4vh, 3.5rem);
       padding-top: 1.25rem;
-      border-top: 1px solid rgba(255, 232, 214, 0.24);
+      border-top: 1px solid rgb(var(--cream-06-rgb) / .24);
 
       > p {
         max-width: 34rem;
         margin: 0;
-        color: rgba(255, 255, 255, 0.74);
+        color: rgb(var(--white-rgb) / .74);
         font-family: "Sansation-Light";
         font-size: clamp(1rem, 1.1vw, 1.25rem);
         line-height: 1.45;
@@ -195,11 +242,46 @@
     position: absolute;
     inset: 0;
     z-index: 7;
-    padding: clamp(5rem, 9vh, 7rem) calc(5 * var(--fvw));
+    padding: var(--courses-rail-top) calc(5 * var(--fvw));
     color: var(--blackText);
     pointer-events: none;
     will-change: clip-path;
     isolation: isolate;
+
+    /*
+     * ─── Jedna geometrie kruhového okna ──────────────────────────────────────
+     *
+     * Okno je díra vymaskovaná v `.Courses__ctaSurface`; `.Courses__ctaWindow`
+     * je jen její obrys s popiskem. Byly to dvě nezávislé sady čísel pro jednu
+     * díru — `ellipse 14vw 29vh at 76% 52%` proti `top: 23%; left: 62%;
+     * width: 28vw; height: 58vh` — které pod 1921 vycházely nastejno jen proto,
+     * že rám je tam přesně 100vw. Nad 1921 je rám zastropovaný (2162 px na
+     * 2552x1351), ale `vw` dál měřilo okno 2552, takže obrys stál o 54.7 px
+     * vpravo od díry, kterou má rámovat. Telefonní mixin `courses-cta-phone()`
+     * to už dělá takhle; landscape to teď dělá taky.
+     *
+     * Vodorovné poloměry v `--fvw` (1 % rámu; pod 1921 přesně 1vw, takže se tam
+     * nezmění ani pixel), svislé v procentech závěsu, který je vysoký 100svh —
+     * `29%` je tedy totéž co dosavadních `29vh`, jen měřených ze stejné krabice
+     * jako střed.
+     */
+    --cta-window-cx: 76%;
+    --cta-window-cy: 52%;
+    --cta-window-rx: calc(14 * var(--fvw));
+    --cta-window-ry: 29%;
+    --cta-window-left: calc(var(--cta-window-cx) - var(--cta-window-rx));
+
+    /*
+     * A z téhož původu i CTA panel vlevo. Dřív měl vlastní `width: min(62rem,
+     * 54vw)`, tedy třetí sadu čísel, která o okně nevěděla: nad 1921 rampa
+     * zvedla 62rem 1.33×, ale `62 %` okna se nezvedlo, a na 2552x1351 panel
+     * končil na x=1469, zatímco okno začínalo na 1340 — „hledá svoje místo."
+     * i tlačítko se kreslily přes kruh. Vůle nikde jinde nebyla o moc lepší:
+     * 64 px na 1920, 16 na 1512, 14 na 1366. Teď je to jeden odečet, takže
+     * mezera je 3 % rámu na každé šířce a do qhd se nemusí psát nic.
+     */
+    --cta-left: calc(7 * var(--fvw));
+    --cta-gutter: clamp(1.5rem, 3 * var(--fvw), 4rem);
 
     .Courses__ctaSurface {
       position: absolute;
@@ -207,26 +289,28 @@
       z-index: -1;
       background: radial-gradient(
           circle at 22% 18%,
-          rgba(255, 232, 214, 0.32),
+          rgb(var(--cream-06-rgb) / .32),
           transparent 30%
         ),
         radial-gradient(
           circle at 74% 58%,
-          rgba(116, 126, 98, 0.2),
+          rgb(var(--olive-15-rgb) / .2),
           transparent 28%
         ),
         var(--bgPrimary);
       -webkit-mask-image: radial-gradient(
-        ellipse 14vw 29vh at 76% 52%,
+        ellipse var(--cta-window-rx) var(--cta-window-ry) at var(--cta-window-cx)
+          var(--cta-window-cy),
         transparent 0%,
         transparent 97%,
-        #000 100%
+        var(--black-01) 100%
       );
       mask-image: radial-gradient(
-        ellipse 14vw 29vh at 76% 52%,
+        ellipse var(--cta-window-rx) var(--cta-window-ry) at var(--cta-window-cx)
+          var(--cta-window-cy),
         transparent 0%,
         transparent 97%,
-        #000 100%
+        var(--black-01) 100%
       );
     }
 
@@ -235,47 +319,52 @@
       grid-template-columns: max-content 1fr max-content;
       align-items: center;
       gap: 1rem;
-      color: rgba(33, 34, 34, 0.56);
+      color: rgb(var(--black-03-rgb) / .56);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+      font-size: var(--courses-rail-type);
       letter-spacing: 0.12em;
       text-transform: uppercase;
 
       .line {
         height: 1px;
-        background: rgba(33, 34, 34, 0.24);
+        background: rgb(var(--black-03-rgb) / .24);
       }
     }
 
+    /* Obrys díry: střed a poloměry masky, nic vlastního. */
     .Courses__ctaWindow {
       position: absolute;
-      top: 23%;
-      left: 62%;
+      top: calc(var(--cta-window-cy) - var(--cta-window-ry));
+      left: var(--cta-window-left);
       z-index: 1;
       display: flex;
-      width: 28vw;
-      height: 58vh;
+      width: calc(var(--cta-window-rx) * 2);
+      height: calc(var(--cta-window-ry) * 2);
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 1.4rem;
-      border: 1px solid rgba(255, 232, 214, 0.34);
+      border: 1px solid rgb(var(--cream-06-rgb) / .34);
       border-radius: 50%;
-      color: rgba(255, 232, 214, 0.78);
+      color: rgb(var(--cream-06-rgb) / .78);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.75rem, 0.62vw, 0.75rem);
+      font-size: var(--courses-rail-type);
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      box-shadow: 0 1.5rem 4rem rgba(33, 34, 34, 0.16),
-        inset 0 0 0 0.35rem rgba(255, 232, 214, 0.04);
+      box-shadow: 0 1.5rem 4rem rgb(var(--black-03-rgb) / .16),
+        inset 0 0 0 0.35rem rgb(var(--cream-06-rgb) / .04);
       transform-origin: center center;
     }
 
     .Courses__cta {
       position: absolute;
       top: 50%;
-      left: calc(7 * var(--fvw));
+      left: var(--cta-left);
       z-index: 2;
-      width: min(62rem, 54vw);
+      /* Od levého okraje panelu k levému okraji okna, minus mezera. Jediné
+         místo, kde se šířka panelu bere — okno si ji drží samo. */
+      width: calc(
+        var(--cta-window-left) - var(--cta-left) - var(--cta-gutter)
+      );
       transform: translateY(-50%);
 
       .Courses__ctaInner {
@@ -285,9 +374,9 @@
       .Courses__ctaKicker {
         display: block;
         margin-bottom: clamp(1rem, 2vh, 1.75rem);
-        color: rgba(33, 34, 34, 0.58);
+        color: rgb(var(--black-03-rgb) / .58);
         font-family: "Sansation-Regular";
-        font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+        font-size: var(--courses-rail-type);
         letter-spacing: 0.12em;
         text-transform: uppercase;
       }
@@ -296,16 +385,23 @@
         display: flex;
         margin: 0;
         flex-direction: column;
-        color: #212222;
+        color: var(--black-03);
         font-family: "Sentient-Regular";
-        font-size: clamp(4.1rem, 5.8vw, 7rem);
+        /*
+         * Vodorovný člen v `--fvw`, ne ve `vw`: kurzíva má `white-space: nowrap`
+         * a měří přesně 7.28 em, takže její místo se počítá z rámu, ve kterém
+         * stojí. Plain 5.8vw dávalo na 2552x1351 148 px, což je 6.85 % rámu
+         * místo 5.8 % — o ten rozdíl přesahovala řádka do kruhu. `min(…, 10.5vh)`
+         * pak sráží velikost na krátké obrazovce (1220x660: 69.3 místo 70.8).
+         */
+        font-size: clamp(3.4rem, min(calc(5.8 * var(--fvw)), 10.5vh), 7rem);
         font-weight: 400;
         line-height: 0.82;
         letter-spacing: -0.055em;
 
         em {
-          margin-left: clamp(2.5rem, 6vw, 7rem);
-          color: #747e62;
+          margin-left: clamp(2.5rem, 6 * var(--fvw), 7rem);
+          color: var(--olive-15);
           font-family: "Sentient-LightItalic";
           font-weight: 300;
           white-space: nowrap;
@@ -316,15 +412,18 @@
         display: grid;
         grid-template-columns: minmax(14rem, 1fr) auto;
         align-items: end;
-        gap: clamp(1.5rem, 3vw, 4rem);
+        gap: clamp(1.5rem, 3 * var(--fvw), 4rem);
         margin-top: clamp(2rem, 4vh, 3rem);
         padding-top: 1.1rem;
-        border-top: 1px solid rgba(33, 34, 34, 0.24);
+        border-top: 1px solid rgb(var(--black-03-rgb) / .24);
 
         > p {
-          max-width: 27rem;
+          /* 22rem, ne 27: v levém sloupci má zůstat zřetelný odstup od tlačítka a odkazu
+             vpravo. Na 27rem se text na užších oknech natáhl skoro až k nim a splýval
+             s nimi do jednoho pásu. */
+          max-width: 22rem;
           margin: 0;
-          color: rgba(33, 34, 34, 0.68);
+          color: rgb(var(--black-03-rgb) / .68);
           font-family: "Sansation-Light";
           font-size: clamp(0.98rem, 1vw, 1.14rem);
           line-height: 1.42;
@@ -345,7 +444,7 @@
 
         > a:last-child {
           position: relative;
-          color: rgba(33, 34, 34, 0.7);
+          color: rgb(var(--black-03-rgb) / .7);
           font-family: "Sansation-Regular";
           font-size: clamp(0.8125rem, 0.82vw, 0.94rem);
           text-decoration: none;
@@ -374,14 +473,16 @@
     .Courses__ctaIndex {
       position: absolute;
       right: calc(5 * var(--fvw));
-      bottom: clamp(2rem, 4vh, 3rem);
+      /* 2rem stálo na podlaze na 768 i 660 (4vh je 30.7 a 26.4); 1.5rem ji pouští
+         dolů, aby index dál sledoval výšku okna jako zbytek závěsu. */
+      bottom: clamp(1.5rem, 4vh, 3rem);
       z-index: 2;
       display: flex;
       align-items: center;
       gap: 0.9rem;
-      color: rgba(33, 34, 34, 0.55);
+      color: rgb(var(--black-03-rgb) / .55);
       font-family: "Sansation-Regular";
-      font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+      font-size: var(--courses-rail-type);
       letter-spacing: 0.12em;
       text-transform: uppercase;
 
@@ -390,7 +491,7 @@
         width: 2rem;
         height: 2rem;
         place-items: center;
-        border: 1px solid rgba(33, 34, 34, 0.24);
+        border: 1px solid rgb(var(--black-03-rgb) / .24);
         border-radius: 50%;
       }
     }
@@ -399,8 +500,8 @@
 
 @include below-px(900px) {
   .courses__section {
-    height: 300vh;
-
+    /* `height: 300vh` tu bylo znovu — táž hodnota jako v základu, tedy override,
+       který nic nepřebíjel. Zkracuje se až na 760 (220vh) a v phs-h (170vh). */
     .Courses__content {
       padding-right: 1.25rem;
       padding-left: 1.25rem;
@@ -443,13 +544,13 @@
           ellipse 36vw 17vh at 50% 25%,
           transparent 0%,
           transparent 97%,
-          #000 100%
+          var(--black-01) 100%
         );
         mask-image: radial-gradient(
           ellipse 36vw 17vh at 50% 25%,
           transparent 0%,
           transparent 97%,
-          #000 100%
+          var(--black-01) 100%
         );
       }
 
@@ -610,32 +711,38 @@
  * Both are now built from one radius at one centre, so they cannot come apart: the hole is
  * `circle 7rem at 50% 26%`, and the ring is the 14rem box around that same point.
  */
-@mixin courses-cta-phone($r, $cy) {
+/*
+ * `$rx` and `$ry` are the window's two radii, `$cy` its centre. Two of them rather than one
+ * because portrait wants an upright ellipse: a circle is bounded by the narrow axis, so on a
+ * phone it can only ever be as tall as the screen is wide — a small coin in a tall panel with
+ * dead space above and below it. An ellipse takes the height that is actually there.
+ *
+ * The mask and the ring are both built from these, so the hole and its border cannot drift apart.
+ */
+@mixin courses-cta-phone($rx, $ry, $cy) {
   .courses__section .Courses__footerCurtain {
     padding-inline: 1.25rem;
 
     .Courses__ctaSurface {
       -webkit-mask-image: radial-gradient(
-        circle #{$r} at 50% #{$cy},
+        ellipse #{$rx} #{$ry} at 50% #{$cy},
         transparent 0%,
         transparent 97%,
-        #000 100%
+        var(--black-01) 100%
       );
       mask-image: radial-gradient(
-        circle #{$r} at 50% #{$cy},
+        ellipse #{$rx} #{$ry} at 50% #{$cy},
         transparent 0%,
         transparent 97%,
-        #000 100%
+        var(--black-01) 100%
       );
     }
 
-    /* A circle rather than an ellipse, and small enough to be an object on the page instead of
-       the page itself — 14rem against the 84vw it was. */
     .Courses__ctaWindow {
-      top: calc(#{$cy} - #{$r});
-      left: calc(50% - #{$r});
-      width: #{$r * 2};
-      height: #{$r * 2};
+      top: calc(#{$cy} - #{$ry});
+      left: calc(50% - #{$rx});
+      width: calc(#{$rx} * 2);
+      height: calc(#{$ry} * 2);
       padding-bottom: 1rem;
     }
 
@@ -678,8 +785,18 @@
   }
 }
 
+/*
+ * Portrait phones, small through large. The width is capped so the ellipse stays an object on the
+ * page rather than the page itself — 38vw is 121px at 320 and would be 163 at 430, where 9rem
+ * holds it at 144. The height is a share of the stage instead, which is the axis a portrait phone
+ * has to spare: 26vh is 166px on a 640px screen and 250 on a 960, so the window grows with the
+ * phone rather than staying the same coin on all of them.
+ *
+ * Centred at 30%: high enough to clear the copy anchored to the floor, low enough that the top of
+ * the ellipse clears the navbar on the shortest screen.
+ */
 @include below-px(600px) {
-  @include courses-cta-phone(7rem, 26%);
+  @include courses-cta-phone(min(38vw, 9rem), 26vh, 30%);
 }
 
 /* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
@@ -687,6 +804,10 @@
  * Sideways the stage is ~430px tall in total, so a 14rem circle at 26% would start at the very
  * top edge and leave the heading nowhere to go. Half the radius, and centred a little lower.
  */
+/*
+ * Sideways, height is the scarce axis rather than the spare one, so this stays a circle — an
+ * upright ellipse in a 430px-tall stage would be cut off at both ends.
+ */
 @include phs-h {
-  @include courses-cta-phone(4.4rem, 34%);
+  @include courses-cta-phone(4.4rem, 4.4rem, 34%);
 }

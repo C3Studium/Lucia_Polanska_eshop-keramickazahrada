@@ -1,43 +1,69 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
-  --checkout-ink: #20211c;
-  --checkout-cream: #ffe8d6;
-  --checkout-olive: #bbb788;
-  --checkout-green: #747e62;
-  --checkout-line: rgba(255, 232, 214, .2);
+  --checkout-ink: var(--ink-05);
+  --checkout-cream: var(--cream-06);
+  --checkout-olive: var(--sage-01);
+  --checkout-green: var(--olive-15);
+  --checkout-line: rgb(var(--cream-06-rgb) / .2);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(330px, .7fr);
+  /* 20.625rem is the summary column's physical floor — kept, but in rem, so the
+     ramp above 1921 lifts it with everything else. */
+  grid-template-columns: minmax(0, 1.55fr) minmax(20.625rem, .7fr);
   align-items: start;
-  gap: clamp(54px, 6vw, 108px);
-  width: min(94vw, 1880px);
+  /* The old single `gap` spent one vw number on both axes. The row gap is the
+     distance between the masthead and the ledger — vertical budget, so vh. */
+  column-gap: clamp(3.375rem, 6vw, 6.75rem);
+  row-gap: clamp(2rem, 5vh, 4.5rem);
+  /* Dvě opravy v jednom řádku, obě mají kořen v globals.scss.
+     1) Strop 1880px byl v px, takže se nad 1921 zastavil, zatímco všechno uvnitř
+        něj ramp zvedl o třetinu. 117.5rem je přesně 1880px při základním rootu
+        (do 1920 se tedy nemění ani pixel) a nad 1921 roste s ostatními stropy.
+     2) `94vw` měřilo OBRAZOVKU, ne rám. Nad 1921 je stránka podle globals.scss
+        zarámovaná na `min(100vw, 100svh * 1.6)` — na 2552x1351 je to 2162px — a
+        checkout layout má overflow: clip, takže co je širší, tiše se ustřihne.
+        `--fvw` je jedno procento RÁMU: pod 1921 je to přesně 1vw (no-op), nad ním
+        drží kontejner týž poměr k rámu, jaký měl k obrazovce na 1920 (okap 3 %).
+        Naměřeno na 2552x1351: 1880px → 2032px uvnitř rámu 2162px.
+     Týž zápis jako `.container` v cart/templates/index.module.scss. */
+  width: min(calc(94 * var(--fvw)), 117.5rem);
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(96px, 10vh, 124px) clamp(28px, 2.8vw, 58px) clamp(110px, 15vh, 180px);
+  /* Floors sit deliberately below the old 96px/110px: at 768px tall, 10vh was
+     76.8px — under the floor — so the vh term was dead on every laptop below
+     960px and the small screen paid the largest share of its height. 8vh is
+     alive from 700px tall, 12vh from 533px. This is what tightens 1280×720 and
+     1366×768 on its own; there is no rule in `lt`. */
+  padding-block: clamp(3.5rem, 8vh, 7.75rem) clamp(4rem, 12vh, 11.25rem);
+  padding-inline: clamp(1.75rem, 2.8vw, 3.625rem);
   color: var(--checkout-cream);
 }
 
 .masthead {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.2fr) minmax(280px, 1.05fr);
+  /* Two tracks, not three. The header has exactly two children — the title block
+     and .mastheadAside — and the aside was pinned to column 3, so the middle
+     track never held anything. The 2.3fr : 1fr split reproduces the widths the
+     three-track version actually painted. Kind of layout, so it stays a rule. */
+  grid-template-columns: minmax(17.5rem, 2.3fr) minmax(17.5rem, 1fr);
   align-items: end;
-  gap: clamp(44px, 4vw, 86px);
-  min-height: 220px;
-  padding: 22px 0 38px;
+  gap: clamp(2.75rem, 4vw, 5.375rem);
+  min-height: clamp(9rem, 22vh, 15rem);
+  padding: clamp(.75rem, 2vh, 1.6rem) 0 clamp(1.4rem, 4vh, 2.8rem);
   border-bottom: 1px solid var(--checkout-line);
   animation: checkoutReveal .8s cubic-bezier(.22, 1, .36, 1) both;
 
   h1 {
-    margin: clamp(46px, 6vh, 68px) 0 0;
-    font: 400 clamp(44px, 4vw, 76px)/.88 "Sentient-Regular", serif;
+    margin: clamp(2rem, 6vh, 4.25rem) 0 0;
+    font: 400 clamp(2.75rem, 4vw, 4.75rem)/.88 "Sentient-Regular", serif;
     letter-spacing: -.05em;
   }
 
   h1 em {
     display: block;
-    margin-left: clamp(22px, 2.4vw, 46px);
+    margin-left: clamp(1.375rem, 2.4vw, 2.875rem);
     color: var(--checkout-olive);
     font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
     font-size: .62em;
@@ -48,10 +74,12 @@
 
 .mastheadMeta {
   margin: 0;
-  padding-bottom: 10px;
+  padding-bottom: clamp(.5rem, .78vw, .75rem);
   border-bottom: 1px solid var(--checkout-line);
-  color: rgba(255, 232, 214, .5);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .5);
+  /* .75rem is the reading floor and never goes below; the ceiling is what lets
+     the ramp carry the eyebrow past 2K instead of leaving it hairline-thin. */
+  font: 400 clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -59,27 +87,29 @@
 .mastheadCopy {
   margin: 0;
   max-width: 34ch;
-  color: rgba(255, 232, 214, .62);
-  font: 300 clamp(14px, .92vw, 17px)/1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 300 clamp(.875rem, 1.1vw, 1.0625rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 .mastheadAside {
-  grid-column: 3;
+  grid-column: 2;
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  gap: 28px;
+  /* Column flex — this gap stacks, so it is height, so it is vh.
+     Floor at 1.125rem so 2.8vh is still alive at 720px tall (live 714–1143). */
+  gap: clamp(1.125rem, 2.8vh, 2rem);
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: clamp(.5rem, .78vw, .75rem);
   /* Symmetric padding: the escape hatch back to the cart was a 19px strip. */
-  padding: 10px 0 10px;
-  border-bottom: 1px solid rgba(255,232,214,.4);
-  color: rgba(255,232,214,.82);
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  padding: clamp(.5rem, .78vw, .75rem) 0;
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .4);
+  color: rgb(var(--cream-06-rgb) / .82);
+  font: 400 clamp(.75rem, 1vw, .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .08em;
   text-transform: uppercase;
   transition: color 220ms ease, border-color 220ms ease;
@@ -90,36 +120,44 @@
 }
 
 .backLink:hover { color: var(--checkout-cream); border-color: var(--checkout-cream); }
-.backLink:hover span { transform: translateX(-4px); }
+.backLink:hover span { transform: translateX(-.25rem); }
 
 .ledger {
+  /* One number for the offset ghost frame; ::before derives all four sides. */
+  --ledger-ghost: clamp(.625rem, 1.1vw, 1.1875rem);
   position: relative;
   z-index: 1;
   min-width: 0;
-  padding: clamp(36px, 4vw, 62px);
+  padding: clamp(2.25rem, 4vw, 3.875rem);
   color: var(--checkout-ink);
   background: var(--checkout-cream);
-  box-shadow: 28px 34px 80px -54px rgba(0,0,0,.95);
+  box-shadow: 1.75rem 2.125rem 5rem -3.375rem rgb(var(--black-01-rgb) / .95);
   animation: ledgerReveal .9s .08s cubic-bezier(.22,1,.36,1) both;
 }
 
 .ledger::before {
   position: absolute;
   z-index: -1;
-  inset: 15px -15px -15px 15px;
+  inset:
+    var(--ledger-ghost)
+    calc(var(--ledger-ghost) * -1)
+    calc(var(--ledger-ghost) * -1)
+    var(--ledger-ghost);
   content: "";
-  border: 1px solid rgba(187,183,136,.38);
-  background: rgba(187,183,136,.07);
+  border: 1px solid rgb(var(--sage-01-rgb) / .38);
+  background: rgb(var(--sage-01-rgb) / .07);
   pointer-events: none;
 }
 
 .ledger::after {
   position: absolute;
-  top: -19px;
+  /* Lifted by roughly 1.6× its own line, so the clearance above the card holds
+     when the ramp grows the label past 17px. */
+  top: clamp(-2.125rem, -1.07vw, -1.1875rem);
   left: 0;
   content: "01—04 · ÚDAJE OBJEDNÁVKY";
-  color: rgba(255,232,214,.38);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .38);
+  font: 400 clamp(.75rem, 1vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -127,7 +165,7 @@
 .ledger :global(input:not([type="checkbox"]):not([type="radio"])),
 .ledger :global(select) {
   border-radius: 0;
-  border-color: transparent transparent rgba(32, 33, 28, .25);
+  border-color: transparent transparent rgb(var(--ink-05-rgb) / .25);
   background: transparent;
   box-shadow: none;
 }
@@ -138,6 +176,13 @@
 }
 
 .order {
+  /* One number owns the halo. Offsets and ring thickness are derived from it,
+     never copied: they are the original 180px disc's own ratios — 80/180,
+     50/180, 34/180, 35/180 — so the disc keeps its relation to the content at
+     every width instead of freezing at one. Inside the live band the right
+     offset is 9.5vw × .278 = 2.64vw, just under the page's own 2.8vw inline
+     padding, so the outer edge tracks the gutter and never crosses it. */
+  --order-halo: clamp(6.5rem, 9.5vw, 14rem);
   position: relative;
   min-width: 0;
   animation: orderReveal .9s .18s cubic-bezier(.22,1,.36,1) both;
@@ -146,31 +191,34 @@
 .order::before {
   position: absolute;
   z-index: -1;
-  top: -80px;
-  right: -50px;
-  width: 180px;
+  top: calc(var(--order-halo) * -.444);
+  right: calc(var(--order-halo) * -.278);
+  width: var(--order-halo);
   aspect-ratio: 1;
   content: "";
-  border: 1px solid rgba(255,232,214,.1);
+  border: 1px solid rgb(var(--cream-06-rgb) / .1);
   border-radius: 50%;
   box-shadow:
-    inset 0 0 0 34px #20211c,
-    inset 0 0 0 35px rgba(255,232,214,.08);
+    inset 0 0 0 calc(var(--order-halo) * .189) var(--ink-05),
+    inset 0 0 0 calc(var(--order-halo) * .195) rgb(var(--cream-06-rgb) / .08);
   pointer-events: none;
 }
 
+/* Reveal travel in vh, calibrated at 1080: 24px = 2.2vh, 28px = 2.6vh. */
 @keyframes checkoutReveal {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(2.2vh); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes ledgerReveal {
-  from { opacity: 0; clip-path: inset(0 0 16% 0); transform: translateY(24px); }
-  to { opacity: 1; clip-path: inset(0); transform: translateY(0); }
+  from { opacity: 0; clip-path: inset(0 0 16% 0); transform: translateY(2.2vh); }
+  /* inset() se čtyřmi členy na obou stranách — `inset(0)` proti `inset(0 0 16% 0)`
+     je jiný tvar výrazu a interpolace tvarů se na tom umí zaseknout. */
+  to { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
 }
 
 @keyframes orderReveal {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(2.6vh); }
   to { opacity: 1; transform: translateY(0); }
 }
 

@@ -22,7 +22,7 @@
   z-index: 500;
   inset: 0;
   display: grid;
-  padding: clamp(14px, 2.5vw, 42px);
+  padding: clamp(0.625rem, 1.8vh, 2rem) clamp(0.875rem, 2.5vw, 2.625rem);
   place-items: center;
 }
 
@@ -33,35 +33,45 @@
   height: 100%;
   padding: 0;
   border: 0;
-  background: rgba(24, 26, 20, 0.36);
+  background: rgb(var(--ink-02-rgb) / .36);
   cursor: default;
 }
 
 .panel {
-  --contact-ink: #282a22;
-  --contact-secondary: #4d4e46;
-  --contact-minimum: #5c5e54;
-  --contact-accent: #555d48;
+  --contact-ink: var(--ink-06);
+  --contact-secondary: var(--olive-04);
+  --contact-minimum: var(--grey-02);
+  --contact-accent: var(--olive-07);
 
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(1540px, 94vw);
-  height: min(900px, 91svh);
-  min-height: 690px;
+  width: min(96.25rem, 94vw);
+
+  /*
+   * As tall as its contents, and no taller than the window.
+   *
+   * It used to be `height: min(900px, 91svh)` with a 690px floor — a box of a fixed size that the
+   * form was then scrolled inside. That is why the heading arrived already cut off at the top:
+   * the panel was not too small for the content, it was simply not sized by it, and the only part
+   * that scrolled was the form column, independently of the map beside it.
+   *
+   * `auto` up to the cap means everything shows whenever it fits, and the whole body scrolls as
+   * one when it does not — see `.panelBody`.
+   *
+   * `svh`, not `vh`: on a phone `vh` is the tall viewport, so a 90vh panel is taller than what is
+   * actually on screen while the browser's chrome is showing.
+   */
+  height: auto;
+  max-height: 90svh;
+  min-height: 0;
   overflow: hidden;
-  /* A 690px floor inside a 430px-tall window put the submit button off-screen with no way to
-     reach it. The dialog has to fit the window and scroll internally instead. */
-  @include phs-h {
-    height: 92svh;
-    min-height: 0;
-  }
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 22px;
-  background: #aaa77b;
+  border: 1px solid rgb(var(--white-rgb) / .4);
+  border-radius: 1.375rem;
+  background: var(--olive-21);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 38px 96px -40px rgba(18, 20, 15, 0.76);
+    inset 0 1px 0 rgb(var(--white-rgb) / .34),
+    0 38px 96px -40px rgb(var(--ink-01-rgb) / .76);
   color: var(--contact-ink);
   grid-template-rows: auto minmax(0, 1fr);
   transform-origin: top right;
@@ -69,19 +79,19 @@
 
 .panelHeader {
   display: flex;
-  min-height: 68px;
+  min-height: 4.25rem;
   align-items: center;
   justify-content: space-between;
-  padding: 11px clamp(20px, 2vw, 32px);
-  border-bottom: 1px solid rgba(38, 40, 32, 0.23);
+  padding: clamp(0.5rem, 1.2vh, 0.875rem) clamp(1.25rem, 2vw, 2rem);
+  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .23);
 }
 
 .panelMeta {
   display: flex;
   align-items: center;
-  gap: clamp(20px, 3vw, 52px);
+  gap: clamp(1.25rem, 3vw, 3.25rem);
   color: var(--contact-secondary);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -89,33 +99,33 @@
 .availability {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .availability i {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: var(--contact-accent);
-  box-shadow: 0 0 0 4px rgba(85, 93, 72, 0.13);
+  box-shadow: 0 0 0 0.25rem rgb(var(--olive-07-rgb) / .13);
 }
 
 .close {
   display: inline-flex;
-  width: 42px;
-  height: 44px;
+  width: 2.625rem;
+  height: 2.75rem;
   overflow: hidden;
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-end;
   gap: 0;
-  padding: 5px;
-  border: 1px solid rgba(38, 40, 32, 0.22);
+  padding: 0.3125rem;
+  border: 1px solid rgb(var(--ink-06-rgb) / .22);
   border-radius: 999px;
-  background: rgba(255, 248, 241, 0.44);
-  box-shadow: 0 4px 12px -8px rgba(31, 35, 25, 0.48);
+  background: rgb(var(--cream-10-rgb) / .44);
+  box-shadow: 0 4px 12px -8px rgb(var(--ink-04-rgb) / .48);
   color: var(--contact-ink);
-  font-size: 13px;
+  font-size: 0.8125rem;
   cursor: pointer;
   transition:
     background-color 0.28s ease,
@@ -127,17 +137,17 @@
 .close span {
   display: block;
   flex: 0 0 auto;
-  margin-right: 9px;
+  margin-right: 0.5625rem;
   white-space: nowrap;
 }
 
 .close i {
   position: relative;
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
+  width: 1.875rem;
+  min-width: 1.875rem;
+  height: 1.875rem;
   border-radius: 50%;
-  background: #33362b;
+  background: var(--ink-11);
   transition: transform 0.46s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
@@ -146,9 +156,9 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 10px;
+  width: 0.625rem;
   height: 1px;
-  background: #ffe8d6;
+  background: var(--cream-06);
   content: "";
 }
 
@@ -162,10 +172,10 @@
 
 .close:hover,
 .close:focus-visible {
-  background: #ffe8d6;
+  background: var(--cream-06);
   box-shadow:
-    inset 0 0 0 1px rgba(116, 126, 98, 0.08),
-    0 9px 22px -17px rgba(38, 40, 32, 0.8);
+    inset 0 0 0 1px rgb(var(--olive-15-rgb) / .08),
+    0 9px 22px -17px rgb(var(--ink-06-rgb) / .8);
   transform: translateY(-1px);
 }
 
@@ -176,17 +186,27 @@
 
 .close:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 3px;
+  outline-offset: 0.1875rem;
 }
 
 .panelBody {
   display: grid;
   min-height: 0;
+
+  /*
+   * Not the scroller — the form column below is.
+   *
+   * Scrolling here instead was the obvious move and it is wrong: the two columns are a grid row,
+   * and past the cap the row stays the height of the visible area while the form's content runs
+   * on past it. Measured at 1440×900 that left a 708px form box holding 874px of content, which
+   * with `overflow: visible` paints straight out through the card's own rounded border.
+   */
+  overscroll-behavior: contain;
   /* 60 % formulář · 5 % mezera · 30 % mapa, s 2,5 % odsazením po stranách —
      2fr:1fr přes zbylou šířku dává přesně ten poměr. */
-  row-gap: 16px;
+  row-gap: clamp(0.625rem, 1.6vh, 1.25rem);
   column-gap: 5%;
-  padding: 16px 2.5%;
+  padding: clamp(0.625rem, 1.6vh, 1.25rem) 2.5%;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
@@ -195,23 +215,26 @@
   display: flex;
   min-width: 0;
   min-height: 0;
+  /* Scrolls only once the panel has hit its cap: below that the panel is `height: auto`, so this
+     column is exactly as tall as its content and there is nothing to scroll. */
   overflow-y: auto;
+  overscroll-behavior: contain;
   flex-direction: column;
   justify-content: flex-start;
-  padding: clamp(38px, 4.6vw, 72px) clamp(38px, 5.5vw, 86px);
-  border: 1px solid rgba(255, 255, 255, 0.46);
-  border-radius: 18px;
+  padding: clamp(2rem, 5.4vh, 4.5rem) clamp(2.375rem, 5.5vw, 5.375rem);
+  border: 1px solid rgb(var(--white-rgb) / .46);
+  border-radius: 1.125rem;
   isolation: isolate;
   background:
-    radial-gradient(ellipse at 8% 0%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 28%, transparent 55%),
-    radial-gradient(ellipse at 96% 100%, rgba(255, 224, 201, 0.48) 0%, transparent 48%),
-    linear-gradient(135deg, #fffefa 0%, #faf6ef 42%, #f5eadf 72%, #ffe8d6 100%);
+    radial-gradient(ellipse at 8% 0%, rgb(var(--white-rgb) / .98) 0%, rgb(var(--white-rgb) / .5) 28%, transparent 55%),
+    radial-gradient(ellipse at 96% 100%, rgb(var(--cream-04-rgb) / .48) 0%, transparent 48%),
+    linear-gradient(135deg, var(--white) 0%, var(--cream-10) 42%, var(--cream-05) 72%, var(--cream-06) 100%);
   background-size: 135% 135%, 145% 145%, 175% 175%;
   animation: creamDrift 16s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.86),
-    inset -15px -18px 32px -27px rgba(77, 82, 61, 0.34),
-    0 22px 45px -34px rgba(24, 26, 20, 0.55);
+    inset 2px 2px 0 rgb(var(--white-rgb) / .86),
+    inset -15px -18px 32px -27px rgb(var(--olive-02-rgb) / .34),
+    0 22px 45px -34px rgb(var(--ink-02-rgb) / .55);
   scrollbar-width: none;
 }
 
@@ -224,14 +247,14 @@
   z-index: 3;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(112deg, transparent 27%, rgba(255, 255, 255, 0.2) 46%, transparent 64%);
+  background: linear-gradient(112deg, transparent 27%, rgb(var(--white-rgb) / .2) 46%, transparent 64%);
   background-position: 130% 0;
   background-size: 240% 100%;
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.78),
-    inset 2px 0 0 rgba(255, 255, 255, 0.38),
-    inset 0 -14px 24px -22px rgba(69, 74, 54, 0.4),
-    inset -14px 0 24px -23px rgba(69, 74, 54, 0.28);
+    inset 0 2px 0 rgb(var(--white-rgb) / .78),
+    inset 2px 0 0 rgb(var(--white-rgb) / .38),
+    inset 0 -14px 24px -22px rgb(var(--olive-01-rgb) / .4),
+    inset -14px 0 24px -23px rgb(var(--olive-01-rgb) / .28);
   animation: lightSweep 1.55s 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
   content: "";
   pointer-events: none;
@@ -257,16 +280,16 @@
 
 .eyebrow {
   color: var(--contact-secondary);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .title h2 {
   max-width: 10.5em;
-  margin: 16px 0 0;
+  margin: clamp(0.625rem, 1.5vh, 1.25rem) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(50px, 4.2vw, 72px);
+  font-size: clamp(3.125rem, 4.2vw, 4.5rem);
   font-weight: 400;
   letter-spacing: -0.052em;
   line-height: 0.92;
@@ -274,48 +297,48 @@
 
 .title h2 em {
   display: block;
-  color: #6b7156;
+  color: var(--olive-12);
   font-weight: 400;
 }
 
 .form {
-  margin-top: clamp(40px, 5vh, 64px);
+  margin-top: clamp(2.5rem, 5vh, 4rem);
 }
 
 .topics {
-  margin: 0 0 28px;
+  margin: 0 0 clamp(1rem, 2.6vh, 1.75rem);
   padding: 0;
   border: 0;
 }
 
 .topics legend {
-  margin-bottom: 12px;
+  margin-bottom: clamp(0.5rem, 1.1vh, 0.75rem);
   color: var(--contact-secondary);
-  font-size: 13px;
+  font-size: 0.8125rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .topics > div {
   display: flex;
-  padding: 6px;
-  border: 1px solid rgba(38, 40, 32, 0.18);
+  padding: 0.375rem;
+  border: 1px solid rgb(var(--ink-06-rgb) / .18);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.38);
+  background: rgb(var(--white-rgb) / .38);
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .topics button {
   position: relative;
-  height: 44px;
-  padding: 0 20px;
+  height: 2.75rem;
+  padding: 0 1.25rem;
   overflow: hidden;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--contact-secondary);
-  font-size: 14px;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: color 0.28s ease;
 }
@@ -327,8 +350,8 @@
   border-radius: inherit;
   background: var(--contact-accent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 7px 18px -12px rgba(126, 93, 65, 0.75);
+    inset 0 1px 0 rgb(var(--white-rgb) / .25),
+    0 7px 18px -12px rgb(var(--clay-07-rgb) / .75);
 }
 
 .topicLabel {
@@ -341,12 +364,12 @@
 }
 
 .topics button.topicActive {
-  color: #fff8f1;
+  color: var(--cream-10);
 }
 
 .fieldGrid {
   display: grid;
-  gap: clamp(20px, 2.2vw, 34px);
+  gap: clamp(1rem, 2.2vh, 1.75rem) clamp(1.25rem, 2.2vw, 2.125rem);
   /* Name and e-mail sit together on one row; the phone follows on its own. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -358,8 +381,8 @@
 .field {
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid rgba(38, 40, 32, 0.28);
-  gap: 9px;
+  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
+  gap: clamp(0.375rem, 0.9vh, 0.625rem);
   transition:
     border-color 0.3s ease,
     background-color 0.3s ease,
@@ -368,15 +391,15 @@
 
 .field > label {
   color: var(--contact-secondary);
-  font-size: 13px;
+  font-size: 0.8125rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .field > label i {
-  margin-left: 5px;
+  margin-left: 0.3125rem;
   color: var(--contact-minimum);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-style: normal;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -387,7 +410,7 @@
   display: block;
   width: 100%;
   min-width: 0;
-  padding: 0 0 14px;
+  padding: 0 0 clamp(0.5rem, 1.3vh, 0.875rem);
   border: 0;
   border-radius: 0;
   appearance: none;
@@ -397,13 +420,13 @@
   color: var(--contact-ink);
   cursor: text;
   font-family: inherit;
-  font-size: clamp(17px, 1.1vw, 19px);
+  font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
   font-weight: 300;
   line-height: 1.35;
 }
 
 .message .input {
-  height: clamp(160px, 22vh, 220px);
+  height: clamp(10rem, 22vh, 13.75rem);
   overflow: auto;
   resize: none;
   white-space: pre-wrap;
@@ -423,26 +446,26 @@
   background-color: transparent !important;
   background-clip: text;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: #282a22;
+  -webkit-text-fill-color: var(--ink-06);
   box-shadow: none !important;
   -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-  caret-color: #282a22;
+  caret-color: var(--ink-06);
   transition: background-color 9999s ease-out 0s;
 }
 
 .field:focus-within {
   border-color: var(--contact-accent);
-  background: linear-gradient(180deg, transparent, rgba(255, 232, 214, 0.2));
-  box-shadow: 0 8px 18px -17px rgba(116, 82, 56, 0.85);
+  background: linear-gradient(180deg, transparent, rgb(var(--cream-06-rgb) / .2));
+  box-shadow: 0 8px 18px -17px rgb(var(--clay-02-rgb) / .85);
 }
 
 .input:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 4px;
+  outline-offset: 0.25rem;
 }
 
 .message {
-  margin-top: 28px;
+  margin-top: clamp(1rem, 2.6vh, 1.75rem);
 }
 
 /* The honeypot: reachable by a bot filling every field, never by a customer. */
@@ -459,58 +482,68 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-top: 26px;
-  gap: 28px;
+  margin-top: clamp(1rem, 2.4vh, 1.625rem);
+  gap: clamp(1.25rem, 2vw, 1.75rem);
 }
 
 .formFooter > p {
-  max-width: 390px;
+  max-width: 24.375rem;
   margin: 0;
   padding: 0;
   color: var(--contact-minimum);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 
-.submitButton {
-  height: 48px !important;
-}
+/*
+ * The pill is a WebButton. WebButton declares `--web-button-label-size`,
+ * `--web-button-label-padding` and its own `height` on `.button` — a single class,
+ * exactly like `.submitButton`, so at equal specificity the winner was whichever CSS
+ * module happened to load later. That is what the three `!important` were paying for.
+ * Qualified by `.panel` instead: two classes beat one deterministically, and the label
+ * goes through the variables WebButton exposes for callers rather than out-shouting its
+ * selector. Same move as `.kurzyTimeline .kurzyTimelineCtaButton`.
+ *
+ * The height floor is 2.75rem = the 44px tap target; the vh member lets it give a little
+ * back on a 720/768-tall laptop instead of standing at 48px there and at 48px on 2K.
+ */
+.panel .submitButton {
+  --web-button-label-size: clamp(0.875rem, 1.05vw, 1rem);
+  --web-button-label-padding: clamp(0.375rem, 0.9vh, 0.625rem) clamp(0.875rem, 1.2vw, 1.1875rem);
 
-.submitButton p {
-  padding: 9px 19px !important;
-  font-size: 15px !important;
+  height: clamp(2.75rem, 4.4vh, 3.25rem);
 }
 
 .status {
-  margin: 20px 0 0;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-size: 15px;
+  margin: clamp(0.75rem, 1.9vh, 1.25rem) 0 0;
+  padding: clamp(0.5rem, 1.3vh, 0.875rem) clamp(0.875rem, 1.3vw, 1.125rem);
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
   line-height: 1.5;
 }
 
 .statusError {
-  border: 1px solid rgba(140, 62, 48, 0.34);
-  background: rgba(255, 236, 228, 0.72);
-  color: #8c3e30;
+  border: 1px solid rgb(var(--clay-06-rgb) / .34);
+  background: rgb(var(--blush-02-rgb) / .72);
+  color: var(--clay-06);
 }
 
 .statusError a {
   color: inherit;
-  text-underline-offset: 3px;
+  text-underline-offset: 0.1875rem;
 }
 
 .successPanel {
   display: flex;
   flex-direction: column;
-  margin-top: clamp(40px, 5vh, 64px);
-  gap: 18px;
+  margin-top: clamp(2.5rem, 5vh, 4rem);
+  gap: clamp(0.75rem, 1.7vh, 1.125rem);
 }
 
 .successPanel h3 {
   margin: 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(28px, 2.4vw, 38px);
+  font-size: clamp(1.75rem, 2.4vw, 2.375rem);
   font-weight: 400;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -520,7 +553,7 @@
   max-width: 46ch;
   margin: 0;
   color: var(--contact-secondary);
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.55;
 }
 
@@ -531,10 +564,10 @@
   min-height: 0;
   overflow: hidden;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 18px;
-  background: #292b24;
-  box-shadow: 0 20px 44px -30px rgba(20, 22, 17, 0.66);
+  border: 1px solid rgb(var(--white-rgb) / .26);
+  border-radius: 1.125rem;
+  background: var(--ink-06);
+  box-shadow: 0 20px 44px -30px rgb(var(--ink-01-rgb) / .66);
 }
 
 /* Mapa vyplní všechno nad kontaktní kartou. */
@@ -553,30 +586,30 @@
 }
 
 .details {
-  margin: 12px;
+  margin: clamp(0.5rem, 1.1vh, 0.75rem) clamp(0.5rem, 0.8vw, 0.75rem);
   display: grid;
-  padding: clamp(20px, 2vw, 28px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 14px;
-  background: rgba(243, 239, 230, 0.94);
+  padding: clamp(1rem, 2vh, 1.75rem) clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid rgb(var(--white-rgb) / .5);
+  border-radius: 0.875rem;
+  background: rgb(var(--cream-07-rgb) / .94);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 16px 34px -24px rgba(18, 20, 15, 0.7);
+    inset 0 1px 0 rgb(var(--white-rgb) / .7),
+    0 16px 34px -24px rgb(var(--ink-01-rgb) / .7);
   backdrop-filter: blur(10px);
   color: var(--contact-ink);
-  gap: 13px;
+  gap: clamp(0.5rem, 1.2vh, 0.8125rem);
 }
 
 .details > div {
   display: grid;
   align-items: baseline;
-  gap: 13px;
-  grid-template-columns: 84px minmax(0, 1fr);
+  gap: clamp(0.5rem, 1vw, 0.8125rem);
+  grid-template-columns: 5.25rem minmax(0, 1fr);
 }
 
 .details > div > span {
   color: var(--contact-secondary);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -586,21 +619,23 @@
   margin: 0;
   padding: 0;
   color: var(--contact-ink);
-  font-size: clamp(14px, 0.9vw, 15px);
+  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
   font-weight: 300;
   line-height: 1.35;
   text-decoration: none;
 }
 
-.faqLink {
+/* Qualified by `.details` so it outranks `.details a` (0,1,1) on specificity instead of
+   on `!important`. Written after that rule, as overrides here have to be. */
+.details .faqLink {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(38, 40, 32, 0.2);
-  color: #4a5140 !important;
-  font-size: 14px !important;
+  margin-top: 0.25rem;
+  padding-top: clamp(0.5rem, 1.3vh, 0.875rem);
+  border-top: 1px solid rgb(var(--ink-06-rgb) / .2);
+  color: var(--olive-03);
+  font-size: 0.875rem;
 }
 
 .faqLink span {
@@ -612,9 +647,11 @@
 }
 
 @include below-px(1050px) {
+  /* Same rule as the base, just a tighter cap: fill the window only when the content asks for it. */
   .panel {
     width: calc(100vw - 28px);
-    height: calc(100svh - 28px);
+    height: auto;
+    max-height: calc(100svh - 28px);
   }
 
   .panelBody {
@@ -645,7 +682,8 @@
 
   .panel {
     width: 100%;
-    height: calc(100svh - 16px);
+    height: auto;
+    max-height: calc(100svh - 16px);
     min-height: 0;
     border-radius: 18px;
   }

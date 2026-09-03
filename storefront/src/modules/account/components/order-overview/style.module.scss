@@ -1,23 +1,27 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   display: grid;
+  // An implicit auto track has its minimum at min-content, so the order card's
+  // intrinsic width would leak upward and stretch the whole page column with it.
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  border-top: 1px solid rgba(32, 33, 29, 0.2);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .itemWrap {
   width: 100%;
+  min-width: 0;
 }
 
 .empty {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
   align-items: end;
-  min-height: 280px;
-  padding: 48px 0;
-  border-top: 1px solid rgba(32, 33, 29, 0.2);
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  min-height: clamp(11rem, 26vh, 20rem);
+  padding: clamp(1.5rem, 4.4vh, 3.5rem) 0;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 
   @include v(md) {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -32,22 +36,32 @@
   max-width: 36rem;
 }
 
+.ctaWrap {
+  display: grid;
+  min-width: 0;
+}
+
 .title {
-  margin: 0 0 12px;
-  font: 400 clamp(2.5rem, 4.5vw, 5.4rem) / 0.9 "Sentient-Regular", serif;
+  margin: 0 0 clamp(0.5rem, 1vh, 1rem);
+  // The vw term sets the scale; the vh term keeps the headline from eating the
+  // screen on a wide-but-short window. The ceiling is the wrap threshold: the
+  // string costs 7.35x its font-size and .emptyContent caps at 36rem, so it holds
+  // one line up to 36rem / 7.35 = 4.9rem. 4.8rem keeps a margin, and because it
+  // is in rem the ramp lifts it above 1921 with everything else.
+  font: 400 clamp(2.5rem, min(4.5vw, 7.5vh), 4.8rem) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
 .desc {
   margin: 0;
-  color: rgba(32, 33, 29, 0.62);
-  font: 16px/1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(0.875rem, 0.95vw, 1.0625rem) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .emptyAction {
-  --premium-link-ink: #20211d;
-  --premium-link-active-ink: #f7e5d5;
-  --premium-link-border: #20211d;
-  --premium-link-fill: #20211d;
+  --premium-link-ink: var(--ink-05);
+  --premium-link-active-ink: var(--cream-06);
+  --premium-link-border: var(--ink-05);
+  --premium-link-fill: var(--ink-05);
 }
 

@@ -1,3 +1,4 @@
+@use "sass:math";
 @use "./index.scss" as sys;
 
 // font shortcut
@@ -11,6 +12,8 @@
 
 // max-width off the same stops, for migrating existing rules — see _mixins.scss
 @mixin below($bp)   { @include sys.below($bp)   { @content; } }
+// below(), plus the landscape phone no max-width can reach — see _mixins.scss
+@mixin below-with-phone($bp) { @include sys.below-with-phone($bp) { @content; } }
 @mixin below-px($w) { @include sys.below-px($w) { @content; } }
 @mixin from-px($w)  { @include sys.from-px($w)  { @content; } }
 @mixin between-px($a, $b) { @include sys.between-px($a, $b) { @content; } }
@@ -19,10 +22,8 @@
 @mixin touch          { @include sys.touch          { @content; } }
 @mixin fine-pointer   { @include sys.fine-pointer   { @content; } }
 @mixin reduced-motion { @include sys.reduced-motion { @content; } }
-
-// Effect budget — set from JS by the shader probe, see _mixins.scss
-@mixin reduced-fx { @include sys.reduced-fx { @content; } }
-@mixin full-fx    { @include sys.full-fx    { @content; } }
+// What the machine can afford, not what the person prefers — see _mixins.scss.
+@mixin reduced-fx     { @include sys.reduced-fx     { @content; } }
 
 // Horizontal per-breakpoint helpers (compact)
 @mixin xxs-h  { @include h(xxs)  { @content; } }
@@ -34,7 +35,8 @@
 @mixin lg-h   { @include h(lg)   { @content; } }
 @mixin xl-h   { @include h(xl)   { @content; } }
 @mixin huge-h { @include h(huge) { @content; } }
-@mixin qhd-h  { @include h(qhd)  { @content; } }  // 2K desktop, 16:9 — from 2200px wide
+@mixin xxl-h  { @include h(xxl)  { @content; } }  // ≥1921px — odtud běží ramp
+@mixin qhd-h  { @include h(qhd)  { @content; } }  // ≥2200px a 16:9 — jiné uspořádání, ne jiná velikost
 
 // Device-qualified landscape stops (height-constrained; see _breakpoints.scss)
 @mixin phs-h  { @include h(phs)  { @content; } }  // phone landscape, from 568×320
@@ -47,3 +49,83 @@
 @mixin s-v  { @include v(s)  { @content; } }
 @mixin md-v { @include v(md) { @content; } }
 @mixin lg-v { @include v(lg) { @content; } }
+
+// A light travelling along a rule. It is the same gesture the reviews' dots
+// make — a short bright stretch that passes and is gone — in its ambient form:
+// no dot, white rather than accent, and on every rule in the page instead of
+// only the three a dot happens to run.
+//
+// The light is the rule's own ::after, so it takes the rule's geometry and
+// nothing has to be restated; the rule clips, so the light comes out of one end
+// and is gone at the other with no fade needed at either — at both ends of the
+// travel the segment is entirely outside the box.
+//
+// `$axis` is the one thing that cannot be inferred. A rule 1px wide and a rule
+// 1px tall need the sweep on different axes, and CSS has no way to ask which
+// one it is looking at, so it is passed in beside the geometry that decides it.
+//
+// `$delay` is normally negative: it starts a rule part-way through its sweep
+// rather than making it wait, which is what keeps a section's rules from all
+// lighting at once. Given in order along a network, it reads as one light
+// travelling through it.
+//
+// Uniform duration rather than uniform speed, on purpose — the page pulses
+// together, and a long rule simply carries its light faster than a short one.
+// $strength turns the whole thing down without changing anything about it. The
+// keyframes own `opacity` — they fade the head in at each end of its travel —
+// so a caller cannot dim this by declaring one, and reaching for that is the
+// obvious mistake. It has to come out of the gradient and the glow, which is
+// what this does.
+@mixin lineSweep($axis: x, $delay: 0s, $duration: 6.5s, $length: 13, $strength: 1) {
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+
+        // How far the light has to travel to cross its own rule, in multiples
+        // of its own width — derived rather than written down, because the
+        // keyframes need it and they live in another file. Set it by hand and
+        // the two drift apart the first time $length changes.
+        --sweep-travel: #{math.div(100 - $length, $length) * 100%};
+
+        animation: $duration linear $delay infinite;
+
+        // The glow is what makes this read at all. A rule is one pixel tall: a
+        // brightness change confined to that one pixel is measurable and still
+        // invisible at arm's length — the accent version in the reviews only
+        // works because it drags a glowing dot. So the light has to leave the
+        // rule. drop-shadow follows the gradient's own alpha rather than the
+        // box, so it gathers at the head and thins along the tail.
+        //
+        // Which is also why the rule must not clip: an overflow tight to a
+        // hairline would cut the glow off at the hairline. Instead the travel
+        // stays inside the rule's own ends and fades at each of them.
+        //
+        // Kept deliberately faint. This is a compliment to the page, not a
+        // feature of it — the rule should read as a rule that happens to catch
+        // the light, never as a rule with a light running down it.
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3 * $strength));
+
+        @if $axis == x {
+            right: auto;
+            width: $length * 1%;
+            background-image: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.18 * $strength) 62%,
+                rgba(255, 255, 255, 0.38 * $strength) 100%
+            );
+            animation-name: lineSweepX;
+        } @else {
+            bottom: auto;
+            height: $length * 1%;
+            background-image: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.18 * $strength) 62%,
+                rgba(255, 255, 255, 0.38 * $strength) 100%
+            );
+            animation-name: lineSweepY;
+        }
+    }
+}

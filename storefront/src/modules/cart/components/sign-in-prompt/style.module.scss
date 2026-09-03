@@ -7,9 +7,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0;
-  border-top: 1px solid rgba(255,232,214,.18);
-  border-bottom: 1px solid rgba(255,232,214,.18);
+  /* The band competes for screen height, so its padding hangs on vh:
+     14.4 -> 24px, live 600-1000 tall. On 1366x768 that is 18.4px instead of a
+     flat 20px, which is why this needs no lt rule of its own. */
+  padding: clamp(.9rem, 2.4vh, 1.5rem) 0;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .18);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .18);
 
   .content {
     display: flex;
@@ -26,24 +29,26 @@
 
     .desc {
       margin: .45rem 0 0;
-      font-size: .9rem;
-      line-height: 1.25rem;
-      color: rgba(255,232,214,.58);
+      /* Was a five-entry hb() ladder written (md, mdt, sm, xs, xxs). h-block
+         emits in written order and every entry is a min-width, so xxs
+         (min-width 400) landed last and won on every landscape width: the
+         1.2rem the author wrote for desktop never rendered once, and the
+         sentence ran at 1.1rem from 400px all the way to 2552px.
+         15.2 -> 19.2px, live 1169-1477. */
+      font-size: clamp(.95rem, 1.3vw, 1.2rem);
+      /* Unitless, so it tracks the clamp instead of standing at a flat 20px
+         while the type grows past it. */
+      line-height: 1.35;
+      color: rgb(var(--cream-06-rgb) / .58);
       font-weight: 300;
       font-family: "Sansation-Light";
 
-      @include hb((
-        md: (font-size: 1.2rem),
-        mdt: (font-size: 1.2rem),
-        sm: (font-size: 1.2rem),
-        xs: (font-size: 1.1rem),
-        xxs: (font-size: 1.1rem),
-      ));
-      @include vb((
-        s: (font-size: 1.2rem),
-        sm: (font-size: 1.2rem),
-        xs: (font-size: 1.2rem),
-      ));
+      /* Portrait is a different shape, not a different size. The vb() ladder
+         was three identical entries (s, sm, xs); xs is the one that actually
+         won, so it is the one that stays. Phone work is the second pass — this
+         holds today's portrait value exactly rather than dropping it to the
+         clamp floor unreviewed. */
+      @include v(xs) { font-size: 1.2rem; }
     }
   }
 
@@ -51,11 +56,13 @@
     display: flex;
     align-items: center;
 
+    /* `.button` from this module lands on PremiumActionButton's wrapper div,
+       not on its <button>: the wrapper was pinned to 2.5rem, the same height
+       `.compact .button` already sets on the real button one level in. Two
+       copies of one height on two different elements, and the outer one is the
+       one that drifts. The owning component keeps it. */
     .link {
-        text-decoration: none;
-        .button {
-          height: 2.5rem; /* h-10 */
-        }
+      text-decoration: none;
     }
   }
 }
@@ -65,40 +72,34 @@
 }
 
 .ClickButton{
-    width: auto;
-    height: auto;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
-    border-radius: 25px;
+    /* Was a five-entry vb() (lg, md, s, sm, xs) all setting the same
+       fit-content over a base of auto. One declaration says it. */
+    width: fit-content;
+    height: fit-content;
+    box-shadow: 0 .125rem .5rem var(--shadows);
+    /* 25px already exceeded half the box height, so the browser was drawing a
+       full pill anyway. Saying so drops the last px out of the shape. */
+    border-radius: 999px;
 
-    @include vb((
-      lg: (width: fit-content, height: fit-content),
-      md: (width: fit-content, height: fit-content),
-      s: (width: fit-content, height: fit-content),
-      sm: (width: fit-content, height: fit-content),
-      xs: (width: fit-content, height: fit-content),
-    ));
     .button{
         position: relative;
-        width: 120px;
-        height: 40px;
+        /* Was 120x40px in the base and again, verbatim, in a five-entry vb().
+           One declaration, in rem so the >=1921 ramp lifts it. 40px sat under
+           the 44px touch target; 2.75rem is exactly 44. Height rather than
+           min-height because .slider below hangs on height: 100% and needs a
+           definite containing height to resolve against. */
+        width: 7.5rem;
+        height: 2.75rem;
         cursor: pointer;
-        border-radius: 25px;
+        border-radius: 999px;
         overflow: hidden;
         border: none;
         box-shadow: none;
         background-color: transparent;
-
-        @include vb((
-          lg: (width: 120px, height: 40px),
-          md: (width: 120px, height: 40px),
-          s: (width: 120px, height: 40px),
-          sm: (width: 120px, height: 40px),
-          xs: (width: 120px, height: 40px),
-        ));
 
         .slider{
             position: relative;
@@ -133,7 +134,7 @@
                 }
             }
         }
-        
+
     }
 }
 
@@ -153,7 +154,13 @@
         &:nth-of-type(2){
             position: absolute;
             transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(12px);
+            /* The face that swings in from below. Its offset is type-relative,
+               not viewport-relative: the rotated copy has to line up with the
+               label it replaces, and the label is rem. 12px -> .75rem, which
+               the ramp lifts in step with the button above 1921. In vw the
+               nudge would grow 1.33x faster than the type it aligns to and the
+               two faces would part company on a 2K screen. */
+            transform: rotateX(-90deg) translateY(.75rem);
             opacity: 0;
         }
     }

@@ -14,17 +14,41 @@ type FormState = "idle" | "loading" | "success" | "error"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+/* Souřadnice ve vw/vh, ne v px — v px zůstalo na 2552px monitoru totéž
+ * 4px cuknutí, které tam není vidět, zatímco panel kolem něj vyrostl o třetinu.
+ * Převod z původních čísel (reference 1600px na šířku, 1080px na výšku, stejně
+ * jako u free-shipping-price-nudge):
+ *   cuknutí chyby  4px / 1600px = 0.25vw
+ *   vjezd zprávy   9px / 1080px = 0.833 → 0.83vh
+ * Druhá čísla se neopisují, odvozují se: krajní bod cuknutí je půlka amplitudy
+ * (původně -2 z -4) a odjezd zprávy jsou dvě třetiny vjezdu (původně 6 z 9). */
+const SHAKE_VW = 0.25
+const SLIDE_VH = 0.83
+const SHAKE_HALF_VW = SHAKE_VW / 2
+const SLIDE_OUT_VH = Number(((SLIDE_VH * 2) / 3).toFixed(3))
+
 const formVariants: Variants = {
   idle: { opacity: 1, y: 0 },
   loading: { opacity: 0.72, y: 0 },
   success: { opacity: 1, y: 0 },
-  error: { opacity: 1, x: [0, -4, 4, -2, 0] },
+  /* Obě strany interpolace musí mít týž tvar výrazu, jinak framer skočí —
+     proto "0vw" v krajních snímcích, ne holá nula. */
+  error: {
+    opacity: 1,
+    x: [
+      "0vw",
+      `-${SHAKE_VW}vw`,
+      `${SHAKE_VW}vw`,
+      `-${SHAKE_HALF_VW}vw`,
+      "0vw",
+    ],
+  },
 }
 
 const messageVariants: Variants = {
-  initial: { opacity: 0, y: 9, clipPath: "inset(0 0 100% 0)" },
-  animate: { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" },
-  exit: { opacity: 0, y: -6, clipPath: "inset(100% 0 0 0)" },
+  initial: { opacity: 0, y: `${SLIDE_VH}vh`, clipPath: "inset(0 0 100% 0)" },
+  animate: { opacity: 1, y: "0vh", clipPath: "inset(0 0 0% 0)" },
+  exit: { opacity: 0, y: `-${SLIDE_OUT_VH}vh`, clipPath: "inset(100% 0 0 0)" },
 }
 
 const RestockForm = ({ variant, product }: RestockFormProps) => {

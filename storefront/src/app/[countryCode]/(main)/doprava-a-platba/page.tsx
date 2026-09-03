@@ -1,6 +1,8 @@
 import { Metadata } from "next"
 
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { getFiles, getPageCopy } from "@lib/data/site-copy"
+import LegalDownloads from "@modules/legal/Downloads"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
@@ -215,7 +217,13 @@ const sections: LegalSectionData[] = [
   },
 ]
 
-export default function Page() {
+export default async function Page() {
+  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
+  const [copy, files] = await Promise.all([
+    getPageCopy("doprava-a-platba"),
+    getFiles("doprava-a-platba"),
+  ])
+
   return (
     <LegalDocument
       code="SERVIS · 04"
@@ -224,6 +232,8 @@ export default function Page() {
       accent="Zabalíme a pošleme."
       description="Ceny dopravy, doručovací lhůty a všechny způsoby platby — zvlášť pro Česko a pro Slovensko."
       sections={sections}
+      block={copy["doprava-a-platba.text"]}
+      downloads={<LegalDownloads files={files} />}
     />
   )
 }

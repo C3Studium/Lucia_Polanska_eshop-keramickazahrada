@@ -27,9 +27,6 @@ import {
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
   JWT_EXPIRES_IN,
-  SANITY_API_TOKEN,
-  SANITY_PROJECT_ID,
-  SANITY_STUDIO_URL,
   SEGMENT_WRITE_KEY,
   COMGATE_MERCHANT,
   COMGATE_SECRET,
@@ -175,19 +172,19 @@ const medusaConfig = {
         ],
       },
     },
-    {
-      resolve: "./src/modules/sanity",
-      options: {
-        api_token: SANITY_API_TOKEN,
-        project_id: SANITY_PROJECT_ID,
-        api_version: new Date().toISOString().split("T")[0],
-        dataset: "production",
-        studio_url: SANITY_STUDIO_URL,
-        type_map: {
-          product: "product",
-        },
-      },
-    },
+    /*
+     * Modul `sanity` tu stával a je pryč.
+     *
+     * Kopíroval produkty do Sanity, aby si je storefront četl odtamtud. Po
+     * přechodu na ValeCMS není co kopírovat: produkty, ceny, sklad, objednávky,
+     * kurzy i recenze drží Medusa a storefront je bere z ní; CMS drží redakční
+     * texty a fotky a o produktech neví. Zmizel tím celý okruh — modul, link,
+     * subscriber na `product.created`/`product.updated`, workflow, tři admin
+     * routy a widget u produktu — a s ním i druhé místo, kde mohl obsah
+     * produktu zastarat.
+     *
+     * Do administrace zbyl jediný odkaz do Studia; viz `src/admin/routes/obsah`.
+     */
     {
       resolve: "./src/modules/wishlist",
     },

@@ -11,11 +11,11 @@
 	.heading {
 		font-size: 2rem;
 		font-weight: 600;
-		color: var(--ui-fg-base, #111827);
+		color: var(--ui-fg-base, var(--ink-03));
 	}
 
 	.message {
 		font-size: 1rem;
-		color: var(--ui-fg-base, #111827);
+		color: var(--ui-fg-base, var(--ink-03));
 	}
 }

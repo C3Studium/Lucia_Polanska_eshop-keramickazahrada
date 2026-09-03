@@ -1,76 +1,154 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 /*
  * Sits inside a LegalDocument chapter, on its cream surface.
- * Ink #24251f on that surface measures 13.9:1; the eyebrow tone #565845 measures 6.1:1.
+ * var(--ink-05) on that surface measures about 14:1; the eyebrow tone var(--olive-05) 6.1:1.
+ * Not one literal colour is written below: the four this box used to spell out were the ink, the
+ * hairline, the white wash and the cream hover, and every one of them exists as a token.
  *
- * Smallest-first, like the document it sits in. The only stops it needs are the ones where the
- * surrounding measure changes: phone landscape, where the chapter column is short of height, and
- * qhd, where the chapter body grows to 880px and a box still sized for 720px reads as a leftover.
+ * Smallest-first, like the document it sits in, but the sizes are clamps now, not stops. The
+ * horizontal ones hang on vw, the vertical ones on vh, which is the whole reason a 1366x768
+ * laptop no longer draws the byte-identical box a 1366x960 tablet does — it used to eat 33% of
+ * that screen against 26% of the taller one.
+ *
+ * Nothing here writes a size into qhd or xxl. Every ceiling is in rem, so the root ramp in
+ * globals.scss (16px -> 21.5px above 1921px, 21.27px at 2552px) lifts all of them by 1.329x on
+ * its own; the ten qhd declarations this file used to carry reproduced that badly enough that
+ * the 36px qhd padding was 1.69rem against 1.75rem at 1920 — the box had relatively LESS lining
+ * on a 2K monitor than on a FullHD one.
+ *
+ * Three stops are left and all three are SHAPE, not size. `v(xs)` on the box, because in portrait
+ * vh is the LONG axis, so a vertical padding on vh against a horizontal one on vw comes out
+ * lopsided — 24.2px against 18px at 430x932 — and portrait puts both axes on vw instead; `v(xs)`
+ * on the button, because a pill that wraps has to stop being shrink-to-fit; and `v(md)` on the
+ * button after it, because a tablet is not a wide phone. `v(xs)` is min-width 320 AND portrait,
+ * so it catches 768x1024 and 1024x1366 as well, and the stretch written for a 430px column was
+ * flinging the arrow 291px from its label on a 618px one. The tablet has the width the phone was
+ * missing, so it goes back to the compact pill the laptop one stop over already draws.
+ *
+ * There were four. `h(phs)` and `v(xs)` on the paragraph used to transcribe LegalDocument's
+ * `.chapterBody p` ladder, so that the boxed copy would go on measuring the same as the copy
+ * around it. This box renders inside that chapter body, so the ladder already reached the
+ * paragraph by descent: the transcription was one geometry maintained in two places, and it is
+ * inherited now instead. The note on that selector has the measurements.
+ *
+ * The phone in landscape has no stop of its own any more. It used to have three declarations in
+ * an `h(phs)` block — 18px margin, 14px padding, 9px gap — and every one of them was a number
+ * the clamp above could reach on its own once its floor was written at the value that block was
+ * asking for. That is the whole trade: a floor is arithmetic every viewport shares, a stop is a
+ * second set of numbers that has to be maintained beside the first.
  */
 
 .placeholder,
 .download {
   display: flex;
-  max-width: 62ch;
   flex-direction: column;
-  margin-top: clamp(24px, 2.4vw, 36px);
-  padding: 18px;
-  border: 1px solid rgba(36, 37, 31, 0.24);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.44);
-  gap: 12px;
+  /* 18px floor below 529px tall, 36px ceiling from 1059px up. 26px on a 768px laptop, exactly
+     36px at 1080px, 45.9px at 2552x1351 where the old qhd rule said 48px. The floor is 18 and
+     not 20 because 18 is the number `h(phs)` used to write here by hand: 3.4vh is 18px at 529px
+     tall, so every viewport shorter than that — 320 and 430 both — reaches it by arithmetic. */
+  margin-top: clamp(1.125rem, 3.4vh, 2.25rem);
+  /*
+   * Two axes deliberately, and the shorthand split is the fix for the low laptop.
+   * Vertical: 14px floor below 538px tall, 28px ceiling from 1077px up — 20px at 768px, 28px at
+   * 1080px, which is what the old md clamp topped out at anyway.
+   * Horizontal: 14px floor below 737px, 28px ceiling from 1474px, so the live band sits right
+   * where the users are.
+   *
+   * Both floors used to stand 2-4px higher with an `h(phs) { padding: 14px }` block underneath
+   * flattening them — one property, two media queries, two numbers, which is a clamp that was
+   * never written. Written at the value that block was asking for, the phone in landscape gets
+   * there on its own: 2.6vh is 14px at 538px tall and 1.9vw is 14px at 737px wide, so 568x320
+   * lands on 14px on both axes with no stop at all, and 932x430 on 14 vertically and 17.7
+   * horizontally — which is right, because its column is 620px wide, not 486.
+   */
+  padding: clamp(0.875rem, 2.6vh, 1.75rem) clamp(0.875rem, 1.9vw, 1.75rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .24);
+  /* 14px below 1921px, 18.6px at 2552px. No clamp needed — the ramp is the whole ladder. */
+  border-radius: 0.875rem;
+  background: rgb(var(--white-rgb) / .44);
+  /* 9px floor below 667px tall, 13px ceiling from 963px up; 17.3px at 2552x1351. The floor is
+     already the phone in landscape: 1.35vh is 4.3px at 320px tall and 5.8px at 430px, so the
+     `h(phs) { gap: 9px }` that used to sit below was writing the number the clamp had computed.
+     Measured 9px at 568x320 and 932x430 before it was removed, and 9px after. */
+  gap: clamp(0.5625rem, 1.35vh, 0.8125rem);
 
-  @include h(md) {
-    padding: clamp(20px, 2vw, 28px);
-  }
-
-  @include h(qhd) {
-    margin-top: 48px;
-    padding: 36px;
-    border-radius: 18px;
-    gap: 18px;
-  }
-
-  @include h(phs) {
-    margin-top: 18px;
-    padding: 14px;
-    gap: 9px;
-  }
-
-  @include v(md) {
-    padding: 22px;
+  /*
+   * Portrait, and a SHAPE rule rather than a size one — which is why it is a whole shorthand and
+   * not a pair of hand-picked numbers. In portrait vh is the long axis, so the two-axis split
+   * above inverts: the vertical member on vh outgrows the horizontal one on vw and the lining
+   * goes lopsided — 24.2px against 18px at 430x932, and 26.6 against 14.6 at 768x1024. Both
+   * axes on vw puts the box back square. 2.9vw is 18px at 621px and 28px at 966px, so every
+   * portrait phone sits on the floor at 18px, 768 gets 22.3px — the flat 22 the old `v(md)`
+   * wrote by hand — and 1024 gets the ceiling.
+   *
+   * After `gap`, not before it: these mixins emit a plain nested media query, not a layer, so at
+   * equal specificity the block written later is the one that applies.
+   */
+  @include v(xs) {
+    padding: clamp(1.125rem, 2.9vw, 1.75rem);
   }
 }
 
-.eyebrow {
+/*
+ * The selector needs a class, an element and a class, and that is not decoration: `.chapterBody p`
+ * in LegalDocument is (0,1,1), so a bare `.eyebrow` (0,1,0) lost to it at every single stop. The
+ * label was rendered at the size of the prose it introduces — 19px against a 16px paragraph at
+ * 1920px, 22px against 22px at 2552px, where it stopped reading as a label at all. Neither
+ * `font-size: 13px` nor its qhd override ever applied anywhere. `.placeholder p:not(.eyebrow)`
+ * below is the same (0,2,1) shape, which is exactly why that one always worked.
+ *
+ * The size is the document's own label ladder, character for character: LegalDocument's
+ * `micro-label` mixin is `clamp(0.75rem, 0.68vw, 0.8125rem)`, and this eyebrow is the same sort of
+ * uppercase archival label as the hero meta, the chapter header and the index heading around it.
+ * A private `0.95vw, 0.875rem` set it a pixel over its own siblings from 1474px up and 18.6px
+ * against their 17.3px at 2552 — one kind of label on two ladders. The floor is --type-eyebrow
+ * from globals.scss; the ideal term is plain vw and not --fvw because that is what the mixin uses,
+ * and a label has no measure to keep.
+ * line-height is explicit because 1.68 inherited from `.chapterBody p` is prose leading, and this
+ * is a one-line uppercase label with 0.12em tracking.
+ */
+.placeholder p.eyebrow,
+.download p.eyebrow {
   margin: 0;
-  color: #565845;
-  font-size: 13px;
+  color: var(--olive-05);
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  line-height: 1.35;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-
-  @include h(qhd) {
-    font-size: 17px;
-  }
 }
 
+/*
+ * Not one size here, and that is the rule rather than an omission.
+ *
+ * This box is rendered as a `supplement`, which LegalDocument places as the last child of
+ * `.chapterBody` (index.tsx). So `.chapterBody p` — specificity (0,1,1), the element selector
+ * unhashed by CSS modules — already matches this paragraph and already carries the entire
+ * ladder: `1rem` base, the measure clamp `h(md) clamp(1rem, calc(1.08 * var(--fvw)), 1.3rem)`,
+ * `h(phs) 0.9375rem` for the phone in landscape, `v(xs) clamp(1rem, 2.83vw, 1.125rem)` for
+ * portrait. The claim this selector makes is that the boxed copy sets at the size of the copy it
+ * is a copy OF; inheriting the document's ladder is the only form of that claim that cannot come
+ * apart.
+ *
+ * It used to be made by transcribing all four rungs here. That is one geometry written in two
+ * places, and it had already failed once: the box carried `v(md) { font-size: 17px }` from the
+ * days LegalDocument had `v(md)` and `v(lg)` rungs, the document collapsed both into the single
+ * `v(xs)` clamp, and the box was left setting 17px against 18px prose at 768x1024 and 1024x1366 —
+ * smaller than the paragraph it frames. Restating the current values fixes that instance;
+ * deleting the copy removes the fault. Measured with the four declarations stripped at runtime,
+ * the paragraph still lands on the surrounding prose to the hundredth of a pixel at all fifteen
+ * stops — 15px at 568x320, 800x430 and 932x430, 16px at 320x568 through 430x932, 16.98px at
+ * 600x900, 18px at 768x1024 and 1024x1366, 20.74px at 1920x1080, 23.35px at 2552x1351 — leading
+ * included, and the box's own height does not move by a tenth of a pixel anywhere.
+ *
+ * What stays is only what the document does not say. `margin: 0` because `.chapterBody p` sets
+ * `0 0 1.35em`, which is right for prose stacked by margin and wrong inside a box stacked by
+ * `gap` — inherited, it hangs a blank 1.35 lines above the bottom border. The colour is stated
+ * because the surface is not the chapter's: this box lays a white wash over the cream, and
+ * var(--ink-05) is the token that measures about 14:1 on it.
+ */
 .placeholder p:not(.eyebrow) {
   margin: 0;
-  color: #24251f;
-  font-size: 16px;
-  line-height: 1.6;
-
-  @include h(qhd) {
-    font-size: 22px;
-  }
-
-  @include h(phs) {
-    font-size: 15px;
-  }
-
-  @include v(md) {
-    font-size: 17px;
-  }
+  color: var(--ink-05);
 }
 
 .placeholder a {
@@ -102,36 +180,98 @@
 
 .button {
   display: inline-flex;
-  min-height: 48px;
+  /*
+   * A touch target, so it is the one measurement here that must not hang on vh: it may grow with
+   * the ramp but must never shrink with a short viewport. 3rem is 48px below 1921px and 63.8px at
+   * 2552px, which reproduces the old qhd 64px by itself.
+   */
+  min-height: 3rem;
   align-items: center;
   justify-content: space-between;
   align-self: flex-start;
   max-width: 100%;
-  padding: 0 20px;
-  border: 1px solid #24251f;
+  /*
+   * Horizontally: 20px floor below 1143px, 25.6px ceiling from 1463px, 34px at 2552px.
+   * Vertically it used to be a flat 0, and on a phone that is a real fault rather than a tidy
+   * shorthand. The label plus the arrow, the 16px gap between them and this lining need about
+   * 327px of pill; the box offers 199px of content width at 320 and 226px at 600, so the label
+   * wraps on every portrait phone and at 600 too — and with no vertical member the second line
+   * sat flat against the border. 1.1vh is 8px below 727px tall and 12px from 1091px up. On vh
+   * like every other vertical measure here, so a phone in landscape with 320px of height to
+   * spend does not spend it on lining.
+   */
+  padding: clamp(0.5rem, 1.1vh, 0.75rem) clamp(1.25rem, 1.75vw, 1.6rem);
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  color: #24251f;
-  font-size: 16px;
-  gap: 16px;
+  color: var(--ink-05);
+  font-size: 1rem;
+  gap: 1rem;
   text-decoration: none;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 
-  @include h(md) {
-    padding: 0 24px;
+  /*
+   * Portrait: shape only, and deliberately not one size. `align-self: flex-start` makes the pill
+   * shrink-to-fit, which is right while it fits on one line and wrong the moment it does not —
+   * on a column this narrow the wrapped pill hugs its own longest line and comes out a lozenge
+   * rather than a button. Stretched across the column it is an ordinary row instead, label left
+   * and arrow right, which is what `justify-content: space-between` above was already for.
+   * After the base declarations, so it wins on source order at equal specificity.
+   */
+  @include v(xs) {
+    align-self: stretch;
   }
 
-  @include h(qhd) {
-    min-height: 64px;
-    padding: 0 34px;
-    font-size: 22px;
-    gap: 22px;
+  /*
+   * The tablet takes the pill back, and this is the one place on this page where the phone rule
+   * above reached a viewport it was not written for. `v(xs)` is `min-width: 320px` and portrait —
+   * every tablet held upright matches it too, so the stretch written for a 430px column was also
+   * being applied to a 618px one.
+   *
+   * Measured with the download branch rendered (it does not ship yet; PROTOCOL_PDF_PATH is still
+   * null), the pill wants 326.3px and the chapter column offers:
+   *
+   *   430x932   356.0   stretched 356.0   — 30px over, phone, stays stretched
+   *   600x900   306.0   stretched 306.4   — SHORT of 326, label wraps to two lines
+   *   620x930   324.0   stretched 324.3   — still short
+   *   640x960   340.9   stretched 341.1   — fits from here up
+   *   768x1024  448.5   stretched 448.1   — 121.8px of dead air between label and arrow
+   *   1024x1366 618.0   stretched 617.8   — 291.5px of dead air
+   *
+   * At 1024 the arrow ends up nearly 300px from the word it belongs to and the button reads as a
+   * bar, which is a phone's answer to a phone's problem: no width. A tablet has the width, and
+   * 1366x768 one stop over already draws the compact 334px pill this is going back to.
+   *
+   * `v(md)` (600) and not the 640 the arithmetic points at, because below 640 the rule is a no-op
+   * rather than a mistake: the label wraps there, shrink-to-fit resolves to the available width,
+   * and both values measure the same box to the tenth of a pixel — 306.4x69.8 at 600x900 and
+   * 324.3x70.4 at 620x930, stretched or not. So the stop the table already has is exact enough,
+   * and rule 7 keeps a private 640 out of the component.
+   *
+   * After `v(xs)`, not before: these mixins emit plain nested media queries, so at equal
+   * specificity the later block is the one that applies, and 768 matches both.
+   */
+  @include v(md) {
+    align-self: flex-start;
   }
 }
 
-.button:hover,
+/*
+ * Hover behind fine-pointer, focus-visible not. A touch device reports a hover it cannot undo:
+ * tapping the pill leaves it inverted — ink ground, cream label — until something else is
+ * tapped, so the thing that looks pressed is whatever was touched last. Keyboard focus has no
+ * such problem and a keyboard can be attached to a touch device, so `:focus-visible` stays
+ * unconditional. Both after `.button`, which is the rule they override.
+ */
+@include fine-pointer {
+  .button:hover {
+    background: var(--ink-05);
+    color: var(--cream-06);
+  }
+}
+
 .button:focus-visible {
-  background: #24251f;
-  color: #ffe8d6;
+  background: var(--ink-05);
+  color: var(--cream-06);
 }

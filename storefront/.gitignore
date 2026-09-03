@@ -57,3 +57,4 @@ dump.rdb
 /blob-report/
 /playwright/.cache/
 /playwright/.auth
+.next-check/

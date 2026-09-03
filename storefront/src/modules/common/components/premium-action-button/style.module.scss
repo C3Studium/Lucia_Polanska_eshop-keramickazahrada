@@ -4,34 +4,38 @@
   width: auto;
 }
 
+/* Sibling of premium-action-link, which is already fully in rem. This one was
+   fully in px, so above 1921 — where the root-rem ramp runs — the link grew and
+   the button did not; visible in the footer, where the two sit side by side.
+   Everything scalar is rem-bounded now; only the hairline border and the drop
+   shadow stay physical. */
 .button {
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 20px;
-  min-width: min(100%, 220px);
+  /* 15 -> 20px, live 1200-1600 */
+  gap: clamp(.9375rem, 1.25vw, 1.25rem);
+  /* min() already delivers the 220px target without letting the button outgrow
+     a narrow cell, which is what the two 220px media query stops were for. */
+  min-width: min(100%, 13.75rem);
   width: 100%;
-  height: 50px;
-  padding: 0 12px 0 22px;
+  /* The button competes for screen height, so the height hangs on vh:
+     44 -> 52px, live 880-1040 tall. That alone is what fits it on 1280x720 and
+     1366x768 — no lt rule needed. */
+  height: clamp(2.75rem, 5vh, 3.25rem);
+  /* 9 -> 12px right, 16 -> 22px left, live 1164-1600 */
+  padding: 0 clamp(.5625rem, .75vw, .75rem) 0 clamp(1rem, 1.375vw, 1.375rem);
   overflow: hidden;
-  border: 1px solid var(--premium-button-ink, #20211c);
+  border: 1px solid var(--premium-button-ink, var(--ink-05));
   border-radius: 999px;
-  color: var(--premium-button-ink, #20211c);
-  background: var(--premium-button-surface, #ffe8d6);
+  color: var(--premium-button-ink, var(--ink-05));
+  background: var(--premium-button-surface, var(--cream-06));
   cursor: pointer;
-  box-shadow: 0 12px 28px -22px rgba(0,0,0,.9);
+  box-shadow: 0 12px 28px -22px rgb(var(--black-01-rgb) / .9);
   transition:
     border-color 280ms ease,
     opacity 280ms ease;
-
-  @include v(md) {
-    min-width: 220px;
-  }
-
-  @include h(xxs) {
-    min-width: 220px;
-  }
 }
 
 .button:focus-visible {
@@ -49,7 +53,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: var(--premium-button-fill, #20211c);
+  background: var(--premium-button-fill, var(--ink-05));
   transform: scaleX(0);
   transform-origin: left center;
   will-change: transform;
@@ -63,30 +67,48 @@
 
 .label {
   white-space: nowrap;
-  /* The CTA for the whole purchase flow — the 15px UI floor applies. */
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  /* The CTA for the whole purchase flow — the 15px UI floor applies, so
+     .9375rem is the floor of the clamp and never goes below it.
+     15 -> 17px, live 1304-1478. */
+  font: 400 clamp(.9375rem, 1.15vw, 1.0625rem)/1 "Sansation-Regular", sans-serif;
 }
 
+/* The arrow sits inside the button, so it rides the same vh axis at a fixed
+   fraction of the button height (29/50 = .58): ideal 5vh * .58 = 2.9vh, floor
+   2.75rem * .58 = 1.6rem, ceiling 3.25rem * .58 = 1.875rem. Both on vh means
+   the circle keeps its proportion at every viewport height instead of drifting
+   against a vw-driven size. aspect-ratio replaces the copied height. */
 .arrow {
   display: grid;
-  width: 29px;
-  height: 29px;
+  width: clamp(1.6rem, 2.9vh, 1.875rem);
+  aspect-ratio: 1;
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
   color: inherit;
-  font-size: 13px;
+  /* Glyph on the same axis as its circle: 13/50 * 5 = 1.3vh, 12 -> 14px. */
+  font-size: clamp(.75rem, 1.3vh, .875rem);
   transform: rotate(0deg);
   will-change: transform;
 }
 
+/* Compact keeps its height flat in rem rather than on a vh clamp, deliberately.
+   A vh clamp would buy nothing on a low laptop — 4vh at 768 is 30.7px, well
+   under the 40px floor, so the floor binds and the value never moves — while
+   above 1000px tall it would grow the button past Footer's newsletter input,
+   which is a flat `height: 40px` next to it in the same grid. 2.5rem is
+   byte-identical to today below 1921 and rides the ramp above it, which is the
+   whole point. (The input still needs the same treatment — see report.) */
 .compact .button {
-  min-width: 132px;
-  height: 40px;
-  gap: 12px;
-  padding: 0 8px 0 16px;
+  min-width: 8.25rem;
+  height: 2.5rem;
+  gap: clamp(.5625rem, .75vw, .75rem);
+  padding: 0 clamp(.375rem, .5vw, .5rem) 0 clamp(.75rem, 1vw, 1rem);
 }
 
-.compact .label { font-size: 14px; }
-.compact .arrow { width: 24px; height: 24px; font-size: 13px; }
+.compact .label { font-size: clamp(.875rem, 1.05vw, 1rem); }
+/* .6 of the compact height (24/40). Flat like the height it sits in, so the
+   ratio holds at every size instead of drifting across two axes. The old
+   font-size: 13px here restated the base value exactly, so it is gone. */
+.compact .arrow { width: 1.5rem; }
 

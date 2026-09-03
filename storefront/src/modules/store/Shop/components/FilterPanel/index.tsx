@@ -77,6 +77,11 @@ export default function FilterPanel({
       </AnimatePresence>
       <motion.aside
         className={`${styles.root} ${isOpen ? styles.open : ""}`}
+        /* data-lenis-prevent: lišta je vlastní scroll kontejner (max-height
+           + overflow-y), ale Lenis poslouchá wheel na dokumentu a bez tohohle
+           by ho spolkl a rolovala by stránka pod ní. Na krátkém laptopu je
+           patička dosažitelná jen tímhle vnitřním scrollem. */
+        data-lenis-prevent
         initial={false}
         aria-label="Filtrování produktů"
         aria-modal={isOpen || undefined}

@@ -1,28 +1,20 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
 /* Preview items scroll container */
-.root {
+
+/* preview.tsx nasazuje `hasOverflow ? s.scroll : s.root`, tedy VŽDY JEN JEDNU třídu.
+   Základ byl přitom napsaný jako `.root { &.scroll { … } }`, což se přeloží na
+   `.root.scroll` — kombinace, která na elementu nikdy nenastane. Od pěti položek výš
+   proto kontejner dostával třídu BEZ JEDINÉ DEKLARACE: přišel o width: 100 % i o barvy
+   tabulky, a scroll, kvůli kterému ta třída existuje, se nikdy nezapnul.
+   Základ tedy platí pro obě třídy. */
+.root,
+.scroll {
   padding-left: 1px;
   color: inherit;
-  @include hb((
-    sm: (width: 100%),
-    xs: (width: 100%),
-    xxs: (width: 100%),
-  ));
-  @include vb((
-    md: (width: 100%),
-    s: (width: 100%),
-    sm: (width: 100%),
-    xs: (width: 100%),
-  ));
-
-  &.scroll {
-    padding-left: 1px; /* pl-[1px] */
-    overflow-y: auto; /* overflow-y-scroll */
-    overflow-x: hidden; /* overflow-x-hidden */
-    max-height: 420px; /* max-h-[420px] */
-    /* no-scrollbar would require vendor-specific rules; omitted intentionally */
-  }
+  /* Sedm media query (hb sm/xs/xxs + vb md/s/sm/xs) nastavovalo jedinou hodnotu width: 100%.
+     Šířka se tady nemění s druhem layoutu, takže je to jedna deklarace, ne ladder. */
+  width: 100%;
 
   :global(table),
   :global(tbody) {
@@ -30,3 +22,12 @@
     background: transparent;
   }
 }
+
+/* Vlastní scrollovací chování se sem VĚDOMĚ nevrací. Zapnout ho není oprava velikosti,
+   ale změna DRUHU layoutu, a to na cizí stránce (checkout-summary je jediný konzument).
+   Scrollovatelný list uvnitř stránky navíc potřebuje `data-lenis-prevent`, jinak Lenis
+   spolkne wheel i touch (ARTEFAKT, tabulka pastí). Do kola pro checkout tedy patří
+   rozhodnutí: buď na .scroll přidat
+     overflow-y: auto; overflow-x: hidden; max-height: clamp(16rem, 46vh, 30rem);
+   a do preview.tsx data-lenis-prevent, nebo přiznat, že se náhled scrollovat nemá,
+   a nechat .scroll jako pouhý alias. Dnes je to alias — a poprvé i vysázený. */

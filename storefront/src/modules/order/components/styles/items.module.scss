@@ -1,7 +1,7 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
   width: 100%;
-  border-top: 1px solid rgba(32, 33, 29, .2);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .root table {

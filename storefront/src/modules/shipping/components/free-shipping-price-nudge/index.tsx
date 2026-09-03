@@ -11,6 +11,7 @@ import PremiumActionLink from "@modules/common/components/premium-action-link"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 type FreeShippingPrice = StorePrice & {
   target_reached: boolean
@@ -109,7 +110,7 @@ function Progress({
         initial={false}
         animate={{
           scaleX: reached ? 1 : percentage / 100,
-          backgroundColor: reached ? "#bbb788" : "#747e62",
+          backgroundColor: reached ? palette.sage01 : palette.olive15,
         }}
         style={styleObj}
         transition={transition}
@@ -183,13 +184,7 @@ function FreeShippingPopup({
           className={styles.popupRoot}
           initial={initial2}
           animate={animate2}
-          exit={{
-            opacity: 0,
-            x: 24,
-            y: 10,
-            scale: 0.96,
-            clipPath: "inset(0 0 0 100%)",
-          }}
+          exit={exit2}
           transition={transition3}
           aria-live="polite"
         >
@@ -266,14 +261,29 @@ function FreeShippingPopup({
 
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
-   render only gave framer-motion new references to re-diff. Values are unchanged. */
+   render only gave framer-motion new references to re-diff.
+ *
+ * Souřadnice jsou ve vw/vh, ne v px, aby se dráha přeškálovala sama — v px zůstal
+ * na 2552px monitoru 32px posun, který tam není vidět. Převod z původních čísel:
+ *   vjezd  x 32px / 1600px reference = 2vw     y 16px / 1080px = 1.48 → 1.5vh
+ *   odjezd x 24px / 1600px           = 1.5vw   y 10px / 1080px = 0.93 → 0.9vh
+ *   inline y 10px / 1080px           = 0.9vh
+ * Obě strany interpolace musí mít TÝŽ tvar výrazu, jinak framer skočí — proto
+ * "0vw"/"0vh" v cílovém stavu, ne holá nula. */
 const styleObj = { originX: 0 }
 const transition = { duration: 0.8, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
-const initial = { opacity: 0, y: 10 }
-const animate = { opacity: 1, y: 0 }
+const initial = { opacity: 0, y: "0.9vh" }
+const animate = { opacity: 1, y: "0vh" }
 const transition2 = { duration: 0.55, ease }
-const initial2 = { opacity: 0, x: 32, y: 16, scale: 0.96 }
-const animate2 = { opacity: 1, x: 0, y: 0, scale: 1 }
+const initial2 = { opacity: 0, x: "2vw", y: "1.5vh", scale: 0.96 }
+const animate2 = { opacity: 1, x: "0vw", y: "0vh", scale: 1 }
+const exit2 = {
+  opacity: 0,
+  x: "1.5vw",
+  y: "0.9vh",
+  scale: 0.96,
+  clipPath: "inset(0 0 0 100%)",
+}
 const transition3 = { duration: 0.62, ease }
 const whileHover = { rotate: 90, scale: 1.06 }
 const whileTap = { scale: 0.92 }

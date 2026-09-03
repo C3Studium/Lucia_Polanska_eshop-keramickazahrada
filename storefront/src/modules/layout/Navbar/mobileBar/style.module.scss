@@ -17,7 +17,7 @@
   --nav-bottom-inset: 12px;
   --nav-bottom-height: 56px;
 
-  display: none;
+  display: grid;
   position: fixed;
   z-index: 2;
   right: calc(var(--page-inset, 0px) + var(--nav-bottom-inset));
@@ -71,6 +71,11 @@
   background: var(--nav-surface);
   backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  /* A pseudo-element is a hit target like any other. This one covers the whole bar, so without
+     this every tap that lands between the four controls is caught by the surface instead of
+     passing through — and `backdrop-filter` promotes it to its own layer, which is exactly the
+     case where the -1 does not reliably keep it out of the way. */
+  pointer-events: none;
 }
 
 .slot {
@@ -129,7 +134,7 @@
   padding: 0 3px;
   border: 0;
   background: none;
-  color: var(--nav-ink, #25271f);
+  color: var(--nav-ink, var(--ink-06));
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
@@ -182,7 +187,7 @@
  * specificity rather than for reading, and that is why.
  */
 .root .cartSlot [data-testid="nav-cart-link"] :global(.magnetic) p {
-  color: var(--nav-ink, #25271f);
+  color: var(--nav-ink, var(--ink-06));
   font-size: 10px;
 }
 
@@ -234,23 +239,35 @@
 
 /* It does get a surface once it is actually open — that is state, not decoration. */
 .regionSlot :global(.regions__select[data-open] .countryButton__surface) {
-  background: rgba(116, 126, 98, 0.14);
-}
-
-@mixin bottom-bar-visible {
-  .root {
-    display: grid;
-  }
-}
-
-@include below-px(600px) {
-  @include bottom-bar-visible;
+  background: rgb(var(--olive-15-rgb) / .14);
 }
 
 /*
- * Phones held sideways. `phs` alone spans the whole landscape-phone range (480–1199px wide at
- * 520px or shorter), so `phl` would repeat it from 800px up with nothing different to say.
+ * Mobile-first, through the engine's own stops rather than a `max-width`.
+ *
+ * The bar is shown in the base — a phone is the smallest case and therefore the default — and
+ * taken away upward: `v(md)` is 600px of portrait, which is a tablet, and `h(xs)` is 750px of
+ * landscape, which is everything from a small laptop up.
+ *
+ * `phs` then puts it back, and has to come last. A phone on its side is 844px wide, so it matches
+ * `h(xs)` on width alone and would lose the bar; `phs` is the height-qualified stop that exists
+ * for exactly that case (480–1199px wide, 520px or shorter) and sits last in the layer order so
+ * it wins over the width-only stop it overlaps.
  */
+@include v(md) {
+  .root {
+    display: none;
+  }
+}
+
+@include h(xs) {
+  .root {
+    display: none;
+  }
+}
+
 @include phs-h {
-  @include bottom-bar-visible;
+  .root {
+    display: grid;
+  }
 }

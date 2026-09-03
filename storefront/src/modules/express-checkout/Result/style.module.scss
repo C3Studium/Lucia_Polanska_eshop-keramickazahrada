@@ -2,51 +2,82 @@
 
 .root {
   display: flex;
-  min-height: calc(100svh - 160px);
-  padding: 34px 0 18px;
+  /* No min-height here on purpose. The express-checkout layout's .frame already
+     holds the window height (min-height: 100svh - shell padding); the old
+     calc(100svh - 160px) was a second, hand-counted copy of that same geometry
+     and it was wrong: the real chrome above and below this box is 28+28 shell
+     + 76 header + 38+38 flow + 2 border = 210px, so the document overflowed the
+     viewport by exactly 50px even with no order at all. Replacing 160 with 210
+     would be the same mistake one number later. One geometry, one place: the
+     frame owns the height, this box is sized by its content and sits in it. */
+  /* Vertical padding, so vh. Round 2 lowered both floors — 1.1 -> .65rem and
+     .6 -> .35rem — which moves the live bands from 518-1012 and 533-1022 tall
+     down to 306-1012 and 311-1022. Same reasoning, and the same numbers, as the
+     shell's --x-flow-pad-y and .brandHeader in the layout stylesheet: a vh floor
+     is by definition only ever active on a SHORT screen, and the only screen
+     below 518 tall is a phone held sideways, so the old floors were a value
+     calibrated on the 660px laptop (where 3.4vh = 22.4px is the live member and
+     nothing here moves) frozen onto the one screen that owns 320px in total.
+     Measured at 568x320: 17.6 + 9.6 becomes 10.88 + 5.76, i.e. 10.6px of
+     document handed back, and portrait keeps every pixel it had — at 568 tall
+     3.4vh is 19.3 and 1.8vh is 10.2, both already past the old floors. */
+  padding: clamp(.65rem, 3.4vh, 2.15rem) 0 clamp(.35rem, 1.8vh, 1.15rem);
   flex-direction: column;
 }
 
 .mark {
   position: relative;
   display: grid;
-  width: 106px;
-  height: 106px;
-  margin: 5px auto 28px;
+  /* The single biggest block above the headline, and it competes for height,
+     so it hangs on vh and only one axis is clamped: 68 -> 106.4px, live
+     716-1120 tall. On a 1280x720 laptop that is 68px instead of a flat 106. */
+  width: clamp(4.25rem, 9.5vh, 6.65rem);
+  height: auto;
+  aspect-ratio: 1;
+  /* 4 -> 7.2px (live 571-1029) and 14.4 -> 28px (live 554-1077). */
+  margin: clamp(.25rem, .7vh, .45rem) auto clamp(.9rem, 2.6vh, 1.75rem);
   place-items: center;
 }
 
 .mark > span {
   position: absolute;
   inset: 0;
-  border: 1px solid rgba(32, 33, 28, .22);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
   border-radius: 50%;
 }
 
+/* The insets were 14px and 28px against a fixed 106px circle. Now that the
+   circle shrinks to 68px on a low laptop, a 28px inset would leave a 12px stub
+   and the three rings would collapse into each other. As percentages of the
+   (square) mark they keep the original proportion at every size:
+   14/106 = 13.2%, 28/106 = 26.4%. */
 .mark > span:nth-child(2) {
-  inset: 14px;
+  inset: 13.2%;
 }
 
 .mark > span:nth-child(3) {
-  inset: 28px;
+  inset: 26.4%;
 }
 
 .mark strong {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 32px;
-  height: 32px;
+  /* Rides the same vh axis as the circle it sits in: 24 -> 32px, live 828-1103
+     tall. aspect-ratio replaces the copied height. */
+  width: clamp(1.5rem, 2.9vh, 2rem);
+  height: auto;
+  aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
-  color: #fff1e5;
-  background: #596248; /* was #7e896b — 3.3:1 with the glyph; now 5.8:1 */
-  font: 400 16px/1 "Sansation-Regular", sans-serif;
+  color: var(--cream-09);
+  background: var(--olive-09); /* was #7e896b — 3.3:1 with the glyph; now 5.8:1 */
+  font: 400 clamp(.8rem, 1.4vh, 1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .root[data-status="failed"] .mark strong,
 .root[data-status="canceled"] .mark strong {
-  background: #8a5147; /* was #9d6258 — 4.4:1; now 5.7:1 */
+  background: var(--clay-15); /* was #9d6258 — 4.4:1; now 5.7:1 */
 }
 
 .copy {
@@ -54,104 +85,208 @@
 }
 
 .eyebrow {
-  color: rgba(32, 33, 28, .66);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  /* .75rem is the legibility floor for this caption, so it deliberately stands
+     on the floor across laptop heights and rises only on a tall screen:
+     12 -> 14.4px, live 1044-1252 tall. Above 1921 the root-rem ramp lifts the
+     floor itself (12 -> 15.9px at 2552 wide), which px could never do. */
+  font: 600 clamp(.75rem, 1.15vh, .9rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .copy h1 {
-  margin: 14px auto 17px;
-  font: 400 clamp(48px, 13vw, 75px)/.82 "Times New Roman", serif;
+  /* Was 8.8 -> 17.6px (live 568-1136) and 10.4 -> 21.6px (live 547-1137), i.e.
+     two more floors that could only ever bind below ~550-570px of window height.
+     Everything the site ships is either taller than that (every laptop, and
+     portrait 320x568 at 8.804 and 10.79px) or is the phone held sideways, so
+     these two were laptop numbers standing on the screen that can least afford
+     them. Floors lowered to 4.8 and 6px; live bands now 310-1136 and 316-1137,
+     which puts 320x568 and 568x320 alike on the live vh member and moves nothing
+     at 660 and above. 8.2px of document back at 568x320, none of it type. */
+  margin: clamp(.3rem, 1.55vh, 1.1rem) auto clamp(.375rem, 1.9vh, 1.35rem);
+  /* Was clamp(48px, 13vw, 75px): the ends were in px, so the ramp above 1921
+     could not lift them, and 13vw reached the 75px ceiling at 577px wide — the
+     entire live band sat below the smallest phone we ship. The axis is vh, not
+     vw, because the card's width is capped at 640px: this headline competes for
+     the height of the window, not its width.
+     40 -> 75.2px, live 576-1090 tall.
+
+     The middle term is 6.9vh, not 5.8. 4.7rem IS the design's 75px, and with 5.8vh the
+     ceiling was only reached on a screen 1297px tall — above every landscape viewport we
+     ship except the 2K one, so a 1920x1080 desktop got 62.6px and the design size existed
+     nowhere. That is the same miscalibration as the clamp(48px, 13vw, 75px) it replaced,
+     mirrored: there the live band sat entirely below the range, here entirely above it.
+     6.9vh lands on 74.5px at 1080 and still gives the low laptop its shrink — 49.7 at 720,
+     53 at 768, 55.2 at 800 — which is where the height for the receipt comes from. */
+  font: 400 clamp(2.5rem, 6.9vh, 4.7rem)/.82 "Times New Roman", serif;
   letter-spacing: -.05em;
 }
 
 .copy h1 em {
   display: block;
-  color: #7e896b;
+  color: var(--olive-19);
   font-weight: 400;
 }
 
 .root[data-status="failed"] .copy h1 em,
 .root[data-status="canceled"] .copy h1 em {
-  color: #9d6258;
+  color: var(--clay-22);
 }
 
 .copy p {
+  /* Content-relative and correct as it is — it scales with the font below. */
   max-width: 42ch;
   margin: 0 auto;
   /* The one sentence that says what happened to the customer's money —
      body floor and AA contrast, not caption-and-atmosphere. */
-  color: rgba(32, 33, 28, .7);
-  font: 400 16px/1.55 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .7);
+  /* Prose, so vw: 16 -> 17.6px, live 1391-1530.
+     The floor is 1rem, not .9rem. 16px was not a leftover px value here — it was set
+     deliberately by the contrast pass (see the comment above), and .9rem put this sentence
+     at 14.4-14.7px on every laptop, i.e. undid that decision on the axis nobody was
+     looking at. A floor that stands still across the laptop range is the correct shape for
+     a floor; the ramp still lifts it (23.4px at 2552 wide). */
+  font: 400 clamp(1rem, 1.333vw, 1.167rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .receipt {
-  margin-top: 34px;
-  border: 1px solid rgba(32, 33, 28, .2);
-  background: rgba(255, 247, 236, .22);
+  /* 16 -> 34.4px, live 500-1075 tall. */
+  margin-top: clamp(1rem, 3.2vh, 2.15rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  background: rgb(var(--cream-10-rgb) / .22);
 }
 
 .receiptHeader,
 .receiptTotal {
   display: flex;
   justify-content: space-between;
-  gap: 15px;
-  padding: 13px;
-  border-bottom: 1px solid rgba(32, 33, 28, .17);
-  font: 600 12px/1 "Sansation-Regular", sans-serif;
+  /* 12 -> 17.6px, live 1044-1530. */
+  gap: clamp(.75rem, 1.15vw, 1.1rem);
+  /* Not a breakpoint's job, and not a size: it is what this row does when the two
+     captions no longer fit beside each other. Measured at 12px with .12em tracking,
+     "OBJEDNÁVKA #104207" and "2. 9. 2026" want 261px of a 214.8px line once the phone
+     held sideways puts the receipt in a half-width column, and without this the FIRST
+     span breaks instead — "OBJEDNÁVKA" over "#104207", with the date parked beside the
+     pair. Wrapping the flex line drops the date to its own line and keeps the order
+     number whole. Inert everywhere it already fits, which is every other viewport in
+     the matrix, portrait 320 included (measured: one line, six-digit display_id).
+     Row gap written separately: the `gap` above is the column gap this row was tuned
+     for, and 12px of it between two stacked captions is a paragraph break.
+     2 -> 3.2px, live 500-800 tall. */
+  flex-wrap: wrap;
+  row-gap: clamp(.125rem, .4vh, .2rem);
+  /* Split axes: 8.8 -> 13.6px on height (live 587-907),
+     9.6 -> 14.4px on width (live 960-1440). */
+  padding: clamp(.55rem, 1.5vh, .85rem) clamp(.6rem, 1vw, .9rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .17);
+  /* 12 -> 14.4px, live 1263-1516. */
+  font: 600 clamp(.75rem, .95vw, .9rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .receiptHeader span:last-child {
-  color: rgba(32, 33, 28, .66);
+  color: rgb(var(--ink-05-rgb) / .66);
 }
 
 .item {
+  /* This row is where the receipt's height lives: three of them were 231px of
+     the measured 312. The thumbnail size used to be written twice — once as the
+     grid track, once as the image's width and height. One geometry, one name:
+     40 -> 54.4px, live 769-1046 tall. */
+  --thumb: clamp(2.5rem, 5.2vh, 3.4rem);
+
   display: grid;
-  grid-template-columns: 54px 1fr auto;
-  gap: 12px;
+  grid-template-columns: var(--thumb) 1fr auto;
+  /* 9.6 -> 14.4px, live 1010-1516. */
+  gap: clamp(.6rem, .95vw, .9rem);
   align-items: center;
-  padding: 11px 13px;
-  border-bottom: 1px solid rgba(32, 33, 28, .13);
+  /* 7.2 -> 12.8px on height (live 533-948), 9.6 -> 14.4px on width. */
+  padding: clamp(.45rem, 1.35vh, .8rem) clamp(.6rem, 1vw, .9rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .13);
 }
 
 .item img {
-  width: 54px;
-  height: 54px;
+  width: var(--thumb);
+  height: auto;
+  aspect-ratio: 1;
   object-fit: cover;
 }
 
 .item div {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: .1875rem;
+  /* The 1fr track's automatic minimum is min-content, i.e. the longest unbreakable
+     run in the product title. A hyphenated SKU breaks on its hyphens and wraps, but a
+     real Czech compound or a hyphen-free SKU does not, and it pushes the whole grid
+     wider than the card — the one latent break into horizontal scroll on this page
+     (everything else measured sideScroll 0 on all seven phone viewports). min-width: 0
+     hands the track back its say; the break opportunity itself comes from the rule
+     below, and the two only work as a pair. */
+  min-width: 0;
 }
 
 .item strong,
 .item span {
-  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+  /* 13.12 -> 15.2px, live 1286-1490.
+     The floor was .78rem (12.48px), and the axis is the reason it had to move. This is
+     the only type in the component that hangs on vw, which is correct — it is the one
+     run of text whose fit is decided by the width of the 640px card, not by the height
+     of the window. But vw makes WIDTH the scarce axis, and an upright tablet is the one
+     shape where the scarce axis is the narrow one: 1.02vw is 7.83px at 768 and 10.44px
+     at 1024, both far under the floor, so both tablets sat on it at 12.48px while a
+     1366x768 laptop got 13.93px from the live member. The same 640px card was therefore
+     setting the most important line of the receipt — the name of the thing that was
+     bought — SMALLER on an iPad Pro than on the narrowest laptop we ship, on a screen
+     held closer to the face. A breakpoint would be the wrong instrument for that: the
+     value is right on the laptop and low on the tablet, which is a floor that was set
+     too low, not a second kind of layout.
+     .82rem is the floor .receiptTotal below already stands on, so the receipt now has
+     one floor rather than two. 1366x768 does not move (1.02vw = 13.93 is still between
+     13.12 and 15.2, i.e. still the live member); both tablets and every phone go
+     12.48 -> 13.12. The live band starts at 1286 instead of 1224 and still ends at
+     1490, so it stays inside the 1200-1500 window where the users are. Ceiling and
+     middle term untouched — this is one end of one clamp. */
+  font: 400 clamp(.82rem, 1.02vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
+}
+
+.item strong {
+  /* The other half of the pair above: with min-width: 0 the box may now be narrower
+     than the word, so the word has to be allowed to break somewhere. `anywhere` and not
+     `break-word` on purpose — only `anywhere` is taken into account when the browser
+     computes min-content, which is the size that was overflowing. */
+  overflow-wrap: anywhere;
 }
 
 .item small {
-  color: rgba(32, 33, 28, .66);
-  font: 400 13px/1.3 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .66);
+  /* Deliberately the same clamp as the pair above, line height apart — the quantity is
+     read in the same glance as the title it sits under, and two floors here would be
+     the same size written twice. Moved with it: .78 -> .82rem. */
+  font: 400 clamp(.82rem, 1.02vw, .95rem)/1.3 "Sansation-Regular", sans-serif;
 }
 
 .receiptTotal {
   border: 0;
-  font-size: 14px;
+  /* 13.1 -> 16px, live 1193-1454. */
+  font-size: clamp(.82rem, 1.1vw, 1rem);
   letter-spacing: 0;
   text-transform: none;
 }
 
 .actions {
   display: flex;
-  margin-top: auto;
-  padding-top: 30px;
+  /* margin-top: auto is gone. With the frame holding the window height and this
+     box no longer stretched against it, `auto` only produced a dead band as
+     tall as the whole receipt on a 2552x1351 screen (actions at y=1188 while
+     the receipt ended near 890). The block now flows straight after the
+     content, which is what the large-monitor screenshot asked for. */
+  /* 16 -> 30.4px (live 533-1013) and 8.8 -> 13.6px (live 704-1088). */
+  padding-top: clamp(1rem, 3vh, 1.9rem);
   flex-direction: column;
-  gap: 13px;
+  gap: clamp(.55rem, 1.25vh, .85rem);
   align-items: center;
 }
 
@@ -164,11 +299,131 @@
 }
 
 .secondary {
-  padding: 8px 3px;
+  /* 6.4 -> 10.4px, live 582-945 tall. The 3px side inset is a text nudge, in
+     rem so the ramp carries it. */
+  padding: clamp(.4rem, 1.1vh, .65rem) .1875rem;
   border: 0;
   border-bottom: 1px solid currentColor;
-  color: rgba(32, 33, 28, .72);
+  color: rgb(var(--ink-05-rgb) / .72);
   background: transparent;
   cursor: pointer;
-  font: 400 15px/1.2 "Sansation-Regular", sans-serif;
+  /* Same clamp as the primary CTA's label beside it, so the two stay in step:
+     15 -> 17px, live 1304-1478. .9375rem is the 15px UI floor. */
+  font: 400 clamp(.9375rem, 1.15vw, 1.0625rem)/1.2 "Sansation-Regular", sans-serif;
+}
+
+/* ===========================================================================
+   PHONE HELD SIDEWAYS  —  phs (>=480 wide, <=520 tall), which 932x430 matches too
+   ===========================================================================
+
+   Every clamp above sits on its rem floor here, because vh is the scarce axis and
+   320px of it is less than any laptop has. Measured with three receipt lines, all
+   floors active: <main> is 630.2px tall. What the page can give it is
+
+       320 - header 55.2 - 2 x flow padding 10.88  =  243.0   (568x320)
+       430 - header 58.8 - 2 x flow padding 14.62  =  342.0   (932x430)
+
+   so the shortfall is 387 and 288px. That is not a sizing problem and no clamp can
+   pay it: the floors are the same floors a 1220x660 laptop stands on (.mark's 4.25rem
+   floor is live there — 9.5vh = 62.7 < 68), so lowering one to fit the phone moves the
+   laptop too. Round 1 calibrated them; they stay.
+
+   What pays it is a change of KIND. The stack becomes two columns:
+
+       column 1   .mark + .copy      "what happened"
+       column 2   .receipt + .actions  "what you bought, what to do next"
+
+   and 630px of stacked boxes becomes max(col 1, col 2). Multi-column, not grid: the two
+   columns have to flow INDEPENDENTLY, and a grid's rows are shared, so a 2x2 grid would
+   give max(mark, receipt) + max(copy, actions) — copy alone is 208px in a half-width
+   column, which would leave the receipt about 110px and put the whole shortfall back.
+   `break-before: column` makes the split deterministic instead of leaving it to the
+   balancer, which would otherwise be free to cut the headline in half.
+
+   Measured after (three lines, status success): 932x430 doc = 430 = the window, primary
+   CTA 87.7px above the fold; 568x320 doc = 353, i.e. 33px of overflow against the 110
+   allowed, CTA 40.3px above the fold, nothing clipped by the frame, sideScroll 0.
+
+   No size below is new geometry invented for the phone: the mark keeps a clamp and the
+   receipt's cap is a clamp on vh, so both still ride the window rather than a constant.
+
+   Written into phs alone, not phs + phl: phs is >=480 and <=520 tall, so 932x430
+   matches it as well, and a phl copy would be a second set of the same numbers. phl
+   would only earn a block of its own if 932 wanted a different SHAPE — a different
+   column ratio, say — and measured, it does not.
+   =========================================================================== */
+@include h(phs) {
+  .root {
+    /* `columns` is ignored on a flex container, so the column direction goes back to
+       block flow and the fragmentation does the stacking instead. */
+    display: block;
+    columns: 2;
+    /* 16 -> 28px, live 727-1272 wide: live at 932, on the floor at 568. */
+    column-gap: clamp(1rem, 2.2vw, 1.75rem);
+  }
+
+  .mark {
+    /* 68px of ring plus 18.4px of margin is 86.4px of pure ornament on a screen that
+       owns 320px of height in total. It has to stay VISIBLE — it is the only thing on
+       the page that says "paid" without being read — so it shrinks, it does not go.
+       40 -> 51.6px, live 334-467 tall: the phone-landscape band is 320-430, so the ring
+       is on its floor at 568x320 and on the live member at 932x430, and the 3.5rem
+       ceiling is only reached at 467 — past phs's own 520px height bound, so this can
+       never be the value a laptop sees. The base clamp is untouched; its 4.25rem floor
+       is the one a 1220x660 laptop stands on. */
+    width: clamp(2.5rem, 12vh, 3.5rem);
+    /* 6.4 -> 8.6px. The top margin goes to zero — the root's own top padding already
+       separates the ring from the card edge, and 4px on top of it was a second gap. */
+    margin: 0 auto clamp(.4rem, 2vh, .55rem);
+  }
+
+  .mark strong {
+    /* Held to the same 35% of the ring the base pair has (24/68), so the glyph does not
+       become a lid on the smaller circle: 14 -> 18px against a 40 -> 51.6px ring. */
+    width: clamp(.875rem, 4.2vh, 1.125rem);
+    /* .75rem is the same legibility floor the eyebrow stands on. At 320 tall this is
+       12px inside a 14px disc, which is the tightest the pair ever gets and still the
+       right way round — the glyph is a mark, and shrinking it below the floor to keep a
+       ratio would be trading the readable half for the decorative one. */
+    font-size: clamp(.75rem, 3vh, .875rem);
+  }
+
+  .receipt {
+    /* Starts column 2. Everything before it therefore stays in column 1, which is what
+       makes the split a decision rather than a balancing outcome. */
+    break-before: column;
+    /* The 16px that separated it from the copy in the stack; at the top of a column it
+       is a gap against nothing. */
+    margin-top: 0;
+    /* 136 -> 192px, live 324-457 tall: 136 at 568x320 and 180.6 at 932x430, which is
+       what column 2 has left once .actions has taken its 112.8px out of the budget
+       above. The rest of the receipt rolls. Three lines measure 229.4px and six measure
+       395.6, and the cap is why the page height is the same either way — this is where
+       the overflow the phone could not afford goes. */
+    max-height: clamp(8.5rem, 42vh, 12rem);
+    /* Both axes written out. `overflow-y: auto` alone computes overflow-x to auto as
+       well, and the receipt would gain a horizontal scrollbar it has no content for. */
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Reaching the end of the list must not carry on into the page. Lenis is not the
+       problem here — LenisContext returns before constructing on
+       (hover: none) and (pointer: coarse), so on a real phone it never runs and the
+       finger drives the native scroller — this is the native chaining. */
+    overscroll-behavior: contain;
+  }
+
+  .actions {
+    /* The no-order case: /express-checkout/result/{status} renders the same <main>
+       without a receipt, and with nothing forcing a break the balancer would cut the
+       headline in half to fill two columns. This puts the buttons in column 2 instead.
+       Overridden immediately below when the receipt is there to do it. */
+    break-before: column;
+  }
+
+  .receipt + .actions {
+    /* With a receipt, the break belongs to the receipt and the buttons follow it down
+       column 2. Written after the rule it beats — it also outranks it on specificity,
+       but the order is the part that is guaranteed. */
+    break-before: auto;
+  }
 }

@@ -12,36 +12,20 @@
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(32,33,28,.5);
+    color: rgb(var(--ink-05-rgb) / .5);
   }
 
   .title {
     margin: 0;
-    font-size: clamp(2.25rem,3.2vw,3.8rem);
+    /* Býval tu clamp(2.25rem, 3.2vw, 3.8rem) a hned pod ním hb((lg/md/mdt: 1.8rem)) — tři
+       stopy stejnou hodnotou, které clamp zabily od 1200 nahoru (28.8px na 1200 i na 1920)
+       a na hranici 1199/1200 dělaly skok 36px → 28.8px. Jeden clamp, laděný na šířku
+       sloupce souhrnu (23.1–27.5rem), živé pásmo 1236–1891. */
+    font-size: clamp(1.7rem, 2.2vw, 2.6rem);
     line-height: .94;
     font-weight: 400;
     font-family: "Sentient-Regular",serif;
     color: inherit;
-    @include hb((
-      lg: (font-size: 1.8rem, line-height: 2rem),
-      md: (font-size: 1.8rem, line-height: 2rem),
-      mdt: (font-size: 1.8rem, line-height: 2rem),
-    ));
-
-    @include vb((
-      md: (font-size: 1.8rem, line-height: 2rem),
-      s: (font-size: 1.8rem, line-height: 2rem),
-    ));
-  }
-
-  .link {
-    text-decoration: none;
-    &:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
-
-    .button {
-        width: 100%;
-        height: 2.5rem; /* h-10 */
-    }
   }
 
 }
@@ -49,53 +33,53 @@
 .LinkButton{
     width: 100%;
     height: auto;
-    min-height: 44px;
+    min-height: 2.75rem;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 12px 28px -22px rgba(0,0,0,.9);
-    border-radius: 25px;
+    box-shadow: 0 .75rem 1.75rem -1.375rem rgb(var(--black-01-rgb) / .9);
+    border-radius: 1.5625rem;
+    /* Odkaz sám — dřív to viselo na `.link`, kterou žádný render nenasazuje (summary.tsx
+       předává `s.LinkButton`), takže focus ring i zrušené podtržení byly mrtvý kód. */
+    text-decoration: none;
 
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid var(--focus-ring);
+      outline-offset: 4px;
+    }
+
+    /* Pět vb položek (lg/md/s/sm/xs) nastavovalo totéž fit-content; v(xs) je 320px na výšku,
+       takže stejně vyhrávala v celém portrétu. Jedna položka, stejný výsledek — na portrét
+       sahá druhé kolo. */
     @include vb((
-      lg: (width: fit-content, height: fit-content),
-      md: (width: fit-content, height: fit-content),
-      s: (width: fit-content, height: fit-content),
-      sm: (width: fit-content, height: fit-content),
       xs: (width: fit-content, height: fit-content),
     ));
     .button{
         position: relative;
         display: grid;
         width: 100%;
-        height: 50px;
-        padding: 0 28px;
+        /* Dřív 50px v základu a další pět vb položek s 50/52px, kde v(xs) beztak přebilo
+           všechny ostatní na 50px. Jedna výška na vh: 44px na 660, 47 na 900, 56 na 1351. */
+        height: clamp(2.75rem, 5.2vh, 3.5rem);
+        padding: 0 1.75rem;
         place-items: center;
         cursor: pointer;
-        border-radius: 25px;
+        border-radius: 1.5625rem;
         overflow: hidden;
-        border: 1px solid #20211c;
+        border: 1px solid var(--ink-05);
         box-shadow: none;
-        background-color: #ffe8d6;
-        color: #20211c;
+        background-color: var(--cream-06);
+        color: var(--ink-05);
         transition:
           color 180ms ease 300ms,
           border-color 280ms ease;
 
         &:hover,
         &:focus-visible {
-          border-color: #20211c;
-          color: #ffe8d6;
+          border-color: var(--ink-05);
+          color: var(--cream-06);
         }
-
-        @include vb((
-          lg: (width: 100%, height: 52px),
-          md: (width: 100%, height: 52px),
-          s: (width: 100%, height: 50px),
-          sm: (width: 100%, height: 50px),
-          xs: (width: 100%, height: 50px),
-        ));
-
     }
 }
 
@@ -104,7 +88,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: #20211c;
+  background: var(--ink-05);
   transform-origin: left center;
 }
 
@@ -112,5 +96,7 @@
   position: relative;
   z-index: 1;
   white-space: nowrap;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  /* Živé pásmo 1295–1524 (na 1440 vyjde 15.1px, tedy dnešek). Vedoucím navržených .78vw
+     by podlahu pustilo až na 1744, takže by od 1200 do 1744 svítilo 13.6px místo 15. */
+  font: 400 clamp(.85rem, 1.05vw, 1rem)/1 "Sansation-Regular", sans-serif;
 }

@@ -4,15 +4,22 @@ import { motion } from "framer-motion"
 import type { Variants } from "framer-motion"
 import styles from "./style.module.scss"
 
+/*
+ * 8px je 0.74vh referenční obrazovky 1080; souřadnice patří na vh, ať si gesto
+ * drží svůj podíl okna. Oba konce nesou jednotku ("0vh", ne holá 0) — framer
+ * interpoluje spolehlivě jen při stejném tvaru výrazu na obou stranách.
+ * Že vh v této verzi (12.23) doběhne, měří .rdshots/zz-lead-vh-motion.cjs.
+ * clip-path je v procentech vlastního prvku, tedy bezrozměrný vůči viewportu.
+ */
 const errorVariants: Variants = {
   hidden: {
     opacity: 0,
-    y: 8,
+    y: "0.74vh",
     clipPath: "inset(0 100% 0 0)",
   },
   visible: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     clipPath: "inset(0 0% 0 0)",
   },
 }

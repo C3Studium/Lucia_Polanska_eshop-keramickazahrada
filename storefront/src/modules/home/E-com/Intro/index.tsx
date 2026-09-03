@@ -4,8 +4,17 @@ import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import Carousel from "./Carousel";
 import Intro from "./intro";
+import { button } from "@lib/util/site-copy";
+import type { CopyBlock, CopyBlocks } from "@lib/util/site-copy";
 
-export default function IntroSection({ data }: { data?: any }) {
+export default function IntroSection({
+    block,
+    copy,
+}: {
+    block?: CopyBlock
+    /** Celá mapa — karusel v galerii drží vlastní tlačítko. */
+    copy?: CopyBlocks
+}) {
     const chapterRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: chapterRef,
@@ -33,13 +42,18 @@ export default function IntroSection({ data }: { data?: any }) {
                 className="home__introChapter__Opening"
                 style={{ y: introY, opacity: introOpacity }}
             >
-                <Intro data={data} />
+                <Intro block={block} />
             </motion.div>
             <motion.div
                 className="home__introChapter__Gallery"
                 style={{ y: carouselY }}
             >
-                <Carousel />
+                {/* Karusel má vlastní blok — je to samostatná sekce s vlastní lištou
+                    („02 · Výběr z ateliéru"), ne pokračování té nad ním. */}
+                <Carousel
+                    block={copy?.["index.ecom-carousel"]}
+                    cta={button(copy, "index.zakazka")}
+                />
             </motion.div>
         </div>
     )

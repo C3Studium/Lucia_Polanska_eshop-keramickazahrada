@@ -1,5 +1,7 @@
 import { Metadata } from "next"
 
+import { getFiles, getPageCopy } from "@lib/data/site-copy"
+import LegalDownloads from "@modules/legal/Downloads"
 import LegalDocument, {
   type LegalSectionData,
 } from "@modules/legal/LegalDocument"
@@ -81,7 +83,13 @@ const sections: LegalSectionData[] = [
   },
 ]
 
-export default function Page() {
+export default async function Page() {
+  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
+  const [copy, files] = await Promise.all([
+    getPageCopy("cookies"),
+    getFiles("cookies"),
+  ])
+
   return (
     <LegalDocument
       code="DATA · 05"
@@ -90,6 +98,8 @@ export default function Page() {
       accent="Krátce a jasně."
       description="Co cookies jsou, k čemu je používáme a jak si je můžete v prohlížeči vypnout."
       sections={sections}
+      block={copy["cookies.text"]}
+      downloads={<LegalDownloads files={files} />}
     />
   )
 }

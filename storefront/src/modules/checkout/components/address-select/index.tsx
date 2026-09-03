@@ -19,11 +19,14 @@ type AddressSelectProps = {
   ) => void
 }
 
+/* Svislé nájezdy jsou ve vh, ne v px — panel se otevírá dolů, tak patří na
+   výškovou osu. Obě strany interpolace mají stejný tvar výrazu (řetězec s vh),
+   jinak framer přepne typ hodnoty a nájezd skočí. -0.75vh je 8.1px na 1080. */
 const addressOptionsVariants: Variants = {
   closed: {
     opacity: 0,
     height: 0,
-    y: -8,
+    y: "-0.75vh",
     transition: {
       height: { duration: 0.36, ease: [0.76, 0, 0.24, 1] },
       opacity: { duration: 0.18, ease: "easeIn" },
@@ -32,7 +35,7 @@ const addressOptionsVariants: Variants = {
   open: {
     opacity: 1,
     height: "auto",
-    y: 0,
+    y: "0vh",
     transition: {
       height: { duration: 0.5, ease: [0.76, 0, 0.24, 1] },
       opacity: { duration: 0.24, delay: 0.12, ease: "easeOut" },
@@ -43,10 +46,10 @@ const addressOptionsVariants: Variants = {
 }
 
 const addressOptionVariants: Variants = {
-  closed: { opacity: 0, y: 8 },
+  closed: { opacity: 0, y: "0.75vh" },
   open: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     transition: {
       duration: 0.4,
       ease: [0.22, 1, 0.36, 1],
@@ -119,9 +122,13 @@ const AddressSelect = ({
                 animate="open"
                 exit="closed"
               >
+                {/* data-lenis-prevent: seznam je vlastní scroll kontejner
+                    (max-height + overflow-y), jinak Lenis spolkne wheel i touch
+                    a odscrolluje stránku pod otevřeným panelem. */}
                 <Listbox.Options
                   static
                   className={s.accountAddressOptions}
+                  data-lenis-prevent
                   data-testid="shipping-address-options"
                 >
                   {addresses.map((address, index) => (

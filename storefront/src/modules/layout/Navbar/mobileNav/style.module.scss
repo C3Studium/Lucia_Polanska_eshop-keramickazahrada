@@ -67,7 +67,7 @@
   width: 100%;
   height: 100%;
   border: 0;
-  background: rgba(24, 27, 19, 0.42);
+  background: rgb(var(--ink-02-rgb) / .42);
   backdrop-filter: blur(6px);
   cursor: default;
 }
@@ -80,10 +80,10 @@
   max-height: calc(100dvh - 90px);
   overflow-y: auto;
   padding: 10px;
-  border: 1px solid rgba(43, 48, 35, 0.16);
+  border: 1px solid rgb(var(--ink-09-rgb) / .16);
   border-radius: 24px;
   background: color-mix(in srgb, var(--bgWhite) 96%, transparent);
-  box-shadow: 0 24px 70px rgba(20, 23, 16, 0.22);
+  box-shadow: 0 24px 70px rgb(var(--ink-02-rgb) / .22);
 
   /* Sideways on a phone the bar sits higher and there is far less room beneath it. */
   @include phs-h {
@@ -100,11 +100,33 @@
   list-style: none;
 
   li {
-    border-bottom: 1px solid rgba(43, 48, 35, 0.1);
+    border-bottom: 1px solid rgb(var(--ink-09-rgb) / .1);
   }
 
   li:last-child {
     border-bottom: 0;
+  }
+
+  /*
+   * The page you are on. A rule down the left edge rather than a colour change: the labels are
+   * already the darkest thing in the panel, so there is no darker to go, and a lighter "active"
+   * would read as disabled. The mark sits in the padding, so nothing shifts when it appears.
+   */
+  a[data-current] {
+    position: relative;
+    color: var(--darkOlive, var(--olive-15));
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 3px;
+      height: 1.15em;
+      border-radius: 999px;
+      background: currentColor;
+      transform: translateY(-50%);
+    }
   }
 
   a,

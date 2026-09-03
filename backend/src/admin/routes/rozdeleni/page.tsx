@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { CollectionDrawer } from "../../components/collection-drawer";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
@@ -40,6 +41,8 @@ const kindBadge: Record<string, { label: string; color: "green" | "orange" | "bl
 const Inner = () => {
   const queryClient = useQueryClient();
   const [collectionId, setCollectionId] = useState<string | null>(null);
+  // Panel „Zobrazit kolekci" — jméno, fotka a popisek vybrané kolekce.
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [categoryId, setCategoryId] = useState<string | "none" | null>(null);
   const [newCollection, setNewCollection] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -517,6 +520,14 @@ const Inner = () => {
                     <img src={(collection.metadata as any).image} alt=""
                       className="h-8 w-8 rounded object-cover" />
                   )}
+                  {/* Jméno, fotka a popisek na jednom místě — všechno, co o kolekci
+                      uvidí zákazník. Drobné „Nastavit fotku" tu zůstalo pro rychlou
+                      výměnu obrázku bez otevírání panelu. */}
+                  <button type="button"
+                    className="text-ui-fg-interactive txt-xsmall cursor-pointer hover:underline"
+                    onClick={() => setDrawerOpen(true)}>
+                    Zobrazit kolekci
+                  </button>
                   <label className="text-ui-fg-interactive txt-xsmall cursor-pointer hover:underline">
                     {(collection.metadata as any)?.image ? "Změnit fotku" : "Nastavit fotku"}
                     <input type="file" accept="image/*" className="hidden"
@@ -1262,6 +1273,15 @@ const Inner = () => {
 
       {/* Lightbox — full-size photos of the clicked piece. */}
       <ProductLightbox product={lightbox} onClose={() => setLightbox(null)} />
+
+      {/* Panel vpravo: jméno, fotka a popisek vybrané kolekce — všechno, co o ní
+          uvidí zákazník, na jednom místě. */}
+      <CollectionDrawer
+        collection={collections.find((c) => c.id === collectionId) ?? null}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onSaved={invalidate}
+      />
     </Container>
   );
 };

@@ -2,9 +2,14 @@
 
 .LinkButton{
     width: fit-content;
-    /* Target floor (SC 2.5.8): was a flat 40px. */
-    height: 44px;
-    min-height: 44px;
+    /* Cíl podle SC 2.5.8 (dřív plochých 40px). Teď v rem, ne v px: 2.75rem je přesně
+       44px, dokud je root 16px — a ten je 16px všude pod 1921, protože ramp
+       v globals.scss má podlahu 16px. Práh dotykového cíle tedy nikde neklesne.
+       Nad 1921 pilulku zvedne ramp spolu s popiskem, který font-size dědí z rootu
+       (na 2552x1351 je z něj 21.27px). V px zůstávala pilulka 44px vysoká i na 2K
+       a text v ní byl namačkaný do 44px, které mu už nepatřily. */
+    height: 2.75rem;
+    min-height: 2.75rem;
     position: relative;
     display: flex;
     justify-content: center;
@@ -19,7 +24,9 @@
         width: 100%;
         /* The button, not its wrapper, is the target axe measures. */
         height: 100%;
-        min-height: 44px;
+        /* Stejná hodnota jako na .LinkButton, a proto stejná jednotka — kdyby tahle
+           zůstala v px, na 2K by uvnitř 58.5px vysoké pilulky seděl 44px vysoký cíl. */
+        min-height: 2.75rem;
         cursor: pointer;
         overflow: hidden;
         border: none;
@@ -27,8 +34,14 @@
         background-color: transparent;
         border-radius: 0;
 
+        /* Portrét (v(s) = min-width 400px + orientation: portrait). Jen převod
+           jednotek, geometrie beze změny:
+           root je v portrétu vždycky 16px — ramp v globals.scss běží přes h(xxl)
+           a h-query() ke každému dotazu přilepuje `and (orientation: landscape)`,
+           takže sem nikdy nedosáhne. 90px = 5.625rem, 44px = 2.75rem, na milimetr
+           totéž co dosud. Tvar téhle položky patří druhému kolu (telefony). */
         @include vb((
-            s: (width: 90px, height: 44px),
+            s: (width: 5.625rem, height: 2.75rem),
         ));
 
         .slider{
@@ -65,23 +78,41 @@
                         display: flex;
                         align-items: flex-start;
                         justify-content: center;
-                        gap: 2.5px;
+                        /* Mezera mezi popiskem a šipkou v em, ne v px: font-size sem
+                           přichází zvenčí (komponent žádnou typografii nemá), takže em
+                           je jediná jednotka, která ji drží v poměru k písmu na každém
+                           místě použití. 2.5px / 16px = 0.15625em — dnešní hodnota. */
+                        gap: 0.15625em;
                         &:nth-of-type(2){
                             width: fit-content;
                             position: absolute;
                             transform-origin: bottom center;
-                            transform: rotateX(-90deg) translateY(12px);
+                            /* Předsazení druhého řádku před překlopením. Musí být v poměru
+                               k výšce řádku, tedy k font-size — 12px / 16px = 0.75em, na
+                               16px přesně dnešních 12px. V px se na 2K popisek zvětšil
+                               (21.27px z rampu), ale posun zůstal 12px, takže se nápis
+                               překlápěl mimo osu. V em drží poměr 0.75 na každé velikosti:
+                               pilulka 2.75em textu, posun 0.75em — celý překlop je od
+                               1200 po 2552 tentýž tvar, jen zvětšený. */
+                            transform: rotateX(-90deg) translateY(0.75em);
                             opacity: 0;
                         }
                     }
                 }
+                /* Dědit, ne psát natvrdo. Jediný konzument tohohle tlačítka je prázdný
+                   košík (empty-cart-message), a ten stojí na tmavé ploše --ink-05:
+                   s --blackText (rgb(33,34,34)) vycházel kontrast 1.02:1, tedy CTA
+                   „Prozkoumat produkty“ bylo doslova černé na černém a nebylo vidět.
+                   Tailwind preflight dává `a { color: inherit }`, takže popisek teď
+                   bere barvu plochy, na které tlačítko stojí — na krémovém pozadí
+                   zůstane tmavý, na inkoustovém zesvětlá. Žádný hex nepřibyl. */
                 p{
                     margin: 0px;
-                    color: var(--blackText);
+                    color: inherit;
                 }
                 &:nth-of-type(2){
                     p{
-                        color: var(--blackText);
+                        color: inherit;
                     }
                 }
                 &:hover{
@@ -104,7 +135,14 @@
     }
 
     .Line{
+        /* !important tu nemá soupeře: v projektu žádné jiné globální `.Line` není
+           (ta v Navbar/productsButton je uvnitř CSS modulu, tedy jiná třída),
+           element v index.tsx nese jen className='Line' a framer-motion mu píše
+           inline transform (x), nikdy width. Nechávám ho být — odstranění nemění
+           render, ale vyžádalo by přeměření na všech landscape stopech a tenhle
+           průchod má být konzervativní. */
         width: 100% !important;
+        /* Vlásek — fyzická 1px linka, do rem nepatří. */
         height: 1px;
         background-color: var(--whiteBoarder);
     }

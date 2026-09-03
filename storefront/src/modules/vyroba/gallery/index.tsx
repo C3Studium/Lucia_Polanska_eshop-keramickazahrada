@@ -1,6 +1,9 @@
 "use client"
 
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 import Image from "next/image"
 import {
   motion,
@@ -89,7 +92,18 @@ type ProcessStep = (typeof processSteps)[number]
 
 export const firstProcessStep = processSteps[0]
 
-export function ProcessCopyVisual({ item }: { item: ProcessStep }) {
+export function ProcessCopyVisual({
+  item,
+  edit,
+}: {
+  item: ProcessStep
+  edit?: {
+    title?: Record<string, string | undefined>
+    text?: Record<string, string | undefined>
+    lead?: Record<string, string | undefined>
+    accent?: Record<string, string | undefined>
+  }
+}) {
   return (
     <>
       <div className="atelierProcess__index">
@@ -98,13 +112,16 @@ export function ProcessCopyVisual({ item }: { item: ProcessStep }) {
         <span>07</span>
       </div>
 
+      {/* Štítek zůstává v kódu — je to typografická ozdoba („Myšlenka · Funkce"),
+          ne věta, kterou by kdo přepisoval. */}
       <p className="atelierProcess__label">{item.label}</p>
-      <h2>{item.title}</h2>
+      <h2 {...edit?.title}>{item.title}</h2>
 
       <p className="atelierProcess__lead">
-        {item.lead} <em>{item.accent}</em>
+        <span {...edit?.lead}>{item.lead}</span>{" "}
+        <em {...edit?.accent}>{item.accent}</em>
       </p>
-      <p className="atelierProcess__body">{item.text}</p>
+      <p className="atelierProcess__body" {...edit?.text}>{item.text}</p>
     </>
   )
 }
@@ -114,11 +131,16 @@ export function ProcessImageVisual({
   imageStyle,
   edgeStyle,
   sizes = "(max-width: 760px) 100vw, 62vw",
+  stamp = "Ateliér · Písek",
+  editStamp,
 }: {
   item: ProcessStep
   imageStyle?: MotionStyle
   edgeStyle?: MotionStyle
   sizes?: string
+  /** Pravá půlka popisku fotky — z bloku `vyroba.kroky`, accent.2. */
+  stamp?: string
+  editStamp?: Record<string, string | undefined>
 }) {
   return (
     <>
@@ -132,11 +154,12 @@ export function ProcessImageVisual({
         aria-hidden="true"
       />
       <figcaption>
+        {/* Číslo a štítek jsou struktura (drží pořadí a navigaci), zůstávají v kódu. */}
         <span>
           {item.number} · {item.label}
         </span>
         <i />
-        <span>Ateliér · Písek</span>
+        <span {...editStamp}>{stamp}</span>
       </figcaption>
     </>
   )
@@ -146,10 +169,17 @@ function ImageLayer({
   item,
   index,
   progress,
+  edit,
+  stamp,
+  editStamp,
 }: {
   item: ProcessStep
   index: number
   progress: MotionValue<number>
+  /** Atributy překryvu pro tuhle fotku. Mimo náhled prázdný objekt. */
+  edit?: Record<string, string | undefined>
+  stamp?: string
+  editStamp?: Record<string, string | undefined>
 }) {
   const count = processSteps.length
   const segment = 1 / count
@@ -191,26 +221,53 @@ function ImageLayer({
     <motion.figure
       className="atelierProcess__image"
       style={{ clipPath, zIndex: index + 1 }}
+      {...edit}
     >
       <ProcessImageVisual
         item={item}
         imageStyle={{ y: imageY, scale: imageScale }}
         edgeStyle={{ opacity: edgeOpacity }}
+        stamp={stamp}
+        editStamp={editStamp}
       />
     </motion.figure>
   )
 }
+
+/*
+ * Vjezd a výjezd odstavce kapitoly — ve výšce okna, ne v pixelech.
+ *
+ * Bylo `[18, 0, -12]`, což framer bere jako px. To je 2 % a 1.33 % z 900px okna, na kterém
+ * se scéna skládala; na 1220×660 by ale týž pohyb byl 2.7 % a na 2552×1351 jen 1.3 %. Ve vh
+ * je to na každé obrazovce stejný díl obrazu. Výjezd jsou dvě třetiny vjezdu, odvozené,
+ * ne opsané. Všechny tři členy mají tvar „<číslo>vh", jinak přestanou být interpolovatelné.
+ */
+const COPY_ENTER_VH = 2
+const COPY_EXIT_VH = -(COPY_ENTER_VH * 2) / 3
+const COPY_TRAVEL = [
+  `${COPY_ENTER_VH}vh`,
+  "0vh",
+  `${COPY_EXIT_VH.toFixed(2)}vh`,
+]
 
 function CopyLayer({
   item,
   index,
   progress,
   isActive,
+  edit,
 }: {
   item: ProcessStep
   index: number
   progress: MotionValue<number>
   isActive: boolean
+  /** Atributy překryvu pro texty kroku. Mimo náhled prázdné. */
+  edit?: {
+    title?: Record<string, string | undefined>
+    text?: Record<string, string | undefined>
+    lead?: Record<string, string | undefined>
+    accent?: Record<string, string | undefined>
+  }
 }) {
   const count = processSteps.length
   const segment = 1 / count
@@ -238,7 +295,7 @@ function CopyLayer({
       start + segment * 0.16,
       Math.min(1, end),
     ],
-    [18, 0, -12]
+    COPY_TRAVEL
   )
 
   return (
@@ -247,7 +304,7 @@ function CopyLayer({
       style={{ opacity, y }}
       aria-hidden={!isActive}
     >
-      <ProcessCopyVisual item={item} />
+      <ProcessCopyVisual item={item} edit={edit} />
     </motion.article>
   )
 }
@@ -286,7 +343,60 @@ function ProgressStep({
   )
 }
 
-export default function Gallery() {
+export default function Gallery({
+  block,
+  texts,
+}: {
+  /** `vyroba.galerie` — fotky kroků. */
+  block?: CopyBlock
+  /** `vyroba.kroky` — nadpisy, odstavce a zvýrazněné konce. */
+  texts?: CopyBlock
+}) {
+  /* Scéna jede jen ze scrollu — bez tohohle by po zapnutí editace zůstaly anotace prázdné. */
+  useEditRerender()
+
+  /*
+   * Fotky z CMS, texty z kódu.
+   *
+   * `processSteps` nese obojí — číslo, nadpis, popis kroku i obrázek —, ale do
+   * CMS jde jen ten obrázek. Sedm kroků výroby je struktura stránky, ne obsah,
+   * který se mění: kdyby šlo v CMS ubrat krok, rozpadl by se scrollovací
+   * mechanismus, který na jejich počtu stojí. Fotku vyměnit lze kdykoli.
+   *
+   * Chybějící fotka v bloku znamená tu z kódu — galerie tak nikdy nemá díru.
+   */
+  const steps = processSteps.map((item, index) => {
+    const photo = block?.gallery?.[index]
+    /*
+     * Texty z bloku `vyroba.kroky`. Mapování je dané schématem `items`:
+     * `label` je nadpis kroku, `value` odstavec pod ním, `note` zvýrazněný
+     * konec věty. `lead` nese číslo, ale to se z CMS nebere — drží pořadí,
+     * na kterém stojí scrollování, a přepsat ho v CMS by rozbilo chování
+     * stránky, ne jen její text.
+     */
+    const copy = texts?.items?.[index]
+    return {
+      ...item,
+      src: photo?.url ?? item.src,
+      alt: photo?.alt?.trim() || item.alt,
+      title: copy?.label?.trim() || item.title,
+      text: copy?.value?.trim() || item.text,
+      accent: copy?.note?.trim() || item.accent,
+      /* `lead` v bloku dřív nesl číslo kroku, které se odsud stejně nečte
+         (pořadí drží kód) — slot teď patří uvozující větě, aby šla upravit. */
+      lead: copy?.lead?.trim() || item.lead,
+      /** Kolikátý krok to je, pro anotaci překryvu. */
+      cmsIndex: index,
+    }
+  })
+
+  const railLeft = texts?.accent?.[0]?.trim() || "Proces · Sedm kapitol"
+  const railRight = texts?.accent?.[1]?.trim() || "Od nápadu k hotovému kusu"
+  const stamp = texts?.accent?.[2]?.trim() || "Ateliér · Písek"
+  const outroEyebrow = texts?.accent?.[3]?.trim() || "Každý kus je jiný"
+  const outroLead = texts?.accent?.[4]?.trim() || "Stejný postup,"
+  const outroAccent = texts?.headline?.trim() || "pokaždé jiný výsledek."
+
   const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const { scrollYProgress } = useScroll({
@@ -323,29 +433,38 @@ export default function Gallery() {
     >
       <div className="atelierProcess">
         <header className="atelierProcess__header">
-          <span>Proces · Sedm kapitol</span>
+          <span {...editable(texts, "accent.0")}>{railLeft}</span>
           <i />
-          <span>Od nápadu k hotovému kusu</span>
+          <span {...editable(texts, "accent.1")}>{railRight}</span>
         </header>
 
         <div className="atelierProcess__stage">
-          {processSteps.map((item, index) => (
+          {steps.map((item, index) => (
             <ImageLayer
               item={item}
               index={index}
               progress={scrollYProgress}
+              edit={editable(block, `gallery.${index}`, "image")}
+              stamp={stamp}
+              editStamp={editable(texts, "accent.2")}
               key={item.number}
             />
           ))}
         </div>
 
         <div className="atelierProcess__copyStage">
-          {processSteps.map((item, index) => (
+          {steps.map((item, index) => (
             <CopyLayer
               item={item}
               index={index}
               progress={scrollYProgress}
               isActive={index === activeIndex}
+              edit={{
+                title: editable(texts, `items.${index}.label`),
+                text: editable(texts, `items.${index}.value`),
+                lead: editable(texts, `items.${index}.lead`),
+                accent: editable(texts, `items.${index}.note`),
+              }}
               key={item.number}
             />
           ))}
@@ -367,12 +486,14 @@ export default function Gallery() {
 
       <div className="atelierProcessMobile">
         <header>
-          <span>Proces · Sedm kapitol</span>
+          <span {...editable(texts, "accent.0")}>{railLeft}</span>
           <i />
         </header>
-        {processSteps.map((item) => (
+        {/* `steps`, ne `processSteps`: mobilní větev dřív četla přímo pole v kódu
+            a vyměněná fotka nebo přepsaný text z CMS se na telefonu neukázaly. */}
+        {steps.map((item, index) => (
           <article className="atelierProcessMobile__chapter" key={item.number}>
-            <figure>
+            <figure {...editable(block, `gallery.${index}`, "image")}>
               <Image src={item.src} alt={item.alt} fill sizes="100vw" />
               <figcaption>
                 {item.number} · {item.label}
@@ -380,21 +501,23 @@ export default function Gallery() {
             </figure>
             <div>
               <span>{item.number} / 07</span>
-              <h2>{item.title}</h2>
+              <h2 {...editable(texts, `items.${index}.label`)}>{item.title}</h2>
               <p className="atelierProcessMobile__lead">
-                {item.lead} <em>{item.accent}</em>
+                <span {...editable(texts, `items.${index}.lead`)}>{item.lead}</span>{" "}
+                <em {...editable(texts, `items.${index}.note`)}>{item.accent}</em>
               </p>
-              <p>{item.text}</p>
+              <p {...editable(texts, `items.${index}.value`)}>{item.text}</p>
             </div>
           </article>
         ))}
       </div>
 
       <div className="Gallery__outro">
-        <span>Každý kus je jiný</span>
+        <span {...editable(texts, "accent.3")}>{outroEyebrow}</span>
+        {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
         <h2>
-          Stejný postup,
-          <em> pokaždé jiný výsledek.</em>
+          <span {...editable(texts, "accent.4")}>{outroLead}</span>
+          <em {...editable(texts, "headline")}> {outroAccent}</em>
         </h2>
       </div>
     </section>

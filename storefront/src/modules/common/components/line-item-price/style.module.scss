@@ -1,36 +1,35 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-
 /* LineItemPrice component styles - SASS nesting */
 .root {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
   color: var(--blackText);
   align-items: flex-end;
-  padding-top: 0.25rem;
+
+  /* Vertical rhythm on the vertical axis. Floors are today's rendered values, so nothing
+     shrinks on a low laptop or a phone; they only grow on tall screens.
+     gap:          floor 8px up to 1081px tall, ceiling 11.2px from 1514px tall.
+     padding-top:  floor 4px up to 1081px tall, ceiling 5.6px from 1514px tall.
+     Both endpoints are rem, so the >=1921 ramp in globals.scss lifts them too. */
+  gap: clamp(0.5rem, 0.74vh, 0.7rem);
+  padding-top: clamp(0.25rem, 0.37vh, 0.35rem);
 
   .priceContainer {
     text-align: right;
-    font-size: 1.1rem;
+
+    /* Was: 1.1rem base + a descending hb()/vb() ladder. h-block() no longer emits @layer,
+       so at equal specificity the LAST emitted key won: xxs (>=400px landscape) and xs
+       (>=320px portrait). The whole desktop range therefore rendered 0.9rem and the
+       lg/md/mdt/sm rungs never applied once. Verified by compiling the module.
+       One clamp replaces both maps; the horizontal axis carries type.
+       Prostředek byl 1vw, tedy živé pásmo 1440–1760: podlaha svítila přes celý desktop.
+       1.15vw ho posouvá na 1252–1530, kam podle ARTEFAKTu patří. Podlaha .9rem je pořád
+       dnešní vykreslení, takže na 1200 se nic nehne; roste to teprve od 1252.
+       Oba krajní členy zůstávají v rem, takže je ramp nad 1921 dál zvedá. */
+    font-size: clamp(0.9rem, 1.15vw, 1.1rem);
     font-family: "Sansation-Regular";
     font-weight: 300;
     color: var(--blackText);
-    @include hb((
-      lg: (font-size: 1rem),
-      md: (font-size: 1rem),
-      mdt: (font-size: 1rem),
-      sm: (font-size: 1rem),
-      xs: (font-size: 0.9rem),
-      xxs: (font-size: 0.9rem),
-    ));
-
-    @include vb((
-      lg: (font-size: 1rem),
-      md: (font-size: 1rem),
-      s: (font-size: 0.9rem),
-      sm: (font-size: 0.9rem),
-      xs: (font-size: 0.9rem),
-    ));
 
     .originalLabel {
       color: var(--blackText);
@@ -46,24 +45,21 @@
     }
 
     .price {
-      font-size: 1.1rem;
+      /* Same defect: hb() md/sm (1rem) lost to xxs (0.95rem) on every landscape width,
+         and the vb() map was a flat 0.95rem in five copies.
+
+         Tohle je řádkový SOUČET a stojí v košíku přímo pod cenou za kus (LineItemUnitPrice,
+         .price = clamp(.95rem, 1.25vw, 1.15rem)) a na detailu objednávky hned vedle ní.
+         Dvě komponenty, jedna geometrie: součet musí být o stupeň nad jednotkovou cenou,
+         jinak se hierarchie obrátí. S původním clamp(.95rem, 1vw, 1.1rem) k tomu docházelo
+         od 1216 do 1520 (na 1440: součet 15.2 proti jednotkové 18.0 px).
+         Odvozeno, ne opsáno: podlaha o 0.8px nad podlahou jednotkové ceny a prostředek
+         dopočítaný tak, aby poměr držel ~1.04× na celém kontinuu —
+           1200 → 16.0 / 15.2   1366 → 17.8 / 17.1   1440 → 18.7 / 18.0   1500+ → 19.2 / 18.4
+         Živé pásmo 1231–1477. Nad 1921 vede strop 1.2rem, který zvedá ramp. */
+      font-size: clamp(1rem, 1.3vw, 1.2rem);
       font-weight: 400;
       font-family: "Sansation-Regular";
-
-      @include hb((
-        md: (font-size: 1rem),
-        sm: (font-size: 1rem),
-        xs: (font-size: 0.95rem),
-        xxs: (font-size: 0.95rem),
-      ));
-
-      @include vb((
-        lg: (font-size: 0.95rem),
-        md: (font-size: 0.95rem),
-        s: (font-size: 0.95rem),
-        sm: (font-size: 0.95rem),
-        xs: (font-size: 0.95rem),
-      ));
 
       &.discounted {
         color: var(--handle);

@@ -1,7 +1,11 @@
 "use client"
-import { HorizontalItem, VerticalItem } from "./item"
+import { editable } from "@c3studium/valecms/edit"
+import { HorizontalItem, VerticalItem, type CollectionCard } from "./item"
+import type { NavigationCollection } from "@modules/layout/Navbar/productsButton"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useDeviceTier } from "@lib/hooks/use-device-tier"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 import {
   useScroll,
   motion,
@@ -10,58 +14,34 @@ import {
   type MotionValue,
 } from "framer-motion"
 
-const collections = [
-  {
-    id: 1,
-    title: "Do zahrady",
-    description: "Kusy, které venku hezky zestárnou spolu se zahradou.",
-    image: "/assets/img/img/7.jpg",
-    href: "/store",
-    item: VerticalItem,
-  },
-  {
-    id: 2,
-    title: "Novinky",
-    description: "Co právě vyšlo z pece v píseckém ateliéru.",
-    image: "/assets/img/img/10.jpg",
-    href: "/store",
-    item: HorizontalItem,
-  },
-  {
-    id: 3,
-    title: "Drobnosti",
-    description: "Malé kousky, které mají svůj výraz i charakter.",
-    image: "/assets/img/img/1.jpg",
-    href: "/store",
-    item: HorizontalItem,
-  },
-  {
-    id: 4,
-    title: "Květinové reliéfy",
-    description: "Keramika podle toho, co roste za oknem.",
-    image: "/assets/img/img/7.jpg",
-    href: "/store",
-    item: VerticalItem,
-  },
-  {
-    id: 5,
-    title: "Figurální tvorba",
-    description: "Tváře a postavy. Modeluju je bez formy, vždycky jen jednou.",
-    image: "/assets/img/img/4.jpg",
-    href: "/store",
-    item: HorizontalItem,
-  },
-  {
-    id: 6,
-    title: "Do interiéru",
-    description: "Výrobky, které se hodí na polici, ke stolu i na parapet.",
-    image: "/assets/img/img/8.jpg",
-    href: "/store",
-    item: HorizontalItem,
-  },
-]
-// najít způsob jak správně lokalizovat kolekce, tak aby byly správně za sebou s jejich obrázky, ty se asi budou muset přidat.
-// Nejdříve sem vrazit kolekce, potom zjisit kde jaká je, potom doplnit obrázkem a textem.
+/**
+ * Záložní fotka, když ji nemá ani CMS, ani Medusa.
+ *
+ * Karta bez obrázku je díra v mřížce, ne prázdné místo — `next/image` navíc bez `src` spadne.
+ */
+const FALLBACK_IMAGE = "/assets/img/img/7.jpg"
+
+/**
+ * Střídání podob karet: svislá, vodorovná, vodorovná — dokola.
+ *
+ * Odvozené z pořadí, ne zapsané u každé kolekce. Seznam kolekcí přichází z Medusy a mění se
+ * podle toho, co si majitelka založí v adminu; kdyby si podobu nesla položka, musel by ji
+ * někdo doplňovat ke každé nové kolekci a mřížka by se rozpadla u té první zapomenuté.
+ */
+const itemFor = (index: number) =>
+  index % 3 === 0 ? VerticalItem : HorizontalItem
+
+/**
+ * Handle kolekce z její adresy. Jím se páruje řádek v CMS.
+ *
+ * Adresa je `/store?collection=<handle>` (viz `catalogueHref`), takže handle je v DOTAZU,
+ * ne v cestě — čtení posledního úseku cesty by u všech kolekcí vrátilo „store" a všechny
+ * karty by dostaly popisek prvního řádku.
+ */
+const handleOf = (href: string): string => {
+  const query = new URLSearchParams(href.split("?")[1] ?? "")
+  return query.get("collection") ?? query.get("category") ?? ""
+}
 
 const springConfig = {
   stiffness: 92,
@@ -77,8 +57,31 @@ const springConfig = {
  * settled and still. Cards now finish at CARDS_SETTLED, the rail lands shortly after, and there
  * is a beat where the whole thing simply stands there before the exit takes it.
  */
-const CARDS_SETTLED = 0.62
-const RAIL_END = 0.72
+/*
+ * Karty dosednou a rail doputuje v PRVNÍ půlce přišepnuté scény, ne ke konci.
+ *
+ * Bylo 0.62 / 0.72 na 210vh sekci: rail dojel a skoro hned na to začal odchod (0.90), takže
+ * mezi „hotovo" a „pryč" nebylo skoro nic a další sekce nastupovala do ještě dojíždějícího
+ * pohybu. Teď sekce měří 300vh (viz style.scss) a podíly jsou menší — dráha railu tím vyjde
+ * DELŠÍ v pixelech (0.58 × 200vh ≈ 116vh proti dřívějším 0.72 × 110vh ≈ 79vh) a přitom skončí
+ * mnohem dřív před odepnutím: zbyde 0.58 → 0.90, tedy asi 64vh, kdy scéna prostě stojí.
+ *
+ * Rail dojíždí kousek za kartami, ne s nimi — poslední, co se hýbe, je celek, ne jeho části.
+ */
+const CARDS_SETTLED = 0.5
+/*
+ * Rail se rozjede AŽ po přišpendlení, ne při náběhu sekce.
+ *
+ * Scroll-rozsah téhle scény začíná dřív, než se scéna zastaví (`offset: ["start 0.6", …]`),
+ * takže bez vlastního startu se skoro 40 % dráhy railu odjelo ještě cestou nahoru — změřeno:
+ * ve chvíli, kdy se scéna zastavila, byla první karta už skoro na svém místě a jelo se jen
+ * dobrzdit. 0.24 je právě ten okamžik zastavení (na 1600×900 vycházel podíl 0.225).
+ *
+ * Do té chvíle rail stojí odsunutý vpravo. Celá cesta první kolekce doleva se tak odehraje
+ * před očima, ne mimo obraz.
+ */
+const RAIL_START = 0.24
+const RAIL_END = 0.66
 /*
  * The exit holds almost to the release point (0.86 → 0.93 → 0.90 as tuned
  * with Matěj): curtain rises 0.90–0.97, cards fade 0.93–0.985 — both settle
@@ -94,7 +97,6 @@ const deterministicRandom = (seed: number) => {
   return x - Math.floor(x)
 }
 
-type CollectionType = (typeof collections)[number]
 type SpreadConfig = {
   startX: number
   midX: number
@@ -106,13 +108,20 @@ type SpreadConfig = {
 
 function CollectionCardMotion({
   collection,
+  block,
+  badge,
+  action,
   spread,
   progress,
   index,
   total,
   isPhone,
 }: {
-  collection: CollectionType
+  collection: CollectionCard
+  /** Jen kvůli sdíleným textům na kartě (štítek, text odkazu) — data karty jsou z Medusy. */
+  block?: CopyBlock
+  badge: string
+  action: string
   spread: SpreadConfig
   progress: MotionValue<number>
   index: number
@@ -167,12 +176,69 @@ function CollectionCardMotion({
          position is the most expensive thing on the page for no visible result. */
       style={isPhone ? undefined : { x, y, rotate, scale, opacity }}
     >
-      <collection.item collection={collection} />
+      {/* Podoba karty je odvozená z pořadí — viz `itemFor`. */}
+      {(() => {
+        const Item = itemFor(index)
+        return (
+          <Item
+            collection={collection}
+            block={block}
+            index={index}
+            badge={badge}
+            action={action}
+          />
+        )
+      })()}
     </motion.div>
   )
 }
 
-export default function Collections() {
+export default function Collections({
+  block,
+  collections: source = [],
+}: {
+  block?: CopyBlock
+  /** Kolekce z Medusy — jméno, odkaz a fotka. Viz `listNavigationCollections`. */
+  collections?: NavigationCollection[]
+}) {
+  /* Sekce se překresluje jen z MotionValues (scroll), a ty překreslení nespouštějí — bez
+     tohohle by `editable()` zůstalo prázdné a texty by v editoru nešly chytit. Viz hook. */
+  useEditRerender()
+
+  const railLeft = block?.accent?.[0]?.trim() || "03 · Kolekce"
+  const railRight = block?.accent?.[1]?.trim() || "Ručně tvořeno v Písku"
+  const headlineLead = block?.title?.trim() || "Stejný postup,"
+  const headlineAccent = block?.headline?.trim() || "pokaždé jiný výsledek."
+  const lede =
+    block?.bodyText?.trim() ||
+    "Pracuju bez formy, takže se mi dva stejné kusy udělat ani nepodaří."
+  const badge = block?.accent?.[2]?.trim() || "Originál · malá série"
+  const action = block?.accent?.[3]?.trim() || "Otevřít kolekci"
+
+  /*
+   * Karty jsou celé z Medusy — jméno, odkaz, fotka i popisek.
+   *
+   * Popisek a fotka se nastavují v adminu Rozdělení, v panelu „Zobrazit kolekci". Původně
+   * byly v CMS a s kolekcí se párovaly přes handle; u kolekce bydlí proto, že kolekce je
+   * katalog — když se přejmenuje nebo smaže, má se s ní hnout i její věta a obrázek. Přes
+   * dva systémy to jinak než ručním úklidem nešlo, a na ten se zapomene.
+   *
+   * V CMS zůstaly jen texty, které ke konkrétní kolekci nepatří: nadpis sekce, lišta,
+   * štítek na kartě a text odkazu.
+   */
+  const cards = useMemo(
+    () =>
+      source.map((collection, index) => ({
+        key: handleOf(collection.href) || collection.id,
+        n: index + 1,
+        title: collection.title,
+        description: collection.description ?? "",
+        image: collection.image || FALLBACK_IMAGE,
+        href: collection.href,
+      })),
+    [source]
+  )
+
   const ref = useRef(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const railRef = useRef<HTMLDivElement>(null)
@@ -225,8 +291,20 @@ export default function Collections() {
 
       const overflow = Math.max(0, rail.scrollWidth - stage.clientWidth)
 
+      /*
+       * Start dál vpravo, aby první kolekce doletěla doleva až za dlouho.
+       *
+       * Bylo `0.18 × šířka scény` proti `0.4 × přesah`, což na 1600px okně dávalo asi 288px —
+       * první karta stála skoro na místě a hned se zabrzdila o levý okraj. Zdvojnásobené
+       * podíly ji posunou zhruba na 450px, takže na začátku je z ní vidět jen kus a přijíždí
+       * celou dobu.
+       *
+       * Pořád je to `min` ze dvou mezí, každá hlídá jiný okraj: podíl ze scény drží kartu
+       * aspoň částečně v obraze i na širokém monitoru, podíl z přesahu nedovolí odsunout ji
+       * dál, než kolik má rail vůbec kam couvat.
+       */
       setTravel({
-        from: Math.min(stage.clientWidth * 0.18, overflow * 0.4 + 48),
+        from: Math.min(stage.clientWidth * 0.34, overflow * 0.6 + 64),
         to: -overflow,
       })
     }
@@ -240,10 +318,12 @@ export default function Collections() {
     return () => observer.disconnect()
   }, [])
 
+  /* Čtyři body: stát vpravo → jet → stát vlevo. Prostřední úsek je celý uvnitř přišpendlení
+     a poslední je ta pauza, po které teprve nastupuje odchod scény (EXIT_START). */
   const xRaw = useTransform(
     scrollYProgress,
-    [0, RAIL_END, 1],
-    [travel.from, travel.to, travel.to]
+    [0, RAIL_START, RAIL_END, 1],
+    [travel.from, travel.from, travel.to, travel.to]
   )
   const yRaw = useTransform(scrollYProgress, [0, 1], ["3%", "-2%"])
   const wrapperScaleRaw = useTransform(
@@ -286,12 +366,14 @@ export default function Collections() {
     mass: 0.65,
   })
 
+  /* Rozptyl visí na POŘADÍ, ne na id: kolekce z Medusy mají id jako řetězec (`pcol_…`)
+     a aritmetika nad ním by dala `NaN`, tedy karty bez posunu. */
   const itemSpread = useMemo(
     () =>
-      collections.map((collection, index) => {
+      cards.map((_, index) => {
         const side = index % 2 === 0 ? -1 : 1
-        const spread = deterministicRandom(collection.id + index * 2.13)
-        const depth = deterministicRandom(collection.id * 1.77 + index * 0.39)
+        const spread = deterministicRandom((index + 1) + index * 2.13)
+        const depth = deterministicRandom((index + 1) * 1.77 + index * 0.39)
 
         return {
           startX: side * (28 + spread * 48),
@@ -302,7 +384,7 @@ export default function Collections() {
           startRotate: side * (0.8 + spread * 1.5),
         }
       }),
-    []
+    [cards]
   )
 
   return (
@@ -338,26 +420,33 @@ export default function Collections() {
             style={isPhone ? undefined : { y: headerY }}
           >
             <div className="header__meta">
-              <span>03 · Kolekce</span>
-              <span>Ručně tvořeno v Písku</span>
+              <span {...editable(block, "accent.0")}>{railLeft}</span>
+              <span {...editable(block, "accent.1")}>{railRight}</span>
             </div>
+            {/* Obě půlky nadpisu jsou VLASTNÍ pole, ne jeden text rozdělený značkou.
+                `editable` zapisuje vždy celé pole, takže dvě věty v jednom poli by měly
+                jeden společný rámeček a upravovaly by se jen obě naráz. */}
             <h2>
-              Stejný postup, <em>pokaždé jiný výsledek.</em>
+              <span {...editable(block, "title")}>{headlineLead}</span>{" "}
+              <em {...editable(block, "headline")}>{headlineAccent}</em>
             </h2>
-            <p>Pracuju bez formy, takže se mi dva stejné kusy udělat ani nepodaří.</p>
+            <p {...editable(block, "body")}>{lede}</p>
           </motion.div>
           <motion.div
             ref={railRef}
             className="Collecion__wrapper"
             style={isPhone ? undefined : { x }}
           >
-            {collections.map((collection, index) => (
+            {cards.map((card, index) => (
               <CollectionCardMotion
-                key={collection.id}
-                collection={collection}
+                key={card.key}
+                collection={card}
+                block={block}
+                badge={badge}
+                action={action}
                 progress={scrollYProgress}
                 index={index}
-                total={collections.length}
+                total={cards.length}
                 spread={itemSpread[index] ?? itemSpread[0]}
                 isPhone={isPhone}
               />

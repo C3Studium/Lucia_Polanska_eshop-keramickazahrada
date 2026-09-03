@@ -1,33 +1,39 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-/* Cream order surface: ink #20211c 15.2:1, label tone #4f5147 7.3:1. */
+/*
+  Return request form on the cream order surface: --ink-05 15.2:1, --olive-04 7.3:1.
+  Every size is a clamp, no media query. Horizontal + type on vw, vertical on vh,
+  floors/ceilings in rem so the >=1921 root ramp lifts them. px only where the thing
+  is physical: 1px hairline, 999px pill. Buttons share one triple with order-edit
+  .primary/.secondary so the page has a single button size.
+*/
 
 .root {
   display: grid;
   max-width: 46rem;
-  margin-top: 16px;
-  gap: 10px;
+  margin-top: clamp(.9rem, 2vh, 1.8rem);
+  gap: clamp(.6rem, 1.3vh, 1.15rem);
 }
 
 .trigger,
 .cancel {
-  min-height: 44px;
-  padding: 0 20px;
-  border: 1px solid rgba(32, 33, 28, 0.4);
+  min-height: clamp(2.4rem, 4.8vh, 3.1rem);
+  padding: 0 clamp(1.1rem, 1.5vw, 2rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .4);
   border-radius: 999px;
   background: transparent;
-  color: #20211c;
+  color: var(--ink-05);
   cursor: pointer;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .trigger:hover,
 .cancel:hover {
-  border-color: #20211c;
+  border-color: var(--ink-05);
 }
 
 .label {
-  color: #4f5147;
-  font: 400 13px/1.4 "Sansation-Regular", sans-serif;
+  color: var(--olive-04);
+  font: 400 clamp(.8rem, 1.07vw, 1rem)/1.4 "Sansation-Regular", sans-serif;
   letter-spacing: 0.06em;
 }
 
@@ -38,30 +44,31 @@
 
 .input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid rgba(32, 33, 28, 0.3);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.6);
-  color: #20211c;
-  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+  padding: clamp(.7rem, 1.5vh, 1.15rem) clamp(.7rem, .95vw, 1.15rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .3);
+  border-radius: clamp(.5rem, .65vw, .75rem);
+  background: rgb(var(--white-rgb) / .6);
+  color: var(--ink-05);
+  font: 400 clamp(1rem, 1vw, 1.2rem)/1.5 "Sansation-Regular", sans-serif;
+  min-height: clamp(5rem, 12vh, 8.5rem);
   resize: vertical;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: clamp(.55rem, .8vw, 1rem);
 }
 
 .submit {
-  min-height: 44px;
-  padding: 0 24px;
-  border: 1px solid #20211c;
+  min-height: clamp(2.4rem, 4.8vh, 3.1rem);
+  padding: 0 clamp(1.3rem, 1.8vw, 2.4rem);
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  background: #20211c;
-  color: #ffe8d6;
+  background: var(--ink-05);
+  color: var(--cream-06);
   cursor: pointer;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1 "Sansation-Regular", sans-serif;
 }
 
 .submit:disabled {
@@ -70,13 +77,13 @@
 }
 
 .sent {
-  margin: 16px 0 0;
-  color: #2f5233;
-  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+  margin: clamp(.9rem, 2vh, 1.8rem) 0 0;
+  color: var(--green-01);
+  font: 400 clamp(.95rem, 1.27vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
 .error {
   margin: 0;
-  color: #8c3e30;
-  font: 400 15px/1.5 "Sansation-Regular", sans-serif;
+  color: var(--clay-06);
+  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1.5 "Sansation-Regular", sans-serif;
 }

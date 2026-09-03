@@ -161,8 +161,14 @@ export default function CommissionBrief({
         </p>
       </header>
 
+      {/* data-lenis-prevent: the thread scrolls itself, otherwise Lenis eats the wheel
+          and touch and scrolls the page instead of the conversation. */}
       {variant === "order" && entries.length > 0 && (
-        <ol className={styles.thread} data-testid="commission-thread">
+        <ol
+          className={styles.thread}
+          data-lenis-prevent
+          data-testid="commission-thread"
+        >
           {entries.map((entry) => (
             <li
               key={entry.id}

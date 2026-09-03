@@ -1,8 +1,8 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .main__vyroba {
-  --vyroba-charcoal: #1d1e1a;
-  --vyroba-cream: #ffe8d6;
-  --vyroba-ember: #d96f3b;
+  --vyroba-charcoal: var(--ink-05);
+  --vyroba-cream: var(--cream-06);
+  --vyroba-ember: var(--clay-26);
 
   position: relative;
   z-index: 4;
@@ -27,6 +27,47 @@
   background: var(--vyroba-charcoal);
   isolation: isolate;
   z-index: 1;
+
+  /*
+   * ─── One hero geometry ────────────────────────────────────────────────────────────────────
+   *
+   * The plate and the tile used to be two independent sets of numbers — `left: 27% + 56vw`
+   * against `right: 5% + 17vw` — and nobody owned the strip where they meet. It came out 64px
+   * at 1280 and 80px at 1920, and the plate's caption ran straight into it: the right-hand label
+   * read "Ateliér ·" with "Písek" buried under the tile at every landscape width.
+   *
+   * Now all four numbers live here and the strip is *derived* from them, so the caption can be
+   * held clear of the tile without a second set of numbers in a breakpoint.
+   *
+   * `--fvw` rather than plain `vw`: this stage is exactly as wide as the page frame, so 27% of
+   * the stage and `27 * var(--fvw)` are the same length — below 1921 because the frame is the
+   * viewport, above it because the stage *is* the frame. Plain `vw` would keep measuring the
+   * screen after 1921 and the plate would hang out of the frame it is composed in. (Measured
+   * before: the plate stopped 80px *short* of the tile at 2552x1351, the gap the overlap was
+   * supposed to be.)
+   */
+  --hero-plate-x: calc(27 * var(--fvw));
+  --hero-plate-w: min(56 * var(--fvw), 67.5rem);
+  --hero-tile-x: calc(5 * var(--fvw));
+  --hero-tile-w: min(17 * var(--fvw), 19.375rem);
+
+  /*
+   * How far the plate reaches under the tile: plate right edge − tile left edge, both measured
+   * from the left of the stage. Positive means the tile sits on the plate, which is the
+   * composition — the tile is meant to overlap, only the caption is not meant to be under it.
+   *
+   *   (--hero-plate-x + --hero-plate-w) − (100fvw − --hero-tile-x − --hero-tile-w)
+   *
+   * With no cap biting this is a flat 5% of the frame: 64px at 1280, 96px at 1920 before the
+   * tile's own cap shaves it to 80, 86px at 1921, 108px at 2552.
+   */
+  --hero-tile-bite: calc(
+    var(--hero-plate-x) + var(--hero-plate-w) + var(--hero-tile-x) + var(--hero-tile-w) -
+      100 * var(--fvw)
+  );
+
+  /* The breathing room inside the plate. Horizontal, so it rides the frame, not the screen. */
+  --hero-caption-pad: clamp(1.125rem, 1.6 * var(--fvw), 1.75rem);
 }
 
 .vyrobaHero {
@@ -35,14 +76,14 @@
     right: 8%;
     top: 8%;
     z-index: 1;
-    width: min(18vw, 340px);
+    width: min(18 * var(--fvw), 21.25rem);
     height: 72%;
     pointer-events: none;
     opacity: 0.26;
     background: linear-gradient(
       180deg,
       transparent,
-      rgba(224, 102, 47, 0.82) 43%,
+      rgb(var(--red-03-rgb) / .82) 43%,
       transparent 88%
     );
     filter: blur(72px);
@@ -52,22 +93,43 @@
 
   &__meta {
     position: absolute;
-    top: clamp(74px, 8vh, 108px);
+    top: clamp(4.625rem, 8vh, 6.75rem);
     left: 4.5%;
     right: 4.5%;
     z-index: 8;
     display: flex;
     align-items: center;
-    gap: clamp(14px, 1.5vw, 24px);
-    color: rgba(255, 232, 214, 0.52);
-    font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+    gap: clamp(0.875rem, 1.5 * var(--fvw), 1.5rem);
+    color: rgb(var(--cream-06-rgb) / .52);
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+
+    /*
+     * The flex row is one element further down than the rule for it was written.
+     *
+     * `__meta` is a flex row with a gap, and the rule between the two labels is `i { flex: 1 }`
+     * — the same bar `.atelierProcess__header` and `.vyrobaCta__meta` draw. But the entrance
+     * animation needed an element of its own (scroll drives opacity and y on `__meta`, and those
+     * win over `animate` for the same property), so `__metaInner` was slid in between — and it is
+     * a plain block. In a block box `flex: 1` does nothing and `height: 1px` does nothing to an
+     * inline `<i>`: measured 0px wide, with the two labels touching, so the bar read
+     * „Výroba · Keramická zahradaPísek · Ručně od roku 2014" at every landscape width.
+     *
+     * The row moves onto the wrapper and `gap: inherit` takes the clamp above rather than
+     * repeating it — one number, two elements.
+     */
+    &Inner {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: inherit;
+    }
 
     i {
       flex: 1;
       height: 1px;
-      background: rgba(255, 232, 214, 0.2);
+      background: rgb(var(--cream-06-rgb) / .2);
     }
   }
 
@@ -90,18 +152,18 @@
     figcaption {
       position: absolute;
       z-index: 3;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: clamp(0.75rem, 0.58vw, 0.75rem);
+      color: rgb(var(--white-rgb) / .7);
+      font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      text-shadow: 0 2px 12px rgba(16, 16, 13, 0.5);
+      text-shadow: 0 2px 12px rgb(var(--ink-01-rgb) / .5);
     }
 
     &--main {
       top: 15%;
-      left: 27%;
+      left: var(--hero-plate-x);
       z-index: 1;
-      width: min(56vw, 1080px);
+      width: var(--hero-plate-w);
       height: 62%;
 
       &::after {
@@ -112,35 +174,52 @@
         pointer-events: none;
         background: linear-gradient(
             90deg,
-            rgba(29, 30, 26, 0.28),
+            rgb(var(--ink-05-rgb) / .28),
             transparent 28%
           ),
-          linear-gradient(180deg, transparent 58%, rgba(17, 18, 15, 0.48));
+          linear-gradient(180deg, transparent 58%, rgb(var(--ink-01-rgb) / .48));
       }
 
+      /*
+       * The right inset carries the tile.
+       *
+       * The label is a flex row pinned to both edges of the plate — "01 · Ruce a materiál", a
+       * rule, "Ateliér · Písek" — and the tile lands on the plate's bottom-right corner, exactly
+       * where the second span ends. Vertically the two always cross (the caption's whole 18px
+       * sits inside the tile's band), so the only free axis is this one: pull the right inset in
+       * by however far the plate reaches under the tile and the label can never be behind it,
+       * at any width, with no second set of numbers.
+       *
+       * `max(0px, …)` because the bite goes negative the moment something else sets the plate or
+       * the tile width — the phone blocks at the bottom of this file do — and a negative inset
+       * would push the label out over the plate's edge.
+       *
+       * `bottom` is vh: it competes with the height of the stage, not its width. 15px at 682 and
+       * under, 24px from 1091 up, live across every laptop in between.
+       */
       figcaption {
-        left: clamp(18px, 1.6vw, 28px);
-        right: clamp(18px, 1.6vw, 28px);
-        bottom: clamp(15px, 1.4vw, 24px);
+        left: var(--hero-caption-pad);
+        right: calc(var(--hero-caption-pad) + max(0px, var(--hero-tile-bite)));
+        bottom: clamp(0.9375rem, 2.2vh, 1.5rem);
         display: flex;
         align-items: center;
-        gap: 13px;
+        gap: 0.8125rem;
 
         i {
           flex: 1;
           height: 1px;
-          background: rgba(255, 255, 255, 0.32);
+          background: rgb(var(--white-rgb) / .32);
         }
       }
     }
 
     &--object {
-      right: 5%;
+      right: var(--hero-tile-x);
       bottom: 10%;
       z-index: 5;
-      width: min(17vw, 310px);
+      width: var(--hero-tile-w);
       height: 25%;
-      box-shadow: 0 28px 64px -30px rgba(0, 0, 0, 0.78);
+      box-shadow: 0 28px 64px -30px rgb(var(--black-01-rgb) / .78);
 
       &::after {
         content: "";
@@ -151,13 +230,13 @@
         background: linear-gradient(
           180deg,
           transparent 52%,
-          rgba(16, 17, 14, 0.48)
+          rgb(var(--ink-01-rgb) / .48)
         );
       }
 
       figcaption {
-        left: 13px;
-        bottom: 12px;
+        left: 0.8125rem;
+        bottom: 0.75rem;
       }
     }
 
@@ -188,14 +267,16 @@
     left: 4.5%;
     top: 29%;
     z-index: 6;
-    width: min(61vw, 1160px);
+    width: min(61 * var(--fvw), 72.5rem);
     pointer-events: none;
   }
 
   &__eyebrow {
-    margin: 0 0 clamp(16px, 1.6vw, 26px);
-    color: rgba(255, 232, 214, 0.62);
-    font-size: clamp(0.75rem, 0.67vw, 0.76rem);
+    /* vh: this is the gap between the eyebrow and the headline, and what it competes with is the
+       height of the stage — on a 720px laptop it gives back 3px the copy block needs. */
+    margin: 0 0 clamp(1rem, 2.4vh, 1.625rem);
+    color: rgb(var(--cream-06-rgb) / .62);
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -204,11 +285,17 @@
     margin: 0;
     color: var(--vyroba-cream);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(5rem, 7.8vw, 9.8rem);
+    /*
+     * `--fvw`, not `vw`, because the box this sits in is `min(61 * var(--fvw), 72.5rem)`. On the
+     * screen the two agree up to 1920 and part company after: at 2552 a plain 7.8vw headline is
+     * 199px inside a 1319px frame-wide column, where at 1920 it was 150px inside 1160 — the same
+     * column, a fatter headline. Hung off the frame it stays 12.8% of its own box at every width.
+     */
+    font-size: clamp(5rem, 7.8 * var(--fvw), 9.8rem);
     font-weight: 400;
     line-height: 0.82;
     letter-spacing: -0.058em;
-    text-shadow: 0 4px 34px rgba(10, 11, 9, 0.26);
+    text-shadow: 0 4px 34px rgb(var(--black-01-rgb) / .26);
   }
 
   &__line {
@@ -222,8 +309,8 @@
     }
 
     &--accent {
-      margin: 0.1em 0 0 clamp(80px, 10vw, 200px);
-      color: #df8356;
+      margin: 0.1em 0 0 clamp(5rem, 10 * var(--fvw), 12.5rem);
+      color: var(--clay-29);
       font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
       font-size: 0.94em;
       font-weight: 300;
@@ -234,26 +321,26 @@
     position: absolute;
     left: 4.5%;
     right: 4.5%;
-    bottom: clamp(24px, 3.6vh, 48px);
+    bottom: clamp(1.5rem, 3.6vh, 3rem);
     z-index: 8;
-    min-height: 58px;
-    padding-top: 15px;
+    min-height: 3.625rem;
+    padding-top: 0.9375rem;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: end;
-    gap: 32px;
+    gap: 2rem;
     border-top: 0;
 
     &Label {
-      color: rgba(255, 232, 214, 0.46);
-      font-size: clamp(0.75rem, 0.62vw, 0.75rem);
+      color: rgb(var(--cream-06-rgb) / .46);
+      font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     > p {
       margin: 0;
-      color: rgba(255, 232, 214, 0.7);
+      color: rgb(var(--cream-06-rgb) / .7);
       font-size: clamp(0.82rem, 0.88vw, 1rem);
       font-weight: 300;
       line-height: 1.32;
@@ -266,7 +353,7 @@
     left: 0;
     width: 100%;
     height: 1px;
-    background: rgba(255, 232, 214, 0.2);
+    background: rgb(var(--cream-06-rgb) / .2);
     transform-origin: left center;
   }
 
@@ -274,21 +361,27 @@
     justify-self: end;
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 0.8125rem;
     padding: 0;
     border: 0;
     color: var(--vyroba-cream);
     background: transparent;
     cursor: pointer;
     font: inherit;
-    font-size: clamp(0.8125rem, 0.74vw, 0.84rem);
+    font-size: 0.8125rem;
     letter-spacing: 0.08em;
 
+    /*
+     * The ring is drawn, not physical — it is a graphic the size of the words next to it, so it
+     * belongs in rem and grows with the page above 1921. Only the hairline stays in px.
+     * Proportions preserved from the 40px original: the stem runs 10→25 and the chevron spans
+     * 22→29, so the two cross by 3px and the arrowhead sits on the end of the line.
+     */
     i {
       position: relative;
-      width: 40px;
-      height: 40px;
-      border: 1px solid rgba(255, 232, 214, 0.3);
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 1px solid rgb(var(--cream-06-rgb) / .3);
       border-radius: 50%;
       transition: border-color 0.35s ease, background-color 0.35s ease;
 
@@ -301,16 +394,16 @@
       }
 
       &::before {
-        top: 10px;
+        top: 0.625rem;
         width: 1px;
-        height: 15px;
+        height: 0.9375rem;
         background: currentColor;
       }
 
       &::after {
-        bottom: 11px;
-        width: 7px;
-        height: 7px;
+        bottom: 0.6875rem;
+        width: 0.4375rem;
+        height: 0.4375rem;
         border-right: 1px solid currentColor;
         border-bottom: 1px solid currentColor;
         rotate: 45deg;
@@ -319,8 +412,8 @@
 
     &:hover i,
     &:focus-visible i {
-      border-color: rgba(255, 232, 214, 0.8);
-      background: rgba(255, 232, 214, 0.08);
+      border-color: rgb(var(--cream-06-rgb) / .8);
+      background: rgb(var(--cream-06-rgb) / .08);
     }
 
     &:focus-visible {
@@ -435,19 +528,26 @@
  *
  * The copy that arrives over the grown image shares `atelierProcess__copyStage` with the gallery
  * section further down the page, and that block is written for a column standing beside a plate:
- * `width: 26vw; height: 70vh; min-height: 520px`, pinned to the right. At 390px that is a 101px
- * ribbon of text 520px tall. The gallery never shows it on a phone — it is `display: none` below
- * 760px — so nothing had to make it work here.
+ * `width: var(--process-copy-w); height: var(--process-stage-h)`, pinned to the right. At 390px
+ * the column's own floor (17rem) is 272px of a 390px screen and the plate height 26rem is 416px
+ * tall. The gallery never shows it on a phone — it is `display: none` below 760px — so nothing
+ * had to make it work here.
  *
  * Under the image instead, full width. Both classes in the selector: this has to outrank the
  * shared block from the other stylesheet whichever order the two are emitted in.
  */
 @mixin vyroba-hero-phone {
+  /*
+   * On the picture, 10vh off the floor — the same placement the gallery's chapters use, so the
+   * hero's final frame and the seven that follow it are one composition rather than two.
+   * `z-index` above the proxy, which is 10.
+   */
   .vyrobaHero__processCopyStage.atelierProcess__copyStage {
     top: auto;
     right: 1.25rem;
-    bottom: max(6vh, 3.5rem);
+    bottom: 10vh;
     left: 1.25rem;
+    z-index: 12;
     width: auto;
     height: auto;
     min-height: 0;
@@ -483,5 +583,18 @@
 
   .main__vyrobaTimeline {
     height: 150vh;
+  }
+}
+
+/*
+ * The hero has to sit above the gallery again on upright phones, because the gallery is pulled
+ * back under it there — see the `v(xs)` block in gallery/styles.scss. The `below-px(680px)` rule
+ * above drops this to `auto`, which was right while the two sections merely followed one another
+ * and is wrong the moment they overlap: the gallery is later in the DOM and would paint over the
+ * stage that is supposed to be dissolving onto it.
+ */
+@include v(xs) {
+  .main__vyroba {
+    z-index: 4;
   }
 }

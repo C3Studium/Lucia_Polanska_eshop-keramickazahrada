@@ -1,9 +1,10 @@
 import React from "react"
 import { IconProps } from "types/icon"
+import { palette } from "styles/palette.generated"
 
 const ArrowRight: React.FC<IconProps> = ({
   size = 15,
-  color = "#212222",
+  color = palette.black03,
 }) => {
   return (
     <svg

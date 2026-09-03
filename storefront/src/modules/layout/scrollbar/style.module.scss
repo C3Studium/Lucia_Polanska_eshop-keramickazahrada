@@ -1,31 +1,40 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .sidebar {
-  /* A hover-revealed rail of 12px marks. On touch the labels can never appear, the marks are far
-     under the target floor, and the rail sits over the content on a narrow screen. It is a
-     pointer affordance, so it belongs to pointer devices. */
-  @include touch {
-    display: none;
-  }
-
   position: fixed;
   z-index: 20000;
   top: 50%;
   right: calc(var(--page-inset, 0px) + 7px);
   display: flex;
   justify-content: flex-end;
-  color: #ffe8d6;
+  color: var(--cream-06);
   mix-blend-mode: difference;
   pointer-events: none;
   transform: translateY(-50%);
 
   /* Both stops re-declare `right`, so the --page-inset on the base rule was being overridden and
-     the rail sat against the screen edge outside the 16:10 frame on ultrawide. */
+     the rail sat against the screen edge outside the 16:10 frame on ultrawide.
+     Krajní členy v rem, ne v px: nad 1921 je zvedne ramp, takže se lišta na 2K odsune od
+     rámu ve stejném poměru, v jakém rám povyrostl (2552: 30.6 px místo dřívějších 24).
+     Živé pásmo 10/0.012 = 833 px … 24/0.012 = 2000 px. */
   @include v(md) {
-    right: calc(var(--page-inset, 0px) + clamp(10px, 1.2vw, 24px));
+    right: calc(var(--page-inset, 0px) + clamp(0.625rem, 1.2vw, 1.5rem));
   }
 
   @include h(xs) {
-    right: calc(var(--page-inset, 0px) + clamp(10px, 1.2vw, 24px));
+    right: calc(var(--page-inset, 0px) + clamp(0.625rem, 1.2vw, 1.5rem));
+  }
+
+  /* A hover-revealed rail of hairline marks. On touch the labels can never appear, the marks are
+     far under the target floor, and the rail sits over the content on a narrow screen. It is a
+     pointer affordance, so it belongs to pointer devices.
+
+     Stojí až za základním pravidlem schválně: h-layer už neemituje @layer, jen obyčejné
+     vnořené media query, takže při stejné specificitě rozhoduje pořadí v souboru. Nahoře
+     nad `display: flex` to sice zatím vyhrávalo (Sass vysype vnořená at-pravidla za
+     deklarace), ale za cenu deseti mixed-decls deprecations a s tím, že po ohlášené změně
+     chování Sassu by `display: flex` skončil za tímhle blokem a přebil ho. */
+  @include touch {
+    display: none;
   }
 }
 
@@ -34,26 +43,40 @@
   align-items: flex-end;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 0 12px 18px;
+
+  /* Bylo `padding: 12px 0 12px 18px` a o dva řádky níž znovu `padding-left: 8px` — těch
+     18 px neplatilo nikdy. Jedna deklarace, a v ní každá osa na svém: svisle vh, protože
+     lišta soupeří o výšku obrazovky (živé pásmo 8/0.011 = 727 px … 14/0.011 = 1272 px
+     výšky), vodorovně vw (živé pásmo 6/0.0055 = 1091 px … 10/0.0055 = 1818 px). */
+  padding: clamp(0.5rem, 1.1vh, 0.875rem) 0 clamp(0.5rem, 1.1vh, 0.875rem)
+    clamp(0.375rem, 0.55vw, 0.625rem);
   cursor: pointer;
   pointer-events: auto;
-  padding-left: 8px;
 
+  /* vh, a je to tady správně: mezera mezi značkami je to hlavní, čím celá lišta roste do
+     výšky. Na 1366×768 vyjde 5 px (podlaha), na 1080 7.02, na 1351 8.78.
+     Živé pásmo 5/0.0065 = 769 px … 8/0.0065 = 1231 px výšky. */
   @include v(md) {
-    gap: clamp(5px, 0.65vh, 8px);
+    gap: clamp(0.3125rem, 0.65vh, 0.5rem);
   }
 
   @include h(xs) {
-    gap: clamp(5px, 0.65vh, 8px);
+    gap: clamp(0.3125rem, 0.65vh, 0.5rem);
   }
 }
 
 .item {
   display: flex;
-  min-height: 12px;
+
+  /* Výška řádku značky je druhá polovina toho součtu, tak taky na vh. Na 1366×768 10 px,
+     na 1080 11.88, na 1351 14.86. Živé pásmo 10/0.011 = 909 px … 14/0.011 = 1272 px výšky. */
+  min-height: clamp(0.625rem, 1.1vh, 0.875rem);
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+
+  /* Odstup popisku od čárky je vodorovný → vw. Živé pásmo 8/0.0072 = 1111 px … 1944 px,
+     strop navazuje na ramp beze skoku (2552: vw 18.4 vs rem-strop 18.6). */
+  gap: clamp(0.5rem, 0.72vw, 0.875rem);
   color: currentColor;
   cursor: pointer;
   text-decoration: none;
@@ -63,15 +86,19 @@
   display: none;
   max-width: 0;
   overflow: hidden;
-  color: rgba(255, 232, 214, 0.78);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .78);
+
+  /* Podlaha přesně 12 px — pod ni text nesmí. Živé pásmo 12/0.0095 = 1263 px … 14/0.0095
+     = 1474 px, tedy uvnitř 1200–1500. Znaky se v index.tsx posouvají o 0.85em, takže
+     dráha té animace se přeškáluje s tímhle clampem sama. */
+  font: 400 clamp(0.75rem, 0.95vw, 0.875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transform: translateX(12px);
+  transform: translateX(0.75rem);
   transition: max-width 560ms cubic-bezier(0.76, 0, 0.24, 1),
     transform 560ms cubic-bezier(0.76, 0, 0.24, 1);
   white-space: nowrap;
-  text-shadow: 0 1px 10px rgba(32, 33, 28, 0.5);
+  text-shadow: 0 1px 10px rgb(var(--ink-05-rgb) / .5);
 
   @include v(md) {
     display: flex;
@@ -93,43 +120,36 @@
   position: relative;
   display: block;
   overflow: hidden;
+
+  /* Vlásek. Fyzický rozměr, zůstává v px. */
   height: 1px;
   flex: 0 0 auto;
 }
 
 .lineTrack {
-  width: 30px;
+  /* Bylo 30 px v základu a 44 px ve v(md) i h(xs) — dvojice media query nesoucí čistou
+     velikost, tedy clamp. Živé pásmo 30/0.024 = 1250 px … 44/0.024 = 1833 px; strop
+     v rem, takže nad 1921 roste dál (2552: 2.75rem = 58.5 px proti 44 px předtím,
+     +33 %, přesně o kolik povyrostla obrazovka). */
+  width: clamp(1.875rem, 2.4vw, 2.75rem);
   transform-origin: right center;
-
-  @include v(md) {
-    width: 44px;
-  }
-
-  @include h(xs) {
-    width: 44px;
-  }
 }
 
 .minorTrack {
-  width: 11px;
+  /* Totéž: 11 → 17 px. Živé pásmo 11.2/0.01 = 1120 px … 16.8/0.01 = 1680 px. */
+  width: clamp(0.7rem, 1vw, 1.05rem);
   padding: 0;
   border: 0;
-  margin-right: 1px;
+
+  /* A 1 → 2 px odsazení s ním. Koeficient je odvozený, ne odhadnutý: 2/17 = 0.118 podílu
+     šířky, takže 0.118 × 1vw ≈ 0.12vw. Obě pásma tak končí na stejné šířce (1667 vs 1680)
+     a mezera zůstává ve stejném poměru ke značce na každé šířce. */
+  margin-right: clamp(0.0625rem, 0.12vw, 0.125rem);
   appearance: none;
   background: transparent;
   color: currentColor;
   cursor: pointer;
   transform-origin: right center;
-
-  @include v(md) {
-    width: 17px;
-    margin-right: 2px;
-  }
-
-  @include h(xs) {
-    width: 17px;
-    margin-right: 2px;
-  }
 }
 
 .lineBase,
@@ -153,12 +173,14 @@
 
 .label[data-visible],
 .item:focus-visible .label {
-  max-width: 190px;
+  /* Prostý rem, ne clamp: písmo drží podlahu 12 px až do 1263 px, takže clamp, který by
+     šířku pod tou hranicí stahoval, by nejdelší popisek („DALŠÍ VÝROBKY", ~116 px při
+     12 px) začal ořezávat. V rem to zároveň nad 1921 roste společně se stropem písma. */
+  max-width: 11.875rem;
   transform: translateX(0);
 }
 
 .item:focus-visible .label {
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.25rem;
 }
-

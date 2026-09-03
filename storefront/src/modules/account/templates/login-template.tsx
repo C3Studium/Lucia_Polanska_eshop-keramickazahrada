@@ -4,6 +4,7 @@ import { useState } from "react"
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
 import { AnimatePresence, motion } from "framer-motion"
+import type { CopyBlock } from "@lib/util/site-copy"
 import AuthPortal from "../components/auth-portal"
 
 export enum LOGIN_VIEW {
@@ -13,14 +14,16 @@ export enum LOGIN_VIEW {
 
 type LoginTemplateProps = {
   redirectTo?: string
+  /** Blok `global.prihlaseni` — fotka vedle formuláře. */
+  block?: CopyBlock
 }
 
-const LoginTemplate = ({ redirectTo }: LoginTemplateProps) => {
+const LoginTemplate = ({ redirectTo, block }: LoginTemplateProps) => {
   const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
   const isSignIn = currentView === LOGIN_VIEW.SIGN_IN
 
   return (
-    <AuthPortal mode={isSignIn ? "login" : "register"}>
+    <AuthPortal mode={isSignIn ? "login" : "register"} block={block}>
       {/* No `initial={false}`: it sets a presence context that suppresses mount animations for
           everything beneath it, so the sign-in heading's own entrance never ran. Switching
           between the two views still animates — that is `mode="wait"` and `exit`, not this. */}

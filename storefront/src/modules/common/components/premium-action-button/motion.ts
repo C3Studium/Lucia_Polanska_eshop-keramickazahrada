@@ -1,4 +1,5 @@
 import type { Transition, Variants } from "framer-motion"
+import { palette } from "styles/palette.generated"
 
 export const PREMIUM_BUTTON_REST = "rest"
 export const PREMIUM_BUTTON_ACTIVE = "hover"
@@ -26,7 +27,7 @@ export const premiumButtonFillTransition: Transition = {
 
 export const premiumButtonForegroundVariants: Variants = {
   [PREMIUM_BUTTON_REST]: {
-    color: "var(--premium-button-ink, #20211c)",
+    color: `var(--premium-button-ink, ${palette.ink05})`,
     transition: {
       duration: 0.18,
       delay: 0.15,
@@ -34,7 +35,7 @@ export const premiumButtonForegroundVariants: Variants = {
     },
   },
   [PREMIUM_BUTTON_ACTIVE]: {
-    color: "var(--premium-button-active-ink, #ffe8d6)",
+    color: `var(--premium-button-active-ink, ${palette.cream06})`,
     transition: {
       duration: 0.18,
       delay: 0.15,

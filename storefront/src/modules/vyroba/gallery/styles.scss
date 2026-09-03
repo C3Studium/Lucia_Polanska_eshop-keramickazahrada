@@ -1,8 +1,8 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .Gallery {
-  --process-charcoal: #1d1e1a;
-  --process-cream: #ffe8d6;
-  --process-ember: #d96f3b;
+  --process-charcoal: var(--ink-05);
+  --process-cream: var(--cream-06);
+  --process-ember: var(--clay-26);
 
   position: relative;
   z-index: 2;
@@ -13,16 +13,60 @@
   background: var(--process-charcoal);
 }
 
+/*
+ * ─── Jedna geometrie páru, jedno místo ───────────────────────────────────────────
+ *
+ * Deska s fotkou a sloupec textu se dělí o šířku RÁMU, ne obrazovky. Nad 1921 je rám užší než
+ * okno (`--page-max-w: min(100vw, 100svh*1.6)`), zatímco `left: 4.5%` a `right: 5%` měří rám.
+ * Staré `61vw` + `26vw` měřilo obrazovku, takže se součet do rámu přestal vejít a sloupec
+ * se tiskl na fotku: naměřeno 107 px @1921×1080, 114 @2048×1152, 264 @2552×1351. `--fvw`
+ * z globals.scss je jedno procento rámu a pod 1921 je to přesně 1vw — pod hranicí se nehne pixel.
+ *
+ * Šířku nese jenom sloupec. Deska je zbytek rámu po něm, ne druhé nezávislé číslo:
+ *   100 − 4.5 (levý okraj) − 3.5 (mezera) − 5 (pravý okraj) = 87 procent rámu − sloupec.
+ * Na 1920 to dává přesně dnešních 1171.2 a 499.2 px a mezeru 67 px. Součet už nemůže přetéct.
+ * Psáno ve `--fvw`, ne v procentech, aby to číslo šlo číst i mimo `.atelierProcess` — hero ve
+ * `vyroba/main` na tutéž geometrii dojíždí svou rostoucí fotkou a procenta by se mu vyčíslila
+ * proti jinému rodiči.
+ *
+ * Podlaha 17rem drží sloupec čitelný, když se rám zúží — živá je pod 1046 px rámu, tedy až pod
+ * fází A. Nahrazuje tím blok `below-px(980)`, který týmž vlastnostem dával druhou hodnotu
+ * (57vw/31vw) a dělal na hraně 980 px skok o 48 px. Strop 34rem je pojistka pro ultrawide.
+ *
+ * Výška je stejný případ — obě desky ji musí mít totéž, jinak se text rozejde s fotkou. Je to
+ * svislý rozměr, tedy `vh`: na nízkém notebooku se sevře sám a žádné pravidlo v `lt` není
+ * potřeba. Původní `min-height: 520px` byl na 1220×660 vyšší než 70vh a tlačil obsah pod hranu.
+ * Živé pásmo 594–1189 px výšky okna pokrývá celé landscape kontinuum.
+ *
+ * `.atelierProcess__copyStage` nosí i hero ve `vyroba/main` (`.vyrobaHero__processCopyStage`),
+ * které stojí mimo `.atelierProcess` — proto je deklarace na obou selektorech, ne jen na rodiči.
+ * Hero to pravidlo jen konzumuje; opsat si ta čísla na svou stranu by je rozdělilo.
+ *
+ * `.main__vyrobaSticky` je tu ze stejného důvodu, jen o krok dál. Hero na konci své timeline
+ * roztahuje fotku (`.vyrobaHero__processProxy` v `main/index.tsx`) přesně do téhle desky a pak
+ * se rozplyne — pod ním už galerie stojí, přitažená `margin-top: -104vh`. Rozjezd mezi tou
+ * rostoucí fotkou a deskou je proto vidět jako skok v jednom snímku. Publikováním proměnných
+ * i na sticky scéně je hero dostane dědičností a může svůj koncový stav odvodit místo opsat;
+ * dřív měl v JS napsané `61vw`, což nad 1921 měřilo obrazovku — naměřeno +238 px proti desce
+ * na 2552×1351 a 162 px zajeté do sloupce textu.
+ */
+.atelierProcess,
+.atelierProcess__copyStage,
+.main__vyrobaSticky {
+  --process-copy-w: clamp(17rem, calc(26 * var(--fvw)), 34rem);
+  --process-stage-w: calc(87 * var(--fvw) - var(--process-copy-w));
+  --process-stage-h: clamp(26rem, 70vh, 52rem);
+}
+
 .atelierProcess {
   position: sticky;
   top: 0;
   width: 100%;
   height: 100svh;
-  min-height: 760px;
   overflow: hidden;
   background: radial-gradient(
       circle at 72% 48%,
-      rgba(217, 111, 59, 0.055),
+      rgb(var(--clay-26-rgb) / .055),
       transparent 27%
     ),
     var(--process-charcoal);
@@ -30,22 +74,22 @@
 
   &__header {
     position: absolute;
-    top: clamp(72px, 8vh, 106px);
+    top: clamp(4.5rem, 8vh, 6.625rem);
     left: 4.5%;
     right: 4.5%;
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: clamp(14px, 1.5vw, 24px);
-    color: rgba(255, 232, 214, 0.46);
-    font-size: clamp(0.75rem, 0.64vw, 0.75rem);
+    gap: clamp(0.875rem, calc(1.5 * var(--fvw)), 1.5rem);
+    color: rgb(var(--cream-06-rgb) / .46);
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
     i {
       flex: 1;
       height: 1px;
-      background: rgba(255, 232, 214, 0.18);
+      background: rgb(var(--cream-06-rgb) / .18);
     }
   }
 
@@ -54,11 +98,10 @@
     top: 15%;
     left: 4.5%;
     z-index: 2;
-    width: 61vw;
-    height: 70vh;
-    min-height: 520px;
+    width: var(--process-stage-w);
+    height: var(--process-stage-h);
     overflow: hidden;
-    background: #181915;
+    background: var(--ink-01);
   }
 
   &__image {
@@ -66,7 +109,7 @@
     inset: 0;
     margin: 0;
     overflow: hidden;
-    background: #181915;
+    background: var(--ink-01);
     will-change: clip-path;
 
     &Inner {
@@ -87,30 +130,31 @@
       pointer-events: none;
       background: linear-gradient(
           90deg,
-          rgba(15, 16, 13, 0.12),
+          rgb(var(--ink-01-rgb) / .12),
           transparent 34%
         ),
-        linear-gradient(180deg, transparent 64%, rgba(15, 16, 13, 0.52));
+        linear-gradient(180deg, transparent 64%, rgb(var(--ink-01-rgb) / .52));
     }
 
     figcaption {
       position: absolute;
-      left: clamp(18px, 1.7vw, 30px);
-      right: clamp(18px, 1.7vw, 30px);
-      bottom: clamp(16px, 1.5vw, 26px);
+      left: clamp(1.125rem, calc(1.7 * var(--fvw)), 1.875rem);
+      right: clamp(1.125rem, calc(1.7 * var(--fvw)), 1.875rem);
+      /* Odsazení ode dna je svislý rozměr — visí na výšce okna, ne na jeho šířce. */
+      bottom: clamp(1rem, 2.4vh, 1.625rem);
       z-index: 3;
       display: flex;
       align-items: center;
-      gap: 14px;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: clamp(0.75rem, 0.6vw, 0.75rem);
+      gap: 0.875rem;
+      color: rgb(var(--white-rgb) / .7);
+      font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
 
       i {
         flex: 1;
         height: 1px;
-        background: rgba(255, 255, 255, 0.28);
+        background: rgb(var(--white-rgb) / .28);
       }
     }
   }
@@ -123,9 +167,9 @@
     z-index: 4;
     height: 2px;
     pointer-events: none;
-    background: #df8356;
-    box-shadow: 0 0 16px rgba(223, 131, 86, 0.72),
-      0 -10px 38px rgba(217, 111, 59, 0.22);
+    background: var(--clay-29);
+    box-shadow: 0 0 16px rgb(var(--clay-29-rgb) / .72),
+      0 -10px 38px rgb(var(--clay-26-rgb) / .22);
   }
 
   &__copyStage {
@@ -133,9 +177,8 @@
     top: 15%;
     right: 5%;
     z-index: 12;
-    width: 26vw;
-    height: 70vh;
-    min-height: 520px;
+    width: var(--process-copy-w);
+    height: var(--process-stage-h);
   }
 
   &__copy {
@@ -148,10 +191,18 @@
     will-change: opacity, transform;
 
     h2 {
-      margin: clamp(20px, 2.5vh, 34px) 0 0;
+      margin: clamp(1.25rem, 2.5vh, 2.125rem) 0 0;
       color: var(--process-cream);
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(3.8rem, 5.5vw, 7rem);
+      /*
+       * Jediný typ v komponentě, který měří rám a ne obrazovku.
+       *
+       * „Modelování“ je jedno slovo — nezalomí se, takže jeho šířku určuje velikost písma
+       * a musí se vejít do sloupce, který teď měří rám. Na plain vw vycházelo na 2552 na 716 px
+       * do 562px sloupce a `overflow: hidden` na .atelierProcess by mu uřízl 46 px. Lead
+       * i odstavec se zalomí samy, proto ty zůstávají na vw i s rampou.
+       */
+      font-size: clamp(3.8rem, calc(5.5 * var(--fvw)), 7rem);
       font-weight: 400;
       line-height: 0.84;
       letter-spacing: -0.055em;
@@ -161,50 +212,50 @@
   &__index {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: rgba(255, 232, 214, 0.45);
-    font-size: clamp(0.8125rem, 0.64vw, 0.8125rem);
+    gap: 0.625rem;
+    color: rgb(var(--cream-06-rgb) / .45);
+    font-size: 0.8125rem;
     letter-spacing: 0.15em;
 
     span:first-child {
-      color: #df8356;
+      color: var(--clay-29);
     }
 
     i {
-      width: clamp(34px, 4vw, 70px);
+      width: clamp(2.125rem, calc(4 * var(--fvw)), 4.375rem);
       height: 1px;
-      background: rgba(255, 232, 214, 0.22);
+      background: rgb(var(--cream-06-rgb) / .22);
     }
   }
 
   &__label {
-    margin: clamp(28px, 3.2vh, 44px) 0 0;
-    color: rgba(255, 232, 214, 0.5);
-    font-size: clamp(0.75rem, 0.65vw, 0.75rem);
+    margin: clamp(1.75rem, 3.2vh, 2.75rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .5);
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   &__lead {
     max-width: 12ch;
-    margin: clamp(26px, 3.2vh, 44px) 0 0;
-    color: rgba(255, 232, 214, 0.9);
+    margin: clamp(1.625rem, 3.2vh, 2.75rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .9);
     font-family: "Sentient-Regular", serif;
     font-size: clamp(1.55rem, 2vw, 2.65rem);
     line-height: 1.02;
     letter-spacing: -0.032em;
 
     em {
-      color: #df8356;
+      color: var(--clay-29);
       font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
       font-weight: 300;
     }
   }
 
   &__body {
-    max-width: 440px;
-    margin: clamp(18px, 2.3vh, 30px) 0 0;
-    color: rgba(255, 232, 214, 0.56);
+    max-width: 27.5rem;
+    margin: clamp(1.125rem, 2.3vh, 1.875rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .56);
     font-size: clamp(0.9rem, 0.94vw, 1.06rem);
     font-weight: 300;
     line-height: 1.52;
@@ -214,21 +265,21 @@
     position: absolute;
     left: 4.5%;
     right: 4.5%;
-    bottom: clamp(22px, 3.5vh, 44px);
+    bottom: clamp(1.375rem, 3.5vh, 2.75rem);
     z-index: 20;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: clamp(8px, 0.8vw, 14px);
+    gap: clamp(0.5rem, calc(0.8 * var(--fvw)), 0.875rem);
 
     button {
       min-width: 0;
-      padding: 7px 0;
+      padding: 0.4375rem 0;
       display: grid;
       grid-template-columns: auto 1fr;
       align-items: center;
-      gap: 9px;
+      gap: 0.5625rem;
       border: 0;
-      color: rgba(255, 232, 214, 0.3);
+      color: rgb(var(--cream-06-rgb) / .3);
       background: transparent;
       cursor: pointer;
       font: inherit;
@@ -250,11 +301,11 @@
       &:hover,
       &:focus-visible,
       &.is-active {
-        color: rgba(255, 232, 214, 0.88);
+        color: rgb(var(--cream-06-rgb) / .88);
       }
 
       &.is-active span {
-        color: #df8356;
+        color: var(--clay-29);
       }
 
       &:focus-visible {
@@ -276,18 +327,19 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  color: #212222;
+  color: var(--black-03);
   background: linear-gradient(
     180deg,
     var(--process-charcoal) 0%,
-    #77785e 48%,
-    #bbb788 100%
+    var(--olive-13) 48%,
+    var(--sage-01) 100%
   );
 
   > span {
-    margin-bottom: clamp(20px, 2vw, 34px);
-    color: rgba(255, 232, 214, 0.58);
-    font-size: clamp(0.75rem, 0.67vw, 0.76rem);
+    /* Mezera pod štítkem soupeří o výšku pásu, ne o jeho šířku. */
+    margin-bottom: clamp(1.25rem, 3.1vh, 2.125rem);
+    color: rgb(var(--cream-06-rgb) / .58);
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -295,7 +347,7 @@
   h2 {
     max-width: 13ch;
     margin: 0;
-    color: #f8dfce;
+    color: var(--cream-06);
     font-family: "Sentient-Regular", serif;
     font-size: clamp(3.2rem, 5.4vw, 7rem);
     font-weight: 400;
@@ -303,7 +355,7 @@
     letter-spacing: -0.05em;
 
     em {
-      color: #292a25;
+      color: var(--ink-06);
       font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
       font-weight: 300;
     }
@@ -312,18 +364,6 @@
 
 .atelierProcessMobile {
   display: none;
-}
-
-@include below-px(980px) {
-  .atelierProcess {
-    &__stage {
-      width: 57vw;
-    }
-
-    &__copyStage {
-      width: 31vw;
-    }
-  }
 }
 
 @include below-px(760px) {
@@ -356,7 +396,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      color: rgba(255, 232, 214, 0.48);
+      color: rgb(var(--cream-06-rgb) / .48);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -364,7 +404,7 @@
       i {
         flex: 1;
         height: 1px;
-        background: rgba(255, 232, 214, 0.2);
+        background: rgb(var(--cream-06-rgb) / .2);
       }
     }
 
@@ -390,7 +430,7 @@
           background: linear-gradient(
             180deg,
             transparent 64%,
-            rgba(15, 16, 13, 0.52)
+            rgb(var(--ink-01-rgb) / .52)
           );
         }
 
@@ -399,7 +439,7 @@
           left: 20px;
           bottom: 18px;
           z-index: 2;
-          color: rgba(255, 255, 255, 0.72);
+          color: rgb(var(--white-rgb) / .72);
           font-size: 0.75rem;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -408,7 +448,7 @@
 
       > div {
         > span {
-          color: #df8356;
+          color: var(--clay-29);
           font-size: 0.8125rem;
           letter-spacing: 0.14em;
         }
@@ -426,7 +466,7 @@
         > p:last-child {
           max-width: 36rem;
           margin: 20px 0 0;
-          color: rgba(255, 232, 214, 0.58);
+          color: rgb(var(--cream-06-rgb) / .58);
           font-size: 0.96rem;
           line-height: 1.5;
         }
@@ -436,13 +476,13 @@
     &__lead {
       max-width: 13ch;
       margin: 24px 0 0;
-      color: rgba(255, 232, 214, 0.9);
+      color: rgb(var(--cream-06-rgb) / .9);
       font-family: "Sentient-Regular", serif;
       font-size: clamp(1.7rem, 8vw, 2.5rem);
       line-height: 1.02;
 
       em {
-        color: #df8356;
+        color: var(--clay-29);
         font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
         font-weight: 300;
       }
@@ -456,3 +496,161 @@
   }
 }
 
+
+/*
+ * ─── Portrait phones: the scene, not the list ───────────────────────────────────────────────
+ *
+ * `below-px(760px)` swaps the whole sticky clip-path scene for a plain stacked list. That is the
+ * right call for a phone on its side — 430px of height cannot hold a pinned stage — but on a
+ * phone held upright the scene is exactly what the page is for, so it comes back here and the
+ * list stands down.
+ *
+ * `v(xs)` is 320px of portrait, so this covers every upright phone, small through large; `v(md)`
+ * below hands tablets back to the list they have today. Both are orientation-locked, so nothing
+ * here can reach a landscape phone that matches on width alone.
+ */
+@include v(xs) {
+  /*
+   * The scroll runway has to come back with it. `height: auto` above leaves the sticky stage with
+   * no travel to be pinned through — the same way the vyroba timeline was switched off — so the
+   * clip-path would hold its first frame for all seven chapters. 560svh against the 734 of the
+   * wide layout: the same seven beats, ~80svh each, scrubbed over less page because a thumb is
+   * doing the scrolling.
+   */
+  .Gallery {
+    height: 560svh;
+
+    /*
+     * The pull-up comes back, and here it is safe.
+     *
+     * It is off at the 760px stop because there this section is `atelierProcessMobile` — ordinary
+     * flow content starting with a chapter, which a viewport of overlap would swallow. Upright,
+     * the sticky scene is back, and its first 100vh is a pinned lead-in with nothing in it to
+     * miss. So the hero's stage can dissolve onto a gallery that is already in place, which is
+     * what makes the join seamless on the wide layout.
+     *
+     * -100vh, not the -104 of the wide composition: that extra 4 is for the taller lead-in the
+     * desktop scene has. Here the stage is exactly `100vh`, so the overlap is exactly a stage.
+     */
+    margin-top: -100vh;
+  }
+
+  .atelierProcess {
+    display: block;
+    height: 100svh;
+    /* 760px is taller than the screen it would be pinned in. */
+    min-height: 0;
+  }
+
+  .atelierProcessMobile {
+    display: none;
+  }
+
+  /* The image is the whole frame now, not a plate with a column of text beside it. */
+  .atelierProcess__stage {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /*
+   * The overlay. This element is in the markup and had no rule anywhere — it was an empty div.
+   * Over the photograph at 0.5 it is what makes cream type legible on whatever the picture is
+   * doing underneath, which on the wide layout was never a problem because the copy sat beside
+   * the image rather than on it.
+   */
+  .atelierProcess__imageShade {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgb(var(--black-01-rgb) / .5);
+    pointer-events: none;
+  }
+
+  /*
+   * The copy moves onto the image, held 10vh off the floor — and keeps an explicit height.
+   *
+   * The stage holds all seven chapters at once, stacked on one another by `position: absolute;
+   * inset: 0` and switched between by opacity. `height: auto` collapses a box whose every child
+   * is absolute, and taking the children out of absolute — which is what I tried first — drops
+   * seven copies into flow one under the other, so the one that is meant to be visible sits a
+   * long way below the screen. Hence a real height here and the children left alone.
+   */
+  .atelierProcess__copyStage {
+    top: auto;
+    right: 1.25rem;
+    bottom: 10vh;
+    left: 1.25rem;
+    z-index: 12;
+    width: auto;
+    height: 46%;
+    min-height: 0;
+  }
+
+  .atelierProcess__copy {
+    justify-content: flex-end;
+  }
+
+  .atelierProcess__lead {
+    font-size: 1.05rem;
+  }
+
+  .atelierProcess__body {
+    font-size: 0.95rem;
+  }
+
+  /* Seven tracks across a 390px screen is 44px each, and it sits where the copy now is. */
+  .atelierProcess__progress {
+    display: none;
+  }
+
+  /*
+   * The picture's own caption goes. It reads „01 · MYŠLENKA · FUNKCE — ATELIÉR · PÍSEK" along the
+   * bottom edge of the frame, which is where the copy now sits — so it printed straight through
+   * the body text, and it is saying what the index and label above it already say. It earns its
+   * place on the wide layout, where the copy is in a column beside the picture and the caption is
+   * the only label on it.
+   */
+  .atelierProcess__image figcaption {
+    display: none;
+  }
+
+  /*
+   * Back to the bottom of the section, absolutely.
+   *
+   * The 760px rule makes this `position: relative`, which is right when the section is a stacked
+   * list and this closes it. With the pinned scene restored, `.Gallery`'s only in-flow child is
+   * that 844px stage — so a relative outro landed at 2448px, a fifth of the way into a 4726px
+   * section, and spent the rest of the scroll hidden behind the pinned scene. It never appeared,
+   * which is the „Stejný postup" panel going missing.
+   *
+   * Absolute at `bottom: 0` puts it back where the wide layout has it: the last screen of the
+   * section, sliding up over the scene as it releases.
+   */
+  .Gallery__outro {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
+/* Portrait tablets keep the stacked list they have today. */
+@include v(md) {
+  .Gallery {
+    height: auto;
+  }
+
+  .atelierProcess {
+    display: none;
+  }
+
+  .atelierProcessMobile {
+    display: block;
+  }
+}

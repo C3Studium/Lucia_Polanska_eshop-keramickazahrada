@@ -5,11 +5,12 @@
 
   .gridTwo {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-
-    @include below-px(820px) {
-      grid-template-columns: 1fr;
-    }
+    // Sloupec se nesmi zuzit pod sirku nejdelsiho labelu ("Potvrdit heslo (povinne)" = 197px).
+    // 13rem podlaha drzi popisek na jednom radku; auto-fit slozi 3 -> 2 -> 1 sloupec sam,
+    // takze zadny sirkovy breakpoint neni potreba. min(100%, ...) brani preteceni,
+    // kdyz je kontejner uzsi nez podlaha.
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    // svisle na vh (nizky laptop se sevre sam), vodorovne na vw
+    gap: clamp(.7rem, 1.6vh, 1.1rem) clamp(.85rem, 1.4vw, 1.4rem);
   }
 }

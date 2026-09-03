@@ -24,12 +24,18 @@ const holdStepDuration = 2600
  * always wraps the whole pill and the cover image just re-crops, so nothing
  * shrinks and nothing is clipped mid-animation.
  *
- * The row holding both buttons is right-anchored with a reserved width
- * (Carousel/style.scss), so a growing button extends leftward — the left one
- * opens into free space, the right one pushes its neighbour aside.
+ * The row holding both buttons is right-anchored with a reserved width, so a
+ * growing button extends leftward — the left one opens into free space, the
+ * right one pushes its neighbour aside. That reserve is the same geometry as
+ * this animation, so it is derived from these two constants rather than copied:
+ * `BUTTONS_RESERVE` below is what Carousel/index.tsx hands the row as
+ * `--buttons-reserve`, and Carousel/style.scss only adds the gap.
  */
 const BUTTON_SIZE = 50
 const BUTTON_GROWN = BUTTON_SIZE * 2.5
+
+/** One grown pill beside one resting circle — the widest the row can ever be. */
+export const BUTTONS_RESERVE = BUTTON_GROWN + BUTTON_SIZE
 const LINE_REST = 20
 const LINE_HOVER = 84
 

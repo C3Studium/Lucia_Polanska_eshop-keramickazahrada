@@ -5,9 +5,11 @@ import { motion, useMotionValue } from "framer-motion"
 import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image";
 import type { PointerEvent } from "react";
-import AboutHeroShader from "./AboutHeroShader";
+import { shaderImages } from "@lib/util/site-copy";
+import type { CopyBlock } from "@lib/util/site-copy";
+import AboutHeroShader, { aboutImages } from "./AboutHeroShader";
 
-export default function AboutMe () {
+export default function AboutMe ({ block }: { block?: CopyBlock }) {
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
     // const reduceMotion = useReducedMotion()
     const pointerX = useMotionValue(0)
@@ -40,9 +42,12 @@ export default function AboutMe () {
                 animate={animate}
                 transition={transition}
             >
+                {/* První dvě fotky bloku `o-mne.galerie`; další dvě nese
+                    příběh níž (viz STORY_OFFSET v omne/story). */}
                 <AboutHeroShader
                     pointerX={pointerX}
                     pointerY={pointerY}
+                    imageSet={shaderImages(block, aboutImages)}
                 />
             </motion.div>
             <motion.p

@@ -1,0 +1,34 @@
+{
+ "login": {
+  "index": "01",
+  "eyebrow": "Váš účet",
+  "title": "Vítejte",
+  "accent": "zpět.",
+  "note": "Objednávky, oblíbené kousky a adresy máte na jednom místě.",
+  "word": "VSTUP"
+ },
+ "register": {
+  "index": "02",
+  "eyebrow": "Nový účet",
+  "title": "Založte si",
+  "accent": "účet.",
+  "note": "Adresu vyplníte jednou a příště už jen potvrdíte objednávku.",
+  "word": "ÚČET"
+ },
+ "recovery": {
+  "index": "03",
+  "eyebrow": "Obnova přístupu",
+  "title": "Cesta",
+  "accent": "zpátky.",
+  "note": "Jeden krok a můžete pokračovat tam, kde jste skončili.",
+  "word": "OBNOVA"
+ },
+ "verification": {
+  "index": "04",
+  "eyebrow": "Potvrzení e-mailu",
+  "title": "Ještě jeden",
+  "accent": "krok.",
+  "note": "Ověřený e-mail chrání vaše objednávky i uložené údaje.",
+  "word": "OVĚŘIT"
+ }
+}

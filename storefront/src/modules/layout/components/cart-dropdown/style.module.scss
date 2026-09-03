@@ -31,13 +31,23 @@
       }
       .cartCount {
         color: var(--iconsPink);
-        font-size: 0.875rem;
 
-        @include hb((
-          sm: (font-size: 0.8125rem),
-          xs: (font-size: 0.8125rem),
-          xxs: (font-size: 0.8125rem),
-        ));
+        /*
+         * One declaration, not four. The map set .8125rem at sm, xs and xxs - three keys
+         * carrying the same value - so the 0.875rem base never applied on any landscape width
+         * down to 400px, and three media queries did the work of one line. .8125rem is what
+         * actually rendered everywhere, so that is what stays; in rem it rides the ramp above
+         * 1921 by itself.
+         *
+         * Deliberately not a clamp. The numeral is the label of a badge the navbar draws and
+         * sizes itself: --nav-badge-size (0.9375rem) for the box, --nav-icon-size (2.25rem) for
+         * the glyph behind it. Both are plain rem, so both hold still between 1200 and 1921 and
+         * both ride the ramp above it. A vw middle term would pull the numeral out of step with
+         * the box drawn around it. In rem it stays locked to that box at every width - and it
+         * now agrees with the .8125rem the navbar's own badge rule asks for, which this selector
+         * outranks four classes to three.
+         */
+        font-size: 0.8125rem;
 
         @include vb((
           lg: (font-size: 1.3rem),
@@ -47,19 +57,25 @@
     .popoverPanel {
       display: block;
       position: absolute;
-      top: calc(100% + 10px);
+      /* The drop below the bar and the invisible bridge that keeps the pointer inside on the
+         way down are the same distance, so the distance is written once. */
+      --cart-panel-gap: 0.625rem;
+
+      top: calc(100% + var(--cart-panel-gap));
       right: 0;
-      width: min(460px, calc(100vw - 24px));
-      color: #24251f;
+      /* px -> rem. Capped in px the panel was exactly as wide on a 2552 screen as on a 1920 one,
+         in the middle of a page that had grown by a third. In rem the cap rides the ramp. */
+      width: min(28.75rem, calc(100vw - 1.5rem));
+      color: var(--ink-05);
       z-index: 100;
-      border: 1px solid rgba(36,37,31,.18);
-      border-radius: 18px;
+      border: 1px solid rgb(var(--ink-05-rgb) / .18);
+      border-radius: 1.125rem;
       background:
-        radial-gradient(circle at 90% 0%, rgba(199,196,154,.28), transparent 16rem),
-        rgba(248,242,230,.97);
+        radial-gradient(circle at 90% 0%, rgb(var(--sage-02-rgb) / .28), transparent 16rem),
+        rgb(var(--cream-07-rgb) / .97);
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.82),
-        0 28px 64px -35px rgba(24,25,21,.72);
+        inset 0 1px 0 rgb(var(--white-rgb) / .82),
+        0 28px 64px -35px rgb(var(--ink-01-rgb) / .72);
       backdrop-filter: blur(18px);
       transform-origin: top right;
 
@@ -69,18 +85,24 @@
         right: 0;
         bottom: 100%;
         width: 100%;
-        height: 12px;
+        /* Covers the gap above, plus a hair, so the pointer never crosses bare page between the
+           button and the panel. Derived from the gap rather than restated beside it. */
+        height: calc(var(--cart-panel-gap) + 0.125rem);
       }
 
       .panelHeader {
-        padding: 1.2rem 1.35rem;
+        /* Vertical padding on the vertical axis. Header and subtotal are the panel's fixed
+           overhead: whatever they take is taken from the list's 48svh. Live from 756px of
+           viewport height to 1067px, so 1220x660 and 1366x768 sit on the floor and a 1080
+           screen keeps exactly what it has today. */
+        padding: clamp(0.85rem, 1.8vh, 1.2rem) 1.35rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        border-bottom: 1px solid rgba(36,37,31,.15);
+        border-bottom: 1px solid rgb(var(--ink-05-rgb) / .15);
         &::after {
           content: "ATELIÉROVÝ VÝBĚR";
-          color: rgba(36,37,31,.48);
+          color: rgb(var(--ink-05-rgb) / .48);
           font-size: 0.8125rem;
           letter-spacing: .14em;
         }
@@ -94,10 +116,19 @@
       .items {
         /* allow internal scrolling and prevent scroll chaining to the page */
         overflow-y: auto;
+        /* Stated, not inherited. A box with overflow-y: auto and overflow-x: visible is not a
+           thing the spec allows, so the visible computes to auto: measured, this list reported
+           overflow-x: auto at every stop from 1220 to 2552 and was one long product title away
+           from a horizontal scrollbar inside the panel. Nothing here is meant to scroll
+           sideways - the row is a grid and the title ellipsises - so it is clipped. */
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
         overscroll-behavior: contain; /* prevent parent page from scrolling when at edges */
         overscroll-behavior-y: contain;
-        max-height: min(48svh, 402px);
+        /* svh was already the right axis here; the second term was not. In px the list was
+           capped at the same 402px on every screen, so above 1921 it stopped taking its share
+           of a page that had grown. 25.125rem is the same 402px at a 16px root. */
+        max-height: min(48svh, 25.125rem);
         padding-inline: 1.35rem;
         display: grid;
         grid-template-columns: 1fr;
@@ -106,13 +137,18 @@
         padding-block: .25rem;
       }
       .cartItem {
+        /* One number for the thumbnail column. The grid said 86px and the link inside it said
+           5.25rem (84px) - two numbers for one width, disagreeing by the 2px sliver that sat
+           between them. The link's width wins, because that is the box the image fills. */
+        --cart-thumb: 5.25rem;
+
         display: grid;
-        grid-template-columns: 86px 1fr;
+        grid-template-columns: var(--cart-thumb) 1fr;
         gap: .9rem;
         padding: 1rem 0;
-        border-bottom: 1px solid rgba(36,37,31,.12);
+        border-bottom: 1px solid rgb(var(--ink-05-rgb) / .12);
         .productLink {
-          width: 5.25rem;
+          width: var(--cart-thumb);
         }
         .itemDetails {
           display: flex;
@@ -134,7 +170,20 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 margin-right: 1rem;
-                width: min(180px, 36vw);
+                /*
+                 * Measured against the row, not the window. 36vw came off the viewport while
+                 * the panel it sits in is capped at 28.75rem: on a 2552 screen that asked for
+                 * 918px of title inside a 612px panel, and on a 500px window it asked for 180.
+                 * Neither number knew anything about the space actually available.
+                 *
+                 * The percentage is of .itemHeader - the panel minus its padding, the thumbnail
+                 * and the gap - so it follows the panel through the ramp and through the
+                 * 100vw-1.5rem branch alike. 75% reproduces what the old expression gave on the
+                 * narrowest sheet; from ~458px up the rem cap governs, as it did before. The box
+                 * still shrinks below this when the price needs the room: overflow is hidden, so
+                 * the automatic minimum size is zero and the ellipsis takes over.
+                 */
+                width: min(11.25rem, 75%);
               }
               .itemPrice {
                 display: flex;
@@ -145,23 +194,32 @@
           .removeBtn {
             margin-top: 0.25rem;
             font-size: 0.875rem;
-            --delete-button-ink: rgba(32, 33, 29, .62);
-            --delete-button-active-ink: #f8eee3;
-            --delete-button-border: rgba(32, 33, 29, .22);
-            --delete-button-fill: #20211d;
+            --delete-button-ink: rgb(var(--ink-05-rgb) / .62);
+            --delete-button-active-ink: var(--cream-07);
+            --delete-button-border: rgb(var(--ink-05-rgb) / .22);
+            --delete-button-fill: var(--ink-05);
 
+            /* The remove control is a delete-button, whose own height is
+               `clamp(2.25rem, 3.7vh, 2.5rem)` — it pulls in on a short laptop and rides the ramp
+               above 1921. Flat rem here (0,1,1 against its 0,1,0) beat that clamp and pinned it
+               back to a fixed 38px at every height. Same shape, one step tighter, so the panel
+               still gets a smaller control than the cart page without standing still. */
             button {
-              min-height: 38px;
-              padding-inline: 9px;
+              min-height: clamp(2.125rem, 3.5vh, 2.375rem);
+              padding-inline: clamp(0.5rem, 0.7vw, 0.625rem);
             }
           }
         }
       }
       .subtotal {
-        padding: 1.25rem 1.35rem 1.35rem;
+        /* Same axis, same reason as the header - this is the other end of the panel's fixed
+           overhead. Live from ~735px to ~1081px of height at the top, ~760 to 1080 at the
+           bottom, ~747 to 1067 for the gap: on a short laptop all three sit on their floors, on
+           a 1080 screen all three are at the value they had before. */
+        padding: clamp(0.85rem, 1.85vh, 1.25rem) 1.35rem clamp(0.95rem, 2vh, 1.35rem);
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: clamp(0.7rem, 1.5vh, 1rem);
           font-size: 0.95rem;
         .subtotalRow {
           display: flex;
@@ -186,6 +244,13 @@
         }
       }
 
+      /*
+       * NOT A TABLE STOP. 639px appears nowhere in system/_breakpoints.scss; the nearest stops
+       * are `ph` (<=560) below it and `xs` (>=750) above. Left as it stands for now because it
+       * governs the phone and small-tablet sheet only - no landscape stop reaches down here -
+       * and moving it would change the layout at widths this pass is not measuring. It belongs
+       * to the phone pass, together with the sheet geometry inside it.
+       */
       @include below-px(639px) {
         position: fixed;
         top: 72px;
@@ -252,9 +317,16 @@
             letter-spacing: 0.1em;
           }
 
-          @include below-px(400px) {
-            &::after {
-              display: none;
+          /*
+           * Hidden on the two smaller portrait phones and restored at `v(s)` — 400px is the
+           * width the eyebrow needs beside the title, and it is a stop the engine already has
+           * for exactly this size of phone.
+           */
+          &::after {
+            display: none;
+
+            @include v(s) {
+              display: revert;
             }
           }
         }
@@ -269,8 +341,18 @@
       .empty {
         .emptyContent {
           display: flex;
-          padding-top: 4rem;
-          padding-bottom: 4rem;
+          /*
+           * 4rem top and bottom is 128px of nothing inside a panel whose list is capped at
+           * min(48svh, 25.125rem) - 317px on a 1220x660 laptop. The empty cart was announcing
+           * itself at nearly the height of a full one. On the vertical axis it settles itself:
+           * floor from 560px of viewport height, ceiling from 1280px, so a short laptop gets
+           * ~33px and a tall screen keeps the generous version.
+           *
+           * The floor is the same 1.75rem the phone sheet above already asked for, so that
+           * override now says what this line would have said anyway.
+           */
+          padding-top: clamp(1.75rem, 5vh, 4rem);
+          padding-bottom: clamp(1.75rem, 5vh, 4rem);
           flex-direction: column;
           gap: 1rem;
           align-items: center;
@@ -307,16 +389,16 @@
           }
 
           .emptyStoreButton.emptyStoreButton {
-            height: 46px;
+            height: 2.875rem;
             border-radius: 999px;
-            box-shadow: 0 14px 30px -22px rgba(33,34,34,.82);
+            box-shadow: 0 14px 30px -22px rgb(var(--black-03-rgb) / .82);
 
             > div {
-              min-width: 164px;
+              min-width: 10.25rem;
             }
 
             p {
-              padding: 8px 18px;
+              padding: 0.5rem 1.125rem;
               font-size: 1rem;
               letter-spacing: .01em;
             }
@@ -338,10 +420,10 @@
 
     .button{
         position: relative;
-        width: 150px;
-        height: 40px;
+        width: 9.375rem;
+        height: 2.5rem;
         cursor: pointer;
-        border-radius: 25px;
+        border-radius: 1.5625rem;
         overflow: hidden;
         border: none;
         box-shadow: none;
@@ -405,7 +487,15 @@
         &:nth-of-type(2){
             position: absolute;
             transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(12px);
+            /*
+             * The second line is parked one line-height below the first and rotated out of sight
+             * about the shared bottom edge; the flip brings it up into place. The offset is a
+             * property of the type (font-size 1rem, so 12px = 0.75em), not of the window, so it
+             * is written in rem and travels with the ramp exactly as the text does. In px it
+             * would have stayed 12px while the label around it grew above 1921, and the two
+             * lines would no longer have met.
+             */
+            transform: rotateX(-90deg) translateY(0.75rem);
             opacity: 0;
         }
     }

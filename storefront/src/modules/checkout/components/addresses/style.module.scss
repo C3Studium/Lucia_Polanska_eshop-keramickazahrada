@@ -1,43 +1,45 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* Addresses panel styles */
+
+/* Vodorovný okap sloupců shrnutí — jedna geometrie, jedno místo. Táž hodnota jako
+   $summary-col-gap v payment, aby obě tabulky shrnutí v jednom sloupci pokladny
+   držely stejný okap. Živé pásmo 1000–1750 px. */
+$col-gap: clamp(1rem, 1.6vw, 1.75rem);
+
 .root {
 	position: relative;
-	padding: 10px 0 42px 58px;
+	/* Svisle na vh — .93vh je 10px na 1080, 3.9vh je 42px na 1080; na 720/768 se to
+	   sevře samo (6.7 / 7.1 px nahoře, 28.1 / 30.0 px dole), takže nízký laptop
+	   nepotřebuje vlastní pravidlo v lt.
+	   Vodorovně 3.625rem = 58px — levá lišta pro číslo kroku, sdílená se shipping,
+	   payment a review; v rem, aby ji ramp nad 1921 zvedl stejně jako sourozencům. */
+	padding: clamp(.4rem, .93vh, .8rem) 0 clamp(1.75rem, 3.9vh, 3.2rem) 3.625rem;
 	background: transparent;
-
-    @include hb((
-        sm: (width: 100%),
-        xs: (width: 100%),
-        xxs: (width: 100%),
-    ));
 
 	.headerRow {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1.5rem;
-
-        @include hb((
-            sm: (gap: 0.5rem),
-            xs: (gap: 1rem),
-            xxs: (gap: 1rem),
-        ));
-        @include vb((
-            md: (gap: 1rem),
-            s: (gap: 1rem),
-            sm: (gap: 1rem),
-            xs: (gap: 1rem),
-        ));
+		/* Byla to dvojice map (hb .5/1/1rem + vb 1rem), a protože poslední klíč xxs
+		   je min-width:400, platilo na desktopu 1rem. Jeden clamp, živé pásmo 800–1600. */
+		gap: clamp(.5rem, 1vw, 1rem);
+		/* 24px → svisle na vh */
+		margin-bottom: clamp(1rem, 2.4vh, 1.75rem);
 
 		.heading {
 			display: flex;
             align-items: center !important;
 			flex-direction: row;
 			gap: 0.5rem;
-			align-items: baseline;
-			max-width: 760px;
+			max-width: 47.5rem;
+			/* Jediná velikost pro všechny kroky pokladny — táž příčka jako shipping
+			   a payment. Podlaha 32px do 1143 px, strop 50.4px od 1800 px, živé pásmo
+			   1143–1800; nad 1921 strop zvedá ramp (3.15rem).
+			   Předtím byl tenhle clamp mrtvý kód: hb/vb mapy sázely min-width dotazy
+			   v pořadí mapy, takže poslední klíč (xxs = min-width:400) přebíjel všechny
+			   ostatní a nadpis stál plochých 1.6rem na 1280 i na 1920. */
 			font-size: clamp(2rem, 2.8vw, 3.15rem);
 			font-weight: 400;
             font-family: "Sentient-Regular", serif;
@@ -45,28 +47,11 @@
             letter-spacing: -.025em;
             width: fit-content;
 
-            @include hb((
-                lg: (font-size: 1.8rem),
-                md: (font-size: 1.8rem),
-                mdt: (font-size: 1.8rem),
-                sm: (font-size: 1.8rem),
-                xs: (font-size: 1.6rem),
-                xxs: (font-size: 1.6rem),
-            ));
-
-            @include vb((
-                lg: (font-size: 1.8rem, padding-right: 2.5rem),
-                md: (font-size: 1.8rem),
-                s: (font-size: 1.6rem),
-                sm: (font-size: 1.6rem),
-                xs: (font-size: 1.6rem),
-            ));
-
             svg{
-                min-width: 15px;
-                min-height: 15px;
+                min-width: .9375rem;
+                min-height: .9375rem;
             }
-            
+
 		}
 		.editBtn {
 			width: auto;
@@ -76,14 +61,14 @@
 
 	.form {
 		.shippingAddress {
-			padding-bottom: 2rem;
+			padding-bottom: clamp(1.25rem, 3vh, 2.25rem);
 		}
 		.billingAddress {
-			padding-bottom: 1.5rem;
-			padding-top: 2rem;
+			padding-bottom: clamp(1rem, 2.2vh, 1.75rem);
+			padding-top: clamp(1.25rem, 3vh, 2.25rem);
 		}
 		.submitBtn {
-			margin-top: 1.5rem;
+			margin-top: clamp(1rem, 2.2vh, 1.75rem);
 			width: 100%;
 			display: flex;
 			justify-content: flex-start;
@@ -99,19 +84,23 @@
                 grid-template-columns: 1.05fr .9fr 1.15fr;
 				align-items: stretch;
 				gap: 0;
-                border-top: 1px solid rgba(32, 33, 28, .18);
-                border-bottom: 1px solid rgba(32, 33, 28, .18);
+                border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
+                border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
 			}
 
 			.col {
 				display: flex;
 				flex-direction: column;
 				width: auto;
-                min-height: 148px;
-                padding: 1.35rem 1.5rem 1.35rem 0;
-                border-right: 1px solid rgba(32, 33, 28, .14);
+                /* 148px natvrdo → vh: podlaha 96px do výšky 600, strop 152px od 950,
+                   takže na 720/768 se sloupec sevře (115 / 123 px) a nad 1921 ho
+                   zvedne ramp — dřív stál 148px od 720 až po 1351. */
+                min-height: clamp(6rem, 16vh, 9.5rem);
+                /* Svislý člen na vh (2vh je 21.6px na 1080), vodorovný sdílený okap. */
+                padding: clamp(.9rem, 2vh, 1.6rem) $col-gap clamp(.9rem, 2vh, 1.6rem) 0;
+                border-right: 1px solid rgb(var(--ink-05-rgb) / .14);
 
-                & + .col { padding-left: 1.5rem; }
+                & + .col { padding-left: $col-gap; }
 
                 &:last-child {
                     padding-right: 0;
@@ -122,7 +111,7 @@
                     /* Was 10.2px at .52 alpha — the header of the address
                        summary a customer proofreads. Caption floor + AA. */
                     margin: 0 0 .9rem;
-                    color: rgba(32, 33, 28, .68);
+                    color: rgb(var(--ink-05-rgb) / .68);
                     font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
                     letter-spacing: 0.12em;
                     text-transform: uppercase;
@@ -130,21 +119,23 @@
 
 			    .value {
                     margin: 0 0 .28rem;
-				    color: #20211c;
+				    color: var(--ink-05);
                     font: 400 1rem/1.4 "Sansation-Regular", sans-serif;
 			    }
 
 			    .note {
-                    max-width: 260px;
+                    /* 260px → míra textu. Při .875rem je 36ch zhruba týchž 260px,
+                       ale drží se písma, takže roste s rampem stejně jako řádek. */
+                    max-width: 36ch;
                     margin: 0;
-				    color: rgba(32, 33, 28, .68);
+				    color: rgb(var(--ink-05-rgb) / .68);
                     font: 300 .875rem/1.45 "Sansation-Light", sans-serif;
 			    }
 		    }
 	    }
 
 	.divider {
-		margin-top: 2rem;
+		margin-top: clamp(1.25rem, 3vh, 2.25rem);
         opacity: .42;
 	}
 }
@@ -152,9 +143,12 @@
 .root::before {
 	content: "01";
 	position: absolute;
-	top: 22px;
+	/* 22px → vh, drží se s padding-top .root (10px → clamp(.4rem, .93vh, .8rem)) */
+	top: clamp(.9rem, 2.04vh, 1.7rem);
 	left: 0;
-	font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+	/* Táž značka jako 02, 03 a 04. Podlaha .75rem je čitelnostní dno projektu —
+	   původních .68rem = 10.88px bylo pod ním. Živé pásmo 1176…1373. */
+	font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
 	letter-spacing: .18em;
 	opacity: .48;
 }
@@ -169,90 +163,10 @@
             min-height: auto;
             padding: 1.1rem 0;
             border-right: 0;
-            border-bottom: 1px solid rgba(32, 33, 28, .12);
+            border-bottom: 1px solid rgb(var(--ink-05-rgb) / .12);
 
             & + .col { padding-left: 0; }
             &:last-child { border-bottom: 0; }
-        }
-    }
-}
-
-
-.ClickButton{
-    width: auto;
-    height: auto;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    .button{
-      position: relative;
-      width: 250px;
-      height: 40px;
-      cursor: pointer;
-      border-radius: 25px;
-      overflow: hidden;
-      border: none;
-      box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
-      background-color: transparent;
-
-      .slider{
-          position: relative;
-          width: 100%;
-          height: 100%;
-
-          .el{
-              width: 100%;
-              height: 100%;
-              p{
-                margin: 0px;
-                font-size: 0.9rem;
-                color: var(--whiteText);
-              }
-              &:nth-of-type(2){
-                  p{
-                    color: var(--whiteText);
-                  }
-              }
-              &:hover{
-                  .perspectiveText{
-                      transform: rotateX(90deg);
-                      p{
-                          &:nth-of-type(1){
-                              transform: translateY(-100%);
-                              opacity: 0;
-                          }
-                          &:nth-of-type(2){
-                              opacity: 1;
-                          }
-                      }
-                  }
-              }
-          }
-      }
-        
-    }
-}
-
-.perspectiveText{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-    p{
-        transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-        pointer-events: none;
-        text-transform: capitalize;
-        &:nth-of-type(2){
-            position: absolute;
-            transform-origin: bottom center;
-            transform: rotateX(-90deg) translateY(10px);
-            opacity: 0;
         }
     }
 }

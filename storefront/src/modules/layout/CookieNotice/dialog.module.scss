@@ -3,6 +3,13 @@
  * „Upravit" — the per-category switches, in the same cream card as the banner.
  * Ink #20211c on #f6f1e6 measures 14.8:1; the muted description is #4a4b42 at 8.1:1.
  * Nothing below 14px; every action is 48px and every switch has a 48px row to be hit in.
+ *
+ * Those two numbers are floors, not values: they are the MIN of their clamps everywhere below, so
+ * the panel can only ever grow past them. Every clamp keeps its ends in rem so the ≥1921px root
+ * ramp lifts them (at 2552px the rem is 21.27px and the whole dialog grows by the third the screen
+ * did), and the middle term picks its axis — `vw` for widths, gutters and type, `vh` for anything
+ * competing for the height of the screen. The `vh` half is what makes this panel fit a 1366×768
+ * laptop without a single `lt` rule: the paddings, the row height and the gaps shrink themselves.
  */
 
 .backdrop {
@@ -12,8 +19,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(16px, 4vw, 40px);
-  background: rgba(20, 22, 17, 0.58);
+
+  /* Split by axis: the vertical half is the margin the panel has to live inside on a short
+     laptop, so it hangs on the height, not on the width. */
+  padding: clamp(1rem, 2.4vh, 2.5rem) clamp(1rem, 2.6vw, 2.5rem);
+  background: rgb(var(--ink-01-rgb) / .58);
   backdrop-filter: blur(6px);
 }
 
@@ -23,16 +33,22 @@
  */
 .panel {
   display: flex;
-  width: min(640px, 100%);
-  max-height: min(86dvh, 760px);
+
+  /* 40rem, not 640px: the card is the reading measure, and the measure has to grow with the type
+     inside it — otherwise a 2552px screen shows 1920's dialog in the middle of a bigger page. */
+  width: min(40rem, 100%);
+  max-height: min(86dvh, 47.5rem);
   flex-direction: column;
-  padding: clamp(20px, 3vw, 30px);
-  border: 1px solid rgba(32, 33, 28, 0.2);
-  border-radius: 20px;
-  background: #f6f1e6;
-  box-shadow: 0 40px 90px -50px rgba(16, 18, 12, 0.8);
-  color: #20211c;
-  gap: 18px;
+
+  /* One value was doing both axes. Vertical floors at 750px tall (so 720/768 laptops tighten to
+     18px), horizontal floors at 1000px wide and tops out at 1500. */
+  padding: clamp(1.125rem, 2.4vh, 1.875rem) clamp(1.25rem, 2vw, 1.875rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-radius: 1.25rem;
+  background: var(--cream-07);
+  box-shadow: 0 40px 90px -50px rgb(var(--ink-01-rgb) / .8);
+  color: var(--ink-05);
+  gap: clamp(.75rem, 1.6vh, 1.25rem);
   overflow: hidden;
 }
 
@@ -40,33 +56,41 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: clamp(1rem, 1.3vw, 1.375rem);
 }
 
+/* 12px is the smallest type on the page and stays the floor. */
 .eyebrow {
-  margin: 0 0 4px;
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  margin: 0 0 .25rem;
+  font: 400 clamp(.75rem, .95vw, .9375rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.18em;
   opacity: 0.6;
   text-transform: uppercase;
 }
 
+/* 3vw put the ceiling at 933px, i.e. every desktop sat on it. 2vw is live from 1100 to 1400. */
 .title {
   margin: 0;
-  font: 400 clamp(22px, 3vw, 28px) / 1.1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(1.375rem, 2vw, 1.75rem) / 1.1 "Sansation-Regular", sans-serif;
 }
 
+/*
+ * A square, so both sides take the same clamp — and the same one as the action buttons, because
+ * they sit on the same row of the header. 48px is the tap floor, so it is the MIN.
+ * The glyph is half the button by construction: 2.5vh is exactly 5vh / 2, and 1.5/3 = 1.75/3.5,
+ * so the × keeps its share of the circle at every size instead of being fixed at 24px.
+ */
 .close {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: clamp(3rem, 5vh, 3.5rem);
+  height: clamp(3rem, 5vh, 3.5rem);
   flex: 0 0 auto;
-  border: 1px solid rgba(32, 33, 28, 0.28);
+  border: 1px solid rgb(var(--ink-05-rgb) / .28);
   border-radius: 999px;
   background: transparent;
-  color: #20211c;
+  color: var(--ink-05);
   cursor: pointer;
-  font-size: 24px;
+  font-size: clamp(1.5rem, 2.5vh, 1.75rem);
   line-height: 1;
   place-items: center;
   transition:
@@ -75,8 +99,8 @@
 }
 
 .close:hover {
-  border-color: #20211c;
-  background: rgba(32, 33, 28, 0.08);
+  border-color: var(--ink-05);
+  background: rgb(var(--ink-05-rgb) / .08);
 }
 
 .close:focus-visible,
@@ -87,7 +111,7 @@
 
 .lede {
   margin: 0;
-  font: 400 14px/1.6 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.6 "Sansation-Regular", sans-serif;
 }
 
 .link {
@@ -109,14 +133,14 @@
   flex-direction: column;
   padding: 0;
   margin: 0;
-  gap: 6px;
+  gap: clamp(.25rem, .6vh, .5rem);
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .category {
-  border-top: 1px solid rgba(32, 33, 28, 0.14);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
 }
 
 .category:first-child {
@@ -128,11 +152,16 @@
 .categoryLabel {
   position: relative;
   display: flex;
-  min-height: 48px;
+
+  /* Same tap floor and same axis as every other action in the dialog. */
+  min-height: clamp(3rem, 5vh, 3.5rem);
   align-items: flex-start;
-  padding: 14px 2px;
+
+  /* The row padding is the height the list can give back: 10px on a 720/768 laptop, 14px at 1080.
+     Four rows × two sides is ~32px returned to the scroll area without touching the 48px floor. */
+  padding: clamp(.625rem, 1.3vh, 1rem) .125rem;
   cursor: pointer;
-  gap: 14px;
+  gap: clamp(.75rem, 1.05vw, 1.125rem);
 }
 
 .categoryLabel:has(.checkbox:disabled) {
@@ -152,16 +181,39 @@
   white-space: nowrap;
 }
 
+/*
+ * Bound geometry, derived once instead of written down three times.
+ *
+ * `box-sizing: border-box` puts the 1px border inside the track, so the box the knob moves in is
+ * (W − 2px) wide and (H − 2px) tall, with an equal pad on all four sides:
+ *
+ *   knob   = H − 2px − 2·pad
+ *   travel = (W − 2px − 2·pad) − knob = W − H      ← the border and both pads cancel out
+ *
+ * At the sizes this file used to hard-code that is 26 − 2 − 2·3 = 18 and 46 − 26 = 20 — the same
+ * three numbers, now following one another instead of agreeing by hand. Change --switch-w and the
+ * knob and its travel move with it; above 1921 the rem ramp lifts all three at once.
+ *
+ * The track hangs on the width (it is a horizontal control) and its height comes from its own
+ * 26/46 aspect rather than a second clamp that could drift out of step. Floor 46px until 1353px
+ * wide, ceiling 56px from 1647px, so it grows right across 1400–1500.
+ */
 .switch {
+  --switch-w: clamp(2.875rem, 3.4vw, 3.5rem);
+  --switch-h: calc(var(--switch-w) * 26 / 46);
+  --switch-pad: .1875rem;
+  --switch-knob: calc(var(--switch-h) - 2px - var(--switch-pad) * 2);
+  --switch-travel: calc(var(--switch-w) - var(--switch-h));
+
   position: relative;
   display: block;
-  width: 46px;
-  height: 26px;
+  width: var(--switch-w);
+  height: var(--switch-h);
   flex: 0 0 auto;
-  border: 1px solid rgba(32, 33, 28, 0.45);
+  border: 1px solid rgb(var(--ink-05-rgb) / .45);
   border-radius: 999px;
   background: transparent;
-  margin-top: 2px;
+  margin-top: .125rem;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -169,26 +221,26 @@
 
 .switchKnob {
   position: absolute;
-  top: 3px;
-  left: 3px;
+  top: var(--switch-pad);
+  left: var(--switch-pad);
   display: block;
-  width: 18px;
-  height: 18px;
+  width: var(--switch-knob);
+  height: var(--switch-knob);
   border-radius: 999px;
-  background: #20211c;
+  background: var(--ink-05);
   transition:
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .checkbox:checked + .switch {
-  border-color: #20211c;
-  background: #20211c;
+  border-color: var(--ink-05);
+  background: var(--ink-05);
 }
 
 .checkbox:checked + .switch .switchKnob {
-  background: #ffe8d6;
-  transform: translateX(20px);
+  background: var(--cream-06);
+  transform: translateX(var(--switch-travel));
 }
 
 /* Necessary cookies: shown on, and shown to be not a choice. */
@@ -199,38 +251,40 @@
 .categoryText {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: .25rem;
 }
 
 .categoryTitle {
   display: flex;
   align-items: center;
-  font: 400 16px/1.3 "Sansation-Regular", sans-serif;
-  gap: 8px;
+  font: 400 clamp(1rem, 1.2vw, 1.1875rem)/1.3 "Sansation-Regular", sans-serif;
+  gap: clamp(.5rem, .6vw, .625rem);
 }
 
+/* 11px is the existing floor for this uppercase micro-label and is left where it was; the clamp
+   only lets it grow with the row it sits in. */
 .badge {
-  padding: 3px 8px;
-  border: 1px solid rgba(32, 33, 28, 0.28);
+  padding: .1875rem clamp(.5rem, .55vw, .625rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .28);
   border-radius: 999px;
-  font: 400 11px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.6875rem, .85vw, .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.06em;
   opacity: 0.75;
   text-transform: uppercase;
 }
 
 .categoryDescription {
-  color: #4a4b42;
-  font: 400 14px/1.55 "Sansation-Regular", sans-serif;
+  color: var(--olive-04);
+  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
 .footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 4px;
-  border-top: 1px solid rgba(32, 33, 28, 0.14);
-  gap: 12px;
+  padding-top: .25rem;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
+  gap: clamp(.75rem, .9vw, 1rem);
 }
 
 /* Draft helpers, not decisions: they move the switches, and „Uložit nastavení" still has to be
@@ -238,24 +292,24 @@
 .quickActions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: .25rem;
 }
 
 .quickAction {
-  min-height: 48px;
-  padding: 0 6px;
+  min-height: clamp(3rem, 5vh, 3.5rem);
+  padding: 0 clamp(.375rem, .5vw, .5rem);
   border: 0;
   background: transparent;
-  color: #4a4b42;
+  color: var(--olive-04);
   cursor: pointer;
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1 "Sansation-Regular", sans-serif;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
 .quickAction:hover {
-  color: #20211c;
+  color: var(--ink-05);
 }
 
 .quickAction:focus-visible {
@@ -266,16 +320,18 @@
 .decisions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: clamp(.625rem, .85vw, .875rem);
 }
 
+/* Identical to the banner's `action`, on purpose: the same four floors (48px tall, 15px type) and
+   the same two axes, so the dialog's buttons and the banner's are never a different size. */
 @mixin action {
-  min-height: 48px;
+  min-height: clamp(3rem, 5vh, 3.5rem);
   flex: 0 0 auto;
-  padding: 0 20px;
+  padding: 0 clamp(1.25rem, 1.5vw, 1.75rem);
   border-radius: 999px;
   cursor: pointer;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+  font: 400 clamp(.9375rem, 1.15vw, 1.125rem)/1 "Sansation-Regular", sans-serif;
   transition:
     background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
@@ -290,26 +346,26 @@
 .buttonPrimary {
   @include action;
 
-  border: 1px solid #20211c;
-  background: #20211c;
-  color: #ffe8d6;
+  border: 1px solid var(--ink-05);
+  background: var(--ink-05);
+  color: var(--cream-06);
 
   &:hover {
     background: transparent;
-    color: #20211c;
+    color: var(--ink-05);
   }
 }
 
 .buttonSecondary {
   @include action;
 
-  border: 1px solid rgba(32, 33, 28, 0.45);
+  border: 1px solid rgb(var(--ink-05-rgb) / .45);
   background: transparent;
-  color: #20211c;
+  color: var(--ink-05);
 
   &:hover {
-    border-color: #20211c;
-    background: rgba(32, 33, 28, 0.08);
+    border-color: var(--ink-05);
+    background: rgb(var(--ink-05-rgb) / .08);
   }
 }
 

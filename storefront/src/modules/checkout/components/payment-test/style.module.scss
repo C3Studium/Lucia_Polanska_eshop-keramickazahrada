@@ -4,12 +4,17 @@
 .root {
   min-height: auto !important;
   padding: .28rem .48rem !important;
-  border: 1px solid rgba(154, 111, 101, .28) !important;
+  border: 1px solid rgb(var(--clay-24-rgb) / .28) !important;
   border-radius: 999px !important;
-  background: rgba(255, 232, 214, .46) !important;
-  color: #75574f !important;
+  background: rgb(var(--cream-06-rgb) / .46) !important;
+  color: var(--clay-08) !important;
   box-shadow: none !important;
-  font: 400 .62rem/1.2 "Sansation-Regular", sans-serif !important;
+  // Byl tu `.62rem`, což je 9.92px při root 16px — pod čitelnostní podlahou 12px.
+  // Podlaha je teď 12px (.75rem), strop 13px (.8125rem = vlastní velikost Badge).
+  // Živé pásmo: 12 / .009 = 1333px … 13 / .009 = 1444px, tedy uprostřed 1200–1500.
+  // Oba krajní členy jsou v rem, takže je ramp nad 1921 zvedne sám
+  // (na 2552 je root 21.27px → strop 17.28px). Do xxl/qhd se proto nic nepíše.
+  font: 400 clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif !important;
   letter-spacing: .02em;
 
   .labelStrong {

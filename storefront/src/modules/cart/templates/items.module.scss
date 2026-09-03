@@ -6,11 +6,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  padding: 0 0 25px;
-  border-bottom: 1px solid rgba(255,232,214,.22);
+  /* Směr je sloupec, takže gap i spodní odsazení jsou svislé rozměry → vh.
+     Druhý `padding-bottom: 18px` tiše přebíjel `padding: 0 0 25px` o tři řádky výš; zrušen. */
+  gap: clamp(1rem, 2vh, 1.5rem);
+  padding: 0 0 clamp(1rem, 2vh, 1.75rem);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .22);
   flex-direction: column;
-  padding-bottom: 18px;
 
   @include v(md) {
     align-items: flex-end;
@@ -23,36 +24,43 @@
 
 .title {
   margin: 0;
-  color: #ffe8d6;
-  font: 400 clamp(2.8rem, 3.6vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  color: var(--cream-06);
+  /* Býval tu pod tímhle ještě druhý font-size: clamp(2.6rem, 13vw, 3.6rem) — telefonní
+     clamp přelepený přes desktopový. 13vw je nad 443px trvale u stropu, takže nadpis měřil
+     57.6px na 1200 i na 1920. Jeden clamp, živé pásmo 1067–1956. Podlaha 2.4rem drží dnešní
+     telefonní vzhled (13vw × 443 ≈ 2.6rem tam beztak nedosáhne dřív než u podlahy). */
+  font: 400 clamp(2.4rem, 3.6vw, 4.4rem)/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
-  font-size: clamp(2.6rem, 13vw, 3.6rem);
 }
 
 .sectionMeta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 0 0 4px;
-  color: rgba(255,232,214,.46);
-  font: 400 12px/1 "Sansation-Regular", sans-serif;
+  gap: clamp(.5rem, .9vw, .85rem);
+  margin: 0 0 .25rem;
+  color: rgb(var(--cream-06-rgb) / .46);
+  /* Podlaha .75rem = 12px. S .72rem měřilo pořadové číslo sekce na 1220 jen 11.52px,
+     tedy pod hranicí, kterou rig hlásí jako vadu. Živé pásmo 1200–1520. */
+  font: 400 clamp(.75rem, 1vw, .95rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .sectionMeta span {
   display: grid;
-  width: 28px;
-  height: 28px;
+  /* Kolečko s pořadovým číslem: obě osy stejným clampem, takže zůstane kruh a nemusí se
+     spoléhat na procenta z druhé osy. Živé pásmo 1280–1680. */
+  width: clamp(1.6rem, 2vw, 2.1rem);
+  height: clamp(1.6rem, 2vw, 2.1rem);
   place-items: center;
-  border: 1px solid rgba(255,232,214,.3);
+  border: 1px solid rgb(var(--cream-06-rgb) / .3);
   border-radius: 50%;
-  color: #bbb788;
+  color: var(--sage-01);
   letter-spacing: 0;
 }
 
 .tableBody {
   display: block;
-  padding-top: 16px;
+  padding-top: clamp(.75rem, 1.6vh, 1.25rem);
 }
 

@@ -1,60 +1,173 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * The owner's message bar, fixed to the bottom edge.
+ *
+ * Sizes: horizontal members on `vw`, vertical members on `vh`. The bar competes with the footer
+ * for the bottom of the screen, so its height must shrink on a short laptop by itself — with
+ * `padding-block` on `vh` a 1366x768 tightens from 10.3px to 7.3px of padding with no `lt` rule
+ * anywhere in this file. There is not a single media query here and there should not be one:
+ * the bar keeps the same shape from 1220 to 2552, only the scale changes.
+ *
+ * Every ceiling is in `rem`, so the ≥1921px root ramp in globals.scss lifts them all — the bar
+ * used to be exactly as tall on a 2552px screen as on a 1366px one.
+ */
 .banner {
+  /*
+   * The close button's geometry, in one place. `padding-inline`'s end member is DERIVED from it
+   * rather than written down (the old pair was `padding-right: 44px` against a button that
+   * measured 10 + 6 + 15 + 6 = 37px from the edge), so the reserve behind the ✕ can never drift
+   * out of step with the ✕ itself.
+   */
+  --close-inset: clamp(0.4rem, 0.71vw, 0.7rem);    /* was right: 10px  — live 901…1577 */
+  --close-pad: clamp(0.25rem, 0.42vw, 0.45rem);    /* was padding: 6px — live 952…1714 */
+  --close-glyph: clamp(0.8125rem, 1.1vw, 1.05rem); /* was 15px         — live 1182…1527 */
+
+  /* One space value for the row: the flex gap and the pill's own offset are the same distance. */
+  --banner-gap: clamp(0.5rem, 0.85vw, 0.95rem);    /* was 12px — live 941…1788 */
+
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 10px 44px 10px 16px;
+  gap: var(--banner-gap);
+
+  padding-block: clamp(0.4rem, 0.95vh, 0.85rem);   /* was 10px — live 674…1432 of HEIGHT */
+  padding-inline:
+    clamp(0.6rem, 1.1vw, 1.05rem)                  /* was 16px — live 873…1527 */
+    calc(var(--close-inset) * 2 + var(--close-pad) * 2 + var(--close-glyph));
+
   /* Fixed to the bottom edge (Matěj, 2026-08-06) — present on every page
-     without pushing the layout, dismissable, above content but below modals. */
+     without pushing the layout, dismissable, above content but below modals.
+
+     Because it lies on the bottom edge it covers whatever the page ends with, which on every
+     page is the footer's copyright line. Rather than each page reserving room for a bar that may
+     have been dismissed a second ago, the component measures itself and publishes the result as
+     `--shop-banner-height` on `:root` (see index.tsx) — set while the bar is up, REMOVED the
+     moment it is dismissed or unmounted. Anything that needs the clearance reads it with its own
+     zero fallback, `var(--shop-banner-height, 0px)`, and gets the right answer in both states. */
   position: fixed;
   inset: auto var(--page-inset, 0px) 0;
   z-index: 40;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18);
-  background: #2b2b28;
-  color: #f5f2ec;
-  font-size: 14px;
+  box-shadow: 0 -2px 12px rgb(var(--black-01-rgb) / .18); /* hairline-class, stays in px */
+  background: var(--black-04);
+  color: var(--cream-08);
+  font-size: clamp(0.8125rem, 1.05vw, 1rem);       /* was 14px — live 1238…1524 */
   line-height: 1.4;
   text-align: center;
 }
 
-.message {
-  animation: bannerFade 0.5s ease;
+/*
+ * Nájezd zdola.
+ *
+ * Dřív se prolínala jednotlivá zpráva při každém přepnutí. Zprávy se dnes nepřepínají — jedou
+ * ve smyčce — takže tenhle pohyb má jedinou úlohu: ukázat pruh ve chvíli, kdy sjedete z hera.
+ * Vyjíždí od spodní hrany, tedy odtud, kde je ukotvený; posun je v procentech vlastní výšky,
+ * takže vypadá stejně na nízkém noťasu i na 2K panelu, kde je pruh vyšší.
+ */
+.banner {
+  animation: bannerRise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes bannerFade {
-  from { opacity: 0; transform: translateY(-3px); }
-  to { opacity: 1; transform: none; }
+@keyframes bannerRise {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/*
+ * Pás oznámení — tatáž technika i tempo jako pás v heru.
+ *
+ * Zpráv je málo a bývají krátké, takže se do řádku vejdou; smyčka přesto jede pořád, aby se obě
+ * oznámení chovala stejně bez ohledu na délku, a aby se pruh choval stejně jako hero.
+ */
+.viewport {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 94%, transparent);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  /*
+   * −50 %, protože obsah je v DOMu dvakrát. Ve chvíli, kdy první kopie odjede přesně celá, stojí
+   * druhá na jejím místě, takže návrat na nulu je tentýž obraz a skok není vidět.
+   *
+   * `--notices-speed` je tatáž proměnná i tatáž výchozí hodnota jako v heru: kdyby se pásy hýbaly
+   * různě rychle, bylo by na jedné stránce vidět, že to nejsou dvě podoby téhož.
+   */
+  animation: bannerNoticesLoop var(--notices-speed, 28s) linear infinite;
+
+  @include reduced-motion {
+    animation: none;
+  }
+
+  /* Když jsou efekty seškrtané kvůli výkonu, pás stojí — je to ozdoba, ne obsah. */
+  @include reduced-fx {
+    animation: none;
+  }
+}
+
+.line {
+  display: inline-flex;
+  align-items: center;
+  /* Mezera drží zprávy od sebe i na švu mezi oběma kopiemi. */
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  padding-inline-end: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.item {
+  white-space: nowrap;
+}
+
+@keyframes bannerNoticesLoop {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 
 .close {
   position: absolute;
-  right: 10px;
+  right: var(--close-inset);
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: 0;
   color: inherit;
-  font-size: 15px;
+  font-size: var(--close-glyph);
   cursor: pointer;
-  padding: 6px;
+  padding: var(--close-pad);
   opacity: 0.75;
 }
 .close:hover { opacity: 1; }
 
-.action {
-  display: inline-block;
-  margin-left: 12px;
-  padding: 3px 12px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  color: inherit;
-  font-size: 13px;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.action:hover {
-  background: #f5f2ec;
-  color: #2b2b28;
+/*
+ * Tlačítko je `WebButton` — tentýž komponent jako pilulky na kurzech a jako tlačítko v pásu
+ * v heru. Vlastní pilulku si pruh nekreslí; tenhle blok jen mění MÍRU.
+ *
+ * Stojí PRVNÍ v řadě, tedy vlevo, a mimo posuvný pás: cíl, který ujíždí, se trefit nedá.
+ * Odsazení od levé hrany dělá `gap` na `.banner`, proto tu není žádný vlastní margin.
+ *
+ * Rozměry se shodují s tlačítkem v heru. Je to tatáž akce z téhož oznámení, jen na dvou
+ * místech stránky, takže by bylo divné, kdyby každé mělo jinou velikost.
+ *
+ * Dvojtřídní selektor schválně: `WebButton` deklaruje tyhle proměnné na `.button`, což je
+ * jedna třída, a při shodné váze by rozhodovalo pořadí načtení stylů.
+ */
+.banner .action {
+  --web-button-label-size: clamp(0.8125rem, 0.9vw, 1rem);
+  /* Svisle nula (drží nízkou výšku), vodorovně plná míra komponentu. Nula na obou osách
+     popisek ustřihla — `WebButton` má `overflow: hidden` kvůli najíždějící výplni, takže
+     text bez odsazení dolehl na okraje pilulky a konce písmen zmizely pod obrysem. */
+  --web-button-label-padding: 0 clamp(0.9rem, 1.3vw, 1.6rem);
+  --web-button-min-width: clamp(5rem, 6vw, 6.5rem);
+  /* Pruh je tmavý, takže obrys i popisek jsou světlé. */
+  --web-button-ink: var(--cream-08);
+  --web-button-fill: var(--cream-08);
+
+  flex-shrink: 0;
+  height: clamp(2rem, 3.2vh, 2.4rem);
+
+  /* Dotyková podlaha 44px platí dál — tlačítko se smí zmenšit očím, ne prstu. */
+  @include touch {
+    height: 2.75rem;
+  }
 }

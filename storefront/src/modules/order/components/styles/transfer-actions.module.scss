@@ -22,11 +22,11 @@
   display: grid;
   gap: .7rem;
   padding-block: 1.2rem;
-  border-block: 1px solid rgba(255, 232, 214, .2);
+  border-block: 1px solid rgb(var(--cream-06-rgb) / .2);
 }
 
 .result span {
-  color: #bbb788;
+  color: var(--sage-01);
   font: 600 .6rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -34,13 +34,13 @@
 
 .result strong {
   max-width: 30rem;
-  color: #ffe8d6;
+  color: var(--cream-06);
   font: 400 1.15rem/1.35 "Sansation-Regular", sans-serif;
 }
 
 .result p {
   margin: 0;
-  color: rgba(255, 232, 214, .52);
+  color: rgb(var(--cream-06-rgb) / .52);
   font: 300 .82rem/1.45 "Sansation-Light", sans-serif;
 }
 
@@ -48,8 +48,8 @@
   display: grid;
   gap: .35rem;
   padding: 1rem 0;
-  border-top: 1px solid rgba(204, 127, 96, .48);
-  color: #f0b39b;
+  border-top: 1px solid rgb(var(--clay-28-rgb) / .48);
+  color: var(--clay-38);
 }
 
 .error strong {
@@ -57,7 +57,7 @@
 }
 
 .error span {
-  color: rgba(255, 232, 214, .46);
+  color: rgb(var(--cream-06-rgb) / .46);
   font: 300 .72rem/1.4 "Sansation-Light", sans-serif;
 }
 

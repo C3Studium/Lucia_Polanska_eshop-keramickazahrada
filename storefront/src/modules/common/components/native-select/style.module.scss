@@ -7,12 +7,16 @@
 .wrapper {
   position: relative;
   display: flex;
-  min-height: 48px;
+  /* 3rem, ne 48px: vyska pole musi rust s textem uvnitr, ktery nese ramp nad 1921.
+     Zamerne NE vh — je to vyska ovladaciho prvku vazana na radek textu,
+     ne pas soutezici o vysku okna. */
+  min-height: 3rem;
   align-items: center;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 28, 0.2);
-  border-radius: 12px;
-  color: #20211c;
+  /* 1px border zustava v px — hairline, fyzicka vec (pravidlo 3). */
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-radius: .75rem;
+  color: var(--ink-05);
 }
 
 .select {
@@ -34,14 +38,17 @@
   right: 1rem;
   z-index: 1;
   display: grid;
-  width: 18px;
-  height: 18px;
+  /* Sipka drzi krok s textem: 1.125rem = 18px pri rem 16px, 23.9px pri rem 21.27px (2552).
+     Odstup od textu je odvozeny, ne opsany: sipka zabira right 1rem … 2.125rem,
+     .select ma padding-right 2.8rem → 0.675rem vule, a ta je v rem, tedy skaluje s ni. */
+  width: 1.125rem;
+  height: 1.125rem;
   place-items: center;
   pointer-events: none;
 
   svg {
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
   }
 }
 
@@ -51,29 +58,52 @@
   right: 0;
   bottom: 0;
   left: 0;
+  /* Hairline zustava v px zamerne — fyzicka vec (pravidlo 3), nesmi ztloustnout s rampem. */
   height: 1px;
-  background: #747e62;
+  background: var(--olive-15);
   transform-origin: left center;
 
   &[data-invalid="true"] {
-    background: #9a6f65;
+    background: var(--clay-24);
   }
 }
 
+/*
+  Varianta contact se nikdy neobjevi sama. Je to devate pole tehoz devitipoloveho
+  formulare, ktery jinak sazi Input (add/edit adresy, fakturacni udaje v profilu) —
+  jedina dve mista, kde .contact zije; checkout uz NativeSelect nepouziva vubec.
+  Proto tenhle box nesmi mit vlastni cisla: sousedni Input visi na
+  --input-height: clamp(2.6rem, 6.5vh, 3.4rem) (input/style.module.scss).
+  Jedno gesto, jedno cislo — odvozene, ne opsane.
+*/
 .contact {
+  /* Nazev zamerne zrcadli --input-height, aby bylo videt, ze jde o dvojici.
+     Plochych 3.5rem delalo z pole zeme na 1220x660 pole o 13 px vyssi nez vsechna
+     ostatni (43 vs 56 px) a o 1.6 px vyssi na kazdem dalsim viewportu. */
+  --select-height: clamp(2.6rem, 6.5vh, 3.4rem);
+
   .wrapper {
-    min-height: 3.5rem;
+    min-height: var(--select-height);
     border: 0;
-    border-bottom: 1px solid rgba(38, 40, 32, 0.28);
+    border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
     border-radius: 0;
     background: transparent !important;
   }
 
   .select {
-    min-height: 3.5rem;
-    padding: 1.1rem 2.5rem 0.45rem 0;
-    color: #282a22;
-    font-size: clamp(1rem, 1vw, 1.08rem);
+    min-height: var(--select-height);
+    /* Padding musi klesat s vyskou, jinak se radek 1.3 prestane do boxu vejit na
+       nizkem laptopu. Stejne zive pasmo jako u Inputu vedle (605–908 px vysky),
+       rozdelene v pomeru tohohle prvku 1.1 : .45. Vodorovny clen zustava v rem —
+       je to odstup od sipky, ne svisly rozmer. */
+    padding: clamp(.73rem, 1.94vh, 1.1rem) 2.5rem clamp(.3rem, .79vh, .45rem) 0;
+    color: var(--ink-06);
+    /* Spolecna hodnota s Inputem: input/style.module.scss ma na
+       .contact .inputWrapper input PRESNE tenhle clamp. Pasmo je vysoko
+       (zive 1600–1728) a patri rozevrit — ale je to vlastnost DVOJICE, takze se
+       meni v obou souborech naraz, nebo v zadnem. Rozevreni jen tady dalo
+       „Cesko" 17.35 px vedle 16px poli na 1366 a 18.4 vedle 17.28 na 1920. */
+    font-size: clamp(1rem, 1.333vw, 1.167rem);
   }
 
   .icon {

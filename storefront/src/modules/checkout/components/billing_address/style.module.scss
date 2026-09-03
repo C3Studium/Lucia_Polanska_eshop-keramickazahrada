@@ -14,13 +14,17 @@
 		}
 		.countryField {
 			display: flex;
-			min-height: 54px;
+			/* Shodné s .countryField v shipping-address — obě pole musí být stejně vysoká.
+			   Pole soupeří o výšku obrazovky. 7vh je 53.8px na 768 (původních 54px
+			   beze změny), podlaha 48px pod 686, strop 64px od 914. */
+			min-height: clamp(3rem, 7vh, 4rem);
 			margin: .25rem;
-			padding: .55rem 0 .42rem;
+			/* Svislé odsazení taky na vh: 6.9px na 768, 9.7px na 1080, strop od 1209. */
+			padding: clamp(.42rem, .9vh, .68rem) 0 clamp(.32rem, .7vh, .52rem);
 			flex-direction: column;
 			justify-content: center;
 			border: 0;
-			border-bottom: 1px solid rgba(38,40,32,.28);
+			border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
 			border-radius: 0;
 			background: transparent;
 
@@ -29,9 +33,9 @@
 				font-weight: 400;
 				letter-spacing: .09em;
 				text-transform: uppercase;
-				color: rgba(38,40,32,.56);
+				color: rgb(var(--ink-06-rgb) / .56);
 			}
-			strong { color: #282a22; font-size: 1rem; font-weight: 300; }
+			strong { color: var(--ink-06); font-size: 1rem; font-weight: 300; }
 		}
 	}
 

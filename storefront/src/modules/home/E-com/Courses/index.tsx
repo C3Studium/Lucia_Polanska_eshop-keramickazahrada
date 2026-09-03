@@ -1,5 +1,9 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { button } from "@lib/util/site-copy"
+import type { CopyBlocks } from "@lib/util/site-copy"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, useScroll, useSpring, useTransform } from "framer-motion"
@@ -44,7 +48,46 @@ const CTA_END = 0.8
 const RAIL_START = 0.66
 const RAIL_END = 0.8
 
-export default function Courses() {
+export default function Courses({ copy }: { copy?: CopyBlocks }) {
+  // Obě tlačítka vedou dovnitř webu, takže se z CMS bere jen název.
+  const ctaKurzy = button(copy, "index.kurzy")
+  const ctaVyrobky = button(copy, "index.vyrobky")
+
+  /* Sekce se hýbe jen hodnotami ze scrollu, a ty překreslení nespouštějí — bez tohohle
+     by `editable()` zůstalo prázdné a texty by v editoru nešly chytit. Viz hook. */
+  useEditRerender()
+
+  const block = copy?.["index.ecom-courses"]
+  const railLeft = block?.accent?.[0]?.trim() || "04 · Kurzy"
+  const railRight = block?.accent?.[1]?.trim() || "Malé skupiny · Písek"
+  const headlineLead = block?.title?.trim() || "U hlíny se nedá spěchat."
+  const headlineAccent = block?.headline?.trim() || "A to je na tom to nejlepší."
+  const lede =
+    block?.bodyText?.trim() ||
+    "Kurzy pro děti i dospělé, vždycky v malé skupině. Pár hodin u hlíny — a domů si odnesete něco, co jste udělali sami."
+
+  /*
+   * Závěrečná výzva (sekce 05) má vlastní blok, ne pole navíc v tom kurzovém.
+   *
+   * Je to samostatná scéna s vlastní lištou a vlastním číslem — redaktor upravuje jednu,
+   * aniž by musel hledat mezi texty té druhé.
+   */
+  const outro = copy?.["index.ecom-outro"]
+  const outroRailLeft = outro?.accent?.[0]?.trim() || "Pokračování"
+  const outroRailRight = outro?.accent?.[1]?.trim() || "Ručně, v píseckém ateliéru"
+  const outroKicker = outro?.accent?.[2]?.trim() || "Z ateliéru k vám domů"
+  const outroStamp = outro?.accent?.[3]?.trim() || "Ateliér · Písek"
+  /* Číslo sekce je struktura (řada 01–05 napříč stránkou) a `accent` má strop
+     šesti položek — „05" proto zůstává v kódu. */
+  const outroIndex = "05"
+  const outroIndexLabel = outro?.accent?.[4]?.trim() || "Pokračujte do e-shopu"
+  const outroAsk = outro?.accent?.[5]?.trim() || "Nebo se zeptat Lucie"
+  const outroLead = outro?.title?.trim() || "Každý výrobek"
+  const outroAccent = outro?.headline?.trim() || "hledá svoje místo."
+  const outroLede =
+    outro?.bodyText?.trim() ||
+    "Ručně tvořená keramika pro zahradu i domov. Všechno vzniká pomalu a jen v malém počtu."
+
   const sectionRef = useRef<HTMLElement>(null)
   const { isPhone } = useDeviceTier()
   const { scrollYProgress } = useScroll({
@@ -140,12 +183,22 @@ export default function Courses() {
       clamp01(entryValue, 0.2, 0.5) *
       (1 - clamp01(pinnedValue, CURTAIN_START + 0.02, CURTAIN_END - 0.06))
   )
+  /*
+   * Ve vh, ne v px. Byly to konstanty 22 a 26 px, tedy dráha, která je na
+   * 1080px obrazovce 2.4 % výšky, ale na 660px laptopu 3.9 % — nejdelší přesně
+   * tam, kde je místa nejmíň. Meta lišta téhle scény jede s ní a na 1220x660 se
+   * při plném driftu schovávala za navbar. 2.04vh a 2.4vh dávají na referenčních
+   * 1080 px původních 22 a 25.9 px, takže se návrhová obrazovka nehne, a níž se
+   * dráha zkracuje s ní: na 660 je to 13.5 a 15.8 px.
+   */
   const contentY = useTransform(
     [entry, revealProgress],
     ([entryValue, pinnedValue]: number[]) =>
-      22 -
-      22 * clamp01(entryValue, 0.2, 0.5) -
-      26 * clamp01(pinnedValue, 0.08, DRIFT_END)
+      `${
+        2.04 -
+        2.04 * clamp01(entryValue, 0.2, 0.5) -
+        2.4 * clamp01(pinnedValue, 0.08, DRIFT_END)
+      }vh`
   )
   /* The section's own `pointer-events: auto` on links survives an opacity of 0, so the invisible
      "Objevit kurzy" would stay clickable over the CTA. visibility takes the children with it. */
@@ -163,7 +216,13 @@ export default function Courses() {
     [0, 1]
   )
   const ctaOpacity = useTransform(revealProgress, [CTA_START, CTA_END], [0, 1])
-  const ctaY = useTransform(revealProgress, [CTA_START, CTA_END], [34, 0])
+  /* Týž důvod: 34 px je 3.15 % výšky na 1080. Obě strany mají stejný tvar
+     výrazu, takže interpolace zůstane interpolací. */
+  const ctaY = useTransform(
+    revealProgress,
+    [CTA_START, CTA_END],
+    ["3.15vh", "0vh"]
+  )
   const ctaWindowOpacity = useTransform(
     revealProgress,
     [WINDOW_START, WINDOW_START + 0.1],
@@ -219,26 +278,31 @@ export default function Courses() {
           }}
         >
           <div className="Courses__meta">
-            <span>04 · Kurzy</span>
+            <span {...editable(block, "accent.0")}>{railLeft}</span>
             <span className="meta__line" />
-            <span>Malé skupiny · Písek</span>
+            <span {...editable(block, "accent.1")}>{railRight}</span>
           </div>
+          {/* Obě půlky nadpisu jsou vlastní pole, ne jeden text rozdělený značkou:
+              `editable` zapisuje celé pole, takže dvě věty v jednom by měly společný
+              rámeček a upravovaly by se jen obě naráz. */}
           <div className="title">
-            <h2>U hlíny se nedá spěchat.</h2>
-            <em>A to je na tom to nejlepší.</em>
+            <h2 {...editable(block, "title")}>{headlineLead}</h2>
+            <em {...editable(block, "headline")}>{headlineAccent}</em>
           </div>
           <div className="Courses__footer">
-            <p>
-              Kurzy pro děti i dospělé, vždycky v malé skupině. Pár hodin
-              u hlíny — a domů si odnesete něco, co jste udělali sami.
-            </p>
-            <WebButton
-              Kind="Link"
-              title="Objevit kurzy"
-              href="/kurzy"
-              alt="Objevit keramické kurzy"
-              tone="dark"
-            />
+            <p {...editable(block, "body")}>{lede}</p>
+            {/* Obal, ne `WebButton`: ten si vykresluje vlastní vnitřek
+                (maska, přejezd výplně) a datové atributy by skončily na
+                prvku, který se při animaci přepisuje. */}
+            <span {...editable(ctaKurzy, "label")}>
+              <WebButton
+                Kind="Link"
+                title={ctaKurzy?.label?.trim() || "Objevit kurzy"}
+                href="/kurzy"
+                alt="Objevit keramické kurzy"
+                tone="dark"
+              />
+            </span>
           </div>
         </motion.div>
         <motion.div
@@ -251,40 +315,48 @@ export default function Courses() {
             style={{ opacity: ctaWindowOpacity, scale: ctaWindowScale }}
             aria-hidden="true"
           >
-            <span>Ateliér · Písek</span>
+            <span {...editable(outro, "accent.3")}>{outroStamp}</span>
           </motion.div>
           <motion.div
             className="Courses__footerRail"
             style={{ opacity: footerRailOpacity }}
           >
-            <span>Pokračování</span>
+            <span {...editable(outro, "accent.0")}>{outroRailLeft}</span>
             <span className="line" />
-            <span>Ručně, v píseckém ateliéru</span>
+            <span {...editable(outro, "accent.1")}>{outroRailRight}</span>
           </motion.div>
           <div className="Courses__cta">
             <motion.div
               className="Courses__ctaInner"
               style={{ opacity: ctaOpacity, y: ctaY }}
             >
-              <span className="Courses__ctaKicker">Z ateliéru k vám domů</span>
+              <span
+                className="Courses__ctaKicker"
+                {...editable(outro, "accent.2")}
+              >
+                {outroKicker}
+              </span>
+              {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
               <h2>
-                Každý výrobek
-                <em>hledá svoje místo.</em>
+                <span {...editable(outro, "title")}>{outroLead}</span>
+                <em {...editable(outro, "headline")}>{outroAccent}</em>
               </h2>
               <div className="Courses__ctaFooter">
-                <p>
-                  Ručně tvořená keramika pro zahradu i domov. Všechno vzniká
-                  pomalu a jen v malém počtu.
-                </p>
+                <p {...editable(outro, "body")}>{outroLede}</p>
                 <div className="Courses__ctaActions">
-                  <WebButton
-                    Kind="Link"
-                    title="Prohlédnout výrobky"
-                    href="/store"
-                    alt="Prohlédnout keramiku"
-                  />
-                  <LocalizedClientLink href="/dotazy">
-                    Nebo se zeptat Lucie <span aria-hidden="true">↗</span>
+                  <span {...editable(ctaVyrobky, "label")}>
+                    <WebButton
+                      Kind="Link"
+                      title={ctaVyrobky?.label?.trim() || "Prohlédnout výrobky"}
+                      href="/store"
+                      alt="Prohlédnout keramiku"
+                    />
+                  </span>
+                  <LocalizedClientLink
+                    href="/dotazy"
+                    {...editable(outro, "accent.5")}
+                  >
+                    {outroAsk} <span aria-hidden="true">↗</span>
                   </LocalizedClientLink>
                 </div>
               </div>
@@ -294,8 +366,8 @@ export default function Courses() {
             className="Courses__ctaIndex"
             style={{ opacity: footerRailOpacity }}
           >
-            <span>05</span>
-            <span>Pokračujte do e-shopu</span>
+            <span>{outroIndex}</span>
+            <span {...editable(outro, "accent.4")}>{outroIndexLabel}</span>
           </motion.div>
         </motion.div>
       </motion.div>

@@ -1,5 +1,8 @@
 // this folder constants are used to store static data like icons, links, etc.
-// it will later be moved to sanity studio for easier management
+//
+// Ikony tu zůstávají a do CMS nepůjdou: je to chrom rozhraní, ne obsah. Klient
+// je needituje a načítat je přes síť by jen zdrželo vykreslení. Obsah, který se
+// upravuje, bydlí ve ValeCMS — viz `lib/data/site-copy.ts`.
 
 
 export const iconLinks = [

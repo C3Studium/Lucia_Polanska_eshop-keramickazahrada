@@ -25,6 +25,7 @@ import {
   type MerchantOrder,
 } from "../../components/merchant-order-queue";
 import { WorkTabs } from "../../components/work-tabs";
+import { StorefrontBridgeButton } from "../../components/storefront-bridge-button";
 import { formatAmount, formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 
@@ -542,15 +543,20 @@ const PrehledInner = () => {
               {formatDate(data.generated_at)} — co je dnes potřeba udělat.
             </Text>
           </div>
-          <Button
-            size="small"
-            variant="secondary"
-            isLoading={isFetching}
-            onClick={() => refetch()}
-          >
-            <ArrowPath />
-            Obnovit
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* The way onto the live site with the admin bar switched on —
+                see components/storefront-bridge-button.tsx. */}
+            <StorefrontBridgeButton path="/cz" />
+            <Button
+              size="small"
+              variant="secondary"
+              isLoading={isFetching}
+              onClick={() => refetch()}
+            >
+              <ArrowPath />
+              Obnovit
+            </Button>
+          </div>
         </header>
 
         {/* Three groups in the order the day runs: what is broken, what is

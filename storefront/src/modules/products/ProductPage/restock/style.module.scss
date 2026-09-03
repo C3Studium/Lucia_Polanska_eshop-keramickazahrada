@@ -3,109 +3,184 @@
 .root {
   position: relative;
   display: grid;
-  gap: 22px;
-  margin-top: 30px;
-  padding: 26px 0 8px;
-  border-top: 1px solid rgba(255, 232, 214, 0.2);
-  color: #ffe8d6;
+  // Svislý rytmus panelu. Panel sedí v nákupním sloupci a o výšku okna
+  // nesoutěží (odsazení nese sloupec), takže ideál je ve vw, ne ve vh.
+  // gap 18→22px, živé 1224–1497 · margin-top 24→30px, živé 1200–1500
+  // padding-top 21→26px, živé 1214–1503. Stropy v rem, takže je nad 1921
+  // zvedne ramp: 22px → 29.2px na 2552.
+  gap: clamp(1.125rem, 1.47vw, 1.375rem);
+  margin-top: clamp(1.5rem, 2vw, 1.875rem);
+  padding: clamp(1.3125rem, 1.73vw, 1.625rem) 0 0.5rem;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+  color: var(--cream-06);
 }
 
 .heading {
   display: grid;
-  gap: 8px;
+  gap: 0.5rem;
 
   > span,
   label {
-    color: rgba(255, 232, 214, 0.48);
-    font: 600 12px/1.2 "Sansation-Regular", sans-serif;
+    color: rgb(var(--cream-06-rgb) / .48);
+    // 12px je podlaha čitelnosti celé stránky — proto rem, ne clamp: pod 1921
+    // zůstává 12px, nad ním ho zvedne ramp (15.9px na 2552).
+    font: 600 0.75rem/1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   strong {
-    color: #bbb788;
-    font: 400 clamp(25px, 2vw, 34px) / 1 "Sentient-LightItalic",
+    color: var(--sage-01);
+    // Týž clamp jako dřív, jen krajní členy v rem — v px se nad 1921 zastavil.
+    // 25→34px, živé 1250–1700; na 2552 je strop 45.2px místo 34px.
+    font: 400 clamp(1.5625rem, 2vw, 2.125rem) / 1 "Sentient-LightItalic",
       "Sentient-Regular", serif;
   }
 
   p {
     max-width: 38ch;
     margin: 0;
-    color: rgba(255, 232, 214, 0.62);
-    font: 300 14px/1.45 "Sansation-Light", sans-serif;
+    color: rgb(var(--cream-06-rgb) / .62);
+    font: 300 0.875rem/1.45 "Sansation-Light", sans-serif;
   }
 }
 
 .form {
   display: grid;
-  gap: 9px;
+  gap: 0.5625rem;
 
   label {
-    color: rgba(255, 232, 214, 0.46);
-    font: 600 12px/1.2 "Sansation-Regular", sans-serif;
+    color: rgb(var(--cream-06-rgb) / .46);
+    font: 600 0.75rem/1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 }
 
+/* Kompaktní tvar: pole a tlačítko vedle sebe, tlačítko smrsklé na kolečko.
+ *
+ * Druhý track byl široký jako kolečko (--restock-dot, 26px), jenže tlačítko se do
+ * něj nikdy nevešlo: s paddingem 18+9px měřilo 29px, popisek se uvnitř zalomil na
+ * tři řádky a `overflow: hidden` na tlačítku ho i s kolečkem tiše uřízl. Změřeno
+ * shodně na 568×320, 932×430 i 1440×900 — nebyla to vada telefonu, track byl užší
+ * než jeho vlastní obsah na každé šířce, kde ta dvousloupcová varianta platí.
+ *
+ * Tlačítko se tu proto na to kolečko opravdu smrskne: padding pryč, popisek do
+ * skryté vrstvy (zůstává čtečkám jako přístupný název, proto ne display: none),
+ * prstenec kreslí rámeček tlačítka a <i> uvnitř ten svůj pouští — jinak by kroužky
+ * byly dva soustředné.
+ *
+ * Strana čtverce je --restock-h, ne --restock-dot: --restock-h už nese podlahu 44px
+ * pro dotyk, a globals dává tlačítkům jen min-height, ne min-width — kolečko 26px by
+ * bylo pod podlahou i s tou výškou. Takhle je cíl 44×44 i na telefonu, kruh sedí
+ * přesně na výšku pole vedle sebe a nad 1921 ho ramp zvedne spolu s ním.
+ * --restock-dot dál drží průměr kroužku v jednom sloupci, kde je tlačítko přes celou
+ * šířku a popisek je vidět.
+ */
+@mixin restock-compact {
+  grid-template-columns: 1fr var(--restock-h);
+
+  button {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    width: var(--restock-h);
+    padding: 0;
+
+    > span:not(.buttonFill) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    i {
+      border: 0;
+    }
+  }
+}
+
 .control {
+  // Jedna geometrie, jedno místo: --restock-h drží výšku pole i tlačítka a
+  // v kompaktním tvaru (restock-compact) i stranu druhého tracku, takže se
+  // výška řádku a šířka tlačítka nemůžou rozejít. --restock-dot je průměr
+  // kroužku uvnitř tlačítka v jednom sloupci.
+  // --restock-h 44→48px, živé 1375–1500; podlaha 2.75rem je 44px, což je
+  // nejmenší rozumný dotykový cíl, pod něj clamp nesmí.
+  --restock-h: clamp(2.75rem, 3.667vw, 3.209rem);
+  --restock-dot: 1.625rem;
+
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  // 8→10px, živé 1194–1493. V jednom sloupci je to mezera svislá, ve dvou
+  // (v(md)/h(xxs) níž) vodorovná — ideál ve vw sedí na obojí.
+  gap: clamp(0.5rem, 0.67vw, 0.625rem);
 
   input {
     min-width: 0;
-    height: 48px;
-    padding: 0 4px;
+    height: var(--restock-h);
+    padding: 0 0.25rem;
     border: 0;
-    border-bottom: 1px solid rgba(255, 232, 214, 0.32);
+    border-bottom: 1px solid rgb(var(--cream-06-rgb) / .32);
     border-radius: 0;
     background: transparent;
-    color: #ffe8d6;
-    font: 300 16px/1 "Sansation-Light", sans-serif;
+    color: var(--cream-06);
+    // Nikdy pod 1rem: iOS Safari zoomuje stránku při fokusu do pole s typem
+    // menším než 16px. Proto tady žádný clamp s nižší podlahou — jen rem,
+    // který nad 1921 poroste s rampem (21.3px na 2552).
+    font: 300 1rem/1 "Sansation-Light", sans-serif;
 
     &::placeholder {
-      color: rgba(255, 232, 214, 0.34);
+      color: rgb(var(--cream-06-rgb) / .34);
     }
 
     &:focus {
-      border-bottom-color: #bbb788;
+      border-bottom-color: var(--sage-01);
     }
 
     &:autofill,
     &:-webkit-autofill {
-      box-shadow: 0 0 0 1000px #20211c inset;
-      -webkit-text-fill-color: #ffe8d6;
+      box-shadow: 0 0 0 1000px var(--ink-05) inset;
+      -webkit-text-fill-color: var(--cream-06);
     }
   }
 
   button {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr;
+    // Popisek a kolečko stojí VEDLE sebe: `1fr` sám dal jeden sloupec dvěma
+    // dětem, takže se skládaly na sebe do dvou řádků (13px + 26px + gap 8 =
+    // 47px obsahu ve 42px vysokém tlačítku) a `overflow: hidden` níž kolečko
+    // o 4px uřízl — změřeno na 320, 390 i 430 v portrétu, kde tenhle
+    // jednosloupcový tvar jediný platí. Asymetrický padding (18px vlevo na
+    // text, 9px vpravo na kroužek) tenhle řádek vždycky předpokládal.
+    grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 8px;
-    height: 48px;
-    padding: 0 9px 0 18px;
+    gap: 0.5rem;
+    height: var(--restock-h);
+    padding: 0 0.5625rem 0 1.125rem;
     overflow: hidden;
-    border: 1px solid rgba(255, 232, 214, 0.65);
+    border: 1px solid rgb(var(--cream-06-rgb) / .65);
     border-radius: 999px;
     background: transparent;
-    color: #ffe8d6;
+    color: var(--cream-06);
     cursor: pointer;
 
     > span:not(.buttonFill),
     i {
       position: relative;
       z-index: 1;
-      font: 400 13px/1 "Sansation-Regular", sans-serif;
+      font: 400 0.8125rem/1 "Sansation-Regular", sans-serif;
       font-style: normal;
     }
 
     i {
       display: grid;
-      width: 26px;
-      height: 26px;
+      width: var(--restock-dot);
+      height: var(--restock-dot);
       place-items: center;
       border: 1px solid currentColor;
       border-radius: 50%;
@@ -117,12 +192,16 @@
     }
   }
 
+  // Změna DRUHU, ne velikosti: pole a tlačítko přestanou stát nad sebou
+  // a postaví se vedle sebe. Zůstává v obou orientacích a oba bloky jsou
+  // AŽ ZA pravidly, která přebíjejí. Tvar sází mixin nahoře, ne dvakrát
+  // opsaný blok — je to jedna geometrie vysázená na dvou osách.
   @include v(md) {
-    grid-template-columns: 1fr 26px;
+    @include restock-compact;
   }
 
   @include h(xxs) {
-    grid-template-columns: 1fr 26px;
+    @include restock-compact;
   }
 }
 
@@ -131,20 +210,20 @@
   z-index: 0;
   inset: 0;
   border-radius: inherit;
-  background: rgba(116, 126, 98, 0.78);
+  background: rgb(var(--olive-15-rgb) / .78);
   transform-origin: left center;
 }
 
 .success,
 .error {
-  margin: -4px 0 0;
-  font: 300 13px/1.4 "Sansation-Light", sans-serif;
+  margin: -0.25rem 0 0;
+  font: 300 0.8125rem/1.4 "Sansation-Light", sans-serif;
 }
 
 .success {
-  color: #bbb788;
+  color: var(--sage-01);
 }
 .error {
-  color: #e6a493;
+  color: var(--clay-36);
 }
 

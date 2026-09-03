@@ -26,6 +26,20 @@ type BundleActionsProps = {
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+/* Vjezd panelu sady ve vh, ne v px — `y: 14` byla jediná pixelová souřadnice
+ * v celé sadě, takže na 2552×1351 cukl panel o stejných 14px, o které se hnul
+ * na 1220×660, zatímco všechno kolem něj mezitím vyrostlo o třetinu. Převod
+ * podle restock/index.tsx, který jede na téže referenci 1080px na výšku:
+ *   vjezd  14px / 1080px = 1.296 → 1.3vh
+ * Odjezd se neopisuje, odvozuje se — dvě třetiny vjezdu, týž poměr jako tam.
+ * (Původní odjezd byl -8px; 2/3 z 1.3vh dává na referenční výšce 9.4px, tedy
+ * o 1.4px delší dráhu. Jedno číslo místo dvou je to za to.)
+ *
+ * Obě strany interpolace musí mít týž tvar výrazu, jinak framer skočí — proto
+ * "0vh" ve snímku `animate`, ne holá nula. */
+const PANEL_VH = 1.3
+const PANEL_OUT_VH = Number(((PANEL_VH * 2) / 3).toFixed(3))
+
 const optionsAsKeymap = (
   variantOptions: HttpTypes.StoreProductVariant["options"] | undefined
 ) =>
@@ -185,9 +199,9 @@ export default function BundleActions({
           <motion.div
             className="bundleInline__configuration"
             key={activeItem.id}
-            initial={{ opacity: 0, y: 14, clipPath: "inset(0 0 20% 0)" }}
-            animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
-            exit={{ opacity: 0, y: -8, clipPath: "inset(100% 0 0 0)" }}
+            initial={panelInitial}
+            animate={panelAnimate}
+            exit={panelExit}
             transition={transition3}
           >
             <div className="bundleInline__activeTitle">
@@ -266,3 +280,18 @@ const variants = {
 const transition = { duration: 0.48, ease }
 const transition2 = { duration: 0.55, ease }
 const transition3 = { duration: 0.52, ease }
+
+/* Timeline panelu sady. Clip-path v procentech se přeškáluje sám, `y` visí na
+   výšce okna (viz PANEL_VH nahoře), takže tahle animace jede stejně na
+   932×430 jako na 2552×1351 — na telefonu na šířku má zůstat, ne zmizet. */
+const panelInitial = {
+  opacity: 0,
+  y: `${PANEL_VH}vh`,
+  clipPath: "inset(0 0 20% 0)",
+}
+const panelAnimate = { opacity: 1, y: "0vh", clipPath: "inset(0 0 0% 0)" }
+const panelExit = {
+  opacity: 0,
+  y: `-${PANEL_OUT_VH}vh`,
+  clipPath: "inset(100% 0 0 0)",
+}

@@ -1,45 +1,78 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * Scroll cue pod hero na /kurzy. Jediné volací místo je modules/home/Kurzy/Intro.
+ *
+ * Celý komponent stojí na JEDNOM rozměru — na výšce kapsle. Šířka jde z
+ * aspect-ratio, kolečko je procento kapsle a dráha kolečka v index.tsx je
+ * procento kolečka. Jiné číslo o velikosti tu není, takže se nemá co rozejít.
+ *
+ * Clamp visí na dvh, ne na dvw: cue sedí u spodní hrany 100svh hero a soupeří
+ * o výšku, ne o šířku. Proto tu není ani jedno pravidlo pro lt — na 1366×768
+ * vyjde kapsle 43px proti 50px na 1440×900 sama od sebe, na 1280×720 40px.
+ *
+ * Živé pásmo (výška okna): 2.1rem·16 / 0.056 = 600px … 3.4rem·16 / 0.056 = 971px.
+ * 720, 768 i 900 leží uvnitř. Nad 1921 zvedne ramp rem a s ním strop 3.4rem
+ * (na 2552 je rem 21.27px, strop tedy 72px) — proto do xxl ani qhd nic nepatří.
+ *
+ * Co tu bylo předtím: žebřík hb(), psaný od největšího (lg, md, mdt, sm, xs, xxs).
+ * h-block emituje mapu v pořadí zápisu jako obyčejné vnořené media query
+ * (system/_mixins.scss:81) a stopy se překrývají, takže na 1440 vyhrál poslední
+ * zápis — xxs: (height: 8dvh) — nad lg, md i sm. Žebřík nesl výhradně velikost,
+ * a velikost do breakpointu nepatří; je z něj tenhle jeden clamp. Přepsat mapu
+ * od nejmenšího by ten žebřík jen oživilo.
+ */
 .mouse-anim{
     position: relative;
-    width: 3dvw;
-    height: 7.5dvh;
+    flex: 0 0 auto;
+    height: clamp(2.1rem, 5.6dvh, 3.4rem);
+    aspect-ratio: 3 / 5;
     overflow: hidden;
     z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    @include hb((
-        lg: (scale: 0.9),
-        md: (scale: 0.9, height: 8dvh),
-        mdt: (scale: 0.9, height: 6dvh),
-        sm: (scale: 0.9, height: 6dvh),
-        xs: (height: 10dvh),
-        xxs: (height: 8dvh),
-    ));
-
+    /*
+     * Portrét je jiný tvar, ne jiná velikost, takže si vlastní osu drží. Hodnoty
+     * jsou beze změny; přepsané je jen POŘADÍ — od nejmenšího stopu, protože
+     * v-block emituje mapu stejně jako h-block a stopy se překrývají. Psáno od
+     * největšího vyhrával na tabletu xs. Vlastní tvar portrétu je práce druhého kola.
+     *
+     * md a lg vrací width na auto, aby jim šířka nezůstala viset na 5dvw ze stopu s —
+     * stopy jsou min-width, takže se všechny překrývají a co se nevrátí, to platí dál.
+     * Auto předá šířku aspect-ratio: na 1000×1400 vyjde 29px proti 30px, které tam
+     * dávala původní základní 3dvw.
+     */
     @include vb((
-        lg: (height: 3.5dvh),
-        md: (height: 3.5dvh),
-        s: (height: 4dvh, width: 5dvw),
-        sm: (height: 4dvh, width: 5dvw),
         xs: (height: 4dvh, width: 4dvw),
+        sm: (height: 4dvh, width: 5dvw),
+        s:  (height: 4dvh, width: 5dvw),
+        md: (height: 3.5dvh, width: auto),
+        lg: (height: 3.5dvh, width: auto),
     ));
-    
 
     .mouse-anim__border{
         position: relative;
         width: 100%;
         height: 100%;
+        // Vlásková linka je fyzická věc, ta v px zůstává. Rádius je 999px, aby to
+        // nebylo číslo, které někdo bude chtít rampovat — kapsle se uzavře sama.
         border: 1px solid var(--iconsPink);
-        border-radius: 50px;
+        border-radius: 999px;
     }
+
+    /*
+     * Kolečko: 18 % šířky kapsle, tvar 1:2. Podlahu i strop dědí po kapsli, takže
+     * nepotřebuje vlastní clamp a nemůže se s ní rozejít. Z toho plyne
+     * výška kolečka = 0.36 × šířka kapsle = 0.216 × výška kapsle — a přesně z toho
+     * čísla je spočítaná dráha v index.tsx.
+     */
     .mouse-anim__wheel{
         position: absolute;
-        width: 0.4dvw;
-        height: 0.8dvw;
-        border-radius: 25px;
+        width: 18%;
+        aspect-ratio: 1 / 2;
+        border-radius: 999px;
         background-color: var(--bgWhite);
     }
 }

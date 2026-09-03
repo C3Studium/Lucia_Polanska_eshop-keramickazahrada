@@ -12,8 +12,48 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #ffe8d6;
+  color: var(--cream-06);
   cursor: pointer;
+}
+
+/* Dotyková podlaha. Přihlášený stav je <button>, nepřihlášený <a> na přihlášení,
+   a globální podlaha v globals.scss míří jen na button/[role=button]/input —
+   odkaz tedy zůstával 40×40, tedy pod cílem pro prst. Rozměr sem nepíšu, ten se
+   bere od předka (product/style.scss: obal 2.75rem, prvek 2.5rem). Zvedá ho jen
+   min-width/min-height, které předkovu width/height přebijí bez !important
+   a bez zásahu do cizího souboru.
+
+   Podlaha musí být na OBOU rozměrech, jinak z border-radius: 50 % vznikne
+   elipsa. Přesně to se dnes na dotyku děje přihlášenému stavu: globals zvedá
+   jen min-height, takže <button> je 40 široký a 44 vysoký. Tohle to srovnává
+   oběma stavům naráz.
+
+   V px, ne v rem, protože prst je fyzický a s rampou nad 1921 neroste — stejně
+   jako 44px v globals.scss. V rem by na dotykovém displeji nad 1921 vyšla šířka
+   2.75rem = 59 px proti výšce 53.7 px (globals drží min-height na 44px
+   !important, takže vyšší hodnota v rem by ji nezvedla) a z kolečka by zase
+   byla elipsa.
+
+   SVISLÝ TABLET — přeměřeno po převážení stop v(md)/v(lg) v product/style.scss.
+   Blok platí i tady: hover:none + pointer:coarse naměřeno na 768×1024 i na
+   1024×1366, takže tablet dostává touž podlahu jako telefon. Není to „telefon
+   zvětšený na tablet", je to táž fyzická míra prstu na obou — proto se sem
+   žádná stopa v `v()` nepíše (pravidlo 5: dotyk se pozná dotykem, ne šířkou).
+   Naměřeno na živé stránce v celém portrétovém pásmu 600 → 1180 px (10 šířek):
+   kolečko 44×44 na všech, kruh (ne elipsa), `.icon` 44×44 s odsazením 0/0,
+   glyf 24.19 px = 55 %, `.surface` 44×44 s odsazením 0/0 a `.pending` 38×38
+   s odstupem 3 px. Řádek CTA je 44 + 12 + 192 = 248 px a nejužší skutečný
+   nákupní sloupec má 272 px při 600 px okna, takže je jednořádkový; na
+   1024×1366 se kolečko po převážení stop vrátilo VEDLE pilulky (dřív sedělo
+   samo nad ní, řádek 220×106). Counterfactual s vypnutou podlahou dá na obou
+   tabletech 40×40 — 44 tu tedy drží tenhle blok, ne rozměr od předka.
+   Na jemném ukazovátku zůstává 40×40 (1366×768 naměřeno). */
+@include touch {
+  .button,
+  .login {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .button:disabled {
@@ -24,21 +64,38 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(116, 126, 98, 0.78);
+  background: rgb(var(--olive-15-rgb) / .78);
 }
 
+/* Kolečko bere rozměr od rodiče (product/style.scss: obal 2.75rem, tlačítko
+   2.5rem), takže nad 1921 roste s rampou samo — naměřeno 44 → 58.47 px na 2552.
+   Ikona proto nesmí nést vlastní pixely: vyplní kolečko a glyf se z něj odvodí
+   poměrem, ne opíše číslem. */
 .icon {
   position: relative;
   z-index: 1;
   display: grid;
+  width: 100%;
+  height: 100%;
   place-items: center;
+}
+
+/* 22 / 40 = 55 % — původní glyf v původním tlačítku, takže na ≤1921 se nic
+   nemění. Před opravou glyf držel 22 px i na 2552, kde kolečko měřilo 53.16 px:
+   z 55 % zbylo 41 %. */
+.icon svg {
+  width: 55%;
+  height: 55%;
 }
 
 .pending {
   position: absolute;
   z-index: 2;
-  inset: 3px;
+  /* 0.1875rem = 3 px při root 16 px. V rem proto, že kolečko je taky v rem —
+     prstenec tak drží odstup od hrany i nad 1921 (3 → 3.99 px na 2552,
+     kolečko 44 → 58.47). Rámeček zůstává fyzický hairline v px. */
+  inset: 0.1875rem;
   border: 1px solid transparent;
-  border-top-color: #bbb788;
+  border-top-color: var(--sage-01);
   border-radius: 50%;
 }

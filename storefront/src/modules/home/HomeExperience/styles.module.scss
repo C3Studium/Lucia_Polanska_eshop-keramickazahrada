@@ -12,13 +12,13 @@
   left: 50%;
   z-index: 0;
   width: min(110vw, 120rem);
-  height: min(85vw, 86rem);
+  height: min(85vh, 86rem);
   border-radius: 50%;
   pointer-events: none;
   transform: translateX(-50%);
   background:
-    radial-gradient(circle at 48% 45%, rgba(255, 232, 214, 0.68), transparent 48%),
-    radial-gradient(circle at 66% 40%, rgba(255, 165, 162, 0.16), transparent 36%);
+    radial-gradient(circle at 48% 45%, rgb(var(--cream-06-rgb) / .68), transparent 48%),
+    radial-gradient(circle at 66% 40%, rgb(var(--blush-01-rgb) / .16), transparent 36%);
   filter: blur(72px);
   mix-blend-mode: soft-light;
 }

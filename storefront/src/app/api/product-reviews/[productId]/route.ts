@@ -4,9 +4,11 @@ import { sdk } from "@lib/config"
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { productId: string } }
+  // `params` je od Next 15 Promise, ne objekt. Se synchronním tvarem se
+  // vygenerovaný validátor routy neshodne a build spadne na `ParamCheck`.
+  { params }: { params: Promise<{ productId: string }> }
 ) {
-  const { productId } = params
+  const { productId } = await params
   const cookieStore = await cookies()
   const token = cookieStore.get("_medusa_jwt")?.value
   const pk = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY

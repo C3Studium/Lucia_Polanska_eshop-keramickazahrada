@@ -1,0 +1,62 @@
+[
+ {
+  "id": "vyroba-na-zakazku",
+  "category": "zakazka",
+  "question": "Vyrábíte keramiku na zakázku?",
+  "answer": "Ano, ráda. Dělám zakázky pro jednotlivce, do interiérů i na menší architektonické projekty. Vždycky si to nejdřív spolu ujasníme — rozměr, povrch, termín i cenu."
+ },
+ {
+  "id": "prubeh-zakazky",
+  "category": "zakazka",
+  "question": "Jak probíhá zakázková výroba?",
+  "answer": "Nejdřív si popovídáme, pak vám pošlu návrh, cenu a přibližný termín. Když odsouhlasíte, pustím se do práce — modelování, sušení, první výpal, glazování a závěrečný výpal. Průběžně vám dávám vědět, jak to jde."
+ },
+ {
+  "id": "delka-vyroby",
+  "category": "zakazka",
+  "question": "Jak dlouho trvá výroba na zakázku?",
+  "answer": "Většinou šest až deset týdnů — podle toho, jak je to velké a kolik toho mám v peci. Hlína musí pomalu vyschnout a projít dvěma výpaly, spěchat se nedá. Přesný termín si vždycky domluvíme předem."
+ },
+ {
+  "id": "dostupnost",
+  "category": "produkty",
+  "question": "Kdy bude vyprodaný produkt znovu dostupný?",
+  "answer": "Menší série doplňuju průběžně, ale každý kus vypadá trochu jinak. U výrobku si můžete nechat poslat upozornění, až bude znovu skladem — nebo mi napište a řeknu vám, kdy to plánuju."
+ },
+ {
+  "id": "rucni-vyroba",
+  "category": "produkty",
+  "question": "Jsou všechny produkty ručně vyráběné?",
+  "answer": "Ano, všechno. Každý kus dělám ručně v ateliéru v Písku. Drobné rozdíly v kresbě, odstínu nebo rozměru nejsou vada — podle nich poznáte ruční práci."
+ },
+ {
+  "id": "baleni",
+  "category": "doprava",
+  "question": "Jak keramiku balíte pro bezpečnou přepravu?",
+  "answer": "Každý kus obalíme několika vrstvami a uložíme do pevné krabice tak, aby se v ní nemohl hýbat. Kde to jde, používáme výplně, které se dají použít znovu nebo vytřídit."
+ },
+ {
+  "id": "poskozena-zasilka",
+  "category": "doprava",
+  "question": "Jak postupovat, když zásilka dorazí poškozená?",
+  "answer": "Vyfoťte prosím balík i poškozený kus hned po rozbalení a ozvěte se nám do 48 hodin. Přiložte číslo objednávky a domluvíme se na výměně, opravě nebo vrácení peněz."
+ },
+ {
+  "id": "vraceni",
+  "category": "doprava",
+  "question": "Mohu produkt vrátit nebo vyměnit?",
+  "answer": "Nepoužitý výrobek z běžné nabídky můžete vrátit do 14 dnů od převzetí. Zakázkové kusy dělané přímo pro vás vrátit bohužel nejde — pokud tedy nejsou poškozené nebo vadné."
+ },
+ {
+  "id": "kurzy-pro-skoly",
+  "category": "kurzy",
+  "question": "Pořádáte kurzy pro školy nebo soukromé skupiny?",
+  "answer": "Ano. Program i délku přizpůsobím věku a zkušenostem skupiny. Napište mi, kolik vás bude a kdy by se vám to hodilo, a připravím konkrétní nabídku."
+ },
+ {
+  "id": "kontakt",
+  "category": "vse",
+  "question": "Jak vás mohu kontaktovat?",
+  "answer": "Nejrychleji přes kontaktní formulář, nebo mi zavolejte na +420 775 211 578. Odpovídám zpravidla do dvou pracovních dnů; když stojím u pece, může to trvat o kousek déle."
+ }
+]

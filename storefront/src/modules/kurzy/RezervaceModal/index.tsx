@@ -577,8 +577,8 @@ function RezervaceModalPanel({
         {confirmed ? (
           <motion.div
             className="kurzyModal__summary"
-            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={reduceMotion ? false : { opacity: 0, y: SUMMARY_RISE }}
+            animate={{ opacity: 1, y: "0vh" }}
             role="status"
           >
             <span className="kurzyModal__summaryEyebrow">Rezervace přijata</span>
@@ -1233,17 +1233,39 @@ const backdropVariants: Variants = {
   visible: { opacity: 1 },
   exit: { opacity: 0 },
 }
+/*
+ * Motion geometry, in the units the thing it moves is measured in.
+ *
+ * The panel rises against the screen, so its offset is `vh`: the original
+ * 26px read at a 900px-tall reference window, which is 26/900 = 2.9vh (22px
+ * on a 768 laptop, 39px on a 1351 desktop). The exit keeps the ratio the
+ * design had — 14/26 = 0.54 — rather than a second hand-picked number.
+ *
+ * The step slide happens *inside* the panel, so its reference is the panel,
+ * not the window: 40px of the 760px panel is 5.3%, and a percentage on `x`
+ * is a percentage of the element's own box, so the slide now scales with the
+ * panel through the 2K ramp and down to a full-width phone. Exit keeps the
+ * design's 30/40 = 0.75. Both ends of every animated value carry the same
+ * unit, or framer stops interpolating and jumps.
+ */
+const PANEL_RISE_VH = 2.9
+/** The confirmation's own rise, derived from the panel's: 18/26 of it. */
+const SUMMARY_RISE = `${+(PANEL_RISE_VH * (18 / 26)).toFixed(2)}vh`
+const PANEL_EXIT_VH = +(PANEL_RISE_VH * (14 / 26)).toFixed(2) // 1.56
+const STEP_SLIDE_PCT = 5.3
+const STEP_EXIT_PCT = +(STEP_SLIDE_PCT * 0.75).toFixed(2) // 3.98
+
 const panelInVariants: Variants = {
-  hidden: { opacity: 0, y: 26, scale: 0.985 },
+  hidden: { opacity: 0, y: `${PANEL_RISE_VH}vh`, scale: 0.985 },
   visible: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     scale: 1,
     transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
     opacity: 0,
-    y: 14,
+    y: `${PANEL_EXIT_VH}vh`,
     scale: 0.99,
     transition: { duration: 0.28, ease: [0.76, 0, 0.24, 1] },
   },
@@ -1254,15 +1276,15 @@ const reducedPanelInVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.1 } },
 }
 const panelVariants: Variants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
+  enter: (dir: number) => ({ opacity: 0, x: `${dir * STEP_SLIDE_PCT}%` }),
   center: {
     opacity: 1,
-    x: 0,
+    x: "0%",
     transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
   },
   exit: (dir: number) => ({
     opacity: 0,
-    x: dir * -30,
+    x: `${dir * -STEP_EXIT_PCT}%`,
     transition: { duration: 0.32, ease: [0.76, 0, 0.24, 1] },
   }),
 }

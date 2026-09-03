@@ -22,7 +22,14 @@ import ProductionPaymentModeChoice from "../production-payment-mode"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import OrderRecap from "./recap"
-import { contentVariants, errorVariants, headingTransition, rowVariants } from "./motion"
+import {
+  contentVariants,
+  errorVariants,
+  HEADING_REST_X,
+  HEADING_SHIFT_X,
+  headingTransition,
+  rowVariants,
+} from "./motion"
 import styles from "./style.module.scss"
 
 import { TERMS_VERSION } from "@lib/constants"
@@ -131,7 +138,10 @@ const Review = ({
         <motion.h2
           className={styles.heading}
           initial={false}
-          animate={{ opacity: isOpen ? 1 : 0.42, x: isOpen ? 0 : -4 }}
+          animate={{
+            opacity: isOpen ? 1 : 0.42,
+            x: isOpen ? HEADING_REST_X : HEADING_SHIFT_X,
+          }}
           transition={headingTransition}
         >
           Přehled

@@ -11,7 +11,6 @@ import {
   Prompt,
   Select,
   Skeleton,
-  Switch,
   Text,
   Textarea,
   Toaster,
@@ -31,11 +30,8 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import {
-  CZECH_WEEKLY_PHRASES,
-  MAX_OCCURRENCES,
-  horizonEndDayKey,
-  planWeeklyOccurrences,
-  type RepeatHorizon,
+  parseTimeOfDay,
+  utcFromPragueWallClock,
 } from "../../../modules/course/recurrence";
 import {
   type CalendarMonth,
@@ -44,12 +40,17 @@ import {
   buildMonthGrid,
   dayLabel,
   groupByPragueDay,
-  mondayIndex,
   monthTitle,
   parseDayKey,
   pragueDayKey,
   pragueMonthOf,
 } from "../../lib/course-calendar";
+import { CourseDayPicker } from "../../components/course-day-picker";
+import { CourseTermWizard } from "../../components/course-term-wizard";
+import {
+  CourseNoteDrawer,
+  CoursePricingDrawer,
+} from "../../components/course-bulk-dialogs";
 
 /**
  * Kurzy — terms and reservations in one place (docs/kurzy-system.md).
@@ -126,15 +127,6 @@ const formatPrague = (value: string): string =>
     minute: "2-digit",
   }).format(new Date(value));
 
-/** Just the Prague date — „24. 11. 2026". */
-const formatPragueDate = (value: string): string =>
-  new Intl.DateTimeFormat("cs-CZ", {
-    timeZone: "Europe/Prague",
-    day: "numeric",
-    month: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-
 /** Just the Prague wall-clock time — „17:00". */
 const formatPragueTime = (value: string): string =>
   new Intl.DateTimeFormat("cs-CZ", {
@@ -142,9 +134,6 @@ const formatPragueTime = (value: string): string =>
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
-
-const termsCountLabel = (count: number): string =>
-  count === 1 ? "1 termín" : count < 5 ? `${count} termíny` : `${count} termínů`;
 
 const formatDuration = (minutes: number | null): string => {
   if (!minutes) return "";
@@ -156,13 +145,6 @@ const formatDuration = (minutes: number | null): string => {
 
 const people = (count: number): string =>
   `${count} ${count === 1 ? "osoba" : count < 5 ? "osoby" : "osob"}`;
-
-/** UTC ISO → value for `<input type="datetime-local">` in the browser's zone. */
-const toLocalInput = (iso: string): string => {
-  const date = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
 
 const TERM_STATUS: Record<
   AdminTerm["status"],
@@ -238,682 +220,200 @@ const errorMessage = async (error: unknown, fallback: string) => {
 /* Term editor (create + edit)                                         */
 /* ------------------------------------------------------------------ */
 
-type TermDraft = {
-  title: string;
-  location: string;
-  starts_at_local: string;
-  duration_minutes: string;
-  capacity: string;
-  price_single: string;
-  price_two: string;
-  group_min: string;
-  price_group_per_person: string;
-  status: "draft" | "published" | "finished";
-  note: string;
-};
-
-const emptyDraft: TermDraft = {
-  title: "",
-  location: "Ateliér u Písku",
-  starts_at_local: "",
-  duration_minutes: "180",
-  capacity: "8",
-  price_single: "",
-  price_two: "",
-  group_min: "",
-  price_group_per_person: "",
-  status: "published",
-  note: "",
-};
-
-const draftFromTerm = (term: AdminTerm): TermDraft => ({
-  title: term.title,
-  location: term.location,
-  starts_at_local: toLocalInput(term.starts_at),
-  duration_minutes: term.duration_minutes ? String(term.duration_minutes) : "",
-  capacity: String(term.capacity),
-  price_single: String(term.price_single),
-  price_two: term.price_two != null ? String(term.price_two) : "",
-  group_min: term.group_min != null ? String(term.group_min) : "",
-  price_group_per_person:
-    term.price_group_per_person != null
-      ? String(term.price_group_per_person)
-      : "",
-  status: term.status === "cancelled" ? "draft" : term.status,
-  note: term.note ?? "",
-});
-
-const draftToPayload = (draft: TermDraft) => {
-  const number = (value: string) =>
-    value.trim() === "" ? null : Number(value.replace(",", "."));
-  return {
-    title: draft.title.trim(),
-    location: draft.location.trim(),
-    starts_at: draft.starts_at_local
-      ? new Date(draft.starts_at_local).toISOString()
-      : "",
-    duration_minutes: number(draft.duration_minutes),
-    capacity: Number(draft.capacity),
-    price_single: number(draft.price_single) ?? -1,
-    price_two: number(draft.price_two),
-    group_min: number(draft.group_min),
-    price_group_per_person: number(draft.price_group_per_person),
-    status: draft.status,
-    note: draft.note.trim() || null,
-  };
-};
-
-/** Czech reasons the term can't be saved yet — shown instead of a mute button. */
-const draftProblems = (draft: TermDraft): string[] => {
-  const payload = draftToPayload(draft);
-  const problems: string[] = [];
-  if (!payload.title.length) {
-    problems.push("Chybí název kurzu.");
-  }
-  if (!payload.location.length) {
-    problems.push("Chybí místo konání.");
-  }
-  if (!payload.starts_at.length) {
-    problems.push("Chybí datum a čas začátku.");
-  }
-  if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
-    problems.push("Kapacita musí být aspoň 1 osoba.");
-  }
-  if (payload.price_single == null || payload.price_single < 0) {
-    problems.push("Chybí cena za jednoho.");
-  }
-  if ((payload.group_min == null) !== (payload.price_group_per_person == null)) {
-    problems.push(
-      "Skupinová cena potřebuje obojí: od kolika lidí platí i kolik zaplatí osoba."
-    );
-  }
-  return problems;
-};
-
-const draftIsValid = (draft: TermDraft): boolean =>
-  draftProblems(draft).length === 0;
-
 /**
- * The three price tiers restated as arithmetic. Labels alone leave room for
- * „za dva = cena dohromady?" — a worked example does not.
+ * Editing one term: what it is called, where and when it happens, how many fit.
+ *
+ * Prices and the participant note deliberately live elsewhere now
+ * (`components/course-bulk-dialogs.tsx`). Both are things the owner changes
+ * for a season rather than for a session, and having them here meant every
+ * seasonal price change was a tour of fourteen identical forms. Creating
+ * terms is `CourseTermWizard`; this drawer only ever edits an existing one.
  */
-const pricingExampleLines = (draft: TermDraft): string[] => {
-  const number = (value: string) => {
-    if (value.trim() === "") return null;
-    const parsed = Number(value.replace(",", "."));
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-  };
-  const lines: string[] = [];
-  const single = number(draft.price_single);
-  if (single != null) {
-    lines.push(`Jeden sám zaplatí ${formatCzk(single)}.`);
-  }
-  const two = number(draft.price_two);
-  if (two != null) {
-    lines.push(
-      `Dva spolu zaplatí 2 × ${formatCzk(two)} = ${formatCzk(two * 2)} dohromady.`
-    );
-  }
-  const groupMin = number(draft.group_min);
-  const groupPrice = number(draft.price_group_per_person);
-  if (groupMin != null && groupMin >= 2 && groupPrice != null) {
-    lines.push(
-      `Skupina ${groupMin} lidí zaplatí ${groupMin} × ${formatCzk(groupPrice)} = ${formatCzk(groupMin * groupPrice)} dohromady.`
-    );
-  }
-  return lines;
-};
-
-/** The „Do kdy" pills — fixed horizons plus a custom end date. */
-const HORIZON_OPTIONS: { key: RepeatHorizon | "vlastni"; label: string }[] = [
-  { key: "tento_mesic", label: "Tento měsíc" },
-  { key: "ctvrt_roku", label: "Čtvrt roku" },
-  { key: "pul_roku", label: "Půl roku" },
-  { key: "rok", label: "Rok" },
-  { key: "vlastni", label: "Vlastní konec" },
-];
-
-/** What POST /admin/courses/terms answers when `repeat` was sent along. */
-type RepeatCreateResult = {
-  created: number;
-  skipped: number;
-  skipped_dates: string[];
-  failed: number;
-  failed_dates: string[];
-  truncated: boolean;
-};
-
-/** „Vytvořeno 12 termínů, 2 přeskočeny — už existovaly." */
-const repeatResultMessage = (result: RepeatCreateResult): string => {
-  const createdPart =
-    result.created === 0
-      ? "Žádný nový termín nevznikl"
-      : result.created === 1
-        ? "Vytvořen 1 termín"
-        : result.created < 5
-          ? `Vytvořeny ${result.created} termíny`
-          : `Vytvořeno ${result.created} termínů`;
-  const dates = result.skipped_dates.map(formatPragueDate).join(", ");
-  const skippedPart = !result.skipped
-    ? ""
-    : result.skipped === 1
-      ? `, 1 přeskočen — už existoval (${dates})`
-      : result.skipped < 5
-        ? `, ${result.skipped} přeskočeny — už existovaly (${dates})`
-        : `, ${result.skipped} přeskočeno — už existovalo (${dates})`;
-  return `${createdPart}${skippedPart}.`;
-};
-
 const TermEditorDrawer = ({
   term,
   trigger,
 }: {
-  /** Absent → create. */
-  term?: AdminTerm;
+  term: AdminTerm;
   trigger: React.ReactNode;
 }) => {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<TermDraft>(emptyDraft);
-  const [repeatWeekly, setRepeatWeekly] = useState(false);
-  const [horizon, setHorizon] = useState<RepeatHorizon | "vlastni">(
-    "tento_mesic"
+  const [title, setTitle] = useState(term.title);
+  const [location, setLocation] = useState(term.location);
+  const [day, setDay] = useState(() => pragueDayKey(term.starts_at));
+  const [time, setTime] = useState(() => formatPragueTime(term.starts_at));
+  const [duration, setDuration] = useState(
+    term.duration_minutes ? String(term.duration_minutes) : ""
   );
-  const [customEnd, setCustomEnd] = useState("");
+  const [capacity, setCapacity] = useState(String(term.capacity));
+  const [status, setStatus] = useState<"draft" | "published" | "finished">(
+    term.status === "cancelled" ? "draft" : term.status
+  );
   const queryClient = useQueryClient();
 
   const openWith = (next: boolean) => {
     if (next) {
-      setDraft(term ? draftFromTerm(term) : emptyDraft);
-      setRepeatWeekly(false);
-      setHorizon("tento_mesic");
-      setCustomEnd("");
+      setTitle(term.title);
+      setLocation(term.location);
+      setDay(pragueDayKey(term.starts_at));
+      setTime(formatPragueTime(term.starts_at));
+      setDuration(term.duration_minutes ? String(term.duration_minutes) : "");
+      setCapacity(String(term.capacity));
+      setStatus(term.status === "cancelled" ? "draft" : term.status);
     }
     setOpen(next);
   };
 
-  /*
-   * Repeat preview — the drawer runs the very same pure functions the server
-   * will run again (`modules/course/recurrence.ts`), so the „Vytvoří se X
-   * termínů" line and the created rows cannot drift apart. The preview is
-   * display-only: the server re-derives the list from starts_at + until.
-   */
-  const startsAtIso = useMemo(() => {
-    if (!draft.starts_at_local) return "";
-    const date = new Date(draft.starts_at_local);
-    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
-  }, [draft.starts_at_local]);
-
-  const repeatActive = !term && repeatWeekly;
-  const untilKey = !repeatActive
-    ? null
-    : horizon === "vlastni"
-      ? customEnd || null
-      : startsAtIso
-        ? horizonEndDayKey(startsAtIso, horizon)
-        : null;
-  const plan = useMemo(
-    () =>
-      repeatActive && startsAtIso && untilKey
-        ? planWeeklyOccurrences(startsAtIso, untilKey)
-        : null,
-    [repeatActive, startsAtIso, untilKey]
-  );
-  const repeatReady = !repeatActive || (plan != null && plan.ok);
-  const repeatPayload =
-    repeatActive && untilKey && plan?.ok
-      ? { frequency: "weekly" as const, until: untilKey }
+  const clock = parseTimeOfDay(time);
+  const startsAtIso =
+    clock && day
+      ? utcFromPragueWallClock({
+          ...parseDayKey(day),
+          hour: clock.hour,
+          minute: clock.minute,
+          second: 0,
+        }).toISOString()
       : null;
+
+  const capacityNumber = Number(capacity);
+  const problems: string[] = [];
+  if (!title.trim()) problems.push("Chybí název kurzu.");
+  if (!location.trim()) problems.push("Chybí místo konání.");
+  if (!day) problems.push("Vyberte v kalendáři den.");
+  if (!clock) problems.push("Čas začátku zadejte ve tvaru 17:00.");
+  if (!Number.isInteger(capacityNumber) || capacityNumber < 1)
+    problems.push("Kapacita musí být aspoň 1 osoba.");
+  if (
+    Number.isInteger(capacityNumber) &&
+    capacityNumber < term.seats_taken
+  )
+    problems.push(
+      `Kapacitu nejde snížit pod už rezervovaná místa (${term.seats_taken}).`
+    );
 
   const save = useMutation({
     mutationFn: () =>
-      term
-        ? sdk.client.fetch(`/admin/courses/terms/${term.id}`, {
-            method: "PATCH",
-            body: draftToPayload(draft),
-          })
-        : sdk.client.fetch(`/admin/courses/terms`, {
-            method: "POST",
-            body: {
-              ...draftToPayload(draft),
-              ...(repeatPayload ? { repeat: repeatPayload } : {}),
-            },
-          }),
-    onSuccess: async (result: unknown) => {
+      sdk.client.fetch(`/admin/courses/terms/${term.id}`, {
+        method: "PATCH",
+        body: {
+          title: title.trim(),
+          location: location.trim(),
+          ...(startsAtIso ? { starts_at: startsAtIso } : {}),
+          duration_minutes: duration.trim() ? Number(duration) : null,
+          capacity: capacityNumber,
+          status,
+        },
+      }),
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["course-terms"] });
-      const repeated =
-        !term &&
-        repeatPayload &&
-        result &&
-        typeof (result as RepeatCreateResult).created === "number"
-          ? (result as RepeatCreateResult)
-          : null;
-      if (repeated) {
-        const suffix =
-          draft.status === "published"
-            ? " Vypsané termíny zákazníci hned vidí na webu."
-            : " Uložené jako koncepty — na webu zatím nejsou.";
-        if (repeated.created > 0) {
-          toast.success(repeatResultMessage(repeated) + suffix);
-        } else {
-          toast.warning(repeatResultMessage(repeated));
-        }
-        if (repeated.failed > 0) {
-          toast.warning(
-            `Nepodařilo se vytvořit: ${repeated.failed_dates
-              .map(formatPragueDate)
-              .join(", ")}. Zkuste je vypsat jednotlivě.`
-          );
-        }
-      } else {
-        toast.success(
-          term
-            ? "Termín byl upraven"
-            : draft.status === "published"
-              ? "Termín je vypsaný — zákazníci ho už vidí na webu"
-              : "Termín je uložený jako koncept — na webu zatím není"
-        );
-      }
+      toast.success("Termín byl upraven");
       setOpen(false);
     },
     onError: async (error) =>
       toast.error(await errorMessage(error, "Termín se nepodařilo uložit")),
   });
 
-  const set = (patch: Partial<TermDraft>) =>
-    setDraft((current) => ({ ...current, ...patch }));
-
-  /** Everything the preview box says, or null while inputs are incomplete. */
-  const repeatSummary =
-    repeatActive && startsAtIso && plan?.ok
-      ? (() => {
-          const { year, month, day } = parseDayKey(pragueDayKey(startsAtIso));
-          return {
-            phrase: CZECH_WEEKLY_PHRASES[mondayIndex(year, month, day)],
-            time: formatPragueTime(startsAtIso),
-            occurrences: plan.occurrences,
-            last: plan.occurrences[plan.occurrences.length - 1],
-            truncated: plan.truncated,
-          };
-        })()
-      : null;
-
   return (
     <Drawer open={open} onOpenChange={openWith}>
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
       <Drawer.Content className="flex h-full flex-col">
         <Drawer.Header>
-          <Drawer.Title>
-            {term ? "Upravit termín" : "Nový termín kurzu"}
-          </Drawer.Title>
+          <Drawer.Title>Upravit termín</Drawer.Title>
           <Drawer.Description>
-            Kde a kdy se kurz koná, kolik lidí se vejde a co zaplatí. Vypsaný
-            termín se hned ukáže na webu.
+            Kde a kdy se kurz koná a kolik lidí se vejde. Ceny a poznámku
+            najdete pod vlastními tlačítky na kartě termínu.
           </Drawer.Description>
         </Drawer.Header>
         <Drawer.Body className="flex-1 overflow-y-auto px-6 py-6">
           <div className="flex flex-col gap-y-6">
             <div className="flex flex-col gap-y-2">
-              <Label htmlFor="term-title">Název</Label>
+              <Label htmlFor="edit-title">Název</Label>
               <Input
-                id="term-title"
-                value={draft.title}
-                placeholder="Kurz točení pro dospělé"
-                onChange={(event) => set({ title: event.target.value })}
+                id="edit-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-y-2">
-                <Label htmlFor="term-location">Kde</Label>
-                <Input
-                  id="term-location"
-                  value={draft.location}
-                  onChange={(event) => set({ location: event.target.value })}
-                />
-              </div>
-              <div className="flex flex-col gap-y-2">
-                <Label htmlFor="term-starts">Kdy</Label>
-                <Input
-                  id="term-starts"
-                  type="datetime-local"
-                  value={draft.starts_at_local}
-                  onChange={(event) =>
-                    set({ starts_at_local: event.target.value })
-                  }
-                />
-                {/* Reminders go out ~3 dny předem and only once — a moved
-                    date after that means everyone was reminded with the OLD
-                    date and the system will not remind them again. */}
-                {term &&
-                term.status === "published" &&
-                term.seats_taken > 0 &&
-                draft.starts_at_local !== toLocalInput(term.starts_at) &&
-                new Date(term.starts_at).getTime() - Date.now() <=
-                  3 * 24 * 60 * 60 * 1000 ? (
-                  <Text size="xsmall" className="text-ui-fg-error">
-                    Pozor: účastníkům už mohla odejít připomínka s původním
-                    datem ({formatPrague(term.starts_at)}) — novou jim systém
-                    sám nepošle. Dejte jim prosím o změně vědět.
-                  </Text>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-y-2">
-                <Label htmlFor="term-duration">Délka (minuty)</Label>
-                <Input
-                  id="term-duration"
-                  type="number"
-                  min={15}
-                  step={15}
-                  value={draft.duration_minutes}
-                  placeholder="180"
-                  onChange={(event) =>
-                    set({ duration_minutes: event.target.value })
-                  }
-                />
-                <Text size="xsmall" className="text-ui-fg-muted">
-                  Např. 180 minut = 3 hodiny.
-                </Text>
-              </div>
-              <div className="flex flex-col gap-y-2">
-                <Label htmlFor="term-capacity">Kapacita (osob)</Label>
-                <Input
-                  id="term-capacity"
-                  type="number"
-                  min={1}
-                  value={draft.capacity}
-                  onChange={(event) => set({ capacity: event.target.value })}
-                />
-                <Text size="xsmall" className="text-ui-fg-muted">
-                  Kolik lidí se do dílny vejde — po naplnění už web další
-                  rezervaci nepustí.
-                </Text>
-              </div>
+            <div className="flex flex-col gap-y-2">
+              <Label htmlFor="edit-location">Kde</Label>
+              <Input
+                id="edit-location"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+              />
             </div>
 
-            {!term ? (
-              <section className="flex flex-col gap-y-4">
-                <div>
-                  <Heading level="h2">Opakování</Heading>
-                  <Text size="small" className="text-ui-fg-subtle mt-1">
-                    Stejný kurz každý týden — vždy ve stejný den a stejný čas
-                    jako první termín. Každý vytvořený termín pak žije sám za
-                    sebe: upravíte nebo zrušíte jeden, ostatních se to
-                    nedotkne.
-                  </Text>
-                </div>
-                <div className="flex items-center gap-x-3">
-                  <Switch
-                    id="term-repeat"
-                    checked={repeatWeekly}
-                    onCheckedChange={(checked) => setRepeatWeekly(checked)}
-                  />
-                  <Label htmlFor="term-repeat">Opakovat každý týden</Label>
-                </div>
-                {repeatWeekly ? (
-                  <>
-                    <div className="flex flex-col gap-y-2">
-                      <Label>Do kdy</Label>
-                      <div
-                        role="group"
-                        aria-label="Do kdy se má kurz opakovat"
-                        className="flex flex-wrap gap-2"
-                      >
-                        {HORIZON_OPTIONS.map((option) => (
-                          <button
-                            key={option.key}
-                            type="button"
-                            aria-pressed={horizon === option.key}
-                            onClick={() => setHorizon(option.key)}
-                            className={
-                              horizon === option.key
-                                ? "bg-ui-bg-base text-ui-fg-base shadow-elevation-card-rest border-ui-border-base rounded-full border px-3 py-1 text-sm font-medium"
-                                : "bg-ui-bg-subtle text-ui-fg-subtle hover:bg-ui-bg-base-hover hover:text-ui-fg-base border-ui-border-base rounded-full border px-3 py-1 text-sm"
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {horizon === "vlastni" ? (
-                      <div className="flex flex-col gap-y-2">
-                        <Label htmlFor="term-repeat-until">
-                          Poslední den opakování
-                        </Label>
-                        <Input
-                          id="term-repeat-until"
-                          type="date"
-                          value={customEnd}
-                          onChange={(event) => setCustomEnd(event.target.value)}
-                        />
-                        <Text size="xsmall" className="text-ui-fg-muted">
-                          Termín, který připadne přesně na tento den, se ještě
-                          vytvoří.
-                        </Text>
-                      </div>
-                    ) : null}
-                    <div className="bg-ui-bg-subtle rounded-lg px-4 py-3">
-                      <Text
-                        size="xsmall"
-                        weight="plus"
-                        className="text-ui-fg-muted uppercase"
-                      >
-                        Co se vytvoří
-                      </Text>
-                      {!startsAtIso ? (
-                        <Text size="xsmall" className="mt-1">
-                          Nejdřív vyplňte datum a čas začátku — opakování se
-                          odvíjí od něj.
-                        </Text>
-                      ) : horizon === "vlastni" && !customEnd ? (
-                        <Text size="xsmall" className="mt-1">
-                          Vyberte poslední den opakování.
-                        </Text>
-                      ) : plan && !plan.ok ? (
-                        <Text size="xsmall" className="text-ui-fg-error mt-1">
-                          Konec opakování je dřív než první termín — vyberte
-                          pozdější datum.
-                        </Text>
-                      ) : repeatSummary ? (
-                        <>
-                          <Text size="xsmall" className="mt-1">
-                            {`Vytvoří se ${termsCountLabel(repeatSummary.occurrences.length)} — ${repeatSummary.phrase} v ${repeatSummary.time}, poslední ${formatPragueDate(repeatSummary.last)}.`}
-                          </Text>
-                          {repeatSummary.truncated ? (
-                            <Text
-                              size="xsmall"
-                              className="text-ui-fg-error mt-1"
-                            >
-                              {`Najednou jde vypsat nejvýš ${MAX_OCCURRENCES} termínů — do zvoleného konce by jich bylo víc, vytvoří se jen prvních ${MAX_OCCURRENCES}. Zbytek případně vypište novým opakováním.`}
-                            </Text>
-                          ) : null}
-                          <div className="mt-2">
-                            {(repeatSummary.occurrences.length <= 5
-                              ? repeatSummary.occurrences
-                              : repeatSummary.occurrences.slice(0, 3)
-                            ).map((occurrence) => (
-                              <Text
-                                key={occurrence}
-                                size="xsmall"
-                                className="text-ui-fg-muted"
-                              >
-                                · {formatPrague(occurrence)}
-                              </Text>
-                            ))}
-                            {repeatSummary.occurrences.length > 5 ? (
-                              <>
-                                <Text
-                                  size="xsmall"
-                                  className="text-ui-fg-muted"
-                                >
-                                  {`· … a dalších ${repeatSummary.occurrences.length - 4} týdnů …`}
-                                </Text>
-                                <Text
-                                  size="xsmall"
-                                  className="text-ui-fg-muted"
-                                >
-                                  · {formatPrague(repeatSummary.last)}
-                                </Text>
-                              </>
-                            ) : null}
-                          </div>
-                        </>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
-              </section>
-            ) : null}
+            <div className="flex flex-col gap-y-3">
+              <Label>Kdy</Label>
+              <CourseDayPicker
+                selected={day ? [day] : []}
+                // One term stands on one day: a second click moves it there
+                // rather than adding a date this drawer could not save.
+                onChange={(next) => setDay(next[next.length - 1] ?? "")}
+                emptyHint="Klikněte na den, kdy se termín koná."
+              />
+            </div>
 
-            <section className="flex flex-col gap-y-4">
-              <div>
-                <Heading level="h2">Ceny</Heading>
-                <Text size="small" className="text-ui-fg-subtle mt-1">
-                  Každá cena je za jednoho člověka. Cena za dva a skupinová
-                  cena jsou nepovinné — bez nich platí každý cenu za jednoho.
-                </Text>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-y-2">
-                  <Label htmlFor="term-price-single">Cena za jednoho (Kč)</Label>
-                  <Input
-                    id="term-price-single"
-                    type="number"
-                    min={0}
-                    value={draft.price_single}
-                    onChange={(event) =>
-                      set({ price_single: event.target.value })
-                    }
-                  />
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Kolik zaplatí ten, kdo přijde sám.
-                  </Text>
-                </div>
-                <div className="flex flex-col gap-y-2">
-                  <Label htmlFor="term-price-two">
-                    Cena za dva — za osobu (Kč)
-                  </Label>
-                  <Input
-                    id="term-price-two"
-                    type="number"
-                    min={0}
-                    value={draft.price_two}
-                    placeholder="nepovinné"
-                    onChange={(event) => set({ price_two: event.target.value })}
-                  />
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Když přijdou dva spolu, tolik zaplatí každý z nich.
-                  </Text>
-                </div>
-                <div className="flex flex-col gap-y-2">
-                  <Label htmlFor="term-group-min">Skupina od (osob)</Label>
-                  <Input
-                    id="term-group-min"
-                    type="number"
-                    min={2}
-                    value={draft.group_min}
-                    placeholder="nepovinné"
-                    onChange={(event) => set({ group_min: event.target.value })}
-                  />
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Od kolika lidí platí skupinová cena.
-                  </Text>
-                </div>
-                <div className="flex flex-col gap-y-2">
-                  <Label htmlFor="term-group-price">
-                    Skupinová cena — za osobu (Kč)
-                  </Label>
-                  <Input
-                    id="term-group-price"
-                    type="number"
-                    min={0}
-                    value={draft.price_group_per_person}
-                    placeholder="nepovinné"
-                    onChange={(event) =>
-                      set({ price_group_per_person: event.target.value })
-                    }
-                  />
-                  <Text size="xsmall" className="text-ui-fg-muted">
-                    Tolik zaplatí každý člověk ve skupině.
-                  </Text>
-                </div>
-              </div>
-              {pricingExampleLines(draft).length > 0 && (
-                <div className="bg-ui-bg-subtle rounded-lg px-4 py-3">
-                  <Text
-                    size="xsmall"
-                    weight="plus"
-                    className="text-ui-fg-muted uppercase"
-                  >
-                    Pro kontrolu
-                  </Text>
-                  {pricingExampleLines(draft).map((line) => (
-                    <Text key={line} size="xsmall" className="mt-1">
-                      {line}
-                    </Text>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-y-2">
-                <Label>Stav</Label>
-                <Select
-                  value={draft.status}
-                  onValueChange={(status) =>
-                    set({ status: status as TermDraft["status"] })
-                  }
-                >
-                  <Select.Trigger>
-                    <Select.Value />
-                  </Select.Trigger>
-                  <Select.Content>
-                    <Select.Item value="draft">
-                      Koncept — zákazníci ho nevidí
-                    </Select.Item>
-                    <Select.Item value="published">
-                      Vypsaný — lze rezervovat
-                    </Select.Item>
-                    {term ? (
-                      <Select.Item value="finished">
-                        Proběhlý — už se konal
-                      </Select.Item>
-                    ) : null}
-                  </Select.Content>
-                </Select>
+                <Label htmlFor="edit-time">Čas začátku</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-y-2">
+                <Label htmlFor="edit-duration">Délka (minuty)</Label>
+                <Input
+                  id="edit-duration"
+                  inputMode="numeric"
+                  value={duration}
+                  onChange={(event) => setDuration(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-y-2">
+                <Label htmlFor="edit-capacity">Kapacita (osob)</Label>
+                <Input
+                  id="edit-capacity"
+                  inputMode="numeric"
+                  value={capacity}
+                  onChange={(event) => setCapacity(event.target.value)}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-y-2">
-              <Label htmlFor="term-note">Poznámka k termínu</Label>
-              <Textarea
-                id="term-note"
-                rows={3}
-                value={draft.note}
-                placeholder="Vezměte si prosím ručník a přezůvky."
-                onChange={(event) => set({ note: event.target.value })}
-              />
-              <Text size="xsmall" className="text-ui-fg-muted">
-                Pošle se i účastníkům v připomínce tři dny před kurzem —
-                ideální místo pro „co s sebou". Nepište sem nic, co nemají
-                číst zákazníci.
-              </Text>
+              <Label htmlFor="edit-status">Stav</Label>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as "draft" | "published" | "finished")
+                }
+              >
+                <Select.Trigger id="edit-status">
+                  <Select.Value />
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Item value="published">
+                    Vypsaný — lze rezervovat
+                  </Select.Item>
+                  <Select.Item value="draft">Koncept — na webu není</Select.Item>
+                  <Select.Item value="finished">Proběhlý — už se konal</Select.Item>
+                </Select.Content>
+              </Select>
             </div>
 
-            {draftProblems(draft).length > 0 && (
+            {problems.length ? (
               <div className="flex flex-col gap-y-1">
-                {draftProblems(draft).map((problem) => (
-                  <Text
-                    key={problem}
-                    size="xsmall"
-                    className="text-ui-fg-subtle"
-                  >
+                {problems.map((problem) => (
+                  <Text key={problem} size="small" className="text-ui-fg-muted">
                     · {problem}
                   </Text>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         </Drawer.Body>
         <Drawer.Footer>
@@ -923,14 +423,10 @@ const TermEditorDrawer = ({
           <Button
             variant="primary"
             isLoading={save.isPending}
-            disabled={!draftIsValid(draft) || !repeatReady}
+            disabled={problems.length > 0}
             onClick={() => save.mutate()}
           >
-            {term
-              ? "Uložit změny"
-              : repeatSummary && repeatSummary.occurrences.length > 1
-                ? `Vytvořit ${termsCountLabel(repeatSummary.occurrences.length)}`
-                : "Vytvořit termín"}
+            Uložit změny
           </Button>
         </Drawer.Footer>
       </Drawer.Content>
@@ -1313,7 +809,14 @@ const priceSummary = (term: AdminTerm): string => {
   return parts.join(" · ");
 };
 
-const TermCard = ({ term }: { term: AdminTerm }) => {
+const TermCard = ({
+  term,
+  allTerms,
+}: {
+  term: AdminTerm;
+  /** Every term — the Ceny and Poznámky dialogs let the edit reach beyond this one. */
+  allTerms: AdminTerm[];
+}) => {
   const [showReservations, setShowReservations] = useState(false);
   const [showWaitlist, setShowWaitlist] = useState(false);
   const expert = useExpertMode();
@@ -1359,14 +862,27 @@ const TermCard = ({ term }: { term: AdminTerm }) => {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-y-2">
           {editable ? (
-            <TermEditorDrawer
-              term={term}
-              trigger={
-                <Button variant="secondary" size="small">
-                  Upravit
-                </Button>
-              }
-            />
+            <div className="flex items-center gap-x-2">
+              <TermEditorDrawer
+                term={term}
+                trigger={
+                  <Button variant="secondary" size="small">
+                    Upravit
+                  </Button>
+                }
+              />
+              {/* Prices got their own door: they are a seasonal decision, and
+                  the dialog can carry one change across every term at once. */}
+              <CoursePricingDrawer
+                term={term}
+                terms={allTerms}
+                trigger={
+                  <Button variant="secondary" size="small">
+                    Ceny
+                  </Button>
+                }
+              />
+            </div>
           ) : null}
           {editable ? <CancelTermPrompt term={term} /> : null}
         </div>
@@ -1392,7 +908,27 @@ const TermCard = ({ term }: { term: AdminTerm }) => {
       </div>
 
       {showReservations ? (
-        term.reservations.length ? (
+        <div className="flex flex-col gap-y-3">
+          {/* The note lives here rather than in the term form on purpose: it
+              is what these people will read in their reminder e-mail, so the
+              place to write it is the screen where you can see who they are. */}
+          <div className="flex items-center justify-between gap-2">
+            <Text size="small" weight="plus" className="text-ui-fg-subtle">
+              {term.note ? `Poznámka: ${term.note}` : "Bez poznámky"}
+            </Text>
+            {editable ? (
+              <CourseNoteDrawer
+                term={term}
+                terms={allTerms}
+                trigger={
+                  <Button variant="secondary" size="small">
+                    Poznámky
+                  </Button>
+                }
+              />
+            ) : null}
+          </div>
+          {term.reservations.length ? (
           <div className="shadow-borders-base divide-y overflow-hidden rounded-lg">
             {term.reservations.map((reservation) => (
               <div
@@ -1457,12 +993,13 @@ const TermCard = ({ term }: { term: AdminTerm }) => {
               </div>
             ))}
           </div>
-        ) : (
-          <Text size="small" className="text-ui-fg-muted">
-            Zatím žádné rezervace. Zákazníci se hlásí na webu, telefonické
-            domluvy zapište tlačítkem „Zapsat rezervaci".
-          </Text>
-        )
+          ) : (
+            <Text size="small" className="text-ui-fg-muted">
+              Zatím žádné rezervace. Zákazníci se hlásí na webu, telefonické
+              domluvy zapište tlačítkem „Zapsat rezervaci".
+            </Text>
+          )}
+        </div>
       ) : null}
 
       {/* A cancelled or finished term ignores its waitlist by design —
@@ -1845,6 +1382,20 @@ const KurzySpravaInner = () => {
 
   const showCalendar = tab === "upcoming" && termsView === "kalendar";
 
+  /** Day key → how many terms already stand there, for the picker's dots. */
+  const termCounts = useMemo(
+    () =>
+      new Map(
+        Array.from(groupByPragueDay(calendarTerms).entries()).map(
+          ([key, list]) => [key, list.length]
+        )
+      ),
+    [calendarTerms]
+  );
+
+  /** Every non-cancelled term — the scope pickers reason over all of them. */
+  const allTerms = termsQuery.data?.terms ?? [];
+
   return (
     <Container className="divide-y p-0">
       <Toaster />
@@ -1860,7 +1411,8 @@ const KurzySpravaInner = () => {
         </div>
         <div className="flex items-center gap-4">
           <ExpertToggle />
-          <TermEditorDrawer
+          <CourseTermWizard
+            termCounts={termCounts}
             trigger={<Button variant="primary">Nový termín</Button>}
           />
         </div>
@@ -1920,7 +1472,8 @@ const KurzySpravaInner = () => {
             }
             action={
               tab === "upcoming" ? (
-                <TermEditorDrawer
+                <CourseTermWizard
+                  termCounts={termCounts}
                   trigger={<Button variant="primary">Nový termín</Button>}
                 />
               ) : undefined
@@ -1934,7 +1487,7 @@ const KurzySpravaInner = () => {
           visible.length > 0 && (
           <div className="grid gap-4 xl:grid-cols-2">
             {visible.map((term) => (
-              <TermCard key={term.id} term={term} />
+              <TermCard key={term.id} term={term} allTerms={allTerms} />
             ))}
           </div>
         )}

@@ -21,6 +21,7 @@ import {
   ProductButton,
 } from "./productsButton"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
+import type { CopyButton } from "@lib/util/site-copy"
 import NavbarSearch from "./navbarSearch"
 
 type NavbarProps = {
@@ -29,6 +30,12 @@ type NavbarProps = {
   isLoggedIn?: boolean
   wishlistItems?: any[]
   navigationCollections?: NavigationCollection[]
+  /**
+   * Tlačítka z CMS. Navbar sám je nepoužívá — předává je jen mobilní nabídce,
+   * která je jediná z celého horního pruhu má editovatelné. Ta rozvaha je
+   * v `mobileNav`.
+   */
+  buttons?: Record<string, CopyButton>
 }
 
 const navButtonHrefs = ["/", "/dotazy", "/vyroba", "/kurzy", "/o-mne"] as const
@@ -52,6 +59,7 @@ export default function Navbar({
   isLoggedIn,
   wishlistItems = [],
   navigationCollections = [],
+  buttons,
 }: NavbarProps) {
   const [isMobile, setIsMobile] = useState<boolean>(false)
   const [isTablet, setIsTablet] = useState<boolean>(false)
@@ -272,7 +280,11 @@ export default function Navbar({
           this element collapses to nothing and the desktop bar is unchanged.
         */}
         <div className="navbar__menu">
-          <MobileNav isOpen={isMenuOpen} onOpenChange={handleMenuOpenChange} />
+          <MobileNav
+            isOpen={isMenuOpen}
+            onOpenChange={handleMenuOpenChange}
+            buttons={buttons}
+          />
         </div>
 
         {/* Phones get MobileBar below instead — this whole pill is display:none there. */}

@@ -1,12 +1,11 @@
 import { Metadata } from "next"
-import { client } from "../../../../sanity/lib/client"
 import { listCollections } from "@lib/data/collections"
 import { listCourseTerms } from "@lib/data/courses"
 import { getRegion } from "@lib/data/regions"
 
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import Kurzy from "@modules/home/Kurzy"
-import type { KurzyIntroData } from "@modules/home/Kurzy/Intro"
+import { getPageCopyWithGlobal } from "@lib/data/site-copy"
 
 export const metadata: Metadata = {
   title: "Keramické kurzy",
@@ -22,10 +21,15 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const [region, { collections }, kurzyIntroData, terms] = await Promise.all([
+  /*
+   * Termíny, kapacity a ceny drží Medusa (`listCourseTerms`); z CMS sem chodí
+   * jen redakční část stránky — úvodní text a fotky. Kdyby CMS někdy začalo
+   * popisovat termíny, jsou to dva zdroje pravdy o jedné věci.
+   */
+  const [region, { collections }, copy, terms] = await Promise.all([
     getRegion(countryCode),
     listCollections({ fields: "id, handle, title" }),
-    client.fetch<KurzyIntroData>('*[_type == "kurzyIntro"][0]'),
+    getPageCopyWithGlobal("kurzy"),
     listCourseTerms(),
   ])
 
@@ -36,7 +40,7 @@ export default async function Home(props: {
   return (
     <>
       <ScrollToTopOnReload />
-      <Kurzy introData={kurzyIntroData} terms={terms} />
+      <Kurzy copy={copy} terms={terms} />
     </>
   )
 }

@@ -13,8 +13,10 @@ import Scrollbar from "@modules/layout/scrollbar"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
+import { getButtons, getPageCopy } from "@lib/data/site-copy"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import CookieNotice from "@modules/layout/CookieNotice"
+import AdminBar from "@modules/layout/AdminBar"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -48,6 +50,13 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   const shopStatus = await getShopStatus()
 
+  // Tlačítka napříč webem (menu, patička). Sociální sítě už mezi nimi nejsou —
+  // ty jsou seznamem v bloku `global.socialni-site`, aby šly přidávat.
+  const buttons = await getButtons()
+
+  // Texty patičky a newsletteru + seznam sociálních sítí.
+  const globalCopy = await getPageCopy("global")
+
   return (
     <ContactDialogProvider merchant={merchant}>
       <ShopBanner status={shopStatus} />
@@ -58,6 +67,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         isLoggedIn={!!customer}
         wishlistItems={wishlistItems}
         navigationCollections={navigationCollections}
+        buttons={buttons}
       />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />
@@ -72,8 +82,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         />
       )}
       {props.children}
-      <Footer merchant={merchant} />
+      <Footer merchant={merchant} copy={globalCopy} />
       <CookieNotice />
+      {/* Renders nothing at all for a normal visitor — see the module. */}
+      <AdminBar />
     </ContactDialogProvider>
   )
 }

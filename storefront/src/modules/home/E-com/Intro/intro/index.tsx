@@ -2,7 +2,8 @@
 import { useInView, motion, Easing } from "framer-motion";
 import Image from "next/image";
 import { useRef } from "react";
-import { urlFor } from "../../../../../sanity/lib/image";
+import { itemValue, paragraphs, type CopyBlock } from "@lib/util/site-copy";
+import { editable } from "@c3studium/valecms/edit"
 
 /*
  * Reveal choreography.
@@ -25,10 +26,11 @@ const LINE_OVERLAP = 0.62 // fraction of a line's own length before the next one
 const enterEase = [0.22, 1, 0.36, 1] as Easing
 
 export default function Intro ({
-    data,
+    block,
     active,
 }: {
-    data?: any
+    /** Blok `index.ecom-intro` z CMS. */
+    block?: CopyBlock
     active?: boolean
 }) {
     const ref = useRef<HTMLDivElement>(null);
@@ -41,9 +43,18 @@ export default function Intro ({
     });
     const isInView = active ?? observedInView;
 
-    const title1 = data?.title1 || "Vítejte"
-    const title2 = data?.title2 || "v Keramické"
-    const title3 = data?.title3 || "Zahradě"
+    // Tři řádky nadpisu jsou v CMS tři pole: první dvě mají vlastní, třetí sedí
+    // mezi `items` pod svým původním jménem. Sázejí se pod sebe, takže slepené
+    // do jednoho řetězce by se nedaly rozdělit zpátky — „v Keramické" není
+    // jedno slovo.
+    const title1 = block?.title || "Vítejte"
+    const title2 = block?.headline || "v Keramické"
+    const title3 = itemValue(block, "title3") || "Zahradě"
+    // Dva odstavce textu; migrace je uložila jako dvě <p> za sebou. Čtou se
+    // z `body`, protože hranici odstavce nese jenom HTML — `bodyText` je po
+    // `plainText()` jediná řádka, takže tohle vracelo oba odstavce slepené do
+    // prvního a druhý sloupec padal na zálohu. Viz `paragraphs()`.
+    const paras = paragraphs(block)
 
     /* Derived from the copy's own length rather than hardcoded, because all three lines come from
        Sanity and an editor changing "Vítejte" to something longer must not desynchronise them. */
@@ -74,7 +85,18 @@ export default function Intro ({
         },
         enter: {
             opacity: 1,
-            width: "clamp(12rem, 21vw, 28rem)",
+            /*
+             * The plate's width lives in style.scss as `--intro-plate-w` and is read from there,
+             * not copied. This wrapper is what pushes the word across, so the two have to be the
+             * same number: when they were two literals, making the plate height-aware would have
+             * left the wrapper opening wider than the plate it holds, with the gap showing as
+             * dead space before the word.
+             *
+             * Framer resolves the token off the element, measures the pixels it lands on to run
+             * the tween, and writes the token itself back as the final value — so the wrapper
+             * finishes bound to the stylesheet and keeps re-resolving on resize.
+             */
+            width: "var(--intro-plate-w)",
             transition: {
                 duration: 0.9,
                 /* Opens just ahead of the line it sits beside, so the word is pushed across by an
@@ -84,11 +106,41 @@ export default function Intro ({
             }
         }
     }
+    /*
+     * Popisky lišty pod sekcí.
+     *
+     * Každý je vlastní položka `accent`, ne jeden slepený řetězec: jsou to dva samostatné
+     * popisky na dvou koncích lišty a redaktor mění jeden bez druhého. Celý text včetně
+     * oddělovače („01 · ") je uvnitř položky schválně — v editoru se pak čte přesně to,
+     * co stojí na stránce.
+     */
+    const railLeft = block?.accent?.[0]?.trim() || "01 · Keramická zahrada";
+    const railRight = block?.accent?.[1]?.trim() || "Ručně, v píseckém ateliéru";
+
+    /*
+     * Poznámka vpravo — vlastní pole, ne druhý odstavec `body`.
+     *
+     * Jako druhý odstavec ji nešlo označit samostatně (`editable` píše celé pole), takže
+     * rámeček v editoru musel obejmout oba sloupce najednou. `paras[1]` zůstává jako záloha
+     * pro obsah, který ještě takhle rozdělený není.
+     */
+    const aside =
+        block?.accent?.[2]?.trim() ||
+        paras[1] ||
+        "Pro zahradu i pro domov. Vzniká to pomalu a jen v malém počtu.";
+
     return (
         <section className="ECom__Intro" ref={ref}>
+            {/* `aria-hidden` zůstává — lišta je typografická ozdoba a čtečce nic nepřidá.
+                Anotace pro vizuální editaci jsou na tom nezávislé: překryv čte DOM, ne
+                strom pro asistivní technologie. */}
             <div className="ECom__Intro__Rail" aria-hidden="true">
-                <motion.span animate={isInView ? "enter" : "start"} variants={railAnim}>
-                    01 · Keramická zahrada
+                <motion.span
+                    animate={isInView ? "enter" : "start"}
+                    variants={railAnim}
+                    {...editable(block, "accent.0")}
+                >
+                    {railLeft}
                 </motion.span>
                 <motion.span
                     className="rail__line"
@@ -96,12 +148,16 @@ export default function Intro ({
                     animate={isInView ? "enter" : "start"}
                     variants={railLineAnim}
                 />
-                <motion.span animate={isInView ? "enter" : "start"} variants={railAnim}>
-                    Ručně, v píseckém ateliéru
+                <motion.span
+                    animate={isInView ? "enter" : "start"}
+                    variants={railAnim}
+                    {...editable(block, "accent.1")}
+                >
+                    {railRight}
                 </motion.span>
             </div>
             <div className="ECom__Intro__Title">
-                <h2>
+                <h2 {...editable(block, "title")}>
                     {charSplit(title1, isInView, line1Delay)}
                 </h2>
                 <div className="Hero__Intro__Container">
@@ -114,7 +170,8 @@ export default function Intro ({
                         <div
                             className="Hero__Intro__Img__Container">
                             <Image
-                                src={data?.image ? urlFor(data.image).url() : "/assets/img/img/3.jpg"}
+                                src={block?.image?.url || "/assets/img/img/3.jpg"}
+                                {...editable(block, "image", "image")}
                                 alt="Intro Image"
                                 fill={true}
                                 sizes="40dvw"
@@ -123,7 +180,7 @@ export default function Intro ({
                             />
                         </div>
                     </motion.div>
-                    <h2>
+                    <h2 {...editable(block, "headline")}>
                         {charSplit(title2, isInView, line2Delay)}
                     </h2>
                 </div>
@@ -131,14 +188,24 @@ export default function Intro ({
                     {charSplit(title3, isInView, line3Delay)}
                 </h2>
             </div>
+            {/*
+              * Anotace jsou na JEDNOTLIVÝCH odstavcích, ne na jejich obalu.
+              *
+              * Překryv pro vizuální editaci obkresluje anotovaný prvek. Dokud seděla anotace
+              * tady na obalu, byl rámeček přes obě sloupce — od textu vlevo až k poznámce
+              * vpravo — a vypadal, jako by text přetékal. Nepřetékal: obal je `static` grid
+              * o dvou drahách a rámeček jen věrně kreslil jeho šířku.
+              *
+              * Rozdělit to šlo teprve tím, že poznámka dostala vlastní pole (`accent.2`).
+              * `editable` zapisuje vždy celé pole, takže dva sourozenci nad jedním polem
+              * mít dvě anotace nemůžou.
+              */}
             <div className="ECom__Intro__Content">
-                <p>
-                    {data?.content1 ? textWithBreaks(data.content1, isInView, contentDelay) : wordSplit("Každý výrobek tvořím rukama, jeden po druhém. Žádné dva nejsou úplně stejné — a to je na tom to hezké.", isInView, contentDelay)}
+                <p {...editable(block, "body")}>
+                    {paras[0] ? textWithBreaks(paras[0], isInView, contentDelay) : wordSplit("Každý výrobek tvořím rukama, jeden po druhém. Žádné dva nejsou úplně stejné — a to je na tom to hezké.", isInView, contentDelay)}
                 </p>
-                <p className="ECom__Intro__Aside">
-                    {data?.content2
-                        ? textWithBreaks(data.content2, isInView, contentDelay + 0.12)
-                        : wordSplit("Pro zahradu i pro domov. Vzniká to pomalu a jen v malém počtu.", isInView, contentDelay + 0.12)}
+                <p className="ECom__Intro__Aside" {...editable(block, "accent.2")}>
+                    {textWithBreaks(aside, isInView, contentDelay + 0.12)}
                 </p>
             </div>
         </section>

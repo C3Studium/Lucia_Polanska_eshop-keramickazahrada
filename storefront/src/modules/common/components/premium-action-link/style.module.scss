@@ -4,25 +4,17 @@
   isolation: isolate;
   display: inline-grid;
   grid-template-columns: 1fr auto;
-  min-width: 0;
+  min-width: min(100%, 14.5rem);
   min-height: 3.2rem;
   align-items: center;
   gap: 1.2rem;
   padding: .45rem .55rem .45rem 1.25rem;
   overflow: hidden;
-  border: 1px solid var(--premium-link-border, rgba(255, 232, 214, .78));
+  border: 1px solid var(--premium-link-border, rgb(var(--cream-06-rgb) / .78));
   border-radius: 999px;
   font: 400 .9rem/1 "Sansation-Regular", sans-serif;
   text-decoration: none;
   width: 100%;
-
-  @include v(md) {
-    min-width: 14.5rem;
-  }
-
-  @include h(xs) {
-    min-width: 14.5rem;
-  }
 }
 
 .root:hover,
@@ -40,7 +32,7 @@
   z-index: -1;
   inset: 0;
   border-radius: inherit;
-  background: var(--premium-link-fill, #ffe8d6);
+  background: var(--premium-link-fill, var(--cream-06));
   transform-origin: left center;
   will-change: transform;
 }

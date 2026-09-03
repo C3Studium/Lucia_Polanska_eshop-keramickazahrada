@@ -321,10 +321,12 @@ function PerspectiveText({ label }: { label: string }) {
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
-const initial = { opacity: 0, y: 20 }
-const whileInView = { opacity: 1, y: 0 }
+/* Entrance offsets in vh, not px — 20px at 1080 is 1.85vh, 16px is 1.5vh. Both ends of every
+   tween carry the unit so the value stays one interpolable shape. */
+const initial = { opacity: 0, y: "1.85vh" }
+const whileInView = { opacity: 1, y: "0vh" }
 const viewport = { once: true, amount: 0.35 }
 const transition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
-const initial2 = { opacity: 0, y: 16 }
+const initial2 = { opacity: 0, y: "1.5vh" }
 const transition2 = { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
 const transition3 = { duration: 0.5, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }

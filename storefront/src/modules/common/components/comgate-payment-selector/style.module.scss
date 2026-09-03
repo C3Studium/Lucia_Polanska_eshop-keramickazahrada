@@ -1,7 +1,16 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* The confirm CTA's height, named because it is stated twice and the two have to
+   agree: once as `min-height`, which is what a mouse gets, and once as `height`
+   inside the touch block, because the global 44px floor replaces the min-height
+   there and the premium button's own fixed height means padding cannot grow the
+   box back. Two literal copies of one clamp is the drift this project names
+   "one geometry, one place"; this is that one place. */
+$confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
+
 .selector {
   width: 100%;
-  color: #20211c;
+  color: var(--ink-05);
   font-family: "Sansation-Regular", sans-serif;
 }
 
@@ -13,24 +22,24 @@
 .groups {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid rgba(32, 33, 28, 0.2);
-  border-left: 1px solid rgba(32, 33, 28, 0.2);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .group {
   position: relative;
   isolation: isolate;
   display: grid;
-  min-height: 98px;
+  min-height: clamp(5.5rem, 11vh, 6.5rem);
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 13px;
-  padding: 16px 17px;
+  gap: clamp(0.5625rem, 0.9vw, 0.8125rem);
+  padding: clamp(0.875rem, 1.55vh, 1rem) clamp(0.75rem, 1.2vw, 1.0625rem);
   overflow: hidden;
   border: 0;
-  border-right: 1px solid rgba(32, 33, 28, 0.2);
-  border-bottom: 1px solid rgba(32, 33, 28, 0.2);
-  color: #20211c;
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
+  color: var(--ink-05);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -38,7 +47,7 @@
 }
 
 .group[data-group="bank"] {
-  min-height: 112px;
+  min-height: clamp(6rem, 12vh, 7rem);
   grid-column: 1 / -1;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
 }
@@ -46,7 +55,7 @@
 /* With a fourth tile — „Zaplatíte při vyzvednutí", offered only for Osobní odběr — the bank
    row stops spanning so the four sit as an even 2×2 instead of 2 + 1 + 1. */
 .groups[data-count="4"] .group[data-group="bank"] {
-  min-height: 98px;
+  min-height: clamp(5.5rem, 11vh, 6.5rem);
   grid-column: auto;
 }
 
@@ -62,13 +71,16 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #20211c;
+  background: var(--ink-05);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.68s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.group:hover .groupFill,
+/* :hover is not in this list — it moved to the fine-pointer block near the end of the
+   file, because on a touch screen it latches on whatever tile was last tapped. The two
+   triggers that stay are the ones a finger can still reach: the wipe has to keep playing
+   on a phone held sideways, and after a tap [data-active="true"] is what plays it. */
 .group:focus-visible .groupFill,
 .group[data-active="true"] .groupFill {
   transform: scaleX(1);
@@ -76,9 +88,9 @@
 
 .groupIndex {
   align-self: start;
-  padding-top: 2px;
-  color: rgba(32, 33, 28, 0.66);
-  font-size: 13px;
+  padding-top: 0.125rem;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
   letter-spacing: 0.12em;
   transition: color 0.28s ease 0.16s;
 }
@@ -87,19 +99,19 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 5px;
+  gap: clamp(0.1875rem, 0.5vh, 0.3125rem);
 }
 
 .groupCopy strong {
-  font-size: 17px;
+  font-size: clamp(1rem, 1.333vw, 1.167rem);
   font-weight: 400;
   line-height: 1.15;
 }
 
 .groupCopy small {
-  color: rgba(32, 33, 28, 0.68);
+  color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Light", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
   line-height: 1.32;
   transition: color 0.28s ease 0.16s;
 }
@@ -107,7 +119,7 @@
 .logoStack {
   display: flex;
   align-items: center;
-  padding-left: 8px;
+  padding-left: clamp(0.4rem, 0.547vw, 0.5rem);
 }
 
 .logoStack > span,
@@ -116,15 +128,15 @@
   display: grid;
   overflow: hidden;
   place-items: center;
-  border: 1px solid rgba(32, 33, 28, 0.18);
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
   border-radius: 50%;
-  background: #f8eee2;
+  background: var(--cream-07);
 }
 
 .logoStack > span {
-  width: 30px;
-  height: 30px;
-  margin-left: -8px;
+  width: clamp(1.5rem, 2.05vw, 1.875rem);
+  height: clamp(1.5rem, 2.05vw, 1.875rem);
+  margin-left: clamp(-0.5rem, -0.547vw, -0.4rem);
 }
 
 .logoStack img,
@@ -142,63 +154,60 @@
   display: block;
   width: 68%;
   height: 68%;
-  color: #20211c;
+  color: var(--ink-05);
 }
 
 .logoStack span span,
 .selectedLogo > span,
 .methodLogo > span {
-  font-size: 13px;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
 }
 
 .groupArrow {
   display: grid;
-  width: 26px;
-  height: 26px;
+  width: clamp(1.3rem, 1.777vw, 1.625rem);
+  height: clamp(1.3rem, 1.777vw, 1.625rem);
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
 }
 
-.group:hover,
 .group:focus-visible,
 .group[data-active="true"] {
-  color: #f8e2d0;
+  color: var(--cream-06);
 }
 
-.group:hover .groupIndex,
 .group:focus-visible .groupIndex,
 .group[data-active="true"] .groupIndex,
-.group:hover .groupCopy small,
 .group:focus-visible .groupCopy small,
 .group[data-active="true"] .groupCopy small {
-  color: rgba(248, 226, 208, 0.67);
+  color: rgb(var(--cream-06-rgb) / .67);
 }
 
 .picker {
-  padding: 18px 0 4px;
+  padding: clamp(0.875rem, 1.75vh, 1.125rem) 0 clamp(0.1875rem, 0.4vh, 0.25rem);
 }
 
 .pickerHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 11px;
+  margin-bottom: clamp(0.5rem, 1.05vh, 0.6875rem);
 }
 
 .pickerHeader span,
 .search > span {
-  color: rgba(32, 33, 28, 0.68);
-  font-size: 12px;
+  color: rgb(var(--ink-05-rgb) / .68);
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .pickerHeader small {
-  color: rgba(32, 33, 28, 0.66);
-  font-size: 13px;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
 }
 
 .search {
@@ -206,68 +215,96 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 12px;
-  padding: 0 14px;
-  border: 1px solid rgba(32, 33, 28, 0.25);
+  gap: clamp(0.625rem, 1vw, 0.875rem);
+  margin-bottom: clamp(0.5rem, 1.15vh, 0.75rem);
+  padding: 0 clamp(0.625rem, 1vw, 0.875rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .25);
   border-radius: 999px;
 }
 
 .search input {
   min-width: 0;
-  height: 45px;
+  height: clamp(2.5rem, 5.4vh, 2.8125rem);
   border: 0;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
-  font: 400 16px/1 "Sansation-Regular", sans-serif;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(1rem, 1.333vw, 1.167rem);
+  font-weight: 400;
+  line-height: 1;
 }
 
 .search input::placeholder {
-  color: rgba(32, 33, 28, 0.38);
+  color: rgb(var(--ink-05-rgb) / .38);
 }
 
 .search input:-webkit-autofill,
 .search input:-webkit-autofill:hover,
 .search input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #20211c;
+  -webkit-text-fill-color: var(--ink-05);
   transition: background-color 9999s ease-out;
   box-shadow: 0 0 0 1000px transparent inset;
 }
 
 .search button {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: clamp(1.4rem, 1.913vw, 1.75rem);
+  height: clamp(1.4rem, 1.913vw, 1.75rem);
   padding: 0;
   place-items: center;
   border: 0;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
   cursor: pointer;
+}
+
+/* The two controls the global 44px floor in globals.scss cannot reach. That rule lists
+   button, [role=button] and the two input types that are buttons, so this text input is
+   outside it altogether; the clear button is inside it and gets the height, but the rule
+   says nothing about width and the button's own clamp floors both axes at 22.4px.
+   Measured on both landscape phones: input 40 tall, clear button 22.4 x 22.4.
+   The input's font-size floor of 1rem is deliberate and stays - below 16px iOS zooms
+   the page when the field takes focus.
+
+   2.75rem, not 44px: identical below 1921 and lifted by the root-rem ramp above it,
+   the same way .brand in the express-checkout shell and .quantity's stepper in the
+   module already write this floor. A px value would leave these two controls at 44
+   on a 2552px screen while every control beside them grew 1.33x. */
+@include touch {
+  .search input {
+    min-height: 2.75rem;
+  }
+
+  .search button {
+    min-width: 2.75rem;
+  }
 }
 
 .methodGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-top: 1px solid rgba(32, 33, 28, 0.18);
-  border-left: 1px solid rgba(32, 33, 28, 0.18);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .18);
 }
 
 .method {
   position: relative;
   isolation: isolate;
   display: grid;
-  min-height: 73px;
+  min-height: clamp(4rem, 7.5vh, 4.875rem);
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: clamp(0.5rem, 0.72vw, 0.625rem);
+  padding: clamp(0.5rem, 0.95vh, 0.625rem) clamp(0.5rem, 0.72vw, 0.625rem);
   border: 0;
-  border-right: 1px solid rgba(32, 33, 28, 0.18);
-  border-bottom: 1px solid rgba(32, 33, 28, 0.18);
-  color: #20211c;
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
+  color: var(--ink-05);
   background: transparent;
-  font: 400 13px/1.25 "Sansation-Regular", sans-serif;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-weight: 400;
+  line-height: 1.25;
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -279,25 +316,27 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #20211c;
+  background: var(--ink-05);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.58s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.method:hover,
+/* :hover for this button and the two below moved to the fine-pointer block at the end
+   of the file - on a touch screen it latches on whatever tile was last tapped. What
+   stays here is :focus-visible, which no pointer query may gate: it is the trigger the
+   keyboard reaches, and it is half of what keeps the wipe alive on a phone. */
 .method:focus-visible {
-  color: #f8e2d0;
+  color: var(--cream-06);
 }
 
-.method:hover::before,
 .method:focus-visible::before {
   transform: scaleX(1);
 }
 
 .methodLogo {
-  width: 35px;
-  height: 35px;
+  width: clamp(1.75rem, 2.392vw, 2.1875rem);
+  height: clamp(1.75rem, 2.392vw, 2.1875rem);
   flex: 0 0 auto;
 }
 
@@ -306,15 +345,15 @@
   isolation: isolate;
   display: grid;
   width: 100%;
-  min-height: 67px;
+  min-height: clamp(3.5rem, 6.4vh, 4.1875rem);
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 9px 13px;
-  border: 1px solid rgba(32, 33, 28, 0.3);
+  gap: clamp(0.5625rem, 0.87vw, 0.75rem);
+  margin-top: clamp(0.4375rem, 0.95vh, 0.625rem);
+  padding: clamp(0.4375rem, 0.85vh, 0.5625rem) clamp(0.625rem, 0.94vw, 0.8125rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .3);
   border-radius: 999px;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -327,63 +366,66 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #20211c;
+  background: var(--ink-05);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.62s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.otherBank:hover,
 .otherBank:focus-visible {
-  color: #f8e2d0;
+  color: var(--cream-06);
 }
 
-.otherBank:hover::before,
 .otherBank:focus-visible::before {
   transform: scaleX(1);
 }
 
-.otherBank:hover small,
 .otherBank:focus-visible small {
-  color: rgba(248, 226, 208, 0.65);
+  color: rgb(var(--cream-06-rgb) / .65);
 }
 
 .otherBank > span:nth-child(2) {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: clamp(0.125rem, 0.3vh, 0.1875rem);
 }
 
 .otherBank strong {
-  font-size: 14px;
+  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
   font-weight: 400;
 }
 
 .otherBank small {
-  color: rgba(32, 33, 28, 0.68);
-  font: 400 13px/1.3 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .68);
+  font-family: "Sansation-Light", sans-serif;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .noResults {
-  margin: 12px 0 0;
-  color: rgba(32, 33, 28, 0.68);
-  font: 400 13px/1.4 "Sansation-Regular", sans-serif;
+  margin: clamp(0.5rem, 1.15vh, 0.75rem) 0 0;
+  color: rgb(var(--ink-05-rgb) / .68);
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .selectedState {
   display: grid;
-  gap: 15px;
+  gap: clamp(0.625rem, 1.4vh, 0.9375rem);
 }
 
 .selected {
   display: grid;
-  min-height: 86px;
+  min-height: clamp(4.5rem, 9.5vh, 5.375rem);
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 15px;
-  padding: 13px 14px;
-  border-top: 1px solid rgba(32, 33, 28, 0.25);
-  border-bottom: 1px solid rgba(32, 33, 28, 0.25);
+  gap: clamp(0.75rem, 1.08vw, 0.9375rem);
+  padding: clamp(0.625rem, 1.22vh, 0.8125rem) clamp(0.6875rem, 1vw, 0.875rem);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .25);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .25);
 }
 
 .confirm {
@@ -393,25 +435,67 @@
 
 .confirm > button {
   width: 100%;
-  min-height: 58px;
+  min-height: $confirm-h;
   background: transparent;
 }
 
+/* The height the three controls above lose on a touch screen. globals.scss
+   gives every button `min-height: 44px !important` under the same touch query,
+   and !important does not floor a component's own min-height — it replaces it.
+   So each of these states a height a mouse gets and a finger does not:
+   .method measures 78.0 with a mouse on 1920×1080 and 48.4 with a finger on
+   768×1024 — the same 166 px cell of the same 500 px column; .otherBank
+   67 → 57.5; the confirm CTA 58 → 51.2. The smaller target sits on the device
+   that needs the bigger one. Answering !important with !important would only
+   move the argument, so the height is restated in properties the global rule
+   does not name.
+
+   The values are the arithmetic of the min-height clamps above, not a second
+   opinion about size. A .method tile is a 1.75rem logo over a 1px border, so
+   padding-block = (min-height − 29px) / 2: (4.875rem − 1.75rem − 1px) / 2 is
+   the 1.53rem ceiling, the live member is the same 7.5vh halved and offset,
+   fitted at the iPad's 1024 px of height ((76.8 − 29) / 2 = 23.9px = 2.33vh),
+   and the floor stays the 0.5rem the padding already had, so viewports with no
+   height to spare do not move — a 568×320 phone measures 45.0 before and
+   after. Same derivation for .otherBank over ~38 px of copy and a 2 px border.
+
+   .confirm > button is the exception, and takes height rather than padding:
+   it is a premium-action-button, and that component sets
+   `height: clamp(2.75rem, 5vh, 3.25rem)` on itself, so padding would be eaten
+   by the fixed box instead of growing it. The clamp restated here is the
+   min-height from the rule above, which is ≥ the component's own height clamp
+   at every window height (52-58 against 44-52) — which is why a mouse keeps
+   exactly what it measured: .method 78.0 on 1920×1080 and 64.0 on 1366×768,
+   .confirm 58 and 52, all unchanged. */
+@include touch {
+  .method {
+    padding-block: clamp(0.5rem, 2.33vh, 1.53rem);
+  }
+
+  .otherBank {
+    padding-block: clamp(0.4375rem, 1.24vh, 0.84rem);
+  }
+
+  .confirm > button {
+    height: $confirm-h;
+  }
+}
+
 .selectedLogo {
-  width: 48px;
-  height: 48px;
+  width: clamp(2.4rem, 3.28vw, 3rem);
+  height: clamp(2.4rem, 3.28vw, 3rem);
 }
 
 .selectedCopy {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: clamp(0.125rem, 0.3vh, 0.1875rem);
 }
 
 .selectedCopy small {
-  color: rgba(32, 33, 28, 0.66);
-  font-size: 12px;
+  color: rgb(var(--ink-05-rgb) / .66);
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -419,7 +503,7 @@
 
 .selectedCopy strong {
   overflow: hidden;
-  font-size: 17px;
+  font-size: clamp(1rem, 1.333vw, 1.167rem);
   font-weight: 400;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -428,9 +512,9 @@
 
 .selectedCopy > span {
   overflow: hidden;
-  color: rgba(32, 33, 28, 0.68);
+  color: rgb(var(--ink-05-rgb) / .68);
   font-family: "Sansation-Light", sans-serif;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -441,13 +525,16 @@
   isolation: isolate;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 8px 7px 15px;
-  border: 1px solid #20211c;
+  gap: clamp(0.5rem, 0.72vw, 0.625rem);
+  padding: clamp(0.3125rem, 0.65vh, 0.4375rem) clamp(0.375rem, 0.58vw, 0.5rem) clamp(0.3125rem, 0.65vh, 0.4375rem) clamp(0.75rem, 1.08vw, 0.9375rem);
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  color: #20211c;
+  color: var(--ink-05);
   background: transparent;
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-weight: 400;
+  line-height: 1;
   cursor: pointer;
   overflow: hidden;
   transition: color 0.24s ease 0.12s;
@@ -458,63 +545,102 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #20211c;
+  background: var(--ink-05);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.55s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.change:hover,
 .change:focus-visible {
-  color: #f8e2d0;
+  color: var(--cream-06);
 }
 
-.change:hover::before,
 .change:focus-visible::before {
   transform: scaleX(1);
 }
 
 .change span {
   display: grid;
-  width: 25px;
-  height: 25px;
+  width: clamp(1.25rem, 1.708vw, 1.5625rem);
+  height: clamp(1.25rem, 1.708vw, 1.5625rem);
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
 }
 
 @include below-px(760px) {
-  .groups,
+  /* Only .methodGrid changes kind here — it drops from three columns to two.
+     `.groups` used to be listed alongside it, restating the two columns it
+     already has in the base rule: a line that computed to nothing but read
+     like a breakpoint decision. Removed, so what is left in this block is
+     exactly what actually changes below 760. */
   .methodGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .group {
-    min-height: 104px;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 9px;
-    padding: 14px 12px;
   }
 
   .group[data-group="bank"] {
-    min-height: 108px;
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .logoStack {
     display: none;
   }
+}
 
-  .groupCopy strong {
-    font-size: 16px;
+/* Above the phone, the window has no say in this component's composition. The
+   step column is `$step: min(100%, 31.25rem)` in the express-checkout module,
+   so it measures exactly 500.0 px at 600, 720, 768, 800, 1024, 1366 and 1920:
+   from about 578 px of window width up, the box these tiles are laid out in is
+   a constant, not a continuum. The query above measures the window instead,
+   and 760 falls 8 px under the iPad, which cut the portrait-tablet band in
+   half — 600 and 720 got the phone's two columns and no logos, 768 and 1024
+   got three columns and the logos, inside the identical 500 px box. This hands
+   the whole band the composition the box asks for. Written after that query on
+   purpose: same specificity, later rule wins. Nothing but kind changes here —
+   every size stays in the clamps above — and one stop is enough, because v(lg)
+   is a subset of v(md). Measured after: 600 and 720 land on the same
+   166.328px × 3 as 768 / 1024, and the group tiles on the same 104-106.4 px.
+   On its own this shortens the page, because three columns need fewer rows —
+   injected alone it took scrollH from 1536 to 1462 at 600 and 1614 to 1537 at
+   720; the touch block earlier in the file spends that again on tile height,
+   so the shipped totals are 1575 and 1661. The phone is untouched: 390×844 and
+   320×568 measure byte for byte the same, min-width 600 never reaches them.
+   The one debit is the wallet tile's „Apple / Google Pay", which now wraps to
+   two lines at 600 and 720 as it already did at 768 and above: that is the
+   text column narrowing from 170.6 to 137.6 px, which is the vw-on-window
+   problem this file has everywhere, not something this block introduced. */
+@include v(md) {
+  .methodGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .groupCopy small {
-    font-size: 13px;
+  .group,
+  .group[data-group="bank"] {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .logoStack {
+    display: flex;
   }
 }
 
 @include below-px(430px) {
+  /* The tiles drop to one column. This is the width where the selector's own container
+     is about 276px, so two columns leave each tile ~138px and the card tile's second
+     line breaks over four rows inside a ~70px text column. A different number of
+     columns is a change of kind, which is what this query is for - the sizes stay in
+     the clamps above. Nothing else has to follow: .group[data-group="bank"] keeps its
+     grid-column: 1 / -1 and now spans a single column, and the four-tile variant, which
+     only sets that same property back to auto, lands on the same one column too.
+     A landscape phone never sees this: 568 and 932 are both above 430. */
+  .groups {
+    grid-template-columns: 1fr;
+  }
+
   .search {
     grid-template-columns: 1fr auto;
   }
@@ -524,7 +650,6 @@
   }
 
   .method {
-    min-height: 78px;
     grid-template-columns: auto minmax(0, 1fr);
   }
 
@@ -544,5 +669,60 @@
     grid-column: 1 / -1;
     justify-content: space-between;
     width: 100%;
+  }
+}
+
+/* Every :hover in this component, behind (hover: hover) and (pointer: fine). A touch
+   screen has no way to leave a hover, so the last tile a finger touched kept the filled
+   state until something else was touched - the solid black "Apple / Google Pay" tile in
+   .rdshots/out/xco-h-steps/p-320x568-3-payment.png is that bug photographed, with nothing
+   selected. Last in the file on purpose: these override earlier rules of the same
+   specificity, and at equal specificity the later rule wins.
+
+   What is NOT in here is the wipe's other triggers. .groupFill, .method::before,
+   .otherBank::before and .change::before keep :focus-visible - and .group its
+   [data-active="true"] - outside every pointer query, so the horizontal scaleX still
+   runs on a phone held sideways: tapping a group tile sets data-active and the fill
+   sweeps left to right exactly as it does under a mouse. */
+@include fine-pointer {
+  .group:hover {
+    color: var(--cream-06);
+  }
+
+  .group:hover .groupFill {
+    transform: scaleX(1);
+  }
+
+  .group:hover .groupIndex,
+  .group:hover .groupCopy small {
+    color: rgb(var(--cream-06-rgb) / .67);
+  }
+
+  .method:hover {
+    color: var(--cream-06);
+  }
+
+  .method:hover::before {
+    transform: scaleX(1);
+  }
+
+  .otherBank:hover {
+    color: var(--cream-06);
+  }
+
+  .otherBank:hover::before {
+    transform: scaleX(1);
+  }
+
+  .otherBank:hover small {
+    color: rgb(var(--cream-06-rgb) / .65);
+  }
+
+  .change:hover {
+    color: var(--cream-06);
+  }
+
+  .change:hover::before {
+    transform: scaleX(1);
   }
 }

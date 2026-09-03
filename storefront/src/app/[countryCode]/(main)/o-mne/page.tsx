@@ -1,9 +1,9 @@
 import { Metadata } from "next"
-import { client } from "../../../../sanity/lib/client"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
 import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
+import { getPageContentFull } from "@lib/data/site-copy"
 import AboutPageExperience from "@modules/omne/page"
 
 export const metadata: Metadata = {
@@ -26,17 +26,21 @@ export default async function Home(props: {
     fields: "id, handle, title",
   })
 
-  // Fetch main page settings from Sanity
-  const settings = await client.fetch('*[_type == "mainPageSettings"][0]')
-
   if (!collections || !region) {
     return null
   }
 
+  /*
+   * Redakční obsah stránky „O mně". Zatím z něj bere název jen tlačítko
+   * v závěrečné výzvě, ale trasa je tím hotová — další blok se do mapy
+   * přidá bez sahání do stránky.
+   */
+  const copy = await getPageContentFull("o-mne")
+
   return (
     <>
       <ScrollToTopOnReload />
-      <AboutPageExperience />
+      <AboutPageExperience copy={copy} />
     </>
   )
 }

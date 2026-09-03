@@ -1,7 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import medusaError from "@lib/util/medusa-error"
+import medusaError, { isUnauthorized } from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
 
@@ -29,6 +29,17 @@ export const retrieveOrder = async (id: string) => {
     .catch((err) => medusaError(err))
 }
 
+/**
+ * Someone's orders, or `null` when nobody is signed in.
+ *
+ * Not signed in is a state, not a failure. This used to go through `medusaError`, which logs the
+ * raw response and throws — so a signed-out visitor landing on an account URL produced
+ * „[medusa] request setup failed: Unauthorized" in the console and an exception in a server
+ * component. Callers that caught it still got the log; the ones that did not took the page down.
+ *
+ * Every other status still throws. A 500 from the orders endpoint is a real failure and should
+ * not be quietly rendered as an empty account.
+ */
 export const listOrders = async (
   limit: number = 10,
   offset: number = 0,
@@ -57,7 +68,13 @@ export const listOrders = async (
       cache: "force-cache",
     })
     .then(({ orders }) => orders)
-    .catch((err) => medusaError(err))
+    .catch((err) => {
+      if (isUnauthorized(err)) {
+        return null
+      }
+
+      return medusaError(err)
+    })
 }
 
 export const createTransferRequest = async (

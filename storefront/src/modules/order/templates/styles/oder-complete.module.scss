@@ -1,10 +1,10 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 .root {
-  --ink: #20211c;
-  --paper: #ffe8d6;
-  --olive: #7b8467;
-  --line: rgba(32, 33, 28, .2);
+  --ink: var(--ink-05);
+  --paper: var(--cream-06);
+  --olive: var(--olive-19);
+  --line: rgb(var(--ink-05-rgb) / .2);
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
@@ -12,9 +12,9 @@
   overflow: clip;
   color: var(--ink);
   background:
-    radial-gradient(circle at 83% 14%, rgba(123, 132, 103, .14), transparent 27rem),
-    radial-gradient(circle at 12% 48%, rgba(255, 255, 255, .28), transparent 34rem),
-    #f9e6d5;
+    radial-gradient(circle at 83% 14%, rgb(var(--olive-19-rgb) / .14), transparent 27rem),
+    radial-gradient(circle at 12% 48%, rgb(var(--white-rgb) / .28), transparent 34rem),
+    var(--cream-06);
 }
 
 .root::before {
@@ -35,7 +35,7 @@
   right: clamp(-5rem, 4vw, 5rem);
   width: clamp(15rem, 24vw, 28rem);
   aspect-ratio: 1;
-  color: rgba(32, 33, 28, .12);
+  color: rgb(var(--ink-05-rgb) / .12);
   pointer-events: none;
   animation: ambientDrift 16s ease-in-out infinite alternate;
 }
@@ -54,7 +54,7 @@
   inset: 46%;
   border: 0;
   background: var(--olive);
-  box-shadow: 0 0 0 12px rgba(123, 132, 103, .1);
+  box-shadow: 0 0 0 12px rgb(var(--olive-19-rgb) / .1);
 }
 
 .ambient::before,
@@ -113,7 +113,7 @@
 .detailHeading p,
 .support > div > p {
   margin: 0 0 1.2rem;
-  color: rgba(32, 33, 28, .52);
+  color: rgb(var(--ink-05-rgb) / .52);
   font: 600 .64rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -146,7 +146,7 @@
 
 .heroAside p {
   margin: 0 0 2.4rem;
-  color: rgba(32, 33, 28, .66);
+  color: rgb(var(--ink-05-rgb) / .66);
   font: 300 1.08rem/1.6 "Sansation-Light", sans-serif;
 }
 
@@ -157,7 +157,7 @@
 }
 
 .heroAside > span {
-  color: rgba(32, 33, 28, .46);
+  color: rgb(var(--ink-05-rgb) / .46);
   font: 600 .62rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -191,8 +191,8 @@
   content: "";
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255, 232, 214, .02), rgba(123, 132, 103, .14)),
-    rgba(32, 33, 28, .025);
+    linear-gradient(90deg, rgb(var(--cream-06-rgb) / .02), rgb(var(--olive-19-rgb) / .14)),
+    rgb(var(--ink-05-rgb) / .025);
   transform: translateX(101%);
   transition: transform .58s cubic-bezier(.76, 0, .24, 1);
 }
@@ -203,7 +203,7 @@
 .statusRail article > * { position: relative; z-index: 1; }
 
 .statusRail article > span {
-  color: rgba(32, 33, 28, .42);
+  color: rgb(var(--ink-05-rgb) / .42);
   font: 600 .62rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: .14em;
 }
@@ -217,7 +217,7 @@
 .statusRail p {
   max-width: 17rem;
   margin: 0;
-  color: rgba(32, 33, 28, .58);
+  color: rgb(var(--ink-05-rgb) / .58);
   font: 300 .96rem/1.55 "Sansation-Light", sans-serif;
 }
 
@@ -230,7 +230,7 @@
   content: "";
   border-radius: 50%;
   background: var(--olive);
-  box-shadow: 0 0 0 7px rgba(123, 132, 103, .12);
+  box-shadow: 0 0 0 7px rgb(var(--olive-19-rgb) / .12);
 }
 
 /* The zakázka's conversation panel — its own breathing room between the progress rail and
@@ -264,7 +264,7 @@
 .receiptStatus span {
   display: block;
   margin-bottom: .7rem;
-  color: rgba(32, 33, 28, .46);
+  color: rgb(var(--ink-05-rgb) / .46);
   font: 600 .68rem/1.1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -308,7 +308,7 @@
 
 .sectionHead > span {
   padding-bottom: .4rem;
-  color: rgba(32, 33, 28, .46);
+  color: rgb(var(--ink-05-rgb) / .46);
   font: 600 .64rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -330,7 +330,7 @@
 .itemIndex {
   align-self: start;
   padding-top: 1.6rem;
-  color: rgba(32, 33, 28, .38);
+  color: rgb(var(--ink-05-rgb) / .38);
   font: 600 .58rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: .14em;
 }
@@ -339,8 +339,8 @@
   width: 6rem;
   aspect-ratio: 1;
   overflow: hidden;
-  background: rgba(255, 255, 255, .42);
-  box-shadow: 16px 18px 40px -28px rgba(32, 33, 28, .65);
+  background: rgb(var(--white-rgb) / .42);
+  box-shadow: 16px 18px 40px -28px rgb(var(--ink-05-rgb) / .65);
 }
 
 .thumbnail > div { width: 100%; height: 100%; }
@@ -357,7 +357,7 @@
 
 .itemCopy > p {
   margin: 0 0 .7rem;
-  color: rgba(32, 33, 28, .43);
+  color: rgb(var(--ink-05-rgb) / .43);
   font: 600 .58rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -370,7 +370,7 @@
 }
 
 .variant {
-  color: rgba(32, 33, 28, .58);
+  color: rgb(var(--ink-05-rgb) / .58);
   font: 300 .96rem/1.5 "Sansation-Light", sans-serif;
 }
 .variant :global(*) { color: inherit !important; }
@@ -393,7 +393,7 @@
   z-index: 1;
   color: var(--paper);
   background: var(--ink);
-  box-shadow: 26px 32px 70px -48px rgba(0, 0, 0, .95);
+  box-shadow: 26px 32px 70px -48px rgb(var(--black-01-rgb) / .95);
   transition: transform .7s cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -402,8 +402,8 @@
   z-index: -1;
   inset: 13px -13px -13px 13px;
   content: "";
-  border: 1px solid rgba(123, 132, 103, .56);
-  background: rgba(123, 132, 103, .08);
+  border: 1px solid rgb(var(--olive-19-rgb) / .56);
+  background: rgb(var(--olive-19-rgb) / .08);
   transition: transform .7s cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -415,15 +415,15 @@
 .receiptNote {
   margin: 0 0 clamp(3rem, 6vh, 5rem);
   padding-bottom: .9rem;
-  border-bottom: 1px solid rgba(255, 232, 214, .2);
-  color: rgba(255, 232, 214, .46);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
+  color: rgb(var(--cream-06-rgb) / .46);
   font: 600 .58rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .receiptEyebrow {
-  color: rgba(255, 232, 214, .42);
+  color: rgb(var(--cream-06-rgb) / .42);
   font: 600 .58rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -438,7 +438,7 @@
 
 .totalRows {
   padding-block: 1rem;
-  border-block: 1px solid rgba(255, 232, 214, .18);
+  border-block: 1px solid rgb(var(--cream-06-rgb) / .18);
 }
 
 .totalRows > div,
@@ -452,7 +452,7 @@
 
 .totalRows > div {
   padding: .38rem 0;
-  color: rgba(255, 232, 214, .65);
+  color: rgb(var(--cream-06-rgb) / .65);
   font: 300 .98rem/1.45 "Sansation-Light", sans-serif;
 }
 
@@ -460,14 +460,14 @@
 
 .grandTotal {
   padding: 1.4rem 0;
-  border-bottom: 1px solid rgba(255, 232, 214, .18);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .18);
   font: 400 1.03rem/1 "Sansation-Regular", sans-serif;
 }
 
 .receiptStatus { padding-top: 1.4rem; }
-.receiptStatus span { margin: 0; color: rgba(255, 232, 214, .42); }
+.receiptStatus span { margin: 0; color: rgb(var(--cream-06-rgb) / .42); }
 .receiptStatus strong {
-  color: #bbb788;
+  color: var(--sage-01);
   font: 400 .78rem/1 "Sansation-Regular", sans-serif;
 }
 
@@ -494,7 +494,7 @@
 
 .detailHeading > span {
   padding-top: .35rem;
-  color: rgba(32, 33, 28, .4);
+  color: rgb(var(--ink-05-rgb) / .4);
   font: 600 .62rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: .16em;
 }
@@ -529,7 +529,7 @@
 
 .detailGrid p {
   margin: .5rem 0 0;
-  color: rgba(32, 33, 28, .62);
+  color: rgb(var(--ink-05-rgb) / .62);
   font: 300 1.02rem/1.62 "Sansation-Light", sans-serif;
 }
 
@@ -548,16 +548,16 @@
   padding: clamp(3rem, 6vw, 6rem);
   color: var(--paper);
   background:
-    radial-gradient(circle at 78% 20%, rgba(123, 132, 103, .22), transparent 20rem),
+    radial-gradient(circle at 78% 20%, rgb(var(--olive-19-rgb) / .22), transparent 20rem),
     var(--ink);
 }
 
-.support > div > p { color: rgba(255, 232, 214, .44); }
+.support > div > p { color: rgb(var(--cream-06-rgb) / .44); }
 .support h2 { font-size: clamp(2.8rem, 4.6vw, 5rem); }
 
 .support > p {
   margin: 0;
-  color: rgba(255, 232, 214, .65);
+  color: rgb(var(--cream-06-rgb) / .65);
   font: 300 1.06rem/1.62 "Sansation-Light", sans-serif;
 }
 
@@ -574,7 +574,7 @@
 }
 
 .textAction {
-  color: rgba(255, 232, 214, .66);
+  color: rgb(var(--cream-06-rgb) / .66);
   font: 400 .9rem/1 "Sansation-Regular", sans-serif;
   text-decoration: underline;
   text-underline-offset: .28em;

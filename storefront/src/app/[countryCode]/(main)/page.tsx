@@ -6,7 +6,8 @@ import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import ECom from "@modules/home/E-com"
 import HeroSection from "@modules/home/Hero"
 import HomeExperience from "@modules/home/HomeExperience"
-import { client } from "../../../sanity/lib/client"
+import { getPageContentFull } from "@lib/data/site-copy"
+import { getHeroNotices } from "@lib/data/notices"
 
 export const metadata: Metadata = {
   title: { absolute: "Keramická zahrada | Autorská keramika Lucie Polanské" },
@@ -28,11 +29,22 @@ export default async function Home(props: {
     fields: "id, handle, title",
   })
 
-  const [settings, introHero, newsText, ecomIntro] = await Promise.all([
-    client.fetch('*[_type == "mainPageSettings"][0]'),
-    client.fetch('*[_type == "introHero"][0]'),
-    client.fetch('*[_type == "newsText"][0]'),
-    client.fetch('*[_type == "ecomIntro"][0]'),
+  /*
+   * Redakční obsah z ValeCMS. Dřív to byly čtyři dotazy do Sanity; teď je to
+   * jedno čtení, protože bloky jedné stránky přijdou pohromadě, klíčované
+   * podle `key` (`index.hero`, `index.news`…). Globální bloky (kontakt, mapa)
+   * jsou v tom taky — patička je potřebuje pod každou routou.
+   *
+   * V téže mapě jsou i tlačítka, pod klíči `tlacitko.<klic>` — komponenty si
+   * je berou přes `buttonLabel()` z `@lib/util/site-copy`, takže stránka
+   * nepotřebuje druhý prop a mezikomponenty nic navíc nepodávají.
+   *
+   * Výpadek CMS tuhle stránku nepoloží: `getPageContentFull` vrací prázdno
+   * a sekce se vykreslí s texty, které mají zabudované.
+   */
+  const [copy, notices] = await Promise.all([
+    getPageContentFull("index"),
+    getHeroNotices(),
   ])
 
   if (!collections || !region) {
@@ -43,12 +55,8 @@ export default async function Home(props: {
     <>
       <ScrollToTopOnReload />
       <HomeExperience>
-        <HeroSection
-          settings={settings}
-          introHero={introHero}
-          newsText={newsText?.text}
-        />
-        <ECom settings={settings} introData={ecomIntro} />
+        <HeroSection copy={copy} notices={notices} />
+        <ECom copy={copy} />
       </HomeExperience>
     </>
   )

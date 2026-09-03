@@ -1,24 +1,46 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 
 .button{
-    --web-button-ink: #212222;
-    --web-button-surface: rgba(255, 232, 214, 0.14);
-    --web-button-fill: #212222;
+    --web-button-ink: var(--black-03);
+    --web-button-surface: rgb(var(--cream-06-rgb) / .14);
+    --web-button-fill: var(--black-03);
     /* The label lives three classes deep inside a CSS module, so a page that wants a smaller
        or tighter button could not reach it — its own rule lost on specificity and the label
        stayed at 1.5rem, overflowing whatever width the page had set. Exposed the way the
        colours already are, so callers set a value instead of out-shouting a selector. */
     --web-button-label-size: 1.5rem;
-    --web-button-label-padding: 10px 20px;
+    /* Nejmenší šířka pilulky. Ze stejného důvodu jako popisek výš je to proměnná: leží na
+       `.slider`, což je třída uvnitř CSS modulu, takže se na ni volající nemá jak dosáhnout —
+       a drobné tlačítko v jednořádkovém pásu by jinak zůstalo zbytečně široké. */
+    --web-button-min-width: clamp(5rem, 6.6vw, 7.5rem);   /* 6.6vw = 99.8px na 1512 */
+    /* Kazdy clen na svou osu. Vodorovny nese sirku pilulky (1.3vw = 19.7px na 1512,
+       tedy puvodnich 20px), svisly soupezi o vysku tlacitka, takze visi na vh a na
+       768 vysokem laptopu se sevre sam.
+       Svisly clen je zaroven nizsi nez puvodnich 10px, a to zamerne: merenim vyslo,
+       ze popisek uz DNES pretekal pilulku a `overflow: hidden` ho strihal — 1.5rem
+       pri line-height 1.5 je 36px, plus 2x10px padding = 56px v 50px vysokem
+       tlacitku, a na 2K, kde rampa zvedne 1.5rem na 31.9px, uz 67.9px v 50px.
+       Svisly padding je pritom mrtva vaha — `p` je ve `.el` centrovane, nic neodsazuje.
+       0.4vh, ne 0.5: popisek meri 36px + 2x svisly padding, tlacitko max(44px, 4.7vh).
+       Pri 0.5vh se ty dve krivky protnou mezi ~800 a ~973px vysky (na 1440x900 popisek
+       45px v 44px tlacitku), pri 0.4vh je rozdil kladny na cele landscape ose. */
+    --web-button-label-padding: clamp(0.2rem, 0.4vh, 0.5rem) clamp(0.9rem, 1.3vw, 1.6rem);
 
     position: relative;
     width: fit-content;
-    height: 50px;
+    /* 4.7vh je 50.8px na 1080 — puvodni vyska — a pod 936px vysky uz stoji na podlaze,
+       takze 1366x768 i 1280x720 se sami snizi na 2.75rem = 44px (dotykovy cil).
+       Zadne pravidlo v `lt` k tomu neni potreba. Strop 3.5rem je v rem, takze ho nad
+       1921 zvedne rampa a tlacitko prestane byt na 2K zamrzle na hodnote z 1920. */
+    height: clamp(2.75rem, 4.7vh, 3.5rem);
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
     cursor: pointer;
-    border-radius: 25px;
+    /* Puvodnich 25px byla pulka pevne vysky 50px. Ted je vyska clamp, takze pevny
+       radius by z pilulky udelal obdelnik se zakulacenymi rohy. 999px se orizne na
+       pulku aktualni vysky sam — stejne jako zbytek chromu. */
+    border-radius: 999px;
     overflow: hidden;
     pointer-events: all;
     padding: 0;
@@ -37,13 +59,13 @@
     .slider{
         position: relative;
         width: fit-content;
-        min-width: 100px;
+        min-width: var(--web-button-min-width);
         height: 100%;   
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 25px;
-        padding: 2.5px 0;
+        border-radius: 999px;
+        padding: clamp(0.125rem, 0.24vh, 0.2rem) 0;
         pointer-events: all;
         cursor: pointer;
         transform-origin: left center;
@@ -85,16 +107,16 @@
 }
 
 .buttonIcon{
-    --web-button-ink: #212222;
-    --web-button-surface: rgba(255, 232, 214, 0.14);
-    --web-button-fill: #212222;
+    --web-button-ink: var(--black-03);
+    --web-button-surface: rgb(var(--cream-06-rgb) / .14);
+    --web-button-fill: var(--black-03);
 
     position: relative;
-    max-width: 120px;
-    height: 40px;
+    max-width: clamp(6rem, 7.9vw, 9rem);   /* 7.9vw = 119.4px na 1512 */
+    height: clamp(2.25rem, 3.75vh, 2.75rem);   /* 3.75vh = 40.5px na 1080 */
     display: inline-flex;
     cursor: pointer;
-    border-radius: 25px;
+    border-radius: 999px;
     overflow: hidden;
     pointer-events: all;
     padding: 0;
@@ -114,8 +136,8 @@
         position: relative;
         width: 100%;
         height: 100%;   
-        border-radius: 25px;
-        padding: 2.5px 10px;
+        border-radius: 999px;
+        padding: clamp(0.125rem, 0.24vh, 0.2rem) clamp(0.5rem, 0.66vw, 0.75rem);
         pointer-events: all;
         cursor: pointer;
 
@@ -154,15 +176,15 @@
 }
 
 .toneLight {
-    --web-button-ink: #212222;
-    --web-button-surface: rgba(255, 232, 214, 0.14);
-    --web-button-fill: #212222;
+    --web-button-ink: var(--black-03);
+    --web-button-surface: rgb(var(--cream-06-rgb) / .14);
+    --web-button-fill: var(--black-03);
 }
 
 .toneDark {
-    --web-button-ink: #ffe8d6;
-    --web-button-surface: rgba(20, 21, 17, 0.72);
-    --web-button-fill: #ffe8d6;
+    --web-button-ink: var(--cream-06);
+    --web-button-surface: rgb(var(--ink-01-rgb) / .72);
+    --web-button-fill: var(--cream-06);
     backdrop-filter: blur(8px);
 }
 
@@ -181,15 +203,19 @@
         justify-content: flex-start;
         white-space: nowrap;
         margin: 0;
-        gap: 10px;
+        /* Rezerva vpravo od popisku je jedna geometrie ve trech deklaracich:
+           gap 0.66vw + `.arrow` margin-left 0.4vw + `.arrow` sirka 1.05vw = 2.11vw.
+           Na 1512 to je 31.9px, tedy puvodnich 10+6+16 = 32px. Odvozeno, ne opsano —
+           kdyz se meni jeden clen, druhe dva se dopocitaji z tehoz souctu. */
+        gap: clamp(0.5rem, 0.66vw, 0.75rem);
     }
 }
 
 .arrow{
     display: inline-flex;
-    width: 16px;
-    min-width: 16px;
-    margin-left: 6px;
+    width: clamp(0.85rem, 1.05vw, 1.25rem);
+    min-width: clamp(0.85rem, 1.05vw, 1.25rem);
+    margin-left: clamp(0.3rem, 0.4vw, 0.45rem);
     align-items: center;
     justify-content: flex-start;
     overflow: hidden;
@@ -199,11 +225,19 @@
 }
 
 .arrowInner{
-    width: 16px;
-    min-width: 16px;
+    width: clamp(0.85rem, 1.05vw, 1.25rem);
+    min-width: clamp(0.85rem, 1.05vw, 1.25rem);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
+    /* ArrowRight sazi <svg> s width/height 15px primo z TSX. Bez tohohle by sipka
+       zustala 15px i na 2K, zatimco pilulka kolem ni roste s rampou. viewBox je
+       24x24, ctverec, takze `height: auto` drzi pomer a sipka jede se schrankou. */
+    svg{
+        width: 100%;
+        height: auto;
+    }
 }
 
 .PerspectiveIcon{

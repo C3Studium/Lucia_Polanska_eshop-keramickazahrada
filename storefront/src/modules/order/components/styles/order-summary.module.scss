@@ -7,7 +7,7 @@
 .title {
   max-width: 100%;
   margin: 0;
-  color: #f7e5d5;
+  color: var(--cream-06);
   font: 400 clamp(2.65rem, 3vw, 4.25rem)/.84 "Sentient-Regular", serif;
   letter-spacing: -.055em;
   overflow-wrap: break-word;
@@ -16,7 +16,7 @@
 .content {
   display: grid;
   gap: 12px;
-  color: rgba(247, 229, 213, .7);
+  color: rgb(var(--cream-06-rgb) / .7);
   font: 16px/1.45 "Sansation-Light", sans-serif;
 }
 
@@ -29,7 +29,7 @@
 
 .row > span:last-child {
   flex: 0 0 auto;
-  color: rgba(247, 229, 213, .86);
+  color: rgb(var(--cream-06-rgb) / .86);
   text-align: right;
 }
 
@@ -41,11 +41,11 @@
 .separator {
   height: 1px;
   margin: 12px 0;
-  background: rgba(247, 229, 213, .2);
+  background: rgb(var(--cream-06-rgb) / .2);
 }
 
 .separator + .row {
-  color: #f7e5d5;
+  color: var(--cream-06);
   font-family: "Sansation-Regular", sans-serif;
   font-size: 19px;
 }

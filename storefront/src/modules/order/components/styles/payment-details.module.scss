@@ -13,7 +13,7 @@
 .row {
   display: grid;
   grid-template-columns: .7fr 1.3fr;
-  border-block: 1px solid rgba(32, 33, 29, .2);
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .colLeft,
@@ -24,12 +24,12 @@
 
 .colLeft {
   padding-left: 0;
-  border-right: 1px solid rgba(32, 33, 29, .2);
+  border-right: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .label {
   margin: 0 0 18px;
-  color: rgba(32, 33, 29, .5);
+  color: rgb(var(--ink-05-rgb) / .5);
   font: 12px/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -37,7 +37,7 @@
 
 .value {
   margin: 0;
-  color: rgba(32, 33, 29, .82);
+  color: rgb(var(--ink-05-rgb) / .82);
   font: 16px/1.5 "Sansation-Light", sans-serif;
   overflow-wrap: anywhere;
 }
@@ -53,8 +53,8 @@
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 1px solid rgba(32, 33, 29, .16);
-  background: rgba(255, 255, 255, .38);
+  border: 1px solid rgb(var(--ink-05-rgb) / .16);
+  background: rgb(var(--white-rgb) / .38);
 }
 
 .divider {
@@ -74,6 +74,6 @@
 
   .colLeft {
     border-right: 0;
-    border-bottom: 1px solid rgba(32, 33, 29, .16);
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
   }
 }

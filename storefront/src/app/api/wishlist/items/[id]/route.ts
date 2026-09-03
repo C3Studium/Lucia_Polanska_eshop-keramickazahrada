@@ -6,10 +6,12 @@ export const runtime = "nodejs"
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // `params` je od Next 15 Promise, ne objekt. Se synchronním tvarem se
+  // vygenerovaný validátor routy neshodne a build spadne na `ParamCheck`.
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params?.id
+    const id = (await params)?.id
     if (!id || typeof id !== "string") {
       return NextResponse.json(
         { success: false, message: "Missing or invalid wishlist item id" },

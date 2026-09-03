@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { retrieveCustomer, refreshAuthToken } from "@lib/data/customer"
 import { retrieveProduct } from "@lib/data/products"
@@ -89,7 +89,20 @@ export default async function WishlistPage(props: PageProps) {
   const customer = await retrieveCustomer()
   const regions = await listRegions()
 
-  if (!customer || !regions) {
+  /*
+   * Signed out is a redirect, not a 404 — telling someone their account does not exist because
+   * their session expired is both wrong and a dead end. No country code needed: the middleware
+   * resolves `/account` to the visitor's region and lands them on the login form.
+   *
+   * This is the page that showed the problem: /account/wishlist reached while signed out had no
+   * `@login` segment to fall back to, so it came back broken instead of asking anyone to log in.
+   */
+  if (!customer) {
+    redirect("/account")
+  }
+
+  /* Missing regions is a real failure, and stays one. */
+  if (!regions) {
     notFound()
   }
 

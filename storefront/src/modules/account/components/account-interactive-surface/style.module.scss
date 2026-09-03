@@ -14,9 +14,9 @@
   pointer-events: none;
   background: linear-gradient(
     100deg,
-    rgba(32, 33, 29, 0.075),
-    rgba(32, 33, 29, 0.026) 68%,
-    rgba(32, 33, 29, 0) 100%
+    rgb(var(--ink-05-rgb) / .075),
+    rgb(var(--ink-05-rgb) / .026) 68%,
+    rgb(var(--ink-05-rgb) / 0) 100%
   );
   transform-origin: left center;
   will-change: transform, opacity;

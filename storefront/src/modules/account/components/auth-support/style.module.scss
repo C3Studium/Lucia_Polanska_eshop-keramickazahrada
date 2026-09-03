@@ -4,22 +4,14 @@
   width: 100%;
   max-width: none;
   min-width: 0;
-  gap: 25px;
-  color: #22231f;
-
-  @include v(md) {
-    gap: clamp(24px, 3.2vh, 38px);
-  }
-
-  @include h(xs) {
-    gap: clamp(24px, 3.2vh, 38px);
-  }
+  gap: clamp(1.25rem, 3.2vh, 2.4rem);
+  color: var(--ink-05);
 }
 
 .header {
   display: grid;
   max-width: 35rem;
-  gap: 14px;
+  gap: clamp(0.7rem, 1.6vh, 1.15rem);
 }
 
 .eyebrow,
@@ -28,53 +20,92 @@
 .notice small,
 .route > span {
   margin: 0;
-  color: rgba(34, 35, 31, 0.52);
-  font: 12px/1.25 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .52);
+  font: 0.75rem/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+/* Podlaha 2.7rem = 43.2px byla aktivní až do 1080px šířky (4vw je pod 43.2px),
+   takže na KAŽDÉM telefonu — na 320 i na 932 — měl nadpis stejných 43.2px.
+   Do ledgeru se na té velikosti „poslat odkaz?" nevešlo: na 320×568 měl box
+   124.5×152.1px, tedy čtyři řádky a slovo přes padding box. 2.05rem = 32.8px
+   se do stejného sloupce vejde na dva řádky.
+
+   Jenže podlaha nezná zařízení, jen šířku: 2.05rem je živá VŠUDE pod 820px,
+   takže telefonní oprava naměřená na 320×568 srazila i každý PORTRÉTNÍ TABLET
+   — 768: 43.2 → 32.8 (−24 %), 834: 43.2 → 33.36, 1024: 43.2 → 40.96 (−5 %).
+   Tam ale podmínka, kvůli které se podlaha snižovala, neplatí: na 768×1024 je
+   panel 718px široký a .header má max-width 35rem = 560px, tedy víc než
+   čtyřnásobek té 124.5px buňky. Tablet dostal telefonní nadpis, aniž měl
+   telefonní tíseň.
+
+   Oprava proto není breakpoint, ale druhá clamp uvnitř podlahy — podlaha se
+   rozhoduje sama podle toho, čím je viewport těsný:
+     2.05rem  dolní mez, hodnota naměřená na 320×568, ta musí zůstat,
+     7.6vw    drží na ní telefon v portrétu (430 → 32.68, 393 → 29.87, obojí
+              pod 2.05rem),
+     4.25vh   drží na ní telefon na šířku (nejvýš 520px výšky → nejvýš 22.1px),
+     2.7rem   horní mez, tedy hodnota, kterou měl soubor před telefonním kolem.
+   Portrétní tablet nesplní ani jednu z těch dvou podmínek: 768×1024 dá
+   min(43.52, 58.37) = 43.52, tedy strop 43.2 — a je zpátky tam, kde byl.
+   600×960 dá 40.8, takže přechod je plynulý a nikde není skok.
+   Ideál 4vw i strop 4.9rem se nemění: od 820px výš — celý laptop i landscape
+   nad 1200 — je hodnota bit po bitu stejná jako dosud a ramp nad 1921 zvedá
+   strop přesně jako předtím (2552×1351: 102.08px). */
 .title {
   margin: 0;
-  font: 400 clamp(2.7rem, 4vw, 4.9rem) / 0.88 "Sentient-Regular", serif;
+  font: 400 clamp(clamp(2.05rem, min(4.25vh, 7.6vw), 2.7rem), 4vw, 4.9rem) / 0.88
+    "Sentient-Regular", serif;
   letter-spacing: -0.055em;
 }
 
 .title em {
   display: block;
   margin-left: 10%;
-  color: #778064;
+  color: var(--olive-15);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
 
 .description {
   max-width: 31rem;
-  margin: 2px 0 0;
-  color: rgba(34, 35, 31, 0.66);
-  font: clamp(14px, 0.95vw, 17px) / 1.5 "Sansation-Light", sans-serif;
+  margin: 0.125rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .66);
+  /* Ideál 0.95vw byl živý až 1474–1789px, takže na 1220–1440 — tedy na každém
+     laptopu — seděl popis natvrdo na 14px, zatímco .title vedle něj rostl.
+     1.15vw posadí živé pásmo na 1217–1478, tedy tam, kde uživatelé jsou. */
+  font: clamp(0.875rem, 1.15vw, 1.0625rem) / 1.5 "Sansation-Light", sans-serif;
 }
 
+/* Žádný max-width: pole i tlačítko nesou vlastní linku
+   (border-bottom, resp. border) a musí končit tam, kde končí linky nad
+   nimi i pod nimi — .ledgerTop, .routes i .ledgerFoot jdou přes celou
+   šířku panelu. S max-width: 35rem se pravou hranou rozcházely:
+   naměřeno 560 z 810px na 1920×1080 a 744 z 882px na 2552×1351,
+   tedy 250, resp. 138px, o které byla linka pole kratší než předděl
+   pod ní. Míru čtení drží .description (max-width: 31rem) — odstavec
+   žádnou linku nenese, takže se nemá s čím minout. */
 .form {
   display: grid;
   width: 100%;
   min-width: 0;
-  gap: 22px;
+  gap: clamp(1.05rem, 2.5vh, 1.75rem);
 }
 
 .field {
-  border-bottom: 1px solid rgba(34, 35, 31, 0.38);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .38);
   transition: border-color 0.3s ease;
 }
 
 .field:focus-within {
-  border-color: #6f785d;
+  border-color: var(--olive-14);
 }
 
 .fieldMeta {
   display: flex;
   justify-content: space-between;
-  padding-bottom: 5px;
+  padding-bottom: clamp(0.25rem, 0.55vh, 0.4rem);
 }
 
 .fieldMeta label {
@@ -90,45 +121,80 @@
 .inputFrame input {
   width: 100%;
   min-width: 0;
-  padding: 8px 42px 13px 0;
+  padding: clamp(0.4rem, 0.9vh, 0.6rem) clamp(2.2rem, 3vw, 2.75rem)
+    clamp(0.65rem, 1.5vh, 1rem) 0;
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #22231f;
-  font: clamp(18px, 1.2vw, 21px) / 1.2 "Sansation-Light", sans-serif;
+  color: var(--ink-05);
+  /* Totéž: 1.2vw bylo živé až od 1500px, takže hodnota pole byla na celém
+     laptopovém pásmu zamrzlá na 18px. 1.45vw → živé 1241–1448. */
+  font: clamp(1.125rem, 1.45vw, 1.3125rem) / 1.2 "Sansation-Light", sans-serif;
   appearance: none;
+
+  /* Na dotyku má pole podlahu 44px. Svislé členy visí na vh, a na telefonu
+     na šířku je vh malé — při 320px výšce dá 0.9vh 2.9px a 1.5vh 4.8px, tedy
+     obojí pod podlahou. O výšku pole tam rozhodují právě ty podlahy:
+     21.6px textu (18px × 1.2) + 6.4 + 10.4 = 38.4px, přesně jak bylo naměřeno.
+     11.2 + 12 zvedne součet na 44.8px. Ideály zůstávají, takže na vysokém
+     dotykovém tabletu se pole chová dál jako dřív.
+     Podlaha padding-right jde nahoru se stejným krokem jako .passwordToggle
+     níž: tlačítko má na dotyku 2.75rem = 44px, odsazení textu tedy musí být
+     nad ním, jinak text vleze pod ikonu. Obojí je v rem, takže ta vazba
+     přežije i ramp nad 1921. */
+  @include touch {
+    padding-top: clamp(0.7rem, 0.9vh, 0.9rem);
+    padding-right: clamp(2.95rem, 3vw, 3.35rem);
+    padding-bottom: clamp(0.75rem, 1.5vh, 1.1rem);
+  }
 }
 
 .inputFrame input::placeholder {
-  color: rgba(34, 35, 31, 0.28);
+  color: rgb(var(--ink-05-rgb) / .28);
 }
 
 .inputFrame input:-webkit-autofill,
 .inputFrame input:-webkit-autofill:hover,
 .inputFrame input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #22231f;
-  box-shadow: 0 0 0 1000px #f6eee2 inset;
+  -webkit-text-fill-color: var(--ink-05);
+  box-shadow: 0 0 0 1000px var(--cream-07) inset;
   transition: background-color 9999s ease-out;
 }
 
+/* 34px a 18px nejsou fyzické míry jako hairline — je to velikost ovládacího
+   prvku a ikony v něm, tedy velikost jako každá jiná. V px nad 1921 zamrzly,
+   zatímco hodnota pole vedle nich rostla na 27.9px. V rem se pod 1921 nic
+   nemění (2.125rem = 34px při root 16) a nad 1921 je zvedne ramp na 45.2,
+   resp. 23.9px. Podlaha padding-right pole je 2.2rem, tedy také v rem
+   — obojí roste stejně a překryv nemůže vzniknout.
+
+   Na dotyku je 2.125rem = 34px pod hranicí zásahu prstem, takže tam jde
+   tlačítko na 2.75rem = 44px. Vazba na padding-right pole platí dál: ten má
+   pod @include touch podlahu 2.95rem, tedy nad novou šířkou tlačítka. Ikona
+   uvnitř zůstává 1.125rem — roste plocha zásahu, ne kresba. */
 .passwordToggle {
   position: absolute;
   right: 0;
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 2.125rem;
+  height: 2.125rem;
   padding: 0;
   place-items: center;
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #22231f;
+  color: var(--ink-05);
   cursor: pointer;
+
+  @include touch {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
 }
 
 .passwordToggle svg {
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .action {
@@ -137,13 +203,14 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 52px;
-  padding: 4px 5px 4px 22px;
+  min-height: clamp(2.9rem, 5.6vh, 3.6rem);
+  padding: clamp(0.2rem, 0.45vh, 0.35rem) clamp(0.25rem, 0.35vw, 0.4rem)
+    clamp(0.2rem, 0.45vh, 0.35rem) clamp(1.15rem, 1.6vw, 1.75rem);
   overflow: hidden;
-  border: 1px solid #22231f;
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
   cursor: pointer;
-  font: 14px/1 "Sansation-Regular", sans-serif;
+  font: 0.875rem/1 "Sansation-Regular", sans-serif;
   isolation: isolate;
   transition: color 0.45s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.25s ease;
 }
@@ -152,7 +219,7 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: #22231f;
+  background: var(--ink-05);
   content: "";
   transform: scaleX(0);
   transform-origin: right center;
@@ -160,42 +227,51 @@
 }
 
 .primary {
-  background: #f6dfcd;
-  color: #22231f;
+  background: var(--cream-06);
+  color: var(--ink-05);
 }
 
 .secondary {
   background: transparent;
-  color: #22231f;
+  color: var(--ink-05);
 }
 
 .action i {
   display: grid;
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  margin-left: 18px;
+  width: clamp(2.3rem, 4.4vh, 2.9rem);
+  height: clamp(2.3rem, 4.4vh, 2.9rem);
+  margin-left: clamp(0.9rem, 1.3vw, 1.4rem);
   place-items: center;
   border-radius: 50%;
-  background: #22231f;
-  color: #f6dfcd;
+  background: var(--ink-05);
+  color: var(--cream-06);
   font-style: normal;
   transition: background 0.45s ease, color 0.45s ease,
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.action:hover {
-  color: #f6dfcd;
-}
+/* Hover jen tam, kde je čím najet. Na dotyku se :hover po tapnutí zasekne
+   a tlačítko zůstane vyplněné i po zvednutí prstu — vodorovný wipe ::before
+   i otočená šipka jsou hover efekty, ne animace choreografie stránky, takže
+   se na dotyku vypnout mají.
+   Blok musí zůstat ZA základními pravidly (přebíjí color a transform) a ZÁROVEŇ
+   PŘED .action:disabled: media query specificitu nezvyšuje, obě pravidla mají
+   (0,2,0), takže o výsledku rozhoduje pořadí v souboru. */
+@include fine-pointer {
+  .action:hover {
+    color: var(--cream-06);
+  }
 
-.action:hover::before {
-  transform: scaleX(1);
-}
+  .action:hover::before {
+    transform: scaleX(1);
+  }
 
-.action:hover i {
-  background: #f6dfcd;
-  color: #22231f;
-  transform: rotate(-18deg);
+  .action:hover i {
+    background: var(--cream-06);
+    color: var(--ink-05);
+    transform: rotate(-18deg);
+  }
 }
 
 .action:disabled {
@@ -210,17 +286,43 @@
   outline-offset: 3px;
 }
 
+/* Dvousloupcová varianta odkazů je JEDEN tvar, který platí za tří různých
+   podmínek: portrét od 600, landscape od 750 — a nově telefon na šířku, který
+   ani jednu z nich nesplňuje. 568×320 je pod 750, takže h(xs) ho míjí, a je
+   na šířku, takže ho míjí i v(md); přitom právě tam je výška nejvzácnější.
+   Naměřeno na 568×320 po opravě ledgeru: jeden sloupec dá pás odkazů vysoký
+   124.8px, dva sloupce 62.4px — 62.4px zpátky, tedy 19.5 % celé obrazovky.
+   Sloupec je 259px široký a nejdelší popisek („Jsem tu poprvé") měří 119.4px,
+   takže se nic nezalamuje ani se k tomu neblíží.
+   Hodnoty jsou v mixinech, ne třikrát opsané: kdyby se odsazení někdy měnilo,
+   je jen na jednom místě. Emitované CSS pro v(md) i h(xs) je bit po bitu
+   stejné jako předtím, přibyl jen třetí blok. phs stojí ZA h(xs) — telefon na
+   šířku je širší než ledaskterý tablet, takže se stopy překrývají a v systému
+   je phs záměrně poslední. */
+@mixin routes-two-up {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@mixin route-divider {
+  padding-left: clamp(1rem, 1.45vw, 1.6rem);
+  border-left: 1px solid rgb(var(--ink-05-rgb) / .18);
+}
+
 .routes {
   display: grid;
   grid-template-columns: 1fr;
-  border-top: 1px solid rgba(34, 35, 31, 0.18);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
 
   @include v(md) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @include routes-two-up;
   }
 
   @include h(xs) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @include routes-two-up;
+  }
+
+  @include h(phs) {
+    @include routes-two-up;
   }
 }
 
@@ -228,24 +330,27 @@
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 7px 12px;
-  padding: 18px 20px 4px 0;
-  color: #22231f;
+  gap: clamp(0.35rem, 0.8vh, 0.55rem) clamp(0.6rem, 0.9vw, 0.95rem);
+  padding: clamp(0.85rem, 2.05vh, 1.4rem) clamp(1rem, 1.45vw, 1.6rem)
+    clamp(0.2rem, 0.45vh, 0.35rem) 0;
+  color: var(--ink-05);
 }
 
 .route + .route {
   padding-left: 0;
   border-left: 0;
-  border-top: 1px solid rgba(34, 35, 31, 0.18);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
 
   @include v(md) {
-    padding-left: 20px;
-    border-left: 1px solid rgba(34, 35, 31, 0.18);
+    @include route-divider;
   }
 
   @include h(xs) {
-    padding-left: 20px;
-    border-left: 1px solid rgba(34, 35, 31, 0.18);
+    @include route-divider;
+  }
+
+  @include h(phs) {
+    @include route-divider;
   }
 }
 
@@ -255,14 +360,14 @@
 
 .route strong {
   width: fit-content;
-  font: 400 16px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 1rem/1.2 "Sansation-Regular", sans-serif;
 }
 
 .route strong::after {
   display: block;
   width: 100%;
   height: 1px;
-  margin-top: 3px;
+  margin-top: 0.1875rem;
   background: currentColor;
   content: "";
   transform: scaleX(0.18);
@@ -276,58 +381,64 @@
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.route:hover strong::after {
-  transform: scaleX(1);
-}
+/* Totéž pro odkazy: podtržení dojede z scaleX(.18) na 1 a šipka poskočí jen
+   pod myší. Na dotyku by po tapnutí zůstalo podtržení natažené na odkazu,
+   ze kterého uživatel dávno odešel. Blok je až za základními pravidly. */
+@include fine-pointer {
+  .route:hover strong::after {
+    transform: scaleX(1);
+  }
 
-.route:hover i {
-  transform: translate(3px, -3px);
+  .route:hover i {
+    transform: translate(3px, -3px);
+  }
 }
 
 .notice,
 .email {
   display: grid;
-  border-top: 1px solid rgba(34, 35, 31, 0.18);
-  border-bottom: 1px solid rgba(34, 35, 31, 0.18);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
 }
 
 .notice {
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
-  padding: 16px 0;
+  gap: clamp(0.7rem, 1.6vh, 1.15rem) clamp(0.7rem, 1vw, 1.15rem);
+  padding: clamp(0.8rem, 1.8vh, 1.3rem) 0;
 }
 
+/* Tečka i kruh kolem ní patří k textu vedle, takže musí růst s ním. */
 .noticeMark {
-  width: 9px;
-  height: 9px;
+  width: 0.5625rem;
+  height: 0.5625rem;
   border: 1px solid currentColor;
   border-radius: 50%;
-  box-shadow: 0 0 0 5px rgba(126, 137, 106, 0.1);
+  box-shadow: 0 0 0 0.3125rem rgb(var(--olive-19-rgb) / .1);
 }
 
 .notice p {
-  margin: 4px 0 0;
-  color: rgba(34, 35, 31, 0.7);
-  font: 14px/1.45 "Sansation-Light", sans-serif;
+  margin: 0.25rem 0 0;
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 0.875rem/1.45 "Sansation-Light", sans-serif;
 }
 
 .success {
-  color: #657054;
+  color: var(--olive-11);
 }
 
 .error {
-  color: #9a5646;
+  color: var(--clay-18);
 }
 
 .email {
-  gap: 8px;
-  padding: 16px 0;
+  gap: clamp(0.4rem, 0.9vh, 0.65rem);
+  padding: clamp(0.8rem, 1.8vh, 1.3rem) 0;
 }
 
 .email strong {
   overflow-wrap: anywhere;
-  color: #737c61;
+  color: var(--olive-15);
   font: 400 clamp(1.3rem, 1.7vw, 1.8rem) / 1.1 "Sentient-LightItalic",
     "Sentient-Regular", serif;
 }

@@ -1,22 +1,23 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .content {
   display: grid;
-  gap: clamp(48px, 7vh, 84px);
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(3rem, 7vh, 5.25rem);
   width: 100%;
 }
 
 .header {
   display: grid;
-  gap: 22px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  gap: clamp(0.9rem, 2.3vh, 1.75rem);
+  padding-bottom: clamp(1.25rem, 3.1vh, 2.25rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .eyebrow,
 .titleRow > span {
   margin: 0;
-  color: rgba(32, 33, 29, 0.5);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: clamp(0.75rem, 0.72vw, 0.85rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -25,7 +26,7 @@
   display: grid;
   align-items: end;
   justify-content: space-between;
-  gap: 28px;
+  gap: clamp(1.25rem, 2.2vw, 2.5rem);
 
   @include v(md) {
     display: flex;
@@ -38,27 +39,27 @@
 
 .title {
   margin: 0;
-  font: 400 clamp(3.5rem, 6vw, 7rem) / 0.82 "Sentient-Regular", serif;
+  font: 400 clamp(3.5rem, min(6vw, 9.4vh), 7rem) / 0.82 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
 .title em {
   display: block;
   margin-left: 12%;
-  color: #7e896a;
+  color: var(--olive-19);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
 
 .desc {
   max-width: 42rem;
-  margin: 0 0 0 auto;
-  color: rgba(32, 33, 29, 0.62);
-  font: clamp(14px, 0.95vw, 17px) / 1.55 "Sansation-Light", sans-serif;
-  margin-left: 0;
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(0.875rem, 0.95vw, 1.0625rem) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .body {
   width: 100%;
+  min-width: 0;
 }
 

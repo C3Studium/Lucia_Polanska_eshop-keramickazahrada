@@ -1,18 +1,136 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
-.box { border: 1px solid #d8d3c8; border-radius: 10px; padding: 16px; margin: 16px 0; display: flex; flex-direction: column; gap: 10px; }
-.title { font-size: 16px; font-weight: 600; margin: 0; }
-.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #e4dfd5; }
-.itemInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.struck { text-decoration: line-through; opacity: 0.6; }
-.locked { font-size: 12px; color: #8a8375; }
-.controls { display: flex; align-items: center; gap: 10px; }
-.select { border: 1px solid #d8d3c8; border-radius: 6px; padding: 4px 8px; font-size: 14px; background: #fff; }
-.linklike { background: none; border: 0; color: #2b4c9b; font-size: 13px; cursor: pointer; text-decoration: underline; }
-.linklike:disabled { color: #b7b1a4; cursor: not-allowed; text-decoration: none; }
-.summary { font-size: 14px; padding-top: 4px; }
-.note { font-size: 13px; color: #6e675b; margin: 0; }
-.error { font-size: 13px; color: #a63d34; margin: 0; }
-.actions { display: flex; gap: 10px; }
-.primary { background: #2b2b28; color: #f5f2ec; border: 0; border-radius: 999px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
-.primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.secondary { background: none; border: 1px solid #2b2b28; border-radius: 999px; padding: 7px 16px; font-size: 14px; cursor: pointer; }
+
+/*
+  Order edit panel — every size is a clamp, no media query.
+  Axis rule: horizontal + type on vw, vertical (padding, gaps, heights) on vh.
+  Floors and ceilings in rem so the >=1921 root ramp lifts them by itself.
+  px survives only where the thing is physical: 1px hairline, 999px pill shape.
+  The low laptop (1280x720 / 1366x768) is handled by the vh members below —
+  there is deliberately no lt rule in this file.
+*/
+
+.box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cream-02);
+  border-radius: clamp(.5rem, .65vw, .75rem);
+  padding: clamp(1rem, 2.2vh, 1.9rem) clamp(1rem, 1.5vw, 2rem);
+  margin: clamp(1rem, 2.4vh, 2.2rem) 0;
+  gap: clamp(.6rem, 1.3vh, 1.2rem);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.4vw, 1.45rem);
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(.4rem, .55vw, .75rem);
+  padding: clamp(.35rem, .8vh, .7rem) 0;
+  border-bottom: 1px dashed var(--cream-02);
+  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(.125rem, .3vh, .3rem);
+  min-width: 0;
+}
+
+.struck {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.locked {
+  color: var(--clay-25);
+  font-size: clamp(.78rem, 1.04vw, .95rem);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: clamp(.5rem, .7vw, .95rem);
+}
+
+.select {
+  min-height: clamp(2.25rem, 4.4vh, 2.9rem);
+  padding: clamp(.3rem, .7vh, .55rem) clamp(.5rem, .6vw, .8rem);
+  border: 1px solid var(--cream-02);
+  border-radius: clamp(.35rem, .47vw, .5rem);
+  background: var(--white);
+  font-size: clamp(.85rem, 1.13vw, 1.05rem);
+}
+
+.linklike {
+  border: 0;
+  background: none;
+  color: var(--blue-01);
+  cursor: pointer;
+  font-size: clamp(.8rem, 1.07vw, 1rem);
+  text-decoration: underline;
+}
+
+.linklike:disabled {
+  color: var(--clay-34);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.summary {
+  padding-top: clamp(.25rem, .5vh, .45rem);
+  font-size: clamp(.85rem, 1.13vw, 1.05rem);
+}
+
+.note {
+  margin: 0;
+  color: var(--clay-11);
+  font-size: clamp(.78rem, 1.04vw, .95rem);
+}
+
+.error {
+  margin: 0;
+  color: var(--clay-16);
+  font-size: clamp(.78rem, 1.04vw, .95rem);
+}
+
+.actions {
+  display: flex;
+  gap: clamp(.5rem, .7vw, .95rem);
+}
+
+/* Same triple as return-request .trigger / .submit / .cancel — one button size
+   on the whole order-detail page instead of two that never meet. */
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(2.4rem, 4.8vh, 3.1rem);
+  padding: 0 clamp(1.1rem, 1.5vw, 2rem);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+}
+
+.primary {
+  border: 0;
+  background: var(--black-04);
+  color: var(--cream-08);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  border: 1px solid var(--black-04);
+  background: none;
+}

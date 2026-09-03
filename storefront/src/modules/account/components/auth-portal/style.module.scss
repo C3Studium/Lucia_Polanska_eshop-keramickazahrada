@@ -3,21 +3,42 @@
 .portal {
   position: relative;
   width: 100%;
-  min-height: max(780px, calc(100svh - 118px));
+  /* Fixní navbar leží přes horní pás stránky, ale .portal si od něj jen odečítal
+     výšku — .meta pak startovala na y=0 a schovala se pod ním. Odsazení je svislé,
+     takže visí na vh: 1280×720 → 68px (navbar končí na 56), 2552×1351 → 100px
+     (navbar končí na 81). box-sizing: border-box z globals.scss drží padding
+     uvnitř min-height, takže odsazení nepřidává stránce žádnou výšku navíc. */
+  padding-top: clamp(4.25rem, 7.4vh, 5.75rem);
+  min-height: calc(100svh - clamp(4rem, 8vh, 7rem));
   overflow: hidden;
-  color: #212222;
+  color: var(--black-03);
+}
+
+/* Podklad si portál kreslí jen tam, kde JE stránkou — tedy když visí přímo na
+   .pageFrame (zapomenuté heslo, ověření e-mailu).
+
+   Nad 1921 rámuje globals.scss stránku do min(100vw, 100svh * 1.6) a pás za rámem
+   barví na --ink-01, aby byl rám vidět jako rám. .portal nekreslil nic, takže na
+   2552×1351 prosvítal ten tmavý pás celou kompozicí a nadpis i .meta byly tmavé
+   na tmavém. Pod 1921 je to no-op — plátno je tam stejně bílé.
+
+   Přihlášení a registrace leží uvnitř account-layoutu, který má vlastní krémový
+   podklad (--cream-03) a portál v něm sedí jako karta. Tam se pravidlo nechytí
+   a krém zůstává, jak byl. */
+:global(.pageFrame) > .portal {
+  background: var(--bgWhite);
 }
 
 .portal::after {
   position: absolute;
-  right: clamp(16px, 2.5vw, 44px);
-  bottom: 24px;
-  width: clamp(74px, 8vw, 140px);
+  right: clamp(1rem, 2.5vw, 2.75rem);
+  bottom: clamp(1rem, 2.2vh, 1.75rem);
+  width: clamp(4.625rem, 8vw, 8.75rem);
   aspect-ratio: 1;
-  border: 1px solid rgba(33, 34, 34, 0.14);
+  border: 1px solid rgb(var(--black-03-rgb) / .14);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 12px rgba(33, 34, 34, 0.025),
-    inset 0 0 0 26px rgba(33, 34, 34, 0.018);
+  box-shadow: inset 0 0 0 0.75rem rgb(var(--black-03-rgb) / .025),
+    inset 0 0 0 1.625rem rgb(var(--black-03-rgb) / .018);
   content: "";
   pointer-events: none;
 }
@@ -29,9 +50,13 @@
   z-index: 0;
   margin: 0;
   color: transparent;
-  font: 400 clamp(9rem, 20vw, 22rem) / 0.72 "Sentient-Regular", serif;
+  /* Podlaha 6rem, ne 9rem: portrétní blok si tutéž velikost psal podruhé jako
+     `font-size: 30vw`, což je na 320px přesně 96px = 6rem, tedy jeho podlaha.
+     Sloučeno do jednoho clampu. Podlaha je živá jen pod 480px (tam je 20vw
+     menší než 96px), takže landscape nad 1200 se nemění. */
+  font: 400 clamp(6rem, 20vw, 22rem) / 0.72 "Sentient-Regular", serif;
   letter-spacing: -0.075em;
-  -webkit-text-stroke: 1px rgba(33, 34, 34, 0.075);
+  -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .075);
   pointer-events: none;
   user-select: none;
 }
@@ -42,12 +67,12 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: clamp(14px, 2vw, 28px);
-  min-height: 58px;
-  padding-inline: clamp(2px, 1vw, 16px);
-  color: rgba(33, 34, 34, 0.52);
+  gap: clamp(0.875rem, 2vw, 1.75rem);
+  min-height: clamp(2rem, 4.6vh, 3.625rem);
+  padding-inline: clamp(0.125rem, 1vw, 1rem);
+  color: rgb(var(--black-03-rgb) / .52);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -65,20 +90,29 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: 10vh minmax(520px, 62vh) 12vh;
-  min-height: 730px;
-  padding: clamp(24px, 3.5vw, 66px) clamp(8px, 3vw, 56px) 0;
+  /* Prostřední stopa nese fotku i ledger. Dřív minmax(520px, 62vh) — 520px byla
+     px podlaha na vh stopě a na každém nízkém laptopu vyhrála nad 62vh (naměřeno
+     přesně 520px na 1366×768, 1280×720 i 1440×800, zatímco na 1512×982 bylo 62vh
+     živých 608.83px). Teď clamp s krajními členy v rem: 720 → 418px, 982 → 544px,
+     nad 1921 ho ramp zvedne sám. Horní mez je `auto`, aby stopa rostla podle
+     obsahu — dřív ji 62vh zastropovalo a ledger z ní vylézal ven. */
+  grid-template-rows: 10vh minmax(clamp(22rem, 58vh, 34rem), auto) 12vh;
+  min-height: clamp(30rem, 82vh, 46rem);
+  /* Horní padding je svislý rozměr — patří na vh, ne na vw. */
+  padding: clamp(1rem, 4.4vh, 3.5rem) clamp(0.5rem, 3vw, 3.5rem) 0;
 }
 
 .visual {
   position: relative;
   grid-column: 4 / 11;
   grid-row: 1 / 3;
-  min-height: 610px;
+  /* 610px byla jediná hodnota, která fotku na 720px vysokém okně držela na 610 —
+     naměřeno h=610 na všech třech lt viewportech. Na vh: 720 → 331px, 1351 → 622px. */
+  min-height: clamp(18rem, 46vh, 40rem);
   margin: 0;
   overflow: hidden;
-  background: #21231e;
-  color: #ffe8d6;
+  background: var(--ink-05);
+  color: var(--cream-06);
 }
 
 .visualImage {
@@ -89,15 +123,21 @@
   transition: transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.visual:hover .visualImage {
-  transform: scale(1.075);
+/* Přiblížení fotky je hover, a hover patří jen tam, kde je kurzor: na dotyku
+   se :hover po tapnutí drží a fotka zůstane zvětšená, dokud se nesáhne jinam.
+   Náběhové `scale(1.055)` i jeho transition zůstávají venku — ty patří
+   k příjezdu obrázku, ne k ukazovátku. */
+@include fine-pointer {
+  .visual:hover .visualImage {
+    transform: scale(1.075);
+  }
 }
 
 .imageShade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(17, 18, 15, 0.28), transparent 48%),
-    linear-gradient(0deg, rgba(17, 18, 15, 0.48), transparent 52%);
+  background: linear-gradient(90deg, rgb(var(--ink-01-rgb) / .28), transparent 48%),
+    linear-gradient(0deg, rgb(var(--ink-01-rgb) / .48), transparent 52%);
 }
 
 .heroCopy {
@@ -105,14 +145,17 @@
   grid-column: 1 / 7;
   grid-row: 2;
   align-self: center;
-  padding-left: clamp(0px, 1vw, 18px);
+  /* Podlaha 0.625rem = 10px místo nuly: portrétní blok si stejné odsazení psal
+     jako `padding-left: 10px`. Podlaha je živá jen pod 1000px (1vw < 10px),
+     nad 1200 se tedy nemění nic. */
+  padding-left: clamp(0.625rem, 1vw, 1.125rem);
   pointer-events: none;
 }
 
 .visualLabel,
 .visualFoot {
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -120,22 +163,43 @@
 .heroCopy h1 {
   display: flex;
   flex-direction: column;
-  margin: clamp(14px, 2vh, 24px) 0 0;
+  margin: clamp(0.875rem, 2vh, 1.5rem) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(5.2rem, 9.2vw, 11.2rem);
+  /* Nadpis lezl do fotky a na qhd byl tmavý na tmavém. 7.4vw místo 9.2vw:
+     na 1366 končí Cesta na x≈284 proti levému okraji fotky 362, na 2552
+     na x≈704 proti 764 — tedy mimo fotku na obou koncích škály.
+
+     Podlaha je `min()`, ne holé 4.6rem, protože na telefonu na šířku je
+     JEDINÝM živým členem: 7.4vw je pod 73.6px až do šířky 995px, takže na
+     320, na 568 i na 932 dával clamp pořád stejných 73.6px. Jenže tam nadpis
+     leží ve skládaném tvaru na pásu fotky, a ten je vysoký 33svh — výška
+     v procentech okna proti velikosti v rem, která se zmenšit neumí. Nadpis
+     se do pásu nevešel a spodní řádek („zpátky.“) řezal krémový panel:
+     naměřeno 18.1px pod hranou panelu na 568×320, 18.9 na 800×360, 14.7 na
+     851×393 a 9.4 na 932×430.
+
+     18vh protne 4.6rem přesně na výšce 409px. Nad ní vrací min() pořád
+     4.6rem, takže se nemění NIC, co je vyšší: nejnižší laptop v tabulce má
+     660px (lt), nejnižší portrét 568px. Pod 409px je jen telefon na šířku,
+     a tam nadpis konečně sleduje osu, o kterou soupeří — výšku. Naměřeno
+     57.6px na 568×320, 64.8 na 800×360, 70.7 na 851×393, 73.6 (beze změny)
+     na 932×430. Přes 1200 na šířku je hodnota bit po bitu stejná jako dřív. */
+  font-size: clamp(min(4.6rem, 18vh), 7.4vw, 9rem);
   font-weight: 400;
   line-height: 0.72;
   letter-spacing: -0.07em;
 }
 
 .heroCopy h1 > span {
-  color: #212222;
-  text-shadow: 1px 0 rgba(247, 240, 228, 0.72), -1px 0 rgba(247, 240, 228, 0.72);
+  color: var(--black-03);
+  text-shadow: 1px 0 rgb(var(--cream-07-rgb) / .72), -1px 0 rgb(var(--cream-07-rgb) / .72);
 }
 
 .heroCopy em {
-  margin-left: clamp(50px, 11vw, 190px);
-  color: #747b61;
+  /* Strop 190px byl v px, takže nad 1921 zamrzl, zatímco písmo kolem rostlo
+     — odsazení akcentu se rozcházelo s velikostí nadpisu. */
+  margin-left: clamp(3rem, 11vw, 11rem);
+  color: var(--olive-15);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-size: 0.62em;
   font-weight: 300;
@@ -143,34 +207,62 @@
   letter-spacing: -0.045em;
 }
 
+/* Popisek fotky musí končit tam, kde začíná ledger — dřív běžel přes celou šířku
+   a pravá polovina včetně Od roku 2014 mizela pod krémovým panelem (naměřeno
+   404px schovaných na 1366×768, 660px na 2552×1351).
+
+   Odsazení se neodhaduje, odvozuje: fotka drží 7 z 12 sloupců (4/11) a ledger
+   začíná v celém sloupci. Přihlášení a registrace ho mají na sloupci 9, takže
+   z fotky zůstává volných 5 ze 7 sloupců → right: 2/7 = 28.58%. */
 .visualFoot {
   position: absolute;
-  right: 24px;
-  bottom: 24px;
-  left: 24px;
+  /* 2/7 posadí pravou hranu popisku PŘESNĚ na hranu panelu — naměřeno
+     0.0px mezery, takže „OD ROKU 2014“ do panelu naráží a čte se jako
+     uťaté. Odsazení navíc je vodorovné, tedy vw. 0.8vw, ne 1.2vw jako gap
+     uvnitř popisku: linka mezi popisky bere zbytek místa a při 1.2vw spadla
+     na 4.4px šířky na 1200 a 8.1px na 1220. S 0.8vw je gap 9.6–20.4px
+     a linka zůstává 9–108px, tedy pořád viditelná. */
+  right: calc(28.58% + clamp(0.5rem, 0.8vw, 1.125rem));
+  bottom: clamp(1rem, 2.2vh, 1.75rem);
+  left: clamp(1rem, 1.7vw, 1.75rem);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  /* minmax(0, 1fr) na linku: při nedostatku místa se zkracuje ona, ne popisky. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  color: rgba(255, 232, 214, 0.68);
+  gap: clamp(0.75rem, 1.2vw, 1.25rem);
+  color: rgb(var(--cream-06-rgb) / .68);
+  white-space: nowrap;
 }
 
 .ledger {
   z-index: 5;
   grid-column: 9 / 13;
   grid-row: 2 / 4;
-  align-self: center;
+  /* stretch, ne center: panel je vyšší než plocha řádků 2–3, a s `center` z ní
+     visel ven na obě strany (+73px na 1366×768, +70 na 1280×720, +44 na 1512×982).
+     Protože má .portal overflow: hidden, spodek se tiše ořezával. Se `stretch`
+     naroste stopa — přesně past place-items: center z ARTEFAKTu. */
+  align-self: stretch;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  min-height: clamp(470px, 58vh, 650px);
+  min-height: clamp(24rem, 58vh, 40rem);
   margin-bottom: 0;
-  padding: clamp(24px, 3vw, 46px);
-  border: 1px solid rgba(33, 34, 34, 0.23);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 45%),
-    rgba(247, 240, 228, 0.95);
-  box-shadow: 0 34px 80px rgba(44, 41, 31, 0.12),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  /* Svisle na vh, vodorovně na vw — dřív hnalo obojí jedno clamp(…vw). */
+  padding: clamp(1.25rem, 3.2vh, 2.6rem) clamp(1.5rem, 2.4vw, 2.9rem);
+  border: 1px solid rgb(var(--black-03-rgb) / .23);
+  background: linear-gradient(135deg, rgb(var(--white-rgb) / .2), transparent 45%),
+    rgb(var(--cream-07-rgb) / .95);
+  box-shadow: 0 34px 80px rgb(var(--ink-07-rgb) / .12),
+    inset 0 0 0 1px rgb(var(--white-rgb) / .28);
   backdrop-filter: blur(16px);
+
+  /* Ve skládaném tvaru je panel přes celou šířku telefonu, takže se rozostřuje
+     plocha o velikosti obrazovky — přesně ten drahý případ, na který je
+     rozpočet efektů. Vypíná se podle `data-fx`, ne podle prefers-reduced-motion:
+     ta vrstva je na webu záměrně vypnutá (globals.scss). */
+  @include reduced-fx {
+    backdrop-filter: none;
+  }
 }
 
 /* Recovery and verification contain explanatory states and longer actions than
@@ -181,27 +273,49 @@
   grid-column: 7 / 13;
 }
 
+/* Širší ledger začíná na sloupci 7, takže z fotky zůstávají volné 3 ze 7 sloupců
+   → right: 4/7. Selektor je (0,2,1), takže přebíjí prostý .visualFoot výš
+   specificitou; blok pro skládaný layout níž proto musí mít stejný tvar,
+   jinak by prohrál bez ohledu na pořadí. */
+.portal[data-auth-mode="recovery"] .visualFoot,
+.portal[data-auth-mode="verification"] .visualFoot {
+  right: calc(57.15% + clamp(0.5rem, 0.8vw, 1.125rem));
+}
+
 .ledgerTop {
   display: flex;
   justify-content: space-between;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(33, 34, 34, 0.2);
-  color: rgba(33, 34, 34, 0.52);
-  font-size: 12px;
+  padding-bottom: clamp(0.625rem, 1.5vh, 1.25rem);
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .2);
+  color: rgb(var(--black-03-rgb) / .52);
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+/* Jedna buňka, všechny děti do ní.
+
+   Dřív to byl flex a `width: 100%` na dětech. Šablony ale vedle panelu renderují
+   ještě <Toaster />, prázdnou <section> s nulovou výškou — a ta si o 100 % řekla
+   taky. Dvě flex položky se stejným základem se srovnaly na půlku každá, takže
+   formulář běžel na 50 % šířky ledgeru (naměřeno 287 z 574px na 1366×768,
+   441 z 882px na 2552×1351). Nadpis se v té půlce lámal do tří řádků a panel
+   narostl na 513px, resp. 939px — to byl hlavní zdroj výšky celé stránky.
+
+   Grid s jedinou buňkou to řeší bez ohledu na to, kolik sourozenců šablona přidá:
+   všichni leží na sobě, výšku určuje ten nejvyšší. */
 .formSlot {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   min-width: 0;
   align-items: center;
   justify-content: center;
-  padding-block: clamp(25px, 4vh, 48px);
+  padding-block: clamp(1.5625rem, 4vh, 3rem);
 }
 
 .formSlot > * {
+  grid-area: 1 / 1;
   width: 100%;
   min-width: 0;
 }
@@ -210,26 +324,36 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(33, 34, 34, 0.2);
+  gap: clamp(1rem, 1.8vw, 2rem);
+  padding-top: clamp(0.75rem, 1.7vh, 1.4rem);
+  border-top: 1px solid rgb(var(--black-03-rgb) / .2);
 }
 
 .ledgerFoot p {
-  max-width: 270px;
+  max-width: 17rem;
   margin: 0;
-  color: rgba(33, 34, 34, 0.6);
-  font-size: 13px;
+  color: rgb(var(--black-03-rgb) / .6);
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 
 .ledgerFoot a {
   flex: 0 0 auto;
-  color: #212222;
-  font-size: 13px;
+  color: var(--black-03);
+  font-size: 0.8125rem;
   text-decoration: underline;
-  text-decoration-color: rgba(33, 34, 34, 0.35);
-  text-underline-offset: 4px;
+  text-decoration-color: rgb(var(--black-03-rgb) / .35);
+  text-underline-offset: 0.25rem;
+
+  /* Odkaz je jednořádkový text vysoký 19.5px, na 320px se láme na dvě řádky
+     a měří 39px — obojí pod dotykovou podlahou 44px. globals.scss řeší
+     <button>, ne <a>, takže podlaha patří sem. Jen na dotyku: s kurzorem je
+     19.5px trefitelných a inline-flex by v řádku odsadil podtržení. */
+  @include touch {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
 }
 
 .indexMark {
@@ -240,10 +364,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;
-  padding-bottom: 34px;
-  color: rgba(33, 34, 34, 0.52);
-  font: 13px/1 "Sansation-Regular", sans-serif;
+  gap: clamp(0.5rem, 0.8vw, 0.875rem);
+  padding-bottom: clamp(1.25rem, 3.4vh, 2.75rem);
+  color: rgb(var(--black-03-rgb) / .52);
+  font: 0.8125rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
 }
 
@@ -252,46 +376,247 @@
   background: currentColor;
 }
 
-@include below-px(900px) {
+/* Popisek fotky do jednoho sloupce. Jedna geometrie, jedno místo: platí ve
+   dvou orientacích téhož pásma (portrét i tablet na šířku), a dvakrát opsané
+   procento je dvakrát tolik míst, kde se rozejde. Stejný postup, jaký má
+   auth-support u routes-two-up. */
+@mixin visual-foot-stacked {
+  .portal[data-auth-mode="recovery"] .visualFoot,
+  .portal[data-auth-mode="verification"] .visualFoot {
+    right: calc(71.43% + clamp(0.5rem, 0.8vw, 1.125rem));
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    gap: clamp(0.2rem, 0.5vh, 0.4rem);
+  }
+
+  .portal[data-auth-mode="recovery"] .footLine,
+  .portal[data-auth-mode="verification"] .footLine {
+    display: none;
+  }
+}
+
+/* Velký tablet: ledger pořád stojí vedle fotky, jen o sloupec širší.
+   Blok je NAD skládaným tvarem schválně. Oba selektory mají specificitu (0,3,0),
+   takže rozhoduje pořadí — a telefon na šířku 926×428 / 932×430 spadá do rozsahu
+   900–1180 zároveň se stopem phs. Kdyby tenhle blok stál níž, vzal by mu ledger
+   přes celou šířku zpátky na 6/13, tedy zase půlku obrazovky. Pro skutečný tablet
+   900–1180 se skládaný blok nechytí (neplatí max-width 899.98 ani phs, který chce
+   max-height 520), takže přesun tady nemění nic.
+
+   Dolní mez je 900, ne 901: skládaný tvar končí na max-width 899.98px, takže
+   mezi ním a 901 zůstávala jedna celočíselná šířka bez majitele. Na 900×1200 se
+   nechytil ani jeden z obou tvarů — ledger zůstal na 7/13, popisek uhýbal
+   o 57.15 % a přetekl vlastní box o 51px, takže „OD ROKU 2014“ šlo pod panel.
+   Posun o pixel dolů nemůže nic vzít: mezi 899.98 a 900 už žádné pravidlo
+   není. */
+@include between-px(900px, 1180px) {
+  .portal[data-auth-mode="recovery"] .ledger,
+  .portal[data-auth-mode="verification"] .ledger {
+    grid-column: 6 / 13;
+  }
+
+  /* Ledger se v tomhle pásmu roztáhl na sloupec 6, ale popisek fotky pořád
+     uhýbal o 57.15 % — to je číslo pro ledger na sloupci 7. Odvození je stejné
+     jako výš: fotka drží 7 z 12 sloupců (4/11), ledger začíná na 6, takže
+     z fotky zbývají volné 2 ze 7 → skryto 5/7 = 71.43 %. Naměřeno před opravou:
+     popisek lezl 72px POD panel na 1024×1366 a „OD ROKU 2014“ nebylo vidět
+     vůbec; na 1180×1580 83px. Základních 57.15 % zůstává správně pro login
+     a registraci, které ledger na sloupci 6 nemají.
+
+     Zalomení do sloupce není ozdoba: popisky měří 111.7 + 102.3px a dvě mezery
+     2×12.3px, tedy 238.6px minimum v jedné řadě, proti viditelnému proužku
+     fotky 160.4px (1024) a 184.9px (1180). Do jedné řady se to v tomhle pásmu
+     nevejde nikde. S jedním sloupcem nemá linka co oddělovat — odděluje řadu,
+     ne sloupec —, a bez skrytí by se z ní stal prázdný třetí řádek.
+
+     Vnořené v(md), ne holé between-px: telefon na šířku 932×430 splňuje
+     between-px(900, 1180) I skládaný blok níž zároveň. v(md) je portrait-only,
+     takže mu tenhle zásah nesáhne na nic. Emituje se (min-width: 900px) and
+     (max-width: 1180px) and (min-width: 600px) and (orientation: portrait).
+     Specificita (0,3,0) je táž jako u základního pravidla výš a blok stojí
+     za ním; se skládaným blokem je disjunktní, takže pořadí vůči němu nehraje
+     roli. */
+  @include v(md) {
+    @include visual-foot-stacked;
+  }
+
+  /* TÝŽ TABLET, JEN NA ŠÍŘKU. Zásah výš je portrait-only schválně — telefon na
+     šířku 932×430 splňuje between-px i skládaný blok zároveň a v(md) je jediná
+     podmínka, která ho spolehlivě mine. Vada je ale geometrická, ne orientační:
+     viditelný proužek fotky měří 160.4px na 1024×768 a 184.9px na 1180×820,
+     do obou se popisek (238.6px v jedné řadě) vejde stejně málo jako v portrétu.
+     Naměřeno před opravou: popisek 95.5px POD panelem na 1024×768 a přetečení
+     vlastního boxu 24px; 82.9px pod panelem na 1180×820.
+
+     h(smt) je tabulkový stop „tablet na šířku“ — min-width 900, max-width
+     1399.98, min-height 720, landscape. Ta výšková podmínka je přesně to, co
+     odděluje tablet od telefonu na šířku (nejvyšší má 430px), takže deklarace
+     můžou být tytéž jako v portrétu, aniž by se telefonu dotkly. Horní mez
+     1180 drží vnější between-px, takže se to nekříží s hotovým landscape nad
+     1200. Blok stojí ZA v(md) i za základním pravidlem výš — specificita je
+     u všech tří (0,3,0), takže rozhoduje pořadí.
+
+     Co tenhle stop nepokryje: landscape v pásmu 900–1180 NIŽŠÍ než 720px.
+     Tabulka pro něj stop nemá a nový breakpoint do komponentu nepatří. */
+  @include h(smt) {
+    @include visual-foot-stacked;
+  }
+}
+
+/* Skládaný tvar: fotka nahoru přes celou šířku, ledger pod ni, indexMark pryč.
+   Tvar, ne velikost — velikosti uvnitř visí na clampech.
+
+   below-with-phone(sm), ne below-px(900px): 900 je pouhá šířka, a telefon na
+   šířku je až 932px široký. 568–851 se do max-width 900 vešly, 926/932 ne, takže
+   jedna třída zařízení dostávala dva různé layouty (naměřeno indexMark: none do
+   851 a grid na 926/932, composition rows "43px 502px 51px" místo dvouřádkových).
+   Mixin přidá k max-width: 899.98px stop phs (>=480 a <=520 vysoko) jako jeden
+   comma-seznam, takže se ty dvě půlky nedají oddělit pravidlem mezi nimi. */
+@include below-with-phone(sm) {
   .composition {
-    grid-template-rows: 42svh auto;
+    /* Výška pásu fotky je jedna geometrie, tak ať stojí na jednom místě: sahá po
+       ní `grid-template-rows` i `min-height` na .visual. Dřív bylo 42svh napsané
+       dvakrát tady a 390px dvakrát v portrétním bloku — čtyři zápisy jedné výšky.
+       33svh: na 320 vysokém telefonu na šířku leží pod podlahou → 120px, tedy
+       37 % obrazovky (limit je 40 %); 390×844 dá 279px (33 %), 430×932 pak 308px.
+
+       Strop 26rem = 416px je mez pro PORTRÉTNÍ TABLET, ne pro telefon, a proto
+       stojí rovnou tady, ne podruhé ve vnořeném v(md): 33svh na něj dosáhne
+       teprve od výšky 1260px, zatímco nejvyšší portrétní telefon má 932px
+       (33svh = 307.5px) a nejvyšší telefon na šířku 430px (141.9px). Na telefonu
+       je strop mrtvý člen, takže druhý zápis v media query by byl jen tatáž
+       vlastnost se dvěma hodnotami — přesně to, co má nést jeden clamp.
+       Dřívějších 20rem mrtvých nebylo: srážely každý portrétní tablet na rovných
+       320px (768×1024 −26 %, 834×1194 −36 %), takže o výšce pásu rozhodovala
+       mez psaná pro telefon místo poměru. Zpět na ideál: 768×1024 → 337.9,
+       810×1080 → 356.4, 834×1194 → 394.
+
+       Přesah je taky geometrie: ledger se o `--fp-ledger-lift` vytahuje nahoru
+       přes spodek fotky, takže z pásu je vidět jen `--fp-visual-h` mínus přesah.
+       Nadpis se centruje do té viditelné části, ne do celého pásu — proto po téže
+       proměnné sahá i margin-bottom .heroCopy. */
+    --fp-visual-h: clamp(7.5rem, 33svh, 26rem);
+    --fp-ledger-lift: 4vh;
+    grid-template-rows: var(--fp-visual-h) auto;
     padding-inline: 0;
   }
 
   .visual {
     grid-column: 2 / 13;
     grid-row: 1;
-    min-height: 42svh;
+    min-height: var(--fp-visual-h);
   }
 
   .heroCopy {
     grid-column: 1 / 11;
     grid-row: 1;
+    /* Posun o půlku přesahu nahoru: `align-self: center` centruje marginový box,
+       takže spodní margin ve výši přesahu srovná nadpis na střed té části pásu,
+       kterou panel nepřekrývá. Bez něj se spodní řádek nadpisu schová pod panel
+       (na 320×568 by z něj mizelo 8px, s ním má 12px vzduchu). */
+    margin-bottom: var(--fp-ledger-lift);
+  }
+
+  /* Ve skládaném layoutu leží ledger POD fotkou, takže popisek nemá čemu uhýbat
+     — vrací se přes celou šířku, jak byl.
+
+     Selektor s [data-auth-mode] není ozdoba: pravidlo výš je
+     `.portal[data-auth-mode="recovery"] .visualFoot`, tedy (0,2,1). Prostý
+     `.visualFoot` je (0,1,0) a prohrál by specificitou bez ohledu na pořadí
+     — naměřeno right: 204px místo 20px na 390×844. Se stejnou specificitou
+     rozhodne pořadí a tenhle blok je až za ním. */
+  .portal[data-auth-mode] .visualFoot {
+    right: clamp(1rem, 1.7vw, 1.75rem);
+    /* Popisek se ve skládaném tvaru uhýbá panelu svisle, ne vodorovně: ledger
+       leze přes spodek fotky o `--fp-ledger-lift`, a základní odsazení 2.2vh je
+       na 844 menší (18.6px) než ten přesah (33.8px), takže by „ATELIÉR · PÍSEK“
+       zmizelo pod panelem. Odsazení se proto počítá z téhož přesahu plus vzduch;
+       na 320 vysokém telefonu na šířku dá 21px, na 390×844 46px. */
+    bottom: calc(var(--fp-ledger-lift) + clamp(0.5rem, 1.4vh, 1.25rem));
   }
 
   .ledger {
-    grid-column: 1 / 13;
     grid-row: 2;
     min-height: auto;
-    margin: -4vh 0 40px;
+    /* Záporný přesah je tvar, zůstává ve vh. Spodní mezera byla 40px — svislý
+       rozměr v px, který na 320 vysokém telefonu bral stejně místa jako na 932.
+       Do clampu: 320 → 24px, 844 → 38px, 932 → 42px. */
+    margin: calc(-1 * var(--fp-ledger-lift)) 0 clamp(1.5rem, 4.5vh, 3rem);
+  }
+
+  /* Selektor s [data-auth-mode] není ozdoba — je to táž past jako u .visualFoot
+     o kus výš. Pravidlo `.portal[data-auth-mode="recovery"] .ledger` je (0,3,0),
+     prostý `.ledger` (0,1,0), takže `grid-column: 1 / 13` z tohohle bloku
+     prohrávalo specificitou bez ohledu na pořadí a ledger zůstával na 7/13, tedy
+     na půlce obrazovky — naměřeno na 320, 360, 390, 430, 560, 568, 667, 736, 800,
+     844 i 851. Že šlo o specificitu a ne o pořadí bylo vidět z toho, že padding
+     ze stejného bloku se aplikoval. Se stejným tvarem (0,3,0) rozhodne pořadí
+     a tenhle blok je až za oběma. Jedno pravidlo pokrývá všechny čtyři režimy:
+     login/register mají v základu 9/13, recovery/verification 7/13. */
+  .portal[data-auth-mode] .ledger {
+    grid-column: 1 / 13;
   }
 
   .indexMark {
     display: none;
   }
-}
 
-@include between-px(901px, 1180px) {
-  .portal[data-auth-mode="recovery"] .ledger,
-  .portal[data-auth-mode="verification"] .ledger {
-    grid-column: 6 / 13;
+  /* PORTRÉTNÍ TABLET UVNITŘ SKLÁDANÉHO TVARU.
+
+     Skládat je na 768×1024 správně a nemění se to: vedle sebe by ledger bral
+     6 z 12 sloupců (box 361px), formulář 313px a na proužek fotky by zbylo
+     180px, do kterých se popisek nevejde vůbec. Rozdíl mezi telefonem
+     a tabletem tedy nepatří do rozhodnutí „skládat/neskládat“, ale dovnitř
+     pásu — telefon skládá do jednoho sloupce proto, že nemá ani šířku, ani
+     výšku, a 768×1024 má obojí (víc svislého místa než laptop 1366×768).
+
+     Blok MUSÍ být poslední uvnitř skládaného bloku: .visual, .heroCopy
+     i .indexMark tu mají základní pravidla se stejnou specificitou,
+     takže rozhoduje pořadí. Vnořené v(md) emituje (max-width: 899.98px) and
+     (min-width: 600px) and (orientation: portrait) plus druhou větu z comma
+     seznamu below-with-phone(sm), která spojuje landscape s portrait a nemůže
+     nastat nikdy. Telefony v portrétu (nejširší 430) i telefon na šířku tedy
+     zůstávají netknuté. */
+  @include v(md) {
+    /* Ten druhý sloupec, který tablet mít má a telefon nemůže: nadpis VEDLE
+       fotky, ne na ní. Kolo 1 si vysloveně poznamenalo, že nadpis do fotky
+       lézt nemá (proto 7.4vw místo 9.2vw), a portrétní tablet o ten záměr
+       přišel jen tím, že chytal skládaný tvar psaný pro telefon. Naměřeno po
+       zásahu (kladné = text je mimo fotku): 768 label +61.5, „Cesta“ +79,
+       „zpátky.“ +26.3; 834 +83.5 / +101 / +41.1. Na 600 vychází em −11.2, což
+       je menší přesah, než má dnes desktop sám (−21.4 na 1024, −28.6 na 1366). */
+    .visual {
+      grid-column: 5 / 13;
+    }
+
+    .heroCopy {
+      grid-column: 1 / 5;
+    }
+
+    /* Značku skládaný tvar ruší pro nedostatek výšky. Portrétní tablet výšku má
+       a jeho sourozenec 1024×1366 ji už dnes ukazuje. Třetí řádek tu neexistuje
+       (grid-template-rows má dvě stopy), takže `grid-row: 3` ze základu vyrobí
+       implicitní řadu a značka přistane pod celošířkovým panelem — čte se jako
+       „03 —— 04“ nad patičkou. Levé zarovnání sdílí s .heroCopy, tentýž clamp.
+       Spodní odsazení je z landscape kompozice, kde značka drží dno stránky;
+       tady jen odděluje od panelu, tedy nahoru. */
+    .indexMark {
+      display: grid;
+      grid-column: 1 / 7;
+      padding-top: clamp(1rem, 2.4vh, 1.75rem);
+      padding-bottom: 0;
+      padding-left: clamp(0.625rem, 1vw, 1.125rem);
+    }
   }
 }
 
-@include below-px(560px) {
+/* Telefon v portrétu. below(ph), ne below-px(560px): 560 je pojmenovaný stop
+   `ph` z $h-max, tedy nad nejširším telefonem (430) a pod nejužším tabletem
+   v portrétu (600). Zbylo tu jen to, co je opravdu jiný TVAR — velikosti se
+   přesunuly do clampů výš. */
+@include below(ph) {
   .meta {
     grid-template-columns: 1fr auto;
-    padding-inline: 4px;
   }
   .metaLine {
     display: none;
@@ -301,36 +626,57 @@
   }
   .ghostWord {
     top: 6%;
-    font-size: 30vw;
   }
   .composition {
-    grid-template-rows: 390px auto;
-    padding-top: 14px;
-  }
-  .visual {
-    grid-column: 2 / 13;
-    min-height: 390px;
+    /* Nad fotkou stačí v portrétu užší pás než v landscape, kde kompozice drží
+       celou obrazovku. Dřív 14px napevno; na vh: 568 → 12px, 844 → 14px,
+       932 → 16px. */
+    padding-top: clamp(0.75rem, 1.7vh, 1.5rem);
   }
   .heroCopy {
     grid-column: 1 / 13;
-    padding-left: 10px;
   }
   .heroCopy h1 {
-    font-size: clamp(4.5rem, 22vw, 7rem);
-  }
-  .heroCopy em {
-    margin-left: 12vw;
-  }
-  .ledger {
-    grid-column: 1 / 13;
-    margin-top: -18px;
-    padding: 24px 18px 30px;
-  }
-  .formSlot {
-    padding-block: 38px;
+    /* Portrét má pro nadpis jiný koeficient než landscape, a to oprávněně:
+       tady vyplňuje celou šířku, ne polovinu vedle fotky. 22vw zůstává, ale
+       dostal strop — bez něj měl nadpis na 560 rovných 112px proti 73.6px
+       na 561, tedy 34% skok na hranici bloku. Strop 5.25rem = 84px sráží skok
+       na 12 %. Podlaha 4.5rem je táž hodnota jako dřív: na 320 dává 72px. */
+    font-size: clamp(4.5rem, 22vw, 5.25rem);
   }
   .ledgerFoot {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* Telefon na šířku. Stojí ZÁMĚRNĚ ÚPLNĚ POSLEDNÍ: `phs` se šířkou překrývá
+   `below-with-phone(sm)` i `between-px(900px, 1180px)` nad sebou (932px je
+   širší než každý tabletový stop), a při shodné specificitě rozhoduje pořadí
+   — proto je v $h i v _mixins.scss phs zařazený na konec. `below(ph)` výš
+   je max-width 559.98px, takže se s ním nekříží: nejužší telefon na šířku
+   měří 568px. Stačí phs, phl je jeho podmnožina (>=800 je zároveň >=480).
+
+   Jsou tu jen dvě pravidla a obě jsou TVAR, ne velikost: na pásu vysokém
+   105–142px nemá vedle nadpisu co dělat ještě eyebrow. */
+@include h(phs) {
+  /* Ve skládaném tvaru se `.visualLabel` nevykresluje NA fotce, ale nad ní
+     na bílé — heroCopy začíná výš než pás (grid-column 1/11 proti 2/13
+     u fotky) a text se tam potkává s obrysem ghost slova. Čte se jako
+     utržený řádek a přitom jen opakuje, co o kus níž říká `.visualFoot`
+     („ATELIÉR · PÍSEK / OD ROKU 2014“) a `.meta` („KERAMICKÁ ZAHRADA ·
+     PÍSEK“). V portrétu naopak sedí na fotce správně, proto se skrývá
+     tady a ne ve skládaném bloku, který portrét sdílí. */
+  .visualLabel {
+    display: none;
+  }
+
+  /* Odsazení nadpisu odděluje h1 od eyebrow nad ním. Bez eyebrow nemá co
+     oddělovat a jen ubírá z pásu: heroCopy je grid item, takže vlastní
+     nezávislý formátovací kontext a margin dítěte se z něj neprolne ven
+     — těch 14px se do výšky opravdu počítá. Na 800×360 byly právě ony
+     rozdílem mezi 6.4px vzduchu a 1px překryvu. */
+  .heroCopy h1 {
+    margin-top: 0;
   }
 }

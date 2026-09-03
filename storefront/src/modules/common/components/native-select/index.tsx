@@ -13,6 +13,7 @@ import {
   useState,
 } from "react"
 import s from "./style.module.scss"
+import { alpha, palette } from "styles/palette.generated"
 
 export type NativeSelectProps = {
   placeholder?: string
@@ -89,20 +90,20 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
           animate={visualState}
           variants={{
             rest: {
-              backgroundColor: "rgba(255, 248, 238, .16)",
-              color: "#20211c",
+              backgroundColor: alpha("selectCream", .16),
+              color: palette.ink05,
             },
             placeholder: {
-              backgroundColor: "rgba(255, 248, 238, .1)",
-              color: "rgba(32, 33, 28, .52)",
+              backgroundColor: alpha("selectCream", .1),
+              color: alpha("ink05", .52),
             },
             focused: {
-              backgroundColor: "rgba(187, 183, 136, .1)",
-              color: "#20211c",
+              backgroundColor: alpha("sage01", .1),
+              color: palette.ink05,
             },
             invalid: {
-              backgroundColor: "rgba(154, 111, 101, .08)",
-              color: "#20211c",
+              backgroundColor: alpha("clay24", .08),
+              color: palette.ink05,
             },
           }}
           transition={transition}

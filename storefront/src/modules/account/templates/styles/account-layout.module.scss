@@ -5,13 +5,23 @@
   isolation: isolate;
   width: 100%;
   min-height: 100svh;
-  padding: clamp(96px, 11vh, 150px) clamp(6px, 1vw, 20px) clamp(38px, 6vh, 80px);
+  // Krajní členy v rem, ne v px: nad 1921 zvedne ramp rem a s ním celý rámec.
+  // S px stropy rámec zamrzl na hodnotách z 1920, zatímco obsah uvnitř (samé
+  // rem stropy) rostl 1.33x — na 2552 byl pak v 1920px rámu 1.33x větší obsah.
+  //
+  // Podlaha je 4.5rem, ne 6rem: 96px podlaha byla aktivní až do výšky 873px,
+  // tedy na 660 i 720 i 768 i 800 — na CELÉM pásmu nízkého laptopu. Prostřední
+  // člen tam byl mrtvý, čili vh nedělalo přesně to, kvůli čemu se píše.
+  // Naměřeno: karta přihlášení končila 3.4px pod hranou okna na 1280x720
+  // a 50.7px pod ní na 1220x660. Teď je 11vh živé od 654px výšky nahoru
+  // (72.6px na 660, 79.2 na 720, 84.5 na 768) a strop drží ramp.
+  padding: clamp(4.5rem, 11vh, 9.375rem) clamp(.375rem, 1vw, 1.25rem) clamp(2.375rem, 6vh, 5rem);
   overflow: clip;
   background:
-    radial-gradient(circle at 76% 16%, rgba(199, 196, 154, .26), transparent 30rem),
-    radial-gradient(circle at 20% 82%, rgba(255, 232, 214, .28), transparent 34rem),
-    #eee8d6;
-  color: #212222;
+    radial-gradient(circle at 76% 16%, rgb(var(--sage-02-rgb) / .26), transparent 30rem),
+    radial-gradient(circle at 20% 82%, rgb(var(--cream-06-rgb) / .28), transparent 34rem),
+    var(--cream-03);
+  color: var(--black-03);
 }
 
 .section::before {
@@ -32,32 +42,42 @@
   color: transparent;
   font: 400 clamp(9rem, 23vw, 28rem)/.7 "Sentient-Regular", serif;
   letter-spacing: -.08em;
-  -webkit-text-stroke: 1px rgba(33, 34, 34, .055);
+  -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .055);
   pointer-events: none;
 }
 
 .container {
-  width: min(100wv, 1920px);
-  min-height: calc(100svh - clamp(140px, 17vh, 215px));
+  // Bylo `min(100wv, 1920px)`. `100wv` není platná délka, takže celá math funkce
+  // byla neplatná a prohlížeč deklaraci zahodil — šířka nikdy neomezovala nic
+  // a `margin-inline: auto` nemělo co centrovat. `120rem` je týchž 1920px při
+  // rem 16 a nad 1921 se strop zvedne rampem stejně jako obsah pod ním.
+  width: min(100%, 120rem);
+  min-height: calc(100svh - clamp(8.75rem, 17vh, 13.4375rem));
   margin-inline: auto;
-  padding: 0 2.5vw
+  padding: 0 clamp(1.25rem, 2.5vw, 3rem);
 }
 
 .verifiedGrid {
   display: grid;
-  grid-template-columns: clamp(330px, 21vw, 400px) minmax(0, 1fr);
-  min-height: calc(100svh - clamp(140px, 17vh, 215px));
-  border-top: 1px solid rgba(33, 34, 34, .2);
-  border-bottom: 1px solid rgba(33, 34, 34, .2);
+  // Sloupec navigace: strop 25rem je týchž 400px při rem 16, ale nad 1921 roste
+  // s typem uvnitř. Se zamrzlým 400px stropem se na 2552 tlačil do stejně
+  // širokého sloupce nadpis o třetinu větší.
+  grid-template-columns: clamp(20.625rem, 21vw, 25rem) minmax(0, 1fr);
+  min-height: calc(100svh - clamp(8.75rem, 17vh, 13.4375rem));
+  border-top: 1px solid rgb(var(--black-03-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--black-03-rgb) / .2);
 }
 
 .nav {
   position: relative;
   min-width: 0;
-  padding: clamp(34px, 3.2vw, 54px) clamp(30px, 3vw, 50px);
+  // Svisle na vh, vodorovně na vw. Svislý padding rámu soupeří o výšku okna
+  // se sedmi položkami navigace a dvěma tlačítky; na vw dostal nízký laptop
+  // stejných 43.7px jako 1440x900, i když má o 130px výšky míň.
+  padding: clamp(2.125rem, 5vh, 3.375rem) clamp(1.875rem, 3vw, 3.125rem);
   overflow: visible;
-  background: #20221d;
-  color: #f7e5d5;
+  background: var(--ink-05);
+  color: var(--cream-06);
 }
 
 .nav::after {
@@ -66,25 +86,34 @@
   right: -1px;
   width: 1px;
   height: 100%;
-  background: rgba(33, 34, 34, .2);
+  background: rgb(var(--black-03-rgb) / .2);
   content: "";
 }
 
 .children {
   position: relative;
   min-width: 0;
-  padding: clamp(72px, 6vw, 108px) clamp(32px, 3.6vw, 68px);
+  // Největší svislý rozměr celé stránky: na 1366x768 ukrajoval 2x82px z 768.
+  // Na vh se sevře sám (76.8px na 768, 66px na 660) a nad 1921 poroste rampem
+  // přes strop v rem, místo aby stál na 108px z roku 1920.
+  // Podlaha 4rem (ne 4.5rem) je aktivní až pod 640px výšky, takže 10vh zůstává
+  // živé i na 660 — jinak by se i tady podlaha zakousla na celém pásmu lt.
+  padding: clamp(4rem, 10vh, 6.75rem) clamp(2rem, 3.6vw, 4.25rem);
   background:
-    linear-gradient(115deg, rgba(255, 255, 255, .12), transparent 34%),
-    rgba(247, 240, 228, .78);
+    linear-gradient(115deg, rgb(var(--white-rgb) / .12), transparent 34%),
+    rgb(var(--cream-07-rgb) / .78);
 }
 
 .children::before {
   position: absolute;
-  top: clamp(22px, 3vw, 44px);
-  right: clamp(26px, 4vw, 66px);
-  color: rgba(33, 34, 34, .42);
-  font: 12px/1 "Sansation-Regular", sans-serif;
+  // Odsazení sleduje padding .children, takže i tady svisle vh, vodorovně vw.
+  top: clamp(1.375rem, 4vh, 2.75rem);
+  right: clamp(1.625rem, 4vw, 4.125rem);
+  color: rgb(var(--black-03-rgb) / .42);
+  // .75rem je týchž 12px při rem 16 — dokumentovaná podlaha čitelnosti
+  // (globals.scss: --type-eyebrow). Jako holé px byl tohle jediný text
+  // na stránce, který nad 1921 zamrzl, zatímco všechno kolem rostlo.
+  font: .75rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   content: "Keramická zahrada · váš účet";
@@ -93,7 +122,7 @@
 .center,
 .centerZ1 {
   width: 100%;
-  min-height: calc(100svh - clamp(140px, 17vh, 215px));
+  min-height: calc(100svh - clamp(8.75rem, 17vh, 13.4375rem));
 }
 
 .centerZ1 {

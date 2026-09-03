@@ -5,6 +5,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { Easing, motion } from "framer-motion"
 import { useState } from "react"
 import styles from "./styles.module.scss"
+import { palette } from "styles/palette.generated"
 
 type CollectionCategoryLinkProps = {
   className?: string
@@ -18,11 +19,16 @@ type CollectionCategoryLinkProps = {
 
 const ease = [0.76, 0, 0.24, 1] as Easing
 
+/*
+ * The reveal is a unitless 0→1 scalar. The two lengths it opens — the icon box and the gap in
+ * front of it — live in the stylesheet as `--arrow-w` / `--arrow-gap`, so the window and the box
+ * are one number in one place. Naming 18px here instead froze the window at 18px above 1921px,
+ * where the rem ramp grows the box inside it to ~24px and the arrowhead was clipped.
+ */
 const arrowWrapper = {
-  rest: { width: 0, marginLeft: 0, opacity: 0 },
+  rest: { "--arrow-reveal": 0, opacity: 0 },
   hover: {
-    width: 18,
-    marginLeft: 7,
+    "--arrow-reveal": 1,
     opacity: 1,
     transition: { duration: 0.35, ease },
   },
@@ -54,9 +60,9 @@ const underline = {
 
 export default function CollectionCategoryLink({
   className = "",
-  color = "#ffffff",
+  color = palette.white,
   href,
-  hoverColor = "#FFE8D6",
+  hoverColor = palette.ambientShowcase1,
   hoverOpacity = 1,
   label,
   onClick,

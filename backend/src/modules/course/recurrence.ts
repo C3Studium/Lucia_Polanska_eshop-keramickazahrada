@@ -281,3 +281,124 @@ export const planWeeklyOccurrences = (
   }
   return { ok: true, occurrences, truncated }
 }
+
+/* ------------------------------------------------------------------------- */
+/* Multi-day plan                                                            */
+/* ------------------------------------------------------------------------- */
+
+/**
+ * The owner clicks the days in a calendar rather than typing one date.
+ *
+ * Several picked days and „opakovat každý týden" compose: each picked day is a
+ * seed, and each seed grows its own weekly series through the horizon. Picking
+ * 3., 11. and 16. October with repeat-until-31 gives 3/10/17/24/31 + 11/18/25 +
+ * 16/23/30 — the union, deduplicated, in time order.
+ *
+ * Deduplication matters because two seeds can collide (pick a Monday and the
+ * Monday after it, repeat weekly, and both series cover the same later dates).
+ * The owner picked days, not rows; two clicks that mean the same session must
+ * not create two terms.
+ *
+ * A picked day later than the horizon still creates its own term — the click
+ * was explicit, and silently dropping it would be the surprising reading of
+ * „vytvoř tyhle dny".
+ */
+
+const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/
+
+export type TimeOfDay = { hour: number; minute: number }
+
+/** "HH:MM" (24h) → components, or null when it is not a real wall time. */
+export const parseTimeOfDay = (time: string): TimeOfDay | null => {
+  const match = TIME_PATTERN.exec(String(time ?? "").trim())
+  if (!match) {
+    return null
+  }
+  return { hour: Number(match[1]), minute: Number(match[2]) }
+}
+
+/** A "YYYY-MM-DD" that names a real calendar day. */
+export const isValidDayKey = (key: string): boolean => {
+  if (!DAY_KEY_PATTERN.test(String(key ?? ""))) {
+    return false
+  }
+  const [year, month, day] = key.split("-").map(Number)
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month)
+}
+
+export type MultiDayPlan =
+  | {
+      ok: true
+      /** UTC ISO instants, deduplicated and ascending. */
+      occurrences: string[]
+      /** True when the union exceeded `cap` and was cut short. */
+      truncated: boolean
+      reason?: undefined
+    }
+  | {
+      ok: false
+      reason: "no_days" | "invalid_time" | "invalid_day"
+      occurrences?: undefined
+      truncated?: undefined
+    }
+
+export const planMultiDayOccurrences = (
+  dayKeys: string[],
+  time: string,
+  untilDayKey: string | null,
+  cap: number = MAX_OCCURRENCES
+): MultiDayPlan => {
+  const clock = parseTimeOfDay(time)
+  if (!clock) {
+    return { ok: false, reason: "invalid_time" }
+  }
+
+  const days = Array.from(new Set(dayKeys ?? []))
+  if (!days.length) {
+    return { ok: false, reason: "no_days" }
+  }
+  if (days.some((key) => !isValidDayKey(key))) {
+    return { ok: false, reason: "invalid_day" }
+  }
+
+  const instants = new Set<string>()
+  for (const key of days.slice().sort()) {
+    let date: PlainDate = parseDayKeyToPlain(key)
+    for (;;) {
+      instants.add(
+        utcFromPragueWallClock({
+          year: date.year,
+          month: date.month,
+          day: date.day,
+          hour: clock.hour,
+          minute: clock.minute,
+          second: 0,
+        }).toISOString()
+      )
+      if (!untilDayKey) {
+        break
+      }
+      const next = addDays(date, 7)
+      if (dayKeyOfDate(next) > untilDayKey) {
+        break
+      }
+      date = next
+      // The cap is enforced on the union below; a single runaway series still
+      // has to stop somewhere, and no horizon holds more than cap weeks.
+      if (instants.size > cap * 4) {
+        break
+      }
+    }
+  }
+
+  const occurrences = Array.from(instants).sort()
+  if (occurrences.length > cap) {
+    return { ok: true, occurrences: occurrences.slice(0, cap), truncated: true }
+  }
+  return { ok: true, occurrences, truncated: false }
+}
+
+const parseDayKeyToPlain = (key: string): PlainDate => {
+  const [year, month, day] = key.split("-").map(Number)
+  return { year, month, day }
+}

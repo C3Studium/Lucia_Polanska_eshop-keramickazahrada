@@ -171,10 +171,14 @@ export default function WishlistToggle({
     }
   }
 
+  /* Barva jde přes currentColor, ne literálem: `color` na .button i .login je
+     var(--cream-06), takže render je totožný (naměřeno rgb(255 232 214) před
+     i po) a v komponentě nezůstal zápis barvy. Velikost bere .icon svg
+     (55 % kolečka) — v JSX žádné px. */
   const icon = inWishlist ? (
-    <BookmarkFull size="22" color="#ffe8d6" />
+    <BookmarkFull color="currentColor" />
   ) : (
-    <Bookmark size="22" color="#ffe8d6" />
+    <Bookmark color="currentColor" />
   )
 
   if (isAuthenticated === false) {
@@ -186,6 +190,7 @@ export default function WishlistToggle({
         title="Přihlásit se a uložit do oblíbených"
       >
         <motion.span
+          className={s.icon}
           whileHover={whileHover}
           whileTap={whileTap}
           transition={transition}

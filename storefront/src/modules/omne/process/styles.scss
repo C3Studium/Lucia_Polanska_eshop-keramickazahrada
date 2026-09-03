@@ -1,7 +1,7 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
 .process{
-    --process-ink: #212222;
+    --process-ink: var(--black-03);
 
     position: relative;
     height: 150vh;
@@ -14,7 +14,7 @@
         left: 3.5%;
         right: 3.5%;
         height: 1px;
-        background: rgba(33, 34, 34, .2);
+        background: rgb(var(--black-03-rgb) / .2);
     }
 
     .sticky__container{
@@ -60,8 +60,8 @@
                         pointer-events: none;
                         background: linear-gradient(
                             180deg,
-                            rgba(18, 18, 14, .02) 34%,
-                            rgba(18, 18, 14, .68) 100%
+                            rgb(var(--ink-01-rgb) / .02) 34%,
+                            rgb(var(--ink-01-rgb) / .68) 100%
                         );
                     }
 
@@ -80,7 +80,7 @@
                         left: clamp(18px, 2vw, 28px);
                         bottom: clamp(17px, 2vw, 26px);
                         z-index: 2;
-                        color: rgba(255, 255, 255, .92);
+                        color: rgb(var(--white-rgb) / .92);
                         font-family: "Sentient-Regular", serif;
                         font-size: clamp(1rem, 1.2vw, 1.28rem);
                         line-height: 1.06;
@@ -89,7 +89,7 @@
                         small{
                             display: block;
                             margin-bottom: 9px;
-                            color: rgba(255, 255, 255, .68);
+                            color: rgb(var(--white-rgb) / .68);
                             font-family: inherit;
                             font-size: .54em;
                             letter-spacing: 0.12em;
@@ -112,8 +112,8 @@
 
             .process__eyebrow{
                 margin: 0 0 18px;
-                color: rgba(33, 34, 34, .54);
-                font-size: clamp(0.75rem, .68vw, 0.75rem);
+                color: rgb(var(--black-03-rgb) / .54);
+                font-size: clamp(0.75rem, 1vw, 0.875rem);
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
             }
@@ -133,7 +133,7 @@
                     display: flex;
                     align-items: center;
                     gap: 7px;
-                    color: rgba(33, 34, 34, .4);
+                    color: rgb(var(--black-03-rgb) / .4);
                     font-size: clamp(0.8125rem, .88vw, .98rem);
                     font-weight: 400;
                     white-space: nowrap;
@@ -165,7 +165,7 @@
                 .line{
                     width: clamp(18px, 2.4vw, 44px);
                     height: 1px;
-                    background: rgba(33, 34, 34, .2);
+                    background: rgb(var(--black-03-rgb) / .2);
                 }
             }
 
@@ -174,7 +174,7 @@
                 height: 1px;
                 margin-top: 24px;
                 overflow: hidden;
-                background: rgba(33, 34, 34, .14);
+                background: rgb(var(--black-03-rgb) / .14);
 
                 span{
                     display: block;
@@ -215,8 +215,8 @@
 
                         .text__chapter{
                             flex: 0 0 auto;
-                            color: rgba(33, 34, 34, .58);
-                            font-size: clamp(0.75rem, .72vw, .8rem);
+                            color: rgb(var(--black-03-rgb) / .58);
+                            font-size: clamp(0.75rem, 1vw, 0.875rem);
                             letter-spacing: 0.12em;
                             text-transform: uppercase;
                         }
@@ -225,13 +225,13 @@
                             flex: 1;
                             height: 1px;
                             overflow: hidden;
-                            background: rgba(33, 34, 34, .13);
+                            background: rgb(var(--black-03-rgb) / .13);
 
                             i{
                                 display: block;
                                 width: 100%;
                                 height: 100%;
-                                background: rgba(33, 34, 34, .48);
+                                background: rgb(var(--black-03-rgb) / .48);
                                 transform-origin: left;
                             }
                         }
@@ -253,7 +253,7 @@
                     .text__detail{
                         width: min(72%, 620px);
                         margin-top: clamp(24px, 3vw, 44px);
-                        color: rgba(33, 34, 34, .65);
+                        color: rgb(var(--black-03-rgb) / .65);
                         font-size: clamp(1rem, 1.12vw, 1.28rem);
                         font-weight: 300;
                         line-height: 1.35;

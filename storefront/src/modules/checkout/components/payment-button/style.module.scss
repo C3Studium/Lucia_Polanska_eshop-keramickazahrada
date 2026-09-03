@@ -34,17 +34,44 @@
   .button{
     position: relative;
     display: grid;
-    width: 250px;
-    height: 50px;
-    padding: 0 28px;
+
+    /* Šířka je vodorovný rozměr, takže vw — ale jako PODLAHA, ne jako pevná míra.
+       Pevná šířka ořezávala vlastní popisek: `.label` má white-space: nowrap a
+       `.button` overflow: hidden, takže „Potvrdit — zaplatíte při vyzvednutí"
+       (229px při 15px) nikdy nevešlo do obsahových 192px a uřízlo se z obou stran.
+       S width: auto tlačítko dorovná obsah, min-width drží tvar pilulky u krátkých
+       popisků („Potvrdit objednávku") a max-width ho nepustí přes sloupec.
+       Podlaha 12rem se schválně kryje s `min-width: 12rem` v `.root .button` —
+       kdyby byla nižší, tiše by ji podlezla a to pravidlo by se stalo mrtvým kódem.
+       Živé pásmo: 192/0.16 = 1200px … 248/0.16 = 1550px. */
+    width: auto;
+    min-width: clamp(12rem, 16vw, 15.5rem);
+    max-width: 100%;
+
+    /* Výška soupeří o výšku okna, takže vh — a tohle je celé řešení nízkého
+       laptopu. Podlaha 2.75rem = 44px je přesně dotyková podlaha, kterou
+       globals.scss vynucuje na @include touch; strop 3.125rem = původních 50px,
+       takže na 1920 se nic nezměnilo a nad 1921 to zvedne ramp.
+       Živé pásmo je ve VÝŠCE okna: 44/0.06 = 733px … 50/0.06 = 833px.
+       Naměřeno: 720 → 44,0 · 768 → 46,1 · 800 → 48,0 · 982 → 50,0 · 1080 → 50,0
+       · 1351 (root 21.27) → 66,5. Proto tenhle komponent nepotřebuje ani jedno
+       pravidlo v `lt`. */
+    height: clamp(2.75rem, 6vh, 3.125rem);
+
+    /* Vodorovný padding → vw. 20px … 28px, živé pásmo 1111px … 1556px. */
+    padding: 0 clamp(1.25rem, 1.8vw, 1.75rem);
+
     place-items: center;
     cursor: pointer;
     border-radius: 999px;
     overflow: hidden;
-    border: 1px solid #20211c;
-    box-shadow: 0 12px 28px -22px rgba(0,0,0,.9);
-    background-color: #ffe8d6;
-    color: #20211c;
+    border: 1px solid var(--ink-05);
+    /* 12px/28px/-22px při rootu 16px, jen v rem — stín nemá být fyzický, má růst
+       s tlačítkem. Clamp tu nedává smysl (nesoupeří o žádnou osu okna), stačí,
+       že strop v rem zvedne ramp nad 1921. */
+    box-shadow: 0 .75rem 1.75rem -1.375rem rgb(var(--black-01-rgb) / .9);
+    background-color: var(--cream-06);
+    color: var(--ink-05);
     transition:
       color 160ms ease 180ms,
       border-color 280ms ease,
@@ -52,7 +79,7 @@
 
     &:hover,
     &:focus-visible {
-      color: #ffe8d6;
+      color: var(--cream-06);
     }
 
     &:disabled {
@@ -60,6 +87,10 @@
       opacity: .46;
     }
 
+    /* SVISLÝ TELEFON — druhé kolo, nesaháno. Poznámka pro něj: 90×35px je pod
+       44px dotykovou podlahou, kterou globals.scss vynucuje uvnitř @include
+       touch (`min-height: 44px !important` na button). Výška 35px se tam tedy
+       stejně neprosadí a šířka 90px zůstane pod cílem. */
     @include vb((
         s: (width: 90px, height: 35px),
     ));
@@ -72,7 +103,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: #20211c;
+  background: var(--ink-05);
   transform-origin: left center;
 }
 
@@ -80,5 +111,22 @@
   position: relative;
   z-index: 1;
   white-space: nowrap;
-  font: 400 15px/1 "Sansation-Regular", sans-serif;
+
+  /* Rozepsáno ze zkratky `font:`, aby velikost mohla být clamp — zkratka
+     s clamp() sice parsuje, ale zároveň nuluje font-style/variant/stretch,
+     a to tady nikdo nechce.
+
+     Prostřední člen není odhad, je odvozený z šířky tlačítka, aby text a jeho
+     krabice zamrzly ve stejném bodě a poměr text/krabice se přes rozsah
+     nepřevracel: šířka narazí na strop, když 16vw = 248px, tedy na 1550px;
+     strop typu 1.1rem = 17.6px má tedy vyjít na týchž 1550px →
+     17.6/1550 = 1.135vw.
+     Živé pásmo: 14/0.01135 = 1233px … 17.6/0.01135 = 1551px.
+     Naměřeno: 1280 → 14,53 · 1366 → 15,50 · 1440 → 16,34 · 1512 → 17,16
+     · 1550 a výš → 17,60 · 2552 (root 21.27) → 23,39. Strop je v rem, takže
+     nad 1921 ho zvedne ramp — přesně to, co dosud nešlo, protože 15px byl px. */
+  font-family: "Sansation-Regular", sans-serif;
+  font-weight: 400;
+  font-size: clamp(.875rem, 1.135vw, 1.1rem);
+  line-height: 1;
 }

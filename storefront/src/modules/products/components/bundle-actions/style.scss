@@ -1,12 +1,56 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
+/*
+ * Sada „balíček" v nákupním sloupci PDP.
+ *
+ * Osy: co se skládá na výšku sloupce (paddingy pásů, min-height řádků, svislé
+ * mezery) visí na `vh`; co je široké (mezera mřížky, sloupec popisky, typ) na
+ * `vw`. Proto tady není jediné pravidlo v `lt` — na 1366×768 i 1220×660 se
+ * sloupec sevře sám.
+ *
+ * Krajní členy jsou v `rem`, aby je nad 1921 zvedl ramp z globals.scss. Před
+ * touhle úpravou byly všechny v px a naměřená výška komponenty byla 528.52 px
+ * na 1920×1080 i na 2552×1351 — tedy nula růstu přes celou rampu.
+ *
+ * ── SVISLÝ TABLET ────────────────────────────────────────────────────────────
+ * Panel nemá vlastní stopu pro šířku a mít ji nemá: šířku mu dává nákupní
+ * sloupec `.product__story` a ten se v portrétu láme třikrát. Naměřeno na
+ * skutečné sadě (harness, viz .rdshots/harness/README.txt) po převážení stop
+ * v `ProductPage/product/style.scss`:
+ *
+ *     430×932    telefon, složený tok      panel 395.63 px
+ *     599×900    ještě telefon             panel 551.08 px
+ *     600×960    v(md), DVA sloupce        panel 272.00 px   ← nejužší portrét
+ *     768×1024   v(md), dva sloupce        panel 307.97 px
+ *     834×1112   v(md), dva sloupce        panel 334.44 px
+ *     1024×1366  v(lg), TŘI sloupce        panel 256.00 px
+ *     1200×1920  v(lg), tři sloupce        panel 292.23 px
+ *
+ * Tablet tedy NENÍ širší telefon ani pro tenhle panel — je to pravý opak:
+ * na 600 px se panel proti telefonu o 279 px ZÚŽÍ (551.08 → 272.00), protože
+ * dostane jeden ze dvou sloupců místo celé stránky. Všechno, co v tomhle
+ * souboru na tabletu řeším, plyne z těch 272–334 px, ne z toho, že je displej
+ * velký.
+ *
+ * Svisle je to obráceně a proto se sem nepíše ani jedno `vh` pravidlo: výšky
+ * má tablet dost a stropy v `rem` ho drží samy. `.bundleInline` padding-top
+ * clamp(1.625rem, 3.5vh, 2.375rem) je na 960 i 1024 uvnitř živého pásma
+ * (33.6 a 35.84 px) a od výšky 1086 px stojí o strop 38 px; `__purchase`
+ * padding-top clamp(2.625rem, 6vh, 4.125rem) dá 57.6 / 61.4 px a od 1100 px
+ * strop 66 px. Nic se tedy na vysokém tabletu nerozjede — a naopak je
+ * z čeho zaplatit řádek navíc tam, kde nestačí ŠÍŘKA. Přesně to dělá
+ * `v(md)` u `.bundleInline__activeTitle` níž a je to jediné tabletové
+ * pravidlo, které tenhle soubor potřeboval.
+ */
+
 .bundleInline {
-  --bundle-cream: #ffe8d6;
-  --bundle-olive: #bbb788;
-  --bundle-green: #747e62;
+  --bundle-cream: var(--cream-06);
+  --bundle-olive: var(--sage-01);
+  --bundle-green: var(--olive-15);
   display: flex;
   min-height: 0;
-  padding-top: clamp(26px, 3.5vh, 38px);
+  // živé pásmo 743–1086 px výšky okna
+  padding-top: clamp(1.625rem, 3.5vh, 2.375rem);
   flex: 1;
   flex-direction: column;
 }
@@ -15,9 +59,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 13px;
-  color: rgba(255, 232, 214, 0.58);
-  font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+  // živé pásmo 667–1250 px výšky okna
+  padding-bottom: clamp(0.5rem, 1.2vh, 0.9375rem);
+  color: rgb(var(--cream-06-rgb) / .58);
+  font: 400 0.8125rem/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -25,13 +70,89 @@
 .bundleInline__previews {
   display: grid;
   grid-template-columns: repeat(3, minmax(90px, 1fr));
-  gap: clamp(10px, 0.8vw, 15px);
-  padding: 16px 0 26px;
-  border-top: 1px solid rgba(255, 232, 214, 0.2);
-  border-bottom: 1px solid rgba(255, 232, 214, 0.2);
-  overflow-x: auto;
+  // vodorovná mezera mřížky → vw; živé pásmo 1111–1667 px šířky
+  gap: clamp(0.625rem, 0.9vw, 0.9375rem);
+  // svisle → vh; živá pásma 667–1200 (nahoře) a 667–1167 (dole)
+  padding: clamp(0.625rem, 1.5vh, 1.125rem) 0 clamp(1rem, 2.4vh, 1.75rem);
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
 
-  @include v(lg) {
+  /*
+   * Obě osy napsané, i když se scrolluje jen jedna. Se samotným
+   * `overflow-x: auto` dopočítá prohlížeč druhou osu z `visible` taky na
+   * `auto` — naměřeno `ovf=auto/auto` na všech sedmi viewportech, takže tenhle
+   * pruh byl i svislý scroll kontejner, aniž o to někdo požádal. Svisle přetéct
+   * nemá čím (scrollHeight = clientHeight na všech sedmi), proto `hidden`.
+   *
+   * Bez `data-lenis-prevent`, schválně: Lenis se na skutečném dotyku vůbec
+   * nekonstruuje (`lib/context/LenisContext.tsx` má early return na
+   * `(hover: none) and (pointer: coarse)`) a po opravě stopy níž nemá tenhle
+   * prvek na žádném měřeném viewportu vodorovné přetečení (scrollWidth =
+   * clientWidth), takže by kolo ani prst neměly co scrollovat. Atribut by tady
+   * jenom zastavil stránku pod prstem, který leží na náhledech — přesný opak
+   * toho, k čemu je. Kdyby sada někdy dostala sloupec užší než 290px, patří
+   * sem i on, stejně jako ho má `.soldProducts__viewport`.
+   */
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  /*
+   * Obě stopy mění DRUH stopy mřížky, ne velikost: zahazují 90px minimum, aby
+   * se tři náhledy vešly do užšího sloupce místo aby jely vodorovně. Mřížka
+   * s minimem měří 3 × 90 + 2 × 10 = 290px; kde je nákupní sloupec užší,
+   * přeteče a `overflow-x` z ní udělá scroll, který tam nikdo nechtěl.
+   *
+   * v(xs) 320, ne v(lg) 1000. Na 320×568 je sloupec 288px široký
+   * (`.product__story` má v `below-px(560px)` padding-inline
+   * clamp(1rem, 4vw, 1.5rem), tedy na podlaze 16px), takže 290px mřížky
+   * přetékalo — naměřeno scrollWidth 290 proti clientWidth 288 a třetí náhled
+   * na [216,306] proti rodiči končícímu na 304. v(xs) je min-width 320 +
+   * portrait, takže jedním pravidlem pokrývá i to, proč tu v(lg) stálo:
+   * portrétní tablet drží v `v(lg)` desktopovou třísloupcovou mřížku a nechává
+   * na sadu 256px, tedy míň než 290px minima. Dvě stopy s toutéž deklarací by
+   * emitovaly tentýž řádek CSS dvakrát; Options/Colors/Select i
+   * Options/Sizes/Select udělaly týž krok. Naměřeno po opravě:
+   * 320 → 3 × 89.33, 390 → 3 × 112.66, 430 → 3 × 126, všude
+   * scrollWidth = clientWidth.
+   *
+   * h(sm) 900px drží landscape a živý je na tabletu: 1024×768 dává sloupec
+   * 219.66px (bez minima 3 × 66.55 + 20 = 219.66, s minimem by to bylo 290,
+   * tedy 70px ven). Telefony na šířku ho nepotřebují ani jeden — po foldu
+   * `below-with-phone(sm)` v product/style.scss je sloupec 522.55px na 568×320
+   * a 720px na 932×430, takže 290px se tam vejde tak jako tak (naměřeno
+   * 3 × 167.52 a 3 × 233.33, scrollWidth = clientWidth). phs stejně tuhle
+   * stopu nesplňuje (568 < 900) a nic mu nechybí.
+   *
+   * SVISLÝ TABLET: tři sloupce ZŮSTÁVAJÍ, jízda se nezavádí. `v(xs)` je
+   * min-width 320 + portrait, tedy nadmnožina celého tabletového pásma, takže
+   * je to hotové jedním pravidlem a další stopa sem nepatří. Přeměřeno po
+   * převážení stop v product/style.scss: 600 → 3 × 84.00, 768 → 3 × 95.98,
+   * 834 → 3 × 104.81, 1024 → 3 × 78.66; mezera všude 10px (0.9vw je na
+   * tabletu hluboko pod podlahou 0.625rem, což je správně — v úzkém sloupci
+   * se mezera zužovat nemá) a všude scrollWidth = clientWidth, tedy nic
+   * nepřetéká a `overflow-x` výše zůstává bez práce.
+   *
+   * Dotykový cíl karty: `.bundleInline__preview` je `<button>`, takže na něj
+   * sedí `min-height: 44px !important` z globals.scss r. 422. Ta podlaha je
+   * na tabletu stejně nečinná — naměřená karta je 84 × 111 px na 600 a
+   * 95.98 × 123 px na 768, protože nese čtvercový náhled přes celou šířku.
+   *
+   * Co se na tabletu NEVEJDE a schválně se s tím nic nedělá: název v kartě.
+   * `strong` má `white-space: nowrap` + `text-overflow: ellipsis` a na 768
+   * mu zbývá 68.94–72.11px (karta 95.98 minus pořadové číslo 15.88–19.08
+   * a mezera 8), zatímco nejkratší ze tří názvů („Dekorativní tyčky
+   * a zápichy") měří 187.03px inkoustu — dvě ze tří karet proto vysadí
+   * shodné „Keramic…". Ořez ale NENÍ tabletová regrese, je to stav všech
+   * úzkých sloupců: 1220×660 dává kartu 81.17px a 1024×768 jen 66.55px, tedy
+   * míň než tablet. Nepomáhá ani ta největší obrazovka — na 2552×1351 je
+   * karta 156.75px, jenže nad 1921 zvětšuje ramp v témž poměru i písmo
+   * názvu, takže se podíl ořezu nemění. Jediný viewport v celé matici, kde se
+   * název vešel celý, byl starý 768×1024 (karta 228.84px) — a to jen proto,
+   * že tam panel dostával 707px roztaženého telefonu. Identita karty visí na
+   * náhledu a pořadovém čísle; kdyby se to mělo změnit, je to změna návrhu
+   * celého pásu náhledů, ne tabletová oprava, a musela by platit i pro noťas.
+   */
+  @include v(xs) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -43,17 +164,15 @@
 .bundleInline__preview {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 9px 8px;
+  // Typografické mezery uvnitř karty, ne pás soupeřící o výšku okna → rem.
+  gap: 0.5625rem 0.5rem;
   min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 232, 214, 0.48);
+  color: rgb(var(--cream-06-rgb) / .48);
   text-align: left;
   cursor: pointer;
-
-  &:focus {
-  }
 
   &:focus-visible .bundleInline__previewMedia {
     outline: var(--focus-ring-width) solid var(--focus-ring);
@@ -66,14 +185,14 @@
 
   > span:not(.bundleInline__previewMedia) {
     color: var(--bundle-olive);
-    font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+    font: 400 0.8125rem/1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.1em;
   }
 
   strong {
     overflow: hidden;
     color: inherit;
-    font: 400 15px/1.2 "Sansation-Regular", sans-serif;
+    font: 400 0.9375rem/1.2 "Sansation-Regular", sans-serif;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -88,9 +207,9 @@
 .bundleInline__previewImage {
   width: 100% !important;
   padding: 0 !important;
-  border: 1px solid rgba(255, 232, 214, 0.12) !important;
+  border: 1px solid rgb(var(--cream-06-rgb) / .12) !important;
   border-radius: 0 !important;
-  background: #efefed !important;
+  background: var(--cream-08) !important;
   box-shadow: none !important;
 }
 
@@ -103,20 +222,28 @@
 }
 
 .bundleInline__configuration {
-  padding: 21px 0 0;
+  // živé pásmo 718–1231 px výšky okna
+  padding: clamp(0.875rem, 1.95vh, 1.5rem) 0 0;
 }
 
 .bundleInline__activeTitle {
   display: flex;
-  min-height: 38px;
-  padding-bottom: 12px;
+  // živé pásmo 914–1143 px výšky okna
+  min-height: clamp(2rem, 3.5vh, 2.5rem);
+  // živé pásmo 727–1273 px výšky okna
+  padding-bottom: clamp(0.5rem, 1.1vh, 0.875rem);
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  /* Dvě osy jedním zápisem, ne táž vlastnost dvakrát. Vodorovná mezera mezi
+     „Upravujete" a názvem je 0.875rem a platí, dokud je řádek jednořádkový;
+     svislá 0.375rem se zapne až tam, kde se řádek v `v(md)` níž zalomí.
+     Dokud je `flex-wrap: nowrap`, je row-gap bez účinku, takže se tímhle
+     nikde nic nemění a v tabletové stopě nemusí stát druhé `gap`. */
+  gap: 0.375rem 0.875rem;
 
   small {
-    color: rgba(255, 232, 214, 0.46);
-    font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+    color: rgb(var(--cream-06-rgb) / .46);
+    font: 400 0.8125rem/1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
@@ -124,42 +251,105 @@
   span {
     overflow: hidden;
     color: var(--bundle-olive);
-    font: 400 clamp(18px, 1.25vw, 22px) / 1 "Sentient-LightItalic",
+    // 1.25vw mělo živé pásmo 1440–1760, tedy na 1220 i 1366 stálo na podlaze;
+    // 1.35vw je posouvá na 1333–1630.
+    font: 400 clamp(1.125rem, 1.35vw, 1.375rem) / 1 "Sentient-LightItalic",
       "Sentient-Regular", serif;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /*
+   * Svislý tablet: popiska a název NAD SEBOU, ne vedle sebe.
+   *
+   * Je to jediné místo panelu, kde se tabletu nedostává ŠÍŘKY na to, co
+   * telefon zvládá — a zároveň je to místo, kde má nadbytek VÝŠKY čím
+   * zaplatit. „UPRAVUJETE" měří 94.69px, mezera 14px, takže na název zbývá
+   * sloupec minus 108.69px:
+   *
+   *     430×932   telefon   panel 395.63  →  název 234.66px, celý
+   *     600×960   v(md)     panel 272.00  →  název 163.31px, uříznuto 72px
+   *     768×1024  v(md)     panel 307.97  →  název 199.28px, uříznuto 36px
+   *     834×1112  v(md)     panel 334.44  →  název 225.75px, uříznuto 9px
+   *     1024×1366 v(lg)     panel 256.00  →  název 147.31px, uříznuto 88px
+   *     1200×1920 v(lg)     panel 292.23  →  název 183.55px, uříznuto 51px
+   *
+   * Telefon tedy název konfigurované položky UKAZUJE a tablet ho ztrácel —
+   * přesně obráceně, než jak to má být na zařízení, kde se sada vybírá prstem.
+   * `flex-wrap: wrap` pošle název na vlastní řádek a ten má celou šířku
+   * sloupce: naměřeno 234.66px a nula ořezu na VŠECH šesti šířkách výše.
+   * Zaplatí se 12.9–16.55px výšky (0.375rem row-gap ze základu + jeden řádek
+   * 18px), tedy 1.3–1.7 % viewportu, který má 960–1920px. `min-height`
+   * i `align-items: baseline` výše zůstávají bez účinku — zalomený blok měří
+   * 50.14–53.59px proti stropu min-height 40px a každý řádek má jen jednu
+   * položku.
+   *
+   * `v(md)`, ne `v(lg)`: ořez je největší právě na 1024 (88px), takže by
+   * stopa od 1000 minula obě iPadové šířky. min-width 600 + portrait pokryje
+   * celé pásmo jedním pravidlem. Landscape se nedotkne — na 1366×768 má panel
+   * 324.16px a na 2552×1351 510.09px, tam se řádek nelomí a `v()` je stejně
+   * portrait-only (pravidlo 4).
+   *
+   * AŽ ZA deklaracemi, které přebíjí: mixin emituje obyčejné vnořené media
+   * query, ne @layer, takže při stejné specificitě rozhoduje pořadí v souboru.
+   */
+  @include v(md) {
+    flex-wrap: wrap;
+  }
 }
 
+/*
+ * Cizí vazba: `.product__details__subDetails__colors` je třída z
+ * `ProductPage/product/style.scss` (r. 492–512) — sázejí ji ProductOptions,
+ * které si sada půjčuje. Tady se jenom srovnávají jednotky téhle převazby,
+ * v cizím souboru se nemění nic. Základ tam je clamp(82px, 6vw, 112px) /
+ * min-height 62px / padding 11px 0 / p 12px.
+ */
 .bundleInline__configuration .product__details__subDetails__colors {
-  grid-template-columns: clamp(96px, 6.5vw, 124px) minmax(0, 1fr);
-  min-height: 58px;
-  padding: 10px 0;
+  // 6.5vw bylo živé 1477–1908 (na celém laptopovém pásmu podlaha); 7.5vw dává 1280–1653
+  //
+  // Na telefonu je 7.5vw hluboko pod podlahou (24px na 320), takže z clampu je
+  // konstanta 6rem = 96px — a to je přesně návrhová hodnota, ne náhoda:
+  // nejdelší popiska, kterou `labelFor()` umí vysadit, je „Provedení |" a měří
+  // v tomhle řezu (0.8125rem + letter-spacing .1em) 95.63px inkoustu. Níž tedy
+  // podlaha nesmí; základ v product/style.scss má 5.125rem = 82px, ale ten sází
+  // popisku o pixel menší (clamp(0.75rem, 0.68vw, 0.76rem)). Naměřeno na 320,
+  // 390, 430, 568 i 932: labelCol 96, labelInk 59.03 („Barvy |") / 87.63
+  // („Velikosti |") / 95.63 („Provedení |"), tedy jedna řádka bez zlomu.
+  grid-template-columns: clamp(6rem, 7.5vw, 7.75rem) minmax(0, 1fr);
+  // živé pásmo 906–1170 px výšky okna
+  min-height: clamp(3rem, 5.3vh, 3.875rem);
+  // živé pásmo 632–1263 px výšky okna
+  padding: clamp(0.375rem, 0.95vh, 0.75rem) 0;
 
   > p {
-    color: rgba(255, 232, 214, 0.58);
-    font-size: 13px;
+    color: rgb(var(--cream-06-rgb) / .58);
+    font-size: 0.8125rem;
   }
 }
 
 .bundleInline__purchase {
   margin-top: auto;
-  padding-top: clamp(42px, 6vh, 66px);
+  // živé pásmo 700–1100 px výšky okna
+  padding-top: clamp(2.625rem, 6vh, 4.125rem);
 
   .product__details__cta__price {
-    gap: 13px;
-    padding-bottom: 22px;
+    // vodorovná mezera ceny a poznámky → rem
+    gap: 0.8125rem;
+    // živé pásmo 700–1200 px výšky okna
+    padding-bottom: clamp(0.875rem, 2vh, 1.5rem);
 
     > p {
-      margin-top: 7px;
-      font-size: 13px;
+      margin-top: 0.4375rem;
+      font-size: 0.8125rem;
     }
   }
 
   > p {
-    margin: 12px 0 0;
-    color: rgba(255, 232, 214, 0.52);
-    font: 300 13px/1.4 "Sansation-Light", sans-serif;
+    // živé pásmo 727–1273 px výšky okna
+    margin: clamp(0.5rem, 1.1vh, 0.875rem) 0 0;
+    color: rgb(var(--cream-06-rgb) / .52);
+    font: 300 0.8125rem/1.4 "Sansation-Light", sans-serif;
     text-align: right;
   }
 }
@@ -168,29 +358,116 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 0.75rem;
+
+  /*
+   * Kolečko oblíbených drží kruh. Bez tohohle na něj padne smrštění řádku
+   * (naměřeno 38.45 × 44 px na 1220×660) a `border-radius: 50%` z něj udělá
+   * elipsu. Rezervu má pilulka: nejdelší popisek „Přidat vše do košíku" měří
+   * 147.5 px inkoustu v obsahovém boxu 184 px.
+   */
+  .product__details__cta__buy__button__add {
+    flex: 0 0 auto;
+  }
+
+  /*
+   * Řádek se musí umět zalomit, jinak tiše vyleze ze sloupce.
+   *
+   * Řádek měří kroužek + mezera 0.75rem + pilulka 13.125rem = 44 + 12 + 210
+   * = 266px. Kroužek je 2.75rem od předka, ale na DOTYKU ho zvedá
+   * `min-width: 44px` z wishlist-toggle.module.scss — v px schválně, prst je
+   * fyzický. Při root 16px to vyjde nastejno; nahoru se rozejdou a to je pro
+   * pojistku bezpečný směr, viz `v(md)` níž. Těch 210 není `--cta-pill-w`: tu
+   * publikuje `.product__details__cta__buy`, kterou sada nemá nad sebou, takže
+   * platí vlastní záloha CartButtonu `clamp(13.125rem, 16vw, 15rem)` —
+   * naměřeno 210px na všem do 1312px šířky. Sesterský řádek
+   * `.product__details__cta__buy__buttons` na běžné PDP dostane od toho předka
+   * podlahu 12rem a měří 44 + 12 + 192 = 248px, tedy o 18px míň. Ten rozdíl
+   * je celý důvod, proč sada potřebuje pojistku tam, kde PDP ne — sloupce
+   * v product/style.scss jsou počítané z 248px.
+   *
+   * Naměřeno na skutečné sadě (harness, viz .rdshots/harness/README.txt):
+   *
+   *   LANDSCAPE, `h(smt)` (≥900, ≤1399.98, ≥720 vysoko):
+   *     1024×768   sloupec 219.66px  →  266 se nevejde, 46.34px ven  ŽIVÁ
+   *     1366×768   sloupec 324.16px  →  vejde se, jedna řada         nečinná
+   *   Stopa má výškovou podmínku schválně: nepodmíněné `flex-wrap: wrap` by
+   *   potrestalo 1220×660, kde je sloupec 265.45px proti řádku 266px — tedy
+   *   0.55px, které nikdo nevidí, kdežto zalomenou pilulku ano. 660 < 720,
+   *   takže `h(smt)` ho míjí.
+   *
+   *   PORTRÉT, `v(lg)` (≥1000):
+   *     1000×1333  sloupec 256.00px  →  10.00px ven                  ŽIVÁ
+   *     1024×1366  sloupec 256.00px  →  10.00px ven                  ŽIVÁ
+   *     1060×1400  sloupec 258.14px  →   7.86px ven                  ŽIVÁ
+   *     1080×1920  sloupec 263.02px  →   2.98px ven                  ŽIVÁ
+   *     1200×1920  sloupec 292.23px  →  vejde se, rezerva 26.23px    nečinná
+   *   Těch 256px je 16rem: `v(lg)` v product/style.scss píše krajní stopu jako
+   *   `minmax(calc(16rem + <padding>), 1fr)`, takže obsah sloupce je plochých
+   *   16rem od 1000 do ~1051px a nad tím ho přebírá podíl fr. 16rem je
+   *   napsaná potřeba PDP (248px řádku + 8px rezervy), ne sady — sada je
+   *   o oněch 18px širší, a proto z ní vyleze. Pojistka je tedy živá zhruba
+   *   1000–1090px šířky a výš nečinná; iPad Pro 1024×1366 leží uvnitř.
+   *   Bez ní by kroužek oblíbených vylezl 10px doleva do 22.5px mezery mezi
+   *   sloupci, tedy z pravého zarovnání ceny nad ním i poznámky pod ním.
+   *
+   * `v(md)` (600–999, dva sloupce) pojistku NEPOTŘEBUJE a schválně tu žádná
+   * není. Nákupní stopa je tam `minmax(17rem, 0.82fr)`, takže sloupec nikdy
+   * neklesne pod 17rem = 272px, a proti řádku 266px zbývá 6px. Není to
+   * porovnání rem s vw, kde by se strany rozjely s oknem: sloupec je 17rem
+   * a řádek 13.875rem + fyzických 44px kroužku, takže při větším root písmu
+   * roste sloupec RYCHLEJI než řádek a rezerva se jen otevírá. Naměřeno:
+   * 600×960 → 272.00 (rezerva 6.00px, jedna řada),
+   * 768×1024 → 307.97 (41.97px), 834×1112 → 334.44 (68.44px). Pravidlo, které
+   * jen opakuje základní `nowrap`, by tu bylo šum.
+   *
+   * Telefony pojistku nepotřebují: po foldu `below-with-phone(sm)` je sloupec
+   * 288px na 320×568, 395.63px na 430×932, 522.55px na 568×320 a 720px na
+   * 932×430 — všude jedna řada, naměřeno.
+   */
+  @include h(smt) {
+    flex-wrap: wrap;
+  }
+
+  @include v(lg) {
+    flex-wrap: wrap;
+  }
 }
 
 .bundleInline__confirm,
 .bundleInline__error {
   width: 100%;
-  margin: 8px 0 0;
+  margin: 0.5rem 0 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
 .bundleInline__confirm {
-  color: #4c6b33;
+  color: var(--olive-06);
 }
 
 .bundleInline__error {
-  color: #8c3e30;
+  color: var(--clay-06);
 }
 
-.bundleInline__cart {
-  width: clamp(230px, 16vw, 290px) !important;
-  height: 54px !important;
-  font-size: 15px !important;
-}
-
+/*
+ * `.bundleInline__cart` schválně NEMÁ geometrii.
+ *
+ * Byla tu třetí sada rozměrů — width: clamp(230px, 16vw, 290px) !important,
+ * height: 54px !important, font-size: 15px !important — vedle CartButtonu
+ * (240 × 50 px, `cart-button.module.scss`) a „Koupit ihned"
+ * (clamp(210px, 14vw, 250px) × 50 px, `product/style.scss` r. 760–764).
+ * Naměřeno, co dělala: třída sedí na OBALU `.MButton`, ne na tlačítku, takže
+ *   – na 1920 a 2552 byl obal 290 px kolem 240px pilulky → pilulka visela
+ *     25 px od pravé hrany sloupce, mimo zarovnání s poznámkou pod ní,
+ *   – na 1220 a 1366 byla podlaha 230 px pod návrhovou šířkou 240 px, takže
+ *     se pilulka smrštila a zbytek smrštění spolkl kroužek oblíbených,
+ *   – font-size 15px byl mrtvý: `.label` si sází vlastní 16px.
+ * Jedna geometrie, jedno místo: pilulka je teď ta z `cart-button.module.scss`,
+ * a jakmile ji tenhle modul mezitím převedl na rem/vw/vh, sada z toho těží
+ * zadarmo — naměřeno po převodu 210 × 44 px na 1220×660, 240 × 50 px na 1920
+ * a 319 × 62.5 px na 2552, pokaždé lícem k pravé hraně sloupce (odstup
+ * 0.00 px od poznámky pod ní). Kdyby sada někdy potřebovala jinou pilulku,
+ * patří to na `--cta-pill-w` / `--cta-pill-h` z toho modulu, ne sem.
+ */

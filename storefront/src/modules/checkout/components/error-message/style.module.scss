@@ -1,39 +1,41 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .root {
+  /* Icon column and the marker underline are one geometry, so they read one number. */
+  --em-gutter: 2.125rem;
   position: relative;
   display: grid;
-  grid-template-columns: 34px 1fr;
+  grid-template-columns: var(--em-gutter) 1fr;
   align-items: stretch;
-  min-height: 42px;
-  margin-top: 12px;
+  min-height: clamp(2.4rem, 5vh, 3rem);
+  margin-top: clamp(.6rem, 1.5vh, .9rem);
   overflow: hidden;
-  border: 1px solid rgba(154, 86, 75, .32);
-  background: rgba(154, 86, 75, .055);
-  color: #7f4139;
-  font: 400 14px/1.45 "Sansation-Regular", sans-serif;
+  border: 1px solid rgb(var(--clay-18-rgb) / .32);
+  background: rgb(var(--clay-18-rgb) / .055);
+  color: var(--clay-05);
+  font: 400 clamp(.85rem, .9vw, .95rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
 .root::before {
   display: grid;
   place-items: center;
-  border-right: 1px solid rgba(154, 86, 75, .24);
+  border-right: 1px solid rgb(var(--clay-18-rgb) / .24);
   content: "!";
-  font: 400 13px/1 "Sentient-Regular", serif;
+  font: 400 clamp(.8rem, .85vw, .9rem)/1 "Sentient-Regular", serif;
 }
 
 .root span {
   position: relative;
   z-index: 1;
   align-self: center;
-  padding: 9px 13px;
+  padding: clamp(.5rem, 1.2vh, .7rem) clamp(.7rem, .9vw, .9rem);
 }
 
 .marker {
   position: absolute;
   right: 0;
   bottom: 0;
-  left: 34px;
+  left: var(--em-gutter);
   height: 1px;
-  background: rgba(154, 86, 75, .7);
+  background: rgb(var(--clay-18-rgb) / .7);
   transform-origin: left center;
 }

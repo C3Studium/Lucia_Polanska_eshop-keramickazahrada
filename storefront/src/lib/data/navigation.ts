@@ -86,6 +86,10 @@ function toCollectionCards(
       title: collection.title,
       href: catalogueHref("collection", collection.handle),
       image: imageFor(collection.metadata, collection.products),
+      /* Popisek pod jménem kolekce, z panelu „Zobrazit kolekci" v adminu Rozdělení.
+         Bydlí u kolekce, ne v CMS: kolekce je katalog, a když se přejmenuje nebo smaže,
+         má se s ní hnout i její věta. Prázdný je normální stav — karta pak nese jen jméno. */
+      description: subtitleOf(collection.metadata),
       productCount: collection.products?.length ?? 0,
       categories: categories
         .filter(
@@ -116,6 +120,9 @@ function toCategoryCards(
       title: category.name,
       href: catalogueHref("category", category.handle),
       image: imageFor(category.metadata, category.products),
+      /* Táž `metadata.subtitle` jako u kolekcí — tahle větev nastupuje, když katalog
+         žádné kolekce nemá a karty vezmou kategorie. */
+      description: subtitleOf(category.metadata),
       productCount: category.products?.length ?? 0,
       categories: (category.category_children ?? [])
         .slice(0, CATEGORY_LINK_LIMIT)
@@ -142,6 +149,12 @@ function catalogueHref(
   handle: string | null | undefined
 ) {
   return handle ? `/store?${kind}=${encodeURIComponent(handle)}` : "/store"
+}
+
+/** `metadata.subtitle` — jedna věta pod jménem kolekce, nebo prázdno. */
+function subtitleOf(metadata: Record<string, unknown> | null | undefined): string {
+  const value = metadata?.subtitle
+  return typeof value === "string" ? value.trim() : ""
 }
 
 /** An editor-set `metadata.image` wins; otherwise the first product that has a thumbnail. */

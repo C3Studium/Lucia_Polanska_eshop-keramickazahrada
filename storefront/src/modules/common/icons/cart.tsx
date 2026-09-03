@@ -1,10 +1,11 @@
 import React from "react"
 
 import { IconProps } from "types/icon"
+import { palette } from "styles/palette.generated"
 
 const Cart: React.FC<IconProps> = ({
   size = "21",
-  color = "#747E62",
+  color = palette.olive15,
   ...attributes
 }) => {
   return (

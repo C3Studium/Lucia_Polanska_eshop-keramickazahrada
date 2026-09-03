@@ -4,21 +4,21 @@
   display: grid;
   gap: clamp(42px, 6vh, 74px);
   width: 100%;
-  color: #20211d;
+  color: var(--ink-05);
 }
 
 .accountOrderDetailsHeader {
   display: grid;
   gap: 22px;
   padding-bottom: 30px;
-  border-bottom: 1px solid rgba(32, 33, 29, .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountOrderDetailsHeader > p,
 .accountOrderDetailsSection > span,
 .accountOrderDetailsAside > span {
   margin: 0;
-  color: rgba(32, 33, 29, .5);
+  color: rgb(var(--ink-05-rgb) / .5);
   font: 12px/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -40,22 +40,27 @@
 .accountOrderDetailsHeading h1 em {
   display: block;
   margin-left: 15%;
-  color: #7e896a;
+  color: var(--olive-19);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
 
 .accountOrderBackLink {
   flex: 0 0 auto;
-  margin-bottom: 4px;
-  --premium-link-ink: #20211d;
-  --premium-link-active-ink: #f7e5d5;
-  --premium-link-border: #20211d;
-  --premium-link-fill: #20211d;
+  /* PremiumActionLink carries width: 100%, which in this flex header resolves against the
+     whole header row: the pill measured 842px at 1366 and ran 309px off the right edge, its
+     own overflow:hidden eating the arrow. max-width is a property .root never sets, so this
+     wins without depending on stylesheet order. */
+  max-width: max-content;
+  margin-bottom: .25rem;
+  --premium-link-ink: var(--ink-05);
+  --premium-link-active-ink: var(--cream-06);
+  --premium-link-border: var(--ink-05);
+  --premium-link-fill: var(--ink-05);
 }
 
 .accountOrderDetailsIntro {
-  border-block: 1px solid rgba(32, 33, 29, .2);
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountOrderDetailsLayout {
@@ -67,14 +72,14 @@
 
 .accountOrderDetailsMain {
   display: grid;
-  border-top: 1px solid rgba(32, 33, 29, .2);
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountOrderDetailsSection {
   display: grid;
   gap: 18px;
   padding: clamp(28px, 4vw, 48px) 0;
-  border-bottom: 1px solid rgba(32, 33, 29, .2);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountOrderDetailsSection > h2 {
@@ -90,14 +95,14 @@
   gap: 24px;
   min-width: 0;
   padding: clamp(28px, 2.7vw, 44px);
-  border: 1px solid rgba(32, 33, 29, .22);
-  background: #20221d;
-  color: #f7e5d5;
-  box-shadow: 16px 18px 0 -1px rgba(126, 137, 106, .28);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
+  background: var(--ink-05);
+  color: var(--cream-06);
+  box-shadow: 16px 18px 0 -1px rgb(var(--olive-19-rgb) / .28);
 }
 
 .accountOrderDetailsAside > span {
-  color: rgba(247, 229, 213, .5);
+  color: rgb(var(--cream-06-rgb) / .5);
 }
 
 @container account-order (max-width: 980px) {

@@ -8,8 +8,10 @@ import {
 import styles from "./styles.module.scss"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Image from "next/image"
+import Link from "next/link"
 import { useState } from "react"
 import ArrowRight from "@modules/common/icons/arrow-right"
+import { palette } from "styles/palette.generated"
 
 type NavButton = {
   title?: string
@@ -22,6 +24,15 @@ type NavButton = {
   onTagAction?: (payload: { input: string; state: boolean }) => void
   className?: string
   tone?: "light" | "dark"
+  /**
+   * Je `href` adresa na tomhle webu?
+   *
+   * Rozhoduje, kudy odkaz půjde: vlastní cesta přes `LocalizedClientLink` (ten k ní doplní
+   * kód země), cizí adresa obyčejným `Link` do nového panelu. Když se prop vynechá, odvodí se
+   * z href — cokoli se schématem (`https:`, `mailto:`, `tel:`) nebo bez protokolu (`//…`) je
+   * cizí. Vypsat se dá kvůli případům, kdy odhad nestačí.
+   */
+  local?: boolean
   /** So the primary button can actually submit a form rather than only handle clicks. */
   type?: "button" | "submit"
   disabled?: boolean
@@ -36,6 +47,9 @@ type ForegroundVariantCustom = {
   palette: ButtonPalette
 }
 
+/** Adresa mimo web: cokoli se schématem (`https:`, `mailto:`, `tel:`) nebo bez protokolu (`//…`). */
+const EXTERNAL_HREF = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i
+
 const BUTTON_REST = "rest"
 const BUTTON_ACTIVE = "active"
 const BUTTON_EASE = [0.76, 0, 0.24, 1] as Easing
@@ -43,12 +57,12 @@ const BUTTON_FOREGROUND_EASE = [0.22, 1, 0.36, 1] as Easing
 
 const BUTTON_PALETTES: Record<ButtonTone, ButtonPalette> = {
   light: {
-    foreground: "#212222",
-    activeForeground: "#ffe8d6",
+    foreground: palette.black03,
+    activeForeground: palette.ambientShowcase1,
   },
   dark: {
-    foreground: "#ffe8d6",
-    activeForeground: "#212222",
+    foreground: palette.ambientShowcase1,
+    activeForeground: palette.black03,
   },
 }
 
@@ -152,6 +166,8 @@ export default function WebButton({
   onClickAction,
   className,
   tone = "light",
+  // Výchozí hodnota se odvodí z href — viz `local` v typu výš.
+  local = !EXTERNAL_HREF.test(href ?? ""),
   type = "button",
   disabled = false,
 }: NavButton) {
@@ -227,6 +243,27 @@ export default function WebButton({
   } ${className ?? ""}`
 
   if (Kind === "Link") {
+    /*
+     * Cizí adresa jde obyčejným `Link`, ne `LocalizedClientLink`.
+     *
+     * Ten druhý před href bez ptaní přilepí `/${countryCode}`, takže z odkazu na YouTube udělá
+     * `/cz/https://www.youtube.com/…` — rozbitou vnitřní cestu. Dokud tudy chodily jen vlastní
+     * cesty, nebylo to vidět; oznámení z administrace ale míří ven z webu běžně.
+     */
+    if (!local) {
+      return (
+        <Link
+          className={buttonClassName}
+          href={href ?? "/"}
+          target="_blank"
+          rel="noreferrer"
+          {...interactionProps}
+        >
+          {content}
+        </Link>
+      )
+    }
+
     return (
       <LocalizedClientLink
         className={buttonClassName}

@@ -16,10 +16,15 @@ $h: (
   xl:  1500px,
   huge: 1730px,
 
-  // 2K / QHD desktop. A 2560x1440 monitor presents a 2552x1351 viewport once the scrollbar and
-  // the browser's own chrome are subtracted, which is the size this stop was measured against.
-  // 2200px sits far enough above `huge` (1730px) that a maximised 1920 window never reaches it,
-  // and far enough below 2552px that a 2K window does not have to be edge-to-edge to qualify.
+  // Začátek rampu pro velké monitory. 1921, ne 1920: 0.8333vw je přesně 16px
+  // při 1920, takže ramp navazuje na hodnotu, která už platila, a přes hranici
+  // není skok. Sám o sobě nenese žádnou velikost — jen otevírá místo, kde
+  // globals.scss zvedá root font-size a s ním všechny stropy v rem.
+  xxl: 1921px,
+
+  // 2K / QHD desktop. Monitor 2560x1440 dává po odečtení lišt viewport
+  // 2552x1351. Ramp nad xxl už se postaral o VELIKOST; tenhle stop zůstává na
+  // to, co ramp neumí — jiné uspořádání, další sloupec, rozměr fyzicky v px.
   qhd: 2200px,
 
   // Phone, landscape. Smallest target 568×320, largest 932×430.
@@ -43,39 +48,38 @@ $h-constraints: (
   ),
   // 520px clears the tallest phone in landscape (430px) with room for browser chrome,
   // while staying well under the shortest tablet in landscape (768px).
-  //
-  // The max-width matters as much as the height. Height alone let these two claim a laptop: a
-  // 1280x720 screen leaves ~510px of viewport once Chrome's tab strip, omnibox and bookmarks bar
-  // are subtracted, so a 1220x510 laptop matched `phl` and got the phone-landscape composition —
-  // headline down from 84px to 51px, secondary labels dropped. The largest phone in landscape is
-  // 932px wide, so 1199.98px is generous for a phone and still stops exactly where `lt` begins
-  // (min-width: 1200px). The two now partition the short-viewport range instead of overlapping.
   phs: (
-    max-width: 1199.98px,
     max-height: 520px
   ),
   phl: (
-    max-width: 1199.98px,
     max-height: 520px
   ),
   lt: (
     max-height: 800px
   ),
-  // Width alone would hand this stop to an ultrawide as readily as to a 16:9 panel, and a
-  // 3440x1440 monitor is a different composition problem from a 2560x1440 one — it is wider
-  // without being taller, so a layout tuned for the extra vertical room does not fit it.
-  //
-  // 2552x1351 is 1.889:1, comfortably past 16/9 (1.778), so a real 2K browser window clears this
-  // with room to spare. A 2K window shortened past 1436px tall drops below the ratio and falls
-  // back to `huge`, which is the correct behaviour: at that point it is no longer the viewport
-  // this stop describes.
-  //
-  // Quoted so Sass emits the ratio verbatim. Unquoted, `16 / 9` is a division and the query
-  // would ship as `min-aspect-ratio: 1.7777777778` — legal in Media Queries 4, but not what
-  // anyone reading the compiled CSS expects to find.
+  // Poměr stran drží ultrawide stranou: 3440x1440 je širší, ale ne vyšší, a
+  // kompozice psaná pro 16:9 mu nesedí. 2552x1351 je 1.889:1, tedy s rezervou
+  // nad 16/9. V uvozovkách, jinak by Sass ten zlomek vydělil a poslal do CSS
+  // min-aspect-ratio: 1.7777777778.
   qhd: (
     min-aspect-ratio: "16 / 9"
   )
+);
+
+// Max-width stops. Everything above is a min-width ladder, which is the right
+// default for designing upward from the phone; these name a width a layout has
+// to fold AT, which is what an existing `@media (max-width: N)` rule already
+// says. `below()` reads this map as well as the two ladders.
+$h-max: (
+  // The phone in portrait, as a form factor rather than as a width the design
+  // grows from. Above the widest phone this table recognises (430px — see the
+  // note on `phl`) and below the narrowest tablet in portrait (`$v md`, 600px),
+  // so a 7" tablet keeps the tablet layout and a large phone does not get it.
+  //
+  // Only half the answer on its own: a phone in landscape is 932px wide and
+  // matches no max-width a tablet does not. `below-with-phone()` in _mixins.scss
+  // is what pairs this with `phs`.
+  ph: 560px
 );
 
 // Vertical (portrait) min-width breakpoints (bp → up), ordered smallest → largest.

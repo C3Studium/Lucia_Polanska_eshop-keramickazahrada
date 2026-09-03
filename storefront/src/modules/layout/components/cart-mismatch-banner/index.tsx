@@ -37,9 +37,9 @@ function CartMismatchBanner({
   return (
     <motion.aside
       className={styles.root}
-      initial={{ opacity: 0, y: -18, clipPath: "inset(0 0 100% 0)" }}
-      animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
-      exit={{ opacity: 0, y: -12, clipPath: "inset(0 0 100% 0)" }}
+      initial={{ opacity: 0, y: "-1.8vh", clipPath: "inset(0 0 100% 0)" }}
+      animate={{ opacity: 1, y: "0vh", clipPath: "inset(0 0 0% 0)" }}
+      exit={{ opacity: 0, y: "-1.2vh", clipPath: "inset(0 0 100% 0)" }}
       transition={transition}
       aria-live="polite"
     >
@@ -108,9 +108,9 @@ export default CartMismatchBanner
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
 const transition = { duration: 0.62, ease }
-const initial = { opacity: 0, y: 6 }
-const animate = { opacity: 1, y: 0 }
-const exit = { opacity: 0, y: -4 }
+const initial = { opacity: 0, y: "0.6vh" }
+const animate = { opacity: 1, y: "0vh" }
+const exit = { opacity: 0, y: "-0.4vh" }
 const transition2 = { duration: 0.35, ease }
 const variants = {
               rest: { scaleX: 0 },

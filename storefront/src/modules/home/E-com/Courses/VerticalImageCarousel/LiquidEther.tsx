@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react"
 import * as THREE from "three"
+import { palette } from "styles/palette.generated"
 
 export interface LiquidEtherProps {
   mouseForce?: number
@@ -93,7 +94,7 @@ export default function LiquidEther({
       if (Array.isArray(stops) && stops.length > 0) {
         arr = stops.length === 1 ? [stops[0], stops[0]] : stops
       } else {
-        arr = ["#ffffff", "#ffffff"]
+        arr = [palette.white, palette.white]
       }
       const w = arr.length
       const data = new Uint8Array(w * 4)

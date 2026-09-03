@@ -1,39 +1,48 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .aboutCta {
-    --cta-ink: #212222;
-    --cta-olive: #686b4f;
+    --cta-ink: var(--black-03);
+    --cta-olive: var(--olive-10);
+
+    /* Výška meta pásku. Čtou ji dvě místa — sám pásek a mřížka pod ním, která si o ni
+       krátí výšku. Jako dvě čísla se rozejdou tiše, jako token ne. V rem, aby ji ramp
+       nad 1921 zvedl spolu s písmem, které v pásku stojí. */
+    --cta-meta-h: 1.125rem;
 
     position: relative;
-    height: clamp(560px, 66svh, 760px);
-    padding: clamp(30px, 3.6vw, 62px) 4.5%;
+    /* Pás soupeří o výšku obrazovky, ne o šířku: svislé míry proto visí na svh/vh a
+       kraje jsou v rem. Nízký laptop se tím sevře sám — žádné pravidlo v lt. */
+    height: clamp(30rem, 66svh, 50rem);
+    padding: clamp(1.5rem, 4.5vh, 3.9rem) 4.5%;
     overflow: hidden;
     color: var(--cta-ink);
 
     &__meta {
-        height: 18px;
+        height: var(--cta-meta-h);
         display: flex;
         align-items: center;
-        gap: clamp(12px, 1.4vw, 24px);
-        color: rgba(33, 34, 34, .52);
-        font-size: clamp(0.75rem, .62vw, 0.75rem);
+        gap: clamp(0.75rem, 1.4vw, 1.5rem);
+        color: rgb(var(--black-03-rgb) / .52);
+        font-size: 0.75rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
 
         i {
             flex: 1;
             height: 1px;
-            background: rgba(33, 34, 34, .24);
+            background: rgb(var(--black-03-rgb) / .24);
             transform-origin: left center;
         }
     }
 
     &__composition {
         position: relative;
-        height: calc(100% - 18px);
+        height: calc(100% - var(--cta-meta-h));
         display: grid;
-        grid-template-columns: minmax(0, 1.04fr) minmax(440px, .96fr);
+        grid-template-columns: minmax(0, 1.04fr) minmax(27.5rem, .96fr);
         align-items: center;
-        gap: clamp(48px, 5.5vw, 112px);
+        /* --fvw je jedno procento rámu (globals.scss). Pod 1921 je to přesně 1vw a nic se
+           nehne; nad ním drží mezeru v poměru k rámu, ne k obrazovce, která je širší. */
+        gap: clamp(3rem, calc(5.5 * var(--fvw)), 7rem);
     }
 
     &__visuals {
@@ -46,7 +55,7 @@
         position: absolute;
         margin: 0;
         overflow: hidden;
-        box-shadow: 0 22px 58px -30px rgba(33, 34, 34, .42);
+        box-shadow: 0 22px 58px -30px rgb(var(--black-03-rgb) / .42);
         will-change: clip-path, transform;
 
         img {
@@ -62,17 +71,20 @@
         figcaption {
             position: absolute;
             z-index: 2;
-            color: rgba(255, 255, 255, .78);
-            font-size: clamp(0.75rem, .58vw, 0.75rem);
+            color: rgb(var(--white-rgb) / .78);
+            font-size: 0.75rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            text-shadow: 0 2px 12px rgba(18, 18, 15, .46);
+            text-shadow: 0 2px 12px rgb(var(--ink-01-rgb) / .46);
         }
 
         &--main {
             left: 1%;
             top: 15%;
-            width: min(39vw, 720px);
+            /* Procento sloupce, ne vw: nad 1921 je rám užší než obrazovka, takže vw
+               obrázek utrhne od mřížky. 87.8 % sloupce je přesně to, co 39vw dávalo
+               pod 1847 px, kde ještě nedosáhlo na strop. */
+            width: min(87.8%, 45rem);
             height: 70%;
             z-index: 1;
 
@@ -81,21 +93,26 @@
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
-                background: linear-gradient(180deg, transparent 52%, rgba(20, 20, 16, .38));
+                background: linear-gradient(180deg, transparent 52%, rgb(var(--ink-01-rgb) / .38));
             }
 
             figcaption {
-                left: clamp(14px, 1.3vw, 24px);
-                right: clamp(14px, 1.3vw, 24px);
-                bottom: clamp(12px, 1.2vw, 20px);
+                left: clamp(0.875rem, 1.3vw, 1.5rem);
+                right: clamp(0.875rem, 1.3vw, 1.5rem);
+                /* Svisle na vh, ne na vw: obrázek je 70 % sloupce, jehož výška
+                   visí na 66svh, takže tenhle odsazovák soupeří o výšku. Na vw
+                   byl na 1366x768 i 1366x1024 stejných 16.4px, ať byl obrázek
+                   294 nebo 418 vysoký — táž chyba osy, jakou má opravenou
+                   figcaption v omne/story. Živé pásmo 649 … 1081px výšky. */
+                bottom: clamp(0.75rem, 1.85vh, 1.25rem);
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 0.75rem;
 
                 i {
                     height: 1px;
                     flex: 1;
-                    background: rgba(255, 255, 255, .42);
+                    background: rgb(var(--white-rgb) / .42);
                 }
             }
         }
@@ -104,13 +121,13 @@
             right: -1%;
             bottom: 7%;
             z-index: 2;
-            width: clamp(160px, 15vw, 280px);
+            width: clamp(10rem, calc(15 * var(--fvw)), 17.5rem);
             aspect-ratio: .82;
-            box-shadow: 0 30px 66px -28px rgba(33, 34, 34, .58);
+            box-shadow: 0 30px 66px -28px rgb(var(--black-03-rgb) / .58);
 
             figcaption {
-                left: 12px;
-                bottom: 11px;
+                left: 0.75rem;
+                bottom: 0.6875rem;
             }
         }
     }
@@ -118,14 +135,18 @@
     &__content {
         position: relative;
         z-index: 3;
-        width: min(100%, 800px);
+        width: min(100%, 50rem);
         padding-top: 1%;
     }
 
     &__eyebrow {
-        margin: 0 0 clamp(16px, 1.65vw, 26px);
-        color: rgba(33, 34, 34, .56);
-        font-size: clamp(0.75rem, .67vw, .76rem);
+        margin: 0 0 clamp(1rem, 2.4vh, 1.625rem);
+        color: rgb(var(--black-03-rgb) / .56);
+        /* Třetí mrtvý clamp: podlaha 12px, strop 12.16px — 0.16px přes celý
+           rozsah, živé pásmo 24px široké. Stejný mikropopisek jako `&__meta`
+           a oba figcaption, takže stejná plochá 0.75rem; nad 1921 je zvedne
+           ramp společně. */
+        font-size: 0.75rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         will-change: opacity;
@@ -151,7 +172,7 @@
         }
 
         &--accent {
-            margin: .08em 0 0 clamp(46px, 6vw, 110px);
+            margin: .08em 0 0 clamp(2.875rem, 6vw, 6.875rem);
             color: var(--cta-olive);
             font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
             font-size: 1.05em;
@@ -169,20 +190,27 @@
 
     &__character {
         display: inline-block;
+        /* Nadpis se sází po znacích: `titleWords` = ["Teď", "je řada"] a druhé
+           slovo se přes Array.from() rozpadne i na mezeru, která tak skončí ve
+           vlastním inline-block uvnitř `inline-flex` rodiče. Tam se sbalí na
+           nulu — naměřeno 0.00px na všech sedmi stopech — a nadpis se četl
+           „Teď jeřada", zatímco aria-label nesl správné „Teď je řada na vás.".
+           `pre` mezeru udrží; index znaků a s ním timing animace zůstává. */
+        white-space: pre;
         will-change: opacity, transform, clip-path;
     }
 
     &__action {
-        margin-top: clamp(36px, 3.6vw, 58px);
+        margin-top: clamp(2rem, 5vh, 3.6rem);
         display: flex;
         align-items: center;
-        gap: clamp(20px, 2.4vw, 38px);
+        gap: clamp(1.25rem, 2.4vw, 2.375rem);
         will-change: opacity, transform;
 
         > p {
-            width: min(27vw, 380px);
+            width: min(48%, 24rem);
             margin: 0;
-            color: rgba(33, 34, 34, .62);
+            color: rgb(var(--black-03-rgb) / .62);
             font-size: clamp(0.8125rem, .84vw, .96rem);
             font-weight: 300;
             line-height: 1.4;
@@ -190,11 +218,8 @@
     }
 
     @include below-px(980px) {
-        height: clamp(540px, 62svh, 680px);
-
         &__composition {
             grid-template-columns: minmax(0, .9fr) minmax(400px, 1.1fr);
-            gap: 36px;
         }
 
         &__image--main {
@@ -238,7 +263,7 @@
             height: 72%;
 
             &::after {
-                background: linear-gradient(90deg, var(--about-cream) 0%, rgba(255, 232, 214, .26) 58%);
+                background: linear-gradient(90deg, var(--about-cream) 0%, rgb(var(--cream-06-rgb) / .26) 58%);
             }
         }
 

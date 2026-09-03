@@ -2,9 +2,18 @@
 
 /* Payment component styles using nested Sass structure */
 
+/* Vodorovná mezera sloupců shrnutí — jedna geometrie, jedno místo.
+   Živé pásmo 1000–1750 px. */
+$summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
+
 .root {
   position: relative;
-  padding: 34px 0 42px 58px;
+  /* Svisle na vh (nízký laptop se sevře sám).
+     Vlevo lišta pro pořadové číslo kroku: 58px → 3.625rem.
+     NENÍ to clamp schválně — lišta je SDÍLENÁ s addresses (01), shipping (02) a review (04);
+     měřeno, že 01 i 02 už jedou na 3.625rem (58 → 77.1px nad rampou). Vlastní clamp by
+     rozházel levou hranu čtyř kroků pod sebou. Velikost tady nese ramp, ne vw. */
+  padding: clamp(1.25rem, 4.4vh, 2.6rem) 0 clamp(1.75rem, 5.4vh, 3.25rem) 3.625rem;
   background: transparent;
 
   .headerRow {
@@ -12,24 +21,16 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.5rem; /* 24px */
-
-    @include hb((
-      sm: (gap: 0.5rem),
-      xs: (gap: 1rem),
-      xxs: (gap: 1rem),
-    ));
-    @include vb((
-      md: (gap: 1rem),
-      s: (gap: 1rem),
-      sm: (gap: 1rem),
-      xs: (gap: 1rem),
-    ));
+    gap: clamp(0.5rem, 1vw, 1rem); /* 0.5–1rem: živé 800–1600 px */
+    margin-bottom: clamp(1rem, 2.4vh, 1.75rem); /* 24px → svisle na vh */
   }
 
   .heading {
     display: flex;
     flex-direction: row;
+    /* Jediná velikost pro všechny kroky pokladny — táž příčka jako addresses,
+       shipping a review. Podlaha 32px do 1143 px, strop 50.4px od 1800 px,
+       živé pásmo 1143–1800. Nad 1921 strop zvedá ramp (3.15rem). */
     font-size: clamp(2rem, 2.8vw, 3.15rem);
     font-weight: 400;
     font-family: "Sentient-Regular", serif;
@@ -38,22 +39,6 @@
     gap: 0.5rem;
     align-items: baseline;
 
-    @include hb((
-      lg: (font-size: 1.8rem),
-      md: (font-size: 1.8rem),
-      mdt: (font-size: 1.8rem),
-      sm: (font-size: 1.8rem),
-      xs: (font-size: 1.6rem),
-      xxs: (font-size: 1.6rem),
-    ));
-
-    @include vb((
-      lg: (font-size: 1.8rem),
-      md: (font-size: 1.8rem),
-      s: (font-size: 1.6rem),
-      sm: (font-size: 1.6rem),
-      xs: (font-size: 1.6rem),
-    ));
     &.inactive {
       opacity: 0.5;
       pointer-events: none;
@@ -78,7 +63,7 @@
     .buttonRow{
       display: flex;
       justify-content: flex-start;
-      margin-top: 2rem;
+      margin-top: clamp(1.25rem, 3vh, 2.25rem); /* 32px → svisle na vh */
     }
   }
 
@@ -96,16 +81,16 @@
 
     span {
       /* „Jak chcete zaplatit?" was 10.4px at .56 — the question itself. */
-      color: rgba(32, 33, 28, .68);
+      color: rgb(var(--ink-05-rgb) / .68);
       font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     p {
-      max-width: 330px;
+      max-width: clamp(16rem, 24vw, 22rem); /* 330px → rem, živé 1067–1467 px */
       margin: 0;
-      color: rgba(32, 33, 28, .68);
+      color: rgb(var(--ink-05-rgb) / .68);
       font: 300 .875rem/1.35 "Sansation-Light", sans-serif;
       text-align: right;
     }
@@ -117,19 +102,18 @@
 
   .paymentStatus {
     margin: 1rem 0 0;
-    color: rgba(32, 33, 28, .66);
+    color: rgb(var(--ink-05-rgb) / .66);
     font: 400 .88rem/1.45 "Sansation-Regular", sans-serif;
   }
 
   .colThird {
     display: flex;
     flex-direction: column;
-    width: 33.333333%;
   }
 
   .sectionTitle {
     margin: 0 0 .85rem;
-    color: rgba(32, 33, 28, .68);
+    color: rgb(var(--ink-05-rgb) / .68);
     font: 600 .8125rem/1 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -137,7 +121,7 @@
 
   .sectionText {
     margin: 0;
-    color: #20211c;
+    color: var(--ink-05);
     font: 400 1rem/1.4 "Sansation-Regular", sans-serif;
   }
 
@@ -147,18 +131,18 @@
     align-items: stretch;
     gap: 0;
     width: 100%;
-    border-top: 1px solid rgba(32, 33, 28, .18);
-    border-bottom: 1px solid rgba(32, 33, 28, .18);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .18);
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
 
     .colThird {
-      width: auto;
-      min-height: 112px;
-      padding: 1.25rem 1.5rem 1.25rem 0;
-      border-right: 1px solid rgba(32, 33, 28, .14);
+      /* 112px natvrdo → vh; podlaha 80px do 615, strop 128px od 984 */
+      min-height: clamp(5rem, 13vh, 8rem);
+      padding: clamp(0.85rem, 1.9vh, 1.5rem) $summary-col-gap clamp(0.85rem, 1.9vh, 1.5rem) 0;
+      border-right: 1px solid rgb(var(--ink-05-rgb) / .14);
 
       & + .colThird {
         padding-right: 0;
-        padding-left: 1.5rem;
+        padding-left: $summary-col-gap;
         border-right: 0;
       }
     }
@@ -170,28 +154,32 @@
     gap: 0.5rem; /* 8px */
     font-size: 1rem;
     line-height: 1.5rem;
-    color: var(--fg-subtle);
+    /* --fg-subtle v _colors.scss neexistuje (0 definic) a neměl ani fallback, takže
+       deklarace propadala a řádek dědil barvu od .root. Tlumený tón se v tomhle
+       souboru píše takhle — viz .sectionText a .methodIntro výš. */
+    color: rgb(var(--ink-05-rgb) / .68);
   }
 
   .iconBox {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    /* 34px → rem; podlaha 29.6px do 1233, strop 36px od 1500 */
+    width: clamp(1.85rem, 2.4vw, 2.25rem);
+    height: clamp(1.85rem, 2.4vw, 2.25rem);
     padding: 0;
-    border: 1px solid rgba(32, 33, 28, .2);
+    border: 1px solid rgb(var(--ink-05-rgb) / .2);
     border-radius: 50%;
     background: transparent;
     box-shadow: none;
   }
 
   .submitBtn {
-    margin-top: 1.5rem; /* 24px */
+    margin-top: clamp(1rem, 2.4vh, 1.75rem); /* 24px → svisle na vh */
   }
 
   .divider {
-    margin-top: 2rem; /* 32px */
+    margin-top: clamp(1.25rem, 3vh, 2.25rem); /* 32px → svisle na vh */
   }
 
   #comgate-container {
@@ -203,9 +191,12 @@
 .root::before {
   content: "03";
   position: absolute;
-  top: 48px;
+  /* 48px → vh, drží se s padding-top .root (34px → clamp(1.25rem, 4.4vh, 2.6rem)) */
+  top: clamp(2rem, 6.2vh, 3.7rem);
   left: 0;
-  font: 600 .68rem/1 "Sansation-Regular", sans-serif;
+  /* Táž značka jako 01, 02 a 04. Podlaha .75rem je čitelnostní dno projektu —
+     .68rem = 10.88px bylo pod ním. Živé pásmo 1176…1373. */
+  font: 600 clamp(.75rem, 1.02vw, .875rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .18em;
   opacity: .48;
 }
@@ -227,92 +218,12 @@
       min-height: auto;
       padding: 1rem 0;
       border-right: 0;
-      border-bottom: 1px solid rgba(32, 33, 28, .12);
+      border-bottom: 1px solid rgb(var(--ink-05-rgb) / .12);
 
       & + .colThird {
         padding: 1rem 0;
         border-bottom: 0;
       }
     }
-  }
-}
-
-
-.ClickButton{
-  width: auto;
-  height: auto;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  .button{
-    position: relative;
-    width: 250px;
-    height: 40px;
-    cursor: pointer;
-    border-radius: 25px;
-    overflow: hidden;
-    border: none;
-    box-shadow: 0 2px 8px var(--shadows); // subtle shadow here
-    background-color: transparent;
-
-    .slider{
-        position: relative;
-        width: 100%;
-        height: 100%;
-
-        .el{
-            width: 100%;
-            height: 100%;
-            p{
-              margin: 0px;
-              font-size: 0.9rem;
-              color: var(--whiteText);
-            }
-            &:nth-of-type(2){
-                p{
-                  color: var(--whiteText);
-                }
-            }
-            &:hover{
-                .perspectiveText{
-                    transform: rotateX(90deg);
-                    p{
-                        &:nth-of-type(1){
-                            transform: translateY(-100%);
-                            opacity: 0;
-                        }
-                        &:nth-of-type(2){
-                            opacity: 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-      
-  }
-}
-
-.perspectiveText{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-  p{
-      transition: all 0.75s cubic-bezier(0.76, 0, 0.24, 1);
-      pointer-events: none;
-      text-transform: capitalize;
-      &:nth-of-type(2){
-          position: absolute;
-          transform-origin: bottom center;
-          transform: rotateX(-90deg) translateY(10px);
-          opacity: 0;
-      }
   }
 }

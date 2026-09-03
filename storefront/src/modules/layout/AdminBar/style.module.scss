@@ -1,0 +1,162 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
+/* The admin bar sits above everything, bottom-left, out of the way of the
+   navbar and the cart drawer. Deliberately not the shop's own palette — it is
+   a tool, not part of the design, and it should never be mistaken for
+   something a customer is meant to see.
+
+   That is also why the sizes below stay in raw px while the rest of the shop
+   runs on rem clamps: the bar must NOT ramp with `:root` above 1921px. A tool
+   that grows into the layout is a tool a customer starts reading. Either all
+   of these numbers move onto the scale or none of them do — none of them do.
+
+   The one thing that is not a size, and therefore does follow the page, is
+   where the bar is anchored: see `--page-inset` below.
+
+   Known and accepted: at this corner the bar can cover the cookie card, and it
+   sits over the shop banner on the bottom edge. z-index 9999 says the tool wins
+   — an admin can hide it with the pill, a customer never sees either overlap. */
+
+.bar {
+  position: fixed;
+  bottom: 16px;
+  /*
+   * + --page-inset, the same correction the navbar, the cookie card, the scroll
+   * rail and the shop banner make (see globals.scss). `fixed` resolves against
+   * the viewport, not against the 16:10 frame, so without it the bar anchors to
+   * the screen edge: on 2552x1351 the inset is 195px, and the bar was sitting on
+   * the dark band beside the page rather than inside it. Below 1921px the
+   * variable is 0px and nothing moves by a pixel.
+   */
+  left: calc(var(--page-inset, 0px) + 16px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgb(var(--black-02-rgb) / .94);
+  color: var(--white);
+  box-shadow: 0 8px 28px rgb(var(--black-01-rgb) / .28);
+  backdrop-filter: blur(10px);
+  font-size: 13px;
+  line-height: 1;
+  /* Frame, not screen — once the left edge is inside the frame, the width that
+     is still allowed to it is the frame's, otherwise a long admin e-mail could
+     run back out over the band. Below 1921px --page-max-w is exactly 100vw. */
+  max-width: calc(var(--page-max-w, 100vw) - 32px);
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green-02);
+  flex: none;
+}
+
+.who {
+  color: rgb(var(--white-rgb) / .66);
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--black-02);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--white);
+  }
+}
+
+.ghost {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--white-rgb) / .62);
+  font: inherit;
+  padding: 6px 4px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--white);
+    text-decoration: underline;
+  }
+}
+
+/* Collapsed: a small pill that says the mode is still on without covering
+   anything — hiding the bar must not hide the fact that you are an admin. */
+.pill {
+  position: fixed;
+  bottom: 16px;
+  /* Same anchor as .bar — collapsing the bar must not move it out of the frame. */
+  left: calc(var(--page-inset, 0px) + 16px);
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 0;
+  background: rgb(var(--black-02-rgb) / .86);
+  color: var(--white);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgb(var(--black-01-rgb) / .24);
+}
+
+/* Phone portrait: the bar spans the width instead of wrapping into a lump.
+   Written through the table's own helper rather than a hand-rolled media query
+   (rule 9). The offsets inside are phone offsets and stay as they are; they
+   re-declare `left` without --page-inset, which is the trap the scroll rail hit
+   — here it is harmless, because the frame only exists from 1921px up and this
+   block can never be live at the same time as the inset. */
+@include below-px(600px) {
+  .bar {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    justify-content: space-between;
+  }
+
+  .who {
+    display: none;
+  }
+}
+
+@media print {
+  .bar,
+  .pill {
+    display: none;
+  }
+}

@@ -14,15 +14,15 @@ import {
 import { heroBeat, heroReveal } from "@lib/motion-tokens"
 import Image from "next/image"
 import { useRef, useState } from "react"
-import type { SanityImageSource } from "@sanity/image-url/lib/types/types"
-import { urlFor } from "../../../../sanity/lib/image"
+import { galleryUrl, type CopyBlock, type CopyImage } from "@lib/util/site-copy"
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import WebButton from "@modules/common/components/Buttons/webButton"
+import { alpha, palette } from "styles/palette.generated"
 
-export type KurzyIntroData = {
-  content?: string
-  images?: SanityImageSource[]
-} | null
+/** Blok `kurzy.intro` z CMS. Jméno zůstává, importuje ho wrapper i stránka. */
+export type KurzyIntroData = CopyBlock | undefined
 
 /*
  * Scene order: what a course is → who it is for.
@@ -41,9 +41,18 @@ const fallbackLede =
 const fallbackAbout =
   "Na kurzu si hlínu osaháte pomalu a bez spěchu. Provedu vás celým procesem — od výběru hlíny přes modelování až po glazování a výpal. Každý si najde svůj vlastní způsob a odnese si kousek, který nikde jinde neseženete."
 
+/*
+ * One photograph per audience, above the block it belongs to.
+ *
+ * Placeholders from the existing library for now — the `image`/`alt` pair is what the three
+ * blocks are keyed on, so swapping in the real shoot later is a change to these three lines and
+ * nothing else.
+ */
 const audienceBlocks = [
   {
     number: "01",
+    image: "/assets/img/img/4.jpg",
+    imageAlt: "Dětské ruce u hrnčířské hlíny",
     eyebrow: "Školy · Školky · Kroužky",
     title: "Pro děti",
     accent: "a školy.",
@@ -53,6 +62,8 @@ const audienceBlocks = [
   },
   {
     number: "02",
+    image: "/assets/img/img/9.jpg",
+    imageAlt: "Skupina u společného tvoření v ateliéru",
     eyebrow: "Teambuilding · Společné tvoření",
     title: "Pro firmy",
     accent: "a spolky.",
@@ -62,6 +73,8 @@ const audienceBlocks = [
   },
   {
     number: "03",
+    image: "/assets/img/img/2.jpg",
+    imageAlt: "Hotový keramický kus z kurzu",
     eyebrow: "Jednotlivci · Dvojice · Malé skupiny",
     title: "Pro zájemce",
     accent: "o kurz.",
@@ -81,13 +94,68 @@ const HERO_OUT = 0.44
 const ABOUT_IN = 0.47
 
 export default function Intro({
-  data,
+  block,
+  gallery,
+  about,
   onReserveAction,
 }: {
-  data?: KurzyIntroData
+  block?: KurzyIntroData
+  /**
+   * Blok `kurzy.galerie` — tři fotky u typů kurzů.
+   *
+   * Vlastní blok, ne další fotky v `kurzy.intro`: úvod stránky si své tři
+   * bere z galerie toho bloku a míchat obojí do jednoho pole by znamenalo,
+   * že se editor musí trefovat do indexů 3–5 a vědět proč.
+   */
+  gallery?: CopyBlock
+  /** Blok `kurzy.about` — scéna „Pro koho": nadpisy, popisek a tři bloky publik. */
+  about?: CopyBlock
   /** „Pro zájemce → Vybrat termín" — opens the reservation modal. */
   onReserveAction: () => void
 }) {
+  /* Scény jedou jen ze scrollu — bez tohohle by po zapnutí editace zůstaly
+     anotace prázdné. Viz hook. */
+  useEditRerender()
+
+  const railLeft = block?.accent?.[0]?.trim() || "Kurzy · Keramická zahrada"
+  const railRight = block?.accent?.[1]?.trim() || "Písek · Malé skupiny"
+  const heroEyebrow = block?.accent?.[2]?.trim() || "Keramické kurzy · 01"
+  const scrollCue = block?.accent?.[3]?.trim() || "Pojďte dál"
+  const progressFirst = block?.accent?.[4]?.trim() || "01 · Kurzy"
+  const heroTitle = block?.title?.trim() || "U hlíny se nedá spěchat."
+  const heroAccent = block?.headline?.trim() || "A to je na tom to nejlepší."
+  const heroLede = block?.bodyText?.trim() || fallbackLede
+  /* Popisky u fotek v řádcích nadpisu — řádky `items`; samotné slovo „Kurzy"
+     je značka stránky a zůstává v kódu. */
+  const rowLabels = [
+    block?.items?.[0]?.label?.trim() || "01 · Materiál",
+    block?.items?.[1]?.label?.trim() || "02 · Vlastní tvar",
+    block?.items?.[2]?.label?.trim() || "03 · Radost",
+  ]
+
+  const aboutMetaLeft = about?.accent?.[0]?.trim() || "02 · Pro koho"
+  const aboutMetaRight = about?.accent?.[1]?.trim() || "Děti · Firmy · Zájemci"
+  const aboutEyebrow = about?.accent?.[2]?.trim() || "Kurzy pro každého"
+  const ctaContact = about?.accent?.[3]?.trim() || "Napište mi"
+  const ctaReserve = about?.accent?.[4]?.trim() || "Vybrat termín"
+  const aboutLead = about?.title?.trim() || "Nejdřív hlína."
+  const aboutAccentText = about?.headline?.trim() || "Potom nápad."
+  const aboutText = about?.bodyText?.trim() || fallbackAbout
+
+  /* Tři publika: texty z řádků `kurzy.about`, fotky z `kurzy.galerie`. */
+  const audiences = audienceBlocks.map((item, index) => {
+    const row = about?.items?.[index]
+    return {
+      ...item,
+      eyebrow: row?.lead?.trim() || item.eyebrow,
+      title: row?.label?.trim() || item.title,
+      text: row?.value?.trim() || item.text,
+      accent: row?.note?.trim() || item.accent,
+      cta: item.action === "contact" ? ctaContact : ctaReserve,
+      cmsIndex: index,
+    }
+  })
+
   const timelineRef = useRef<HTMLElement>(null)
   const [activeScene, setActiveScene] = useState(0)
 
@@ -118,7 +186,7 @@ export default function Intro({
   const background = useTransform(
     scrollYProgress,
     [0, 0.32, 0.49, 1],
-    ["#1d1e1a", "#1d1e1a", "#f3e7da", "#f3e7da"]
+    [palette.kurzyInk, palette.kurzyInk, palette.cream05, palette.cream05]
   )
   const ambientX = useTransform(
     scrollYProgress,
@@ -134,10 +202,10 @@ export default function Intro({
     scrollYProgress,
     [0, 0.42, 0.55, 1],
     [
-      "rgba(211, 106, 57, .2)",
-      "rgba(211, 106, 57, .12)",
-      "rgba(255, 232, 214, .78)",
-      "rgba(255, 232, 214, .32)",
+      alpha("kurzyAccent", .2),
+      alpha("kurzyAccent", .12),
+      alpha("ambientShowcase1", .78),
+      alpha("ambientShowcase1", .32),
     ]
   )
 
@@ -195,10 +263,21 @@ export default function Intro({
     [0.165, 0.29, HERO_HOLD + 0.14, HERO_OUT - 0.02],
     [0, 1, 1, 0]
   )
+  /*
+   * The last four scroll coordinates in this file that were still bare pixels, while the eight
+   * around them (heroTitleX/Y, image1–3, aboutY) were already written as vw/vh.
+   *
+   * Read at the 900px-tall / 1440px-wide window the numbers were authored on, so `k = 1` there
+   * and nothing moves on the reference screen: 26/900 = 2.89vh, 14/900 = 1.56vh, 24/900 = 2.67vh,
+   * 30/900 = 3.33vh, and the one horizontal nudge 26/1440 = 1.8vw. In px a 26px entrance was the
+   * same physical nudge on a 660px laptop and a 1351px desktop; as a percentage of the window it
+   * is the same GESTURE on both. Every keyframe of a value carries the same unit — a mixed pair
+   * stops being interpolatable and framer jumps instead of tweening.
+   */
   const heroCopyY = useTransform(
     scrollYProgress,
     [0.165, 0.29, HERO_OUT - 0.02],
-    [26, 0, -14]
+    ["2.89vh", "0vh", "-1.56vh"]
   )
 
   const aboutOpacity = useTransform(
@@ -211,15 +290,16 @@ export default function Intro({
     [ABOUT_IN, ABOUT_IN + 0.11, 1],
     ["4vh", "0vh", "0vh"]
   )
+  /* Sideways, so vw — the heading slides in along its own column, not against the screen height. */
   const aboutHeadingX = useTransform(
     scrollYProgress,
     [ABOUT_IN + 0.02, ABOUT_IN + 0.15, 1],
-    [-26, 0, 0]
+    ["-1.8vw", "0vw", "0vw"]
   )
   const aboutLedeY = useTransform(
     scrollYProgress,
     [ABOUT_IN + 0.055, ABOUT_IN + 0.185, 1],
-    [24, 0, 0]
+    ["2.67vh", "0vh", "0vh"]
   )
   const aboutLedeOpacity = useTransform(
     scrollYProgress,
@@ -229,10 +309,12 @@ export default function Intro({
 
   const progressScale = useTransform(scrollYProgress, [0, 1], [0.03, 1])
 
+  // Z CMS chodí hotové adresy v úložišti — žádný builder jako u Sanity.
+  // `galleryUrl` drží zálohu pro případ, že blok fotku nemá.
   const images = [
-    data?.images?.[0] ? urlFor(data.images[0]).url() : "/assets/img/img/2.jpg",
-    data?.images?.[1] ? urlFor(data.images[1]).url() : "/assets/img/img/3.jpg",
-    data?.images?.[2] ? urlFor(data.images[2]).url() : "/assets/img/img/5.jpg",
+    galleryUrl(block, 0, "/assets/img/img/2.jpg"),
+    galleryUrl(block, 1, "/assets/img/img/3.jpg"),
+    galleryUrl(block, 2, "/assets/img/img/5.jpg"),
   ]
 
   return (
@@ -269,8 +351,10 @@ export default function Intro({
           aria-labelledby="kurzy-hero-title"
         >
           <SceneMeta
-            left="Kurzy · Keramická zahrada"
-            right="Písek · Malé skupiny"
+            left={railLeft}
+            right={railRight}
+            editLeft={editable(block, "accent.0")}
+            editRight={editable(block, "accent.1")}
           />
 
           <motion.div
@@ -282,13 +366,17 @@ export default function Intro({
             }
             aria-hidden="true"
           >
+            {/* Slovo „Kurzy" je značka stránky a jeho řezy drží typografii — v kódu.
+                Popisky a fotky mezi písmeny jdou z CMS. */}
             <HeroTitleRow
               before="Ku"
               after="rzy"
               width={reduceMotion ? "24vw" : image1}
               src={images[0]}
               alt=""
-              label="01 · Materiál"
+              label={rowLabels[0]}
+              editLabel={editable(block, "items.0.label")}
+              editImage={editable(block, "gallery.0", "image")}
             />
             <HeroTitleRow
               before="Kur"
@@ -296,7 +384,9 @@ export default function Intro({
               width={reduceMotion ? "24vw" : image2}
               src={images[1]}
               alt=""
-              label="02 · Vlastní tvar"
+              label={rowLabels[1]}
+              editLabel={editable(block, "items.1.label")}
+              editImage={editable(block, "gallery.1", "image")}
             />
             <HeroTitleRow
               before="Kurz"
@@ -304,7 +394,9 @@ export default function Intro({
               width={reduceMotion ? "24vw" : image3}
               src={images[2]}
               alt=""
-              label="03 · Radost"
+              label={rowLabels[2]}
+              editLabel={editable(block, "items.2.label")}
+              editImage={editable(block, "gallery.2", "image")}
             />
           </motion.div>
 
@@ -324,7 +416,7 @@ export default function Intro({
               animate="show"
               custom={heroBeat.eyebrow}
             >
-              Keramické kurzy · 01
+              <span {...editable(block, "accent.2")}>{heroEyebrow}</span>
             </motion.span>
             <motion.h1
               id="kurzy-hero-title"
@@ -333,16 +425,17 @@ export default function Intro({
               animate="show"
               custom={heroBeat.heading}
             >
-              U hlíny se nedá spěchat.
-              <em>A to je na tom to nejlepší.</em>
+              <span {...editable(block, "title")}>{heroTitle}</span>
+              <em {...editable(block, "headline")}>{heroAccent}</em>
             </motion.h1>
             <motion.p
               variants={heroReveal}
               initial={reduceMotion ? false : "hidden"}
               animate="show"
               custom={heroBeat.lede}
+              {...editable(block, "body")}
             >
-              {fallbackLede}
+              {heroLede}
             </motion.p>
           </motion.div>
 
@@ -355,7 +448,7 @@ export default function Intro({
             custom={heroBeat.chrome}
           >
             <MouseAnim />
-            <span>Pojďte dál</span>
+            <span {...editable(block, "accent.3")}>{scrollCue}</span>
           </motion.div>
         </motion.article>
 
@@ -370,16 +463,22 @@ export default function Intro({
           }
           aria-labelledby="kurzy-about-title"
         >
-          <SceneMeta left="02 · Pro koho" right="Děti · Firmy · Zájemci" />
+          <SceneMeta
+            left={aboutMetaLeft}
+            right={aboutMetaRight}
+            editLeft={editable(about, "accent.0")}
+            editRight={editable(about, "accent.1")}
+          />
 
           <motion.header
             className="kurzyAbout__intro"
             style={reduceMotion ? undefined : { x: aboutHeadingX }}
           >
-            <span>Kurzy pro každého</span>
+            <span {...editable(about, "accent.2")}>{aboutEyebrow}</span>
+            {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
             <h2 id="kurzy-about-title">
-              Nejdřív hlína.
-              <em>Potom nápad.</em>
+              <span {...editable(about, "title")}>{aboutLead}</span>
+              <em {...editable(about, "headline")}>{aboutAccentText}</em>
             </h2>
           </motion.header>
 
@@ -391,14 +490,26 @@ export default function Intro({
                 : { y: aboutLedeY, opacity: aboutLedeOpacity }
             }
           >
-            <p>{data?.content || fallbackAbout}</p>
+            <p {...editable(about, "body")}>{aboutText}</p>
           </motion.div>
 
           <div className="kurzyAbout__blocks">
-            {audienceBlocks.map((block, index) => (
+            {audiences.map((audience, index) => (
               <AudienceBlock
-                key={block.number}
-                block={block}
+                key={audience.number}
+                block={audience}
+                photo={gallery?.gallery?.[index]}
+                edit={editable(gallery, `gallery.${index}`, "image")}
+                editTexts={{
+                  eyebrow: editable(about, `items.${index}.lead`),
+                  title: editable(about, `items.${index}.label`),
+                  accent: editable(about, `items.${index}.note`),
+                  text: editable(about, `items.${index}.value`),
+                  cta: editable(
+                    about,
+                    audience.action === "contact" ? "accent.3" : "accent.4"
+                  ),
+                }}
                 progress={scrollYProgress}
                 index={index}
                 onReserve={onReserveAction}
@@ -412,8 +523,9 @@ export default function Intro({
             activeScene + 1
           }`}
         >
-          <span>01 · Kurzy</span>
-          <span>02 · Pro koho</span>
+          <span {...editable(block, "accent.4")}>{progressFirst}</span>
+          {/* Totéž slovo jako v hlavičce scény — jedno pole, dvě místa. */}
+          <span {...editable(about, "accent.0")}>{aboutMetaLeft}</span>
           <i>
             <motion.b style={{ scaleX: progressScale }} />
           </i>
@@ -423,12 +535,23 @@ export default function Intro({
   )
 }
 
-function SceneMeta({ left, right }: { left: string; right: string }) {
+function SceneMeta({
+  left,
+  right,
+  editLeft,
+  editRight,
+}: {
+  left: string
+  right: string
+  /** Atributy překryvu pro obě půlky lišty. Mimo náhled prázdné. */
+  editLeft?: Record<string, string | undefined>
+  editRight?: Record<string, string | undefined>
+}) {
   return (
     <header className="kurzySceneMeta">
-      <span>{left}</span>
+      <span {...editLeft}>{left}</span>
       <i />
-      <span>{right}</span>
+      <span {...editRight}>{right}</span>
     </header>
   )
 }
@@ -440,6 +563,8 @@ function HeroTitleRow({
   src,
   alt,
   label,
+  editLabel,
+  editImage,
 }: {
   before: string
   after: string
@@ -448,13 +573,16 @@ function HeroTitleRow({
   src: string
   alt: string
   label: string
+  /** Atributy překryvu pro popisek a fotku řádku. Mimo náhled prázdné. */
+  editLabel?: Record<string, string | undefined>
+  editImage?: Record<string, string | undefined>
 }) {
   return (
     <div className="kurzyHero__titleRow">
       <span>{before}</span>
-      <motion.figure style={{ width }}>
+      <motion.figure style={{ width }} {...editImage}>
         <Image src={src} alt={alt} fill sizes="24vw" priority />
-        <figcaption>{label}</figcaption>
+        <figcaption {...editLabel}>{label}</figcaption>
       </motion.figure>
       <span>{after}</span>
     </div>
@@ -463,11 +591,26 @@ function HeroTitleRow({
 
 function AudienceBlock({
   block,
+  photo,
+  edit,
+  editTexts,
   progress,
   index,
   onReserve,
 }: {
   block: (typeof audienceBlocks)[number]
+  /** Fotka z CMS; chybí-li, kreslí se ta z `block`. */
+  photo?: CopyImage
+  /** Atributy překryvu. Mimo náhled prázdný objekt. */
+  edit?: Record<string, string | undefined>
+  /** Atributy překryvu pro texty bloku (řádek `kurzy.about`). */
+  editTexts?: {
+    eyebrow?: Record<string, string | undefined>
+    title?: Record<string, string | undefined>
+    accent?: Record<string, string | undefined>
+    text?: Record<string, string | undefined>
+    cta?: Record<string, string | undefined>
+  }
   progress: MotionValue<number>
   index: number
   onReserve: () => void
@@ -478,37 +621,56 @@ function AudienceBlock({
   const settled = start + 0.1
 
   const opacity = useTransform(progress, [start, settled, 1], [0, 1, 1])
-  const y = useTransform(progress, [start, settled, 1], [30, 0, 0])
+  /* vh for the same reason as the scene's own entrance above: 30/900 on the reference window. */
+  const y = useTransform(progress, [start, settled, 1], ["3.33vh", "0vh", "0vh"])
 
   return (
     <motion.article
       className="kurzyAudience"
       style={reduceMotion ? { opacity } : { opacity, y }}
     >
+      {/* Above the rule, so the number still reads as the start of the block's text. */}
+      <div className="kurzyAudience__figure" {...edit}>
+        <Image
+          src={photo?.url ?? block.image}
+          alt={photo?.alt?.trim() || block.imageAlt}
+          fill
+          sizes="(max-width: 900px) 100vw, 30vw"
+        />
+      </div>
+
       <div className="kurzyAudience__number">
         <span>{block.number}</span>
         <i />
       </div>
-      <span className="kurzyAudience__eyebrow">{block.eyebrow}</span>
+      <span className="kurzyAudience__eyebrow" {...editTexts?.eyebrow}>
+        {block.eyebrow}
+      </span>
       <h3>
-        {block.title}
-        <em>{block.accent}</em>
+        <span {...editTexts?.title}>{block.title}</span>
+        <em {...editTexts?.accent}>{block.accent}</em>
       </h3>
-      <p>{block.text}</p>
+      <p {...editTexts?.text}>{block.text}</p>
       <div className="kurzyAudience__action">
+        {/* Obal, ne tlačítko: obě si vykreslují vlastní vnitřek a datové atributy
+            by skončily na prvku, který se při animaci přepisuje. */}
         {block.action === "contact" ? (
-          <ContactTrigger
-            text={block.cta}
-            topic="Kurzy"
-            className="kurzyTimelineCtaButton"
-          />
+          <span {...editTexts?.cta}>
+            <ContactTrigger
+              text={block.cta}
+              topic="Kurzy"
+              className="kurzyTimelineCtaButton"
+            />
+          </span>
         ) : (
-          <WebButton
-            Kind="Button"
-            title={block.cta}
-            className="kurzyTimelineCtaButton"
-            onClickAction={onReserve}
-          />
+          <span {...editTexts?.cta}>
+            <WebButton
+              Kind="Button"
+              title={block.cta}
+              className="kurzyTimelineCtaButton"
+              onClickAction={onReserve}
+            />
+          </span>
         )}
       </div>
     </motion.article>

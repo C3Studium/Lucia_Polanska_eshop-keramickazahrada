@@ -1,237 +1,130 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 /* CartTotals component styles - SASS nesting */
+
+/* Velikost nese clamp, ne breakpoint. Laddery hb()/vb() tady byly psané v pořadí
+   (lg, md, mdt, sm, xs, xxs); h-block() emituje mapu tak, jak je zapsaná, takže
+   xxs (min-width: 400) šel ven POSLEDNÍ a vyhrával na každé landscape šířce —
+   .label, .total i .totalValue měřily 14.4px na 1200 i na 1920 a souhrn neměl
+   žádnou hierarchii. Jeden clamp na rodinu to řeší bez jediného media query:
+
+     řádky souhrnu   clamp(.9rem, 1.2vw, 1.1rem)     živé pásmo 1200–1467 px
+     doprava / daně  clamp(.85rem, 1.1vw, 1rem)      živé pásmo 1236–1454 px
+     Celkem          clamp(1.05rem, 1.4vw, 1.3rem)   o stupeň výš, ať má součet váhu
+
+   Stropy jsou v rem, takže je nad 1921 zvedne ramp v globals.scss sám — proto
+   v tomhle souboru není (a nesmí být) nic v qhd ani xxl.
+   Svislý rytmus visí na vh, takže se nízký laptop (1366×768, 1220×660) sevře sám. */
 .root {
   width: 100%;
   font-family: "Sansation-Light";
   color: inherit;
-  @include vb((
-    md: (padding: 1rem),
-    s: (padding: 1rem),
-    sm: (padding: 1rem),
-    xs: (padding: 1rem),
-  ));
+
+  /* Čtyři portrétové stopy nastavovaly tutéž hodnotu; stačí jedna. */
+  @include v(xs) {
+    padding: 1rem;
+  }
+
   .totalsList {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    font-size: 1.1rem;
+    gap: clamp(.2rem, .45vh, .35rem);
+    font-size: clamp(.9rem, 1.2vw, 1.1rem);
     font-weight: 300;
     color: var(--blackText);
+
     .row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       .label {
         display: flex;
         gap: 0.25rem;
         align-items: center;
         font-weight: 400;
-        font-size: 1.1rem;
+        font-size: clamp(.9rem, 1.2vw, 1.1rem);
         font-family: "Sansation-Regular";
-
-        @include hb((
-          lg: (font-size: 1.1rem),
-          md: (font-size: 1rem),
-          mdt: (font-size: 1rem),
-          sm: (font-size: 1rem),
-          xs: (font-size: 0.9rem),
-          xxs: (font-size: 0.9rem),
-        ));
-        @include vb((
-          lg: (font-size: 1rem),
-          md: (font-size: 1rem),
-          s: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.9rem),
-        ));
       }
 
       .labelValue {
-        font-size: 1.1rem;
+        font-size: clamp(.9rem, 1.2vw, 1.1rem);
         font-weight: 300;
         font-family: "Sansation-Light";
-
-        @include hb((
-          lg: (font-size: 1.1rem),
-          md: (font-size: 1rem),
-          mdt: (font-size: 1rem),
-          sm: (font-size: 1rem),
-          xs: (font-size: 0.9rem),
-          xxs: (font-size: 0.9rem),
-        ));
-        @include vb((
-          lg: (font-size: 1rem),
-          md: (font-size: 1rem),
-          s: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.9rem),
-        ));
       }
 
-      .subtotal{
+      .subtotal {
         color: var(--blackText);
         font-weight: 400;
-        font-size: 1.1rem;
+        font-size: clamp(.9rem, 1.2vw, 1.1rem);
         font-family: "Sansation-Regular";
-        @include hb((
-          lg: (font-size: 1.1rem),
-          md: (font-size: 1rem),
-          mdt: (font-size: 1rem),
-          sm: (font-size: 1rem),
-          xs: (font-size: 0.9rem),
-          xxs: (font-size: 0.9rem),
-        ));
-
-        @include vb((
-          lg: (font-size: 1rem),
-          md: (font-size: 1rem),
-          s: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.9rem),
-        ));
       }
+
       .discount, .giftCard {
         color: var(--blackText);
-        font-size: 1.1rem;
+        font-size: clamp(.9rem, 1.2vw, 1.1rem);
         font-weight: 300;
         font-family: "Sansation-Regular";
-
-        @include hb((
-          lg: (font-size: 1.1rem),
-          md: (font-size: 1rem),
-          mdt: (font-size: 1rem),
-          sm: (font-size: 1rem),
-          xs: (font-size: 0.9rem),
-          xxs: (font-size: 0.9rem),
-        ));
-
-        @include vb((
-          lg: (font-size: 1rem),
-          md: (font-size: 1rem),
-          s: (font-size: 0.9rem),
-          sm: (font-size: 0.9rem),
-          xs: (font-size: 0.9rem),
-        ));
       }
     }
+
     .taxRow {
       display: flex;
       justify-content: space-between;
+
       .label {
         display: flex;
         gap: 0.25rem;
         align-items: center;
-        font-size: 1rem;
+        font-size: clamp(.85rem, 1.1vw, 1rem);
         font-weight: 300;
         font-family: "Sansation-Light";
-
-        @include hb((
-          lg: (font-size: 1rem),
-          md: (font-size: 0.95rem),
-          mdt: (font-size: 0.95rem),
-          sm: (font-size: 0.95rem),
-          xs: (font-size: 0.85rem),
-          xxs: (font-size: 0.85rem),
-        ));
-
-        @include vb((
-          lg: (font-size: 0.95rem),
-          md: (font-size: 0.95rem),
-          s: (font-size: 0.85rem),
-          sm: (font-size: 0.85rem),
-          xs: (font-size: 0.85rem),
-        ));
       }
 
-      .labelValue{
-        font-size: 1.1rem;
+      .labelValue {
+        font-size: clamp(.85rem, 1.1vw, 1rem);
         font-weight: 300;
         font-family: "Sansation-Light";
-
-        @include hb((
-          lg: (font-size: 1rem),
-          md: (font-size: 0.95rem),
-          mdt: (font-size: 0.95rem),
-          sm: (font-size: 0.95rem),
-          xs: (font-size: 0.85rem),
-          xxs: (font-size: 0.85rem),
-        ));
-
-        @include vb((
-          lg: (font-size: 0.95rem),
-          md: (font-size: 0.95rem),
-          s: (font-size: 0.85rem),
-          sm: (font-size: 0.85rem),
-          xs: (font-size: 0.85rem),
-        ));
       }
     }
   }
+
   .divider {
     height: 1px;
     width: 100%;
-    border-bottom: 1px solid #e5e7eb;
-    margin: 1rem 0;
+    border-bottom: 1px solid var(--blue-04);
+    /* Svisle na vh: na 900 vysokém okně vyjde 16.2px jako dřív, na 768 už jen 13.8. */
+    margin: clamp(.55rem, 1.8vh, 1.1rem) 0;
     background: none;
+
     &.mt {
-      margin-top: 1rem;
+      /* margin-top zůstává ze základní zkratky výš — jedna hodnota, jedno místo. */
       margin-bottom: 0;
     }
+
     &.mb {
-      margin-bottom: 0.5rem;
+      margin-bottom: clamp(.28rem, .9vh, .55rem);
       margin-top: 0;
     }
   }
+
   .totalRow {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
-    
+    margin-bottom: clamp(.28rem, .9vh, .55rem);
+
     .total {
-      font-size: 1.1rem;
+      font-size: clamp(1.05rem, 1.4vw, 1.3rem);
       font-weight: 400;
       font-family: "Sansation-Regular";
       color: var(--blackText);
-
-
-      @include hb((
-        lg: (font-size: 1.1rem),
-        md: (font-size: 1rem),
-        mdt: (font-size: 1rem),
-        sm: (font-size: 1rem),
-        xs: (font-size: 0.9rem),
-        xxs: (font-size: 0.9rem),
-      ));
-      @include vb((
-        lg: (font-size: 1rem),
-        md: (font-size: 1rem),
-        s: (font-size: 0.9rem),
-        sm: (font-size: 0.9rem),
-        xs: (font-size: 0.9rem),
-      ));
     }
+
     .totalValue {
-      font-size: 1.1rem;
+      font-size: clamp(1.05rem, 1.4vw, 1.3rem);
       font-weight: 300;
       font-family: "Sansation-Light";
-
-      @include hb((
-        lg: (font-size: 1.1rem),
-        md: (font-size: 1rem),
-        mdt: (font-size: 1rem),
-        sm: (font-size: 1rem),
-        xs: (font-size: 0.9rem),
-        xxs: (font-size: 0.9rem),
-      ));
-      @include vb((
-        lg: (font-size: 1rem),
-        md: (font-size: 1rem),
-        s: (font-size: 0.9rem),
-        sm: (font-size: 0.9rem),
-        xs: (font-size: 0.9rem),
-      ));
     }
   }
 }
@@ -252,13 +145,18 @@
 
 .root .divider { border-color: currentColor; opacity: .16; }
 
-/* "včetně DPH" sits beside the headline figure, quiet but legible (13px, AA on the surface). */
+/* "včetně DPH" sits beside the headline figure, quiet but legible.
+   Bylo 13px — a px ramp nad 1921 nezvedne, takže to na 2552 měřilo pořád 13px
+   vedle nadpisu, který vyrostl na 76px. V rem ano. */
 .vatNote {
   display: block;
-  margin-top: 2px;
-  color: #5c5e54;
+  margin-top: .14rem;
+  color: var(--grey-02);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 13px;
+  /* Podlaha .75rem (12px), ne .72rem (11.52px): na 1220 se tím poznámka dostávala pod
+     hranici, kterou shoot.cjs hlásí jako vadu, a komentář výš počítá kontrast na 12px.
+     Živé pásmo 1250–1417; strop .85rem nad 1921 nese ramp (2552: 18.1px). */
+  font-size: clamp(.75rem, .96vw, .85rem);
   font-style: normal;
   letter-spacing: 0.04em;
   text-transform: none;

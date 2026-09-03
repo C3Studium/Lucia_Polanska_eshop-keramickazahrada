@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { PropsWithChildren, useRef } from "react"
 import styles from "./styles.module.scss"
+import { palette } from "styles/palette.generated"
 
 export default function HomeExperience({ children }: PropsWithChildren) {
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -14,7 +15,7 @@ export default function HomeExperience({ children }: PropsWithChildren) {
   const backgroundColor = useTransform(
     scrollYProgress,
     [0, 0.13, 0.25, 0.7, 0.9, 1],
-    ["#212222", "#BBB788", "#C8C39A", "#FFE8D6", "#BBB788", "#212222"]
+    [palette.black03, palette.sage01, palette.gradientHome1, palette.ambientShowcase1, palette.sage01, palette.black03]
   )
   const glowOpacity = useTransform(
     scrollYProgress,

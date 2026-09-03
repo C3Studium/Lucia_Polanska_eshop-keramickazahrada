@@ -7,6 +7,7 @@ import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDragScroll } from "./useDragScroll"
 import styles from "./style.module.scss"
+import { alpha, palette } from "styles/palette.generated"
 
 const ease = [0.22, 1, 0.36, 1] as const
 const revealEase = [0.76, 0, 0.24, 1] as const
@@ -154,8 +155,8 @@ const getProductSearchValue = (hit: NavbarProductHit) =>
 /* One quarry card exists per search hit (up to a full catalogue page), and the panel re-renders
    on every keystroke. These were inline literals: seven fresh objects per card, per keystroke. */
 const quarryVariants: Variants = {
-  rest: { y: 0, color: "#20211c" },
-  hover: { y: -4, color: "#20211c" },
+  rest: { y: 0, color: palette.ink05 },
+  hover: { y: -4, color: palette.ink05 },
 }
 const quarryTransition = {
   y: { duration: 0.5, ease },
@@ -176,22 +177,22 @@ const arrowVariants: Variants = {
   rest: {
     x: 0,
     rotate: 0,
-    color: "#20211c",
-    backgroundColor: "rgba(32, 33, 28, 0)",
+    color: palette.ink05,
+    backgroundColor: alpha("ink05", 0),
   },
   hover: {
     x: 3,
     rotate: 45,
-    color: "#fff1e7",
-    backgroundColor: "#20211c",
+    color: palette.cream09,
+    backgroundColor: palette.ink05,
   },
 }
 const arrowTransition = { duration: 0.44, ease }
 
 const chipInitial = { opacity: 0, x: -14 }
 const chipVariants: Variants = {
-  rest: { opacity: 1, x: 0, color: "#20211c" },
-  hover: { opacity: 1, x: 0, color: "#fff8ee" },
+  rest: { opacity: 1, x: 0, color: palette.ink05 },
+  hover: { opacity: 1, x: 0, color: palette.selectCream },
 }
 const chipFillVariants: Variants = { hover: { scaleX: 1 } }
 const chipFillInitial = { scaleX: 0 }

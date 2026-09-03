@@ -2,28 +2,94 @@
 /* Sits above the order template on its cream surface; both tones measured against it. */
 
 .notice {
-  width: min(1840px, calc(100% - clamp(36px, 7vw, 140px)));
-  margin: clamp(90px, 12vh, 130px) auto 0;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font: 400 16px/1.5 "Sansation-Regular", sans-serif;
+  /*
+   * Source of truth for both the measure and the drop is the order template it stands on:
+   * `.container` and `.root`'s padding-top in ../../templates/styles/oder-complete.module.scss.
+   * Copied verbatim — a second, independent expression of the same geometry drifted in two
+   * directions at once (narrower than the container below 1500, wider past 2K). The 1740 stays
+   * in px because the container's does; in rem the ramp above 1921 would part them again.
+   */
+  width: min(96vw, 1740px);
+  margin: clamp(6rem, 11vh, 8.5rem) auto 0;
+  padding: clamp(0.75rem, 1.6vh, 1.1rem) clamp(0.9rem, 1.3vw, 1.35rem);
+  border-radius: clamp(0.5rem, 0.625vw, 0.75rem);
+  /*
+   * The height term is not decoration: on a tablet held upright `vw` is the SMALLER axis, so
+   * `1.15vw` alone put every portrait width from 600 to 1024 on the 0.92rem floor — 14.72px,
+   * bit for bit what a 390px phone gets, in a band 737px wide. In the shell variant below that
+   * left the payment result set SMALLER than the 16.8px paragraph explaining it, the reverse of
+   * every landscape viewport, where the two meet at 16.8 from 1461px up.
+   *
+   * 1.5vh is the coefficient that separates the two devices rather than their widths: it clears
+   * the 14.72px floor from 981px of height up, so the tallest phone in the matrix (440x956)
+   * resolves to 14.34 and stays on the floor untouched, while the shortest upright tablet
+   * (768x1024) gets 15.36 and the iPad Pro reaches the same 16.8 a desktop has. Landscape cannot
+   * see it at all — `1.15vw` wins whenever the viewport is wider than 1.304x its height, which
+   * every landscape stop is; 1280x720 through 2552x1351 are unchanged to the digit.
+   */
+  font: 400 clamp(0.92rem, max(1.15vw, 1.5vh), 1.05rem)/1.5 "Sansation-Regular", sans-serif;
+
+  /*
+   * Below 620 the template stops using the geometry copied above: its own legacy stop at
+   * ../../templates/styles/oder-complete.module.scss:643 sets `.root { padding: 5.4rem 1rem
+   * 2.5rem }` and `.container { width: 100% }`. The copy did not know about it, so on a phone
+   * the notice hung 9.6px past the container on each side (320px: 307.2 vs 288) and started
+   * 9.6px lower than the page it introduces (96px vs 86.4px).
+   *
+   * Mirrored deliberately with the SAME legacy `below-px` query and the SAME numbers, even
+   * though BRIEF.md calls below-px legacy for new rules: this is not a new rule, it is the
+   * template's rule restated. `calc(100% - 2rem)` is `.container`'s `width: 100%` inside
+   * `.root`'s 1rem inline padding; `5.4rem` is that padding-top verbatim. Picking any other
+   * value here — a lower drop "so more is visible" included — recreates exactly the drift the
+   * note above warns about. When the template moves, both places move together.
+   *
+   * Nested INSIDE `.notice` on purpose: a media query adds no specificity, so the same rule
+   * written as a standalone block at the end of the file would outrank `.inline` (last rule
+   * below) at equal 0,1,0 by source order and break the OrderStateShell variant — the guest
+   * branch of this route and the whole of /newsletter.
+   */
+  @include below-px(620px) {
+    width: calc(100% - 2rem);
+    margin-top: 5.4rem;
+  }
 }
 
-/* #2f5233 on #e8f0e4 — 7.4:1 */
+/* #2f5233 on #e8f0e4 — 7.58:1 recomputed (the 7.4 written here was 0.18 low). */
 .ok {
-  border: 1px solid rgba(47, 82, 51, 0.3);
-  background: #e8f0e4;
-  color: #2f5233;
+  border: 1px solid rgb(var(--green-01-rgb) / .3);
+  background: var(--sage-05);
+  color: var(--green-01);
 }
 
-/* #8c3e30 on #ffece4 — 6.9:1 */
+/* #8c3e30 on #ffece4 — 6.45:1 recomputed (the 6.9 written here was 0.45 high). Still clears AA
+   at every size the clamp above can produce, 14.72px to 22.33px; it never met AAA. */
 .warn {
-  border: 1px solid rgba(140, 62, 48, 0.34);
-  background: #ffece4;
-  color: #8c3e30;
+  border: 1px solid rgb(var(--clay-06-rgb) / .34);
+  background: var(--blush-02);
+  color: var(--clay-06);
 }
 
+/*
+ * The OrderStateShell variant — the guest branch of this route, and nothing else in the app.
+ *
+ * The shell supplies the HORIZONTAL margins (its `.root` padding-inline), which is why the width
+ * and the auto centring above are dropped here. It supplies no vertical one: `.copy` is a plain
+ * block with no `gap`, so every node inside it brings its own top margin — `.description` does,
+ * `.actions` does, and so does `.reference`, the only other element ever passed into this slot
+ * (cart/components/payment-pending). With `margin: 0` this one brought none and the tinted box
+ * sat welded to the last line of the paragraph above it: measured 0.00px of air above against
+ * 29.69px below at 768x1024, and 0.00 against 39.61 at 1024x1366. Zero at every viewport, on
+ * both themes of the box, since the component was written.
+ *
+ * The value is `.reference`'s expression verbatim rather than a second one that happens to look
+ * similar — two children of one shell, one line of geometry. It resolves to 26.62px on an iPad,
+ * 30.4 on an iPad Pro, 21.94 on a 390x844 phone and 14.4 on a landscape phone, which is the
+ * stop where the column is tightest and where the vh term is doing its job.
+ *
+ * Still a SHORTHAND on purpose: that is what outranks the `below-px(620)` block's `margin-top`
+ * nested in `.notice` above, which a longhand `margin-top` here would tie on rather than beat.
+ */
 .inline {
   width: 100%;
-  margin: 0;
+  margin: clamp(.9rem, 2.6vh, 1.9rem) 0 0;
 }

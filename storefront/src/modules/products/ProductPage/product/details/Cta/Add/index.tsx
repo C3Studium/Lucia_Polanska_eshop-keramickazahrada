@@ -114,7 +114,6 @@ export default function CTA({
         <CartButton
           onClick={handleAddToCart}
           disabled={!inStock || !selectedVariant || isAdding || !isValidVariant}
-          className="w-full h-10"
           isLoading={isAdding}
           data-testid="add-product-button"
         >

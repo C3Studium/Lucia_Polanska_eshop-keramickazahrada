@@ -6,31 +6,78 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0.125rem;
   color: inherit;
 }
 
 .navbar {
-  --nav-height: 48px;
-  --nav-control-height: 38px;
-  --nav-surface: rgba(250, 247, 240, 0.88);
-  --nav-border: rgba(255, 255, 255, 0.62);
-  --nav-ink: #25271f;
-  --nav-shadow: 0 13px 30px -18px rgba(24, 27, 20, 0.62),
-    0 3px 8px -5px rgba(24, 27, 20, 0.34),
-    inset 0 2px 3px rgba(255, 255, 255, 0.7),
-    inset 0 -3px 5px rgba(83, 92, 68, 0.13),
-    inset 2px 0 4px rgba(255, 255, 255, 0.18),
-    inset -2px 0 4px rgba(83, 92, 68, 0.055);
+  /*
+   * The bar's geometry, written once — and that once is now `:root` in globals.scss, not here.
+   *
+   * --nav-height, --nav-control-height, --nav-top-inset and --nav-side-inset live there because
+   * the search overlay is a SIBLING of this element in index.tsx and never inherited them; it was
+   * keeping a private copy of each clamp as a fallback, and --nav-top-inset was read there while
+   * existing nowhere at all. The values are unchanged, so nothing in the bar moves.
+   *
+   * Both heights are vertical, so the middle term hangs on vh — that is what makes the bar pull
+   * itself in on a 1366x768 or 1220x660 laptop without a single rule in `lt`. Floor and ceiling
+   * in rem, so the ramp above 1921 lifts them: measured before this, the bar was 48px tall on
+   * 1366 and still 48px on 2552, while the root rem had grown by a third.
+   *
+   * --nav-height: floor 46px until 1000px of viewport height, ceiling 56px from 1217px up.
+   *   1080 gives 49.7px, 1351 (rem 21.27) gives 62.1px — 1.29x the old flat 48px.
+   * --nav-control-height is the same clamp scaled by 0.7826, the ratio the two numbers had at
+   *   48/38. Scaled rather than derived with calc() on purpose: `@include touch` at the foot of
+   *   this file re-declares --nav-height as a flat 56px on `.navbar` for the thumb, and the
+   *   controls must not follow it up there.
+   */
+
+  /* The utility row (region, cart, wishlist, account) sat exactly 2px under the control height.
+     Derived, so the two cannot drift apart as the bar resizes. */
+  --nav-utility-height: calc(var(--nav-control-height) - 0.125rem);
+
+  /* The E-shop button's width. Both the centre grid's middle track and the button itself read
+     it; it used to be the literal 102px, typed in both places. */
+  --nav-cta-width: 6.375rem;
+
+  /* The region menu's width. The hover bridge under the closed button spans the same distance,
+     and used to say 184px on its own. */
+  --nav-region-menu-width: 11.5rem;
+
+  /* The flag disc, in the closed button and in every row of the open list. */
+  --nav-flag-size: 1.375rem;
+
+  /* Cart glyph and utility icon — one size, two elements. */
+  --nav-icon-size: 2.25rem;
+
+  /* The count bubble on the cart and on the wishlist. */
+  --nav-badge-size: 0.9375rem;
+
+  --nav-surface: rgb(var(--cream-10-rgb) / .88);
+  --nav-border: rgb(var(--white-rgb) / .62);
+  --nav-ink: var(--ink-06);
+  --nav-shadow: 0 13px 30px -18px rgb(var(--ink-02-rgb) / .62),
+    0 3px 8px -5px rgb(var(--ink-02-rgb) / .34),
+    inset 0 2px 3px rgb(var(--white-rgb) / .7),
+    inset 0 -3px 5px rgb(var(--olive-07-rgb) / .13),
+    inset 2px 0 4px rgb(var(--white-rgb) / .18),
+    inset -2px 0 4px rgb(var(--olive-07-rgb) / .055);
   position: fixed;
-  top: clamp(10px, 0.8vw, 16px);
+  /*
+   * The gap above the bar is vertical, so it belongs on vh. 1.42vh is the old 0.8vw restated on
+   * the right axis: on a 16:9 screen 0.8vw is exactly 1.4222vh, so every 16:9 viewport keeps the
+   * offset it already had (1080 -> 15.3px against 15.4px before) and only the laptops that are
+   * wider than 16:9 get the tighter offset they should always have had. Live 704..1127px of
+   * height; the rem ceiling then ramps it to 19.2px at 1351, where it used to stop at 16px.
+   */
+  top: var(--nav-top-inset);
   /* + --page-inset so the pill sits inside the 16:10 frame on ultrawide (see globals.scss). */
-  left: calc(var(--page-inset, 0px) + clamp(12px, 1.4vw, 28px));
+  left: calc(var(--page-inset, 0px) + var(--nav-side-inset));
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: calc(var(--page-max-w, 100vw) - clamp(24px, 2.8vw, 56px));
+  width: calc(var(--page-max-w, 100vw) - 2 * var(--nav-side-inset));
   height: var(--nav-height);
   color: var(--nav-ink);
   transition: filter 0.4s ease;
@@ -57,7 +104,7 @@
       inset: 2px;
       z-index: -1;
       border-radius: inherit;
-      border: 1px solid rgba(44, 47, 38, 0.035);
+      border: 1px solid rgb(var(--ink-06-rgb) / .035);
       pointer-events: none;
     }
   }
@@ -68,8 +115,8 @@
     min-width: 0;
     max-width: 52%;
     justify-content: flex-start;
-    gap: 3px;
-    padding: 5px;
+    gap: 0.1875rem;
+    padding: 0.3125rem;
     transition: max-width 0.65s cubic-bezier(0.76, 0, 0.24, 1),
       height 0.5s cubic-bezier(0.76, 0, 0.24, 1), background-color 0.4s ease,
       border-color 0.35s ease, box-shadow 0.35s ease;
@@ -80,13 +127,13 @@
 
     &--search {
       z-index: 4;
-      border-color: rgba(116, 126, 98, 0.34);
-      box-shadow: 0 15px 34px -19px rgba(24, 27, 20, 0.66),
-        0 3px 9px -5px rgba(24, 27, 20, 0.36),
-        inset 0 2px 3px rgba(255, 255, 255, 0.76),
-        inset 0 -3px 5px rgba(83, 92, 68, 0.15),
-        inset 2px 0 4px rgba(255, 255, 255, 0.2),
-        inset -2px 0 4px rgba(83, 92, 68, 0.06);
+      border-color: rgb(var(--olive-15-rgb) / .34);
+      box-shadow: 0 15px 34px -19px rgb(var(--ink-02-rgb) / .66),
+        0 3px 9px -5px rgb(var(--ink-02-rgb) / .36),
+        inset 0 2px 3px rgb(var(--white-rgb) / .76),
+        inset 0 -3px 5px rgb(var(--olive-07-rgb) / .15),
+        inset 2px 0 4px rgb(var(--white-rgb) / .2),
+        inset -2px 0 4px rgb(var(--olive-07-rgb) / .06);
     }
   }
 
@@ -94,32 +141,38 @@
     position: absolute;
     left: 50%;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 102px minmax(0, 1fr);
-    column-gap: 6px;
-    /* Mobile-first: the floor used to be a hard 500px, which overflowed every phone — a 320px
-       viewport was rendering a 500px bar. Fluid here, fixed only once there is room for it. */
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) var(--nav-cta-width) minmax(0, 1fr);
+    column-gap: 0.375rem;
+    /*
+     * Mobile-first: the floor used to be a hard 500px, which overflowed every phone — a 320px
+     * viewport was rendering a 500px bar. Then three media queries carried the desktop width
+     * (v(md) 500px, h(sm) 500px, h(md) clamp(500px, 28vw, 560px)) — the same property, three
+     * values, which is a clamp that was never written. This is that clamp:
+     *
+     *   min()      keeps it inside the bar on a phone, which is what `width: 100%` did.
+     *   31.25rem   is the 500px both fixed stops asked for.
+     *   38vw       puts the live band at 1316..1474px, the widths most people are on. The old
+     *              28vw only came off its floor at 1786px and hit its ceiling at 2000 — a band
+     *              almost nobody sits in, which is why 1366, 1440 and 1512 all measured 500px.
+     *   35rem      is the 560px ceiling, in rem, so past 1921 the ramp carries it: 560px at
+     *              1920, 744px at 2552, where it used to freeze at 560.
+     *
+     * What is left in a media query is only where the KIND changes: the compact bar below
+     * 900px turns this into a flex item of its own width.
+     */
+    width: min(100%, clamp(31.25rem, 38vw, 35rem));
     max-width: 100%;
     min-width: 0;
-    padding: 5px 10px;
+    padding: 0.3125rem 0.625rem;
     transform: translateX(-50%);
 
-    @include v(md) {
-      width: 500px;
-      max-width: none;
-    }
-
-    @include h(sm) {
-      width: 500px;
-      max-width: none;
-    }
-
-    @include h(md) {
-      width: clamp(500px, 28vw, 560px);
-    }
-
-    > button {
-      width: 102px;
+    /* `> a` as well as `> button`: ProductButton renders a LocalizedClientLink, so the rule that
+       said `> button` alone matched nothing and the 102px track was holding a 110px button. Both
+       numbers come off the bar now, so the track and its occupant cannot disagree. */
+    > button,
+    > a {
+      width: var(--nav-cta-width);
+      height: var(--nav-control-height);
       justify-self: center;
     }
 
@@ -128,12 +181,13 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       align-items: center;
       justify-items: center;
-      gap: 4px;
+      gap: 0.25rem;
       min-width: 0;
     }
 
     .CTA__block {
-      flex: 0 0 92px;
+      /* The button's width less the centre's own inline padding. */
+      flex: 0 0 calc(var(--nav-cta-width) - 0.625rem);
       height: var(--nav-control-height);
 
       > button {
@@ -142,13 +196,13 @@
       }
 
       p {
-        gap: 4px;
-        padding-inline: 4px;
+        gap: 0.25rem;
+        padding-inline: 0.25rem;
       }
 
       svg {
-        width: 12px;
-        height: 12px;
+        width: 0.75rem;
+        height: 0.75rem;
       }
     }
   }
@@ -157,8 +211,8 @@
     width: max-content;
     flex: 0 0 auto;
     justify-content: flex-end;
-    gap: 3px;
-    padding: 5px;
+    gap: 0.1875rem;
+    padding: 0.3125rem;
 
     /* 320px-class phones cannot hold the logo plus four utility controls. The region selector
        goes first: it is the only one that is not navigation, and the locale is already in the
@@ -183,9 +237,10 @@
       content: "";
       position: absolute;
       left: -2px;
+      /* Hairline: physical, stays in px. Its length is not. */
       width: 1px;
-      height: 16px;
-      background: rgba(43, 47, 36, 0.11);
+      height: 1rem;
+      background: rgb(var(--ink-09-rgb) / .11);
     }
   }
 
@@ -196,7 +251,7 @@
   }
 
   .navbar__brand {
-    width: 58px;
+    width: 3.625rem;
 
     > div > div:first-child img {
       width: 100% !important;
@@ -208,8 +263,8 @@
     > div > div:nth-of-type(2) img,
     > div > div:nth-of-type(3) img {
       width: auto;
-      max-width: 36px;
-      max-height: 20px;
+      max-width: var(--nav-icon-size);
+      max-height: 1.25rem;
     }
   }
 
@@ -218,17 +273,20 @@
     width: auto;
     min-width: 0;
     color: var(--nav-ink);
-    font-size: 14px;
+    font-size: 0.875rem;
     letter-spacing: -0.01em;
 
+    /* Was 13px here and 10px again in a second `.navbar` block at the foot of the file — same
+       selector, same specificity, so the 10px always won and the 13px never rendered once. The
+       10px that was actually on screen is the value; the dead rule is gone. */
     > div {
-      padding-inline: 13px;
+      padding-inline: 0.625rem;
     }
 
     p {
       justify-content: center;
-      gap: 4px;
-      padding-inline: 4px;
+      gap: 0.25rem;
+      padding-inline: 0.25rem;
       white-space: nowrap;
 
       &:nth-of-type(2) {
@@ -237,8 +295,8 @@
     }
 
     svg {
-      width: 12px;
-      height: 12px;
+      width: 0.75rem;
+      height: 0.75rem;
     }
   }
 
@@ -247,7 +305,7 @@
   .navbar__cart,
   .navbar__utility-link,
   .navbar__right > .magnetic {
-    height: 36px;
+    height: var(--nav-utility-height);
 
     /* The navbar's utility row is the densest cluster of controls on the site and every one of
        them sat at 36px. Raised to the 44px floor on touch only, so the desktop bar keeps its
@@ -262,12 +320,14 @@
     position: relative;
     min-width: 0;
 
+    /* The bridge the pointer crosses from the closed button to the open list, so it spans the
+       list's width — read from the list, not typed a second time. */
     &[data-open]::after {
       position: absolute;
       top: 100%;
       right: 0;
-      width: 184px;
-      height: 10px;
+      width: var(--nav-region-menu-width);
+      height: 0.625rem;
       content: "";
     }
 
@@ -283,18 +343,18 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 3px;
-    padding: 0 7px 0 5px;
+    gap: 0.1875rem;
+    padding: 0 0.4375rem 0 0.3125rem;
     overflow: hidden;
     border: 0;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.34);
+    background: rgb(var(--white-rgb) / .34);
     color: var(--nav-ink);
     cursor: pointer;
 
     svg {
-      width: 13px;
-      height: 13px;
+      width: 0.8125rem;
+      height: 0.8125rem;
     }
   }
 
@@ -302,7 +362,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: rgba(116, 126, 98, 0.14);
+    background: rgb(var(--olive-15-rgb) / .14);
     pointer-events: none;
   }
 
@@ -311,36 +371,36 @@
     z-index: 1;
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: var(--nav-flag-size);
+    height: var(--nav-flag-size);
     overflow: hidden;
     border-radius: 50%;
 
     > span,
     svg {
-      width: 22px !important;
-      height: 22px !important;
+      width: var(--nav-flag-size) !important;
+      height: var(--nav-flag-size) !important;
       object-fit: cover;
     }
   }
 
   .countryOptions {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 0.5rem);
     right: 0;
     z-index: 900;
     display: grid;
-    gap: 2px;
-    width: 184px;
-    max-height: min(420px, calc(100svh - 96px));
+    gap: 0.125rem;
+    width: var(--nav-region-menu-width);
+    max-height: min(26.25rem, calc(100svh - 6rem));
     margin: 0;
-    padding: 8px;
+    padding: 0.5rem;
     overflow-y: auto;
-    border: 1px solid rgba(43, 47, 36, 0.12);
-    border-radius: 16px;
-    background: rgba(250, 247, 240, 0.96);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72),
-      0 18px 38px -22px rgba(24, 27, 20, 0.62);
+    border: 1px solid rgb(var(--ink-09-rgb) / .12);
+    border-radius: 1rem;
+    background: rgb(var(--cream-10-rgb) / .96);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .72),
+      0 18px 38px -22px rgb(var(--ink-02-rgb) / .62);
     backdrop-filter: blur(18px);
     transform-origin: top right;
     scrollbar-width: none;
@@ -350,11 +410,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 3px;
-    padding: 4px 7px 8px;
-    border-bottom: 1px solid rgba(43, 47, 36, 0.12);
-    color: rgba(43, 47, 36, 0.52);
-    font: 500 12px/1 "Sansation-Regular", sans-serif;
+    margin-bottom: 0.1875rem;
+    padding: 0.25rem 0.4375rem 0.5rem;
+    border-bottom: 1px solid rgb(var(--ink-09-rgb) / .12);
+    color: rgb(var(--ink-09-rgb) / .52);
+    font: 500 0.75rem/1 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -363,37 +423,37 @@
     position: relative;
     display: grid;
     width: 100%;
-    min-height: 38px;
-    grid-template-columns: 25px minmax(0, 1fr) 7px;
+    min-height: 2.375rem;
+    grid-template-columns: 1.5625rem minmax(0, 1fr) 0.4375rem;
     align-items: center;
-    gap: 9px;
-    padding: 5px 8px;
+    gap: 0.5625rem;
+    padding: 0.3125rem 0.5rem;
     overflow: hidden;
     border: 0;
-    border-radius: 10px;
+    border-radius: 0.625rem;
     background: transparent;
-    color: rgba(43, 47, 36, 0.72);
+    color: rgb(var(--ink-09-rgb) / .72);
     text-align: left;
     cursor: pointer;
 
     &:hover,
     &:focus-visible,
     &[data-selected="true"] {
-      background: rgba(116, 126, 98, 0.14);
+      background: rgb(var(--olive-15-rgb) / .14);
       color: var(--nav-ink);
     }
 
     > span {
       display: block;
       overflow: hidden;
-      font: 400 13px/1.2 "Sansation-Regular", sans-serif;
+      font: 400 0.8125rem/1.2 "Sansation-Regular", sans-serif;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     > i {
-      width: 5px;
-      height: 5px;
+      width: 0.3125rem;
+      height: 0.3125rem;
       border-radius: 50%;
       background: currentColor;
       opacity: 0;
@@ -405,8 +465,8 @@
   }
 
   .countryOption__flag {
-    width: 22px !important;
-    height: 22px !important;
+    width: var(--nav-flag-size) !important;
+    height: var(--nav-flag-size) !important;
     object-fit: cover;
   }
 
@@ -414,30 +474,30 @@
     position: relative;
     z-index: 1;
     display: grid;
-    width: 13px;
-    height: 13px;
+    width: 0.8125rem;
+    height: 0.8125rem;
     place-items: center;
     opacity: 0.62;
-    font: 400 13px/1 "Sansation-Regular", sans-serif;
+    font: 400 0.8125rem/1 "Sansation-Regular", sans-serif;
   }
 
   .navbar__cart,
   .navbar__utility-link {
-    width: 40px;
+    width: 2.5rem;
     border-radius: 999px;
     transition: color 0.25s ease, background-color 0.25s ease;
 
     &:hover {
       color: var(--darkOlive);
-      background: rgba(116, 126, 98, 0.1);
+      background: rgb(var(--olive-15-rgb) / .1);
     }
   }
 
   .navbar__right .magnetic {
     display: grid !important;
     place-items: center;
-    width: 40px;
-    height: 36px;
+    width: 2.5rem;
+    height: var(--nav-utility-height);
 
     > * {
       display: grid;
@@ -452,8 +512,8 @@
     }
 
     svg {
-      width: 36px;
-      height: 36px;
+      width: var(--nav-icon-size);
+      height: var(--nav-icon-size);
     }
 
     [data-testid="nav-cart-link"] {
@@ -465,15 +525,15 @@
         right: -3px;
         display: grid;
         place-items: center;
-        min-width: 15px;
-        height: 15px;
+        min-width: var(--nav-badge-size);
+        height: var(--nav-badge-size);
         margin: 0;
-        padding: 0 3px;
-        border: 1px solid rgba(255, 255, 255, 0.68);
+        padding: 0 0.1875rem;
+        border: 1px solid rgb(var(--white-rgb) / .68);
         border-radius: 999px;
         background: var(--darkOlive);
-        color: #fff8f1;
-        font-size: 13px;
+        color: var(--cream-10);
+        font-size: 0.8125rem;
         line-height: 1;
       }
     }
@@ -481,8 +541,8 @@
 
   .navbar__utility-link {
     img {
-      width: 36px;
-      height: 36px;
+      width: var(--nav-icon-size);
+      height: var(--nav-icon-size);
       opacity: 0.78;
       transition: opacity 0.25s ease,
         transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
@@ -500,27 +560,27 @@
     right: 0;
     display: grid;
     place-items: center;
-    min-width: 15px;
-    height: 15px;
-    padding: 0 3px;
-    border: 1px solid rgba(255, 255, 255, 0.68);
+    min-width: var(--nav-badge-size);
+    height: var(--nav-badge-size);
+    padding: 0 0.1875rem;
+    border: 1px solid rgb(var(--white-rgb) / .68);
     border-radius: 999px;
     background: var(--darkOlive);
-    color: #fff8f1;
-    font-size: 13px;
+    color: var(--cream-10);
+    font-size: 0.8125rem;
     line-height: 1;
   }
 
   .navbar__left:focus-within,
   .navbar__center:focus-within,
   .navbar__right:focus-within {
-    border-color: rgba(116, 126, 98, 0.42);
-    box-shadow: 0 15px 34px -19px rgba(24, 27, 20, 0.68),
-      0 3px 9px -5px rgba(24, 27, 20, 0.38),
-      inset 0 2px 3px rgba(255, 255, 255, 0.78),
-      inset 0 -3px 5px rgba(83, 92, 68, 0.15),
-      inset 2px 0 4px rgba(255, 255, 255, 0.2),
-      inset -2px 0 4px rgba(83, 92, 68, 0.06);
+    border-color: rgb(var(--olive-15-rgb) / .42);
+    box-shadow: 0 15px 34px -19px rgb(var(--ink-02-rgb) / .68),
+      0 3px 9px -5px rgb(var(--ink-02-rgb) / .38),
+      inset 0 2px 3px rgb(var(--white-rgb) / .78),
+      inset 0 -3px 5px rgb(var(--olive-07-rgb) / .15),
+      inset 2px 0 4px rgb(var(--white-rgb) / .2),
+      inset -2px 0 4px rgb(var(--olive-07-rgb) / .06);
   }
 
   a:focus-visible,
@@ -530,13 +590,13 @@
   }
 
   &.navbar--scrolled {
-    --nav-surface: rgba(250, 247, 240, 0.95);
-    --nav-shadow: 0 11px 26px -17px rgba(24, 27, 20, 0.66),
-      0 3px 7px -5px rgba(24, 27, 20, 0.38),
-      inset 0 2px 3px rgba(255, 255, 255, 0.74),
-      inset 0 -3px 5px rgba(83, 92, 68, 0.14),
-      inset 2px 0 4px rgba(255, 255, 255, 0.18),
-      inset -2px 0 4px rgba(83, 92, 68, 0.055);
+    --nav-surface: rgb(var(--cream-10-rgb) / .95);
+    --nav-shadow: 0 11px 26px -17px rgb(var(--ink-02-rgb) / .66),
+      0 3px 7px -5px rgb(var(--ink-02-rgb) / .38),
+      inset 0 2px 3px rgb(var(--white-rgb) / .74),
+      inset 0 -3px 5px rgb(var(--olive-07-rgb) / .14),
+      inset 2px 0 4px rgb(var(--white-rgb) / .18),
+      inset -2px 0 4px rgb(var(--olive-07-rgb) / .055);
 
     .navbar__left,
     .navbar__center,
@@ -546,22 +606,13 @@
   }
 }
 
-/* Was a raw `@media (max-width: 1240px)`, which pinned .navbar__center to 500px at every width
-   below 1240 — phones included. Re-expressed in the system: these are the defaults now, and the
-   wide-viewport values are applied upward from .navbar__center above. */
-.navbar {
-  .navbar__left {
-    min-width: 0;
-  }
-
-  .navbar__right {
-    width: max-content;
-  }
-
-  .navbar__nav-link > div {
-    padding-inline: 10px;
-  }
-}
+/*
+ * A block used to sit here — the remains of a raw `@media (max-width: 1240px)`. Two of its three
+ * declarations (`.navbar__left { min-width: 0 }`, `.navbar__right { width: max-content }`) were
+ * verbatim repeats of the base rule, and the third overrode `.navbar__nav-link > div` at equal
+ * specificity, so the base's 13px never rendered and the 10px did. That 10px now lives in the
+ * base rule as 0.625rem and the block is gone: one declaration per property, no silent winner.
+ */
 
 /*
  * Mobile bar: the links move into the MobileNav overlay, so the horizontal groups come out.

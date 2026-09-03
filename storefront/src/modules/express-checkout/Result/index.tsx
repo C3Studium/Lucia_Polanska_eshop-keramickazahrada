@@ -94,9 +94,23 @@ export default function ExpressResult({
         <p>{content.description}</p>
       </motion.div>
 
+      {/* data-lenis-prevent on the receipt below: on phs it becomes a scroll container
+          (max-height + overflow-y: auto — see style.module.scss), and phs matches two very
+          different clients. On a phone held sideways LenisProvider returns before constructing,
+          so the finger drives the native scroller and nothing here is needed. On a desktop
+          window sized to 568x320 Lenis IS running, it takes the wheel on a document-level
+          listener and calls preventDefault — measured: a wheel over the receipt left
+          receipt.scrollTop at 0 and moved the page instead, so with six items 388px of the
+          order, the total included, could not be reached at all. The attribute makes Lenis bail
+          out of that one subtree WITHOUT preventDefault, which hands the wheel straight back to
+          the native scroller. overscroll-behavior: contain in the stylesheet is the other half:
+          that one stops the native chaining once the list ends, this one stops Lenis taking the
+          wheel in the first place. Same fix, same spelling, as the four overlays in
+          Navbar/ContactDialog. */}
       {order && (
         <motion.section
           className={styles.receipt}
+          data-lenis-prevent
           initial={reduceMotion ? false : initial3}
           animate={animate2}
           transition={transition3}
@@ -177,8 +191,14 @@ export default function ExpressResult({
 const initial = { scale: .7, opacity: 0 }
 const animate = { scale: 1, opacity: 1 }
 const transition = { duration: .7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
-const initial2 = { opacity: 0, y: 20 }
-const animate2 = { opacity: 1, y: 0 }
+/* Entry offsets were 20px and 18px, i.e. fixed on a 2552-tall monitor and on a
+   720px laptop alike. Expressed against the 900px landscape reference height:
+   20/900 = 2.22vh -> 2.2vh. The receipt's offset is derived from the copy's by
+   the ratio the two always had (18/20 = .9), not copied: 2.2 * .9 = 1.98 -> 2vh.
+   Both animate to "0vh" rather than 0 so the two ends of the interpolation keep
+   the same shape — a bare 0 against a unit string is what makes framer jump. */
+const initial2 = { opacity: 0, y: "2.2vh" }
+const animate2 = { opacity: 1, y: "0vh" }
 const transition2 = { duration: .7, delay: .12, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
-const initial3 = { opacity: 0, y: 18 }
+const initial3 = { opacity: 0, y: "2vh" }
 const transition3 = { duration: .65, delay: .24, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }

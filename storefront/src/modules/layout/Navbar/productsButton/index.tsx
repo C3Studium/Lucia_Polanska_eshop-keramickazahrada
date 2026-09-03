@@ -24,6 +24,8 @@ export type NavigationCollection = {
   title: string
   href: string
   image: string
+  /** Věta pod jménem, z admina (`metadata.subtitle`). Prázdná, dokud ji nikdo nenapíše. */
+  description: string
   categories: NavigationCategory[]
   /** Shown when the entry has no sub-categories to list. */
   productCount: number

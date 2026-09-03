@@ -13,63 +13,136 @@
   width: 100%;
   height: 100%;
   border: 0;
-  background: rgba(24, 27, 19, 0.28);
+  background: rgb(var(--ink-02-rgb) / .28);
   backdrop-filter: blur(8px);
   pointer-events: auto;
   cursor: default;
 }
 
 .panel {
+  /*
+   * The bar's geometry, kept as three named members instead of one hand-added number. `top: 78px`
+   * and `max-height: calc(100dvh - 98px)` were the same three numbers added up by hand — 48px of
+   * bar, its 16px top inset, 14px of air under it — and any of the three moving made both wrong
+   * at once. Which is exactly what happened: the Navbar pass put the bar's height and inset on
+   * clamps, and 78 was a laptop's worth of pixels out of date the moment it did.
+   *
+   *   --nav-height        the bar's height.
+   *   --nav-top-inset     the bar's own `top`.
+   *   0.875rem            the gap between bar and panel (was a flat 14px).
+   *
+   * Both now come from `:root` (globals.scss). They used to be spelled out here as fallbacks,
+   * because this overlay is the bar's SIBLING in index.tsx and never inherited from `.navbar` —
+   * which meant the fallbacks were not fallbacks at all but the live values, a second copy of the
+   * bar's geometry that agreed with the first only as long as nobody edited either. (--nav-top-
+   * inset was worse: it was read here and declared nowhere, the bar writing the number straight
+   * into its own `top`.) With one declaration there is nothing left to keep in agreement.
+   *
+   * `--panel-top` then pays for itself twice: once as the offset, once inside the height budget,
+   * so the two can no longer drift apart.
+   */
+  --panel-top: calc(
+    var(--nav-height) + var(--nav-top-inset) + 0.875rem
+  );
+
+  /* One gutter for the five places that inset content from the panel edge. */
+  --search-gutter: clamp(1.25rem, 4vw, 4rem);
+
+  /* One card height for the product and for the skeleton that stands in for it, so the swap
+     between them cannot jump. min(), not clamp(): a floor that a short screen may lower. */
+  --search-card-min: min(21rem, 44vh);
+
   position: absolute;
-  top: 78px;
-  left: 1.5vw;
-  width: 97vw;
-  max-height: calc(100dvh - 98px);
-  overflow: hidden;
-  border: 1px solid rgba(43, 48, 35, 0.16);
+  top: var(--panel-top);
+  /*
+   * The overlay is fixed, so it resolves against the viewport rather than against the 16:10
+   * frame — above 1921px it has to add `--page-inset` exactly like the bar, the cookie card and
+   * the scroll rail do (globals.scss names those four). `left: 1.5vw` / `width: 97vw` matched the
+   * bar by coincidence of tuning up to 1920 — 21.6px against the bar's 20.2px at 1440 — and then
+   * walked out of the frame: on 2552x1351 the panel spanned 38…2514 while the frame spans
+   * 195…2357, so it hung 157px past the composition on each side. Measured after this change,
+   * panel and bar now share both edges exactly, at 1220 (17.1…1202.9) and at 2552 (230.9…2321.1).
+   *
+   * `--nav-side-inset` is the band beside the bar, now published on `:root` (globals.scss) and
+   * read by both, so the panel follows the bar by construction instead of by a repeated value.
+   */
+  left: calc(var(--page-inset, 0px) + var(--nav-side-inset));
+  width: calc(var(--page-max-w, 100vw) - 2 * var(--nav-side-inset));
+  /* Bar, gap, panel, and a matching breath at the bottom. */
+  max-height: calc(100dvh - var(--panel-top) - 1.25rem);
+  /*
+   * The vertical clamps below are sized so the column fits inside that budget down to 1220x660,
+   * the shortest laptop in the table — but the column's tallest row is a card whose photo takes
+   * its height from the card's *width*, and a title that may run to one line or two. That last
+   * variable is not something CSS can be certain about, and `overflow: hidden` with no scroller
+   * anywhere in the landscape rules does not merely clip what does not fit: it makes it
+   * unreachable. The phone block already reached this conclusion for its own budget; this is the
+   * same net one size up, and on every viewport where the column fits it shows nothing at all.
+   */
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
+  scrollbar-width: thin;
+  border: 1px solid rgb(var(--ink-09-rgb) / .16);
+  /* Physical, and deliberately so: the reveal in index.tsx clips with `inset(… round 30px)` and
+     the two radii have to be the same number or the corners tear while the panel opens. */
   border-radius: 30px;
   background: color-mix(in srgb, var(--bgWhite) 94%, transparent);
-  box-shadow: 0 24px 70px rgba(20, 23, 16, 0.2);
+  box-shadow: 0 24px 70px rgb(var(--ink-02-rgb) / .2);
   pointer-events: auto;
   will-change: clip-path, transform, opacity;
 }
 
+/*
+ * The panel's own padding is vertical only, and it now hangs on the height of the screen rather
+ * than its width. It used to be `clamp(18px, 2.5vw, 32px) / clamp(24px, 3vw, 42px)`: on a
+ * 1220x660 laptop that read 30 and 37px — the widest values the panel could afford, spent on the
+ * screen with the least room for them. On vh it reads 18 and 24 there and 28/37 on a 1080p
+ * desktop, which is the same swap that keeps everything below inside `max-height`.
+ *
+ * Live band 692–1231px of viewport height (top) and 706–1235px (bottom): floor on the laptops,
+ * growing across every desktop, and the rem ceilings still rise with the ramp above 1921.
+ */
 .content {
-  padding: clamp(18px, 2.5vw, 32px) 0 clamp(24px, 3vw, 42px);
+  padding: clamp(1.125rem, 2.6vh, 2rem) 0 clamp(1.5rem, 3.4vh, 2.625rem);
 }
 
 .helper,
 .resultsHeader {
-  margin-inline: clamp(20px, 4vw, 64px);
+  margin-inline: var(--search-gutter);
 }
 
 .resultsHeader button {
   border: 0;
   background: transparent;
   color: var(--darkOlive);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.25rem;
   cursor: pointer;
 }
 
 .helper {
-  min-height: 82px;
-  padding: 10px 0 16px;
+  /* Was a flat 82px. Live band 600–1025px of height, so a 660px laptop gets 53px and the ramp
+     still lifts the ceiling above 1921. */
+  min-height: clamp(3rem, 8vh, 5.125rem);
+  /* Vertical, so vh: full 10/16 from 1067px of height up, 7/10 on a 660px laptop. */
+  padding: clamp(0.25rem, 1vh, 0.625rem) 0 clamp(0.5rem, 1.5vh, 1rem);
 }
 
 .helperLabel {
   display: block;
-  margin-bottom: 10px;
-  color: rgba(43, 48, 35, 0.65);
-  font: 500 12px/1 "Sansation-Regular", sans-serif;
+  margin-bottom: clamp(0.25rem, 0.9vh, 0.625rem);
+  color: rgb(var(--ink-09-rgb) / .65);
+  font: 500 0.75rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .suggestions {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   overflow-x: auto;
   scrollbar-width: none;
 
@@ -82,10 +155,10 @@
     flex: 0 0 auto;
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 0.5rem;
     overflow: hidden;
-    padding: 10px 15px;
-    border: 1px solid rgba(43, 48, 35, 0.2);
+    padding: 0.625rem 0.9375rem;
+    border: 1px solid rgb(var(--ink-09-rgb) / .2);
     border-radius: 999px;
     background: transparent;
     color: var(--bgBlack);
@@ -96,7 +169,7 @@
       z-index: 0;
       inset: 0;
       border-radius: inherit;
-      background: #20211c;
+      background: var(--ink-05);
     }
 
     small,
@@ -106,8 +179,8 @@
     }
 
     small {
-      color: rgba(43, 48, 35, 0.58);
-      font-size: 12px;
+      color: rgb(var(--ink-09-rgb) / .58);
+      font-size: 0.75rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -127,27 +200,41 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 34px;
-  margin-bottom: 14px;
+  /* A floor for one line of 13px text, lowered on a screen too short to spend 34px on it. */
+  min-height: min(2.125rem, 5vh);
+  margin-bottom: clamp(0.5rem, 1.3vh, 0.875rem);
 
   p {
     margin: 0;
-    color: rgba(43, 48, 35, 0.72);
-    font-size: 13px;
+    color: rgb(var(--ink-09-rgb) / .72);
+    font-size: 0.8125rem;
   }
 }
 
 .quarryViewport {
   width: 100%;
-  min-height: 360px;
+  /*
+   * Was a flat 360px, which the phone block already had to undo. The same reasoning holds one
+   * step up. On 1220x660 the old panel had 562px to spend (100dvh − 98) and the column inside it
+   * measured 67 of padding + 143 of chips and facets + 48 of results header + 366 of rail = 624.
+   * Sixty-two pixels over, inside `overflow: hidden` with no scroller anywhere in the landscape
+   * rules — so the bottom of the cards was not merely clipped, it was unreachable.
+   *
+   * The 360 was never the binding number, though: a card measured ~348 on its own and the rail
+   * takes the taller of the two. The floor only mattered when the results were few and short.
+   * So it becomes the smaller of a fixed floor and a share of the screen — the same shape the
+   * phone block uses — and the height itself is dealt with where it is made: the photo's cap in
+   * `.thumbnailWrap`, and the vertical clamps above. Those bring the column to ~563 into 568.
+   */
+  min-height: min(22.5rem, 46vh);
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 18px;
+  padding-bottom: 1.125rem;
   /* The rail is draggable; grabbing it should look possible. */
   cursor: grab;
   /* Wheel and drag are handled in JS, so the browser must not claim the gesture first. */
   touch-action: pan-y;
-  scrollbar-color: rgba(116, 126, 98, 0.55) rgba(43, 48, 35, 0.09);
+  scrollbar-color: rgb(var(--olive-15-rgb) / .55) rgb(var(--ink-09-rgb) / .09);
   scrollbar-width: thin;
 
   &[data-dragging] {
@@ -162,30 +249,32 @@
 
   &::-webkit-scrollbar-track {
     border-radius: 999px;
-    background: rgba(43, 48, 35, 0.09);
+    background: rgb(var(--ink-09-rgb) / .09);
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(116, 126, 98, 0.55);
+    background: rgb(var(--olive-15-rgb) / .55);
     transition: background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   &:hover::-webkit-scrollbar-thumb {
-    background: rgba(116, 126, 98, 0.82);
+    background: rgb(var(--olive-15-rgb) / .82);
   }
 }
 
 .quarryTrack {
   display: flex;
   width: max-content;
-  gap: 18px;
-  padding-inline: clamp(20px, 4vw, 64px);
+  gap: 1.125rem;
+  padding-inline: var(--search-gutter);
   touch-action: pan-y;
 }
 
+/* Live band 1209–1565px, i.e. the card is still growing across every laptop and desktop width,
+   and the rem ceiling keeps growing with the ramp above 1921. */
 .productSlot {
-  flex: 0 0 clamp(278px, 23vw, 360px);
+  flex: 0 0 clamp(17.375rem, 23vw, 22.5rem);
 }
 
 .productMotion {
@@ -198,15 +287,15 @@
   display: flex;
   overflow: hidden;
   width: 100%;
-  min-height: 338px;
+  min-height: var(--search-card-min);
   flex-direction: column;
   gap: 0;
-  padding: 10px;
-  border: 1px solid rgba(43, 48, 35, 0.13);
-  border-radius: 22px;
-  background: rgba(255, 250, 242, 0.62);
+  padding: 0.625rem;
+  border: 1px solid rgb(var(--ink-09-rgb) / .13);
+  border-radius: 1.375rem;
+  background: rgb(var(--cream-10-rgb) / .62);
   color: inherit;
-  box-shadow: 0 6px 22px rgba(31, 35, 25, 0.07);
+  box-shadow: 0 6px 22px rgb(var(--ink-04-rgb) / .07);
   user-select: none;
 }
 
@@ -216,11 +305,11 @@
   inset: 0;
   background: linear-gradient(
       90deg,
-      rgba(32, 33, 28, 0.075),
-      rgba(32, 33, 28, 0.018) 62%,
+      rgb(var(--ink-05-rgb) / .075),
+      rgb(var(--ink-05-rgb) / .018) 62%,
       transparent
     ),
-    rgba(32, 33, 28, 0.008);
+    rgb(var(--ink-05-rgb) / .008);
   pointer-events: none;
 }
 
@@ -228,10 +317,23 @@
   position: relative;
   z-index: 1;
   width: 100%;
+  /*
+   * The one element in the panel that competes for both axes: its width comes from the card
+   * (a vw clamp) and its height follows from the ratio, so on a short laptop the photo alone
+   * claimed 182 of the panel's 568px. The ratio stays; the height gets a ceiling that knows
+   * about the screen, and `object-fit: cover` inside the Thumbnail turns the difference into a
+   * crop rather than a squash.
+   *
+   * 26vh against a natural height that measures 27.6vh at 1220x660, 26.8 at 1366x768 and 22 at
+   * 1920x1080: it trims the short laptops by 6–11px each and never engages on a desktop. The
+   * 17rem ceiling stays clear of the natural height at both 1080p (238px against 272) and
+   * 2552x1351 after the ramp (322 against 351).
+   */
   aspect-ratio: 1.42 / 1;
+  max-height: min(17rem, 26vh);
   overflow: hidden;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.58);
+  border-radius: 0.9375rem;
+  background: rgb(var(--white-rgb) / .58);
 }
 
 .thumbnailMotion {
@@ -247,13 +349,13 @@
 
 .productIndex {
   position: absolute;
-  bottom: 10px;
-  left: 11px;
-  padding: 5px 8px;
+  bottom: 0.625rem;
+  left: 0.6875rem;
+  padding: 0.3125rem 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 248, 238, 0.86);
-  color: rgba(32, 33, 28, 0.7);
-  font: 500 12px/1 "Sansation-Regular", sans-serif;
+  background: rgb(var(--cream-10-rgb) / .86);
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 500 0.75rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -262,12 +364,12 @@
   position: relative;
   z-index: 1;
   min-width: 0;
-  padding: 16px 8px 7px;
+  padding: clamp(0.75rem, 1.9vh, 1rem) 0.5rem 0.4375rem;
 
   h3 {
     display: -webkit-box;
     overflow: hidden;
-    margin: 8px 0 16px;
+    margin: clamp(0.25rem, 1.1vh, 0.5rem) 0 clamp(0.625rem, 2.2vh, 1rem);
     font: 400 clamp(1.45rem, 1.8vw, 2rem) / 1.02 "Sentient-Regular", serif;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -279,7 +381,7 @@
   overflow: hidden;
   color: currentColor;
   opacity: 0.58;
-  font: 500 12px/1 "Sansation-Regular", sans-serif;
+  font: 500 0.75rem/1 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -290,16 +392,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
+  padding-top: 0.75rem;
   border-top: 1px solid currentColor;
   color: currentColor;
-  font-size: 13px;
+  font-size: 0.8125rem;
   opacity: 0.72;
 
   i {
     display: grid;
-    width: 25px;
-    height: 25px;
+    width: 1.5625rem;
+    height: 1.5625rem;
     border: 1px solid currentColor;
     border-radius: 50%;
     font-style: normal;
@@ -310,26 +412,28 @@
 .skeletonTrack {
   display: flex;
   width: max-content;
-  gap: 18px;
-  padding-inline: clamp(20px, 4vw, 64px);
+  gap: 1.125rem;
+  padding-inline: var(--search-gutter);
 }
 
+/* Same basis and same height as `.productSlot` / `.product`, from the same two sources, so the
+   rail does not resize under the reader when the real cards arrive. */
 .skeleton {
-  flex: 0 0 clamp(278px, 23vw, 360px);
+  flex: 0 0 clamp(17.375rem, 23vw, 22.5rem);
   display: flex;
-  min-height: 338px;
+  min-height: var(--search-card-min);
   flex-direction: column;
-  gap: 16px;
-  padding: 10px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.48);
+  gap: 1rem;
+  padding: 0.625rem;
+  border-radius: 1.375rem;
+  background: rgb(var(--white-rgb) / .48);
 
   i,
   span {
     display: block;
     overflow: hidden;
-    border-radius: 12px;
-    background: rgba(43, 48, 35, 0.08);
+    border-radius: 0.75rem;
+    background: rgb(var(--ink-09-rgb) / .08);
 
     &::after {
       display: block;
@@ -338,7 +442,7 @@
       background: linear-gradient(
         100deg,
         transparent 20%,
-        rgba(255, 255, 255, 0.7) 50%,
+        rgb(var(--white-rgb) / .7) 50%,
         transparent 80%
       );
       content: "";
@@ -354,35 +458,37 @@
 
   span {
     width: 72%;
-    height: 25px;
-    margin: 0 8px;
+    height: 1.5625rem;
+    margin: 0 0.5rem;
   }
 }
 
 .empty {
   display: flex;
-  min-height: 106px;
+  /* Same shape as the rail's floor it replaces: a share of the screen once the screen is short
+     enough that 106px is no longer a small number. */
+  min-height: min(6.625rem, 16vh);
   align-items: center;
-  gap: 12px;
-  margin-inline: clamp(20px, 4vw, 64px);
-  padding: 18px 20px;
-  border: 1px solid rgba(43, 48, 35, 0.14);
-  border-radius: 18px;
-  color: rgba(43, 48, 35, 0.68);
+  gap: 0.75rem;
+  margin-inline: var(--search-gutter);
+  padding: 1.125rem 1.25rem;
+  border: 1px solid rgb(var(--ink-09-rgb) / .14);
+  border-radius: 1.125rem;
+  color: rgb(var(--ink-09-rgb) / .68);
 
   span {
     margin-right: auto;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   button,
   a {
-    padding: 10px 14px;
-    border: 1px solid rgba(43, 48, 35, 0.32);
+    padding: 0.625rem 0.875rem;
+    border: 1px solid rgb(var(--ink-09-rgb) / .32);
     border-radius: 999px;
     background: transparent;
     color: var(--bgBlack);
-    font-size: 13px;
+    font-size: 0.8125rem;
     text-decoration: none;
     cursor: pointer;
     transition: border-color 0.25s ease, background-color 0.25s ease,
@@ -444,19 +550,20 @@
 .facets {
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  margin-top: clamp(0.375rem, 1.4vh, 0.625rem);
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
 
   button {
+    /* px on purpose: a thumb is a physical object and does not scale with the page. */
     min-height: 44px;
-    padding: 0 16px;
-    border: 1px solid rgba(43, 48, 35, 0.2);
+    padding: 0 1rem;
+    border: 1px solid rgb(var(--ink-09-rgb) / .2);
     border-radius: 999px;
     background: transparent;
-    color: #20211c;
+    color: var(--ink-05);
     cursor: pointer;
-    font: 400 14px/1 "Sansation-Regular", sans-serif;
+    font: 400 0.875rem/1 "Sansation-Regular", sans-serif;
     transition:
       background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
       color 0.3s cubic-bezier(0.22, 1, 0.36, 1),
@@ -464,29 +571,29 @@
   }
 
   button:hover {
-    border-color: rgba(43, 48, 35, 0.45);
+    border-color: rgb(var(--ink-09-rgb) / .45);
   }
 }
 
 .facetActive {
-  border-color: #20211c !important;
-  background: #20211c !important;
-  color: #fff8ee !important;
+  border-color: var(--ink-05) !important;
+  background: var(--ink-05) !important;
+  color: var(--cream-10) !important;
 }
 
 /* Text-only, so it never competes with the pills it clears. */
 .clearFilters {
   margin-left: auto;
-  padding: 0 6px !important;
+  padding: 0 0.375rem !important;
   border: 0 !important;
   background: transparent !important;
-  color: #4d4e46 !important;
+  color: var(--olive-04) !important;
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.25rem;
 }
 
 .clearFilters:hover {
-  color: #20211c !important;
+  color: var(--ink-05) !important;
 }
 
 /*

@@ -29,7 +29,7 @@
       z-index: 3;
       width: clamp(3rem, 6vw, 7rem);
       height: 1px;
-      background: rgba(33, 34, 34, 0.34);
+      background: rgb(var(--black-03-rgb) / .34);
       pointer-events: none;
     }
   }
@@ -39,9 +39,31 @@
   position: relative;
   width: 100%;
   min-height: 85svh;
-  padding: clamp(9rem, 17vh, 14rem) 1.25rem clamp(6rem, 12vh, 10rem);
+  /*
+   * Both floors used to be the desktop value (9rem / 6rem) with `lt-h` re-cutting them flat at
+   * 5.5rem / 4rem, which stepped the top padding 167 → 88px across the 800px height line. The
+   * floor is now the short-laptop value and 17vh/12vh carries the whole range: 130px at 768,
+   * 167 at 982, 184 at 1080 — the same curve, no stop needed.
+   * Live: top 518…1318px of viewport height, bottom 533…1333.
+   */
+  padding: clamp(5.5rem, 17vh, 14rem) 1.25rem clamp(4rem, 12vh, 10rem);
   color: var(--blackText);
 
+  /*
+   * Not a dead rule, and not a size.
+   *
+   * It looks dead from the desktop: the chapter measures 1108 in a 982 window, 1293 in 1080,
+   * 1652 in 1351 — always taller than its own frame, so the floor never comes into it. On the
+   * two short laptops it is the opposite. At 1366×768 the section measures exactly 768, at
+   * 1220×660 exactly 660: there the content is *shorter* than the frame and this floor is the
+   * only thing holding the chapter open, which is also what gives the `space-between` in `lt-h`
+   * something to distribute. Removing it would drop those two by ~50px and collapse the
+   * distribution with them.
+   *
+   * The 85svh base against 100svh here is a change of kind, not of scale: stacked in one column
+   * on a phone the chapter is a block of text, and in the wide composition it is a full-frame
+   * panel. Neither number is a size, they are two shares of whatever height exists.
+   */
   @include h(sm) {
     min-height: 100svh;
     padding-right: calc(5 * var(--fvw));
@@ -64,9 +86,21 @@
     align-items: center;
     gap: 1rem;
     margin-bottom: clamp(5rem, 10vh, 8rem);
-    color: rgba(33, 34, 34, 0.58);
+    color: rgb(var(--black-03-rgb) / .58);
     font-family: "Sansation-Regular";
-    font-size: clamp(0.75rem, 0.68vw, 0.76rem);
+    /*
+     * `clamp(0.75rem, 0.68vw, 0.76rem)` was a clamp in name only: 0.68vw crosses 12px at 1765
+     * and 12.16px at 1788, so the live band was 23px wide and the label was a constant 12px on
+     * every landscape screen.
+     *
+     * The replacement is the page's one rail step — the same declaration as the hero's topline
+     * and footer rail, the carousel's rail, the Kolekce meta and `--courses-rail-type` in
+     * Kurzy. Live 1263…1474px. The floor stays at 12px, the readability line uppercase set at
+     * 0.12em cannot go under; the ratio is deliberately short of the 1.5× the type ladder
+     * wants, because with a hard floor a wider ratio can only be bought at the top and 14px is
+     * already the largest this label can take without reading as a heading.
+     */
+    font-size: clamp(0.75rem, 0.95vw, 0.875rem);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 
@@ -82,7 +116,7 @@
 
     .rail__line {
       height: 1px;
-      background: rgba(33, 34, 34, 0.22);
+      background: rgb(var(--black-03-rgb) / .22);
     }
   }
 
@@ -121,10 +155,36 @@
     }
 
     .Hero__Intro__Container {
+      /*
+       * The plate's width, declared once.
+       *
+       * `index.tsx` opens the wrapper beside this line by animating its width, so the reveal and
+       * the plate have to agree on one number or the wrapper ends up wider than what it holds and
+       * a gap opens between the plate and the word. The animation targets `var(--intro-plate-w)`;
+       * framer resolves the token, measures the px it lands on for the tween, and puts the token
+       * back as the final value — so after the reveal the wrapper is still bound to this line and
+       * still re-resolves on resize.
+       *
+       * Height-aware because the plate competes for both axes: 21vw alone made it 287×176 on a
+       * 1366×768 laptop, which `lt-h` then cut to 178×71 — a 44%/53% step across one pixel of
+       * viewport height. `min(21vw, 30vh)` reaches the same size continuously.
+       * Ratio holds without `aspect-ratio`: 21/10 = 2.10 in the width-led band, 30/14 = 2.14 in
+       * the height-led one, and the two arms cross within 2% of each other (1.43 vs 1.40 aspect),
+       * so the plate is never width-led on one axis and height-led on the other for long enough
+       * to distort. The rem ends never bind in landscape — 30vh clears 8rem above 427px of
+       * height and only reaches 28rem above 1493px.
+       */
+      --intro-plate-w: clamp(8rem, min(21vw, 30vh), 28rem);
+
       display: flex;
       align-items: center;
-      gap: clamp(1rem, 2.5vw, 3rem);
-      margin: 0.8rem 0 1rem 0;
+      /* Follows the plate rather than the window: the gap sits between the plate and the word, so
+         when height takes the plate down it has to come down with it. Live 576…1920 on width,
+         400…1333 on height. */
+      gap: clamp(0.9rem, min(2.5vw, 3.6vh), 3rem);
+      /* Was 0.8rem/1rem here and 0.5rem/0.6rem in `lt-h`. The short-laptop values are the floors
+         and vh carries the rest: 8/9.6px at 768, 10.8/14px at 1080. Live 800…1440 and 738…1354. */
+      margin: clamp(0.5rem, 1vh, 0.9rem) 0 clamp(0.6rem, 1.3vh, 1.1rem);
 
       @include h(sm) { margin-left: calc(10 * var(--fvw)); }
       @include v(lg) { margin-left: calc(10 * var(--fvw)); }
@@ -139,7 +199,7 @@
       }
 
       h2 {
-        color: #747e62;
+        color: var(--olive-15);
         font-family: "Sentient-LightItalic";
         font-size: clamp(4.2rem, min(7.8vw, 13vh), 8.8rem);
         letter-spacing: -0.045em;
@@ -153,8 +213,8 @@
 
       .Hero__Intro__Img__Container {
         position: relative;
-        width: clamp(12rem, 21vw, 28rem);
-        height: clamp(5.4rem, 10vw, 11rem);
+        width: var(--intro-plate-w);
+        height: clamp(3.4rem, min(10vw, 14vh), 11rem);
         overflow: hidden;
 
         img {
@@ -171,28 +231,47 @@
     display: grid;
     grid-template-columns: 1fr;
     justify-content: space-between;
+    /*
+     * A measure for the row, not for the column it sits in.
+     *
+     * The two tracks cap at 34rem and 24rem, so on a 1728px frame they used up 58rem of it and
+     * `space-between` poured the remaining ~700px into the middle: a paragraph on the left, a
+     * note against the far right, and a void between them that read as a layout fault rather
+     * than as a counterweight. Bounding the row is what closes it, and 78rem is where the gap
+     * stops being a void: 58rem of tracks leaves 20rem of air, less than the narrower of the two
+     * columns, which is the point at which a gap reads as a column gap. Above 1921 the ramp
+     * lifts all three together, so the proportion is identical at 2552 (20.5% of the row) as at
+     * 1920. `min()` with 100% so nothing changes on any screen narrower than the bound.
+     */
+    max-width: min(100%, 78rem);
+    /* One-column stack: this is the row gap between paragraph and note. The two-column
+       composition below overrides only the column axis, where the measure is a different job. */
     gap: 2.5rem;
-    margin-top: 4rem;
+    /* Was a flat 4rem here and clamp(5rem, 11vh, 9rem) in the two wide stops — one property,
+       two values. The floor is the narrow value, 11vh carries the rest. Live 582…1309. */
+    margin-top: clamp(4rem, 11vh, 9rem);
 
     @include h(sm) {
       grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
-      gap: 4rem;
-      margin-top: clamp(5rem, 11vh, 9rem);
+      /* 4rem here against 3rem in `lt-h` was the last size pair in this block. Live 1333…2000. */
+      column-gap: clamp(3rem, 3.6vw, 4.5rem);
     }
 
     @include v(lg) {
       grid-template-columns: minmax(18rem, 34rem) minmax(14rem, 24rem);
-      gap: 4rem;
-      margin-top: clamp(5rem, 11vh, 9rem);
+      column-gap: clamp(3rem, 3.6vw, 4.5rem);
     }
 
     p {
       display: flex;
       flex-wrap: wrap;
       margin: 0;
-      color: rgba(33, 34, 34, 0.76);
+      color: rgb(var(--black-03-rgb) / .76);
       font-family: "Sentient-Light";
-      font-size: clamp(1.15rem, 1.35vw, 1.55rem);
+      /* 1.35vw against clamp(1rem, 1.05vw, 1.15rem) in `lt-h` dropped the body 18.4 → 16px over
+         the height line. 2.4vh meets 1.35vw almost exactly at 16:9 (18.43 vs 18.44px at
+         1366×768), so the step is gone rather than softened. Live 1185…1837 on width. */
+      font-size: clamp(1rem, min(1.35vw, 2.4vh), 1.55rem);
       line-height: 1.38;
 
       span {
@@ -206,7 +285,7 @@
     .ECom__Intro__Aside {
       align-self: end;
       padding-top: 1.2rem;
-      border-top: 1px solid rgba(33, 34, 34, 0.24);
+      border-top: 1px solid rgb(var(--black-03-rgb) / .24);
       font-family: "Sansation-Light";
       font-size: clamp(0.95rem, 1vw, 1.12rem);
       line-height: 1.45;
@@ -218,23 +297,23 @@
 /*
  * Laptops with a short viewport — see the same stop in Hero/IntroHero/style.scss.
  *
- * This chapter is a 100svh panel whose every vertical value is a clamp with a rem floor:
- * `clamp(9rem, 17vh, 14rem)` of top padding resolves to 17vh only above ~847px of viewport, so
- * on a 600px laptop screen it is a flat 144px — and so is every other one. Measured at 1280x600
- * the section stood 814px tall inside a 600px viewport: the title alone filled the screen and the
- * paragraph it introduces never appeared above the fold.
+ * What used to be here was a second set of sizes: flat 5.5rem/4rem paddings, a smaller plate, a
+ * smaller body face. Every one of them existed because the base values were width-led clamps with
+ * desktop rem floors, so on a 768px screen they all sat on those floors and none of them noticed
+ * the missing height. They are gone; the floors moved down to what this stop asked for and the
+ * middle terms moved to vh, so the same numbers now arrive continuously instead of at a step.
  *
- * The type comes down and the vertical padding is re-cut against the height that actually exists.
- * The composition — rail, stepped two-line title with the inline plate, then the two-column body —
- * is untouched.
+ * What is left is the part vh cannot express, because 1366×768 and 1920×1080 are the same shape:
+ * no blend of vw and vh can tell them apart, only a stop can. Those are all changes of kind —
+ * how the chapter distributes itself, and how wide the title's diagonal is allowed to spread.
  */
 @include lt-h {
   .ECom__Intro {
     /*
-     * The chapter is a forced 100svh panel, and its three parts — rail, title, body — were
-     * stacked from the top with fixed gaps. On a 562px screen that packed everything into the
-     * upper 420px and left a quarter of the frame empty underneath, which read as the section
-     * having been cut short rather than composed.
+     * The chapter's three parts — rail, title, body — were stacked from the top with fixed gaps.
+     * On a 562px screen that packed everything into the upper 420px and left a quarter of the
+     * frame empty underneath, which read as the section having been cut short rather than
+     * composed.
      *
      * Distributing them instead pins the rail to the top and the body to the bottom, with the
      * title floating between: the same three-part structure, but it now fills whatever height
@@ -243,8 +322,6 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding-top: 5.5rem;
-    padding-bottom: 4rem;
 
     .ECom__Intro__Rail {
       margin-bottom: 0;
@@ -258,9 +335,8 @@
      * middle, which is what this looked like before.
      *
      * Bounding the block is what fixes it: the stagger keeps its shape but spans 62rem instead of
-     * the full 72rem column, so the descent stays legible as one shape. The indents come in to
-     * match, and the plate is sized off the line box beside it so it reads as a companion to the
-     * type rather than a stray thumbnail.
+     * the full 72rem column, so the descent stays legible as one shape, and the indents come in
+     * to match. The plate is no longer re-sized here — 30vh brings it down on its own.
      */
     .ECom__Intro__Title {
       /*
@@ -273,6 +349,23 @@
        */
       max-width: 86%;
 
+      /*
+       * The two indents below are the only sizes left in this stop, and they stay on purpose.
+       *
+       * They are not two sizes of one offset — they are the offsets of a different box. The
+       * `max-width: 86%` above re-cuts the diagonal inside a narrower title, and the stagger has
+       * to be re-cut with it: 10 and 7 fvw are read against the full column, 5 and 4 against the
+       * bounded one. Proportional scaling would not give these numbers either (86% of 10 is 8.6,
+       * not 5) — the descent is steepened, not just shrunk.
+       *
+       * Nor could a clamp reach them. 1366×768 and 1920×1080 are the same 16:9 shape, so every
+       * vw/vh blend that pulls the indent in at 768 pulls it in by the same factor at 1080 and
+       * takes the desktop composition with it. The choice is this stop or nothing, and `--fvw`
+       * already makes both values scale with the frame, so neither is a fixed size.
+       *
+       * The cost is honest: at the 800px height line the indent still steps, 10 → 5 fvw. It now
+       * steps together with the bound it belongs to instead of alone.
+       */
       h2 {
         /* Size comes from the continuous height-aware rule above; only the stagger is tuned here. */
         &:last-child {
@@ -281,28 +374,17 @@
       }
 
       .Hero__Intro__Container {
-        /* Not `margin: … 0`: that shorthand silently reset the 10vw left indent this line is
-           built on, which is what dropped the plate under "Vítejte" at the far left. */
-        margin-top: 0.5rem;
-        margin-right: 0;
-        margin-bottom: 0.6rem;
+        /* Left indent only. The vertical margins and the gap are continuous clamps now, and the
+           `margin` shorthand that used to be needed here would silently reset this indent — which
+           is what once dropped the plate under "Vítejte" at the far left. */
         margin-left: calc(5 * var(--fvw));
-        gap: clamp(0.9rem, 1.8vw, 1.8rem);
-
-        .Hero__Intro__Img__Container {
-          width: clamp(8rem, 13vw, 15rem);
-          height: clamp(3.4rem, 5.2vw, 6rem);
-        }
       }
     }
 
     .ECom__Intro__Content {
+      /* Belongs to `justify-content: space-between` above, not to the type scale: the body is
+         pinned to the bottom of the frame, so the gap that would push it there is removed. */
       margin-top: 0;
-      gap: 3rem;
-
-      p {
-        font-size: clamp(1rem, 1.05vw, 1.15rem);
-      }
     }
   }
 }

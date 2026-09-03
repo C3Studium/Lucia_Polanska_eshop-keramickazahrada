@@ -1,7 +1,7 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .accountWishlistDelete {
   --premium-button-surface: transparent;
-  --premium-button-ink: #8d493d;
-  --premium-button-active-ink: #fff;
-  --premium-button-fill: #8d493d;
+  --premium-button-ink: var(--clay-12);
+  --premium-button-active-ink: var(--white);
+  --premium-button-fill: var(--clay-12);
 }

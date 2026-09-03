@@ -1,6 +1,6 @@
 "use server"
 
-import { sdk } from "@lib/config"
+import { backendUrl, sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import { HttpTypes } from "@medusajs/types"
@@ -524,13 +524,28 @@ export const getCustomerWishlistItems = async (): Promise<any[]> => {
 
   if (!authHeaders) return []
 
+  /*
+   * Publikovatelný klíč patří i sem.
+   *
+   * `/store/*` si ho vynucuje bez ohledu na přihlášení — přihlášený zákazník
+   * bez něj dostane 400, ne 401. Volání níž vrací při neúspěchu prázdné pole,
+   * takže by se to neprojevilo jako chyba, ale jako „nemáte nic uloženého",
+   * což je ta horší varianta: vypadá jako platná odpověď.
+   *
+   * Ostatní čtení jdou přes SDK, které si klíč bere z konfigurace samo; tohle
+   * je jeden ze tří syrových `fetch` v celém `lib/data`, a proto se na něj
+   * zapomnělo. (Stejná příčina jako u `shop-status`.)
+   */
+  const pk = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+
   const headers = {
     ...authHeaders,
+    ...(pk ? { "x-publishable-api-key": pk, "x-publishable-key": pk } : {}),
   }
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/customers/me/wishlists`,
+      `${backendUrl}/store/customers/me/wishlists`,
       {
         method: "GET",
         headers,

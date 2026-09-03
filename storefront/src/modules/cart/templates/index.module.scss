@@ -1,16 +1,20 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
 .root {
-  --cart-ink: #20211c;
-  --cart-cream: #ffe8d6;
-  --cart-olive: #bbb788;
-  --cart-green: #747e62;
-  --cart-line: rgba(255, 232, 214, .2);
+  --cart-ink: var(--ink-05);
+  --cart-cream: var(--cream-06);
+  --cart-olive: var(--sage-01);
+  --cart-green: var(--olive-15);
+  --cart-line: rgb(var(--cream-06-rgb) / .2);
   position: relative;
   isolation: isolate;
   width: 100%;
   min-height: 100svh;
-  padding: clamp(94px, 10vh, 124px) 0 clamp(110px, 15vh, 180px);
+  /* Svislý pás stránky visí na výšce okna, ne na šířce, a krajní členy jsou v rem, aby je
+     ramp nad 1921 zvedl. Živé pásmo 800–1378 px výšky nahoře, 615–1385 dole: na 660px
+     laptopu sedí na podlaze (72/80), na 1351 na stropě (124/180 — dnešní desktopová
+     hodnota). Podlaha 94px byla na nízkém notebooku třetina toho, co zbývá na obsah. */
+  padding: clamp(4.5rem, 9vh, 7.75rem) 0 clamp(5rem, 13vh, 11.25rem);
   overflow: clip;
   color: var(--cart-cream);
   background: var(--cart-ink);
@@ -23,9 +27,9 @@
   content: "";
   pointer-events: none;
   background:
-    radial-gradient(circle at 86% 10%, rgba(228, 126, 79, .32), transparent 30rem),
-    radial-gradient(ellipse at 12% 48%, rgba(255, 232, 214, .18), transparent 48rem),
-    radial-gradient(ellipse at 76% 78%, rgba(187, 183, 136, .28), transparent 54rem);
+    radial-gradient(circle at 86% 10%, rgb(var(--clay-29-rgb) / .32), transparent 30rem),
+    radial-gradient(ellipse at 12% 48%, rgb(var(--cream-06-rgb) / .18), transparent 48rem),
+    radial-gradient(ellipse at 76% 78%, rgb(var(--sage-01-rgb) / .28), transparent 54rem);
   opacity: .12;
   animation: cartAmbient 32s cubic-bezier(.45, 0, .55, 1) infinite alternate;
 }
@@ -33,24 +37,38 @@
 .container {
   position: relative;
   z-index: 1;
-  width: min(96vw, 1980px);
+  /* 123.75rem == 1980px do 1921; nad ním strop roste s rampem (na 2552 je 2632px), takže
+     vyhrává první člen.
+
+     Ten první člen ale MUSÍ měřit RÁM, ne obrazovku. Nad 1921 běží v globals.scss
+     `--page-max-w: min(100vw, 100svh * 1.6)` a celý web sedí v `.pageFrame` té šířky —
+     na 2552×1351 je rám 2162px, ne 2552. „Černý okraj po stranách" tedy nebyl strop téhle
+     komponenty, byl to rám celého webu. S 96vw vyšel kontejner 2450px, tedy o 288px širší
+     než jeho vlastní rodič, a `.root { overflow: clip }` ten přesah uřízl: souhrn sahal na
+     2599, rám končí na 2357 — 242px souhrnu VČETNĚ PRAVÉ ČÁSTI TLAČÍTKA „Pokračovat
+     k pokladně" nebylo na 2K vidět (změřeno; na 2200×1238 chybělo 92px).
+     `--fvw` je 1 % rámu (globals.scss): pod 1921 je to přesně 1vw, takže se tam nehne nic,
+     nad ním dá 96 × 21.6 = 2075px a kontejner se do rámu vejde s 43px po stranách. */
+  width: min(calc(96 * var(--fvw)), 123.75rem);
   margin: 0 auto;
 }
 
 .intro {
   display: grid;
-  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.2fr) minmax(280px, 1.05fr);
-  gap: clamp(44px, 4vw, 86px);
+  grid-template-columns: minmax(17.5rem, 1.05fr) minmax(22.5rem, 1.2fr) minmax(17.5rem, 1.05fr);
+  gap: clamp(2.75rem, 4vw, 5.375rem);
   align-items: end;
-  min-height: 210px;
-  padding: 22px clamp(18px, 1.8vw, 36px) 42px;
+  /* Výška úvodního pásu je to, co rozhoduje, jestli je první produkt nad ohybem. 210px
+     natvrdo zabralo na 1220x660 třetinu obrazovky; 22vh dá 145px tam a 224px na 1351. */
+  min-height: clamp(9rem, 22vh, 14rem);
+  padding: clamp(.9rem, 2.2vh, 1.6rem) clamp(1.125rem, 1.8vw, 2.25rem) clamp(1.75rem, 4.2vh, 3rem);
   border-bottom: 1px solid var(--cart-line);
   animation: cartReveal .8s cubic-bezier(.22, 1, .36, 1) both;
 
   h1 {
     grid-column: 1;
-    margin: clamp(46px, 6vh, 68px) 0 0;
-    font: 400 clamp(44px, 4vw, 76px)/.9 "Sentient-Regular", serif;
+    margin: clamp(2.25rem, 6vh, 4.25rem) 0 0;
+    font: 400 clamp(2.75rem, 4vw, 4.75rem)/.9 "Sentient-Regular", serif;
     letter-spacing: -.05em;
   }
 }
@@ -59,10 +77,14 @@
   grid-column: 1 / -1;
   align-self: start;
   margin: 0;
-  padding-bottom: 10px;
+  padding-bottom: .625rem;
   border-bottom: 1px solid var(--cart-line);
-  color: rgba(255, 232, 214, .5);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .5);
+  /* Podlaha .75rem, ne .72rem: .72rem je 11.52px a na 1200–1280 se tím popisek dostal POD
+     dvanáctipixelovou hranici, kterou shoot.cjs hlásí jako vadu (naměřeno na 1220×660).
+     12px je přesně to, co se tu vysází dnes. Živé pásmo 1200–1520, nad 1921 nese strop ramp
+     — v px to na 2552 zůstávalo 12px vedle 76px nadpisu. */
+  font: 400 clamp(.75rem, 1vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -71,8 +93,8 @@
   grid-column: 3;
   margin: 0;
   max-width: 34ch;
-  color: rgba(255, 232, 214, .62);
-  font: 300 clamp(14px, .92vw, 17px)/1.5 "Sansation-Light", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .62);
+  font: 300 clamp(.875rem, 1.05vw, 1.1rem)/1.5 "Sansation-Light", sans-serif;
 }
 
 .objectMark {
@@ -81,9 +103,12 @@
   position: relative;
   align-self: center;
   justify-self: center;
-  width: clamp(104px, 9vw, 168px);
+  /* Značka je uvnitř úvodního pásu, takže soupeří o VÝŠKU, ne o šířku — a protože má
+     aspect-ratio: 1, clampuje se jen jedna osa (procenta by se počítala z té druhé).
+     Živé pásmo 615–1292 px výšky: 86px na 660, 117px na 900, 168px na 1351. */
+  width: clamp(5rem, 13vh, 10.5rem);
   aspect-ratio: 1;
-  color: rgba(255,232,214,.22);
+  color: rgb(var(--cream-06-rgb) / .22);
   animation: objectDrift 12s ease-in-out infinite alternate;
 }
 
@@ -100,8 +125,10 @@
 .objectMark b {
   inset: 43%;
   border: 0;
-  background: #bbb788;
-  box-shadow: 0 0 0 8px rgba(187,183,136,.08);
+  background: var(--sage-01);
+  /* Prstenec kolem tečky drží podíl z .objectMark, který je sám 13vh — 8/117 na 900px
+     výšky je 6.8 % z 13vh, tedy .9vh. V px by na 2K zůstal osmi pixely na 168px značce. */
+  box-shadow: 0 0 0 clamp(.375rem, .9vh, .625rem) rgb(var(--sage-01-rgb) / .08);
 }
 
 .objectMark::before,
@@ -119,17 +146,24 @@
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(370px, 22vw, 440px);
+  /* Souhrn drží 22 % šířky. V px se strop 440 zasekl a na 2552 z něj byl útržek (17 %);
+     v rem ho ramp zvedne na 585px. Podlaha 23.125rem je minimální šířka sloupce, ne
+     velikost — pod 1682 se o šířku hlásí položky.
+     Prostřední člen měří rám, ne obrazovku (`--fvw`, viz .container výš): pod 1921 je to
+     přesně 22vw, nad ním 22 % z rámu — jinak by souhrn na 2552 zabral 27 % kontejneru
+     místo dnešních 22.9 %, a na 3440×1440 (týž rám, jiná obrazovka) zase jiných. */
+  grid-template-columns: minmax(0, 1fr) clamp(23.125rem, calc(22 * var(--fvw)), 27.5rem);
   align-items: start;
-  gap: clamp(58px, 5vw, 96px);
-  padding: clamp(68px, 9vh, 104px) clamp(18px, 1.8vw, 36px) 0;
+  gap: clamp(3rem, 5vw, 6rem);
+  padding: clamp(3.5rem, 9vh, 6.5rem) clamp(1.125rem, 1.8vw, 2.25rem) 0;
 }
 
 .left {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 48px;
+  /* Sloupec, takže gap je svislý rozměr: 32px na 660px laptopu místo 48. */
+  gap: clamp(2rem, 4.4vh, 3.5rem);
   color: var(--cart-cream);
 }
 
@@ -146,49 +180,57 @@
 
 .sticky {
   position: sticky;
-  top: clamp(86px, 9vh, 108px);
+  /* Podlaha 4.5rem = 72px, tedy nad --nav-height (clamp(2.875rem, 4.6vh, 3.5rem), max 56px)
+     i na nejnižším laptopu. Živé pásmo 800–1200 px výšky okna. */
+  top: clamp(4.5rem, 9vh, 6.75rem);
 }
 
 .summaryBox {
   position: relative;
   z-index: 1;
-  padding: clamp(30px, 3vw, 46px);
-  border: 1px solid rgba(32, 33, 28, .2);
+  /* Osy rozdělené: svisle podle výšky okna (na 660px laptopu 24px místo 37), vodorovně
+     podle šířky — jedna hodnota na 3vw dělala z boxu na nízkém notebooku svislý polštář. */
+  padding: clamp(1.5rem, 3vh, 2.6rem) clamp(1.5rem, 2.4vw, 2.875rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
   background: var(--cart-cream);
   color: var(--cart-ink);
-  box-shadow: 24px 30px 70px -48px rgba(0,0,0,.95);
+  box-shadow: 1.5rem 1.875rem 4.375rem -3rem rgb(var(--black-01-rgb) / .95);
   transition: transform 700ms cubic-bezier(.22,1,.36,1);
 }
 
 .summaryBox::before {
   position: absolute;
   z-index: -1;
-  inset: 13px -13px -13px 13px;
+  inset: .8125rem -.8125rem -.8125rem .8125rem;
   content: "";
-  border: 1px solid rgba(187,183,136,.42);
-  background: rgba(187,183,136,.08);
+  border: 1px solid rgb(var(--sage-01-rgb) / .42);
+  background: rgb(var(--sage-01-rgb) / .08);
   transition: transform 700ms cubic-bezier(.22,1,.36,1);
 }
 
 .summaryBox::after {
   position: absolute;
-  top: -19px;
-  right: 11px;
+  top: -1.1875rem;
+  right: .6875rem;
   content: "02 · SOUHRN";
-  color: rgba(255,232,214,.38);
-  font: 400 13px/1 "Sansation-Regular", sans-serif;
+  color: rgb(var(--cream-06-rgb) / .38);
+  font: 400 clamp(.78rem, .95vw, 1rem)/1 "Sansation-Regular", sans-serif;
   letter-spacing: .15em;
 }
 
-.summaryBox:hover { transform: translateY(-3px); }
-.summaryBox:hover::before { transform: translate(4px, 4px); }
+/* Posun na hoveru je vázaný na vlastní geometrii boxu (::before má inset .8125rem),
+   ne na okno — proto rem, ne vw/vh. V px by rámeček nad 1921 vyjel o týchž 4 px z boxu,
+   který mezitím vyrostl 1.33×, a zákryt s odsazením rámečku by se rozešel. */
+.summaryBox:hover { transform: translateY(-.1875rem); }
+.summaryBox:hover::before { transform: translate(.25rem, .25rem); }
 
 .secureNote {
-  margin: 0 0 clamp(34px, 4vw, 52px);
-  padding-bottom: 11px;
-  border-bottom: 1px solid rgba(32, 33, 28, .2);
-  color: rgba(32, 33, 28, .5);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  /* Svislá mezera visela na šířce okna: na 1220x660 z ní bylo 48.8px. Na vh je to 22px. */
+  margin: 0 0 clamp(1.4rem, 3.4vh, 3.25rem);
+  padding-bottom: .6875rem;
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: 400 clamp(.75rem, 1vw, .95rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -204,14 +246,20 @@
   to { opacity: .17; transform: scale(1.015) translate3d(.7%, -.3%, 0); }
 }
 
+/* Dráhy ve vh, ne v px — svislý posun se má krátit se stejnou osou, o kterou celý pás
+   soupeří. 24px na 900px vysokém okně je 2.67vh, zaokrouhleno dolů na 2.4vh, aby na 1351
+   nevyskočil úvod o 36px. */
 @keyframes cartReveal {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(2.4vh); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Odvozeno z velikosti značky, ne opsáno: .objectMark je 13vh, na 900px výšky tedy 117px,
+   a dnešní drift -4/+5px z toho dělá -3.4 % / +4.3 %. Táž procenta z 13vh jsou -.44vh
+   a +.56vh, takže amplituda drží poměr ke značce na každé výšce okna. */
 @keyframes objectDrift {
-  from { transform: rotate(-4deg) translateY(-4px); }
-  to { transform: rotate(7deg) translateY(5px); }
+  from { transform: rotate(-4deg) translateY(-.44vh); }
+  to { transform: rotate(7deg) translateY(.56vh); }
 }
 
 @include below-px(1100px) {

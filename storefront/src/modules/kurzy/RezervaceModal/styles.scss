@@ -10,13 +10,13 @@
  * never zooms on focus.
  */
 .kurzyModal {
-  --kurzy-charcoal: #24251f;
-  --kurzy-cream: #ffe8d6;
-  --kurzy-paper: #f3e7da;
-  --kurzy-olive: #74775b;
-  --kurzy-ember: #d47a50;
-  --kurzy-olive-text: #5d6046;
-  --kurzy-ember-text: #a34f28;
+  --kurzy-charcoal: var(--ink-05);
+  --kurzy-cream: var(--cream-06);
+  --kurzy-paper: var(--cream-05);
+  --kurzy-olive: var(--olive-13);
+  --kurzy-ember: var(--clay-27);
+  --kurzy-olive-text: var(--olive-08);
+  --kurzy-ember-text: var(--clay-13);
 
   position: fixed;
   inset: 0;
@@ -24,43 +24,48 @@
   z-index: 500;
   display: grid;
   place-items: center;
-  padding: clamp(10px, 2vh, 32px) clamp(10px, 2vw, 32px);
+  padding: clamp(0.625rem, 2vh, 2rem) clamp(0.625rem, 2vw, 2rem);
 
   &__backdrop {
     position: absolute;
     inset: 0;
     border: 0;
-    background: rgba(20, 21, 17, 0.55);
+    background: rgb(var(--ink-01-rgb) / .55);
     backdrop-filter: blur(3px);
     cursor: pointer;
   }
 
   &__panel {
     position: relative;
-    width: min(760px, 100%);
-    max-height: min(92svh, 1000px);
+    /* Both stops in rem: above 1921 the root ramp widens the panel with the
+       type inside it, instead of leaving 760px of box around 1.33× type. */
+    width: min(47.5rem, 100%);
+    max-height: min(92svh, 62rem);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    /* Explicit, or the browser computes overflow-x: auto from the line above
+       and the panel gains a horizontal scroller it never needs. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
-    padding: clamp(22px, 3vh, 40px) clamp(18px, 3vw, 44px)
-      clamp(26px, 3.4vh, 44px);
-    border: 1px solid rgba(36, 37, 31, 0.24);
+    padding: clamp(1.375rem, 3vh, 2.5rem) clamp(1.125rem, 3vw, 2.75rem)
+      clamp(1.625rem, 3.4vh, 2.75rem);
+    border: 1px solid rgb(var(--ink-05-rgb) / .24);
     background: var(--kurzy-paper);
     color: var(--kurzy-charcoal);
-    box-shadow: 0 40px 90px -40px rgba(10, 10, 8, 0.7);
+    box-shadow: 0 2.5rem 5.625rem -2.5rem rgb(var(--black-01-rgb) / .7);
   }
 
   &__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 18px;
-    padding-bottom: clamp(14px, 2vh, 22px);
-    border-bottom: 1px solid rgba(36, 37, 31, 0.16);
+    gap: 1.125rem;
+    padding-bottom: clamp(0.875rem, 2vh, 1.375rem);
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
 
     h2 {
-      margin: 10px 0 0;
+      margin: 0.625rem 0 0;
       font-family: "Sentient-Regular", serif;
       font-size: clamp(1.7rem, 2.6vw, 2.5rem);
       font-weight: 400;
@@ -77,7 +82,7 @@
   }
 
   &__eyebrow {
-    color: rgba(36, 37, 31, 0.66);
+    color: rgb(var(--ink-05-rgb) / .66);
     font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -86,11 +91,13 @@
   &__close {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     flex-shrink: 0;
-    height: 44px;
-    padding: 0 16px;
-    border: 1px solid rgba(36, 37, 31, 0.42);
+    /* 2.75rem is 44px at the base root and only grows — the touch target
+       floor holds without a media query. */
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 1px solid rgb(var(--ink-05-rgb) / .42);
     border-radius: 999px;
     background: transparent;
     color: var(--kurzy-charcoal);
@@ -106,7 +113,7 @@
 
     &:hover {
       border-color: var(--kurzy-charcoal);
-      background: rgba(255, 248, 241, 0.7);
+      background: rgb(var(--cream-10-rgb) / .7);
     }
 
     &:focus-visible {
@@ -122,24 +129,24 @@
   &__progress {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: clamp(14px, 2vh, 22px);
+    gap: 0.5rem;
+    margin-top: clamp(0.875rem, 2vh, 1.375rem);
   }
 
   &__progressStep {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 10px 4px 12px;
+    gap: 0.1875rem;
+    padding: 0.625rem 0.25rem 0.75rem;
     border: 0;
     background: transparent;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     text-align: left;
     cursor: pointer;
 
     &:disabled {
-      color: rgba(36, 37, 31, 0.38);
+      color: rgb(var(--ink-05-rgb) / .38);
       cursor: default;
     }
 
@@ -160,7 +167,7 @@
   &__progressLabel {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
     font-size: 0.8125rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -173,7 +180,7 @@
 
   &__progressSummary {
     overflow: hidden;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.8125rem;
     font-weight: 300;
     text-overflow: ellipsis;
@@ -185,7 +192,7 @@
     right: 0;
     bottom: 0;
     left: 0;
-    height: 2px;
+    height: 0.125rem;
     background: var(--kurzy-charcoal);
   }
 
@@ -195,25 +202,27 @@
 
   &__stage {
     position: relative;
-    margin-top: clamp(14px, 2vh, 22px);
+    margin-top: clamp(0.875rem, 2vh, 1.375rem);
   }
 
   &__stepPanel {
     width: 100%;
   }
 
+  /* The step stack is what a 720px laptop runs out of room for, so its rhythm
+     hangs on vh: 1.6vh is 12.3px at 768 and 17.9px at 1120. */
   &__step {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: clamp(0.75rem, 1.6vh, 1.25rem);
   }
 
   &__back {
     align-self: flex-start;
-    padding: 6px 0;
+    padding: 0.375rem 0;
     border: 0;
     background: transparent;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.875rem;
     cursor: pointer;
 
@@ -229,16 +238,16 @@
 
   &__hint {
     margin: 0;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.95rem;
     font-weight: 300;
   }
 
   &__chosen {
     margin: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(36, 37, 31, 0.16);
-    color: rgba(36, 37, 31, 0.75);
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
+    color: rgb(var(--ink-05-rgb) / .75);
     font-size: 0.9rem;
     line-height: 1.5;
   }
@@ -250,18 +259,19 @@
   &__viewSwitch {
     display: inline-flex;
     align-self: flex-start;
-    border: 1px solid rgba(36, 37, 31, 0.3);
+    border: 1px solid rgb(var(--ink-05-rgb) / .3);
     border-radius: 999px;
-    background: rgba(255, 248, 241, 0.6);
-    padding: 3px;
+    background: rgb(var(--cream-10-rgb) / .6);
+    padding: 0.1875rem;
 
     button {
-      min-height: 40px;
-      padding: 0 18px;
+      /* Was 40px — under the 44px target floor even before the conversion. */
+      min-height: 2.75rem;
+      padding: 0 1.125rem;
       border: 0;
       border-radius: 999px;
       background: transparent;
-      color: rgba(36, 37, 31, 0.7);
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: 0.875rem;
       cursor: pointer;
       transition: background 0.25s ease, color 0.25s ease;
@@ -286,16 +296,16 @@
   &__termList {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: clamp(0.625rem, 1.2vh, 0.875rem);
   }
 
   &__term {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: clamp(14px, 1.8vh, 20px) clamp(16px, 1.6vw, 24px);
-    border: 1px solid rgba(36, 37, 31, 0.18);
-    background: rgba(255, 248, 241, 0.55);
+    gap: 0.3125rem;
+    padding: clamp(0.875rem, 1.8vh, 1.25rem) clamp(1rem, 1.6vw, 1.5rem);
+    border: 1px solid rgb(var(--ink-05-rgb) / .18);
+    background: rgb(var(--cream-10-rgb) / .55);
     text-align: left;
     cursor: pointer;
     transition: border-color 0.3s ease, background 0.3s ease,
@@ -303,8 +313,8 @@
 
     &:hover,
     &:focus-visible {
-      border-color: rgba(36, 37, 31, 0.42);
-      box-shadow: 0 16px 34px -28px rgba(24, 25, 20, 0.7);
+      border-color: rgb(var(--ink-05-rgb) / .42);
+      box-shadow: 0 1rem 2.125rem -1.75rem rgb(var(--ink-01-rgb) / .7);
     }
 
     &:focus-visible {
@@ -338,13 +348,13 @@
   }
 
   &__termMeta {
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.9rem;
     font-weight: 300;
   }
 
   &__termPrices {
-    color: rgba(36, 37, 31, 0.72);
+    color: rgb(var(--ink-05-rgb) / .72);
     font-size: 0.9rem;
   }
 
@@ -355,7 +365,7 @@
     text-transform: uppercase;
 
     &.is-full {
-      color: rgba(36, 37, 31, 0.45);
+      color: rgb(var(--ink-05-rgb) / .45);
     }
   }
 
@@ -366,16 +376,19 @@
   &__fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 16px;
+    /* Row gap on vh, column gap on vw — the two axes compete for different
+       room. Two columns stay two columns all the way up: at 2K the panel is
+       1010px wide, which is a 480px field, not a stretched one. */
+    gap: clamp(0.75rem, 1.5vh, 1.125rem) clamp(1rem, 1.2vw, 1.5rem);
 
     label,
     .kurzyModal__count {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0.375rem;
 
       > span {
-        color: rgba(36, 37, 31, 0.7);
+        color: rgb(var(--ink-05-rgb) / .7);
         font-size: var(--type-caption, 0.8125rem);
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -387,11 +400,11 @@
     }
 
     input {
-      height: 46px;
-      padding: 0 14px;
-      border: 1px solid rgba(36, 37, 31, 0.5);
+      min-height: 2.875rem;
+      padding: 0 0.875rem;
+      border: 1px solid rgb(var(--ink-05-rgb) / .5);
       border-radius: 0;
-      background: #fffdfa;
+      background: var(--white);
       color: var(--kurzy-charcoal);
       /* 16px: the body floor, and below it iOS zooms the page on focus. */
       font-size: var(--type-body, 1rem);
@@ -402,13 +415,13 @@
       }
 
       &[aria-invalid="true"] {
-        border-color: #a33c25;
+        border-color: var(--clay-10);
       }
     }
   }
 
   &__fieldError {
-    color: #a33c25;
+    color: var(--clay-10);
     font-size: 0.8125rem;
     font-style: normal;
   }
@@ -416,12 +429,12 @@
   &__count > div {
     display: flex;
     align-items: stretch;
-    border: 1px solid rgba(36, 37, 31, 0.26);
-    background: #fffdfa;
+    border: 1px solid rgb(var(--ink-05-rgb) / .26);
+    background: var(--white);
 
     button {
-      width: 46px;
-      height: 44px;
+      width: 2.875rem;
+      min-height: 2.75rem;
       border: 0;
       background: transparent;
       color: var(--kurzy-charcoal);
@@ -430,11 +443,11 @@
       transition: background 0.25s ease;
 
       &:hover:not(:disabled) {
-        background: rgba(36, 37, 31, 0.06);
+        background: rgb(var(--ink-05-rgb) / .06);
       }
 
       &:disabled {
-        color: rgba(36, 37, 31, 0.3);
+        color: rgb(var(--ink-05-rgb) / .3);
         cursor: default;
       }
 
@@ -465,13 +478,13 @@
   &__price {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    gap: 0.75rem;
     flex-wrap: wrap;
-    padding-top: 14px;
-    border-top: 1px solid rgba(36, 37, 31, 0.16);
+    padding-top: clamp(0.75rem, 1.4vh, 1.125rem);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
 
     > span {
-      color: rgba(36, 37, 31, 0.7);
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: var(--type-caption, 0.8125rem);
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -494,7 +507,7 @@
   &__recap {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: clamp(0.625rem, 1.2vh, 0.875rem);
   }
 
   &__payment {
@@ -503,11 +516,11 @@
     border: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: clamp(0.5rem, 1vh, 0.75rem);
 
     legend {
-      margin-bottom: 10px;
-      color: rgba(36, 37, 31, 0.7);
+      margin-bottom: 0.625rem;
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: var(--type-caption, 0.8125rem);
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -516,25 +529,26 @@
     label {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 1px solid rgba(36, 37, 31, 0.2);
-      background: rgba(255, 253, 250, 0.6);
+      gap: 0.75rem;
+      padding: clamp(0.625rem, 1.2vh, 0.875rem) 0.875rem;
+      border: 1px solid rgb(var(--ink-05-rgb) / .2);
+      background: rgb(var(--white-rgb) / .6);
       cursor: pointer;
       transition: border-color 0.25s ease, background 0.25s ease;
 
       &.is-active {
         border-color: var(--kurzy-charcoal);
-        background: #fffdfa;
+        background: var(--white);
       }
 
       input {
-        /* A tremor-friendly radio: the browser default is ~13px. */
-        width: 20px;
-        height: 20px;
-        margin-top: 2px;
+        /* A tremor-friendly radio: the browser default is ~13px. In rem so
+           the 2K ramp takes it with the label it belongs to. */
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-top: 0.125rem;
         flex-shrink: 0;
-        accent-color: #24251f;
+        accent-color: var(--ink-05);
       }
 
       strong {
@@ -545,8 +559,8 @@
 
       small {
         display: block;
-        margin-top: 2px;
-        color: rgba(36, 37, 31, 0.7);
+        margin-top: 0.125rem;
+        color: rgb(var(--ink-05-rgb) / .7);
         font-size: 0.8125rem;
         font-weight: 300;
       }
@@ -555,17 +569,17 @@
 
   &__error {
     margin: 0;
-    padding: 10px 14px;
-    border: 1px solid rgba(163, 60, 37, 0.4);
-    background: rgba(163, 60, 37, 0.07);
-    color: #a33c25;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid rgb(var(--clay-10-rgb) / .4);
+    background: rgb(var(--clay-10-rgb) / .07);
+    color: var(--clay-10);
     font-size: 0.9rem;
   }
 
   &__consent {
     margin: 0;
     /* 0.7 is the audited AA floor for secondary text on the cream ground. */
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.8125rem;
     font-weight: 300;
     line-height: 1.45;
@@ -580,10 +594,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    min-width: min(280px, 100%);
-    height: 54px;
-    padding: 0 26px;
+    gap: 0.625rem;
+    min-width: min(17.5rem, 100%);
+    min-height: 3.375rem;
+    padding: 0 1.625rem;
     border: 1px solid var(--kurzy-charcoal);
     border-radius: 999px;
     background: var(--kurzy-charcoal);
@@ -599,8 +613,8 @@
 
     &:hover:not(:disabled),
     &:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: 0 18px 34px -24px rgba(0, 0, 0, 0.8);
+      transform: translateY(-0.125rem);
+      box-shadow: 0 1.125rem 2.125rem -1.5rem rgb(var(--black-01-rgb) / .8);
     }
 
     &:focus-visible {
@@ -621,18 +635,18 @@
   /* ------------------------------------------------------------------ */
 
   &__waitlist {
-    padding-top: 4px;
+    padding-top: 0.25rem;
 
     form {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: clamp(0.75rem, 1.5vh, 1.125rem);
     }
   }
 
   &__waitlistIntro {
     margin: 0;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.95rem;
     font-weight: 300;
     line-height: 1.5;
@@ -649,8 +663,8 @@
     }
 
     p {
-      margin: 12px 0 0;
-      color: rgba(36, 37, 31, 0.7);
+      margin: 0.75rem 0 0;
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: 0.95rem;
       font-weight: 300;
       line-height: 1.5;
@@ -664,8 +678,8 @@
   &__summary {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: clamp(16px, 2.4vh, 26px);
+    gap: 0.25rem;
+    margin-top: clamp(1rem, 2.4vh, 1.625rem);
 
     h3 {
       margin: 0;
@@ -684,19 +698,19 @@
     }
 
     dl {
-      margin: 18px 0 0;
-      border-top: 1px solid rgba(36, 37, 31, 0.16);
+      margin: 1.125rem 0 0;
+      border-top: 1px solid rgb(var(--ink-05-rgb) / .16);
 
       > div {
         display: flex;
         justify-content: space-between;
-        gap: 16px;
-        padding: 10px 0;
-        border-bottom: 1px solid rgba(36, 37, 31, 0.1);
+        gap: 1rem;
+        padding: clamp(0.5rem, 1.1vh, 0.875rem) 0;
+        border-bottom: 1px solid rgb(var(--ink-05-rgb) / .1);
       }
 
       dt {
-        color: rgba(36, 37, 31, 0.7);
+        color: rgb(var(--ink-05-rgb) / .7);
         font-size: var(--type-caption, 0.8125rem);
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -711,8 +725,8 @@
     }
 
     > p {
-      margin: 14px 0 0;
-      color: rgba(36, 37, 31, 0.7);
+      margin: 0.875rem 0 0;
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: 0.95rem;
       font-weight: 300;
       line-height: 1.55;
@@ -720,7 +734,7 @@
 
     .kurzyModal__primary {
       align-self: flex-end;
-      margin-top: 18px;
+      margin-top: 1.125rem;
     }
   }
 
@@ -733,7 +747,7 @@
 
   &__summaryLink {
     align-self: flex-start;
-    margin-top: 14px;
+    margin-top: 0.875rem;
     color: var(--kurzy-ember-text);
     font-size: 0.9rem;
     text-decoration: underline;
@@ -753,13 +767,13 @@
 .kurzyCalendar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: clamp(0.5rem, 1vh, 0.75rem);
 
   &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 0.625rem;
 
     strong {
       font-family: "Sentient-Regular", serif;
@@ -771,11 +785,14 @@
   }
 
   &__nav {
-    width: 44px;
-    height: 44px;
-    border: 1px solid rgba(36, 37, 31, 0.36);
+    /* One axis clamped, the circle held by aspect-ratio — sizing both axes
+       independently is how round buttons stop being round. */
+    width: 2.75rem;
+    min-height: 2.75rem;
+    aspect-ratio: 1;
+    border: 1px solid rgb(var(--ink-05-rgb) / .36);
     border-radius: 50%;
-    background: rgba(255, 248, 241, 0.6);
+    background: rgb(var(--cream-10-rgb) / .6);
     color: var(--kurzy-charcoal);
     font-size: 1.25rem;
     line-height: 1;
@@ -788,8 +805,8 @@
     }
 
     &:disabled {
-      color: rgba(36, 37, 31, 0.3);
-      border-color: rgba(36, 37, 31, 0.16);
+      color: rgb(var(--ink-05-rgb) / .3);
+      border-color: rgb(var(--ink-05-rgb) / .16);
       cursor: default;
     }
 
@@ -802,10 +819,10 @@
   &__weekdays {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
+    gap: 0.25rem;
 
     span {
-      color: rgba(36, 37, 31, 0.7);
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: 0.75rem;
       letter-spacing: 0.08em;
       text-align: center;
@@ -816,11 +833,18 @@
   &__grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
+    gap: 0.25rem;
   }
 
+  /* The row height is the only axis this grid owns — the seven columns are
+     1fr of the panel. So it hangs on vh: 44px on a 720 laptop (the touch
+     floor, and the whole reason the month still fits there), 48.6px at 900,
+     60px from 1111 up. `aspect-ratio: 1` was the other candidate and is
+     wrong here: the cells measure 93px wide, so square cells would make the
+     month 481px tall instead of 236px and push the actions off a short
+     laptop entirely. */
   &__pad {
-    min-height: 48px;
+    min-height: clamp(2.75rem, 5.4vh, 3.75rem);
   }
 
   &__day {
@@ -829,33 +853,33 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    min-height: 48px;
+    gap: 0.1875rem;
+    min-height: clamp(2.75rem, 5.4vh, 3.75rem);
     border: 1px solid transparent;
     background: transparent;
-    color: rgba(36, 37, 31, 0.45);
+    color: rgb(var(--ink-05-rgb) / .45);
     font-size: 0.95rem;
     cursor: default;
 
     &.has-terms {
-      border-color: rgba(36, 37, 31, 0.24);
-      background: rgba(255, 248, 241, 0.6);
+      border-color: rgb(var(--ink-05-rgb) / .24);
+      background: rgb(var(--cream-10-rgb) / .6);
       color: var(--kurzy-charcoal);
       cursor: pointer;
       transition: border-color 0.25s ease, background 0.25s ease;
 
       &:hover {
-        border-color: rgba(36, 37, 31, 0.5);
+        border-color: rgb(var(--ink-05-rgb) / .5);
         background: var(--kurzy-cream);
       }
     }
 
     &.is-full {
       background: transparent;
-      color: rgba(36, 37, 31, 0.55);
+      color: rgb(var(--ink-05-rgb) / .55);
 
       .kurzyCalendar__dot {
-        background: rgba(36, 37, 31, 0.35);
+        background: rgb(var(--ink-05-rgb) / .35);
       }
     }
 
@@ -878,16 +902,16 @@
 
   &__dot {
     position: relative;
-    width: 7px;
-    height: 7px;
+    width: 0.4375rem;
+    height: 0.4375rem;
     border-radius: 50%;
     background: var(--kurzy-ember-text);
 
     &[data-count]::after {
       content: attr(data-count) "×";
       position: absolute;
-      top: -3px;
-      left: 11px;
+      top: -0.1875rem;
+      left: 0.6875rem;
       color: var(--kurzy-ember-text);
       font-size: 0.65rem;
       line-height: 1;
@@ -897,15 +921,15 @@
   &__legend {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     margin: 0;
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.8125rem;
     font-weight: 300;
 
     i {
-      width: 7px;
-      height: 7px;
+      width: 0.4375rem;
+      height: 0.4375rem;
       flex-shrink: 0;
       border-radius: 50%;
       background: var(--kurzy-ember-text);

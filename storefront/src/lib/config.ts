@@ -13,6 +13,12 @@ if (process.env.MEDUSA_BACKEND_URL) {
 // Normalize (no trailing slash)
 MEDUSA_BACKEND_URL = MEDUSA_BACKEND_URL.replace(/\/$/, "")
 
+/**
+ * Where the backend lives — exported because the admin bar links back into
+ * the Medusa dashboard, which is served from that same origin.
+ */
+export const backendUrl = MEDUSA_BACKEND_URL
+
 export const sdk = new Medusa({
   baseUrl: MEDUSA_BACKEND_URL,
   debug: process.env.NODE_ENV === "development",

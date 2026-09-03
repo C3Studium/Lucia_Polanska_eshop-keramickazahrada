@@ -1,10 +1,11 @@
-import LenisProvider from "@lib/context/LenisContext"
+import SiteChrome from "@modules/layout/components/site-chrome"
 import MotionPreferenceProvider from "@lib/context/MotionPreferenceProvider"
 import EffectBudgetFlag from "@modules/layout/components/effect-budget-flag"
 import { StateProvider } from "@lib/context/StateContext"
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import "styles/globals.scss"
+import StudioClient from "@c3studium/valecms/manage/appClient.jsx";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -27,11 +28,12 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <EffectBudgetFlag />
         <MotionPreferenceProvider>
           <StateProvider>
-            <LenisProvider>
-              <main className="pageFrame relative">{props.children}</main>
-            </LenisProvider>
+            {/* Rám stránky a plynulé scrollování — obojí vynechané nad
+                /studio, kde je to aplikace, ne stránka. Viz komponentu. */}
+            <SiteChrome>{props.children}</SiteChrome>
           </StateProvider>
         </MotionPreferenceProvider>
+        <StudioClient />
       </body>
     </html>
   )

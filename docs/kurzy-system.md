@@ -152,8 +152,31 @@ Majitelka dostává notifikaci (zvonek + e-mail) o každé nové rezervaci
 
 `/app/kurzy-sprava`: záložky Nadcházející / Proběhlé a zrušené.
 
-- **Nový termín / Upravit** — všechna pole včetně cen; kapacitu nejde snížit
-  pod už rezervovaná místa; zrušení termínu má vlastní tlačítko.
+- **Nový termín** — průvodce na dva kroky (`components/course-term-wizard.tsx`).
+  Krok 1 „kdy": název, místo, **kalendář** — naklikají se dny, kdy se kurz koná
+  (tečka označuje den, kde termín už je), k tomu jeden čas, délka, kapacita a
+  stav. Přepínač „opakovat každý týden" se s výběrem skládá: z **každého**
+  vybraného dne vyroste vlastní týdenní řada a vytvoří se jejich sjednocení
+  (`planMultiDayOccurrences`) — dva kliky, které míří na stejné datum, udělají
+  jeden termín, ne dva. Krok 2 „ceny": tři pásma s příkladem výpočtu.
+  Cena je v databázi povinná, proto ji krok 2 vybírá vždy — termín nikdy
+  nevznikne bez ní.
+- **Upravit** — jen to, co dělá termín tím termínem: název, místo, den (opět
+  kalendář, jednodenní), čas, délka, kapacita, stav. Kapacitu nejde snížit pod
+  už rezervovaná místa; zrušení termínu má vlastní tlačítko.
+- **Ceny** (tlačítko na kartě termínu) a **Poznámky** (tlačítko až v rozkliknutém
+  termínu, u seznamu lidí) — `components/course-bulk-dialogs.tsx`. Obojí je
+  sezónní rozhodnutí, ne vlastnost jedné lekce, takže obojí má **volič rozsahu**:
+  jen tenhle termín / vybrané termíny (kalendář) / všechny nadcházející / dané
+  období. Píše se přes `POST /admin/courses/terms/bulk`. Pravidla rozsahu jsou
+  v `modules/course/bulk-scope.ts` (čisté, otestované) a admin je pouští taky —
+  proto je věta „změní 14 termínů" slib, ne odhad. Dvě pravidla, která neustoupí:
+  **zrušený termín se nikdy nesáhne** (je to historický záznam) a **plošný rozsah
+  nesahá do minulosti** (proběhlý termín si drží cenu, za kterou se prodal, aby
+  peníze v rezervacích seděly). Na minulý termín se dá dosáhnout jen jmenovitě.
+  U cen se posílá jen to, co se opravdu změnilo — otevřít ceny nad termínem za
+  500 Kč, změnit jen cenu za dva a pustit to na celý podzim nesmí ostatním
+  přepsat cenu za jednoho.
 - **Obsazenost** — pruh X/kapacita (zelená → oranžová → červená).
 - **Rezervace** — kdo přijde, kontakty, pásmo + částka, stav platby;
   „Zapsat rezervaci" pro telefonické domluvy (jen jméno + počet + poznámka).
@@ -173,8 +196,8 @@ Majitelka dostává notifikaci (zvonek + e-mail) o každé nové rezervaci
   a vyjmenuje rezervace bez e-mailu i ty k ručnímu vrácení. Čekací listina
   se při zrušení termínu záměrně neobesílá.
 - **Čekací listina** — karta termínu ukazuje „Čekají na uvolnění místa: N"
-  s rozbalovacím seznamem jmen; poznámka termínu v editaci upozorňuje, že
-  ji uvidí účastníci v připomínce.
+  s rozbalovacím seznamem jmen; dialog Poznámky upozorňuje, že text uvidí
+  účastníci v připomínce tři dny předem.
 
 ## Storefront — stránka /kurzy
 

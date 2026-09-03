@@ -7,14 +7,29 @@ import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
 import styles from "./style.module.scss"
 
+/*
+ * Nájezdová geometrie v jednotce toho, proti čemu se pohybuje.
+ *
+ * Blok stoupá proti obrazovce, takže jeho posun patří do vh, ne do px:
+ * původních 12px čtených na referenčním okně vysokém 1080 je 12/1080 = 1.11vh
+ * (8.5px na laptopu 768, 15px na desktopu 1351). Posun položek uvnitř si drží
+ * poměr, který návrh měl — 8/12 — místo druhého ručně vybraného čísla.
+ *
+ * Obě strany interpolace nesou stejný tvar výrazu ("1.11vh" ↔ "0vh"); kdyby
+ * cíl zůstal číslem 0, framer by míchal px s vh a animace by skočila.
+ */
+const PROMPT_RISE_VH = 1.11
+/** Položka uvnitř bloku: 8/12 posunu bloku. */
+const PROMPT_ITEM_RISE_VH = +(PROMPT_RISE_VH * (8 / 12)).toFixed(2) // 0.74
+
 const savedAddressPromptVariants: Variants = {
   hidden: {
     opacity: 0,
-    y: 12,
+    y: `${PROMPT_RISE_VH}vh`,
   },
   visible: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     transition: {
       duration: 0.56,
       ease: [0.22, 1, 0.36, 1],
@@ -25,10 +40,10 @@ const savedAddressPromptVariants: Variants = {
 }
 
 const savedAddressPromptItemVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0, y: `${PROMPT_ITEM_RISE_VH}vh` },
   visible: {
     opacity: 1,
-    y: 0,
+    y: "0vh",
     transition: {
       duration: 0.46,
       ease: [0.22, 1, 0.36, 1],

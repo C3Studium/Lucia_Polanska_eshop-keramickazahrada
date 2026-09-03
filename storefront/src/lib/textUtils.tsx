@@ -1,13 +1,13 @@
 import React from 'react';
 
 /**
- * Utility function to render text with line breaks - optimized for Sanity CMS
+ * Utility function to render text with line breaks — for editorial text from the CMS
  * Handles \n line breaks, HTML tags, and provides safe rendering
  */
 export const renderTextWithBreaks = (text: string): React.ReactNode => {
   if (!text) return null;
 
-  // If text contains HTML tags, render as HTML (for rich text from Sanity)
+  // If text contains HTML tags, render as HTML (rich text from the CMS)
   if (text.includes('<') && text.includes('>')) {
     return <span dangerouslySetInnerHTML={{ __html: text }} />;
   }

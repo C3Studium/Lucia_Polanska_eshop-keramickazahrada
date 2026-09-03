@@ -1,25 +1,29 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
-/* Checkout sits on cream, the order page on ink — same control, two grounds. */
+/* Both mounts are cream: checkout's surface, and oder-complete's `.root`, whose last
+   background layer is literally var(--cream-06). The order variant is a wash, not a flip. */
 .root,
 .rootOrder {
-  --brief-accent: #a04e18; /* was #c2601f — below AA as small text on cream */
+  --brief-accent: var(--clay-04); /* was #c2601f — below AA as small text on cream */
 
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  padding: clamp(18px, 2vw, 26px);
-  border: 1px solid rgba(32, 33, 28, 0.18);
+  /* Vertical padding on vh, horizontal on vw — the low laptop (720/768/800) shrinks the
+     vertical axis by itself. Kept identical to carrier-damage: both boxes stack in one section. */
+  padding: clamp(1rem, 2.2vh, 1.6rem) clamp(1.125rem, 1.6vw, 1.625rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
   border-left: 2px solid var(--brief-accent);
-  background: rgba(194, 96, 31, 0.05);
+  background: rgb(var(--clay-17-rgb) / .05);
   color: var(--blackText);
 }
 
 .rootOrder {
-  border-color: rgba(255, 232, 214, 0.22);
-  border-left-color: var(--brief-accent);
-  background: rgba(255, 232, 214, 0.06);
-  color: #ffe8d6;
+  /* Was an ink-ground variant standing on cream: color and ground were the same token,
+     1.00:1. It only ever differed by the surface underneath, and that surface turned out
+     to be the same cream — so the variant keeps a slightly deeper wash (it sits on the
+     template's radial gradients, not on flat paper) and inherits the ink text above. */
+  background: rgb(var(--clay-17-rgb) / .07);
 }
 
 .header {
@@ -31,7 +35,7 @@
 .eyebrow {
   margin: 0;
   color: var(--brief-accent);
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -47,20 +51,20 @@
 .piece {
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 0.88rem;
+  font-size: clamp(0.82rem, 1.05vw, 0.95rem);
   opacity: 0.72;
 }
 
 .lede {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.9rem;
+  font-size: clamp(0.86rem, 1.1vw, 1rem);
   line-height: 1.5;
   opacity: 0.78;
 }
 
 .label {
-  font: 400 12px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.66;
@@ -68,13 +72,13 @@
 
 .textarea {
   width: 100%;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid rgba(32, 33, 28, 0.24);
+  padding: clamp(0.55rem, 1.2vh, 0.85rem) clamp(0.7rem, 0.9vw, 0.95rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .24);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgb(var(--white-rgb) / .6);
   color: inherit;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.95rem;
+  font-size: clamp(0.9rem, 1.15vw, 1.05rem);
   line-height: 1.5;
   resize: vertical;
 
@@ -84,9 +88,20 @@
   }
 }
 
-.rootOrder .textarea {
-  border-color: rgba(255, 232, 214, 0.28);
-  background: rgba(20, 21, 17, 0.34);
+/* iOS Safari zooms the whole page in when a focused field's text is under 16px, and it never
+   zooms back out — the person keeps reading the rest of the order at 1.3x. That is a physical
+   threshold of the platform, the same 16px on a 320px phone as on a 932px one, so it is a
+   property of the device and not of the width: capability query, not breakpoint.
+   Written as a clamp, not as a flat `1rem`: the threshold is a FLOOR, and a flat value turns
+   the query into a size — the one thing rule 1 forbids. It also measurably shrank the field on
+   every touch device past 1391px, where the base clamp has already left 16px behind: 16px
+   instead of 16.56 at 1440, 16.8 at 1920, 22.33 at 2552 under the ramp. Only the floor moves;
+   the middle and the ceiling are the base clamp's, so above 1391px this is identical to what
+   the landscape pass measured, and below it the field is never under 16px. */
+@include touch {
+  .textarea {
+    font-size: clamp(1rem, 1.333vw, 1.167rem);
+  }
 }
 
 .photos {
@@ -98,12 +113,14 @@
 .photo,
 .photoDraft {
   position: relative;
-  width: 84px;
-  height: 84px;
+  /* Clamp one axis only — clamping both returns a rectangle, not a square. */
+  width: clamp(4.25rem, 5.5vw, 6rem);
+  aspect-ratio: 1;
+  height: auto;
   margin: 0;
   overflow: hidden;
   border-radius: 4px;
-  border: 1px solid rgba(32, 33, 28, 0.2);
+  border: 1px solid rgb(var(--ink-05-rgb) / .2);
 
   img {
     width: 100%;
@@ -121,11 +138,46 @@
     place-items: center;
     border: 0;
     border-radius: 50%;
-    background: rgba(20, 21, 17, 0.72);
-    color: #fff;
+    background: rgb(var(--ink-01-rgb) / .72);
+    color: var(--white);
     cursor: pointer;
     font-size: 15px;
     line-height: 1;
+  }
+
+  /* The global target floor (globals.scss) raises min-height to 44px on touch and cannot reach
+     width — so this 22x22 circle came out 22 wide and 44 tall on a finger: a dark ellipse down
+     a third of the tile, and still only 22px of width to actually hit. The box has to grow on
+     both axes, or the 50% radius keeps drawing an ellipse.
+     Nothing moves visually: the mark stays the same 22px disc in the same corner, and the
+     target grows down and left into the photo. 2px inset + 44px = 46px inside a 68px tile, so
+     nothing reaches the frame. */
+  @include touch {
+    button {
+      width: 44px;
+      height: 44px;
+      /* Content box is the top-right 22x22 square, so place-items keeps the glyph on the disc. */
+      padding: 0 0 22px 22px;
+      background: none;
+      /* Own stacking context, so the disc can sit behind the glyph without falling behind
+         the photograph. */
+      z-index: 0;
+
+      /* The disc is drawn as a child, not as this button's background: a 22px background disc
+         in the corner of a 44px box would be cut by border-radius: 50%, which still belongs to
+         the hit area. A child is clipped by overflow, not by the parent's radius. */
+      &::before {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        top: 0;
+        right: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgb(var(--ink-01-rgb) / .72);
+      }
+    }
   }
 }
 
@@ -136,14 +188,15 @@
 }
 
 .add {
-  width: 84px;
-  height: 84px;
+  width: clamp(4.25rem, 5.5vw, 6rem);
+  aspect-ratio: 1;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 1px dashed rgba(32, 33, 28, 0.38);
+  border: 1px dashed rgb(var(--ink-05-rgb) / .38);
   border-radius: 4px;
   background: transparent;
   color: inherit;
@@ -157,37 +210,41 @@
     line-height: 1;
   }
 
-  &:hover:not(:disabled) {
-    border-color: var(--brief-accent);
-  }
-
   &:disabled {
     cursor: default;
     opacity: 0.5;
   }
 }
 
-.rootOrder .add {
-  border-color: rgba(255, 232, 214, 0.34);
+/* Hover only where there is a pointer to hover with — on touch the accent border sticks after
+   a tap and the tile reads as selected for the rest of the session. */
+@include fine-pointer {
+  .add:hover:not(:disabled) {
+    border-color: var(--brief-accent);
+  }
 }
 
 .thread {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  max-height: 320px;
+  /* Competes with the screen's height, so it hangs on vh: 245px on a 720 laptop. */
+  max-height: clamp(14rem, 34vh, 26rem);
   margin: 0;
   padding: 0 0.2rem 0 0;
+  overflow-x: hidden; /* explicit: overflow-y alone computes overflow-x to auto */
   overflow-y: auto;
   list-style: none;
 }
 
 .entryMine,
 .entryAtelier {
-  padding: 0.55rem 0.7rem;
+  padding: clamp(0.45rem, 0.95vh, 0.7rem) clamp(0.6rem, 0.8vw, 0.85rem);
   border-radius: 4px;
-  border-left: 2px solid rgba(255, 232, 214, 0.3);
-  background: rgba(255, 232, 214, 0.05);
+  /* The thread only ever renders in the order variant, so these were cream-on-cream too:
+     a cream rule and a 5% cream wash on a cream page, i.e. no rule and no wash at all. */
+  border-left: 2px solid rgb(var(--ink-05-rgb) / .2);
+  background: rgb(var(--white-rgb) / .5);
 }
 
 .entryMine {
@@ -197,7 +254,7 @@
 .entryWho {
   display: block;
   margin-bottom: 0.2rem;
-  font: 400 11px/1.2 "Sansation-Regular", sans-serif;
+  font: 400 clamp(0.66rem, 0.85vw, 0.78rem)/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.62;
@@ -206,14 +263,42 @@
 .entryText {
   margin: 0 0 0.35rem;
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.9rem;
+  font-size: clamp(0.86rem, 1.1vw, 1rem);
   line-height: 1.5;
   white-space: pre-wrap;
 }
 
+/* Phone in landscape (phs covers phl too — same min-width, same 520px height bound). The screen
+   is 320-430px tall, so 34vh is 108-146px and the 14rem floor wins: measured 224px on 568x320
+   AND on 932x430, i.e. 70 % of the smallest screen handed to a scroller sitting inside a
+   scrolling page. Two nested scrollers on a 320px-tall screen is a different KIND of layout, not
+   a smaller one, so here the thread stops being a scroller and the page carries the conversation.
+   Portrait keeps the clamp — 224/640 and 287/844 are both ~34 %, which is exactly what 34vh is
+   for, so nothing is written for it.
+   `overflow`, not `overflow-y`: with overflow-x still hidden, `visible` on the other axis
+   computes back to `auto` and the box would quietly stay a scroll container. Written after
+   `.entryText` so both overrides land behind the rules they beat. */
+@include h(phs) {
+  .thread {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* The clip that used to catch an unbreakable string (a pasted URL) goes with the scroller. */
+  .entryText {
+    overflow-wrap: anywhere;
+  }
+}
+
 .entryPhoto {
   display: inline-block;
-  max-width: 220px;
+  /* The 220/160 on <Image> is only an intrinsic hint now — the size lives here.
+     It has to be `width`, not `max-width`: this box shrink-to-fits, so the img's intrinsic
+     220px would be the used width and max-width could only ever clip it (measured: 220px
+     at 1920 AND at 2552, where the clamp is already 340px). max-width: 100% keeps it inside
+     a narrow entry. */
+  width: clamp(9rem, 14vw, 16rem);
+  max-width: 100%;
   overflow: hidden;
   border-radius: 4px;
 
@@ -235,10 +320,10 @@
   border: 1px solid var(--brief-accent);
   border-radius: 999px;
   background: var(--brief-accent);
-  color: #fff;
+  color: var(--white);
   cursor: pointer;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 0.88rem;
+  font-size: clamp(0.84rem, 1.08vw, 0.98rem);
 
   &:disabled {
     cursor: default;
@@ -249,7 +334,7 @@
 .ok,
 .error {
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.82rem;
+  font-size: clamp(0.78rem, 1vw, 0.9rem);
 }
 
 .ok {
@@ -257,16 +342,100 @@
 }
 
 .error {
-  color: #9a3b13;
+  color: var(--red-02);
 }
 
-.rootOrder .error {
-  color: #f0a882;
-}
-
-@include below-px(560px) {
+/* 560px is not an ad-hoc number: it is the named stop `ph` in $h-max — "the phone in portrait
+   as a form factor". Same query (max-width: 559.98px), now read from the table instead of
+   retyped. Not v(xs): v() is min-width and would take a portrait tablet with it. */
+@include below(ph) {
   .save {
     width: 100%;
     text-align: center;
+  }
+}
+
+/* =================================================================================================
+   PORTRÉTOVÝ TABLET — 768x1024 (iPad) a 1024x1366 (iPad Pro).
+
+   `v(md)` je `(min-width: 600px) and (orientation: portrait)`, a to je čistě tabletové pásmo:
+   nejširší telefon, který tabulka zná, je 430px na šířku (viz `phl`), takže sem žádný telefon
+   nespadne. Proto tu nesmí být nic telefonního — a taky není:
+
+   - `h(phs)` výš ruší `.thread` jako scroller. Je to `orientation: landscape` a `max-height: 520px`,
+     tedy dvě podmínky, které portrétový tablet nesplní ani jednou. Konverzace tu zůstává vlastním
+     scrollerem (34vh = 348.16px na 768x1024, strop 26rem = 416px na 1024x1366) a `data-lenis-prevent`
+     na ní drží dál. Tablet má výšky víc než většina notebooků — 1024px proti 768px na 1366x768 —
+     takže důvod, proč se scroller na telefonu na šířku rozpouští do stránky, tady neplatí.
+   - `below(ph)` (max-width: 559.98px) s celosířkovým `.save` končí 40px pod začátkem tohoto pásma.
+     Tlačítko tu zůstává inline vedle stavu, 155px vedle „3/6 fotek".
+
+   Co se na tabletu opravdu rozbilo, jsou dva důsledky jedné věci — že prostřední člen clampu visí
+   na `vw` a portrét ho nikdy nedožene:
+   1. běžící text neměl žádný strop, takže se roztáhl na celou šířku panelu: 99 až 137 znaků na řádek;
+   2. každá velikost počítaná z `vw` seděla na podlaze — dlaždice fotek měly na 768 i na 1024 přesně
+      68px, tedy tolik, kolik dostane telefon široký 320px.
+   Obojí je pořád VELIKOST, takže obojí zůstává clampem — jen na ose, kterou portrét doopravdy má.
+   ============================================================================================== */
+@include v(md) {
+  /* Jedna míra čtení pro celý panel, ne dvě čísla opsaná zvlášť u odstavce a zvlášť u bubliny.
+     Typ na tomhle pásmu stojí celou dobu na podlaze 0.86rem (1.1vw je mezi 600 a 1024 jen
+     6.6–11.3px, vždy pod ní), takže znak Sansation-Light měří naměřených ~6px a do 28.5rem =
+     456px se vejde nejvýš 76 znaků na řádek — počítáno na skutečně vysázených řádcích, ne
+     odhadem z šířky; proti 99–137 znakům bez stropu.
+     60vw drží míru živou od 693 do 760, pak ji přebere strop; níž stojí na podlaze 26rem. */
+  .root,
+  .rootOrder {
+    --brief-measure: clamp(26rem, 34.667vw, 30.342rem);
+  }
+
+  .lede {
+    max-width: var(--brief-measure);
+  }
+
+  .entryMine,
+  .entryAtelier {
+    /* Strop patří na bublinu, ne dovnitř na `.entryText`: bublina široká 695px kolem věty
+       „Super, děkuju!" nevypadá jako zpráva, ale jako rozbitý rámeček. Tohle je míra plus vlastní
+       rám bubliny — 0.6rem paddingu z každé strany a 2px linka. Padding je clamp, ale jeho
+       prostřední člen (0.8vw) je na tomhle pásmu 4.8–8.2px, tedy pod podlahou 0.6rem, takže
+       součet je tady přesný a text uvnitř dosedne přesně na míru. */
+    max-width: calc(var(--brief-measure) + 1.2rem + 2px);
+  }
+
+  /* Teprve `align-self` bublinu SMRŠTÍ. Položka ve sloupcovém flexu se sama roztahuje přes celou
+     šířku, takže samotný max-width by jen zkrátil to roztažení, nikdy nedosedl na obsah.
+     A když už si musí vybrat stranu, můžou si dva mluvčí vzít každý svou — to je ten kus
+     kompozice, který telefon mít nemůže (v 393px se dvě strany neuživí) a desktop nepotřebuje. */
+  .entryAtelier {
+    align-self: flex-start;
+  }
+
+  .entryMine {
+    align-self: flex-end;
+    /* Akcent jde s bublinou: značí okraj, ze kterého zpráva visí, a linka na vnitřní straně
+       pravé bubliny neukazuje na nic. Týž token, druhá strana. Šířka boxu se nemění (2px ubyde
+       vlevo, 2px přibude vpravo), takže součet u max-width výš platí dál. */
+    border-right: 2px solid var(--brief-accent);
+    border-left-width: 0;
+  }
+
+  .entryMine .entryWho {
+    text-align: right;
+  }
+
+  /* Dlaždice fotek. Základní clamp má prostřední člen 5.5vw — to je 42px na 768 a 56px na 1024,
+     takže na každé portrétové šířce vyhrála podlaha 4.25rem a dlaždice zůstala 68px; v ní se
+     „+ Přidat fotku" lámalo na dva řádky. Není to jiný DRUH prvku, pořád je to velikost, takže
+     zůstává clampem — jen měřeným na ose, kterou portrét doopravdy má: 9.4vw dá 84px na 894px
+     a 96px na 1021px, takže podlaha 5.25rem drží iPad (768) a strop 6rem iPad Pro (1024).
+     Strop je týž 6rem, na kterém končí krajinný clamp — dlaždice tedy nikdy nepřeroste velikost,
+     na které se už dohodl desktop.
+     Jen šířka: čtverec dělá `aspect-ratio: 1` na základním pravidle a clampovat obě osy vrací
+     obdélník. Všechny tři dlaždice sdílejí jedno pravidlo, aby zůstaly stejně velké. */
+  .photo,
+  .photoDraft,
+  .add {
+    width: clamp(5.25rem, 9.4vw, 6rem);
   }
 }

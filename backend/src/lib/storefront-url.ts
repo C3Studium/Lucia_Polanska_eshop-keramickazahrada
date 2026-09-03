@@ -127,3 +127,17 @@ export const resetPasswordLink = (
     ? `${base}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
     : ""
 }
+
+/**
+ * The storefront's bare origin — no country segment.
+ *
+ * Everything above builds customer-facing pages, which live under
+ * `/[countryCode]/…`. The admin bridge posts to `/api/admin-bridge`, a route
+ * handler that sits outside that segment, so it needs the origin on its own.
+ */
+export const storefrontOrigin = (): string =>
+  (
+    process.env.STOREFRONT_PUBLIC_URL ||
+    process.env.MEDUSA_STOREFRONT_URL ||
+    ""
+  ).replace(/\/+$/, "")

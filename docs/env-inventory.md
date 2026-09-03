@@ -30,6 +30,7 @@ table follows that file's order.
 | `MEDUSA_DISABLE_ADMIN` | `true` disables the bundled admin |
 | `BACKEND_PUBLIC_URL` / `RAILWAY_PUBLIC_DOMAIN_VALUE` | Public backend URL used for file URLs and admin config |
 | `STOREFRONT_PUBLIC_URL` | Used for storefront links from admin |
+| `ADMIN_BRIDGE_SECRET` | „Otevřít web jako admin" — **stejná hodnota i ve storefrontu**. Nenastavené = můstek je vypnutý (endpoint vrací 503, lišta se nikdy nezobrazí). Žádný výchozí fallback: sdílené výchozí heslo by komukoliv dovolilo si lištu vyrobit. Vygenerujte např. `openssl rand -hex 32` |
 
 ### Integrations (optional — absent means the feature is off)
 
@@ -77,7 +78,9 @@ fallback means nothing breaks in the meantime.
 `MEDUSA_BACKEND_URL` / `NEXT_PUBLIC_MEDUSA_BACKEND_URL`,
 `MEDUSA_PUBLISHABLE_API_KEY` / `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY`,
 `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_DEFAULT_REGION`, `NEXT_PUBLIC_SANITY_*`,
-`REVALIDATE_SECRET`, `NEXT_PUBLIC_STRIPE_KEY`, the invoice details
+`REVALIDATE_SECRET`, `ADMIN_BRIDGE_SECRET` (musí se shodovat s backendem —
+bez něj storefront žádnému tokenu nevěří a lišta admina se nezobrazí),
+`NEXT_PUBLIC_STRIPE_KEY`, the invoice details
 (`CISLO_UCTU`, `IBAN`, `SWIFT_KOD`, `IDENTIFIKACNI_CISLO`, `SIDLO_ADRESA`,
 `INTERNETOVA_ADRESA`) and the legacy `NEXT_PUBLIC_PACKETA_API_KEY` /
 `NEXT_PUBLIC_PACKETA_SHIPPING_METHOD_ID`.

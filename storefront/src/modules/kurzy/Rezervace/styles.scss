@@ -8,36 +8,56 @@
  * reservation modal (RezervaceModal/styles.scss owns the form voice now);
  * what remains here is the landing spot: the copy, the nearest terms as
  * read-only cards and the button that opens the modal.
+ *
+ * Sizes are clamps with rem ends and a vw/vh middle, never px ends: above
+ * 1921 globals.scss ramps the root font size (16px → 21.5px at 2560), so a
+ * rem ceiling grows with the monitor and a px ceiling freezes. Vertical
+ * measures hang on vh, which is also what makes the short laptops (1280×720,
+ * 1366×768) fit without a single rule of their own.
  */
 .kurzyRezervace {
-  --kurzy-charcoal: #24251f;
-  --kurzy-cream: #ffe8d6;
-  --kurzy-paper: #f3e7da;
-  --kurzy-olive: #74775b;
-  --kurzy-ember: #d47a50;
+  --kurzy-charcoal: var(--ink-05);
+  --kurzy-cream: var(--cream-06);
+  --kurzy-paper: var(--cream-05);
+  --kurzy-olive: var(--olive-13);
+  --kurzy-ember: var(--clay-27);
   /* Text-safe shades of the accents: the display olive/ember stay for large
      type, these carry the same voice at caption sizes with AA contrast
      (olive-text 5.3–5.8:1, ember-text 4.8–5.1:1 on every surface here). */
-  --kurzy-olive-text: #5d6046;
-  --kurzy-ember-text: #a34f28;
+  --kurzy-olive-text: var(--olive-08);
+  --kurzy-ember-text: var(--clay-13);
+
+  /* The section's two-column measure and its gutter, written once. The teaser
+     sets the term list against the action card with them; qhd below sets the
+     head against the empty state with the same pair. One ratio, one gap — two
+     places that must not drift apart. */
+  --kurzy-rez-cols: minmax(0, 1.15fr) minmax(0, 1fr);
+  --kurzy-rez-gap: clamp(1.75rem, 3.5vw, 4rem);
 
   position: relative;
-  padding: clamp(84px, 12vh, 160px) 6% clamp(96px, 14vh, 180px);
+  /* Vertical band on vh (live 700–1333px tall), horizontal on the container's
+     own width. 1280×720 takes 86/101px where 2552×1351 takes 162/189px, with
+     no lt rule to say so. */
+  padding: clamp(5.25rem, 12vh, 10rem) 6% clamp(6rem, 14vh, 11.25rem);
   color: var(--kurzy-charcoal);
   background: var(--kurzy-paper);
 
   &__head {
-    max-width: 720px;
+    /* 45rem, not 720px. The sibling `> p` below was already in rem and grew
+       544 → 720px on a 2K monitor while this ceiling stayed at 720px on every
+       width — so the h2 broke into three lines inside a column half the width
+       its own type had grown to. In rem the column ramps with the type. */
+    max-width: 45rem;
 
     > span {
-      color: rgba(36, 37, 31, 0.66);
+      color: rgb(var(--ink-05-rgb) / .66);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     h2 {
-      margin: 20px 0 0;
+      margin: 1.25rem 0 0;
       font-family: "Sentient-Regular", serif;
       font-size: clamp(2.8rem, 4.2vw, 5.2rem);
       font-weight: 400;
@@ -54,8 +74,8 @@
 
     > p {
       max-width: 34rem;
-      margin: clamp(18px, 2.4vh, 28px) 0 0;
-      color: rgba(36, 37, 31, 0.68);
+      margin: clamp(1.125rem, 2.4vh, 1.75rem) 0 0;
+      color: rgb(var(--ink-05-rgb) / .68);
       font-size: clamp(0.95rem, 1vw, 1.12rem);
       font-weight: 300;
       line-height: 1.55;
@@ -68,16 +88,28 @@
 
   &__teaser {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: clamp(28px, 3.5vw, 64px);
-    margin-top: clamp(36px, 5vh, 64px);
+    /* Stacked is the base, as the system asks — smallest first. The side-by-side
+       is a change of KIND, so it is a stop, not a width: `smt` and `md` between
+       them cover every landscape viewport at least 900px wide that also has the
+       height for a pinned card, and their height bound is what keeps the phone
+       in landscape (932×430, wider than every tablet stop) out of it. The
+       `below-px(980px)` this replaces was orientation-blind and gave that phone
+       two columns and a sticky sidebar in 430px of screen. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--kurzy-rez-gap);
+    margin-top: clamp(2.25rem, 5vh, 4rem);
     align-items: start;
+
+    @include hb((
+      smt: (grid-template-columns: var(--kurzy-rez-cols)),
+      md:  (grid-template-columns: var(--kurzy-rez-cols))
+    ));
   }
 
   &__teaserList {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 0.875rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -86,10 +118,10 @@
   &__term {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: clamp(16px, 2vh, 24px) clamp(18px, 1.8vw, 28px);
-    border: 1px solid rgba(36, 37, 31, 0.18);
-    background: rgba(255, 248, 241, 0.55);
+    gap: 0.375rem;
+    padding: clamp(1rem, 2vh, 1.5rem) clamp(1.125rem, 1.8vw, 1.75rem);
+    border: 1px solid rgb(var(--ink-05-rgb) / .18);
+    background: rgb(var(--cream-10-rgb) / .55);
     text-align: left;
 
     &--static {
@@ -118,55 +150,68 @@
   }
 
   &__termMeta {
-    color: rgba(36, 37, 31, 0.7);
+    color: rgb(var(--ink-05-rgb) / .7);
     font-size: 0.9rem;
     font-weight: 300;
   }
 
   &__termPrices {
-    margin-top: 4px;
-    color: rgba(36, 37, 31, 0.72);
+    margin-top: 0.25rem;
+    color: rgb(var(--ink-05-rgb) / .72);
     font-size: 0.9rem;
   }
 
   &__termSeats {
-    margin-top: 2px;
+    margin-top: 0.125rem;
     color: var(--kurzy-olive-text);
     font-size: 0.8125rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 
     &.is-full {
-      color: rgba(36, 37, 31, 0.45);
+      color: rgb(var(--ink-05-rgb) / .45);
     }
   }
 
   &__teaserAction {
-    position: sticky;
-    top: clamp(84px, 12vh, 140px);
+    /* Static while the teaser is stacked — a card pinned above the thing it
+       belongs to reads as a stray. `top` is declared here anyway, where it is
+       inert, so the two stops below only have to flip `position` and the
+       offset cannot drift between them.
+       The offset clears the fixed navbar (z-index 1000, 46px tall, bottom edge
+       at 56px) on the shortest laptop this pass covers: 12vh of 720 is 86px,
+       of 768 is 92px — 30 and 35px of daylight. The 5.25rem floor holds 1220×660
+       at 84px, still 28px clear. Hence no lt rule. */
+    position: static;
+    top: clamp(5.25rem, 12vh, 8.75rem);
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: clamp(22px, 2.6vh, 34px) clamp(20px, 2vw, 32px);
-    border: 1px solid rgba(36, 37, 31, 0.2);
-    background: rgba(255, 248, 241, 0.72);
+    gap: 1rem;
+    padding: clamp(1.375rem, 2.6vh, 2.125rem) clamp(1.25rem, 2vw, 2rem);
+    border: 1px solid rgb(var(--ink-05-rgb) / .2);
+    background: rgb(var(--cream-10-rgb) / .72);
 
     p {
       margin: 0;
-      color: rgba(36, 37, 31, 0.7);
+      color: rgb(var(--ink-05-rgb) / .7);
       font-size: 0.95rem;
       font-weight: 300;
       line-height: 1.5;
     }
+
+    @include hb((
+      smt: (position: sticky),
+      md:  (position: sticky)
+    ));
   }
 
   &__teaserButton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 0.625rem;
     width: 100%;
-    height: 54px;
+    height: 3.375rem;
     border: 1px solid var(--kurzy-charcoal);
     border-radius: 999px;
     background: var(--kurzy-charcoal);
@@ -184,7 +229,7 @@
     &:hover,
     &:focus-visible {
       transform: translateY(-2px);
-      box-shadow: 0 18px 34px -24px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 18px 34px -24px rgb(var(--black-01-rgb) / .8);
 
       i {
         transform: translate(2px, -2px);
@@ -202,11 +247,14 @@
   /* ------------------------------------------------------------------ */
 
   &__empty {
-    max-width: 640px;
-    margin-top: clamp(36px, 5vh, 64px);
-    padding: clamp(26px, 3.2vh, 40px) clamp(22px, 2.4vw, 36px);
-    border: 1px solid rgba(36, 37, 31, 0.2);
-    background: rgba(255, 248, 241, 0.65);
+    /* rem for the same reason as __head: 640px on a 2552px monitor left the
+       card marooned in ~1400px of blank paper. 40rem is 640px up to 1920 and
+       851px at 2K, where qhd below also stands it beside the head. */
+    max-width: 40rem;
+    margin-top: clamp(2.25rem, 5vh, 4rem);
+    padding: clamp(1.625rem, 3.2vh, 2.5rem) clamp(1.375rem, 2.4vw, 2.25rem);
+    border: 1px solid rgb(var(--ink-05-rgb) / .2);
+    background: rgb(var(--cream-10-rgb) / .65);
 
     h3 {
       margin: 0;
@@ -218,44 +266,50 @@
     }
 
     p {
-      margin: 14px 0 0;
-      color: rgba(36, 37, 31, 0.66);
+      margin: 0.875rem 0 0;
+      color: rgb(var(--ink-05-rgb) / .66);
       font-size: 0.95rem;
       font-weight: 300;
       line-height: 1.5;
     }
 
     .kurzyRezervaceCtaButton {
-      margin-top: 20px;
+      margin-top: 1.25rem;
     }
   }
 
   /* The dialog-opening pill inside the empty state — same family as the
-     timeline CTA, scoped here because the timeline's rule cannot reach it. */
+     timeline CTA, scoped here because the timeline's rule cannot reach it.
+     Every measure below is the twin of home/Kurzy/Intro/styles.scss
+     `.kurzyTimeline .kurzyTimelineCtaButton`; the two are one component wearing
+     two class names and have to be changed together. */
   .kurzyRezervaceCtaButton {
     --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
     --web-button-label-padding: 0;
 
     width: fit-content;
-    min-width: clamp(190px, 13vw, 240px);
-    height: 52px;
+    min-width: clamp(11.875rem, 13vw, 15rem);
+    /* The pill measured 52px on 1280 and on 2552 alike while the body copy
+       beside it went 15.2 → 23.8px. In rem the whole pill — height, badge,
+       label inset — rides the ramp with the type it sits in. */
+    height: 3.25rem;
     padding: 0;
-    border: 1px solid rgba(36, 37, 31, 0.42);
+    border: 1px solid rgb(var(--ink-05-rgb) / .42);
     border-radius: 999px;
     background: var(--kurzy-cream);
     color: var(--kurzy-charcoal);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
-      0 13px 30px -22px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .7),
+      0 13px 30px -22px rgb(var(--black-01-rgb) / .5);
     transition: border-color 0.35s ease, box-shadow 0.35s ease,
       transform 0.35s ease;
 
     &::after {
       position: absolute;
       top: 50%;
-      right: 7px;
+      right: 0.4375rem;
       z-index: 8;
-      width: 38px;
-      height: 38px;
+      width: 2.375rem;
+      height: 2.375rem;
       display: grid;
       place-items: center;
       border-radius: 50%;
@@ -269,7 +323,7 @@
     }
 
     > div {
-      padding: 3px 54px 3px 22px;
+      padding: 0.1875rem 3.375rem 0.1875rem 1.375rem;
     }
 
     p {
@@ -296,20 +350,45 @@
       outline-offset: 4px;
     }
   }
-}
 
-@include below-px(980px) {
-  .kurzyRezervace {
+  /* ------------------------------------------------------------------ */
+  /* 2K — arrangement only, no measures (the ramp owns those)            */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * On a 2552×1351 monitor the section's content box is 1902px wide, and the
+   * empty state is one 851px card with the rest of that width left blank —
+   * the scaled-up screenshot BRIEF §6.3 forbids. Stacking is what is wrong
+   * here, not the sizes, so qhd changes the stacking: the head takes the left
+   * column and the branch below it moves up into the right one.
+   *
+   * The teaser branch already spans the full measure (two ~900px columns of
+   * its own), so it keeps the whole row rather than being squeezed into half
+   * of it and folding its own columns into thirds.
+   *
+   * Not one length is written in here: the ratio and the gutter are the
+   * section's own custom properties, and `margin-top: 0` removes a stacking
+   * gap that no longer has anything to stack.
+   */
+  @include h(qhd) {
+    display: grid;
+    grid-template-columns: var(--kurzy-rez-cols);
+    column-gap: var(--kurzy-rez-gap);
+    align-items: start;
+
     &__teaser {
-      grid-template-columns: minmax(0, 1fr);
+      grid-column: 1 / -1;
     }
 
-    &__teaserAction {
-      position: static;
+    &__empty {
+      margin-top: 0;
     }
   }
 }
 
+/* Phone gutter. Left as it stands: phones (phs/phl and the v() axis) are the
+   second round of this pass, and this rule is theirs — 6% of a 430px screen is
+   26px, which is not what the phone wants either way. Flagged, not touched. */
 @include below-px(720px) {
   .kurzyRezervace {
     padding-inline: 20px;

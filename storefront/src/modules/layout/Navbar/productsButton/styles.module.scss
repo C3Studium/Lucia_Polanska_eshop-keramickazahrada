@@ -2,21 +2,33 @@
 
 .button {
   position: relative;
-  width: 110px;
-  height: 38px;
+  /*
+   * This is one of the navbar's controls, so it takes the bar's own geometry instead of
+   * restating it. Both numbers were typed here as 110px and 38px; the bar meanwhile names them
+   * itself — `--nav-cta-width` is the width of the centre grid's middle track, which this
+   * button is the only occupant of, and `--nav-control-height` is the row every other control
+   * in the bar stands at. Its own comment says this button already reads them. It did not:
+   * 110px in a 102px track stood 8px proud of it, and 38px was --nav-control-height's value
+   * from before that clamp existed. Tied to the source now, so the bar can resize and this
+   * comes with it — which is the whole point of the bar having made them variables.
+   */
+  width: var(--nav-cta-width, 6.875rem);
+  height: var(--nav-control-height);
   overflow: hidden;
-  border: 1px solid rgba(33, 34, 34, 0.14);
-  border-radius: 25px;
-  background: rgba(255, 255, 255, 0.38);
-  box-shadow: inset 0 0 0 1px rgba(33, 34, 34, 0.04);
+  border: 1px solid rgb(var(--black-03-rgb) / .14);
+  /* A pill at any height. 25px was already being scaled down to half the height by the browser
+     at 38px tall; once the bar ramps past 50px it would have stopped being one. */
+  border-radius: 999px;
+  background: rgb(var(--white-rgb) / .38);
+  box-shadow: inset 0 0 0 1px rgb(var(--black-03-rgb) / .04);
   cursor: pointer;
   z-index: 1;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
   &:hover,
   &[aria-expanded="true"] {
-    border-color: rgba(116, 126, 98, 0.48);
-    box-shadow: 0 5px 14px -8px rgba(33, 34, 34, 0.46);
+    border-color: rgb(var(--olive-15-rgb) / .48);
+    box-shadow: 0 5px 14px -8px rgb(var(--black-03-rgb) / .46);
   }
 
   @include vb((
@@ -30,16 +42,16 @@
   position: absolute;
   inset: 2px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  border: 1px solid rgb(var(--white-rgb) / .52);
   border-radius: inherit;
-  background: #555d48;
+  background: var(--olive-07);
 
   img { object-fit: cover; }
 
   > span {
     position: absolute;
     inset: 0;
-    background: rgba(18, 20, 15, 0.58);
+    background: rgb(var(--ink-01-rgb) / .58);
   }
 }
 
@@ -49,11 +61,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 0.3125rem;
   width: 100%;
   height: 100%;
   color: var(--blackText);
-  font-size: 15px;
+  /* rem, so the label rides the ramp with the control it sits in — the bar's own row now goes
+     from 36px on a short laptop to 58px at 2552, and 15px of type would have read as a note
+     inside it. */
+  font-size: 0.9375rem;
   font-weight: 300;
 
   .button:hover &,
@@ -81,57 +96,121 @@
   width: 100%;
   height: 100%;
   border: 0;
-  background: rgba(19, 21, 17, 0.5);
+  background: rgb(var(--ink-01-rgb) / .5);
   backdrop-filter: blur(9px);
   cursor: default;
 }
 
 .menuPanel {
+  /*
+   * ─── The panel's budget, written once ───────────────────────────────────────────────────
+   *
+   * The panel is a fixed overlay one gutter in from the window, so what it spends above and
+   * below the card rail is exactly what the rail cannot have. Those amounts used to be written
+   * twice — once as the padding and row heights that actually render, once as the constants
+   * `182px` and `66px` that `.collectionCards` subtracted from the viewport — and the two had
+   * drifted 19.5px apart. Measured with the menu open: the panel came out 787.5px tall in a
+   * 660px window, 787.5 in 720, 787.5 in 768, 819.5 in 800 and 987 in 982, so its footer sat
+   * below the bottom edge on every laptop up to about 1550px wide.
+   *
+   * Every part is named here and subtracted by name below, so a row cannot be added above or
+   * under the rail without the rail paying for it.
+   *
+   * The vertical parts hang on `vh`, not `vw`. That is what fits this menu on a short laptop:
+   * at 1366×768 and 1220×660 the whole budget contracts with the window instead of holding a
+   * figure sized for 1080, and `lt` needs no rule of its own.
+   */
+  --panel-inset: 8px;   /* the gutter to the window — left, right and top are the same one */
+  --panel-pad-x: 12px;
+
+  /*
+   * The band above the rail. Its floor is not taste: the panel opens under the navbar, which is
+   * `--nav-height` tall, so the rail cannot begin higher than the bar's lower edge plus air.
+   * 106px stays as the ceiling, but it was never a desktop requirement — it was sized to hold
+   * the tabs and the breadcrumb, which are commented out of the JSX. With them gone it is a
+   * screenful of nothing, so on a short window it comes down to whatever clears the bar and no
+   * more: measured 70px at 660 and 720, 75.3 at 768, 96.2 at 982, 105.8 at 1080, 132.4 at 1351.
+   */
+  --panel-pad-top: clamp(calc(var(--nav-height) + 1.5rem), 9.8vh, 6.625rem);
+  --panel-pad-bottom: clamp(0.375rem, 0.85vh, 0.5625rem);
+
+  /*
+   * The bar row — tabs and breadcrumb. Both carried `top: 55px` by hand, tied to the 106px band
+   * by nothing but arithmetic somebody did once. 55 was the bar's height plus 7 back when that
+   * height was a flat 48, so that is what it says now — and since the bar's height has become a
+   * clamp of its own, the band and both rows follow it instead of standing still under it.
+   * (Both are dormant. If they come back, the band's floor has to rise with them: 30px of bar
+   * plus its air does not fit in the 70px the band contracts to on a short window.)
+   */
+  --panel-bar-h: 1.875rem;
+  --panel-bar-top: calc(var(--nav-height) + 0.4375rem);
+
+  /* Under the rail, in order: the rule and gap above „Zobrazit celý e-shop", that row itself,
+     then the legal footer — its own padding, the link row, and the meta line. */
+  --store-row-gap: clamp(0.5rem, 1.25vh, 0.875rem);
+  --store-row-h: clamp(2.75rem, 4.8vh, 3.25rem);
+  --footer-pad-top: clamp(0.3125rem, 0.65vh, 0.4375rem);
+  --footer-links-h: clamp(2.75rem, 6.111vh, 3.209rem);
+  --footer-meta-h: 1.47rem;   /* its own line box: .25rem of padding + 1.5 × .8125rem of type */
+
+  --below-cards: calc(
+    var(--store-row-gap) + var(--store-row-h) +
+    var(--footer-pad-top) + var(--footer-links-h) + var(--footer-meta-h)
+  );
+
+  /* Everything the panel occupies outside the rail: the gutter above it, its own padding, and
+     both hairlines. `2px` is two borders — physical, so it is the one term that stays px. */
+  --panel-frame: calc(var(--panel-inset) + var(--panel-pad-top) + var(--panel-pad-bottom) + 2px);
+
+  /* The rail's own width, out of the same gutter and padding that draw the panel. The card
+     photograph is sized off this rather than describing the same box a second time. */
+  --rail-w: calc(100vw - (var(--panel-inset) + var(--panel-pad-x) + 1px) * 2);
+
   position: relative;
   z-index: 2;
-  width: calc(100vw - 16px);
-  margin: 8px auto 0;
-  padding: 106px 12px 9px;
+  width: calc(100vw - var(--panel-inset) * 2);
+  margin: var(--panel-inset) auto 0;
+  padding: var(--panel-pad-top) var(--panel-pad-x) var(--panel-pad-bottom);
   overflow: hidden;
-  border: 1px solid rgba(33, 34, 34, 0.22);
+  border: 1px solid rgb(var(--black-03-rgb) / .22);
   border-radius: 18px;
-  background: #fbfaf6;
-  box-shadow: 0 12px 34px rgba(20, 22, 17, 0.2), 0 2px 5px rgba(20, 22, 17, 0.12);
+  background: var(--white);
+  box-shadow: 0 12px 34px rgb(var(--ink-01-rgb) / .2), 0 2px 5px rgb(var(--ink-01-rgb) / .12);
   transform-origin: top center;
   will-change: clip-path, transform, opacity;
 }
 
 .collectionTabs {
   position: absolute;
-  top: 55px;
+  top: var(--panel-bar-top);
   left: 50%;
   z-index: 3;
   display: flex;
   align-items: center;
   overflow: hidden;
   border-radius: 999px;
-  border: 1px solid rgba(33, 34, 34, 0.14);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 2px 6px rgba(20, 22, 17, 0.12);
+  border: 1px solid rgb(var(--black-03-rgb) / .14);
+  background: rgb(var(--white-rgb) / .94);
+  box-shadow: 0 2px 6px rgb(var(--ink-01-rgb) / .12);
   transform: translateX(-50%);
 
   button {
     min-width: 78px;
-    height: 30px;
+    height: var(--panel-bar-h);
     padding: 0 16px;
     border: 0;
     border-radius: 999px;
     background: transparent;
-    color: rgba(31, 35, 25, 0.58);
-    font-size: 13px;
+    color: rgb(var(--ink-04-rgb) / .58);
+    font-size: 0.8125rem;
     transition: color 0.25s ease, background-color 0.25s ease;
     cursor: pointer;
   }
 
   .collectionTabActive {
     color: var(--whiteText);
-    background: #30322b;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    background: var(--ink-10);
+    box-shadow: inset 0 0 0 1px rgb(var(--white-rgb) / .5);
   }
 }
 
@@ -140,14 +219,14 @@
   align-items: center;
   justify-content: space-between;
   position: absolute;
-  top: 55px;
+  top: var(--panel-bar-top);
   left: 14px;
   z-index: 3;
-  min-height: 30px;
+  min-height: var(--panel-bar-h);
   padding: 0 10px;
-  border: 1px solid rgba(255, 232, 214, 0.5);
+  border: 1px solid rgb(var(--cream-06-rgb) / .5);
   border-radius: 999px;
-  background: #30322b;
+  background: var(--ink-10);
   color: var(--whiteText);
 
   button {
@@ -161,28 +240,56 @@
   }
 
   p { margin: 0 0 0 12px; }
-  p span { margin-right: 8px; color: rgba(255, 255, 255, 0.62); }
+  p span { margin-right: 8px; color: rgb(var(--white-rgb) / .62); }
 }
 
 .collectionCards {
-  --expanded-card-width: calc((100vw - 80px) * 0.4444 + 6px);
-  /* Everything under the cards that the panel still has to fit: the „Zobrazit celý e-shop"
-     row (52px + its 14px rule) and the legal footer. The cards take what is left, so adding
-     a row means widening this — miss it and the footer is pushed off the bottom edge, which
-     is exactly what happened on every tablet the moment the row appeared. */
-  --below-cards: 66px;
+  --card-gap: 8px;
+  /* Six gaps and seven hairlines — what the rail spends before any card gets a share of it. */
+  --rail-tracks: calc(var(--card-gap) * 6 + 2px * 7);
+  /*
+   * The photograph is pre-sized to the width its card reaches when it opens, so the flex
+   * animation moves the card rather than rescaling the image inside it. That width is not a
+   * number of its own: it is the rail (`--rail-w`, drawn from the panel's own gutter and
+   * padding) less its tracks, times the 4 grow shares the open card takes of the 10 the seven
+   * cards share — `flexGrow: 4` against six 1s — plus the card's own two hairlines.
+   *
+   * Checked against the live rail at every width: 448.4px at 1220, 565.2 at 1512, 728.4 at
+   * 1920, 981.2 at 2552 — exact. The old `(100vw - 80px) * 0.4444 + 6px` described the same
+   * box in different numbers and missed by ~90px: 0.4444 is 4/9, the ratio for six cards, and
+   * there have been seven for a while.
+   */
+  --expanded-card-width: calc((var(--rail-w) - var(--rail-tracks)) * 0.4 + 2px);
   display: flex;
-  gap: 8px;
+  gap: var(--card-gap);
   width: 100%;
-  /* Off *both* terms: the 80vh branch is the one that binds on a tablet, so subtracting from
-     the dvh branch alone changed nothing at all. */
+  /*
+   * Off *both* terms: the 82vh branch is the one that binds on a laptop, so subtracting from
+   * the dvh branch alone changed nothing at all. 82 rather than the old 80 because
+   * `--below-cards` is now the true sum of what sits underneath (~125px on a short window,
+   * ~142px on 1080) instead of the 66 it used to claim — without the two extra points the
+   * honest accounting would have cost the rail 76px of height at 1920 and nothing else.
+   */
   height: min(
-    calc(80vh - var(--below-cards)),
-    calc(100dvh - 182px - var(--below-cards))
+    calc(82vh - var(--below-cards)),
+    calc(100dvh - var(--panel-frame) - var(--below-cards))
   );
-  min-height: 520px;
+  /*
+   * No `min-height`, deliberately. The old 520px floor overrode the whole calculation above
+   * it: on 1220×660 the height resolves to about 417px and the floor put it straight back to
+   * 520 — which is how a panel 787.5px tall came to stand in a 660px window with its footer
+   * past the bottom edge, and 787.5 again at 1280×720 and 1366×768. `phs-h` already cancelled
+   * that floor for phones (`min-height: 0`); nothing ever cancelled it for a low laptop.
+   * The dvh branch is the floor's job done properly — it can never ask for more than there is.
+   */
 
-  /* A 520px floor inside a 430px window leaves the menu unscrollable and unclosable. */
+  /*
+   * Was: „a 520px floor inside a 430px window leaves the menu unscrollable and unclosable" —
+   * there is no floor to cancel any more, so `min-height: 0` here is a no-op. Both lines are in
+   * fact already dead: the accordion at the foot of this file is included from `phs-h` too, it
+   * comes later, and it sets `height: auto` and its own `max-height` on this element. Left
+   * standing rather than removed — the landscape-phone pass owns this block and can decide.
+   */
   @include phs-h {
     height: calc(100dvh - 96px - var(--below-cards));
     min-height: 0;
@@ -194,14 +301,14 @@
   flex-basis: 0;
   min-width: 76px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgb(var(--white-rgb) / .16);
   border-radius: 16px;
-  background: #30322b;
+  background: var(--ink-10);
   isolation: isolate;
   contain: paint;
   transform: translateZ(0);
   will-change: flex-grow;
-  box-shadow: 0 3px 10px rgba(20, 22, 17, 0.12);
+  box-shadow: 0 3px 10px rgb(var(--ink-01-rgb) / .12);
 }
 
 .cardImage,
@@ -237,7 +344,7 @@
 .imageShade {
   z-index: 1;
   opacity: 0.62;
-  background: linear-gradient(180deg, rgba(16, 17, 15, 0.4), rgba(16, 17, 15, 0.68));
+  background: linear-gradient(180deg, rgb(var(--ink-01-rgb) / .4), rgb(var(--ink-01-rgb) / .68));
   transition: opacity 0.48s cubic-bezier(0.76, 0, 0.24, 1);
   will-change: opacity;
 }
@@ -254,7 +361,18 @@
   margin: 0;
   color: var(--whiteText);
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(30px, 3.2vw, 54px);
+  /*
+   * A rotated title is the one piece of type in here that is measured on the vertical axis:
+   * `writing-mode: vertical-rl` and `nowrap` mean the string's *length* runs down the card, so
+   * its size competes for the card's height, not its width. Measured, the longest title runs
+   * 8.62× its own font-size — 39.04px of type made 336.5px of title at 1220, 54px made 465.4
+   * at 2552 — so on a wide, short window sized off `vw` alone it outgrows the card: 51.2px at
+   * 1600×660 wants 441px inside a 417px card, and it was only ever the 520px floor that hid
+   * that. Hence the second term. `5.6vh` and `3.2vw` are within 2% of each other at 16:9, so
+   * this changes nothing on a normal desktop (54px at 1920, 48.4 at 1512 — unmoved) and only
+   * bites where the window is wider than it is tall, which is exactly the low laptop.
+   */
+  font-size: clamp(1.875rem, min(3.2vw, 5.6vh), 3.375rem);
   font-weight: 300;
   white-space: nowrap;
   writing-mode: vertical-rl;
@@ -266,17 +384,25 @@
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
-  bottom: 52px;
-  padding: clamp(20px, 2.5vw, 34px);
+  /* Clears the `.openLabel` pill in the card's bottom-right corner, which stands 38px off the
+     edge — hence the 2.5rem floor, not lower. */
+  bottom: clamp(2.5rem, 4.8vh, 3.25rem);
+  /* Split axes: the block sits inside the card and its top and bottom padding come out of the
+     card's height, which is the scarce dimension on a laptop. */
+  padding: clamp(1rem, 2.6vh, 2.125rem) clamp(1.25rem, 2.5vw, 2.125rem);
   color: var(--whiteText);
   pointer-events: none;
 
   h3 {
-    max-width: 680px;
+    max-width: 42.5rem;
     margin: 6px 0 4px;
-    color: #fff8f1;
+    color: var(--cream-10);
     font-family: "Sentient-Regular", serif;
-    font-size: clamp(43px, 4.5vw, 72px);
+    /* Same reasoning as `.verticalTitle`, one step milder: this one wraps, so it is the block's
+       stacked height that competes with the card's. 8vh and 4.5vw agree at 16:9 — identical at
+       1280×720 and 1366×768, unmoved at 1512 and 1920 — and the vh term takes over only on a
+       window wider than it is tall. */
+    font-size: clamp(2.6875rem, min(4.5vw, 8vh), 4.5rem);
     font-weight: 400;
     line-height: 0.98;
     letter-spacing: -0.035em;
@@ -284,18 +410,33 @@
 }
 
 .cardEyebrow {
-  color: #ffe8d6;
-  font-size: 12px;
+  color: var(--cream-06);
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .categoryLinks {
+  /*
+   * The list is a stack, so its height is the count times the row — which makes the link's type
+   * size a vertical measurement even though type usually is not. CategoryLink is shared with the
+   * footer and reads this from whoever uses it, falling back to its own `clamp(20px, 1.55vw,
+   * 28px)`; this menu never set it, so the longest list was sized purely off width. Measured at
+   * 1600×660 that ran the open card's content 25.6px past the top of the card and `overflow:
+   * hidden` cut it off — the widest, shortest window is the worst case for a stack sized by
+   * width. Bound to the shorter of the two axes it comes back inside with room to spare, and at
+   * 16:9 the two terms are within 2% of each other, so 1920 and 1512 do not move.
+   *
+   * Set from here rather than in CategoryLink, the way the accordion below does it, so that
+   * component keeps one definition and this stays a decision about the menu.
+   */
+  --animated-link-font-size: clamp(1rem, min(1.55vw, 2.7vh), 1.75rem);
+
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
-  max-width: 720px;
+  max-width: 45rem;
   pointer-events: auto;
 }
 
@@ -307,11 +448,11 @@
   align-items: center;
   gap: 4px;
   padding: 4px 9px;
-  border: 1px solid rgba(255, 232, 214, 0.46);
+  border: 1px solid rgb(var(--cream-06-rgb) / .46);
   border-radius: 999px;
   color: var(--whiteText);
-  background: rgba(19, 21, 17, 0.68);
-  font-size: 13px;
+  background: rgb(var(--ink-01-rgb) / .68);
+  font-size: 0.8125rem;
   backdrop-filter: blur(8px);
   pointer-events: none;
 }
@@ -323,12 +464,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 52px;
-  margin-top: 14px;
+  /* Both named in the panel's budget above, because `.collectionCards` has to subtract them —
+     the 52 and the 14 used to live here and again as the `66px` the rail took off itself. */
+  min-height: var(--store-row-h);
+  margin-top: var(--store-row-gap);
   padding: 0 4px;
-  border-top: 1px solid rgba(31, 35, 25, 0.3);
-  color: #1f2319;
-  font-size: clamp(15px, 1.15vw, 19px);
+  border-top: 1px solid rgb(var(--ink-04-rgb) / .3);
+  color: var(--ink-04);
+  font-size: clamp(0.9375rem, 1.15vw, 1.1875rem);
   text-decoration: none;
   transition: opacity 0.3s ease;
 
@@ -352,24 +495,25 @@
 }
 
 .menuFooter {
-  padding-top: 7px;
+  padding-top: var(--footer-pad-top);
 }
 
 .footerLinks {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  min-height: 46px;
-  border-top: 1px solid rgba(31, 35, 25, 0.3);
-  border-bottom: 1px solid rgba(31, 35, 25, 0.3);
+  /* Floor is 2.75rem, not lower: these are links, and 44px is the tap target. */
+  min-height: var(--footer-links-h);
+  border-top: 1px solid rgb(var(--ink-04-rgb) / .3);
+  border-bottom: 1px solid rgb(var(--ink-04-rgb) / .3);
 
   .footerLink {
     justify-self: center;
     width: fit-content;
     max-width: 100%;
     height: calc(1.15em + 3px);
-    color: rgba(31, 35, 25, 0.74);
-    font-size: clamp(13px, 0.95vw, 16px);
+    color: rgb(var(--ink-04-rgb) / .74);
+    font-size: clamp(0.8125rem, 0.95vw, 1rem);
     transition: color 0.3s ease, opacity 0.3s ease;
 
     &:hover { opacity: 0.68; }
@@ -379,9 +523,15 @@
 .footerMeta {
   display: flex;
   justify-content: space-between;
-  padding: 4px 6px 0;
-  color: rgba(31, 35, 25, 0.5);
-  font-size: 13px;
+  /* The last line in the panel, and the only one whose height nobody declared — so the budget
+     could not count it, which is most of the 19.5px the old arithmetic was out by. Padding,
+     type and leading are all in rem now and `--footer-meta-h` is their sum, so what the rail
+     subtracts and what this line measures are the same number at every rem. */
+  min-height: var(--footer-meta-h);
+  padding: 0.25rem 6px 0;
+  color: rgb(var(--ink-04-rgb) / .5);
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 @include below-px(900px) {
@@ -389,17 +539,22 @@
     /* This is the rule that actually applies on every touch device, and it replaced the base
        height wholesale — a flat 80vh with nothing set aside for what sits under the cards.
        Both terms have to allow for it: 80vh alone pushed the footer past the bottom edge,
-       and the dvh term keeps the whole panel inside a short window. */
+       and the dvh term keeps the whole panel inside a short window.
+
+       The old second term said `192px`, which was the panel's own frame plus 67px of reserve
+       for the bottom bar — written when the frame was a fixed 106+9+8+2. The frame is a clamp
+       now, so only the reserve is still a number here; 192 is what this still resolves to
+       wherever the band is at its 106px ceiling, which is every window this block sees. */
     height: min(
       calc(80vh - var(--below-cards)),
-      calc(100dvh - 192px - var(--below-cards))
+      calc(100dvh - var(--panel-frame) - 67px - var(--below-cards))
     );
     min-height: 480px;
     overflow-x: auto;
   }
 
   .collectionCard { min-width: 54px; }
-  .expandedContent h3 { font-size: clamp(28px, 7vw, 48px); }
+  .expandedContent h3 { font-size: clamp(1.75rem, 7vw, 3rem); }
 
   .footerLinks {
     display: flex;
@@ -411,9 +566,9 @@
 
 /* Shown instead of sub-category links when an entry has none: how much is inside. */
 .cardCount {
-  color: rgba(255, 244, 235, 0.86);
+  color: rgb(var(--cream-10-rgb) / .86);
   font-family: "Sansation-Regular", sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   letter-spacing: 0.02em;
 }
 

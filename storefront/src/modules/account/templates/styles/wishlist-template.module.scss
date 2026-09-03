@@ -1,16 +1,16 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 .accountWishlistRoot {
   display: grid;
-  gap: clamp(40px, 6vh, 72px);
+  gap: clamp(2.5rem, 6vh, 4.5rem);
   width: 100%;
-  color: #20211d;
+  color: var(--ink-05);
 }
 
 .accountWishlistHeader {
   display: grid;
-  gap: 22px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.2);
+  gap: clamp(.85rem, 2vh, 1.4rem);
+  padding-bottom: clamp(1.1rem, 2.6vh, 1.9rem);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .2);
 }
 
 .accountWishlistHeader > p,
@@ -18,8 +18,8 @@
 .accountWishlistInfo > span,
 .accountWishlistImage > span {
   margin: 0;
-  color: rgba(32, 33, 29, 0.5);
-  font: 12px/1.2 "Sansation-Regular", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .5);
+  font: clamp(.72rem, .78vw, .85rem) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -27,7 +27,7 @@
 .accountWishlistHeading {
   display: grid;
   justify-content: space-between;
-  gap: 24px;
+  gap: clamp(1rem, 1.75vw, 1.8rem);
   align-items: end;
   grid-template-columns: 1fr;
 
@@ -49,7 +49,7 @@
 .accountWishlistHeading h1 em {
   display: block;
   margin-left: 16%;
-  color: #7e896a;
+  color: var(--olive-19);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
@@ -57,7 +57,7 @@
 .accountWishlistIntro {
   display: grid;
   justify-content: space-between;
-  gap: 24px;
+  gap: clamp(1rem, 1.75vw, 1.8rem);
   align-items: end;
   grid-template-columns: 1fr;
 
@@ -73,22 +73,22 @@
 .accountWishlistIntro > p {
   max-width: 38rem;
   margin: 0;
-  color: rgba(32, 33, 29, 0.62);
-  font: clamp(15px, 1vw, 18px) / 1.55 "Sansation-Light", sans-serif;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: clamp(.95rem, 1vw, 1.15rem) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountWishlistBody {
   display: grid;
-  gap: 24px;
+  gap: clamp(.9rem, 2.2vh, 1.6rem);
 }
 
 .accountPreviewNotice {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: clamp(1rem, 1.75vw, 1.8rem);
   align-items: baseline;
-  padding: 16px 0;
-  border-block: 1px solid rgba(126, 137, 106, 0.35);
+  padding: clamp(.6rem, 1.5vh, 1.1rem) 0;
+  border-block: 1px solid rgb(var(--olive-19-rgb) / .35);
 
   @include v(md) {
     display: grid;
@@ -102,22 +102,22 @@
 }
 
 .accountPreviewNotice span {
-  color: #647052;
-  font: 12px/1.2 "Sansation-Bold", sans-serif;
+  color: var(--olive-11);
+  font: clamp(.72rem, .78vw, .85rem) / 1.2 "Sansation-Bold", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .accountPreviewNotice p {
   margin: 0;
-  color: rgba(32, 33, 29, 0.65);
-  font-size: 14px;
+  color: rgb(var(--ink-05-rgb) / .65);
+  font-size: clamp(.84rem, .91vw, 1rem);
 }
 
 .accountWishlistGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: clamp(18px, 2.2vw, 30px);
+  gap: clamp(1.1rem, 2.2vw, 1.9rem);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -137,11 +137,17 @@
   @include h(sm) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  // Pocet sloupcu, ne velikost — o velikost se nad 1921 stara ramp. Na 2552
+  // drzela mrizka 3 sloupce, takze karta merila 596px a fotka 596x715px.
+  @include h(qhd) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .accountWishlistCard {
   min-width: 0;
-  border-bottom: 1px solid rgba(32, 33, 29, 0.22);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .22);
 }
 
 .accountWishlistSurface {
@@ -152,7 +158,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100%;
-  padding-bottom: 18px;
+  padding-bottom: clamp(.7rem, 1.6vh, 1.2rem);
 }
 
 .accountWishlistProduct {
@@ -164,14 +170,14 @@
   position: relative;
   aspect-ratio: 5 / 6;
   overflow: hidden;
-  border: 1px solid rgba(32, 33, 29, 0.14);
-  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgb(var(--ink-05-rgb) / .14);
+  background: rgb(var(--white-rgb) / .38);
 }
 
 .accountWishlistImage::after {
   position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(32, 33, 29, 0.12);
+  inset: clamp(.5rem, 1vw, 1.1rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .12);
   content: "";
   pointer-events: none;
 }
@@ -184,65 +190,103 @@
 
 .accountWishlistImage > span {
   position: absolute;
-  top: 22px;
-  left: 22px;
+  top: clamp(.9rem, 1.6vw, 1.9rem);
+  left: clamp(.9rem, 1.6vw, 1.9rem);
   z-index: 1;
 }
 
 .accountWishlistImage > i {
   position: absolute;
-  top: 18px;
-  right: 18px;
+  top: clamp(.75rem, 1.32vw, 1.55rem);
+  right: clamp(.75rem, 1.32vw, 1.55rem);
   z-index: 1;
-  padding: 7px 10px;
-  border: 1px solid rgba(32, 33, 29, 0.22);
+  padding: clamp(.3rem, .52vw, .62rem) clamp(.42rem, .74vw, .88rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .22);
   border-radius: 999px;
-  background: rgba(245, 237, 223, 0.88);
-  font: 12px/1 "Sansation-Regular", sans-serif;
+  background: rgb(var(--cream-07-rgb) / .88);
+  font: clamp(.72rem, .78vw, .85rem) / 1 "Sansation-Regular", sans-serif;
   font-style: normal;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+// Jiny DRUH paticky, ne jina velikost. Pilulka "Odstranit" ma z .compact
+// v premium-action-button min-width: 8.25rem, takze ve dvousloupcovem gridu
+// zbyde na titulek 71-111px a text lezl pod tlacitko (52px pretečeni na 1200,
+// nula az od 1500). Zaklad je proto jednosloupcovy — tlacitko jde na druhy
+// radek — a dva sloupce se vraci az tam, kde se do nich text vejde.
+//
+// Stop je huge (1730), ne xl (1500): na 1500 ma karta 299px, tedy na titulek
+// zbyva 146px pri fontu 34.5px (4.2 em) a "Zápich do květináče" se lame na
+// tri radky, z nichz treti clamp uřízne. Na 1730 ma karta 352px, titulek 199px
+// pri 39.8px (5.0 em) a cely se vejde. Kriterium neni pretečeni (to resi
+// line-clamp), ale ctitelnost — a ta zacina az na huge.
 .accountWishlistCardFooter {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(.55rem, 1.2vh, .9rem) clamp(.7rem, 1.3vw, 1.3rem);
   align-items: end;
-  padding-top: 18px;
+  padding-top: clamp(.7rem, 1.6vh, 1.2rem);
+
+  @include h(huge) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  // Na qhd ma mrizka ctvrty sloupec, takze karta je UZSI nez na 1920
+  // (334 vs 396px), zatimco ramp mezitim zvedl pilulku na 175px a titulek
+  // na 57px. Ve dvousloupcove paticce zbyde na titulek 131px a slova se lamou
+  // uprostred ("Pom / ně…"). Ctvrty sloupec je zmena druhu, tak se s nim
+  // paticka vraci na jeden radek. Piseme AZ ZA huge, aby prebilo.
+  @include h(qhd) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .accountWishlistInfo {
   display: grid;
-  gap: 7px;
+  gap: clamp(.3rem, .52vw, .6rem);
   min-width: 0;
   color: inherit;
 }
 
+// Pevne dva radky. Bez toho meni titulek pocet radku od karty ke karte,
+// paticka roste s textem a spodni linky karet nelezi na jedne care
+// (nameřeno 473/486 na 1366, 853/908 na 2552). block-size = 2 x line-height,
+// tedy 2 x 0.96em, takze se skaluje s vlastnim clampem font-size.
 .accountWishlistInfo h2 {
+  display: -webkit-box;
+  block-size: 1.92em;
   margin: 0;
+  overflow: hidden;
   font: 400 clamp(1.7rem, 2.3vw, 2.7rem) / 0.96 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .accountWishlistInfo p {
   margin: 0;
-  color: rgba(32, 33, 29, 0.55);
-  font-size: 15px;
+  overflow: hidden;
+  color: rgb(var(--ink-05-rgb) / .55);
+  font-size: clamp(.88rem, .95vw, 1.05rem);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .accountWishlistCardAction {
   align-self: end;
+  justify-self: start;
 }
 
 .accountWishlistEmpty {
   display: grid;
   justify-content: space-between;
-  gap: 30px;
+  gap: clamp(1.2rem, 2.2vw, 2.3rem);
   align-items: center;
-  min-height: 210px;
-  padding: 36px 0;
-  border-block: 1px solid rgba(32, 33, 29, 0.2);
+  min-height: clamp(9rem, 24vh, 16rem);
+  padding: clamp(1.4rem, 3.4vh, 2.4rem) 0;
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .2);
   grid-template-columns: 1fr;
 
   @include v(md) {
@@ -260,13 +304,31 @@
 }
 
 .accountWishlistEmpty > div > p {
-  color: rgba(32, 33, 29, 0.62);
+  color: rgb(var(--ink-05-rgb) / .62);
 }
 
-.accountWishlistAction {
-  --premium-link-ink: #20211d;
-  --premium-link-active-ink: #f7e5d5;
-  --premium-link-border: #20211d;
-  --premium-link-fill: #20211d;
+// Zdvojena trida schvalne: premium-action-link ma na tomtez elementu
+// .root { width: 100% } se stejnou specificitou, takze o CTA v prazdnem stavu
+// (rodic je na h(xs) flex) rozhodovalo poradi modulu v bundlu — a roztahlo se
+// na ~530px. Chrome soubor zustava nedotceny.
+.accountWishlistAction.accountWishlistAction {
+  --premium-link-ink: var(--ink-05);
+  --premium-link-active-ink: var(--cream-06);
+  --premium-link-border: var(--ink-05);
+  --premium-link-fill: var(--ink-05);
+
+  // Auto sirka patri jen tam, kde je .accountWishlistEmpty flexovy RADEK —
+  // tedy do tychz dvou stopu, ktere ten radek delaji. V zakladu (svisly
+  // telefon) zustava CTA na width:100% z premium-action-link: plna sirka pod
+  // textem je tam spravne a telefony se v tomhle kole nedelaji.
+  @include v(md) {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  @include h(xs) {
+    width: auto;
+    flex: 0 0 auto;
+  }
 }
 

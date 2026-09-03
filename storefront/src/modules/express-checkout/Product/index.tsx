@@ -346,14 +346,18 @@ const OptionGroups = ({
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
 const transition = { duration: .8, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }
-const bundleItemInitial = { opacity: 0, x: 14 }
-const animate = { opacity: 1, x: 0 }
-const exit = { opacity: 0, x: -10 }
+/* Column-relative, same reason as the stage slide: the bundle item is as wide
+   as the 500px step column, so 14/500 = 2.8% in and 10/500 = 2% out. Same unit
+   on both ends of the interpolation. */
+const bundleItemInitial = { opacity: 0, x: "2.8%" }
+const animate = { opacity: 1, x: "0%" }
+const exit = { opacity: 0, x: "-2%" }
 /* Reduced motion: crossfade without the sideways travel. */
 const reducedInitial = { opacity: 0 }
 const reducedExit = { opacity: 0 }
 const transition2 = { duration: .35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }
-const initial2 = { opacity: 0, y: -4 }
-const animate2 = { opacity: 1, y: 0 }
+/* 4/1080 = .37vh — the error drops in from a screen-relative distance now. */
+const initial2 = { opacity: 0, y: "-0.37vh" }
+const animate2 = { opacity: 1, y: "0vh" }
 const exit2 = { opacity: 0 }
 const whileTap = { scale: .97 }

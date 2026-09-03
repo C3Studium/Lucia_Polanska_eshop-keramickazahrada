@@ -13,7 +13,7 @@
 .row {
   display: grid;
   grid-template-columns: 1fr;
-  border-block: 1px solid rgba(32, 33, 29, .2);
+  border-block: 1px solid rgb(var(--ink-05-rgb) / .2);
 
   @include v(md) {
     grid-template-columns: 1.2fr 1fr 1fr;
@@ -28,18 +28,18 @@
   min-height: 0;
   padding: 22px 0;
   border-right: 0;
-  border-bottom: 1px solid rgba(32, 33, 29, .16);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
 
   @include v(md) {
     min-height: 180px;
     padding: 24px;
-    border-right: 1px solid rgba(32, 33, 29, .2);
+    border-right: 1px solid rgb(var(--ink-05-rgb) / .2);
   }
 
   @include h(xs) {
     min-height: 180px;
     padding: 24px;
-    border-right: 1px solid rgba(32, 33, 29, .2);
+    border-right: 1px solid rgb(var(--ink-05-rgb) / .2);
   }
 }
 
@@ -48,7 +48,7 @@
   min-height: 0;
   padding: 22px 0;
   border-right: 0;
-  border-bottom: 1px solid rgba(32, 33, 29, .16);
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .16);
 }
 
 .col:last-child {
@@ -58,7 +58,7 @@
 
 .label {
   margin: 0 0 18px;
-  color: rgba(32, 33, 29, .5);
+  color: rgb(var(--ink-05-rgb) / .5);
   font: 12px/1.25 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -66,14 +66,14 @@
 
 .value {
   margin: 3px 0;
-  color: rgba(32, 33, 29, .82);
+  color: rgb(var(--ink-05-rgb) / .82);
   font: 16px/1.5 "Sansation-Light", sans-serif;
   overflow-wrap: anywhere;
 }
 
 .secondaryValue {
   margin: 8px 0 0;
-  color: rgba(32, 33, 29, .56);
+  color: rgb(var(--ink-05-rgb) / .56);
   font: 14px/1.45 "Sansation-Light", sans-serif;
 }
 

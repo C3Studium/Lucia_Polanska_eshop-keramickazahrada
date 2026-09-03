@@ -310,43 +310,56 @@ const variants = {
           hidden: {},
           visible: { transition: { staggerChildren: 0.09 } },
         }
+/* Entrance rises measured against the 1080px-tall design window and written in
+   vh, so a 660px laptop gets a shorter rise instead of the same 20px shove:
+   8/1080 = .74vh · 20/1080 = 1.85vh · 10/1080 = .93vh. Both ends of every
+   interpolation carry the same unit — a bare 0 would be 0px and make framer
+   mix two different value types. */
 const variants2 = {
-            hidden: { opacity: 0, y: 8 },
+            hidden: { opacity: 0, y: "0.74vh" },
             visible: {
               opacity: 1,
-              y: 0,
+              y: "0vh",
               transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
             },
           }
 const variants3 = {
-            hidden: { opacity: 0, y: 20 },
+            hidden: { opacity: 0, y: "1.85vh" },
             visible: {
               opacity: 1,
-              y: 0,
+              y: "0vh",
               transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
             },
           }
 const variants4 = {
-            hidden: { opacity: 0, y: 10 },
+            hidden: { opacity: 0, y: "0.93vh" },
             visible: {
               opacity: 1,
-              y: 0,
+              y: "0vh",
               transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
             },
           }
 
 /* The stage: one panel at a time, sliding in the direction of travel while the
    container's height follows — the same easing family the flow already uses. */
+/* The slide is PANEL-relative, not window-relative: the stage sits inside the
+   frame, so a vw path would over-travel on a wide monitor while the panel it
+   moves stays the same size. Measured stage width 562px, so the old fixed
+   travel converts as 40/562 = 7.1% in and 30/562 = 5.3% out — identical today,
+   and it keeps pace on its own once the frame grows with the ≥1921 ramp. */
+const PANEL_ENTER_PCT = 7.1
+const PANEL_EXIT_PCT = 5.3
+
 const panelVariants: Variants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
+  enter: (dir: number) => ({ opacity: 0, x: `${dir * PANEL_ENTER_PCT}%` }),
   center: {
     opacity: 1,
-    x: 0,
+    x: "0%",
     transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
   },
   exit: (dir: number) => ({
     opacity: 0,
-    x: dir * -30,
+    x: `${dir * -PANEL_EXIT_PCT}%`,
     transition: { duration: 0.32, ease: [0.76, 0, 0.24, 1] },
   }),
 }

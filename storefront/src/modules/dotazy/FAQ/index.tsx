@@ -1,5 +1,7 @@
 "use client"
 
+import { editable, editableDoc, editableLink } from "@c3studium/valecms/edit"
+import type { CopyBlock, FaqCategory, FaqQuestion } from "@lib/util/site-copy"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import { AnimatePresence, motion, type Easing, type Variants } from "framer-motion"
 import Image from "next/image"
@@ -7,9 +9,14 @@ import { useMemo, useState } from "react"
 
 import { easeReveal } from "@lib/motion-tokens"
 
-type Category = "vse" | "zakazka" | "produkty" | "doprava" | "kurzy"
+/*
+ * Kategorie je řetězec, ne výčet: přicházejí z CMS (bloky `dotazy.kategorie-*`),
+ * takže jich může být kolik chce a jmenují se, jak chce redaktor. Pevná pětice
+ * níž zůstává jako záloha pro stav, kdy v CMS žádná kategorie není.
+ */
+type Category = string
 
-const categories: { id: Category; label: string }[] = [
+const fallbackCategories: { id: Category; label: string }[] = [
     { id: "vse", label: "Vše" },
     { id: "zakazka", label: "Zakázková výroba" },
     { id: "produkty", label: "Produkty" },
@@ -82,20 +89,139 @@ const faq = [
 
 type ActiveState = string | null
 
-export default function FAQBody() {
+export default function FAQBody({
+    block,
+    texts,
+    cmsQuestions = [],
+    cmsCategories = [],
+}: {
+    /** Blok `dotazy.galerie` — fotky. */
+    block?: CopyBlock
+    /** Blok `dotazy.otazky` — texty kolem seznamu a kontaktní výzva. */
+    texts?: CopyBlock
+    /**
+     * Dokumenty typu `qna` — jedna otázka = jeden dokument, seřazené podle
+     * `poradi`. Nová otázka i nová kategorie vznikají ve Studiu v sekci
+     * Dotazy; kliknutí na otázku v „upravit kontent" otevře formulář celého
+     * dokumentu (`editableDoc`). Dokud žádné nejsou, jede stránka ze
+     * seznamu v kódu.
+     */
+    cmsQuestions?: FaqQuestion[]
+    /** Dokumenty `qnaKategorie` — znění a pořadí čipů filtru. */
+    cmsCategories?: FaqCategory[]
+}) {
+    /*
+     * Fotka u kontaktní výzvy. V bloku `dotazy.galerie` je čtvrtá v pořadí —
+     * první tři nese shader nad stránkou a ty se z CMS zatím neberou, protože
+     * je načítá WebGL jako textury, ne `next/image`, a cizí doména by
+     * potřebovala CORS na bucketu.
+     */
+    const photo = block?.gallery?.[3]
+
     const [active, setActive] = useState<ActiveState>(faq[0].id)
     const [category, setCategory] = useState<Category>("vse")
     const [query, setQuery] = useState("")
 
+    /*
+     * Otázky z CMS, `id` a `category` z kódu.
+     *
+     * Kategorie filtruje seznam a `id` drží rozbalený panel přes překreslení —
+     * obojí je chování stránky, ne text. Do CMS jde znění otázky a odpovědi;
+     * páruje se pozicí, protože blok `dotazy.otazky` je psaný ve stejném
+     * pořadí jako pole níž (viz scripts/seed-texts.mjs).
+     *
+     * Otázka, kterou blok nemá, si nechá znění z kódu — seznam tak nikdy
+     * nezkrátí ani nezprázdní, ať je v CMS cokoliv.
+     */
+    /*
+     * Dva zdroje, jedna přednost: dokumenty `qna` z CMS, jinak seznam z kódu.
+     *
+     * Otázka z CMS je celý dokument, takže její anotace není textové pole, ale
+     * `editableDoc` — kliknutí v „upravit kontent" otevře popup s formulářem
+     * typu: otázka, odpověď, kategorie i pořadí pohromadě.
+     *
+     * Čipy vznikají z hodnot `kategorie` v pořadí, v jakém je potkávají
+     * seřazené otázky — kategorie se tedy řadí tím, že se seřadí otázky, a
+     * nová vznikne prostě tím, že ji některá otázka nese. Prázdná `kategorie`
+     * nechá otázku jen pod „Vše".
+     */
+    const fromDocuments = useMemo(() => {
+        if (!cmsQuestions.length) return null
+
+        /*
+         * Čipy: napřed založené kategorie v jejich pořadí, pak jména, která
+         * nesou otázky a kategorie k nim není. Ta druhá půlka je záchranná —
+         * překlep v `kategorie` na otázce čip stejně vytvoří (za seřazenými),
+         * takže otázka nikdy nezmizí; jen je vidět, že něco nesedí.
+         */
+        const seen: string[] = cmsCategories.map((cat) => cat.nazev)
+        for (const q of cmsQuestions) {
+            if (q.kategorie && !seen.includes(q.kategorie)) seen.push(q.kategorie)
+        }
+        const chips: { id: Category; label: string }[] = [
+            { id: "vse", label: "Vše" },
+            ...seen.map((name) => ({ id: name, label: name })),
+        ]
+
+        const list = cmsQuestions.map((q, index) => ({
+            id: q.id ?? `qna-${index}`,
+            category: (q.kategorie || "vse") as Category,
+            title: q.question,
+            desc: q.answer,
+            /** Celý dokument — anotace `editableDoc` otevře jeho formulář. */
+            doc: q as FaqQuestion | null,
+            /* Jen kvůli shodnému tvaru se záložní větví — v téhle se nečtou. */
+            cmsDoc: undefined as CopyBlock | undefined,
+            cmsIndex: -1,
+        }))
+
+        return { chips, list }
+    }, [cmsQuestions, cmsCategories])
+
+    const questions = useMemo(() => {
+        if (fromDocuments) return fromDocuments.list
+
+        return faq.map((item, index) => {
+            const cms = texts?.questions?.[index]
+            return {
+                ...item,
+                title: cms?.question?.trim() || item.title,
+                desc: cms?.answer?.trim() || item.desc,
+                doc: null as FaqQuestion | null,
+                /** Kolikátá je v bloku — pro anotaci překryvu. */
+                cmsDoc: texts,
+                cmsIndex: index,
+            }
+        })
+    }, [fromDocuments, texts])
+
+    const chips = fromDocuments?.chips ?? fallbackCategories
+
+    const sectionEyebrow = texts?.accent?.[0]?.trim() || "Odpovědi · 02"
+    /* `null` = použij výchozí JSX se zalomením; řetězec z CMS jde bez něj. */
+    const sectionTitle = texts?.title?.trim() || null
+    const sectionLede =
+        texts?.bodyText?.trim() ||
+        "Sepsala jsem, na co se lidé ptají nejčastěji — objednávky, výroba, doprava i kurzy. Kdyby tu něco chybělo, napište mi."
+
+    const contactEyebrow = texts?.accent?.[1]?.trim() || "Ještě něco? · 03"
+    const contactTitle = texts?.headline?.trim() || "Nenašli jste odpověď?"
+    const contactLede =
+        texts?.accent?.[2]?.trim() ||
+        "Napište mi přímo do ateliéru. Ozvu se zpravidla do dvou pracovních dnů."
+    const contactCta = texts?.accent?.[3]?.trim() || "Napsat zprávu"
+    const contactPhone = texts?.items?.[0]?.value?.trim() || "+420 775 211 578"
+    const contactPhoneHref = texts?.items?.[0]?.note?.trim() || "tel:+420775211578"
+
     const visibleQuestions = useMemo(() => {
         const normalizedQuery = query.trim().toLocaleLowerCase("cs")
 
-        return faq.filter((question) => {
+        return questions.filter((question) => {
             const matchesCategory = category === "vse" || question.category === category || question.category === "vse"
             const matchesQuery = !normalizedQuery || `${question.title} ${question.desc}`.toLocaleLowerCase("cs").includes(normalizedQuery)
             return matchesCategory && matchesQuery
         })
-    }, [category, query])
+    }, [category, query, questions])
 
     return (
         <section
@@ -113,14 +239,20 @@ export default function FAQBody() {
                 variants={sectionVariants}
             >
                 <motion.div variants={faqRevealItem}>
-                    <span className="faqEyebrow">Odpovědi · 02</span>
-                    <h2 id="faq-section-title">
-                        Na co se ptáte<br />nejčastěji.
+                    <span className="faqEyebrow" {...editable(texts, "accent.0")}>
+                        {sectionEyebrow}
+                    </span>
+                    {/* Zalomení drží jen výchozí znění z kódu; text z CMS se láme sám. */}
+                    <h2 id="faq-section-title" {...editable(texts, "title")}>
+                        {sectionTitle ?? (
+                            <>
+                                Na co se ptáte<br />nejčastěji.
+                            </>
+                        )}
                     </h2>
                 </motion.div>
-                <motion.p variants={faqRevealItem}>
-                    Sepsala jsem, na co se lidé ptají nejčastěji — objednávky, výroba,
-                    doprava i kurzy. Kdyby tu něco chybělo, napište mi.
+                <motion.p variants={faqRevealItem} {...editable(texts, "body")}>
+                    {sectionLede}
                 </motion.p>
             </motion.div>
 
@@ -142,7 +274,7 @@ export default function FAQBody() {
                     <span className="faqSearchIcon" aria-hidden="true" />
                 </label>
                 <div className="faqCategories" aria-label="Kategorie otázek">
-                    {categories.map((item) => (
+                    {chips.map((item) => (
                         <button
                             type="button"
                             key={item.id}
@@ -178,6 +310,26 @@ export default function FAQBody() {
                                 number={String(index + 1).padStart(2, "0")}
                                 title={question.title}
                                 desc={question.desc}
+                                /* Otázka z CMS je dokument: `editableDoc` na celé kartě
+                                   otevře popup s formulářem (otázka + odpověď + kategorie
+                                   + pořadí). Záložní režim z kódu anotuje texty v místě —
+                                   pozicí v BLOKU, ne v zobrazeném seznamu, ten je
+                                   filtrovaný a `index` by ukazoval na cizí otázku. */
+                                editDoc={
+                                    question.doc
+                                        ? editableDoc(question.doc, "qna")
+                                        : undefined
+                                }
+                                editTitle={
+                                    question.doc
+                                        ? undefined
+                                        : editable(question.cmsDoc, `questions.${question.cmsIndex}.question`)
+                                }
+                                editDesc={
+                                    question.doc
+                                        ? undefined
+                                        : editable(question.cmsDoc, `questions.${question.cmsIndex}.answer`)
+                                }
                                 active={active}
                                 setActive={setActive}
                                 id={question.id}
@@ -199,17 +351,37 @@ export default function FAQBody() {
                     viewport={asideViewport}
                     transition={asideTransition}
                 >
-                    <div className="faqContactImage">
-                        <Image src="/assets/img/faq/FAQ4.png" alt="Ručně balená keramika z ateliéru" fill sizes="32vw" />
+                    <div className="faqContactImage" {...editable(block, "gallery.3", "image")}>
+                        <Image
+                            src={photo?.url ?? "/assets/img/faq/FAQ4.png"}
+                            alt={photo?.alt?.trim() || "Ručně balená keramika z ateliéru"}
+                            fill
+                            sizes="32vw"
+                        />
                         <span />
                     </div>
                     <div className="faqContactCopy">
-                        <span className="faqEyebrow">Ještě něco? · 03</span>
-                        <h3>Nenašli jste odpověď?</h3>
-                        <p>Napište mi přímo do ateliéru. Ozvu se zpravidla do dvou pracovních dnů.</p>
+                        <span className="faqEyebrow" {...editable(texts, "accent.1")}>
+                            {contactEyebrow}
+                        </span>
+                        <h3 {...editable(texts, "headline")}>{contactTitle}</h3>
+                        <p {...editable(texts, "accent.2")}>{contactLede}</p>
                         <div className="faqContactActions">
-                            <ContactTrigger text="Napsat zprávu" />
-                            <a href="tel:+420775211578">+420 775 211 578</a>
+                            {/* Hook pro sirku pilulky. WebButton pripoji `className` primo na
+                                `<button>`, takze FAQ/styles.scss se na nej dostane, aniz by
+                                sahal do ContactDialogu nebo do webButtonu.
+                                Anotace na obalu — vnitřek tlačítka se při animaci přepisuje. */}
+                            <span {...editable(texts, "accent.3")}>
+                                <ContactTrigger text={contactCta} className="faqContactButton" />
+                            </span>
+                            {/* Telefon: vypsaný tvar i cíl odkazu z jednoho řádku bloku —
+                                `editableLink` otevře popup s obojím. */}
+                            <a
+                                href={contactPhoneHref}
+                                {...editableLink(texts, { text: "items.0.value", href: "items.0.note" })}
+                            >
+                                {contactPhone}
+                            </a>
                         </div>
                     </div>
                 </motion.aside>
@@ -221,6 +393,11 @@ export default function FAQBody() {
 type QuestionProps = {
     desc: string
     title: string
+    /** Atributy překryvu pro znění otázky a odpovědi. Mimo náhled prázdné. */
+    editTitle?: Record<string, string | undefined>
+    editDesc?: Record<string, string | undefined>
+    /** `editableDoc` na celé kartě — popup s formulářem otázky. Mimo náhled prázdné. */
+    editDoc?: Record<string, string | undefined>
     id: string
     number: string
     index: number
@@ -228,7 +405,7 @@ type QuestionProps = {
     setActive: (next: ActiveState) => void
 }
 
-function Question({ desc, title, id, number, index, active, setActive }: QuestionProps) {
+function Question({ desc, title, editTitle, editDesc, editDoc, id, number, index, active, setActive }: QuestionProps) {
     const isActive = active === id
 
     /* The only per-question value is the stagger delay, and it depends solely on the row's
@@ -247,6 +424,7 @@ function Question({ desc, title, id, number, index, active, setActive }: Questio
         <motion.article
             layout
             className={`question ${isActive ? "active" : ""}`}
+            {...editDoc}
             initial={questionInitial}
             animate={questionAnimate}
             exit={questionExit}
@@ -260,7 +438,7 @@ function Question({ desc, title, id, number, index, active, setActive }: Questio
                 onClick={() => setActive(isActive ? null : id)}
             >
                 <span className="questionNumber">{number}</span>
-                <span className="questionLabel">{title}</span>
+                <span className="questionLabel" {...editTitle}>{title}</span>
                 <span className="questionToggle" aria-hidden="true"><i /><i /></span>
             </button>
             <AnimatePresence initial={false}>
@@ -277,6 +455,7 @@ function Question({ desc, title, id, number, index, active, setActive }: Questio
                             initial={answerCopyInitial}
                             animate={answerCopyAnimate}
                             transition={answerCopyTransition}
+                            {...editDesc}
                         >
                             {desc}
                         </motion.p>

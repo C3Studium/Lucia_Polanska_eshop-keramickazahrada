@@ -154,6 +154,14 @@ const normalize = (value: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("cs")
 
+/* Entrance travel rides the window height instead of a frozen pixel count. One coefficient
+   — 100/1080 vh per px, the 1080-tall baseline these offsets were drawn against — derives
+   every nudge, so a 768-tall laptop gets proportionally shorter travel instead of the same
+   8px. Both ends of each tween carry the unit: framer interpolates cleanly only when the
+   two sides are the same shape, so the rest state is travel(0), not a bare 0. */
+const VH_PER_PX = 100 / 1080
+const travel = (px: number) => `${+(px * VH_PER_PX).toFixed(3)}vh`
+
 const listVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -164,20 +172,20 @@ const listVariants: Variants = {
 }
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0, y: travel(8) },
   visible: {
     opacity: 1,
-    y: 0,
+    y: travel(0),
     transition: { duration: 0.42, ease },
   },
 }
 
 const panelVariants: Variants = {
-  hidden: { height: 0, opacity: 0, y: -8 },
+  hidden: { height: 0, opacity: 0, y: travel(-8) },
   visible: {
     height: "auto",
     opacity: 1,
-    y: 0,
+    y: travel(0),
     transition: {
       height: { duration: 0.5, ease },
       opacity: { duration: 0.32, delay: 0.1 },
@@ -187,7 +195,7 @@ const panelVariants: Variants = {
   exit: {
     height: 0,
     opacity: 0,
-    y: -6,
+    y: travel(-6),
     transition: {
       height: { duration: 0.42, ease },
       opacity: { duration: 0.18 },
@@ -558,8 +566,9 @@ export default function ComgatePaymentSelector({
 
 
 /* Hoisted from JSX: these motion objects are static, so allocating them per
-   render only gave framer-motion new references to re-diff. Values are unchanged. */
-const initial = { opacity: 0, y: 7 }
-const animate = { opacity: 1, y: 0 }
-const exit = { opacity: 0, y: -5 }
+   render only gave framer-motion new references to re-diff. The offsets now come
+   from travel(), so the nudge is a share of the window height rather than a pixel. */
+const initial = { opacity: 0, y: travel(7) }
+const animate = { opacity: 1, y: travel(0) }
+const exit = { opacity: 0, y: travel(-5) }
 const transition = { duration: 0.42, ease }

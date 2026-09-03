@@ -61,9 +61,15 @@ function ProductRail({ products }: ProductRailProps) {
     const viewport = viewportRef.current
     if (!viewport || usesNativeScrollRef.current) return
 
-    const focusPoint =
-      viewport.getBoundingClientRect().left + window.innerWidth * 0.38
-    const focusRadius = Math.max(window.innerWidth * 0.34, 420)
+    /* Ohnisko i poloměr se čtou z railu, ne z window.innerWidth. Nad 1921 je rám
+       zastropovaný na 100svh*1.6, takže obrazovka a rám nejsou totéž: na 2552x1351 je rám
+       2162px, ale 38 % obrazovky je 970px, což je 44,9 % rámu — ohnisko se posunulo o skoro
+       sedminu rámu doprava a největší karta se zvětšovala jinde, než kam se člověk dívá.
+       `viewport` je width:100% uvnitř .pageFrame, takže jeho šířka JE rám; pod 1921 je to
+       táž hodnota jako innerWidth. Jeden rect na celý výpočet, ne dvě měření. */
+    const rail = viewport.getBoundingClientRect()
+    const focusPoint = rail.left + rail.width * 0.38
+    const focusRadius = Math.max(rail.width * 0.34, 420)
 
     viewport
       .querySelectorAll<HTMLElement>("[data-related-card]")
@@ -102,18 +108,51 @@ function ProductRail({ products }: ProductRailProps) {
   }, [baseX, updateFocus])
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 760px)")
+    /* Tyhle dva výrazy a dvojice `@include below-px(760px)` + `@include h(phs)` ve
+       style.scss MUSÍ zůstat v zákrytu. Jsou to dvě půlky jednoho přepínače: CSS udělá
+       z pásu nativní scroll-snap carousel, JS ho tímhle refem odpojí od marquee smyčky.
+       Když se rozejdou, nikdo to neohlásí — jen se stane jedna ze dvou tichých věcí:
+         · CSS pustí marquee a JS ne  -> usesNativeScrollRef umlčí updateFocus
+           i scroll impulsy, rail stojí a ohnisko je mrtvé;
+         · JS pustí marquee a CSS ne  -> transform se hýbe pod overflow-x: auto,
+           a protože v tom režimu je vysázená jen jedna skupina, po jednom oběhu
+           smyčky pás skočí.
+
+       Nativní režim je proto přesně to, co zbyde po odečtení: telefonní fold MÍNUS
+       telefon na šířku, kterému ten blok v CSS odvolává `@include h(phs)`. Napsané
+       jako obyčejné media query, ne jedna s Level 4 `not` — matchMedia na dotaz,
+       kterému prohlížeč nerozumí, tiše vrací false, a to by tady znamenalo marquee
+       nad nativním scrollerem. Řetězec phs je doslova to, co emituje h-query(phs)
+       ze styles/system/_mixins.scss.
+
+       Fold sám je od tabletového kola dvoučlenný, protože holé `max-width: 760px`
+       si bralo i svislé tablety: 744x1133 (iPad mini 6) a 600x960 dostávaly celou
+       telefonní kompozici sekce, včetně nativního pásu s jedinou vysázenou skupinou.
+       Členy jsou tytéž dva, které stojí v style.scss — svislý telefon (< 600px)
+       a krátká šířka do 760px. Telefon o nic nepřišel: nejširší svislý telefon má
+       430px, a 568x320 i 736x414 chytá druhý člen. */
+    const phonePortrait = window.matchMedia("(max-width: 599.98px)")
+    const shortLandscape = window.matchMedia(
+      "(max-width: 760px) and (orientation: landscape)"
+    )
+    const phoneLandscape = window.matchMedia(
+      "(min-width: 480px) and (max-height: 520px) and (orientation: landscape)"
+    )
+    const queries = [phonePortrait, shortLandscape, phoneLandscape]
 
     const updateMode = () => {
-      usesNativeScrollRef.current = media.matches
+      const foldApplies = phonePortrait.matches || shortLandscape.matches
+      usesNativeScrollRef.current = foldApplies && !phoneLandscape.matches
       if (usesNativeScrollRef.current) {
         baseX.set(0)
       }
     }
 
     updateMode()
-    media.addEventListener("change", updateMode)
-    return () => media.removeEventListener("change", updateMode)
+    queries.forEach((q) => q.addEventListener("change", updateMode))
+    return () => {
+      queries.forEach((q) => q.removeEventListener("change", updateMode))
+    }
   }, [baseX])
 
   useEffect(() => {
@@ -274,7 +313,16 @@ function ProductRail({ products }: ProductRailProps) {
                   fill
                   draggable={false}
                   quality={100}
-                  sizes="(max-width: 760px) 78vw, (max-width: 1200px) 42vw, 31vw"
+                  /* První podmínka je telefon na šířku (phs/phl): karta tam má
+                     34vw, ne 78vw, a bez ní by si telefon stahoval dvakrát větší
+                     obrázek, než jaký zobrazí. Pořadí je závazné, platí první
+                     shoda. */
+                  /* Druhá a třetí podmínka jsou tytéž dva členy jako telefonní
+                     fold ve style.scss — 78vw platí jen tam, kde CSS opravdu
+                     dává kartě 78vw. Svislý tablet 600–760px má od tabletového
+                     kola základní kartu (clamp(20.625rem, 29vw, 35rem) stojí
+                     v celém pásmu na podlaze 330px, tedy 55vw na 600px). */
+                  sizes="(min-width: 480px) and (max-height: 520px) and (orientation: landscape) 34vw, (max-width: 599.98px) 78vw, (max-width: 760px) and (orientation: landscape) 78vw, (max-width: 760px) 55vw, (max-width: 1200px) 42vw, 31vw"
                 />
               )}
               <span className="soldProducts__imageIndex">
@@ -303,6 +351,12 @@ function ProductRail({ products }: ProductRailProps) {
     <motion.div
       className="soldProducts__viewport"
       ref={viewportRef}
+      /* data-lenis-prevent: ve svislém režimu je tenhle prvek vlastní vodorovný
+         scroll kontejner uvnitř Lenis stránky (lib/context/LenisContext.tsx). Bez
+         toho Lenis spolkne wheel i touch a odscrolluje stránku místo seznamu. Na
+         skutečném dotyku se Lenis sám vypíná, takže tohle je pro myš nad úzkým
+         oknem a pro emulaci v devtools — právě tam, kde se to testuje. */
+      data-lenis-prevent
       onPanStart={handlePanStart}
       onPan={handlePan}
       onPanEnd={handlePanEnd}

@@ -165,6 +165,31 @@ export async function middleware(request: NextRequest) {
   const urlHasCountryCode =
     request.nextUrl.pathname.split("/")[1]?.toLowerCase() === countryCode
 
+  /*
+   * Signed-out visitors are sent back to /account, which is where the login form lives.
+   *
+   * The account area protects itself through parallel routes: the layout picks the `@login` slot
+   * when there is no customer. That works at /account itself and nowhere below it — `@login` has
+   * a single `page.tsx` and no segment for `wishlist`, `orders`, `profile` and the rest, so on a
+   * request straight to /account/wishlist there is no slot to render and the page comes back
+   * broken rather than as a login form. Which is what „wishlist neroutuje" is.
+   *
+   * The cookie is the gate here rather than the customer, because middleware has no session to
+   * ask — a JWT that exists but has expired still gets through, and the layout catches that on
+   * the server. So this is the redirect, not the authorisation; `default.tsx` in the slots covers
+   * the same case for client-side navigation and for a stale token.
+   */
+  if (urlHasCountryCode) {
+    const segments = request.nextUrl.pathname.split("/").filter(Boolean)
+    const isBelowAccountRoot = segments[1] === "account" && segments.length > 2
+
+    if (isBelowAccountRoot && !request.cookies.get("_medusa_jwt")?.value) {
+      const loginUrl = new URL(`/${countryCode}/account`, request.nextUrl.origin)
+
+      return NextResponse.redirect(loginUrl, 307)
+    }
+  }
+
   // if one of the country codes is in the url and the cache id is set, return next
   if (urlHasCountryCode && cacheIdCookie) {
     return NextResponse.next()

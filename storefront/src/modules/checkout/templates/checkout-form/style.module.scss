@@ -5,16 +5,6 @@
   gap: 0;
   padding: 0;
   background: transparent;
-
-  @include v(md) {
-    gap: 0;
-    padding: 0;
-  }
-
-  @include h(xs) {
-    gap: 0;
-    padding: 0;
-  }
 }
 
 .root > * {
@@ -24,8 +14,12 @@
 .root > *:nth-child(3) { animation-delay: 140ms; }
 .root > *:nth-child(4) { animation-delay: 210ms; }
 
+/* Dráha nájezdu ve vh, dopočítaná na návrhové výšce 1080, kde těch 18px vzniklo:
+   18/1080 = 1.667 % → 1.67vh. Táž metoda, jakou jsou přepočítané keyframes v
+   page.module.scss (24px = 2.2vh, 28px = 2.6vh). V px se dráha na 720px vysokém
+   notebooku neškrtla vůbec, přestože tam je výška nejdražší. */
 @keyframes checkoutStepReveal {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(1.67vh); }
   to { opacity: 1; transform: translateY(0); }
 }
 

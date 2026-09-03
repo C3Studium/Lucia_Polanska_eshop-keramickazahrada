@@ -1,5 +1,8 @@
 "use client"
 
+import { editable } from "@c3studium/valecms/edit"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import type { CopyBlock } from "@lib/util/site-copy"
 import type { CourseTerm } from "@lib/data/courses"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 
@@ -22,37 +25,57 @@ type Props = {
   terms: CourseTerm[]
   /** Opens the reservation modal. */
   onReserveAction: () => void
+  /** Blok `kurzy.rezervace` — texty kolem termínů; termíny samy jsou z Medusy. */
+  block?: CopyBlock
 }
 
-export default function Rezervace({ terms, onReserveAction }: Props) {
+export default function Rezervace({ terms, onReserveAction, block }: Props) {
+  /* Sekce sama o sobě nemá důvod k překreslení — bez tohohle by po zapnutí
+     režimu editace zůstaly anotace prázdné. Viz hook. */
+  useEditRerender()
+
   const nearest = terms.slice(0, TEASER_COUNT)
+
+  const eyebrow = block?.accent?.[0]?.trim() || "03 · Rezervace"
+  const titleLead = block?.title?.trim() || "Vyberte si termín."
+  const titleAccent = block?.headline?.trim() || "Místo je vaše."
+  const lede =
+    block?.bodyText?.trim() ||
+    "Vypsané kurzy pro jednotlivce, dvojice i malé skupiny. Zaplatit můžete předem kartou, nebo až na místě."
+  const ctaText = block?.accent?.[1]?.trim() || "Vybrat termín"
+  const teaserNote =
+    block?.accent?.[2]?.trim() ||
+    "Rezervace s kalendářem a volnými místy zabere minutu."
+  const emptyTitle =
+    block?.accent?.[3]?.trim() || "Právě nejsou vypsané žádné termíny."
+  const emptyText =
+    block?.accent?.[4]?.trim() ||
+    "Napište mi a dám vám vědět, jakmile vypíšu další — nebo se domluvíme na termínu jen pro vaši skupinu."
+  const emptyCta = block?.accent?.[5]?.trim() || "Dejte mi vědět"
 
   return (
     <section className="kurzyRezervace" id="rezervace" data-scroll-section>
       <header className="kurzyRezervace__head">
-        <span>03 · Rezervace</span>
+        <span {...editable(block, "accent.0")}>{eyebrow}</span>
+        {/* Obě půlky vlastní pole — `editable` píše celé pole naráz. */}
         <h2>
-          Vyberte si termín.
-          <em>Místo je vaše.</em>
+          <span {...editable(block, "title")}>{titleLead}</span>
+          <em {...editable(block, "headline")}>{titleAccent}</em>
         </h2>
-        <p>
-          Vypsané kurzy pro jednotlivce, dvojice i malé skupiny. Zaplatit
-          můžete předem kartou, nebo až na místě.
-        </p>
+        <p {...editable(block, "body")}>{lede}</p>
       </header>
 
       {terms.length === 0 ? (
         <div className="kurzyRezervace__empty">
-          <h3>Právě nejsou vypsané žádné termíny.</h3>
-          <p>
-            Napište mi a dám vám vědět, jakmile vypíšu další — nebo se
-            domluvíme na termínu jen pro vaši skupinu.
-          </p>
-          <ContactTrigger
-            text="Dejte mi vědět"
-            topic="Kurzy"
-            className="kurzyRezervaceCtaButton"
-          />
+          <h3 {...editable(block, "accent.3")}>{emptyTitle}</h3>
+          <p {...editable(block, "accent.4")}>{emptyText}</p>
+          <span {...editable(block, "accent.5")}>
+            <ContactTrigger
+              text={emptyCta}
+              topic="Kurzy"
+              className="kurzyRezervaceCtaButton"
+            />
+          </span>
         </div>
       ) : (
         <div className="kurzyRezervace__teaser">
@@ -96,13 +119,16 @@ export default function Rezervace({ terms, onReserveAction }: Props) {
               type="button"
               className="kurzyRezervace__teaserButton"
               onClick={onReserveAction}
+              {...editable(block, "accent.1")}
             >
-              Vybrat termín <i aria-hidden="true">↗</i>
+              {ctaText} <i aria-hidden="true">↗</i>
             </button>
-            <p>
+            {/* Varianta s počtem termínů se skládá z čísla, které zná jen Medusa —
+                ta zůstává v kódu; editovatelná je věta bez počtu. */}
+            <p {...editable(block, "accent.2")}>
               {terms.length > TEASER_COUNT
                 ? `Všech ${terms.length} termínů s kalendářem, volnými místy a rezervací zabere minutu.`
-                : "Rezervace s kalendářem a volnými místy zabere minutu."}
+                : teaserNote}
             </p>
           </div>
         </div>

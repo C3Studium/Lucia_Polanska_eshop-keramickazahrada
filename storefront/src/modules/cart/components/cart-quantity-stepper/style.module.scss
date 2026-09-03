@@ -2,25 +2,29 @@
 .root {
   display: grid;
   /* −/+ were 28×34px — the smallest control in the purchase path, and the
-     global touch floor fixes only height. 36px columns, 40px tall. */
-  grid-template-columns: 36px 34px 36px;
+     global touch floor fixes only height, so the stepper carries its own.
+     2.375rem / 2.75rem is 38px / 44px at a 16px root: the box that already
+     shipped, written once in the base instead of being restated by a
+     v(md) + h(xs) pair that set the identical value. h(xs) is min-width 750px,
+     so the 40px base never rendered in landscape at all.
+
+     rem, not px: above 1921 the root ramp lifts the control with the rest of
+     the page — in px it stayed 114×44 next to a 76px heading on a 2K monitor.
+     rem, not a vh clamp: 44px is a touch threshold, and any vh middle term
+     would sit on its floor on a 768px-tall laptop anyway (4.6vh = 35px), so
+     the floor is the whole value and a clamp would only hide it.
+
+     Width is deliberately not increased below the ramp — .cellActions in
+     item/style.module.scss already overflows its padding box at every
+     landscape width. */
+  grid-template-columns: 2.375rem 2.25rem 2.375rem;
   align-items: center;
-  height: 40px;
+  height: 2.75rem;
   overflow: hidden;
-  border: 1px solid rgba(255,232,214,.34);
+  border: 1px solid rgb(var(--cream-06-rgb) / .34);
   border-radius: 999px;
-  color: #ffe8d6;
-  background: rgba(255,232,214,.045);
-
-  @include v(md) {
-    grid-template-columns: 38px 36px 38px;
-    height: 44px;
-  }
-
-  @include h(xs) {
-    grid-template-columns: 38px 36px 38px;
-    height: 44px;
-  }
+  color: var(--cream-06);
+  background: rgb(var(--cream-06-rgb) / .045);
 }
 
 .control {
@@ -32,14 +36,20 @@
   color: inherit;
   background: transparent;
   cursor: pointer;
-  font: 400 17px/1 "Sansation-Regular", sans-serif;
+  /* Was a flat 17px. Floor keeps that value, ceiling is 20px; live 1214–1429px
+     (17 / 0.014 … 20 / 0.014), so the growth happens where the users are and
+     the ramp takes the 1.25rem ceiling on from 1921. */
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1;
   transition: color 220ms ease, background-color 220ms ease;
 }
 
 .control:hover:not(:disabled),
 .control:focus-visible {
-  color: #20211c;
-  background: #bbb788;
+  color: var(--ink-05);
+  background: var(--sage-01);
 }
 
 .control:disabled {
@@ -49,12 +59,19 @@
 
 .value {
   display: grid;
-  height: 22px;
+  /* The divider rules are this box's edges, so its height is half the stepper
+     by intent (22 of 44). In rem it stays half through the ramp; in px it would
+     have shrunk to a third of a 58px control on a 2K monitor. */
+  height: 1.375rem;
   place-items: center;
-  border-right: 1px solid rgba(255,232,214,.18);
-  border-left: 1px solid rgba(255,232,214,.18);
-  color: #ffe8d6;
-  font: 400 14px/1 "Sansation-Regular", sans-serif;
+  border-right: 1px solid rgb(var(--cream-06-rgb) / .18);
+  border-left: 1px solid rgb(var(--cream-06-rgb) / .18);
+  color: var(--cream-06);
+  /* Was a flat 14px. Live 1197–1453px (14 / 0.0117 … 17 / 0.0117). */
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(.875rem, 1.17vw, 1.0625rem);
+  font-weight: 400;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 

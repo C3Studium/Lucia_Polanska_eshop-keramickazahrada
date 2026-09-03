@@ -11,6 +11,18 @@
 @use "tailwindcss/utilities" as *;
 // This file is used to define global styles for the application without using import style.scss from .
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * BARVY WEBU SE MĚNÍ TADY:  src/styles/system/_colors.scss
+ *
+ * Celá paleta je v tom jediném souboru a odtud se rozsvítí do celého webu.
+ * V komponentách už není ani jeden zápis barvy — všechny sahají po tokenu,
+ * takže změna jednoho řádku v paletě se projeví všude, kde se ta barva
+ * používá. Dřív jich tam bylo 2 304 a stejný odstín býval napsaný osmi
+ * způsoby, takže se barva „na jednom místě" změnit nedala.
+ *
+ * Blok `:root` musí zůstat v souboru, který sem přijde přes @use, a ne
+ * v komponentě: CSS Modules odmítají `:root` jako „nečistý" selektor.
+ * ───────────────────────────────────────────────────────────────────────────── */
 @use "./system/colors.scss" as *;
 
 // --- Fonts definitions and import into the project ---
@@ -178,7 +190,7 @@
    * 3.7:1 on the ink product stage #20211c — so no per-surface variant is needed. A surface that
    * genuinely needs a different ring overrides --focus-ring locally.
    */
-  --focus-ring: #9a6f65;
+  --focus-ring: var(--clay-24);
   --focus-ring-width: 2px;
   --focus-ring-offset: 3px;
 }
@@ -229,6 +241,43 @@ body::-webkit-scrollbar {
 }
 
 /*
+ * Studio není stránka, je to aplikace — a pravidla nad ním neplatí.
+ *
+ * `/studio` bydlí pod stejným kořenovým layoutem jako web, takže dědilo
+ * všechno výše. Tři věci z toho aplikaci na celou výšku rozbíjejí:
+ *
+ * - `body { height: fit-content }` — aplikace potřebuje známou výšku, aby si
+ *   panely mohly říct `height: 100%` a rolovat uvnitř sebe. S „podle obsahu"
+ *   se místo toho natáhne stránka a vnitřní `overflow` nemá co omezit.
+ * - **schované scrollbary** — na webu záměr, ve Studiu to znamená seznam,
+ *   u kterého není poznat, že pokračuje.
+ * - `max-width: 100dvw` na `body` spolu s `.pageFrame` — viz komponentu
+ *   `site-chrome`, která rám nad Studiem vynechává.
+ *
+ * Atribut razí `SiteChrome` podle cesty; mimo Studio tenhle blok nic nedělá.
+ */
+html[data-app="studio"],
+html[data-app="studio"] body {
+  height: 100%;
+  max-width: none;
+  scrollbar-width: auto;
+}
+
+html[data-app="studio"]::-webkit-scrollbar,
+html[data-app="studio"] body::-webkit-scrollbar,
+html[data-app="studio"] *::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+
+html[data-app="studio"] *::-webkit-scrollbar-thumb {
+  width: auto;
+  border-radius: 999px;
+  background: rgb(var(--white-rgb) / .22);
+}
+
+/*
  * ---------------------------------------------------------------------------------------------
  * 16:10 page frame.
  *
@@ -263,6 +312,27 @@ body::-webkit-scrollbar {
    * substitution below is a no-op. Nothing under the threshold moves by a pixel.
    */
   --fvw: calc(var(--page-max-w) / 100);
+
+  /*
+   * ---------------------------------------------------------------------------------------------
+   * Navbar geometry, published here because more than the navbar draws against it.
+   *
+   * The bar is `.navbar`, but the search overlay is its SIBLING in Navbar/index.tsx, not its
+   * child — custom properties declared on `.navbar` never reach it. It was therefore carrying its
+   * own copy of all three clamps as `var(--nav-height, clamp(2.875rem, 4.6vh, 3.5rem))` fallbacks
+   * that were always the live value, and `--nav-top-inset` was read there while being declared
+   * NOWHERE in src: the bar wrote the same number straight into `top:`. Two files holding one
+   * geometry, with one of them holding it only by luck, is the failure this token set removes.
+   *
+   * Values are the ones the bar already computed, so nothing moves; the bar now reads them too.
+   * `@include touch` in Navbar/style.scss still re-declares --nav-height on `.navbar` for the
+   * thumb, which is deliberately scoped to the bar and its children and must not land here.
+   * ---------------------------------------------------------------------------------------------
+   */
+  --nav-height: clamp(2.875rem, 4.6vh, 3.5rem);
+  --nav-control-height: clamp(2.25rem, 3.6vh, 2.75rem);
+  --nav-top-inset: clamp(0.625rem, 1.42vh, 1rem);
+  --nav-side-inset: clamp(0.75rem, 1.4vw, 1.75rem);
 }
 
 @media (min-width: 1921px) {
@@ -274,7 +344,7 @@ body::-webkit-scrollbar {
   /* The band behind the frame. Darker than the brand's #212222 so the frame reads as a frame
      even where the page itself is dark. */
   body {
-    background: #141513;
+    background: var(--ink-01);
   }
 }
 
@@ -282,6 +352,32 @@ body::-webkit-scrollbar {
 .pageFrame {
   max-width: var(--page-max-w);
   margin-inline: auto;
+}
+
+/*
+ * Ramp nad 1921 — jedno číslo pro celý web.
+ *
+ * Clamp má vadu: nad určitou šířkou každý narazí o strop a stránka přestane
+ * růst. Na 2552px monitoru pak dostaneš design z roku 1920 s pruhy prázdna po
+ * stranách — u téhle stránky změřeno, že ani jeden nadpis nebyl o pixel větší
+ * než na 1920.
+ *
+ * Všechny stropy v clampech jsou v rem a rem je 16px, protože root velikost
+ * nikdo nikdy nenastavil. Takže stačí pohnout tímhle jediným řádkem a pohnou
+ * se všechny stropy naráz.
+ *
+ * 0.8333vw je přesně 16px při 1920 — proto stop na 1921 a ne 1920: ramp
+ * začíná tam, kde hodnota už byla, takže přes hranici není skok. 2552/1920 je
+ * 1.33 a 21.27/16 taky 1.33, takže se každý strop zvedne přesně o tolik,
+ * o kolik se zvětšila obrazovka.
+ *
+ * Zastavuje se na 21.5px kousek za 2560: 4K ani ultrawide nikdo neověřoval
+ * a držet se ověřeného je poctivější než hádat.
+ */
+@include h(xxl) {
+  :root {
+    font-size: clamp(16px, 0.8333vw, 21.5px);
+  }
 }
 
 [data-scroll-section] {
@@ -325,4 +421,19 @@ body::-webkit-scrollbar {
        it is the one thing a component should not be able to opt out of on a touch device. */
     min-height: 44px !important;
   }
+}
+
+/*
+ * Anotovaný prvek musí jít trefit kurzorem, jinak ho překryv pro editaci nechytí.
+ *
+ * Sekce, které leží přes fotku, si obal obsahu vypínají `pointer-events: none`, aby
+ * nepřekážel — a výjimku dávají jen odkazům a tlačítkům. Texty (a u tlačítek i obal, na
+ * kterém anotace sedí) tak zůstaly neklikatelné a ve Studiu se tvářily jako natvrdo psané.
+ *
+ * `data-cms-field` vzniká VÝHRADNĚ v režimu editace — mimo něj `editable()` vrací prázdno,
+ * takže tohle pravidlo na veřejném webu nemá na co platit a nic nemění. Proto smí být
+ * globální: opravuje to jednou pro všechny sekce, ne v každé zvlášť.
+ */
+[data-cms-field] {
+  pointer-events: auto;
 }

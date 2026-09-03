@@ -76,6 +76,10 @@ function LinkFace({ label }: { label: string }) {
     return (
         <span className={styles.linkFace}>
             <span>{label}</span>
+            {/* `size` is inert here: the stylesheet sets the svg to 0.875em, and CSS beats an
+                SVG presentation attribute. It has to be em — the label rides a rem/vw clamp and
+                the rem ramp above 1921, so a fixed 14 would have frozen the arrow while the word
+                beside it grew. Change the size in styles.module.scss, not here. */}
             <Arrow size={14} />
         </span>
     )

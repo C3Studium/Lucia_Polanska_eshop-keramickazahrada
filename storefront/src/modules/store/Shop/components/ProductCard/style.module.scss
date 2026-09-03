@@ -1,27 +1,27 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
 .root { min-width: 0; }
 
-.link { display: block; color: #212222; text-decoration: none; }
+.link { display: block; color: var(--black-03); text-decoration: none; }
 .link:focus-visible .visual { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 
 .visual {
+  /* One inset for both corners of the photo — the badges top-left and the discover pill
+     bottom-right. Written once: two copies drift apart the moment they are clamped. */
+  --card-inset: clamp(.65rem, .9vw, 1.05rem);
+
   position: relative;
+  /* Competes on both axes, so aspect-ratio holds the shape and only the radius is clamped.
+     The clamp itself lives on --card-radius in ProductGrid, because the skeleton placeholder
+     draws the same corner and is not a ProductCard — two copies is how the skeleton ended up
+     rounding 20px where the card rounded 16.6. */
   aspect-ratio: 4 / 4.75;
   overflow: hidden;
-  border-radius: 17px;
-  background: #ded9cb;
+  border-radius: var(--card-radius);
+  background: var(--cream-02);
   isolation: isolate;
 
-  &::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 2; background: linear-gradient(transparent, rgba(20,20,17,.28)); pointer-events: none; }
+  &::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 2; background: linear-gradient(transparent, rgb(var(--ink-01-rgb) / .28)); pointer-events: none; }
   img { object-fit: cover; }
-
-  @include v(md) {
-    border-radius: 20px;
-  }
-
-  @include h(xs) {
-    border-radius: 20px;
-  }
 }
 
 .primary,
@@ -35,37 +35,58 @@
   transform-origin: right center;
 }
 
-.badges { position: absolute; top: 13px; left: 13px; z-index: 3; display: flex; gap: 5px; }
-.badges span { padding: 8px 11px; border-radius: 999px; background: rgba(247,243,234,.9); color: #212222; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.badges { position: absolute; top: var(--card-inset); left: var(--card-inset); z-index: 3; display: flex; gap: clamp(.25rem, .35vw, .35rem); }
+/* Two chips side by side ate three quarters of the card width at 1280. Vertical padding goes
+   on vh (it competes for the height of the photo), horizontal padding and type on vw, and
+   letter-spacing drops .08em -> .07em because caps on a 274px card need every pixel back.
+   The width came back out of the padding and the tracking, NOT out of the type: the floor is
+   .75rem because 12px is this project's legibility minimum (--type-eyebrow), and a .68rem floor
+   put "NOVINKA" at 10.9px on the 1220 and 1366 laptops the pass exists for. */
+.badges span { padding: clamp(.4rem, .7vh, .55rem) clamp(.55rem, .75vw, .8rem); border-radius: 999px; background: rgb(var(--cream-07-rgb) / .9); color: var(--black-03); font-size: clamp(.75rem, 1vw, 0.875rem); letter-spacing: .07em; text-transform: uppercase; backdrop-filter: blur(8px); }
 
 .discover {
+  /* The pill's geometry lives here and only here. At rest exactly the round cap shows, so the
+     clipped distance is width minus height — not a copied 102px (which was 146 − 32 − 2×6, three
+     numbers that come apart the moment each one is clamped on its own axis). The icon is the
+     height minus the ring inset on both sides.
+     The only thing the TSX animates is --discover-clip-k: 1 closed, 0 open. A bare number is the
+     same shape of expression on both sides of the interpolation, which is what framer needs —
+     inset() with a calc() on one side and plain px on the other stops interpolating and jumps. */
+  --discover-w: clamp(8.5rem, 11vw, 11rem);
+  --discover-h: clamp(2.5rem, 4.6vh, 3.1rem);
+  --discover-inset: clamp(.3rem, .7vh, .45rem);
+  --discover-icon: calc(var(--discover-h) - 2 * var(--discover-inset));
+  --discover-gap: clamp(.6rem, .8vw, .9rem);
+  --discover-clip-k: 1;
+
   position: absolute;
-  right: 13px;
-  bottom: 13px;
+  right: var(--card-inset);
+  bottom: var(--card-inset);
   z-index: 3;
   display: block;
   box-sizing: border-box;
-  width: 146px;
-  height: 44px;
+  width: var(--discover-w);
+  height: var(--discover-h);
   padding: 0;
   overflow: hidden;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: clamp(.78rem, .72vw, .92rem);
+  clip-path: inset(0 0 0 calc((var(--discover-w) - var(--discover-h)) * var(--discover-clip-k)));
   pointer-events: none;
   isolation: isolate;
 
   i {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: var(--discover-inset);
+    right: var(--discover-inset);
     z-index: 1;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    width: var(--discover-icon);
+    height: var(--discover-icon);
     border-radius: 999px;
-    background: #212222;
-    color: #fff;
+    background: var(--black-03);
+    color: var(--white);
     font-style: normal;
   }
 }
@@ -74,10 +95,10 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  border: 1px solid rgba(255,255,255,.38);
+  border: 1px solid rgb(var(--white-rgb) / .38);
   border-radius: inherit;
-  background: rgba(247,243,234,.92);
-  box-shadow: 0 9px 25px -17px rgba(20,20,17,.72);
+  background: rgb(var(--cream-07-rgb) / .92);
+  box-shadow: 0 9px 25px -17px rgb(var(--ink-01-rgb) / .72);
   transform-origin: right center;
   backdrop-filter: blur(9px);
 }
@@ -85,7 +106,8 @@
 .discoverLabel {
   position: absolute;
   top: 50%;
-  right: 50px;
+  /* Was 50px = 32 icon + 6 inset + 12 gap. Derived from those three, not copied. */
+  right: calc(var(--discover-icon) + var(--discover-inset) + var(--discover-gap));
   z-index: 1;
   display: inline-flex;
   overflow: hidden;
@@ -96,28 +118,51 @@
   > span { display: inline-block; }
 }
 
-.meta { padding: 14px 4px 24px;
-  padding-bottom: 34px;
+/* One declaration: there used to be a padding here with a padding-bottom right under it that
+   overwrote its own third value. Vertical members on vh — on 1280×720 the foot of the card
+   tightens by itself, with no rule in lt. */
+.meta { padding: clamp(.7rem, 1.8vh, 1.1rem) clamp(.2rem, .4vw, .35rem) clamp(1.4rem, 3.6vh, 2.4rem); }
+.heading { display: flex; justify-content: space-between; gap: clamp(.6rem, .95vw, 1rem); padding-bottom: clamp(.6rem, 1.3vh, .95rem); border-bottom: 1px solid rgb(var(--black-03-rgb) / .18); }
+.heading p { margin: 0 0 clamp(.3rem, .6vh, .45rem); color: var(--grey-02); font-size: clamp(.75rem, 1vw, 0.875rem); letter-spacing: .09em; text-transform: uppercase; }
+.heading h3 {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-family: "Sentient-Regular", serif;
+  /* Size and leading come from ProductGrid, which sizes the skeleton's title bar off the same
+     two values. They were two separate sets of numbers and had already drifted: 1.4375rem
+     against this 1.35rem, so the placeholder line was 1.5px taller than the line that replaced
+     it and every card twitched on load. */
+  font-size: var(--card-title-size);
+  font-weight: 400;
+  line-height: var(--card-title-leading);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  /* Three line boxes are reserved whether the title fills them or not. Without it the cards in
+     one row had titles of 2 to 4 lines, so the rule, the description and the price sat at a
+     different height on every card and the row fell apart. */
+  min-height: calc(var(--card-title-leading) * 3em);
 }
-.heading { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid rgba(33,34,34,.18); }
-.heading p { margin: 0 0 6px; color: #5c5e54; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; }
-.heading h3 { margin: 0; font-family: "Sentient-Regular", serif; font-size: 24px; font-weight: 400; line-height: 1.08;
+.index {
+  --index-size: clamp(1.5rem, 1.95vw, 2.1rem);
 
-  @include v(md) {
-    font-size: clamp(23px, 1.65vw, 31px);
-  }
-
-  @include h(xs) {
-    font-size: clamp(23px, 1.65vw, 31px);
-  }
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: var(--index-size);
+  height: var(--index-size);
+  border: 1px solid rgb(var(--black-03-rgb) / .35);
+  border-radius: 50%;
+  font-size: clamp(.75rem, 1vw, 0.875rem);
 }
-.index { flex: 0 0 auto; display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid rgba(33,34,34,.35); border-radius: 50%; font-size: 12px; }
 
-.bottom { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-top: 12px; }
-.description { display: -webkit-box; max-width: 60%; margin: 0; overflow: hidden; color: #4d4e46; font-size: 13px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bottom { display: flex; align-items: end; justify-content: space-between; gap: clamp(.8rem, 1.2vw, 1.3rem); padding-top: clamp(.55rem, 1.2vh, .85rem); }
+/* Size and leading from ProductGrid for the same reason as the title: the skeleton's second bar
+   is one description line tall and must be told by the same clamp, not by a second one. */
+.description { display: -webkit-box; max-width: 60%; margin: 0; overflow: hidden; color: var(--olive-04); font-size: var(--card-desc-size); line-height: var(--card-desc-leading); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .price { display: flex; flex-direction: column; align-items: end; white-space: nowrap; }
-.price del { color: #985f56; font-size: 12px; }
-.price strong { font-family: "Sentient-Regular", serif; font-size: 20px; font-weight: 400; }
+.price del { color: var(--clay-22); font-size: clamp(.75rem, 1vw, 0.875rem); }
+.price strong { font-family: "Sentient-Regular", serif; font-size: clamp(1.1rem, 1.35vw, 1.5rem); font-weight: 400; }
 
 @include fine-pointer {
   .link:hover .primary,
@@ -131,18 +176,18 @@
 /* Availability chips: same shape as "Novinka", different tone. Never colour alone — each
    carries its own word, so a colour-blind customer reads the same information. */
 .badgeSold {
-  background: #3a3b34 !important;
-  color: #ffe8d6 !important;
+  background: var(--ink-12) !important;
+  color: var(--cream-06) !important;
 }
 
 .badgeLast {
-  background: #9a6f65 !important;
-  color: #fff8f1 !important;
+  background: var(--clay-24) !important;
+  color: var(--cream-10) !important;
 }
 
 /* Quieter than the other two: „Na objednávku" is not a warning, it is a lead
    time. It should read as available, just not immediately. */
 .badgeMade {
-  background: rgba(58, 59, 52, .08) !important;
-  color: #3a3b34 !important;
+  background: rgb(var(--ink-12-rgb) / .08) !important;
+  color: var(--ink-12) !important;
 }

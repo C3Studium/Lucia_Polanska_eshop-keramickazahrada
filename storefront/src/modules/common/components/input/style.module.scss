@@ -3,20 +3,21 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+
+  /* One control, one height. Same clamp as login/register (they may drop the
+     !important and just reassign this variable): 41.6px on a 640px-tall window,
+     54.4px from 837px up — 46.8px on 1280x720, 49.9px on 1366x768. The vh is
+     what makes the low laptop fit without a single rule in lt. */
+  --input-height: clamp(2.6rem, 6.5vh, 3.4rem);
 }
 
+/* Was .9rem with 1rem repeated in v(md) and h(xs) — two media query setting one
+   property, i.e. a clamp that was never written. Live 1252px (14.4px) → 1391px
+   (16px); .95vw would have parked the floor across the whole 1200-1500 band. */
 .topLabel {
   margin-bottom: .5rem;
-  font-size: .9rem;
+  font-size: clamp(.9rem, 1.15vw, 1rem);
   font-weight: 500;
-
-  @include v(md) {
-    font-size: 1rem;
-  }
-
-  @include h(xs) {
-    font-size: 1rem;
-  }
 }
 
 .inputWrapper {
@@ -24,39 +25,33 @@
   display: flex;
   z-index: 0;
   width: 100%;
-  font-size: .9rem;
+  font-size: clamp(.9rem, 1.15vw, 1rem);
   font-weight: 500;
-
-  @include v(md) {
-    font-size: 1rem;
-  }
-
-  @include h(xs) {
-    font-size: 1rem;
-  }
 }
 
 .inputWrapper input {
   display: block;
   width: 100%;
-  height: 2.75rem;
+  height: var(--input-height);
   margin: 0;
   padding: 1rem 1rem .25rem;
-  border: 1px solid rgba(33, 34, 34, .2);
-  border-radius: 12px;
+  border: 1px solid rgb(var(--black-03-rgb) / .2);
+  // .75rem = týchž 12px při rem 16; jako holé px by rádius zamrzl, zatímco
+  // výška pole (--input-height) má strop v rem a nad 1921 roste rampem.
+  border-radius: .75rem;
   appearance: none;
-  background: rgba(255, 248, 238, .42);
+  background: rgb(var(--cream-10-rgb) / .42);
   box-shadow: none;
   transition: border-color .2s ease, box-shadow .2s ease;
 }
 
 .inputWrapper input:hover {
-  background: rgba(255, 248, 238, .58);
+  background: rgb(var(--cream-10-rgb) / .58);
 }
 
 .inputWrapper input:focus {
-  border-color: #9a6f65;
-  box-shadow: 0 0 0 2px rgba(154, 111, 101, .18);
+  border-color: var(--clay-24);
+  box-shadow: 0 0 0 2px rgb(var(--clay-24-rgb) / .18);
 }
 
 .inputWrapper label {
@@ -68,7 +63,7 @@
   align-items: center;
   margin-left: .75rem;
   padding-inline: .25rem;
-  color: #6b7280;
+  color: var(--blue-02);
   font-size: .9375rem;
   pointer-events: none;
   transition: color .2s ease, font-size .2s ease, top .2s ease;
@@ -92,16 +87,16 @@
   padding-inline: 1rem;
   border: 0;
   background: transparent;
-  color: #6b7280;
+  color: var(--blue-02);
 }
 
 .passwordBtn:focus-visible {
-  color: #111827;
+  color: var(--ink-03);
 }
 
 .contact .inputWrapper {
-  min-height: 3.5rem;
-  border-bottom: 1px solid rgba(38, 40, 32, .28);
+  min-height: var(--input-height);
+  border-bottom: 1px solid rgb(var(--ink-06-rgb) / .28);
   background: transparent;
   transition:
     border-color .3s ease,
@@ -109,8 +104,8 @@
 }
 
 .contact .inputWrapper:focus-within {
-  border-color: #555d48;
-  box-shadow: 0 8px 18px -17px rgba(116, 82, 56, .85);
+  border-color: var(--olive-07);
+  box-shadow: 0 8px 18px -17px rgb(var(--clay-02-rgb) / .85);
 }
 
 .contact .inputWrapper input {
@@ -119,16 +114,21 @@
   display: block;
   width: 100%;
   min-width: 0;
-  min-height: 3.5rem;
-  padding: 1.35rem 2.75rem .42rem 0;
+  height: var(--input-height);
+  /* The padding has to come down with the height, or the 1rem/1.35 line stops
+     fitting the box: at the 41.6px floor only 20px is left for padding, and the
+     old 1.35rem + .42rem is 28.3px. Ideal terms sum to 3.12vh = 20px at 640px
+     tall and hit the old ceilings at 906px; split in the original 1.35 : .42
+     ratio. 24px of padding on 1366x768, 22.5px on 1280x720. */
+  padding: clamp(.9rem, 2.38vh, 1.35rem) 2.75rem clamp(.28rem, .74vh, .42rem) 0;
   border: 0;
   border-radius: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  color: #282a22;
+  color: var(--ink-06);
   font-family: inherit;
-  font-size: clamp(1rem, 1vw, 1.08rem);
+  font-size: clamp(1rem, 1.333vw, 1.167rem);
   font-weight: 300;
   line-height: 1.35;
   cursor: text;
@@ -151,8 +151,8 @@
   background-color: transparent !important;
   background-clip: text;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: #282a22;
-  caret-color: #282a22;
+  -webkit-text-fill-color: var(--ink-06);
+  caret-color: var(--ink-06);
   -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
   box-shadow: none !important;
   transition: background-color 9999s ease-out 0s;
@@ -163,7 +163,7 @@
 .contact .inputWrapper input:autofill:focus {
   border: 0;
   background: transparent;
-  color: #282a22;
+  color: var(--ink-06);
   box-shadow: none;
 }
 
@@ -175,7 +175,7 @@
   padding: 0;
   /* Every form label on the site rests in this state — it has to be
      readable before focus, not after. .56 was 3.5:1 at 12px. */
-  color: rgba(38, 40, 32, .7);
+  color: rgb(var(--ink-06-rgb) / .7);
   font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1;
@@ -198,6 +198,10 @@
 
 /* Requirement stated in words beside the label, not by a colour-only asterisk (SC 1.4.1). */
 .requiredHint {
+  /* The label is display:flex, so the leading space inside the span in index.tsx
+     is stripped the way leading whitespace is at the start of a line box — the
+     label rendered "E-MAIL(POVINNÉ)". The gap belongs here, in em, not in JSX. */
+  margin-left: .3em;
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
   opacity: 0.82;

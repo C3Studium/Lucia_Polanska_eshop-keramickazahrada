@@ -4,6 +4,7 @@ import { sdk } from "@lib/config"
 import { Toaster, toast } from "@medusajs/ui"
 import { useState } from "react"
 
+import type { CopyBlock } from "@lib/util/site-copy"
 import AuthPortal from "../components/auth-portal"
 import {
   SupportButton,
@@ -15,7 +16,7 @@ import {
   SupportPanel,
 } from "../components/auth-support"
 
-export default function RequestResetPassword() {
+export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,7 +45,7 @@ export default function RequestResetPassword() {
   }
 
   return (
-    <AuthPortal mode="recovery">
+    <AuthPortal mode="recovery" block={block}>
       <SupportPanel>
         <SupportHeader
           eyebrow="Obnova přístupu · 03"

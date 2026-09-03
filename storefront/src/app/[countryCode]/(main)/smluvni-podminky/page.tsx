@@ -1,5 +1,7 @@
 import { Metadata } from "next"
 
+import { getFiles, getPageCopy } from "@lib/data/site-copy"
+import LegalDownloads from "@modules/legal/Downloads"
 import LegalDocument from "@modules/legal/LegalDocument"
 import { sections } from "./data"
 
@@ -128,7 +130,13 @@ const supplements = {
   ),
 }
 
-export default function Page() {
+export default async function Page() {
+  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
+  const [copy, files] = await Promise.all([
+    getPageCopy("smluvni-podminky"),
+    getFiles("smluvni-podminky"),
+  ])
+
   return (
     <LegalDocument
       code="01"
@@ -138,6 +146,8 @@ export default function Page() {
       description="Jak to mezi námi funguje — od objednávky přes platbu a dopravu až po vrácení zboží."
       updated="Platné od 1. 1. 2015"
       sections={sections}
+      block={copy["smluvni-podminky.text"]}
+      downloads={<LegalDownloads files={files} />}
       supplements={supplements}
     />
   )

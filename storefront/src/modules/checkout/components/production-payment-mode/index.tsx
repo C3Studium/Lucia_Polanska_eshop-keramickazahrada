@@ -9,6 +9,7 @@ import type {
 } from "@lib/util/made-to-order"
 
 import styles from "./style.module.scss"
+import { palette } from "styles/palette.generated"
 
 type Props = {
   initial: ProductionPaymentMode
@@ -262,4 +263,4 @@ export default function ProductionPaymentModeChoice({
 }
 
 /* Hoisted: static style object, no re-allocation per render. */
-const saveErrorStyle = { color: "#b3352b", opacity: 1 }
+const saveErrorStyle = { color: palette.stateError, opacity: 1 }

@@ -1,141 +1,254 @@
 @use "../../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Metriky karty, napsané jednou. Sedí na obalu mřížky, takže je dědí
+ * ProductCard uvnitř `.grid` i `.skeletonCard` uvnitř `.skeletonGrid` —
+ * skeleton se tak nemůže rozejít se skutečnou kartou. Dokud ProductCard
+ * po nich nesáhne, drží se čísel, která má dnes ve `v(md)`/`h(xs)`.
+ *
+ * Konvence pro tenhle soubor: 12px verzálkové mikropopisky zůstávají plochý
+ * .75rem (pod 12px zákaznický text nesmí a nad 1921 je zvedne ramp),
+ * 13px běžný text dostal clamp, protože na laptopech opravdu má růst.
+ */
+
+// Běžný text téhle routy — jedno číslo pro popisek karty, hlášku u tlačítka
+// „Zobrazit další", prázdný stav i chybovou lištu. 13–15.2px, živé 1300–1520.
+// Deklarované na všech třech kořenech, které komponent umí vrátit, protože
+// společného předka uvnitř modulu nemají.
+.results,
+.skeletonGrid,
+.empty {
+  --grid-text: clamp(.8125rem, 1vw, .95rem);
+}
+
+/*
+ * Kontrakt musí být OBOUSTRANNÝ, jinak je to jen třetí sada čísel. Tyhle tři
+ * hodnoty tu nejdřív stály tak, jak vypadaly PŘED přepisem ProductCard, a
+ * ten mezitím dojel na jiné: titulek clamp(1.4375rem…) proti 1.35rem, popisek
+ * na --grid-text (.8125/1vw/.95) proti .72/.87vw/.88, rádius 1.0625/1.35vw/
+ * 1.25 proti 1/1.3vw/1.5. Skeleton tedy sliboval jinou kartu, než jaká se
+ * načetla — na 1280 o 1.5px vyšší řádek titulku, na qhd rádius 26.6px proti
+ * skutečným 31.9. Hodnoty jsou teď ty z ProductCard a ProductCard je ČTE,
+ * takže se rozejít nemůžou.
+ */
+.results,
+.skeletonGrid {
+  // 21.6–31.2px, živé 1309–1891.
+  --card-title-size: clamp(1.35rem, 1.65vw, 1.95rem);
+  --card-title-leading: 1.08;
+
+  // 12–14.1px, živé 1200–1408. Podlaha .75rem, ne .72rem: rig naměřil popisek
+  // karty na 11.5px na 1220 a 11.9px na 1366, tedy pod 12px minimem projektu
+  // a pod původními zmrazenými 13px. Prostřední člen šel z .87vw na 1vw,
+  // aby pásmo vyšlo na 1200–1408 místo 1379–1618.
+  --card-desc-size: clamp(.75rem, 1vw, .88rem);
+  --card-desc-leading: 1.45;
+
+  // 16–24px, živé 1231–1846. Dřív to byla dvojice `border-radius: 17px`
+  // v základu a `20px` ve `v(md)` i `h(xs)` — chybějící clamp, napsaný 2×.
+  --card-radius: clamp(1rem, 1.3vw, 1.5rem);
+}
+
 .results { position: relative; }
-.grid { display: grid; grid-template-columns: 1fr; gap: 20px;
 
-  @include v(md) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 38px 16px;
-  }
-
-  @include v(lg) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  @include h(xs) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 38px 16px;
-  }
-
-  @include h(md) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+/*
+ * Mřížka. Počet sloupců byl žebřík 1 → 2 (h(xs)) → 3 (h(md)) → 4 (h(xl)),
+ * a ten čtvrtý stupeň byl posazený tak, že místo růstu dělal propad:
+ * naměřeno 1280 → 274px, 1366 → 301, 1440 → 324 a pak 1512 → 256, tedy
+ * nejužší karta na webu, užší než na 1280, a zpátky nad 300px až na 1760.
+ *
+ * Teď počet vyplývá z naclampované šířky karty a žebřík je pryč — s ním
+ * i past s pořadím: `@include h(xl)` na posledním řádku souboru vyhrával
+ * nad `h(md)` uvnitř `.grid` jen díky pořadí, ne specificitě.
+ *
+ * PROČ ČTVRTÝ SLOUPEC NIKDY NEVYJDE, a proč to tak má být.
+ * Plocha výsledků je zlomek rámu stránky: rám mínus 2×.8vw rámování,
+ * 2×2vw vnitřku `.catalogue`, 3.4vw mezera `.layout` a 19vw lišta filtru,
+ * tedy 0.72× rámu pod 1921. Nad 1921 se rám sám zastropuje na
+ * `min(100vw, 100svh * 1.6)` (globals.scss), ale vw i rem dál měří CELÝ
+ * viewport — na 2552x1351 je rám 2161.6px a plocha výsledků naměřených
+ * 1481px, tedy 0.685× rámu. Karta o šířce C potřebuje ve čtyřech sloupcích
+ * 4×C + 3×mezera; při C = 19vw to dělá ~0.80× rámu, což se do 0.69–0.72
+ * nevejde v žádné landscape šířce. Čtvrtý sloupec se proto vždycky vešel
+ * jen tak, že kartu zmáčkl na 0.17× rámu — to je těch naměřených 256px
+ * na 1512. Tři sloupce dávají 0.23× rámu a rostou plynule.
+ * (Ověřeno i pro `qhd` se čtyřmi sloupci natvrdo: na 2552 by karta vyšla
+ * 345px, tedy méně než 349px na 1512 — další propad, jen posunutý.)
+ *
+ * Podlaha 16rem = 256px, strop 20rem = 320px, živé pásmo 1347–1684.
+ * Podlaha není 15rem: pod 1200 sundá Shop lištu filtru (`below(md)`) a
+ * plocha výsledků povyskočí o ~250px, takže se tam čtvrtý sloupec vejde.
+ * Při 240px začínal ten skok už na 1085, při 256px až na ~1140 — naměřeno
+ * 1137 → 3 sloupce po 347px, 1199 → 4 po 270px, 1200 → 3 po 277px.
+ * Zbylé okno 1140–1199 je pod mým zadáním (pásmo `smt`) a jeho příčina je
+ * ten fold, ne tenhle clamp; do reportu jde jako poznámka pro druhé kolo.
+ * Naměřené portrétní a telefonní výsledky: 320 → 1 sloupec po 280px
+ * (256 se vejde), 390 → 1 po 350, 600 → 2, 768 → 2 po 352, 1024 → 3 po 311.
+ *
+ * Naměřený průběh šířky karty (vždy tři sloupce): 1366 → 315 · 1440 → 332
+ * · 1512 → 349 · 1760 → 408 · 1960 → 395 · 2552 → 471. Propad ve 1500
+ * je pryč a karta roste; na 2K si ji zvedne ramp sám.
+ * Jediné zaškobrtnutí je 1760 → 1960 (408 → 395) a není z tohohle souboru:
+ * 1960x1100 má rám 1.6×1100 = 1760px, tedy stejný jako okno 1760x990, ale
+ * odsazení `.catalogue`/`.layout` se počítají z 1960. To je ta věc, na
+ * kterou globals.scss zavedl `--fvw` — Shop ho zatím nepoužívá.
+ *
+ * `min(100%, …)` je pojistka: kdyby byl kontejner užší než podlaha, stopa
+ * by přetekla ven místo aby se srazila.
+ *
+ * Mezery: řádková na vh, protože soupeří o výšku obrazovky, sloupcová na vw.
+ * Dřív stálo `gap: 20px` a `38px 16px` ve `v(md)` i `h(xs)`, a celý blok
+ * podruhé slovo od slova ve `.skeletonGrid` — jedna chybějící dvojice
+ * clampů napsaná čtyřikrát, se stejnou hodnotou od 750px do 2552px.
+ * živé: řádek 659–1224px výšky · sloupec 857–1829px šířky.
+ */
+.grid,
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(16rem, 19vw, 20rem)), 1fr));
+  gap: clamp(1.4rem, 3.4vh, 2.6rem) clamp(.75rem, 1.4vw, 1.6rem);
 }
 
 .refreshing {
   position: sticky;
-  top: 74px;
+  // Výška navbaru byla na téhle routě napsaná třemi různými čísly ve třech
+  // souborech: 88px (FilterPanel top), 108px (jeho max-height) a tady
+  // 74px → 92px ve `v(md)`/`h(xs)`. Teď ji nese `--rail-top` na `.catalogue`
+  // v Shopu, odvozená z --nav-top-inset a --nav-height. Bez fallbacku
+  // schválně: fallback byl čtvrtá kopie téhož čísla, o 14px jinde než ta,
+  // podle které se řídí lišta filtru vedle — a protože `.refreshing` není
+  // potomkem panelu, platil vždycky ten fallback, ne panel.
+  top: var(--rail-top);
   z-index: 5;
   width: fit-content;
-  margin: 0 auto -34px;
-  padding: 8px 13px;
-  border: 1px solid rgba(33,34,34,.12);
+  // Záporná mezera je táž velikost jako `.inlineError { margin-top }`,
+  // jen otočená — proto z téhož clampu, ne z druhého čísla.
+  margin: 0 auto calc(-1 * clamp(1.2rem, 3vh, 2.2rem));
+  padding: clamp(.4rem, 1.1vh, .55rem) clamp(.7rem, 1.1vw, .95rem);
+  border: 1px solid rgb(var(--black-03-rgb) / .12);
   border-radius: 999px;
-  background: rgba(247,243,234,.9);
-  box-shadow: 0 12px 28px -20px rgba(33,34,34,.65);
-  color: #4d4e46;
-  font-size: 12px;
+  background: rgb(var(--cream-07-rgb) / .9);
+  box-shadow: 0 .75rem 1.75rem -1.25rem rgb(var(--black-03-rgb) / .65);
+  color: var(--olive-04);
+  font-size: .75rem;
   letter-spacing: .08em;
   text-transform: uppercase;
   backdrop-filter: blur(10px);
 
-  @include v(md) {
-    top: 92px;
-  }
-
-  @include h(xs) {
-    top: 92px;
+  @include reduced-fx {
+    backdrop-filter: none;
   }
 }
 
-.loadMore { display: flex; flex-direction: column; align-items: center; padding: 65px 0 30px; }
-.progress { width: min(280px, 70%); height: 1px; overflow: hidden; background: rgba(33,34,34,.2); }
-.progress i { display: block; height: 100%; background: #212222; transition: width .5s ease; }
-.loadMore p { margin: 10px 0 19px; color: #5c5e54; font-size: 13px; }
-.loadMore button { display: flex; align-items: center; gap: 22px; min-height: 44px; padding: 7px 8px 7px 19px; border: 1px solid #212222; border-radius: 999px; background: transparent; color: #212222; font-size: 15px; cursor: pointer; transition: background-color .25s ease, color .25s ease; }
-.loadMore button span { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: #212222; color: #fff; transition: transform .3s ease, background-color .25s ease; }
-.loadMore button:hover { background: #212222; color: #fff; }
-.loadMore button:hover span { transform: translateY(2px); background: #ffe8d6; color: #212222; }
+// Svisle na vh: 65px/30px natvrdo dělalo na 720px okně 95px mrtvé plochy pod
+// poslední řadou, a to ještě před 128px spodního paddingu z `.catalogue`.
+// živé: horní 492–1108px výšky · dolní 587–1173px výšky.
+.loadMore { display: flex; flex-direction: column; align-items: center; padding: clamp(2rem, 6.5vh, 4.5rem) 0 clamp(1.1rem, 3vh, 2.2rem); }
+.progress { width: min(18rem, 70%); height: 1px; overflow: hidden; background: rgb(var(--black-03-rgb) / .2); }
+.progress i { display: block; height: 100%; background: var(--black-03); transition: width .5s ease; }
+.loadMore p { margin: clamp(.5rem, 1.3vh, .75rem) 0 clamp(.95rem, 2.6vh, 1.45rem); color: var(--grey-02); font-size: var(--grid-text); }
+
+.loadMore button {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 1.5vw, 1.375rem);            // 16–22px, živé 1067–1467
+  // Podlaha zůstává na 2.75rem = 44px: je to dotykový cíl, pod něj se nesmí.
+  // 44–56px, živé 733–933px výšky.
+  min-height: clamp(2.75rem, 6vh, 3.5rem);
+  padding: clamp(.4rem, .95vh, .5rem) clamp(.5rem, .65vw, .625rem) clamp(.4rem, .95vh, .5rem) clamp(1.1rem, 1.45vw, 1.4rem);
+  border: 1px solid var(--black-03);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--black-03);
+  font-size: clamp(.9375rem, 1.15vw, 1.1rem);   // 15–17.6px, živé 1304–1530
+  cursor: pointer;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+.loadMore button span {
+  // Jeden rozměr, ne dva stejná čísla vedle sebe. 29–35.2px, živé 1261–1530.
+  --dot: clamp(1.8125rem, 2.3vw, 2.2rem);
+
+  display: grid;
+  place-items: center;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--black-03);
+  color: var(--white);
+  transition: transform .3s ease, background-color .25s ease;
+}
+
+.loadMore button:hover { background: var(--black-03); color: var(--white); }
+.loadMore button:hover span { transform: translateY(.125rem); background: var(--cream-06); color: var(--black-03); }
 .loadMore button:disabled { opacity: .55; cursor: wait; }
 .loadMore button:focus-visible,
 .empty button:focus-visible,
 .inlineError button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: 4px; }
 
-.empty { display: grid; place-items: center; min-height: 56vh; padding: 60px 20px; border: 1px solid rgba(33,34,34,.14); border-radius: 24px; text-align: center; }
-.empty > span { color: #9a6f65; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
-.empty h2 { margin: 11px 0; font-family: "Sentient-Regular", serif; font-size: clamp(32px, 4vw, 58px); font-weight: 400; }
-.empty p { max-width: 440px; margin: 0 0 25px; color: #5c5e54; font-size: 13px; line-height: 1.5; }
-.empty button { display: flex; align-items: center; gap: 16px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+// `min-height: 56vh` bylo na téhle routě jedno z mála míst, kde už někdo sáhl
+// po správné ose — zůstává. Svislý padding na vh (32–60.8px, živé 582–1105),
+// vodorovný na vw (16–32px, živé 800–1600).
+.empty { display: grid; place-items: center; min-height: 56vh; padding: clamp(2rem, 5.5vh, 3.8rem) clamp(1rem, 2vw, 2rem); border: 1px solid rgb(var(--black-03-rgb) / .14); border-radius: 1.5rem; text-align: center; }
+.empty > span { color: var(--clay-24); font-size: .75rem; letter-spacing: 0.12em; text-transform: uppercase; }
+// 32–57.6px, živé 800–1440. Pod 1921 na pixel totéž co dřív; rozdíl je nad
+// rampem, kde strop v px zamrzal a strop v rem se zvedne sám.
+.empty h2 { margin: clamp(.55rem, 1.4vh, .8rem) 0; font-family: "Sentient-Regular", serif; font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 400; }
+.empty p { max-width: 27.5rem; margin: 0 0 clamp(1.25rem, 3.2vh, 2rem); color: var(--grey-02); font-size: var(--grid-text); line-height: 1.5; }
+.empty button { display: flex; align-items: center; gap: 1rem; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .empty button i { font-style: normal; transition: transform .25s ease; }
-.empty button:hover i { transform: translateX(5px); }
-.emptyActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 22px; }
+.empty button:hover i { transform: translateX(.3125rem); }
+.emptyActions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem 1.375rem; }
 
 .inlineError {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 8px;
-  margin-top: 34px;
-  padding: 13px 18px;
-  border: 1px solid rgba(152,95,86,.24);
-  border-radius: 14px;
-  background: rgba(255,232,214,.42);
-  color: #704c46;
-  font-size: 13px;
+  // Byla to dvojice 8px → 18px, napsaná ve `v(md)` i `h(xs)`. Mezera je
+  // velikost, takže patří sem; 8–18.4px, živé 667–1533.
+  gap: clamp(.5rem, 1.2vw, 1.15rem);
+  margin-top: clamp(1.2rem, 3vh, 2.2rem);       // 19.2–35.2px, živé 640–1173
+  padding: clamp(.65rem, 1.7vh, .95rem) clamp(.95rem, 1.45vw, 1.35rem);
+  border: 1px solid rgb(var(--clay-22-rgb) / .24);
+  border-radius: .875rem;
+  background: rgb(var(--cream-06-rgb) / .42);
+  color: var(--clay-03);
+  font-size: var(--grid-text);
 
   button { padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
   flex-direction: column;
 
+  // Zůstává: skládání na sloupec a zarovnání je DRUH layoutu, ne velikost.
   @include v(md) {
     align-items: center;
-    gap: 18px;
   }
 
   @include h(xs) {
     align-items: center;
-    gap: 18px;
   }
 }
 
-.skeletonGrid { display: grid; grid-template-columns: 1fr; gap: 20px;
-
-  @include v(md) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 38px 16px;
-  }
-
-  @include v(lg) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  @include h(xs) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 38px 16px;
-  }
-
-  @include h(md) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 .skeletonCard {
   display: grid;
-  gap: 12px;
+  gap: clamp(.55rem, 1.5vh, .85rem);            // 8.8–13.6px, živé 587–907
 
   div,
   span,
   i {
     display: block;
     overflow: hidden;
-    background: linear-gradient(100deg,rgba(222,217,203,.72) 24%,rgba(255,232,214,.62) 42%,rgba(222,217,203,.72) 60%);
+    background: linear-gradient(100deg,rgb(var(--cream-02-rgb) / .72) 24%,rgb(var(--cream-06-rgb) / .62) 42%,rgb(var(--cream-02-rgb) / .72) 60%);
     background-size: 220% 100%;
     animation: catalogueShimmer 1.65s ease-in-out infinite;
   }
 
-  div { aspect-ratio: 4 / 4.75; border-radius: 20px; }
-  span { width: 74%; height: 26px; border-radius: 5px; }
-  i { width: 48%; height: 12px; border-radius: 4px; }
+  // Výšky se neopisují, odvozují se: `span` je řádek titulku (24.8–33.5px
+  // proti dřívějším plochým 26px, kde skutečný titulek měřil 23–31px a při
+  // načtení to poskočilo), `i` je řádek popisku. Poloměr obrázku je táž
+  // proměnná, kterou má číst `.visual` v ProductCard.
+  div { aspect-ratio: 4 / 4.75; border-radius: var(--card-radius); }
+  span { width: 74%; height: calc(var(--card-title-size) * var(--card-title-leading)); border-radius: .3125rem; }
+  i { width: 48%; height: calc(var(--card-desc-size) * var(--card-desc-leading)); border-radius: .25rem; }
 }
 
 @keyframes catalogueShimmer { to { background-position: -120% 0; } }
-
-@include h(xl) { .grid,.skeletonGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-

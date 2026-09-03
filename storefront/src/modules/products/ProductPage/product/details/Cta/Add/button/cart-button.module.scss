@@ -1,4 +1,27 @@
 @use "../../../../../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * Primární pilulka „Přidat do košíku" — a JEDINÁ geometrie pilulky v projektu.
+ *
+ * Sady čísel byly tři. `.bundleInline__cart` tu svoji už zrušil
+ * (bundle-actions/style.scss r. 238–253) s poznámkou, že pilulka „poroste s ní,
+ * až se její px převedou na rem". Tohle je ten převod.
+ *
+ * Kontrakt pro zbylé dva konzumenty: geometrie visí na čtyřech proměnných,
+ * takže ji předek přeladí JEDNÍM zápisem a bez `!important`u —
+ *   .product__details__cta__buy { --cta-pill-w / --cta-pill-h /
+ *                                 --cta-pill-px / --cta-pill-label }
+ * pokryje CartButton i „Koupit ihned" naráz. Předek to tak dnes dělá:
+ * `product/style.scss` publikuje --cta-pill-w / --cta-pill-h na
+ * `.product__details__cta__buy` a `!important`, který tam dřív přebíjel šířku
+ * i výšku, je pryč (nedosáhl stejně na „Koupit ihned", takže se pilulky
+ * lišily). Když je nikdo nenastaví, platí fallback níž — a ten fallback JE
+ * návrhová hodnota, ne nouzovka.
+ *
+ * Osy: šířka a vodorovný padding na vw, výška na vh. Výška soupeří o obrazovku
+ * v pravém sloupci PDP, takže nízký laptop (1366×768, 1220×660) se sevře sám
+ * na dotykovou podlahu a nepotřebuje ani jedno pravidlo v `lt`.
+ */
+
 .MButton {
   position: relative;
   display: flex;
@@ -10,18 +33,46 @@
 .button {
   position: relative;
   display: grid;
-  width: 240px;
-  height: 50px;
-  padding: 0 28px;
+  /* Šířka na vw. Podlaha 13.125rem = 210 px unese i nejdelší popisek, který
+     tímhle komponentem prochází („Přidat vše do košíku", naměřeno 147.5 px
+     inkoustu při 16 px) — v nejtěsnějším bodě pásma zbývá 16 px rezervy.
+     Strop 15rem = 240 px je návrhová šířka. Živé pásmo 210/0.16 = 1312 px až
+     240/0.16 = 1500 px. Na 1920 sedí strop, takže referenční viewport je beze
+     změny; nad 1921 ten strop veze rem ramp (2552 → 319 px), což pevných
+     240 px neumělo — přesně ta nula rem krajních členů z hlášení. */
+  width: var(--cta-pill-w, clamp(13.125rem, 16vw, 15rem));
+  /* Výška na vh, ne vw. 4.63vh je 50.0 px na výšce 1080, takže návrhová výška
+     zůstává na místě. Živé pásmo 44/0.0463 = 950 px až 50/0.0463 = 1080 px
+     VÝŠKY okna; pod ním drží podlaha 2.75rem = 44 px, což je tentýž dotykový
+     cíl, jaký globals.scss r. 401 vynucuje `!important`em. Důsledek: na 768
+     i 660 px vysokém laptopu je pilulka 44 px, o 6 px nižší než dnes, a to
+     bez jediného pravidla v `lt`. */
+  height: var(--cta-pill-h, clamp(2.75rem, 4.63vh, 3.125rem));
+  /* Vodorovný inset, tedy vw. Podlaha 1.5rem = 24 px je hodnota, kterou dnes
+     drží „Koupit ihned"; strop 1.75rem = 28 px je zdejší návrhová. Živé pásmo
+     1200–1400 px. */
+  padding: 0 var(--cta-pill-px, clamp(1.5rem, 2vw, 1.75rem));
+  /* Šířka výše je vnější míra: na 1920 je 240 px celkem, z toho 2×28 px
+     paddingu a 2×1 px rámečku, tedy 182 px obsahu. (Poznámka u
+     `.bundleInline__cart` uvádí 184 px — to je táž pilulka bez rámečku.)
+     Deklarace jen zapisuje, co globální `*` už nastavuje; závisí na tom
+     jak šířka, tak koeficient `cqw` u `.label`. */
+  box-sizing: border-box;
+  /* Popisek se měří touhle pilulkou, ne oknem — viz `.label`. Stejný chvat,
+     jakým si Footer r. 124/168 drží název značky uvnitř sloupce. Šířka výše je
+     určitá, takže inline-size kontejnment nemá co zacyklit; `.indicator` je
+     `position: absolute` v už tak `position: relative` rodiči, takže se pro něj
+     nic nemění. */
+  container-type: inline-size;
   place-items: center;
   overflow: hidden;
-  border: 1px solid #20211c;
+  border: 1px solid var(--ink-05);
   border-radius: 999px;
-  background: #ffe8d6;
+  background: var(--cream-06);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 12px 28px -22px rgba(0, 0, 0, 0.9);
-  color: #20211c;
+    inset 0 1px 0 rgb(var(--white-rgb) / .55),
+    0 12px 28px -22px rgb(var(--black-01-rgb) / .9);
+  color: var(--ink-05);
   cursor: pointer;
   transition:
     color 160ms ease 180ms,
@@ -29,10 +80,33 @@
     opacity 280ms ease;
 }
 
-.button:hover,
+/* Klávesnice je na obou druzích zařízení, takže `:focus-visible` zůstává venku
+   bez podmínky. Sedí to i s framerem: `whileFocus` (cart-button.tsx r. 40) se
+   řídí týmž `:focus-visible` — `gestures/focus.mjs` volá
+   `matches(":focus-visible")` a bez shody `.indicator` neroztáhne — takže
+   přebarvení popisku a inkoustové pozadí pod ním se spínají SPOLEČNĚ. */
 .button:focus-visible {
-  border-color: #ffe8d6;
-  color: #ffe8d6;
+  border-color: var(--cream-06);
+  color: var(--cream-06);
+}
+
+/* Hover jen na fine-pointeru — na dotyku by po tapnutí VISEL a popisek by zmizel.
+   Celý trik pilulky je, že se popisek přebarví na krém a čitelný ho udrží
+   framerový `whileHover`, který mezitím roztáhne `.indicator` s inkoustovým
+   pozadím (cart-button.tsx r. 39, scaleX 0 → 1). Jenže framerové gesto se dotyku
+   vyhýbá schválně — `hover()` v motion-dom zahazuje událost s
+   `pointerType === "touch"` — kdežto CSS `:hover` mobilní prohlížeč po tapnutí
+   nastaví a nechá viset. Bez téhle podmínky tedy na telefonu zbyde krémový
+   popisek na krémovém `background: var(--cream-06)` výše, tedy prázdná pilulka
+   u tlačítka, bez kterého se PDP nedá použít. Na myši jdou obě poloviny ruku
+   v ruce, tak pravidlo platí jen tam.
+   Blok je AŽ ZA pravidlem, které přebíjí: mixin emituje obyčejné media query,
+   ne @layer, takže při stejné specificitě rozhoduje pořadí v souboru. */
+@include fine-pointer {
+  .button:hover {
+    border-color: var(--cream-06);
+    color: var(--cream-06);
+  }
 }
 
 .button:disabled {
@@ -45,14 +119,31 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: #20211c;
+  background: var(--ink-05);
   transform-origin: left center;
-  box-shadow: inset 0 1px 0 rgba(255, 232, 214, 0.16);
+  box-shadow: inset 0 1px 0 rgb(var(--cream-06-rgb) / .16);
 }
 
 .label {
   position: relative;
   z-index: 1;
   white-space: nowrap;
-  font: 400 16px/1 "Sansation-Regular", sans-serif;
+  /* Rozepsáno z `font:` zkratky schválně: kdyby předek nastavil --cta-pill-label
+     na neplatnou hodnotu, zkratka by spadla celá i s rodinou písma. Takhle
+     spadne nanejvýš velikost.
+     Prostřední člen je `cqw`, ne `vw`, a to je tady ten podstatný rozdíl:
+     popisek nesoupeří s oknem, ale s pilulkou, do které se musí vejít. Odvozeno,
+     ne opsáno — 8.79cqw je 16.0 px v naměřeném obsahovém boxu 182 px na 1920,
+     takže referenční viewport zůstává na návrhové velikosti.
+     Co to řeší: šířku pilulky určuje předek přes --cta-pill-w, a na PDP je to
+     clamp(12rem, 16vw, 15.625rem), tedy užší pásmo než zdejší fallback. Kdyby
+     popisek visel na vw, rostl by podle okna do pilulky, kterou řídí někdo
+     jiný — dřív, když tu šířku držel px `!important`, z toho na 2552 zbylo
+     2.6 px vůle a na 3440×1440 −0.2 px, tedy oříznuto. Na `cqw` roste popisek
+     jen tak, jak roste jeho pilulka, takže to přežije, ať šířku určuje kdokoli. Podlaha 0.875rem = 14 px drží nad hranicí 12 px,
+     strop 1rem jde nad 1921 s rampou. */
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: var(--cta-pill-label, clamp(0.875rem, 8.79cqw, 1rem));
+  font-weight: 400;
+  line-height: 1;
 }
