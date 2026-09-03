@@ -1,8 +1,9 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { PencilSquare } from "@medusajs/icons";
 import { Button, Container, Heading, Text } from "@medusajs/ui";
+import { useEffect, useState } from "react";
 
-import { CMS_STUDIO_URL } from "../../../lib/constants";
+import { sdk } from "../../lib/sdk";
 
 /**
  * Obsah webu — rozcestník do Studia.
@@ -28,7 +29,25 @@ import { CMS_STUDIO_URL } from "../../../lib/constants";
  * začalo lhát.
  */
 const ObsahPage = () => {
-  const studio = (CMS_STUDIO_URL || "").trim().replace(/\/+$/, "");
+  /* The Studio address is server env — the browser bundle can't read it, and
+     importing `src/lib/constants` for it drags the entire server framework
+     (pg, jsonwebtoken) into the vite bundle and crashes the admin at load.
+     One authenticated fetch instead; null = still loading. */
+  const [studio, setStudio] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    sdk.client
+      .fetch<{ studio_url: string }>("/admin/workbench/cms-config")
+      .then((config) => {
+        if (!cancelled) setStudio(config.studio_url ?? "");
+      })
+      .catch(() => {
+        if (!cancelled) setStudio("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <Container className="divide-y p-0">
@@ -48,7 +67,7 @@ const ObsahPage = () => {
           v administraci. Ve Studiu je nehledejte.
         </Text>
 
-        {studio ? (
+        {studio === null ? null : studio ? (
           <div>
             {/* Nová karta schválně: administrace je pracovní plocha, ze které se
                 odchází a vrací. `noopener` proto, že cílová stránka by jinak
