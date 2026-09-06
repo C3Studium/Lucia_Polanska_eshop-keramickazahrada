@@ -111,9 +111,26 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     },
   }
 
+  const logger = req.scope.resolve("logger")
+  const telo = (req.body || {}) as Record<string, unknown>
+
+  /*
+   * Že oznámení vůbec dorazilo, je první věc, kterou je při ladění potřeba
+   * vědět — adresu pro oznámení si ComGate drží ve svém portálu, ne v našem
+   * kódu, takže mlčení tady znamená „chodí to jinam", ne „platba neprošla".
+   * Vypisuje se jen číslo transakce a stav; tělo může nést tajemství.
+   */
+  logger.info(
+    `[comgate] oznámení přijato: transId=${telo.transId ?? "-"} stav=${telo.status ?? "-"} refId=${telo.refId ?? "-"}`
+  )
+
   try {
     const paymentModule = req.scope.resolve(Modules.PAYMENT)
     const result = await paymentModule.getWebhookActionAndData(event)
+
+    logger.info(
+      `[comgate] ověřeno u brány: akce=${result.action} relace=${result.data?.session_id ?? "-"}`
+    )
 
     if (result.action === "not_supported" || !result.data?.session_id) {
       /*
@@ -122,9 +139,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
        * nespraví: 400 říká „nepatří nám", ať se pokusy nekupí v logu vedle
        * skutečných selhání. Důvod už vypsal provider.
        */
-      req.scope
-        .resolve("logger")
-        .warn("Comgate push notification was not recognised")
+      logger.warn(
+        `[comgate] oznámení nerozpoznáno (transId=${telo.transId ?? "-"}) — nepatří nám`
+      )
       return res.status(400).json({ received: false })
     }
 
@@ -141,13 +158,16 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
         throw new Error("Verified Comgate callback is missing its transaction ID")
       }
       await reconcileMadeToOrderPayment(req, sessionId, transId)
+
+      logger.info(`[comgate] platba zaúčtována, relace ${sessionId}`)
     }
 
     return res.status(200).json({ received: true })
   } catch (error) {
-    req.scope
-      .resolve("logger")
-      .error("Comgate push notification processing failed", error)
+    logger.error(
+      `[comgate] zpracování oznámení selhalo (transId=${telo.transId ?? "-"})`,
+      error as Error
+    )
     return res.status(500).json({ received: false })
   }
 }

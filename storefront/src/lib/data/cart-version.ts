@@ -44,6 +44,13 @@ export type VysledekPrevodu = {
   stav: "nic" | "zahozen" | "aktualni" | "orazitkovan" | "prenesen"
   preneseno?: number
   vynechano?: number
+  /*
+   * Kterým krokem pokladny má zákazník pokračovat. Počítá se tady, protože
+   * jedině tady je vidět, co do nového košíku doopravdy přešlo — prohlížeč
+   * by musel hádat. Bez toho pokladna otevřela znovu adresu, kterou má
+   * zákazník vyplněnou, a vypadalo to, že se reset nepovedl.
+   */
+  krok?: "address" | "delivery"
 }
 
 const STAMP_KEY = "build_stamp"
@@ -201,6 +208,9 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
 
   await setCartId(novy.id)
 
+  const krok: "address" | "delivery" =
+    cart.email && cart.shipping_address?.address_1 ? "delivery" : "address"
+
   const tag = await getCacheTag("carts")
   if (tag) revalidateTag(tag)
 
@@ -208,5 +218,5 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
     `[košík] ${puvodniId} → ${novy.id} (přeneseno ${preneseno}, vynecháno ${vynechano})`
   )
 
-  return { stav: "prenesen", preneseno, vynechano }
+  return { stav: "prenesen", preneseno, vynechano, krok }
 }

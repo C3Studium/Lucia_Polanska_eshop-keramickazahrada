@@ -335,14 +335,28 @@
   cursor: pointer;
 }
 
+/*
+ * Widget výdejních míst přes celou obrazovku — na každém zařízení.
+ *
+ * Dřív to byl dialog podle doporučení České pošty (360 × 800 px) a přes celou
+ * plochu jen na svislém telefonu. Jenže mapa, hledání i seznam poboček se
+ * mačkaly do okénka i na notebooku a kolem prosvítala stránka pod ním. Ve
+ * chvíli, kdy si člověk vybírá výdejní místo, nedělá nic jiného — tak ať má
+ * celou plochu, ať sedí u čehokoli.
+ *
+ * `100svh` na obalu, ne `100vh` na panelu: `inset: 0` se na telefonu počítá
+ * s uklizenou lištou prohlížeče, takže dokud je lišta vidět, dialog by o její
+ * výšku přetekl a hlavička se zavíracím křížkem by skončila pod hranou.
+ * Panel pak bere `100 %` z obalu, ne `100vw` — to by na počítači připočetlo
+ * i šířku posuvníku a vyrobilo vodorovné posouvání.
+ */
 .balikovnaModal {
   position: fixed;
   inset: 0;
   z-index: 1200;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  height: 100svh;
+  padding: 0;
 }
 
 .balikovnaBackdrop {
@@ -358,15 +372,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Manuál ČP: doporučené minimum dialogu je 360 × 800 px.
-     27rem = 432px a 51rem = 816px při základním rootu, ale nad 1921 je ramp zvedne
-     s okolím, místo aby dialog zůstal v px trčet. */
-  width: min(27rem, 94vw);
-  height: min(51rem, 88vh);
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  border-radius: 1rem;
   background: var(--white);
-  box-shadow: 0 1.875rem 5rem -1.875rem rgb(var(--black-01-rgb) / .5);
 }
 
 .balikovnaPanelHeader {
@@ -398,30 +407,6 @@
   border: 0;
 }
 
-/*
- * Na svislém telefonu přes celou obrazovku.
- *
- * Panel je stavěný podle manuálu České pošty na doporučených 360 × 800 px, což
- * na telefonu vyjde 404 × 816 uvnitř okna 430 × 932 — mapa, hledání i seznam
- * výdejních míst se mačkají do okénka, kolem kterého prosvítá stránka. Na
- * dotyku k tomu není důvod: widget je v tu chvíli jediná věc, kterou člověk
- * dělá, tak ať má celou plochu.
- *
- * `100svh`, ne `100vh`: `vh` se na telefonu počítá s uklizenou lištou
- * prohlížeče, takže dokud je vidět, panel by o její výšku přetekl a hlavička
- * se zavíracím křížkem by skončila nad hranou obrazovky.
- */
-@media (orientation: portrait) and (max-width: 599.98px) {
-  .balikovnaModal {
-    padding: 0;
-  }
-
-  .balikovnaPanel {
-    width: 100vw;
-    height: 100svh;
-    border-radius: 0;
-  }
-}
 
 
 /*

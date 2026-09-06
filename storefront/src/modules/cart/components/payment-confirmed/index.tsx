@@ -13,6 +13,20 @@ const isRedirectSignal = (error: unknown) =>
   typeof (error as { digest?: unknown })?.digest === "string" &&
   (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
 
+/*
+ * Proč se to zkouší víckrát.
+ *
+ * Brána pošle zákazníka zpátky ve chvíli, kdy peníze vezme — ale její vlastní
+ * dotaz na stav i oznámení, které chodí na server, se za tím opožďují
+ * o vteřiny. Jediný pokus hned po návratu tak umí selhat na platbě, která je
+ * v pořádku, a z dvouvteřinového zpoždění udělá objednávku k ručnímu
+ * dodělání. Šest pokusů po třech vteřinách je zhruba čtvrt minuty — pod tím,
+ * co člověk vydrží koukat na „ještě ji dokončujeme", a nad tím, co brána
+ * potřebuje.
+ */
+const POKUSU = 6
+const PRODLEVA_MS = 3000
+
 export default function PaymentConfirmed({
   id,
   supportEmail,
@@ -33,16 +47,25 @@ export default function PaymentConfirmed({
     startedRef.current = true
 
     const complete = async () => {
-      try {
-        // Capture happens server-side via the ComGate webhook; the storefront
-        // used to also call a /store/payment/capture route that never existed.
-        await placeOrder(id)
-      } catch (error) {
-        if (isRedirectSignal(error)) {
+      for (let pokus = 1; pokus <= POKUSU; pokus += 1) {
+        try {
+          // Capture happens server-side via the ComGate webhook; the storefront
+          // used to also call a /store/payment/capture route that never existed.
+          await placeOrder(id)
           return
-        }
+        } catch (error) {
+          if (isRedirectSignal(error)) {
+            return
+          }
 
-        setFailed(true)
+          if (pokus === POKUSU) {
+            console.error(`[objednávka] košík ${id} se nepodařilo dokončit`, error)
+            setFailed(true)
+            return
+          }
+
+          await new Promise((hotovo) => setTimeout(hotovo, PRODLEVA_MS))
+        }
       }
     }
 

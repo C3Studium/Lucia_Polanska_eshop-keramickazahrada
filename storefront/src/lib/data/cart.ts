@@ -4,7 +4,7 @@ import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
-import { redirect } from "next/navigation"
+import { RedirectType, redirect } from "next/navigation"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -714,6 +714,53 @@ export async function createOrderFromCart(cartId: string) {
 }
 // ...existing code...
 
+/**
+ * Co je s platbou v okamžiku, kdy se objednávku nepodařilo dokončit.
+ *
+ * Bez tohohle výpisu se v logu objeví jen přeložená hláška od Medusy
+ * („Payment authorization failed" a podobně), ze které se nedá poznat, jestli
+ * brána ještě neví o zaplacení, jestli relace patří k jiné částce, nebo jestli
+ * kolekce vůbec vznikla. Tady je to všechno na jednom řádku.
+ *
+ * Nesmí to nikdy shodit dokončení objednávky — je to jen diagnostika, takže
+ * všechno uvnitř je v `try`.
+ */
+async function logStavPlatby(cartId: string, headers: Record<string, string>) {
+  try {
+    const { cart } = await sdk.client.fetch<HttpTypes.StoreCartResponse>(
+      `/store/carts/${cartId}`,
+      {
+        method: "GET",
+        query: {
+          fields:
+            "*payment_collection,*payment_collection.payment_sessions,*shipping_methods",
+        },
+        headers,
+        cache: "no-store",
+      }
+    )
+
+    const kolekce = (cart as any)?.payment_collection
+    const relace = (kolekce?.payment_sessions ?? [])
+      .map(
+        (s: any) =>
+          `${s.id} status=${s.status} provider=${s.provider_id} amount=${s.amount}` +
+          ` transId=${s.data?.transId ?? "-"} branaHlasi=${s.data?.providerStatus ?? "-"}`
+      )
+      .join(" ;; ")
+
+    console.error(
+      `[objednávka] ${cartId} nedokončen | celkem=${cart?.total} ${cart?.currency_code}` +
+        ` | doprava=${(cart?.shipping_methods ?? []).map((m: any) => `${m.name}:${m.amount}`).join(",") || "-"}` +
+        ` | kolekce=${kolekce?.status ?? "ŽÁDNÁ"} amount=${kolekce?.amount ?? "-"}` +
+        ` authorized=${kolekce?.authorized_amount ?? "-"} captured=${kolekce?.captured_amount ?? "-"}` +
+        ` | relace: ${relace || "ŽÁDNÉ"}`
+    )
+  } catch (chyba) {
+    console.error(`[objednávka] ${cartId}: stav platby se nepodařilo přečíst`, chyba)
+  }
+}
+
 export async function placeOrder(cartId?: string) {
   const id = cartId || (await getCartId())
 
@@ -732,9 +779,15 @@ export async function placeOrder(cartId?: string) {
       revalidateTag(cartCacheTag)
       return cartRes
     })
-    .catch(medusaError)
+    .catch(async (chyba: any) => {
+      // Nejdřív stav platby, teprve pak překlad — `medusaError` totiž vyhodí
+      // výjimku a za ním už se nic nevypíše.
+      await logStavPlatby(id, headers as Record<string, string>)
+      return medusaError(chyba)
+    })
 
   if (cartRes?.type === "order") {
+    console.info(`[objednávka] ${id} → ${cartRes.order.id} hotovo`)
     const countryCode =
       cartRes.order.shipping_address?.country_code?.toLowerCase()
 
@@ -753,7 +806,17 @@ export async function placeOrder(cartId?: string) {
       // cookie write may never make it into the response.
       await removeCartId()
     }
-    redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+    /*
+     * `replace`, ne výchozí `push`: objednávka je hotová, takže stránka,
+     * ze které sem zákazník přišel — přehled pokladny nebo návratová adresa
+     * od brány — už nikam nevede. S `push` po ní zůstane záznam v historii,
+     * takže se z potvrzení objednávky vrací tlačítkem zpět na stránku, která
+     * se pokusí objednávku založit znovu.
+     */
+    redirect(
+      `/${countryCode}/order/${cartRes?.order.id}/confirmed`,
+      RedirectType.replace
+    )
   }
 
   return cartRes.cart

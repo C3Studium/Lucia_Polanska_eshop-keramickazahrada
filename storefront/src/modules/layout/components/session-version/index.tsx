@@ -89,10 +89,21 @@ const SessionVersionWatch = () => {
         })
         if (!odpoved.ok || zruseno) return
 
-        const { stav } = await odpoved.json()
-        if (!zruseno && (stav === "prenesen" || stav === "zahozen")) {
-          router.refresh()
+        const { stav, krok } = await odpoved.json()
+        if (zruseno || (stav !== "prenesen" && stav !== "zahozen")) return
+
+        /*
+         * V pokladně nestačí stránku překreslit: krok v adrese ukazuje na
+         * dopravu nebo platbu, které jsme právě zrušili, a zákazník by skončil
+         * zpátky na adrese, kterou má vyplněnou. Server ví, kam patří.
+         * `replace`, aby po tom nezůstal krok v historii.
+         */
+        if (krok && window.location.pathname.includes("/checkout")) {
+          router.replace(`${window.location.pathname}?step=${krok}`)
+          return
         }
+
+        router.refresh()
       } catch {
         // Košík zůstane, jaký byl. Není to důvod cokoli zákazníkovi hlásit.
       }
