@@ -4,7 +4,12 @@ const kus = (title: string, profil?: string, requires_shipping = true) => ({
   id: `item_${title}`,
   title,
   requires_shipping,
-  variant: { product: profil ? { shipping_profile: { id: profil } } : {} },
+  variant: {
+    product: {
+      id: `prod_${title}`,
+      ...(profil ? { shipping_profile: { id: profil } } : {}),
+    },
+  },
 })
 
 describe("kusy bez profilu dopravy", () => {
@@ -13,7 +18,9 @@ describe("kusy bez profilu dopravy", () => {
       items: [kus("Keramická růže", "sp_zaklad"), kus("Keramický motýl")],
     }
 
-    expect(itemsWithoutShippingProfile(cart)).toEqual(["Keramický motýl"])
+    expect(itemsWithoutShippingProfile(cart)).toEqual([
+      { productId: "prod_Keramický motýl", title: "Keramický motýl" },
+    ])
   })
 
   it("mlčí, když profil mají všechny", () => {
@@ -38,9 +45,13 @@ describe("kusy bez profilu dopravy", () => {
     expect(itemsWithoutShippingProfile(null)).toEqual([])
   })
 
-  it("kus bez názvu popíše, místo aby spadl", () => {
+  /* Bez produktu se nedá ani pojmenovat, ani spravit — ale spadnout na tom
+     nesmíme; pojistka to pak jen odmítne, místo aby zkoušela nemožné. */
+  it("kus bez názvu i bez produktu popíše, místo aby spadl", () => {
     const cart = { items: [{ requires_shipping: true, variant: {} }] }
 
-    expect(itemsWithoutShippingProfile(cart)).toEqual(["neznámý kus"])
+    expect(itemsWithoutShippingProfile(cart)).toEqual([
+      { productId: "", title: "neznámý kus" },
+    ])
   })
 })

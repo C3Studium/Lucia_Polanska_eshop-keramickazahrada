@@ -40,7 +40,17 @@ export default async function assignShippingProfileToCatalogue({
   args,
 }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
-  const prepinace = args ?? []
+
+  /*
+   * Přepínače se čtou i z `process.argv`, nejen z `args`.
+   *
+   * Medusa registruje příkaz jako `exec [file] [args..]` a — na rozdíl od
+   * `mcloud` hned vedle — nenastavuje `unknown-options-as-args`. yargs si
+   * proto `--dry-run` i `--force` sebere jako své vlastní volby a do skriptu
+   * pošle prázdné pole. Syrová příkazová řádka je tím pádem jediné místo,
+   * kde ty přepínače spolehlivě jsou.
+   */
+  const prepinace = [...(args ?? []), ...process.argv.slice(2)]
   const naSucho = prepinace.includes("--dry-run")
   const vynuceno = prepinace.includes("--force")
   const jen = prepinace
