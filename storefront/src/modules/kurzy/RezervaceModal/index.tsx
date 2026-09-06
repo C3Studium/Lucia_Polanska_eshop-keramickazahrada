@@ -19,6 +19,7 @@ import {
 } from "@lib/data/courses"
 import { pragueDayKey } from "@lib/util/course-calendar"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import PhoneInput from "@modules/common/components/phone-input"
 
 import {
   czk,
@@ -973,10 +974,8 @@ function RezervaceModalPanel({
                         </label>
                         <label>
                           <span>Telefon</span>
-                          <input
-                            type="tel"
+                          <PhoneInput
                             name="phone"
-                            autoComplete="tel"
                             value={phone}
                             aria-invalid={fieldErrors.phone ? true : undefined}
                             aria-describedby={

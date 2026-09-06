@@ -51,16 +51,23 @@ const getAboutCardRects = (
   images: readonly GlazeImage[]
 ): CardRect[] => {
   if (width <= 560) {
-    const mainWidth = width * .93
-    const mainHeight = height * .46
-    const portraitWidth = Math.min(width * .48, 245)
-    const portraitHeight = portraitWidth / images[1].aspect
+    /*
+     * Dvojice karet přes sebe — zrcadlo bloku `below-px(560px)`
+     * v main/styles.scss. Portrét je vysoký 40 % okna (dřív odvozený od jeho
+     * ŠÍŘKY, takže se kompozice s poměrem stran rozjížděla) a jeho horní hrana
+     * sedí na 35 %, tedy pod pravým dolním rohem široké karty, která končí
+     * na 44 %.
+     */
+    const mainWidth = width * .72
+    const mainHeight = height * .32
+    const portraitHeight = height * .40
+    const portraitWidth = portraitHeight * images[1].aspect
 
     return [
-      { left: width * .035, top: height * .09, width: mainWidth, height: mainHeight },
+      { left: width * .035, top: height * .12, width: mainWidth, height: mainHeight },
       {
-        left: width - 18 - portraitWidth,
-        top: height - height * .05 - portraitHeight,
+        left: width - width * .04 - portraitWidth,
+        top: height * .35,
         width: portraitWidth,
         height: portraitHeight,
       },

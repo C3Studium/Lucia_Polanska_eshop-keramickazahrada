@@ -628,6 +628,26 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   }
 }
 
+/*
+ * Svislý telefon: jeden sloupec vždycky, ne jen na těch nejužších.
+ *
+ * Stop níž řeší 430px a míň, jenže dnešní telefony jsou širší — na 448px se
+ * dlaždice pořád skládaly do dvou sloupců a „Platební karta" i „Apple / Google
+ * Pay" lámaly nadpis i popisek přes tři až čtyři řádky, zatímco „Platba přes
+ * bankou" pod nimi zabírala celou šířku sama. Tři různě vysoké dlaždice ve
+ * dvou sloupcích se čtou hůř než tři stejné pod sebou, a na výběr způsobu
+ * platby je to poslední místo, kde má člověk luštit.
+ *
+ * Nic dalšího se dopočítávat nemusí — platí totéž, co říká komentář v bloku
+ * níž: `.group[data-group="bank"]` si nechá `grid-column: 1 / -1`, což v jednom
+ * sloupci znamená týž jeden sloupec, a čtyřdlaždicová varianta taky.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .groups {
+    grid-template-columns: 1fr;
+  }
+}
+
 @include below-px(430px) {
   /* The tiles drop to one column. This is the width where the selector's own container
      is about 276px, so two columns leave each tile ~138px and the card tile's second

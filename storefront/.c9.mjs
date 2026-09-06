@@ -1,0 +1,23 @@
+import { chromium } from "playwright"
+setTimeout(() => { console.error("TIMEOUT"); process.exit(2) }, 250000)
+const b = await chromium.launch()
+const ctx = await b.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true })
+const p = await ctx.newPage()
+// prázdný košík → pruh nesmí být
+await p.goto("http://localhost:8000/cz/cart", { waitUntil: "domcontentloaded", timeout: 120000 })
+await p.waitForTimeout(5000)
+console.log("prázdný košík → pruh:", await p.evaluate(() => [...document.querySelectorAll("div")].some((e) => { const cs = getComputedStyle(e); return cs.position === "fixed" && cs.zIndex === "900" }) ? "JE (chyba)" : "není (OK)"))
+// naplnit a kliknout na pruh
+await p.goto("http://localhost:8000/cz/store", { waitUntil: "domcontentloaded", timeout: 120000 })
+await p.waitForTimeout(6000)
+const href = await p.evaluate(() => document.querySelector('a[href*="/products/"]')?.getAttribute("href"))
+await p.goto("http://localhost:8000" + href, { waitUntil: "domcontentloaded", timeout: 120000 })
+await p.waitForTimeout(3600)
+await p.evaluate(() => { const b = [...document.querySelectorAll("button")].find((x) => /^Přidat do košíku$/i.test((x.textContent || "").trim())); b?.click() })
+await p.waitForTimeout(3200)
+await p.goto("http://localhost:8000/cz/cart", { waitUntil: "domcontentloaded", timeout: 120000 })
+await p.waitForTimeout(6000)
+await p.evaluate(() => { const el = [...document.querySelectorAll("div")].find((e) => { const cs = getComputedStyle(e); return cs.position === "fixed" && cs.zIndex === "900" }); el.querySelector("a").click() })
+await p.waitForURL("**/checkout**", { timeout: 30000 }).catch(() => {})
+console.log("po kliku na pruh:", p.url().replace("http://localhost:8000", ""))
+await b.close(); process.exit(0)

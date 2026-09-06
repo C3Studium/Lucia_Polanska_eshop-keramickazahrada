@@ -64,3 +64,35 @@
   padding-top: clamp(.75rem, 1.6vh, 1.25rem);
 }
 
+/*
+ * ─── Pět kusů a dost, dál se roluje ─────────────────────────────────────────
+ *
+ * Výpis rostl s košíkem donekonečna: každý další kus přidal celý řádek a
+ * s deseti kusy byla stránka na telefonu nekonečná šachta, kterou se muselo
+ * projít k souhrnu. Strop drží pět řádků; šestý a další se dorolují uvnitř
+ * seznamu, zbytek stránky zůstává na místě.
+ *
+ * `--cart-row` je změřená výška řádku po zeštíhlení — 139px s názvem na jeden
+ * řádek, 160px na dva. Strop počítá s tím delším, aby se pět kusů opravdu
+ * vešlo a rolovat začal až šestý.
+ *
+ * Druhý člen `min()` je pojistka pro nízké telefony: na 640px displeji je pět
+ * řádků víc než celá obrazovka a strop by nic neřešil. Tam se ukážou zhruba
+ * tři a půl.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .tableBody {
+    --cart-row: 10rem;
+
+    max-height: min(calc(5 * var(--cart-row)), 88svh);
+    overflow-y: auto;
+    /* Doscrollování na konec seznamu nemá rozjet stránku pod ním. */
+    overscroll-behavior-y: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+

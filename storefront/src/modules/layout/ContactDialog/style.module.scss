@@ -19,6 +19,8 @@
 
 .overlay {
   position: fixed;
+  /* Pod navbarem (1000) — schválně: menu zůstává vidět i nad modálem.
+     Zavírací ✕ se navbaru vyhýbá polohou (top 8.5 % na svislém telefonu). */
   z-index: 500;
   inset: 0;
   display: grid;
@@ -425,6 +427,18 @@
   line-height: 1.35;
 }
 
+/*
+ * Předvolba vedle podtrženého vstupu.
+ *
+ * Vstup kontaktu nese text u horní hrany a 11.7px podložení POD linkou, takže
+ * střed jeho krabice neleží na středu textu — rozbaleník srovnaný na střed
+ * krabic pak stál ~5px pod řádkem čísla. Posun je půlka toho podložení plus
+ * půlrozdíl písem, změřeno na glyfech.
+ */
+.phoneRow select {
+  transform: translateY(-6px);
+}
+
 .message .input {
   height: clamp(10rem, 22vh, 13.75rem);
   overflow: auto;
@@ -744,6 +758,112 @@
     @include phs-h {
       display: none;
     }
+  }
+}
+
+/*
+ * Svislé telefony — tatáž hranice jako JS přepínač v Kurzy/Intro
+ * (portrait do 600px), aby se „telefon" v celém webu lámal na jednom místě.
+ *
+ * Titulek: podlaha 42px z bloku výš je na 390–434px skle půl obrazovky —
+ * dolů na 8.6vw mezi 30 a 40px, pořád největší věc v panelu, ale nechá
+ * místo formuláři, kvůli kterému modál existuje.
+ *
+ * Pilulky témat: menší písmo a odsazení, aby se čtyři vešly do dvou řádků
+ * bez tlačenice. VÝŠKU pod 44px dostane jen jemný kurzor: dotyková podlaha
+ * v globals drží tlačítkům 44px schválně a tady se nepodlézá — pilulka se
+ * zmenšuje očím, ne prstu.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  /*
+   * Zavírací ✕ přikované do pravého horního ROHU MODÁLU.
+   *
+   * Absolutně vůči panelu, ne vůči řádku hlavičky: pak ho nemůže odsunout
+   * zalomení textu o dostupnosti, přetečení těla ani nic, co se stane
+   * s hlavičkou — roh modálu je roh modálu. Z-index nad vším obsahem
+   * panelu, ať je vždycky nahoře a vždycky se dá zavřít.
+   */
+  .panel {
+    position: relative;
+  }
+
+  /* Jen posunuté zavírací tlačítko — do rohu karty, pod plovoucí navbar.
+     Hodnoty vyladěné okem (Matěj): 8.5 % výšky panelu, 4 % zprava. */
+  .close {
+    position: absolute;
+    top: 8.5%;
+    right: 4%;
+    z-index: 30;
+  }
+
+  .title h2 {
+    margin-top: 0.5rem;
+    font-size: clamp(1.875rem, 8.6vw, 2.5rem);
+    letter-spacing: -0.045em;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+  }
+
+  .form {
+    margin-top: 1.75rem;
+  }
+
+  .topics legend {
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /*
+   * Čtyři témata VEDLE SEBE, klidně drobná; do druhé řady až případné páté.
+   *
+   * Mřížka, ne flex se zalamováním: flex láme podle šířky obsahu, takže
+   * „Obecný dotaz" shodil čtvrtou pilulku o řádek níž. Čtyři stejné sloupce
+   * rozdělí řádek vždycky, a delší popisek se místo zalomení zmenší sazbou —
+   * písmo jde s šířkou skla až k podlaze 10px.
+   */
+  .topics > div {
+    display: grid;
+    /*
+     * Sloupce vážené délkou popisků, ne čtyři stejné: v rovných čtvrtinách se
+     * „Obecný dotaz" ořezával (pilulka má overflow: hidden kvůli jezdci),
+     * zatímco vedle „Kurzy" zbývalo místo. Váhy jsou poměry šířek textů —
+     * témata jsou pevná čtveřice v panel.tsx, takže tohle je táž konstanta.
+     */
+    grid-template-columns: 1.5fr 1fr 1.3fr 0.75fr;
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .topics button {
+    min-width: 0;
+    padding: 0 0.25rem;
+    font-size: clamp(0.625rem, 2.9vw, 0.75rem);
+    text-align: center;
+    white-space: nowrap;
+
+    @media (hover: hover) and (pointer: fine) {
+      height: 2.25rem;
+    }
+  }
+
+  /* Zpráva níž: na stojatém telefonu stačí ~4 řádky (podlaha 10rem jich
+     dávala sedm) — odeslat se tím zvedne do dohledu bez scrollování. */
+  .message .input {
+    height: clamp(6rem, 14vh, 8.5rem);
+  }
+
+  /* Podlaha 700px z bloku pod 760px držela odeslat pod ohybem i po zkrácení
+     zprávy — na stojatém telefonu ať výšku určuje obsah. */
+  .formPanel {
+    min-height: 0;
+  }
+
+  /* Menší písmo vstupu na telefonu = menší nesouměrnost — stačí menší posun
+     než desktopových −6px (vyladěno okem, Matěj). */
+  .phoneRow select {
+    transform: translateY(-1px);
   }
 }
 

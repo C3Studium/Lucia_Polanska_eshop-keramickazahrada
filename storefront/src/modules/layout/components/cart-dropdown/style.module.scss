@@ -147,6 +147,22 @@
         gap: .9rem;
         padding: 1rem 0;
         border-bottom: 1px solid rgb(var(--ink-05-rgb) / .12);
+
+        /*
+         * Řádek se smí zúžit pod svůj obsah — jinak se nezúží vůbec.
+         *
+         * Položka mřížky i položka flexu mají ve výchozím stavu `min-width:
+         * auto`, tedy „nikdy užší, než je nejužší možný obsah". Na telefonu
+         * z toho byl řádek 405px v panelu širokém 364: název se ořízl v půli
+         * slova a cena skončila 50px ZA pravou hranou panelu, mimo obrazovku.
+         * Ellipsis na názvu proti tomu nic nezmohl — ten se zapne, až když ho
+         * má co stlačit, a celá řada nad ním se stlačit odmítala.
+         *
+         * Nuly musí být na celém řetězci, ne jen na řádku: každá další úroveň
+         * (mřížka → sloupec → flex → hlavička) si to auto nese znovu.
+         */
+        min-width: 0;
+
         .productLink {
           width: var(--cart-thumb);
         }
@@ -155,14 +171,17 @@
           flex-direction: column;
           justify-content: space-between;
           flex: 1;
+          min-width: 0;
           .itemInfo {
             display: flex;
             flex-direction: column;
             flex: 1;
+            min-width: 0;
             .itemHeader {
               display: flex;
               align-items: flex-start;
               justify-content: space-between;
+              min-width: 0;
               .itemTitle {
                 font-size: 1rem;
                 font-weight: 400;
@@ -337,6 +356,99 @@
           padding-top: 1.75rem;
           padding-bottom: 1.75rem;
         }
+
+        /*
+         * ─── Řádek zboží na telefonu ────────────────────────────────────────
+         *
+         * Náhled z 5.25rem na 4.5rem a užší mezera: na listu širokém 366px
+         * zbývalo textu 222px, teď 246. Nejde o náhled — ten je čitelný i
+         * menší —, jde o to, že vedle něj stojí název, varianta, cena
+         * i tlačítko Odebrat.
+         */
+        .cartItem {
+          --cart-thumb: 4.5rem;
+
+          gap: 0.75rem;
+          padding: 0.85rem 0;
+          /* Odkaz s náhledem je položka mřížky, takže se natahoval na výšku
+             celého řádku (naměřeno 72×139) a čtvercový náhled v něm plaval.
+             Nahoře u názvu, kam patří. */
+          align-items: start;
+        }
+
+        /*
+         * Tři kusy a dost — dál se roluje.
+         *
+         * Se stropem 48svh / 25.125rem se seznam lámal uprostřed třetího
+         * řádku a s košíkem o pěti kusech z něj byl na telefonu sloupec přes
+         * půl obrazovky. Řádek měří ~10.5rem (název na dvou řádcích, varianta,
+         * množství a tlačítko Odebrat s dotykovou podlahou 44px), takže tři
+         * jsou 31.5rem.
+         *
+         * `min()` s podílem okna je pojistka pro krátké telefony: na 640px
+         * vysokém displeji by tři řádky snědly celý list i s patičkou, tam se
+         * ukážou dva a půl. Podíl je 60svh, ne 48 — při 48 by se na vyšší
+         * telefony tři řádky nevešly a strop by nikdy nesplnil, co slibuje.
+         */
+        .items {
+          --cart-row: 10.5rem;
+
+          max-height: min(60svh, calc(3 * var(--cart-row)));
+        }
+
+        /*
+         * Název na dva řádky místo jednoho s třemi tečkami. „Keramické
+         * zahradní pítko s ptáčky" se do jednoho řádku nevejde na žádném
+         * telefonu — uříznout ho v půlce slova je horší než ho zalomit.
+         * Pevná šířka `min(11.25rem, 75%)` byla počítaná pro jednořádkový
+         * text vedle ceny; na dvou řádcích si ji vezme sám, kolik zbude.
+         *
+         * Celá cesta zápisu, ne jen `.itemTitle`: základní pravidlo je
+         * vnořené osm tříd hluboko, takže kratší selektor by prohrál
+         * specificitou a `white-space: nowrap` by platil dál (ověřeno — název
+         * se ořezával i s tímhle blokem).
+         */
+        .cartItem .itemDetails .itemInfo .itemHeader .itemTitle {
+          width: auto;
+          white-space: normal;
+          margin-right: 0.5rem;
+
+          /*
+           * Ořez patří NÁZVU, ne tomuhle obalu — ten drží i „Variace" a
+           * „Množství" pod ním, takže dvouřádkový ořez na něm by uřízl je
+           * (naměřeno: obal 38px vysoký a obsah přetékal).
+           */
+          h3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9375rem;
+            line-height: 1.25;
+          }
+        }
+
+        /*
+         * Hlavní akce listu přes celou jeho šířku.
+         *
+         * `vb((s: (width: 90px, height: 35px)))` níž ji od 400px šířky srazil
+         * na 90×35 — do toho se „Přejít do košíku" při písmu 1rem nevejde,
+         * takže se popisek lámal na dva řádky uvnitř pilulky vysoké 35px
+         * (a dotyková podlaha 44px ji stejně přetáhla). Na listu není o co
+         * se dělit: je to jediné tlačítko a patří mu celá šířka.
+         */
+        .goToCartBtn {
+          width: 100%;
+
+          .button {
+            width: 100%;
+            height: clamp(2.75rem, 6vh, 3.125rem);
+          }
+
+          .el p {
+            white-space: nowrap;
+          }
+        }
       }
       .empty {
         .emptyContent {
@@ -429,8 +541,16 @@
         box-shadow: none;
         background-color: transparent;
 
+        /*
+         * Jen výška, šířka ne. `width: 90px` tu bylo pro popisek „Přejít do
+         * košíku", který při písmu 1rem potřebuje ~130px: naměřeno na tabletu
+         * nastojato 48px textu v pilulce vysoké 35 — text z tlačítka lezl ven
+         * a lámal se na dva řádky. Základních 9.375rem mu stačí a na
+         * telefonním listu si tlačítko stejně bere celou šířku (viz blok
+         * `.navbar__bottomBar` níž).
+         */
         @include vb((
-            s: (width: 90px, height: 35px),
+            s: (height: 35px),
         ));
 
         .slider{

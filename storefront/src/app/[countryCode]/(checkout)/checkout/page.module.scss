@@ -247,3 +247,39 @@
   .mastheadAside { margin-top: auto; gap: 22px; }
   .ledger { padding: 30px 20px; }
 }
+
+/*
+ * ─── Úvod pokladny na svislém telefonu ──────────────────────────────────────
+ *
+ * Hlavička brala 220px minimální výšky a nadpis „Ještě pár kroků." přes dva
+ * řádky při 15vw — dohromady zhruba 370px, než začal první krok. Na stránce,
+ * kde jde o vyplnění formuláře, je to skoro půl obrazovky uvítání.
+ *
+ * Věta „Ještě pár kroků a můžeme to z ateliéru poslat k vám." říká totéž, co
+ * nadpis nad ní, jen delšími slovy — a kolikátý krok zrovna běží, teď ukazují
+ * bublinky nad formulářem. Odkaz zpět do košíku zůstává, ten je funkční.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .masthead {
+    min-height: 0;
+    padding: 10px 0 18px;
+  }
+
+  .masthead h1 {
+    margin-top: 14px;
+    font-size: clamp(2.25rem, 11vw, 3rem);
+  }
+
+  .mastheadCopy {
+    display: none;
+  }
+
+  .mastheadAside {
+    margin-top: 16px;
+    gap: 0;
+  }
+
+  .ledger {
+    padding: 20px 14px;
+  }
+}

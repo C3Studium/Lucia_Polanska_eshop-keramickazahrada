@@ -1,0 +1,65 @@
+/*
+ * Telefon s předvolbou — jen kostra řady.
+ *
+ * Rozbaleník je nativní <select>: na telefonu otevře systémové kolečko,
+ * se čtečkou i klávesnicí umí všechno sám a za jedenáct položek nestojí
+ * za vlastní popup. Vzhled drží tokeny a zděděné písmo, aby zapadl vedle
+ * kteréhokoli z formulářů, do kterých se řada vkládá — vlastní barvy si
+ * nevymýšlí.
+ */
+.row {
+  display: flex;
+  /* Střed krabic. Formulář s nesouměrným vstupem (kontakt: text nahoře,
+     podložení pod linkou) si předvolbu dorovná vlastním posunem přes
+     `className` — `baseline` u <select> prohlížeče nedrží spolehlivě. */
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Vedle vysokého plovoucího Inputu tvoří oba rámečky jednu výškovou linku. */
+.rowTall {
+  align-items: stretch;
+}
+
+.number {
+  min-width: 0;
+  flex: 1 1 auto;
+
+  /* Sdílený Input i holý <input> mají roztáhnout celý zbytek řady. */
+  > div,
+  input {
+    width: 100%;
+  }
+}
+
+.dial {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid rgb(var(--ink-06-rgb) / 0.22);
+  border-radius: 0.4375rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Vedle plovoucího popisku sdíleného Inputu je řádek vysoký celý — tam se
+   předvolba natáhne s ním, aby oba rámečky tvořily jednu výškovou linku. */
+.dialTall {
+  min-height: 2.75rem;
+  align-self: stretch;
+}
+
+/* Číslo v podtrženém vstupu sedí na téže ose jako předvolba. */
+.number input {
+  vertical-align: middle;
+}

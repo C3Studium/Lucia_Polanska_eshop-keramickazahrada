@@ -4,7 +4,7 @@ import { HttpTypes } from "@medusajs/types"
 import { BundleProduct } from "@lib/data/products"
 import { motion } from "framer-motion"
 import Image from "next/image"
-import { useMemo } from "react"
+import { useMemo, useRef, useState } from "react"
 
 import { easeMicro } from "@lib/motion-tokens"
 
@@ -112,6 +112,40 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
 
   const galleryCount = galleryImages.length + (bundleImages.length ? 1 : 0)
 
+  /*
+   * Pás fotek na telefonu.
+   *
+   * Rámečky jsou pod sebou a na telefonu z nich byla metrová šachta, kterou
+   * musel projít každý, kdo se chtěl dostat k ceně. Ve vodorovném pásu zaberou
+   * všechny dohromady výšku jedné a listuje se prstem. Samotné posouvání dělá
+   * `scroll-snap` v CSS, ne JS — tady se jen sleduje, kde pás stojí, aby to
+   * ukazatel pod ním uměl říct.
+   *
+   * Na širokých oknech je pás `display: contents`, tedy bez boxu: rámečky tam
+   * zůstávají přímými dětmi galerie a skládají se pod sebe jako dosud. Proto
+   * ta pojistka na nulovou šířku — dělení nulou by dalo NaN.
+   */
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [activeSlide, setActiveSlide] = useState(0)
+
+  const handleTrackScroll = () => {
+    const track = trackRef.current
+    if (!track || track.clientWidth === 0) return
+
+    const next = Math.min(
+      galleryCount - 1,
+      Math.max(0, Math.round(track.scrollLeft / track.clientWidth))
+    )
+    setActiveSlide((current) => (current === next ? current : next))
+  }
+
+  const goToSlide = (index: number) => {
+    const track = trackRef.current
+    if (!track || track.clientWidth === 0) return
+
+    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" })
+  }
+
   return (
     <div className="product__gallery">
       <div className="product__galleryIntro">
@@ -119,6 +153,11 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
         <span>{String(galleryCount).padStart(2, "0")} pohledů</span>
       </div>
 
+      <div
+        className="product__mediaTrack"
+        ref={trackRef}
+        onScroll={handleTrackScroll}
+      >
       {bundleImages.length > 0 && (
         <motion.figure
           className="product__mediaFrame product__bundleFrame"
@@ -198,6 +237,32 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
           </motion.figure>
         )
       })}
+      </div>
+
+      {/* Kolik jich je a na které stojíte. Viditelný jen na telefonu, kde se
+          listuje — na širokých oknech leží fotky pod sebou a ukazatel by
+          neměl co ukazovat. Čárka, ne tečka: stránka mluví linkami.
+          Tlačítko je záměrně větší než ta čárka — dotykový cíl má 44px
+          (globální podlaha), kreslí se jen ta linka uvnitř. */}
+      {galleryCount > 1 && (
+        <div
+          className="product__mediaDots"
+          role="tablist"
+          aria-label="Fotky výrobku"
+        >
+          {Array.from({ length: galleryCount }, (_, index) => (
+            <button
+              key={index}
+              type="button"
+              role="tab"
+              aria-selected={index === activeSlide}
+              aria-label={`Fotka ${index + 1} z ${galleryCount}`}
+              className={index === activeSlide ? "is-active" : undefined}
+              onClick={() => goToSlide(index)}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="product__galleryOutro">
         <span>Na každém kusu je něco malinko jinak.</span>

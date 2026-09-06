@@ -249,6 +249,21 @@
   margin-bottom: 0.625rem;
 }
 
+/*
+ * Pás fotek existuje kvůli telefonu (vodorovné listování, viz gallery.tsx).
+ * Na širokých oknech nesmí být vidět vůbec: `display: contents` mu vezme box,
+ * takže rámečky zůstávají přímými dětmi `.product__gallery` a její flexový
+ * sloupec s mezerou platí dál — nula změn v ověřeném desktopu.
+ */
+.product__mediaTrack {
+  display: contents;
+}
+
+/* Ukazatel patří k listování, a to je jen na telefonu. */
+.product__mediaDots {
+  display: none;
+}
+
 .product__mediaFrame {
   position: relative;
   width: 100%;
@@ -1226,8 +1241,176 @@
     padding-inline: clamp(1rem, 4vw, 1.5rem);
   }
 
+  /*
+   * ─── Pořadí podle důležitosti, ne podle mřížky ────────────────────────────
+   *
+   * Tři sloupce desktopu se na telefonu skládaly pod sebe v pořadí, v jakém
+   * stojí v mřížce: text, CELÁ galerie, teprve pak cena. Naměřeno na 390×844:
+   * tlačítko „Přidat do košíku" na 2749px, tedy 326vh — mezi perexem a cenou
+   * leželo 1530px fotek. Kdo chce koupit, scrolluje tři obrazovky.
+   *
+   * `display: contents` je tu ta klíčová věc: bez něj `order` nedosáhne přes
+   * úrovně vnoření. Harmonika je uvnitř `.product__identityInner`, fotky
+   * uvnitř `.product__media > .product__gallery`, takže `order` řadil jen
+   * uvnitř těch obalů — proto stará poznámka o `order: 4` říká, že slot se za
+   * nákupní sloupec dostane jedině přesunem v TSX. Zrušením boxů u čtyř obalů
+   * se jejich děti stanou přímými položkami flexu `.product__story` a pořadí
+   * jde poskládat jedním číslem u každé.
+   *
+   * Daň: obaly `.product__identityInner` a `.product__purchaseInner` mají
+   * nájezdovou animaci (opacity + posun o 24px). Prvek bez boxu se nemá jak
+   * posunout, takže identita na telefonu najíždí bez ní. Nákupní sloupec si
+   * svou nechává — ten se nerozpouští.
+   *
+   * Výsledek: cena na 112vh, tlačítko dokončené na 129vh.
+   */
+  .product__identity,
+  .product__identityInner,
+  .product__media,
+  .product__gallery {
+    display: contents;
+  }
+
+  /* `align-items: start` je z desktopové mřížky, kde drží sloupce u horní
+     hrany. Ve složeném toku ale znamená „na šířku obsahu": obaly to nebylo
+     vidět, protože `.product__identity` a `.product__purchase` mají
+     `width: 100%`, jenže jejich děti, které se sem právě vynořily, ho nemají —
+     harmonika Detaily se smrskla na 140px a linka pod eyebrow končila v půlce.
+     Ve flexu je `stretch` výchozí chování, tady se jen vrací. */
+  .product__story {
+    align-items: stretch;
+  }
+
+  /*
+   * Fotky nahoru, ale vedle sebe: ve vodorovném pásu zaberou všechny dohromady
+   * výšku jedné, takže mezi perexem a cenou nestojí nic než jeden snímek — a
+   * přitom o žádnou fotku nepřijdete, listuje se prstem. U sady je prvním
+   * snímkem rovnou kompozice celé sady.
+   */
+  .product__eyebrow { order: 1; }
+  .product__identity h1 { order: 2; }
+  .product__lead { order: 3; }
+  .product__rating { order: 4; }
+  .product__galleryIntro { order: 5; }
+  .product__mediaTrack { order: 6; }
+  .product__mediaDots { order: 7; }
+  .product__purchase { order: 8; }
+  .product__detailsSlot { order: 9; }
+  .product__galleryOutro { order: 10; }
+
+  /* Totéž říká řádek „Ručně vytvořeno" mezi službami pod nákupem. */
+  .product__signature {
+    display: none;
+  }
+
+  /*
+   * Nadpis na dva řádky. 17vw je 66px a to je na telefonu čtyřřádkový titul
+   * vysoký 238px; naměřeno 40px = dva řádky, 48px = tři. Strop 2.5rem drží
+   * dvouřádkový i na 447px širokém telefonu, kde by 9vw už přeteklo.
+   * Odsazení shora bylo `clamp(3.25rem, 8vh, 5.5rem)` pro čtyřřádkový nadpis
+   * pod eyebrow — u dvouřádkového je to díra.
+   */
   .product__identity h1 {
-    font-size: clamp(3rem, 17vw, 4.5rem);
+    max-width: none;
+    margin: clamp(1rem, 2.5vh, 1.75rem) 0 0;
+    font-size: clamp(1.85rem, 9vw, 2.5rem);
+  }
+
+  /*
+   * Pás. Posouvání i zastavování na snímku dělá prohlížeč sám přes
+   * `scroll-snap` — JS v gallery.tsx jen čte, kde pás stojí, takže listování
+   * běží nativně i než se stránka rozběhne.
+   *
+   * `overscroll-behavior-x: contain` je tu proto, aby doswipování za poslední
+   * fotku nespustilo gesto zpět v prohlížeči.
+   */
+  .product__mediaTrack {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* Všechny snímky v pásu stejně vysoké — vedle sebe se jiná výška projeví
+     jako poskakující rám. Výšku proto nese pás, ne jednotlivé rámečky, a
+     přebíjí i `:nth-of-type(even)` a `.product__bundleFrame` ze základu. */
+  .product__mediaTrack .product__mediaFrame,
+  .product__mediaTrack .product__mediaFrame:nth-of-type(even) {
+    flex: 0 0 100%;
+    height: clamp(15rem, 42vh, 26rem);
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  /*
+   * Ukazatel: čárky, ne tečky — stránka mluví linkami. Tlačítko samo je
+   * dotykový cíl (globální podlaha 44px v globals.scss ho stejně na tuhle
+   * výšku natáhne), vidět je jen linka kreslená uvnitř. Aktivní se prodlouží
+   * a rozsvítí, takže pozici poznáte i bez barvy.
+   */
+  .product__mediaDots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    /* Mezera flexu `.product__story` je 28px; pod pásem stačí menší. */
+    margin-top: -1.25rem;
+
+    button {
+      position: relative;
+      width: 1.5rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      transition: width .35s cubic-bezier(.76, 0, .24, 1);
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 0;
+        left: 0;
+        height: 2px;
+        border-radius: 2px;
+        background: rgb(var(--cream-06-rgb) / .3);
+        translate: 0 -50%;
+        transition: background-color .35s ease;
+      }
+
+      &.is-active {
+        width: 2.5rem;
+      }
+
+      &.is-active::before {
+        background: var(--pdp-olive);
+      }
+
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* Dva popisky vedle sebe se do 374px nevejdou: levý („01 · <celý název
+     výrobku>") se lámal na dva řádky a pravý dobíhal do okraje. Název je
+     přitom nad fotkou v nadpisu — zůstává jen to, co fotka sama neřekne. */
+  .product__mediaFrame figcaption span:first-child {
+    display: none;
+  }
+
+  /* Odsazení počítané pro patu lepivého sloupce; ve složeném toku dělá
+     129px ze dvou krátkých řádků. */
+  .product__selection {
+    padding-top: clamp(1rem, 2.5vh, 1.5rem);
+    padding-bottom: 1.125rem;
   }
 
   .product__galleryOutro {

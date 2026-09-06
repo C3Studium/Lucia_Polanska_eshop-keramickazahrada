@@ -100,3 +100,89 @@
      by podlahu pustilo až na 1744, takže by od 1200 do 1744 svítilo 13.6px místo 15. */
   font: 400 clamp(.85rem, 1.05vw, 1rem)/1 "Sansation-Regular", sans-serif;
 }
+
+/*
+ * Obal hlavičky souhrnu je na širokém okně průhledný — bez boxu se jeho děti
+ * skládají do sloupce `.root` přesně jako dřív, takže ověřený desktop se
+ * nemění ani o pixel.
+ */
+.head,
+.heading,
+.discountSlot {
+  display: contents;
+}
+
+/* Na širokém okně platí dlouhé znění, kratší se neukazuje. */
+.titleNarrow {
+  display: none;
+}
+
+/*
+ * ─── Souhrn na svislém telefonu ─────────────────────────────────────────────
+ *
+ * Byl vyšší než výpis, ke kterému patří: štítek „OBJEDNÁVKA", pod ním nadpis
+ * přes dva řádky, pod ním na vlastní řádce tlačítko slevového kódu a teprve
+ * pak čísla. Nadpis a slevový kód se vejdou vedle sebe — „Kolik to dělá" má
+ * při 1.25rem asi 110px a tlačítko 150 z 366 dostupných.
+ *
+ * Štítek jde pryč: „Objednávka" nad nadpisem „Kolik to dělá" říká totéž
+ * podruhé a na telefonu je to celý řádek navíc.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  /* Od horní hrany, ne na střed: rozbalené pole pro kód řádek vpravo natáhne
+     a nadpis by s ním sjížděl doprostřed. Odsazení nadpisu ho opticky srovná
+     s tlačítkem vedle, které je vysoké celý dotykový práh. */
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.625rem;
+  }
+
+  .heading {
+    display: block;
+    min-width: 0;
+  }
+
+  .discountSlot {
+    /* Nesmršťovat pod vlastní obsah — tlačítko má zůstat na jednom řádku,
+       a rozbalené políčko pro kód potřebuje šířku, ne tři znaky. */
+    display: block;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .title {
+    margin-top: 0.5rem;
+    font-size: 1.25rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .titleWide {
+    display: none;
+  }
+
+  .titleNarrow {
+    display: inline;
+  }
+
+  /* Sloupec souhrnu dýchal po desktopovém — na telefonu je z těch mezer
+     zbytečná délka. */
+  .root {
+    row-gap: 0.625rem;
+  }
+
+  /*
+   * Velké tlačítko na konci souhrnu je tu podruhé: „K pokladně" nese lepkavý
+   * pruh nade spodní lištou, který je vidět pořád (viz checkout-bar). Dvě
+   * stejné cesty pod sebou jen prodlužují to, co má být kratší.
+   */
+  .LinkButton {
+    display: none;
+  }
+}

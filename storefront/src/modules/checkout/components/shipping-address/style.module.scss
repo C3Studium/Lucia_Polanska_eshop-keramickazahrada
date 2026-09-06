@@ -152,3 +152,31 @@
     }
   }
 }
+
+/*
+ * ─── Adresní formulář na svislém telefonu ───────────────────────────────────
+ *
+ * Osm polí pod sebou po 55px je 440px jen na vstupy — a to je nejdelší část
+ * celé pokladny. Dvojice, které se do poloviny šířky vejdou, jdou vedle sebe:
+ * jméno s příjmením a PSČ s městem. Ulice, firma a země zůstávají přes celou —
+ * dlouhé hodnoty a rozbalovací seznam se do 168px nevejdou čitelně.
+ *
+ * Až od 380px šířky: na užších telefonech by z poloviny zbylo ~135px a pole
+ * by se plnila po slabikách. Tam zůstává jeden sloupec.
+ *
+ * `.root .formGrid` kvůli specificitě — základní pravidlo je vnořené a plochý
+ * `.formGrid` by prohrál.
+ */
+@media (orientation: portrait) and (min-width: 380px) and (max-width: 599.98px) {
+  .root .formGrid {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 0.5rem;
+  }
+
+  /* Adresa, Společnost a Země doručení — pořadí polí viz index.tsx. */
+  .root .formGrid > *:nth-child(3),
+  .root .formGrid > *:nth-child(4),
+  .root .formGrid > .countryField {
+    grid-column: 1 / -1;
+  }
+}

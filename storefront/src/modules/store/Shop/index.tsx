@@ -1,9 +1,14 @@
 "use client"
 
 import { listStoreCatalogue } from "@lib/data/products"
-// import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
+import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import type { HttpTypes } from "@medusajs/types"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  clearShopSnapshot,
+  peekShopSnapshot,
+  saveShopSnapshot,
+} from "./restore"
 import FilterPanel from "./components/FilterPanel"
 import ProductGrid from "./components/ProductGrid"
 // import ShopHero from "./components/ShopHero"
@@ -68,8 +73,35 @@ export default function ECom({
   const initialQuery = useRef(true)
   const requestSequence = useRef(0)
   const filterTrigger = useRef<HTMLElement | null>(null)
+  /**
+   * Běží obnova stavu? Dokud ano, sdílený dotaz mlčí — výpis si načítá ona.
+   *
+   * Ne „přeskoč příští dotaz": React ve vývoji efekty spouští dvakrát, takže
+   * jednorázové přeskočení se vyčerpalo na běhu, který o obnovu vůbec nešlo.
+   * A ne porovnání filtrů: sdílený dotaz se v tom dvojím kole dostane ke slovu
+   * dřív, než se obnovené filtry projeví ve stavu, takže by vlastní obnovu
+   * považoval za cizí zásah. Obojí končilo výpisem sraženým na prvních
+   * šestnáct kusů.
+   */
+  const restoreInFlight = useRef(false)
+  /** Sáhl člověk na filtr dřív, než se obnova vrátila? Pak má přednost on. */
+  const restoreCancelled = useRef(false)
+  /** Obnova už běží — druhé spuštění efektu ji nemá rozjíždět znovu. */
+  const restoreStarted = useRef(false)
+  /** Obnovený výpis už na stránce je — serverový ho nemá čím nahradit. */
+  const restored = useRef(false)
 
   useEffect(() => {
+    /*
+     * Po obnovené návštěvě ne. Při kroku zpět router vykreslí stránku znovu
+     * a `initialProducts` přijdou jako nové pole — tenhle efekt se proto
+     * spustí ZNOVU, už po obnově, a přepsal jí načtený výpis zpátky na první
+     * stránku: naměřeno 16 kusů místo 48, které se stihly načíst a vykreslit.
+     * Serverový výpis je v tu chvíli stejně mimo — patří k filtrům z adresy,
+     * ne k těm, které si člověk nastavil a které obnova právě vrátila.
+     */
+    if (restored.current) return
+
     setProducts(initialProducts)
     setResultCount(totalCount ?? initialProducts.length)
     setAllLoaded(
@@ -77,11 +109,118 @@ export default function ECom({
     )
   }, [initialProducts, totalCount])
 
-  const updateFilters = useCallback((patch: Partial<ShopFilters>) => {
-    setFilters((current) => ({ ...current, ...patch }))
+  /*
+   * ─── Návrat z výrobku ───────────────────────────────────────────────────
+   *
+   * Snímek se ukládá při kliknutí na kartu výrobku (posluchač níž) a tady se
+   * spotřebuje. Načte se v JEDNOM dotazu tolik kusů, kolik jich bylo předtím
+   * — čtyři kliknutí na „Načíst další" tedy neznamenají čtyři dotazy —,
+   * a teprve až jsou vykreslené, vrátí se scroll. Dřív by neměl kam: stránka
+   * je v tu chvíli vysoká šestnáct kusů a scroll by se ořízl na její konec.
+   *
+   * `restoreFilters` říká sdílenému dotazu, že tenhle filtr si obsluhuje
+   * obnova — jinak by načetl první stránku a tenhle výsledek přebil.
+   * `restoreCancelled` hlídá opačný směr: sáhne-li člověk na filtr dřív, než
+   * se obnova vrátí, má přednost on a výsledek obnovy se zahodí.
+   *
+   * Bez rušení při odpojení: React ve vývoji efekt spustí, uklidí a spustí
+   * znovu, takže úklid rušící rozdělaný dotaz by obnovu zabil pokaždé. Hlídá
+   * to `restoreStarted` — rozjede se jednou za život komponenty.
+   */
+  useEffect(() => {
+    if (restoreStarted.current) return
+
+    const snapshot = peekShopSnapshot()
+    if (!snapshot) return
+
+    restoreStarted.current = true
+    restoreInFlight.current = true
+    setFilters(snapshot.filters)
+    setRefreshing(true)
+    setLoadError(false)
+
+    ;(async () => {
+      try {
+        const payload = await listStoreCatalogue({
+          filters: snapshot.filters,
+          limit: Math.max(snapshot.loaded, PRODUCT_LIMIT),
+          offset: 0,
+          countryCode,
+        })
+        if (restoreCancelled.current) return
+
+        restored.current = true
+        setProducts(payload.products)
+        setResultCount(payload.count)
+        setAllLoaded(payload.products.length >= payload.count)
+
+        window.requestAnimationFrame(() =>
+          scrollWithLenis(snapshot.scrollY, { immediate: true })
+        )
+      } catch (error) {
+        if (restoreCancelled.current) return
+        console.error("Obnova stavu obchodu selhala", error)
+        setLoadError(true)
+      } finally {
+        /* Snímek platí pro jeden návrat — a padá i když se dotaz nepovedl,
+           ať se stará poloha nevrací při příští návštěvě obchodu. */
+        clearShopSnapshot()
+        restoreInFlight.current = false
+        setRefreshing(false)
+      }
+    })()
+    // Jen při příchodu na stránku; `countryCode` se za života komponenty nemění.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const resetFilters = useCallback(() => setFilters(emptyFilters), [])
+  /*
+   * Snímek se pořizuje v okamžiku odchodu, ne průběžně: posluchač v zachytávací
+   * fázi na obalu katalogu chytí kliknutí na kteroukoli kartu výrobku dřív, než
+   * router odejde. Jedno místo pro všechny odkazy v mřížce — karty by jinak
+   * musely dostat callback a vědět, že nějaká paměť obchodu existuje.
+   */
+  useEffect(() => {
+    const root = catalogueRef.current
+    if (!root) return
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target?.closest?.("a[href*='/products/']")) return
+
+      saveShopSnapshot({
+        filters,
+        loaded: products.length,
+        scrollY: window.scrollY,
+      })
+    }
+
+    root.addEventListener("click", handleClick, true)
+    return () => root.removeEventListener("click", handleClick, true)
+  }, [filters, products.length])
+
+  /*
+   * Od téhle chvíle platí volba člověka, ne uložený snímek. Sedí to na
+   * `updateFilters`/`resetFilters`, protože tudy vede KAŽDÝ zásah do filtrů —
+   * panel, štítky i řazení a hledání v liště. Doběhne-li obnova až po nich,
+   * výsledek se zahodí místo aby jejich volbu přepsal.
+   */
+  const cancelRestore = useCallback(() => {
+    restoreInFlight.current = false
+    restoreCancelled.current = true
+  }, [])
+
+  const updateFilters = useCallback(
+    (patch: Partial<ShopFilters>) => {
+      cancelRestore()
+      setFilters((current) => ({ ...current, ...patch }))
+    },
+    [cancelRestore]
+  )
+
+  const resetFilters = useCallback(() => {
+    cancelRestore()
+    setFilters(emptyFilters)
+  }, [cancelRestore])
   const openFilters = useCallback(() => {
     filterTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -116,6 +255,14 @@ export default function ECom({
       initialQuery.current = false
       return
     }
+
+    /* Dokud běží obnova stavu, výpis si obsluhuje ona — a rovnou celý, ne jen
+       první stránku. Zruší ji až skutečný zásah člověka (`cancelRestore`
+       v `updateFilters`/`resetFilters`), ne tenhle efekt: ten se ve vývoji
+       spustí dřív, než se obnovené filtry stihnou projevit ve stavu, a
+       porovnávat hodnoty tu tedy znamená považovat vlastní obnovu za cizí
+       zásah — naměřeno jako druhý dotaz, který výpis srazil na 16 kusů. */
+    if (restoreInFlight.current) return
 
     const requestId = ++requestSequence.current
     const delay = filters.search.trim() ? 320 : 0

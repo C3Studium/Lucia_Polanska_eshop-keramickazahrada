@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import Input from "@modules/common/components/input"
+import PhoneInput from "@modules/common/components/phone-input"
 import React, { useState } from "react"
 import s from "./style.module.scss"
 
@@ -105,23 +106,27 @@ const BillingAddress = ({ cart, countryCode }: { cart: HttpTypes.StoreCart | nul
           value={routeCountry}
           data-testid="billing-country-select"
         />
-        <Input
-          label="Kraj / Okres"
-          name="billing_address.province"
-          autoComplete="address-level1"
-          value={formData["billing_address.province"]}
-          onChange={handleChange}
-          data-testid="billing-province-input"
-          className={s.input}
-          variant="contact"
-        />
-        <Input
+        {/* Kraj se v české verzi neptáme — určuje ho PSČ. Viz shipping-address. */}
+        {routeCountry !== "cz" && (
+          <Input
+            label="Kraj / Okres"
+            name="billing_address.province"
+            autoComplete="address-level1"
+            value={formData["billing_address.province"]}
+            onChange={handleChange}
+            data-testid="billing-province-input"
+            className={s.input}
+            variant="contact"
+          />
+        )}
+        {/* Událost z PhoneInputu nese jen target.name/value — to, co handleChange čte. */}
+        <PhoneInput
           label="Telefon"
           name="billing_address.phone"
-          type="tel"
-          autoComplete="tel"
           value={formData["billing_address.phone"]}
-          onChange={handleChange}
+          onChange={(e) =>
+            handleChange(e as React.ChangeEvent<HTMLInputElement>)
+          }
           data-testid="billing-phone-input"
           className={s.input}
           variant="contact"

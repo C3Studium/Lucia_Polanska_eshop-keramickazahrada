@@ -116,6 +116,15 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const result = await paymentModule.getWebhookActionAndData(event)
 
     if (result.action === "not_supported" || !result.data?.session_id) {
+      /*
+       * Oznámení, které se nepodařilo přiřadit — cizí, podvržené, nebo bez
+       * transakce, kterou ComGate zná. To není naše chyba a opakování ho
+       * nespraví: 400 říká „nepatří nám", ať se pokusy nekupí v logu vedle
+       * skutečných selhání. Důvod už vypsal provider.
+       */
+      req.scope
+        .resolve("logger")
+        .warn("Comgate push notification was not recognised")
       return res.status(400).json({ received: false })
     }
 

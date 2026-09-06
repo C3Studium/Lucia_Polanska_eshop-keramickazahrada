@@ -381,19 +381,68 @@
     backdrop-filter: blur(7px);
   }
 
+  /*
+   * O kolik šuplík stojí nad spodní hranou. Na svislých telefonech ho tam
+   * čeká spodní lišta, takže se zvedá (viz stop níž) — a to je jedno číslo
+   * čtené na TŘECH místech, protože posunout jen `bottom` nestačí:
+   *
+   *   · `bottom` … kde šuplík stojí otevřený,
+   *   · `transform` … zavřený musí být pořád CELÝ pod hranou. Dřív to bylo
+   *     `100% + 16px`, což ho schová jen dokud stojí 8px nade dnem; se
+   *     zvednutým dnem by ho 7.5vh koukalo,
+   *   · `max-height` … strop se o tolik sníží, takže horní hrana zůstane, kde
+   *     byla, a šuplík nevyjede pod navbar.
+   */
   .root {
+    --drawer-lift: 0px;
+
     position: fixed;
     top: auto;
     right: 8px;
-    bottom: 8px;
+    bottom: calc(8px + var(--drawer-lift));
     left: 8px;
     z-index: 1100;
     width: auto;
-    max-height: 84dvh;
-    transform: translateY(calc(100% + 16px));
+    /*
+     * Skoro celá obrazovka — a druhý člen je pojistka, ne druhé číslo: říká
+     * „až k horní hraně, s 8px mezerou", takže se strop sám sníží, kdyby ho
+     * zvednuté dno vytlačilo nad okno. Na 390×844 z toho vyjde 90.6dvh (horní
+     * hrana na 8px), na tabletu nastojato, kde se nic nezvedá, se uplatní
+     * strop 92dvh a nad šuplíkem zůstane vidět stránka.
+     */
+    max-height: min(92dvh, calc(100dvh - 16px - var(--drawer-lift)));
+    transform: translateY(calc(100% + 16px + var(--drawer-lift)));
     transition: transform .55s cubic-bezier(.76,0,.24,1);
   }
 
   .open { transform: translateY(0); }
   .close { display: block; }
+}
+
+/*
+ * Svislé telefony: šuplík stojí 5 % pod horní hranou a měří 92.5dvh.
+ *
+ * Ta dvě čísla určují i třetí: pod šuplíkem zbývá 100 − 5 − 92.5 = 2.5dvh, a to
+ * je `--drawer-lift`, kterou čte `bottom` (kde stojí otevřený) i zavírací
+ * posun v bloku výš (aby zavřený zůstal CELÝ pod hranou — bez ní by ho
+ * v zavřeném stavu koukalo pár pixelů). Horní hrana je tak dopočet, ne čtvrté
+ * číslo, které by se s ostatními muselo shodovat.
+ *
+ * `height`, ne `max-height`: se stropem se šuplík dělal podle obsahu a na
+ * vyšších telefonech na něj nedosáhl — naměřeno 84.9dvh na 390×844 —, takže
+ * stál pokaždé jinde.
+ *
+ * Vlastní dotaz místo `v(xs)`: ten by platil i pro tablety nastojato a musel
+ * by se pod nimi zase rušit. Tenhle pás je týž, jaký drží zbytek webu pro
+ * svislé telefony (viz ContactDialog).
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root {
+    --drawer-lift: 2.5dvh;
+
+    top: auto;
+    bottom: var(--drawer-lift);
+    height: 92.5dvh;
+    max-height: 92.5dvh;
+  }
 }

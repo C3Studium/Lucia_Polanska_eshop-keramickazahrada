@@ -1,6 +1,7 @@
 "use client"
 
 import WebButton from "@modules/common/components/Buttons/webButton"
+import PhoneInput from "@modules/common/components/phone-input"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
@@ -308,15 +309,20 @@ export default function ContactDialogPanel({
                     placeholder="vas@email.cz"
                     required
                   />
-                  <Field
-                    id={`${fieldId}-phone`}
-                    name="phone"
-                    label="Telefon"
-                    type="tel"
-                    autoComplete="tel"
-                    placeholder="+420"
-                    hint="nepovinné"
-                  />
+                  {/* Předvolba jede rozbaleníkem PhoneInputu (výchozí podle země
+                      v adrese), takže placeholder „+420" ztratil práci. */}
+                  <div className={styles.field}>
+                    <label htmlFor={`${fieldId}-phone`}>
+                      Telefon <i>(nepovinné)</i>
+                    </label>
+                    <PhoneInput
+                      id={`${fieldId}-phone`}
+                      name="phone"
+                      className={styles.phoneRow}
+                      inputClassName={styles.input}
+                      placeholder="603 123 456"
+                    />
+                  </div>
                 </div>
 
                 <div className={`${styles.field} ${styles.message}`}>

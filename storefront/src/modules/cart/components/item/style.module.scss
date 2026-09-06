@@ -403,3 +403,69 @@
   .title { font-size: 1.65rem; }
   .options { font-size: 13px; }
 }
+
+/*
+ * ─── Svislé telefony: řádek na polovinu ─────────────────────────────────────
+ *
+ * Blok výš dává řádku 124px náhled, 24px odsazení a nadpis 1.65rem — dohromady
+ * naměřených 236px na kus. Tři kusy tedy zabraly 708px, tři čtvrtiny
+ * obrazovky, a člověk se k souhrnu prorolovával přes výpis, ve kterém stejně
+ * jen kontroluje, co si dal. Řádek proto na telefonu sedne na ~120px:
+ * menší náhled, menší nadpis, těsnější odsazení a pryč se štítkem
+ * „Z ATELIÉRU", který je na každém řádku stejný a o zboží nic neříká.
+ *
+ * Ovládací řádek (množství, cena, odebrat) se nezmenšuje — jeho výšku drží
+ * dotyková podlaha 44px z globals.scss a ta je tu ta správná hranice.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .row:not(.previewRow) {
+    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-rows: auto;
+    min-height: 0;
+  }
+
+  .row:not(.previewRow) .cellThumb {
+    padding: 12px 12px 12px 0;
+    align-self: start;
+  }
+
+  .row:not(.previewRow) .cellTitle {
+    padding: 12px 2px 12px 12px;
+  }
+
+  .kicker {
+    display: none;
+  }
+
+  .title {
+    font-size: 1.0625rem;
+    line-height: 1.25;
+    /* Dva řádky a dost — názvy jako „Keramické zahradní pítko s koupajícím se
+       ptáčkem 35cm" by jinak samy nafoukly řádek zpátky. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .options {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .mobileControls {
+    margin-top: 8px;
+    gap: 8px;
+  }
+}
+
+/*
+ * Rozměry se vypisují jen u kusů, které je v metadatech mají — u ostatních
+ * zůstával prázdný blok, a ten si i tak bral svoje odsazení: naměřeno 14px
+ * ničeho v každém řádku košíku. Platí všude, ne jen na telefonu; prázdné místo
+ * po nenapsaném údaji není o nic správnější na širokém okně.
+ */
+.dimensions:empty {
+  display: none;
+}

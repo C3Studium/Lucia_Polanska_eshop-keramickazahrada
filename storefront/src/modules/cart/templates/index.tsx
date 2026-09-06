@@ -1,3 +1,4 @@
+import CheckoutBar from "./checkout-bar"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -42,6 +43,7 @@ const CartTemplate = async ({
     }))
 
   return (
+    <>
     <div className={s.root}>
       <div className={s.container} data-testid="cart-container">
         {cart?.items?.length ? (
@@ -93,6 +95,18 @@ const CartTemplate = async ({
         )}
       </div>
     </div>
+
+    {/*
+      * Částka a cesta k pokladně na dosah — jen na svislých telefonech, kde se
+      * souhrn složí až pod výpis.
+      *
+      * MIMO `.root`: ten má `overflow: clip`, a ten na rozdíl od `hidden`
+      * ořezává i potomky s `position: fixed`. Uvnitř byl pruh vidět jen nahoře
+      * a při odrolování dolů zmizel — tedy přesně tam, kde ho je potřeba
+      * nejvíc.
+      */}
+    {cart?.items?.length ? <CheckoutBar cart={cart} /> : null}
+    </>
   )
 }
 

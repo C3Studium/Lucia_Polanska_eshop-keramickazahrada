@@ -1,6 +1,7 @@
 "use client"
 
 import { setShippingMethod } from "@lib/data/cart"
+import PhoneInput from "@modules/common/components/phone-input"
 import {
   setExpressAddress,
   setExpressCartMetadata,
@@ -279,15 +280,17 @@ export const Shipping = ({
           onChangeAction={(value) => updateField("email", value)}
           wide
         />
-        <Field
-          label="Telefon"
-          type="tel"
-          name="tel"
-          autoComplete="tel"
-          value={address.phone}
-          onChangeAction={(value) => updateField("phone", value)}
-          wide
-        />
+        {/* Předvolba přes PhoneInput; do stavu jde složené číslo, stejně jako
+            dřív jeden řetězec. */}
+        <label className={`${styles.field} ${styles.fieldWide}`}>
+          <span>Telefon</span>
+          <PhoneInput
+            name="tel"
+            value={address.phone}
+            onChange={(e) => updateField("phone", e.target.value)}
+            required
+          />
+        </label>
         <Field
           label="Ulice a číslo"
           name="street-address"

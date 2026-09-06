@@ -23,7 +23,8 @@ type SummaryProps = {
   }
 }
 
-function getCheckoutStep(cart: HttpTypes.StoreCart) {
+/** Kam pokladna otevře — čte to i lepkavý pruh na telefonu (checkout-bar). */
+export function getCheckoutStep(cart: HttpTypes.StoreCart) {
   if (!cart?.shipping_address?.address_1 || !cart.email) {
     return "address"
   } else if (cart?.shipping_methods?.length === 0) {
@@ -38,9 +39,30 @@ const Summary = ({ cart }: SummaryProps) => {
 
   return (
     <div className={s.root}>
-      <p className={s.eyebrow}>Objednávka</p>
-      <h2 className={s.title}>Kolik to dělá</h2>
-      <DiscountCode cart={cart} />
+      {/*
+        * Obal, který na širokém okně NEEXISTUJE: `.head` i `.heading` mají
+        * `display: contents`, takže se jejich děti skládají do sloupce souhrnu
+        * přesně jako dřív. Teprve na svislém telefonu se z něj stane řádek,
+        * kde vedle nadpisu sedí slevový kód — souhrn tam byl na výšku delší
+        * než výpis, ke kterému patří.
+        */}
+      <div className={s.head}>
+        <div className={s.heading}>
+          <p className={s.eyebrow}>Objednávka</p>
+          {/* Dvě znění, přepínaná zobrazením — ne `aria-hidden`: to by na
+              telefonu nechalo nadpis bez přístupného textu, protože skryté
+              „Kolik to dělá" ze stromu vypadne. Čtečka přečte to, co je vidět.
+              Krátké „Souhrn" tu není jen kvůli místu na sebe: vedle nadpisu
+              teď stojí slevový kód a jeho rozbalené pole potřebuje šířku. */}
+          <h2 className={s.title}>
+            <span className={s.titleWide}>Kolik to dělá</span>
+            <span className={s.titleNarrow}>Souhrn</span>
+          </h2>
+        </div>
+        <div className={s.discountSlot}>
+          <DiscountCode cart={cart} />
+        </div>
+      </div>
       <Divider />
       <CartTotals totals={cart} />
       <LinkButton

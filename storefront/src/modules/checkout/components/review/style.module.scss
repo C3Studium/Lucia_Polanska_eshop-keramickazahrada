@@ -317,3 +317,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/*
+ * ─── Krok pokladny na svislém telefonu ──────────────────────────────────────
+ *
+ * Sekce byly stavěné pro sloupec vedle souhrnu: 58px levá lišta na pořadové
+ * číslo a nadpis, jehož podlaha 2rem se na telefonu láme přes dva až tři řádky
+ * — samotné „Doručovací a fakturační adresa" zabralo 64px, než začal formulář.
+ * Celá pokladna měřila 4,2 obrazovky.
+ *
+ * Lišta se zúží na 34px (číslo je drobné, víc místa nepotřebuje) a nadpis
+ * sedne na velikost, kterou má zbytek telefonních nadpisů. Pořadí kroků teď
+ * nese řádek bublinek nahoře (step-bubbles), takže čísla u kroků jsou už jen
+ * orientační značka, ne jediný nositel informace.
+ *
+ * Zápis kopíruje vnoření původních pravidel — plochý `.heading` by proti
+ * `.root .headerRow .heading` prohrál specificitou a nadpis by zůstal velký.
+ */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root {
+    padding-left: 2.125rem;
+    padding-bottom: 1.5rem;
+
+    &::before {
+      font-size: 0.6875rem;
+      letter-spacing: 0.14em;
+    }
+
+    .heading {
+      font-size: 1.375rem;
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+    }
+  }
+}

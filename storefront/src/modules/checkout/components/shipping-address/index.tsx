@@ -2,6 +2,7 @@ import { HttpTypes } from "@medusajs/types"
 import { motion, type Variants } from "framer-motion"
 import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
+import PhoneInput from "@modules/common/components/phone-input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
@@ -255,16 +256,27 @@ const ShippingAddress = ({
           value={routeCountry}
           data-testid="shipping-country-select"
         />
-        <Input
-          label="Kraj / Okres"
-          name="shipping_address.province"
-          autoComplete="address-level1"
-          value={formData["shipping_address.province"]}
-          onChange={handleChange}
-          data-testid="shipping-province-input"
-          className={styles.input}
-          variant="contact"
-        />
+        {/*
+          * Kraj se v české verzi obchodu neptáme — PSČ ho určuje samo a
+          * dopravci ho z něj čtou. Je to políčko navíc na formuláři, který je
+          * na telefonu stejně nejdelší částí pokladny.
+          *
+          * Zemi drží adresa (`routeCountry`), ne výběr ve formuláři, takže se
+          * to za běhu nemůže změnit — a na `/sk`, `/de` a dalších verzích, kde
+          * kraj něco znamená, pole zůstává.
+          */}
+        {routeCountry !== "cz" && (
+          <Input
+            label="Kraj / Okres"
+            name="shipping_address.province"
+            autoComplete="address-level1"
+            value={formData["shipping_address.province"]}
+            onChange={handleChange}
+            data-testid="shipping-province-input"
+            className={styles.input}
+            variant="contact"
+          />
+        )}
       </div>
       <div className={styles.checkboxRow}>
         <Checkbox
@@ -289,13 +301,15 @@ const ShippingAddress = ({
           className={styles.input}
           variant="contact"
         />
-        <Input
+        {/* Událost z PhoneInputu nese jen target.name/value — přesně to,
+            co handleChange čte; typ se proto jen zúží přetypováním. */}
+        <PhoneInput
           label="Telefon"
           name="shipping_address.phone"
-          type="tel"
-          autoComplete="tel"
           value={formData["shipping_address.phone"]}
-          onChange={handleChange}
+          onChange={(e) =>
+            handleChange(e as React.ChangeEvent<HTMLInputElement>)
+          }
           data-testid="shipping-phone-input"
           className={styles.input}
           variant="contact"

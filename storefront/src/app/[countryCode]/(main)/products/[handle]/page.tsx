@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import ScrollToTopOnEnter from "@lib/helpers/scrollToTopOnEnter"
 import {
   // BundleProduct, // Re-enable with the static preview block below.
   getBundleProduct,
@@ -220,6 +221,8 @@ export default async function ProductPage(props: Props) {
 
   return (
     <main>
+      {/* Karta výrobku začíná vždy nahoře — i po kroku vpřed v historii. */}
+      <ScrollToTopOnEnter />
       <Product
         product={pricedProduct}
         region={region}

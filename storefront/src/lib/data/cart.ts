@@ -51,7 +51,21 @@ export async function retrieveCart(cartId?: string) {
       next,
       cache: "force-cache",
     })
-    .then(({ cart }) => cart)
+    /*
+     * Dokončený košík je pro obchod tentýž případ jako žádný košík.
+     *
+     * Objednávku teď zakládá server z ověřeného oznámení o platbě, ne prohlížeč
+     * — a ten se k „dokončeno" nemusí vůbec dostat: zákazník zavře záložku na
+     * bráně, nebo se z ní vrátí až po chvíli. Cookie ale pořád ukazuje na ten
+     * košík, a ten je od té chvíle dokončený a nezměnitelný. Bez téhle podmínky
+     * by mu odznak u ikony dál ukazoval už koupené kusy, otevřel je na stránce
+     * košíku a přidání dalšího kusu by skončilo chybou od Medusy.
+     *
+     * Vrací se `null`, ne smazaná cookie: čte se to i při vykreslování, kde
+     * Next zápis do cookies zakazuje. Nový košík si založí `getOrSetCart` při
+     * nejbližším přidání do košíku a cookie přepíše.
+     */
+    .then(({ cart }) => (cart?.completed_at ? null : cart))
     .catch(() => null)
 }
 
@@ -599,7 +613,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         postal_code: formData.get("shipping_address.postal_code"),
         city: formData.get("shipping_address.city"),
         country_code: formData.get("shipping_address.country_code"),
-        province: formData.get("shipping_address.province"),
+        /* Kraj se v české verzi neptáme (určuje ho PSČ), takže pole ve formuláři
+           chybí a `get` vrací null. Prázdný řetězec je totéž, co soubor posílá
+           za `address_2` — nesbíraný údaj, ne chybějící. */
+        province: formData.get("shipping_address.province") ?? "",
         phone: formData.get("shipping_address.phone"),
       },
       email: formData.get("email"),
@@ -618,7 +635,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         postal_code: formData.get("billing_address.postal_code"),
         city: formData.get("billing_address.city"),
         country_code: formData.get("billing_address.country_code"),
-        province: formData.get("billing_address.province"),
+        province: formData.get("billing_address.province") ?? "",
         phone: formData.get("billing_address.phone"),
       }
     await updateCart(data)

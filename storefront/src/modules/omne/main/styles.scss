@@ -50,32 +50,41 @@
 
     position: relative;
     width: 100%;
-    overflow: hidden;
-    padding: 0;
-    background:
-        radial-gradient(circle at 86% 22%, rgb(var(--cream-06-rgb) / .2), transparent 27%),
-        linear-gradient(118deg, rgb(var(--cream-06-rgb) / .07), transparent 42%);
-
-    /* Hero soupeří o výšku obrazovky, takže výšku nese JEDNA svislá míra a
-       nula breakpointů.
-
-       Stálo tu `min-height: 800px` a pod ním dva stopy, které ho zase rušily
-       (`phs-h`, `lt-h`) — tedy velikost bydlící v breakpointu. Převod podlahy
-       na `50rem` to ještě zhoršil: ramp nad 1921 zvedne rem na 21.33px, takže
-       podlaha vyroste na 1066px, zatímco 92svh visí na výšce okna. Na 2560x1080
-       podlaha výšku přerostla a hero měřilo naměřených 1066.6px v okně vysokém
-       1080 (na 1920x1080 je podlaha 800px, tedy neškodná — proto to na sedmi
-       stopech fáze A nebylo vidět).
-
-       Podlaha přitom nikde nechyběla: 92svh překročí 800px už při okně 870px
-       vysokém a pod tím ji `lt-h` stejně rušil, takže na žádném landscape stopu
-       nikdy nevázala. Navíc kazila i 1024x768 (tablet na šířku), kde dělala
-       hero 800px vysoké v okně 768. Telefonní bloky níž si min-height nastavují
-       samy, takže na nich se nezměnilo nic. */
-    height: 92svh;
 
     &::after{
         display: none;
+    }
+
+    /* Rám hero — nese VŠECHNY krabicové vlastnosti staré sekce (výšku,
+       overflow, pozadí), aby se procentní geometrie konzumentů nahoře nehnula
+       ani o pixel. Sekce sama je teď jen obal 200vh timeline s připnutou
+       scénou (viz .aboutMe__sticky níž) — stejné dělení jako úvod výroby. */
+    .aboutMe__frame{
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        padding: 0;
+        background:
+            radial-gradient(circle at 86% 22%, rgb(var(--cream-06-rgb) / .2), transparent 27%),
+            linear-gradient(118deg, rgb(var(--cream-06-rgb) / .07), transparent 42%);
+
+        /* Hero soupeří o výšku obrazovky, takže výšku nese JEDNA svislá míra a
+           nula breakpointů.
+
+           Stálo tu `min-height: 800px` a pod ním dva stopy, které ho zase rušily
+           (`phs-h`, `lt-h`) — tedy velikost bydlící v breakpointu. Převod podlahy
+           na `50rem` to ještě zhoršil: ramp nad 1921 zvedne rem na 21.33px, takže
+           podlaha vyroste na 1066px, zatímco 92svh visí na výšce okna. Na 2560x1080
+           podlaha výšku přerostla a hero měřilo naměřených 1066.6px v okně vysokém
+           1080 (na 1920x1080 je podlaha 800px, tedy neškodná — proto to na sedmi
+           stopech fáze A nebylo vidět).
+
+           Podlaha přitom nikde nechyběla: 92svh překročí 800px už při okně 870px
+           vysokém a pod tím ji `lt-h` stejně rušil, takže na žádném landscape stopu
+           nikdy nevázala. Navíc kazila i 1024x768 (tablet na šířku), kde dělala
+           hero 800px vysoké v okně 768. Telefonní bloky níž si min-height nastavují
+           samy, takže na nich se nezměnilo nic. */
+        height: 92svh;
     }
 
     .aboutHeroShaderStage,
@@ -395,10 +404,13 @@
 
     }
 
-    > .portrait__caption{
+    /* Popisek bydlí UVNITŘ karty portrétu (dřív `> .portrait__caption` na
+       sekci): stejné místo — 1.125rem/1rem od rohu karty — ale mizí spolu
+       s ní, když ji při růstu překryje deska příběhu s vlastním popiskem. */
+    .Images__content .portrait__caption{
         position: absolute;
-        right: calc(var(--hero-portrait-right) + 1.125rem);
-        bottom: calc(var(--hero-portrait-bottom) + 1rem);
+        right: 1.125rem;
+        bottom: 1rem;
         z-index: 6;
         color: rgb(var(--white-rgb) / .86);
         font-size: 0.75rem;
@@ -457,8 +469,10 @@
     }
 
     @include below-px(900px) {
-        height: 94svh;
-        min-height: 780px;
+        .aboutMe__frame{
+            height: 94svh;
+            min-height: 780px;
+        }
 
         /* Jen jiný obdélník, ne jiná sada konzumentů — viz proměnné nahoře.
            Portrét: původní `width: min(42vw, 340px)` převedený poměrem 297/410
@@ -492,9 +506,9 @@
             }
         }
 
-        > .portrait__caption{
-            right: calc(var(--hero-portrait-right) + 13px);
-            bottom: calc(var(--hero-portrait-bottom) + 13px);
+        .Images__content .portrait__caption{
+            right: 13px;
+            bottom: 13px;
         }
 
         .about__chapterTransition{
@@ -503,24 +517,61 @@
     }
 
     @include below-px(560px) {
-        height: 860px;
-        min-height: 860px;
+        /*
+         * Rám je přesně obrazovka, ne 860px.
+         *
+         * Hero se tu připíná (viz `v(xs)` dole) a připnutá scéna je vysoká
+         * `100svh` — rám vyšší než ona by si nechal spodek uříznout
+         * `overflow: hidden`. Dřív mu 860px trčelo pod hranu a bylo tam vidět
+         * zahájení příběhu; teď hero drží obrazovku a příběh začne, až když
+         * má.
+         */
+        .aboutMe__frame{
+            height: 100svh;
+            /* Podlahu 780px dědí blok pro ≤900px a na krátkém telefonu vyhraje
+               nad 100svh: naměřeno 780px v okně vysokém 640, takže spodních
+               140px včetně „01 · Můj příběh" leželo pod hranou připnuté scény
+               a `overflow: hidden` je uřízl. */
+            min-height: 0;
+        }
 
-        --hero-img-top: 9%;
+        /*
+         * Dvojice karet přes sebe — a obě míry ve stejné ose.
+         *
+         * Portrét měl výšku odvozenou od ŠÍŘKY okna (`min(48vw, 245px)`),
+         * takže na krátkém telefonu zabíral polovinu výšky a na vysokém
+         * třetinu — kompozice se s poměrem stran rozjížděla. Teď je i on
+         * v `svh` jako široká karta, takže dvojice drží tvar na každém
+         * telefonu. Šířku dopočítá `aspect-ratio`.
+         *
+         * Široká karta se zmenšila (93→72 % šířky, 46→32 % výšky), portrét
+         * povyrostl (48vw ≈ 187px → 40svh ≈ 245px na 844) a posunul se nahoru
+         * tak, aby jeho horní hrana zajela pod pravý dolní roh té široké —
+         * překryv je ~165×68 px na 390×844. `--hero-portrait-bottom` je proto
+         * dopočet, ne další nezávislé číslo: horní hrana portrétu sedí na 33 %
+         * a spodní hrana široké karty na 41 %.
+         *
+         * POZOR: tytéž obdélníky kreslí shader v `getAboutCardRects()`
+         * (AboutHeroShader.tsx, větev `width <= 560`). Změna tady se musí
+         * promítnout i tam.
+         */
+        --hero-img-top: 12%;
         --hero-img-left: 3.5%;
-        --hero-img-w: 93%;
-        --hero-img-h: 46%;
-        --hero-portrait-right: 18px;
-        --hero-portrait-bottom: 5%;
-        --hero-portrait-h: calc(min(48vw, 245px) * 410 / 297);
+        --hero-img-w: 72%;
+        --hero-img-h: 32%;
+        --hero-portrait-right: 4%;
+        --hero-portrait-h: 40svh;
+        --hero-portrait-bottom: calc(65% - var(--hero-portrait-h));
 
         .aboutHeroShaderFallbackImage,
         .aboutHeroShaderShadows i{
             border-radius: 15px;
         }
 
+        /* Pod navbar, ne za něj: ten sahá na telefonu do ~68px a 5.5 % z 844
+           je 46. Karta pod tím startuje na 12 %. */
         .about__eyebrow{
-            top: 5.5%;
+            top: 8.5%;
             left: 4%;
         }
 
@@ -528,14 +579,28 @@
             .image__intro{
                 border-radius: 18px;
 
+                /* Dva štítky přes celou šířku karty se do 281px nevejdou —
+                   „RUČNĚ TVOŘENO" se lámalo na dva řádky do nadpisu. Zůstává
+                   levý a linka, přesně jak to na úzkých oknech dělá hero
+                   výroby. */
+                .about__imageMeta span:last-child{
+                    display: none;
+                }
+
+                /* Spodní odsazení drží nadpis NAD portrétem, který teď zajíždí
+                   do pravého dolního rohu téhle karty. Portrét začíná na 33 %
+                   výšky okna, karta končí na 41 % — nadpis se proto musí zvednout
+                   o těch 8 %, jinak by mu portrét přejel druhý řádek. Ve vh,
+                   protože to, s čím soupeří, je výška okna. */
                 h1{
-                    font-size: clamp(3rem, 15vw, 4.8rem);
-                    padding: 22px;
+                    font-size: clamp(2.5rem, 11.5vw, 3.6rem);
+                    padding: 22px 22px clamp(4rem, 9vh, 6rem);
                 }
             }
 
+            /* Pod dvojici karet: portrét sahá na 75 % výšky. */
             .greetings{
-                top: 57%;
+                top: 78%;
                 left: 5%;
                 width: 51%;
                 min-height: 68px;
@@ -549,9 +614,9 @@
             border-radius: 15px;
         }
 
-        > .portrait__caption{
-            right: calc(var(--hero-portrait-right) + 12px);
-            bottom: calc(var(--hero-portrait-bottom) + 11px);
+        .Images__content .portrait__caption{
+            right: 12px;
+            bottom: 11px;
             font-size: 0.8125rem;
         }
 
@@ -563,6 +628,146 @@
             gap: 9px;
             font-size: 0.8125rem;
         }
+    }
+}
+
+/*
+ * ─── Předání do příběhu (viz index.tsx) ─────────────────────────────────────
+ *
+ * Hero jede ve 200vh timeline s připnutou scénou jako úvod výroby; příběh je
+ * pod něj podtažený (`margin-top: -104vh` v story/styles.scss) a scéna se na
+ * konci rozplyne na jeho už stojící snímek. Proto musí hero stát NAD příběhem:
+ * `.aboutPage > section` vnucuje z-index 1 se silnější specificitou, takže
+ * přebití potřebuje tutéž kotvu.
+ */
+.aboutPage > section.AboutMe{
+    z-index: 4;
+}
+
+.aboutMe__timeline{
+    position: relative;
+    width: 100%;
+}
+
+.aboutMe__sticky{
+    position: relative;
+    width: 100%;
+    /*
+     * Neprůhledná půda scény. Rám hero nese jen průhledné přechody — plnou
+     * barvu mu dřív dělal `.aboutPage` pod ním. Teď je ale pod hero podtažený
+     * příběh (z1 pod z4) a skrz průhlednou scénu prosvítal: naměřeno „Kořeny"
+     * skrz závoj na 0.93. Táž barva, kterou má stránka v této fázi scrollu
+     * (fázový trigger leží až ZA hero, takže tu drží konstantní sage) —
+     * a glaze/grain overlaye tu mají opacity 0, žádná textura se neztrácí.
+     */
+    background: var(--about-olive);
+}
+
+/* Stmívání do uhelné místnosti příběhu. Barvu řídí index.tsx po dráze přes
+   olivovou (viz komentář tam); tenhle prvek nese jen geometrii a žhavý odlesk,
+   aby poslední snímek hero byl k nerozeznání od pozadí `.aboutStory` pod ním. */
+.aboutMe__veil{
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    display: none;
+    pointer-events: none;
+
+    i{
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: radial-gradient(
+            circle at 28% 48%,
+            rgb(var(--clay-26-rgb) / .05),
+            transparent 27%
+        );
+    }
+}
+
+/* Rostoucí deska — vizuál `.aboutStory__image`, polohu a velikost řídí
+   index.tsx od portrétu (`--hero-portrait-*`) k desce scény (`--story-*`). */
+.aboutMe__storyProxy{
+    display: none;
+    z-index: 10;
+    margin: 0;
+    pointer-events: none;
+    will-change: clip-path, transform;
+    /* Týž stín, jaký nese karta portrétu — proxy ji na začátku růstu střídá
+       a bez něj by se při výměně na světlém podkladu stín ztratil. Na konci,
+       na uhelném pozadí, je tmavý stín stejně neviditelný, takže nemusí
+       nikam animovat. */
+    box-shadow: 0 34px 76px rgb(var(--black-03-rgb) / .22);
+}
+
+/* Náhled textu 1. kapitoly — geometrii sloupce nese `.aboutStory__copyStage`
+   (proměnné zveřejněné na `.aboutMe__sticky` v story/styles.scss). */
+.aboutMe__storyCopyStage{
+    display: none;
+    pointer-events: none;
+}
+
+/*
+ * Předání se zapíná na dvou místech — na šířku od 760 px a na svislých
+ * telefonech —, ale je to jedna a tatáž scéna, takže bydlí v mixinu. Mezi tím
+ * (telefon naležato, tablet nastojato) jede hero obyčejným tokem a příběh
+ * naskládaným seznamem; `$travel` je jediné, co se liší, protože palcem se
+ * scrolluje kratší dráha než kolečkem.
+ *
+ * Dvojice stop musí sedět na `matchMedia` v index.tsx — JS na ní přepíná
+ * odchody hero obsahu.
+ */
+@mixin aboutme-handoff($travel) {
+    .aboutMe__timeline{
+        height: $travel;
+    }
+
+    .aboutMe__sticky{
+        position: sticky;
+        top: 0;
+        height: 100svh;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .aboutMe__veil,
+    .aboutMe__storyProxy,
+    .aboutMe__storyCopyStage{
+        display: block;
+    }
+}
+
+@include from-px(760px) {
+    @include aboutme-handoff(200vh);
+}
+
+/*
+ * Svislé telefony. Kratší dráha a `svh` místo `vh`: připnutá scéna je vysoká
+ * `100svh` a podtažení příběhu je v `-104svh` — s `vh` by se ty dvě míry
+ * rozešly ve chvíli, kdy telefon schová adresní řádek, a s nimi i překryv,
+ * který šev schovává.
+ */
+@include v(xs) {
+    @include aboutme-handoff(180svh);
+}
+
+/* Tablety nastojato ukazují seznam příběhu — hero se vrací do toku. */
+@include v(md) {
+    .aboutMe__timeline{
+        height: auto;
+    }
+
+    .aboutMe__sticky{
+        position: relative;
+        top: auto;
+        height: auto;
+        overflow: visible;
+    }
+
+    .aboutMe__veil,
+    .aboutMe__storyProxy,
+    .aboutMe__storyCopyStage{
+        display: none;
     }
 }
 

@@ -3,6 +3,7 @@
 import styles from "./style.module.scss"
 
 import { RadioGroup, Radio } from "@headlessui/react"
+import { createPortal } from "react-dom"
 import { mergeCartMetadata, setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
@@ -686,7 +687,21 @@ const Shipping: React.FC<ShippingProps> = ({
             )
           })()}
 
-          {balikovnaOpen && (
+          {/*
+            * Dialog patří na `document.body`, ne sem.
+            *
+            * `position: fixed` se váže k oknu jen tehdy, když nad prvkem není
+            * předek s `transform` — a ten tu je hned dvakrát: krok pokladny
+            * i sekce `.ledger` dojíždějí nájezdovou animací s `both`, takže
+            * jim na konci zůstane `translateY(0)`. Transform, i nulový, dělá
+            * z prvku kotvu pro fixed potomky. Dialog se proto neroztáhl na
+            * okno, ale na ten sloupec: naměřeno 370×733 na pozici 30,169
+            * v okně 430×932.
+            *
+            * Portál ho vynese ven ze všech těch kotev naráz. Řeší to i široká
+            * okna, kde se dialog dosud centroval do sloupce místo do stránky.
+            */}
+          {balikovnaOpen && createPortal(
             <div
               className={styles.balikovnaModal}
               role="dialog"
@@ -719,7 +734,8 @@ const Shipping: React.FC<ShippingProps> = ({
                   className={styles.balikovnaFrame}
                 />
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* If packeta shipping method is selected but no pickup point chosen, show notice and reopen button */}

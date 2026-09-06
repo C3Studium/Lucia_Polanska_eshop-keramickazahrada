@@ -1,7 +1,10 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 
-/* The vyroba gallery's animation grammar, recut for the two O mně chapters.
-   Same charcoal room, same wipe-and-crossfade — a shorter walk through it. */
+/* The vyroba page's animation grammar, recut for the two O mně chapters and
+   mirrored: the hero's portrait grows into a plate standing on the right
+   (vyroba grows left→right into a plate on the left), the copy column takes
+   the left. Same charcoal room, same wipe-and-crossfade — a shorter walk
+   through it. */
 .AboutStory {
   --story-charcoal: var(--ink-05);
   --story-cream: var(--cream-06);
@@ -10,39 +13,79 @@
   position: relative;
   z-index: 2;
   width: 100%;
+  /* 200svh of travel, 100svh per chapter — the growth happens in the hero. */
   height: 300svh;
+  /*
+   * The hand-off, same trick as vyroba's gallery: the hero (omne/main) ends
+   * its timeline with the portrait grown into exactly this scene's plate and
+   * then dissolves — and this section is already pinned behind it, pulled up
+   * by a viewport (100vh of hero travel + the 4vh fade window). The first
+   * chapter needs no reveal of its own, so nothing in the overlap is missed.
+   */
+  margin-top: -104vh;
   color: var(--story-cream);
   background: var(--story-charcoal);
+}
+
+/*
+ * ─── Jedna geometrie předání, jedno místo ───────────────────────────────────
+ *
+ * Hero (omne/main) dojíždí svou rostoucí fotkou přesně na tuhle desku a jeho
+ * náhled textu kapitoly stojí přesně v tomhle sloupci. Proměnné proto bydlí
+ * i na `.aboutMe__sticky` — hero je dostane dědičností a svůj koncový stav
+ * ODVODÍ místo aby ho opsal; dvě sady čísel by se rozešly první změnou.
+ * (Stejný důvod, proč gallery výroby zveřejňuje `--process-*` na
+ * `.main__vyrobaSticky`.)
+ */
+.aboutStory,
+.aboutMe__sticky {
+  /* Ve `svh`, ne v procentech. Deska i sloupec textu stojí v boxech vysokých
+     100svh, takže tady jsou obě míry totéž — ALE hero na tuhle hodnotu
+     dojíždí rostoucí fotkou, která leží ve svém rámu vysokém 92svh, a tam by
+     15 % vyšlo o 11px jinam (naměřeno: 124 proti 135). Absolutní míra platí
+     v obou. */
+  --story-top: 15svh;
+  --story-h: clamp(20rem, 70vh, 46rem);
+  /* copy left 5% + gutter 5% + stage right 4.5% — vyroba's sides, swapped */
+  --story-side: 14.5%;
+  --story-copy-w: clamp(20.8rem, calc(28 * var(--fvw)), 34rem);
+  --story-stage-w: calc(100% - var(--story-copy-w) - var(--story-side));
+
+  /* Kam deska DOROSTE. Čtyři čísla, dva konzumenti: `.aboutStory__stage` je
+     na nich postavená a hero (omne/main) na ně dojíždí rostoucím portrétem,
+     takže se koncový stav animace nedá rozejít s tím, co pak stojí ve scéně.
+     Svislý telefon je přepíše na celý rám (viz `v(xs)` níž) a hero se
+     nemusí ptát, na čem běží — hodnoty dostane dědičností. */
+  --story-plate-top: var(--story-top);
+  --story-plate-right: 4.5%;
+  --story-plate-w: var(--story-stage-w);
+  --story-plate-h: var(--story-h);
 }
 
 .aboutStory {
   /* One geometry, one place.
 
-     `--story-copy-w` is the only width actually authored; the stage is what is left of the
-     frame after it, so the 5% gutter between photo and copy is structural and the two can
-     never overlap at any width. The middle term reads `--fvw` (one percent of `.pageFrame`)
-     rather than plain vw: above 1921 the frame is capped to 100svh*1.6 while vw still
-     measures the screen, and 4.5% + 58vw + 28vw + 5% came to 2400px inside a 2162px frame.
-     Below 1921 `--fvw` is exactly 1vw, so nothing under the threshold moves.
+     `--story-copy-w` (declared in the shared rule above) is the only width actually
+     authored; the stage is what is left of the frame after it, so the 5% gutter between
+     photo and copy is structural and the two can never overlap at any width. The middle
+     term reads `--fvw` (one percent of `.pageFrame`) rather than plain vw: above 1921 the
+     frame is capped to 100svh*1.6 while vw still measures the screen, and 4.5% + 58vw +
+     28vw + 5% came to 2400px inside a 2162px frame. Below 1921 `--fvw` is exactly 1vw, so
+     nothing under the threshold moves.
 
      `--story-top` and `--story-h` are shared by stage and copy so one composition is not
      described by two coordinate systems. With the 720px floor gone the panel is exactly
      100svh, which is also what `--story-h` measures against, so the 15% and the vh finally
      refer to the same box. That floor was what pushed `&__progress` off a 660px screen. */
-  --story-top: 15%;
-  --story-h: clamp(20rem, 70vh, 46rem);
-  /* left 4.5% + gutter 5% + right 5% */
-  --story-side: 14.5%;
-  --story-copy-w: clamp(20.8rem, calc(28 * var(--fvw)), 34rem);
-  --story-stage-w: calc(100% - var(--story-copy-w) - var(--story-side));
 
   position: sticky;
   top: 0;
   width: 100%;
   height: 100svh;
   overflow: hidden;
+  /* Ember glow mirrored with the plate: 72% → 28%. */
   background: radial-gradient(
-      circle at 72% 48%,
+      circle at 28% 48%,
       rgb(var(--clay-26-rgb) / .05),
       transparent 27%
     ),
@@ -72,11 +115,15 @@
 
   &__stage {
     position: absolute;
-    top: var(--story-top);
-    left: 4.5%;
+    /* The mirror: the plate stands on the right, the copy column on the left.
+       These four values are also where the hero's growing portrait lands — it
+       reads the same variables (see the shared rule above), so the animation's
+       end state cannot drift from where the plate actually stands. */
+    top: var(--story-plate-top);
+    right: var(--story-plate-right);
     z-index: 2;
-    width: var(--story-stage-w);
-    height: var(--story-h);
+    width: var(--story-plate-w);
+    height: var(--story-plate-h);
     overflow: hidden;
     background: var(--ink-01);
   }
@@ -105,8 +152,10 @@
       inset: 0;
       z-index: 1;
       pointer-events: none;
+      /* Edge vignette mirrored with the plate: it darkens the screen-edge
+         side, which is now the right one — 90deg → 270deg. */
       background: linear-gradient(
-          90deg,
+          270deg,
           rgb(var(--ink-01-rgb) / .12),
           transparent 34%
         ),
@@ -138,7 +187,7 @@
   &__copyStage {
     position: absolute;
     top: var(--story-top);
-    right: 5%;
+    left: 5%;
     z-index: 12;
     width: var(--story-copy-w);
     height: var(--story-h);
@@ -276,8 +325,15 @@
 }
 
 @include below-px(760px) {
+  /*
+   * `margin-top: 0` — no pull-up here, deliberately. The -104vh of the wide
+   * layout slides this section under the hero's sticky stage; here the hero is
+   * ordinary flow and this section is a stacked list starting with a chapter —
+   * pulled up by a viewport, that chapter would scroll past unseen.
+   */
   .AboutStory {
     height: auto;
+    margin-top: 0;
     background: var(--story-charcoal);
   }
 
@@ -385,5 +441,113 @@
         font-weight: 300;
       }
     }
+  }
+}
+
+/*
+ * ─── Portrait phones: the scene, not the list ───────────────────────────────
+ *
+ * The same decision the vyroba gallery makes (see the `v(xs)` block in
+ * vyroba/gallery/styles.scss): `below-px(760px)` swaps the sticky scene for a
+ * stacked list, which is right for a phone on its side, but upright the scene
+ * is what the page is for — so it comes back here, and with it the hand-off:
+ * the hero grows its portrait into this plate and dissolves onto it, exactly
+ * as on the wide layout. Only the plate's target and the runway change.
+ */
+@include v(xs) {
+  .AboutStory {
+    /* 160svh of new scroll after the pull-up, ~80svh per chapter — the
+       cadence the vyroba scene has at 560svh for seven. */
+    height: 260svh;
+    /* Pull-up in svh, because the hero's pinned stage is `100svh` here: in vh
+       the two units part company the moment a phone's toolbar collapses, and
+       the overlap that hides the seam would drift with it. −104 leaves the
+       same 4-unit window for the fade as the wide layout. */
+    margin-top: -104svh;
+  }
+
+  .aboutStory {
+    display: block;
+  }
+
+  .aboutStoryMobile {
+    display: none;
+  }
+
+  /* The image is the whole frame now, not a plate beside a column of text —
+     and that is also where the hero's growth lands (shared variables). */
+  .aboutStory,
+  .aboutMe__sticky {
+    --story-plate-top: 0svh;
+    --story-plate-right: 0%;
+    --story-plate-w: 100%;
+    /* Svisle absolutně — viz `--story-top` výš: rám hero měří proti sobě. */
+    --story-plate-h: 100svh;
+  }
+
+  /* Over the photograph at .5 — cream type has to stay legible on whatever
+     the picture is doing underneath, same overlay as the vyroba scene. */
+  .aboutStory__imageShade {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgb(var(--black-01-rgb) / .5);
+    pointer-events: none;
+  }
+
+  /* The copy moves onto the image, held 10vh off the floor — an explicit
+     height because every child is absolute (see vyroba's note). */
+  .aboutStory__copyStage {
+    top: auto;
+    right: 1.25rem;
+    bottom: 10vh;
+    left: 1.25rem;
+    z-index: 12;
+    width: auto;
+    height: 46%;
+    min-height: 0;
+  }
+
+  .aboutStory__copy {
+    justify-content: flex-end;
+  }
+
+  .aboutStory__lead {
+    font-size: clamp(1.35rem, 6.4vw, 1.8rem);
+  }
+
+  .aboutStory__body {
+    font-size: 0.95rem;
+  }
+
+  /* Two tracks under the copy would sit where the copy now is. */
+  .aboutStory__progress {
+    display: none;
+  }
+
+  /* The picture's caption says what the index and label above it already
+     say, and it printed straight through the body text. */
+  .aboutStory__image figcaption {
+    display: none;
+  }
+}
+
+/* Portrait tablets keep the stacked list — same call as vyroba. `margin-top`
+   explicitly back to 0: a tablet wider than 760 misses the block above and
+   would inherit the wide pull-up under a hero that never pins there. */
+@include v(md) {
+  .AboutStory {
+    height: auto;
+    margin-top: 0;
+  }
+
+  .aboutStory {
+    display: none;
+  }
+
+  .aboutStoryMobile {
+    display: block;
   }
 }

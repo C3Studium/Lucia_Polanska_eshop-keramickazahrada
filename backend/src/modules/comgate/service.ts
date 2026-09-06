@@ -99,6 +99,23 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     this.options = options
   }
 
+  /*
+   * Logování, které nesmí shodit ověření platby.
+   *
+   * Zamítací větve `getWebhookActionAndData` sahaly rovnou na `this.logger_`.
+   * Když ho kontejner v dané cestě nedodá, je to `undefined` a samotný zápis
+   * do logu vyhodí výjimku — z čistého „tohle oznámení nepatří nám" (400) se
+   * stane „nám to spadlo" (500), a ComGate takové oznámení opakuje donekonečna.
+   * Odmítnutí se musí dát vyslovit i bez logu.
+   */
+  private warn(message: string) {
+    this.logger_?.warn?.(message)
+  }
+
+  private info(message: string) {
+    this.logger_?.info?.(message)
+  }
+
   private credentials() {
     const merchant = this.options?.merchant
     const secret = this.options?.secret
@@ -568,26 +585,59 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     return this.initiatePayment({ ...input, data: replacementData })
   }
 
+  /**
+   * Ověření oznámení o platbě — protokolem v2.0.
+   *
+   * Dřív tahle metoda vyžadovala, aby oznámení v těle neslo `secret`
+   * a `merchant`, a když nesedly, zahodila ho hned první podmínkou — bez
+   * jediného dotazu na ComGate. To je způsob protokolu **v1.0**, kde se tajemství
+   * posílalo v každém callbacku. Jenže platby se zakládají přes **v2.0**
+   * (`https://payments.comgate.cz/v2.0`), kde se merchant a heslo posílají
+   * v hlavičce `Authorization: Basic` a v těle oznámení nejsou. Každé skutečné
+   * oznámení tedy padlo na té první podmínce, relace zůstala `pending`
+   * a objednávka nikdy nevznikla — reprodukováno dvěma testovacími platbami
+   * (`8YTG-VQEN-PFCH`, `NRS2-DKWJ-R4GZ`): ComGate obě potvrdil a poslal
+   * zákazníka na návratovou adresu pro zaplaceno, přesto kolekce zůstala
+   * `not_paid` i po minutě.
+   *
+   * Důvěra se proto přesouvá tam, kam v2.0 patří: **z těla oznámení na dotaz
+   * zpět ComGate**. Oznámení už je jen upozornění „podívej se na tuhle
+   * transakci"; co se skutečně stalo, řekne ověřený dotaz na
+   * `/payment/transId/…json` autorizovaný Basicem. Je to přísnější než dřív —
+   * dřív šlo o shodu dvou hodnot z těla, teď rozhoduje odpověď z ComGate,
+   * kterou nikdo cizí neovlivní.
+   *
+   * Kontrola `secret`/`merchant` zůstává, ale jen jako doplněk: přijde-li
+   * (starší protokol, testovací nástroje), musí sedět; nepřijde-li, rozhoduje
+   * ověřený dotaz. Nesouhlas je pořád důvod oznámení zahodit.
+   */
   async getWebhookActionAndData(
     payload: ProviderWebhookPayload["payload"]
   ): Promise<WebhookActionResult> {
     const callback = asRecord(payload.data)
     const { merchant, secret } = this.credentials()
 
+    /* Tvrzení z těla ověřujeme jen tehdy, když v něm vůbec jsou — chybějící
+       pole není v v2.0 chyba, kdežto nesprávné je i tam. */
+    const claimsSecret = callback.secret !== undefined && callback.secret !== ""
+    const claimsMerchant =
+      callback.merchant !== undefined && callback.merchant !== ""
+
     if (
-      !secureCompare(callback.secret, secret) ||
-      !secureCompare(callback.merchant, merchant)
+      (claimsSecret && !secureCompare(callback.secret, secret)) ||
+      (claimsMerchant && !secureCompare(callback.merchant, merchant))
     ) {
-      this.logger_.warn("Rejected an unauthenticated Comgate push notification")
+      this.warn("Rejected an unauthenticated Comgate push notification")
       return { action: "not_supported" }
     }
 
-    const transId = resolveComgateTransactionId({ transId: callback.transId })
+    const transId = resolveComgateTransactionId(callback)
     if (!transId) {
-      this.logger_.warn("Rejected a Comgate push notification without transId")
+      this.warn("Rejected a Comgate push notification without transId")
       return { action: "not_supported" }
     }
 
+    /* Jediný zdroj pravdy: co o transakci říká sám ComGate. */
     const details = await this.retrieveDetails(transId)
     const callbackStatus = (() => {
       try {
@@ -596,24 +646,30 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
         return null
       }
     })()
-    const callbackTest = resolveComgateTestMode(callback.test)
-    const verifiedTest = resolveComgateTestMode(details.test)
-    const matchesVerifiedPayment =
-      callbackStatus !== null &&
-      Number(callback.price) === Number(details.price) &&
-      String(callback.curr || "").toUpperCase() === details.curr &&
-      String(callback.refId || "") === details.refId &&
-      callbackTest === verifiedTest
 
-    if (!matchesVerifiedPayment) {
-      this.logger_.warn(
-        `Rejected mismatched Comgate push notification for ${transId}`
-      )
+    /*
+     * Pole z těla porovnáváme s ověřenou odpovědí — ale zase jen ta, která
+     * v těle přišla. Rozpor znamená podvrh nebo záměnu transakce a oznámení
+     * letí pryč; chybějící pole znamená jen jiný protokol.
+     */
+    const rozporVTele =
+      (callback.price !== undefined &&
+        Number(callback.price) !== Number(details.price)) ||
+      (callback.curr !== undefined &&
+        String(callback.curr).toUpperCase() !== details.curr) ||
+      (callback.refId !== undefined &&
+        String(callback.refId) !== details.refId) ||
+      (callback.test !== undefined &&
+        resolveComgateTestMode(callback.test) !==
+          resolveComgateTestMode(details.test))
+
+    if (rozporVTele) {
+      this.warn(`Rejected mismatched Comgate push notification for ${transId}`)
       return { action: "not_supported" }
     }
 
-    if (callbackStatus !== details.status) {
-      this.logger_.info(
+    if (callbackStatus !== null && callbackStatus !== details.status) {
+      this.info(
         `Comgate push status ${callbackStatus} was superseded by verified status ${details.status} for ${transId}`
       )
     }
@@ -621,7 +677,7 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     // New payments deliberately use the Medusa payment-session ID as refId.
     // Refuse unrelated/legacy references rather than targeting an arbitrary cart.
     if (!details.refId.startsWith("payses_")) {
-      this.logger_.warn(
+      this.warn(
         `Ignored Comgate transaction ${transId} without a Medusa payment-session reference`
       )
       return { action: "not_supported" }

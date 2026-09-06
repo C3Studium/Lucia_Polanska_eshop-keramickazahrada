@@ -111,6 +111,13 @@
   .catalogue { padding-inline: 10px; }
   .introduction { display: block; margin-bottom: 55px; }
   .introduction > p { margin-bottom: 18px; }
-  .introduction h2 { font-size: clamp(43px, 13.3vw, 66px); }
+  /* Dva řádky, ne čtyři.
+     Nadpis se láme značkou (`<br>`) na „Vyberte si něco," a „co vám zůstane.",
+     jenže 13.3vw dělalo delší z nich o ~8px širší, než je místo — na 390px
+     potřeboval 358 do 350 —, takže se každý řádek zlomil ještě jednou a titulek
+     zabral čtyři. Naměřeno: vejde se od 12.9vw (360px) po 13.2vw (447px), tady
+     s rezervou na kurzívu druhého řádku, kterou měření neumí vzít v potaz.
+     Podlaha z 43 na 38px ze stejného důvodu — na 320px oknech 43px přetékalo. */
+  .introduction h2 { font-size: clamp(38px, 12vw, 66px); }
   .introduction > span { display: block; margin-top: 25px; }
 }

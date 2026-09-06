@@ -15,6 +15,7 @@ import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
+import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import styles from "./style.module.scss"
 
@@ -101,6 +102,9 @@ export default async function CheckoutForm({
 
   return (
     <div className={styles.root}>
+      {/* Kde v pokladně jste — čtyři bublinky nahoře, jen na svislém telefonu,
+          kde se levá lišta s čísly kroků scvrkne a pořadí se ztratí. */}
+      <CheckoutStepBubbles />
       <Addresses cart={cart} customer={customer} countryCode={countryCode} />
       <Shipping
         cart={cart}

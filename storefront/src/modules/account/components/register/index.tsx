@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 
 import { useActionState } from "react"
 import Input from "@modules/common/components/input"
+import PhoneInput from "@modules/common/components/phone-input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -75,11 +76,9 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             autoComplete="email"
             data-testid="email-input"
           />
-          <Input
+          <PhoneInput
             label="Telefon"
             name="phone"
-            type="tel"
-            autoComplete="tel"
             data-testid="phone-input"
           />
           <Input

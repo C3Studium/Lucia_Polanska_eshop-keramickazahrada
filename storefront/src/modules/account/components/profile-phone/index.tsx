@@ -2,7 +2,7 @@
 
 import React, { useEffect, useActionState } from "react";
 
-import Input from "@modules/common/components/input"
+import PhoneInput from "@modules/common/components/phone-input"
 
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
@@ -57,12 +57,10 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
         data-testid="account-phone-editor"
       >
         <div className={s.formGrid}>
-          <Input
+          <PhoneInput
             variant="contact"
             label="Telefon"
             name="phone"
-            type="tel"
-            autoComplete="tel"
             required
             defaultValue={customer.phone ?? ""}
             data-testid="phone-input"

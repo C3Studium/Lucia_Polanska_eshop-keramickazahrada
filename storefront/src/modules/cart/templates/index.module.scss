@@ -286,3 +286,20 @@
   .grid { gap: 52px; padding: 42px 0 0; }
   .summaryBox { padding: 28px 22px; }
 }
+
+/* Konec stránky se musí vejít nad lepkavý pruh s částkou (checkout-bar), jinak
+   na něm leží poslední řádek souhrnu. Odvozeno ze stejných proměnných spodní
+   lišty, na jakých stojí pruh sám. */
+@media (orientation: portrait) and (max-width: 599.98px) {
+  .root {
+    padding-bottom: calc(
+      var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 5.5rem
+    );
+  }
+
+  /* Užší okraje panelu: uvnitř teď stojí nadpis a slevový kód vedle sebe
+     a rozbalenému poli pro kód se hodí každý pixel šířky. */
+  .summaryBox {
+    padding: 18px 16px;
+  }
+}

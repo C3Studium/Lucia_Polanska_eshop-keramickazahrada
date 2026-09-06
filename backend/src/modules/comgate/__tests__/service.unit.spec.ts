@@ -173,4 +173,83 @@ describe("Comgate payment provider", () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
   })
+
+  /*
+   * Protokol v2.0: oznámení nenese `secret` ani `merchant` — merchant a heslo
+   * jdou v hlavičce odchozích dotazů, ne v těle příchozího upozornění. Tenhle
+   * tvar musí projít, jinak neprojde žádná skutečná platba.
+   */
+  it("accepts a v2.0 notification that carries no secret in the body", async () => {
+    const fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(jsonResponse(providerDetails("PAID")))
+
+    await expect(
+      createService().getWebhookActionAndData({
+        data: { transId: "AAAA-BBBB-CCCC", status: "PAID" },
+        rawData: Buffer.from(""),
+        headers: {},
+      })
+    ).resolves.toEqual({
+      action: "captured",
+      data: { session_id: "payses_test", amount: "450" },
+    })
+
+    // O stavu nerozhoduje tělo, ale ověřený dotaz zpět na ComGate.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("accepts a bare v2.0 notification and reports the verified status", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(jsonResponse(providerDetails("CANCELLED")))
+
+    await expect(
+      createService().getWebhookActionAndData({
+        data: { transId: "AAAA-BBBB-CCCC" },
+        rawData: Buffer.from(""),
+        headers: {},
+      })
+    ).resolves.toMatchObject({ action: "canceled" })
+  })
+
+  /* Tělo, které tvrdí něco jiného než ověřená odpověď, je záměna nebo podvrh. */
+  it("rejects a notification whose body contradicts the verified payment", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(jsonResponse(providerDetails("PAID")))
+
+    await expect(
+      createService().getWebhookActionAndData({
+        data: {
+          transId: "AAAA-BBBB-CCCC",
+          status: "PAID",
+          refId: "payses_nekoho_jineho",
+        },
+        rawData: Buffer.from(""),
+        headers: {},
+      })
+    ).resolves.toEqual({ action: "not_supported" })
+  })
+
+  /* Odmítnutí se musí dát vyslovit i bez loggeru — jinak z „nepatří nám"
+     vznikne pád a ComGate opakuje pokusy donekonečna. */
+  it("rejects without a logger instead of throwing", async () => {
+    const bezLoggeru = new (ComgatePaymentProviderService as any)({} as any, {
+      merchant: "merchant-1",
+      secret: "secret-1",
+      test: true,
+      country: "CZ",
+      curr: "CZK",
+      method: "ALL",
+    })
+
+    await expect(
+      bezLoggeru.getWebhookActionAndData({
+        data: { merchant: "merchant-1", secret: "wrong" },
+        rawData: Buffer.from(""),
+        headers: {},
+      })
+    ).resolves.toEqual({ action: "not_supported" })
+  })
 })

@@ -174,8 +174,15 @@
   place-items: center;
 }
 
-/* `<Cart size={40}/>` sets width and height as attributes, which any CSS rule outranks. */
-.cartSlot svg {
+/*
+ * `<Cart size={40}/>` sets width and height as attributes, which any CSS rule outranks.
+ *
+ * Zúženo na SPOUŠŤ. `.cartSlot svg` platilo na každé svg uvnitř slotu — a ten drží celý
+ * rozbalený košík, takže tohle přebilo i ikonu koše v tlačítku Odebrat hluboko v panelu:
+ * naměřeno 27px místo 14, přetékala svůj rámeček a lezla 7px do popisku. Trigger má
+ * `data-testid`, kterým ho zbytek souboru už tak adresuje.
+ */
+.cartSlot [data-testid="nav-cart-link"] svg {
   width: 27px;
   height: 27px;
 }
