@@ -53,7 +53,11 @@ export default function OrderRecap({ cart }: { cart: any }) {
           )}
           {shippingMethod && (
             <p className={styles.recapNote}>
-              {shippingMethod.name} · {money(shippingMethod.total)}
+              {/* `amount`, ne `total`: výběr polí v `retrieveCart` u dopravy
+                  `total` nevrací, takže se tu cena vykreslovala jako „0,-" —
+                  vedle řádku „Doprava 90,-" o dva bloky níž. */}
+              {shippingMethod.name} ·{" "}
+              {money(shippingMethod.total ?? shippingMethod.amount)}
             </p>
           )}
           {/* The pickup point is the single detail most often lost between checkout and the
