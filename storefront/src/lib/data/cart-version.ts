@@ -107,6 +107,23 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
     return { stav: "aktualni" }
   }
 
+  /*
+   * Na vývoji se košík nepřekládá, ale zahazuje.
+   *
+   * `pnpm dev` vyrobí při každém startu nový otisk, takže tohle znamená
+   * „restartoval jsem server" — a při ladění pokladny je to přesně ta
+   * chvíle, kdy je čistý stůl k užitku a rozdělaný košík z minulého pokusu
+   * na obtíž. Zahodí se jen odkaz; košík na backendu zůstane a sám vyprší.
+   *
+   * V ostrém provozu tohle platit nesmí: tam by nové nasazení vysypalo
+   * nákup každému, kdo měl něco rozebráno. Tam se překládá (viz níž) —
+   * zboží a adresa se přenesou, zahodí se jen rozdělaná pokladna.
+   */
+  if (process.env.NODE_ENV !== "production") {
+    await removeCartId()
+    return { stav: "zahozen" }
+  }
+
   const headers = { ...(await getAuthHeaders()) }
   const razitko = { ...(cart.metadata ?? {}), [STAMP_KEY]: BUILD_STAMP }
 

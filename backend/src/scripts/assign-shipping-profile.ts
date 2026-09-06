@@ -25,8 +25,10 @@ import {
  * Idempotentní — produkty, které profil mají, se nechávají být.
  *
  * Přepínače:
- *   --dry-run   jen vypíše, co by udělal; nic nezapisuje
- *   --force     povolí běh i proti ostré databázi
+ *   --dry-run       jen vypíše, co by udělal; nic nezapisuje
+ *   --force         povolí běh i proti ostré databázi
+ *   --only=a,b,c    jen tyhle produkty (id nebo handle) — na vyzkoušení
+ *                   celého průchodu na jednom kusu, než se sáhne na katalog
  *
  * Pouští se taky sám před `medusa develop` (viz `dev` v package.json), aby
  * si to nikdo nemusel pamatovat při práci na místní databázi. Na ostré
@@ -41,6 +43,11 @@ export default async function assignShippingProfileToCatalogue({
   const prepinace = args ?? []
   const naSucho = prepinace.includes("--dry-run")
   const vynuceno = prepinace.includes("--force")
+  const jen = prepinace
+    .filter((p) => p.startsWith("--only="))
+    .flatMap((p) => p.slice("--only=".length).split(","))
+    .map((p) => p.trim())
+    .filter(Boolean)
 
   /*
    * Ani selhání nesmí zastavit vývojový server: `dev` skript volá tenhle
@@ -49,7 +56,7 @@ export default async function assignShippingProfileToCatalogue({
    * Doplnění profilu je pomoc, ne podmínka běhu.
    */
   try {
-    await doplnitProfily(container, logger, { naSucho, vynuceno })
+    await doplnitProfily(container, logger, { naSucho, vynuceno, jen })
   } catch (error) {
     logger.error(
       `[shipping-profile] Doplnění profilů selhalo: ${
@@ -62,7 +69,11 @@ export default async function assignShippingProfileToCatalogue({
 async function doplnitProfily(
   container: ExecArgs["container"],
   logger: { info: (m: string) => void; error: (m: string) => void },
-  { naSucho, vynuceno }: { naSucho: boolean; vynuceno: boolean }
+  {
+    naSucho,
+    vynuceno,
+    jen,
+  }: { naSucho: boolean; vynuceno: boolean; jen: string[] }
 ) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
 
@@ -84,32 +95,53 @@ async function doplnitProfily(
 
   logger.info(`[shipping-profile] Výchozí profil: ${profil.name} (${profil.id})`)
 
-  // Po stránkách: katalog má stovky kusů a `query.graph` bez stránkování
-  // vrací jen první dávku.
-  const STRANKA = 200
   const chybejici: { id: string; title: string }[] = []
   let prohlednuto = 0
-  let skip = 0
 
-  for (;;) {
+  if (jen.length) {
+    /* Vyjmenované kusy. `id` i `handle`, protože z adresy výrobku má člověk
+       po ruce handle, kdežto z logu spíš id. */
     const { data: products } = await query.graph({
       entity: "product",
-      fields: SHIPPING_PROFILE_PRODUCT_FIELDS,
-      pagination: { skip, take: STRANKA },
+      fields: [...SHIPPING_PROFILE_PRODUCT_FIELDS, "handle"],
+      filters: { $or: [{ id: jen }, { handle: jen }] } as any,
     })
 
-    if (!products.length) {
-      break
-    }
-
-    prohlednuto += products.length
+    prohlednuto = products.length
     chybejici.push(...productsMissingShippingProfile(products as any[]))
 
-    if (products.length < STRANKA) {
-      break
+    if (!prohlednuto) {
+      logger.error(
+        `[shipping-profile] Žádný z uvedených produktů neexistuje: ${jen.join(", ")}`
+      )
+      return
     }
+  } else {
+    // Po stránkách: katalog má stovky kusů a `query.graph` bez stránkování
+    // vrací jen první dávku.
+    const STRANKA = 200
+    let skip = 0
 
-    skip += STRANKA
+    for (;;) {
+      const { data: products } = await query.graph({
+        entity: "product",
+        fields: SHIPPING_PROFILE_PRODUCT_FIELDS,
+        pagination: { skip, take: STRANKA },
+      })
+
+      if (!products.length) {
+        break
+      }
+
+      prohlednuto += products.length
+      chybejici.push(...productsMissingShippingProfile(products as any[]))
+
+      if (products.length < STRANKA) {
+        break
+      }
+
+      skip += STRANKA
+    }
   }
 
   if (!chybejici.length) {

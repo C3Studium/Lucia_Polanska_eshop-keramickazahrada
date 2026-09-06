@@ -33,6 +33,7 @@ import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-
 import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/discount/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
+import { requireShippableCart } from "../lib/require-shippable-cart";
 import {
   blockEmptyingConfirm,
   blockMtoLineEdits,
@@ -211,6 +212,16 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/production-payment-mode",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostProductionPaymentModeSchema)],
+    },
+    /*
+     * Výběr dopravy je poslední společné hrdlo před penězi. Kus bez profilu
+     * dopravy se tu odmítne, protože po zaplacení už by bylo pozdě — Medusa
+     * ho odmítne až při dokončení košíku. Viz `lib/require-shippable-cart`.
+     */
+    {
+      matcher: "/store/carts/:id/shipping-methods",
+      methods: ["POST"],
+      middlewares: [requireShippableCart()],
     },
     // Newsletter. Note that the unsubscribe link in e-mails points at the
     // top-level GET /newsletter/unsubscribe, *not* /store/... — the framework
