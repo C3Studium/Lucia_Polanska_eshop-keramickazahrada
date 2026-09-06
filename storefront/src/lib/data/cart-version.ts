@@ -1,7 +1,6 @@
 import "server-only"
 
 import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 
 import { BUILD_STAMP } from "@lib/util/session-version"
@@ -28,8 +27,17 @@ import {
  * vybral, se přenese do čerstvého košíku a zahodí se jen ta rozdělaná
  * pokladna, kterou stejně projde znovu.
  *
- * Přenáší se jen košík, který je opravdu prošlý. Nákup, který do pokladny
- * ještě nevstoupil, nemá co zastarat — ten se jen orazítkuje a nechá být.
+ * Překládá se každý košík, který už do pokladny vstoupil — ne jen ten, na
+ * kterém je stáří vidět. Důvod je konkrétní: rozdělaná pokladna drží platební
+ * relaci navázanou na transakci u brány a ta má omezenou platnost. Jakmile
+ * vyprší, nedá se zrušit — a protože ji Medusa musí smazat pokaždé, když se
+ * mění částka nebo způsob platby, přestane jít dokončit doprava i platba.
+ * Zvenčí to na košíku poznat není, takže se nespoléhá na to, že se prošlost
+ * podaří odhalit.
+ *
+ * Nákup, který do pokladny ještě nevstoupil, nemá co zastarat — ten se jen
+ * orazítkuje a nechá být. Zákazník tedy po nasazení znovu vybere dopravu;
+ * zboží ani adresu neztratí.
  */
 
 export type VysledekPrevodu = {
@@ -75,44 +83,6 @@ const adresaProKopii = (adresa: any) =>
 const vstoupilDoPokladny = (cart: any) =>
   (cart.shipping_methods?.length ?? 0) > 0 || Boolean(cart.payment_collection)
 
-/**
- * Platí ještě zvolená doprava?
- *
- * Ptá se načerstvo, ne přes cache: cache je právě to, co po nasazení drží
- * starou odpověď. Neplatí, když nabídka zmizela z nabídky, nebo když se
- * změnila její cena — přesně ten případ „Balíkovna · 0,-\" vedle „Doprava 90,-\".
- */
-const dopravaPlati = async (cart: any): Promise<boolean> => {
-  const metody = cart.shipping_methods ?? []
-  if (!metody.length) {
-    return false
-  }
-
-  const headers = { ...(await getAuthHeaders()) }
-  const odpoved = await sdk.client.fetch<{
-    shipping_options: HttpTypes.StoreCartShippingOption[]
-  }>("/store/shipping-options", {
-    query: { cart_id: cart.id },
-    headers,
-    cache: "no-store",
-  })
-
-  return metody.every((metoda: any) => {
-    const nabidka = odpoved.shipping_options.find(
-      (o) => o.id === metoda.shipping_option_id
-    )
-    if (!nabidka) {
-      return false
-    }
-
-    const cena =
-      (nabidka as any).amount ??
-      (nabidka as any).calculated_price?.calculated_amount
-
-    return cena === undefined || cena === null || Number(cena) === Number(metoda.amount)
-  })
-}
-
 export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
   const puvodniId = await getCartId()
   if (!puvodniId) {
@@ -133,8 +103,8 @@ export async function carryCartToCurrentVersion(): Promise<VysledekPrevodu> {
   const headers = { ...(await getAuthHeaders()) }
   const razitko = { ...(cart.metadata ?? {}), [STAMP_KEY]: BUILD_STAMP }
 
-  if (!vstoupilDoPokladny(cart) || (await dopravaPlati(cart))) {
-    // Zdravý košík se nepřekládá — jen se poznamená, ke které verzi patří.
+  if (!vstoupilDoPokladny(cart)) {
+    // Do pokladny nevstoupil, není co resetovat — jen se poznamená verze.
     await sdk.store.cart.update(cart.id, { metadata: razitko }, {}, headers)
     const tag = await getCacheTag("carts")
     if (tag) revalidateTag(tag)

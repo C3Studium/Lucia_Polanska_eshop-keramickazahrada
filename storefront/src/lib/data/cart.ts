@@ -183,7 +183,9 @@ export async function addToCart({
 
     return { success: true }
   } catch (e: any) {
-    // Normalize Medusa error messages
+    // Normalize Medusa error messages — a do logu i tu původní, viz
+    // `initiatePaymentSession` níž. Přeložená věta se k nám nedostane.
+    console.error(`[košík] přidání do košíku selhalo: ${e?.message ?? e}`)
     const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
@@ -273,6 +275,13 @@ export async function setShippingMethod({
 
     return { success: true }
   } catch (e: any) {
+    /*
+     * Krok dopravy uměl selhat úplně tiše — a přitom je to nejkřehčí místo
+     * pokladny: změna dopravy mění celkovou částku a Medusa při tom maže
+     * platební relace. Když se některá smazat nedá, spadne celý krok
+     * hláškou, kterou zákazník nikdy neuvidí a my bez tohohle řádku taky ne.
+     */
+    console.error(`[doprava] způsob dopravy se nepodařilo nastavit: ${e?.message ?? e}`)
     const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }
