@@ -2,7 +2,6 @@ import { Metadata } from "next"
 
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
-import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import ECom from "@modules/home/E-com"
 import HeroSection from "@modules/home/Hero"
 import HomeExperience from "@modules/home/HomeExperience"
@@ -53,7 +52,6 @@ export default async function Home(props: {
 
   return (
     <>
-      <ScrollToTopOnReload />
       <HomeExperience>
         <HeroSection copy={copy} notices={notices} />
         <ECom copy={copy} />

@@ -24,11 +24,16 @@ const DeleteButton = ({
   children,
   className,
   bundle_id,
+  "data-testid": dataTestId,
 }: {
   id: string
   children?: React.ReactNode
   className?: string
   bundle_id?: string
+
+  /* Volající ho předával odjakživa, komponenta ho ale zahazovala — háček
+     `cart-item-remove-button` tak v DOM nikdy nebyl. */
+  "data-testid"?: string
 }) => {
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -61,6 +66,7 @@ const DeleteButton = ({
         whileFocus={isDeleting ? "pending" : "hover"}
         whileTap={isDeleting ? undefined : { scale: .975 }}
         variants={buttonVariants}
+        data-testid={dataTestId}
       >
         <motion.span
           className={styles.fill}

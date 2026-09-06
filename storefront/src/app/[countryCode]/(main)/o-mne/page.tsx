@@ -2,7 +2,6 @@ import { Metadata } from "next"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
-import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import { getPageContentFull } from "@lib/data/site-copy"
 import AboutPageExperience from "@modules/omne/page"
 
@@ -39,7 +38,6 @@ export default async function Home(props: {
 
   return (
     <>
-      <ScrollToTopOnReload />
       <AboutPageExperience copy={copy} />
     </>
   )

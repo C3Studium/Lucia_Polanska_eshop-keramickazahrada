@@ -15,7 +15,15 @@
   grid-template-columns:
     clamp(11.875rem, 16vw, 15.625rem)
     minmax(14.5rem, 1fr)
-    clamp(15.5rem, 20vw, 17.5rem);
+    /* Ceník na 300 px. Obsah si žádá ~256 (stepper 112 + „Odebrat" ~100
+       vedle sebe, plus mezera a odsazení), takže zbývá přes čtyřicet pixelů
+       vzduchu — o to tu jde, 150 px bylo nacpané. V rem, ne v px: nad 1921
+       ho root ramp zvedne se zbytkem stránky. Platí to prostřední sloupec,
+       který je `1fr` a má místa nejvíc.
+
+       Pevná hodnota, ne clamp: sloupec drží ovladače, jejichž šířka se
+       s oknem nemění, takže by clamp jen posouval prázdné místo. */
+    18.75rem;
   /* Výška řádku soupeří s výškou okna, ne s její šířkou. 92px natvrdo × 3 dělalo na
      1366×768 z jednoho řádku 42 % obrazovky. */
   grid-template-rows: repeat(3, minmax(clamp(4rem, 9vh, 6.5rem), auto));
@@ -166,7 +174,10 @@
   max-width: min(20ch, 100%);
   margin: 0 0 clamp(.5rem, 1.2vh, .8125rem);
   color: var(--cream-06);
-  font: 400 clamp(2.2rem, 3vw, 3.6rem)/.92 "Sentient-Regular", serif;
+  /* Dvakrát po 0.8× z původních 2.2 / 3vw / 3.6, tedy 0.64×: titulek si bral
+     víc místa než cokoli jiného v řádku a přitom je to jméno kusu, ne nadpis
+     stránky. Na 1920 z 57.6 px na 36.9. */
+  font: 400 clamp(1.4rem, 1.92vw, 2.3rem)/.96 "Sentient-Regular", serif;
   letter-spacing: -.04em;
   transition: color 240ms ease;
 }
@@ -208,9 +219,8 @@
 .cellActions {
   grid-row: 1;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-content: center;
-  align-items: center;
   gap: clamp(.5rem, .85vw, .75rem);
   --delete-button-ink: rgb(var(--cream-06-rgb) / .66);
   --delete-button-active-ink: var(--ink-05);
@@ -220,6 +230,16 @@
 }
 
 .cellActions .controlLabel { grid-column: 1 / -1; }
+
+/* Ovladač a „Odebrat" na jedné lince. */
+.actionsLine {
+  display: flex;
+  align-items: center;
+  /* Pojistka: kdyby se dvojice do sloupce přece nevešla, spadne „Odebrat"
+     pod ovladač místo toho, aby se ustřihlo `overflow: hidden` na řádku. */
+  flex-wrap: wrap;
+  gap: clamp(.5rem, .85vw, .75rem);
+}
 
 .actionsRow {
   display: flex;
@@ -257,12 +277,11 @@
      řádky (78×32 na každé šířce, i na 2552) a cena pak visela svisle mezi nimi, zatímco
      sousední „CELKEM 190,-" byla jednořádková. Grid dá popisku celou volnou stopu, cena si
      vezme svoje max-content a obojí sedí na jedné účaří. */
-  display: grid;
-  /* `max-content`, ne `auto`: 1fr spolkne všechno volné místo, takže auto stopa spadne na
-     min-content a cena (LineItemUnitPrice má `width: 100%`) se zlomí na 32 px do tří řádků.
-     max-content ji drží na šířce textu a procento se pak počítá z hotové stopy. */
-  grid-template-columns: 1fr max-content;
+  /* „CENA ZA KUS: 65,-" na jedné lince. `baseline`, aby popisek a cena
+     stály na společné účaří i při různé velikosti písma. */
+  display: flex;
   align-items: baseline;
+  gap: .375rem;
 }
 
 .cellPrice {
@@ -289,14 +308,22 @@
   margin: 0;
   font-size: clamp(.75rem, .96vw, .85rem);
   white-space: nowrap;
+
+  /* „CENA ZA KUS: 65,-" stojí na jedné lince, takže popisek potřebuje
+     interpunkci — bez ní to čte jako dvě nesouvisející slova vedle sebe.
+     Přes `::after`, ne v textu: popisek se taky předčítá a dvojtečka do
+     něj obsahově nepatří. */
+  &::after { content: ":"; }
 }
 
 .priceWrap {
+  /* „CELKEM: 65,-" na jedné lince, stejně jako „Cena za kus" nad ním.
+     `preview` řádek si tenhle blok přepisuje po svém, ten se nemění. */
   display: flex;
   width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: .375rem;
 }
 
 .previewQtyRow {
@@ -313,7 +340,11 @@
    — v px byl řádek náhledu 104 px vysoký i na 2552, kde je rem 21.27. Je to malý panel,
    ne pás stránky, takže se o výšku obrazovky nepere a vh sem nepatří. */
 .previewRow {
-  grid-template-columns: 4.75rem minmax(0, 1fr) auto;
+  /* Cenový sloupec byl `auto`, tedy přesně tak široký, jak si vynutil obsah:
+     naměřeno 68 px, do kterých se „1× 1 600,-" mačkalo pod „1 600,-".
+     Podlaha 8.5rem je dvojnásobek — místo si bere prostřední sloupec, který
+     je `1fr`. `auto` jako strop zůstává, aby delší částka mohla přerůst. */
+  grid-template-columns: 4.75rem minmax(0, 1fr) minmax(8.5rem, auto);
   grid-template-rows: 6.5rem;
   min-height: 6.5rem;
   border-color: rgb(var(--cream-06-rgb) / .14);
@@ -344,7 +375,10 @@
     border: 0;
   }
   .priceWrap {
-    width: auto;
+    /* Vyplní celý sloupec, ne jen šířku textu: jinak by se rozšíření
+       sloupce neprojevilo (obsah se pořád krčil na 58 px) a dělicí linka
+       mezi jednotkovou cenou a součtem by zůstala kratší než obojí. */
+    width: 100%;
     align-items: flex-end;
     justify-content: center;
     flex-direction: column;

@@ -22,6 +22,7 @@ import { useDismiss } from "@lib/hooks/use-dismiss"
 import { Fragment, useCallback, useEffect, useRef, useState, type WheelEvent } from "react"
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
+import CartDropdownQuantity from "./quantity"
 
 const CartDropdown = ({
   cart: cartState,
@@ -204,12 +205,7 @@ const CartDropdown = ({
                                   data-testid="cart-item-variant"
                                   data-value={item.variant}
                                 />
-                                <span
-                                  data-testid="cart-item-quantity"
-                                  data-value={item.quantity}
-                                >
-                                  Množství: {item.quantity}
-                                </span>
+
                               </div>
                               <div className={styles.itemPrice}>
                                 <LineItemPrice
@@ -220,13 +216,20 @@ const CartDropdown = ({
                               </div>
                             </div>
                           </div>
-                          <DeleteButton
-                            id={item.id}
-                            className={styles.removeBtn}
-                            data-testid="cart-item-remove-button"
-                          >
-                            Odebrat
-                          </DeleteButton>
+                          {/* Množství a odebrání patří k sobě — dokud stály
+                              pod sebou, byl každý řádek panelu o ovladač vyšší
+                              a do panelu se vešly sotva dvě položky. */}
+                          <div className={styles.itemActions}>
+                            <CartDropdownQuantity item={item} />
+                            <DeleteButton
+                              id={item.id}
+                              bundle_id={item.metadata?.bundle_id as string | undefined}
+                              className={styles.removeBtn}
+                              data-testid="cart-item-remove-button"
+                            >
+                              Odebrat
+                            </DeleteButton>
+                          </div>
                         </div>
                       </div>
                     ))}

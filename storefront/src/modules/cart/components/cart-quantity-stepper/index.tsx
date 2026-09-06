@@ -8,6 +8,9 @@ type CartQuantityStepperProps = {
   max: number
   disabled?: boolean
   onChange: (quantity: number) => void
+  /* Když `min` je 0, mínus u jedničky položku odebírá — a to musí říct
+     i čtečce, jinak slibuje snížení množství a udělá něco jiného. */
+  decreaseLabel?: string
   "data-testid"?: string
 }
 
@@ -17,6 +20,7 @@ const CartQuantityStepper = ({
   max,
   disabled = false,
   onChange,
+  decreaseLabel = "Snížit množství",
   "data-testid": dataTestId,
 }: CartQuantityStepperProps) => {
   const decrease = () => value > min && onChange(value - 1)
@@ -34,7 +38,7 @@ const CartQuantityStepper = ({
         className={styles.control}
         onClick={decrease}
         disabled={disabled || value <= min}
-        aria-label="Snížit množství"
+        aria-label={decreaseLabel}
       >
         −
       </button>

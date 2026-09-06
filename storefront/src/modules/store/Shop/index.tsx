@@ -27,6 +27,47 @@ type EComProps = {
 }
 
 const PRODUCT_LIMIT = 16
+
+/* Strop jednoho dotazu v `listStoreCatalogue`. Obnova po návratu z výrobku
+   si o víc říct nemůže — nad ním se výsledek mlčky ořízne. */
+const DAVKA_OBNOVY = 48
+
+/*
+ * Vrácení na uloženou pozici, až bude kam.
+ *
+ * Odrolovat hned po `setProducts` nestačí: v tom snímku má mřížka teprve
+ * první řadu karet, dokument je krátký a prohlížeč cíl ořízne na aktuální
+ * maximum. Naměřeno: uloženo 6737, skončilo to na 3617 — o dvě obrazovky
+ * výš, než kde člověk klikal.
+ *
+ * Čeká se tedy na výšku, ne na pevný počet snímků. Strop třiceti snímků
+ * (~půl vteřiny) je pojistka pro případ, že se výpis zkrátil — třeba když
+ * mezitím něco vyprodala — a uložená pozice už v něm neexistuje. Pak se
+ * odroluje na to, co je, což je pořád lepší než zůstat nahoře.
+ *
+ * A `lenis.resize()` těsně předtím: Lenis si drží vlastní hranici scrollu,
+ * spočítanou při posledním přeměření. Mřížka mezitím narostla o tři řady
+ * karet, ale Lenis o tom neví a cíl si ořízne podle staré hranice — proto
+ * to skončilo na 3617 i ve chvíli, kdy dokument už 6737 dovoloval.
+ */
+const obnovPozici = (cil: number) => {
+  let snimku = 0
+
+  const zkus = () => {
+    const dosah = document.documentElement.scrollHeight - window.innerHeight
+
+    if (dosah >= cil || snimku >= 30) {
+      window.lenis?.resize()
+      scrollWithLenis(cil, { immediate: true })
+      return
+    }
+
+    snimku += 1
+    window.requestAnimationFrame(zkus)
+  }
+
+  window.requestAnimationFrame(zkus)
+}
 const emptyFilters: ShopFilters = {
   categoryId: "",
   collectionId: "",
@@ -141,22 +182,40 @@ export default function ECom({
 
     ;(async () => {
       try {
-        const payload = await listStoreCatalogue({
-          filters: snapshot.filters,
-          limit: Math.max(snapshot.loaded, PRODUCT_LIMIT),
-          offset: 0,
-          countryCode,
-        })
-        if (restoreCancelled.current) return
+        /*
+         * Po dávkách, ne jedním dotazem.
+         *
+         * `listStoreCatalogue` drží strop jednoho dotazu na 48 kusech a nad
+         * ním mlčky ořízne. Kdo prošel čtyři stránky výpisu (64 kusů) a vrátil
+         * se, dostal 48 — výpis kratší, než z jakého odešel, takže uložená
+         * poloha ukazovala jinam, než na výrobek, na který klikal. Naměřeno:
+         * uloženo `loaded: 64`, vráceno 48.
+         */
+        const nactene: HttpTypes.StoreProduct[] = []
+        let celkem = 0
+
+        while (nactene.length < snapshot.loaded) {
+          const payload = await listStoreCatalogue({
+            filters: snapshot.filters,
+            limit: Math.min(snapshot.loaded - nactene.length, DAVKA_OBNOVY),
+            offset: nactene.length,
+            countryCode,
+          })
+          if (restoreCancelled.current) return
+
+          celkem = payload.count
+          if (!payload.products.length) break
+
+          nactene.push(...payload.products)
+          if (nactene.length >= payload.count) break
+        }
 
         restored.current = true
-        setProducts(payload.products)
-        setResultCount(payload.count)
-        setAllLoaded(payload.products.length >= payload.count)
+        setProducts(nactene)
+        setResultCount(celkem)
+        setAllLoaded(nactene.length >= celkem)
 
-        window.requestAnimationFrame(() =>
-          scrollWithLenis(snapshot.scrollY, { immediate: true })
-        )
+        obnovPozici(snapshot.scrollY)
       } catch (error) {
         if (restoreCancelled.current) return
         console.error("Obnova stavu obchodu selhala", error)

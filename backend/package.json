@@ -19,7 +19,7 @@
     "db:migrate": "cd .medusa/server && ../../node_modules/.bin/medusa db:migrate --all-or-nothing --execute-safe-links",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "cd .medusa/server && ../../node_modules/.bin/medusa start",
-    "dev": "medusa develop",
+    "dev": "medusa exec ./src/scripts/assign-shipping-profile.ts && medusa develop",
     "dev:email": "email dev --dir ./src/modules/resend/emails",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.integration.config.js --runInBand --forceExit"
   },

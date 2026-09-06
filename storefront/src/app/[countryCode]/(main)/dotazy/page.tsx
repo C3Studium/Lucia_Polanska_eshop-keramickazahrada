@@ -1,5 +1,4 @@
 import { Metadata } from "next"
-import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import { getFaqCategories, getFaqQuestions, getPageContentFull } from "@lib/data/site-copy"
 import DotazyMain from "@modules/dotazy/main"
 
@@ -24,7 +23,6 @@ export default async function FAQPage() {
 
   return (
     <>
-        <ScrollToTopOnReload />
         <DotazyMain
           block={copy["dotazy.galerie"]}
           texts={copy["dotazy.otazky"]}

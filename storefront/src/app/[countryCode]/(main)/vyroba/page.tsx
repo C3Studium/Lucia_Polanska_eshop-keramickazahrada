@@ -1,6 +1,5 @@
 import { Metadata } from "next"
 
-import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import { getPageContentFull } from "@lib/data/site-copy"
 import VyrobaCta from "@modules/vyroba/cta"
 import VyrobaJourney from "@modules/vyroba/journey"
@@ -24,7 +23,6 @@ export default async function Home() {
 
   return (
     <>
-      <ScrollToTopOnReload />
       <VyrobaJourney
         block={copy["vyroba.galerie"]}
         texts={copy["vyroba.kroky"]}

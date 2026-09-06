@@ -75,5 +75,21 @@ export function maxPurchasableQuantity(
   if (!variant) return 0
   if (variant.allow_backorder || !variant.manage_inventory) return fallback
 
-  return Math.max(0, variant.inventory_quantity ?? 0)
+  /*
+   * `undefined` znamená „nevíme", ne „nic".
+   *
+   * `inventory_quantity` je počítané pole a obchodní API ho vrací jen
+   * u produktů — u položek košíku nikdy, ať se v `fields` napíše cokoli
+   * (ověřeno na živém backendu třemi různými zápisy). Dřív se tady
+   * chybějící hodnota brala jako nula, takže ovladač množství v košíku
+   * i v panelu měl strop 0 a plus se nedal zmáčknout vůbec — u kusu,
+   * kterého je skladem dvacet, stejně jako u posledního.
+   *
+   * Když zásobu neznáme, platí strop volajícího a o skutečnou hranici se
+   * postará backend; „Tolik kusů už bohužel nemáme" má svůj překlad.
+   * Vyprodaný kus se tím neprodá: tam přijde skutečná nula, ne `undefined`.
+   */
+  if (variant.inventory_quantity == null) return fallback
+
+  return Math.max(0, variant.inventory_quantity)
 }

@@ -511,7 +511,15 @@
       height: 100%;
     }
 
-    svg {
+    /*
+     * Zúženo na SPOUŠŤ košíku.
+     *
+     * `.navbar__cart svg` platilo na každé svg uvnitř slotu — a ten drží
+     * i rozbalený panel košíku. Koš u „Odebrat" tak dostal 2.25rem (36px),
+     * přerostl vlastní tlačítko a překryl jeho popisek. Ikona v navigaci má
+     * být velká, ikony uvnitř panelu si velikost řeší samy.
+     */
+    [data-testid="nav-cart-link"] svg {
       width: var(--nav-icon-size);
       height: var(--nav-icon-size);
     }

@@ -3,7 +3,6 @@ import { listCollections } from "@lib/data/collections"
 import { listCourseTerms } from "@lib/data/courses"
 import { getRegion } from "@lib/data/regions"
 
-import ScrollToTopOnReload from "@lib/helpers/scrollToTopOnReload"
 import Kurzy from "@modules/home/Kurzy"
 import { getPageCopyWithGlobal } from "@lib/data/site-copy"
 
@@ -39,7 +38,6 @@ export default async function Home(props: {
 
   return (
     <>
-      <ScrollToTopOnReload />
       <Kurzy copy={copy} terms={terms} />
     </>
   )

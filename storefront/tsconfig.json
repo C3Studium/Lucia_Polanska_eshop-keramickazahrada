@@ -42,9 +42,10 @@
     ".next-check/types/**/*.ts",
     ".next-dev-check/types/**/*.ts",
     ".next-final/types/**/*.ts",
+    ".next-t/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-t/types/**/*.ts"
+    ".next-mereni/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

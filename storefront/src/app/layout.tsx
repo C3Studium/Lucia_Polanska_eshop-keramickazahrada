@@ -1,6 +1,7 @@
 import SiteChrome from "@modules/layout/components/site-chrome"
 import MotionPreferenceProvider from "@lib/context/MotionPreferenceProvider"
 import EffectBudgetFlag from "@modules/layout/components/effect-budget-flag"
+import ScrollResetOnRoute from "@lib/helpers/scrollResetOnRoute"
 import SessionVersionWatch from "@modules/layout/components/session-version"
 import { bootResetScript } from "@lib/util/session-version"
 import { StateProvider } from "@lib/context/StateContext"
@@ -35,6 +36,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           <script dangerouslySetInnerHTML={{ __html: uklidPoStareVerzi }} />
         ) : null}
         <SessionVersionWatch />
+        <ScrollResetOnRoute />
         {/* Stamps the effect budget on <html> for every page, including the ones that render
             outside the (main) layout and have no shader of their own. */}
         <EffectBudgetFlag />

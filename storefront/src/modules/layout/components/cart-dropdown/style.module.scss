@@ -620,3 +620,47 @@
         }
     }
 }
+
+/*
+ * Množství a odebrání v jednom řádku.
+ *
+ * Dřív tu stál jen text „Množství: 2" a jediné, co šlo udělat, bylo odebrat
+ * celou položku. Ovladač je tentýž jako na stránce košíku, jen přebarvený:
+ * ta stránka je tmavá, tenhle panel krémový, takže výchozí `--cream-06`
+ * by tu byl neviditelný. Barvy jsou stejné jako u sousedního „Odebrat",
+ * aby ta dvojice držela pohromadě — a drží i na řádku, jinak by byl každý
+ * kus v panelu o celý ovladač vyšší a vešly by se sotva dva.
+ *
+ * `flex-wrap` je pojistka pro úzký panel: než aby se ovladač zmáčkl,
+ * spadne „Odebrat" pod něj.
+ *
+ * Selektor je psaný celou cestou schválně — základní pravidla panelu jsou
+ * osmkrát zanořená a plochá třída by proti nim neprošla (viz `.itemTitle` výš).
+ */
+.cartItem .itemDetails .itemActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4375rem;
+}
+
+.cartItem .itemDetails .itemActions .quantity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+
+  --qty-stepper-ink: rgb(var(--ink-05-rgb) / .82);
+  --qty-stepper-border: rgb(var(--ink-05-rgb) / .22);
+  --qty-stepper-bg: rgb(var(--ink-05-rgb) / .04);
+  --qty-stepper-divider: rgb(var(--ink-05-rgb) / .16);
+  --qty-stepper-active-ink: var(--cream-07);
+  --qty-stepper-active-bg: var(--ink-05);
+}
+
+.cartItem .itemDetails .itemActions .quantityError {
+  color: var(--error, #a3402f);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}

@@ -100,23 +100,29 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       {type === "full" && (
         <div className={s.cellActions}>
           <span className={s.controlLabel}>Množství</span>
-          <div className={s.actionsRow}>
-            <CartQuantityStepper
-              value={item.quantity}
-              max={quantityLimit}
-              disabled={updating}
-              onChange={changeQuantity}
-              data-testid="product-select-button"
-            />
-            {updating && <Spinner />}
+          {/* Ovladač a „Odebrat“ na jedné lince — do 150px sloupce se vejdou
+              jen v menší velikosti a s tlačítkem bez popisku (`compact`). */}
+          <div className={s.actionsLine}>
+            <div className={s.actionsRow}>
+              <CartQuantityStepper
+                value={item.quantity}
+                max={quantityLimit}
+                disabled={updating}
+                onChange={changeQuantity}
+                data-testid="product-select-button"
+              />
+              {updating && <Spinner />}
+            </div>
+            <DeleteButton
+              id={item.id}
+              data-testid="product-delete-button"
+              bundle_id={item.metadata?.bundle_id as string}
+            >
+              {item.metadata?.bundle_id !== undefined
+                ? "Odebrat balíček"
+                : "Odebrat"}
+            </DeleteButton>
           </div>
-          <DeleteButton
-            id={item.id}
-            data-testid="product-delete-button"
-            bundle_id={item.metadata?.bundle_id as string}
-          >
-            {item.metadata?.bundle_id !== undefined ? "Odebrat balíček" : "Odebrat"}
-          </DeleteButton>
           <ErrorMessage error={error} data-testid="product-error-message" />
         </div>
       )}
