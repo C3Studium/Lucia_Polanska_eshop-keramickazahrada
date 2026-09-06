@@ -106,10 +106,6 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
     })
   }, [bundle, images, product.title])
 
-  if (!galleryImages.length && !bundleImages.length) {
-    return <div className="product__mediaEmpty">Fotky sem ještě doplníme.</div>
-  }
-
   const galleryCount = galleryImages.length + (bundleImages.length ? 1 : 0)
 
   /*
@@ -144,6 +140,11 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
     if (!track || track.clientWidth === 0) return
 
     track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" })
+  }
+
+  /* Prázdný stav až za hooky výše — pořadí hooků musí být v každém renderu stejné. */
+  if (!galleryImages.length && !bundleImages.length) {
+    return <div className="product__mediaEmpty">Fotky sem ještě doplníme.</div>
   }
 
   return (

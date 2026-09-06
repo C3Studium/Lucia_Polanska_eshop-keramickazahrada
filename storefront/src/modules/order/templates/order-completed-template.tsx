@@ -14,6 +14,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
+import { pickupPointLabel } from "@lib/util/pickup-point"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -54,9 +55,8 @@ export default async function OrderCompletedTemplate({
     | undefined
   const orderNumber = String(order.display_id).padStart(4, "0")
   // Persisted at checkout by the shipping step; the confirmation never showed it (spec §4).
-  const pickupPoint = String(
-    (order.metadata as Record<string, unknown> | undefined)
-      ?.packeta_pickup_point_label ?? ""
+  const pickupPoint = pickupPointLabel(
+    order.metadata as Record<string, unknown> | undefined
   )
   const fulfillmentStatus = translateStatus(
     order.fulfillment_status,
@@ -238,7 +238,7 @@ export default async function OrderCompletedTemplate({
               <div className={s.totalRows}>
                 <div>
                   <span>Mezisoučet</span>
-                  <strong>{money(order.subtotal)}</strong>
+                  <strong>{money(order.item_total)}</strong>
                 </div>
                 {order.discount_total > 0 && (
                   <div>

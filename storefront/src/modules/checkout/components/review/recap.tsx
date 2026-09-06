@@ -2,6 +2,7 @@
 
 import { convertToLocale } from "@lib/util/money"
 import styles from "./style.module.scss"
+import { pickupPointLabel } from "@lib/util/pickup-point"
 
 /**
  * What the customer is about to pay for, in one block: the objects, where they are going,
@@ -14,7 +15,7 @@ export default function OrderRecap({ cart }: { cart: any }) {
 
   const address = cart?.shipping_address
   const shippingMethod = cart?.shipping_methods?.at(-1)
-  const pickupPoint = String(cart?.metadata?.packeta_pickup_point_label || "")
+  const pickupPoint = pickupPointLabel(cart?.metadata as Record<string, unknown>)
 
   return (
     <div className={styles.recap}>
@@ -70,7 +71,9 @@ export default function OrderRecap({ cart }: { cart: any }) {
           <dl className={styles.totals}>
             <div>
               <dt>Mezisoučet</dt>
-              <dd>{money(cart?.subtotal)}</dd>
+              {/* `item_total`, ne `subtotal`: Medusa do `subtotal` počítá i dopravu,
+                  takže tenhle sloupec vycházel jako „363 + 90 = 363". */}
+              <dd>{money(cart?.item_total)}</dd>
             </div>
             {Boolean(cart?.discount_total) && (
               <div>

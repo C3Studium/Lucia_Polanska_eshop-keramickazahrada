@@ -3,6 +3,7 @@
 const fs = require("fs")
 const path = require("path")
 const { spawn } = require("child_process")
+const { resolveBuildStamp } = require("./build-stamp")
 
 const command = process.argv[2]
 const commandArgs = process.argv.slice(3)
@@ -85,6 +86,17 @@ async function main() {
   loadLocalEnvironment()
 
   const childEnvironment = { ...process.env }
+
+  /*
+   * Otisk verze do klientského balíku. `NEXT_PUBLIC_*` Next zapéká při
+   * sestavení, takže `start` už nemá co nastavovat — hodnota v běžícím
+   * serveru pochází z buildu a musí tak zůstat, jinak by každý restart
+   * serveru vypadal jako nová verze a vyresetoval by session všem.
+   */
+  if (command !== "start") {
+    childEnvironment.NEXT_PUBLIC_BUILD_STAMP = resolveBuildStamp(command)
+    console.log(`Otisk verze: ${childEnvironment.NEXT_PUBLIC_BUILD_STAMP}`)
+  }
 
   if (!childEnvironment.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) {
     const backendUrl =

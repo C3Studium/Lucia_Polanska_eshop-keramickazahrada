@@ -296,6 +296,22 @@ export async function initiatePaymentSession(
     if (cartCacheTag) revalidateTag(cartCacheTag)
     return { success: true, data: resp }
   } catch (e: any) {
+    /*
+     * Bez tohohle řádku byla pokladna slepá.
+     *
+     * Chyba se přeložila do češtiny, vrátila jako `message` a tím to
+     * skončilo: zákazník viděl obecné „Něco se nepovedlo" a nikde — ani
+     * v logu — nezůstalo, co se stalo. Na rozdíl od ostatních volání tady
+     * chybu nezpracovává `medusaError`, který původní hlášku vypisuje.
+     * Metoda je v logu schválně: liší se právě mezi metodami, co brána
+     * přijme, a bez ní se nedá poznat, která z nich zlobí.
+     */
+    console.error(
+      `[platba] relaci se nepodařilo založit (${data?.provider_id ?? "?"}` +
+        `${(data as any)?.data?.method ? ` / ${(data as any).data.method}` : ""}` +
+        `): ${e?.response?.status ?? ""} ${e?.message ?? e}`
+    )
+
     const message = toCzechErrorMessage(e?.message)
     return { success: false, message }
   }

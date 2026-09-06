@@ -85,6 +85,19 @@ bez něj storefront žádnému tokenu nevěří a lišta admina se nezobrazí),
 `INTERNETOVA_ADRESA`) and the legacy `NEXT_PUBLIC_PACKETA_API_KEY` /
 `NEXT_PUBLIC_PACKETA_SHIPPING_METHOD_ID`.
 
+`NEXT_PUBLIC_BUILD_STAMP` se **nenastavuje** — vyrábí ho `scripts/build-stamp.js`
+při každém `pnpm dev` i `pnpm run build` a Next ho zapéká do klientského
+balíku. Prohlížeč podle něj pozná, že stav, který si drží, patří k předchozí
+verzi obchodu, a uklidí po ní sám (`src/lib/util/session-version.ts`); otisk
+hlásí i endpoint `/api/version`, aby o nasazení věděla i otevřená záložka.
+Podle téhož otisku se na novou verzi převádí i košík (`/api/cart/version`):
+zboží, e-mail a adresa se přenesou, rozdělaná pokladna — doprava, výdejní
+místo, platební kolekce, souhlas — se zahodí. Překládá se jen košík, jehož
+doprava už neplatí; zdravý nákup se jen orazítkuje a nechá být.
+
+Vyplnit ho v prostředí má smysl jen tehdy, když někdo potřebuje otisk
+zmrazit — pak se nová verze návštěvníkům neohlásí.
+
 The two Packeta variables go away with D8 once the Balíkovna pickup-point picker
 replaces the Packeta widget in checkout — a flagged storefront dependency,
 outside admin scope.

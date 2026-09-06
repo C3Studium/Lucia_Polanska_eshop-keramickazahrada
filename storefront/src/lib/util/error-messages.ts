@@ -156,6 +156,18 @@ const RULES: ErrorRule[] = [
     message:
       "Nepovedlo se nám spojit se serverem. Zkontrolujte prosím připojení a zkuste to znovu.",
   },
+
+  /*
+   * Úplně poslední, protože je to nejobecnější vzorec: tímhle Medusa maskuje
+   * neošetřenou výjimku uvnitř backendu — typicky odmítnutí od platební brány.
+   * Zkoušet totéž znovu nemá smysl, dopadne to stejně, takže věta posílá na
+   * jiný způsob platby a na nás — ne zpátky na stejné tlačítko.
+   */
+  {
+    match: ["unknown error"],
+    message:
+      "Tenhle způsob platby teď nejde spustit. Zkuste prosím jiný — a když to nepůjde, napište nám na info@keramickazahrada.cz, hned se na to podíváme.",
+  },
 ]
 
 /**

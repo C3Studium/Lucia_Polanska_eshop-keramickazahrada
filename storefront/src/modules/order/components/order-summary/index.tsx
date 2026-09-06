@@ -24,7 +24,7 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
       <div className={styles.content}>
         <div className={styles.row}>
           <span>Mezisoučet</span>
-          <span>{getAmount(order.subtotal)}</span>
+          <span>{getAmount(order.item_total)}</span>
         </div>
         <div className={styles.meta}>
           {order.discount_total > 0 && (
