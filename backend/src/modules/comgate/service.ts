@@ -523,8 +523,68 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     }
   }
 
+  /**
+   * Zahození relace, kterou Medusa nahrazuje novou.
+   *
+   * Není to zrušení platby, i když se tak jmenuje — je to úklid po volbě,
+   * kterou zákazník opustil. Medusa tohle volá pokaždé, když se má na
+   * kolekci založit nová relace, a když to vyhodí výjimku, spadne jí celý
+   * krok: „Could not delete all payment sessions". Zákazník pak nemá jak
+   * zaplatit — a přitom mu v cestě stojí transakce, o kterou nikdo nestojí.
+   *
+   * Reprodukováno: relace založená na 756 Kč, košík mezitím změněný na 363.
+   * Druhý den už ComGate o té transakci nechtěl slyšet a pokladna se od té
+   * chvíle nedala dokončit ničím, co má zákazník po ruce.
+   *
+   * Neprojde tudy jediná výjimka — kromě jedné: zaplacenou ani autorizovanou
+   * platbu zahodit nesmíme. Na tu se váže objednávka a oznámení od ComGate ji
+   * hledá podle `refId`, tedy podle téhle relace. Radši ať se to nahoře
+   * ozve, než aby zmizely peníze.
+   */
   async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
-    return this.cancelPayment(input)
+    const data = asRecord(input.data)
+    const transId = resolveComgateTransactionId(data)
+
+    if (!transId) {
+      return { data }
+    }
+
+    let details: ComgatePaymentDetails
+    try {
+      details = await this.retrieveDetails(transId)
+    } catch (error) {
+      // ComGate o transakci neví — vypršela nebo ji smazal. Není co rušit.
+      this.warn(
+        `Comgate transaction ${transId} could not be read while dropping its session (${
+          error instanceof Error ? error.message : String(error)
+        }); leaving it be`
+      )
+      return { data }
+    }
+
+    if (details.status === "PAID" || details.status === "AUTHORIZED") {
+      throw new Error(
+        `Comgate payment ${transId} is ${details.status}; refusing to drop the Medusa session it belongs to`
+      )
+    }
+
+    if (details.status !== "CANCELLED") {
+      try {
+        await this.request(
+          `/payment/transId/${encodeURIComponent(transId)}.json`,
+          { method: "DELETE" }
+        )
+      } catch (error) {
+        // Nezrušená transakce vyprší sama. Zákazníka to blokovat nesmí.
+        this.warn(
+          `Comgate transaction ${transId} could not be cancelled (${
+            error instanceof Error ? error.message : String(error)
+          }); leaving it to expire`
+        )
+      }
+    }
+
+    return { data: this.providerData(data, details) }
   }
 
   async retrievePayment(
@@ -566,7 +626,10 @@ class ComgatePaymentProviderService extends AbstractPaymentProvider<ComgateOptio
     }
 
     if (details.status === "PENDING") {
-      await this.cancelPayment({ data })
+      // `deletePayment`, ne `cancelPayment`: nahrazujeme transakci, kterou
+      // zákazník opustil, a její neúspěšné zrušení nesmí vzít novou platbu
+      // s sebou. Zaplacenou platbu `deletePayment` odmítne samo.
+      await this.deletePayment({ data } as DeletePaymentInput)
     }
 
     const replacementData = { ...data }

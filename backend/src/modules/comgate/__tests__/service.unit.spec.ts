@@ -232,6 +232,82 @@ describe("Comgate payment provider", () => {
     ).resolves.toEqual({ action: "not_supported" })
   })
 
+  /*
+   * Zahození opuštěné relace.
+   *
+   * Medusa tohle volá pokaždé, než na kolekci založí novou relaci. Když to
+   * vyhodí výjimku, spadne jí celý krok („Could not delete all payment
+   * sessions") a zákazník nemá jak zaplatit. Reprodukováno na skutečném
+   * košíku: relace z předchozího dne, kterou už ComGate neznal.
+   */
+  it("drops a session whose transaction Comgate no longer knows", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(jsonResponse({ code: 1400, message: "Unknown transaction" }, 404))
+
+    await expect(
+      createService().deletePayment({ data: { transId: "AAAA-BBBB-CCCC" } })
+    ).resolves.toBeDefined()
+
+    expect(logger.warn).toHaveBeenCalled()
+  })
+
+  it("drops a session even when the cancellation itself fails", async () => {
+    const fetchMock = jest.spyOn(global, "fetch")
+    fetchMock.mockResolvedValueOnce(jsonResponse(providerDetails("PENDING")))
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ code: 1200, message: "Payment cannot be cancelled" }, 409)
+    )
+
+    await expect(
+      createService().deletePayment({ data: { transId: "AAAA-BBBB-CCCC" } })
+    ).resolves.toBeDefined()
+
+    expect(logger.warn).toHaveBeenCalled()
+  })
+
+  /* Jediná výjimka: na zaplacenou platbu se váže objednávka a oznámení od
+     ComGate ji hledá podle `refId`. Tu relaci zahodit nesmíme. */
+  it("refuses to drop the session of a paid payment", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(jsonResponse(providerDetails("PAID")))
+
+    await expect(
+      createService().deletePayment({ data: { transId: "AAAA-BBBB-CCCC" } })
+    ).rejects.toThrow(/PAID/)
+  })
+
+  /* Změna metody zakládá novou transakci místo staré. Když se ta stará mezitím
+     stala nezrušitelnou, nesmí to novou platbu vzít s sebou. */
+  it("switches payment method even when the superseded transaction cannot be cancelled", async () => {
+    const fetchMock = jest.spyOn(global, "fetch")
+    // 1) stav staré transakce, 2) stav znovu (uvnitř zahození), 3) neúspěšné
+    // zrušení, 4) založení nové transakce
+    fetchMock.mockResolvedValueOnce(jsonResponse(providerDetails("PENDING")))
+    fetchMock.mockResolvedValueOnce(jsonResponse(providerDetails("PENDING")))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ code: 1200, message: "nope" }, 409))
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        { code: 0, message: "OK", transId: "DDDD-EEEE-FFFF", redirect: "https://payments.comgate.cz/client/payment" },
+        201
+      )
+    )
+
+    await expect(
+      createService().updatePayment({
+        amount: 450,
+        currency_code: "czk",
+        data: {
+          transId: "AAAA-BBBB-CCCC",
+          session_id: "payses_test",
+          method: "GOOGLEPAY_REDIRECT",
+          email: "customer@example.com",
+        },
+      } as any)
+    ).resolves.toMatchObject({ data: { transId: "DDDD-EEEE-FFFF" } })
+  })
+
   /* Odmítnutí se musí dát vyslovit i bez loggeru — jinak z „nepatří nám"
      vznikne pád a ComGate opakuje pokusy donekonečna. */
   it("rejects without a logger instead of throwing", async () => {
