@@ -242,3 +242,76 @@
     padding-block: 14.5px;
   }
 }
+
+/*
+ * Rozbalovací hlavička.
+ *
+ * Je to `<button>`, ne `<summary>`: rozbalování animuje framer-motion, a to
+ * potřebuje stav v Reactu — `<details>` se otevře samo dřív, než by se animace
+ * stihla rozjet. Přístupnost obstará `aria-expanded` a `aria-controls`.
+ *
+ * Reset vzhledu je tu proto, že prohlížeč by tlačítku jinak nakreslil rámeček
+ * a šedé pozadí přes celý blok.
+ */
+.summary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.summaryCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/* Byly to `<p>` a `<h3>`, teď jsou to `<span>` uvnitř tlačítka — bez tohohle
+   by se poskládaly vedle sebe na jeden řádek. */
+.eyebrow,
+.heading { display: block; }
+
+/* Otáčení řídí framer-motion spolu s rozbalováním, ať jedou po jedné křivce;
+   tady zůstává jen barva na najetí. */
+.chevron {
+  display: grid;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid rgb(var(--ink-05-rgb) / .18);
+  border-radius: 999px;
+  color: var(--damage-accent);
+  transition: background-color 240ms ease;
+}
+
+.summary:hover .chevron { background: rgb(var(--clay-17-rgb) / .12); }
+
+/* Obal, kterému se animuje výška. Odsazení má až `.body` — na obalu by se
+   sráželo dřív než obsah a blok by při zavírání cukl. */
+.bodyWrap { overflow: hidden; }
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron { transition: none; }
+}

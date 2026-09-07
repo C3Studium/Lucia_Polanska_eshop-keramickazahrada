@@ -21,10 +21,14 @@ import s from "./styles/order-details.module.scss"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
+  /* Načítá ho stránka, ne tahle šablona: je klientská a datová vrstva je
+     `server-only`. Viz komentář v `carrier-damage`. */
+  claimForm?: { title: string; url: string } | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
+  claimForm = null,
 }) => {
   return (
     <AccountPageReveal
@@ -100,6 +104,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <CarrierDamageNotice
           orderNumber={order.display_id}
           isCarrierDelivery={isCarrierShippingMethod(order as any)}
+          claimForm={claimForm}
           stage="delivered"
         />
 

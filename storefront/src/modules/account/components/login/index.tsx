@@ -59,6 +59,7 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
             title="Zadejte platnou e-mailovou adresu."
             autoComplete="email"
             required
+            selectAllOnDoubleClick
             data-testid="email-input"
           />
           <Input
@@ -67,6 +68,7 @@ const Login = ({ setCurrentView, redirectTo }: Props) => {
             type="password"
             autoComplete="current-password"
             required
+            selectAllOnDoubleClick
             data-testid="password-input"
           />
         </div>

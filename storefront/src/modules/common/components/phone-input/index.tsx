@@ -107,6 +107,9 @@ type PhoneInputProps = {
   id?: string
   placeholder?: string
   autoComplete?: string
+  /* Prochází beze změny do sdíleného `Input` — registrace si ho zapíná
+     u všech svých polí, telefon nevyjímaje. */
+  selectAllOnDoubleClick?: boolean
   "data-testid"?: string
   "aria-invalid"?: boolean
   "aria-describedby"?: string

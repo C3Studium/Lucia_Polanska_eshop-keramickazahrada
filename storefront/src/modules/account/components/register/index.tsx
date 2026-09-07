@@ -59,6 +59,7 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             name="first_name"
             required
             autoComplete="given-name"
+            selectAllOnDoubleClick
             data-testid="first-name-input"
           />
           <Input
@@ -66,6 +67,7 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             name="last_name"
             required
             autoComplete="family-name"
+            selectAllOnDoubleClick
             data-testid="last-name-input"
           />
           <Input
@@ -74,9 +76,11 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             required
             type="email"
             autoComplete="email"
+            selectAllOnDoubleClick
             data-testid="email-input"
           />
           <PhoneInput
+            selectAllOnDoubleClick
             label="Telefon"
             name="phone"
             data-testid="phone-input"
@@ -87,6 +91,7 @@ const Register = ({ setCurrentView, redirectTo }: Props) => {
             required
             type="password"
             autoComplete="new-password"
+            selectAllOnDoubleClick
             data-testid="password-input"
           />
         </div>

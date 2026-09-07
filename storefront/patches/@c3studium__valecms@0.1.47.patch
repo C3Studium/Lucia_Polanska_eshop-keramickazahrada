@@ -1,0 +1,38 @@
+diff --git a/src/edit/overlay/lock.js b/src/edit/overlay/lock.js
+index 192b6e9a261f580b4abb8b77ba9a97256b3aadb8..4a4e2bd4a87701d31a9bd46fefc4b77fe567eb3e 100644
+--- a/src/edit/overlay/lock.js
++++ b/src/edit/overlay/lock.js
+@@ -97,9 +97,31 @@ const BLOCKED = [
+ /** The ones whose default action is the thing being prevented. See above. */
+ const CANCELLED = new Set(["click", "auxclick", "dragstart"])
+ 
+-/** The overlay's chrome, and the field an editor is typing into. */
++/**
++ * Pole, do kterých se píše.
++ *
++ * Zámek má stránce vzít GESTA — odkaz, magnet, kurzor, tažení obrázku ven.
++ * Textové pole žádné z nich není: kliknutí do něj neposune stránku, nic
++ * neotevře a nikam nenaviguje, jen postaví kurzor. Dokud tudy zámek jel taky,
++ * nešlo v rámu označit obsah inputu — ani tažením, ani dvojklikem —, takže
++ * přihlašovací formulář se v editaci nedal použít a redaktor si stránku
++ * nemohl prohlédnout přihlášený.
++ *
++ * Výčtem typů, ne holým `input`: tlačítka, odesílací pole, zaškrtávátka
++ * a výběr souboru MAJÍ zůstat zamčené — jejich výchozí akce je přesně ta
++ * věc, kterou zámek zadržuje (odeslat formulář, otevřít dialog).
++ * `select` a `textarea` jsou v tom stejné jako textový input.
++ */
++const TEXT_FIELDS =
++  "textarea,select," +
++  "[contenteditable]:not([contenteditable='false'])," +
++  "input:not([type='button']):not([type='submit']):not([type='reset'])" +
++  ":not([type='checkbox']):not([type='radio'])" +
++  ":not([type='image']):not([type='file'])"
++
++/** The overlay's chrome, the field an editor is typing into, and form fields. */
+ 
+-const EXEMPT = "[data-cms-overlay],[data-cms-editing]"
++const EXEMPT = "[data-cms-overlay],[data-cms-editing]," + TEXT_FIELDS
+ 
+ /**
+  * Set on the framed `<html>` while the lock is up. Not read by any stylesheet —

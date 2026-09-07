@@ -8,7 +8,10 @@ import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
 import { addOrderCommissionNote } from "@lib/data/commission-actions"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
-import CarrierDamageNotice from "@modules/order/components/carrier-damage"
+import CarrierDamageNotice, {
+  CLAIM_FORM_KEY,
+} from "@modules/order/components/carrier-damage"
+import { getSiteDocument } from "@lib/data/documents"
 import CommissionBrief from "@modules/checkout/components/commission-brief"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
@@ -54,6 +57,7 @@ export default async function OrderCompletedTemplate({
     | (HttpTypes.StoreOrderShippingMethod & { amount?: number })
     | undefined
   const orderNumber = String(order.display_id).padStart(4, "0")
+  const claimForm = await getSiteDocument(CLAIM_FORM_KEY)
   // Persisted at checkout by the shipping step; the confirmation never showed it (spec §4).
   const pickupPoint = pickupPointLabel(
     order.metadata as Record<string, unknown> | undefined
@@ -117,6 +121,7 @@ export default async function OrderCompletedTemplate({
           <CarrierDamageNotice
             orderNumber={order.display_id}
             isCarrierDelivery={isCarrierShippingMethod(order as any)}
+            claimForm={claimForm}
             stage="pending"
           />
         </section>
@@ -175,7 +180,7 @@ export default async function OrderCompletedTemplate({
             <div className={s.sectionHead}>
               <div>
                 <p>01 · Co jste objednali</p>
-                <h2>Kolik to dělá</h2>
+                <h2>Souhrn</h2>
               </div>
               <span>
                 {items.reduce((count, item) => count + item.quantity, 0)} ks
@@ -233,7 +238,7 @@ export default async function OrderCompletedTemplate({
                 Bezpečná platba · pečlivé balení
               </p>
               <span className={s.receiptEyebrow}>02 · Souhrn</span>
-              <h2>Kolik to dělá</h2>
+              <h2>Souhrn</h2>
 
               <div className={s.totalRows}>
                 <div>
@@ -282,7 +287,7 @@ export default async function OrderCompletedTemplate({
               <span>03</span>
               <div>
                 <p>Doručení</p>
-                <h2>Kam to pošleme</h2>
+                <h2>Vaše adresa</h2>
               </div>
             </div>
 
@@ -327,7 +332,7 @@ export default async function OrderCompletedTemplate({
               <span>04</span>
               <div>
                 <p>Platba</p>
-                <h2>Jak jste zaplatili</h2>
+                <h2>Vaše platba</h2>
               </div>
             </div>
 

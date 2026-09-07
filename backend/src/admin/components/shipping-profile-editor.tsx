@@ -1,14 +1,16 @@
 import {
+  Badge,
   Button,
   Drawer,
   Input,
   Label,
+  Select,
   Switch,
   Text,
   toast,
 } from "@medusajs/ui";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
 
 /**
@@ -49,10 +51,32 @@ export const ShippingProfileEditor = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [isFragile, setIsFragile] = useState(fragile);
+  const [profil, setProfil] = useState("");
   const [price, setPrice] = useState(
     packagingPrice === null ? "" : String(packagingPrice)
   );
   const queryClient = useQueryClient();
+
+  /* Až po otevření: seznam profilů ani profil kusu nejsou k ničemu, dokud je
+     zásuvka zavřená, a řádků v Produkty+ jsou stovky. */
+  const { data: produkt } = useQuery<any>({
+    queryKey: ["product-shipping-profile", productId],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/products/${productId}?fields=id,*shipping_profile`),
+    enabled: open,
+  });
+
+  const { data: profily } = useQuery<any>({
+    queryKey: ["shipping-profiles"],
+    queryFn: () => sdk.client.fetch("/admin/shipping-profiles?limit=100"),
+    enabled: open,
+  });
+
+  const soucasnyProfil = produkt?.product?.shipping_profile?.id ?? "";
+
+  useEffect(() => {
+    setProfil(soucasnyProfil);
+  }, [soucasnyProfil]);
 
   const save = useMutation({
     mutationFn: () => {
@@ -63,20 +87,38 @@ export const ShippingProfileEditor = ({
         throw new Error("Cena balení musí být kladné číslo, nebo prázdná.");
       }
 
-      // Merges rather than replacing — the native product endpoint would wipe
-      // clearance and dobírka off this piece.
-      return sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
-        method: "POST",
-        body: {
-          fragile: isFragile,
-          // Explicit null clears it back to the shop default rather than
-          // freezing whatever was typed once.
-          packaging_price: parsed,
-        },
-      });
+      /* Dvě různé cesty schválně: příznaky přes workbench, který slučuje
+         (nativní endpoint by z kusu smazal výprodej a dobírku), profil přes
+         nativní endpoint, protože ten jediný umí přepsat vazbu na dopravu.
+         Profil se posílá jen při změně, ať se produkt nepřepisuje pro nic. */
+      const zapisy: Promise<unknown>[] = [
+        sdk.client.fetch(`/admin/workbench/products/${productId}/flags`, {
+          method: "POST",
+          body: {
+            fragile: isFragile,
+            // Explicit null clears it back to the shop default rather than
+            // freezing whatever was typed once.
+            packaging_price: parsed,
+          },
+        }),
+      ];
+
+      if (profil && profil !== soucasnyProfil) {
+        zapisy.push(
+          sdk.client.fetch(`/admin/products/${productId}`, {
+            method: "POST",
+            body: { shipping_profile_id: profil },
+          })
+        );
+      }
+
+      return Promise.all(zapisy);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["product-shipping-profile", productId],
+      });
       toast.success(`${productTitle} — doprava a balení uloženy.`);
       setOpen(false);
     },
@@ -127,6 +169,40 @@ export const ShippingProfileEditor = ({
               value={price}
               onChange={(event) => setPrice(event.target.value)}
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <Label size="small" weight="plus">
+                Profil dopravy
+              </Label>
+              {soucasnyProfil ? (
+                <Badge size="2xsmall" color="green">
+                  Lze objednat
+                </Badge>
+              ) : (
+                <Badge size="2xsmall" color="red">
+                  Nelze objednat
+                </Badge>
+              )}
+            </div>
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1 mb-2">
+              {soucasnyProfil
+                ? "Zpřístupní všechny dopravy, které na profilu leží — u výchozího poštu, Balíkovnu i osobní odběr."
+                : "Kus bez profilu nejde objednat: zákazník zaplatí a objednávka teprve pak spadne. Vyberte profil."}
+            </Text>
+            <Select value={profil} onValueChange={setProfil}>
+              <Select.Trigger>
+                <Select.Value placeholder="Bez profilu" />
+              </Select.Trigger>
+              <Select.Content>
+                {((profily?.shipping_profiles ?? []) as any[]).map((item) => (
+                  <Select.Item key={item.id} value={item.id}>
+                    {item.name}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select>
           </div>
 
           <Text size="xsmall" className="text-ui-fg-muted">

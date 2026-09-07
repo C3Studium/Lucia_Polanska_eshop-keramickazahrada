@@ -70,8 +70,21 @@
 
 .ambient::after { transform: rotate(90deg); }
 
+/*
+ * Šířku rozhoduje `90vw`, ne strop.
+ *
+ * Dřív to bylo `min(96vw, 1740px)` — jenže ten strop se na běžném monitoru
+ * potkal dřív než procenta: na 2161px širokém okně vycházelo 1740, tedy
+ * sotva 80 % šířky, a stránka působila, že se krčí uprostřed. Vnitřní
+ * odsazení `.root` (až 4.5rem po stranách) přitom ubírá dalších ~144px.
+ *
+ * Strop zůstává, ale posunutý tak, aby platil až nad 2444px — od té šířky
+ * už řádek přestává být čitelný a je lepší ho zastavit než ho táhnout dál.
+ * Pod 620px si `.container` bere 100 %, což po odsazení vyjde na těch 90 %
+ * samo — telefonu tedy tohle pravidlo nic nemění.
+ */
 .container {
-  width: min(96vw, 1740px);
+  width: min(90vw, 2200px);
   margin-inline: auto;
 }
 
@@ -122,7 +135,9 @@
 .title {
   max-width: 13ch;
   margin: 0;
-  font: 400 clamp(3.8rem, 7.1vw, 7.6rem)/.84 "Sentient-Regular", Georgia, serif;
+  /* 0.75x puvodniho (3.8 / 7.1vw / 7.6). Podekovani ma stranku otevrit,
+     ne ji zabrat - pod nim je objednavka, kvuli ktere sem clovek prisel. */
+  font: 400 clamp(2.85rem, 5.3vw, 5.7rem)/.86 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.06em;
 }
 
@@ -302,7 +317,8 @@
 .detailHeading h2,
 .support h2 {
   margin: 0;
-  font: 400 clamp(2.4rem, 4.2vw, 4.6rem)/.92 "Sentient-Regular", Georgia, serif;
+  /* 0.75x puvodniho (2.4 / 4.2vw / 4.6): nadpis sekce, ne nadpis stranky. */
+  font: 400 clamp(1.8rem, 3.15vw, 3.45rem)/.94 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.045em;
 }
 
@@ -365,7 +381,9 @@
 
 .itemCopy h3 {
   margin: 0 0 .55rem;
-  font: 400 clamp(1.6rem, 2.3vw, 2.45rem)/1 "Sentient-Regular", Georgia, serif;
+  /* 0.8x puvodniho (1.6 / 2.3vw / 2.45): v seznamu objednavky je nazev
+     popisek radku, ne nadpis. */
+  font: 400 clamp(1.28rem, 1.85vw, 1.95rem)/1.05 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.035em;
 }
 
@@ -430,9 +448,10 @@
 }
 
 .receipt h2 {
-  max-width: 6ch;
-  margin: 1.2rem 0 3rem;
-  font: 400 clamp(2.8rem, 4vw, 4.6rem)/.86 "Sentient-Regular", Georgia, serif;
+  max-width: 8ch;
+  margin: 1.2rem 0 2.25rem;
+  /* 0.75x puvodniho (2.8 / 4vw / 4.6). */
+  font: 400 clamp(2.1rem, 3vw, 3.45rem)/.9 "Sentient-Regular", Georgia, serif;
   letter-spacing: -.05em;
 }
 
@@ -471,12 +490,20 @@
   font: 400 .78rem/1 "Sansation-Regular", sans-serif;
 }
 
+/*
+ * Doruceni a platba pod sebou, ne vedle.
+ *
+ * Vedle sebe si kazda brala pul sirky, takze se jejich vnitrni mrizky
+ * (adresa ve trech sloupcich, platba ve dvou) mackaly do poloviny stranky
+ * a rostly do vysky. Pod sebou ma kazda celou sirku, vejde se na min radku
+ * a cely blok je nakonec nizsi, ne vyssi.
+ */
 .details {
   display: grid;
-  grid-template-columns: 1.15fr .85fr;
-  gap: clamp(3rem, 6vw, 7rem);
-  margin-top: clamp(6rem, 12vh, 10rem);
-  padding-top: clamp(4rem, 8vh, 7rem);
+  grid-template-columns: 1fr;
+  gap: clamp(2rem, 4vh, 3.25rem);
+  margin-top: clamp(4rem, 8vh, 7rem);
+  padding-top: clamp(2.5rem, 5vh, 4.5rem);
   border-top: 1px solid var(--line);
 }
 
@@ -489,7 +516,7 @@
   display: grid;
   grid-template-columns: 2rem 1fr;
   gap: 1rem;
-  margin-bottom: clamp(2.5rem, 5vh, 4.5rem);
+  margin-bottom: clamp(1.25rem, 2.5vh, 2rem);
 }
 
 .detailHeading > span {
@@ -500,7 +527,9 @@
 }
 
 .detailHeading p { margin-bottom: .75rem; }
-.detailHeading h2 { max-width: 12ch; font-size: clamp(2.2rem, 3.6vw, 3.9rem); }
+/* 0.7x puvodniho (2.2 / 3.6vw / 3.9): tyhle dve karty jsou doklad, ne
+   kapitoly - nadpis ma oddelit, ne kricet. */
+.detailHeading h2 { max-width: 16ch; font-size: clamp(1.55rem, 2.5vw, 2.75rem); }
 
 .detailGrid {
   display: grid;
@@ -609,7 +638,7 @@
 
 @include below-px(820px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
-  .title { font-size: clamp(3.5rem, 12vw, 6rem); }
+  .title { font-size: clamp(2.65rem, 9vw, 4.5rem); }
   .title em { margin-left: 0; width: auto; max-width: 11ch; }
   .statusRail { grid-template-columns: 1fr; }
   .statusRail article { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -646,7 +675,7 @@
   .masthead { grid-template-columns: 1fr; }
   .confirmed { justify-self: start; }
   .hero { padding-inline: 0; }
-  .title { font-size: clamp(3.2rem, 17vw, 5rem); }
+  .title { font-size: clamp(2.4rem, 12.75vw, 3.75rem); }
   .orderMeta { grid-template-columns: 1fr; }
   .orderMeta > div,
   .orderMeta > div:first-child,
@@ -657,19 +686,50 @@
   }
   .orderMeta > div:last-child { border-bottom: 0; }
   .sectionHead { align-items: flex-start; flex-direction: column; gap: .5rem; }
+  /* Tretim sloupcem se z „Mnozstvi" a „Celkem" stane jedna rada misto dvou:
+     radek polozky je o cely blok nizsi a do obrazovky se jich vejde vic. */
   .item {
-    grid-template-columns: 4.8rem minmax(0, 1fr);
+    grid-template-columns: 4.8rem minmax(0, 1fr) minmax(0, 1fr);
   }
   .itemIndex { display: none; }
   .thumbnail { width: 4.2rem; }
-  .itemCopy { padding: .8rem 0 .8rem 1rem; }
-  .itemCopy h3 { font-size: 1.55rem; }
+  .itemCopy { grid-column: 2 / -1; padding: .8rem 0 .8rem 1rem; }
+  .itemCopy h3 { font-size: clamp(1.15rem, 4.4vw, 1.35rem); }
   .itemQuantity,
   .itemTotal {
-    grid-column: 2;
-    padding-left: 1rem;
+    padding: .9rem 0 .9rem 1rem;
   }
+  /* Cara jen mezi nimi, ne za miniaturou. */
+  .itemQuantity { grid-column: 2; border-left: 0; }
+  .itemTotal { grid-column: 3; }
   .receipt { width: calc(100% - 13px); margin-left: 0; }
+
+  /*
+   * Na uzke obrazovce jde souhrn pred seznam.
+   *
+   * Vedle sebe se to na sirokem okne cte najednou; pod sebou znamena poradi
+   * v kodu poradi ctení, a seznam peti kusu odsune castku, kvuli ktere clovek
+   * na tuhle stranku prisel, o par obrazovek nize. Adresa a platba jdou hned
+   * za souhrn — to jsou dalsi dve veci, ktere si zakaznik kontroluje; seznam
+   * kusu je az pod tim, k prohlednuti.
+   *
+   * `display: contents` na `.purchaseGrid` je tu proto, ze `.objects`
+   * a `.receipt` jsou jeho deti, kdezto `.details` je jeho sourozenec —
+   * bez toho by se mezi ne `.details` nedaly vlozit. Poradi dostavaji
+   * VSICHNI sourozenci, ne jen ty tri: `order` se pocita v ramci celeho
+   * kontejneru, takze bez cisel u ostatnich by hlavicka i paticka skocily
+   * na zacatek.
+   */
+  .container { display: grid; grid-template-columns: 1fr; }
+  .purchaseGrid { display: contents; }
+  .masthead { order: 1; }
+  .hero { order: 2; }
+  .orderMeta { order: 3; }
+  .receipt { order: 4; }
+  .details { order: 5; }
+  .objects { order: 6; }
+  .support { order: 7; }
+  .footer { order: 8; }
   .detailHeading { grid-template-columns: 1.6rem 1fr; }
   .support { grid-template-columns: 1fr; padding: 2.4rem 1.5rem; }
   .actions { grid-column: auto; align-items: flex-start; flex-direction: column; }

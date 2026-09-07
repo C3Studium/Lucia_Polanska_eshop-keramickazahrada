@@ -5,7 +5,9 @@ import medusaError from "@lib/util/medusa-error"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { ipZHlavicek, vejdeSeDoStropu } from "@lib/util/reset-throttle"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -265,6 +267,196 @@ export async function login(_currentState: unknown, formData: FormData) {
     redirect(redirectTo)
   }
 }
+/**
+ * Obnova hesla — tři kroky, všechny na serveru.
+ *
+ * Dřív si je stránky volaly samy z prohlížeče přes `sdk.auth`. To po Meduse
+ * chce `AUTH_CORS` s originem obchodu, a ten na backendu povolený není:
+ * preflight na `/auth/customer/emailpass/reset-password` se vrací 204, ale
+ * BEZ `access-control-allow-origin`, takže požadavek prohlížeč zahodí ještě
+ * před odesláním a uživatel vidí „Failed to fetch". Změřeno na produkčním
+ * backendu pro localhost:8000, localhost:7001 i keramickazahrada.cz —
+ * nepovolený je každý. `STORE_CORS` naopak localhost:8000 vrací, proto
+ * zbytek webu chodí a rozbité je jen tohle.
+ *
+ * Ze serveru žádné CORS není — to je pravidlo prohlížeče, ne HTTP. Volání
+ * tím zároveň zapadá k `login` a `signup` o kus výš, které přes server
+ * chodily vždycky; obnova hesla byla jediná výjimka.
+ *
+ * Vrací `null` při úspěchu a českou hlášku při chybě, stejně jako `login`.
+ */
+/** Tvar adresy. Ne validace podle RFC — ta se dělá doručením. */
+const TVAR_EMAILU = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const DELKA_EMAILU = 254
+
+/**
+ * Nejkratší doba, po které se odpovídá.
+ *
+ * Odpověď je pro existující i neexistující účet stejná, takže jediné, čím by
+ * se dalo poznat, kdo u nás účet má, je ČAS: u existujícího se navíc zakládá
+ * token a vypravuje událost. Sjednocené dno ten rozdíl schová. 400 ms je pod
+ * hranicí, kdy se čekání začne číst jako zdržení, a nad rozptylem, který
+ * mezi těmi dvěma větvemi vzniká.
+ */
+const NEJKRATSI_ODPOVED_MS = 400
+
+const pockejDo = async (cas: number) => {
+  const zbyva = cas - Date.now()
+  if (zbyva > 0) {
+    await new Promise((hotovo) => setTimeout(hotovo, zbyva))
+  }
+}
+
+/**
+ * Žádost o odkaz na nové heslo.
+ *
+ * ## Odpověď je vždycky stejná
+ *
+ * Krom vysloveně rozbitého tvaru adresy vrací `null` — tedy „hotovo" — ať
+ * účet existuje, neexistuje, nebo backend spadl. Kdyby se rozlišovalo,
+ * je z formuláře nástroj na zjišťování, kdo u obchodu nakupuje: stačí zkoušet
+ * adresy a číst odpovědi. Skutečná chyba jde do serverového logu, kde patří.
+ *
+ * Na tvar adresy se odpovídá chybou schválně — to je informace o tom, co
+ * člověk napsal, ne o tom, koho známe.
+ *
+ * ## Strop podle IP
+ *
+ * Backend počítá žádosti podle adresy příjemce; tady se počítají podle IP
+ * odesílatele, protože skutečnou IP vidí jedině tahle strana. Rozdíl a meze
+ * obou vrstev popisuje `lib/util/reset-throttle.ts`.
+ *
+ * Vyčerpaný strop se navenek tváří jako úspěch. Kdo klepe pošesté za čtvrt
+ * hodiny, buď e-mail dávno má, nebo ho posílá někam, kam nemá — ani jednomu
+ * není co vysvětlovat.
+ */
+export async function requestPasswordReset(email: string) {
+  const dokdy = Date.now() + NEJKRATSI_ODPOVED_MS
+  const adresa = (email ?? "").trim().toLowerCase()
+
+  if (
+    !adresa ||
+    adresa.length > DELKA_EMAILU ||
+    !TVAR_EMAILU.test(adresa)
+  ) {
+    return "Zadejte prosím platnou e-mailovou adresu."
+  }
+
+  try {
+    const hlavicky = await headers()
+
+    if (vejdeSeDoStropu(`obnova-hesla:${ipZHlavicek(hlavicky)}`)) {
+      await sdk.auth.resetPassword("customer", "emailpass", {
+        identifier: adresa,
+      })
+    } else {
+      console.warn("[obnova hesla] strop podle IP vyčerpán — žádost neodeslána")
+    }
+  } catch (error: any) {
+    /* Ven se to nedostane. Backendový 429 z tamního omezovače sem chodí
+       úplně stejnou cestou jako výpadek — a v obou případech má člověk
+       vidět tutéž větu. */
+    console.error(
+      "[obnova hesla] žádost selhala:",
+      error?.message ?? error?.toString()
+    )
+  }
+
+  await pockejDo(dokdy)
+
+  return null
+}
+
+/**
+ * Nastavení nového hesla podle tokenu z e-mailu.
+ *
+ * Token nese odkaz v e-mailu a jde do hlavičky `Authorization` — proto se
+ * předává zvlášť, ne v těle.
+ */
+/**
+ * Meze hesla.
+ *
+ * Osm znaků je totéž, co slibuje nápis v poli — pravidlo, které formulář
+ * ukazuje a server nevynucuje, není pravidlo. Horní mez není o síle hesla,
+ * ale o tom, že se heslo hashuje: bez stropu je z přihlašovacího pole
+ * levný způsob, jak serveru zadat práci na několik megabajtů.
+ */
+const HESLO_MIN = 8
+const HESLO_MAX = 128
+
+export async function updatePasswordWithToken(
+  email: string,
+  password: string,
+  token: string
+) {
+  /* Kontroly se opakují i na klientovi — tyhle jsou ty platné. Klientské
+     jsou kvůli rychlé odezvě, ne kvůli bezpečnosti; obejít je znamená
+     otevřít nástroje pro vývojáře. */
+  if (!token) {
+    return "Odkaz není celý — otevřete ho prosím z e-mailu znovu."
+  }
+
+  if (password.length < HESLO_MIN) {
+    return `Heslo musí mít aspoň ${HESLO_MIN} znaků.`
+  }
+
+  if (password.length > HESLO_MAX) {
+    return `Heslo může mít nejvýš ${HESLO_MAX} znaků.`
+  }
+
+  if (password.trim().toLowerCase() === (email ?? "").trim().toLowerCase()) {
+    return "Heslo nemůže být stejné jako e-mail."
+  }
+
+  try {
+    await sdk.auth.updateProvider(
+      "customer",
+      "emailpass",
+      { email, password },
+      token
+    )
+  } catch (error: any) {
+    return toCzechErrorMessage(error?.message ?? error?.toString())
+  }
+
+  return null
+}
+
+/**
+ * Přihlášení hned po změně hesla.
+ *
+ * Nejde jen o CORS. `sdk.auth.login` v prohlížeči vrátí token do JS, jenže
+ * aplikace čte přihlášení z httpOnly cookie `_medusa_jwt`, kterou z JS
+ * nastavit nejde — takže i kdyby CORS povolený byl, člověk by se „přihlásil"
+ * a stránka účtu by ho stejně poslala zpátky na přihlášení. Cookie umí
+ * nastavit jen server, přes `setAuthToken`.
+ *
+ * Tělo je záměrně tytéž kroky jako v `login` bez formuláře a přesměrování;
+ * `login` zůstává nedotčený, protože je to cesta, kterou chodí všichni.
+ */
+export async function loginAfterPasswordReset(email: string, password: string) {
+  try {
+    const token = await sdk.auth.login("customer", "emailpass", {
+      email,
+      password,
+    })
+    await setAuthToken(token as string)
+
+    const customerCacheTag = await getCacheTag("customers")
+    revalidateTag(customerCacheTag)
+  } catch (error: any) {
+    return toCzechErrorMessage(error?.message ?? error?.toString())
+  }
+
+  try {
+    await transferCart()
+  } catch (error: any) {
+    return toCzechErrorMessage(error?.message ?? error?.toString())
+  }
+
+  return null
+}
+
 export async function signout(countryCode: string) {
   try {
     await sdk.auth.logout()

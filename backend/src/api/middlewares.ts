@@ -34,6 +34,8 @@ import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-se
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { requireShippableCart } from "../lib/require-shippable-cart";
+import { throttleResetPassword } from "../lib/reset-password-throttle";
+import { PostAdminDocumentSchema } from "./admin/dokumenty/route";
 import {
   blockEmptyingConfirm,
   blockMtoLineEdits,
@@ -222,6 +224,18 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/shipping-methods",
       methods: ["POST"],
       middlewares: [requireShippableCart()],
+    },
+    // Nepřihlášený endpoint, který na cizí příkaz odesílá e-mail — bez stropu
+    // je z něj nástroj na zaplavení cizí schránky. Podrobnosti v souboru.
+    {
+      matcher: "/auth/customer/emailpass/reset-password",
+      methods: ["POST"],
+      middlewares: [throttleResetPassword()],
+    },
+    {
+      matcher: "/admin/dokumenty",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostAdminDocumentSchema)],
     },
     // Newsletter. Note that the unsubscribe link in e-mails points at the
     // top-level GET /newsletter/unsubscribe, *not* /store/... — the framework

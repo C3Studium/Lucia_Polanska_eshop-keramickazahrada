@@ -7,13 +7,18 @@ settings:
 overrides:
   webpack: ^5
 
+patchedDependencies:
+  '@c3studium/valecms@0.1.47':
+    hash: a36597304191bd2c924343a086e2ec2f10b50153411db9c2fb50fb4d4dd6d26c
+    path: patches/@c3studium__valecms@0.1.47.patch
+
 importers:
 
   .:
     dependencies:
       '@c3studium/valecms':
         specifier: 0.1.47
-        version: 0.1.47(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))
+        version: 0.1.47(patch_hash=a36597304191bd2c924343a086e2ec2f10b50153411db9c2fb50fb4d4dd6d26c)(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))
       '@headlessui/react':
         specifier: ^2.2.7
         version: 2.2.7(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
@@ -5358,7 +5363,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@c3studium/valecms@0.1.47(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))':
+  '@c3studium/valecms@0.1.47(patch_hash=a36597304191bd2c924343a086e2ec2f10b50153411db9c2fb50fb4d4dd6d26c)(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))':
     dependencies:
       next: 15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0)
       react: 19.0.5

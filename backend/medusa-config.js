@@ -230,6 +230,9 @@ const medusaConfig = {
       resolve: "./src/modules/made-to-order",
     },
     {
+      resolve: "./src/modules/dokumenty",
+    },
+    {
       // Course terms and reservations (kurzy) — see docs/kurzy-system.md.
       resolve: "./src/modules/course",
     },
@@ -250,6 +253,23 @@ const medusaConfig = {
     ...(REDIS_URL ? [{
       key: Modules.EVENT_BUS,
       resolve: '@medusajs/medusa/event-bus-redis',
+      options: {
+        redisUrl: REDIS_URL
+      }
+    },
+    // Cache na Redisu, ne v paměti procesu.
+    //
+    // Medusa bez tohohle zápisu registruje paměťovou cache. To stačí na
+    // odlehčení dotazů, ale ne na počítadla, která něco brání: omezovač
+    // žádostí o obnovu hesla (lib/reset-password-throttle.ts) by se nulou
+    // při každém restartu a nasazení, a mezi instancemi by o sobě nevěděl —
+    // tedy přesně ve chvíli, kdy je útok nejlevnější, by nefungoval.
+    //
+    // Podmínka je táž jako u sběrnice událostí o řádek výš: bez REDIS_URL
+    // (lokální vývoj) zůstává paměťová a vývoj se nezmění.
+    {
+      key: Modules.CACHE,
+      resolve: '@medusajs/medusa/cache-redis',
       options: {
         redisUrl: REDIS_URL
       }

@@ -1,8 +1,11 @@
 "use client"
 
-import { sdk } from "@lib/config"
+import {
+  loginAfterPasswordReset,
+  updatePasswordWithToken,
+} from "@lib/data/customer"
 import { Toaster, toast } from "@medusajs/ui"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeSlash } from "@medusajs/icons"
 import AuthPortal from "../components/auth-portal"
@@ -28,8 +31,35 @@ export default function ResetPasswordForm() {
   const [loginLoading, setLoginLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const token = searchParams.get("token")
-  const email = searchParams.get("email") ?? ""
+
+  /* Přečteno JEDNOU, při prvním vykreslení — hned nato se z adresního řádku
+     obojí maže, takže po zbytek života stránky už v `searchParams` nic není. */
+  const [token] = useState(() => searchParams.get("token"))
+  const [email] = useState(() => searchParams.get("email") ?? "")
+
+  /*
+   * Token a adresa pryč z adresního řádku.
+   *
+   * Odkaz z e-mailu nese v adrese živý klíč k účtu. Dokud tam stojí, zapíše
+   * se do historie prohlížeče, nabídne se při psaní v adresním řádku a odejde
+   * v hlavičce `Referer` (tu ruší `referrer: no-referrer` na routě, ale
+   * historie zůstává). Když si člověk odkaz omylem někam zkopíruje, kopíruje
+   * přihlašovací údaj.
+   *
+   * `replaceState`, ne `push`: nová položka v historii by znamenala, že se
+   * tlačítkem zpět dá vrátit na adresu s tokenem — tedy přesně to, co se tu
+   * odstraňuje. Hodnoty jsou v tu chvíli už ve stavu výš, takže formuláři
+   * nic nechybí.
+   */
+  useEffect(() => {
+    if (!searchParams.toString()) {
+      return
+    }
+
+    window.history.replaceState(null, "", window.location.pathname)
+    // Jen po prvním vykreslení; `searchParams` se schválně nesleduje.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -41,50 +71,52 @@ export default function ResetPasswordForm() {
       toast.error("Vyplňte prosím heslo.")
       return
     }
+    /* Táž mez jako v `updatePasswordWithToken` na serveru. Tady kvůli
+       odezvě, tam kvůli platnosti — nápis „Alespoň 8 znaků" nad polem musí
+       něco znamenat na obou stranách. */
+    if (password.length < 8) {
+      toast.error("Heslo musí mít aspoň 8 znaků.")
+      return
+    }
     if (password !== confirmPassword) {
       toast.error("Hesla se neshodují.")
       return
     }
     setLoading(true)
 
-    sdk.auth
-      .updateProvider(
-        "customer",
-        "emailpass",
-        {
-          email,
-          password,
-        },
-        token
-      )
-      .then(() => {
-        toast.success("Heslo bylo úspěšně změněno.")
-        setSuccess(true)
-      })
-      .catch((error) => {
-        toast.error(`Heslo se nepovedlo změnit: ${error.message}`)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    /* Serverová akce ze stejného důvodu jako u žádosti o odkaz — auth
+       endpointy Medusy nejsou pro origin obchodu v CORS. */
+    const chyba = await updatePasswordWithToken(email, password, token)
+    setLoading(false)
+
+    if (chyba) {
+      toast.error(`Heslo se nepovedlo změnit: ${chyba}`)
+      return
+    }
+
+    toast.success("Heslo bylo úspěšně změněno.")
+    setSuccess(true)
   }
 
   // Auto-login handler
   const handleAutoLogin = async () => {
     if (!email || !password) return
     setLoginLoading(true)
-    try {
-      await sdk.auth.login("customer", "emailpass", {
-        identifier: email,
-        password,
-      })
-      toast.success("Jste přihlášeni.")
-      router.push("/account")
-    } catch (error: any) {
-      toast.error(error?.message || "Přihlášení se nepovedlo.")
-    } finally {
-      setLoginLoading(false)
+
+    /* Musí to udělat server, a ne kvůli CORS: přihlášení aplikace čte
+       z httpOnly cookie `_medusa_jwt`, kterou z JS nastavit nejde. Token
+       vrácený do prohlížeče by se tedy zahodil a účet by nás poslal zpátky
+       na přihlášení. */
+    const chyba = await loginAfterPasswordReset(email, password)
+    setLoginLoading(false)
+
+    if (chyba) {
+      toast.error(chyba)
+      return
     }
+
+    toast.success("Jste přihlášeni.")
+    router.push("/account")
   }
 
   return (

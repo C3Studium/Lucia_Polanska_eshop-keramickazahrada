@@ -2,6 +2,7 @@ import {
   assignShippingProfile,
   productsMissingShippingProfile,
   resolveDefaultShippingProfile,
+  shippingProfileSummary,
 } from "../shipping-profile-default"
 
 const kontejner = (profily: unknown[], link = { create: jest.fn() }) =>
@@ -81,5 +82,30 @@ describe("výchozí profil dopravy", () => {
       product: { product_id: "prod_1" },
       fulfillment: { shipping_profile_id: "sp_zaklad" },
     })
+  })
+})
+
+describe("rozpis profilů", () => {
+  it("spočítá produkty po profilech a bez profilu zvlášť", () => {
+    const produkty = [
+      { id: "p1", shipping_profile: { id: "sp_1", name: "Default Shipping Profile" } },
+      { id: "p2", shipping_profile: { id: "sp_1", name: "Default Shipping Profile" } },
+      { id: "p3", shipping_profile: { id: "sp_2", name: "Křehké" } },
+      { id: "p4" },
+    ]
+
+    expect(shippingProfileSummary(produkty)).toEqual([
+      ["Default Shipping Profile", 2],
+      ["Křehké", 1],
+      ["(bez profilu)", 1],
+    ])
+  })
+
+  /* Bez názvu je id pořád lepší než nic — souhrn nesmí spadnout na neúplných
+     datech, právě v nich je totiž potřeba se vyznat. */
+  it("použije id, když profil nemá název", () => {
+    expect(shippingProfileSummary([{ shipping_profile: { id: "sp_bez" } }])).toEqual([
+      ["sp_bez", 1],
+    ])
   })
 })

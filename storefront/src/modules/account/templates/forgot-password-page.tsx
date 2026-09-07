@@ -1,6 +1,6 @@
 "use client"
 
-import { sdk } from "@lib/config"
+import { requestPasswordReset } from "@lib/data/customer"
 import { Toaster, toast } from "@medusajs/ui"
 import { useState } from "react"
 
@@ -21,27 +21,33 @@ export default function RequestResetPassword({ block }: { block?: CopyBlock }) {
   const [email, setEmail] = useState("")
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!email) {
+    if (!email.trim()) {
       toast.error("Vyplňte prosím e-mail.")
+      return
+    }
+    /* Tvar se kontroluje i na serveru; tahle kontrola je kvůli odezvě, aby
+       se za zjevný překlep nechodilo přes síť. O tom, kdo u nás účet má,
+       neprozrazuje nic — je to informace o napsaném textu. */
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      toast.error("Zadejte prosím platnou e-mailovou adresu.")
       return
     }
     setLoading(true)
 
-    sdk.auth
-      .resetPassword("customer", "emailpass", {
-        identifier: email,
-      })
-      .then(() => {
-        toast.success(
-          "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla."
-        )
-      })
-      .catch((error) => {
-        toast.error(error.message)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    /* Přes serverovou akci, ne `sdk.auth` z prohlížeče: auth endpointy
+       Medusy nemají povolený CORS pro origin obchodu, takže volání odsud
+       skončilo na „Failed to fetch". Ze serveru žádné CORS není. */
+    const chyba = await requestPasswordReset(email)
+    setLoading(false)
+
+    if (chyba) {
+      toast.error(chyba)
+      return
+    }
+
+    toast.success(
+      "Pokud u nás účet s tímhle e-mailem máte, poslali jsme na něj odkaz pro nastavení nového hesla."
+    )
   }
 
   return (

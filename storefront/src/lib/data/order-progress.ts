@@ -55,6 +55,18 @@ export const fallbackStageLabel = (order: {
     case "fulfilled":
       return "Zabaleno"
     default:
-      return order.payment_status === "captured" ? "Přijato" : "Přijato"
+      /*
+       * Nezaplacená objednávka je taky „Přijato" — a je to schválně.
+       *
+       * Dobírka a osobní odběr se platí až při převzetí, takže u nich
+       * `payment_status` zůstává `not_paid` po celou dobu, kdy se objednávka
+       * normálně vyřizuje. Rozlišovat tu podle platby by jim napsalo něco
+       * jako „čeká na platbu" ve chvíli, kdy se balí.
+       *
+       * Stálo tu `payment_status === "captured" ? "Přijato" : "Přijato"`,
+       * tedy podmínka s totožnými větvemi. Výsledek správný, zápis matoucí —
+       * vypadalo to jako nedodělaná myšlenka, kterou někdo příště „opraví".
+       */
+      return "Přijato"
   }
 }

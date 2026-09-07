@@ -30,7 +30,31 @@ export const SHIPPING_PROFILE_PRODUCT_FIELDS = [
   "id",
   "title",
   "shipping_profile.id",
+  // Jen kvůli výpisu: v souhrnu je „Default Shipping Profile: 200" k něčemu,
+  // „sp_01K2JKV3…: 200" ne.
+  "shipping_profile.name",
 ]
+
+/**
+ * Kolik produktů má který profil — a kolik žádný.
+ *
+ * Obchodní API profil produktu nevrací žádným zápisem `fields` (ověřeno
+ * čtyřmi), takže tohle je jediné místo, kde se dá zvenčí zjistit, jak na tom
+ * katalog vlastně je.
+ */
+export const shippingProfileSummary = (products: any[]) => {
+  const pocty = new Map<string, number>()
+
+  for (const product of products) {
+    const klic = product?.shipping_profile?.id
+      ? String(product.shipping_profile.name ?? product.shipping_profile.id)
+      : "(bez profilu)"
+
+    pocty.set(klic, (pocty.get(klic) ?? 0) + 1)
+  }
+
+  return [...pocty.entries()].sort((a, b) => b[1] - a[1])
+}
 
 /**
  * Výchozí profil dopravy obchodu.

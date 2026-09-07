@@ -11,7 +11,10 @@
 .header {
   display: grid;
   max-width: 35rem;
-  gap: clamp(0.7rem, 1.6vh, 1.15rem);
+  /* Mezera mezi nadpisem a popisem je na přihlášení 0.65rem = 10.4px. S menším
+     nadpisem musela dolů i tahle: 1.6vh dávalo 15.7px, což u 34px nadpisu
+     rozpadalo hlavičku na tři nesouvisející řádky. 982 → 10.3px, 844 → 8.9px. */
+  gap: clamp(0.5rem, 1.05vh, 0.8rem);
 }
 
 .eyebrow,
@@ -26,56 +29,36 @@
   text-transform: uppercase;
 }
 
-/* Podlaha 2.7rem = 43.2px byla aktivní až do 1080px šířky (4vw je pod 43.2px),
-   takže na KAŽDÉM telefonu — na 320 i na 932 — měl nadpis stejných 43.2px.
-   Do ledgeru se na té velikosti „poslat odkaz?" nevešlo: na 320×568 měl box
-   124.5×152.1px, tedy čtyři řádky a slovo přes padding box. 2.05rem = 32.8px
-   se do stejného sloupce vejde na dva řádky.
-
-   Jenže podlaha nezná zařízení, jen šířku: 2.05rem je živá VŠUDE pod 820px,
-   takže telefonní oprava naměřená na 320×568 srazila i každý PORTRÉTNÍ TABLET
-   — 768: 43.2 → 32.8 (−24 %), 834: 43.2 → 33.36, 1024: 43.2 → 40.96 (−5 %).
-   Tam ale podmínka, kvůli které se podlaha snižovala, neplatí: na 768×1024 je
-   panel 718px široký a .header má max-width 35rem = 560px, tedy víc než
-   čtyřnásobek té 124.5px buňky. Tablet dostal telefonní nadpis, aniž měl
-   telefonní tíseň.
-
-   Oprava proto není breakpoint, ale druhá clamp uvnitř podlahy — podlaha se
-   rozhoduje sama podle toho, čím je viewport těsný:
-     2.05rem  dolní mez, hodnota naměřená na 320×568, ta musí zůstat,
-     7.6vw    drží na ní telefon v portrétu (430 → 32.68, 393 → 29.87, obojí
-              pod 2.05rem),
-     4.25vh   drží na ní telefon na šířku (nejvýš 520px výšky → nejvýš 22.1px),
-     2.7rem   horní mez, tedy hodnota, kterou měl soubor před telefonním kolem.
-   Portrétní tablet nesplní ani jednu z těch dvou podmínek: 768×1024 dá
-   min(43.52, 58.37) = 43.52, tedy strop 43.2 — a je zpátky tam, kde byl.
-   600×960 dá 40.8, takže přechod je plynulý a nikde není skok.
-   Ideál 4vw i strop 4.9rem se nemění: od 820px výš — celý laptop i landscape
-   nad 1200 — je hodnota bit po bitu stejná jako dosud a ramp nad 1921 zvedá
-   strop přesně jako předtím (2552×1351: 102.08px). */
+/* Nadpis panelu má tutéž velikost jako na přihlášení.
+   Dřív to byl displejový nadpis (4vw = 60.5px na 1512), zatímco „Vítejte zpět"
+   v témže panelu na přihlášení měří 34px — obnova hesla tím vypadala jako
+   z jiného webu. Clamp je doslova ten z login.module.scss: podlaha 28.8px pod
+   1280px šířky, strop 41.6px nad 1849. Naměřeno po zásahu 34px na 1512
+   a 28.8px na 390, tedy shodně s přihlášením. */
 .title {
   margin: 0;
-  font: 400 clamp(clamp(2.05rem, min(4.25vh, 7.6vw), 2.7rem), 4vw, 4.9rem) / 0.88
-    "Sentient-Regular", serif;
-  letter-spacing: -0.055em;
+  font: 400 calc(var(--auth-zoom) * clamp(1.8rem, 2.25vw, 2.6rem)) / 1 "Sentient-Regular", serif;
+  letter-spacing: -0.025em;
 }
 
+/* Akcent zůstává v řádku, ne na vlastním. Odskok o 10 % byl kresba pro
+   šedesátipixelový displejový nadpis; na 34px z něj byla jen díra uprostřed
+   věty. Na přihlášení je nadpis panelu taky jeden řádek. */
 .title em {
-  display: block;
-  margin-left: 10%;
   color: var(--olive-15);
   font-family: "Sentient-LightItalic", "Sentient-Regular", serif;
   font-weight: 300;
 }
 
+/* Popis pod nadpisem, opět hodnoty z přihlášení (.desc v login.module.scss):
+   pevných 0.96rem a řádkování 1.45. Pevná velikost, ne clamp, je tu záměr
+   z loginu — popis se nemá zmenšovat pod čitelnost ani růst nad nadpis.
+   Šířka 23rem drží řádek kolem 60 znaků. */
 .description {
-  max-width: 31rem;
+  max-width: 23rem;
   margin: 0.125rem 0 0;
   color: rgb(var(--ink-05-rgb) / .66);
-  /* Ideál 0.95vw byl živý až 1474–1789px, takže na 1220–1440 — tedy na každém
-     laptopu — seděl popis natvrdo na 14px, zatímco .title vedle něj rostl.
-     1.15vw posadí živé pásmo na 1217–1478, tedy tam, kde uživatelé jsou. */
-  font: clamp(0.875rem, 1.15vw, 1.0625rem) / 1.5 "Sansation-Light", sans-serif;
+  font: 0.96rem/1.45 "Sansation-Light", sans-serif;
 }
 
 /* Žádný max-width: pole i tlačítko nesou vlastní linku
@@ -121,15 +104,16 @@
 .inputFrame input {
   width: 100%;
   min-width: 0;
-  padding: clamp(0.4rem, 0.9vh, 0.6rem) clamp(2.2rem, 3vw, 2.75rem)
-    clamp(0.65rem, 1.5vh, 1rem) 0;
+  /* Odsazení i velikost písma jsou hodnoty z přihlášení (.fields input
+     v login.module.scss). Pole tam měří 54px na výšku na desktopu i na
+     telefonu; tady mělo 49 a 45 a písmo 21px proti 16.32. Pravé odsazení
+     2.8rem drží místo pro oko na odkrytí hesla, stejně jako na přihlášení. */
+  padding: clamp(0.75rem, 2vh, 1.05rem) 2.8rem clamp(0.2rem, 0.6vh, 0.35rem) 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--ink-05);
-  /* Totéž: 1.2vw bylo živé až od 1500px, takže hodnota pole byla na celém
-     laptopovém pásmu zamrzlá na 18px. 1.45vw → živé 1241–1448. */
-  font: clamp(1.125rem, 1.45vw, 1.3125rem) / 1.2 "Sansation-Light", sans-serif;
+  font: 1.02rem/1.2 "Sansation-Light", sans-serif;
   appearance: none;
 
   /* Na dotyku má pole podlahu 44px. Svislé členy visí na vh, a na telefonu
@@ -203,14 +187,19 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: clamp(2.9rem, 5.6vh, 3.6rem);
+  /* Doslova tatáž deklarace, jakou má tlačítko na přihlášení
+     (premium-action-button). Včetně toho, že je to height, ne min-height:
+     s min-height rozhodoval o výšce obsah a naměřeno 44px tam, kde přihlášení
+     mělo 47 (430×932) a 51 (768×1024). Bylo 55px na desktopu a 47 na telefonu. */
+  height: clamp(2.75rem, 5vh, 3.25rem);
   padding: clamp(0.2rem, 0.45vh, 0.35rem) clamp(0.25rem, 0.35vw, 0.4rem)
     clamp(0.2rem, 0.45vh, 0.35rem) clamp(1.15rem, 1.6vw, 1.75rem);
   overflow: hidden;
   border: 1px solid var(--ink-05);
   border-radius: 999px;
   cursor: pointer;
-  font: 0.875rem/1 "Sansation-Regular", sans-serif;
+  /* 1rem, tedy 16px jako na přihlášení; bylo 14px. */
+  font: 1rem/1 "Sansation-Regular", sans-serif;
   isolation: isolate;
   transition: color 0.45s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.25s ease;
 }
@@ -239,8 +228,12 @@
 .action i {
   display: grid;
   flex: 0 0 auto;
-  width: clamp(2.3rem, 4.4vh, 2.9rem);
-  height: clamp(2.3rem, 4.4vh, 2.9rem);
+  /* Kolečko se šipkou je stejnou úvahou jako na přihlášení odvozené z výšky
+     tlačítka: 0.58 z každého členu clampu výš, takže si drží poměr na každé
+     výšce okna místo aby se rozjíždělo proti velikosti hnané šířkou.
+     Tady mělo 43px na desktopu a 37 na telefonu, tedy skoro dvojnásobek. */
+  width: clamp(1.6rem, 2.9vh, 1.875rem);
+  height: clamp(1.6rem, 2.9vh, 1.875rem);
   margin-left: clamp(0.9rem, 1.3vw, 1.4rem);
   place-items: center;
   border-radius: 50%;

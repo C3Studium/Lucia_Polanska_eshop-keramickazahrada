@@ -9,6 +9,19 @@ type InputProps = Omit<
   "placeholder"
 > & {
   label: string
+  /**
+   * Dvojklik označí celou hodnotu, ne jedno slovo.
+   *
+   * Dvojklik v inputu označuje SLOVO a prohlížeč bere za jeho hranici i `@`
+   * a tečku — na `lucie@keramickazahrada.cz` tak padne výběr na `lucie`,
+   * ne na adresu, a vypadá to, jako by dvojklik nedělal nic.
+   *
+   * Volba, ne automatika podle typu: zapíná se jen na přihlášení a registraci,
+   * kde se hodnota přepisuje celá. Ve zbytku webu (adresa, město, poznámka)
+   * se po slovech opravuje běžně a označit rovnou celý řádek by z opravy
+   * překlepu udělalo přepsání všeho. Trojklik označí vše všude a bez tohohle.
+   */
+  selectAllOnDoubleClick?: boolean
   errors?: Record<string, unknown>
   touched?: Record<string, unknown>
   name: string
@@ -28,6 +41,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       topLabel,
       className,
       variant = "default",
+      selectAllOnDoubleClick = false,
       ...props
     },
     ref
@@ -52,6 +66,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     useImperativeHandle(ref, () => inputRef.current!)
 
+    /* Vlastní `onDoubleClick` z props se nepřepisuje, jen se zavolá za tím
+       naším — komponenta je sdílená a nemá právo brát volajícímu chování. */
+    const oznacitVse = (event: React.MouseEvent<HTMLInputElement>) => {
+      if (selectAllOnDoubleClick) {
+        event.currentTarget.select()
+      }
+      props.onDoubleClick?.(event)
+    }
+
     return (
       <div
         className={`${styles.root} ${
@@ -71,6 +94,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
             id={inputId}
             ref={inputRef}
+            onDoubleClick={oznacitVse}
           />
           <label htmlFor={inputId} className="">
             {label}

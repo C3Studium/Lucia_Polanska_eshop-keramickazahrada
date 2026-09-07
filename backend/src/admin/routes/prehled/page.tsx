@@ -1,3 +1,4 @@
+import ChybejiciDokumenty from "../../components/chybejici-dokumenty";
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { ArrowPath, House } from "@medusajs/icons";
 import {
@@ -532,6 +533,8 @@ const PrehledInner = () => {
 
   return (
     <div className="flex flex-col gap-y-3">
+      {/* Úplně nahoře a jen když opravdu chybí — viz komentář v komponentě. */}
+      <ChybejiciDokumenty />
       <Container className="divide-y p-0">
         <WorkTabs active="prehled" />
       <VitrinaCard />
