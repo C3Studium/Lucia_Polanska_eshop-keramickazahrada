@@ -231,6 +231,40 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   return createdCustomer
 }
+/**
+ * Stojí za přihlašovací identitou opravdu zákazník?
+ *
+ * Přihlášení a zákaznický záznam jsou v Meduse dvě různé věci spojené odkazem.
+ * Když záznam zmizí a identita zůstane, `sdk.auth.login` vrátí 200 a platný
+ * token — jen `actor_id` v něm ukazuje na někoho, kdo v databázi není.
+ * Zaznamenáno naživo: token s actor_id cus_01K2YYP1CG6DC25MYH06ET684E
+ * a odpověď „Customer with id ... was not found".
+ *
+ * Rozlišuje se 404 od ostatních selhání schválně. 404 je odpověď, ne porucha:
+ * účet opravdu není. Cokoli jiného (výpadek sítě, pětistovka) je porucha na
+ * cestě a kvůli ní se nikomu přihlášení brát nemá — proto `neznamo`, se
+ * kterým se pokračuje dál.
+ */
+const overitZakaznika = async (): Promise<"ok" | "chybi" | "neznamo"> => {
+  try {
+    await sdk.client.fetch("/store/customers/me", {
+      method: "GET",
+      headers: await getAuthHeaders(),
+      cache: "no-store",
+    })
+    return "ok"
+  } catch (error: any) {
+    const stav = error?.status ?? error?.response?.status
+    const zprava = String(error?.message ?? "")
+
+    if (stav === 404 || /was not found|not_found/i.test(zprava)) {
+      return "chybi"
+    }
+
+    return "neznamo"
+  }
+}
+
 export async function login(_currentState: unknown, formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
@@ -257,10 +291,31 @@ export async function login(_currentState: unknown, formData: FormData) {
     return toCzechErrorMessage(error?.message ?? error?.toString())
   }
 
+  /* Heslo sedělo, ale účet za identitou chybí. Cookie se musí zase sundat —
+     jinak by člověk zůstal „přihlášený" do něčeho, co neexistuje, a každá
+     stránka účtu by mu vrátila 404. */
+  if ((await overitZakaznika()) === "chybi") {
+    await removeAuthToken()
+
+    return (
+      "Přihlášení k tomuto e-mailu existuje, ale účet k němu v obchodě chybí. " +
+      "Napište nám prosím na info@keramickazahrada.cz, obnovíme ho."
+    )
+  }
+
+  /* Převod košíku přihlášení NEBLOKUJE.
+     Je to pohodlí — host měl něco v košíku a nemá o to po přihlášení přijít —,
+     ne podmínka. Dřív se jeho selháním vracela chybová hláška, takže úspěšné
+     přihlášení vypadalo jako špatné heslo, přestože cookie už byla nastavená.
+     Přesně to se stalo u účtu s chybějícím zákazníkem: 404 na
+     /store/carts/…/customer a člověk zůstal na přihlašovací stránce. */
   try {
     await transferCart()
   } catch (error: any) {
-    return toCzechErrorMessage(error?.message ?? error?.toString())
+    console.error(
+      "[přihlášení] košík se nepodařilo převést, pokračuji:",
+      error?.message ?? error?.toString()
+    )
   }
 
   if (redirectTo) {

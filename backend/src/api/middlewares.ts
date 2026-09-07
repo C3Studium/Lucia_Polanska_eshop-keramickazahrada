@@ -35,6 +35,7 @@ import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
+import { PostOsireleUctySchema } from "./admin/osirele-ucty/route";
 import { PostAdminDocumentSchema } from "./admin/dokumenty/route";
 import {
   blockEmptyingConfirm,
@@ -236,6 +237,11 @@ export default defineMiddlewares({
       matcher: "/admin/dokumenty",
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostAdminDocumentSchema)],
+    },
+    {
+      matcher: "/admin/osirele-ucty",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostOsireleUctySchema)],
     },
     // Newsletter. Note that the unsubscribe link in e-mails points at the
     // top-level GET /newsletter/unsubscribe, *not* /store/... — the framework

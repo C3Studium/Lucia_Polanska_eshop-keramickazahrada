@@ -1,4 +1,5 @@
 import ChybejiciDokumenty from "../../components/chybejici-dokumenty";
+import OsireleUcty from "../../components/osirele-ucty";
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { ArrowPath, House } from "@medusajs/icons";
 import {
@@ -533,7 +534,10 @@ const PrehledInner = () => {
 
   return (
     <div className="flex flex-col gap-y-3">
-      {/* Úplně nahoře a jen když opravdu chybí — viz komentář v komponentě. */}
+      {/* Úplně nahoře a jen když opravdu je co řešit — viz komentáře
+          v komponentách. Účet, ke kterému se někdo právě nedostane, jde
+          napřed: dokument se dá doplnit zítra, zákazník čeká teď. */}
+      <OsireleUcty />
       <ChybejiciDokumenty />
       <Container className="divide-y p-0">
         <WorkTabs active="prehled" />

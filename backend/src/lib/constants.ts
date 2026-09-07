@@ -90,9 +90,37 @@ export const JWT_SECRET = (() => {
 })()
 
 /**
- * JWT Expires In
+ * Jak dlouho platí přihlášení.
+ *
+ * ## Past, do které tenhle obchod spadl
+ *
+ * `jsonwebtoken` čte `expiresIn` dvěma způsoby: ČÍSLO bere jako sekundy,
+ * ale ŘETĚZEC bez jednotky posílá do knihovny `ms`, která ho čte jako
+ * MILISEKUNDY. Proměnné prostředí jsou vždycky řetězce — takže
+ * `JWT_EXPIRES_IN=604800`, napsané v dobré víře jako „sedm dní v sekundách",
+ * znamená 604800 ms, tedy 604 sekund.
+ *
+ * Naměřeno na produkci: token vrácený z `/auth/customer/emailpass` měl
+ * exp − iat = 604 s. Zákazníci se odhlašovali po deseti minutách a vypadalo
+ * to jako rozbité přihlášení. Ověřeno i opačně, `ms("604800")` vrací
+ * 604800 ms; `ms("7d")` vrací 604800000.
+ *
+ * ## Co s tím dělá tenhle řádek
+ *
+ * Samé číslice se doplní o `s`, tedy na sekundy — to je význam, který mu
+ * dává jsonwebtoken u číselné hodnoty, a jediný, který kdy někdo myslel.
+ * Hodnota s jednotkou (`7d`, `30d`, `12h`) prochází beze změny.
+ *
+ * Je to normalizace, ne domněnka: obojí by se dalo napsat i do Railway, ale
+ * past by tam zůstala pro příště a projeví se až u zákazníka.
  */
-export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d'
+const jwtExpiresInRaw = (process.env.JWT_EXPIRES_IN ?? '').trim()
+
+export const JWT_EXPIRES_IN = !jwtExpiresInRaw
+  ? '30d'
+  : /^\d+$/.test(jwtExpiresInRaw)
+    ? `${jwtExpiresInRaw}s`
+    : jwtExpiresInRaw
 
 /**
  * Cookie secret used for signing cookies
