@@ -278,76 +278,21 @@
     }
   }
 
-  /* The dialog-opening pill inside the empty state — same family as the
-     timeline CTA, scoped here because the timeline's rule cannot reach it.
-     Every measure below is the twin of home/Kurzy/Intro/styles.scss
-     `.kurzyTimeline .kurzyTimelineCtaButton`; the two are one component wearing
-     two class names and have to be changed together. */
+  /* Tlačítko otevírající dialog v prázdném stavu — táž pilulka jako v časové
+     ose kurzů, jen sem její pravidlo nedosáhne. Míry, kotouč a struktura jsou
+     ve `cta-pill` v systému stylů; tady zůstávají jen barvy a stín. */
   .kurzyRezervaceCtaButton {
-    --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
-    --web-button-label-padding: 0;
+    @include cta-pill;
 
-    width: fit-content;
-    min-width: clamp(11.875rem, 13vw, 15rem);
-    /* The pill measured 52px on 1280 and on 2552 alike while the body copy
-       beside it went 15.2 → 23.8px. In rem the whole pill — height, badge,
-       label inset — rides the ramp with the type it sits in. */
-    height: 3.25rem;
-    padding: 0;
     border: 1px solid rgb(var(--ink-05-rgb) / .42);
-    border-radius: 999px;
     background: var(--kurzy-cream);
     color: var(--kurzy-charcoal);
     box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .7),
       0 13px 30px -22px rgb(var(--black-01-rgb) / .5);
-    transition: border-color 0.35s ease, box-shadow 0.35s ease,
-      transform 0.35s ease;
 
     &::after {
-      position: absolute;
-      top: 50%;
-      right: 0.4375rem;
-      z-index: 8;
-      width: 2.375rem;
-      height: 2.375rem;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
       background: var(--kurzy-charcoal);
       color: var(--kurzy-cream);
-      content: "↗";
-      font-family: "Sansation-Light", sans-serif;
-      font-size: 0.9rem;
-      transform: translateY(-50%);
-      transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-    }
-
-    > div {
-      padding: 0.1875rem 3.375rem 0.1875rem 1.375rem;
-    }
-
-    p {
-      color: inherit;
-      line-height: 1;
-      white-space: nowrap;
-
-      span {
-        display: none;
-      }
-    }
-
-    &:hover,
-    &:focus-visible {
-      transform: translateY(-2px);
-
-      &::after {
-        transform: translate(-3px, -50%) rotate(45deg);
-      }
-    }
-
-    &:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring);
-      outline-offset: 4px;
     }
   }
 

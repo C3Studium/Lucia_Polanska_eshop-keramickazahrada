@@ -4,6 +4,103 @@ Co MUSÍ být hotové před produkcí, je v `FINISHINGTODOLIST.md`. Sem patří 
 o kterých padlo rozhodnutí „ano, dává to smysl, ale ne teď" — ať se na ně
 nezapomene a ať se u nich nemusí znovu vymýšlet, co vlastně obnášejí.
 
+---
+
+# URGENTNÍ — dodělat zítra (10. 9. 2026)
+
+Výjimka z pravidla nahoře: tohle před spuštěním hotové být musí, ale sepsáno
+je to sem, protože to vzniklo 9. 9. 2026 při hledání příčiny nezdařených e-mailů.
+Až na to dojde, patří to přesunout do `FINISHINGTODOLIST.md`.
+
+## Nezdařené e-maily: opraveno v kódu, zbývá ověřit a uklidit
+
+**Co se dělo.** V administraci bylo 193 nezdařených e-mailů, z toho 191
+upomínek na opuštěný košík. Příčina je změřená, ne odhadnutá:
+
+1. **Resend pouští 10 požadavků za sekundu.** Noční úloha brala košíky po
+   stovkách a předávala celou stovku jedním voláním `createNotifications`.
+   Notifikační modul Medusy je posílá jedním `promiseAll` bez jakéhokoli
+   škrcení, takže z toho bylo 100 souběžných požadavků. Ověřeno proti
+   produkčnímu klíči: ze 100 naráz projde 10 a 90 se vrátí s HTTP 429
+   `rate_limit_exceeded`. V databázi tomu odpovídá 100 e-mailů, které
+   změnily stav na `failure` během jediné sekundy.
+
+2. **Jeden nezdařený e-mail shodil celou dávku.** `createNotifications`
+   vyhazuje souhrnnou výjimku, takže krok spadl a `updateCartsStep` za ním se
+   nespustil. Příznak `abandoned_notification` proto neměl ani jeden z 318
+   košíků a každou noc se rozesílalo úplně všem znovu.
+
+3. **Seedovaná data.** 85 ze 193 nezdařených e-mailů míří na `example.com`
+   (`jana.novakova@example.com`, `jana@example.com`, `test@example.com`).
+   Resend tuhle doménu odmítá rovnou s HTTP 422 („Please use our testing
+   email address instead of domains like example.com") — ty se nepodaří
+   odeslat nikdy, ať se opraví cokoli.
+
+**Co už je opravené** (v pracovním stromu, nezacommitované):
+
+- `backend/src/workflows/steps/send-abandoned-notifications.ts` — posílá po
+  vlnách 8 s pauzou 1.1 s a po jednom košíku, takže je jasné, který prošel.
+  Rozlišuje přechodnou chybu (429, výpadek sítě → zítra znovu) od trvalé
+  (odmítnutá adresa → košík se už upomínat nebude).
+- `backend/src/workflows/send-abandoned-carts.ts` — razítkuje jen košíky,
+  které krok opravdu vyřídil.
+- `backend/src/jobs/send-abandoned-cart-notification.ts` — dotaz na košík
+  konečně vrací `currency_code` a `shipping_address` (šablona z nich čte,
+  ale nikdy je nedostala), a prázdná stránka už workflow nespouští.
+- `backend/src/workflows/__tests__/abandoned-cart-throttle.unit.spec.ts` —
+  nový test na třídění chyb.
+
+**Co zbývá — TOHLE JE TA PRÁCE NA ZÍTRA:**
+
+- [ ] **Denní kvóta Resendu je 100 e-mailů a dnes je vyčerpaná.** Ověření
+      nového tempa ji dojelo (100 zpráv na testovací adresu `delivered@resend.dev`).
+      Do doby, než se obnoví, nemá smysl cokoli dalšího zkoušet.
+- [ ] **Kvóta vs. 317 čekajících košíků.** I s opraveným tempem se za den
+      pošle nejvýš 100 e-mailů. Než se úloha pustí naostro, je třeba se
+      rozhodnout: buď zvýšit plán u Resendu, nebo dát úloze denní strop,
+      nebo (nejspíš správně) staré testovací košíky vůbec neupomínat.
+- [ ] **Vyčistit seedované košíky z produkční databáze.** 317 opuštěných
+      košíků s položkami, z toho drtivá většina jsou testovací data
+      (`t@t.cz`, `example.com`, `test@keramickazahrada.cz`). Skutečných
+      zákaznických košíků je pár. Mazání produkčních dat je rozhodnutí
+      klienta, ne moje.
+- [ ] **Uklidit 193 nezdařených a 119 čekajících notifikací**, ať je
+      v administraci vidět skutečný stav a ne historie testů.
+- [ ] **Ověřit noční běh** po nasazení: kolik odešlo, kolik košíků dostalo
+      příznak `abandoned_notification` (dnes 0 z 318), kolik zůstalo
+      k zopakování.
+- [ ] **Doplnit `OWNER_NOTIFICATION_EMAIL`** — v logu workeru se opakuje
+      `Skipping the owner e-mail for "Skladové upozornění" — OWNER_NOTIFICATION_EMAIL
+      is not set`, takže majitelce nechodí skladová upozornění.
+- [ ] **Zapnout zpět noční úlohu.** `send-abandoned-cart-notification.ts` má
+      teď `schedule: "0 0 29 2 *"`, tedy prakticky nikdy. Vypnuto 9. 9. 2026,
+      aby dnešní běh nespálil zítřejší stovku. Zapnutí = vrátit `0 0 * * *`.
+- [ ] **Nastavit `OWNER_NOTIFICATION_EMAIL`** na Backendu i Backend-workeru.
+      Bez ní nemá varování o vyčerpaném stropu (níž) komu odejít a majitelce
+      nechodí ani skladová upozornění — v logu workeru je to vidět jako
+      `Skipping the owner e-mail … OWNER_NOTIFICATION_EMAIL is not set`.
+- [ ] **Ověřit varování o vyčerpaném stropu naostro.** Logika je otestovaná
+      (10 testů), ale skutečné odeslání ne — na to byla potřeba kvóta.
+      Nejlevnější zkouška: dočasně `RESEND_DAILY_QUOTA=2`, poslat dva e-maily
+      a zkontrolovat, že druhý nedorazí zákazníkovi a místo něj přijde
+      majitelce „Došel denní limit odesílání e-mailů".
+- [ ] **Počítadlo stropu je zatím jen v procesu.** Backend a Backend-worker
+      mají každý své, takže dohromady můžou strop překročit dřív, než
+      varování odejde. Přesné číslo umí databáze:
+      `select count(*) from notification where channel='email' and status='success'
+      and created_at >= date_trunc('day', now() at time zone 'utc')`.
+      Chce to buď sdílené počítadlo v Redisu, nebo tenhle dotaz při startu.
+- [ ] **Ověřit, jak Resend hlásí vyčerpanou denní kvótu.** Hlídání stropu
+      si počítá vlastní odeslané zprávy a na odpověď Resendu nespoléhá,
+      protože přesný tvar té chyby jsem neviděl — kvóta došla dřív, než jsem
+      ji stihl zachytit. Až to nastane, stojí za to si ji poznamenat.
+- [ ] **Prověřit dva nezdařené e-maily mimo upomínky** — `order-placed`
+      z 9. 9. 00:02 a `password-reset` ze 7. 9. 11:39, oba na
+      `nathanaelnux@gmail.com`. Stejné šablony jindy prošly, takže to bude
+      nejspíš taky kvóta nebo limit, ale potvrzené to není.
+
+---
+
 ## Načtení firmy z ARES podle IČO
 
 **Stav:** odloženo (2026-09-08). Firemní nákup funguje i bez toho.

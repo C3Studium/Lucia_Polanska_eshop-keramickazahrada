@@ -129,3 +129,94 @@
         }
     }
 }
+
+// Pilulka s kotoučem a šipkou — „klasické" tlačítko webu.
+//
+// Bylo napsané dvakrát slovo od slova: `.kurzyTimelineCtaButton` v
+// home/Kurzy/Intro/styles.scss a `.kurzyRezervaceCtaButton` v
+// kurzy/Rezervace/styles.scss. Oba soubory to ve svých komentářích samy
+// přiznávají („one component wearing two class names"), takže třetí kopie
+// v navbaru by byla ta, po které už nikdo nedohledá, kde se co mění.
+//
+// Mixin nese GEOMETRII a strukturu. Barvy, rámeček a stín zůstávají na
+// volajícím — každé místo sedí na jiném podkladu (kurzy na krému, panel
+// e-shopu na bílé) a míchat je do jednoho mixinu by znamenalo parametr
+// za každou barvu.
+//
+// Kotouč se odvozuje z výšky, ne aby byl napsaný podruhé: při výchozích
+// 3.25rem vyjde 2.375rem a pravé odsazení popisku 3.375rem, tedy přesně
+// čísla, která oba soubory měly ručně. Kde je pilulka nižší (navbar ji
+// váže na `--store-row-h`, 44–52px), zmenší se s ní i kotouč.
+//
+// Čeká WebButton uvnitř: `> div` je jeho posuvník a `p` jeho popisek.
+@mixin cta-pill($height: 3.25rem) {
+    --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
+    --web-button-label-padding: 0;
+
+    --cta-pill-h: #{$height};
+    --cta-pill-inset: 0.4375rem;
+    --cta-pill-disc: calc(var(--cta-pill-h) - 2 * var(--cta-pill-inset));
+
+    // Popisek je to, co se musí vejít — pilulka si bere vlastní míru a clamp
+    // je podlaha, pod kterou se nesmrskne.
+    width: fit-content;
+    min-width: clamp(11.875rem, 13vw, 15rem);
+    max-width: 100%;
+    height: var(--cta-pill-h);
+    padding: 0;
+    border-radius: 999px;
+    transition: border-color 0.35s ease, box-shadow 0.35s ease,
+        transform 0.35s ease;
+
+    &::after {
+        position: absolute;
+        top: 50%;
+        right: var(--cta-pill-inset);
+        z-index: 8;
+        width: var(--cta-pill-disc);
+        height: var(--cta-pill-disc);
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        content: "↗";
+        font-family: "Sansation-Light", sans-serif;
+        font-size: 0.9rem;
+        transform: translateY(-50%);
+        transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    // Pravé odsazení musí kotouč obejít i se vzduchem: inset + kotouč + 9px.
+    > div {
+        padding: 0.1875rem
+            calc(var(--cta-pill-inset) + var(--cta-pill-disc) + 0.5625rem)
+            0.1875rem 1.375rem;
+    }
+
+    p {
+        // Scény si nastavují `p { color }` bare selectorem a ten chytá
+        // i popisek uvnitř tlačítka; WebButton si barvu animuje inline stylem
+        // na obalu, takže barva psaná přímo na <p> ho přebije. Dědění ji vrací
+        // té animaci.
+        color: inherit;
+        line-height: 1;
+        white-space: nowrap;
+
+        span {
+            display: none;
+        }
+    }
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(-2px);
+
+        &::after {
+            transform: translate(-3px, -50%) rotate(45deg);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 4px;
+    }
+}

@@ -32,6 +32,8 @@ type EmailRow = {
   resource_id: string | null;
   resource_type: string | null;
   original_notification_id: string | null;
+  /** Nezdařený pokus, který se později povedlo odeslat. */
+  vyreseno?: boolean;
   subject: string | null;
 };
 
@@ -133,9 +135,18 @@ const EmailRowItem = ({ email }: { email: EmailRow }) => {
       </div>
 
       <div className="flex items-center gap-x-2">
-        <Badge size="2xsmall" color={statusMeta[email.status].color}>
-          {statusMeta[email.status].label}
-        </Badge>
+        {/* Nezdařený pokus, který se pak povedlo odeslat, není červený:
+            zákazník ten e-mail dostal. Řádek zůstává jako doklad, že se to
+            napoprvé nepovedlo. */}
+        {email.vyreseno ? (
+          <Badge size="2xsmall" color="green">
+            Odesláno později
+          </Badge>
+        ) : (
+          <Badge size="2xsmall" color={statusMeta[email.status].color}>
+            {statusMeta[email.status].label}
+          </Badge>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -144,7 +155,7 @@ const EmailRowItem = ({ email }: { email: EmailRow }) => {
             <Link to={`/orders/${email.resource_id}`}>Objednávka</Link>
           </Button>
         )}
-        {email.status === "failure" && (
+        {email.status === "failure" && !email.vyreseno && (
           <Button
             size="small"
             variant="secondary"

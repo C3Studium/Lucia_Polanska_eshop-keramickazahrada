@@ -3,6 +3,7 @@
 import Arrow from "@modules/common/icons/arrow"
 import ArrowRight from "@modules/common/icons/arrow-right"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import WebButton from "@modules/common/components/Buttons/webButton"
 import LinkCat from "./Link"
 import CollectionCategoryLink from "./CategoryLink"
 import { AnimatePresence, Easing, motion, useAnimate, type AnimationSequence } from "framer-motion"
@@ -362,16 +363,21 @@ export function CollectionList({
             {/* The one way into the shop as a whole. The cards each lead to a single
                 collection and the footer below is legal text, so without this there was no
                 „everything" — and on touch, where the button toggles rather than navigates,
-                no route to /store at all. */}
-            <LocalizedClientLink
-              href="/store"
-              className={styles.storeLink}
-              onClick={() => setActive(false)}
-              data-testid="menu-store-link"
-            >
-              <span>Zobrazit celý e-shop</span>
-              <ArrowRight size={13} color="currentColor" />
-            </LocalizedClientLink>
+                no route to /store at all.
+
+                Pilulka WebButtonu, ne holý odkaz: v řadě obrázků a drobného
+                textu se řádek s podtržením ztrácel. Je to týž prvek jako
+                „Napište mi" na Kurzech — jedny míry ve `cta-pill`. */}
+            <div className={styles.storeRow}>
+              <WebButton
+                Kind="Link"
+                href="/store"
+                title="Zobrazit celý e-shop"
+                className={styles.storeLink}
+                onClickAction={() => setActive(false)}
+                testId="menu-store-link"
+              />
+            </div>
 
             <nav className={styles.menuFooter} aria-label="Důležité odkazy">
               <div className={styles.footerLinks}>

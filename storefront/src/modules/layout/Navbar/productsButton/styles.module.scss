@@ -465,38 +465,61 @@
 
 /* The menu's primary action, so it sits on its own row above the legal links rather than
    among them — it is where you go, not fine print. */
-.storeLink {
+/*
+ * Řádek s cestou do celého e-shopu.
+ *
+ * Byl to holý odkaz s podtržítkovou šipkou a v panelu plném fotek se ztrácel
+ * — přesně to, co je vidět na snímku od uživatele. Teď je to táž pilulka jako
+ * „Napište mi" na Kurzech; míry nese `cta-pill` v systému stylů.
+ *
+ * Čára a rozpočet výšky zůstávají na ŘÁDKU, ne na tlačítku: pilulka má
+ * `width: fit-content`, takže by se čára táhla jen pod ní. `--store-row-h`
+ * a `--store-row-gap` odečítá `.collectionCards` z výšky panelu, takže obě
+ * musí zůstat tady, kde je panel čeká.
+ */
+.storeRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  /* Both named in the panel's budget above, because `.collectionCards` has to subtract them —
-     the 52 and the 14 used to live here and again as the `66px` the rail took off itself. */
   min-height: var(--store-row-h);
   margin-top: var(--store-row-gap);
-  padding: 0 4px;
   border-top: 1px solid rgb(var(--ink-04-rgb) / .3);
+}
+
+/*
+ * Kvalifikováno řádkem, ne psáno jako holá `.storeLink` — a je to nutnost,
+ * ne kosmetika.
+ *
+ * WebButton si `--web-button-label-size` deklaruje na vlastní `.button`, což
+ * je taky jedna třída, takže o popisku by při shodné specificitě rozhodlo
+ * pořadí načtení modulů. Horší je vnitřek: `.slider` má svůj padding pravidlem
+ * `.button .slider`, tedy dvě třídy — holá `.storeLink > div` má jen jednu
+ * a prohraje. Naměřeno: popisek se přestal odsazovat zprava a přejel kotouč
+ * se šipkou („Zobrazit celý e-sho◯p").
+ *
+ * Kurzy mají tentýž problém vyřešený stejně (`.kurzyTimeline` před názvem).
+ */
+.storeRow .storeLink {
+  /* Výška z rozpočtu panelu, ne plochých 3.25rem jako na Kurzech: na krátkém
+     okně se řádek smrskne na 44px a kotouč se šipkou se sveze s ním. */
+  @include cta-pill(var(--store-row-h));
+
+  border: 1px solid rgb(var(--ink-04-rgb) / .3);
+  background: var(--cream-10);
+  box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .7),
+    0 13px 30px -22px rgb(var(--ink-01-rgb) / .5);
   color: var(--ink-04);
-  font-size: clamp(0.9375rem, 1.15vw, 1.1875rem);
   text-decoration: none;
-  transition: opacity 0.3s ease;
 
-  span {
-    display: inline-block;
-  }
-
-  svg {
-    flex: 0 0 auto;
-    transition: transform 0.42s cubic-bezier(0.76, 0, 0.24, 1);
+  &::after {
+    background: var(--ink-10);
+    color: var(--whiteText);
   }
 
   &:hover,
   &:focus-visible {
-    opacity: 0.66;
-
-    svg {
-      transform: translateX(5px);
-    }
+    border-color: var(--ink-04);
+    box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .72),
+      0 18px 34px -24px rgb(var(--ink-01-rgb) / .6);
   }
 }
 

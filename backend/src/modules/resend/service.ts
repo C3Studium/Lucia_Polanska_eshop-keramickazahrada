@@ -49,6 +49,14 @@ import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
 import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
+import {
+
+  novyStav,
+  proDen,
+  rozhodniOKvote,
+  textVarovani,
+  type StavKvoty,
+} from "../../lib/email-quota";
 
 enum Templates {
   ORDER_PLACED = "order-placed",
@@ -259,11 +267,19 @@ type InjectedDependencies = {
   logger: Logger
 }
 
+/**
+ * Značka v `data`, kterou se varování o vyčerpaném stropu pozná samo —
+ * musí projít i ve chvíli, kdy se všechno ostatní už zastavuje.
+ */
+const ZNACKA_VAROVANI = "__kvota_varovani"
+
 class ResendNotificationProviderService extends AbstractNotificationProviderService {
   static identifier = "notification-resend"
   private resendClient: Resend
   private options: ResendOptions
   private logger: Logger
+  /** Denní počítadlo odeslaných zpráv — viz `lib/email-quota.ts`. */
+  private kvotaStav: StavKvoty = novyStav(new Date())
 
   constructor(
     { logger }: InjectedDependencies, 
@@ -289,7 +305,6 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       )
     }
   }
-
 
   getTemplate(template: Templates) {
     if (this.options.html_templates?.[template]) {
@@ -398,6 +413,67 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     
   }
 
+  /** Denní strop z prostředí. 0 nebo nesmysl = hlídání vypnuté. */
+  private denniKvota(): number {
+    const hodnota = Number(process.env.RESEND_DAILY_QUOTA ?? 100)
+    return Number.isFinite(hodnota) ? hodnota : 0
+  }
+
+  /**
+   * Poslední zpráva ze stropu: e-mail majitelce, že strop došel.
+   *
+   * Posílá se PŘÍMO přes Resend, ne přes notifikační modul. Ten je totiž
+   * právě uprostřed rozesílání a volal by tenhle provider znovu — a kromě
+   * toho by varování skončilo ve frontě za zprávami, které už neprojdou.
+   * Cena za to je, že varování není vidět v Přehled → Odeslané e-maily;
+   * v Resendu a v logu ano.
+   */
+  private async posliVarovaniOKvote(kvota: number): Promise<boolean> {
+    const prijemce = (process.env.OWNER_NOTIFICATION_EMAIL ?? "").trim()
+    const text = textVarovani(kvota, this.kvotaStav.den)
+
+    if (!prijemce) {
+      this.logger.error(
+        "[resend] Denní strop e-mailů je vyčerpaný, ale nemám komu to říct — " +
+          "OWNER_NOTIFICATION_EMAIL není nastavená."
+      )
+      return false
+    }
+
+    try {
+      const { data, error } = await this.resendClient.emails.send({
+        from: this.options.from,
+        to: [prijemce],
+        subject: text.predmet,
+        react: merchantNotificationEmail({
+          title: text.nadpis,
+          description: text.popis,
+          urgent: true,
+        }) as React.ReactElement,
+      } as CreateEmailOptions)
+
+      if (error || !data) {
+        this.logger.error(
+          "[resend] Nepodařilo se odeslat varování o vyčerpaném stropu: " +
+            describeResendError(error)
+        )
+        return false
+      }
+
+      this.logger.error(
+        `[resend] Denní strop ${kvota} e-mailů je vyčerpaný. ` +
+          `Poslední kus stropu jsem utratil za varování na ${prijemce}.`
+      )
+      return true
+    } catch (chyba) {
+      this.logger.error(
+        "[resend] Varování o vyčerpaném stropu se nepodařilo odeslat: " +
+          describeResendError(chyba)
+      )
+      return false
+    }
+  }
+
   async send(
     notification: ProviderSendNotificationDTO
   ): Promise<ProviderSendNotificationResultsDTO> {
@@ -482,6 +558,35 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       }
     }
 
+    /*
+     * Strop se kontroluje až tady, po vykreslení: kdyby šablona spadla, má
+     * se to dozvědět jako chyba šablony, ne jako vyčerpaná kvóta.
+     */
+    const jeVarovani = Boolean(
+      (notification.data as Record<string, unknown> | undefined)?.[ZNACKA_VAROVANI]
+    )
+    const kvota = this.denniKvota()
+    this.kvotaStav = proDen(this.kvotaStav, new Date())
+
+    const rozhodnuti = rozhodniOKvote(this.kvotaStav, kvota, jeVarovani)
+
+    if (rozhodnuti !== "posli") {
+      if (rozhodnuti === "posliVarovani") {
+        this.kvotaStav.varovaniOdeslano = true
+        this.kvotaStav.odeslano += 1
+        await this.posliVarovaniOKvote(kvota)
+      }
+
+      const duvod =
+        `Denní strop ${kvota} e-mailů je vyčerpaný (den ${this.kvotaStav.den} UTC). ` +
+        "Zpráva se neodeslala; po půlnoci UTC ji jde poslat znovu."
+
+      this.logger.error(
+        `[resend] E-mail "${notification.template}" na ${notification.to} neodešel: ${duvod}`
+      )
+      throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, duvod)
+    }
+
     let data: { id: string } | null = null
     let error: unknown = null
 
@@ -510,6 +615,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         `Resend odmítl e-mail "${notification.template}" pro ${notification.to}: ${detail}`
       )
     }
+
+    this.kvotaStav.odeslano += 1
 
     return { id: data.id }
   }

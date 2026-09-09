@@ -36,6 +36,8 @@ type NavButton = {
   /** So the primary button can actually submit a form rather than only handle clicks. */
   type?: "button" | "submit"
   disabled?: boolean
+  /** Prochází na vykreslený prvek jako `data-testid` — tlačítko i obě podoby odkazu. */
+  testId?: string
 }
 
 type ButtonTone = NonNullable<NavButton["tone"]>
@@ -170,6 +172,7 @@ export default function WebButton({
   local = !EXTERNAL_HREF.test(href ?? ""),
   type = "button",
   disabled = false,
+  testId,
 }: NavButton) {
   /*
    * Rozsvícení NEŘÍDÍ fokus.
@@ -253,6 +256,15 @@ export default function WebButton({
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onBlur: () => setIsPressed(false),
+    /*
+     * `onClickAction` platil jen pro `Kind="Button"`, přestože ho typ nabízel
+     * i odkazům. Odkaz, který má po kliknutí něco zavřít — panel e-shopu v
+     * navbaru — si tak musel zůstat obyčejným <a> mimo tenhle komponent.
+     * Volá se jen to, co volající sám předal, takže dosavadní odkazy
+     * (žádný z nich prop nepředává) se nemění.
+     */
+    onClick: onClickAction,
+    "data-testid": testId,
   }
   const buttonClassName = `${styles.button} ${
     tone === "dark" ? styles.toneDark : styles.toneLight
@@ -294,10 +306,13 @@ export default function WebButton({
   return (
     <button
       className={buttonClassName}
-      onClick={handleButtonClick}
       type={type}
       disabled={disabled}
       {...interactionProps}
+      /* Tlačítko si klik řeší samo — přepínač rozsvícení PLUS onClickAction —
+         takže musí přebít onClick z interactionProps, a proto stojí až za
+         rozbalením. */
+      onClick={handleButtonClick}
     >
       {content}
     </button>

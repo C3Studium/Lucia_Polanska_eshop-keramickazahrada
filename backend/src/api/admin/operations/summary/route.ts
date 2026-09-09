@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { jeVyresena, vyreseneKoreny } from "../../../../lib/email-retries"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
 import { getInventoryAlerts } from "../../../../lib/inventory-alerts"
@@ -180,15 +181,35 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     getInventoryAlerts(req.scope),
   ])
 
-  // ---- Failures (windowed: a notification is never "resolved") --------------
-  const [, failedEmailCount] = await notifications.listAndCountNotifications(
+  /*
+   * ---- Nezdařené e-maily v okně ------------------------------------------
+   *
+   * Dřív tu stálo „a notification is never resolved" a počítalo se prostě
+   * všechno se stavem `failure`. Jenže vyřešit se to dá: tlačítkem „Poslat
+   * znovu", které vyrobí nový pokus ukazující na ten původní. Původní řádek
+   * zůstává jako doklad, ale jako nedoručený e-mail se počítat nemá —
+   * zákazník ho dostal. Stejné pravidlo jako v /admin/operations/emails.
+   */
+  const nezdareneVOkne = (await notifications.listNotifications(
     {
       channel: "email",
       status: "failure",
       created_at: { $gte: attentionSince },
     } as never,
-    { take: 1 }
-  )
+    { take: 1000, select: ["id", "original_notification_id"] } as never
+  )) as unknown as { id: string; original_notification_id?: string | null }[]
+
+  // Úspěchy se neomezují oknem: opakované odeslání může přijít i o pár dní
+  // později a pořád vyřešilo ten původní e-mail.
+  const uspesneEmaily = (await notifications.listNotifications(
+    { channel: "email", status: "success" } as never,
+    { take: 1000, select: ["id", "original_notification_id"] } as never
+  )) as unknown as { id: string; original_notification_id?: string | null }[]
+
+  const vyreseneEmailoveKoreny = vyreseneKoreny(uspesneEmaily)
+  const failedEmailCount = nezdareneVOkne.filter(
+    (radek) => !jeVyresena(radek, vyreseneEmailoveKoreny)
+  ).length
 
   // The ship-failure notification (#10, P3-5) tags itself through the dedupe
   // key's second segment, which the notify helper stores as `trigger_type`.

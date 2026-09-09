@@ -578,79 +578,29 @@
  * wide enough to run under the arrow and get cut by the pill's overflow.
  */
 .kurzyTimeline .kurzyTimelineCtaButton {
-  --web-button-label-size: clamp(0.86rem, 0.82vw, 0.98rem);
-  --web-button-label-padding: 0;
-
-  /* The label is what has to fit — the pill takes its own measure and the
-     clamp is the floor it will not shrink below. */
-  width: fit-content;
-  min-width: clamp(11.875rem, 13vw, 15rem);
-  max-width: 100%;
   /*
-   * The pill in rem, not px. Every dimension here used to be a literal, so it measured 52px on
-   * 1280 and 52px on 2552 while the h3 beside it went 31px → 59px and the body under it 15px →
-   * 25px — a control from another page. 3.25rem is the same 52px at a 16px root and rides the
-   * ramp from there; it cannot fall under the 44px touch target, because the root never goes
-   * below 16px.
+   * Míry, kotouč se šipkou a struktura jsou ve `cta-pill` v systému stylů —
+   * tenhle blok a `.kurzyRezervaceCtaButton` v kurzy/Rezervace/styles.scss
+   * byly slovo od slova totéž a od té doby, co je má i navbar, by to byly
+   * tři kopie. Zůstává tu jen to, co je pro tuhle scénu vlastní: barvy,
+   * rámeček a stín.
+   *
+   * Výchozí výška 3.25rem je stále týchž 52px při rem 16 a stále jede po
+   * rampě nahoru; pod dotykový cíl 44px nespadne, protože rem nikdy neklesne
+   * pod 16px.
    */
-  height: 3.25rem;
-  padding: 0;
+  @include cta-pill;
+
   border: 1px solid rgb(var(--cream-06-rgb) / .72);
-  border-radius: 999px;
   background: var(--kurzy-cream);
   box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .7),
     0 13px 30px -22px rgb(var(--black-01-rgb) / .8);
   color: var(--kurzy-charcoal);
-  transition: border-color 0.35s ease, box-shadow 0.35s ease,
-    transform 0.35s ease;
 
+  /* Kotouč dostane barvy scény; jeho míry a chování nese mixin. */
   &::after {
-    position: absolute;
-    top: 50%;
-    right: 0.4375rem;
-    z-index: 8;
-    width: 2.375rem;
-    height: 2.375rem;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
     background: var(--kurzy-charcoal);
     color: var(--kurzy-cream);
-    content: "↗";
-    font-family: "Sansation-Light", sans-serif;
-    font-size: 0.9rem;
-    transform: translateY(-50%);
-    transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-  }
-
-  /*
-   * Right inset clears the arrow disc (0.4375 + 2.375 = 2.8125rem) with room to spare.
-   *
-   * These four numbers ARE `.kurzyRezervaceCtaButton` in kurzy/Rezervace/styles.scss, which says
-   * in its own comment that the two are one component wearing two class names. They were
-   * 0.44 / 0.19 / 3.4 / 1.4 here against 0.4375 / 0.1875 / 3.375 / 1.375 there — close enough to
-   * read as intended, far enough apart to be two components. Both files now say the same thing.
-   */
-  > div {
-    padding: 0.1875rem 3.375rem 0.1875rem 1.375rem;
-  }
-
-  p {
-    /*
-     * The scene's own body copy sets a `p { color: … }`, and that bare
-     * descendant selector also catches the label inside this button.
-     * WebButton animates its foreground as an inline style on the wrapping
-     * div, so a colour declared straight on the <p> beats it however the
-     * button is feeling. Inheriting hands the label back to that animation.
-     * Equal specificity to those scene rules, so this stays below them.
-     */
-    color: inherit;
-    line-height: 1;
-    white-space: nowrap;
-
-    span {
-      display: none;
-    }
   }
 
   &:hover,
@@ -658,16 +608,6 @@
     border-color: var(--kurzy-cream);
     box-shadow: inset 0 1px 0 rgb(var(--white-rgb) / .72),
       0 18px 34px -24px rgb(var(--black-01-rgb) / .9);
-    transform: translateY(-2px);
-
-    &::after {
-      transform: translate(-3px, -50%) rotate(45deg);
-    }
-  }
-
-  &:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring);
-    outline-offset: 4px;
   }
 }
 
