@@ -162,6 +162,21 @@ const CartDropdown = ({
           >
             <div className={styles.panelHeader}>
               <h3>Košík</h3>
+              {/*
+                Zavírací křížek — na dotyku jediná cesta ven.
+                Na myši se panel zavře odjetím kurzoru (onMouseLeave), jenže
+                dotyk žádné "odjetí" nemá: po ťuknutí do košíku panel zůstane
+                stát a zavře ho leda ťuknutí mimo, což není nikde napsané.
+                Ve stylech je proto vidět jen na dotykových zařízeních.
+              */}
+              <button
+                type="button"
+                className={styles.panelClose}
+                onClick={close}
+                aria-label="Zavřít košík"
+              >
+                <span aria-hidden="true">✕</span>
+              </button>
             </div>
             {cartState && cartState.items?.length ? (
               <>

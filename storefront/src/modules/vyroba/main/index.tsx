@@ -70,16 +70,19 @@ export default function MainVyroba({
   const { isPhone } = useDeviceTier()
 
   /*
-   * Upright phones get the gallery's sticky scene and its pull-up; phones on their side get the
-   * stacked list and no overlap. The handoff below has to follow that split, and `isPhone` cannot
-   * — it is true for both. The query is the `v(xs)`…below-`v(md)` band the stylesheet uses.
+   * Displeje na výšku dostávají scénu galerie i její podtažení; telefon naležato
+   * naskládaný seznam a žádný překryv. Předávka níž musí kopírovat právě tohle
+   * dělení, a `isPhone` na to nestačí — je true pro obě polohy.
+   *
+   * Dotaz je celé pásmo `v()`, tedy bez stropu. Byl tu `max-width: 599.98px`,
+   * takže svislé tablety zůstávaly mimo: galerie jim mezitím dala scénu, ale
+   * hero se na ni nikdy nepředalo a obě sekce ukazovaly totéž pod sebou.
+   * Jméno proměnné zůstává, ať se nemusí přepisovat na dvou dalších místech.
    */
   const [isPortraitPhone, setIsPortraitPhone] = useState(false)
 
   useEffect(() => {
-    const query = window.matchMedia(
-      "(orientation: portrait) and (max-width: 599.98px)"
-    )
+    const query = window.matchMedia("(orientation: portrait)")
     const sync = () => setIsPortraitPhone(query.matches)
 
     sync()
@@ -147,20 +150,34 @@ export default function MainVyroba({
    */
   const PLATE_W_START = (19 / 61).toFixed(4)
   const PLATE_H_START = (29 / 70).toFixed(4)
+
+  /*
+   * Cíl růstu se řídí ORIENTACÍ, ne tím, jestli je to telefon.
+   *
+   * Deska, do které náhled roste, je na výšku celý rám (viz `v(xs)` v
+   * gallery/styles.scss), kdežto na šířku sloupec vedle textu. Dokud tu stálo
+   * `isPhone`, měl svislý tablet `false` a rostl do cíle širokého rozvržení:
+   * na 820x1180 skončil na 758px výšky proti 1180 desky, takže jeho kopie
+   * textu seděla o 151px výš než kopie galerie pod ním a obě byly vidět
+   * najednou. Telefon naležato zůstává na širokém cíli — tam deska sloupec
+   * opravdu je.
+   */
+  const rosteNaVysku = isPortraitPhone
+
   const previewLeft = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    isPhone ? ["17%", "4%"] : ["8%", "4.5%"]
+    rosteNaVysku ? ["17%", "4%"] : ["8%", "4.5%"]
   )
   const previewTop = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    isPhone ? ["60%", "8%"] : ["56%", "15%"]
+    rosteNaVysku ? ["60%", "8%"] : ["56%", "15%"]
   )
   const previewWidth = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    isPhone
+    rosteNaVysku
       ? ["36vw", "92vw"]
       : [
           `calc(var(--process-stage-w) * ${PLATE_W_START})`,
@@ -175,7 +192,7 @@ export default function MainVyroba({
   const previewHeight = useTransform(
     scrollYProgress,
     [0.58, 0.99],
-    isPhone
+    rosteNaVysku
       ? ["17%", "84%"]
       : [
           `calc(var(--process-stage-h) * ${PLATE_H_START})`,

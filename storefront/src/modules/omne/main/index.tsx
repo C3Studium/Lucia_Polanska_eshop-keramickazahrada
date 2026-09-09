@@ -136,18 +136,23 @@ export default function AboutMe ({ block }: { block?: CopyBlock }) {
 
     /*
      * Předání běží tam, kde je scéna příběhu podtažená pod hero: na šířku od
-     * 760 px a na svislých telefonech. Mezi tím (telefon naležato, tablet
-     * nastojato) jede hero obyčejným tokem a příběh naskládaným seznamem —
-     * tam by se stmívání pověsilo na timeline, která nemá žádnou dráhu.
+     * 760 px a na všech svislých displejích. Zbývá telefon naležato, kde hero
+     * jede obyčejným tokem a příběh naskládaným seznamem — tam by se stmívání
+     * pověsilo na timeline, která nemá žádnou dráhu.
      *
-     * Dotaz musí sedět na stopy ve stylech, jinak by se JS a CSS rozešly:
-     * `from-px(760px)` plus `v(xs)` omezené `v(md)` v main/styles.scss.
+     * Dotaz musí sedět na stopy ve stylech, jinak se JS a CSS rozejdou:
+     * `from-px(760px)` plus `v(xs)` a `v(md)` v main/styles.scss.
+     *
+     * Svislé tablety tu dřív chyběly (`max-width: 599.98px`). CSS jim mezitím
+     * scénu dalo, ale `handoff` zůstal false, takže hero nikdy neodešlo:
+     * na 820x1180 stály obě kopie textu pod sebou — hero drželo horních 799px
+     * se svým proxy textem a příběh pod ním ukazoval týž odstavec znovu.
      */
     const [handoff, setHandoff] = useState(false)
 
     useEffect(() => {
         const query = window.matchMedia(
-            "(min-width: 760px) and (orientation: landscape), (orientation: portrait) and (max-width: 599.98px)"
+            "(min-width: 760px) and (orientation: landscape), (orientation: portrait)"
         )
         const sync = () => setHandoff(query.matches)
 

@@ -60,7 +60,12 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 
 .accountReviewsHeading h1 {
   margin: 0;
-  font: 400 clamp(3.2rem, 5.15vw, 5.9rem) / 0.84 "Sentient-Regular", serif;
+  /* Nadpis visí na témž násobiteli jako zbytek účtu.
+     `--account-zoom` nastavuje account-layout: 0.75 na svislém tabletu,
+     0.9 na svislém telefonu. Bez proměnné (desktop) je fallback 1 a hodnota
+     je bit po bitu tatáž jako předtím. Na telefonu tím nadpis klesne
+     z 54.4 na 49px a přestane brát dva a půl řádku. */
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, 4.12vw, 5.9rem)) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
@@ -78,7 +83,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   color: rgb(var(--ink-05-rgb) / .62);
   // 1vw byl živý až od 1500 do 1800, takže na celém pásmu notebooků stál na podlaze
   // 15px vedle h1, které rostlo dál. 1.15vw je živý 1308–1572.
-  font: clamp(0.94rem, 1.15vw, 1.13rem) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.94rem, 0.92vw, 1.13rem)) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .accountReviewsBody {
@@ -113,7 +118,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 .accountPreviewNotice p {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .65);
-  font-size: clamp(0.875rem, 1.167vw, 1.021rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.875rem, 0.934vw, 1.021rem));
 }
 
 .accountReviewsList {
@@ -223,7 +228,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 .accountReviewCopy h2 {
   margin: clamp(0.5rem, 1.1vh, 0.85rem) 0 clamp(0.4rem, 0.9vh, 0.7rem);
   overflow-wrap: break-word;
-  font: 400 clamp(1.65rem, 2.25vw, 2.75rem) / 0.96 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.65rem, 1.8vw, 2.75rem)) / 0.96 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
 
@@ -233,7 +238,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   margin: 0;
   overflow: hidden;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: clamp(0.875rem, 1.1vw, 1rem) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.875rem, 0.88vw, 1rem)) / 1.55 "Sansation-Light", sans-serif;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -249,7 +254,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 
 .accountReviewFooter time {
   color: rgb(var(--ink-05-rgb) / .52);
-  font-size: clamp(0.81rem, 0.98vw, 0.9rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.81rem, 0.784vw, 0.9rem));
 }
 
 .accountReviewStars {
@@ -317,7 +322,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   place-items: center;
   border: 1px solid var(--ink-05);
   border-radius: 50%;
-  font-size: clamp(0.95rem, 1.25vw, 1.15rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.95rem, 1vw, 1.15rem));
   font-style: normal;
 }
 
@@ -343,7 +348,7 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
 // (naměřeno +8.9px na 1280 až +19.1px na 2552). Blok + vlastní odsazení to rozvede.
 .accountReviewsEmpty > div > span {
   display: block;
-  font: 400 clamp(2.5rem, 4vw, 4.8rem) / 0.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 3.2vw, 4.8rem)) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
@@ -367,4 +372,34 @@ $star: clamp(0.94rem, 1.12vw, 1.05rem);
   flex: 0 0 auto;
   width: max-content;
   min-width: clamp(11rem, 14vw, 16rem);
+}
+
+/*
+ * ── Svislé tablety: nižší karta recenze ──
+ *
+ * Na 820x1180 stála úvodní karta na 288px — clamp(11.5rem, 27vh, 18rem) narazil na svůj
+ * strop — a náhled na 216px. Text zabral jen část a pod hvězdami zůstal prázdný pruh.
+ * Podlaha klesá na 250px u úvodní karty a 200px u ostatních. Pořád je to jen PODLAHA:
+ * delší recenze kartu roztáhne dál, jak má.
+ *
+ * Náhled klesá s ní, ne zvlášť: 250 - 2x30.7 paddingu = 188.6px vnitřní výšky, do které
+ * se 11rem (176px) vejde i s rámečkem, takže obrázek kartu nikdy nepřetlačí přes podlahu.
+ *
+ * Stejná specificita jako základní pravidla výš, takže rozhoduje pořadí v souboru — proto
+ * blok stojí na konci. Telefony sem nespadají, v(md) začíná na 600px.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .accountReviewSurfaceContent > a {
+      min-height: 12.5rem;
+    }
+
+    .accountReviewCard:first-child .accountReviewSurfaceContent > a {
+      min-height: 15.625rem;
+    }
+
+    .accountReviewImage {
+      height: 11rem;
+    }
+  }
 }

@@ -180,3 +180,22 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Přepínač firemního nákupu a pole, která odemyká.
+ *
+ * Formulář je nad tabletem dvousloupcový, takže zaškrtávátko i název firmy
+ * musí říct, že chtějí celou šířku — jinak by přepínač seděl v jedné buňce
+ * vedle pole, ke kterému nepatří, a název firmy by byl užší než adresa,
+ * přestože bývá delší.
+ *
+ * IČO a DIČ zůstávají v mřížce vedle sebe: jsou to dvě krátká čísla, která
+ * se vyplňují společně a patří k sobě.
+ */
+.firmaToggle {
+  grid-column: 1 / -1;
+  margin: 0.35rem 0.25rem 0.15rem;
+}
+
+.inputWide {
+  grid-column: 1 / -1;
+}

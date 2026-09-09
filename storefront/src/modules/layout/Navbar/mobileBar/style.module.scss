@@ -14,8 +14,20 @@
    * which both hang off controls in this bar and so must size themselves against it. Both are
    * descendants, so they inherit these; this stays the one place the bar's dimensions live.
    */
-  --nav-bottom-inset: 12px;
-  --nav-bottom-height: 56px;
+  --nav-bottom-inset: calc(12px * var(--bar-scale));
+  --nav-bottom-height: calc(56px * var(--bar-scale));
+
+  /*
+   * Jedno číslo, kterým se lišta zvětšuje. Rozměry níž jsou telefonní a jdou
+   * všechny přes něj, takže tablet nepotřebuje vlastní sadu pixelů — jen jinou
+   * hodnotu. Místo mezi ovládacími prvky se zvětšuje samo: šířka lišty se
+   * škáluje také a sloupce jsou její čtvrtiny.
+   */
+  --bar-scale: 1;
+  --bar-slot: calc(44px * var(--bar-scale));
+  --bar-mark: calc(27px * var(--bar-scale));
+  --bar-badge: calc(14px * var(--bar-scale));
+  --bar-badge-text: calc(10px * var(--bar-scale));
 
   display: grid;
   position: fixed;
@@ -40,11 +52,11 @@
    * which matters because a transform here would become the containing block for the cart panel
    * and the country list and break both of them.
    */
-  width: min(288px, calc(100vw - 32px));
+  width: min(calc(288px * var(--bar-scale)), calc(100vw - 32px));
   height: var(--nav-bottom-height);
   align-items: center;
   margin-inline: auto;
-  padding: 0 6px;
+  padding: 0 calc(6px * var(--bar-scale));
   border: 1px solid var(--nav-border);
   border-radius: 999px;
   box-shadow: var(--nav-shadow);
@@ -92,16 +104,16 @@
 .link {
   position: relative;
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: var(--bar-slot);
+  height: var(--bar-slot);
   border-radius: 999px;
   color: inherit;
   place-items: center;
 }
 
 .icon {
-  width: 27px;
-  height: 27px;
+  width: var(--bar-mark);
+  height: var(--bar-mark);
   opacity: 0.78;
   transition: opacity 0.25s ease;
 }
@@ -128,14 +140,14 @@
   top: 1px;
   right: 3px;
   display: grid;
-  min-width: 14px;
-  height: 14px;
+  min-width: var(--bar-badge);
+  height: var(--bar-badge);
   margin: 0;
   padding: 0 3px;
   border: 0;
   background: none;
   color: var(--nav-ink, var(--ink-06));
-  font-size: 10px;
+  font-size: var(--bar-badge-text);
   font-weight: 500;
   line-height: 1;
   place-items: center;
@@ -151,8 +163,8 @@
 .cartSlot [data-testid="nav-cart-link"] {
   position: relative;
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: var(--bar-slot);
+  height: var(--bar-slot);
   gap: 0;
   place-items: center;
 }
@@ -169,8 +181,8 @@
  */
 .cartSlot :global(.magnetic) {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: var(--bar-slot);
+  height: var(--bar-slot);
   place-items: center;
 }
 
@@ -183,8 +195,8 @@
  * `data-testid`, kterým ho zbytek souboru už tak adresuje.
  */
 .cartSlot [data-testid="nav-cart-link"] svg {
-  width: 27px;
-  height: 27px;
+  width: var(--bar-mark);
+  height: var(--bar-mark);
 }
 
 /*
@@ -195,7 +207,7 @@
  */
 .root .cartSlot [data-testid="nav-cart-link"] :global(.magnetic) p {
   color: var(--nav-ink, var(--ink-06));
-  font-size: 10px;
+  font-size: var(--bar-badge-text);
 }
 
 /*
@@ -207,9 +219,9 @@
  */
 .regionSlot :global(.regions__select),
 .regionSlot :global(.regions__select__button) {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
+  width: var(--bar-slot);
+  min-width: var(--bar-slot);
+  height: var(--bar-slot);
   justify-content: center;
   padding: 0;
 }
@@ -276,5 +288,43 @@
 @include phs-h {
   .root {
     display: grid;
+  }
+}
+
+/*
+ * Svislé tablety dostávají tutéž lištu jako telefon, jen větší.
+ *
+ * Až sem se svislý tablet choval jako počítač: `v(md)` výše lištu schová a všechny
+ * ovládací prvky zůstaly nahoře v pravém shluku. Na 825px na šířku je to řada
+ * drobných ikon u horní hrany, na kterou se z ruky nedosáhne — přesně to, kvůli
+ * čemu spodní lišta na telefonu vznikla. Tablet má stejný způsob držení, jen větší
+ * plochu, takže dostává stejné rozvržení a liší se jen měřítkem.
+ *
+ * Dva stupně, ne jeden: mezi 600px a iPadem Pro je skoro dvojnásobek šířky
+ * a jedna hodnota by byla buď malá nahoře, nebo neúměrná dole.
+ *
+ * `below-px(1180px)` drží stranou svislý monitor — ten je sice na výšku, ale sedí
+ * se u něj a myš na horní lištu dosáhne.
+ *
+ * Pořadí vrstev: musí to být za `v(md)`, který lištu schovává. `h(xs)` ani `phs-h`
+ * do toho nemluví, oba jsou na šířku.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .root {
+      --bar-scale: 1.05;
+
+      display: grid;
+    }
+  }
+}
+
+@include from-px(900px) {
+  @include v(md) {
+    @include below-px(1180px) {
+      .root {
+        --bar-scale: 1.17;
+      }
+    }
   }
 }

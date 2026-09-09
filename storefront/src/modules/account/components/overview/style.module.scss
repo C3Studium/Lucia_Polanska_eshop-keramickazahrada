@@ -1,4 +1,15 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+/* Displejové velikosti visí na jednom násobiteli.
+ *
+ * `--account-zoom` nastavuje account-layout na svislém tabletu (0.75). Tady
+ * se jím násobí jen to, co je VELKÉ kvůli dojmu — pozdrav, čísla v dlaždicích
+ * a nadpisy sekcí. Běžný text, popisky a tlačítka se nenásobí schválně:
+ * 0.85rem × 0.75 je 10.2px, tedy pod čitelností, a tlačítko pod 44px je pod
+ * nejmenším cílem pro prst. Zmenšit se má dojem, ne použitelnost.
+ *
+ * Bez proměnné (desktop, telefon) je fallback 1 a hodnoty jsou bit po bitu
+ * tytéž jako předtím.
+ */
 // Dotazovací kontejner pro celý přehled. Šířka, o kterou tu jde, není šířka okna,
 // ale šířka obsahového sloupce v .children — sidebar clamp(20.625rem, 21vw, 25rem) plus
 // paddingy layoutu z ní ukrojí 500–560 px, takže na okně 1200–1366 zbývá ~700–740 px.
@@ -28,7 +39,7 @@
   // Podlaha .75rem, ne .72rem: .72rem je 11.52px a rig hlídá čitelnost pod 12px
   // (.rdshots/acct-shot.cjs ohlásí každý text s fs < 12). Takhle drží mikropopisek
   // dnešních 12px až do 1600 a nad 1921 ho zvedne ramp přes strop v rem.
-  font: clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -52,7 +63,7 @@
 
 .accountOverviewHeading h1 {
   margin: 0;
-  font: 400 clamp(3.4rem, 5.7vw, 6.5rem)/.83 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, 4.56vw, 6.5rem))/.83 "Sentient-Regular", serif;
   letter-spacing: -.06em;
 }
 
@@ -72,7 +83,7 @@
   margin: clamp(.5rem, 1.1vh, .8rem) 0 0;
   overflow-wrap: anywhere;
   color: rgb(var(--ink-05-rgb) / .7);
-  font-size: clamp(.94rem, 1vw, 1.125rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.94rem, 0.8vw, 1.125rem));
 }
 
 .accountOverviewStats {
@@ -127,7 +138,7 @@
 }
 
 .accountOverviewStatValue strong {
-  font: 400 clamp(4.6rem, 7vw, 8.5rem)/.7 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(4.6rem, 5.6vw, 8.5rem))/.7 "Sentient-Regular", serif;
   letter-spacing: -.07em;
 }
 
@@ -139,7 +150,7 @@
   max-width: 9rem;
   margin: 0 0 .2rem;
   color: rgb(var(--ink-05-rgb) / .62);
-  font-size: clamp(.85rem, .9vw, .95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.72vw, .95rem));
 }
 
 // height: 3px zůstává v px schválně — hairline pruh je fyzická věc (pravidlo 3).
@@ -163,7 +174,7 @@
   min-height: clamp(2.6rem, 5vh, 3.2rem);
   margin: 0 0 clamp(1.2rem, 3vh, 2.1rem);
   color: rgb(var(--ink-05-rgb) / .6);
-  font: clamp(.9rem, .95vw, 1rem)/1.5 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.9rem, 0.76vw, 1rem))/1.5 "Sansation-Light", sans-serif;
 }
 
 .accountOverviewAction {
@@ -189,7 +200,7 @@
 
 .accountOverviewSectionHead h2 {
   margin: clamp(.6rem, 1.4vh, .95rem) 0 0;
-  font: 400 clamp(2.7rem, 4vw, 4.8rem)/.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.7rem, 3.2vw, 4.8rem))/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 
@@ -219,6 +230,98 @@
 
 .accountOverviewEmpty p {
   margin: 0;
-  font: 400 clamp(1.8rem, 3vw, 3.2rem)/1 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 2.4vw, 3.2rem))/1 "Sentient-Regular", serif;
 }
 
+
+/* SVISLÝ TABLET — tlačítka o kus níž.
+ *
+ * Měřila 51px, tedy stejně jako na laptopu, kde je místa dvakrát tolik.
+ * Násobit je 0.75 jako displejové písmo ale nejde: vyšlo by 38px a nejmenší
+ * cíl pro prst je 44. Clamp proto míří k té hranici, ne pod ni — 768 → 44,
+ * 834 → 45.4, 1024 → 46.4 místo jednotných 51.
+ *
+ * Selektor je dvoutřídní schválně. Tlačítko nese `.root` z premium-action-button
+ * i `.accountOverviewAction` odsud, obojí na TÉMŽE prvku a obojí (0,1,0) —
+ * o vítězi by rozhodovalo pořadí souborů, které u CSS modulů není zaručené.
+ * `.accountOverviewStat .accountOverviewAction` je (0,2,0) a vyhraje vždy.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .accountOverviewStat .accountOverviewAction,
+      .accountOverviewEmpty .accountOverviewAction {
+        /* O výšce nakonec nerozhoduje ani jedna mez, ale obsah: šipka
+           2.15rem (34.4px) + odsazení 2× .45rem + rámeček = 50.8px, přesně
+           to naměřené. Snížit se proto musí odsazení; 0.3rem dá 46px, což
+           je pořád nad 44 — nejmenším cílem pro prst. Spodní mez jde dolů
+           s tím, aby výšku nedržela zespodu. */
+        min-height: clamp(2.75rem, 3.8vh, 2.9rem);
+        padding-block: 0.3rem;
+      }
+    }
+  }
+}
+
+/* SVISLÝ TELEFON — přehled na výšku sevřít.
+ *
+ * Sekce měřila 1343px na 844px vysokém okně, tedy víc než jeden a půl
+ * obrazovky, a většina z toho nebyl obsah. Rozpočet, naměřený na 390×844:
+ *
+ *   min-height dlaždic  2 × 337px, obsah v nich přitom potřeboval 272
+ *   mezera mezi sekcemi 2 × 59px
+ *   odsazení dlaždic    2 × 2 × 34px
+ *   mezera pod popiskem 2 × 51px
+ *
+ * `min-height: 40vh` je ta hlavní: na širokém monitoru drží dlaždice v řadě
+ * stejně vysoké, ale na telefonu jsou pod sebou, takže srovnávat není co —
+ * jen roztahuje. Pod tou hranicí rozhoduje obsah.
+ *
+ * Ostatní členy jdou dolů zhruba na polovinu. Zůstávají na vh, aby se sevřely
+ * dál na nízkém okně; mění se jen koeficient, ne princip.
+ *
+ * 560, ne 760: nad tím jsou telefony na šířku a malé tablety, kde jsou
+ * dlaždice vedle sebe a `min-height` má co srovnávat.
+ */
+@include below-px(560px) {
+  .accountOverviewRoot {
+    gap: clamp(1.1rem, 2.6vh, 1.8rem);
+  }
+
+  .accountOverviewStat {
+    /* Výšku určí obsah — vedle sebe tu nic nestojí. */
+    min-height: 0;
+    padding-block: clamp(0.8rem, 1.8vh, 1.2rem);
+  }
+
+  .accountOverviewStatValue {
+    margin-top: clamp(0.7rem, 1.7vh, 1.1rem);
+  }
+
+  /* Číslo v dlaždici menší.
+     Podlaha 4.6rem (73.6px) je psaná pro monitor, kde číslo stojí vedle
+     druhého a nese celou dlaždici; na telefonu je pod sebou a stačí, aby
+     bylo zřetelně největší v bloku — 66.2px z něj dělalo dominantu, kvůli
+     které se pod ním všechno ostatní muselo tlačit. 390 → 46.8, 430 → 51.6.
+     Procento i „00" jdou s ním: znak % je 0.34em toho čísla, takže se
+     zmenší sám a poměr zůstane. */
+  .accountOverviewStatValue strong {
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.6rem, 9.6vw, 3.4rem));
+  }
+
+  .accountOverviewEmpty {
+    min-height: 0;
+    padding-block: clamp(1.1rem, 2.6vh, 1.6rem);
+  }
+
+  /* Dvě linky 30px od sebe.
+     Hlavička má spodní okraj a blok dlaždic horní; vedle sebe na monitoru
+     je mezi nimi tolik místa, že se každá čte jako rám svého bloku, ale na
+     telefonu pod sebou z nich byl proužek prázdna ohraničený dvakrát — čte
+     se to jako chyba, ne jako rytmus. Zůstává ta spodní, protože patří
+     k rámu dlaždic; hlavičku odděluje dost sama mezera. */
+  .accountOverviewHero {
+    border-bottom: 0;
+    padding-bottom: clamp(0.9rem, 2.2vh, 1.4rem);
+  }
+}

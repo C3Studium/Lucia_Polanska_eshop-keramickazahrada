@@ -222,3 +222,31 @@
         display: none;
     }
 }
+
+/*
+ * Svislý tablet drží telefonní podobu.
+ *
+ * `v(md)` výše vrací ovladači vlastní rámeček a výplň. To je správně tam, kde je
+ * bar hustý, ale `v(md)` je portrait od 600px — tedy i svislý tablet, který se
+ * drží jako telefon a bar má telefonní. Vznikal tam přesně ten kroužek v kroužku,
+ * před kterým varuje komentář u `phone-search-control`: pilulka, uvnitř ní
+ * druhý kroužek a mezi nimi pruh mrtvé plochy.
+ *
+ * Musí to být za `v(md)` i za `phs-h`; `h(xs)` je na šířku a nekoliduje.
+ */
+@include v(md) {
+    @include below-px(1180px) {
+        @include phone-search-control;
+
+        /* Lupa a šířka otevřeného tlačítka jsou tu pevné; měřítko publikuje navbar. */
+        .searchIcon {
+            width: calc(1.1875rem * var(--nav-phone-scale, 1));
+            height: calc(1.1875rem * var(--nav-phone-scale, 1));
+        }
+
+        .searchControl.active .button {
+            flex: 0 0 calc(44px * var(--nav-phone-scale, 1));
+            width: calc(44px * var(--nav-phone-scale, 1));
+        }
+    }
+}

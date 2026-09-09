@@ -34,13 +34,13 @@
 .label,
 .meta dt {
   color: rgb(var(--ink-05-rgb) / .48);
-  font: clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .orderNumber {
-  font: 400 clamp(2.5rem, 3.25vw, 4rem) / 0.82 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 2.6vw, 4rem)) / 0.82 "Sentient-Regular", serif;
   letter-spacing: -0.045em;
 }
 
@@ -68,12 +68,12 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: rgb(var(--ink-05-rgb) / .78);
-  font: 400 clamp(.875rem, 1vw, 1.06rem) / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.875rem, 0.8vw, 1.06rem)) / 1.35 "Sansation-Regular", sans-serif;
 }
 
 .meta .metaAmount {
   color: var(--ink-05);
-  font-size: clamp(1rem, 1.15vw, 1.19rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(1rem, 0.92vw, 1.19rem));
 }
 
 .products {
@@ -191,22 +191,54 @@
 }
 
 @container account-order-row (max-width: 45rem) {
+  /*
+   * Číslo objednávky a datum pod sebou vlevo, obě částky vedle nich.
+   *
+   * `display: contents` na `<dl>` je tu ta klíčová věc: datum, hodnota a počet
+   * kusů jsou jeho děti, takže je mřížka karty jinak umístit nemůže — umí to
+   * jen se svými přímými potomky. Zrušením boxu se jimi stanou.
+   */
   .rowContent {
-    grid-template-columns: minmax(7.1875rem, 0.35fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
   .meta {
-    grid-template-columns: 1fr 1fr;
+    display: contents;
   }
 
+  .identity {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  /* Číslo o pětinu dolů: vedle něj teď stojí dvě částky, ne prázdno. */
+  .orderNumber {
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2rem, 2.08vw, 3.2rem));
+  }
+
+  /* Vytvořeno pod číslo. */
   .meta > div:first-child {
-    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-column: 1;
     padding: 0 0 1rem;
   }
 
   .meta > div:nth-child(2) {
+    grid-row: 1 / span 2;
+    grid-column: 2;
     padding-left: 0;
     border-left: 0;
+  }
+
+  .meta > div:nth-child(3) {
+    grid-row: 1 / span 2;
+    grid-column: 3;
+  }
+
+  /* Obě částky větší — je to to, co se z karty čte nejčastěji. */
+  .meta > div:nth-child(2) dd,
+  .meta > div:nth-child(3) dd {
+    font-size: calc(var(--account-zoom, 1) * clamp(1.15rem, 1.52vw, 1.5rem));
   }
 
   .products,
@@ -230,8 +262,38 @@
     grid-template-columns: 1fr;
   }
 
+  /*
+   * Hodnota a počet kusů vedle sebe, ne pod sebou.
+   *
+   * Stopa 45rem výš to tak už dělá; tady se to vracelo na jeden sloupec, takže
+   * z karty byl na telefonu sloupec šesti řádků a na „Co jste objednali"
+   * — jediné místo s obrázky — zbyl kus úplně dole. Datum si celou šířku
+   * nechává, je nejdelší; ty dvě čísla jsou krátká a vedle sebe se vejdou.
+   */
+  /* Zpátky vlastní mřížka: stopa 45rem výš z `<dl>` box sundává
+     (`display: contents`), a bez boxu by tahle mřížka nebyla komu nastavit. */
   .meta {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1rem;
+  }
+
+  /* A zpátky automatické umístění — čísla řádků a sloupců z tabletové stopy
+     míří do mřížky karty, ne do téhle.
+
+     Selektory musí být stejně silné jako tam: `.meta > div` je slabší než
+     `.meta > div:nth-child(2)` a reset prohrával, takže hodnota s počtem kusů
+     zůstávaly i na telefonu v řádku 1 a datum se propadlo pod ně. */
+  .identity,
+  .meta > div:first-child,
+  .meta > div:nth-child(2),
+  .meta > div:nth-child(3) {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .orderNumber {
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, 2.6vw, 4rem));
   }
 
   .meta > div,
@@ -242,6 +304,11 @@
   }
 
   .meta > div:first-child {
-    grid-column: auto;
+    grid-column: 1 / -1;
+  }
+
+  /* Ušetřenou výšku dostanou fotky — kvůli nim se na kartu člověk dívá. */
+  .productIcon {
+    width: clamp(4rem, 17vw, 5.25rem);
   }
 }

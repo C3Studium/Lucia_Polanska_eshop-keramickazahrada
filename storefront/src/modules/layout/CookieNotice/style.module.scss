@@ -36,7 +36,12 @@
    * y: floor at 667px tall, ceiling at 1167 — live across 720, 768, 800, 900 and 1080.
    */
   --notice-inset-x: clamp(1rem, 1.6vw, 1.75rem);
-  --notice-inset-y: clamp(1rem, 2.4vh, 1.75rem);
+  /* Deset procent výšky okna nad spodní hranou.
+      Dřív clamp(1rem, 2.4vh, 1.75rem), tedy 20px na telefonu — lišta pak
+      seděla přes plovoucí ovládání obchodu a překrývala košík i účet.
+      Naměřeno: cookie 20px nad hranou, spodní lišta 12px a vysoká 56, tedy
+      překryv 48px. */
+  --notice-inset-y: 10vh;
 
   position: fixed;
   z-index: 400;
@@ -224,7 +229,11 @@
    */
   .root {
     --notice-inset-x: 12px;
-    --notice-inset-y: 10px;
+    /* Deset pixelů plus to, co si u dolní hrany bere lišta navigace — ta je
+       na telefonu na šířku zapnutá a s pouhými 10px by lišta s cookies
+       seděla přes košík a účet. 10vh jako v portrétu tu nedává smysl:
+       na 320px vysoké obrazovce je to 32px, tedy míň než sama lišta. */
+    --notice-inset-y: calc(var(--nav-bottom-clearance, 0px) + 10px);
 
     padding: .5rem .75rem;
     gap: 6px;

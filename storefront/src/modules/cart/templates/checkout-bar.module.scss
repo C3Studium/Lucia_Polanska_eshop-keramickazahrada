@@ -2,20 +2,32 @@
 
 /* Mimo svislé telefony pruh neexistuje — tam je souhrn v lepkavém sloupci
    vedle výpisu a druhé tlačítko by si s ním jen konkurovalo. */
+.breakdown,
+.breakdownHead,
+.breakdownEyebrow,
+.line {
+  display: none;
+}
+
 .root {
   display: none;
 }
 
-@media (orientation: portrait) and (max-width: 599.98px) {
+/*
+ * Rozsah je celý portrét do 1180, ne jen telefon: spodní lišta navbaru je od
+ * tabletové stopy i na svislých tabletech, takže tam dává smysl i pruh nad ní —
+ * celkem a „Pokračovat k pokladně" na dosah bez rolování na konec stránky.
+ */
+@media (orientation: portrait) and (max-width: 1179.98px) {
   .root {
     position: fixed;
     right: 12px;
-    /* Nad spodní lištou, kterou navbar drží ve svých proměnných — jedno místo,
-       kde je její výška zapsaná, i kdyby se změnila. Táž stavba, jakou používá
-       list košíku v cart-dropdown. */
-    bottom: calc(
-      var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 10px
-    );
+    /* Nad spodní lištou. `--nav-bottom-clearance` publikuje mobileBar na `:root`
+       a je to výška lišty i s jejím odsazením — na telefonu 56+12, na tabletu
+       o měřítko víc. Dřív to tu stálo na dvou proměnných z lišty samotné, jenže
+       ty jsou deklarované na ní a sem, mimo její podstrom, se nedědí: braly se
+       záložní hodnoty, tedy vždycky telefonní. */
+    bottom: calc(var(--nav-bottom-clearance, 68px) + 10px + 2.5vh);
     left: 12px;
     /* Pod rozbaleným košíkem (1100) a jeho podkladem (1090), nad stránkou. */
     z-index: 900;
@@ -74,5 +86,141 @@
       outline: var(--focus-ring-width) solid var(--focus-ring);
       outline-offset: 3px;
     }
+  }
+}
+
+/*
+ * Zjednodušený rozpad v pruhu — jen na svislých tabletech.
+ *
+ * Na telefonu má pruh sotva 366 px vnitřní šířky a stojí v něm částka
+ * a tlačítko; třetí sloupec by je stlačil. Na tabletu je místa dost, takže se
+ * sem stěhuje to, co dřív stálo v panelu níž.
+ */
+@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+  /*
+   * Dvě patra místo jedné linky.
+   *
+   * Pruh tu nese celý souhrn, ne jen výsledek, a natlačený do jedné řádky
+   * z toho byla přeplněná pilulka. Nahoře tedy rozpad, dole částka vlevo
+   * a cesta k pokladně vpravo — čte se to shora dolů jako účtenka.
+   *
+   * Zaoblení z 999px na pevné: kapsle má smysl u nízké linky, u bloku vysokého
+   * pětinu okna by z boků udělala oblouky.
+   */
+  /*
+   * Výšku dává obsah, ne číslo.
+   *
+   * Bylo tu `min-height: 20vh` a `align-content: space-between` — psané pro
+   * pruh, ve kterém stála jen částka a tlačítko. Jakmile do něj přibyl celý
+   * souhrn, zůstala mezi rozpadem a spodním patrem díra: naměřeno 49 px
+   * prázdna na 825×1196. Teď si výšku určí obsah a mezery drží `row-gap`.
+   *
+   * Šířka 90 vw — zkouška s 80 vw byla na vkus úzká.
+   */
+  .root {
+    display: grid;
+    right: auto;
+    left: 50%;
+    align-items: end;
+    width: 90vw;
+    min-height: 0;
+    grid-template-columns: 1fr auto;
+    row-gap: clamp(0.75rem, 1.8vh, 1.15rem);
+    padding: clamp(0.9rem, 2vh, 1.4rem) clamp(1rem, 2vw, 1.5rem);
+    border-radius: 1.375rem;
+    transform: translateX(-50%);
+  }
+
+  /*
+   * Souhrn přes celou šířku, řádky popisek — částka.
+   *
+   * Dřív to byl dvouřádkový sloupeček zaražený do pravého rohu, takže střed
+   * pruhu zůstal prázdný a nic to nespojovalo. Takhle to čte stejně jako panel
+   * pod výpisem: nadpis, řádky, čára, výsledek.
+   */
+  .breakdown {
+    display: flex;
+    grid-row: 1;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    gap: 0.3rem;
+    /* Předěl nad spodním patrem. Nese ho rozpad, protože sahá přes obě buňky
+       mřížky — na částce by čára končila v půlce a na tlačítku by přeťala
+       jeho pilulku. */
+    padding-bottom: clamp(0.6rem, 1.4vh, 0.9rem);
+    border-bottom: 1px solid rgb(var(--ink-05-rgb) / .18);
+    color: rgb(var(--ink-05-rgb) / .62);
+    /* 1rem, ne 0.875: řádky souhrnu jsou to hlavní, co se v pruhu čte. */
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  /*
+   * Hlava souhrnu: štítek vlevo, slevový kód vpravo.
+   *
+   * `align-items: flex-start`, ne `center`: rozbalené pole pro kód řádek
+   * vpravo natáhne dolů a štítek by s ním sjížděl doprostřed. Táž úvaha,
+   * jakou má hlava panelu v summary.module.scss.
+   */
+  /*
+   * Štítek na svůj řádek, slevový kód pod něj přes celou šířku.
+   *
+   * Vedle sebe se kód tísnil a rozbalené pole si na sebe muselo brát šířku
+   * po štítku. Pod ním má celý řádek, takže se pole roztáhne a „Použít"
+   * dosedne na pravou hranu.
+   */
+  .breakdownHead {
+    display: block;
+    /* Odstup od prvního řádku rozpadu pod ním. */
+    margin-bottom: clamp(0.7rem, 1.6vh, 1.1rem);
+  }
+
+  /* Nad slevovým kódem byly 2 px, takže se štítek s přepínačem téměř dotýkaly. */
+  .breakdownHead .breakdownEyebrow {
+    margin-bottom: clamp(0.45rem, 1vh, 0.7rem);
+  }
+
+  .breakdownHead > div {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* Vodorovné rozvržení slevového kódu si řídí jeho vlastní modul přes
+     `layout="inline"` — zvenčí se ta pravidla přebít nedají, mají čtyři třídy. */
+
+  .breakdownEyebrow {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: rgb(var(--ink-05-rgb) / .45);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    /* Tečkovaná spojnice by tu byla ozdoba navíc; stačí, že se čísla srovnají
+       na pravé hraně jako v panelu. */
+    gap: 1rem;
+  }
+
+  /*
+   * Čára nad spodním patrem — týž předěl, jaký má panel nad „Celkem".
+   * Na mřížce, ne na prvku: patro tvoří dvě položky vedle sebe a border na
+   * jedné z nich by končil v půlce.
+   */
+  .total {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .cta {
+    grid-row: 2;
+    grid-column: 2;
+    margin-left: 1rem;
+    justify-self: end;
   }
 }

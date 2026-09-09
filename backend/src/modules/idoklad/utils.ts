@@ -281,6 +281,10 @@ export type InvoiceOrderInput = {
   billing_address?: AddressLike | null
   shipping_address?: AddressLike | null
   customer?: { first_name?: string | null; last_name?: string | null } | null
+  /* Firemní nákup: IČO a DIČ pod klíči `firma_ico` a `firma_dic`.
+     Obchod je ukládá do metadat KOŠÍKU, protože `StoreAddAddress` v Meduse
+     metadata nemá a tiše je zahodí; z košíku se přenesou do objednávky. */
+  metadata?: Record<string, unknown> | null
 }
 
 type AddressLike = {
@@ -302,6 +306,17 @@ const fullName = (address?: AddressLike | null): string =>
  * The customer as an iDoklad contact. `CompanyName` is the only required
  * field and doubles as the display name, so a private person's contact is
  * simply named "Jana Nováková".
+ *
+ * ## Firemní nákup
+ *
+ * Zaškrtne-li zákazník v pokladně „nakupuji na firmu", uloží obchod IČO
+ * a DIČ do metadat adresy a odsud jdou na doklad. Bez nich není faktura
+ * pro firmu použitelná — účetní ji neuzná a zjistí se to až měsíce po
+ * objednávce.
+ *
+ * DPH to nemění: obchod je neplátce (viz mapování o kus níž), takže DIČ
+ * odběratele je na dokladu údaj, ne sazba. Až se to změní, je to jedno
+ * místo, kde na to sáhnout.
  */
 export const buildContactPayload = (
   order: InvoiceOrderInput,
@@ -319,8 +334,14 @@ export const buildContactPayload = (
     .filter(Boolean)
     .join(", ")
 
+  const meta = (order.metadata ?? {}) as Record<string, unknown>
+  const ico = typeof meta.firma_ico === "string" ? meta.firma_ico.trim() : ""
+  const dic = typeof meta.firma_dic === "string" ? meta.firma_dic.trim() : ""
+
   return {
     CompanyName: name,
+    ...(ico ? { IdentificationNumber: truncate(ico, 16) } : {}),
+    ...(dic ? { VatIdentificationNumber: truncate(dic, 16) } : {}),
     ...(order.email ? { Email: truncate(order.email, 254) } : {}),
     ...(address.first_name ? { Firstname: truncate(address.first_name, 50) } : {}),
     ...(address.last_name ? { Surname: truncate(address.last_name, 50) } : {}),

@@ -61,7 +61,11 @@
   // 44–92px při rem 16, tedy pod 1921 na pixel totéž co dřív (živé 733–1533).
   // Rozdíl je nad rampem: strop v px zamrzal na 92px i na 2552, strop v rem
   // se zvedne na 122px sám a do qhd/xxl se nic psát nemusí.
-  h2 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(2.75rem, 6vw, 5.75rem); font-weight: 400; line-height: .91; letter-spacing: -.045em; }
+  // 0.8x původního clamp(2.75rem, 6vw, 5.75rem). Naměřeno 82px na 1371px
+  // okně — nadpis bral přes tři čtvrtiny šířky hlavičky a popisek vedle něj
+  // se lámal do čtyř řádek. 35.2–58.9px při rem 16, nad rampem si strop
+  // zvedne ramp sám (stejně jako dřív, jen z nižšího čísla).
+  h2 { margin: 0; font-family: "Sentient-Regular", serif; font-size: clamp(2.2rem, 4.8vw, 4.6rem); font-weight: 400; line-height: .91; letter-spacing: -.045em; }
   h2 em { color: var(--olive-18); font-style: italic; }
 
   // font-size 14.4–17px, živé 1252–1475. Prostřední člen je 1.15vw, ne .85vw:
@@ -78,9 +82,20 @@
 .layout {
   // Jediné místo, kde je šířka filtrační lišty. Dřív bylo 290px napsané
   // podruhé ve FilterPanel/.root; ta si teď přečte tuhle proměnnou.
-  // 224–352px, živé 1179–1853. Na 1512 vyjde 287 (dnes 290, ale karta jen
-  // 256 — lišta byla širší než produkt), na qhd 468 místo pořád stejných 290.
-  --rail: clamp(14rem, 19vw, 22rem);
+  //
+  // Z 19vw na 22vw: lišta s kategoriemi byla proti třem sloupcům produktů
+  // úzká na každém laptopu (1280 → 243px lišta proti 294px kartě), a fotka
+  // karty je `aspect-ratio: 4/4.75`, takže co lišta vezme na šířku, ubere
+  // kartě i na výšce. Naměřeno 1366: lišta 260 → 300, karta 316 → 298,
+  // fotka 375 → 354. Prostřední člen je vw, takže to platí od nejmenšího
+  // laptopu po 2K, ne jen pro velké monitory.
+  //
+  // Proč ne víc: pod 1200 Shop lištu skládá pod obsah (`below(md)`), takže
+  // nejtěsnější je právě 1200. Tři sloupce tam potřebují 3×256 + 2×16.8 =
+  // 801.6px a při 22vw jich zbývá 828 — 26px rezervy. Při 24vw už jen dva,
+  // a dvousloupcová mřížka by karty naopak ZVĚTŠILA.
+  // 240–384px, živé 1091–1745.
+  --rail: clamp(15rem, 22vw, 24rem);
 
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
@@ -118,6 +133,44 @@
      zabral čtyři. Naměřeno: vejde se od 12.9vw (360px) po 13.2vw (447px), tady
      s rezervou na kurzívu druhého řádku, kterou měření neumí vzít v potaz.
      Podlaha z 43 na 38px ze stejného důvodu — na 320px oknech 43px přetékalo. */
-  .introduction h2 { font-size: clamp(38px, 12vw, 66px); }
+  /* Také 0.8x. Dvouřádkový zlom drží dál — menší písmo se do řádku vejde
+     tím spíš; pásmo, ve kterém rozhoduje prostřední člen, zůstává stejné. */
+  .introduction h2 { font-size: clamp(30px, 9.6vw, 53px); }
   .introduction > span { display: block; margin-top: 25px; }
+}
+
+/*
+ * Svislé tablety: hlavička na jeden sloupec.
+ *
+ * Dosud sem platil blok `below(md)` výš, tedy `1fr 2fr` — „Co je právě k mání"
+ * stálo jako úzký sloupec vlevo od nadpisu a bralo mu třetinu šířky, kterou
+ * nadpis na tabletu potřebuje. Telefon si to řeší `display: block` v bloku
+ * `below-px(700px)`, ale tam popisek se štítkem stojí pod sebou; tady se vejdou
+ * vedle sebe na jednu řádku nad nadpis.
+ *
+ * `grid-column: auto` u popisu ruší `grid-column: 2` z `below(md)`, které by ho
+ * v jednosloupcové mřížce hodilo mimo.
+ */
+@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+  .introduction {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .introduction > p {
+    display: flex;
+    align-items: baseline;
+    margin: 0 0 clamp(.75rem, 1.8vh, 1.25rem);
+    gap: clamp(.75rem, 2vw, 1.25rem);
+  }
+
+  .introduction .filterScope {
+    margin-top: 0;
+  }
+
+  .introduction > span {
+    max-width: 48ch;
+    margin-top: clamp(1rem, 2.4vh, 1.75rem);
+    grid-column: auto;
+  }
 }

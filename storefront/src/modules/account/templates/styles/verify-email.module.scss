@@ -142,7 +142,7 @@
 
     .title {
       font-family: "Sentient-Regular", serif;
-      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, 4.8vw, 5rem));
       line-height: .92;
       letter-spacing: -.04em;
     }
@@ -319,7 +319,7 @@
 
 .title {
   margin: 0 0 1.25rem;
-  font: 400 clamp(3.1rem, 4.8vw, 5.2rem)/.88 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.1rem, 3.84vw, 5.2rem))/.88 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 
   em {

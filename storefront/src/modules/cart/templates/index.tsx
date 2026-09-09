@@ -105,7 +105,7 @@ const CartTemplate = async ({
       * a při odrolování dolů zmizel — tedy přesně tam, kde ho je potřeba
       * nejvíc.
       */}
-    {cart?.items?.length ? <CheckoutBar cart={cart} /> : null}
+    {cart?.items?.length ? <CheckoutBar cart={cart as any} /> : null}
     </>
   )
 }

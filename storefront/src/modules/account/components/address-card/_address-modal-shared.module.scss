@@ -24,7 +24,7 @@
 
 @mixin modal-title {
   margin: 0;
-  font: 400 clamp(2.8rem, 5vw, 4.8rem)/.86 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, 4vw, 4.8rem))/.86 "Sentient-Regular", serif;
   letter-spacing: -.055em;
 }
 
@@ -62,7 +62,7 @@
   /* 14px was frozen at every viewport; it must not get smaller on a laptop, so the
      floor holds it at 14 and the ceiling lets the ramp lift it: 14 -> 15.2px,
      live 1400-1520, 20.2px at 2552. */
-  font-size: clamp(.875rem, 1.167vw, 1.021rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.875rem, 0.934vw, 1.021rem));
 }
 
 @mixin button-row {
@@ -80,4 +80,33 @@
   @include button-row;
   justify-content: flex-end;
   width: 100%;
+}
+
+/* SVISLÝ TABLET — modál o čtvrtinu menší.
+ *
+ * Nadpis „Přidat adresu" měl 5vw, tedy 41.7px na 834 — velikost psaná pro
+ * dialog, který na monitoru stojí uprostřed široké obrazovky. Na tabletu
+ * s osmi řádky polí pod ním z toho byl dialog, který se sotva vešel.
+ *
+ * Tři čtvrtiny všeho, co určuje jeho výšku: nadpis, mezery mezi poli
+ * a odsazení uvnitř polí. Písmo v polích zůstává — pod 16px začne Safari
+ * při zaostření přibližovat stránku a z „menšího" dialogu je poskakující.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .title {
+        font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.1rem, 3vw, 3.6rem));
+      }
+
+      .fields {
+        gap: clamp(0.375rem, 1.05vh, 0.64rem);
+      }
+
+      .field input,
+      .field select {
+        padding-block: clamp(0.375rem, 0.9vh, 0.56rem);
+      }
+    }
+  }
 }

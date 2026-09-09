@@ -476,3 +476,32 @@
         top: 59%;
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Svislé tablety — koláž se rozestupuje, texty jdou ke dnu           */
+/* ------------------------------------------------------------------ */
+/* Stopy `v()` jsou min-width bez stropu, takže telefonní kompozice výš
+   platila i tady: fotky semknuté do horní poloviny (15/22/32 %) a texty
+   hned pod nimi. Na 820x1180 to nechalo 205px prázdna u dolní hrany a
+   koláž působila zmáčknutě.
+
+   Rozestupy se roztahují na 10/22/35 % a popisek se odpíchne ODE DNA,
+   ne shora — výška bloku se mezi 768 a 1024 liší o 17px a shora počítané
+   procento by ho na nejnižším tabletu poslalo do poslední fotky.
+   Naměřeno po změně: mezera mezi koláží a popiskem 31px na 768, 54 na 820
+   a 100 na 1024, spodní lišta webu zůstává volná. */
+@include v(md) {
+  @include below-px(1180px) {
+    .faqShaderFallbackImage,
+    .faqShaderShadows i {
+      &:nth-child(1) { top: 10%; left: 4%; }
+      &:nth-child(2) { top: 22%; left: 52%; }
+      &:nth-child(3) { top: 35%; left: 10%; }
+    }
+
+    .faqHeroCaption {
+      top: auto;
+      bottom: 9%;
+    }
+  }
+}

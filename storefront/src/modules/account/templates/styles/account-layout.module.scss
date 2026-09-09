@@ -40,7 +40,7 @@
   bottom: -3vh;
   z-index: -1;
   color: transparent;
-  font: 400 clamp(9rem, 23vw, 28rem)/.7 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(9rem, 18.4vw, 28rem))/.7 "Sentient-Regular", serif;
   letter-spacing: -.08em;
   -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .055);
   pointer-events: none;
@@ -153,6 +153,41 @@
   }
 }
 
+/* SVISLÝ TABLET — z bočního sloupce ikonová lišta.
+ *
+ * Sloupec držel napevno 280px, tedy 36 % obrazovky na 768px tabletu a 34 %
+ * na 834. Pevné číslo, ne clamp: stejných 280px dostal 768px tablet
+ * i 1180px monitor. Obsah tím zbyl na dvě třetiny šířky a texty se v něm
+ * lámaly.
+ *
+ * Rail je clamp: 768 → 72px, 834 → 72, 1024 → 82. Ikony v něm mají 44px,
+ * což je nejmenší cíl pro prst, a kolem zůstává vzduch.
+ *
+ * Obsah zmenšený na 0.75. Nadpis, velká čísla a tlačítka jsou stavěné na
+ * šířku, kterou má laptop; na tabletu z nich byl nadpis 54px vysoký nad
+ * dvousloupcovou mřížkou, která se do zbylého místa vešla jen tak tak.
+ * Násobitel je jeden a mění se na jednom místě.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .verifiedGrid {
+        grid-template-columns: clamp(4.5rem, 8vw, 5.5rem) minmax(0, 1fr);
+      }
+
+      .nav {
+        padding-inline: clamp(0.5rem, 1.2vw, 0.9rem);
+      }
+
+      .children {
+        padding: clamp(2rem, 4.5vh, 3.25rem) clamp(1.25rem, 2.6vw, 2rem)
+          clamp(1.75rem, 4vh, 2.75rem);
+        --account-zoom: 0.75;
+      }
+    }
+  }
+}
+
 @include below-px(760px) {
   .section {
     padding: 82px 10px 28px;
@@ -169,6 +204,11 @@
 
   .children {
     padding: 62px 18px 42px;
+    /* Obsah o desetinu menší. Míň než na tabletu (0.75) schválně: na
+       telefonu je sloupec jen jeden a displejové písmo v něm nesoupeří
+       s ničím vedle sebe — stačí ubrat tolik, aby se nadpis vešel na méně
+       řádků. Pozdrav 54.4 → 49, velká čísla 73.6 → 66.2. */
+    --account-zoom: 0.9;
   }
 
   .children::before {
@@ -180,5 +220,45 @@
   .center,
   .centerZ1 {
     min-height: calc(100svh - 110px);
+  }
+}
+
+/*
+ * Ležato: obsah účtu o pětinu menší.
+ *
+ * `--account-zoom` tu byl už dřív, ale visely na něm jen displejové nadpisy.
+ * Teď je na něm KAŽDÁ clamp velikost písma v účtu — 97 deklarací ve 29
+ * stylopisech včetně detailu objednávky a kurzů v účtu —, takže celou sekci
+ * posadí jedna hodnota. Výchozí je 1, takže kde se nenastaví, se nic nemění.
+ *
+ * Naležato je vzácná výška, ne šířka: na 1412x907 měl pozdrav 50.8px a číslo
+ * objednávky 45.9px, takže na obsah zbývalo míň než půl obrazovky.
+ * 0.8 dá 40.6 a 36.7.
+ *
+ * Blok je poslední v souboru schválně: telefon naležato pod 760px matchuje
+ * i pravidlo výš (0.9) a při stejné specificitě rozhoduje pořadí.
+ */
+@media (orientation: landscape) {
+  /* Na `.section`, ne na `.children`: boční sloupec s „Váš účet." a se
+     seznamem kapitol je jeho sourozenec, takže na `.children` by proměnná
+     do něj nedosáhla — a právě ten nadpis je na ležaté obrazovce vidět
+     první. Svislé stopy výš zůstávají na `.children`, tam je sloupec
+     složený do lišty a vlastní sazbu si řídí sám. */
+  .section {
+    --account-zoom: 0.8;
+
+    /*
+     * Displejová sazba ještě o čtvrtinu dolů — jen ona, ne tabulky a
+     * popisky pod ní. Naležato je vzácná výška a nadpisy z ní ukusovaly
+     * nejvíc: „Kam to posíláme" a „Platba" měly na 1440 rovných 53.3px,
+     * tedy víc než vlastní h1 stránky (52.5) — ty dvě komponenty totiž
+     * dosud nevisely na žádném knobu.
+     *
+     * Knob je zvlášť od `--account-zoom` schválně: displejové velikosti
+     * (podlaha od 1.4rem) se dají stáhnout, aniž by se drobná sazba stala
+     * nečitelnou. Mimo účet — třeba na stránce po dokončení objednávky —
+     * má výchozí hodnotu 1, takže se tam nemění nic.
+     */
+    --account-display-zoom: 0.75;
   }
 }

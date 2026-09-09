@@ -16,6 +16,11 @@ import {
 import { retrieveCustomer } from "./customer"
 import { getRegion } from "./regions"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
+import {
+  normalizujDic,
+  normalizujIco,
+  zkontrolujFirmu,
+} from "@lib/util/firma"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -496,11 +501,78 @@ export async function mergeCartMetadata(
   )
 }
 
+/**
+ * Proč se stav kódu zjišťuje zvlášť.
+ *
+ * `POST /store/carts/:id` s `promo_codes` neplatný kód TIŠE ZAHODÍ — vrátí
+ * košík bez něj a nic neřekne. Z té odpovědi se tedy pozná jen „neuplatnilo
+ * se", což je pro člověka u pokladny bezcenné: překlep a kód, kterému došla
+ * platnost, chtějí každý jinou reakci. Důvod proto říká vlastní routa
+ * `/store/promotions/:code` (backend).
+ *
+ * Když ta routa není k dispozici — starší backend, výpadek —, vrátí se
+ * obecná hláška. Nasazení storefrontu tím nezávisí na nasazení backendu.
+ */
+type StavKodu =
+  | { exists: false }
+  | { exists: true; valid: true }
+  | {
+      exists: true
+      valid: false
+      reason: "inactive" | "not-started" | "expired"
+    }
+
+async function zjistiStavKodu(code: string): Promise<StavKodu | null> {
+  return sdk.client
+    .fetch<StavKodu>(`/store/promotions/${encodeURIComponent(code)}`, {
+      method: "GET",
+      cache: "no-store",
+    })
+    .catch(() => null)
+}
+
+/** Proč se kód neuplatnil, česky a konkrétně. */
+async function procNeprosel(code: string): Promise<string> {
+  const stav = await zjistiStavKodu(code)
+
+  if (!stav) {
+    return "Kód se nepodařilo uplatnit. Zkuste to prosím ještě jednou."
+  }
+
+  if (!stav.exists) {
+    return "Takový kód neznáme. Zkontrolujte prosím, jestli sedí."
+  }
+
+  if (stav.valid) {
+    /* Kód platí, ale košíku nevyhověl — třeba nedosáhl minimální částky nebo
+       je vázaný na jiné zboží. Podmínky se schválně nevypisují: routa je
+       veřejná a nemá je komu prozrazovat. */
+    return "Tenhle kód na váš košík nesedí — platí pro jiné zboží nebo objednávku."
+  }
+
+  if (stav.reason === "expired") {
+    return "Platnost tohohle kódu už vypršela."
+  }
+
+  if (stav.reason === "not-started") {
+    return "Tenhle kód začne platit až později."
+  }
+
+  return "Tenhle kód už neplatí."
+}
+
 export async function submitPromotionForm(
   currentState: unknown,
   formData: FormData
 ) {
-  const code = formData.get("code") as string
+  /* Prázdné pole se na backend vůbec neposílá — je to jediný případ, který se
+     dá rozhodnout tady, a odpověď na něj je jednoznačná. */
+  const code = String(formData.get("code") ?? "").trim()
+
+  if (!code) {
+    return "Nezadali jste žádný kód."
+  }
+
   try {
     /*
      * `applyPromotions` REPLACES the cart's promotion list wholesale — sending
@@ -520,11 +592,13 @@ export async function submitPromotionForm(
     if (cart) {
       const found = (cart.promotions || []).some((p: any) => p.code === code)
       if (!found) {
-        return "Tenhle slevový kód neplatí." // Czech: "Promotion code is not valid."
+        return await procNeprosel(code)
       }
     }
-  } catch (e: any) {
-    return e.message
+  } catch {
+    /* I výjimka jde přes tentýž rozbor: hlášku z SDK („Něco se nepovedlo…")
+       člověk u pokladny použít neumí, kdežto „platnost vypršela" ano. */
+    return await procNeprosel(code)
   }
 }
 
@@ -628,13 +702,52 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       throw new Error("No existing cart found when setting addresses")
     }
 
+    /*
+     * Firemní nákup.
+     *
+     * Kontrola je tady, ne jen ve formuláři: klientskou validaci obejde
+     * každý, kdo otevře nástroje pro vývojáře, a chybné IČO se pak pozná
+     * až na faktuře u účetní. Pravidla jsou sdílená (lib/util/firma),
+     * takže se obě strany nemůžou rozejít.
+     *
+     * IČO a DIČ jdou do metadat KOŠÍKU, ne adresy.
+     *
+     * Adresa by byla přirozenější místo, jenže `StoreAddAddress` v Meduse
+     * má `company` a `phone`, a `metadata` ne — poslaná metadata adresy
+     * se tiše zahodí. Naměřeno: název firmy se do košíku propsal, IČO ne.
+     * Metadata košíku podporovaná jsou a přenesou se do objednávky, odkud
+     * je čte fakturace.
+     */
+    const naFirmu = formData.get("nakup_na_firmu") === "on"
+    const nazevFirmy = (
+      (formData.get("shipping_address.company") as string) || ""
+    ).trim()
+    const ico = normalizujIco(
+      (formData.get("shipping_address.ico") as string) || ""
+    )
+    const dic = normalizujDic(
+      (formData.get("shipping_address.dic") as string) || ""
+    )
+
+    if (naFirmu) {
+      const chyba = zkontrolujFirmu({ nazev: nazevFirmy, ico, dic })
+      if (chyba) {
+        return chyba
+      }
+    }
+
+    /* Nezaškrtnuto = není to firemní nákup, takže se případná dřívější
+       hodnota v košíku vyprázdní. Nechat ji tam by znamenalo vystavit
+       doklad na firmu, kterou zákazník právě odklikl. */
+    const firemniUdaje = naFirmu ? { company: nazevFirmy } : { company: "" }
+
     const data = {
       shipping_address: {
         first_name: formData.get("shipping_address.first_name"),
         last_name: formData.get("shipping_address.last_name"),
         address_1: formData.get("shipping_address.address_1"),
         address_2: "",
-        company: formData.get("shipping_address.company"),
+        ...firemniUdaje,
         postal_code: formData.get("shipping_address.postal_code"),
         city: formData.get("shipping_address.city"),
         country_code: formData.get("shipping_address.country_code"),
@@ -656,7 +769,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         last_name: formData.get("billing_address.last_name"),
         address_1: formData.get("billing_address.address_1"),
         address_2: "",
-        company: formData.get("billing_address.company"),
+        /* Firma je odběratel bez ohledu na to, kam se zboží veze, a doklad
+           se vystavuje na fakturační adresu — takže IČO patří i sem, když
+           si zákazník zvolil jinou fakturační adresu. */
+        ...firemniUdaje,
         postal_code: formData.get("billing_address.postal_code"),
         city: formData.get("billing_address.city"),
         country_code: formData.get("billing_address.country_code"),
@@ -664,6 +780,16 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         phone: formData.get("billing_address.phone"),
       }
     await updateCart(data)
+
+    /* Firemní čísla zvlášť, a sloučením — `updateCart` metadata NAHRAZUJE
+       celá, takže zapsat je přímo by smazalo, co si do košíku ukládá režim
+       platby a balíčky. `mergeCartMetadata` čte čerstvý stav a přepíše jen
+       tyhle dva klíče; prázdné hodnoty je vyčistí, když člověk firmu
+       odklikne. */
+    await mergeCartMetadata({
+      firma_ico: naFirmu ? ico : "",
+      firma_dic: naFirmu ? dic : "",
+    })
   } catch (e: any) {
     return e.message
   }

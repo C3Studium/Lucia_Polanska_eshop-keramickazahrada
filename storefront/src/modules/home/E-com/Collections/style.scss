@@ -611,3 +611,26 @@
     }
   }
 }
+
+/*
+ * Svislé tablety: užší karty kolekcí.
+ *
+ * Ve složeném režimu (`[data-phone]`) mají karty `width: 100%`, což je na
+ * telefonu správně — 348px na 390px skla. Na tabletu z toho ale je 726 na 768
+ * a 778 na 820: karta přes celou šířku sekce, která pak čte jako plakát, ne
+ * jako položka v seznamu.
+ *
+ * 78 % a na střed. Výšku dopočítá `aspect-ratio: 4/3` z pravidla výš, takže
+ * se poměr nemá jak rozejít — proto se tu sahá jen na šířku.
+ *
+ * Strop 1000px: od 1000 nahoru se `[data-phone]` nezapíná a karty jedou
+ * vodorovnou lištou (na 1024x1366 naměřeno pět sloupců po 496px).
+ */
+@include v(md) {
+  @include below-px(1000px) {
+    .Collections[data-phone] .Collecion__wrapper .collection__cardMotion {
+      width: 78%;
+      margin-inline: auto;
+    }
+  }
+}

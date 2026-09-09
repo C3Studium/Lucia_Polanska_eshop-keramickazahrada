@@ -751,24 +751,21 @@
     @include aboutme-handoff(180svh);
 }
 
-/* Tablety nastojato ukazují seznam příběhu — hero se vrací do toku. */
+/*
+ * Svislé tablety. Táž předávka jako na telefonu, a to doslova týmiž
+ * mírami: 180svh dráhy proti 260svh příběhu a podtažení -104svh.
+ *
+ * Zkoušel jsem tu dát delší dráhu (200svh), ať má portrét na vyšším skle
+ * víc času růst. Rozešlo to ale šev: podtažení příběhu je pevných -104svh,
+ * takže o těch 20svh navíc se rozjelo okno, ve kterém se hero rozplývá, a
+ * na 820x1180 stály obě kopie textu přes sebe — hero drželo horních 879px
+ * a příběh zbytek. Dráha a podtažení jsou jedna soustava; větší je tady
+ * sazba, ne geometrie.
+ *
+ * Dřív se tu hero vracelo do toku a příběh se ukazoval jako seznam.
+ */
 @include v(md) {
-    .aboutMe__timeline{
-        height: auto;
-    }
-
-    .aboutMe__sticky{
-        position: relative;
-        top: auto;
-        height: auto;
-        overflow: visible;
-    }
-
-    .aboutMe__veil,
-    .aboutMe__storyProxy,
-    .aboutMe__storyCopyStage{
-        display: none;
-    }
+    @include aboutme-handoff(180svh);
 }
 
 @keyframes aboutCopyIn{

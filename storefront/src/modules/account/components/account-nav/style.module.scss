@@ -18,7 +18,7 @@
 .accountMeta span {
   margin: 0 0 .75rem;
   color: rgb(var(--cream-06-rgb) / .5);
-  font: clamp(.75rem, 1vw, 0.875rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem)) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -27,7 +27,7 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  font: 400 clamp(2.8rem, 3.6vw, 4.6rem) / 0.76 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.8rem, 2.88vw, 4.6rem)) / 0.76 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
@@ -46,30 +46,53 @@
   padding: clamp(1.1rem, 2.5vh, 1.75rem) 0;
 }
 
-.chapter > div > div {
+/*
+ * `.chapter > div`, ne `> div > div`.
+ *
+ * AnimatePresence nevykresluje žádný vlastní element, takže pod `.chapter`
+ * stojí rovnou motion.div se span/strong/small. Selektor o patro hloub
+ * nesedl na nic a mřížka se nikdy nezapnula: číslice se pak sázela jako
+ * inline text s `line-height: 0.72` a název sekce jí lezl přes patku.
+ */
+.chapter > div {
   display: grid;
   grid-template-columns: auto 1fr;
   column-gap: 1rem;
   align-items: end;
 }
 
+/* Číslice i název stojí na jedné spodní hraně: obojí přes obě řádky mřížky,
+   zarovnání dodá `align-items: end` z rodiče. Popisek je mimo tok, takže
+   druhá řádka je prázdná a `align-self: center` by název zvedl nad číslici. */
 .chapter span {
   grid-row: 1 / 3;
-  align-self: center;
   color: rgb(var(--cream-06-rgb) / .15);
-  font: 400 clamp(2.6rem, 3.4vw, 4rem) / 0.72 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.6rem, 2.72vw, 4rem)) / 0.72 "Sentient-Regular", serif;
   letter-spacing: -0.08em;
 }
 
 .chapter strong {
-  font: 400 clamp(1.2rem, 1.5vw, 1.65rem) / 1 "Sentient-Regular", serif;
+  grid-row: 1 / 3;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.7rem, 1.72vw, 2.35rem)) / 1 "Sentient-Regular", serif;
 }
 
+/*
+ * Popisek sekce: opticky pryč, pro čtečku pořád tady.
+ *
+ * "Všechno na jednom místě" se ve sloupci lámalo do názvu i do číslice.
+ * Název sekce zůstává — ten sloupec pojmenovává —, mizí jen podtitulek.
+ *
+ * Text se ale nemaže z DOM: `.chapter` je `aria-live="polite"` a po
+ * překliknutí oznamuje čtečce, kam se návštěvník dostal. Týž
+ * `clip-path: inset(50%)` jako u .linkIndex/.linkTitle v telefonní liště.
+ */
 .chapter small {
-  margin-top: .3rem;
-  color: rgb(var(--cream-06-rgb) / .48);
-  font-size: clamp(.78rem, .95vw, .88rem);
-  letter-spacing: 0.05em;
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .navigation {
@@ -93,12 +116,12 @@
 }
 
 .linkIndex {
-  font-size: clamp(.78rem, .95vw, .88rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.76vw, .88rem));
   letter-spacing: 0.1em;
 }
 
 .linkTitle {
-  font-size: clamp(.8rem, .98vw, .94rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, 0.784vw, .94rem));
 }
 
 .linkLine {
@@ -125,7 +148,7 @@
   margin: 0;
   overflow: hidden;
   color: rgb(var(--cream-06-rgb) / .7);
-  font-size: clamp(.78rem, .95vw, .88rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.76vw, .88rem));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -133,8 +156,39 @@
 .actions {
   display: grid;
   grid-template-columns: 1fr;
-  gap: .75rem;
+  /* Dvojice patří k sobě, tak ať to je vidět: mezi odhlášením a smazáním
+     účtu úzká mezera, nad celou dvojicí široká. Předtím byly obě 12px
+     a tlačítka splývala se zbytkem sloupce. */
+  gap: clamp(0.35rem, 0.8vh, 0.5rem);
+  padding-top: clamp(1rem, 2.4vh, 1.6rem);
   align-items: center;
+}
+
+/* Linka mezi odhlášením a smazáním účtu.
+ *
+ * Dvě tlačítka pod sebou, obě obrysová, obě stejně velká — bez předělu se
+ * čtou jako dvojice rovnocenných voleb. Nejsou: jedno je každodenní, druhé
+ * je nevratné. Linka je nejlevnější způsob, jak říct „tohle už je něco
+ * jiného", aniž by se sahalo na barvy nebo velikosti.
+ *
+ * Kreslí ji druhé tlačítko přes ::before, ne samostatný prvek: v DOM je to
+ * ozdoba, ne obsah, a čtečka ani klávesnice o ni nemají zakopnout.
+ * Odsazení je půlka mezery mřížky, takže linka leží přesně mezi nimi.
+ */
+.accountDeleteAction {
+  position: relative;
+}
+
+.accountDeleteAction::before {
+  position: absolute;
+  /* Půlka mezery mřížky, ať linka leží přesně mezi tlačítky. */
+  bottom: calc(100% + clamp(0.175rem, 0.4vh, 0.25rem));
+  left: 50%;
+  width: 100%;
+  height: 1px;
+  background: rgb(var(--cream-06-rgb) / .18);
+  content: "";
+  transform: translateX(-50%);
 }
 
 .accountLogoutAction,
@@ -200,5 +254,344 @@
   .actions {
     grid-template-columns: 1fr 1fr;
     margin-top: 16px;
+  }
+}
+
+/* Základ pro ikonu v odkazu: v širokém sloupci se nekreslí vůbec. */
+.linkIcon {
+  display: none;
+}
+
+/* Totéž pro ukazatel posunu: existuje jen v telefonní liště, kde se
+   navigace opravdu posouvá. */
+.navScroll {
+  display: none;
+}
+
+/* Ikonová dvojčata tlačítek. V širokém sloupci se nekreslí — vidí se
+   textová varianta o kus výš. */
+.actionsIcons {
+  display: none;
+}
+
+.iconAction {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(var(--cream-06-rgb) / .28);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cream-06);
+  cursor: pointer;
+  transition: border-color .3s ease, color .3s ease, background .3s ease;
+}
+
+.iconActionDanger {
+  border-color: rgb(var(--clay-24-rgb) / .5);
+  color: var(--clay-24);
+  position: relative;
+}
+
+/* Táž linka jako u textových tlačítek, jen na šířku lišty: přes celých 44px
+   kruhu by se dotýkala jeho obrysu, 60 % ji drží uvnitř. */
+.iconActionDanger::before {
+  position: absolute;
+  bottom: calc(100% + clamp(0.15rem, 0.35vh, 0.25rem));
+  left: 50%;
+  width: 60%;
+  height: 1px;
+  background: rgb(var(--cream-06-rgb) / .18);
+  content: "";
+  transform: translateX(-50%);
+}
+
+@include fine-pointer {
+  .iconAction:hover {
+    border-color: var(--cream-06);
+    background: rgb(var(--cream-06-rgb) / .1);
+  }
+
+  .iconActionDanger:hover {
+    border-color: var(--clay-24);
+    background: rgb(var(--clay-24-rgb) / .12);
+  }
+}
+
+.iconAction:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* SVISLÝ TABLET — z bočního sloupce ikonová lišta.
+ *
+ * Sloupec měl napevno 280px bez ohledu na šířku obrazovky, tedy 36 % na
+ * 768px tabletu a 34 % na 834. K tomu byl tak vysoký, že „Odhlásit se"
+ * a „Smazat účet" končily na y=945 a y=1113 — pod ohybem, přestože jde
+ * o dvě nejdůležitější tlačítka celého sloupce.
+ *
+ * Zůstávají tedy jen ikony. Název odkazu se z DOM nemaže, jen se opticky
+ * skryje (clip, ne display: none), takže odkaz má pořád přístupné jméno
+ * a čtečka i klávesnice se chovají stejně jako na desktopu.
+ *
+ * Rozsah 760–1180 na výšku: pod 760 platí telefonní pás, nad 1180 je
+ * plnohodnotný sloupec s texty. iPad Pro (1024) do toho spadá taky —
+ * sám o sobě problém neměl, ale mít na tabletech dva různé sloupce podle
+ * úhlopříčky by znamenalo dvě věci k údržbě místo jedné.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .top,
+      .chapter,
+      .accountMeta,
+      .actions {
+        display: none;
+      }
+
+      /* Lišta drží ikony u dolní hrany PRVNÍ OBRAZOVKY.
+         Sloupec je vysoký jako obsah — na přehledu přes 2500px —, takže
+         `align-content: end` sám by ikony poslal na konec stránky, kam se
+         nikdo nedívá. `min-height` mu proto dá výšku okna zmenšenou o to,
+         co je nad ním (odsazení sekce a sloupce), a teprve ke dnu TÉHLE
+         výšky se zarovnává.
+
+         Zkoušel jsem lepení k oknu, aby ikony šly s sebou při rolování;
+         nefunguje a nejde to spravit zevnitř: `.section` v account-layoutu
+         má `overflow: clip` kvůli tomu velkému vodoznaku ÚČET, a ten
+         `position: sticky` ruší. Přestavovat kvůli tomu ořez celé sekce
+         mi nepřišlo jako dobrá výměna.
+
+         16vh je součet obojího odsazení nad lištou. Naměřeno: 768 → ikony
+         končí na 1017 z 1024, 834 → 1183 z 1194, 1024 → 1353 z 1366. */
+      .root {
+        /* Základ má `grid-template-rows: auto auto 1fr auto auto` — ten 1fr
+           je řádek navigace a roztahuje se, aby patička sloupce klesla ke dnu.
+           V liště jsou ale vidět jen dvě věci (ikony a dvojice tlačítek),
+           takže 1fr zůstal prázdný uprostřed a spolkl všechno volné místo;
+           `align-content: end` pak neměl co rozdělovat a ikony zůstaly
+           nahoře. Dvě stopy podle obsahu a zarovnat je ke dnu. */
+        grid-template-rows: auto auto;
+        min-height: calc(100svh - clamp(9.5rem, 17.5vh, 16rem));
+        align-content: end;
+      }
+
+      .navigation ol {
+        display: grid;
+        justify-items: center;
+        gap: clamp(0.35rem, 0.8vh, 0.6rem);
+      }
+
+      .navigation a {
+        display: grid;
+        /* Jeden sloupec, ne čtyři ze základu: se čtyřmi stopami se ikona
+           centruje do první z nich, ne do kruhu — proto seděla aktivní
+           ikona mimo střed své výplně. */
+        grid-template-columns: 1fr;
+        width: 2.75rem;
+        height: 2.75rem;
+        place-items: center;
+        padding: 0;
+        border-radius: 50%;
+        transition: background .3s ease;
+
+        /* Základní min-height clamp(2.6rem, 5vh, 3.4rem) dělal z odkazu
+           44×54, tedy elipsu — a spodní linka řádku přes ni kreslila oblouk,
+           který vypadal jako uříznutý kroužek. V liště řádky neoddělují
+           linky, odděluje je mezera. */
+        min-height: 0;
+        border-bottom: 0;
+      }
+
+      /* Ikony z @medusajs/icons se kreslí na 15px, což je v 44px kruhu ztracené. */
+      .linkIcon svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .navigation a.accountNavCurrent {
+        background: rgb(var(--cream-06-rgb) / .14);
+      }
+
+      .linkIcon {
+        display: grid;
+        place-items: center;
+        color: currentColor;
+      }
+
+      /* Opticky pryč, pro čtečku pořád tady. `display: none` by odkazu
+         sebral přístupné jméno a zůstal by z něj nepojmenovaný obrázek. */
+      .linkIndex,
+      .linkTitle {
+        position: absolute;
+        overflow: hidden;
+        width: 1px;
+        height: 1px;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .linkLine,
+      .linkArrow {
+        display: none;
+      }
+
+      .actionsIcons {
+        display: grid;
+        justify-items: center;
+        /* Táž úvaha jako u textových tlačítek: úzko mezi dvojicí, široko
+           nad ní. Odhlášení a smazání účtu nejsou další dvě položky
+           navigace, jsou to konce cesty. */
+        gap: clamp(0.3rem, 0.7vh, 0.5rem);
+        padding-top: clamp(1.25rem, 3vh, 2rem);
+      }
+    }
+  }
+}
+
+/* SVISLÝ TELEFON — z pásu s texty horní lišta s ikonami.
+ *
+ * Původně tu byl vodorovně posuvný pás, kde každá položka měla 126px
+ * (číslo + název), takže se na 390px obrazovku vešly dvě a půl ze sedmi —
+ * o zbytku navigace se člověk dozvěděl jen tím, že to zkusil posunout.
+ * Pod ním pak druhý řádek se dvěma tlačítky, tedy dohromady přes 110px
+ * výšky, než začal obsah.
+ *
+ * Ikony to srovnají do jednoho řádku: sedm kroužků 44px se posouvá, dvojice
+ * odhlásit/smazat je zakotvená vpravo a neposouvá se s nimi — je pořád po
+ * ruce a zároveň se odděluje od navigace tím, že stojí jinde.
+ *
+ * Blok stojí ZA blokem svislého tabletu schválně: oba mají stejnou
+ * specificitu a `below-px(760px)` s `v(md)` (min-width 600) se překrývají
+ * v pásmu 600–760, kde jsou telefony na šířku. Pořadí tam rozhoduje a
+ * telefonní tvar má vyhrát.
+ */
+@include below-px(760px) {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 2.5vw, 0.9rem);
+  }
+
+  /* Posouvá se jen navigace, ne celá lišta. */
+  .navigation {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /*
+   * Vlastní ukazatel posunu. Systémový posuvník tu nepomůže: `overflow-x:
+   * auto` ho na telefonu ukáže jen během doteku a `::-webkit-scrollbar`
+   * iOS Safari nezná, takže na stojící stránce nic neprozradí, že ikony
+   * pokračují za pravým okrajem.
+   *
+   * `position: sticky` uvnitř posouvaného boxu: proužek je potomek lišty,
+   * ale drží se jejího viditelného levého okraje, takže s ikonami neujíždí.
+   * Procentní šířka se navíc počítá z VIDITELNÉ šířky, ne z `max-content`
+   * seznamu — proto je dráha přesně tak dlouhá jako lišta.
+   *
+   * Když se posouvat není kam, drží si proužek místo (`visibility`, ne
+   * `display`), aby lišta nepoposkočila o svou vlastní výšku.
+   */
+  .navScroll {
+    position: sticky;
+    left: 0;
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin-top: clamp(0.25rem, 1.2vw, 0.4rem);
+    border-radius: 999px;
+    background: rgb(var(--cream-06-rgb) / .16);
+  }
+
+  .navScroll[data-visible="false"] {
+    visibility: hidden;
+  }
+
+  .navScroll i {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: rgb(var(--cream-06-rgb) / .78);
+  }
+
+  /* Posun jezdce je odezva na dotek, ne animace sama o sobě — kdo si
+     tlumené pohyby vypnul, dostane skok bez přechodu. */
+  @media (prefers-reduced-motion: no-preference) {
+    .navScroll i {
+      transition: left .12s linear, width .2s ease;
+    }
+  }
+
+  .navigation ol {
+    gap: clamp(0.25rem, 1.2vw, 0.5rem);
+  }
+
+  .navigation li {
+    min-width: 0;
+  }
+
+  .navigation a {
+    grid-template-columns: 1fr;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-height: 0;
+    place-items: center;
+    padding: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 50%;
+  }
+
+  .navigation a.accountNavCurrent {
+    background: rgb(var(--cream-06-rgb) / .14);
+  }
+
+  .linkIcon {
+    display: grid;
+    place-items: center;
+  }
+
+  .linkIcon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* Opticky pryč, pro čtečku pořád tady — stejně jako v liště na tabletu. */
+  .linkIndex,
+  .linkTitle {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .actionsIcons {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: clamp(0.4rem, 2vw, 0.7rem);
+    padding-top: 0;
+    padding-left: clamp(0.5rem, 2.5vw, 0.9rem);
+  }
+
+  /* Tlačítka jsou tu vedle sebe, ne pod sebou, takže i oddělovač se otáčí
+     na svislý. Leží v půlce mezery mezi nimi. */
+  .iconActionDanger::before {
+    top: 50%;
+    right: calc(100% + clamp(0.2rem, 1vw, 0.35rem));
+    bottom: auto;
+    left: auto;
+    width: 1px;
+    height: 60%;
+    transform: translateY(-50%);
   }
 }

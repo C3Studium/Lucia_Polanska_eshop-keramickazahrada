@@ -56,11 +56,18 @@
    Naměřeno po zásahu — bylo → je: velký nadpis 111.9 → 83.9px na 1512
    a 160.2 → 120.2 na 2165, panel 439 → 329 a 628 → 471, fotka 767×642 →
    575×482 a 1100×749 → 825×562. */
-@include from-px(1200px) {
+@include from-px(1600px) {
   .portal {
-    --auth-zoom: 0.75;
+    --auth-zoom: 0.9;
   }
 }
+
+@include from-px(1920px) {
+  .portal {
+    --auth-zoom: 0.8;
+  }
+}
+
 
 /* Podklad si portál kreslí jen tam, kde JE stránkou — tedy když visí přímo na
    .pageFrame (zapomenuté heslo, ověření e-mailu).
@@ -143,7 +150,7 @@
      `font-size: 30vw`, což je na 320px přesně 96px = 6rem, tedy jeho podlaha.
      Sloučeno do jednoho clampu. Podlaha je živá jen pod 480px (tam je 20vw
      menší než 96px), takže landscape nad 1200 se nemění. */
-  font: 400 calc(var(--auth-zoom) * clamp(6rem, 20vw, 22rem)) / 0.72 "Sentient-Regular", serif;
+  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(6rem, 16vw, 22rem))) / 0.72 "Sentient-Regular", serif;
   letter-spacing: -0.075em;
   -webkit-text-stroke: 1px rgb(var(--black-03-rgb) / .075);
   pointer-events: none;
@@ -185,8 +192,20 @@
      živých 608.83px). Teď clamp s krajními členy v rem: 720 → 418px, 982 → 544px,
      nad 1921 ho ramp zvedne sám. Horní mez je `auto`, aby stopa rostla podle
      obsahu — dřív ji 62vh zastropovalo a ledger z ní vylézal ven. */
-  grid-template-rows: 10vh minmax(calc(var(--auth-zoom) * clamp(22rem, 58vh, 34rem)), auto) 12vh;
-  min-height: calc(var(--auth-zoom) * clamp(30rem, 82vh, 46rem));
+  /* Náběhový a spodní řádek jsou vzduch nad kompozicí a pod ní. Bylo 10vh
+     a 12vh, tedy 22 % obrazovky jen na prázdno — na 1512×982 z toho bylo
+     216px a portál přetékal okno o 178. Čtyři procenta se stropem 3rem:
+     982 → 39px, 1352 → 54, 1080 → 43. Podlaha 0.75rem drží mezeru i na
+     nízkém okně, kde by 4vh spadla pod 25px.
+
+     Prostřední stopa nese fotku i panel; z 58vh na 46vh ze stejného důvodu.
+     Horní mez je auto, aby stopa rostla podle obsahu — dřív ji strop
+     zastropoval a panel z ní vylézal ven. */
+  grid-template-rows:
+    clamp(0.75rem, 4vh, 3rem)
+    minmax(calc(var(--auth-zoom) * clamp(18rem, 46vh, 30rem)), auto)
+    clamp(0.75rem, 4vh, 3rem);
+  min-height: calc(var(--auth-zoom) * clamp(24rem, 68vh, 38rem));
   /* Zmenšení na šířku dělá mřížka jako celek, ne její jednotlivé boxy.
      Když se násobitel pověsil zvlášť na fotku a zvlášť na panel, každý z nich
      se zúžil ke své hraně a mezi nadpisem a fotkou zůstala díra — na 2165 přes
@@ -281,7 +300,7 @@
      a tam nadpis konečně sleduje osu, o kterou soupeří — výšku. Naměřeno
      57.6px na 568×320, 64.8 na 800×360, 70.7 na 851×393, 73.6 (beze změny)
      na 932×430. Přes 1200 na šířku je hodnota bit po bitu stejná jako dřív. */
-  font-size: calc(var(--auth-zoom) * clamp(min(4.6rem, 18vh), 7.4vw, 9rem));
+  font-size: calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * clamp(min(4.6rem, 18vh), 7.4vw, 9rem)));
   font-weight: 400;
   line-height: 0.72;
   letter-spacing: -0.07em;
@@ -573,31 +592,82 @@
      nastat nikdy. Telefony v portrétu (nejširší 430) i telefon na šířku tedy
      zůstávají netknuté. */
   @include v(md) {
-    /* Ten druhý sloupec, který tablet mít má a telefon nemůže: nadpis VEDLE
-       fotky, ne na ní. Kolo 1 si vysloveně poznamenalo, že nadpis do fotky
-       lézt nemá (proto 7.4vw místo 9.2vw), a portrétní tablet o ten záměr
-       přišel jen tím, že chytal skládaný tvar psaný pro telefon. Naměřeno po
-       zásahu (kladné = text je mimo fotku): 768 label +61.5, „Cesta“ +79,
-       „zpátky.“ +26.3; 834 +83.5 / +101 / +41.1. Na 600 vychází em −11.2, což
-       je menší přesah, než má dnes desktop sám (−21.4 na 1024, −28.6 na 1366). */
-    .visual {
-      grid-column: 5 / 13;
+    /* PORTRÉTNÍ TABLET — nadpis, formulář, fotka. V tomhle pořadí.
+
+       Dřív tu byl nadpis VEDLE fotky, na sloupcích 1–5. Na 768 z toho byl
+       sloupec 236px široký, do kterého se „Ještě jeden“ nevešlo, takže se
+       nadpis lámal na dva řádky, a nad ním ještě ležel pás fotky. První
+       obrazovka tedy patřila obrázku a rozlámanému nadpisu; formulář, kvůli
+       kterému sem člověk přišel, začínal až pod tím.
+
+       Teď dostane nadpis celou šířku a vejde se na jeden řádek i s akcentem:
+       nejdelší z nich, „Ještě jeden krok.“, měří 5.88× velikost písma, tedy
+       325px při 55.2px proti 531px sloupce na 768. Pod ním je panel a fotka
+       leží ZA ním — stejně jako na telefonu. */
+    .portal {
+      /* Formulář užší a nižší. Týž násobitel jako na noteboocích a monitorech,
+         jen jinou cestou: tam ho zapíná šířka od 1200px, sem portrét tabletu.
+         Panel klesne ze 708–775px na 531–581. Škáluje se jím celá mřížka
+         (viz .composition), takže si nadpis, panel i fotka drží poměry. */
+      --auth-zoom: 0.75;
+    }
+
+    .composition {
+      /* Panel nemá co překrývat: fotka leží pod ním, ne nad ním. Nuluje se tím
+         i záporný margin .ledger a odsazení popisku fotky — všechny tři visí
+         na téhle jedné proměnné. 0px, ne 0: calc(-1 * 0) je neplatná délka. */
+      --fp-ledger-lift: 0px;
+      /* Dvě stopy: nadpis a panel. Fotka žádnou nebere. */
+      grid-template-rows: auto auto;
     }
 
     .heroCopy {
-      grid-column: 1 / 5;
+      grid-column: 1 / 13;
+      grid-row: 1;
+    }
+
+    /* Nadpis i s akcentem na jeden řádek. Řádek místo sloupce, ale se
+       ZALOMENÍM: nadpisy chodí z CMS a redaktor tam může napsat cokoli
+       delšího — pak spadne akcent pod hlavní text, jak to dělal dosud.
+       Zarovnání na účtaří, ne na střed: akcent je 0.62em a střed by ho
+       posadil výš než dolní dotah hlavního textu. */
+    .heroCopy h1 {
+      flex-flow: row wrap;
+      align-items: baseline;
+      gap: 0 0.14em;
+    }
+
+    /* Odskok akcentu doprava má smysl jen ve sloupci, kde odděluje druhý
+       řádek od prvního. Na jednom řádku by z mezery mezi slovy udělal díru. */
+    .heroCopy em {
+      margin-left: 0;
+    }
+
+    /* FOTKA ZA PANELEM.
+       Absolutně umístěné dítě mřížky si za obal bere svou BUŇKU, takže
+       `grid-row: 2` a `grid-column: 1 / 13` tu neurčují stopu, ale přesně
+       plochu panelu; `inset: 0` ji vyplní a stránce to nepřidá ani pixel.
+       z-index 0 proti 5 na .ledger: panel je krémový na 95 % a rozostřuje
+       podklad — až teď má co rozostřovat. */
+    .visual {
+      position: absolute;
+      z-index: 0;
+      grid-row: 2;
+      grid-column: 1 / 13;
+      inset: 0;
+      min-height: 0;
     }
 
     /* Značku skládaný tvar ruší pro nedostatek výšky. Portrétní tablet výšku má
-       a jeho sourozenec 1024×1366 ji už dnes ukazuje. Třetí řádek tu neexistuje
-       (grid-template-rows má dvě stopy), takže `grid-row: 3` ze základu vyrobí
-       implicitní řadu a značka přistane pod celošířkovým panelem — čte se jako
-       „03 —— 04“ nad patičkou. Levé zarovnání sdílí s .heroCopy, tentýž clamp.
-       Spodní odsazení je z landscape kompozice, kde značka drží dno stránky;
-       tady jen odděluje od panelu, tedy nahoru. */
+       a jeho sourozenec 1024×1366 ji už dnes ukazuje. Řádek 4, ne 3: třetí teď
+       drží fotka, takže by se značka kreslila přes ni. Levé zarovnání sdílí
+       s .heroCopy, tentýž clamp. Spodní odsazení je z landscape kompozice, kde
+       značka drží dno stránky; tady jen odděluje od fotky, tedy nahoru. */
     .indexMark {
       display: grid;
       grid-column: 1 / 7;
+      /* Třetí řádek, ne čtvrtý: fotka už žádnou stopu nedrží. */
+      grid-row: 3;
       padding-top: clamp(1rem, 2.4vh, 1.75rem);
       padding-bottom: 0;
       padding-left: clamp(0.625rem, 1vw, 1.125rem);
@@ -699,7 +769,7 @@
        stropu by 18.5vw na 559 dalo 103px a na hraně by nadpis skočil o 29 %.
        S ním je skok 3 %. Podlaha 3.7rem ožívá až pod 320px, tedy nikde —
        je tam jen proto, aby clamp držel tvar. */
-    font-size: clamp(3.7rem, 18.5vw, 4.75rem);
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.7rem, 14.8vw, 4.75rem));
 
     /* Řádek místo sloupce, ale se ZALOMENÍM. Nadpisy chodí z CMS a čtyři
        režimy portálu mají různě dlouhé: při téže velikosti je „Vítejte zpět."
@@ -735,6 +805,174 @@
   }
 }
 
+/* VELKÝ TABLET NA VÝŠKU — iPad Pro a spol.
+
+   Nad 900px šířky se portrétní tablet do skládaného tvaru nevejde (ten končí
+   na 899.98) a spadl do kompozice vedle sebe, psané pro landscape. Panel v ní
+   držel čtyři sloupce z dvanácti — 260px na 900×1200, 297 na 1024×1366 —
+   a „nathanaelnux@gmail.com" se do něj lámalo uprostřed slova.
+
+   Skládaný tvar, ne širší sloupec vedle fotky. Panel má být zhruba dvakrát
+   širší, jenže na 1024 je celá kompozice 928px: při 890px panelu zbude na
+   fotku vedle 38px, tedy nic. Vedle sebe přestane existovat samo od sebe,
+   takže je poctivější rovnou postavit ten tvar, který „široký formulář na
+   svislé obrazovce" opravdu má — nadpis nahoře, panel pod ním, fotka ZA ním.
+   Je to zároveň totéž, co dělají menší svislé tablety, takže celý svislý
+   rozsah od 600px výš vypadá stejně.
+
+   Násobitel 0.85, ne 0.75 jako u menších: tady je místa víc a panel má být
+   větší. Na 1024×1366 dá 789px proti dosavadním 445, tedy 1.77×.
+
+   `from-px(900px)` + `v(md)` dá dohromady „od 900 a na výšku": svislý stop
+   na 900 v tabulce není a vyrábět ho kvůli jednomu bloku by znamenalo
+   breakpoint navíc v systému. */
+@include from-px(900px) {
+  @include v(md) {
+    .portal {
+      --auth-zoom: 0.85;
+    }
+
+    .composition {
+      /* Panel nemá co překrývat, fotka leží pod ním. Nuluje se tím i záporný
+         margin .ledger. 0px, ne 0: calc(-1 * 0) je neplatná délka. */
+      --fp-ledger-lift: 0px;
+      /* Dvě stopy: nadpis a panel. Fotka žádnou nebere. */
+      grid-template-rows: auto auto;
+    }
+
+    .heroCopy {
+      grid-column: 1 / 13;
+      grid-row: 1;
+    }
+
+    /* Nadpis i s akcentem na jeden řádek, jako ve zbytku svislého rozsahu.
+       Zalomení zůstává povolené — nadpisy chodí z CMS. */
+    .heroCopy h1 {
+      flex-flow: row wrap;
+      align-items: baseline;
+      gap: 0 0.14em;
+    }
+
+    .heroCopy em {
+      margin-left: 0;
+    }
+
+    .ledger {
+      grid-column: 1 / 13;
+      /* Řádek 2 natvrdo: základ má `2 / 4`, což by ve dvouřádkové mřížce
+         vyrobilo implicitní třetí řadu. A min-height 0, protože o výšce
+         panelu tu rozhoduje obsah, ne 58vh. */
+      grid-row: 2;
+      align-self: start;
+      min-height: 0;
+    }
+
+    .visual {
+      position: absolute;
+      z-index: 0;
+      grid-row: 2;
+      grid-column: 1 / 13;
+      inset: 0;
+      min-height: 0;
+    }
+
+    .indexMark {
+      display: grid;
+      grid-column: 1 / 7;
+      grid-row: 3;
+      padding-top: clamp(1rem, 2.4vh, 1.75rem);
+      padding-bottom: 0;
+      padding-left: clamp(0.625rem, 1vw, 1.125rem);
+    }
+  }
+}
+
+/* NÍZKÝ LAPTOP NA ŠÍŘKU — nejtěsnější landscape, jaký na webu je.
+
+   1280×720, 1295×614, 1366×768: šířky dost, výšky málo. Kompozice je ale
+   stavěná na to, že výšku má (náběhový řádek 10vh, spodní 12vh, min-height
+   82vh), takže na 614px vysokém okně z toho byl vzduch, který si vzal většinu
+   obrazovky, a na panel zbylo tak málo, že se do něj „nathanaelnux@gmail.com“
+   lámalo UPROSTŘED SLOVA.
+
+   Panel proto dostane pět sloupců místo čtyř a svislé rezervy jdou dolů,
+   stejně jako u tabletu na šířku. h(lt) je min-width 1200 A max-height 800
+   A landscape — vysokých laptopů (1512×982) se to netýká, ti výšku mají. */
+@include h(lt) {
+  .composition {
+    grid-template-rows: 3vh minmax(0, auto) 3vh;
+    min-height: 0;
+    padding-top: clamp(0.5rem, 1.5vh, 1rem);
+  }
+
+  .ledger {
+    grid-column: 8 / 13;
+    padding-block: clamp(0.75rem, 1.8vh, 1.4rem);
+  }
+
+  /* Panel drží pět sloupců ze dvanácti a fotka sedm (4/11), takže z fotky
+     zakrývá 3 ze 7 → 42.86 %. Bez přepočtu by popisek uhýbal o 28.58 %
+     a „OD ROKU 2014“ by skončilo pod panelem. */
+  .visualFoot {
+    right: calc(42.86% + clamp(0.5rem, 0.8vw, 1.125rem));
+  }
+}
+
+/* TABLET NA ŠÍŘKU.
+
+   Naměřeno předtím na 1024×768, 1180×820 i 1187×821: panel držel 29 % šířky
+   obrazovky (297–344px, sloupec formuláře 246–285), zatímco fotka 51 %.
+   Text se v tak úzkém sloupci lámal na tři čtyři řádky, panel tím narostl
+   na 711–733px a stránka scrollovala (1783–1950px obsahu proti 768–821
+   oknu). Na širokoúhlé obrazovce, kde je místa dost, byl formulář nejužší
+   prvek na stránce.
+
+   Panel proto dostane šest sloupců místo čtyř a fotka se posune vlevo na
+   1/8, takže se překrývají jen o jeden sloupec. Širší sloupec je zároveň
+   NIŽŠÍ panel — text se láme míň —, což je ta cesta, jak se vejít do
+   obrazovky, aniž by se ubíralo z velikosti písma.
+
+   `below-px(1200px)` kolem `h(smt)` je nutné: `smt` samo sahá do 1399.98,
+   takže by chytlo i notebooky 1280×800 a 1366×768, které mají vlastní
+   zmenšení z `from-px(1200px)`. Takhle se ty dva zásahy nekříží — tablet
+   končí na 1199.98, notebook začíná na 1200. */
+@include below-px(1200px) {
+  @include h(smt) {
+    /* Kompozice na výšku obrazovky, ne přes ni.
+       Náběhový řádek 10vh a spodní 12vh jsou vzduch pro landscape monitor,
+       kde je výšky dost. Na tabletu 1024×768 z nich bylo 77 + 92px prázdna
+       nad panelem a pod ním, a portál kvůli tomu přetékal okno o 105–232px
+       podle stránky. Tři procenta místo deseti a dvanácti; min-height 0,
+       protože 82vh tu nemá co vynucovat, když obsah stejně rozhoduje. */
+    .composition {
+      grid-template-rows: 3vh minmax(0, auto) 3vh;
+      min-height: 0;
+      padding-top: clamp(0.5rem, 1.5vh, 1rem);
+    }
+
+    .ledger {
+      grid-column: 7 / 13;
+    }
+
+    /* Svislé odsazení panelu taky dolů — 3.2vh je 24.6px nahoře i dole,
+       tedy 49px jen na okrajích. Vodorovné zůstává, to o výšku nejde. */
+    .ledger {
+      padding-block: clamp(0.75rem, 1.8vh, 1.4rem);
+    }
+
+    .visual {
+      grid-column: 1 / 8;
+    }
+
+    /* Popisek fotky se odsazuje podle toho, kolik z ní panel zakrývá. Fotka
+       drží 7 sloupců (1/8), panel začíná na 7 → schovaný je 1 ze 7, tedy
+       14.29 %. Bez přepočtu by popisek uhýbal 28.58 % prázdnu. */
+    .visualFoot {
+      right: calc(14.29% + clamp(0.5rem, 0.8vw, 1.125rem));
+    }
+  }
+}
+
 /* Telefon na šířku. Stojí ZÁMĚRNĚ ÚPLNĚ POSLEDNÍ: `phs` se šířkou překrývá
    `below-with-phone(sm)` i `between-px(900px, 1180px)` nad sebou (932px je
    širší než každý tabletový stop), a při shodné specificitě rozhoduje pořadí
@@ -763,5 +1001,42 @@
      rozdílem mezi 6.4px vzduchu a 1px překryvu. */
   .heroCopy h1 {
     margin-top: 0;
+
+    /* Nadpis i s akcentem na jeden řádek, stejně jako ve svislých tvarech.
+       Velikost se měnit nemusí: nejdelší nadpis („Ještě jeden krok.“) měří
+       5.88× velikost písma, tedy 339px při 57.6px na 568 proti 413px sloupce
+       a 433px při 73.6 na 932 proti 711px. Vejde se všude s rezervou, jen
+       tomu dosud bránil sloupcový směr.
+       Zalomení zůstává povolené — nadpisy chodí z CMS. */
+    flex-flow: row wrap;
+    align-items: baseline;
+    gap: 0 0.14em;
+  }
+
+  /* Odskok akcentu doprava dává smysl jen ve sloupci. */
+  .heroCopy em {
+    margin-left: 0;
+  }
+
+  /* FOTKA ZA PANELEM, ne pásem nad ním.
+     Na 320px vysoké obrazovce brala 120–142px, tedy 38–44 % výšky, jen aby
+     nad formulářem něco bylo — a formulář kvůli tomu začínal až za první
+     obrazovkou. Absolutně umístěné dítě mřížky si za obal bere svou BUŇKU,
+     takže `grid-row: 2` je přesně plocha panelu; `inset: 0` ji vyplní
+     a stránce to nepřidá ani pixel. z-index 0 proti 5 na .ledger. */
+  .composition {
+    /* Panel nemá co překrývat. Nuluje se tím i záporný margin .ledger
+       a odsazení popisku fotky. 0px, ne 0: calc(-1 * 0) je neplatná délka. */
+    --fp-ledger-lift: 0px;
+    grid-template-rows: auto auto;
+  }
+
+  .visual {
+    position: absolute;
+    z-index: 0;
+    grid-row: 2;
+    grid-column: 1 / 13;
+    inset: 0;
+    min-height: 0;
   }
 }

@@ -296,3 +296,47 @@
         }
     }
 }
+
+/*
+ * ── Svislé tablety: text a tlačítko doprava ──
+ *
+ * Blok `below-px(980px)` výš drží pravému sloupci podlahu 400px. Na 768
+ * z toho zbylo levému 225px, jenže hlavní fotka je `38vw`, tedy 292px —
+ * přetekla ze svého sloupce pod text a `Teď je řada na vás.` leželo přes ni.
+ * Na 820 se boxy sice minuly, ale o 5px, což vypadá stejně těsně.
+ *
+ * Podlaha jde pryč, poměr se překlápí ve prospěch textu a ten se odsazuje
+ * k pravé hraně. Fotky se o kus zúží, aby mezi nimi a textem zůstal vzduch,
+ * ne jen nula.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .aboutCta {
+      &__composition {
+        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+        gap: clamp(1.25rem, 3vw, 2.25rem);
+      }
+
+      &__action {
+        justify-self: end;
+        width: 100%;
+        max-width: 24rem;
+      }
+
+      /* Širší, než dovoloval starý sloupec: 36vw je na 820 295px a pravá
+         hrana skončí na 332 proti textu, který začíná na 399 — 67px vzduchu.
+         Na 768 vychází 277 / 312 / 349, tedy 37px, což je nejtěsnější místo
+         celého rozsahu a pořád to není nakrátko. */
+      &__image--main {
+        width: 36vw;
+      }
+
+      /* Náhled roste s hlavní fotkou — pevných 160px vedle 295px vypadalo
+         jako z jiné dvojice. */
+      &__image--detail {
+        right: 2%;
+        width: 24vw;
+      }
+    }
+  }
+}

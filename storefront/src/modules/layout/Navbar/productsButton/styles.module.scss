@@ -341,15 +341,21 @@
 
 .cardImageActive img { filter: blur(0); transform: translateZ(0) scale(1); }
 
+/*
+ * Přikrývka fotky. Plošná, jedna hodnota pro všechna zařízení — pozici a rozměr
+ * bere z `position: absolute; inset: 0` výš, což je celá plocha karty.
+ *
+ * Bylo to svislý gradient řízený opacitou, ke kterému si pak harmonika držela
+ * vlastní dvojici hodnot, protože text na ní leží jinak než na kartě velikosti
+ * plakátu. Teď je to jedno místo: 0.7 v klidu, 0.4 na otevřené kartě.
+ */
 .imageShade {
   z-index: 1;
-  opacity: 0.62;
-  background: linear-gradient(180deg, rgb(var(--ink-01-rgb) / .4), rgb(var(--ink-01-rgb) / .68));
-  transition: opacity 0.48s cubic-bezier(0.76, 0, 0.24, 1);
-  will-change: opacity;
+  background: rgba(0, 0, 0, 0.7);
+  transition: background-color 0.48s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.imageShadeActive { opacity: 0.18; }
+.imageShadeActive { background: rgba(0, 0, 0, 0.4); }
 .cardHitArea { z-index: 2; }
 
 .verticalTitle {
@@ -662,18 +668,6 @@
   }
 
   /*
-   * Text sits on the photograph at every state now, so the shade cannot drop to 0.18 the way it
-   * does on a card the size of a poster.
-   */
-  .imageShade {
-    opacity: 0.66;
-  }
-
-  .imageShadeActive {
-    opacity: 0.58;
-  }
-
-  /*
    * The collapsed title is the row. It comes out of absolute positioning so that it — and not a
    * fixed height — is what gives the row its height.
    */
@@ -770,4 +764,107 @@
 /* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
 @include phs-h {
   @include collection-accordion;
+}
+
+/*
+ * Svislý tablet dostává týž panel jako telefon.
+ *
+ * Harmonika se dosud zapínala jen do 600px, takže svislý tablet otevíral
+ * desktopovou variantu s kartami — pod barem, který je mezitím telefonní.
+ * Rozsah je stejný jako u baru, aby se ovladač a to, co otevírá, nemohly
+ * rozejít.
+ */
+@include v(md) {
+    @include below-px(1180px) {
+        @include collection-accordion;
+
+        /*
+         * Harmonika si drží dvě telefonní čísla natvrdo a obě měří bar, ne panel:
+         * 84px odsazení shora odklízí spodní hranu baru (na telefonu 68px) a 226px
+         * je součet toho odsazení, patičky a rezervy na spodní lištu. Na tabletu je
+         * bar i lišta o měřítko vyšší, takže by panel spodní lištou prorůstal.
+         */
+        .menuPanel {
+            padding-top: calc(84px * var(--nav-phone-scale, 1));
+        }
+
+        .collectionCards {
+            max-height: calc(100dvh - 226px * var(--nav-phone-scale, 1));
+        }
+
+        /*
+         * Řádky harmoniky 1.5× vyšší — na tabletu je na ně místo, které telefon nemá.
+         *
+         * `.cardHitArea` je záměrně omezená na hlavičku řádku, aby ťuk nepadal na
+         * kategorie, které řádek rozbalil; musí tedy růst s ním, jinak by dole zůstal
+         * pruh, který nereaguje. `.openLabel` má v telefonní verzi `top: 13px`, což je
+         * přesně jeho vystředění v 52px; o polovinu přírůstku výš zůstane vystředěný
+         * i v 78px, ať je štítek vysoký kolik chce.
+         */
+        .collectionCard {
+            min-height: 78px;
+        }
+
+        .cardHitArea {
+            height: 78px;
+        }
+
+        .openLabel {
+            top: 26px;
+        }
+
+        /*
+         * Titulek sbalené karty.
+         *
+         * Podle komentáře u harmoniky je titulek „ten řádek" — jeho vlastní box
+         * dává řádku výšku. V 78px to přestalo platit: výšku drží `min-height`
+         * na kartě, pod titulkem zbylo prázdno a on zůstal nahoře. Výšku tedy
+         * dostane on a text si v ní vystředí sám. Zarovnání doleva zůstává, drží
+         * rytmus s rozbalenou kartou, která má obsah taky vlevo.
+         */
+        .verticalTitle {
+            display: flex;
+            align-items: center;
+            min-height: 78px;
+            padding-block: 10px;
+            font-size: 28px;
+        }
+
+        /*
+         * Otevřená karta. Nemá vlastní třídu — pozná se tím, že místo titulku
+         * vykreslí `.expandedContent`, takže výšku dostane rovnou ta.
+         *
+         * `flex-end` vrací obsah ke spodní hraně, kde ho má základní varianta
+         * (`inset: auto 0 0`); ve vyšší kartě by jinak visel nahoře a fotka pod
+         * ním by zůstala prázdná.
+         */
+        .expandedContent {
+            display: flex;
+            /*
+             * Z výšky okna, ne pevných pixelů: sbalené řádky zaberou pořád
+             * stejných 6×78, takže co zbyde na otevřenou kartu, se mezi 1024
+             * a 1366 liší skoro o třetinu. Pevné číslo by na iPadu Pro nechalo
+             * pruh prázdna nad spodní lištou a na nejkratším tabletu by naopak
+             * rozjelo scrollování uvnitř seznamu.
+             *
+             * Změřeno se sedmi kartami včetně mezer: 863px obsahu v 959 na
+             * 825×1196 a 914 v 1102 na iPadu Pro. Na nejkratším 768×1024 seznam
+             * o ~24px přeteče a odroluje se — to umí (`overflow-y: auto`)
+             * a patička s „Zobrazit celý e-shop" zůstává mimo něj, takže se
+             * neschová. Zmenšit kartu všude kvůli nejmenšímu tabletu by stálo
+             * víc, než ten rolovací kousek.
+             *
+             * Strop 420px drží kartu v rozumném poměru k řádkům i na velmi
+             * vysokém okně.
+             */
+            min-height: clamp(260px, 30dvh, 420px);
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        /* Ať titulek otevřením nezmenší — sbalený je teď 28px. */
+        .expandedContent h3 {
+            font-size: 28px;
+        }
+    }
 }

@@ -5,9 +5,17 @@ import type { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, type Variants } from "framer-motion"
 import Image from "next/image"
-import { memo, useCallback, useMemo, useState } from "react"
+import { useParams } from "next/navigation"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styles from "./style.module.scss"
-import { availabilityLabel, productAvailability } from "@lib/util/availability"
+import { addToCart } from "@lib/data/cart"
+import Cart from "@modules/common/icons/cart"
+import WishlistToggle from "@modules/products/components/wishlist-toggle"
+import {
+  availabilityLabel,
+  maxPurchasableQuantity,
+  productAvailability,
+} from "@lib/util/availability"
 import { easeReveal } from "@lib/motion-tokens"
 
 type ProductCardProps = {
@@ -25,6 +33,10 @@ const cardTransition = { duration: 0.6, ease: easeReveal }
 const cardExit = { opacity: 0, scale: 0.985, transition: { duration: 0.25 } }
 
 const NEW_FOR_MS = 30 * 86400000
+
+/* Jak dlouho tlačítko drží „V košíku", než se vrátí do klidu. Stejná míra
+   jako na stránce produktu, ať se ta samá akce chová na obou místech stejně. */
+const ADDED_FOR_MS = 4000
 
 /* Re-derived, not patched. ProductGrid moved to `repeat(auto-fill, minmax(min(100%,
    clamp(16rem, 19vw, 20rem)), 1fr))`, so the column count is no longer a breakpoint at all —
@@ -103,6 +115,15 @@ const buttonAnim: Variants = {
 
 function ProductCard({ product, priority = false }: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
+  const [addState, setAddState] = useState<
+    "idle" | "adding" | "added" | "error"
+  >("idle")
+  const resetTimer = useRef<number | undefined>(undefined)
+  const { countryCode } = useParams() as { countryCode?: string }
+
+  /* Mřížka karty odmontuje při každé změně filtru; časovač by doběhl do
+     nesmontované komponenty. */
+  useEffect(() => () => window.clearTimeout(resetTimer.current), [])
 
   /* Hovering flips `isInteracting`, which re-renders the card. Deriving price, availability and
      the image pair cost that work again on every pointer in/out; they depend only on the product,
@@ -129,6 +150,68 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
         availability: productAvailability(product),
       }
     }, [product])
+
+  /*
+   * Rychlé přidání do košíku.
+   *
+   * Nabízí se JEN tam, kde je jednoznačné, co se přidá: produkt s jedinou
+   * variantou, která je skladem. U vícevariantního zboží by tlačítko muselo
+   * hádat velikost nebo barvu, u zakázkové výroby patří ke kusu ještě zadání,
+   * které se píše na stránce produktu — v obou případech je poctivější poslat
+   * člověka na detail, což karta stejně nabízí.
+   */
+  const quickAddVariant = useMemo(() => {
+    const variants = product.variants ?? []
+    if (variants.length !== 1) return null
+
+    return maxPurchasableQuantity(variants[0]) > 0 ? variants[0] : null
+  }, [product.variants])
+
+  /* Oblíbené se ukládají po variantě, takže platí totéž omezení jako u košíku —
+     u vícevariantního kusu by karta hádala, který se má uložit. Sklad se tu
+     ale neřeší: uložit si vyprodaný kus je právě ten případ, kdy to dává smysl. */
+  const wishlistVariantId =
+    (product.variants ?? []).length === 1 ? product.variants?.[0]?.id : undefined
+
+  const canQuickAdd =
+    Boolean(quickAddVariant && countryCode) &&
+    (availability === "in-stock" || availability === "last-one")
+
+  const handleQuickAdd = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement>) => {
+      /* Tlačítko stojí mimo odkaz karty, takže by kliknutí neodnavigovalo —
+         `stopPropagation` je tu kvůli hoveru a případným rodičovským handlerům. */
+      event.stopPropagation()
+
+      if (!quickAddVariant?.id || !countryCode || addState === "adding") return
+
+      window.clearTimeout(resetTimer.current)
+      setAddState("adding")
+
+      try {
+        const result = await addToCart({
+          variantId: quickAddVariant.id,
+          quantity: 1,
+          countryCode,
+        })
+
+        if (!result?.success) {
+          throw new Error(result?.message)
+        }
+
+        setAddState("added")
+        resetTimer.current = window.setTimeout(
+          () => setAddState("idle"),
+          ADDED_FOR_MS
+        )
+      } catch {
+        /* Košík v hlavičce se otevře sám, ale tady je člověk u mřížky —
+           text tlačítka je jediné, co mu o výsledku řekne. */
+        setAddState("error")
+      }
+    },
+    [addState, countryCode, quickAddVariant]
+  )
 
   const startInteracting = useCallback(() => setIsInteracting(true), [])
   const stopInteracting = useCallback(() => setIsInteracting(false), [])
@@ -229,15 +312,50 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
             </div>
             <span className={styles.index} aria-hidden="true">LP</span>
           </div>
-          <div className={styles.bottom}>
-            <p className={styles.description}>{product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}</p>
-            <div className={styles.price}>
-              {hasSale && <del>{cheapestPrice?.original_price}</del>}
-              <strong>{cheapestPrice?.calculated_price || "Cena na dotaz"}</strong>
-            </div>
-          </div>
+          <p className={styles.description}>{product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}</p>
         </div>
       </LocalizedClientLink>
+
+      {/*
+        Řádek s akcemi stojí MIMO odkaz karty: tlačítko uvnitř `<a>` je
+        neplatné HTML a odečítačky obrazovky si s vnořeným ovládacím prvkem
+        neporadí. Cena šla s ním, aby ikony a částka drželi jednu linku —
+        proto tu není původní `.bottom`, kde cena stála vedle popisku.
+      */}
+      <div className={styles.actions}>
+        <div className={styles.actionIcons}>
+          {wishlistVariantId && (
+            <span className={styles.iconSlot}>
+              <WishlistToggle variantId={wishlistVariantId} />
+            </span>
+          )}
+          {canQuickAdd && (
+            <button
+              type="button"
+              className={styles.quickAdd}
+              data-state={addState}
+              disabled={addState === "adding"}
+              onClick={handleQuickAdd}
+              aria-label={
+                addState === "added"
+                  ? `${product.title ?? "Výrobek"} je v košíku`
+                  : `Přidat ${product.title ?? "výrobek"} do košíku`
+              }
+            >
+              {addState === "added" ? (
+                <i aria-hidden="true">✓</i>
+              ) : (
+                <Cart size="19" color="currentColor" />
+              )}
+            </button>
+          )}
+        </div>
+
+        <div className={styles.price}>
+          {hasSale && <del>{cheapestPrice?.original_price}</del>}
+          <strong>{cheapestPrice?.calculated_price || "Cena na dotaz"}</strong>
+        </div>
+      </div>
     </motion.article>
   )
 }

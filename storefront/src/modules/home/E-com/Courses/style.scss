@@ -811,3 +811,21 @@
 @include phs-h {
   @include courses-cta-phone(4.4rem, 4.4rem, 34%);
 }
+
+/*
+ * Svislé tablety: výřez nastojato.
+ *
+ * Stopy v tomhle souboru jsou jen šířkové (900 / 760 / 600), takže od 760
+ * nahoru platil široký výřez — na 820x1180 elipsa 585x400, tedy naležato
+ * v panelu, který je na výšku. Táž úvaha jako u telefonu: výška je tu ten
+ * volný rozměr, tak ať ji výřez využije.
+ *
+ * `rx` je stropované na 15rem, aby okno zůstalo předmětem na stránce, ne
+ * stránkou samotnou: 30vw je na 1024 už 307px. `ry` jde z výšky (26vh), aby
+ * okno rostlo s displejem — 266px na 768, 355 na 1024.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    @include courses-cta-phone(min(30vw, 15rem), 26vh, 30%);
+  }
+}

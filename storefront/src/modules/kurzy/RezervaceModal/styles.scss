@@ -18,13 +18,34 @@
   --kurzy-olive-text: var(--olive-08);
   --kurzy-ember-text: var(--clay-13);
 
+  /*
+   * Spodní hrana navbaru plus vzduch — odkud smí začít panel na úzkých
+   * displejích, aby mu lišta neležela přes tlačítko Zavřít.
+   *
+   * `max(3.5rem, …)`, protože `--nav-height` na `:root` nezná dotykové
+   * přebití: `@include touch` v Navbar/style.scss deklaruje plochých 56px
+   * na `.navbar`, a modál je portálovaný na `body`, takže by po něm sáhl
+   * a dostal 46px z kořene. Na širokých displejích se proměnná nepoužívá,
+   * tam se panel pod lištu vejde sám.
+   */
+  --kurzy-nav-bottom: calc(
+    var(--nav-top-inset, 0.625rem) + max(3.5rem, var(--nav-height, 3.5rem))
+  );
+  --kurzy-modal-top: calc(
+    var(--kurzy-nav-bottom) + clamp(0.5rem, 1.2vh, 0.875rem)
+  );
+
   position: fixed;
   inset: 0;
   /* Same layer as the contact dialog — one overlay family, nothing above it. */
   z-index: 500;
   display: grid;
   place-items: center;
-  padding: clamp(0.625rem, 2vh, 2rem) clamp(0.625rem, 2vw, 2rem);
+  /* Shora až pod navbar — viz --kurzy-modal-top. Netýká se to jen úzkých
+     displejů: lišta je fixní i na 1280x720, kde vystředěný panel začíná na
+     ~29px, tedy 27px za ní. */
+  padding: var(--kurzy-modal-top) clamp(0.625rem, 2vw, 2rem)
+    clamp(0.625rem, 2vh, 2rem);
 
   &__backdrop {
     position: absolute;
@@ -40,7 +61,12 @@
     /* Both stops in rem: above 1921 the root ramp widens the panel with the
        type inside it, instead of leaving 760px of box around 1.33× type. */
     width: min(47.5rem, 100%);
-    max-height: min(92svh, 62rem);
+    /* Strop se odvíjí od zbylé výšky, ne od 92svh: s odsazením pod navbar by
+       panel o ten kus přetekl dolů. Druhý člen je spodní odsazení překryvu. */
+    max-height: min(
+      calc(100svh - var(--kurzy-modal-top) - clamp(0.625rem, 2vh, 2rem)),
+      62rem
+    );
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -54,6 +80,69 @@
     background: var(--kurzy-paper);
     color: var(--kurzy-charcoal);
     box-shadow: 0 2.5rem 5.625rem -2.5rem rgb(var(--black-01-rgb) / .7);
+
+    /* Systémový posuvník pryč — kreslíme si vlastní, viz &__scrollRail. */
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /*
+   * Ukazatel posunu panelu.
+   *
+   * `position: sticky` s nulovou výškou: prvek je potomkem posouvaného panelu,
+   * ale drží se jeho viditelného horního okraje a v toku nezabírá ani řádek,
+   * takže obsah pod ním sedí přesně tam, kde seděl. Dráhu i jezdec počítá JS
+   * v pixelech — procenta by se počítala z celé odscrollované výšky, ne
+   * z viditelné části.
+   *
+   * Když se posouvat není kam, mizí celý (`data-visible="false"`). Na rozdíl od
+   * vodorovného v liště účtu si nemusí držet místo: neleží v toku.
+   */
+  &__scrollRail {
+    position: sticky;
+    top: 0;
+    /* Nad obsahem, ale POD spodní lištou (ta má 3) — jinak jezdec přejíždí
+       přes její podklad až k dolní hraně panelu. */
+    z-index: 2;
+    height: 0;
+    pointer-events: none;
+  }
+
+  &__scrollRail[data-visible="false"] {
+    visibility: hidden;
+  }
+
+  &__scrollTrack {
+    position: absolute;
+    /* Kolejnice se zastaví až na horním odsazení panelu, takže bez tohohle
+       posunu začíná dráha o padding níž a o tentýž kus přetéká pod spodní
+       hranu (naměřeno 26px na 1440). Týž výraz jako `padding-top` panelu. */
+    top: calc(-1 * clamp(1.375rem, 3vh, 2.5rem));
+    /* Do poloviny pravého odsazení panelu, ať se proužek neopírá o text. */
+    right: calc(-1 * clamp(0.5rem, 1.4vw, 1.25rem));
+    width: 0.1875rem;
+    border-radius: 999px;
+    background: rgb(var(--ink-05-rgb) / .12);
+
+    i {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      border-radius: inherit;
+      background: rgb(var(--ink-05-rgb) / .55);
+    }
+  }
+
+  /* Posun jezdce je odezva na scroll, ne animace sama o sobě — kdo si tlumené
+     pohyby vypnul, dostane skok bez přechodu. */
+  @media (prefers-reduced-motion: no-preference) {
+    &__scrollTrack i {
+      transition: height .2s ease;
+    }
   }
 
   &__head {
@@ -138,6 +227,21 @@
     display: flex;
     flex-direction: column;
     gap: 0.1875rem;
+
+    /*
+     * Tlačítko jen tak široké, jak je jeho obsah — ne přes celou třetinu
+     * mřížky. Podtržení aktivního kroku je `left: 0; right: 0` uvnitř něj,
+     * takže se sloupcem táhlo skoro až k dalšímu kroku. Sloupce zůstávají
+     * po třetinách a `justify-self: start` drží popisky na týchž náběžných
+     * hranách; mění se jen šířka podtržení.
+     *
+     * `max-width: 100%`, protože neaktivní krok pod popiskem ukazuje shrnutí
+     * (`&__progressSummary`) na jednu řádku s výpustkou — bez stropu by ho
+     * `max-content` roztáhlo přes sousední sloupec.
+     */
+    justify-self: start;
+    width: max-content;
+    max-width: 100%;
     padding: 0.625rem 0.25rem 0.75rem;
     border: 0;
     background: transparent;
@@ -322,9 +426,29 @@
       outline-offset: 3px;
     }
 
+    /*
+     * Vybraný termín. Hover kartu jen zvedne; tohle je stav, ne odezva, takže
+     * si bere svislý proužek u levé hrany a plný obrys — po jednom pohledu je
+     * jasné, který termín se chystá potvrdit tlačítko dole.
+     *
+     * Proužek je `inset` stín, ne `border-left`: obyčejný okraj by kartu
+     * rozšířil a text uvnitř by při výběru poskočil o jeho tloušťku.
+     */
     &.is-active {
       border-color: var(--kurzy-charcoal);
       background: var(--kurzy-cream);
+      box-shadow:
+        inset 0.1875rem 0 0 0 var(--kurzy-ember),
+        0 1rem 2.125rem -1.75rem rgb(var(--ink-01-rgb) / .7);
+    }
+
+    /* Hover nesmí přebít stav výběru — bez tohohle by přejetí myší nad
+       vybranou kartou její proužek přepsalo vlastním stínem. */
+    &.is-active:hover,
+    &.is-active:focus-visible {
+      box-shadow:
+        inset 0.1875rem 0 0 0 var(--kurzy-ember),
+        0 1rem 2.125rem -1.75rem rgb(var(--ink-01-rgb) / .7);
     }
 
     &.is-soldout {
@@ -588,6 +712,80 @@
   &__stepActions {
     display: flex;
     justify-content: flex-end;
+  }
+
+  /*
+   * Lišta se zvoleným termínem u dolní hrany panelu: vlevo co je vybráno,
+   * vpravo potvrzení.
+   *
+   * `sticky`, ne `absolute`: absolutní pozice uvnitř posouvaného panelu se
+   * posouvá s obsahem, takže by lišta odjela se seznamem. Sticky ji nechá
+   * v toku — nic pod ní se nepřekrývá —, ale nepustí ji nad spodní okraj
+   * viditelné části. Vlastní podklad má proto, že přes ni pod ní projíždějí
+   * karty termínů.
+   */
+  &__stepActions--floating {
+    position: sticky;
+    /* Záporně přesně o spodní odsazení panelu: dráha sticky sahá jen po jeho
+       OBSAHOVÝ box, takže `bottom: 0` nechá lištu viset 32px nad hranou. */
+    bottom: calc(-1 * clamp(1.625rem, 3.4vh, 2.75rem));
+    z-index: 3;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    margin-top: clamp(0.5rem, 1.2vh, 1rem);
+
+    /*
+     * Lišta jde přes celou šířku panelu, ne jen přes jeho obsah. Záporné
+     * okraje ji vytáhnou přes odsazení panelu až k jeho hranám a odsazení
+     * lišty ho zevnitř vrátí, takže text i tlačítko zůstanou v jedné svislici
+     * s kartami nad nimi. Obě hodnoty jsou TÝŽ výraz jako `padding` panelu —
+     * jinou by se rozešly při prvním doladění.
+     *
+     * Záporný spodní okraj je zároveň to, co lištu posadí až na spodní hranu:
+     * sticky drží uvnitř dráhy MARGIN box, takže border box klesne přesně
+     * o tenhle kus níž — a stejně to vypadá i v klidu, když se seznam vejde
+     * bez posouvání.
+     */
+    margin-inline: calc(-1 * clamp(1.125rem, 3vw, 2.75rem));
+    margin-bottom: calc(-1 * clamp(1.625rem, 3.4vh, 2.75rem));
+    padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(1.125rem, 3vw, 2.75rem);
+    border-top: 1px solid rgb(var(--ink-05-rgb) / .2);
+    background: var(--kurzy-paper);
+    /* Stín nahoru — pod lištou už nic není. */
+    box-shadow: 0 -1.25rem 2.5rem -1.5rem rgb(var(--black-01-rgb) / .55);
+  }
+
+  &__chosenBar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    margin: 0;
+
+    strong {
+      overflow: hidden;
+      font-family: "Sentient-Regular", serif;
+      font-size: clamp(1rem, 1.15vw, 1.2rem);
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__chosenBarEyebrow {
+    color: var(--kurzy-olive-text);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__chosenBarMeta {
+    color: var(--kurzy-ember-text);
+    font-size: 0.8125rem;
+    line-height: 1.35;
   }
 
   &__primary {
@@ -937,13 +1135,69 @@
   }
 }
 
+/*
+ * ── Svislé tablety: panel k hornímu okraji ──
+ *
+ * Překryv středí panel ve zbylé ploše. Na 820x1180 je obsah 772px vysoký
+ * proti 1078px místa, takže se panelu rozdělilo 157px nad a 157px pod —
+ * seznam pak začínal až na y=235, hluboko pod lištou, a dole zbýval pruh
+ * prázdna. Panel se proto zarovná nahoru a nad ním zůstane 2.5vh vzduchu
+ * od spodní hrany lišty.
+ *
+ * Jen svislé tablety: telefony mají panel přes celou obrazovku (vyplní ji
+ * tak jako tak) a na širokých displejích obsah plochu vyplní sám.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .kurzyModal {
+      align-items: start;
+      padding-top: calc(var(--kurzy-nav-bottom) + 2.5vh);
+
+      /*
+       * Strop 85svh, a k tomu ještě zbylá výška po odečtení spodní lišty:
+       * panel je tu zarovnaný nahoru, takže bez druhého členu by při 85svh
+       * dosáhl na 1180px až k y=1105 — přesně tam, kde začínají ikony
+       * košíku a účtu. Míru zveřejňuje sama lišta přes
+       * `--nav-bottom-clearance`; když je skrytá, proměnná zmizí a náhrada
+       * je nula.
+       */
+      &__panel {
+        max-height: min(
+          85svh,
+          calc(
+            100svh - var(--kurzy-nav-bottom) - 2.5vh -
+              var(--nav-bottom-clearance, 0px) - clamp(0.625rem, 2vh, 2rem)
+          )
+        );
+      }
+    }
+  }
+}
+
 @include below-px(720px) {
   .kurzyModal {
-    padding: 0;
+    /* K hornímu okraji, ne na střed. Panel je nižší než zbylá plocha (o tu
+       spodní lištu webu), takže by mu středění rozdělilo rozdíl na obě
+       strany — na 390px 28px dolů, přesně o tolik by konec panelu podlezl
+       lištu, přes kterou má končit. */
+    align-items: start;
+    padding: var(--kurzy-modal-top) 0 0;
 
+    /* Panel končí nad spodní lištou webu, ne na spodku okna. Dřív sahal až
+       dolů a lišta s vybraným termínem se před něj jen zvedla — mezi její
+       spodní hranou a koncem panelu tak zbýval pruh, ve kterém dál
+       prosvítal posouvaný seznam.
+
+       Ke `--nav-bottom-clearance` ještě mezera navíc: proměnná hlásí výšku
+       lišty plus její odsazení ode dna (44 + 12 = 56px na 390), ale lišta
+       kolem sebe kreslí ještě rozptyl (`.root::before`), takže panel
+       zakončený přesně na 56px pod ni pořád opticky podlézal. */
     &__panel {
       width: 100%;
-      max-height: 100svh;
+      max-height: calc(
+        100svh - var(--kurzy-modal-top) - var(--nav-bottom-clearance, 0px) -
+          clamp(0.5rem, 1.4vh, 0.875rem)
+      );
       border: 0;
     }
 
@@ -961,6 +1215,19 @@
       .kurzyModal__primary {
         width: 100%;
       }
+    }
+
+    /* Na 390px se název termínu a tlačítko vedle sebe nevejdou — 17.5rem
+       minimální šířky tlačítka by z lišty nechalo na text 5rem. Pod sebe.
+
+       Svislé odsazení si NEPŘEBÍJÍ: panel má spodní odsazení i tady (mění se
+       jen odsazení překryvu kolem něj), takže `bottom: 0` by lištu zastavilo
+       o ten kus výš a mezi ní a koncem panelu by dál prosvítal seznam —
+       naměřeno 29px na 390px. Platí základní záporná hodnota. */
+    &__stepActions--floating {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
     }
   }
 }

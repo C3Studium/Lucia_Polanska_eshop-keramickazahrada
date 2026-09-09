@@ -661,3 +661,47 @@
     font-size: clamp(1rem, 2.6vw, 1.5rem);
   }
 }
+
+/*
+ * Svislé tablety: výška obrázku z poměru stran, ne z výšky okna.
+ *
+ * Karty se v základu měří na `vh` (51/43/47vh), což je psané pro ležatou
+ * obrazovku. Na výšku je `vh` větší a karta zároveň stojí na své rem podlaze,
+ * takže z obrázku byl úzký vysoký pás — naměřené poměry šířka:výška byly
+ * 0.52–0.68 proti 0.85–0.88, které dává notebook 1512×982.
+ *
+ * Ty tři hodnoty jsou tedy opsané z landscape laptopu, každá pro svou variantu
+ * karty (stupňování nesou šířky, ne výšky). Přes `aspect-ratio` se drží při
+ * jakékoli šířce okna — na rozdíl od pevné výšky v rem, která by platila jen
+ * tam, kde karta stojí na podlaze.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    /*
+     * Sekce už nemusí být na celé okno.
+     *
+     * `min-height: 100svh` ze základu (a `min(100svh, 78rem)` z `v(lg)`) je
+     * psané pro karty vysoké přes půl okna. Když se výška obrázků snížila na
+     * poměr z notebooku, zbylo pod pásem prázdno na výšku jedné karty — sekce
+     * si držela okno, které už neměla čím vyplnit.
+     */
+    .soldProducts {
+      min-height: 75svh;
+    }
+
+    .soldProducts__cardImage {
+      height: auto;
+      aspect-ratio: 0.88;
+    }
+
+    .soldProducts__card:nth-child(3n + 2) .soldProducts__cardImage {
+      height: auto;
+      aspect-ratio: 0.86;
+    }
+
+    .soldProducts__card:nth-child(3n + 3) .soldProducts__cardImage {
+      height: auto;
+      aspect-ratio: 0.85;
+    }
+  }
+}

@@ -33,7 +33,7 @@
 
 .accountOrderDetailsHeading h1 {
   margin: 0;
-  font: 400 clamp(3.4rem, 5.7vw, 6.5rem)/.82 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, 4.56vw, 6.5rem))/.82 "Sentient-Regular", serif;
   letter-spacing: -.06em;
 }
 
@@ -84,7 +84,7 @@
 
 .accountOrderDetailsSection > h2 {
   margin: 0;
-  font: 400 clamp(2.4rem, 3.7vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.4rem, 2.96vw, 4.4rem))/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 

@@ -396,7 +396,7 @@
 
 .copy h1 {
   margin: 0;
-  font: 400 clamp(3rem, 16vw, 5.4rem)/.82 "Sentient", Georgia, serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3rem, 12.8vw, 5.4rem))/.82 "Sentient", Georgia, serif;
   letter-spacing: -.055em;
   /* Czech compounds and the longest word in the deck ("neztratilo.", "Objednávku") sit close to
      the 288px a 320px phone offers. A break is better than a clip. */

@@ -42,7 +42,7 @@
        tentyz label. Podlaha .75rem je 12px, kterou kontroluje rig; nad 1921 ji
        ramp zvedne sam na ~16px. */
     font-family: "Sansation-Regular", sans-serif;
-    font-size: clamp(.75rem, .62vw, .9rem);
+    font-size: calc(var(--account-zoom, 1) * clamp(.75rem, 0.496vw, .9rem));
     line-height: 1.2;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -57,7 +57,7 @@
     display: block;
     overflow-wrap: anywhere;
     color: var(--ink-05);
-    font: 400 clamp(1.12rem, 1.25vw, 1.36rem) / 1.4 "Sansation-Light",
+    font: 400 calc(var(--account-zoom, 1) * clamp(1.12rem, 1vw, 1.36rem)) / 1.4 "Sansation-Light",
       sans-serif;
   }
 
@@ -87,7 +87,7 @@
     /* 2px zustava v px - fyzicky akcentovy prouzek, ne mira layoutu. */
     border-left: 2px solid var(--olive-19);
     background: rgb(var(--olive-19-rgb) / .09);
-    font-size: clamp(.85rem, .78vw, 1rem);
+    font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.624vw, 1rem));
   }
 
   .errorPanel p {
@@ -150,5 +150,59 @@
   .root .editContent > div:first-child,
   .root .editContent .editActions {
     grid-column: 1;
+  }
+}
+
+/* SVISLÝ TELEFON — hodnota přes celou šířku, tlačítko pod ni.
+ *
+ * Do 720px je řádek dvousloupcový: vlevo popisek a hodnota, vpravo „Upravit".
+ * Tlačítko má přes 130px, takže na 390px telefonu zbylo na hodnotu kolem 190
+ * — a „nathanaelnux@gmail.com" měří asi 200. E-mail nemá kde zalomit, takže
+ * se lámal UPROSTŘED SLOVA: „nathanaelnux@gmail.co / m".
+ *
+ * Pod 560px proto jeden sloupec. Hodnota dostane celých 330px a vejde se na
+ * řádek; tlačítko klesne pod ni. Řádek tím naroste o jednu výšku tlačítka,
+ * což je za čitelnou adresu dobrá výměna — a je to běžný tvar na telefonu.
+ *
+ * 560, ne 720: nad tou hranicí je místa dost (telefon na šířku má 568) a
+ * dva sloupce tam fungují. Rozbité to bylo jen na svislém telefonu.
+ */
+@include below-px(560px) {
+  .root .headerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .root .editAction {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    margin-top: 4px;
+  }
+}
+
+/* SVISLÝ TABLET — řádky nižší.
+ *
+ * `--row-min` je 12.5vh se stropem 8.6rem, tedy 137.6px na 834×1194. Na řádek,
+ * který nese popisek, jednu hodnotu a tlačítko, je to skoro dvakrát tolik,
+ * než potřebuje — a takových řádků je na nastavení dvanáct, takže z toho je
+ * přes 400px prázdna. Číslo je psané pro monitor, kde řádek stojí v širokém
+ * sloupci a výška ho drží čitelný; na tabletu je sloupec užší a hodnota se
+ * stejně láme.
+ *
+ * Tři čtvrtiny, jako zbytek obsahu účtu: 1024 → 96, 1194 → 103, 1366 → 103.
+ * Odsazení jde dolů se stejným poměrem. Obojí zůstává na vh — mění se míra,
+ * ne princip.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .root {
+        --row-min: clamp(3.75rem, 9.4vh, 6.45rem);
+      }
+
+      .root .headerRow {
+        padding-block: clamp(0.75rem, 1.95vh, 1.8rem);
+      }
+    }
   }
 }

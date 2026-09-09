@@ -23,6 +23,37 @@ type WishlistToggleProps = {
 const ease = [0.22, 1, 0.36, 1] as const
 const wishlistUpdateEvent = "keramicka-zahrada:wishlist-updated"
 
+/*
+ * Prázdný seznam jako modulová konstanta, ne `= []` v hlavičce komponenty.
+ *
+ * Výchozí hodnota parametru se vyhodnotí při KAŽDÉM renderu, takže volající,
+ * který `wishlistItems` nepředá, dostal pokaždé jiné pole. Efekt níž ho má
+ * v závislostech, viděl novou referenci, sáhl na stav, tím vyvolal další
+ * render — a znovu. „Maximum update depth exceeded" na mřížce obchodu, kde
+ * karty ten prop nepředávají.
+ */
+const NO_ITEMS: WishlistItem[] = []
+
+/*
+ * Shoda podle obsahu, ne podle reference.
+ *
+ * Samotná stabilní konstanta výš by stačila na volajícího, který prop vynechá,
+ * ale ne na toho, kdo tam napíše nové pole přímo v JSX. Když se obsah nezměnil,
+ * vrátí setter tutéž referenci a React render přeskočí — efekt se pak nemá
+ * čím spustit znovu, ať mu do závislostí přijde cokoli.
+ */
+const sameWishlist = (a: WishlistItem[], b: WishlistItem[]) =>
+  a.length === b.length &&
+  a.every((item, index) => {
+    const other = b[index]
+
+    return (
+      item.id === other?.id &&
+      (item.product_variant_id ?? item.product_variant?.id) ===
+        (other?.product_variant_id ?? other?.product_variant?.id)
+    )
+  })
+
 const findWishlistItem = (items: WishlistItem[], variantId?: string) =>
   items.find(
     (item) =>
@@ -32,7 +63,7 @@ const findWishlistItem = (items: WishlistItem[], variantId?: string) =>
 
 export default function WishlistToggle({
   variantId,
-  wishlistItems = [],
+  wishlistItems = NO_ITEMS,
   isAuthenticated,
 }: WishlistToggleProps) {
   const [localItems, setLocalItems] = useState<WishlistItem[]>(wishlistItems)
@@ -47,7 +78,9 @@ export default function WishlistToggle({
   }, [])
 
   useEffect(() => {
-    setLocalItems(wishlistItems)
+    setLocalItems((previous) =>
+      sameWishlist(previous, wishlistItems) ? previous : wishlistItems
+    )
   }, [wishlistItems])
 
   useEffect(() => {

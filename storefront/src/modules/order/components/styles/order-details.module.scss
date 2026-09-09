@@ -22,7 +22,7 @@
 
 .accountOrderConfirmation p {
   margin: 0;
-  font: 400 clamp(1.05rem, 1.2vw, 1.25rem)/1.45 "Sansation-Light", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.05rem, 0.96vw, 1.25rem))/1.45 "Sansation-Light", sans-serif;
 }
 
 .accountOrderConfirmation strong {
@@ -54,7 +54,7 @@
 
 .accountOrderMetaGrid dd {
   margin: 0;
-  font: 400 clamp(16px, 1vw, 18px)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(16px, 0.8vw, 18px))/1.4 "Sansation-Regular", sans-serif;
 }
 
 @include below-px(800px) {

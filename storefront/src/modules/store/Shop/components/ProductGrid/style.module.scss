@@ -34,7 +34,9 @@
 .results,
 .skeletonGrid {
   // 21.6–31.2px, živé 1309–1891.
-  --card-title-size: clamp(1.35rem, 1.65vw, 1.95rem);
+  /* 0.8× původního clamp(1.35rem, 1.65vw, 1.95rem). Jedno místo, protože
+     stejnou míru čte i kostra načítání níž — dvě čísla by se rozešla. */
+  --card-title-size: clamp(1.08rem, 1.32vw, 1.56rem);
   --card-title-leading: 1.08;
 
   // 12–14.1px, živé 1200–1408. Podlaha .75rem, ne .72rem: rig naměřil popisek

@@ -47,7 +47,7 @@
 
 .name {
   margin: 0 0 6px;
-  font: 400 clamp(1.45rem, 1.75vw, 2rem)/1.02 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.45rem, 1.4vw, 2rem))/1.02 "Sentient-Regular", serif;
   letter-spacing: -.035em;
   overflow-wrap: anywhere;
 }

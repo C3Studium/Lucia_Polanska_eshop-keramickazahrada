@@ -6,7 +6,7 @@ import {
   useReducedMotion,
   type Variants,
 } from "framer-motion"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
 import {
@@ -140,6 +140,80 @@ function RezervaceModalPanel({
   const reduceMotion = useReducedMotion()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+
+  /*
+   * Vlastní svislý ukazatel posunu panelu.
+   *
+   * Panel se posouvá celý (`overflow-y: auto`) a systémový posuvník se na
+   * dotykových zařízeních ukáže jen během doteku, takže ze stojícího seznamu
+   * není poznat, že termíny pokračují níž. Proužek je proto vlastní — týž
+   * princip jako vodorovný v liště účtu, jen na svislo.
+   *
+   * Rozměry jdou v pixelech, ne v procentech: dráha je vysoká jako VIDITELNÁ
+   * část panelu, kdežto procenta by se počítala z celé odscrollované výšky.
+   */
+  const [scrollHint, setScrollHint] = useState({
+    visible: false,
+    viewH: 0,
+    thumbH: 0,
+    thumbY: 0,
+  })
+
+  const measureScrollHint = useCallback(() => {
+    const el = panelRef.current
+    if (!el) {
+      return
+    }
+
+    const skryte = el.scrollHeight - el.clientHeight
+
+    /* Vracíme PŘEDCHOZÍ objekt, ne nový se stejnými čísly: ResizeObserver hlásí
+       i změny, ze kterých z měření nic neplyne, a nový objekt by z každé udělal
+       další render. */
+    if (skryte <= 1) {
+      setScrollHint((predchozi) =>
+        predchozi.visible
+          ? { visible: false, viewH: 0, thumbH: 0, thumbY: 0 }
+          : predchozi
+      )
+      return
+    }
+
+    const viewH = el.clientHeight
+    /* 40px podlaha, ať jezdec nezmizí v dlouhém seznamu. */
+    const thumbH = Math.max(40, (viewH / el.scrollHeight) * viewH)
+    const thumbY = (el.scrollTop / skryte) * (viewH - thumbH)
+
+    setScrollHint((predchozi) =>
+      predchozi.visible &&
+      Math.abs(predchozi.viewH - viewH) < 0.5 &&
+      Math.abs(predchozi.thumbH - thumbH) < 0.5 &&
+      Math.abs(predchozi.thumbY - thumbY) < 0.5
+        ? predchozi
+        : { visible: true, viewH, thumbH, thumbY }
+    )
+  }, [])
+
+  useEffect(() => {
+    const el = panelRef.current
+    if (!el) {
+      return
+    }
+
+    measureScrollHint()
+    el.addEventListener("scroll", measureScrollHint, { passive: true })
+
+    /* Obsah panelu mění výšku bez změny okna — přepnutí kalendář/seznam,
+       rozbalený formulář, doběhnutá písma. Sledujeme panel i jeho obsah. */
+    const observer = new ResizeObserver(measureScrollHint)
+    observer.observe(el)
+    Array.from(el.children).forEach((dite) => observer.observe(dite))
+
+    return () => {
+      el.removeEventListener("scroll", measureScrollHint)
+      observer.disconnect()
+    }
+  }, [measureScrollHint])
 
   /* ---------------------------------------------------------------- data */
   const [terms, setTerms] = useState<CourseTerm[]>(initialTerms)
@@ -557,6 +631,26 @@ function RezervaceModalPanel({
         animate="visible"
         exit="exit"
       >
+        {/* Sticky s nulovou výškou: leží uvnitř posouvaného panelu, ale drží se
+            jeho viditelného horního okraje a nezabírá v toku ani řádek. */}
+        <div
+          className="kurzyModal__scrollRail"
+          aria-hidden="true"
+          data-visible={scrollHint.visible ? "true" : "false"}
+        >
+          <div
+            className="kurzyModal__scrollTrack"
+            style={{ height: `${scrollHint.viewH}px` }}
+          >
+            <i
+              style={{
+                height: `${scrollHint.thumbH}px`,
+                transform: `translateY(${scrollHint.thumbY}px)`,
+              }}
+            />
+          </div>
+        </div>
+
         <header className="kurzyModal__head">
           <div>
             <span className="kurzyModal__eyebrow">Kurzy · Rezervace</span>
@@ -895,7 +989,29 @@ function RezervaceModalPanel({
                               )}
                             </div>
                           ) : (
-                            <div className="kurzyModal__stepActions">
+                            /* Lišta stojí u dolní hrany panelu od začátku, ne až po
+                               výběru: kdo přijde na seznam termínů, má rovnou vidět,
+                               že se z něj někam pokračuje. Do výběru drží místo
+                               a říká, co se po člověku chce; tlačítko je do té doby
+                               vypnuté (`kurzyModal__primary:disabled`). */
+                            <div className="kurzyModal__stepActions kurzyModal__stepActions--floating">
+                              <p className="kurzyModal__chosenBar">
+                                <span className="kurzyModal__chosenBarEyebrow">
+                                  {termDone && selected
+                                    ? "Zvolený termín"
+                                    : "Termín"}
+                                </span>
+                                <strong>
+                                  {termDone && selected
+                                    ? selected.title
+                                    : "Zatím nevybráno"}
+                                </strong>
+                                <span className="kurzyModal__chosenBarMeta">
+                                  {termDone && selected
+                                    ? formatPrague(selected.starts_at)
+                                    : "Vyberte termín v seznamu nebo v kalendáři"}
+                                </span>
+                              </p>
                               <button
                                 type="button"
                                 className="kurzyModal__primary"
@@ -1213,6 +1329,7 @@ function TermCard({
     </button>
   )
 }
+
 
 /* The house motion family — the express-checkout stepper's values, plus the
    contact dialog's overlay entrance, hoisted so framer-motion re-diffs

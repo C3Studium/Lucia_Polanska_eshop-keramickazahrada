@@ -23,7 +23,7 @@
 .root .title {
   margin: 0 0 .65rem;
   font-family: "Sentient-Regular", serif;
-  font-size: calc(var(--auth-zoom) * clamp(1.8rem, 2.25vw, 2.6rem));
+  font-size: calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 1.8vw, 2.6rem)));
   font-weight: 400;
   letter-spacing: -.025em;
   line-height: 1;
@@ -75,7 +75,7 @@
   margin-left: 0 !important;
   color: rgb(var(--black-03-rgb) / .54) !important;
   /* floor 12.8px keeps the .54-alpha uppercase caption above the 12px legibility floor */
-  font-size: clamp(.8rem, .85vw, .9rem) !important;
+  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, 0.68vw, .9rem)) !important;
   letter-spacing: .1em;
   text-transform: uppercase;
 }

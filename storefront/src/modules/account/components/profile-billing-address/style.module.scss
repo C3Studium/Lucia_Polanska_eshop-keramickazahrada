@@ -19,7 +19,7 @@
     gap: clamp(0.3rem, 0.55vh, 0.5rem) clamp(1.1rem, 2vw, 2.1rem);
     align-items: baseline;
     color: var(--ink-05);
-    font: 400 clamp(1rem, 1.08vw, 1.18rem) / 1.45 "Sansation-Light", sans-serif;
+    font: 400 calc(var(--account-zoom, 1) * clamp(1rem, 0.864vw, 1.18rem)) / 1.45 "Sansation-Light", sans-serif;
 
     strong {
       grid-row: 1 / span 2;

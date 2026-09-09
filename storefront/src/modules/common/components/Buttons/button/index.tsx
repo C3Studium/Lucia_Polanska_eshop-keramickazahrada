@@ -46,6 +46,28 @@ const backText = {
   active: { opacity: 1, transition: t },
 }
 
+/*
+ * Táž varianta pro POPISEK, jen s dojezdem do strany.
+ *
+ * Zadní strana nese navíc šipku, takže vystředěná dvojice popisek + šipka
+ * sedí o její polovinu vlevo proti přednímu popisku — naměřeno −7.1px na
+ * 1440. Obě strany se přitom jen prolnou, každá na své pozici, takže text
+ * při překlopení skočí do strany. To je ten posun, co je vidět.
+ *
+ * Odsazení zleva o šířku šipky včetně mezery drží popisek na startu tam, kde
+ * stál vepředu, a prolnutí ho během týchž 420 ms doveze na místo. V rem, ne
+ * v px: nad 1921 roste s rampou stejně jako šipka (0.75rem) a mezera mezi
+ * nimi (0.25rem) v Navbar/style.scss. Klidová hodnota 0.25rem je odsazení,
+ * které tomu odstavci dává tentýž stylopis.
+ *
+ * Ikona (PerspectiveIcon) si bere `backText` beze změny — šipku nemá a
+ * dojezd by ji jen odsunul.
+ */
+const backTextLabel = {
+  rest: { opacity: 0, paddingLeft: "1.25rem", transition: t },
+  active: { opacity: 1, paddingLeft: "0.25rem", transition: t },
+}
+
 export default function Button({title, href, img = "/assets/links/home_img.png", alt = 'bg__image', icon1, icon2, Kind, onClickAction, onTagAction, className, index, isActive = false, animationKey = 0, onActiveChange}: NavButton) {
     const [isTagActive, setIsTagActive] = useState<boolean>(false)
     const isControlled = index !== undefined && onActiveChange !== undefined
@@ -179,7 +201,7 @@ function PerspectiveText({
       <motion.p variants={frontText} style={{ color }}>
         {label}
       </motion.p>
-      <motion.p variants={backText} style={backFace}>
+      <motion.p variants={backTextLabel} style={backFace}>
         {label}
         <span>
             <ArrowRight size={15} color="var(--whiteText)"/>
@@ -232,14 +254,17 @@ function PerspectiveImage({img, alt}: {img: string, alt: string}) {
 /* Hoisted from JSX: these motion objects are static, so allocating them per
    render only gave framer-motion new references to re-diff. Values are unchanged. */
 
-/* Geometrie překlopení — jedno místo pro obě zadní stěny. Odvozená od výšky tlačítka
-   ze styles.module.scss, clamp(2.25rem, 3.7vh, 3rem), dvěma koeficienty:
-     perspektiva = 20x výška (800px u staré pevné výšky 40px) -> clamp(45rem, 74vh, 60rem)
-     hloubka     = 0.3x výška (12px u téže výšky)             -> clamp(0.675rem, 1.11vh, 0.9rem)
-   Všechny tři clampy lámou na týchž prazích (972.97px a 1297.3px na výšku okna), takže poměr
-   1 : 20 : 0.3 drží na každém viewportu, ne jen na 1080. V px se překlopení nad 1921 plošti:
-   tlačítko roste s rampou, hloubka ne. */
-const FLIP_DEPTH = "clamp(0.675rem, 1.11vh, 0.9rem)"
+/* Geometrie překlopení — jedno místo pro obě zadní stěny. Odvozená od výšky tlačítka,
+   perspektiva = 20x výška (800px u staré pevné výšky 40px) -> clamp(45rem, 74vh, 60rem).
+
+   Hloubka se ale ČTE ze `--flip-depth` (styles.module.scss) a váže se na PÍSMO, ne na
+   výšku tlačítka. Byl tu `clamp(0.675rem, 1.11vh, 0.9rem)`, dopočítaný jako 0.3x výška
+   z téhož stylopisu — jenže Navbar tlačítkům výšku přebíjí svým `--nav-control-height`,
+   což je jiný clamp. Na 1280 a 1440 vycházely obě shodou okolností stejně, na 1920 už
+   ne: tlačítko 38.9px, hloubka 11.99 místo potřebných 11, a zadní popisek dosedl o 1px
+   POD přední. Na výšce tlačítka to ale nestojí ani po opravě: měřením přes 36 až 51.8px
+   vyšlo, že rozhoduje výška řádku, a 0.78em drží popisek na středu na všech. */
+const FLIP_DEPTH = "var(--flip-depth, 0.78em)"
 const styleObj = { perspective: "clamp(45rem, 74vh, 60rem)" }
 const styleObj2 = { transformStyle: "preserve-3d" as const }
 const styleObj3 = {objectFit: 'cover' as const}

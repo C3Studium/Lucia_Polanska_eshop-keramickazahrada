@@ -265,10 +265,19 @@ export default function ProductReviews({
   }
 
   // "0 recenzí" plus five empty stars on every new product undermines a shop where most pieces
-  // are new (spec §4). The section appears once it has something to show; customers who want to
-  // write the first one still reach the form from their account after ordering.
+  // are new (spec §4), takže seznam recenzí se objeví až s prvním hodnocením. Formulář ale
+  // zůstává vždycky — jinak není odkud první recenzi napsat.
   if (!displayedCount && !isLoadingMore && !error) {
-    return null
+    return (
+      <div
+        id="product-reviews"
+        className={`product-page-constraint ${styles.container} ${styles.containerFormOnly}`}
+        data-scroll-section
+        data-scroll-label="Recenze"
+      >
+        <ProductReviewsForm productId={productId} previewMode={false} />
+      </div>
+    )
   }
 
   return (

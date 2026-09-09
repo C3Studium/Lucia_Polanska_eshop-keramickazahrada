@@ -23,7 +23,7 @@
   background: transparent;
   color: var(--ink-05);
   cursor: pointer;
-  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem))/1 "Sansation-Regular", sans-serif;
 }
 
 .trigger:hover,
@@ -33,7 +33,7 @@
 
 .label {
   color: var(--olive-04);
-  font: 400 clamp(.8rem, 1.07vw, 1rem)/1.4 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.8rem, 0.856vw, 1rem))/1.4 "Sansation-Regular", sans-serif;
   letter-spacing: 0.06em;
 }
 
@@ -49,7 +49,7 @@
   border-radius: clamp(.5rem, .65vw, .75rem);
   background: rgb(var(--white-rgb) / .6);
   color: var(--ink-05);
-  font: 400 clamp(1rem, 1vw, 1.2rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1rem, 0.8vw, 1.2rem))/1.5 "Sansation-Regular", sans-serif;
   min-height: clamp(5rem, 12vh, 8.5rem);
   resize: vertical;
 }
@@ -68,7 +68,7 @@
   background: var(--ink-05);
   color: var(--cream-06);
   cursor: pointer;
-  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem))/1 "Sansation-Regular", sans-serif;
 }
 
 .submit:disabled {
@@ -79,11 +79,11 @@
 .sent {
   margin: clamp(.9rem, 2vh, 1.8rem) 0 0;
   color: var(--green-01);
-  font: 400 clamp(.95rem, 1.27vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.95rem, 1.016vw, 1.15rem))/1.5 "Sansation-Regular", sans-serif;
 }
 
 .error {
   margin: 0;
   color: var(--clay-06);
-  font: 400 clamp(.9rem, 1.2vw, 1.1rem)/1.5 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem))/1.5 "Sansation-Regular", sans-serif;
 }

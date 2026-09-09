@@ -359,7 +359,7 @@
 .title {
   margin: 0 0 1rem;
   color: var(--black-03);
-  font: 400 clamp(3.1rem, 4.8vw, 5.2rem)/.88 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.1rem, 3.84vw, 5.2rem))/.88 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 
   em {

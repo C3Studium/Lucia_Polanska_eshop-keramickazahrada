@@ -41,7 +41,12 @@
 
 .title {
   margin: 0;
-  font: 400 clamp(3.4rem, 5.8vw, 6.6rem)/.82 "Sentient-Regular", serif;
+  /* Nadpis visí na témž násobiteli jako zbytek účtu.
+     `--account-zoom` nastavuje account-layout: 0.75 na svislém tabletu,
+     0.9 na svislém telefonu. Bez proměnné (desktop) je fallback 1 a hodnota
+     je bit po bitu tatáž jako předtím. Na telefonu tím nadpis klesne
+     z 54.4 na 49px a přestane brát dva a půl řádku. */
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.4rem, 4.64vw, 6.6rem))/.82 "Sentient-Regular", serif;
   letter-spacing: -.06em;
 }
 
@@ -57,7 +62,7 @@
   max-width: 31rem;
   margin: 0 0 .25rem;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: clamp(.95rem, 1vw, 1.12rem)/1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.95rem, 0.8vw, 1.12rem))/1.55 "Sansation-Light", sans-serif;
 }
 
 .header .divider {

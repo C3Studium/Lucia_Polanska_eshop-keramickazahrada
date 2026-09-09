@@ -1,9 +1,20 @@
 "use client"
 
+import {
+  ArrowRightOnRectangle,
+  BookOpen,
+  CogSixTooth,
+  Heart,
+  House,
+  MapPin,
+  ShoppingBag,
+  Star,
+  Trash,
+} from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { AnimatePresence, motion } from "framer-motion"
 import { useParams, usePathname } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { signout } from "@lib/data/customer"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -17,6 +28,7 @@ const navigation = [
   {
     index: "01",
     href: "/account",
+    icon: House,
     title: "Přehled",
     caption: "Všechno na jednom místě",
     testId: "overview-link",
@@ -24,6 +36,7 @@ const navigation = [
   {
     index: "02",
     href: "/account/profile",
+    icon: CogSixTooth,
     title: "Nastavení",
     caption: "Osobní údaje",
     testId: "profile-link",
@@ -31,6 +44,7 @@ const navigation = [
   {
     index: "03",
     href: "/account/addresses",
+    icon: MapPin,
     title: "Adresy",
     caption: "Místa doručení",
     testId: "addresses-link",
@@ -38,6 +52,7 @@ const navigation = [
   {
     index: "04",
     href: "/account/orders",
+    icon: ShoppingBag,
     title: "Objednávky",
     caption: "Co jste u nás koupili",
     testId: "orders-link",
@@ -45,6 +60,7 @@ const navigation = [
   {
     index: "05",
     href: "/account/reviews",
+    icon: Star,
     title: "Recenze",
     caption: "Vaše zkušenost",
     testId: "reviews-link",
@@ -52,6 +68,7 @@ const navigation = [
   {
     index: "06",
     href: "/account/wishlist",
+    icon: Heart,
     title: "Seznam přání",
     caption: "Uložené kousky",
     testId: "wishlist-link",
@@ -59,6 +76,7 @@ const navigation = [
   {
     index: "07",
     href: "/account/kurzy",
+    icon: BookOpen,
     title: "Kurzy",
     caption: "Rezervovaná místa",
     testId: "kurzy-link",
@@ -76,6 +94,7 @@ const AccountNavigationLink = ({
 }) => {
   const [hovered, setHovered] = useState(false)
   const visualState = active || hovered ? "active" : "rest"
+  const Ikona = item.icon
 
   return (
     <LocalizedClientLink
@@ -85,7 +104,16 @@ const AccountNavigationLink = ({
       data-testid={item.testId}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
+      /* Na úzkých obrazovkách zbude z odkazu jen ikona. Název proto zůstává
+         v DOM a schovává se opticky (viz .linkTitle v CSS), ne přes
+         display: none — přístupné jméno odkazu je pořád ten text. `title`
+         přidává bublinu pro myš; na dotyku žádná není, a proto je tenhle
+         tvar vyhrazený sloupci, kde se ikony opakují na každé podstránce. */
+      title={item.title}
     >
+      <span className={styles.linkIcon} aria-hidden="true">
+        <Ikona />
+      </span>
       <span className={styles.linkIndex}>{item.index}</span>
       <span className={styles.linkTitle}>{item.title}</span>
       <motion.span
@@ -130,6 +158,77 @@ const AccountNav = ({
     [localRoute]
   )
 
+  /*
+   * Vodorovný ukazatel posunu v telefonní liště.
+   *
+   * Lišta má `scrollbar-width: none` a mobilní prohlížeče kreslí posuvník
+   * jen během doteku, takže na stojící stránce nic nenapovídá, že ikony
+   * pokračují za pravým okrajem. Tenhle proužek je proto vlastní, ne
+   * odkrytý systémový: `::-webkit-scrollbar` iOS Safari ignoruje.
+   *
+   * `size` je podíl viditelné části, `offset` pozice v dráze — obojí ve
+   * zlomcích, převod na procenta dělá až JSX.
+   */
+  const navRef = useRef<HTMLElement | null>(null)
+  const [scrollHint, setScrollHint] = useState({
+    visible: false,
+    size: 1,
+    offset: 0,
+  })
+
+  const measureScrollHint = useCallback(() => {
+    const el = navRef.current
+    if (!el) {
+      return
+    }
+
+    const skryte = el.scrollWidth - el.clientWidth
+
+    /* Vracíme PŘEDCHOZÍ objekt, ne nový se stejnými čísly. ResizeObserver
+       si sahá i na změny, které z měření nic nemění, a nový objekt by z
+       každé takové udělal další render. */
+    if (skryte <= 1) {
+      setScrollHint((predchozi) =>
+        predchozi.visible ? { visible: false, size: 1, offset: 0 } : predchozi
+      )
+      return
+    }
+
+    const size = el.clientWidth / el.scrollWidth
+    const offset = (el.scrollLeft / skryte) * (1 - size)
+
+    setScrollHint((predchozi) =>
+      predchozi.visible &&
+      Math.abs(predchozi.size - size) < 0.001 &&
+      Math.abs(predchozi.offset - offset) < 0.001
+        ? predchozi
+        : { visible: true, size, offset }
+    )
+  }, [])
+
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) {
+      return
+    }
+
+    measureScrollHint()
+    el.addEventListener("scroll", measureScrollHint, { passive: true })
+
+    /* Šířka lišty se mění i bez změny okna — otočením telefonu, skrytím
+       adresního řádku, doběhnutím písem. Sledujeme proto oba boxy. */
+    const observer = new ResizeObserver(measureScrollHint)
+    observer.observe(el)
+    if (el.firstElementChild) {
+      observer.observe(el.firstElementChild)
+    }
+
+    return () => {
+      el.removeEventListener("scroll", measureScrollHint)
+      observer.disconnect()
+    }
+  }, [measureScrollHint])
+
   const handleLogout = async () => {
     await signout(countryCode)
   }
@@ -162,6 +261,7 @@ const AccountNav = ({
         </div>
 
         <nav
+          ref={navRef}
           className={styles.navigation}
           aria-label="Navigace zákaznického účtu"
         >
@@ -175,11 +275,54 @@ const AccountNav = ({
               )
             })}
           </ol>
+
+          {/* Sticky, ne absolutní: leží uvnitř posouvané lišty, ale drží se
+              jejího viditelného levého okraje, takže s ikonami neujíždí. */}
+          <div
+            className={styles.navScroll}
+            aria-hidden="true"
+            data-visible={scrollHint.visible ? "true" : "false"}
+          >
+            <i
+              style={{
+                width: `${scrollHint.size * 100}%`,
+                left: `${scrollHint.offset * 100}%`,
+              }}
+            />
+          </div>
         </nav>
 
         <div className={styles.accountMeta}>
           <span>Jste přihlášeni</span>
           <p>{customer?.email}</p>
+        </div>
+
+        {/* Ikonová dvojčata obou tlačítek. Vykreslují se vždycky a přepíná
+            mezi nimi CSS, protože která varianta platí, rozhoduje šířka
+            obrazovky — a to je otázka pro media query, ne pro JavaScript:
+            s hookem na velikost okna by se první vykreslení na serveru
+            netrefilo a tlačítka by po hydrataci poskočila. */}
+        <div className={styles.actionsIcons}>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={styles.iconAction}
+            aria-label="Odhlásit se"
+            title="Odhlásit se"
+            data-testid="logout-button-icon"
+          >
+            <ArrowRightOnRectangle />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenModal(true)}
+            className={`${styles.iconAction} ${styles.iconActionDanger}`}
+            aria-label="Smazat účet"
+            title="Smazat účet"
+            data-testid="delete-account-button-icon"
+          >
+            <Trash />
+          </button>
         </div>
 
         <div className={styles.actions}>

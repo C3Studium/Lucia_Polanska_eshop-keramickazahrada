@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge, Heading, Input, Text } from "@medusajs/ui"
+import { Badge, Heading, Text, clx } from "@medusajs/ui"
 import React, { useActionState } from "react"
 
 import { applyPromotions, submitPromotionForm } from "@lib/data/cart"
@@ -17,9 +17,23 @@ type DiscountCodeProps = {
   cart: HttpTypes.StoreCart & {
     promotions: HttpTypes.StorePromotion[]
   }
+  /**
+   * `stacked` je souhrn v úzkém sloupci: přepínač, pod ním pole s tlačítkem.
+   * `inline` je vodorovná linka pro široké místo, například plovoucí pruh
+   * košíku na svislém tabletu.
+   *
+   * Je to prop, ne selektory zvenčí. Svislé odstupy nese uvnitř `margin`
+   * přepínače a `padding` řádku — ve sloupci jsou to mezery mezi nimi, na
+   * lince posun jednoho proti druhému. Volající je odtud přebít nemůže:
+   * pravidla modulu mají čtyři třídy, jeho selektor by musel mít víc.
+   */
+  layout?: "stacked" | "inline"
 }
 
-const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
+const DiscountCode: React.FC<DiscountCodeProps> = ({
+  cart,
+  layout = "stacked",
+}) => {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const { items = [], promotions = [] } = cart
@@ -47,7 +61,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   const [message, formAction] = useActionState(submitPromotionForm, null)
 
   return (
-    <div className={styles.root}>
+    <div className={clx(styles.root, layout === "inline" && styles.inline)}>
       <div className={styles.content}>
         <form action={formAction} className={styles.form}>
           {/* A div, not <Label>: a label wrapping a button (with no control)
@@ -78,7 +92,16 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                 transition={transition}
               >
                 <div className={styles.row}>
-                  <Input
+                  {/*
+                    Vlastní `<input>`, ne `<Input>` z @medusajs/ui.
+
+                    Ta komponenta si nese svůj vzhled — vlastní rámeček, poloměr
+                    a modrý focus prstenec — který na krémovém souhrnu vypadá jako
+                    kus cizí administrace. Navíc obaluje pole ještě jedním divem,
+                    takže flexovou položkou řádku byl ten obal a ne pole samo; kvůli
+                    tomu tu stálo pravidlo na `> :first-child`.
+                  */}
+                  <input
                     className={styles.input}
                     id="promotion-input"
                     name="code"

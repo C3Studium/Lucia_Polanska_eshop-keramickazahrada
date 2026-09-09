@@ -27,7 +27,7 @@
      measured against, and it is also the rig's legibility floor. 0.9vw releases
      it at 1333px, so the live band is 1333–1511 — inside the target 1200–1500. */
   color: rgb(var(--ink-05-rgb) / .66);
-  font: clamp(0.75rem, 0.9vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.75rem, 0.72vw, 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -50,7 +50,10 @@
 
 .heading h1 {
   margin: 0;
-  font: 400 clamp(3.2rem, 5.15vw, 5.9rem) / 0.84 "Sentient-Regular", serif;
+  /* Týž násobitel jako zbytek účtu — stránka kurzů v něm sedí a nemá
+     důvod mít vlastní velikost. `--account-zoom` nastavuje account-layout
+     (0.75 svislý tablet, 0.9 svislý telefon); bez ní je fallback 1. */
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.2rem, 4.12vw, 5.9rem)) / 0.84 "Sentient-Regular", serif;
   letter-spacing: -0.06em;
 }
 
@@ -66,7 +69,7 @@
   max-width: 38rem;
   margin: 0 0 0 auto;
   color: rgb(var(--ink-05-rgb) / .68);
-  font: clamp(0.94rem, 1.15vw, 1.14rem) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.94rem, 0.92vw, 1.14rem)) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .body {
@@ -84,7 +87,7 @@
 
   > div span {
     color: rgb(var(--ink-05-rgb) / .5);
-    font: clamp(0.75rem, 0.9vw, 0.85rem) / 1.2 "Sansation-Regular", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.75rem, 0.72vw, 0.85rem)) / 1.2 "Sansation-Regular", sans-serif;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -93,7 +96,7 @@
     max-width: 30rem;
     margin: 0.75rem 0 0;
     color: rgb(var(--ink-05-rgb) / .65);
-    font: clamp(0.94rem, 1.15vw, 1.1rem) / 1.55 "Sansation-Light", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.94rem, 0.92vw, 1.1rem)) / 1.55 "Sansation-Light", sans-serif;
   }
 }
 
@@ -153,14 +156,14 @@
 
   h2 {
     margin: 0.375rem 0 0;
-    font: 400 clamp(1.35rem, 1.9vw, 1.9rem) / 1.02 "Sentient-Regular", serif;
+    font: 400 calc(var(--account-zoom, 1) * clamp(1.35rem, 1.52vw, 1.9rem)) / 1.02 "Sentient-Regular", serif;
     letter-spacing: -0.03em;
   }
 
   p {
     margin: 0.375rem 0 0;
     color: rgb(var(--ink-05-rgb) / .62);
-    font: clamp(0.85rem, 1.1vw, 1.05rem) / 1.45 "Sansation-Light", sans-serif;
+    font: calc(var(--account-zoom, 1) * clamp(0.85rem, 0.88vw, 1.05rem)) / 1.45 "Sansation-Light", sans-serif;
   }
 }
 
@@ -175,7 +178,7 @@
   grid-column: 1 / -1;
 
   strong {
-    font: 400 clamp(1rem, 1.25vw, 1.35rem) / 1 "Sentient-Regular", serif;
+    font: 400 calc(var(--account-zoom, 1) * clamp(1rem, 1vw, 1.35rem)) / 1 "Sentient-Regular", serif;
   }
 
   i {
@@ -207,4 +210,29 @@
 
 .card[data-tone="ok"] .cardState {
   color: var(--olive-19);
+}
+
+/*
+ * ── Svislé telefony: vyšší karta rezervace ──
+ *
+ * Karta byla vysoká přesně podle svého obsahu, takže na 390x844 kolísala mezi
+ * 170 a 214px podle toho, na kolik řádků se zlomil název kurzu — a nejnižší
+ * z nich vypadala vedle ostatních uspěchaně.
+ *
+ * `min-height` je podlaha, ne pevná výška: delší název kartu dál roztáhne.
+ * `align-content: space-between` tu výšku navíc rozdělí místo toho, aby ji
+ * nechal ležet pod obsahem — datum s názvem drží u horní hrany, stav platby
+ * s cenou u dolní.
+ *
+ * Stejná specificita jako `.card > a` výš, takže rozhoduje pořadí v souboru.
+ * Tablety ani telefony na šířku sem nespadají: v(xs) je portrait a strop 600px
+ * je přesně tam, kde začíná v(md).
+ */
+@include v(xs) {
+  @include below-px(600px) {
+    .card > a {
+      align-content: space-between;
+      min-height: clamp(13.75rem, 28vh, 16.5rem);
+    }
+  }
 }

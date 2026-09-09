@@ -6,7 +6,7 @@
 
 .title {
   margin: 0;
-  font: 400 clamp(2.4rem, 3.7vw, 4.4rem)/.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.4rem, 2.96vw, 4.4rem))/.9 "Sentient-Regular", serif;
   letter-spacing: -.05em;
 }
 

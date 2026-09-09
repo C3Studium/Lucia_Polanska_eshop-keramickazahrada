@@ -138,7 +138,7 @@
   color: rgb(var(--ink-05-rgb) / .64);
   /* 15px was frozen at every width; now 13.6 -> 16.8px, live 1295-1600, and the ramp
      carries the ceiling to 22.3px at 2552. */
-  font-size: clamp(.875rem, 1.1vw, 1.05rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.875rem, 0.88vw, 1.05rem));
   line-height: 1.55;
 }
 
@@ -185,7 +185,7 @@
 
 .name {
   margin: 0 0 .625rem;
-  font: 400 clamp(2rem, 2.8vw, 3.2rem) / 0.95 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2rem, 2.24vw, 3.2rem)) / 0.95 "Sentient-Regular", serif;
   letter-spacing: -0.04em;
 }
 
@@ -195,7 +195,7 @@
   color: rgb(var(--ink-05-rgb) / .62);
   /* Measured at a flat 15px on all ten landscape viewports, next to a name that ramps
      to 68px at 2552. Same clamp as .description so the two read as one voice. */
-  font: clamp(.875rem, 1.1vw, 1.05rem)/1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.875rem, 0.88vw, 1.05rem))/1.55 "Sansation-Light", sans-serif;
 }
 
 .addressLines {

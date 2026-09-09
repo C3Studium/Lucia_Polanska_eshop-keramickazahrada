@@ -52,7 +52,13 @@
      The only thing the TSX animates is --discover-clip-k: 1 closed, 0 open. A bare number is the
      same shape of expression on both sides of the interpolation, which is what framer needs —
      inset() with a calc() on one side and plain px on the other stops interpolating and jumps. */
-  --discover-w: clamp(8.5rem, 11vw, 11rem);
+  /* Podlaha 10.25rem, ne 8.5: šířka je jediný člen téhle geometrie na `vw`,
+     kdežto výška a z ní odvozená ikona jedou na `vh`. V portrétu je proto
+     pilulka na podlaze, zatímco kolečko uvnitř roste — popisku „Zobrazit detail"
+     zbývalo na 825×1196 jen 5.6 px k levé hraně proti 37.5 px na notebooku.
+     Nová podlaha dává těch 33 px zpátky. Nad ~1491 px šířky je `11vw` větší
+     než podlaha, takže se tam nemění nic. */
+  --discover-w: clamp(10.25rem, 11vw, 11rem);
   --discover-h: clamp(2.5rem, 4.6vh, 3.1rem);
   --discover-inset: clamp(.3rem, .7vh, .45rem);
   --discover-icon: calc(var(--discover-h) - 2 * var(--discover-inset));
@@ -121,7 +127,10 @@
 /* One declaration: there used to be a padding here with a padding-bottom right under it that
    overwrote its own third value. Vertical members on vh — on 1280×720 the foot of the card
    tightens by itself, with no rule in lt. */
-.meta { padding: clamp(.7rem, 1.8vh, 1.1rem) clamp(.2rem, .4vw, .35rem) clamp(1.4rem, 3.6vh, 2.4rem); }
+/* Spodní vzduch karty nese teď řádek s akcemi, který stojí pod tímhle blokem
+   mimo odkaz — kdyby si ho `.meta` nechala, vznikl by mezi popiskem a ikonami
+   pruh přes dva centimetry. */
+.meta { padding: clamp(.7rem, 1.8vh, 1.1rem) clamp(.2rem, .4vw, .35rem) 0; }
 .heading { display: flex; justify-content: space-between; gap: clamp(.6rem, .95vw, 1rem); padding-bottom: clamp(.6rem, 1.3vh, .95rem); border-bottom: 1px solid rgb(var(--black-03-rgb) / .18); }
 .heading p { margin: 0 0 clamp(.3rem, .6vh, .45rem); color: var(--grey-02); font-size: clamp(.75rem, 1vw, 0.875rem); letter-spacing: .09em; text-transform: uppercase; }
 .heading h3 {
@@ -156,10 +165,9 @@
   font-size: clamp(.75rem, 1vw, 0.875rem);
 }
 
-.bottom { display: flex; align-items: end; justify-content: space-between; gap: clamp(.8rem, 1.2vw, 1.3rem); padding-top: clamp(.55rem, 1.2vh, .85rem); }
 /* Size and leading from ProductGrid for the same reason as the title: the skeleton's second bar
    is one description line tall and must be told by the same clamp, not by a second one. */
-.description { display: -webkit-box; max-width: 60%; margin: 0; overflow: hidden; color: var(--olive-04); font-size: var(--card-desc-size); line-height: var(--card-desc-leading); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.description { display: -webkit-box; margin: 0; overflow: hidden; color: var(--olive-04); font-size: var(--card-desc-size); line-height: var(--card-desc-leading); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .price { display: flex; flex-direction: column; align-items: end; white-space: nowrap; }
 .price del { color: var(--clay-22); font-size: clamp(.75rem, 1vw, 0.875rem); }
 .price strong { font-family: "Sentient-Regular", serif; font-size: clamp(1.1rem, 1.35vw, 1.5rem); font-weight: 400; }
@@ -190,4 +198,108 @@
 .badgeMade {
   background: rgb(var(--ink-12-rgb) / .08) !important;
   color: var(--ink-12) !important;
+}
+
+/*
+ * Řádek s akcemi pod popiskem: vlevo ikony, vpravo cena.
+ *
+ * Stojí mimo odkaz karty (viz komentář v index.tsx), takže si musí sám
+ * zopakovat vodorovné odsazení `.meta` — jinak by ikony začínaly jinde než
+ * nadpis nad nimi. Svislé odsazení `.meta` proto končí u popisku a spodní
+ * vzduch nese tenhle řádek.
+ */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(.6rem, 1vw, 1rem);
+  padding: clamp(.55rem, 1.2vh, .85rem) clamp(.2rem, .4vw, .35rem)
+    clamp(1.4rem, 3.6vh, 2.4rem);
+}
+
+.actionIcons {
+  display: flex;
+  align-items: center;
+  gap: clamp(.35rem, .6vw, .5rem);
+}
+
+/*
+ * Kroužek 44 px pro obě ikony — plný, ne obrysový.
+ *
+ * Obrys nestačil: `WishlistToggle` má ve svém modulu `color: var(--cream-06)`,
+ * protože je psaný pro tmavé pozadí stránky produktu. Na krémové kartě z něj
+ * byla krémová ikona na krémovém podkladu, tedy skoro nic. Tmavá výplň je
+ * proto oprava, ne ozdoba — teprve na ní ta ikona vůbec je.
+ *
+ * Košíku dávám tutéž barvu ručně, aby ty dva kroužky vedle sebe byly jeden
+ * pár a ne dvě různá tlačítka.
+ *
+ * `WishlistToggle` je `width: 100%; height: 100%` svého obalu — na stránce
+ * produktu mu rozměr dává nákupní blok, tady tenhle slot. Košík je `<button>`,
+ * takže rozměr nese rovnou on; obojí stojí na dotykovém minimu.
+ */
+.iconSlot,
+.quickAdd {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink-05);
+  color: var(--cream-06);
+  transition:
+    background-color .3s ease,
+    color .3s ease;
+}
+
+.quickAdd {
+  padding: 0;
+  cursor: pointer;
+
+  i {
+    font-size: 1.05rem;
+    font-style: normal;
+    line-height: 1;
+  }
+
+  /* Potvrzení nese barva kroužku, ne odstín ikony — olivová je v tomhle obchodě
+     barva dokončené akce (tlačítko „Přejít do košíku" v rozbaleném košíku). */
+  &[data-state="added"] {
+    background: var(--olive-15);
+  }
+
+  &[data-state="error"] {
+    background: var(--clay-22);
+  }
+
+  &[disabled] {
+    cursor: default;
+    opacity: .62;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Myš: kroužky v klidu ustoupí, aby mřížka nebyla řada černých teček, a doplní
+   se při najetí na kartu. Na dotyku žádné „v klidu" není, tam svítí pořád. */
+@include fine-pointer {
+  .iconSlot,
+  .quickAdd {
+    background: rgb(var(--ink-05-rgb) / .72);
+  }
+
+  .root[data-interacting] .iconSlot,
+  .root[data-interacting] .quickAdd:not([data-state="added"]):not([data-state="error"]) {
+    background: var(--ink-05);
+  }
+
+  .quickAdd:hover:not([disabled]):not([data-state="added"]) {
+    background: var(--olive-15);
+  }
 }

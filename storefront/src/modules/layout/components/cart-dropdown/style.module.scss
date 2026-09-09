@@ -107,10 +107,44 @@
           letter-spacing: .14em;
         }
         h3 {
-          margin: 0;
+          /* Odtlačí eyebrow i křížek doprava; `space-between` by je se třemi
+             položkami rozprostřelo po celé šířce místo k sobě. */
+          margin: 0 auto 0 0;
           font-family: "Sentient-Regular", serif;
           font-size: 1.75rem;
           font-weight: 400;
+        }
+
+        /*
+         * Křížek stojí AŽ ZA eyebrow: `::after` je v pořadí poslední potomek,
+         * takže bez `order` by tlačítko skončilo mezi nadpisem a "Ateliérový
+         * výběr". Ukazuje se jen na dotyku — myš panel zavře odjetím kurzoru.
+         */
+        .panelClose {
+          display: none;
+          order: 1;
+          margin-left: 0.75rem;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: rgb(var(--ink-05-rgb) / .48);
+          cursor: pointer;
+        }
+
+        @include touch {
+          .panelClose {
+            display: inline-flex;
+            width: 2.75rem;
+            height: 2.75rem;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            /* Zápornými okraji si bere dotykovou plochu z okolí, aby řádek
+               hlavičky nevyrostl o 44px kvůli cíli, který je vidět jako 15px. */
+            margin: -0.75rem -0.5rem -0.75rem 0.25rem;
+            font-size: 0.9375rem;
+            line-height: 1;
+          }
         }
       }
       .items {

@@ -517,3 +517,30 @@
         height: 3.25rem;
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Svislé tablety                                                     */
+/* ------------------------------------------------------------------ */
+/* Blok `v(xs)` výš rozpouští pilulku toolbaru a nechává pole hledání
+   hranaté („Bez zaoblení", Matěj 2026-09-03). Na telefonu to sedí, na
+   tabletu ne: pole stojí přímo nad pilulkami kategorií a ostrý obdélník
+   vedle nich čte jako jiný komponent. Zaoblení je proto zpátky, a rovnou
+   plné — týž tvar, jaký mají čipy pod ním.
+
+   Kontaktní blok: tlačítko a telefon pod sebe. Vedle sebe se na šířku
+   sloupce nevejdou — `.faqContact` má `overflow: hidden`, takže se konec
+   čísla odstřihával. */
+@include v(md) {
+  @include below-px(1180px) {
+    .faqSearch {
+      border-radius: 999px;
+    }
+
+    .faqContactActions {
+      align-items: flex-start;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+  }
+}

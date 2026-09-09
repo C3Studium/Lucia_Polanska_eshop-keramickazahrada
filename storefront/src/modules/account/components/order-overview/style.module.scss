@@ -48,14 +48,14 @@
   // string costs 7.35x its font-size and .emptyContent caps at 36rem, so it holds
   // one line up to 36rem / 7.35 = 4.9rem. 4.8rem keeps a margin, and because it
   // is in rem the ramp lifts it above 1921 with everything else.
-  font: 400 clamp(2.5rem, min(4.5vw, 7.5vh), 4.8rem) / 0.9 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.5rem, min(4.5vw, 7.5vh), 4.8rem)) / 0.9 "Sentient-Regular", serif;
   letter-spacing: -0.05em;
 }
 
 .desc {
   margin: 0;
   color: rgb(var(--ink-05-rgb) / .62);
-  font: clamp(0.875rem, 0.95vw, 1.0625rem) / 1.55 "Sansation-Light", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(0.875rem, 0.76vw, 1.0625rem)) / 1.55 "Sansation-Light", sans-serif;
 }
 
 .emptyAction {

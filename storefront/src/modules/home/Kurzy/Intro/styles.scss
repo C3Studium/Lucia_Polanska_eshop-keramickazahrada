@@ -671,6 +671,51 @@
   }
 }
 
+/*
+ * Laptopy: menší sazba, ať scéna „Pro koho" nesedí na svém podvalu.
+ *
+ * Řádky mřížky se na krátkém okně sbalí k hornímu okraji (`space-between`
+ * bez zbytku), takže spodek karet je prostý součet toho, co je nad ním —
+ * a ten součet se sem přestal vejít. Naměřená mezera mezi spodkem tlačítek
+ * a horní hranou podvalu s „01 · KURZY / 02 · PRO KOHO":
+ *
+ *   1920x1080  38.9px      1440x900   31.0px
+ *   1512x982   34.6px      1366x768   24.6px
+ *   1280x800   26.8px      1342x656   13.7px
+ *   1280x720   22.3px      1312x640    5.9px
+ *
+ * Pět pixelů je opticky nula: tlačítko a popiska podvalu se na nejmenších
+ * laptopech dotýkají. Sazba je tu zároveň předimenzovaná sama o sobě —
+ * 60px nadpis a 31px titulky karet na 656px vysokém okně.
+ *
+ * Podmínka visí na VÝŠCE, protože rozpočet, který praská, je svislý;
+ * `min-width` jen drží stranou svislé tablety a telefony, které mají
+ * vlastní bloky níž v souboru. Nad 900px výšky se nemění nic.
+ */
+@media (orientation: landscape) and (min-width: 1000px) and (max-height: 900px) {
+  .kurzyAbout {
+    &__intro h2 {
+      /* 0.81x — z 60.4 na 49.0 na 1342, ze 57.6 na 46.7 na 1280. */
+      font-size: clamp(2.6rem, 3.65vw, 4.6rem);
+    }
+
+    &__lede p {
+      font-size: clamp(0.9rem, 0.94vw, 1.06rem);
+    }
+  }
+
+  .kurzyAudience {
+    h3 {
+      /* 0.82x — z 30.9 na 25.2 na 1342. Dva řádky, takže ~12px dolů. */
+      font-size: clamp(1.4rem, 1.88vw, 2.3rem);
+    }
+
+    p {
+      font-size: clamp(0.82rem, 0.87vw, 0.96rem);
+    }
+  }
+}
+
 @include below-px(980px) {
   .kurzyHero__titleRow {
     font-size: clamp(7rem, 16vw, 11rem);
@@ -917,8 +962,18 @@
    Psáno proti svislým stopám (v = min-width + orientation: portrait),
    mobile-first: xs nese celou přestavbu, sm a s jen povolují typografii
    a vzduch. Sekce je poslední v souboru schválně — přebíjí below-px()
-   pravidla výš zdrojovým pořadím při stejné specificitě. */
+   pravidla výš zdrojovým pořadím při stejné specificitě.
 
+   STROP 600px není kosmetika. `v()` je min-width, takže celá tahle
+   přestavba platila i pro svislé tablety — jenže JS přepíná `staticFlow`
+   na `(orientation: portrait) and (max-width: 599.98px)`. Nad 600 tak CSS
+   jelo statický tok a JS pinned choreografii: scéna stála v toku, ale
+   scroll dál řídil průhlednosti a posuny, které se do ní nehodily.
+   Komentář v index.tsx slibuje, že se obojí přepíná spolu — tenhle strop
+   ten slib plní. Svislé tablety proto dostávají pinned scénu jako laptopy
+   a tvarují se blokem pod tímhle. */
+
+@include below-px(600px) {
 @include v(xs) {
   .kurzyTimeline {
     height: auto;
@@ -1098,6 +1153,72 @@
     &__blocks {
       margin-top: 2rem;
       gap: 1.75rem;
+    }
+  }
+}
+
+} /* konec stropu 600px pro svislé telefony */
+
+/* ── Svislé tablety: hero na výšku ──
+
+   Pinned choreografie zůstává jako na laptopu — mění se jen rozvržení scény,
+   protože ležatá kompozice (lockup přes celou plochu, popisek v pravém
+   sloupci vedle něj) se na stojatém skle překrývá: na 820x1180 měl lockup
+   118–944 a popisek 388–793, tedy jeden přes druhý.
+
+   Nahoře lockup, dole vpravo odkrývaný popisek. Lockup si bere výšku podle
+   obsahu místo pásu 70 %, takže sedí u horní hrany a nechá pod sebou volno.
+   Písmo o 1.15x: řádek se pořád vejde i s fotopruhem v plné šířce (24vw),
+   „Kurzy" 380 + pruh 197 + mezery je na 820 asi 600 proti 787 dostupným. */
+@include v(md) {
+  @include below-px(1180px) {
+    .kurzyHero {
+      &__title {
+        top: 8%;
+        height: auto;
+        justify-content: flex-start;
+      }
+
+      &__titleRow {
+        font-size: clamp(8.05rem, 18.4vw, 12.65rem);
+      }
+
+      /* Vpravo dole, ale text zarovnaný doleva — blok se stěhuje, sazba ne. */
+      &__copy {
+        top: auto;
+        right: 6%;
+        bottom: 13%;
+        left: auto;
+        width: min(30rem, 62vw);
+        text-align: left;
+      }
+    }
+
+    /*
+     * CTA pilulky ve třech kartách „Pro koho".
+     *
+     * Sazba je psaná pro ležatou obrazovku: 3.25rem na výšku a podlaha
+     * 11.875rem na šířku. Na 820 je sloupec karty asi 230px, takže pilulka
+     * zabrala 190 z nich a působila jako z jiné stránky.
+     *
+     * Menší je tu jen VÝŠKA a kolečko se šipkou — šířka zůstává štědrá,
+     * protože úzká pilulka vedle popisku karty působí utaženě. Výška 44px,
+     * ne níž: tablet je dotykový a to je podlaha zásahové plochy.
+     */
+    .kurzyTimeline .kurzyTimelineCtaButton {
+      height: 2.75rem;
+      min-width: 10.75rem;
+
+      &::after {
+        right: 0.3125rem;
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.8rem;
+      }
+
+      > div {
+        padding: 0.1875rem 2.625rem 0.1875rem 1rem;
+      }
     }
   }
 }

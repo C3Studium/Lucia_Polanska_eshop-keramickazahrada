@@ -28,6 +28,15 @@
   place-items: center;
 }
 
+/*
+ * Podklad musí přebít stránku pod sebou, ne ji prosvítat.
+ *
+ * Při .36 bez rozostření se skrz rám kolem panelu ukazovalo, co je zrovna
+ * za dialogem — na stránce Dotazy je to dole tmavá sekce, takže spodních
+ * 31px a pravých 39px rámu čtlo jako těžký stín, kdežto nahoře vlevo byl
+ * rám světlý. Vyšší krytí a rozostření z toho udělají jeden podklad, ať se
+ * dialog otevře odkudkoli.
+ */
 .backdrop {
   position: absolute;
   inset: 0;
@@ -35,7 +44,8 @@
   height: 100%;
   padding: 0;
   border: 0;
-  background: rgb(var(--ink-02-rgb) / .36);
+  background: rgb(var(--ink-02-rgb) / .58);
+  backdrop-filter: blur(6px);
   cursor: default;
 }
 
@@ -229,13 +239,20 @@
   isolation: isolate;
   background:
     radial-gradient(ellipse at 8% 0%, rgb(var(--white-rgb) / .98) 0%, rgb(var(--white-rgb) / .5) 28%, transparent 55%),
-    radial-gradient(ellipse at 96% 100%, rgb(var(--cream-04-rgb) / .48) 0%, transparent 48%),
+    radial-gradient(ellipse at 96% 100%, rgb(var(--cream-04-rgb) / .26) 0%, transparent 48%),
     linear-gradient(135deg, var(--white) 0%, var(--cream-10) 42%, var(--cream-05) 72%, var(--cream-06) 100%);
   background-size: 135% 135%, 145% 145%, 175% 175%;
   animation: creamDrift 16s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+  /*
+   * Tmavé vnitřní stíny u pravého dolního rohu jsou pryč.
+   *
+   * Byly tu tři naráz — jeden na kartě a dva na `::before` — a na širokém
+   * nízkém panelu (740x471 na 1311px skla) se slily do šmouhy u dolní hrany,
+   * která čte jako špína na papíře, ne jako hloubka. Světlé vnitřní hrany
+   * a vnější stín zůstávají, papírový dojem drží ony.
+   */
   box-shadow:
     inset 2px 2px 0 rgb(var(--white-rgb) / .86),
-    inset -15px -18px 32px -27px rgb(var(--olive-02-rgb) / .34),
     0 22px 45px -34px rgb(var(--ink-02-rgb) / .55);
   scrollbar-width: none;
 }
@@ -254,9 +271,7 @@
   background-size: 240% 100%;
   box-shadow:
     inset 0 2px 0 rgb(var(--white-rgb) / .78),
-    inset 2px 0 0 rgb(var(--white-rgb) / .38),
-    inset 0 -14px 24px -22px rgb(var(--olive-01-rgb) / .4),
-    inset -14px 0 24px -23px rgb(var(--olive-01-rgb) / .28);
+    inset 2px 0 0 rgb(var(--white-rgb) / .38);
   animation: lightSweep 1.55s 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
   content: "";
   pointer-events: none;
@@ -291,7 +306,7 @@
   max-width: 10.5em;
   margin: clamp(0.625rem, 1.5vh, 1.25rem) 0 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(3.125rem, 4.2vw, 4.5rem);
+  font-size: calc(var(--contact-title-zoom, 1) * clamp(3.125rem, 4.2vw, 4.5rem));
   font-weight: 400;
   letter-spacing: -0.052em;
   line-height: 0.92;
@@ -677,7 +692,7 @@
   }
 
   .title h2 {
-    font-size: clamp(44px, 5.4vw, 60px);
+    font-size: calc(var(--contact-title-zoom, 1) * clamp(44px, 5.4vw, 60px));
   }
 
   .fieldGrid {
@@ -892,5 +907,227 @@
   to {
     background-position: -115% 0;
     opacity: 1;
+  }
+}
+
+/*
+ * Svislé tablety: dvě patra pod sebou, mapa nahoře.
+ *
+ * Do téhle chvíle to byly dva sloupce vedle sebe jako na počítači, jen užší —
+ * a do těch dvou třetin se formulář nevešel: tlačítko „Odeslat zprávu" se
+ * ořezávalo a e-mail v kontaktní kartě přetékal ven z ní. Na výšku je tu místa
+ * dost, tak se to rozdělí: nahoře mapa a vedle ní kontaktní karta, dole
+ * formulář přes celou šířku.
+ *
+ * `order` na sloupci, ne `display: block` jako na telefonu — formulář je v DOM
+ * první, ale tady patří dolů.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    /*
+     * Modál začíná pod navbarem, ne pod jeho horní hranou.
+     *
+     * Overlay je schválně pod navbarem (z-index 500 proti 1000), takže zavírací
+     * ✕ mizel za hamburgerem. Telefon si to řeší polohou ✕; tady se posune celý
+     * panel. `6.5vh` samo nestačí — na 768×1024 je to 66.6px, zatímco spodní
+     * hrana navbaru je na 70.7 (odsazení 12 + výška 58.7). Proto `max()`
+     * s pevným dnem, které tu hranu přeskočí na každém tabletu.
+     */
+    .overlay {
+      --contact-top: max(5.25rem, 6.5vh);
+
+      align-items: start;
+      padding-top: var(--contact-top);
+    }
+
+    /*
+     * Strop je to, co zbylo mezi tím odsazením a spodní lištou. Míru lišty
+     * zveřejňuje mobileBar na `:root`, takže se panel nemusí dohadovat.
+     */
+    .panel {
+      max-height: calc(
+        100svh - var(--contact-top) - var(--nav-bottom-clearance, 1.25rem)
+      );
+    }
+
+    .panelBody {
+      display: flex;
+      overflow-y: auto;
+      flex-direction: column;
+    }
+
+    .visualPanel {
+      order: 1;
+      display: grid;
+      /* Mapa dostane většinu, karta jen tolik, kolik potřebuje adresa na dva řádky. */
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+
+      /*
+       * Odsazení nese panel, ne karta. Karta si ho v základu drží vlastním
+       * `margin`, což tady dělalo mapu přesně o ten margin vyšší — změřeno
+       * 244 proti 222. Takhle jsou obě děti přesně na výšku řádku a jsou si
+       * rovny.
+       */
+      gap: clamp(0.5rem, 0.8vw, 0.75rem);
+      padding: clamp(0.5rem, 1.1vh, 0.75rem) clamp(0.5rem, 0.8vw, 0.75rem);
+    }
+
+    /* Mapa už nesahá na zaoblený okraj panelu, tak si zaoblení vezme sama. */
+    .mapFrame {
+      overflow: hidden;
+      border-radius: 0.875rem;
+    }
+
+    /*
+     * Výšku patra dává karta a mapa se k ní srovná — proto tu není žádný pevný
+     * `min-height`. Mapa nemá vlastní výšku, takže by jinak brala, co dostane,
+     * a vedle karty stála jako dvojnásobně vysoký blok.
+     */
+    .details {
+      margin: 0;
+      align-self: stretch;
+    }
+
+    /*
+     * Štítek nad hodnotu, ne vedle ní.
+     *
+     * Řádky karty stojí na pevném sloupci 5.25rem pro štítek, což je v širokém
+     * sloupci v pořádku, ale tady z karty ukrajuje polovinu: na 825 zbylo na
+     * hodnotu 149px a e-mail, který potřebuje 220, z karty vytékal ven — přesně
+     * jak to bylo vidět. Pod sebou má hodnota celou šířku karty a je to i stejné
+     * uspořádání, jaké mají pole formuláře vedle.
+     */
+    .details > div {
+      gap: 0.125rem;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .formPanel {
+      order: 2;
+      min-height: 0;
+      /* Scroller je teď `.panelBody`; kdyby scrolloval i formulář, jede se dvakrát. */
+      overflow: visible;
+      /* Vršek dolů: nadpis nemá začínat až v třetině panelu. */
+      padding-top: clamp(1.25rem, 2.6vh, 2rem);
+    }
+
+    /*
+     * Ani jedno patro se nesmí smrštit.
+     *
+     * Flex položky se v základu smršťují, a protože je formulář vysoký, ubíral
+     * výšku patru nad sebou i sobě: mapa i kontaktní karta se ořízly o spodní
+     * okraj a tlačítko „Odeslat zprávu" vylezlo formuláři pod zaoblenou hranu,
+     * protože panel má `overflow: visible`. Obě patra si tedy berou svou vlastní
+     * výšku a roluje se `.panelBody`.
+     */
+    .visualPanel,
+    .formPanel {
+      flex: 0 0 auto;
+    }
+
+    /* Nadpis a „S čím vám můžu pomoct?" k sobě. */
+    .form {
+      margin-top: clamp(1rem, 2.2vh, 1.75rem);
+    }
+
+    /* Zpráva nemusí být na třetinu panelu; místo patří tomu, co je pod ní. */
+    .message .input {
+      height: clamp(5.5rem, 10vh, 7.5rem);
+    }
+
+    /* Tlačítka témat na 0.8× — 2.75rem/1.25rem/0.875rem v základu. */
+    .topics button {
+      height: 2.2rem;
+      padding: 0 1rem;
+      font-size: 0.7rem;
+    }
+
+    /*
+     * Nadpis na jednu řádku.
+     *
+     * `em` je v základu `display: block`, takže „Ozvu se osobně." stálo pod
+     * „Napište mi." a dvě řádky písma téhle velikosti spolykaly kus panelu, který
+     * chybí zprávě dole. Vedle sebe se to zvedne a textarea i tlačítko vylezou
+     * nahoru. `max-width: 10.5em' by ten řádek zase zalomil, takže padá s tím.
+     */
+    .title h2 {
+      max-width: none;
+      font-size: clamp(2.25rem, 4.6vw, 3.25rem);
+    }
+
+    .title h2 em {
+      display: inline;
+      margin-left: 0.28em;
+    }
+
+    /*
+     * Přepínač témat široký podle obsahu, ne podle panelu.
+     *
+     * Roztažený přes celou šířku zbývalo za „Kurzy" prázdné pouzdro; obtéká to
+     * teď tlačítka a po stranách dostane vlastní vzduch.
+     */
+    .topics > div {
+      width: fit-content;
+      max-width: 100%;
+      padding: 0.375rem 0.75rem;
+    }
+
+    /*
+     * Menší písmo ve vstupech — na užších tabletech se tím vejde víc.
+     *
+     * 16px, ne níž: pod tuhle hranici Safari při zaostření pole stránku sám
+     * přiblíží, což v modálu znamená, že uživateli uskočí celý dialog.
+     */
+    .input {
+      font-size: 1rem;
+    }
+  }
+}
+
+/*
+ * Ležato: titulek dialogu o pětinu menší.
+ *
+ * Na 1280x800 měl 53.8px a na 1312x640 dokonce 55.1 — na nízkém laptopu si
+ * bral přes 100px výšky panelu, do kterého se pod ním má vejít celý
+ * formulář. Knob sedí na `.overlay`, takže platí pro obě velikosti výš
+ * (základní i tu pod 1050) a mění se jedním číslem.
+ *
+ * Jen ležato: svislé stopy níž v souboru mají titulek vyřešený samy
+ * (37.7px na svislém tabletu, 33.5 na telefonu) a ty se nedotýkají.
+ */
+@media (orientation: landscape) {
+  .overlay {
+    --contact-title-zoom: 0.7;
+
+    /*
+     * Panel začíná až pod navbarem — jinak si lišta sedne na zavírací ✕.
+     *
+     * Overlay je schválně pod navbarem (z-index 500 proti 1000), aby menu
+     * zůstalo přístupné. Vystředěný panel s max-height 90svh tím pádem na
+     * nízkém laptopu (1312x640) začíná na 32px, kdežto spodní hrana lišty
+     * je na 56 — ✕ v pravém rohu hlavičky mizel přesně za pravou skupinou
+     * ikon. Svislý tablet a telefon si to řeší vlastními stopami níž
+     * v souboru; tohle je táž oprava pro ležato.
+     *
+     * `max(3.5rem, …)` u výšky ze stejného důvodu jako u kurzy modálu:
+     * `@include touch` deklaruje plochých 56px na `.navbar`, ale dialog je
+     * portálovaný na `body`, takže by z kořene dostal jen 46px.
+     */
+    --contact-nav-bottom: calc(
+      var(--nav-top-inset, 0.625rem) + max(3.5rem, var(--nav-height, 3.5rem))
+    );
+    --contact-top: calc(
+      var(--contact-nav-bottom) + clamp(0.5rem, 1.2vh, 0.875rem)
+    );
+
+    padding-top: var(--contact-top);
+  }
+
+  /* Strop je to, co po odsazení zbylo do spodní hrany okna. */
+  .panel {
+    max-height: min(
+      90svh,
+      calc(100svh - var(--contact-top) - clamp(0.625rem, 1.8vh, 2rem))
+    );
   }
 }

@@ -21,7 +21,7 @@
 
 .title {
   margin: 0;
-  font-size: clamp(1.05rem, 1.4vw, 1.45rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(1.05rem, 1.12vw, 1.45rem));
   font-weight: 600;
 }
 
@@ -33,7 +33,7 @@
   gap: clamp(.4rem, .55vw, .75rem);
   padding: clamp(.35rem, .8vh, .7rem) 0;
   border-bottom: 1px dashed var(--cream-02);
-  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem));
 }
 
 .itemInfo {
@@ -50,7 +50,7 @@
 
 .locked {
   color: var(--clay-25);
-  font-size: clamp(.78rem, 1.04vw, .95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
 }
 
 .controls {
@@ -65,7 +65,7 @@
   border: 1px solid var(--cream-02);
   border-radius: clamp(.35rem, .47vw, .5rem);
   background: var(--white);
-  font-size: clamp(.85rem, 1.13vw, 1.05rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.904vw, 1.05rem));
 }
 
 .linklike {
@@ -73,7 +73,7 @@
   background: none;
   color: var(--blue-01);
   cursor: pointer;
-  font-size: clamp(.8rem, 1.07vw, 1rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, 0.856vw, 1rem));
   text-decoration: underline;
 }
 
@@ -85,19 +85,19 @@
 
 .summary {
   padding-top: clamp(.25rem, .5vh, .45rem);
-  font-size: clamp(.85rem, 1.13vw, 1.05rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.904vw, 1.05rem));
 }
 
 .note {
   margin: 0;
   color: var(--clay-11);
-  font-size: clamp(.78rem, 1.04vw, .95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
 }
 
 .error {
   margin: 0;
   color: var(--clay-16);
-  font-size: clamp(.78rem, 1.04vw, .95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
 }
 
 .actions {
@@ -116,7 +116,7 @@
   padding: 0 clamp(1.1rem, 1.5vw, 2rem);
   border-radius: 999px;
   cursor: pointer;
-  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem));
 }
 
 .primary {

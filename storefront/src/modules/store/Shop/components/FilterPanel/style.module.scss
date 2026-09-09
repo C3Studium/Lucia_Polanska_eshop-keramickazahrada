@@ -446,3 +446,37 @@
     max-height: 92.5dvh;
   }
 }
+
+/*
+ * Svislé tablety: horní hrana na 5 dvh, užší šuplík.
+ *
+ * Do téhle chvíle sem platil jen blok `below(md)` výš, tedy `bottom: 8px`
+ * a strop `min(92dvh, …)`. Strop se ale podle obsahu nevyčerpal, takže šuplík
+ * začínal tam, kam ho obsah pustil — na 825×1196 až ve čtvrtině stránky —
+ * a dnem stál pod plovoucí spodní lištou, která mu překryla patičku
+ * se „Zrušit filtry".
+ *
+ * Horní hrana je dopočet, ne čtvrté číslo, stejně jako u svislých telefonů:
+ * 100 − zdvih − (95 − zdvih) = 5 dvh, ať zdvih vyjde jakkoli. Zdvih čte míru
+ * spodní lišty, kterou mobileBar zveřejňuje na `:root`; 2.5dvh je dno pro
+ * případ, že by lišta nebyla (tam, kde ji `--nav-bottom-clearance` nehlásí).
+ *
+ * Zavírací posun v bloku `below(md)` zdvih taky čte, takže zavřený šuplík
+ * zůstane celý pod hranou i s vyšším dnem.
+ *
+ * Šířka 75 vw: na telefonu drží šuplík skoro celou šířku, protože jinou nemá,
+ * ale na tabletu je z toho přes 800px řádku na jednořádkové položky filtru.
+ */
+@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+  .root {
+    --drawer-lift: max(2.5dvh, var(--nav-bottom-clearance, 0px));
+
+    top: auto;
+    right: 12.5vw;
+    bottom: var(--drawer-lift);
+    left: 12.5vw;
+    width: auto;
+    height: calc(95dvh - var(--drawer-lift));
+    max-height: calc(95dvh - var(--drawer-lift));
+  }
+}

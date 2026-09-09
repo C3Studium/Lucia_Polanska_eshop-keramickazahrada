@@ -21,6 +21,7 @@ import {
   ProductButton,
 } from "./productsButton"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
+import { useContactDialog } from "@modules/layout/ContactDialog"
 import type { CopyButton } from "@lib/util/site-copy"
 import NavbarSearch from "./navbarSearch"
 
@@ -80,6 +81,7 @@ export default function Navbar({
 
   const pathname = usePathname()
   const { countryCode } = useParams<{ countryCode: string }>()
+  const { isOpen: isContactDialogOpen } = useContactDialog()
   const pathActiveIdx = navButtonHrefs.findIndex((href) => {
     const localizedHref =
       href === "/" ? `/${countryCode}` : `/${countryCode}${href}`
@@ -102,6 +104,18 @@ export default function Navbar({
 
   const getButtonIsActive = (index: number) =>
     isActive ? activeIdx === index : pathActiveIdx === index
+
+  /*
+   * Kontakt nemá routu, ale v liště se má chovat jako by ji měl: index hned za
+   * `navButtonHrefs`, takže `pathActiveIdx` se mu nikdy nerovná a roli aktivní
+   * routy hraje otevřený dialog. Bez toho se hover na Kontakt vůbec nedostal do
+   * `handleButtonActiveChange` a rozsvícený odkaz zůstal svítit vedle něj —
+   * dvě zvýrazněné pilulky naráz.
+   */
+  const kontaktIdx = navButtonHrefs.length
+  const kontaktIsActive = isActive
+    ? activeIdx === kontaktIdx
+    : isContactDialogOpen
 
   useEffect(() => {
     setIsSearchOpen(false)
@@ -257,6 +271,9 @@ export default function Navbar({
               text="Kontakt"
               img="/assets/links/home_img.png"
               alt=""
+              index={kontaktIdx}
+              isActive={kontaktIsActive}
+              onActiveChange={handleButtonActiveChange}
             />
             <Button
               className="navbar__nav-link"

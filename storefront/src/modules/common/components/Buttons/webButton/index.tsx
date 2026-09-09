@@ -171,17 +171,35 @@ export default function WebButton({
   type = "button",
   disabled = false,
 }: NavButton) {
+  /*
+   * Rozsvícení NEŘÍDÍ fokus.
+   *
+   * Bylo `isHovered || isFocused`, jenže kontaktní dialog i rezervační modál
+   * po zavření vracejí fokus na tlačítko, které je otevřelo — správně, kvůli
+   * klávesnici. Tlačítko tím ale zůstalo rozsvícené i potom, co myš dávno
+   * odjela: naměřeno `maFokus: true` a plná výplň na „Napište mi" po Escapu.
+   *
+   * Zůstává tedy najetí myší a k němu přepínač na klik — na dotyku, kde
+   * hover neexistuje, je klik jediné, co tlačítko rozsvítí, a druhý klik ho
+   * zase zhasne. Odjetí myši i ztráta fokusu ho shodí, takže se nemá jak
+   * zaseknout. Fokus pro klávesnici tím nemizí — kreslí ho `:focus-visible`
+   * ve stylopisu, ne tahle animace.
+   */
   const [isHovered, setIsHovered] = useState(false)
-  const [isFocused, setIsFocused] = useState(false)
-  const isActive = isHovered || isFocused
+  const [isPressed, setIsPressed] = useState(false)
+  const isActive = isHovered || isPressed
   const foregroundVariantCustom: ForegroundVariantCustom = {
     palette: BUTTON_PALETTES[tone],
   }
 
   const handleMouseEnter = () => setIsHovered(true)
-  const handleMouseLeave = () => setIsHovered(false)
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    setIsPressed(false)
+  }
 
   const handleButtonClick = () => {
+    setIsPressed((predchozi) => !predchozi)
     onClickAction?.()
   }
 
@@ -193,8 +211,7 @@ export default function WebButton({
         onClick={handleButtonClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => setIsPressed(false)}
       >
         <motion.div className={styles.slider}>
           <SolidBackground active={isActive} />
@@ -235,8 +252,7 @@ export default function WebButton({
   const interactionProps = {
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
-    onFocus: () => setIsFocused(true),
-    onBlur: () => setIsFocused(false),
+    onBlur: () => setIsPressed(false),
   }
   const buttonClassName = `${styles.button} ${
     tone === "dark" ? styles.toneDark : styles.toneLight

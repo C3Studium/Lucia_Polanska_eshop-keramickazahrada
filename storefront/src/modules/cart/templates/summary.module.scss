@@ -128,7 +128,14 @@
  * Štítek jde pryč: „Objednávka" nad nadpisem „Kolik to dělá" říká totéž
  * podruhé a na telefonu je to celý řádek navíc.
  */
-@media (orientation: portrait) and (max-width: 599.98px) {
+/*
+ * Rozsah je celý portrét do 1180, ne jen telefon. Všechno, co tenhle blok dělá,
+ * platí na svislém tabletu stejně: nadpis a slevový kód se do řádku vejdou
+ * (sloupec je tam 660 px), „Objednávka" nad „Kolik to dělá" říká totéž podruhé,
+ * a tlačítko uvnitř panelu je zbytečné, protože „Pokračovat k pokladně" nese
+ * plovoucí pruh nad spodní lištou — ten je od téhle stopy i na tabletech.
+ */
+@media (orientation: portrait) and (max-width: 1179.98px) {
   /* Od horní hrany, ne na střed: rozbalené pole pro kód řádek vpravo natáhne
      a nadpis by s ním sjížděl doprostřed. Odsazení nadpisu ho opticky srovná
      s tlačítkem vedle, které je vysoké celý dotykový práh. */
@@ -183,6 +190,20 @@
    * stejné cesty pod sebou jen prodlužují to, co má být kratší.
    */
   .LinkButton {
+    display: none;
+  }
+}
+
+/*
+ * Rozpad je na svislém tabletu v plovoucím pruhu, tady by stál podruhé.
+ *
+ * Od 600 px, ne od nuly: na telefon se rozpad do pruhu nevejde (pruh tam má
+ * sotva 366 px vnitřní šířky), takže tam musí zůstat v panelu — jinak by
+ * mezisoučet a doprava zmizely úplně. Hlava se slevovým kódem zůstává všude,
+ * ten pruh nenese a jinde se zadat nedá.
+ */
+@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+  .totalsSlot {
     display: none;
   }
 }

@@ -6,6 +6,25 @@
   min-width: 0;
   gap: clamp(1.25rem, 3.2vh, 2.4rem);
   color: var(--ink-05);
+
+  /* Tablet na šířku: mezery mezi bloky panelu dolů, aby se stránka vešla do
+     obrazovky. 3.2vh dělalo na 768px vysokém tabletu 24.6px a panel má čtyři
+     až pět takových mezer — přes 100px jen na vzduchu mezi odstavci. 1.9vh
+     dá 14.6px, což na řádkování 1.45 pořád odděluje bloky zřetelně.
+     Táž dvojice podmínek jako v auth-portalu: smt samo sahá do 1399.98,
+     takže by chytlo i notebooky, které mají vlastní zmenšení od 1200px. */
+  @include below-px(1200px) {
+    @include h(smt) {
+      gap: clamp(0.85rem, 1.9vh, 1.4rem);
+    }
+  }
+
+  /* Nízký laptop na šířku má tutéž tíseň jako tablet na šířku — výšky málo,
+     a mezery mezi bloky panelu jsou to první, co se dá ubrat, aniž by se
+     sahalo na velikost písma. */
+  @include h(lt) {
+    gap: clamp(0.85rem, 1.9vh, 1.4rem);
+  }
 }
 
 .header {
@@ -37,7 +56,7 @@
    a 28.8px na 390, tedy shodně s přihlášením. */
 .title {
   margin: 0;
-  font: 400 calc(var(--auth-zoom) * clamp(1.8rem, 2.25vw, 2.6rem)) / 1 "Sentient-Regular", serif;
+  font: 400 calc(var(--auth-zoom) * calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.8rem, 1.8vw, 2.6rem))) / 1 "Sentient-Regular", serif;
   letter-spacing: -0.025em;
 }
 
@@ -319,11 +338,24 @@
   }
 }
 
+/* Šipka patří k textu, ne na druhý konec buňky.
+   Byla to mřížka se sloupci `1fr auto`, takže první sloupec spolykal všechno
+   volné místo a šipku odtlačil až k oddělovači — „Můj účet" vlevo, šipka
+   o 200px dál vpravo, mezi nimi nic. Čte se to jako dva nesouvisející prvky.
+
+   Flex místo mřížky, protože popisek nad odkazem má být přes celou šířku
+   (`flex: 0 0 100%` níž) a zbytek se má srovnat na svou vlastní šířku. To
+   v mřížce nejde napsat, aniž by popisek roztahoval sloupce pod sebou:
+   položka přes obě stopy jim svou šířku rozdělí a šipka je zase u kraje.
+
+   Mezera 0.5rem svisle zůstává na clampu — je to odsazení mezi popiskem
+   a odkazem, tedy svislý rozměr, a ten se má s oknem měnit dál. */
 .route {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: clamp(0.35rem, 0.8vh, 0.55rem) clamp(0.6rem, 0.9vw, 0.95rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.35rem, 0.8vh, 0.55rem) 0.5rem;
   padding: clamp(0.85rem, 2.05vh, 1.4rem) clamp(1rem, 1.45vw, 1.6rem)
     clamp(0.2rem, 0.45vh, 0.35rem) 0;
   color: var(--ink-05);
@@ -348,7 +380,8 @@
 }
 
 .route > span {
-  grid-column: 1 / -1;
+  /* Popisek na vlastní řádek přes celou šířku — ve flexu to dělá základ 100 %. */
+  flex: 0 0 100%;
 }
 
 .route strong {
@@ -432,7 +465,7 @@
 .email strong {
   overflow-wrap: anywhere;
   color: var(--olive-15);
-  font: 400 clamp(1.3rem, 1.7vw, 1.8rem) / 1.1 "Sentient-LightItalic",
+  font: 400 calc(var(--account-zoom, 1) * clamp(1.3rem, 1.36vw, 1.8rem)) / 1.1 "Sentient-LightItalic",
     "Sentient-Regular", serif;
 }
 

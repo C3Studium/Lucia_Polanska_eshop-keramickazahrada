@@ -934,6 +934,26 @@
 }
 
 /*
+ * Svislé tablety pod v(lg).
+ *
+ * Komentář u mixinu tvrdí, že vyvážená kompozice tabletu vydrží až ke stopám
+ * sm/lg. Naměřeno na 768x1024 a 820x1180 to neplatí: lockup vyjede pod dolní
+ * hranu okna (751–1037 proti 1024, resp. 905–1195 proti 1180), takže se
+ * podpis „— Lucie Polanská" ořízne, a popisek s tlačítkem zůstane vpravo
+ * NAHOŘE, zatímco nadpis leží vlevo dole — dvě poloviny dvou různých
+ * rozvržení. Vyvážit se tu totiž nemá co: sloupec je jeden, ne dva.
+ *
+ * Platí proto týž sloupec jako na telefonu, jen se vzduchem podle většího
+ * skla. Strop 1000px, ne 1180: od 1000 nahoru bere svislý displej `v(lg)`,
+ * tedy plnou širokou kompozici, a ta na 1024x1366 měřením sedí.
+ */
+@include v(md) {
+  @include below-px(1000px) {
+    @include hero-intro-phone(9vh, 8vh);
+  }
+}
+
+/*
  * phs alone spans the landscape-phone range; phl would only repeat it from 800px up.
  *
  * 7.5vh of a 390px-tall screen is 29px, and 5vh is 20 — the proportions that separate two masses

@@ -234,9 +234,41 @@
   padding-top: clamp(2.375rem, 7vh, 4.5rem);
 }
 
+/*
+ * ── Ležatá verze: tři sloupce v jednom řádku ────────────────────────────────
+ *
+ * Sloupec I ŘÁDEK musí být napsané čísly, ne odvozené z pořadí zápisu.
+ *
+ * `.product__sideStack` drží identitu a nákup pohromadě kvůli lepivosti na
+ * svislém tabletu (viz stopa na konci souboru) a galerie kvůli tomu leží v DOM
+ * až za nimi. Tady je obal `display: contents`, takže se pro mřížku chová, jako
+ * by tu nebyl — jenže pořadí, které pak mřížka vidí, je identita, nákup,
+ * galerie.
+ *
+ * Bez čísel by z toho vyšlo tohle: identita sedne do sloupce 1, nákup do 3
+ * a galerie, která chce sloupec 2, ho v prvním řádku najde už za kurzorem —
+ * automat ji proto odsune do DRUHÉHO řádku. Střed prvního řádku zůstane prázdný
+ * a galerie začne až pod ním. Řádek je tedy stejně závazný jako sloupec.
+ */
+.product__sideStack {
+  display: contents;
+}
+
+.product__identity {
+  grid-row: 1;
+  grid-column: 1;
+}
+
 .product__media {
   position: relative;
+  grid-row: 1;
+  grid-column: 2;
   min-width: 0;
+}
+
+.product__purchase {
+  grid-row: 1;
+  grid-column: 3;
 }
 
 .product__gallery {
@@ -1684,16 +1716,25 @@
     gap: clamp(1.25rem, 2.2vw, 2.25rem);
   }
 
-  /* Zpátky na automatické umístění: v třístopé mřížce dá pořadí v DOM
-     (identita, galerie, nákup) přesně sloupce 1/2/3. `margin-top: 0` z v(md)
-     se nevrací — základní pravidlo žádný margin-top na `.product__media` ani
-     `.product__purchase` nemá, ten margin je výhradně z foldu telefonu pod
-     900 px, takže je tady nula bez účinku. */
-  .product__identity,
-  .product__media,
+  /* Sloupce pojmenované, ne z pořadí v DOM: to je od zavedení
+     `.product__sideStack` identita, nákup, galerie. `grid-row: auto` ruší
+     řádkování z v(md). `margin-top: 0` z v(md) se nevrací — základní pravidlo
+     žádný margin-top na `.product__media` ani `.product__purchase` nemá, ten
+     margin je výhradně z foldu telefonu pod 900 px, takže je tady nula bez
+     účinku. */
+  .product__identity {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .product__media {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
   .product__purchase {
-    grid-column: auto;
-    grid-row: auto;
+    grid-row: 1;
+    grid-column: 3;
   }
 
   /* Lepivé sloupce, jejich patka a boční padding — všechno hodnoty základního
@@ -1721,5 +1762,171 @@
   .product__identity h1 {
     max-width: 9ch;
     font-size: clamp(2.75rem, 4vw, 4.75rem);
+  }
+}
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SVISLÝ TABLET — galerie vlevo, přilepený pravý sloupec.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Vlevo fotky, vpravo všechen text — a ten vpravo se drží obrazovky, takže při
+ * projíždění galerie zůstává vidět nadpis, perex i cena. Lepit se dá jen box,
+ * ne skupina sourozenců, a přesně proto existuje `.product__sideStack`: jinde
+ * je `display: contents` a nikdo o něm neví, tady je to ten box.
+ *
+ * `display: contents` na identitě zůstává i tady, ale z jiného důvodu než dřív:
+ * rozpouští ji do sloupce, takže Detaily můžou přes `order` spadnout až za
+ * nákup. Bez toho by seděly nad ním, kde je má DOM.
+ *
+ * Sloupec se ROLOVAT NEMÁ — zkoušel to `max-height` s `overflow-y`, ale rolovat
+ * uvnitř přilepeného bloku je matoucí. Místo toho se zmenšuje obsah: nadpis,
+ * perex, tlačítka a rozestupy jsou tu proti základu stažené, aby se sloupec
+ * vešel na obrazovku sám. Výběr provedení se nezmenšuje — je to to, čím se
+ * u tohohle zboží rozhoduje.
+ *
+ * Daň je stejná jako na telefonu: `.product__identityInner` má nájezdovou
+ * animaci a prvek bez boxu se nemá jak posunout, takže identita najíždí bez ní.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .product__story {
+      grid-template-columns: minmax(0, 1.05fr) minmax(17rem, 0.95fr);
+      align-items: start;
+      row-gap: 0;
+    }
+
+    .product__media {
+      grid-row: 1;
+      grid-column: 1;
+      margin-top: 0;
+    }
+
+    /*
+     * Fotky na polovinu.
+     *
+     * Rámečky se měří na `vh` (64/56vh), což je psané pro širokou obrazovku.
+     * Na výšku je ale `vh` větší a sloupec zároveň užší, takže z fotky byl úzký
+     * vysoký pás. Poloviční hodnoty vrací poměr zhruba tam, kde je na ležatém
+     * počítači.
+     */
+    .product__mediaFrame {
+      height: min(32vh, 21.875rem);
+    }
+
+    .product__mediaFrame:nth-of-type(even) {
+      height: min(28vh, 19.375rem);
+    }
+
+    .product__bundleFrame {
+      height: min(34vh, 23.125rem);
+    }
+
+    .product__sideStack {
+      position: sticky;
+      top: clamp(5.125rem, 8.5vh, 6.5625rem);
+      z-index: 3;
+      display: flex;
+      grid-row: 1;
+      grid-column: 2;
+      flex-direction: column;
+    }
+
+    .product__identity,
+    .product__identityInner {
+      display: contents;
+    }
+
+    /*
+     * Text zarovnaný doprava. Levou hranu tu drží galerie, takže odsazený text
+     * by mezi ní a pravým okrajem plaval; napravo má o co se opřít.
+     */
+    .product__eyebrow,
+    .product__identity h1,
+    .product__lead {
+      text-align: right;
+    }
+
+    .product__identity h1 {
+      /* Sloupec je tu užší než celá levá půlka a nesmí se rolovat, tak dvakrát
+         dolů proti 7.5vw ze stopy výš. Odsazení shora je v základu až 5.5rem —
+         to je psané pro stránku, která začíná prázdnem, ne pro sevřený sloupec. */
+      margin-top: clamp(1.25rem, 2.4vh, 2rem);
+      font-size: clamp(1.75rem, 4.2vw, 2.5rem);
+    }
+
+    /*
+     * „Vyrobeno rukama, jen jednou." pryč — ze stejného důvodu, pro jaký ji
+     * skrývá telefon: totéž říká řádek „Ručně vytvořeno" mezi službami pod
+     * nákupem, a tady stojí přímo pod ní. Odstup, který nesl její spodní
+     * margin, přebírá perex.
+     */
+    .product__signature {
+      display: none;
+    }
+
+    .product__lead {
+      max-width: 34ch;
+      margin-top: clamp(0.875rem, 1.8vh, 1.25rem);
+      margin-left: auto;
+      font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
+      line-height: 1.45;
+    }
+
+    .product__rating {
+      margin-top: clamp(0.75rem, 1.6vh, 1.25rem);
+    }
+
+    /*
+     * Pořadí ve sloupci. Obě čísla musí být napsaná: `below-with-phone(sm)`
+     * o kus výš dává nákupu `order: 3`, takže samotná jednička u Detailů by ho
+     * nepřeskočila a skončily by nad ním — naměřeno, slot na 607, nákup na 854.
+     */
+    .product__purchase {
+      position: relative;
+      top: auto;
+      order: 0;
+      margin-top: clamp(1.25rem, 2.4vh, 1.75rem);
+    }
+
+    /* Detaily až vespod — v DOM stojí uvnitř identity, tedy nad nákupem. */
+    .product__detailsSlot {
+      order: 1;
+      margin-top: clamp(1rem, 2vh, 1.5rem);
+      padding-top: 0;
+    }
+
+    /*
+     * Z tlačítek se stahují jen mezery kolem nich.
+     *
+     * Kroužek u srdíčka se zmenšit NESMÍ: ovládací prvek uvnitř drží dotyková
+     * podlaha na 44 px (`wishlist-toggle.module.scss`) a obsahový box kroužku
+     * je 2.75rem mínus dva rámečky, tedy 42. Zkusil jsem 2.25rem a rozbil tím
+     * přesně to, co o pár desítek řádků výš řeší `margin: -1px`: 44 se do 34
+     * nevejde, Chromium při přetečení srazí `place-items: center` na start
+     * a srdíčko vyleze z kroužku doprava dolů. Pilulka „Přidat do košíku" má
+     * výšku ze stejné podlahy a je to hlavní akce stránky.
+     */
+    .product__details__cta__buy {
+      gap: 0.375rem;
+    }
+
+    .product__details__cta__buy__buttons {
+      gap: 0.5rem;
+    }
+
+    /*
+     * Sleva čitelně.
+     *
+     * Původní cena i procenta se měří na `1.083vw`, což je psané pro širokou
+     * obrazovku — tady spadnou na svou podlahu 13 px vedle ceny, která má 34.
+     * Na notebooku, kde je nákupní sloupec podobně široký, vychází 15 px, takže
+     * se to sem jen vrací; není to nové číslo, je to totéž, co ukazuje počítač.
+     */
+    .product__details__cta__price__main > p,
+    .product__priceOriginalLabel,
+    .product__priceOriginal,
+    .product__priceDiscount {
+      font-size: 0.9375rem;
+    }
   }
 }

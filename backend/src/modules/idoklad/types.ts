@@ -64,6 +64,10 @@ export type IdokladPagedList<T> = {
 export type IdokladContact = {
   Id: number
   CompanyName: string
+  /** IČO. iDoklad ho na dokladu tiskne u odběratele. */
+  IdentificationNumber?: string | null
+  /** DIČ. Neplátce DPH ho nemá, proto nepovinné. */
+  VatIdentificationNumber?: string | null
   Email?: string | null
   Firstname?: string | null
   Surname?: string | null
@@ -77,6 +81,8 @@ export type IdokladContact = {
 
 export type IdokladContactPayload = {
   CompanyName: string
+  IdentificationNumber?: string
+  VatIdentificationNumber?: string
   Email?: string
   Firstname?: string
   Surname?: string

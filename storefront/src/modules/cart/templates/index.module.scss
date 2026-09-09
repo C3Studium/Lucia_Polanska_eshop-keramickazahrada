@@ -290,16 +290,35 @@
 /* Konec stránky se musí vejít nad lepkavý pruh s částkou (checkout-bar), jinak
    na něm leží poslední řádek souhrnu. Odvozeno ze stejných proměnných spodní
    lišty, na jakých stojí pruh sám. */
-@media (orientation: portrait) and (max-width: 599.98px) {
+@media (orientation: portrait) and (max-width: 1179.98px) {
   .root {
-    padding-bottom: calc(
-      var(--nav-bottom-height, 56px) + var(--nav-bottom-inset, 12px) + 5.5rem
-    );
+    /* Stejná míra jako u pruhu samotného — viz komentář v checkout-bar. */
+    padding-bottom: calc(var(--nav-bottom-clearance, 68px) + 5.5rem);
   }
+
+
 
   /* Užší okraje panelu: uvnitř teď stojí nadpis a slevový kód vedle sebe
      a rozbalenému poli pro kód se hodí každý pixel šířky. */
   .summaryBox {
     padding: 18px 16px;
+  }
+}
+
+/*
+ * Svislý tablet: souhrn tu nestojí — celý je v plovoucím pruhu nad spodní
+ * lištou, včetně slevového kódu.
+ *
+ * Skrývá se celý sloupec, ne jen jeho obsah: štítek „02 · SOUHRN" je
+ * `::after` toho panelu, takže by po skrytí obsahu zůstal viset sám nad
+ * prázdným místem. S ním jde i „Bezpečná platba · pečlivé balení".
+ *
+ * Od 600 px, ne od nuly: do telefonního pruhu se rozpad ani kód nevejdou
+ * (má tam sotva 366 px vnitřní šířky), takže tam panel musí zůstat — jinak by
+ * se souhrn ztratil úplně.
+ */
+@media (orientation: portrait) and (min-width: 600px) and (max-width: 1179.98px) {
+  .right {
+    display: none;
   }
 }

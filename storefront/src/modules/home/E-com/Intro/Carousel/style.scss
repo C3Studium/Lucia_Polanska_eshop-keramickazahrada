@@ -441,6 +441,26 @@
   @include intro-carousel-phone;
 }
 
+/*
+ * Svislé tablety pod v(lg).
+ *
+ * Dvousloupcová sazba se zapíná až od `v(lg)`, takže mezi 600 a 1000 platil
+ * základ psaný pro dva sloupce, jen bez nich. Naměřeno na 820x1180:
+ *   · pravý sloupec měl 200px odsazení shora — prázdno, kterým se sloupce
+ *     navzájem posouvaly; bez druhého sloupce je to jen díra pod fotkou
+ *   · druhá lišta fotek se kreslila, takže sekce narostla na 2262px
+ *   · tlačítka držela úzkou dráhu vpravo (l=614) místo celé řádky
+ *
+ * Platí tedy týž mixin jako na telefonu. Strop 1000px, ne 1180: od 1000
+ * nahoru má svislý displej `v(lg)`, tedy dva sloupce vedle sebe, a ty na
+ * 1024x1366 měřením sedí (levý 51–649, pravý 685–973).
+ */
+@include v(md) {
+  @include below-px(1000px) {
+    @include intro-carousel-phone;
+  }
+}
+
 /* phs alone spans the landscape-phone range; phl would only repeat it from 800px up. */
 @include phs-h {
   @include intro-carousel-phone;

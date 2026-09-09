@@ -1,7 +1,16 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 .sidebar {
   position: fixed;
-  z-index: 20000;
+  /*
+   * Pod rodinou překryvů (500: kontaktní dialog, rezervace kurzu, cookie
+   * dialog), nad pruhem s cookies (400).
+   *
+   * Bylo 20000, takže se lišta kreslila PŘES otevřený dialog — a protože má
+   * `mix-blend-mode: difference`, invertovala pod sebou panel a četla se jako
+   * tmavý pruh u pravé hrany. V kontaktním dialogu to vypadalo jako divný
+   * stín; ve skutečnosti to byl posuvník stránky nad modálem.
+   */
+  z-index: 450;
   top: 50%;
   right: calc(var(--page-inset, 0px) + 7px);
   display: flex;

@@ -63,8 +63,12 @@ const Summary = ({ cart }: SummaryProps) => {
           <DiscountCode cart={cart} />
         </div>
       </div>
-      <Divider />
-      <CartTotals totals={cart} />
+      {/* Obal, aby se dal rozpad na svislém tabletu skrýt — tam ho nese
+          plovoucí pruh nad spodní lištou (checkout-bar). */}
+      <div className={s.totalsSlot}>
+        <Divider />
+        <CartTotals totals={cart} />
+      </div>
       <LinkButton
         text="Pokračovat k pokladně"
         href={"/checkout?step=" + step}

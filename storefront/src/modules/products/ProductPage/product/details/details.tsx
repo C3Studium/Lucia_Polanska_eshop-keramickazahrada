@@ -208,60 +208,223 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   return (
     <>
       <div className="product__story">
-        <aside className="product__identity" aria-label="Informace o produktu">
-          <motion.div
-            className="product__identityInner"
-            initial={initial}
-            animate={animate}
-            transition={transition}
-          >
-            <div className="product__eyebrow">
-              <span>01 · {category || "Autorská keramika"}</span>
-              <span>Písek</span>
-            </div>
+        {/*
+          Pravý sloupec jako JEDEN box.
 
-            <h1>{displayTitle}</h1>
-            <p className="product__signature">
-              {bundle
-                ? "Vybráno dohromady."
-                : "Vyrobeno rukama, jen jednou."}
-            </p>
-            <p className="product__lead">
-              {descriptionPreview}
-              {hasLongDescription && (
+          Na svislém tabletu má být přilepený k obrazovce celý — nadpis, perex
+          i nákup — a lepit se dá jen box, ne skupina sourozenců. Jinde je
+          `display: contents`, takže se pro rozvržení chová, jako by tu nebyl,
+          a počítač, landscape ani telefon o něm nevědí.
+
+          Galerie tím padá v DOM za nákup. Základní mřížka i `v(lg)` si proto
+          sloupce pojmenovávají čísly místo pořadím zápisu.
+        */}
+        <div className="product__sideStack">
+          <aside className="product__identity" aria-label="Informace o produktu">
+            <motion.div
+              className="product__identityInner"
+              initial={initial}
+              animate={animate}
+              transition={transition}
+            >
+              <div className="product__eyebrow">
+                <span>01 · {category || "Autorská keramika"}</span>
+                <span>Písek</span>
+              </div>
+
+              <h1>{displayTitle}</h1>
+              <p className="product__signature">
+                {bundle
+                  ? "Vybráno dohromady."
+                  : "Vyrobeno rukama, jen jednou."}
+              </p>
+              <p className="product__lead">
+                {descriptionPreview}
+                {hasLongDescription && (
+                  <>
+                    {"… "}
+                    <button
+                      type="button"
+                      className="product__leadMore"
+                      onClick={openDescription}
+                    >
+                      více
+                    </button>
+                  </>
+                )}
+              </p>
+
+              {initialCount >= 5 && (
+                <div
+                  className="product__rating"
+                  aria-label={`${initialRating} z 5, ${initialCount} recenzí`}
+                >
+                  <span className="product__ratingValue">
+                    {initialRating.toFixed(1)}
+                  </span>
+                  <span className="product__ratingRule" />
+                  <a href="#product-reviews" onClick={scrollToReviews}>
+                    {initialCount} recenzí
+                  </a>
+                </div>
+              )}
+
+              <div className="product__detailsSlot">
+                <Details product={product} />
+              </div>
+            </motion.div>
+          </aside>
+
+          <aside
+            className="product__purchase"
+            data-bundle={bundle ? "true" : undefined}
+            aria-label="Výběr varianty a nákup"
+          >
+            <motion.div
+              className="product__purchaseInner"
+              initial={initial}
+              animate={animate}
+              transition={transition2}
+            >
+              <div className="product__purchaseHeader">
+                <span>Vaše volba</span>
+                {/* The shared availability vocabulary (spec §12); bundles are
+                    stock-blind on the storefront, so they keep the older
+                    two-state copy instead of mislabelling themselves. */}
+                <span>
+                  {bundle
+                    ? inStock
+                      ? "K dispozici"
+                      : "Na dotaz"
+                    : availabilityLabel[availability]}
+                </span>
+              </div>
+
+              <div className="product__selection">
+                <small>Vaše provedení</small>
+                <span>
+                  {bundle
+                    ? `${bundle.items.length} kusy dohromady`
+                    : selectedOptionLabels ||
+                      selectedVariant?.title ||
+                      "Jediné provedení"}
+                </span>
+              </div>
+
+              {bundle ? (
+                <BundleActions
+                  bundle={bundle}
+                  region={region}
+                  isPreview={isBundlePreview}
+                  wishlistVariantId={selectedVariant?.id}
+                  wishlistItems={wishlistItems}
+                  isAuthenticated={isAuthenticated}
+                  price={
+                    <ProductPrice
+                      product={product}
+                      variant={selectedVariant}
+                      countryCode={countryCode}
+                    />
+                  }
+                />
+              ) : (
                 <>
-                  {"… "}
-                  <button
-                    type="button"
-                    className="product__leadMore"
-                    onClick={openDescription}
-                  >
-                    více
-                  </button>
+                  <div className="product__optionPanel">
+                    <ProductOptions
+                      product={product}
+                      isAdding={isAdding}
+                      options={options}
+                      setOptionValue={setOptionValue}
+                    />
+                  </div>
+
+                  {/* The chosen provedení, shown as itself: a variant can carry its
+                      own photos and note (admin: Varianty a ceny), because a blue
+                      glaze sold by a photo of the green one is a return waiting
+                      to happen. */}
+                  {(variantPhotos.length > 0 || variantNote) && (
+                    <div className="product__variantMedia">
+                      {variantPhotos.length > 0 && (
+                        <div className="product__variantPhotos">
+                          {variantPhotos.map((url) => (
+                            <img
+                              key={url}
+                              src={url}
+                              alt={`${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`}
+                              loading="lazy"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {variantNote && (
+                        <p className="product__variantNote">{variantNote}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="product__buyBlock">
+                    {isMadeToOrder && productionProfile && (
+                      <MadeToOrderPanel
+                        profile={productionProfile}
+                        variantId={selectedVariant?.id}
+                        unitAmount={
+                          selectedVariant?.calculated_price?.calculated_amount ?? null
+                        }
+                        currencyCode={region?.currency_code ?? "czk"}
+                      />
+                    )}
+                    <ProductPrice
+                      product={product}
+                      variant={selectedVariant}
+                      countryCode={countryCode}
+                    />
+                    <CTA
+                      inStock={inStock}
+                      selectedVariant={selectedVariant}
+                      isAdding={isAdding}
+                      addState={addState}
+                      availability={availability}
+                      backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
+                      codAllowed={productAllowsDobirka(product)}
+                      quantity={quantity}
+                      maxQuantity={maxQuantity}
+                      onQuantityChange={setQuantity}
+                      isValidVariant={isValidVariant}
+                      handleAddToCart={handleAddToCart}
+                      options={options}
+                      product={product}
+                      wishlistItems={wishlistItems}
+                      isAuthenticated={isAuthenticated}
+                      countryCode={countryCode}
+                      /* Zakázková výroba stays on the classic path — the express
+                         flow has no brief and no deposit slider. Auth + saved
+                         address are only a hint here: the prebuilt PDP is
+                         anonymous, so the button re-checks them in the browser. */
+                      showBuyNow={Boolean(!isMadeToOrder && !isCommissionCategory)}
+                      buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
+                    />
+                  </div>
                 </>
               )}
-            </p>
 
-            {initialCount >= 5 && (
-              <div
-                className="product__rating"
-                aria-label={`${initialRating} z 5, ${initialCount} recenzí`}
-              >
-                <span className="product__ratingValue">
-                  {initialRating.toFixed(1)}
-                </span>
-                <span className="product__ratingRule" />
-                <a href="#product-reviews" onClick={scrollToReviews}>
-                  {initialCount} recenzí
-                </a>
+              <div className="product__serviceNotes">
+                <span>Zabalíme pečlivě</span>
+                <span>Ručně vytvořeno</span>
+                <span>Ateliér · Písek</span>
               </div>
-            )}
 
-            <div className="product__detailsSlot">
-              <Details product={product} />
-            </div>
-          </motion.div>
-        </aside>
+              {!bundle && selectedVariant && !inStock && (
+                <RestockForm
+                  variant={{
+                    id: selectedVariant.id,
+                    title: selectedVariant.title || undefined,
+                  }}
+                  product={{ title: product.title || undefined }}
+                />
+              )}
+            </motion.div>
+          </aside> 
+        </div>
 
         <div className="product__media" aria-label="Fotografie produktu">
           <Gallery
@@ -271,156 +434,6 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             bundle={bundle}
           />
         </div>
-
-        <aside
-          className="product__purchase"
-          data-bundle={bundle ? "true" : undefined}
-          aria-label="Výběr varianty a nákup"
-        >
-          <motion.div
-            className="product__purchaseInner"
-            initial={initial}
-            animate={animate}
-            transition={transition2}
-          >
-            <div className="product__purchaseHeader">
-              <span>Vaše volba</span>
-              {/* The shared availability vocabulary (spec §12); bundles are
-                  stock-blind on the storefront, so they keep the older
-                  two-state copy instead of mislabelling themselves. */}
-              <span>
-                {bundle
-                  ? inStock
-                    ? "K dispozici"
-                    : "Na dotaz"
-                  : availabilityLabel[availability]}
-              </span>
-            </div>
-
-            <div className="product__selection">
-              <small>Vaše provedení</small>
-              <span>
-                {bundle
-                  ? `${bundle.items.length} kusy dohromady`
-                  : selectedOptionLabels ||
-                    selectedVariant?.title ||
-                    "Jediné provedení"}
-              </span>
-            </div>
-
-            {bundle ? (
-              <BundleActions
-                bundle={bundle}
-                region={region}
-                isPreview={isBundlePreview}
-                wishlistVariantId={selectedVariant?.id}
-                wishlistItems={wishlistItems}
-                isAuthenticated={isAuthenticated}
-                price={
-                  <ProductPrice
-                    product={product}
-                    variant={selectedVariant}
-                    countryCode={countryCode}
-                  />
-                }
-              />
-            ) : (
-              <>
-                <div className="product__optionPanel">
-                  <ProductOptions
-                    product={product}
-                    isAdding={isAdding}
-                    options={options}
-                    setOptionValue={setOptionValue}
-                  />
-                </div>
-
-                {/* The chosen provedení, shown as itself: a variant can carry its
-                    own photos and note (admin: Varianty a ceny), because a blue
-                    glaze sold by a photo of the green one is a return waiting
-                    to happen. */}
-                {(variantPhotos.length > 0 || variantNote) && (
-                  <div className="product__variantMedia">
-                    {variantPhotos.length > 0 && (
-                      <div className="product__variantPhotos">
-                        {variantPhotos.map((url) => (
-                          <img
-                            key={url}
-                            src={url}
-                            alt={`${product.title} — ${selectedVariant?.title ?? "zvolené provedení"}`}
-                            loading="lazy"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {variantNote && (
-                      <p className="product__variantNote">{variantNote}</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="product__buyBlock">
-                  {isMadeToOrder && productionProfile && (
-                    <MadeToOrderPanel
-                      profile={productionProfile}
-                      variantId={selectedVariant?.id}
-                      unitAmount={
-                        selectedVariant?.calculated_price?.calculated_amount ?? null
-                      }
-                      currencyCode={region?.currency_code ?? "czk"}
-                    />
-                  )}
-                  <ProductPrice
-                    product={product}
-                    variant={selectedVariant}
-                    countryCode={countryCode}
-                  />
-                  <CTA
-                    inStock={inStock}
-                    selectedVariant={selectedVariant}
-                    isAdding={isAdding}
-                    addState={addState}
-                    availability={availability}
-                    backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
-                    codAllowed={productAllowsDobirka(product)}
-                    quantity={quantity}
-                    maxQuantity={maxQuantity}
-                    onQuantityChange={setQuantity}
-                    isValidVariant={isValidVariant}
-                    handleAddToCart={handleAddToCart}
-                    options={options}
-                    product={product}
-                    wishlistItems={wishlistItems}
-                    isAuthenticated={isAuthenticated}
-                    countryCode={countryCode}
-                    /* Zakázková výroba stays on the classic path — the express
-                       flow has no brief and no deposit slider. Auth + saved
-                       address are only a hint here: the prebuilt PDP is
-                       anonymous, so the button re-checks them in the browser. */
-                    showBuyNow={Boolean(!isMadeToOrder && !isCommissionCategory)}
-                    buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
-                  />
-                </div>
-              </>
-            )}
-
-            <div className="product__serviceNotes">
-              <span>Zabalíme pečlivě</span>
-              <span>Ručně vytvořeno</span>
-              <span>Ateliér · Písek</span>
-            </div>
-
-            {!bundle && selectedVariant && !inStock && (
-              <RestockForm
-                variant={{
-                  id: selectedVariant.id,
-                  title: selectedVariant.title || undefined,
-                }}
-                product={{ title: product.title || undefined }}
-              />
-            )}
-          </motion.div>
-        </aside> 
       </div>
     </>
   )

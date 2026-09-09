@@ -67,7 +67,7 @@
 .index,
 .account span {
   color: rgb(var(--black-03-rgb) / .56);
-  font: clamp(.75rem, 1vw, 0.875rem)/1.2 "Sansation-Regular", sans-serif;
+  font: calc(var(--account-zoom, 1) * clamp(.75rem, 0.8vw, 0.875rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -112,7 +112,7 @@
   // Míra sazby uvnitř panelu — v rem, ať roste týmž činitelem jako panel i typ.
   max-width: 32.5rem;
   margin: clamp(1.5rem, 4vh, 2.6rem) 0 clamp(1rem, 2.5vh, 1.6rem);
-  font: 400 clamp(2.6rem, 5.5vw, 4.6rem) / 0.76 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2.6rem, 4.4vw, 4.6rem)) / 0.76 "Sentient-Regular", serif;
   letter-spacing: -0.062em;
 }
 
@@ -128,7 +128,7 @@
   max-width: 31.25rem;
   margin: 0;
   color: rgb(var(--black-03-rgb) / .74);
-  font-size: clamp(1rem, 1.25vw, 1.125rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(1rem, 1vw, 1.125rem));
   line-height: 1.55;
 }
 
@@ -143,7 +143,7 @@
 
 .account strong {
   overflow-wrap: anywhere;
-  font: 400 clamp(1rem, 1.4vw, 1.19rem) / 1.35 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(1rem, 1.12vw, 1.19rem)) / 1.35 "Sansation-Regular", sans-serif;
 }
 
 .error {
@@ -204,7 +204,7 @@
 
   .panel h2 {
     margin-top: 34px;
-    font-size: clamp(3.5rem, 19vw, 5.3rem);
+    font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(3.5rem, 15.2vw, 5.3rem));
   }
 
   .description {
@@ -217,5 +217,24 @@
 
   .actions > div {
     width: 100%;
+  }
+}
+
+/* SVISLÝ TABLET — potvrzení o čtvrtinu menší.
+ *
+ * Nadpis „Smazat účet?" měl 5.5vw, tedy 45.9px na 834 a 56.3 na 1024 —
+ * velikost psaná pro dialog uprostřed široké obrazovky. Váha u nevratné
+ * akce je záměr a zůstává: i po zmenšení je nadpis v dialogu zdaleka
+ * největší. Tři čtvrtiny, stejně jako zbytek obsahu účtu a modál adresy,
+ * takže dva dialogy vedle sebe nepůsobí jako dva různé weby: 834 → 34.4,
+ * 1024 → 42.2.
+ */
+@include from-px(760px) {
+  @include below-px(1180px) {
+    @include v(md) {
+      .panel h2 {
+        font-size: calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(1.95rem, 3.3vw, 3.45rem));
+      }
+    }
   }
 }

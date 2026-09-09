@@ -23,7 +23,7 @@
 
 .addressText {
   margin: 0;
-  font: 400 clamp(2rem, 3vw, 3.4rem)/.95 "Sentient-Regular", serif;
+  font: 400 calc(var(--account-zoom, 1) * var(--account-display-zoom, 1) * clamp(2rem, 2.4vw, 3.4rem))/.95 "Sentient-Regular", serif;
   letter-spacing: -.04em;
 }
 

@@ -64,17 +64,32 @@ $touch-floor: 2.75rem;
         /* Svisle, tedy na vh: 12px od 1091 nahoru, 8px na 660. Živé pásmo 727–1091. */
         padding-top: clamp(.5rem, 1.1vh, .75rem);
 
-        /* Medusa <Input> obaluje pole vlastním divem — flexovou položkou je ten div,
-           ne .input pod ním. Bez podlahy a basisu na obalu se držel na 200px min-width
-           pole a řádek přetékal `overflow: hidden` na .promoReveal, který uřízl pravý
-           okraj tlačítka „Použít“: 52.7px na 1682, 44.5 na 1730, 41.1 na 1440,
-           30.5 na 1220, 11.7 na 1920 (změřeno scrollWidth 340 proti clientWidth). */
-        > :first-child {
+        /* Pole je od výměny za nativní `<input>` přímou flexovou položkou řádku,
+           takže basis a podlaha patří jemu. Dřív tu byl mezi nimi obal od Medusy
+           a bez těchhle dvou hodnot na něm se řádek trhal: `overflow: hidden` na
+           .promoReveal uřízl pravý okraj tlačítka „Použít“ o 52.7px na 1682,
+           44.5 na 1730, 41.1 na 1440, 30.5 na 1220, 11.7 na 1920. */
+        .input {
           flex: 1 1 auto;
           min-width: $field-floor;
         }
 
         .input {
+          /* Vlastní vzhled pole. Bylo tu jen `width` a `min-height`, zbytek
+             kreslila Medusa `<Input>` — jiný rámeček, jiný poloměr a modrý
+             prohlížečový prstenec při zaostření. Teď je to nativní `<input>`,
+             takže si tvar musí popsat tenhle modul sám. */
+          appearance: none;
+          padding: 0 0.875rem;
+          border: 1px solid rgb(var(--ink-05-rgb) / .22);
+          border-radius: 999px;
+          background: rgb(var(--white-rgb) / .72);
+          color: var(--ink-05);
+          font-family: inherit;
+          /* 1rem je práh, pod kterým Safari při zaostření přiblíží stránku. */
+          font-size: 1rem;
+          line-height: 1.2;
+          transition: border-color .25s ease, background-color .25s ease;
           width: 100%;
           /* 300px → rem, aby strop nesl ramp nad 1921. Vodorovně je stejně nečinný:
              pole dostává zbytek řádku, tedy 147–251px. */
@@ -88,6 +103,32 @@ $touch-floor: 2.75rem;
           min-width: $field-floor;
           /* 32px vysoké pole vedle 44px tlačítka: práh i zarovnání řádku. */
           min-height: $touch-floor;
+
+          &::placeholder {
+            color: rgb(var(--ink-05-rgb) / .45);
+          }
+
+          /* Prstenec projektu, ne prohlížeče. `outline: none` bez náhrady by
+             pole odřízl od ovládání klávesnicí. */
+          &:focus {
+            outline: none;
+            border-color: rgb(var(--olive-15-rgb) / .62);
+            background: var(--white);
+          }
+
+          /*
+           * Prstenec DOVNITŘ pole, ne kolem něj.
+           *
+           * `outline` s odsazením 2px sahá 4px za okraj pole, jenže rozbalovací
+           * panel nad ním má `overflow: hidden` — nese výškovou animaci, takže
+           * ho odtud zrušit nejde. Prstenec se o ten ořez sekal na pravé straně,
+           * nahoře i dole. Vnitřní stín je uvnitř rámečku pole, takže ho nemá
+           * co uříznout, a vypadá jako zesílený okraj — v pilulce správně.
+           */
+          &:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring);
+          }
         }
 
         .applyBtn {
@@ -150,6 +191,64 @@ $touch-floor: 2.75rem;
           }
         }
       }
+    }
+  }
+}
+
+/*
+ * Vodorovná linka: přepínač, pole a „Použít" vedle sebe.
+ *
+ * Zapíná ji prop `layout="inline"` (viz index.tsx). Svislé odstupy, které ve
+ * sloupci dělají mezery mezi prvky, jsou tady posunem jednoho proti druhému —
+ * přepínač měl `margin` a řádek `padding-top`, takže seděl o 5.6 px výš než
+ * pole i než tlačítko. Obojí se tu ruší a mezeru přebírá `gap` formuláře.
+ *
+ * Musí to být tady, ne u volajícího: pravidla výš mají čtyři třídy a zvenčí je
+ * bez `!important` nikdo nepřebije. Tenhle blok jich má pět.
+ */
+.root.inline {
+  /* Blok se nemá dotýkat okrajů toho, do čeho je vložený.
+
+     `width: auto` k tomu patří: základ má `width: 100%` a s margin 5px
+     z toho bylo 100 % + 10 px, takže vlevo odsazení sedělo a vpravo blok
+     o 5 px přetékal. Blokový prvek si šířku dopočítá sám. */
+  width: auto;
+  margin: 5px;
+
+  .content .form {
+    display: flex;
+    align-items: center;
+    /* Vzdušněji než ve sloupci: na lince stojí tři pilulky vedle sebe a 8px
+       mezi nimi je slepovalo do jednoho pruhu. */
+    gap: clamp(0.625rem, 1.4vw, 1rem);
+
+    .label {
+      margin-block: 0;
+    }
+
+    /* Pole si bere zbytek linky; `min-width: 0` proto, aby se smrsknout SMĚLO —
+       bez něj drží flexová položka svůj obsah a linka přeteče. */
+    .promoReveal {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .row {
+      /* Táž mezera jako mezi přepínačem a polem — ta je na formuláři, tahle
+         uvnitř řádku, takže se musí říct dvakrát, jinak je linka nesouměrná
+         (naměřeno 11 px vlevo od pole proti 8 vpravo). */
+      gap: clamp(0.625rem, 1.4vw, 1rem);
+      padding-top: 0;
+    }
+
+    /* Vlastní strop, ne ten ze sloupce (18.75rem) ani žádný.
+
+       Bez stropu se pole roztáhlo na 446–655 px, což je na pár znaků kódu
+       zbytečně široké pole přes celou linku. Se stropem ze sloupce zas vpravo
+       zbývalo 168–388 px prázdna. 22rem je mezi tím: na kód pohodlně dost
+       a „Použít" zůstane hned za ním, ne na druhém konci pruhu. */
+    .input {
+      max-width: 22rem;
     }
   }
 }

@@ -2,6 +2,19 @@
 
 .button{
     position: relative;
+    /*
+     * Hloubka překlopení. Váže se na PÍSMO, ne na výšku tlačítka — kde dosedne
+     * zadní strana, rozhoduje výška řádku, ne pilulka kolem něj. Naměřeno na
+     * čtyřech viewportech: 0.78em posadí ŘÁDKOVÝ BOX do 0.08px na střed na
+     * 1280, 1440, 1920 i 2560, přestože tlačítko roste z 36 na 51.8px a nad
+     * 1921 se k tomu přidá rampa písma. Viz FLIP_DEPTH v index.tsx.
+     *
+     * 0.74em je proti tomu optická korekce o 0.65px nahoru: řádkový box nese
+     * pod účařím prostor pro dolní dotahy, takže text vystředěný boxem čte
+     * o kousek níž, než kde ho oko čeká. Menší hodnota = výš, větší = níž,
+     * a protože je v em, drží poměr i po rampě.
+     */
+    --flip-depth: 0.74em;
     /* Vodorovný strop na vw (živé pásmo 1196–1522 px), výška na vh (živé pásmo 973–1297 px
        na výšku). Podlaha 2.25rem je to, co usadí 1280×720 i 1366×768 samo, takže tenhle
        komponent nepotřebuje ani jedno pravidlo v lt. Stejná rodina jako --nav-control-height
@@ -94,6 +107,8 @@
 
 .buttonIcon{
     position: relative;
+    /* Táž sazba jako .button, tedy táž hloubka. */
+    --flip-depth: 0.74em;
     /* Užší strop (živé pásmo 1182–1545 px), výška je táž sazba ovládacího prvku jako
        u .button — jedna výška, dvě šířky. */
     max-width: clamp(6.5rem, 8.8vw, 8.5rem);

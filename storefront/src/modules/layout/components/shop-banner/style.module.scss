@@ -45,7 +45,22 @@
      moment it is dismissed or unmounted. Anything that needs the clearance reads it with its own
      zero fallback, `var(--shop-banner-height, 0px)`, and gets the right answer in both states. */
   position: fixed;
-  inset: auto var(--page-inset, 0px) 0;
+  /* Nad spodní lištu navigace, ne pod ni.
+     Pruh visel na `bottom: 0`, takže na telefonu ležel POD plovoucí lištou
+     s košíkem a účtem — zpráva o dovolené se schovala za ovládání obchodu.
+     Míru si lišta zveřejňuje sama (`--nav-bottom-clearance`, viz mobileBar);
+     kde lišta není, je proměnná odstraněná a nula vrátí pruh na hranu, jak
+     byl. Osm pixelů navíc, aby se pruh a lišta nedotýkaly. */
+  /* Mezera mezi pruhem a lištou. Náhrada je ZÁPORNÁ o tutéž hodnotu:
+     kde spodní lišta není (desktop, tablet), vyjde -8 + 8 = 0 a pruh sedí
+     na hraně přesně jako dřív — jinak by se mu na širokých obrazovkách
+     objevila osmipixelová štěrbina, o kterou nikdo nežádal. */
+  --banner-lift: 8px;
+  inset: auto var(--page-inset, 0px)
+    calc(
+      var(--nav-bottom-clearance, calc(-1 * var(--banner-lift))) +
+        var(--banner-lift)
+    );
   z-index: 40;
   box-shadow: 0 -2px 12px rgb(var(--black-01-rgb) / .18); /* hairline-class, stays in px */
   background: var(--black-04);

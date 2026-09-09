@@ -1,5 +1,21 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
+/*
+ * Jedno číslo, kterým se tlačítko zmenšuje.
+ *
+ * Rozměry níž jsou psané pro plnou velikost a volající je zvenčí přebít
+ * nemůže — třídy tohohle modulu jsou hashované. Barvy si přitom nastavit umí
+ * (`--premium-button-*`), takže velikost jde stejnou cestou.
+ *
+ * Výšku ale na dotykovém zařízení nesnižuje pod 44 px: to je práh, pod který
+ * nemá smysl jít, ať si volající přeje cokoli. Zmenší se šířka, odsazení,
+ * písmo a kolečko se šipkou.
+ *
+ * Výchozí 1 je schválně až ve `var()` níž, ne deklarací tady: deklarace na
+ * vlastním kořeni by zděděnou hodnotu od volajícího přebila a proměnná by
+ * nikdy nic nedělala.
+ */
 .root {
+
   display: inline-flex;
   width: auto;
 }
@@ -100,15 +116,21 @@
    byte-identical to today below 1921 and rides the ramp above it, which is the
    whole point. (The input still needs the same treatment — see report.) */
 .compact .button {
-  min-width: 8.25rem;
-  height: 2.5rem;
-  gap: clamp(.5625rem, .75vw, .75rem);
-  padding: 0 clamp(.375rem, .5vw, .5rem) 0 clamp(.75rem, 1vw, 1rem);
+  min-width: calc(8.25rem * var(--premium-button-scale, 1));
+  height: calc(2.5rem * var(--premium-button-scale, 1));
+  gap: calc(clamp(.5625rem, .75vw, .75rem) * var(--premium-button-scale, 1));
+  padding:
+    0
+    calc(clamp(.375rem, .5vw, .5rem) * var(--premium-button-scale, 1))
+    0
+    calc(clamp(.75rem, 1vw, 1rem) * var(--premium-button-scale, 1));
 }
 
-.compact .label { font-size: clamp(.875rem, 1.05vw, 1rem); }
+.compact .label {
+  font-size: calc(clamp(.875rem, 1.05vw, 1rem) * var(--premium-button-scale, 1));
+}
 /* .6 of the compact height (24/40). Flat like the height it sits in, so the
    ratio holds at every size instead of drifting across two axes. The old
    font-size: 13px here restated the base value exactly, so it is gone. */
-.compact .arrow { width: 1.5rem; }
+.compact .arrow { width: calc(1.5rem * var(--premium-button-scale, 1)); }
 

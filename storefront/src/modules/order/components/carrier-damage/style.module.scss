@@ -25,7 +25,7 @@
 .eyebrow {
   margin: 0;
   color: var(--damage-accent);
-  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(0.7rem, 0.72vw, 0.82rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -33,7 +33,7 @@
 .heading {
   margin: 0;
   font-family: "Sentient-Regular", serif;
-  font-size: clamp(1.15rem, 1.5vw, 1.5rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(1.15rem, 1.2vw, 1.5rem));
   font-weight: 400;
   letter-spacing: -0.015em;
 }
@@ -41,7 +41,7 @@
 .lede {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.88rem, 1.12vw, 1.05rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.88rem, 0.896vw, 1.05rem));
   line-height: 1.55;
   opacity: 0.82;
 }
@@ -53,7 +53,7 @@
   flex-direction: column;
   gap: 0.45rem;
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.86rem, 1.1vw, 1rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.86rem, 0.88vw, 1rem));
   line-height: 1.5;
 
   strong {
@@ -76,7 +76,7 @@
 
 .documentLabel {
   margin: 0 0 0.2rem;
-  font: 400 clamp(0.7rem, 0.9vw, 0.82rem)/1.2 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--account-zoom, 1) * clamp(0.7rem, 0.72vw, 0.82rem))/1.2 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.66;
@@ -85,7 +85,7 @@
 .documentNote {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.82rem, 1.05vw, 0.95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.82rem, 0.84vw, 0.95rem));
   line-height: 1.5;
   opacity: 0.78;
 }
@@ -93,7 +93,7 @@
 .more {
   margin: 0;
   font-family: "Sansation-Light", sans-serif;
-  font-size: clamp(0.82rem, 1.05vw, 0.95rem);
+  font-size: calc(var(--account-zoom, 1) * clamp(0.82rem, 0.84vw, 0.95rem));
   opacity: 0.72;
 
   a {

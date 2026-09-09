@@ -115,6 +115,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             </div>
             <DeleteButton
               id={item.id}
+              className={s.removeCompact}
               data-testid="product-delete-button"
               bundle_id={item.metadata?.bundle_id as string}
             >

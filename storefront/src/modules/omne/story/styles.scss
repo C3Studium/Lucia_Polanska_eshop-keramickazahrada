@@ -534,20 +534,49 @@
   }
 }
 
-/* Portrait tablets keep the stacked list — same call as vyroba. `margin-top`
-   explicitly back to 0: a tablet wider than 760 misses the block above and
-   would inherit the wide pull-up under a hero that never pins there. */
+/*
+ * ─── Svislé tablety: táž scéna jako na telefonu, jen větší ──────────────
+ *
+ * Dřív tu stál složený seznam a hero se vracelo do toku. Scéna je ale to,
+ * kvůli čemu stránka existuje, a na stojatém tabletu je na ni místa víc
+ * než na telefonu, ne míň.
+ *
+ * Přebírá se celý blok `v(xs)` výš — ten je psaný přes `v()`, tedy
+ * min-width, takže sem dosáhne sám. Restatují se jen tři věci, které
+ * tenhle blok dřív rušil (výška dráhy, podtažení, přepnutí seznam/scéna),
+ * a k tomu se zvedá sazba: na telefonu je strop titulku 1.8rem, což je na
+ * 820px přes celou fotku málo.
+ *
+ * Podtažení zůstává -104svh, ne jiná hodnota: nezávisí na délce dráhy, ale
+ * na výšce připnuté scény (100svh) plus okno na prolnutí (4svh) — táž
+ * úvaha jako u telefonu i u širokého rozvržení.
+ */
 @include v(md) {
   .AboutStory {
-    height: auto;
-    margin-top: 0;
+    height: 260svh;
+    margin-top: -104svh;
   }
 
   .aboutStory {
-    display: none;
+    display: block;
   }
 
   .aboutStoryMobile {
-    display: block;
+    display: none;
+  }
+
+  .aboutStory__copyStage {
+    right: 2.5rem;
+    bottom: 12vh;
+    left: 2.5rem;
+    height: 42%;
+  }
+
+  .aboutStory__lead {
+    font-size: clamp(1.9rem, 4.4vw, 3rem);
+  }
+
+  .aboutStory__body {
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
   }
 }

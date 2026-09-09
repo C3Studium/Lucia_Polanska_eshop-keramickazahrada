@@ -177,6 +177,24 @@ const Addresses = ({
                   data-testid="shipping-address-summary"
                 >
                   <Text className={s.label}>Kam to pošleme</Text>
+                  {/* Firemní nákup se ve shrnutí musí objevit.
+                      Zákazník vyplnil název firmy a IČO, pak přešel na
+                      dopravu a nikde je neviděl — nemá jak zkontrolovat,
+                      jestli se uložilo to, co napsal, a na faktuře už je
+                      pozdě. Nefiremní objednávka nevykreslí nic. */}
+                  {cart.shipping_address.company ? (
+                    <Text className={s.value} data-testid="summary-company">
+                      {cart.shipping_address.company}
+                    </Text>
+                  ) : null}
+                  {cart.metadata?.firma_ico ? (
+                    <Text className={s.value} data-testid="summary-ico">
+                      IČO {String(cart.metadata.firma_ico)}
+                      {cart.metadata?.firma_dic
+                        ? ` · DIČ ${String(cart.metadata.firma_dic)}`
+                        : ""}
+                    </Text>
+                  ) : null}
                   <Text className={s.value}>
                     {cart.shipping_address.first_name}{" "}
                     {cart.shipping_address.last_name}

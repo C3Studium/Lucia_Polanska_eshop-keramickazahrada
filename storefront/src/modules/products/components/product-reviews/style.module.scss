@@ -55,6 +55,26 @@
   }
 }
 
+/*
+ * Produkt bez recenzí ukazuje ze sekce jen formulář (viz index.tsx). Dvousloupcový rozvrh
+ * výš by ho posadil do levého 11fr sloupce a pravou polovinu nechal prázdnou, takže se tu
+ * vrací jeden sloupec. Šířka zůstává ta, na kterou je formulář navržený — v rozdělené sekci
+ * dostane 9fr z obsahu, což je na 1440px zhruba 37rem; 42rem je strop, ne cíl.
+ *
+ * Dvě třídy schválně: dvousloupcová pravidla `.container` sedí v media query, takže by je
+ * jednotřídní selektor přebil jen pořadím v souboru.
+ */
+.container.containerFormOnly {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+
+  > * {
+    width: 100%;
+    max-width: 42rem;
+    margin-inline: auto;
+  }
+}
+
 .reviews {
   min-width: 0;
 }

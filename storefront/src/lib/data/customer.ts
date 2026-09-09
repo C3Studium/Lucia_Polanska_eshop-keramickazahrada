@@ -220,6 +220,12 @@ export async function signup(_currentState: unknown, formData: FormData) {
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
+    /* Objednávky taky: jejich seznam se cachuje pod jmenovkou vázanou na
+       prohlížeč (`_medusa_cache_id`), ne na přihlášeného člověka. Bez tohohle
+       přežije prázdný seznam z doby před přihlášením i to přihlášení. */
+    const ordersCacheTag = await getCacheTag("orders")
+    if (ordersCacheTag) revalidateTag(ordersCacheTag)
+
     await transferCart()
   } catch (error: any) {
     return toCzechErrorMessage(error?.message ?? error?.toString())
@@ -277,6 +283,12 @@ export async function login(_currentState: unknown, formData: FormData) {
         await setAuthToken(token as string)
         const customerCacheTag = await getCacheTag("customers")
         revalidateTag(customerCacheTag)
+
+        /* Objednávky taky: jejich seznam se cachuje pod jmenovkou vázanou na
+           prohlížeč (`_medusa_cache_id`), ne na přihlášeného člověka. Bez tohohle
+           přežije prázdný seznam z doby před přihlášením i to přihlášení. */
+        const ordersCacheTag = await getCacheTag("orders")
+        if (ordersCacheTag) revalidateTag(ordersCacheTag)
       })
   } catch (error: any) {
     // Try to extract a message from the error object
@@ -499,6 +511,12 @@ export async function loginAfterPasswordReset(email: string, password: string) {
 
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
+
+    /* Objednávky taky: jejich seznam se cachuje pod jmenovkou vázanou na
+       prohlížeč (`_medusa_cache_id`), ne na přihlášeného člověka. Bez tohohle
+       přežije prázdný seznam z doby před přihlášením i to přihlášení. */
+    const ordersCacheTag = await getCacheTag("orders")
+    if (ordersCacheTag) revalidateTag(ordersCacheTag)
   } catch (error: any) {
     return toCzechErrorMessage(error?.message ?? error?.toString())
   }
@@ -524,6 +542,12 @@ export async function signout(countryCode: string) {
 
   const customerCacheTag = await getCacheTag("customers")
   revalidateTag(customerCacheTag)
+
+  /* Objednávky taky: jejich seznam se cachuje pod jmenovkou vázanou na
+     prohlížeč (`_medusa_cache_id`), ne na přihlášeného člověka. Bez tohohle
+     přežije prázdný seznam z doby před přihlášením i to přihlášení. */
+  const ordersCacheTag = await getCacheTag("orders")
+  if (ordersCacheTag) revalidateTag(ordersCacheTag)
 
   await removeCartId()
 

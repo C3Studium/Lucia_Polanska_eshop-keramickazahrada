@@ -503,3 +503,51 @@
 .dimensions:empty {
   display: none;
 }
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SVISLÝ TABLET — nižší řádek, obsah na šířku.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Řádek se měří na výšku okna: `min-height: clamp(15rem, 34vh, 24rem)` a tři
+ * řádky s podlahou `9vh`. To je psané pro ležatou obrazovku; na výšku je `vh`
+ * o třetinu větší, takže z jedné položky košíku byl na 825×1196 pruh přes 380 px
+ * a čtyři kusy zabraly tři obrazovky.
+ *
+ * Výšku tedy nese obsah, ne okno — řádky jdou na `auto` a `min-height` na zlomek
+ * toho, co bylo. Zbytek je o tom, aby si obsah tu ušetřenou výšku nevzal zpátky:
+ * menší nadpis, sevřenější odsazení buněk a „Odebrat" jen jako koš.
+ */
+@include v(md) {
+  @include below-px(1180px) {
+    .row:not(.previewRow) {
+      grid-template-rows: repeat(3, minmax(0, auto));
+      min-height: clamp(8.5rem, 15vh, 11rem);
+    }
+
+    .cellTitle {
+      padding: clamp(0.75rem, 1.8vh, 1.25rem) clamp(0.9rem, 1.8vw, 1.4rem);
+    }
+
+    .title {
+      font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+    }
+
+    .cellUnit,
+    .cellPrice {
+      padding: clamp(0.5rem, 1.1vh, 0.8rem) clamp(0.6rem, 1vw, 0.9rem);
+    }
+
+    /*
+     * „Odebrat" jen jako koš.
+     *
+     * Popisek je v modulu tlačítka poslední potomek `<button>` (výplň, ikona,
+     * popisek) a hashovanou třídu z cizího modulu selektor nechytí — proto
+     * strukturálně. Košík mu k tomu předává `removeCompact`, takže se to nedotkne
+     * ostatních míst, kde tenhle button stojí, ani náhledu v rozbaleném košíku.
+     */
+    .removeCompact button > span:last-child {
+      display: none;
+    }
+  }
+}

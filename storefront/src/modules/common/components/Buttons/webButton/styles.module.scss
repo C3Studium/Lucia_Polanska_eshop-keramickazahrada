@@ -257,3 +257,12 @@
 
     }
 }
+
+/* Fokus pro klávesnici. Dokud rozsvícení řídil `isFocused`, dělala ho výplň;
+   ta teď jede jen z myši a z kliku (viz index.tsx), takže obrys musí být
+   vlastní — jinak by se tlačítko při procházení tabulátorem nijak nepřiznalo. */
+.button:focus-visible,
+.buttonIcon:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+}
