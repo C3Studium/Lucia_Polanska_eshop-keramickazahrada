@@ -10,6 +10,7 @@ import {
   premiumButtonFillTransition,
   premiumButtonFillVariants,
   premiumButtonForegroundVariants,
+  premiumButtonLabelRevealVariants,
 } from "./motion"
 import styles from "./style.module.scss"
 
@@ -87,8 +88,32 @@ const PremiumActionButton = ({
           style={styleObj}
           transition={premiumButtonFillTransition}
         />
-        <span className={styles.label}>
-          {text}
+        {/*
+          Popisek je tu DVAKRÁT, a je to jediný způsob, jak ho udržet čitelný.
+
+          Pod výplní, která přejíždí zleva doprava, nemůže mít jednobarevný text
+          správnou barvu: dokud výplň nedojede, je pozadí krémové, potom tmavé.
+          Přebarvení v nějakém okamžiku znamená, že chvíli předtím nebo potom
+          text splývá — naměřeno 239 ms nečitelnosti při najetí a 233 ms při
+          odjetí. Ladit to časováním navíc nejde, protože barvy jsou zapsané
+          přes `var()` a framer mezi dvěma `var()` neinterpoluje; překlápí je
+          skokem.
+
+          Spodní kopie je tmavá a leží v toku. Horní je světlá a ořezaná
+          přesně tam, kam došla výplň — obě se hýbou týmž předpisem a týmž
+          časem, takže se nemají jak rozejít. V každém okamžiku je nad krémem
+          vidět tmavá a nad výplní světlá.
+        */}
+        <span className={styles.labelStack}>
+          <span className={styles.label}>{text}</span>
+          <motion.span
+            className={styles.labelOver}
+            variants={premiumButtonLabelRevealVariants}
+            transition={premiumButtonFillTransition}
+            aria-hidden="true"
+          >
+            {text}
+          </motion.span>
         </span>
         <motion.span
           className={styles.arrow}

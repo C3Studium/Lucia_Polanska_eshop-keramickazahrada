@@ -138,7 +138,10 @@ export default async function ProductPage(props: Props) {
     countryCode,
     queryParams: { 
       handle: params.handle, 
-      fields: "*bundle, *variants.calculated_price, +variants.inventory_quantity, +variants.metadata, +metadata, +tags",
+      /* `+variants.allow_backorder`: bez něj přijde `undefined` a z vyprodaného
+         kusu, který se dá dorobit, se stane „Prodáno" — viz `lib/data/products.ts`. */
+      fields:
+        "*bundle, *variants.calculated_price, +variants.inventory_quantity, +variants.allow_backorder, +variants.metadata, +metadata, +tags",
     },
   }).then(({ response }) => response.products[0])
 

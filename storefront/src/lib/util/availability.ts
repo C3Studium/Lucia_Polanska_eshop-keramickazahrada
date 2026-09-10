@@ -51,6 +51,30 @@ export function variantAvailability(
   return "in-stock"
 }
 
+/**
+ * Došly kusy na poličce?
+ *
+ * Odděleně od `Availability`, protože „Na objednávku" umí vzniknout dvěma
+ * cestami a zákazník je nemá jak rozlišit: buď se kus vyprodal a dorobí se,
+ * nebo se u něj sklad nikdy nepočítal. To první je pořád „Prodáno" — a karta
+ * to má říct vedle „Na objednávku", aby nevypadala jako kus připravený k odeslání.
+ *
+ * Nepočítané varianty se sem nepletou: o čem se nevede sklad, to nemohlo dojít.
+ */
+export function hasEmptyShelf(
+  product?: Pick<HttpTypes.StoreProduct, "variants"> | null
+): boolean {
+  const sledovane = (product?.variants ?? []).filter(
+    (variant) => variant?.manage_inventory
+  )
+
+  if (!sledovane.length) {
+    return false
+  }
+
+  return sledovane.every((variant) => (variant.inventory_quantity ?? 0) <= 0)
+}
+
 /** A product's state, as shown on a card: the best any of its variants can offer. */
 export function productAvailability(
   product?: Pick<HttpTypes.StoreProduct, "variants"> | null

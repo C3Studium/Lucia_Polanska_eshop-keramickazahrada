@@ -119,20 +119,25 @@ export default function CTA({
         >
           {label}
         </CartButton>
-      </div>
 
-      {/* One click from here to the express payment step — only for a
-          logged-in customer whose account already knows where to deliver. */}
-      {showBuyNow && countryCode && inStock && isValidVariant && (
-        <BuyNowButton
-          variantId={selectedVariant?.id}
-          quantity={quantity}
-          countryCode={countryCode}
-          handle={product.handle}
-          initialEligible={buyNowEligible}
-          disabled={!inStock || !selectedVariant || isAdding || !isValidVariant}
-        />
-      )}
+        {/* One click from here to the express payment step — only for a
+            logged-in customer whose account already knows where to deliver.
+
+            Stojí v TÉŽE řadě jako „Přidat do košíku", ne pod ní: jsou to dvě
+            varianty jednoho rozhodnutí („chci to"), a pod sebou vypadaly jako
+            dva různé kroky. Řada se umí zalomit (`flex-wrap`), takže na úzkém
+            sloupci spadne druhé tlačítko pod první samo. */}
+        {showBuyNow && countryCode && inStock && isValidVariant && (
+          <BuyNowButton
+            variantId={selectedVariant?.id}
+            quantity={quantity}
+            countryCode={countryCode}
+            handle={product.handle}
+            initialEligible={buyNowEligible}
+            disabled={!inStock || !selectedVariant || isAdding || !isValidVariant}
+          />
+        )}
+      </div>
 
       {addState.kind === "error" && (
         <p className="product__details__cta__error" role="alert">

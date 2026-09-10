@@ -56,9 +56,19 @@
 
 /* Vedle plovoucího popisku sdíleného Inputu je řádek vysoký celý — tam se
    předvolba natáhne s ním, aby oba rámečky tvořily jednu výškovou linku. */
+/*
+ * S popiskem nad polem se předvolba srovnává DOLŮ, ne přes celou výšku.
+ *
+ * `stretch` ji roztáhl od popisku „TELEFON" až po linku pod číslem, takže
+ * opticky visela nad číslem, ke kterému patří. Řada je vysoká kvůli popisku,
+ * ale předvolba je součást vstupu — patří na jeho řádek.
+ *
+ * Týká se to jen varianty s popiskem (pokladna, fakturační adresa). Kontaktní
+ * formulář popisek nemá, dostává `.dial` a řídí se jím dál.
+ */
 .dialTall {
   min-height: 2.75rem;
-  align-self: stretch;
+  align-self: flex-end;
 }
 
 /* Číslo v podtrženém vstupu sedí na téže ose jako předvolba. */

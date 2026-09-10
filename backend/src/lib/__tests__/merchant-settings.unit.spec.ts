@@ -13,6 +13,7 @@ describe("merchant settings allowlist", () => {
       "announcement_enabled",
       "announcement_link",
       "announcement_text",
+      "company_purchase_enabled",
       "daily_digest_enabled",
       "default_parcel_weight_kg",
       "low_stock_default_threshold",

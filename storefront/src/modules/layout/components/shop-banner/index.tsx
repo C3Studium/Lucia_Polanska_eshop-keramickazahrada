@@ -35,9 +35,26 @@ const HEIGHT_VAR = "--shop-banner-height"
 /** Sekce hera na úvodní stránce — viz `modules/home/Hero/index.tsx`. */
 const HERO_ID = "home-atelier"
 
+/*
+ * Kolikrát se sada zpráv v pásu zopakuje.
+ *
+ * Zpráva bývá jedna a na širokém displeji za ní zbývalo prázdno; teď je pás
+ * plný na jakékoli šířce. Že se text opakuje, nevadí — nikdo pás nečte celý
+ * a stejně se dá zavřít.
+ *
+ * Rychlost se tím nemění: `.track` násobí dobu běhu touhle hodnotou přes
+ * `--notices-repeat`, jinak by dvanáctkrát delší pás ujížděl dvanáctkrát rychleji.
+ */
+const NOTICES_REPEAT = 12
+
 export default function ShopBanner({ status }: { status: ShopStatus | null }) {
   const messages = useMemo(() => {
-    const list: { text: string; link?: string | null }[] = []
+    const list: {
+      text: string
+      link?: string | null
+      /** Čeho se zpráva týká — vypisuje se před ní jako odznak. */
+      badge: string
+    }[] = []
     if (status?.vacation) {
       const until = status.vacation.until
         ? ` Zakázky přijímáme znovu po ${status.vacation.until
@@ -45,12 +62,13 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
             .reverse()
             .join(". ")}.`
         : ""
-      list.push({ text: `${status.vacation.message}${until}` })
+      list.push({ text: `${status.vacation.message}${until}`, badge: "Dovolená" })
     }
     if (status?.announcement)
       list.push({
         text: status.announcement.message,
         link: status.announcement.link ?? null,
+        badge: "Novinky",
       })
     return list
   }, [status])
@@ -168,11 +186,14 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
    */
   const line = (copy: "first" | "second") => (
     <span className={styles.line} aria-hidden={copy === "second"}>
-      {messages.map((message, i) => (
-        <span key={`${copy}-${i}`} className={styles.item}>
-          {message.text}
-        </span>
-      ))}
+      {Array.from({ length: NOTICES_REPEAT }).flatMap((_, opakovani) =>
+        messages.map((message, i) => (
+          <span key={`${copy}-${opakovani}-${i}`} className={styles.item}>
+            <span className={styles.badge}>{message.badge}</span>
+            {message.text}
+          </span>
+        ))
+      )}
     </span>
   )
 
@@ -192,7 +213,11 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
 
       {/* Maska drží pás uvnitř své šířky; kdyby přetékal, rozšířil by stránku. */}
       <div className={styles.viewport}>
-        <div className={styles.track}>
+        <div
+          className={styles.track}
+          /* Aby doba běhu odpovídala délce pásu — viz `.track` ve stylopisu. */
+          style={{ "--notices-repeat": NOTICES_REPEAT } as React.CSSProperties}
+        >
           {line("first")}
           {/* Druhá kopie: bez ní by po odjetí první zůstala mezera. */}
           {line("second")}

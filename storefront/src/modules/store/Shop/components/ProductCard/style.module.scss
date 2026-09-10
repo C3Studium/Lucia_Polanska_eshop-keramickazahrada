@@ -35,14 +35,19 @@
   transform-origin: right center;
 }
 
-.badges { position: absolute; top: var(--card-inset); left: var(--card-inset); z-index: 3; display: flex; gap: clamp(.25rem, .35vw, .35rem); }
+/* `right` a `flex-wrap`, protože štítky můžou být tři: „Prodáno" + „Na objednávku"
+   + „Novinka". Bez pravé hranice neměla řada žádnou šířku, takže se nezalomila —
+   běžela dál za kartu a poslední štítek ležel přes předchozí. S hranicí se
+   přebytek přesune na druhý řádek. `nowrap` na štítku pak brání tomu, aby se
+   místo řady lámalo slovo uvnitř („NA / OBJEDNÁVKU"). */
+.badges { position: absolute; top: var(--card-inset); right: var(--card-inset); left: var(--card-inset); z-index: 3; display: flex; flex-wrap: wrap; gap: clamp(.25rem, .35vw, .35rem); }
 /* Two chips side by side ate three quarters of the card width at 1280. Vertical padding goes
    on vh (it competes for the height of the photo), horizontal padding and type on vw, and
    letter-spacing drops .08em -> .07em because caps on a 274px card need every pixel back.
    The width came back out of the padding and the tracking, NOT out of the type: the floor is
    .75rem because 12px is this project's legibility minimum (--type-eyebrow), and a .68rem floor
    put "NOVINKA" at 10.9px on the 1220 and 1366 laptops the pass exists for. */
-.badges span { padding: clamp(.4rem, .7vh, .55rem) clamp(.55rem, .75vw, .8rem); border-radius: 999px; background: rgb(var(--cream-07-rgb) / .9); color: var(--black-03); font-size: clamp(.75rem, 1vw, 0.875rem); letter-spacing: .07em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.badges span { padding: clamp(.4rem, .7vh, .55rem) clamp(.55rem, .75vw, .8rem); border-radius: 999px; background: rgb(var(--cream-07-rgb) / .9); color: var(--black-03); font-size: clamp(.75rem, 1vw, 0.875rem); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; backdrop-filter: blur(8px); }
 
 .discover {
   /* The pill's geometry lives here and only here. At rest exactly the round cap shows, so the
@@ -183,7 +188,13 @@
 
 /* Availability chips: same shape as "Novinka", different tone. Never colour alone — each
    carries its own word, so a colour-blind customer reads the same information. */
-.badgeSold {
+/* „Prodáno" a „Na objednávku" vypadají stejně — jedno pravidlo, ne dvě.
+   Dřív byl druhý z nich průsvitný a světlý („není to varování, je to čekací
+   doba"), jenže vedle plného tmavého štítku to nečetlo jako dvojice, ale jako
+   omyl. Psané jedním pravidlem, aby se ta shoda nedala rozbít úpravou jednoho
+   z nich. */
+.badgeSold,
+.badgeMade {
   background: var(--ink-12) !important;
   color: var(--cream-06) !important;
 }
@@ -191,13 +202,6 @@
 .badgeLast {
   background: var(--clay-24) !important;
   color: var(--cream-10) !important;
-}
-
-/* Quieter than the other two: „Na objednávku" is not a warning, it is a lead
-   time. It should read as available, just not immediately. */
-.badgeMade {
-  background: rgb(var(--ink-12-rgb) / .08) !important;
-  color: var(--ink-12) !important;
 }
 
 /*

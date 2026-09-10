@@ -13,6 +13,8 @@ import Cart from "@modules/common/icons/cart"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
 import {
   availabilityLabel,
+  hasEmptyShelf,
+  isPurchasable,
   maxPurchasableQuantity,
   productAvailability,
 } from "@lib/util/availability"
@@ -173,9 +175,21 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
   const wishlistVariantId =
     (product.variants ?? []).length === 1 ? product.variants?.[0]?.id : undefined
 
+  /*
+   * Košík u karty se řídí tím, co jde koupit — ne tím, co leží na poličce.
+   *
+   * Dřív tu stálo `in-stock || last-one`, takže vyprodaný kus zůstal bez
+   * tlačítka i tehdy, když ho ateliér dorobí a backend ho normálně prodá.
+   * Produktová stránka se přitom ptá správně (`isPurchasable`), takže z jedné
+   * a téže věci říkala mřížka „nedá se" a detail „dá se".
+   *
+   * `isPurchasable` pustí i „Na objednávku", a ten stav nastane JEN tam, kde
+   * varianta má `allow_backorder` nebo se u ní sklad nehlídá — tedy přesně tam,
+   * kde backend přidání do košíku přijme. Dokud se katalog nepřepne, zůstává
+   * vyprodaný kus „Prodáno" a tlačítko se neukáže; po přepnutí naskočí samo.
+   */
   const canQuickAdd =
-    Boolean(quickAddVariant && countryCode) &&
-    (availability === "in-stock" || availability === "last-one")
+    Boolean(quickAddVariant && countryCode) && isPurchasable(availability)
 
   const handleQuickAdd = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -272,20 +286,25 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
               </motion.div>
           )}
           <div className={styles.badges}>
-            {/* A customer could fall in love with a sold piece and only learn at the PDP. */}
-            {availability === "sold-out" && (
+            {/*
+              „Prodáno" mluví o poličce, ne o tom, jestli se dá koupit.
+              A customer could fall in love with a sold piece and only learn at the PDP.
+
+              Platí i pro kus, který se dá dorobit: došel, a to je pravda, kterou
+              má karta říct. Že se dá objednat, ukazuje košík vedle ceny —
+              a jak dlouho se čeká, stojí na stránce produktu.
+
+              Štítek „Na objednávku" tu schválně NENÍ. Patří jen zakázkové výrobě,
+              a tu mřížka rozpoznat neumí: profil zakázky se načítá zvlášť pro
+              jeden produkt a `/store/products` ho s produktem nevrací (ověřeno
+              třemi zápisy `fields`). Než ho začne vracet, byl by ten štítek
+              na všem, co došlo — což je přesně to, čím byl.
+            */}
+            {(availability === "sold-out" || hasEmptyShelf(product)) && (
               <span className={styles.badgeSold}>{availabilityLabel["sold-out"]}</span>
             )}
             {availability === "last-one" && (
               <span className={styles.badgeLast}>{availabilityLabel["last-one"]}</span>
-            )}
-            {/* Buyable, but not from a shelf — the wait is spelled out on the
-                product page. Saying it here too stops the grid from reading as
-                „ready to ship" for a piece that still has to be made. */}
-            {availability === "made-to-order" && (
-              <span className={styles.badgeMade}>
-                {availabilityLabel["made-to-order"]}
-              </span>
             )}
             {isNew && <span>Novinka</span>}
             {hasSale && <span>−{Math.round(Number(cheapestPrice!.percentage_diff))} %</span>}

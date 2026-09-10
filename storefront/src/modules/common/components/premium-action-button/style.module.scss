@@ -75,13 +75,32 @@
   will-change: transform;
 }
 
-.label,
+.labelStack,
 .arrow {
   position: relative;
   z-index: 1;
 }
 
+/* Obě kopie popisku leží přesně na sobě: spodní drží místo v řádku, horní se
+   podle ní jen překryje. Proto `position: relative` tady a `absolute` u horní —
+   žádné rozměry se nikde neopisují. */
+.labelStack {
+  display: inline-block;
+}
+
+.labelOver {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--premium-button-active-ink, var(--cream-06));
+  pointer-events: none;
+}
+
 .label {
+  /* Spodní kopie zůstává tmavá vždy — přebarvení řeší horní kopie ořezem.
+     Bez tohohle by ji přebarvila animace barvy, která běží na tlačítku kvůli
+     šipce, a obě kopie by v jednu chvíli svítily světle. */
+  color: var(--premium-button-ink, var(--ink-05));
   white-space: nowrap;
   /* The CTA for the whole purchase flow — the 15px UI floor applies, so
      .9375rem is the floor of the clamp and never goes below it.

@@ -317,7 +317,17 @@ export const listStoreCatalogue = async ({
     // asked for by name. Without it every tracked variant read as quantity 0,
     // so the grid called in-stock pieces „Prodáno" and never showed „Poslední
     // kus" at all — the cards contradicted the product page they linked to.
-    fields: "*bundle,*type,*categories,*images,+variants.inventory_quantity",
+    /*
+     * `allow_backorder` se musí vyžádat výslovně — bez něj přijde `undefined`.
+     *
+     * `variantAvailability` na něm stojí: vyprodaný kus, který se dá dorobit,
+     * má hlásit „Na objednávku" a jít koupit. Chybějící pole je ale nepravdivé,
+     * takže z KAŽDÉ nuly na skladě vycházelo „Prodáno" — a to i potom, co se
+     * v katalogu prodej bez skladu zapnul. Mřížka tak tvrdila něco jiného než
+     * backend, který přidání do košíku normálně přijal.
+     */
+    fields:
+      "*bundle,*type,*categories,*images,+variants.inventory_quantity,+variants.allow_backorder",
   }
 
   if (searchTerm) {

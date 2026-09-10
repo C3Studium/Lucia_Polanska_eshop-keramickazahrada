@@ -221,9 +221,20 @@ const variants = {
           }
 const transition = { duration: 0.46, ease }
 const styleObj = { width: "22px" as const, height: "22px" as const }
+/*
+ * Šipka u výběru země. Znak je „↗", tedy 45° vpravo nahoru — každé otočení
+ * se počítá od TOHO, ne od vodorovné.
+ *
+ * Zavřeno 225°: šipka míří rovně doleva, tedy na vlajku vedle sebe — ukazuje
+ * na to, co se právě vybralo.
+ * Otevřeno 135°: rovně dolů, do seznamu, který se pod tlačítkem rozbalí.
+ *
+ * Dřív tu stálo 180 / 90, z čehož vycházelo ↙ v klidu a ↘ po otevření — dva
+ * diagonální směry, z nichž ani jeden neukazoval na nic konkrétního.
+ */
 const variants2 = {
-            closed: { rotate: 180, x: 0 },
-            open: { rotate: 90, x: 1 },
+            closed: { rotate: 225, x: 0 },
+            open: { rotate: 135, x: 1 },
           }
 const transition2 = { duration: 0.5, ease }
 const initial = { opacity: 0, y: -5 }

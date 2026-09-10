@@ -84,6 +84,14 @@ const KEY_SCHEMAS = {
   vacation_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")),
   /** Her own words for the banner; empty falls back to a sensible default. */
   vacation_message: z.string().max(300),
+  /**
+   * Nákup na firmu — smí zákazník v pokladně vyplnit firemní údaje?
+   *
+   * Vypnutí schová volbu v obchodě, nic víc. Objednávky, které tak už vznikly,
+   * zůstávají i s firemními údaji: jsou na vystavené faktuře a zmizet z dohledu
+   * nesmí jen proto, že se od zítřka na firmu prodávat nebude.
+   */
+  company_purchase_enabled: z.boolean(),
   /** Oznámení — an event banner atop the storefront („v sobotu na trhu…"). */
   announcement_enabled: z.boolean(),
   announcement_text: z.string().max(300),
@@ -110,6 +118,9 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   announcement_enabled: false,
   announcement_text: "",
   announcement_link: "",
+  /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
+     nebude chtít, ne naopak. */
+  company_purchase_enabled: true,
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
   review_request_days: 10,

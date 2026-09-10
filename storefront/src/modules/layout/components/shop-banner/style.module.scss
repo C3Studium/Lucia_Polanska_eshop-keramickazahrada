@@ -65,7 +65,10 @@
   box-shadow: 0 -2px 12px rgb(var(--black-01-rgb) / .18); /* hairline-class, stays in px */
   background: var(--black-04);
   color: var(--cream-08);
-  font-size: clamp(0.8125rem, 1.05vw, 1rem);       /* was 14px — live 1238…1524 */
+  /* 1.15× původního clamp(0.8125rem, 1.05vw, 1rem) — pás byl proti okolí drobný.
+     Násobí se všechny tři členy, takže živé pásmo (1238…1524) zůstává tam, kde bylo;
+     mění se jen velikost, ne to, kde se přestává zvětšovat. 15…18.4px při rem 16. */
+  font-size: clamp(0.934rem, 1.208vw, 1.15rem);
   line-height: 1.4;
   text-align: center;
 }
@@ -111,6 +114,23 @@
    * různě rychle, bylo by na jedné stránce vidět, že to nejsou dvě podoby téhož.
    */
   animation: bannerNoticesLoop var(--notices-speed, 28s) linear infinite;
+  /*
+   * Doba běhu se násobí počtem opakování.
+   *
+   * `--notices-speed` je čas, za který pás ujede polovinu své šířky. Když se
+   * obsah zopakuje dvanáctkrát, je pás dvanáctkrát širší — a při stejném čase
+   * by se hnal dvanáctkrát rychleji. Násobek drží stejnou rychlost čtení bez
+   * ohledu na to, kolikrát se zpráva opakuje.
+   *
+   * Samostatný longhand, ne `calc()` uvnitř zkratky `animation`: zkratka
+   * s `var()` se vyhodnocuje až dodatečně, a když z ní vyjde něco neplatného,
+   * spadnou na výchozí hodnoty VŠECHNY její části — naměřeno
+   * `animation-name: none`, tedy pás úplně stojící. Takhle je nejhorší možný
+   * následek špatná doba, ne mrtvá animace.
+   */
+  animation-duration: calc(
+    var(--notices-speed, 28s) * var(--notices-repeat, 1)
+  );
 
   @include reduced-motion {
     animation: none;
@@ -131,7 +151,45 @@
 }
 
 .item {
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
   white-space: nowrap;
+}
+
+/*
+ * Odznak před zprávou — čeho se týká.
+ *
+ * V pásu jedou zprávy dvojího druhu (dovolená a oznámení) a při opakování
+ * po sobě jdou stejně dlouhé věty; bez odznaku nejde poznat, kde která začíná
+ * a co je zač. Drobná verzálková značka je tentýž jazyk, jakým mluví zbytek
+ * webu („PÍSEK · OD ROKU 2014").
+ */
+.badge {
+  padding: .1875rem .5rem;
+  border: 1px solid rgb(var(--cream-06-rgb) / .34);
+  border-radius: 999px;
+  opacity: .78;
+  /* Také 1.15×, aby odznak nezůstal drobný proti zvětšené zprávě vedle. */
+  font-size: .719rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/*
+ * Oddělovač mezi zprávami.
+ *
+ * Pás běží ve smyčce a je v DOMu dvakrát, takže po poslední zprávě přijde rovnou
+ * první z druhé kopie. Se samotnou mezerou to splývalo v jednu větu — a když je
+ * zpráva jen jedna, vypadalo to, že se text nesmyslně opakuje.
+ *
+ * Proto za KAŽDOU zprávou, i za tou poslední: ta se ve smyčce potkává s první
+ * a šev potřebuje oddělit stejně jako zbytek.
+ */
+.item::after {
+  margin-inline-start: clamp(1.5rem, 4vw, 3.5rem);
+  content: "———";
+  opacity: .38;
 }
 
 @keyframes bannerNoticesLoop {

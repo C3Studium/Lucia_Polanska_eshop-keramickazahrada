@@ -32,6 +32,9 @@ const Inner = () => {
   const [announce, setAnnounce] = useState(false);
   const [aText, setAText] = useState("");
   const [aLink, setALink] = useState("");
+  /* Výchozí true jako v backendu — než dorazí uložená hodnota, ať formulář
+     neproblikne vypnutým stavem u něčeho, co je zapnuté. */
+  const [company, setCompany] = useState(true);
 
   useEffect(() => {
     const s = data?.settings;
@@ -42,6 +45,7 @@ const Inner = () => {
     setAnnounce(Boolean(s.announcement_enabled));
     setAText(s.announcement_text ?? "");
     setALink(s.announcement_link ?? "");
+    setCompany(s.company_purchase_enabled !== false);
   }, [data]);
 
   const save = useMutation({
@@ -55,6 +59,7 @@ const Inner = () => {
           announcement_enabled: announce,
           announcement_text: aText,
           announcement_link: aLink.trim(),
+          company_purchase_enabled: company,
         },
       }),
     onSuccess: async () => {
@@ -131,6 +136,20 @@ const Inner = () => {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="flex flex-col gap-y-4 px-6 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <Text size="small" weight="plus">Nákup na firmu</Text>
+            <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
+              Zákazník může v pokladně vyplnit IČO, DIČ a sídlo, aby dostal
+              fakturu na firmu. Vypnutím se ta volba v obchodě jen schová —
+              objednávky, které tak už vznikly, zůstávají i s údaji na faktuře.
+            </Text>
+          </div>
+          <Switch checked={company} onCheckedChange={setCompany} />
+        </div>
       </section>
 
       <footer className="px-6 py-4">
