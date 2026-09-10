@@ -22,7 +22,7 @@
  * demand — because a customer cannot tell those apart and should not have to.
  */
 export const DEFAULT_BACKORDER_NOTE =
-  "Tenhle kousek nemáme skladem — vyrobíme ho pro vás. Obvykle to trvá 3–7 dní."
+  "Tenhle kousek nemáme skladem — Výroba obvykle trvá 3–7 dní."
 
 /** The merchant's own sentence, when she wrote one on the product. */
 export const backorderNote = (
@@ -35,6 +35,28 @@ export const backorderNote = (
   const trimmed = value.trim()
   return trimmed.length ? trimmed : null
 }
+
+/**
+ * Zakázková výroba mluví jinak.
+ *
+ * Kus, co došel, se dá dorobit podle stejné předlohy, a proto se u něj dá slíbit
+ * rozmezí dní. Zakázka žádnou předlohu nemá — teprve se domlouvá, co má vzniknout —,
+ * takže by stejná věta slibovala termín, který v tu chvíli nikdo nezná.
+ *
+ * Stojí tady vedle té běžné schválně: obě věty odpovídají na tutéž otázku
+ * („kdy to budu mít?") a musí se měnit společně.
+ */
+export const COMMISSION_WAIT_NOTE =
+  "Jde o zakázkovou výrobu na míru — doba zpracování se liší od běžných výrobků, ozveme se vám s termínem."
+
+/**
+ * Věta pro balíček, ve kterém něco chybí.
+ *
+ * Zákazník si nekupuje jednotlivé kusy, ale balíček, takže se mu neříká, který
+ * z nich zrovna došel — jen že se na něj čeká a jak dlouho.
+ */
+export const BUNDLE_BACKORDER_NOTE =
+  "Součástí balíčku je výrobek, který nemáme skladem — Výroba obvykle trvá 3–7 dní."
 
 /**
  * What the customer actually reads under „Na objednávku".

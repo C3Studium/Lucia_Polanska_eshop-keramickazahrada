@@ -499,9 +499,24 @@
  * Kurzy mají tentýž problém vyřešený stejně (`.kurzyTimeline` před názvem).
  */
 .storeRow .storeLink {
-  /* Výška z rozpočtu panelu, ne plochých 3.25rem jako na Kurzech: na krátkém
-     okně se řádek smrskne na 44px a kotouč se šipkou se sveze s ním. */
-  @include cta-pill(var(--store-row-h));
+  /*
+   * Výška z rozpočtu panelu, ne plochých 3.25rem jako na Kurzech: na krátkém
+   * okně se řádek smrskne na 44px a kotouč se šipkou se sveze s ním.
+   *
+   * Mínus 4px, aby se pilulka řádku nedotýkala. Na Kurzech stojí ve volném
+   * prostoru, tady má nad sebou čáru a pod sebou patičku — a když vyplnila
+   * řádek přesně, celý spodek panelu čtl natěsno.
+   */
+  @include cta-pill(calc(var(--store-row-h) - 0.25rem));
+
+  /*
+   * Šířku určuje popisek, ne podlaha z mixinu.
+   *
+   * `clamp(11.875rem, 13vw, 15rem)` je psané pro krátká „Napište mi" —
+   * tady je popisek dlouhý a podlaha jen přidávala prázdno: na 1920 dělala
+   * z 221px obsahu 240px pilulku.
+   */
+  min-width: 0;
 
   border: 1px solid rgb(var(--ink-04-rgb) / .3);
   background: var(--cream-10);

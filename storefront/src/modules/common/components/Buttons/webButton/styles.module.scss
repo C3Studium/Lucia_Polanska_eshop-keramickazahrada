@@ -58,7 +58,25 @@
 
     .slider{
         position: relative;
-        width: fit-content;
+        /*
+         * Posuvník musí vyplnit tlačítko, ne jen svůj obsah.
+         *
+         * Výplň, která se při najetí roztahuje (`.solidFill`), je
+         * `inset: 0` PRÁVĚ TOHOTO prvku. Dokud tu stálo `fit-content`,
+         * končila animace všude, kde je tlačítko širší než jeho obsah —
+         * tedy pokaždé, když o šířce rozhodla `min-width` nebo ji nastavil
+         * volající — a u pravého kulatého okraje zbyl světlý srpek.
+         * Naměřeno na „Zobrazit celý e-shop“ na 1920: tlačítko 240px,
+         * výplň 220.9px, tedy 92 %.
+         *
+         * Ikonková varianta níž má `width: 100%` odjakživa; tahle textová
+         * byla jediná, která to neměla.
+         *
+         * Tlačítko samo je `fit-content`, takže tam, kde se řídí obsahem,
+         * se nemění nic: 100 % je přesně ta šířka, kterou měl posuvník
+         * i předtím.
+         */
+        width: 100%;
         min-width: var(--web-button-min-width);
         height: 100%;   
         display: flex;

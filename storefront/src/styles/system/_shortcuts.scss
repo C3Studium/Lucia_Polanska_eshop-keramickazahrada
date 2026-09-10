@@ -187,6 +187,8 @@
 
     // Pravé odsazení musí kotouč obejít i se vzduchem: inset + kotouč + 9px.
     > div {
+        // Šířku posuvníku (a tím i dojezd výplně) řeší sám WebButton
+        // ve svém stylopisu — tady se opakovat nemusí.
         padding: 0.1875rem
             calc(var(--cta-pill-inset) + var(--cta-pill-disc) + 0.5625rem)
             0.1875rem 1.375rem;

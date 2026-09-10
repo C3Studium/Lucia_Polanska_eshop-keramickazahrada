@@ -243,6 +243,18 @@
 
   @include h(huge) {
     grid-template-columns: minmax(0, 1fr) auto;
+
+    // Vzduch pro pohyb pilulky pri najeti.
+    //
+    // Ve dvousloupcove paticce stoji pilulka "Odstranit" natesno u prave
+    // hrany karty — namereno na 1920 presne 0 px vule. Karta se pri najeti
+    // zvetsi a pilulka se tim posune o 5.4 px doprava, jenze `.root` karty
+    // ma `overflow: hidden`, takze se prave zaobleni ukrojilo.
+    //
+    // 0.75rem = 12 px pri root 16, tedy posun plus par pixelu navic. V rem,
+    // protoze i ten posun roste s velikosti karty: je to dusledek zvetseni,
+    // ne pevna vzdalenost.
+    padding-right: .75rem;
   }
 
   // Na qhd ma mrizka ctvrty sloupec, takze karta je UZSI nez na 1920

@@ -25,12 +25,21 @@
        s oknem nemění, takže by clamp jen posouval prázdné místo. */
     18.75rem;
   /* Výška řádku soupeří s výškou okna, ne s její šířkou. 92px natvrdo × 3 dělalo na
-     1366×768 z jednoho řádku 42 % obrazovky. */
-  grid-template-rows: repeat(3, minmax(clamp(4rem, 9vh, 6.5rem), auto));
+     1366×768 z jednoho řádku 42 % obrazovky.
+
+     Z 9vh na 6.2vh: devět procent výšky okna na buňku bylo víc, než co v nich stojí.
+     Nejvyšší z těch tří je „Množství" a ta potřebuje stepper 2.25rem plus svislé
+     odsazení, tedy ~65px; zbylé dvě jsou jednořádkové. Naměřeno na 1440×900: tři
+     buňky po 81px daly řádek 306px, což je 34 % obrazovky — dvě položky v košíku
+     a je plná. Minimum se tím snižuje, ne obsah: druhý člen `minmax` je pořád `auto`,
+     takže co potřebuje víc, si víc vezme. */
+  grid-template-rows: repeat(3, minmax(clamp(3.25rem, 6.2vh, 4.75rem), auto));
   width: 100%;
   /* 320px natvrdo: na 1366×768 čtyři řádky = 1280 px, celá stránka 3.6 obrazovky.
-     34vh drží stejný podíl obrazovky všude — 261 px na 768, 306 na 900, 367 na 1080. */
-  min-height: clamp(15rem, 34vh, 24rem);
+     34vh drželo stejný podíl obrazovky všude, jenže ten podíl byl moc velký:
+     261 px na 768, 306 na 900, 367 na 1080, 490 na 1440. Na 24vh vychází
+     184 / 216 / 259 / 346 a podíl obrazovky klesne z 34 % na 24 %. */
+  min-height: clamp(11.5rem, 24vh, 17rem);
   overflow: hidden;
   border-top: 1px solid rgb(var(--cream-06-rgb) / .22);
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .11);

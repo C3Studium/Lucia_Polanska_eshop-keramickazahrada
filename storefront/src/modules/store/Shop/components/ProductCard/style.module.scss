@@ -259,6 +259,25 @@
   padding: 0;
   cursor: pointer;
 
+  /*
+   * Stejný podíl kolečka jako záložka vedle — 55 %, viz
+   * `wishlist-toggle.module.scss`.
+   *
+   * Košík si nesl velikost z JSX (`size="19"`), tedy pevné pixely, a
+   * vycházela z toho kresba 15.0 x 13.5 px proti 12.8 x 18.5 u záložky.
+   * O pět pixelů nižší glyf vedle vyššího čte jako menší ikona, i když je
+   * širší.
+   *
+   * Při 55 % se obě kresby škálují týmž číslem (oba glyfy mají viewBox
+   * 21 vysoký), takže si sednou na stejnou výšku a košík zůstane přirozeně
+   * širší — tak, jak je nakreslený. A protože je to podíl, ne pixely,
+   * rostou nad 1921 obě s rampou zároveň.
+   */
+  svg {
+    width: 55%;
+    height: 55%;
+  }
+
   i {
     font-size: 1.05rem;
     font-style: normal;

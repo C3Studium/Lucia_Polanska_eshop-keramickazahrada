@@ -118,11 +118,25 @@ const solidFillVariants: Variants = {
   },
 }
 
+/*
+ * Šipka je vidět POŘÁD, nejen po najetí.
+ *
+ * Dřív se při najetí teprve odkrývala (`opacity: 0`, `clipPath` zprava),
+ * takže tlačítko v klidu končilo textem a teprve pod myší dostalo směr.
+ * Vizuálně je lepší, když směr nese od začátku — a nic to nestojí:
+ * `.arrow` má ve stylopisu pevnou šířku i levý okraj, místo je tedy
+ * v rozvržení zabrané tak jako tak a zviditelněním se nic neposune.
+ *
+ * Po najetí zůstává pohyb, jen jiný: celá šipka popojede o kousek vpřed.
+ * Posouvá se OBAL, ne vnitřek — obal má `overflow: hidden`, takže posun
+ * vnitřku by šipku u kraje ukrojil.
+ */
 const arrowWrapperVariants: Variants = {
   [BUTTON_REST]: {
-    opacity: 0,
-    scaleX: 0.35,
-    clipPath: "inset(0 100% 0 0)",
+    opacity: 1,
+    scaleX: 1,
+    clipPath: "inset(0 0% 0 0)",
+    x: 0,
     transition: {
       duration: 0.22,
       ease: BUTTON_EASE,
@@ -132,6 +146,7 @@ const arrowWrapperVariants: Variants = {
     opacity: 1,
     scaleX: 1,
     clipPath: "inset(0 0% 0 0)",
+    x: 4,
     transition: {
       duration: 0.35,
       ease: BUTTON_EASE,
@@ -139,10 +154,11 @@ const arrowWrapperVariants: Variants = {
   },
 }
 
+/* Vnitřek stojí — viz poznámka u obalu výš. */
 const arrowSlideVariants: Variants = {
   [BUTTON_REST]: {
-    x: "-100%",
-    opacity: 0,
+    x: "0%",
+    opacity: 1,
     transition: {
       duration: 0.2,
       ease: BUTTON_EASE,
@@ -152,7 +168,6 @@ const arrowSlideVariants: Variants = {
     x: "0%",
     opacity: 1,
     transition: {
-      delay: 0.08,
       duration: 0.26,
       ease: BUTTON_EASE,
     },

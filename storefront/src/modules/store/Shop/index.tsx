@@ -85,6 +85,19 @@ const priceLabels: Record<string, string> = {
   "2500+": "Nad 2 500 Kč",
 }
 
+/**
+ * Otisk serverového výpisu — co v něm je, ne jaké je to pole.
+ *
+ * Slouží k rozlišení „server poslal jiný výpis" od „server poslal ten samý
+ * výpis znovu". To druhé se děje po každé serverové akci, protože Next po ní
+ * překreslí celou routu; bez tohohle rozlišení by se mřížka pokaždé vrátila
+ * na první stránku.
+ */
+const podpisVypisu = (
+  produkty: HttpTypes.StoreProduct[],
+  celkem?: number
+) => (celkem ?? produkty.length) + "|" + produkty.map((p) => p.id).join(",")
+
 export default function ECom({
   countryCode,
   products: initialProducts,
@@ -131,6 +144,12 @@ export default function ECom({
   const restoreStarted = useRef(false)
   /** Obnovený výpis už na stránce je — serverový ho nemá čím nahradit. */
   const restored = useRef(false)
+  /**
+   * Co naposledy přišlo ze serveru — podle obsahu, ne podle reference pole.
+   * Seed z prvního vykreslení, protože stav už je z `initialProducts` nasetý
+   * v `useState` výš; efekt tedy hned po připojení nemá co dělat.
+   */
+  const podpisServeru = useRef(podpisVypisu(initialProducts, totalCount))
 
   useEffect(() => {
     /*
@@ -142,6 +161,26 @@ export default function ECom({
      * ne k těm, které si člověk nastavil a které obnova právě vrátila.
      */
     if (restored.current) return
+
+    /*
+     * A stejně tak ne, když server poslal TENTÝŽ výpis znovu.
+     *
+     * Každá serverová akce (a přidání do košíku je serverová akce) nechá
+     * Next znovu vykreslit celou routu a poslat čerstvý RSC payload. Pole
+     * `initialProducts` tím pádem přijde jako nová reference, i když je
+     * v něm položku po položce totéž — a tenhle efekt na to reagoval
+     * přepsáním výpisu zpátky na prvních šestnáct kusů. Naměřeno v obchodě:
+     * načteno 48 z 263, klik na košík u karty, a rázem zase 16 z 263.
+     * To „seknutí" při přidávání do košíku nebyla animace, ale zmizelé
+     * dvě třetiny mřížky.
+     *
+     * Rozhoduje proto OBSAH, ne reference: dokud server posílá stejná id
+     * a stejný počet, není co přepisovat. Skutečná změna filtru v adrese
+     * pošle jiná id a výpis se obnoví jako dřív.
+     */
+    const podpis = podpisVypisu(initialProducts, totalCount)
+    if (podpis === podpisServeru.current) return
+    podpisServeru.current = podpis
 
     setProducts(initialProducts)
     setResultCount(totalCount ?? initialProducts.length)
