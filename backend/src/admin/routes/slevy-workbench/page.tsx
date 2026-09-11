@@ -15,7 +15,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -29,6 +28,7 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Slevy+ — promotions, campaigns and price lists as one workbench
@@ -667,7 +667,7 @@ const SlevyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const SlevyWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>

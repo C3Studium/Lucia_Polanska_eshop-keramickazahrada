@@ -13,7 +13,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -22,6 +21,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 type ProductionStage =
   | "specification_pending"
@@ -71,7 +71,7 @@ type ProductionAction =
   | "request_balance"
   | "cancel";
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const stageMeta: Record<
   ProductionStage,

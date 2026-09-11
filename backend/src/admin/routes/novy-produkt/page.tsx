@@ -1,6 +1,5 @@
 import { Button, Container, Heading, Input, Label, Text, Toaster, toast } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
 } from "@tanstack/react-query";
@@ -8,6 +7,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateBundledProduct from "../../components/create-bundled-product";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * „Nový produkt" — the single front door for creating anything sellable.
@@ -278,7 +278,7 @@ const NovyProduktInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const NovyProduktPage = () => (
   <QueryClientProvider client={queryClient}>

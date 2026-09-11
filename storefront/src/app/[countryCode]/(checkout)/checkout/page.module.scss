@@ -234,6 +234,32 @@
   .order { order: 3; margin-top: 24px; }
 }
 
+/*
+ * ─── Svisle: souhrn nad pokladnu ────────────────────────────────────────────
+ *
+ * Na ležato zůstává souhrn pod formulářem — tam je to rekapitulace na konci
+ * cesty. Na svislé obrazovce je z něj ale komponenta na rozbalení
+ * (`checkout/components/order-summary-disclosure`) a ta patří nahoru:
+ *
+ * - Rozbaluje se směrem dolů. Kdyby stála pod formulářem, otevřel by se obsah
+ *   pod ohybem a člověk by k němu musel doscrollovat; a po zavření by
+ *   formulář uskočil zpátky pod prstem.
+ * - Zavřená zabere tři řádky, takže „co kupuju a kolik to dělá" je vidět
+ *   dřív, než se začne vyplňovat — což je pořadí, ve kterém to člověk chce.
+ *
+ * Táž hranice jako `below-px(1020px)` výš, schválně: nad ní drží stránka
+ * dvousloupcové rozvržení, souhrn sedí ve vlastním sloupci vedle formuláře
+ * a `order` by tam nic neznamenalo.
+ */
+@media (orientation: portrait) and (max-width: 1020px) {
+  .order {
+    order: 1;
+    /* Odstup teď patří pod souhrn, ne nad něj — nad ním je už mezera od
+       hlavičky, kterou drží `gap` mřížky. */
+    margin-top: 0;
+  }
+}
+
 @include below-px(700px) {
   .root { width: calc(100% - 32px); padding: 78px 0 90px; gap: 42px; }
   .masthead {

@@ -1,6 +1,5 @@
 import { Badge, Container, Heading, Skeleton, Tabs, Text } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import { paymentStatusMeta } from "../../../components/merchant-order-queue";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 type PaymentRow = {
   order_id: string;
@@ -195,7 +195,7 @@ const PlatbyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /**
  * Platby — money in, and money that did not arrive.

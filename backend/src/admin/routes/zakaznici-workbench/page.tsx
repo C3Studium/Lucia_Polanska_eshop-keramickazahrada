@@ -14,7 +14,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -29,6 +28,7 @@ import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { ThankYouButton } from "../../components/thank-you-button";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Zákazníci — the advanced customer workbench (admin-advanced-plan.md).
@@ -602,7 +602,7 @@ const ZakazniciInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ZakazniciWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>

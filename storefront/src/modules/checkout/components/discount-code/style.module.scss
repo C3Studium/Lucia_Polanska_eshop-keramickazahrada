@@ -34,14 +34,25 @@ $touch-floor: 2.75rem;
     font-size: 1rem;
     line-height: 1.5rem;
 
+    /*
+     * Odstupy nese rozvržení, ne jednotlivé prvky.
+     *
+     * Dokud tu stál formulář a pod ním seznam kódů, stačila `margin-bottom`
+     * na formuláři. Mezi ně ale přibyly vysvětlující věty, a s cizí spodní
+     * mezerou nad sebou a vlastní drobnou pod sebou seděly blíž k seznamu než
+     * k poli, které vysvětlují — četlo se to jako popiska seznamu.
+     *
+     * `gap` řeší všechny mezery jednou hodnotou a nezáleží na tom, kolik vět
+     * se zrovna ukazuje. Číslo je to původní z formuláře: mezera soupeří
+     * o výšku okna, ne o šířku — 28px od 1077 nahoru, 18px na 660px vysokém
+     * notebooku. Živé pásmo 692–1077.
+     */
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.125rem, 2.6vh, 1.75rem);
+
     .form {
       width: 100%;
-      /* Held 150px open whether or not the code panel was showing, which left a hand's worth
-         of empty cream between the button and the totals. The panel animates its own height
-         from 0, so there is nothing to reserve.
-         Mezera pod panelem soupeří o výšku okna, ne o šířku: 28px zůstává od 1077 nahoru,
-         na 660px vysokém notebooku je z ní 18px. Živé pásmo 692–1077. */
-      margin-bottom: clamp(1.125rem, 2.6vh, 1.75rem);
 
       .label {
         display: flex;
@@ -53,7 +64,27 @@ $touch-floor: 2.75rem;
            je to tlačítko — tudy se na něj dá sáhnout, aniž bych psal do cizího
            komponentu. Dřív tu na stejném místě stálo `.ClickButton .button
            { width: 180px; height: 35px }`, které nic netrefilo (viz poznámka nahoře). */
-        .toggleBtn button { min-height: $touch-floor; }
+        .toggleBtn button {
+          min-height: $touch-floor;
+
+          /*
+           * Svislý telefon: pilulka musí být širší.
+           *
+           * `compact` drží podlahu 8.25rem (132px), do které se „Mám slevový
+           * kód" nevejde — text se zalomil na dva řádky a druhý uřízla pevná
+           * výška s `overflow: hidden`, takže z tlačítka koukalo „Mám slevový".
+           *
+           * Řeší se to šířkou, ne menším písmem: 14px je na dotykovém displeji
+           * spodní hranice čitelnosti a zmenšit ho by byla výměna jedné vady
+           * za druhou. `nowrap` zalomení zakáže a podlaha dá pilulce vzduch —
+           * měřeno na 390px širokém telefonu vychází obsah na ~156px, takže
+           * 11.5rem není natěsno ani na nejužší obrazovce.
+           */
+          @media (orientation: portrait) and (max-width: 599.98px) {
+            min-width: 11.5rem;
+            white-space: nowrap;
+          }
+        }
       }
 
       .row {
@@ -145,6 +176,29 @@ $touch-floor: 2.75rem;
         /* Nese výškovou animaci panelu (height 0 → auto), takže overflow zůstává. */
         overflow: hidden;
       }
+    }
+
+    /*
+     * Vysvětlivky k poli, jeden blok.
+     *
+     * Věty jsou dvě („jeden kód" a „zlevněné kusy") a každá se ukazuje
+     * samostatně. Jako dvě flexové položky `.content` by mezi sebou dostaly
+     * celou mezeru rozvržení a četly by se jako dvě různé zprávy; takhle je
+     * to jedna poznámka o jednom nebo dvou řádcích.
+     */
+    .poznamky {
+      display: flex;
+      flex-direction: column;
+      gap: $hair-y;
+    }
+
+    /* Potichu, ne jako varování. Odstupy nese obal, vlastní `margin` by se
+       s jeho `gap` sečetl. */
+    .poznamka {
+      margin: 0;
+      color: rgb(var(--ink-05-rgb) / .62);
+      font-size: 0.875rem;
+      line-height: 1.45;
     }
 
     .promotionsWrap {

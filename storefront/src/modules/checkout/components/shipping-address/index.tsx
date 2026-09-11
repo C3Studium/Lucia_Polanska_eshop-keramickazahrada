@@ -78,6 +78,9 @@ const ShippingAddress = ({
     "shipping_address.phone": cart?.shipping_address?.phone || "",
     "shipping_address.ico": (cart?.metadata?.firma_ico as string) || "",
     "shipping_address.dic": (cart?.metadata?.firma_dic as string) || "",
+    "shipping_address.firma_ulice": (cart?.metadata?.firma_ulice as string) || "",
+    "shipping_address.firma_psc": (cart?.metadata?.firma_psc as string) || "",
+    "shipping_address.firma_mesto": (cart?.metadata?.firma_mesto as string) || "",
     email: cart?.email || "",
   })
 
@@ -225,66 +228,6 @@ const ShippingAddress = ({
           className={styles.input}
           variant="contact"
         />
-        {/*
-          Firemní nákup je volba, ne políčko navíc.
-          „Společnost" tu stálo pro všechny a devět z deseti lidí nakupuje
-          jako fyzická osoba — pro ně to bylo prázdné pole k přeskočení.
-          Firma naopak potřebuje víc než jen název: bez IČO nejde vystavit
-          doklad na firmu a zjistí se to až po zaplacení.
-
-          Pole se vykreslují jen zaškrtnuté. Nezaškrtnuté se neodešlou
-          vůbec, takže se v košíku vyprázdní i případná dřívější hodnota —
-          to je správně, není to firemní nákup.
-        */}
-        <div className={styles.firmaToggle}>
-          <Checkbox
-            label="Nakupuji na firmu"
-            name="nakup_na_firmu"
-            checked={naFirmu}
-            onChange={() => setNaFirmu((stav) => !stav)}
-            data-testid="company-purchase-checkbox"
-          />
-        </div>
-
-        {naFirmu && (
-          <>
-            <Input
-              label="Název firmy"
-              name="shipping_address.company"
-              value={formData["shipping_address.company"]}
-              onChange={handleChange}
-              autoComplete="organization"
-              required
-              data-testid="shipping-company-input"
-              className={`${styles.input} ${styles.inputWide}`}
-              variant="contact"
-            />
-            <Input
-              label="IČO"
-              name="shipping_address.ico"
-              value={formData["shipping_address.ico"]}
-              onChange={handleChange}
-              inputMode="numeric"
-              autoComplete="off"
-              required
-              title="Osm číslic, například 27074358."
-              data-testid="shipping-ico-input"
-              className={styles.input}
-              variant="contact"
-            />
-            <Input
-              label="DIČ"
-              name="shipping_address.dic"
-              value={formData["shipping_address.dic"]}
-              onChange={handleChange}
-              autoComplete="off"
-              title="Tvar CZ a osm až deset číslic, například CZ27074358. Neplátce DPH nechá prázdné."
-              data-testid="shipping-dic-input"
-              className={styles.input}
-              variant="contact"
-            />
-          </>
-        )}
         <Input
           label="PSČ"
           name="shipping_address.postal_code"
@@ -378,6 +321,115 @@ const ShippingAddress = ({
           variant="contact"
         />
       </div>
+        {/*
+          Firemní nákup je vlastní formulář, ne pár políček navíc.
+
+          „Společnost" tu kdysi stálo pro všechny a devět z deseti lidí nakupuje
+          jako fyzická osoba — pro ně to bylo prázdné pole k přeskočení. Firma
+          naopak potřebuje víc než jen název: bez IČO a sídla nejde vystavit
+          doklad a zjistí se to až po zaplacení.
+
+          Proto stojí až pod kontaktem, ve vlastním rámu a s vlastní mřížkou:
+          jsou to fakturační údaje odběratele, ne další řádek dodací adresy.
+          Zabalené v <section> i kvůli odečítačkám — nadpis říká, čeho se ta
+          pole týkají.
+
+          Pole se vykreslují jen zaškrtnuté. Nezaškrtnuté se neodešlou vůbec,
+          takže se v košíku vyprázdní i případná dřívější hodnota — to je
+          správně, není to firemní nákup.
+        */}
+        <section className={styles.firmaSekce} aria-labelledby="firma-nadpis">
+          <div className={styles.firmaHlavicka}>
+            <Checkbox
+              label="Nakupuji na firmu"
+              name="nakup_na_firmu"
+              checked={naFirmu}
+              onChange={() => setNaFirmu((stav) => !stav)}
+              data-testid="company-purchase-checkbox"
+            />
+            <p id="firma-nadpis" className={styles.firmaPopis}>
+              Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží
+              pošleme na adresu výš.
+            </p>
+          </div>
+
+          {naFirmu && (
+            <div className={styles.firmaGrid}>
+              <Input
+                label="Název firmy nebo jméno a příjmení"
+                name="shipping_address.company"
+                value={formData["shipping_address.company"]}
+                onChange={handleChange}
+                autoComplete="organization"
+                required
+                title="U firmy název, u OSVČ jméno a příjmení tak, jak jsou v rejstříku."
+                data-testid="shipping-company-input"
+                className={`${styles.input} ${styles.firmaSiroke}`}
+                variant="contact"
+              />
+              <Input
+                label="IČO"
+                name="shipping_address.ico"
+                value={formData["shipping_address.ico"]}
+                onChange={handleChange}
+                inputMode="numeric"
+                autoComplete="off"
+                required
+                title="Osm číslic, například 27074358."
+                data-testid="shipping-ico-input"
+                className={styles.input}
+                variant="contact"
+              />
+              <Input
+                label="DIČ"
+                name="shipping_address.dic"
+                value={formData["shipping_address.dic"]}
+                onChange={handleChange}
+                autoComplete="off"
+                title="Tvar CZ a osm až deset číslic, například CZ27074358. Neplátce DPH nechá prázdné."
+                data-testid="shipping-dic-input"
+                className={styles.input}
+                variant="contact"
+              />
+              {/* Sídlo zvlášť: na dokladu musí být sídlo nebo místo podnikání,
+                  a to se s adresou, kam se zboží veze, běžně neshoduje. */}
+              <Input
+                label="Ulice a číslo popisné sídla"
+                name="shipping_address.firma_ulice"
+                value={formData["shipping_address.firma_ulice"]}
+                onChange={handleChange}
+                autoComplete="off"
+                required
+                data-testid="shipping-firma-ulice-input"
+                className={`${styles.input} ${styles.firmaSiroke}`}
+                variant="contact"
+              />
+              <Input
+                label="PSČ sídla"
+                name="shipping_address.firma_psc"
+                value={formData["shipping_address.firma_psc"]}
+                onChange={handleChange}
+                inputMode="numeric"
+                autoComplete="off"
+                required
+                data-testid="shipping-firma-psc-input"
+                className={styles.input}
+                variant="contact"
+              />
+              <Input
+                label="Město sídla"
+                name="shipping_address.firma_mesto"
+                value={formData["shipping_address.firma_mesto"]}
+                onChange={handleChange}
+                autoComplete="off"
+                required
+                data-testid="shipping-firma-mesto-input"
+                className={styles.input}
+                variant="contact"
+              />
+            </div>
+          )}
+        </section>
     </div>
   )
 }

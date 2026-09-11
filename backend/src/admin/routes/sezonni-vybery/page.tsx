@@ -11,7 +11,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -21,6 +20,7 @@ import { EmptyState } from "../../components/empty-state";
 import { SeasonalSaleEditor } from "../../components/seasonal-sale-editor";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 type SeasonalItem = {
   id: string;
@@ -152,7 +152,7 @@ const OnEndControl = ({ selection }: { selection: SeasonalSelection }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const SezonniVyberyInner = () => {
   const [group, setGroup] = useState<GroupKey>("active");

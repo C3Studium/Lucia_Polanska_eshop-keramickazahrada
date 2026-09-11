@@ -107,13 +107,30 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 4000)
+      /*
+       * `manual`, ne `follow` — a je to rozdíl mezi pravdou a poplachem.
+       *
+       * Obchod na první požadavek odpoví 307 a nastaví `_medusa_cache_id`.
+       * Prohlížeč si cookie uloží, pošle ji zpátky a podruhé dostane stránku.
+       * `fetch` tady žádné cookies nedrží, takže se stejným požadavkem dostane
+       * zase 307 na tutéž adresu — a s `follow` se točil dokola, dokud nenarazil
+       * na strop přesměrování, vyhodil výjimku a spadl do `catch` níž. Odtud
+       * ta hláška „Obchod se nepodařilo načíst" u obchodu, který normálně jede
+       * (ověřeno: bez cookies nekonečná smyčka, s cookies stav 200 po jednom
+       * skoku).
+       *
+       * Tahle kontrola se ptá „odpovídá server?", ne „kolik skoků a cookies
+       * stojí cesta k obsahu". Přesměrování je odpověď, tedy důkaz, že obchod
+       * žije. Za problém se počítá až 4xx a 5xx — a 405 ne, protože na HEAD
+       * někteří hostitelé takhle odpovídají zcela v pořádku.
+       */
       const response = await fetch(base, {
         method: "HEAD",
         signal: controller.signal,
-        redirect: "follow",
+        redirect: "manual",
       })
       clearTimeout(timer)
-      if (!response.ok && response.status !== 405) {
+      if (response.status >= 400 && response.status !== 405) {
         problems.push({
           text: `Obchod na ${base} odpovídá chybou ${response.status}.`,
           path: null,

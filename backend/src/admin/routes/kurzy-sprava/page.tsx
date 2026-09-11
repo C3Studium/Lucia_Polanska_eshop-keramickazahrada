@@ -17,7 +17,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -51,6 +50,7 @@ import {
   CourseNoteDrawer,
   CoursePricingDrawer,
 } from "../../components/course-bulk-dialogs";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Kurzy — terms and reservations in one place (docs/kurzy-system.md).
@@ -109,7 +109,7 @@ type AdminTerm = {
   waitlist_waiting: number;
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /* ------------------------------------------------------------------ */
 /* Formatting                                                          */

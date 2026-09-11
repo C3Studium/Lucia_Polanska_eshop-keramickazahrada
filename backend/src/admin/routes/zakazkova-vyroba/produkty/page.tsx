@@ -15,7 +15,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -23,6 +22,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 type VariantProfile = {
   id?: string;
@@ -94,7 +94,7 @@ type ProductDetailsResponse = {
 
 type ProductDraft = Omit<MadeToOrderProduct, "product_id" | "title" | "thumbnail" | "status">;
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const toDraft = (product: MadeToOrderProduct): ProductDraft => ({
   enabled: product.enabled !== false,

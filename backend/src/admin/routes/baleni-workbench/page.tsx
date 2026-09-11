@@ -11,7 +11,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -34,6 +33,7 @@ import {
   applyCatalogFilter,
   type CatalogFilter,
 } from "../../components/catalog-filter";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Balení+ — every product's packaging cost, editable where you can see them all.
@@ -426,7 +426,7 @@ const BaleniInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const BaleniWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>

@@ -1,7 +1,8 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { Badge, Container, Text } from "@medusajs/ui";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * The publish-time smoke detector (Matěj: „when she is about to post
@@ -48,7 +49,7 @@ const Inner = ({ productId }: { productId: string }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Widget = ({ data }: { data: { id: string } }) => (
   <QueryClientProvider client={queryClient}>
     <Inner productId={data.id} />

@@ -80,6 +80,40 @@
   margin-top: clamp(1.25rem, 2.4vh, 2rem);
 }
 
+/*
+ * ─── Svisle: hlavička souhrnu jako titulek bloku ────────────────────────────
+ *
+ * Tady souhrn stojí jako první věc pod hlavičkou stránky a je zabalený do tří
+ * řádků (`order-summary-disclosure`). Nadpis přes celou šířku — 38px textu
+ * a 42px mezery nad ním — by před tím zabaleným souhrnem dělal vrátného
+ * a sebral by mu přesně to, kvůli čemu se zabaluje.
+ *
+ * Zmenšuje se na titulek bloku, ne na nadpis stránky. Ten už je nad ním
+ * („Ještě pár kroků.") a druhý stejně velký hned pod ním je jen hluk.
+ *
+ * Táž hranice jako u spouště a u pořadí sloupců na stránce.
+ */
+@media (orientation: portrait) and (max-width: 1020px) {
+  /*
+   * V pásmu 1000–1020 px by `v(lg)` nahoře zapnul lepkavost. Ta dává smysl,
+   * dokud souhrn stojí ve vlastním sloupci vedle formuláře — tady stojí nad
+   * ním a rozbaluje se, a lepkavý blok, který se rozroste přes celou stránku,
+   * je past.
+   */
+  .root {
+    position: static;
+  }
+
+  .eyebrow {
+    margin-bottom: clamp(.5rem, 1.2vh, .875rem);
+  }
+
+  .heading {
+    margin: clamp(1rem, 2.2vh, 1.5rem) 0 clamp(.625rem, 1.4vh, 1rem);
+    font-size: clamp(1.625rem, 7vw, 2.125rem);
+  }
+}
+
 .root :global(button:focus-visible),
 .root :global(a:focus-visible),
 .root :global(input:focus-visible) {

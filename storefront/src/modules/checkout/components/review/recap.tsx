@@ -1,6 +1,7 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
+import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 
@@ -75,14 +76,23 @@ export default function OrderRecap({ cart }: { cart: any }) {
           <dl className={styles.totals}>
             <div>
               <dt>Mezisoučet</dt>
-              {/* `item_total`, ne `subtotal`: Medusa do `subtotal` počítá i dopravu,
-                  takže tenhle sloupec vycházel jako „363 + 90 = 363". */}
-              <dd>{money(cart?.item_total)}</dd>
+              {/* Ne `subtotal`: do toho Medusa počítá i dopravu, takže sloupec
+                  vycházel jako „363 + 90 = 363".
+
+                  A ne `item_total`: ten je až PO odečtení akcí, takže se sleva
+                  o řádek níž započítala podruhé — naměřeno na košíku s 28%
+                  akcí: 2 419 − 941 = 2 419. `item_subtotal` je týž součet před
+                  akcemi, tedy ta částka, od které se sleva odečítá. */}
+              <dd>{money(cart?.item_subtotal)}</dd>
             </div>
-            {Boolean(cart?.discount_total) && (
+            {Boolean(cart?.item_discount_total) && (
               <div>
                 <dt>Sleva</dt>
-                <dd>−{money(cart?.discount_total)}</dd>
+                {/* Sleva na ZBOŽÍ. `discount_total` nese i tu dopravní, jenže
+                    řádek Doprava pod tím ukazuje cenu po slevě — odečetlo by
+                    se to dvakrát. Doprava zdarma se tedy neukáže jako sleva,
+                    ale jako nula u dopravy, což je totéž a čitelnější. */}
+                <dd>−{money(cart?.item_discount_total)}</dd>
               </div>
             )}
             <div>
@@ -94,9 +104,13 @@ export default function OrderRecap({ cart }: { cart: any }) {
               <dd>{money(cart?.total)}</dd>
             </div>
           </dl>
-          <p className={styles.vatNote}>
-            Včetně DPH {money(cart?.tax_total)}. Tolik zaplatíte.
-          </p>
+          {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. Bez daně by ta věta
+              tvrdila, že v ceně nějaká je. */}
+          {PLATCE_DPH && (
+            <p className={styles.vatNote}>
+              Včetně DPH {money(cart?.tax_total)}. Tolik zaplatíte.
+            </p>
+          )}
         </section>
       </div>
     </div>

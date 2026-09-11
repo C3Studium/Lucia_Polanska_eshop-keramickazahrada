@@ -11,7 +11,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -21,6 +20,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, pieces } from "./empty-state";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * Nízký stav and Vyprodáno (§10, §22, P7-1).
@@ -281,7 +281,7 @@ const AlertListInner = ({
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 export const InventoryAlertList = (
   props: Parameters<typeof AlertListInner>[0]

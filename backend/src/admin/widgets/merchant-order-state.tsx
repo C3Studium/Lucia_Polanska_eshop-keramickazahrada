@@ -2,7 +2,6 @@ import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -18,8 +17,9 @@ import {
   type MerchantOrderStage,
 } from "../components/merchant-order-queue";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;

@@ -39,3 +39,28 @@
   background: rgb(var(--clay-18-rgb) / .7);
   transform-origin: left center;
 }
+
+/*
+ * ─── Sdělení, ne chyba ───────────────────────────────────────────────────────
+ *
+ * Tvar, geometrie i pohyb zůstávají — je to tentýž pruh pod polem, jen jinak
+ * naladěný. Mění se barva (hliněná varuje, olivová konstatuje) a značka:
+ * vykřičník za „něco se nepovedlo", „i" za „stalo se tohle".
+ *
+ * Olivová, ne zelená: zelená by z toho udělala potvrzení úspěchu, a věta jako
+ * „váš kód s větší slevou jsme nechali" nic neslaví, jen vysvětluje.
+ */
+.info {
+  border-color: rgb(var(--olive-15-rgb) / .34);
+  background: rgb(var(--olive-15-rgb) / .06);
+  color: var(--olive-15);
+}
+
+.info::before {
+  border-right-color: rgb(var(--olive-15-rgb) / .26);
+  content: "i";
+}
+
+.info .marker {
+  background: rgb(var(--olive-15-rgb) / .7);
+}

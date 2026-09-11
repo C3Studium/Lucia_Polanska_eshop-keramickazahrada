@@ -196,6 +196,69 @@
   margin: 0.35rem 0.25rem 0.15rem;
 }
 
+/*
+ * Firemní údaje jako samostatný formulář.
+ *
+ * Nejsou to další řádky dodací adresy — je to odběratel na dokladu, a když
+ * stály v téže mřížce, splývaly s adresou nad sebou. Vlastní rám a vlastní
+ * mřížka to oddělí, aniž by se musel vymýšlet druhý vzhled: barvy i linky
+ * jsou tytéž, jen o stupeň zdůrazněné.
+ *
+ * Vodorovné odsazení kopíruje `.input` (0.25rem), aby popisky uvnitř rámu
+ * stály v téže svislici jako popisky nad ním.
+ */
+.firmaSekce {
+  grid-column: 1 / -1;
+  margin: clamp(1rem, 2.4vh, 1.75rem) 0.25rem 0;
+  padding: clamp(1.25rem, 2.8vh, 2rem) clamp(1rem, 1.6vw, 1.5rem);
+  border: 1px solid rgb(var(--ink-06-rgb) / .18);
+  border-radius: 0.75rem;
+  background: rgb(var(--white-rgb) / .34);
+}
+
+.firmaHlavicka {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.firmaPopis {
+  margin: 0;
+  color: rgb(var(--ink-06-rgb) / .62);
+  font-size: clamp(.8125rem, 1vw, .9375rem);
+  line-height: 1.45;
+}
+
+/* Vlastní mřížka, ne ta formulářová: sekce má svou šířku a nemá se řídit
+   sloupci, které patří adrese. */
+.firmaGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-top: clamp(1rem, 2.2vh, 1.5rem);
+  /*
+   * Svislá mezera je štědřejší než u adresy nad sekcí.
+   *
+   * Tam nesou pole vlastní `margin: .25rem` z `.formGrid .input`; tady ne,
+   * takže při stejném `gap` seděly řádky na sobě a sekce působila stísněně,
+   * i když má kolem sebe rám. Svislá mezera visí na výšce okna, vodorovná
+   * na šířce — každá na té ose, o kterou soupeří.
+   */
+  gap: clamp(.9rem, 2vh, 1.4rem) clamp(.75rem, 1.4vw, 1.25rem);
+
+  @include v(md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include h(xs) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Název firmy a ulice sídla přes celou šířku — jsou to dlouhé texty. */
+.firmaSiroke {
+  grid-column: 1 / -1;
+}
+
 .inputWide {
   grid-column: 1 / -1;
 }

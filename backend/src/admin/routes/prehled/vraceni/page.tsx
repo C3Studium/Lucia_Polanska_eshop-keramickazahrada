@@ -13,7 +13,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -25,6 +24,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Vrácení — the intake queue for customer return requests.
@@ -415,7 +415,7 @@ const VraceniInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const VraceniPage = () => (
   <QueryClientProvider client={queryClient}>

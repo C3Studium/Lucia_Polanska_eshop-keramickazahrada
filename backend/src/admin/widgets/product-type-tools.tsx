@@ -1,10 +1,11 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { Badge, Button, Container, Text, toast } from "@medusajs/ui";
 import {
-  QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient,
+  QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
 import { ProductionProfileEditor } from "../components/production-profile-editor";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * Typ produktu — right where she creates it (Matěj: the zakázka % and the
@@ -156,7 +157,7 @@ const Inner = ({ productId }: { productId: string }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Widget = ({ data }: { data: { id: string } }) => (
   <QueryClientProvider client={queryClient}>
     <Inner productId={data.id} />

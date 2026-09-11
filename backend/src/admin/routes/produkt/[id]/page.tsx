@@ -14,7 +14,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -34,6 +33,7 @@ import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../../lib/exper
 import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Detail produktu — jedna stránka místo nativní editace (Matěj, 2026-08-16).
@@ -1974,7 +1974,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ProduktDetailPage = () => {
   const { id } = useParams();

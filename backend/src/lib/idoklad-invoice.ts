@@ -21,6 +21,7 @@ import {
   sendCustomerEmail,
 } from "./customer-email"
 import { notifyMerchant } from "./notify"
+import { jeZkusebniRezim } from "./test-mode"
 import { epsilonFor, toAmount } from "./ship-gate"
 
 /**
@@ -342,6 +343,28 @@ export const ensureInvoiceForOrder = async (
   options: EnsureInvoiceOptions
 ): Promise<IdokladActionResult> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  /*
+   * Zkušební režim — před vším ostatním.
+   *
+   * Číselná řada faktur je jednosměrná: vytržené číslo se nevrací a deset
+   * zkušebních objednávek udělá deset děr, které pak někdo vysvětluje. Proto
+   * se to zavírá dřív, než se sáhne na iDoklad, ne až uvnitř.
+   *
+   * Vrací se `skipped`, ne chyba: volající (odběratel na `payment.captured`,
+   * tlačítko v administraci) mají faktury jako vedlejší efekt a nesmí je
+   * shodit to, že se zrovna zkouší.
+   */
+  if (await jeZkusebniRezim(container)) {
+    logger.info(
+      `[idoklad] Přeskakuji fakturu pro objednávku ${orderId} — je zapnutý zkušební režim.`
+    )
+    return {
+      status: "skipped",
+      reason: "Zkušební režim — faktura se nevystavuje.",
+    }
+  }
+
   const idoklad = resolveIdokladService(container)
   if (!idoklad) {
     logger.info(
@@ -480,6 +503,15 @@ export const markInvoicePaidForOrder = async (
   paidAt?: string | Date | null
 ): Promise<IdokladActionResult> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  /* Zkušební režim: není co označovat zaplaceným, faktura nevznikla. */
+  if (await jeZkusebniRezim(container)) {
+    return {
+      status: "skipped",
+      reason: "Zkušební režim — faktura se nevystavuje.",
+    }
+  }
+
   const idoklad = resolveIdokladService(container)
   if (!idoklad) {
     return { status: "skipped", reason: "iDoklad není nakonfigurován." }

@@ -48,9 +48,14 @@ export async function retrieveCart(cartId?: string) {
       query: {
         /* `items.product.categories.handle`: checkout has to know whether a line is
            zakázková výroba, and the handle is the readable, admin-stable way to ask. The
-           relation already comes back — only the ids, which say nothing on their own. */
+           relation already comes back — only the ids, which say nothing on their own.
+
+           `items.is_discountable` a `items.compare_at_unit_price`: podle nich se
+           pozná kus, na který slevový kód neplatí (`lib/util/sleva.ts`). Jsou
+           vyjmenované, ne ponechané na `*items` — je to jediné místo, kde se
+           dá poznat, že se na ně někdo spoléhá. */
         fields:
-          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +items.product.categories.handle",
+          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, +items.is_discountable, +items.compare_at_unit_price, *promotions, +shipping_methods.name, +items.product.categories.handle",
       },
       headers,
       next,
@@ -561,45 +566,229 @@ async function procNeprosel(code: string): Promise<string> {
   return "Tenhle kód už neplatí."
 }
 
+/**
+ * Vrátit košíku seznam kódů, který měl, než se na něj sáhlo.
+ *
+ * Vlastní `try`: tohle je úklid po neúspěchu a nesmí ten neúspěch přebít
+ * jinou chybou. Když selže i návrat, zůstane košík bez kódu — nepříjemné,
+ * ale pořád lepší než místo „kód neplatí" ukázat něco o síti.
+ */
+async function vratKody(kody: string[]) {
+  try {
+    await applyPromotions(kody)
+  } catch {
+    /* Vědomě spolknuto — viz výš. */
+  }
+}
+
+/**
+ * Co se po zadání kódu napíše pod pole.
+ *
+ * Druh je součástí odpovědi, ne odhad na straně komponenty. „Váš kód s větší
+ * slevou jsme nechali" je dobrá zpráva a v červeném rámečku s vykřičníkem
+ * vypadá jako selhání — a naopak. Rozhodnout to umí jen ten, kdo ví, co se
+ * stalo.
+ */
+export type VysledekKodu = {
+  text: string
+  druh: "chyba" | "info"
+}
+
+const chyba = (text: string): VysledekKodu => ({ text, druh: "chyba" })
+const info = (text: string): VysledekKodu => ({ text, druh: "info" })
+
+/** Míří akce na dopravu, ne na zboží? */
+const miriNaDopravu = (akce: any): boolean =>
+  akce?.application_method?.target_type === "shipping_methods"
+
+/** Úvodní věta obou zpráv o nahrazení — pravidlo se říká pokaždé stejně. */
+const JEDEN_KOD = "Můžete mít jen jeden slevový kód na objednávku."
+
 export async function submitPromotionForm(
-  currentState: unknown,
+  currentState: VysledekKodu | null,
   formData: FormData
-) {
+): Promise<VysledekKodu | null> {
   /* Prázdné pole se na backend vůbec neposílá — je to jediný případ, který se
      dá rozhodnout tady, a odpověď na něj je jednoznačná. */
   const code = String(formData.get("code") ?? "").trim()
 
   if (!code) {
-    return "Nezadali jste žádný kód."
+    return chyba("Nezadali jste žádný kód.")
   }
 
+  /* Mimo `try`, aby se to dalo vrátit i z `catch`: než se pozná, že zápis
+     selhal, může už být starý kód z košíku pryč. */
+  let puvodniKody: string[] = []
+
   try {
+    const currentCart = await retrieveCart()
+
+    /*
+     * Automatické akce si obchod nasazuje sám a zákazník je nezadával — do
+     * počtu „kolik kódů jsem uplatnil" se proto nepočítají a v seznamu, který
+     * se posílá zpátky, musí zůstat.
+     */
+    const kodyPromoakci = (currentCart?.promotions ?? []).filter(
+      (promotion: any) => typeof promotion?.code === "string"
+    )
+    const automaticke = kodyPromoakci
+      .filter((promotion: any) => promotion.is_automatic)
+      .map((promotion: any) => promotion.code as string)
+    const rucniAkce = kodyPromoakci.filter(
+      (promotion: any) => !promotion.is_automatic
+    )
+    const rucni = rucniAkce.map((promotion: any) => promotion.code as string)
+
+    /*
+     * Jeden kód na objednávku — a vyhrává ten výhodnější.
+     *
+     * Nejdřív to druhý kód odmítalo s tím, ať se ten první odebere. Pravidlo
+     * to drželo, ale stálo to zákazníka cestu navíc přes koš, a to u pokladny,
+     * kde je každý krok navíc důvod odejít.
+     *
+     * Nahradit ho naslepo je ale druhá krajnost: zákazník má v ruce dva kódy,
+     * netuší, který je lepší, a tím, že vyzkouší ten druhý, může o výhodnější
+     * slevu přijít, aniž se to kde dozví. Rozhodne se to tedy za něj a nahlas
+     * — nový kód se uplatní, změřená úspora se porovná a v košíku zůstane ta
+     * větší.
+     *
+     * Zopakovaný týž kód je jediná výjimka: tam se nemá co porovnávat a tiché
+     * „hotovo" by vypadalo, jako by se nic nestalo.
+     */
+    const jeToTentyz =
+      rucni.includes(code) || rucni.includes(code.toUpperCase())
+
+    if (rucni.length > 0 && jeToTentyz) {
+      return chyba("Tenhle kód už v košíku máte.")
+    }
+
+    /* Co v košíku bylo, než se sáhlo na kódy. Když nový neprojde, musí se to
+       vrátit — `applyPromotions` seznam přepisuje celý, takže by jinak pokus
+       o neplatný kód smazal ten funkční, který tam zákazník už měl. */
+    puvodniKody = [...automaticke, ...rucni]
+
+    /*
+     * Kolik košík ušetřil PŘED novým kódem — proti tomu se bude porovnávat.
+     *
+     * `discount_total` obsahuje i automatické akce, jenže ty jsou v obou
+     * měřeních stejné, takže se rozdíl rovná přesně rozdílu mezi starým
+     * a novým kódem.
+     */
+    const usporaPred = Number(currentCart?.discount_total ?? 0)
+
+    /*
+     * Kdy se porovnávat nedá.
+     *
+     * Sleva na dopravu se v součtu objeví, teprve když je doprava vybraná.
+     * V košíku bez zvoleného doručení by tedy kód „doprava zdarma" naměřil
+     * nulu a prohrál by s čímkoli — a zákazník by přišel přesně o to, co si
+     * právě vyžádal. Když se do porovnání plete doprava a vybraná není,
+     * porovnání se vynechá a platí prosté nahrazení.
+     */
+    const maVybranouDopravu =
+      ((currentCart as any)?.shipping_methods?.length ?? 0) > 0
+    const staraNaDopravu = rucniAkce.some(miriNaDopravu)
+
+    /*
+     * Je v košíku vůbec něco, na co může sleva na zboží dopadnout?
+     *
+     * `is_discountable` na položce je přesně to, čím se řídí Medusa
+     * (`backend/src/lib/discountable.ts`) — když je všude `false`, projde kód
+     * naprázdno a bude v souhrnu viset jako uplatněný, aniž by cokoli strhl.
+     *
+     * Prázdný košík se schválně nepočítá: `every` by na něm vyšlo pravdivě
+     * a odmítalo by kódy z důvodu, který nenastal.
+     */
+    const polozky = currentCart?.items ?? []
+    const nicNeslevi =
+      polozky.length > 0 &&
+      polozky.every((polozka: any) => polozka?.is_discountable === false)
+
     /*
      * `applyPromotions` REPLACES the cart's promotion list wholesale — sending
-     * just the new code silently dropped every code already applied. Union
-     * with the fresh server-side list, so a second code adds instead of swaps.
+     * just the new code silently dropped every code already applied. Automatic
+     * ones therefore go do seznamu spolu s novým kódem.
      */
-    const currentCart = await retrieveCart()
-    const existingCodes = (currentCart?.promotions ?? [])
-      .map((promotion: any) => promotion?.code)
-      .filter((value: unknown): value is string => typeof value === "string")
-    const cart = await applyPromotions(
-      Array.from(new Set([...existingCodes, code]))
-    )
+    const cart = await applyPromotions([...automaticke, code])
 
     // If the backend accepted the update but did not apply a promotion for the
     // provided code, surface a user-friendly message so the UI can show it.
     if (cart) {
-      const found = (cart.promotions || []).some((p: any) => p.code === code)
-      if (!found) {
-        return await procNeprosel(code)
+      const uplatnena = (cart.promotions || []).find(
+        (p: any) => p.code === code
+      )
+
+      if (!uplatnena) {
+        await vratKody(puvodniKody)
+        return chyba(await procNeprosel(code))
       }
+
+      /*
+       * Kód se uchytil, ale v tomhle košíku nemá na co sáhnout.
+       *
+       * Nastane to, když je celý košík ze zlevněných kusů: Medusa je z výpočtu
+       * akce vynechává, takže kód projde a nestrhne nic. Viset tam pak jako
+       * uplatněný by tvrdilo něco, co není — sundá se a řekne se proč.
+       *
+       * Ptá se to na cíl akce, ne na to, o kolik se změnil součet — z důvodu
+       * popsaného výš u `maVybranouDopravu`.
+       */
+      const novaNaDopravu = miriNaDopravu(uplatnena)
+
+      if (!novaNaDopravu && nicNeslevi) {
+        await vratKody(puvodniKody)
+        return chyba(
+          "Kód se na tenhle košík neprojeví — na zlevněné kusy slevové kódy neplatí."
+        )
+      }
+
+      /* Bez předchozího kódu není co porovnávat — jen se uplatnil nový. */
+      if (!rucni.length) {
+        return null
+      }
+
+      /* Kód se jmenuje jen tehdy, když je jeden — košíky založené před tímhle
+         pravidlem jich můžou nést víc a vyjmenovat je uprostřed věty se nedá
+         česky napsat. */
+      const stary = rucni.length === 1 ? `Kód ${rucni[0]}` : "Předchozí kód"
+      const novy = (uplatnena as any).code ?? code
+
+      if (!maVybranouDopravu && (novaNaDopravu || staraNaDopravu)) {
+        return info(`${JEDEN_KOD} ${stary} jsme nahradili kódem ${novy}.`)
+      }
+
+      const usporaPo = Number(cart.discount_total ?? 0)
+
+      if (usporaPo > usporaPred) {
+        return info(
+          `${JEDEN_KOD} ${stary} slevil míň, takže jsme ho nahradili kódem ${novy}.`
+        )
+      }
+
+      /* Nový kód není lepší — vrací se ten původní. Zákazník o výhodnější
+         slevu nepřijde jen proto, že zkusil druhý kód. */
+      await vratKody(puvodniKody)
+
+      return info(
+        usporaPo < usporaPred
+          ? `${JEDEN_KOD} ${stary} slevil víc, takže jsme ho nechali a ${novy} neuplatnili.`
+          : `${JEDEN_KOD} Oba kódy slevily stejně, takže zůstává ten původní.`
+      )
     }
   } catch {
     /* I výjimka jde přes tentýž rozbor: hlášku z SDK („Něco se nepovedlo…")
-       člověk u pokladny použít neumí, kdežto „platnost vypršela" ano. */
-    return await procNeprosel(code)
+       člověk u pokladny použít neumí, kdežto „platnost vypršela" ano.
+
+       Návrat kódů i tady: výjimka mohla přijít až po zápisu, takže starý kód
+       už v košíku být nemusí. Prázdný seznam znamená, že se to nestihlo ani
+       přečíst — pak není co vracet. */
+    if (puvodniKody.length) {
+      await vratKody(puvodniKody)
+    }
+    return chyba(await procNeprosel(code))
   }
+
+  return null
 }
 
 /**
@@ -728,11 +917,28 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     const dic = normalizujDic(
       (formData.get("shipping_address.dic") as string) || ""
     )
+    const firmaUlice = (
+      (formData.get("shipping_address.firma_ulice") as string) || ""
+    ).trim()
+    const firmaPsc = (
+      (formData.get("shipping_address.firma_psc") as string) || ""
+    ).trim()
+    const firmaMesto = (
+      (formData.get("shipping_address.firma_mesto") as string) || ""
+    ).trim()
 
     if (naFirmu) {
       const chyba = zkontrolujFirmu({ nazev: nazevFirmy, ico, dic })
       if (chyba) {
         return chyba
+      }
+
+      /* Sídlo se kontroluje tady, ne v `zkontrolujFirmu`: ta funkce ověřuje
+         čísla (kontrolní číslice IČO, tvar DIČ), tohle je jen „vyplněno".
+         Prohlížeč to sice hlídá přes `required`, jenže formulář se dá odeslat
+         i mimo něj a doklad bez sídla je neplatný doklad. */
+      if (!firmaUlice || !firmaPsc || !firmaMesto) {
+        return "Vyplňte prosím sídlo firmy — ulici, PSČ i město."
       }
     }
 
@@ -789,6 +995,12 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     await mergeCartMetadata({
       firma_ico: naFirmu ? ico : "",
       firma_dic: naFirmu ? dic : "",
+      /* Sídlo odběratele. Na doklad patří sídlo nebo místo podnikání, a to
+         se s adresou, kam se zboží veze, běžně neshoduje — proto vlastní
+         pole, ne opsaná dodací adresa. */
+      firma_ulice: naFirmu ? firmaUlice : "",
+      firma_psc: naFirmu ? firmaPsc : "",
+      firma_mesto: naFirmu ? firmaMesto : "",
     })
   } catch (e: any) {
     return e.message

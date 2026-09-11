@@ -2,12 +2,12 @@ import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminProduct, DetailWidgetProps } from "@medusajs/framework/types";
 import { Container, Heading, Switch, Text, Toaster, toast } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * „Výprodej — kus se už nevyrobí" (requested 2026-08-04).
@@ -67,7 +67,7 @@ const ProductClearanceInner = ({ product }: { product: AdminProduct }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ProductClearanceWidget = ({ data }: DetailWidgetProps<AdminProduct>) => (
   <QueryClientProvider client={queryClient}>

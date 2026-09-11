@@ -11,7 +11,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -19,6 +18,7 @@ import {
 } from "@tanstack/react-query";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * „Odeslané e-maily" on the order page (§16, P5-3).
@@ -95,15 +95,61 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
     onError: (error) => toast.error(error.message),
   });
 
+  /*
+   * „Výzva k zaplacení" — ruční, a schválně.
+   *
+   * Platba se nepovede častěji, než by člověk čekal: vyprší relace u brány,
+   * zákazník zavře záložku, banka zamítne. Objednávka existuje, zboží je
+   * odložené a chybí jen peníze. Automatika na to není a být nemá —
+   * rozhodnutí „tuhle objednávku chci ještě zachránit" je obchodní, ne
+   * technické, a u stornované obzvlášť.
+   *
+   * Tlačítko stojí tady, ne v tabulce plateb: po odeslání je výzva jedním
+   * z řádků v seznamu pod ním, takže je hned vidět, že odešla.
+   */
+  const vyzva = useMutation<
+    { sent: boolean; warning?: string | null },
+    Error,
+    void
+  >({
+    mutationFn: () =>
+      sdk.client.fetch(
+        `/admin/merchant-orders/${order.id}/payment-request`,
+        { method: "POST" }
+      ),
+    onSuccess: async (result) => {
+      if (result.warning) {
+        /* Varování, ne chyba: e-mail odešel. */
+        toast.warning(result.warning);
+      } else if (result.sent) {
+        toast.success("Výzva k zaplacení odeslána");
+      } else {
+        toast.error("Výzvu se nepodařilo odeslat");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["order-emails"] });
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
   const emails = data?.emails ?? [];
 
   return (
     <Container className="divide-y p-0">
-      <header className="px-6 py-4">
-        <Heading level="h2">Odeslané e-maily</Heading>
-        <Text size="small" className="text-ui-fg-subtle mt-1">
-          Co zákazník o této objednávce dostal.
-        </Text>
+      <header className="flex flex-wrap items-start justify-between gap-3 px-6 py-4">
+        <div>
+          <Heading level="h2">Odeslané e-maily</Heading>
+          <Text size="small" className="text-ui-fg-subtle mt-1">
+            Co zákazník o této objednávce dostal.
+          </Text>
+        </div>
+        <Button
+          size="small"
+          variant="secondary"
+          isLoading={vyzva.isPending}
+          onClick={() => vyzva.mutate()}
+        >
+          Poslat výzvu k zaplacení
+        </Button>
       </header>
 
       {isLoading && (
@@ -163,7 +209,7 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const OrderEmailsWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
   <QueryClientProvider client={queryClient}>

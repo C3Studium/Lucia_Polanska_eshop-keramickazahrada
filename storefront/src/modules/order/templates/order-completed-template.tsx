@@ -1,6 +1,7 @@
 import { paymentMethodTitle } from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import { convertToLocale } from "@lib/util/money"
+import { PLATCE_DPH } from "@lib/util/dph"
 import OrderProgressPanel from "@modules/order/components/order-progress"
 import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
@@ -261,10 +262,13 @@ export default async function OrderCompletedTemplate({
                   <span>Doprava</span>
                   <strong>{money(order.shipping_total)}</strong>
                 </div>
-                <div>
-                  <span>Daně</span>
-                  <strong>{money(order.tax_total)}</strong>
-                </div>
+                {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
+                {PLATCE_DPH && (
+                  <div>
+                    <span>Daně</span>
+                    <strong>{money(order.tax_total)}</strong>
+                  </div>
+                )}
               </div>
 
               <div className={s.grandTotal}>

@@ -10,13 +10,13 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * Context about a person, on their own page (§14, P10-1).
@@ -101,7 +101,7 @@ const CustomerContextInner = ({ customer }: { customer: AdminCustomer }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const CustomerContextWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => (
   <QueryClientProvider client={queryClient}>

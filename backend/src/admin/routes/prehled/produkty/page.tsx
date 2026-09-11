@@ -11,7 +11,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -30,6 +29,7 @@ import {
   applyCatalogFilter,
   type CatalogFilter,
 } from "../../../components/catalog-filter";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -503,7 +503,7 @@ const ProduktyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ProduktyPage = () => (
   <QueryClientProvider client={queryClient}>

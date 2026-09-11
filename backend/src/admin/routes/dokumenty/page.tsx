@@ -4,10 +4,11 @@ import {
   Badge, Button, Container, Heading, Input, Label, Text, Toaster, toast,
 } from "@medusajs/ui";
 import {
-  QueryClient, QueryClientProvider, useQuery, useQueryClient,
+  QueryClientProvider, useQuery, useQueryClient,
 } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Dokumenty — PDF, na která web někde odkazuje.
@@ -291,7 +292,7 @@ const Inner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Page = () => (
   <QueryClientProvider client={queryClient}>
     <Inner />

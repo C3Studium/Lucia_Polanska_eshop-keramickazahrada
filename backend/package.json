@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "jest --config jest.config.js",
     "db:migrate": "cd .medusa/server && ../../node_modules/.bin/medusa db:migrate --all-or-nothing --execute-safe-links",
-    "predeploy": "npm run db:migrate && npx medusa exec ./src/scripts/enable-backorder-default.ts",
+    "predeploy": "npm run db:migrate && npx medusa exec ./src/scripts/enable-backorder-default.ts && npx medusa exec ./src/scripts/sync-discountable.ts && npx medusa exec ./src/scripts/backfill-inventory-levels.ts",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "cd .medusa/server && ../../node_modules/.bin/medusa start",
     "dev": "medusa exec ./src/scripts/assign-shipping-profile.ts && medusa develop",

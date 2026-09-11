@@ -8,6 +8,7 @@ import {
 } from "@headlessui/react"
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
+import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import Magnetic from "@modules/common/components/Buttons/Magnetic"
@@ -252,8 +253,14 @@ const CartDropdown = ({
                 <div className={styles.subtotal}>
                   <div className={styles.subtotalRow}>
                     <span className={styles.subtotalLabel}>
-                      Celkem{" "}
-                      <span className={styles.normal}>včetně DPH</span>
+                      Celkem
+                      {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
+                      {PLATCE_DPH && (
+                        <>
+                          {" "}
+                          <span className={styles.normal}>včetně DPH</span>
+                        </>
+                      )}
                     </span>
                     <span
                       className={styles.subtotalValue}

@@ -14,7 +14,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -33,6 +32,7 @@ import {
 } from "../../lib/workbench";
 import { formatDateTime } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Objednávky — the advanced order worklist (admin-advanced-plan.md).
@@ -1174,7 +1174,7 @@ const OrdersInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const OrdersWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>

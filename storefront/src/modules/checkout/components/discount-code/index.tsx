@@ -5,6 +5,7 @@ import React, { useActionState } from "react"
 
 import { applyPromotions, submitPromotionForm } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
+import { maZlevnenePolozky } from "@lib/util/sleva"
 import { HttpTypes } from "@medusajs/types"
 import Trash from "@modules/common/icons/trash"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
@@ -59,6 +60,27 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
   }
 
   const [message, formAction] = useActionState(submitPromotionForm, null)
+
+  /*
+   * Jeden kód na objednávku — ale pole zůstává otevřené.
+   *
+   * Chvíli tu místo formuláře stála jen věta „odeberte nejdřív ten stávající".
+   * Pravidlo to popisovalo správně a bylo to k ničemu: člověk u pokladny chce
+   * kód napsat tam, kde stojí, ne se vracet do košíku nebo hledat koš.
+   *
+   * Zadání nového kódu se tedy vždycky zkusí a v košíku zůstane ten, který
+   * slevuje víc (`submitPromotionForm`) — pořád je uplatněná jedna sleva
+   * a zákazník o tu výhodnější nepřijde tím, že zkusil druhý kód.
+   *
+   * Automatické akce se do toho nepočítají: ty si nasazuje obchod sám
+   * a zákazník je nezadával; poznají se podle toho, že u nich chybí i tlačítko
+   * na odebrání.
+   */
+  const maRucniKod = promotions.some((promotion) => !promotion.is_automatic)
+
+  /* Kód se nevztahuje na kusy, které už mají sníženou cenu. Píše se to, jen
+     když je takový kus opravdu v košíku — jinak by to byla výstraha do prázdna. */
+  const maZlevnene = maZlevnenePolozky(items as any[])
 
   return (
     <div className={clx(styles.root, layout === "inline" && styles.inline)}>
@@ -120,14 +142,38 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({
                   />
                 </div>
 
+                {/* Odebrání kódu je vždycky chyba, když se ozve; výsledek
+                    zadání si druh nese s sebou (`VysledekKodu`). */}
                 <ErrorMessage
-                  error={message || removeError}
+                  error={message?.text ?? removeError}
+                  druh={message?.druh ?? "chyba"}
                   data-testid="discount-error-message"
                 />
               </motion.div>
             )}
           </AnimatePresence>
         </form>
+
+        {(maRucniKod || maZlevnene) && (
+          <div className={styles.poznamky}>
+            {maRucniKod && (
+              <Text
+                className={styles.poznamka}
+                data-testid="discount-replace-note"
+              >
+                Uplatnit lze jeden slevový kód — zůstane ten, který slevuje víc.
+              </Text>
+            )}
+            {maZlevnene && (
+              <Text
+                className={styles.poznamka}
+                data-testid="discount-sale-note"
+              >
+                Na zlevněné kusy se slevové kódy nevztahují.
+              </Text>
+            )}
+          </div>
+        )}
 
         {promotions.length > 0 && (
           <div className={styles.promotionsWrap}>

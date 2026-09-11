@@ -1,7 +1,8 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { Badge, Container, Text } from "@medusajs/ui";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /** Guardian on the campaign: an exhausted budget or a past end date means
  * its discounts silently stopped applying. */
@@ -32,7 +33,7 @@ const Inner = ({ id }: { id: string }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Widget = ({ data }: { data: { id: string } }) => (
   <QueryClientProvider client={queryClient}><Inner id={data.id} /></QueryClientProvider>
 );

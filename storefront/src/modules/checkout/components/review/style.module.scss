@@ -199,31 +199,106 @@
 
 /* ---------- consent ---------- */
 
+/* Písmo štítku na jednom místě: obal zaškrtávátka ho musí mít TOTÉŽ, jinak se
+   jejich první řádky nepotkají. Viz komentář u `.consentBoxWrap`. */
+$consent-font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.55 "Sansation-Regular", sans-serif;
+/* Svislé odsazení, které oběma stranám dělá dotykovou plochu. Fyzická míra
+   prstu, tedy px — ramp ji zvedat nesmí. */
+$consent-pad: 10px;
+
 .consent {
   display: flex;
   align-items: flex-start;
   margin-bottom: clamp(.8rem, 1.78vh, 1.5rem);
-  gap: .875rem;
+  /* Bylo .875rem a k tomu 10px na `margin-right` zaškrtávátka. Odsazení se
+     z něj stěhuje sem, aby rozestup držel jeden údaj místo dvou sečtených. */
+  gap: 1.5rem;
 }
 
+/*
+ * Proč tu ten obal je a co dělá.
+ *
+ * `align-items: flex-start` staví obě strany k hornímu okraji — a tam se
+ * potkat nemají. Zaškrtávátko měří 24 px, řádek textu 1.55 × velikost písma
+ * (na 1.3rem je to 32 px), takže po zarovnání shora stál čtvereček
+ * o čtyři pixely výš než střed věty, kterou potvrzuje.
+ *
+ * Dopočítat ten posun do `margin-top` by znamenalo zopakovat tady `clamp`
+ * z písma štítku a udržovat dvě čísla v souhře. Místo toho dostane obal
+ * TOTÉŽ písmo a TOTÉŽ odsazení jako štítek a uvnitř neviditelnou vzpěru
+ * vysokou jeden řádek — zaškrtávátko se pak vystředí proti prvnímu řádku
+ * samo a drží to na každé šířce okna.
+ */
 .consentBoxWrap {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  padding: $consent-pad 0;
+  font: $consent-font;
 }
 
-/* 24px box inside a 44px target, per the interaction floor (WCAG 2.5.8).
-   Fyzická míra prstu — 24 + 10 + 10 zůstává v px schválně, ramp ji zvedat nesmí. */
+.consentBoxWrap::before {
+  width: 0;
+  height: 1.55em;
+  content: "";
+}
+
+/* 24px čtvereček. Fyzická míra, ne typografická — prst se s rampem nezvětšuje. */
 .consentBox {
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
-  margin: 10px 10px 10px 0;
+  margin: 0;
   border: 1px solid var(--review-ink);
   border-radius: 4px;
-  accent-color: var(--olive-07);
+  background: transparent;
   cursor: pointer;
+
+  /*
+   * Vlastní vzhled, ne prohlížečový.
+   *
+   * `accent-color` obarví nativní zaškrtávátko, ale nesáhne na to, KDE uvnitř
+   * rámečku fajfka sedí — a ta se kreslí podle písma a zvětšení stránky.
+   * Na krémovém pozadí to byla modrá krabička s fajfkou vytlačenou k hornímu
+   * okraji. Nakreslená fajfka sedí uprostřed vždycky a v každém prohlížeči
+   * stejně.
+   *
+   * Fajfka visí na `::before` zaškrtávátka. Dřív to nešlo — `<input>` byl
+   * nahrazený prvek a pseudoprvky na něm nic nekreslily — ale s
+   * `appearance: none` už nahrazený není a Chrome, Firefox i Safari (15.4+)
+   * ho vykreslí. Kdyby se někdy objevil prohlížeč, který ne, zůstane po
+   * zaškrtnutí olivový čtvereček bez fajfky: stav je pořád vidět, jen míň
+   * výmluvně.
+   */
+  appearance: none;
+  display: grid;
+  place-content: center;
+  transition: background-color .18s ease, border-color .18s ease;
+}
+
+.consentBox::before {
+  /* Dva tahy do V, ne glyf: „✓" má v každém písmu jinou výšku i těžiště
+     a vycentrovat se nedá. Rozměry jsou podíly čtverečku, ne opsaná čísla. */
+  width: 6px;
+  height: 11px;
+  content: "";
+  border: solid var(--cream-06);
+  border-width: 0 2px 2px 0;
+  /* Posun nahoru o vlas: těžiště hotového V je níž než jeho geometrický
+     střed, takže by se opticky propadalo. */
+  transform: translateY(-1px) rotate(45deg);
+  opacity: 0;
+  transition: opacity .14s ease;
+}
+
+.consentBox:checked {
+  border-color: var(--olive-07);
+  background: var(--olive-07);
+}
+
+.consentBox:checked::before {
+  opacity: 1;
 }
 
 .consentBox:focus-visible {
@@ -232,13 +307,15 @@
 }
 
 /* Padding zůstává v px: 10 + řádek + 10 drží klikací plochu štítku na 44px i tehdy,
-   když je text jednořádkový. Typ nad ním roste, plocha jen sílí. */
+   když je text jednořádkový. Typ nad ním roste, plocha jen sílí.
+   Písmo i odsazení jsou tytéž proměnné, jaké má obal zaškrtávátka — na tom
+   stojí to, že se jejich první řádky potkají. */
 .consentLabel {
   max-width: 62ch;
-  padding: 10px 0;
+  padding: $consent-pad 0;
   color: var(--review-ink);
   cursor: pointer;
-  font: 400 clamp(1rem, 1.33vw, 1.3rem)/1.55 "Sansation-Regular", sans-serif;
+  font: $consent-font;
 }
 
 .consentLabel a {

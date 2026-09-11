@@ -24,17 +24,35 @@ const errorVariants: Variants = {
   },
 }
 
-const ErrorMessage = ({ error, 'data-testid': dataTestid }: { error?: string | null, 'data-testid'?: string }) => {
+/**
+ * `druh` rozlišuje „něco se nepovedlo" od „stalo se tohle".
+ *
+ * Sdělení jako „váš kód s větší slevou jsme nechali" je dobrá zpráva; v tomtéž
+ * červeném rámečku s vykřičníkem a s `role="alert"` by ji člověk četl jako
+ * selhání a hledal, co udělal špatně. Tvar zůstává stejný, mění se barva,
+ * značka a naléhavost, se kterou to ohlásí odečítač obrazovky.
+ */
+const ErrorMessage = ({
+  error,
+  druh = "chyba",
+  'data-testid': dataTestid,
+}: {
+  error?: string | null
+  druh?: "chyba" | "info"
+  'data-testid'?: string
+}) => {
   if (!error) {
     return null
   }
 
+  const jeInfo = druh === "info"
+
   return (
     <motion.div
       key={error}
-      className={styles.root}
+      className={jeInfo ? `${styles.root} ${styles.info}` : styles.root}
       data-testid={dataTestid}
-      role="alert"
+      role={jeInfo ? "status" : "alert"}
       aria-live="polite"
       variants={errorVariants}
       initial="hidden"

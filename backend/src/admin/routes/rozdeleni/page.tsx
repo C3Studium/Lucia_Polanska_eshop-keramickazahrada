@@ -6,7 +6,7 @@ import {
   Badge, Button, Container, Heading, Input, Prompt, Text, Toaster, toast,
 } from "@medusajs/ui";
 import {
-  QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient,
+  QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -15,6 +15,7 @@ import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Rozdělení — kolekce → kategorie → produkty as three columns
@@ -1286,7 +1287,7 @@ const Inner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );

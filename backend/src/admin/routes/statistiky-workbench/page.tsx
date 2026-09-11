@@ -2,13 +2,14 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { SquaresPlus } from "@medusajs/icons";
 import { Container, Heading, Skeleton, Text } from "@medusajs/ui";
 import {
-  QueryClient, QueryClientProvider, useQuery,
+  QueryClientProvider, useQuery,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { SubTabs } from "../../components/work-tabs";
 import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { formatCzk, productionStageLabels, stageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Statistiky+ — every measurement in one room (Matěj, 2026-08-06).
@@ -356,7 +357,7 @@ const Inner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );

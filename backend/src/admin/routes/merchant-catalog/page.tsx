@@ -15,7 +15,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -23,6 +22,7 @@ import {
 } from "@tanstack/react-query";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 type CatalogCategory = {
   id: string;
@@ -109,7 +109,7 @@ const UnclassifiedBanner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const getInitialDraft = (collection: CatalogCollection): CollectionDraft => ({
   title: collection.title || "",

@@ -10,7 +10,6 @@ import {
   useDataTable,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -20,6 +19,7 @@ import DeleteBundledProduct from "../../components/delete-bundled-product";
 import UpdateBundledProduct from "../../components/update-bundled-product";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 type BundledProduct = {
   id: string;
@@ -179,7 +179,7 @@ const columns = [
 ];
 
 const limit = 15;
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const BundledProductsPageInner = () => {
   const [pagination, setPagination] = useState<DataTablePaginationState>({

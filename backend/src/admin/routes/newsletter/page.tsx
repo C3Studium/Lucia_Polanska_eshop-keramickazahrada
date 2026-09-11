@@ -41,7 +41,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -52,6 +51,7 @@ import { EmptyState } from "../../components/empty-state";
 import { SubTabs } from "../../components/work-tabs";
 import { formatAmount, formatDateTime } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Newsletter — odběratelé, psaní kampaní a historie na jednom místě.
@@ -2623,7 +2623,7 @@ const NewsletterInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const NewsletterPage = () => (
   <QueryClientProvider client={queryClient}>

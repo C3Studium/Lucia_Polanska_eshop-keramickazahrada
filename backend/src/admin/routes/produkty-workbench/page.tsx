@@ -18,7 +18,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -45,6 +44,7 @@ import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ShippingProfileEditor } from "../../components/shipping-profile-editor";
 import { ArchiveToggle } from "../../components/archive-toggle";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -1346,7 +1346,7 @@ const ProductsInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ProductsWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>

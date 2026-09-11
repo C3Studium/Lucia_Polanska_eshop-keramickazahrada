@@ -2,7 +2,6 @@ import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { AdminOrder, DetailWidgetProps } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -10,8 +9,9 @@ import {
 } from "@tanstack/react-query";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 type InvoiceState = {
   invoice_id: number | null;

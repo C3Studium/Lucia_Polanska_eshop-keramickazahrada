@@ -92,6 +92,25 @@ const KEY_SCHEMAS = {
    * nesmí jen proto, že se od zítřka na firmu prodávat nebude.
    */
   company_purchase_enabled: z.boolean(),
+  /**
+   * Zkušební režim — obchod běží nanečisto.
+   *
+   * Zapnuto znamená dvě věci naráz:
+   *
+   * - **iDoklad nevystavuje faktury.** Zkušební objednávka nemá co dělat
+   *   v účetnictví — číselná řada je jednosměrná a vytržené číslo se nevrací.
+   *   Tohle je jediná polovina, kterou přepínač opravdu ovládá za běhu.
+   * - **ComGate má běžet nanečisto.** Tady je přepínač jen záznam rozhodnutí,
+   *   ne vypínač: platební poskytovatel dostává `test` z konfigurace při
+   *   startu a k nastavení obchodu se za běhu nedostane (žije ve vlastním
+   *   kontejneru modulu, kde není modul obchodu). Ostrý provoz se přepíná
+   *   proměnnou `COMGATE_TEST` — stránka Zkušební režim to říká nahlas
+   *   a ukazuje, co je právě nastavené.
+   *
+   * Vypnuto je výchozí schválně: kdyby se výchozí hodnotou zapínal zkušební
+   * režim, obchod, kterému nikdo nastavení neuložil, by tiše nefakturoval.
+   */
+  test_mode_enabled: z.boolean(),
   /** Oznámení — an event banner atop the storefront („v sobotu na trhu…"). */
   announcement_enabled: z.boolean(),
   announcement_text: z.string().max(300),
@@ -121,6 +140,8 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */
   company_purchase_enabled: true,
+  /* Vypnuto: obchod, kterému nikdo nastavení neuložil, musí fakturovat. */
+  test_mode_enabled: false,
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
   review_request_days: 10,

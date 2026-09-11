@@ -14,7 +14,6 @@ import {
   clx,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   useMutation,
   useQueryClient,
   QueryClientProvider,
@@ -30,6 +29,7 @@ import { WorkTabs } from "../../components/work-tabs";
 import { StorefrontBridgeButton } from "../../components/storefront-bridge-button";
 import { formatAmount, formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 type EndingSoon = {
   type: "price_list" | "seasonal_selection";
@@ -619,7 +619,7 @@ const PrehledInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /**
  * Přehled (§4) — the page that answers „co mám udělat teď?".

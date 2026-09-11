@@ -4,10 +4,11 @@ import {
   Button, Container, Heading, Input, Switch, Text, Toaster, toast,
 } from "@medusajs/ui";
 import {
-  QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient,
+  QueryClientProvider, useMutation, useQuery, useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Dovolená a oznámení — the shop's voice on its own page (Matěj,
@@ -161,7 +162,7 @@ const Inner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Page = () => (
   <QueryClientProvider client={queryClient}><Inner /></QueryClientProvider>
 );

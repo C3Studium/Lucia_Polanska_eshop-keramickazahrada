@@ -10,7 +10,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -21,6 +20,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Recenze, now a tab of Přehled rather than its own sidebar section.
@@ -333,7 +333,7 @@ const RecenzeInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const RecenzePage = () => (
   <QueryClientProvider client={queryClient}>

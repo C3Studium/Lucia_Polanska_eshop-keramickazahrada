@@ -1,0 +1,186 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+ * Spoušť se ukazuje jen tam, kde souhrn stojí POD sebou s formulářem — tedy na
+ * svislé obrazovce do 1020px. Nad tím drží stránka dvousloupcové rozvržení
+ * (`checkout/page.module.scss`, `below-px(1020px)`), souhrn sedí ve vlastním
+ * sloupci vedle formuláře a schovávat ho nemá smysl.
+ *
+ * Táž hranice jako tam, schválně: kdyby se rozešly, vznikne pásmo, kde je
+ * souhrn ve sloupci a přesto zabalený.
+ */
+$svisle: "(orientation: portrait) and (max-width: 1020px)";
+
+.root {
+  width: 100%;
+}
+
+/* Široké okno: spoušť neexistuje, souhrn je vidět celý. */
+.spoust {
+  display: none;
+}
+
+.obsah {
+  display: block;
+}
+
+@media #{$svisle} {
+  .spoust {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    /* Mezi řádky spouště — náhledy, Celkem, kód. Svisle, tedy na vh. */
+    gap: clamp(.75rem, 1.6vh, 1.125rem);
+    padding: clamp(.875rem, 1.8vh, 1.25rem) 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .spoust:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring);
+  }
+
+  /* ── Řádek 1: náhledy, počet, šipka ─────────────────────────────────── */
+
+  .hlavni {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: clamp(.75rem, 3vw, 1.125rem);
+  }
+
+  .nahledy {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Fotky se lehce překrývají — je to jedna objednávka, ne tři samostatné
+     dlaždice. Přes `margin`, ne `gap`: záporná mezera v CSS neexistuje. */
+  .nahled + .nahled,
+  .nahled + .zbytek {
+    margin-left: calc(-1 * clamp(.5rem, 1.8vw, .75rem));
+  }
+
+  .nahled,
+  .zbytek {
+    /* Náhled je čtverec; jedno číslo nese stranu i to, co je vedle něj. */
+    --nahled: clamp(2.75rem, 12vw, 3.5rem);
+    width: var(--nahled);
+    height: var(--nahled);
+    flex: 0 0 auto;
+    overflow: hidden;
+    border: 1px solid rgb(var(--cream-06-rgb) / .22);
+  }
+
+  .nahled {
+    display: block;
+    background: var(--cream-02);
+  }
+
+  /* Fotka vyplní náhled; `Thumbnail` si jinak nese vlastní poměr stran. */
+  .nahled > * {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .zbytek {
+    display: grid;
+    place-items: center;
+    background: rgb(var(--cream-06-rgb) / .08);
+    color: rgb(var(--cream-06-rgb) / .78);
+    font: 400 clamp(.8125rem, 3.4vw, .9375rem)/1 "Sansation-Regular", sans-serif;
+  }
+
+  .pocet {
+    margin-right: auto;
+    color: rgb(var(--cream-06-rgb) / .72);
+    font: 400 clamp(.8125rem, 3.6vw, .9375rem)/1.3 "Sansation-Regular", sans-serif;
+  }
+
+  /*
+   * Šipka jako dva tahy, ne znak: glyf „⌄" sedí v každém písmu jinak vysoko
+   * a na tenhle rámeček by se nedal vycentrovat.
+   */
+  .sipka {
+    width: .5rem;
+    height: .5rem;
+    flex: 0 0 auto;
+    border-right: 1px solid rgb(var(--cream-06-rgb) / .6);
+    border-bottom: 1px solid rgb(var(--cream-06-rgb) / .6);
+    /* Otáčí se kolem svého středu, ale těžiště špičky je níž — posun nahoru
+       drží obě polohy opticky na téže lince. */
+    transform: translateY(-.125rem) rotate(45deg);
+    transition: transform .32s cubic-bezier(.22, 1, .36, 1);
+  }
+
+  [data-otevreno="ano"] .sipka {
+    transform: translateY(.0625rem) rotate(-135deg);
+  }
+
+  /* ── Řádek 2: celkem ────────────────────────────────────────────────── */
+
+  /*
+   * Jediné číslo, které je vidět i zavřené, a to nejdůležitější na stránce —
+   * dostane proto vlastní linku a váhu, ne odstavec pod fotkami.
+   */
+  .celkem {
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: clamp(.625rem, 1.4vh, .875rem);
+    border-top: 1px solid rgb(var(--cream-06-rgb) / .16);
+  }
+
+  .celkemPopis {
+    color: var(--cream-06);
+    font: 400 clamp(1rem, 4.4vw, 1.1875rem)/1.2 "Sentient-Regular", serif;
+  }
+
+  .celkemCastka {
+    color: var(--cream-06);
+    font: 400 clamp(1.0625rem, 4.8vw, 1.3125rem)/1.2 "Sentient-Regular", serif;
+    /* Číslice v jedné šířce: částka se mění při každé změně košíku a nemá
+       u toho poskakovat. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Řádek 3: uplatněný kód, když nějaký je ─────────────────────────── */
+
+  .kod {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .kodZnacka {
+    padding: .1875rem .4375rem;
+    border: 1px solid rgb(var(--sage-01-rgb) / .45);
+    color: var(--sage-01);
+    font: 400 clamp(.75rem, 3.2vw, .8125rem)/1.2 "Sansation-Regular", sans-serif;
+    letter-spacing: .04em;
+  }
+
+  .kodPopis {
+    color: rgb(var(--cream-06-rgb) / .62);
+    font: 400 clamp(.75rem, 3.2vw, .8125rem)/1.2 "Sansation-Regular", sans-serif;
+  }
+
+  /* Zavřeno: obsah není vidět ani pro odečítač obrazovky. */
+  [data-otevreno="ne"] .obsah {
+    display: none;
+  }
+}
+
+@include reduced-motion {
+  .sipka {
+    transition: none;
+  }
+}

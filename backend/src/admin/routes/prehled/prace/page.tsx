@@ -1,6 +1,5 @@
 import { Badge, Container, Heading, Text, clx } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -15,6 +14,7 @@ import {
   type MerchantOrderStage,
 } from "../../../components/merchant-order-queue";
 import { WorkTabs } from "../../../components/work-tabs";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Denní práce, now a tab of Přehled rather than its own sidebar section.
@@ -125,7 +125,7 @@ const PraceInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const PracePage = () => (
   <QueryClientProvider client={queryClient}>

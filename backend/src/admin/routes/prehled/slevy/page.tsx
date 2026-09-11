@@ -1,6 +1,5 @@
 import { Badge, Button, Container, Heading, Skeleton, Text } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import { SeasonalSaleEditor } from "../../../components/seasonal-sale-editor";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 type DiscountRow = {
   id: string;
@@ -188,7 +188,7 @@ const SlevyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /**
  * Slevy a akce — the answer to „what is discounted right now?".

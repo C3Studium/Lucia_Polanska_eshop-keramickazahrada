@@ -8,7 +8,6 @@ import {
   Toaster,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -19,6 +18,7 @@ import { ProductionOrderActions } from "../../../components/production-order-act
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount, formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 type ProductionOrder = {
   id: string;
@@ -275,7 +275,7 @@ const ZakazkyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /**
  * Zakázky — the commissions queue, as a tab of Přehled.

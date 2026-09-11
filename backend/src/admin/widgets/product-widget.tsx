@@ -1,17 +1,18 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { Container, Heading, Text } from "@medusajs/ui"
-import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useQuery, QueryClientProvider } from "@tanstack/react-query"
 import { sdk } from "../lib/sdk"
 import { 
   DetailWidgetProps, 
   AdminProduct,
 } from "@medusajs/framework/types"
+import { adminQueryClient } from "../lib/query-client"
 
 type WishlistResponse = {
   count: number
 }
 
-const queryClient = new QueryClient()
+const queryClient = adminQueryClient
 
 const ProductWidgetInner = ({ data: product }: DetailWidgetProps<AdminProduct>) => {
   if (!product?.id) {

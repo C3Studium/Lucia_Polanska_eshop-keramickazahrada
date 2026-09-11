@@ -1,7 +1,6 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { Badge, Button, Container, Heading, Select, Text, toast } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -9,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 /**
  * Profil dopravy u produktu — políčko, které nativní admin nemá.
@@ -120,7 +120,7 @@ const Inner = ({ productId }: { productId: string }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 const Widget = ({ data }: { data: { id: string } }) => (
   <QueryClientProvider client={queryClient}>
     <Inner productId={data.id} />

@@ -7,6 +7,7 @@ import type { HttpTypes } from "@medusajs/types"
 
 import { getCheckoutStep } from "./summary"
 import s from "./checkout-bar.module.scss"
+import { PLATCE_DPH } from "@lib/util/dph"
 
 /**
  * Celková částka a cesta k pokladně na dosah — jen na svislých telefonech.
@@ -65,15 +66,18 @@ export default function CheckoutBar({
             })}
           </span>
         </span>
-        <span className={s.line}>
-          <span>Daně</span>
-          <span>
-            {convertToLocale({
-              amount: cart.tax_total ?? 0,
-              currency_code: cart.currency_code,
-            })}
+        {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
+        {PLATCE_DPH && (
+          <span className={s.line}>
+            <span>Daně</span>
+            <span>
+              {convertToLocale({
+                amount: cart.tax_total ?? 0,
+                currency_code: cart.currency_code,
+              })}
+            </span>
           </span>
-        </span>
+        )}
       </span>
 
       <span className={s.total}>

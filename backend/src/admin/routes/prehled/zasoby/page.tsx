@@ -10,7 +10,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -21,6 +20,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { EmptyState, pieces } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 /**
  * Zásoby — what she has, what is running out, what is gone.
@@ -308,7 +308,7 @@ const ZasobyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const ZasobyPage = () => (
   <QueryClientProvider client={queryClient}>

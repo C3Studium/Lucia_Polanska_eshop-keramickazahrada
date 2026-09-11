@@ -1,6 +1,5 @@
 import { Container, Heading, Skeleton, Text, clx } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { WorkTabs } from "../../../components/work-tabs";
 import { formatAmount } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
+import { adminQueryClient } from "../../../lib/query-client"
 
 type Statistics = {
   period: string;
@@ -240,7 +240,7 @@ const StatistikyInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 /**
  * Statistiky (§4 deviation, requested by Matěj).

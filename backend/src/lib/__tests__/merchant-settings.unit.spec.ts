@@ -20,6 +20,7 @@ describe("merchant settings allowlist", () => {
       "onboarding_dismissals",
       "production_started_email_enabled",
       "review_request_days",
+      "test_mode_enabled",
       "vacation_enabled",
       "vacation_message",
       "vacation_until",

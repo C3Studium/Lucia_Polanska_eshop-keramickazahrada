@@ -8,7 +8,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -18,6 +17,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatAmount, formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { adminQueryClient } from "../lib/query-client"
 
 export type MerchantOrderStage =
   | "received"
@@ -698,7 +698,7 @@ const QueueInner = ({
  * dashboard's provider tree, and `@tanstack/react-query` is an external in the build so
  * there is exactly one copy of the library.
  */
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 export const MerchantOrderQueue = ({
   stage,

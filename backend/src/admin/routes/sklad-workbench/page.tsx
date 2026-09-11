@@ -12,7 +12,6 @@ import {
   toast,
 } from "@medusajs/ui";
 import {
-  QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
@@ -26,6 +25,7 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatCount, formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, useViewMode } from "../../lib/view-mode";
+import { adminQueryClient } from "../../lib/query-client"
 
 /**
  * Sklad — the advanced inventory workbench (admin-advanced-plan.md).
@@ -483,7 +483,7 @@ const SkladInner = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = adminQueryClient;
 
 const SkladWorkbenchPage = () => (
   <QueryClientProvider client={queryClient}>
