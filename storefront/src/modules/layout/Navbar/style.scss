@@ -67,8 +67,22 @@
    */
   --nav-icon-size: min(2.25rem, var(--nav-utility-height));
 
-  /* The count bubble on the cart and on the wishlist. */
-  --nav-badge-size: 0.9375rem;
+  /*
+   * Bublina s počtem u košíku a u wishlistu.
+   *
+   * Bylo 0.9375rem (15px). Dvojciferné číslo se do ní vešlo jen tak tak
+   * a z metru na dálku z toho byla šmouha, tak o 1.5px nahoru — 16.5px.
+   * Zůstává v rem, aby to nad 1921 rostlo s celou stránkou.
+   *
+   * Barvy jsou tu s tím svázané: bublina musí mít vlastní kontrast, ne
+   * kontrast vůči krémovému navbaru. Uhlová plocha a bílé číslo drží i při
+   * této velikosti, olivová se světlým textem nedržela.
+   */
+  --nav-badge-size: 1.03125rem;
+  --nav-badge-surface: var(--ink-05);
+  --nav-badge-ink: var(--white);
+  /* 13px → 14px, ať číslo roste s bublinou a nezůstane v ní plavat. */
+  --nav-badge-font: 0.875rem;
 
   --nav-surface: rgb(var(--cream-10-rgb) / .88);
   --nav-border: rgb(var(--white-rgb) / .62);
@@ -114,7 +128,7 @@
   @include touch {
     --nav-utility-height: 44px;
     --nav-utility-width: 44px;
-  }
+  }
 
   .navbar__left,
   .navbar__center,
@@ -589,11 +603,13 @@
         height: var(--nav-badge-size);
         margin: 0;
         padding: 0 0.1875rem;
+        /* Bílý prstenec odděluje uhlovou bublinu od krémové pilulky navbaru —
+           bez něj by na ní seděla jako díra. */
         border: 1px solid rgb(var(--white-rgb) / .68);
         border-radius: 999px;
-        background: var(--darkOlive);
-        color: var(--cream-10);
-        font-size: 0.8125rem;
+        background: var(--nav-badge-surface);
+        color: var(--nav-badge-ink);
+        font-size: var(--nav-badge-font);
         line-height: 1;
       }
     }
@@ -625,9 +641,9 @@
     padding: 0 0.1875rem;
     border: 1px solid rgb(var(--white-rgb) / .68);
     border-radius: 999px;
-    background: var(--darkOlive);
-    color: var(--cream-10);
-    font-size: 0.8125rem;
+    background: var(--nav-badge-surface);
+    color: var(--nav-badge-ink);
+    font-size: var(--nav-badge-font);
     line-height: 1;
   }
 

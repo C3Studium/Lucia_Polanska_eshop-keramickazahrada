@@ -30,24 +30,36 @@
         color: var(--ui-fg-base);
       }
       .cartCount {
-        color: var(--iconsPink);
+        /*
+         * Barvu tu schválně NENASTAVUJEME.
+         *
+         * Stálo tu `color: var(--iconsPink)`, tedy světle růžová — a protože
+         * je tenhle selektor o třídu silnější než pravidlo navbaru, přebíjel
+         * ho. Bublina košíku tak měla jinou barvu než bublina wishlistu vedle
+         * ní a na olivovém podkladu ji nebylo pořádně vidět; bublina
+         * wishlistu přitom vypadala správně, takže to působilo jako chyba
+         * jenom u košíku.
+         *
+         * Obě bubliny teď kreslí navbar z jednoho místa
+         * (`--nav-badge-surface` / `--nav-badge-ink`). Dva vlastníci jedné
+         * barvy jsou přesně to, kvůli čemu se tyhle dvě rozešly.
+         */
 
         /*
-         * One declaration, not four. The map set .8125rem at sm, xs and xxs - three keys
-         * carrying the same value - so the 0.875rem base never applied on any landscape width
-         * down to 400px, and three media queries did the work of one line. .8125rem is what
-         * actually rendered everywhere, so that is what stays; in rem it rides the ramp above
-         * 1921 by itself.
+         * Velikost číslice patří k bublině, ne sem — proto proměnná navbaru.
          *
-         * Deliberately not a clamp. The numeral is the label of a badge the navbar draws and
-         * sizes itself: --nav-badge-size (0.9375rem) for the box, --nav-icon-size (2.25rem) for
-         * the glyph behind it. Both are plain rem, so both hold still between 1200 and 1921 and
-         * both ride the ramp above it. A vw middle term would pull the numeral out of step with
-         * the box drawn around it. In rem it stays locked to that box at every width - and it
-         * now agrees with the .8125rem the navbar's own badge rule asks for, which this selector
-         * outranks four classes to three.
+         * Dřív tu stálo natvrdo .8125rem. Bylo to tehdy totéž číslo, jaké si
+         * navbar nastavoval sám, takže to nevadilo; ve chvíli, kdy se bublina
+         * zvětšila, zůstala tahle kopie pozadu a číslo by v ní plavalo. Tenhle
+         * selektor je o třídu silnější než pravidlo navbaru, takže by tu
+         * starou hodnotu tiše vyhrál.
+         *
+         * Schválně to není `clamp`: číslice je popisek bublinky, kterou kreslí
+         * a měří navbar. Ta drží v rem mezi 1200 a 1921 a nad 1921 se veze
+         * s rampem. Prostřední člen ve vw by číslo vytáhl z kroku s rámečkem
+         * kolem něj.
          */
-        font-size: 0.8125rem;
+        font-size: var(--nav-badge-font);
 
         @include vb((
           lg: (font-size: 1.3rem),
