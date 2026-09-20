@@ -1,8 +1,9 @@
 "use client"
 
-import { useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "framer-motion"
+import { useMotionValue, useMotionValueEvent, useSpring } from "framer-motion"
 import { useEffect, useRef } from "react"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * Makes a horizontally-scrolling rail feel like an object rather than a scrollbar.
  *
@@ -14,7 +15,7 @@ import { useEffect, useRef } from "react"
 export function useDragScroll<T extends HTMLElement>() {
   const ref = useRef<T>(null)
   const target = useMotionValue(0)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const smooth = useSpring(target, { stiffness: 220, damping: 34, mass: 0.7 })
   const isDragging = useRef(false)
 

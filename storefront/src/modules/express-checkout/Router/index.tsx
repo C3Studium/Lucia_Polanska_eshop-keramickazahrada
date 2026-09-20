@@ -8,7 +8,6 @@ import { CheckCircle } from "@medusajs/icons"
 import {
   AnimatePresence,
   motion,
-  useReducedMotion,
   type Variants,
 } from "framer-motion"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -19,6 +18,7 @@ import { Shipping } from "../Shipping"
 import styles from "../style.module.scss"
 import type { ComgatePaymentMethod } from "@lib/util/comgate"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 type ActiveStep = "selection" | "delivery" | "payment"
 
 const STEP_ORDER: ActiveStep[] = ["selection", "delivery", "payment"]
@@ -62,7 +62,7 @@ export const Router = ({
   const router = useRouter()
   const searchParams = useSearchParams()
   /* Reduced motion: steps swap as instant crossfades instead of sliding. */
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const basePath = `/${countryCode}/express-checkout/${handle}`
   const bundleProductIds = new Set(
     bundle?.items.map((item) => item.product.id) || []

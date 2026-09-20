@@ -322,3 +322,38 @@
     display: none;
   }
 }
+
+/*
+ * ─── Notebook naležato: víc místa výpisu, míň souhrnu ───────────────────────
+ *
+ * Na 1280 a 1400 px bral souhrn 23.125rem (370px) a vedle něj zbývalo na
+ * výpis tak málo, že se název kusu lámal na čtyři řádky („Modelovaný /
+ * květináč s / ještěrkou / fazole 20 x 30 cm") a řádek košíku z toho narostl
+ * do výšky, kterou tam nikdo nechtěl.
+ *
+ * Tři čísla, každé na svůj problém:
+ *
+ * - `--cart-title-zoom: 0.8` — název kusu. Je to jméno výrobku, ne nadpis
+ *   stránky; menší se vejde na míň řádků.
+ * - `--cart-summary-zoom: 0.9` — sazba v souhrnu. Nese ji summary, cart-totals
+ *   i pole na slevový kód, takže jedno číslo posadí celý blok.
+ * - Užší sloupec souhrnu. Strop 22.5rem místo 27.5 a podlaha 19rem místo
+ *   23.125 — rozdíl padne výpisu nalevo, který si o šířku říká.
+ *
+ * Pásmo je totéž, co používá účet i kontaktní modál (1180 až `huge`), aby se
+ * ty hranice nerozcházely. Nad `huge` je místa dost a nic se nemění.
+ */
+@media (orientation: landscape) {
+  @include from-px(1180px) {
+    @include below(huge) {
+      .grid {
+        --cart-title-zoom: 0.8;
+        --cart-summary-zoom: 0.9;
+
+        grid-template-columns:
+          minmax(0, 1fr)
+          clamp(19rem, calc(18 * var(--fvw)), 22.5rem);
+      }
+    }
+  }
+}

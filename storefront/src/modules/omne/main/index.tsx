@@ -1,11 +1,11 @@
 "use client"
 
 import {
-    easeInOut,
-    motion,
-    useMotionValue,
-    useScroll,
-    useTransform,
+  easeInOut,
+  motion,
+  useMotionValue,
+  useScroll,
+  useTransform,
 } from "framer-motion"
 
 import { heroBeat, heroReveal } from "@lib/motion-tokens"
@@ -24,6 +24,7 @@ import {
 import AboutHeroShader, { aboutImages } from "./AboutHeroShader";
 import { palette } from "styles/palette.generated";
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /*
  * ─── Předání do příběhu, zrcadlově k výrobě ─────────────────────────────────
  *
@@ -98,7 +99,7 @@ const veilAt = (t: number): string => {
 
 export default function AboutMe ({ block }: { block?: CopyBlock }) {
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
-    // const reduceMotion = useReducedMotion()
+    // const reduceMotion = useSiteReducedMotion()
     const pointerX = useMotionValue(0)
     const pointerY = useMotionValue(0)
 

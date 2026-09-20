@@ -3,11 +3,12 @@
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import styles from "./style.module.scss"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 type ResultStatus = "success" | "pending" | "canceled" | "failed"
 
 const copy: Record<
@@ -60,7 +61,7 @@ export default function ExpressResult({
   order?: HttpTypes.StoreOrder
 }) {
   const router = useRouter()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const content = copy[status]
   const retryPath = productHandle
     ? `/${countryCode}/express-checkout/${productHandle}?step=payment`

@@ -1131,3 +1131,109 @@
     );
   }
 }
+
+/*
+ * ─── Nápověda o rolování ────────────────────────────────────────────────────
+ *
+ * Formulář je vyšší než okno častěji, než se zdá, a rolovatelný sloupec uvnitř
+ * modálu na sobě nemá nic, co by to prozradilo — člověk vidí useknutý
+ * formulář a myslí si, že to je celé. Kolečko myši je obrázek, kterému se
+ * rozumí bez čtení.
+ *
+ * Leží NAD sloupcem, ne v něm (`.panelBody` je mřížka, tohle je její další
+ * dítě posazené absolutně) — uvnitř by se odrolovalo pryč přesně ve chvíli,
+ * kdy má ukazovat, že se rolovat dá.
+ *
+ * Kdy se ukáže, rozhoduje `usePreteklo()` v `panel.tsx` podle skutečné výšky
+ * obsahu, ne podle šířky okna.
+ */
+.scrollCue {
+  position: absolute;
+  z-index: 3;
+  /* Nad spodní hranou formulářového sloupce, v jeho ose. Sloupec zabírá dvě
+     třetiny mřížky po 2.5% odsazení — odtud ta šířka i levý okraj. */
+  bottom: clamp(1rem, 2.4vh, 1.75rem);
+  left: 2.5%;
+  display: flex;
+  width: calc((100% - 5%) * 2 / 3);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/*
+ * Pilulka s vlastním podkladem, ne holý text.
+ *
+ * Nápověda leží NAD obsahem, takže pod ní může být cokoli — u spodní hrany
+ * formuláře je to zrovna drobné písmo o zpracování údajů a tlačítko Odeslat.
+ * Bez podkladu se to slilo do jedné nečitelné kaše (naměřeno na 1728×1117).
+ */
+.scrollCueInner {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  padding: clamp(0.375rem, 0.9vh, 0.5rem) clamp(0.75rem, 1.2vw, 1rem);
+  border: 1px solid rgb(var(--ink-06-rgb) / .14);
+  border-radius: 999px;
+  background: rgb(var(--cream-10-rgb) / .94);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 26px -16px rgb(var(--ink-01-rgb) / .5);
+}
+
+.scrollCueInner span {
+  color: var(--contact-secondary);
+  font: 400 clamp(0.7rem, 0.76vw, 0.8rem)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*
+ * Kapsle myši se řídí VÝŠKOU — šířku si bere z `aspect-ratio: 3/5`. Sáhnout
+ * jí na šířku znamená ten poměr přebít a kapsli protáhnout; stalo se to a
+ * vypadalo to jako svislá čárka přes text.
+ *
+ * A barvy: komponenta je psaná pro tmavé hero (růžový obrys, bílé kolečko).
+ * Na krémovém formuláři je bílé kolečko neviditelné, takže se obojí přebarví
+ * na tichou olivovou, kterou má modál na popisky.
+ */
+.scrollCueInner :global(.mouse-anim) {
+  height: clamp(1.35rem, 3vh, 1.75rem);
+  opacity: 0.75;
+}
+
+.scrollCueInner :global(.mouse-anim__border) {
+  border-color: var(--contact-secondary);
+}
+
+.scrollCueInner :global(.mouse-anim__wheel) {
+  background-color: var(--contact-secondary);
+}
+
+.panelBody {
+  position: relative;
+}
+
+/*
+ * ─── Notebook: celý modál o kus menší ───────────────────────────────────────
+ *
+ * Na MacBooku Pro 16" (1728×1117) sahal formulář hluboko pod okraj okna.
+ * `zoom`, ne `transform: scale()`: transform mění jen malování, takže box
+ * zůstane velký, rolování počítá s původní výškou a klikací plochy se
+ * rozejdou s tím, co je vidět. `zoom` zmenší i layout, takže se modál
+ * doopravdy zkrátí — a zmenší i odsazení, což je u „moc vysokého" panelu
+ * půlka problému; samotné písmo by nestačilo.
+ *
+ * Pásmo je totéž, co používá účet pro notebook (`lg` až `huge`), aby se ty
+ * dvě hranice nerozešly. Menší obrazovky se schválně nezmenšují — tam by
+ * z toho byla nečitelná sazba; těm pomáhá nápověda o rolování výš.
+ */
+@media (orientation: landscape) {
+  @include from-px(1400px) {
+    @include below(huge) {
+      .panel {
+        zoom: 0.85;
+      }
+    }
+  }
+}

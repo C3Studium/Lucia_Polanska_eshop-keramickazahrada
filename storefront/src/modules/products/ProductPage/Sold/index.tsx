@@ -6,7 +6,6 @@ import {
   motion,
   useAnimationFrame,
   useMotionValue,
-  useReducedMotion,
   wrap,
   type PanInfo,
 } from "framer-motion"
@@ -19,6 +18,7 @@ import {
   useRef,
 } from "react"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 type SoldProductsProps = {
   products: HttpTypes.StoreProduct[]
 }
@@ -42,7 +42,7 @@ function ProductRail({ products }: ProductRailProps) {
   const usesNativeScrollRef = useRef(false)
   /* The global reduced-motion CSS layer cannot stop this JS-driven marquee —
      it has to opt out itself. Dragging stays; the perpetual drift stops. */
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const lastFocusUpdateRef = useRef(0)
   const directionRef = useRef(-1)
   const isDraggingRef = useRef(false)

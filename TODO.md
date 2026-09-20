@@ -312,3 +312,44 @@ udělá, když nemá co dělat:
 **Admin** — projít workbenche, jestli po dnešních zásazích sedí data:
 `objednavky`, `kurzy-sprava`, `zakazkova-vyroba`, `sklad-workbench`,
 `statistiky-workbench`, `slevy-workbench`, `merchant-orders`, `dokumenty`.
+
+## Dobírka — testovat AŽ NA KONCI (zapsáno 13. 9. 2026)
+
+Matěj teď prochází storefront (objednávky s účtem i bez). Dobírka se záměrně
+nechává na úplný konec, protože na ní visí věci, které ještě nejsou:
+
+**Proč až na konci (blokery):**
+- [ ] Doběrečné (příplatek za dobírku) — kód zatím neexistuje; design
+      odsouhlasen 13. 9. (automatická položka v košíku vázaná na výběr
+      dobírky, částka v admin nastavení). Čeká na rozhodnutí o výši
+      (~39 Kč jednotně vs. 19/36 podle dopravy).
+- [ ] `cod_allowed` je zapnuté u 0/266 produktů — dokud Lucie produkty
+      neproklikaje, dobírka se v checkoutu vůbec nenabídne (opt-in).
+- [ ] Balíkovna API klíče (po podpisu Dohody) → `BALIKOVNA_API_URL/TOKEN/
+      SECRET/CUSTOMER_ID` na Railway — bez nich není elektronické podání
+      s dobírkovou částkou a VS.
+- [ ] iDoklad: faktura při předání dopravci + webhook „uhrazeno" → capture
+      (čeká na odpověď supportu; ruční tlačítko „Peníze přišly" se postaví
+      spolu s doběrečným).
+
+**Co pak otestovat (celá cesta, viz plán v paměti/konverzaci 13. 9.):**
+- [ ] Produkt s povolenou dobírkou → checkout: dobírka se nabídne JEN s CZ
+      adresou + ČP dopravou; doběrečné se přidá a při přepnutí na kartu zmizí
+- [ ] Košík se smíšenými produkty (jeden bez povolení) → dobírka se nenabídne
+- [ ] Dokončení bez platby → ship-gate pustí expedici; štítek nese dobírkovou
+      částku (celkem vč. doběrečného) a VS = číslo objednávky
+- [ ] Faktura v iDokladu: metoda „Dobírkou", neuhrazeno, VS sedí
+- [ ] Příchod peněz: webhook (nebo ruční „Peníze přišly") → objednávka
+      zaplacená v adminu, ledger sedí
+- [ ] Vratka nepřevzatého balíku → zrušení bez refundu
+
+## E-maily — dodělávky až na konci (13. 9. 2026)
+
+Rozhodnuto: e-mailové resty se dodělají po otestování storefrontu.
+- [ ] Ověřit `RESEND_API_KEY` na Railway (lokální klíč je neplatný — 401)
+- [ ] Resend webhook pro statistiky newsletteru: URL `/hooks/newsletter-events`,
+      události delivered/opened/clicked/bounced/complained, secret do
+      `RESEND_WEBHOOK_SECRET`, zapnout Open & Click tracking na doméně
+- [ ] Nezdařené e-maily z 9. 9. — ověřit nápravu naživo (sekce URGENTNÍ výš)
+- [ ] iDoklad testovací režim (žádost odeslána 13. 9.) → zkušební faktura
+      e-mailem + stažení z objednávky

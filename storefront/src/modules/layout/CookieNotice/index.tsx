@@ -1,6 +1,6 @@
 "use client"
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -20,6 +20,7 @@ import PreferencesDialog from "./preferences-dialog"
 import { noticeVariants } from "./motion"
 import styles from "./style.module.scss"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * The consent gate.
  *
@@ -42,7 +43,7 @@ export default function CookieNotice() {
   const [visible, setVisible] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [choice, setChoice] = useState<ConsentChoice>(DENY_ALL)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const returnFocusRef = useRef<HTMLElement | null>(null)
 
   // Read after mount: the server cannot know what this visitor has already decided.

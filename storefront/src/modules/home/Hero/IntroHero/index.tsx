@@ -1,6 +1,6 @@
 "use client";
-import { Easing, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
-import { useMemo, useRef } from "react";
+import { Easing, motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { easeReveal } from "@lib/motion-tokens";
 import { useStateContext } from "@lib/context/StateContext";
@@ -12,8 +12,11 @@ import HeroImageShader from "./HeroImageShader";
 import HeroNotices from "./HeroNotices";
 import type { Notice } from "@lib/util/notices";
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 const maskedHidden = { y: "115%" }
 const maskedRest = { y: "0%" }
+/* Co vykreslí server, dokud se scroll nedá změřit — viz `chromeStyle`. */
+const chromeAtRest = { opacity: 1 } as const
 const chromeInitial = { opacity: 0, y: 12 }
 const chromeAnimate = { opacity: 1, y: 0 }
 const signatureOrigin = { transformOrigin: "bottom center" } as const
@@ -111,7 +114,7 @@ export default function IntroHero({
     const pointerX = useMotionValue(0);
     const pointerY = useMotionValue(0);
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
-    // const reduceMotion = useReducedMotion();
+    // const reduceMotion = useSiteReducedMotion();
     // Z CMS přichází hotová adresa v úložišti — žádný builder jako u Sanity,
     // kde se rozměr a kvalita skládaly do URL. Velikosti řeší `next/image`.
     const heroImage = block?.gallery?.[0]?.url ?? "/assets/img/img/2.jpg";
@@ -201,9 +204,28 @@ export default function IntroHero({
     const headlineParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-16%"]);
     const ledeParallax = useTransform(localJourneyProgress, [0, 1], ["0%", "-6%"]);
 
+    /*
+     * Hodnoty ze scrollu se nasazují až po připojení.
+     *
+     * Na serveru je `scrollYProgress` nula, takže se vykreslí `opacity: 1`.
+     * Při prvním vykreslení v prohlížeči ale `ref` ještě nikde nevisí a hero
+     * se nedá změřit — framer z toho udělá konec dráhy, tedy `opacity: 0`,
+     * a React ohlásí nesoulad při hydrataci (naměřeno 13. 9. 2026 na
+     * `Hero__Intro__FooterRail`).
+     *
+     * Do připojení se proto posílá klidová hodnota, kterou vykreslil server.
+     * Hned po něm se nasadí skutečná hodnota ze scrollu — jeden průchod navíc,
+     * a server i klient začínají na témže.
+     */
+    const [pripojeno, setPripojeno] = useState(false)
+    useEffect(() => setPripojeno(true), [])
+
     /* framer-motion reads `style` on every render; a fresh object each time forces it to
        re-bind these motion values. They never change identity, so the wrappers are memoised. */
-    const chromeStyle = useMemo(() => ({ opacity: chromeOpacity }), [chromeOpacity])
+    const chromeStyle = useMemo(
+        () => (pripojeno ? { opacity: chromeOpacity } : chromeAtRest),
+        [pripojeno, chromeOpacity]
+    )
     const nameStyle = useMemo(
         () => ({ y: nameY, scale: nameScale, opacity: nameOpacity }),
         [nameY, nameScale, nameOpacity]
@@ -535,7 +557,7 @@ function MaskedLine({
     delay?: number
     className?: string
 }) {
-    const reduceMotion = useReducedMotion()
+    const reduceMotion = useSiteReducedMotion()
 
     const transition = useMemo(
         () => ({

@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { motion } from "framer-motion"
 import { useEffect, useId, useRef, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -15,6 +15,7 @@ import { consentCategories } from "./categories"
 import { dialogBackdropVariants, dialogPanelVariants } from "./motion"
 import styles from "./dialog.module.scss"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -41,7 +42,7 @@ export default function PreferencesDialog({
   const [draft, setDraft] = useState<ConsentChoice>(initial)
   const panelRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
 

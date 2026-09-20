@@ -1,6 +1,7 @@
 "use client"
 
 import WebButton from "@modules/common/components/Buttons/webButton"
+import MouseAnim from "@modules/common/components/MouseAnim"
 import PhoneInput from "@modules/common/components/phone-input"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { AnimatePresence, motion } from "framer-motion"
@@ -17,6 +18,8 @@ import {
   itemVariants,
   overlayVariants,
   panelVariants,
+  scrollCueTransition,
+  scrollCueVariants,
   statusVariants,
   visualPanelVariants,
 } from "./motion"
@@ -49,6 +52,56 @@ const FOCUSABLE =
 const contactEndpoint = () =>
   `${(process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "").replace(/\/+$/, "")}/store/contact`
 
+/**
+ * Přeteklo to? Pak se ukáže nápověda, ať člověk ví, že má rolovat.
+ *
+ * ## Proč se to neptá na šířku okna
+ *
+ * Modál je vysoký podle toho, co v něm je — a to je různé: „Zakázka" má jiný
+ * formulář než „Obecný dotaz", chybová hláška přidá řádek, delší jméno zalomí
+ * popisek. Pravidlo podle šířky by v půlce případů lhalo oběma směry: na
+ * velkém okně by nápovědu schovalo, i když se obsah nevešel, a na malém ji
+ * ukázalo, i když bylo všechno vidět.
+ *
+ * Ptá se tedy prvku, jestli má co rolovat. Tím zároveň odpadá ladění
+ * responzivních stop pro každou variantu formuláře.
+ *
+ * ## Proč i `ResizeObserver`
+ *
+ * Obsah se mění za běhu — přepnutím tématu, odesláním, rozbalením chyby —
+ * a okno se dá zvětšit. Jedno změření při otevření by platilo jen do prvního
+ * kliknutí.
+ */
+function usePreteklo(ref: React.RefObject<HTMLElement | null>) {
+  const [preteklo, setPreteklo] = useState(false)
+  const [rolovano, setRolovano] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    /* 24px tolerance: pár pixelů navíc není důvod něco radit. */
+    const zmer = () => setPreteklo(el.scrollHeight - el.clientHeight > 24)
+
+    zmer()
+    const ro = new ResizeObserver(zmer)
+    ro.observe(el)
+    /* Sleduje se i obsah: přepnuté téma změní výšku, aniž by se změnil rám. */
+    for (const dite of Array.from(el.children)) ro.observe(dite)
+
+    /* Jakmile člověk začne rolovat, nápovědu už nepotřebuje. */
+    const naRolovani = () => setRolovano(el.scrollTop > 8)
+    el.addEventListener("scroll", naRolovani, { passive: true })
+
+    return () => {
+      ro.disconnect()
+      el.removeEventListener("scroll", naRolovani)
+    }
+  }, [ref])
+
+  return preteklo && !rolovano
+}
+
 export default function ContactDialogPanel({
   merchant,
   initialTopic,
@@ -61,6 +114,8 @@ export default function ContactDialogPanel({
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const statusRef = useRef<HTMLParagraphElement>(null)
+  const formSloupecRef = useRef<HTMLDivElement>(null)
+  const ukazNapovedu = usePreteklo(formSloupecRef)
   const fieldId = useId()
 
   // The form panel scrolls, so a failure can land below the fold on the exact click that
@@ -237,6 +292,7 @@ export default function ContactDialogPanel({
 
         <div className={styles.panelBody}>
           <motion.div
+            ref={formSloupecRef}
             className={styles.formPanel}
             variants={contentVariants}
             initial="hidden"
@@ -386,6 +442,30 @@ export default function ContactDialogPanel({
               </motion.form>
             )}
           </motion.div>
+
+          {/*
+            Nápověda „dole toho je víc". Leží nad formulářovým sloupcem, ne
+            v něm — uvnitř by se odrolovala pryč zrovna ve chvíli, kdy má
+            ukazovat, že se rolovat dá. `aria-hidden`, protože pro odečítač
+            obrazovky je scrollovatelná oblast poznat i bez ní.
+          */}
+          <AnimatePresence>
+            {ukazNapovedu && (
+              <motion.div
+                className={styles.scrollCue}
+                aria-hidden="true"
+                initial={scrollCueVariants.hidden}
+                animate={scrollCueVariants.visible}
+                exit={scrollCueVariants.hidden}
+                transition={scrollCueTransition}
+              >
+                <span className={styles.scrollCueInner}>
+                  <MouseAnim />
+                  <span>Posuňte pro zbytek formuláře</span>
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.aside
             className={styles.visualPanel}

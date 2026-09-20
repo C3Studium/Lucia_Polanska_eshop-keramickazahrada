@@ -1,12 +1,13 @@
 "use client"
 
-import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, cubicBezier, motion } from "framer-motion"
 import { useId, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * Poškozená zásilka — what to do, and the window it has to happen in.
  *
@@ -80,7 +81,7 @@ export default function CarrierDamageNotice({
   stage = "pending",
 }: Props) {
   const [otevreno, setOtevreno] = useState(false)
-  const bezPohybu = useReducedMotion()
+  const bezPohybu = useSiteReducedMotion()
   const idObsahu = useId()
 
   if (!isCarrierDelivery) {

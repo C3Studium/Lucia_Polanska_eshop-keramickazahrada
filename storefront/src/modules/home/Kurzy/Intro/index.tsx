@@ -4,7 +4,6 @@ import MouseAnim from "@modules/common/components/MouseAnim"
 import {
   motion,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
@@ -21,6 +20,7 @@ import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import { alpha, palette } from "styles/palette.generated"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /** Blok `kurzy.intro` z CMS. Jméno zůstává, importuje ho wrapper i stránka. */
 export type KurzyIntroData = CopyBlock | undefined
 
@@ -162,7 +162,7 @@ export default function Intro({
   /* Reduced motion (layer 2 of the site's 3-layer scheme): the scenes still
      swap with scroll, but purely as crossfades — no parallax, no sliding,
      no scaling, no spring overshoot. Fades stay; movement goes. */
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
 
   /*
    * Svislé telefony (rozsah v-stopů xs/sm/s: portrait pod 600px) pinned
@@ -687,7 +687,7 @@ function AudienceBlock({
   onReserve: () => void
 }) {
   /* All three arrive a beat apart, left to right, inside the scene's entrance. */
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const start = ABOUT_IN + 0.03 + index * 0.045
   const settled = start + 0.1
 

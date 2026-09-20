@@ -29,7 +29,7 @@
     display: flex;
     flex-direction: column;
     gap: clamp(.2rem, .45vh, .35rem);
-    font-size: clamp(.9rem, 1.2vw, 1.1rem);
+    font-size: calc(var(--cart-summary-zoom, 1) * clamp(.9rem, 1.2vw, 1.1rem));
     font-weight: 300;
     color: var(--blackText);
 
@@ -43,12 +43,12 @@
         gap: 0.25rem;
         align-items: center;
         font-weight: 400;
-        font-size: clamp(.9rem, 1.2vw, 1.1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.9rem, 1.2vw, 1.1rem));
         font-family: "Sansation-Regular";
       }
 
       .labelValue {
-        font-size: clamp(.9rem, 1.2vw, 1.1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.9rem, 1.2vw, 1.1rem));
         font-weight: 300;
         font-family: "Sansation-Light";
       }
@@ -56,13 +56,13 @@
       .subtotal {
         color: var(--blackText);
         font-weight: 400;
-        font-size: clamp(.9rem, 1.2vw, 1.1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.9rem, 1.2vw, 1.1rem));
         font-family: "Sansation-Regular";
       }
 
       .discount, .giftCard {
         color: var(--blackText);
-        font-size: clamp(.9rem, 1.2vw, 1.1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.9rem, 1.2vw, 1.1rem));
         font-weight: 300;
         font-family: "Sansation-Regular";
       }
@@ -76,13 +76,13 @@
         display: flex;
         gap: 0.25rem;
         align-items: center;
-        font-size: clamp(.85rem, 1.1vw, 1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.85rem, 1.1vw, 1rem));
         font-weight: 300;
         font-family: "Sansation-Light";
       }
 
       .labelValue {
-        font-size: clamp(.85rem, 1.1vw, 1rem);
+        font-size: calc(var(--cart-summary-zoom, 1) * clamp(.85rem, 1.1vw, 1rem));
         font-weight: 300;
         font-family: "Sansation-Light";
       }
@@ -115,14 +115,14 @@
     margin-bottom: clamp(.28rem, .9vh, .55rem);
 
     .total {
-      font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+      font-size: calc(var(--cart-summary-zoom, 1) * clamp(1.05rem, 1.4vw, 1.3rem));
       font-weight: 400;
       font-family: "Sansation-Regular";
       color: var(--blackText);
     }
 
     .totalValue {
-      font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+      font-size: calc(var(--cart-summary-zoom, 1) * clamp(1.05rem, 1.4vw, 1.3rem));
       font-weight: 300;
       font-family: "Sansation-Light";
     }
@@ -156,7 +156,7 @@
   /* Podlaha .75rem (12px), ne .72rem (11.52px): na 1220 se tím poznámka dostávala pod
      hranici, kterou shoot.cjs hlásí jako vadu, a komentář výš počítá kontrast na 12px.
      Živé pásmo 1250–1417; strop .85rem nad 1921 nese ramp (2552: 18.1px). */
-  font-size: clamp(.75rem, .96vw, .85rem);
+  font-size: calc(var(--cart-summary-zoom, 1) * clamp(.75rem, .96vw, .85rem));
   font-style: normal;
   letter-spacing: 0.04em;
   text-transform: none;

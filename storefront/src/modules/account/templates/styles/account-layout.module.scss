@@ -261,4 +261,55 @@
      */
     --account-display-zoom: 0.75;
   }
+
+  /*
+   * Od MacBooku dolů se to zvětšuje zpátky.
+   *
+   * 0.8 výš je psané pro ležatou obrazovku obecně, jenže na skutečném
+   * notebooku z toho byla sazba, kterou zákaznice paní Polanské nepřečtou.
+   * Změřeno na 1728px (MacBook Pro 16"):
+   *
+   *   popisek řádku („JMÉNO")  clamp(.75rem, .496vw, .9rem) → podlaha 12px
+   *                            × 0.8 = 9.6px
+   *   hodnota („Matěj Forejt") clamp(1.12rem, 1vw, 1.36rem) → strop 21.8px
+   *                            × 0.8 = 17.4px
+   *
+   * Devět a půl pixelu je popisek, ne text. Násobitel 1.1 dává 13.2 a 23.9.
+   * Zkoušeno i 0.96 (tedy 0.8 × 1.2) — na 1728px to pořád bylo na hraně
+   * čitelnosti, takže 1.1 není opsané z ničeho, je to druhé kolo.
+   *
+   * Velké monitory zůstávají na 0.8 — tam je místa dost a sazba na něm
+   * vypadá správně; tohle je o obrazovkách, kde se šetří šířkou.
+   *
+   * ## Dvě pásma, ne jedno
+   *
+   * Násobitel 1.1 je psaný pro notebook. Na užších obrazovkách — ležatý
+   * tablet, malý notebook — je stejné písmo proti užšímu sloupci velké, tak
+   * tam zůstává na 1. Hranice je `lg` (1400px), tedy stopa, kterou projekt
+   * už má; obě pásma z ní vycházejí, takže mezi nimi nemůže vzniknout díra
+   * ani překryv.
+   *
+   * Jedno číslo na pásmo, protože `--account-zoom` nese každou clamp
+   * velikost písma v účtu — popisky, hodnoty, boční sloupec i nadpis. Sedí
+   * na `.section` ze stejného důvodu jako pravidlo nad ním: aby dosáhlo
+   * i do bočního sloupce, který je sourozencem obsahu.
+   */
+
+  /* 1180 – 1399.98: ležatý tablet a úzký notebook. */
+  @include from-px(1180px) {
+    @include below(lg) {
+      .section {
+        --account-zoom: 1;
+      }
+    }
+  }
+
+  /* 1400 – 1729.98: notebook. Nad tím nastupuje `huge` a platí 0.8. */
+  @include from-px(1400px) {
+    @include below(huge) {
+      .section {
+        --account-zoom: 1.1;
+      }
+    }
+  }
 }

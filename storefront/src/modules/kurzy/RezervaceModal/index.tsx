@@ -3,7 +3,6 @@
 import {
   AnimatePresence,
   motion,
-  useReducedMotion,
   type Variants,
 } from "framer-motion"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -31,6 +30,7 @@ import {
 } from "../format"
 import KurzyCalendar from "./Calendar"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
  * The reservation modal — „Vybrat termín" opens it over the kurzy page.
  *
@@ -41,7 +41,7 @@ import KurzyCalendar from "./Calendar"
  * reopening restores them (see `ModalDraft`). Choreography follows the house stepper
  * (express-checkout Router): a progress rail 01 Termín · 02 Údaje · 03 Platba
  * with done-checks, one direction-aware sliding stage below it, layout-
- * animated height, and `useReducedMotion` degrading every move to a brief
+ * animated height, and `useSiteReducedMotion` degrading every move to a brief
  * crossfade.
  *
  * After submit comes a Souhrn state — not a fourth rail step: for pay-on-site
@@ -137,7 +137,7 @@ function RezervaceModalPanel({
   initialTerms: CourseTerm[]
   onClose: () => void
 }) {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
 

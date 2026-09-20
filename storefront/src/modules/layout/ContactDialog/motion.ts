@@ -108,3 +108,20 @@ export const statusVariants: Variants = {
 }
 
 export const closeTransition = { duration: 0.5, ease: easeReveal }
+
+/*
+ * Nápověda o rolování — objeví se zespodu, zmizí tamtéž.
+ *
+ * Dráha je malá schválně: je to poznámka na okraji, ne příchod dalšího prvku.
+ * Obě polohy mají stejný tvar výrazu (procento vlastní výšky), aby zůstaly
+ * interpolovatelné.
+ */
+export const scrollCueVariants = {
+  hidden: { opacity: 0, y: "40%" },
+  visible: { opacity: 1, y: "0%" },
+}
+
+export const scrollCueTransition = {
+  duration: 0.32,
+  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+}

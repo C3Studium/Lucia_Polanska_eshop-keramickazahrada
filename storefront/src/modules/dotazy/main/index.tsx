@@ -11,6 +11,7 @@ import { useRef, type PointerEvent } from "react"
 import FAQImageShader, { faqImages } from "./FAQImageShader"
 import { alpha, palette } from "styles/palette.generated"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 export default function DotazyMain ({
     block,
     texts,
@@ -46,7 +47,7 @@ export default function DotazyMain ({
 
     const heroRef = useRef<HTMLDivElement>(null)
     // Shader/cursor reduced-motion fallback is intentionally disabled for now.
-    // const reduceMotion = useReducedMotion()
+    // const reduceMotion = useSiteReducedMotion()
     const pointerX = useMotionValue(0)
     const pointerY = useMotionValue(0)
     const cursorX = useSpring(pointerX, { stiffness: 105, damping: 15, mass: 0.42 })

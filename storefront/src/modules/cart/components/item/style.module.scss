@@ -186,7 +186,9 @@
   /* Dvakrát po 0.8× z původních 2.2 / 3vw / 3.6, tedy 0.64×: titulek si bral
      víc místa než cokoli jiného v řádku a přitom je to jméno kusu, ne nadpis
      stránky. Na 1920 z 57.6 px na 36.9. */
-  font: 400 clamp(1.4rem, 1.92vw, 2.3rem)/.96 "Sentient-Regular", serif;
+  /* Násobitel, aby se dal titulek stáhnout bez opisování clampu — nastavuje ho
+     stránka košíku pro notebooky, viz `cart/templates/index.module.scss`. */
+  font: 400 calc(var(--cart-title-zoom, 1) * clamp(1.4rem, 1.92vw, 2.3rem))/.96 "Sentient-Regular", serif;
   letter-spacing: -.04em;
   transition: color 240ms ease;
 }

@@ -8,7 +8,7 @@
 
   .eyebrow {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: calc(var(--cart-summary-zoom, 1) * 0.75rem);
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -21,7 +21,7 @@
        stopy stejnou hodnotou, které clamp zabily od 1200 nahoru (28.8px na 1200 i na 1920)
        a na hranici 1199/1200 dělaly skok 36px → 28.8px. Jeden clamp, laděný na šířku
        sloupce souhrnu (23.1–27.5rem), živé pásmo 1236–1891. */
-    font-size: clamp(1.7rem, 2.2vw, 2.6rem);
+    font-size: calc(var(--cart-summary-zoom, 1) * clamp(1.7rem, 2.2vw, 2.6rem));
     line-height: .94;
     font-weight: 400;
     font-family: "Sentient-Regular",serif;
@@ -98,7 +98,7 @@
   white-space: nowrap;
   /* Živé pásmo 1295–1524 (na 1440 vyjde 15.1px, tedy dnešek). Vedoucím navržených .78vw
      by podlahu pustilo až na 1744, takže by od 1200 do 1744 svítilo 13.6px místo 15. */
-  font: 400 clamp(.85rem, 1.05vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  font: 400 calc(var(--cart-summary-zoom, 1) * clamp(.85rem, 1.05vw, 1rem))/1 "Sansation-Regular", sans-serif;
 }
 
 /*
@@ -165,7 +165,7 @@
 
   .title {
     margin-top: 0.5rem;
-    font-size: 1.25rem;
+    font-size: calc(var(--cart-summary-zoom, 1) * 1.25rem);
     line-height: 1.1;
     white-space: nowrap;
   }

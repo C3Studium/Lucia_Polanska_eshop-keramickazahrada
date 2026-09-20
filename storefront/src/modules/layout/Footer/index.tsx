@@ -10,12 +10,13 @@ import { subscribeToNewsletter } from "@lib/data/newsletter"
 import { openCookiePreferences } from "@lib/util/cookie-consent"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { paymentIcons } from "constants/icons"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
 import { palette } from "styles/palette.generated"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 type FooterTone = "light" | "dark"
 
 const DEFAULT_SURFACE = palette.sage01
@@ -164,7 +165,7 @@ export default function Footer({
     }))
   })()
   const pathname = usePathname()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const footerRef = useRef<HTMLElement>(null)
   /* Typ se píše ručně, protože paleta je `as const` a `DEFAULT_SURFACE` je tím
      doslovný literál — bez toho by stav uměl držet jen tu jednu barvu, kterou

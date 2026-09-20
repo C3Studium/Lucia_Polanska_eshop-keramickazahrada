@@ -9,11 +9,12 @@ import { convertToLocale } from "@lib/util/money"
 import { withCount } from "@lib/util/plurals"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import styles from "../style.module.scss"
 
+import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 const optionsAsKeymap = (
   options: HttpTypes.StoreProductVariant["options"] | undefined
 ) =>
@@ -55,7 +56,7 @@ export const Product = ({
   countryCode,
   onContinueAction,
 }: ProductProps) => {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useSiteReducedMotion()
   const [quantity, setQuantity] = useState(1)
   const [selection, setSelection] = useState<Record<string, string>>({})
   const [bundleSelections, setBundleSelections] = useState<
