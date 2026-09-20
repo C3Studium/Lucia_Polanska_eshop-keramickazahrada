@@ -1,11 +1,12 @@
-import { Metadata } from "next"
 import { retrieveCustomer } from "@lib/data/customer"
 import VerifyEmailReminderPage from "@modules/account/templates/send-email-verification-again-page"
 
-export const metadata: Metadata = {
-  title: "Potvrzení e-mailu",
-  description: "Ověřte svou e-mailovou adresu pro svůj účet v Keramické zahradě.",
-}
+/*
+ * Záměrně BEZ exportu metadata: tohle je paralelní slot, jehož metadata
+ * v Nextu přebíjejí titulek celé /account stránky — i přihlašovací
+ * obrazovka se pak jmenovala „Potvrzení e-mailu". Titulek patří hlavní
+ * stránce účtu, slot žádný nepotřebuje.
+ */
 
 export default async function VerifyEmail() {
   const customer = await retrieveCustomer().catch(() => null)

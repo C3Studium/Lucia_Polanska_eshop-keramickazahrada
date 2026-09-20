@@ -137,6 +137,12 @@ const NovyProduktInner = () => {
             // second piece to make.
             allow_backorder: kind === "produkt" || kind === "balicek",
             options: { Provedení: "Standardní" },
+            // The 2.18 validator REQUIRES the field; an empty list is the
+            // honest value — a price belongs to Lucia, and the product page's
+            // readiness card says „chybí cena" until she fills it. Prefilling
+            // 0 Kč instead would be a real price a published product can sell
+            // for.
+            prices: [],
           },
         ],
       } as never);

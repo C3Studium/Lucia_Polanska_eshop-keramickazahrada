@@ -179,10 +179,13 @@ const CreateBundledProduct = ({
           </div>
         </FocusModal.Header>
 
-        <FocusModal.Body>
-          <div className="flex h-full flex-col items-center overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-[780px] flex-col px-4 py-12 sm:px-8 sm:py-16">
-              <div className="border-ui-border-base mb-10 border-b pb-8">
+        {/* FocusModal.Body je v @medusajs/ui jen `flex-1` BEZ overflow —
+            v flex sloupci Content (overflow-hidden) obsah přerostl a uřízl
+            se bez možnosti scrollu. `min-h-0` + vlastní overflow to řeší. */}
+        <FocusModal.Body className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex w-full flex-col items-center">
+            <div className="mx-auto flex w-full max-w-[1240px] flex-col px-4 py-8 sm:px-8 sm:py-10">
+              <div className="border-ui-border-base mb-8 border-b pb-6">
                 <FocusModal.Title asChild>
                   <Heading level="h1">Sestavit nový balíček</Heading>
                 </FocusModal.Title>

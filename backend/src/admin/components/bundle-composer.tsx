@@ -474,18 +474,23 @@ export const BundleComposer = ({
   excludedProductIds,
   onUploadingChange,
 }: BundleComposerProps) => (
-  <div className="flex flex-col gap-y-10">
+  /* Dva sloupce na širokých obrazovkách: vlevo identita/cena/média, vpravo
+     hledání a složení. Jeden dlouhý sloupec se v modálu nevešel na obrazovku
+     a bez funkčního scrollu se balíček nedal vůbec sestavit. */
+  <div className="grid items-start gap-x-10 gap-y-10 lg:grid-cols-2">
     <BundleProductDetailsFields
       details={details}
       onChange={onDetailsChange}
       onUploadingChange={onUploadingChange}
     />
 
-    <BundleProductSearch
-      items={items}
-      onItemsChange={onItemsChange}
-      excludedProductIds={excludedProductIds}
-    />
-    <BundleComposition items={items} onItemsChange={onItemsChange} />
+    <div className="flex min-w-0 flex-col gap-y-10">
+      <BundleProductSearch
+        items={items}
+        onItemsChange={onItemsChange}
+        excludedProductIds={excludedProductIds}
+      />
+      <BundleComposition items={items} onItemsChange={onItemsChange} />
+    </div>
   </div>
 );

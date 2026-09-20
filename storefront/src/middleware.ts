@@ -131,10 +131,6 @@ export async function middleware(request: NextRequest) {
   if ( request.nextUrl.pathname.startsWith("/studio")) {
     return NextResponse.next()
   }
-  let redirectUrl = request.nextUrl.href
-
-  let response = NextResponse.redirect(redirectUrl, 307)
-
   let cacheIdCookie = request.cookies.get("_medusa_cache_id")
 
   let cacheId = cacheIdCookie?.value || crypto.randomUUID()
@@ -195,13 +191,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
+  /*
+   * URL už kód země má, jen chybí cache cookie. Dřív se tu odpovídalo
+   * redirectem NA TUTÉŽ URL, aby další požadavek přišel s cookie — jenže
+   * klient, který cookies nevrací (Googlebot, curl), se tak točil v nekonečné
+   * smyčce 307 a web byl pro roboty neindexovatelný. Cookie stačí nastavit
+   * na průchozí odpovědi: první render poběží bez cache-id tagu (neškodné),
+   * každý další požadavek už cookie nese.
+   */
   if (urlHasCountryCode && !cacheIdCookie) {
-    response.cookies.set("_medusa_cache_id", cacheId, {
+    const passThrough = NextResponse.next()
+    passThrough.cookies.set("_medusa_cache_id", cacheId, {
       maxAge: 60 * 60 * 24,
     })
 
-    return response
+    return passThrough
   }
 
   // check if the url is a static asset
@@ -214,17 +218,24 @@ export async function middleware(request: NextRequest) {
 
   const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
-  // If no country code is set, we redirect to the relevant region.
+  // If no country code is set, we redirect to the relevant region — and the
+  // cache cookie rides along, so the redirected request needs no second hop.
   if (!urlHasCountryCode && countryCode) {
-    redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
-    response = NextResponse.redirect(`${redirectUrl}`, 307)
+    const redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
+    const redirect = NextResponse.redirect(redirectUrl, 307)
+    if (!cacheIdCookie) {
+      redirect.cookies.set("_medusa_cache_id", cacheId, {
+        maxAge: 60 * 60 * 24,
+      })
+    }
+    return redirect
   }
 
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
   ],
 }

@@ -40,7 +40,7 @@ const lineAnim = {
 export default function LinkButton({ text, href, className, index, onClickAction } : LinkButtonProps) {
     const [ isActive , setIsActive ] = useState<boolean>(false);
     return (
-        <LocalizedClientLink href={href} className={`${className} LinkButton`} key={`LinkButton ${index}`}>
+        <LocalizedClientLink href={href} className={className ? `${className} LinkButton` : "LinkButton"} key={`LinkButton ${index}`}>
             <button 
                 className="LinkButton__container"
                 onMouseEnter={() => setIsActive(true)}
