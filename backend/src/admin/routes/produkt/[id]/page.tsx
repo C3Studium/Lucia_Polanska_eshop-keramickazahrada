@@ -347,9 +347,9 @@ const VariantRow = ({
   const state = stock?.stock_state ? stockMeta[stock.stock_state] : null;
 
   return (
-    <div className="px-6 py-3">
-    <div className="grid items-center gap-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
-      <div>
+    <div className="px-6 py-4">
+    <div className="grid items-center gap-x-3 gap-y-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_120px_150px_170px_auto]">
+      <div className="min-w-0">
         <InlineText
           value={variant.title ?? ""}
           required
@@ -358,7 +358,7 @@ const VariantRow = ({
         />
         {expert && <CopyId value={variant.id} />}
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="mb-1 lg:hidden">
           <FieldLabel>Kód</FieldLabel>
         </div>
@@ -472,7 +472,9 @@ const VariantRow = ({
       </div>
     </div>
 
-    <div className="mt-2 flex flex-col gap-2">
+    {/* Mini-produkt varianty: fotky a poznámka patří k řádku nahoře — jemné
+        pozadí je drží pohromadě, aby se sekce nerozpadala do volných řádků. */}
+    <div className="bg-ui-bg-subtle mt-3 flex flex-col gap-2 rounded-lg px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         {photos.map((url, index) => (
           <figure key={url} className="group relative m-0">
@@ -731,11 +733,19 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
   });
 
   const categoriesQuery = useQuery<{
-    product_categories: { id: string; name: string; is_active: boolean }[];
+    product_categories: {
+      id: string;
+      name: string;
+      is_active: boolean;
+      /** Vazba na kolekci z admin Rozdělení — stejná konvence čte i menu obchodu. */
+      metadata?: Record<string, unknown> | null;
+    }[];
   }>({
     queryKey: ["produkt-categories"],
     queryFn: () =>
-      sdk.client.fetch(`/admin/product-categories?limit=100&fields=id,name,is_active`),
+      sdk.client.fetch(
+        `/admin/product-categories?limit=100&fields=id,name,is_active,metadata`
+      ),
     staleTime: 5 * 60_000,
   });
 
@@ -1545,74 +1555,138 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
 
           <Section
             title="Zařazení"
-            hint="Kolekce a kategorie určují, kde zákazníci kousek najdou."
+            hint="Nejdřív kolekce — kategorie se pak nabídnou podle ní."
           >
-            <div className="flex flex-col gap-4">
-              <div>
-                <FieldLabel>Kolekce</FieldLabel>
-                <div className="mt-1 max-w-72">
-                  <Select
-                    value={product.collection_id ?? "none"}
-                    onValueChange={(next) =>
-                      saveProduct.mutate({
-                        collection_id: next === "none" ? null : next,
-                      })
-                    }
+            {(() => {
+              /* Kaskáda: kategorie patří kolekci přes metadata.collection_id
+                 (nastavuje se v Rozdělení; stejnou vazbu čte menu obchodu).
+                 Plochý mrak všech 20 kategorií nutil Lucii pamatovat si,
+                 co kam patří — teď jí stránka nabídne jen ty správné. */
+              const collectionId = product.collection_id ?? null;
+              const inCollection = collectionId
+                ? categories.filter(
+                    (category) =>
+                      (category.metadata ?? {})["collection_id"] === collectionId
+                  )
+                : [];
+              const inCollectionIds = new Set(
+                inCollection.map((category) => category.id)
+              );
+              /* Už zařazené kategorie z JINÝCH kolekcí nikdy neschovávat —
+                 jinak by nešly odebrat a produkt by v obchodě strašil tam,
+                 kam nepatří. */
+              const assignedElsewhere = categories.filter(
+                (category) =>
+                  selectedCategories.has(category.id) &&
+                  !inCollectionIds.has(category.id)
+              );
+              const collectionTitle =
+                (collectionsQuery.data?.collections ?? []).find(
+                  (collection) => collection.id === collectionId
+                )?.title ?? "";
+
+              const chip = (category: { id: string; name: string }) => {
+                const selected = selectedCategories.has(category.id);
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    disabled={saveProduct.isPending}
+                    onClick={() => toggleCategory(category.id)}
+                    className={`transition-fg rounded-full border px-3 py-1 ${
+                      selected
+                        ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
+                        : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
+                    }`}
                   >
-                    <Select.Trigger>
-                      <Select.Value placeholder="Bez kolekce" />
-                    </Select.Trigger>
-                    <Select.Content>
-                      <Select.Item value="none">Bez kolekce</Select.Item>
-                      {(collectionsQuery.data?.collections ?? []).map(
-                        (collection) => (
-                          <Select.Item key={collection.id} value={collection.id}>
-                            {collection.title}
-                          </Select.Item>
-                        )
-                      )}
-                    </Select.Content>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <FieldLabel>Kategorie</FieldLabel>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {categories.length === 0 && (
-                    <Text size="small" className="text-ui-fg-subtle">
-                      Zatím žádné kategorie — založíte je v{" "}
-                      <Link
-                        to="/rozdeleni"
-                        className="text-ui-fg-interactive hover:underline"
-                      >
-                        Rozdělení
-                      </Link>
-                      .
+                    <Text size="xsmall" weight={selected ? "plus" : "regular"}>
+                      {category.name}
                     </Text>
-                  )}
-                  {categories.map((category) => {
-                    const selected = selectedCategories.has(category.id);
-                    return (
-                      <button
-                        key={category.id}
-                        type="button"
-                        disabled={saveProduct.isPending}
-                        onClick={() => toggleCategory(category.id)}
-                        className={`transition-fg rounded-full border px-3 py-1 ${
-                          selected
-                            ? "border-ui-border-interactive bg-ui-bg-base-pressed text-ui-fg-base"
-                            : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-base-hover"
-                        }`}
+                  </button>
+                );
+              };
+
+              return (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <FieldLabel>Kolekce</FieldLabel>
+                    <div className="mt-1 max-w-72">
+                      <Select
+                        value={product.collection_id ?? "none"}
+                        onValueChange={(next) =>
+                          saveProduct.mutate({
+                            collection_id: next === "none" ? null : next,
+                          })
+                        }
                       >
-                        <Text size="xsmall" weight={selected ? "plus" : "regular"}>
-                          {category.name}
+                        <Select.Trigger>
+                          <Select.Value placeholder="Bez kolekce" />
+                        </Select.Trigger>
+                        <Select.Content>
+                          <Select.Item value="none">Bez kolekce</Select.Item>
+                          {(collectionsQuery.data?.collections ?? []).map(
+                            (collection) => (
+                              <Select.Item
+                                key={collection.id}
+                                value={collection.id}
+                              >
+                                {collection.title}
+                              </Select.Item>
+                            )
+                          )}
+                        </Select.Content>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <FieldLabel>Kategorie</FieldLabel>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {categories.length === 0 && (
+                        <Text size="small" className="text-ui-fg-subtle">
+                          Zatím žádné kategorie — založíte je v{" "}
+                          <Link
+                            to="/rozdeleni"
+                            className="text-ui-fg-interactive hover:underline"
+                          >
+                            Rozdělení
+                          </Link>
+                          .
                         </Text>
-                      </button>
-                    );
-                  })}
+                      )}
+                      {categories.length > 0 && !collectionId && (
+                        <Text size="small" className="text-ui-fg-subtle">
+                          Nejdřív vyberte kolekci — kategorie se nabídnou podle
+                          ní.
+                        </Text>
+                      )}
+                      {categories.length > 0 &&
+                        collectionId &&
+                        inCollection.length === 0 && (
+                          <Text size="small" className="text-ui-fg-subtle">
+                            Kolekce „{collectionTitle}" nemá vlastní kategorie —
+                            stačí samotné zařazení do kolekce.
+                          </Text>
+                        )}
+                      {inCollection.map(chip)}
+                    </div>
+                  </div>
+
+                  {assignedElsewhere.length > 0 && (
+                    <div>
+                      <FieldLabel>Zařazené mimo tuhle kolekci</FieldLabel>
+                      <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
+                        Kousek je v kategoriích jiné kolekce — kliknutím je
+                        odeberete.
+                      </Text>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {assignedElsewhere.map(chip)}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </Section>
 
           <Section

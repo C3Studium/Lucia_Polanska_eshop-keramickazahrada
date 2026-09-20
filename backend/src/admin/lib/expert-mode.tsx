@@ -69,7 +69,7 @@ export const CopyId = ({ value }: { value: string | null | undefined }) => {
   return (
     <button
       type="button"
-      className="text-ui-fg-muted txt-xsmall font-mono hover:text-ui-fg-base text-left break-all"
+      className="text-ui-fg-muted txt-xsmall font-mono hover:text-ui-fg-base block max-w-full truncate text-left"
       title="Kliknutím zkopírujete"
       onClick={() => {
         navigator.clipboard?.writeText(value).catch(() => {});
