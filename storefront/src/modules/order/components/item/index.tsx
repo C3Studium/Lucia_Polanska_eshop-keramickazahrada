@@ -23,7 +23,9 @@ const Item = ({ item, currencyCode }: ItemProps) => {
 
       <Table.Cell className={styles.cellInfo}>
         <p className={styles.name} data-testid="product-name">
-          {item.product_title}
+          {/* Fee lines (doběrečné) carry no product — the line's own title
+              is the honest fallback. */}
+          {item.product_title ?? item.title}
         </p>
         <LineItemOptions variant={item.variant} data-testid="product-variant" />
         <div className={styles.dimensions}>

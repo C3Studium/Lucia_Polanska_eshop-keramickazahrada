@@ -111,6 +111,14 @@ const KEY_SCHEMAS = {
    * režim, obchod, kterému nikdo nastavení neuložil, by tiše nefakturoval.
    */
   test_mode_enabled: z.boolean(),
+  /**
+   * Doběrečné — příplatek za platbu na dobírku, v korunách.
+   *
+   * Účtuje se jako samostatná položka košíku ve chvíli, kdy si zákazník
+   * zvolí dobírku (`lib/dobirka-fee.ts`), a s jiným způsobem platby zase
+   * zmizí. Nula znamená „dobírka bez příplatku" — položka se pak nepřidává.
+   */
+  dobirka_fee_czk: z.number().min(0).max(2000),
   /** Oznámení — an event banner atop the storefront („v sobotu na trhu…"). */
   announcement_enabled: z.boolean(),
   announcement_text: z.string().max(300),
@@ -142,6 +150,8 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   company_purchase_enabled: true,
   /* Vypnuto: obchod, kterému nikdo nastavení neuložil, musí fakturovat. */
   test_mode_enabled: false,
+  /* 39 Kč — částka dohodnutá při zavedení dobírky; v administraci jde změnit. */
+  dobirka_fee_czk: 39,
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
   review_request_days: 10,

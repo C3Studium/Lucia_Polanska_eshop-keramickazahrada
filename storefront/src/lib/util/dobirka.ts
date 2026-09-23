@@ -19,11 +19,28 @@ export const DOBIRKA_COUNTRIES = new Set(["cz"])
 
 type LineLike = {
   product?: { metadata?: Record<string, unknown> | null } | null
+  metadata?: Record<string, unknown> | null
+  variant_id?: string | null
+  product_id?: string | null
 }
 
 /** Opt-in, per product. Absent metadata means no. */
 export const lineAllowsDobirka = (item: LineLike) =>
   Boolean(item?.product?.metadata?.cod_allowed)
+
+/**
+ * The doběrečné line the backend adds when dobírka is chosen. It is a fee,
+ * not a product — it must never count against the per-product opt-in (it has
+ * no product), and the UI hides its quantity/remove controls: it appears and
+ * disappears with the payment choice only.
+ *
+ * Marker AND no product behind the line — the same identity the backend
+ * enforces: `metadata` is client-writable on every line-item route, so a
+ * marker on a variant-backed line is a forgery and stays an ordinary product
+ * row here (with its controls, and counted against the per-product opt-in).
+ */
+export const isDobirkaFeeLine = (item: LineLike | null | undefined) =>
+  Boolean(item?.metadata?.dobirka_fee) && !item?.variant_id && !item?.product_id
 
 /** The same fact read off the product itself — the PDP says it up front. */
 export const productAllowsDobirka = (
@@ -32,7 +49,10 @@ export const productAllowsDobirka = (
 
 /** One piece that forbids it forbids it for the basket — the carrier collects once. */
 export const cartAllowsDobirka = (cart: { items?: LineLike[] | null } | null) => {
-  const items = cart?.items ?? []
+  // Without this filter, adding the fee (which happens the moment dobírka is
+  // chosen) would immediately flip the answer to "no" and hide the option
+  // the customer just picked.
+  const items = (cart?.items ?? []).filter((item) => !isDobirkaFeeLine(item))
   return items.length > 0 && items.every(lineAllowsDobirka)
 }
 

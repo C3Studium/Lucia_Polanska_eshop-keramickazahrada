@@ -46,14 +46,31 @@ export const stampDobirkaStep = createStep(
 
     const [objednavka] = await orderModule.listOrders(
       { id: input.order_id },
-      { select: ["id", "metadata"] }
+      { select: ["id", "metadata", "email"] }
     )
     const puvodni = (objednavka?.metadata ?? {}) as Record<string, unknown>
+
+    /*
+     * E-mail jede stejným kanálem jako dobírka: ČP ho u podání VYŽADUJE
+     * (250 MISSING_REQUIRED_EMAIL — změřeno na testovacím prostředí), ale
+     * `order.email` v pevném seznamu polí, který provider v createFulfillment
+     * dostane, není. Metadata ano.
+     */
+    const email =
+      typeof (objednavka as any)?.email === "string" &&
+      (objednavka as any).email.trim()
+        ? (objednavka as any).email.trim()
+        : null
 
     await orderModule.updateOrders([
       {
         id: input.order_id,
-        metadata: { ...puvodni, cp_dobirka_zjistena: true, cp_dobirka_czk: castka },
+        metadata: {
+          ...puvodni,
+          cp_dobirka_zjistena: true,
+          cp_dobirka_czk: castka,
+          cp_email: email,
+        },
       },
     ])
 

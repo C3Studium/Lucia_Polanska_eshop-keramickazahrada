@@ -440,10 +440,14 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
         prijemce: (order?.shipping_address ?? {}) as any,
         /*
          * `order.email` se do `createFulfillment` nenačítá (není v polích
-         * dotazu) — u Balíkovny proto kontakt stojí na telefonu z adresy.
-         * `sestavPodani` si pohlídá, že aspoň jedno z toho je.
+         * dotazu) — proto ho `stampDobirkaStep` razítkuje do metadat jako
+         * `cp_email`. ČP e-mail u podání vyžaduje (250 MISSING_REQUIRED_EMAIL,
+         * změřeno na testovacím prostředí); telefon sám nestačí.
          */
-        email: (order as any)?.email ?? null,
+        email:
+          (order as any)?.email ??
+          (typeof metadata.cp_email === "string" ? metadata.cp_email : null) ??
+          null,
         vydejna,
         dobirka,
         /* Udaná cena je povinná — hodnotou je to, co zákazník zaplatil. */

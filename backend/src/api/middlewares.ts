@@ -32,6 +32,10 @@ import {
 import { PatchSeasonalSelectionSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/route";
 import { PostSeasonalDiscountSchema } from "./admin/merchant-catalog/seasonal-selections/[id]/discount/route";
 import { GetStoreMerchantCatalogSchema } from "./store/merchant-catalog/route";
+import {
+  applyDobirkaFeeOnPaymentSession,
+  protectDobirkaFeeLine,
+} from "../lib/dobirka-fee";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
@@ -42,6 +46,7 @@ import {
   blockMtoLineEdits,
   blockMtoVariantAdds,
 } from "../lib/native-order-edit-guard";
+import { PostPaymentChoiceSchema } from "./store/carts/[id]/payment-choice/route";
 import { PostProductionPaymentModeSchema } from "./store/carts/[id]/production-payment-mode/route";
 import { PostStoreNewsletterSchema } from "./store/newsletter/validators";
 import { PostNewsletterCampaignSchema } from "./admin/newsletter/campaigns/route";
@@ -226,6 +231,33 @@ export default defineMiddlewares({
       methods: ["POST"],
       middlewares: [requireShippableCart()],
     },
+    /*
+     * Doběrečné. Výběr platby je jediné hrdlo, kterým si KAŽDÁ pokladna
+     * (běžná, expresní i ručně psaný klient) volí poskytovatele — objednávka
+     * bez platební relace nejde dokončit a relace nevzniká nikde jinde.
+     * Middleware běží PŘED nativní routou: srovná položku doběrečného v
+     * košíku a částku platební kolekce, takže vznikající relace už počítá
+     * se správným součtem. Viz `lib/dobirka-fee.ts`.
+     */
+    {
+      matcher: "/store/payment-collections/:id/payment-sessions",
+      methods: ["POST"],
+      middlewares: [applyDobirkaFeeOnPaymentSession()],
+    },
+    // Položka doběrečného není zákazníkova — přidává a odebírá ji výběr
+    // platby. Přímé smazání či úprava množství by dobírku podúčtovaly.
+    {
+      matcher: "/store/carts/:id/line-items/:line_id",
+      methods: ["POST", "DELETE"],
+      middlewares: [protectDobirkaFeeLine()],
+    },
+    // Zobrazovací synchronizace doběrečného (rekapitulace před platbou kartou,
+    // kde relace vzniká až z posledního tlačítka). Vynucení zůstává jinde.
+    {
+      matcher: "/store/carts/:id/payment-choice",
+      methods: ["POST"],
+      middlewares: [validateAndTransformBody(PostPaymentChoiceSchema)],
+    },
     // Nepřihlášený endpoint, který na cizí příkaz odesílá e-mail — bez stropu
     // je z něj nástroj na zaplavení cizí schránky. Podrobnosti v souboru.
     {
@@ -345,6 +377,13 @@ export default defineMiddlewares({
     },
     {
       matcher: "/admin/idoklad/orders/:orderId/mark-paid",
+      methods: ["POST"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    // „Peníze přišly (dobírka)" — explicitly authenticated like the other
+    // custom admin money actions above. No body schema: full amount only.
+    {
+      matcher: "/admin/merchant-orders/:orderId/dobirka-paid",
       methods: ["POST"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },

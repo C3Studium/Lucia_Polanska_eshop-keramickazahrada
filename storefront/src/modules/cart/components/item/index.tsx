@@ -4,6 +4,7 @@ import { Divider, clx } from "@medusajs/ui"
 import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
+import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -39,6 +40,35 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   // failed at the backend — the worst possible place to learn it (spec §4).
   const maxQuantity = maxPurchasableQuantity(item.variant, 10)
   const quantityLimit = Math.min(maxQuantity, 10)
+
+  /*
+   * Doběrečné — a fee, not a product. No photo, no product link, no quantity
+   * stepper and no „Odebrat": it belongs to the dobírka payment choice and
+   * the backend refuses to edit it directly. Choosing another payment removes
+   * it, and the note says exactly that.
+   */
+  if (isDobirkaFeeLine(item)) {
+    return (
+      <article
+        className={clx(s.row, type === "preview" && s.previewRow)}
+        data-testid="dobirka-fee-row"
+      >
+        <div className={s.cellTitle}>
+          <p className={s.kicker}>K platbě na dobírku</p>
+          <h3 className={s.title}>{item.title}</h3>
+          <div className={s.options}>
+            <p>Poplatek za dobírku — zmizí, když zvolíte jiný způsob platby.</p>
+          </div>
+        </div>
+        <div className={s.cellPrice}>
+          <span className={s.priceWrap}>
+            {type === "full" && <span className={s.controlLabel}>Celkem</span>}
+            <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+          </span>
+        </div>
+      </article>
+    )
+  }
 
   return (
     <article

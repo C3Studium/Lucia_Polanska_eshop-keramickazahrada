@@ -30,5 +30,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           }
         : null,
     commissions_paused: vacation,
+    // Doběrečné — the checkout shows the surcharge next to the dobírka
+    // option before it is chosen. Display only: the fee itself is added
+    // server-side when the payment session is created (`lib/dobirka-fee.ts`).
+    dobirka_fee_czk: settings?.dobirka_fee_czk ?? 39,
   })
 }

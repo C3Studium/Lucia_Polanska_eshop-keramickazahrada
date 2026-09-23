@@ -17,6 +17,7 @@ import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import { getProductionPaymentMode } from "@lib/data/made-to-order"
+import { getShopStatus } from "@lib/data/shop-status"
 import styles from "./style.module.scss"
 
 export default async function CheckoutForm({
@@ -93,6 +94,14 @@ export default async function CheckoutForm({
       (chosenOption as any)?.service_zone?.fulfillment_set?.type === "pickup"
     )
 
+  /*
+   * Doběrečné — the amount shown next to the dobírka tile, fetched rather
+   * than hardcoded: the owner edits it in the admin. Display only; the fee
+   * line itself is added server-side when the payment session is created.
+   */
+  const shopStatus = allowsDobirka ? await getShopStatus() : null
+  const dobirkaFeeCzk = shopStatus?.dobirka_fee_czk ?? 0
+
   const hasPickupShipping = shippingMethods.some(
     (option) =>
       chosenOptionIds.has(option.id) &&
@@ -121,6 +130,7 @@ export default async function CheckoutForm({
         comgateMethods={comgateMethods}
         hasPickupShipping={hasPickupShipping}
         allowsDobirka={allowsDobirka}
+        dobirkaFeeCzk={dobirkaFeeCzk}
       />
       <Review
         cart={cart}

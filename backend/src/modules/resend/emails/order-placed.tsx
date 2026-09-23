@@ -165,7 +165,9 @@ function OrderPlacedEmailComponent({
                   margin: 0,
                 }}
               >
-                {item.product_title}
+                {/* Fee lines (doběrečné) have no product — the item's own
+                    title is the honest fallback. */}
+                {item.product_title ?? item.title}
               </Text>
               {item.variant_title ? (
                 <Text

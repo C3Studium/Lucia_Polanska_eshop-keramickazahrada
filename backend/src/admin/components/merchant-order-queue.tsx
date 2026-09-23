@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatAmount, formatDateTime } from "../lib/format";
+import { otevritStitek, type StitekZasilky } from "../lib/stitky";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 
@@ -61,6 +62,9 @@ export type MerchantOrder = {
 
   /** Collected in person at the workshop, paid at the counter. */
   is_personal_pickup: boolean;
+
+  /** Dobírka whose parcel left and whose money hasn't been recorded yet. */
+  dobirka_waiting: boolean;
 
   /** Money owed back after a customer edit — the „Vrátit rozdíl" button. */
   refund_due: { amount: number; currency_code: string; reason?: string } | null;
@@ -317,7 +321,7 @@ export const OrderRow = ({
   const label = useMutation<{
     available: boolean;
     reason?: string;
-    labels: Array<{ url: string; tracking_number: string | null }>;
+    labels: Array<StitekZasilky>;
   }>({
     mutationFn: () =>
       sdk.client.fetch(`/admin/merchant-orders/${order.order_id}/label`),
@@ -326,13 +330,15 @@ export const OrderRow = ({
         toast.info(result.reason ?? "Štítek zatím není k dispozici");
         return;
       }
-      for (const item of result.labels) {
-        window.open(item.url, "_blank", "noopener,noreferrer");
+      const otevrene = result.labels.filter(otevritStitek).length;
+      if (!otevrene) {
+        toast.info("Štítek se nepodařilo otevřít — zkuste to znovu.");
+        return;
       }
       toast.success(
-        result.labels.length === 1
+        otevrene === 1
           ? "Štítek se otevřel v novém okně"
-          : `${result.labels.length} štítků se otevřelo v nových oknech`
+          : `${otevrene} štítků se otevřelo v nových oknech`
       );
     },
     onError: (error) => {
@@ -359,6 +365,34 @@ export const OrderRow = ({
     onError: (error) => {
       const message =
         error instanceof Error ? error.message : "Vrácení se nepodařilo";
+      setLastFailure(message);
+      toast.error(message);
+    },
+  });
+
+  /*
+   * „Peníze přišly (dobírka)" — she writes down that Česká pošta settled the
+   * collected money. The backend records the payment through the native
+   * payment flow, so the paid badge, statistics and the invoice in iDokladu
+   * all follow from this one click. A second click is a friendly no-op.
+   */
+  const dobirkaPaid = useMutation<{ captured: boolean; message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}/dobirka-paid`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      setLastFailure(null);
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      if (result?.captured) {
+        toast.success("Peníze z dobírky jsou zapsané. Objednávka je zaplacená.");
+      } else {
+        toast.info(result?.message ?? "Peníze u této objednávky už jsou zapsané.");
+      }
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Platbu se nepodařilo zapsat";
       setLastFailure(message);
       toast.error(message);
     },
@@ -554,6 +588,22 @@ export const OrderRow = ({
               Vyzvednuto a zaplaceno
             </Button>
           )}
+
+        {/*
+          Only an unpaid dobírka whose parcel already left: earlier the
+          carrier holds nothing, later the money is already recorded — either
+          way the server-derived flag hides the button.
+        */}
+        {order.dobirka_waiting && (
+          <Button
+            variant="primary"
+            size="small"
+            isLoading={dobirkaPaid.isPending}
+            onClick={() => dobirkaPaid.mutate()}
+          >
+            Peníze přišly (dobírka)
+          </Button>
+        )}
 
         {needsHandover && !blockedFromShipping && !order.is_personal_pickup && (
           <Button

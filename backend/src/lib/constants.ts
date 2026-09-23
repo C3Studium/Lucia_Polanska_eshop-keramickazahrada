@@ -296,6 +296,21 @@ export const IDOKLAD_NUMERIC_SEQUENCE_ID = process.env.IDOKLAD_NUMERIC_SEQUENCE_
  * place so the admin widget labels invoices as going to the test agenda.
  */
 export const IDOKLAD_TEST_MODE = process.env.IDOKLAD_TEST_MODE
+/**
+ * PublicId of the webhook registration in iDoklad (v3 API webhooks).
+ *
+ * Register the webhook in iDoklad pointing at
+ * `<BACKEND_PUBLIC_URL>/hooks/idoklad` for issued-invoice payment events
+ * (EntityType 0 = IssuedInvoice, ActionType 4 = úhrada); the registration's
+ * PublicId (GUID) goes here. iDoklad does not sign its deliveries, so this
+ * id is the whole proof of origin — the route compares it constant-time and
+ * refuses everything else. Unset means the route answers 503 (logged once)
+ * and dobírky are paired manually via the admin button only.
+ *
+ * The route reads process.env directly (this module asserts DATABASE_URL at
+ * import, which unit tests must not inherit); this export documents the var.
+ */
+export const IDOKLAD_WEBHOOK_PUBLIC_ID = process.env.IDOKLAD_WEBHOOK_PUBLIC_ID
 
 /**
  * Shared secret for the „Otevřít web jako admin" handover

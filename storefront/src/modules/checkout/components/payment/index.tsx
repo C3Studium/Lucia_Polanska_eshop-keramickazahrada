@@ -8,7 +8,8 @@ import {
   isRetiredPayment,
   paymentInfoMap,
 } from "@lib/constants"
-import { initiatePaymentSession } from "@lib/data/cart"
+import { initiatePaymentSession, syncPaymentChoice } from "@lib/data/cart"
+import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import {
   legacyComgateOptionForMethod,
   toComgateOptionId,
@@ -37,6 +38,7 @@ const Payment = ({
   comgateMethods,
   hasPickupShipping = false,
   allowsDobirka = false,
+  dobirkaFeeCzk = 0,
 }: {
   cart: any
   availablePaymentMethods: any[]
@@ -45,6 +47,8 @@ const Payment = ({
   hasPickupShipping?: boolean
   /** All three dobírka conditions hold: every piece allows it, ČP carriage, Czech address. */
   allowsDobirka?: boolean
+  /** Doběrečné from the admin setting — shown next to the tile; 0 hides it. */
+  dobirkaFeeCzk?: number
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
@@ -96,11 +100,15 @@ const Payment = ({
         detail: isPickupPayment(provider.id)
           ? "Zaplatíte na místě, až si to vyzvednete v ateliéru"
           : isDobirkaPayment(provider.id)
-          ? "Zaplatíte doručovateli, až vám zásilku předá"
+          ? dobirkaFeeCzk > 0
+            ? // The surcharge, said up front — the amount comes from the
+              // admin setting, never from a constant in this file.
+              `Zaplatíte doručovateli, až vám zásilku předá · + ${dobirkaFeeCzk} Kč doběrečné`
+            : "Zaplatíte doručovateli, až vám zásilku předá"
           : "Zaplatíte v dalším kroku",
         logo: paymentInfoMap[provider.id]?.icon,
       })),
-    [nonComgatePaymentMethods]
+    [nonComgatePaymentMethods, dobirkaFeeCzk]
   )
 
   // Switching away from Osobní odběr must clear a pickup payment already chosen.
@@ -174,13 +182,28 @@ const Payment = ({
    * step, where the customer sees the recap and gives consent; the payment session is created
    * there, from the final action. Consent has to exist before the payment does.
    */
-  const continueToReview = (optionId: string) => {
+  const continueToReview = async (optionId: string) => {
     if (isLoading || !optionId) return
 
     setSelectedPaymentMethod(optionId)
     setError(null)
     // The choice carried through to the recap — remember it for next time.
     rememberLastPaymentMethod(optionId)
+
+    /*
+     * Switching away from dobírka towards a card: the fee line must leave the
+     * recap NOW, not at the gateway click (the card session is created only
+     * from the final button, after consent). Display sync only — the server
+     * enforces the fee regardless at session creation and completion.
+     */
+    if ((cart?.items ?? []).some((item: any) => isDobirkaFeeLine(item))) {
+      setIsLoading(true)
+      try {
+        await syncPaymentChoice("pp_comgate_comgate")
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
     const params = new URLSearchParams(searchParams)
     params.set("step", "review")

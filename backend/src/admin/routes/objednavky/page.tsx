@@ -31,6 +31,7 @@ import {
   stageLabels,
 } from "../../lib/workbench";
 import { formatDateTime } from "../../lib/format";
+import { otevritStitek, type StitekZasilky } from "../../lib/stitky";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 
@@ -238,7 +239,7 @@ type OrderDetail = {
 type LabelResult = {
   available: boolean;
   reason?: string;
-  labels: { url: string; tracking_number?: string | null }[];
+  labels: StitekZasilky[];
   destination?: {
     type: "balikovna";
     zip: string | null;
@@ -273,7 +274,7 @@ const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: 
       /* Only the FIRST window.open survives on a phone — browsers block every
          popup after the one tied to the tap. The rest render as links below. */
       if (result.labels[0]) {
-        window.open(result.labels[0].url, "_blank", "noreferrer");
+        otevritStitek(result.labels[0]);
       }
       if (result.labels.length > 1) {
         toast.info("Další štítky otevřete z odkazů pod tlačítky.");
@@ -330,16 +331,15 @@ const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: 
               {(last.labels ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {(last.labels ?? []).map((label, index) => (
-                    <a
-                      key={label.url}
-                      href={label.url}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      key={label.tracking_number ?? label.url ?? index}
+                      type="button"
+                      onClick={() => otevritStitek(label)}
                       className="text-ui-fg-interactive text-xs underline"
                     >
                       Štítek {index + 1}
                       {label.tracking_number ? ` · ${label.tracking_number}` : ""}
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}

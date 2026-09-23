@@ -337,6 +337,37 @@ export async function initiatePaymentSession(
 }
 
 /**
+ * Zobrazovací synchronizace doběrečného před rekapitulací.
+ *
+ * Přechod na platbu kartou zakládá relaci až z posledního tlačítka (souhlas
+ * musí existovat dřív než platba), takže po přepnutí z dobírky by v
+ * rekapitulaci strašilo doběrečné, které už neplatí. Tohle řekne backendu,
+ * kam zákazník míří; položka poplatku a součet se srovnají hned. Vynucení
+ * zůstává na serveru (platební relace + kontrola při dokončení) — selhání
+ * téhle synchronizace proto smí být tiché: brána i dokončení počítají správně.
+ */
+export async function syncPaymentChoice(providerId: string): Promise<void> {
+  const cartId = await getCartId()
+  if (!cartId || !providerId) return
+  try {
+    const headers = {
+      ...(await getAuthHeaders()),
+    }
+    await sdk.client.fetch(`/store/carts/${cartId}/payment-choice`, {
+      method: "POST",
+      headers,
+      body: { provider_id: providerId },
+    })
+    const cartCacheTag = await getCacheTag("carts")
+    if (cartCacheTag) revalidateTag(cartCacheTag)
+  } catch (e: any) {
+    console.error(
+      `[platba] doběrečné se nepodařilo srovnat s výběrem platby: ${e?.message ?? e}`
+    )
+  }
+}
+
+/**
  * Attempts to capture a payment on the backend. Expects a store API route to handle capture.
  * If the route is not available, this will fail gracefully and the caller can fallback to placeOrder.
  */

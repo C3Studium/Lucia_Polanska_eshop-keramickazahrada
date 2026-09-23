@@ -16,6 +16,7 @@ describe("merchant settings allowlist", () => {
       "company_purchase_enabled",
       "daily_digest_enabled",
       "default_parcel_weight_kg",
+      "dobirka_fee_czk",
       "low_stock_default_threshold",
       "onboarding_dismissals",
       "production_started_email_enabled",

@@ -1,5 +1,10 @@
 import { MedusaError } from "@medusajs/framework/utils"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
+import {
+  dobirkaFeeCompletionProblem,
+  isDobirkaFeeLine,
+} from "../../lib/dobirka-fee"
+import { getMerchantSetting } from "../../lib/merchant-settings"
 import { DOBIRKA_PROVIDER_ID } from "../../lib/ship-gate"
 
 /**
@@ -23,12 +28,19 @@ completeCartWorkflow.hooks.validate(
       entity: "cart",
       fields: [
         "id",
+        "currency_code",
         "shipping_address.country_code",
         "payment_collection.payment_sessions.provider_id",
         "payment_collection.payment_sessions.status",
         "shipping_methods.shipping_option.provider_id",
         "items.product_id",
+        // Feeds the fee-line identity (marker + no product behind the line) —
+        // a client-forged `dobirka_fee` marker on a variant line stays a
+        // product here and keeps its `cod_allowed` check.
+        "items.variant_id",
         "items.title",
+        "items.quantity",
+        "items.metadata",
       ],
       filters: { id: cartId },
     })
@@ -41,6 +53,29 @@ completeCartWorkflow.hooks.validate(
         session?.provider_id === DOBIRKA_PROVIDER_ID &&
         session?.status !== "canceled"
     )
+
+    /*
+     * Doběrečné — the completion-time backstop. The fee line is added and
+     * removed by `lib/dobirka-fee.ts` on the payment-session route; here is
+     * where a cart that dodged that door (a crafted line-item delete, an old
+     * cart from before the fee existed) gets stopped instead of underpaying —
+     * and where a stray fee without dobírka gets stopped instead of
+     * overcharging.
+     */
+    const items = (fullCart.items ?? []) as any[]
+    const feeCzk = usesDobirka
+      ? await getMerchantSetting(container, "dobirka_fee_czk")
+      : 0
+    const feeProblem = dobirkaFeeCompletionProblem({
+      usesDobirka,
+      currencyCode: fullCart.currency_code,
+      feeCzk,
+      items,
+    })
+    if (feeProblem) {
+      throw new MedusaError(MedusaError.Types.NOT_ALLOWED, feeProblem)
+    }
+
     if (!usesDobirka) return
 
     const country = String(
@@ -67,9 +102,12 @@ completeCartWorkflow.hooks.validate(
       )
     }
 
+    // The fee line is ours, not a product: it has no product_id, but the
+    // explicit marker filter keeps the intent readable and future-proof.
     const productIds = [
       ...new Set(
-        (fullCart.items ?? [])
+        items
+          .filter((item: any) => !isDobirkaFeeLine(item))
           .map((item: any) => item?.product_id)
           .filter(Boolean) as string[]
       ),

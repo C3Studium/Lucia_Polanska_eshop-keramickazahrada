@@ -192,11 +192,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
+  /*
+   * nAPI vrací PDF štítku base64 přímo v odpovědi podání a provider ho ukládá
+   * do `fulfillment.data.label_pdf_base64` (label_url zůstává prázdné — žádná
+   * URL u dopravce neexistuje). Admin z base64 udělá blob a otevře ho; filtr
+   * jen podle URL by skutečně podanou zásilku vydával za „bez štítku".
+   */
+  const pdfBase64 =
+    typeof fulfillment?.data?.label_pdf_base64 === "string" &&
+    fulfillment.data.label_pdf_base64
+      ? (fulfillment.data.label_pdf_base64 as string)
+      : null
+
   const labels = (fulfillment.labels || [])
-    .filter((label: any) => label?.url)
-    .map((label: any) => ({
-      url: label.url,
+    .filter((label: any) => label?.url || pdfBase64)
+    .map((label: any, index: number) => ({
+      url: label.url || "",
       tracking_number: label.tracking_number ?? null,
+      // PDF nese jen první štítek — podání je jedno volání s jedním PDF.
+      pdf_base64: index === 0 ? pdfBase64 : null,
     }))
 
   if (!labels.length) {

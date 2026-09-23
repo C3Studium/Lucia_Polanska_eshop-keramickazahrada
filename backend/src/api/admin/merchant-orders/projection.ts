@@ -1,4 +1,4 @@
-import { evaluateShipGate } from "../../../lib/ship-gate"
+import { DOBIRKA_PROVIDER_ID, evaluateShipGate } from "../../../lib/ship-gate"
 import { paymentProblemReason } from "../../../modules/merchant-order/payment-state"
 import type { MerchantOrderStage } from "../../../modules/merchant-order/stages"
 
@@ -45,6 +45,13 @@ export type MerchantOrderRow = {
 
   /** Collected in person at the workshop — money and goods meet at the counter. */
   is_personal_pickup: boolean
+
+  /**
+   * Dobírka whose parcel already left, waiting for Česká pošta to settle the
+   * collected money — drives the „Peníze přišly (dobírka)" button. Derived:
+   * a dobírka payment with no capture, on an order in the shipped stage.
+   */
+  dobirka_waiting: boolean
 
   /**
    * Why dispatch is blocked, in Czech, or `null` when it is not (A2).
@@ -142,6 +149,19 @@ export const toMerchantOrderRow = (
         methodData.personal_pickup === true || methodData.service_code === "PICKUP"
       )
     }),
+
+    // Only once the parcel is gone: before that the carrier holds nothing,
+    // so there is no money that could have arrived.
+    dobirka_waiting:
+      state.stage === "shipped" &&
+      (order?.payment_collections || [])
+        .flatMap((collection: any) => collection?.payments || [])
+        .some(
+          (payment: any) =>
+            payment?.provider_id === DOBIRKA_PROVIDER_ID &&
+            !payment?.captured_at &&
+            !payment?.canceled_at
+        ),
 
     awaiting_handover:
       state.stage === "shipping" &&

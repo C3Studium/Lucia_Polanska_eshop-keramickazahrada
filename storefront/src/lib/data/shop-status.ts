@@ -9,6 +9,9 @@ export type ShopStatus = {
   vacation: { until: string | null; message: string } | null
   announcement: { message: string; link?: string | null } | null
   commissions_paused: boolean
+  /** Doběrečné in CZK — shown next to the dobírka payment option. The fee
+      itself is added server-side; this number is display only. */
+  dobirka_fee_czk?: number
 }
 
 export async function getShopStatus(): Promise<ShopStatus | null> {

@@ -50,7 +50,11 @@ const ORDER_FIELDS = [
   "payment_collections.amount",
   "payment_collections.captured_amount",
   "payment_collections.refunded_amount",
+  "payment_collections.payments.id",
   "payment_collections.payments.provider_id",
+  // Whether the dobírka money already arrived — the „Peníze přišly" button.
+  "payment_collections.payments.captured_at",
+  "payment_collections.payments.canceled_at",
   "fulfillments.id",
   "fulfillments.packed_at",
   "fulfillments.shipped_at",

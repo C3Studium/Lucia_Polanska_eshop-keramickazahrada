@@ -8,6 +8,7 @@ import {
 } from "@headlessui/react"
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
+import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import WebButton from "@modules/common/components/Buttons/webButton"
@@ -188,7 +189,33 @@ const CartDropdown = ({
                         ? -1
                         : 1
                     })
-                    .map((item) => (
+                    .map((item) =>
+                      /* Doběrečné: fee row — no product link, no quantity,
+                         no „Odebrat". It follows the payment choice only. */
+                      isDobirkaFeeLine(item) ? (
+                        <div
+                          className={styles.cartItem}
+                          key={item.id}
+                          data-testid="cart-item-dobirka-fee"
+                        >
+                          <div className={styles.itemDetails}>
+                            <div className={styles.itemInfo}>
+                              <div className={styles.itemHeader}>
+                                <div className={styles.itemTitle}>
+                                  <h3>{item.title}</h3>
+                                </div>
+                                <div className={styles.itemPrice}>
+                                  <LineItemPrice
+                                    item={item}
+                                    style="tight"
+                                    currencyCode={cartState.currency_code}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
                       <div
                         className={styles.cartItem}
                         key={item.id}
@@ -248,7 +275,8 @@ const CartDropdown = ({
                           </div>
                         </div>
                       </div>
-                    ))}
+                      )
+                    )}
                 </div>
                 <div className={styles.subtotal}>
                   <div className={styles.subtotalRow}>
