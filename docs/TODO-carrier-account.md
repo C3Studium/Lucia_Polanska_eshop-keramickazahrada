@@ -42,16 +42,59 @@ and can rotate all three there.
 | --- | --- | --- |
 | `BALIKOVNA_API_URL` | — | base URL; test is `https://b2b-test.postaonline.cz:444/restservices/ZSKService/v1/` |
 | `BALIKOVNA_API_TOKEN` | API klíč (token) | UUID |
-| `BALIKOVNA_API_SECRET` | Tajný (privátní) klíč | base64 — signs each request |
-| `BALIKOVNA_API_CUSTOMER_ID` | ID CČK | contract number |
+| `BALIKOVNA_API_SECRET` | Tajný (privátní) klíč | base64-looking — but signs as a **UTF-8 string**, see below |
+| `BALIKOVNA_API_CUSTOMER_ID` | technologické číslo | `U124` |
+| `BALIKOVNA_API_POST_CODE` | podací pošta | PSČ, `10003` |
+| `BALIKOVNA_API_CONTRACT_NUMBER` | ID CČK | `256712001` |
+| `BALIKOVNA_API_LOCATION_NUMBER` | provozovna ke smlouvě | `627` |
 
-Also worth getting in the same conversation:
+**These are four different numbers, not one.** An earlier version of this table
+said `BALIKOVNA_API_CUSTOMER_ID` was the contract number; that was wrong, and it
+is the kind of wrong that only shows up as a rejected parcel. ČP's own e-mails
+call several of them „vaše číslo", so the table above is the authority.
+
+`LOCATION_NUMBER` is not something you are told — list it with
+`GET /ZSKService/v1/location/idContract/<CONTRACT_NUMBER>`, which also returns
+the sender address and the **COD bank account** configured for that location
+(dobírka is set up per provozovna, not per parcel).
+
+Still worth getting in the same conversation:
 
 - the **production** base URL (only the test one is public);
-- the **YAML spec**, which is what actually documents the request-signing
-  scheme — it is the one thing that cannot be inferred from outside;
+- the **YAML spec** — the signing scheme has since been reverse-engineered and
+  verified by live call (see `client.ts`), so this is no longer blocking, but
+  the list of `parcelServices` codes still is;
 - confirmation that **Balíkovna is service code `NB`** on your contract.
   Test accounts are restricted to services S / M / L / XL.
+
+## Testing against `b2b-test` — read this first
+
+Measured 22 Sep 2026, all four combinations (Balíkovna / address × with and
+without dobírka) end to end: ČP returns a parcel code and a PDF label.
+
+Three things will otherwise cost you an evening:
+
+1. **`HTTP 200` does not mean the parcel was accepted.** The verdict is in the
+   body: `responseHeader.resultHeader.responseCode` — `1` is accepted, `19
+   BATCH_INVALID` is not, and `parcelCode` comes back empty. `prectiOdpoved`
+   handles this; anything else reading the API must too.
+2. **The test environment only knows ČP's own fictional Balíkovna points.** A
+   real one picked in the storefront widget (`10109`, `39715`) fails with `247
+   INVALID_ADDRESS`; the fictional `10000` works. So an end-to-end checkout test
+   through the real widget *will* fail on the test environment, and that is not
+   a bug. It inverts in production.
+3. **Every parcel needs `insuredValue`** (service `7`), and every parcel *to an
+   address* needs a size category (`S`/`M`/`L`/`XL`, `261
+   MISSING_SIZE_CATEGORY` otherwise). Balíkovna does not take a size category.
+
+Open question for the ČP rep: the číselník does not list **„Křehce" (`11`) for
+Balíkovna**, yet nAPI accepted it. Codes `22`/`42` („nepovolená služba") are
+checked at the podací pošta, not by the API, so we keep `11` off for Balíkovna
+until someone confirms. For ceramics this is worth asking about.
+
+There is **no cancel endpoint** — verified against every published B2B spec.
+A parcel booked by mistake is simply not handed over, and its code stays
+reserved at ČP for 13 months.
 
 ## What already works without any of this
 

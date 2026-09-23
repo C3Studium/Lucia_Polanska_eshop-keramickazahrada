@@ -243,7 +243,28 @@ export const OWNER_NOTIFICATION_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL
 export const BALIKOVNA_API_URL = process.env.BALIKOVNA_API_URL
 export const BALIKOVNA_API_TOKEN = process.env.BALIKOVNA_API_TOKEN
 export const BALIKOVNA_API_SECRET = process.env.BALIKOVNA_API_SECRET
+
+/**
+ * Čtyři různá čísla, ne jedno.
+ *
+ * Tohle je místo, kde se dá snadno sáhnout vedle, protože ČP je v e-mailech
+ * nazývá zaměnitelně „vaše číslo". Ve skutečnosti jsou to čtyři nezávislé
+ * identifikátory a `parcelService` odmítne podání, když se kterýkoli neshoduje:
+ *
+ * | proměnná          | co to je              | příklad     |
+ * | ----------------- | --------------------- | ----------- |
+ * | `CUSTOMER_ID`     | technologické číslo   | `U124`      |
+ * | `POST_CODE`       | podací pošta (PSČ)    | `10003`     |
+ * | `CONTRACT_NUMBER` | ID centrálního číslaCČK | `256712001` |
+ * | `LOCATION_NUMBER` | provozovna ke smlouvě | `195`       |
+ *
+ * `LOCATION_NUMBER` se nezadává od oka — vrací ho
+ * `GET /ZSKService/v1/location/idContract/<CONTRACT_NUMBER>`.
+ */
 export const BALIKOVNA_API_CUSTOMER_ID = process.env.BALIKOVNA_API_CUSTOMER_ID
+export const BALIKOVNA_API_POST_CODE = process.env.BALIKOVNA_API_POST_CODE
+export const BALIKOVNA_API_CONTRACT_NUMBER = process.env.BALIKOVNA_API_CONTRACT_NUMBER
+export const BALIKOVNA_API_LOCATION_NUMBER = process.env.BALIKOVNA_API_LOCATION_NUMBER
 
 /**
  * (optional) iDoklad invoicing — FINISHINGTODOLIST §1.

@@ -10,6 +10,33 @@ import type {
   FulfillmentOrderDTO,
   Logger,
 } from "@medusajs/framework/types"
+import { callCeskaPosta } from "./client"
+import {
+  chybaZOdpovedi,
+  prectiOdpoved,
+  sestavPodani,
+  popisChyb,
+  sluzbyProZasilku,
+  variabilniSymbol,
+  type KodSluzby,
+  type VelikostZasilky,
+  type VydejnaBalikovny,
+} from "./parcel"
+
+/**
+ * Vybraná výdejna z metadat objednávky.
+ *
+ * Storefront ji ukládá do `cart.metadata` ve čtyřech plochých klíčích a Medusa
+ * je při dokončení košíku přenese na objednávku. `zip` je ten spolehlivý údaj —
+ * viz `adresaPrijemce` v `parcel.ts`.
+ */
+export const vydejnaZMetadat = (
+  metadata: Record<string, unknown> | null | undefined
+): VydejnaBalikovny | null => {
+  const zip = String((metadata as any)?.balikovna_point_zip ?? "").trim()
+  if (!zip) return null
+  return { zip, name: String((metadata as any)?.balikovna_point_name ?? "").trim() }
+}
 
 /**
  * Česká pošta / Balíkovna fulfilment provider (WorkflowPlan.md D8, P4-1).
@@ -50,20 +77,48 @@ import type {
  *
  * ## API mode
  *
- * Once `BALIKOVNA_API_*` is configured, `createFulfillment` books a real parcel
- * and returns `mode: "api"` with a tracking number and label, and the single
- * click ships end to end because the carrier genuinely has the parcel.
+ * S nastavenými `BALIKOVNA_API_*` podá `createFulfillment` skutečnou zásilku a
+ * vrátí `mode: "api"` s číslem zásilky a štítkem — jedno kliknutí tedy odešle
+ * objednávku od začátku do konce, protože dopravce balík opravdu má.
  *
- * **That call is not implemented yet (P4-2)** — it needs a ČP B2B profile that
- * does not exist. The seam is marked below and the mode detection already
- * works, so wiring it is additive rather than a rewrite.
+ * Ověřeno živým voláním 22. 9. 2026 pro všechny čtyři kombinace (Balíkovna a
+ * adresa, každá s dobírkou i bez): ČP vrátila číslo zásilky a PDF štítek.
+ *
+ * ## Dvě věci, na kterých se tu dá pohořet
+ *
+ * **`HTTP 200` neznamená přijatou zásilku.** Verdikt je až v těle odpovědi —
+ * viz `prectiOdpoved` v `parcel.ts`. Kdo se řídí stavovým kódem, oznámí
+ * zákazníkovi odeslání balíku, který nevznikl.
+ *
+ * **Testovací prostředí zná jen vlastní smyšlené výdejny Balíkovny.** Skutečné
+ * ID z widgetu (`10109`, `39715`) tam vrátí `247 INVALID_ADDRESS`, zatímco
+ * zkušební `10000` projde. Není to chyba v kódu a v ostrém provozu se to
+ * obrátí.
  */
 
 type ProviderOptions = {
   api_url?: string
   api_token?: string
   api_secret?: string
+  /**
+   * Čtyři různá čísla, ne jedno — viz `src/lib/constants.ts`. `customer_id` je
+   * technologické číslo (`U124`), ne číslo smlouvy.
+   */
   customer_id?: string
+  post_code?: string
+  contract_number?: string
+  location_number?: string | number
+  /**
+   * Velikostní kategorie zásilek na adresu (`S`/`M`/`L`/`XL`).
+   *
+   * Česká pošta ji u zásilek na adresu **vyžaduje** — bez ní vrátí
+   * `261 MISSING_SIZE_CATEGORY`. Balíkovna ji nechce.
+   *
+   * Je to jedna hodnota pro všechny zásilky, protože rozměry se u nás nikde
+   * neevidují. `M` je kompromis; až budou balíky vycházet jinak, patří sem
+   * změna na jediném místě.
+   */
+  default_size_category?: VelikostZasilky
   /** Fallback when no product in the parcel carries a weight (D2). */
   default_parcel_weight_kg?: number
   /**
@@ -121,7 +176,9 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       this.options_.api_url &&
         this.options_.api_token &&
         this.options_.api_secret &&
-        this.options_.customer_id
+        this.options_.customer_id &&
+        this.options_.post_code &&
+        this.options_.location_number
     )
   }
 
@@ -165,9 +222,17 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     data: Record<string, unknown>,
     _context: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    // Carrier-side validation belongs with the carrier call (P4-2). Until then
-    // the data is passed through unchanged rather than pretending to check it.
-    return { ...data, service_code: optionData?.service_code }
+    /*
+     * `fragile` se veze s sebou, protože v `createFulfillment` už volba dopravy
+     * k dispozici není — do provideru se dostane jen tohle `data`. U Balíkovny
+     * se stejně zahodí: službu „Křehce" tam číselník ČP nepřipouští (viz
+     * `sluzbyProZasilku`).
+     */
+    return {
+      ...data,
+      service_code: optionData?.service_code,
+      ...(optionData?.fragile ? { fragile: true } : {}),
+    }
   }
 
   async validateOption(data: Record<string, unknown>): Promise<boolean> {
@@ -310,30 +375,189 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       }
     }
 
-    // ─── P4-2 seam ──────────────────────────────────────────────────────────
-    // The real nAPI (B2BZasilka) call goes here: POST parcelService for a single
-    // parcel, then parcelPrinting for the PDF label. It needs a ČP B2B profile
-    // that does not exist yet, and the request-signing scheme ships with that
-    // profile's spec — guessing it would produce a provider that looks finished
-    // and fails on the first real parcel.
-    //
-    // Until then, configured credentials still fall through to record-only
-    // rather than throwing: a missing integration must never block her from
-    // shipping.
-    this.logger_.warn(
-      "[ceska-posta] BALIKOVNA_API_* jsou nastavené, ale volání dopravce ještě není implementované (P4-2). " +
-        "Zásilka se zaznamenává jen lokálně."
-    )
+    return this.podejZasilku(serviceCode, items, order, data)
+  }
+
+  /**
+   * Skutečné podání u České pošty.
+   *
+   * ## Jedno volání, ne dvě
+   *
+   * Členění API svádí k tomu čekat `parcelService` (podání) a pak
+   * `parcelPrinting` (štítek). Ve skutečnosti přijde PDF rovnou v odpovědi na
+   * podání, jako base64 v `responsePrintParams.file`. Ověřeno voláním.
+   *
+   * ## Když volání selže, zásilka se NEPODÁ — a řekne se to
+   *
+   * Při chybě se vrací `mode: "manual"` i s důvodem, ne výjimka. Důvod je ten
+   * samý, proč režim bez přístupů existuje vůbec: `mode: "manual"` zastaví
+   * odeslání (A1), takže objednávka zůstane v K odeslání s vysvětlením a
+   * zboží se nerezervuje nadarmo. Výjimka by celé vyskladnění shodila a ona by
+   * nemohla balík podat ani ručně.
+   *
+   * ## Opakování není zadarmo
+   *
+   * Storno podané zásilky v nAPI **neexistuje** — ověřeno proti všem
+   * publikovaným specifikacím B2B. Číslo zásilky navíc zůstává v evidenci ČP
+   * 13 měsíců. Když tedy spojení spadne po odeslání požadavku, ale před
+   * přečtením odpovědi, může u pošty ležet zásilka, o které nevíme, a další
+   * pokus vyrobí druhou. Proto se tu nic neopakuje automaticky: opakovat smí
+   * jen člověk, který se podívá do portálu ČP.
+   */
+  private async podejZasilku(
+    serviceCode: string,
+    items: Partial<Omit<FulfillmentItemDTO, "fulfillment">>[],
+    order: Partial<FulfillmentOrderDTO> | undefined,
+    data: Record<string, unknown>
+  ): Promise<CreateFulfillmentResult> {
+    const vaha = this.parcelWeight(items)
+    const oznaceni = order?.display_id ?? order?.id ?? "?"
+
+    /* Co se vrátí, když se podat nepodaří — vždy se stejným vysvětlením. */
+    const rucne = (duvod: string): CreateFulfillmentResult => {
+      this.logger_.error(`[ceska-posta] Objednávka ${oznaceni}: ${duvod}`)
+      return {
+        data: {
+          mode: "manual" satisfies FulfillmentMode,
+          service_code: serviceCode,
+          weight_kg: vaha,
+          recorded_at: new Date().toISOString(),
+          carrier_error: duvod,
+        },
+        labels: [],
+      }
+    }
+
+    try {
+      const kod: KodSluzby = serviceCode === CP_SERVICE_CODES.balikovna ? "NB" : "DR"
+      const metadata = (order?.metadata ?? {}) as Record<string, unknown>
+      const vydejna = vydejnaZMetadat(metadata)
+      const dobirka = this.dobirkaZObjednavky(order)
+
+      const telo = sestavPodani({
+        serviceCode: kod,
+        vaha,
+        prijemce: (order?.shipping_address ?? {}) as any,
+        /*
+         * `order.email` se do `createFulfillment` nenačítá (není v polích
+         * dotazu) — u Balíkovny proto kontakt stojí na telefonu z adresy.
+         * `sestavPodani` si pohlídá, že aspoň jedno z toho je.
+         */
+        email: (order as any)?.email ?? null,
+        vydejna,
+        dobirka,
+        /* Udaná cena je povinná — hodnotou je to, co zákazník zaplatil. */
+        udanaCena: Math.round(Number((order as any)?.total ?? 0)),
+        odesilatel: {
+          customerId: String(this.options_.customer_id),
+          postCode: String(this.options_.post_code),
+          locationNumber: Number(this.options_.location_number),
+        },
+        sluzby: sluzbyProZasilku({
+          serviceCode: kod,
+          krehke: Boolean(data?.fragile),
+          maDobirku: Boolean(dobirka),
+          velikost: this.options_.default_size_category,
+        }),
+      })
+
+      const odpoved = await callCeskaPosta(
+        {
+          apiUrl: String(this.options_.api_url),
+          apiToken: String(this.options_.api_token),
+          apiSecret: String(this.options_.api_secret),
+        },
+        "/ZSKService/v1/parcelService",
+        "POST",
+        telo
+      )
+
+      if (odpoved.status < 200 || odpoved.status >= 300) {
+        return rucne(
+          `Česká pošta zásilku nepřijala — ${chybaZOdpovedi(odpoved.status, odpoved.body, odpoved.raw)}`
+        )
+      }
+
+      const { ok, cisloZasilky, stitekBase64, chyby } = prectiOdpoved(odpoved.body)
+
+      /*
+       * Tady se rozhoduje podle těla, ne podle stavového kódu HTTP. ČP
+       * odpovídá `200` i na odmítnutá podání — viz `prectiOdpoved`.
+       */
+      if (!ok) {
+        return rucne(
+          chyby.length
+            ? `Česká pošta zásilku nepřijala — ${popisChyb(chyby)}`
+            : "Česká pošta odpověděla bez čísla zásilky. Zkontroluj podání v portálu ČP, " +
+                `ať nevznikne dvakrát. Odpověď: ${odpoved.raw.slice(0, 200)}`
+        )
+      }
+
+      this.logger_.info(
+        `[ceska-posta] Objednávka ${oznaceni}: podána zásilka ${cisloZasilky} (${kod}, ${vaha} kg)` +
+          (dobirka ? `, dobírka ${dobirka.castka} Kč / VS ${dobirka.variabilniSymbol}` : "")
+      )
+
+      return {
+        data: {
+          mode: "api" satisfies FulfillmentMode,
+          service_code: serviceCode,
+          weight_kg: vaha,
+          recorded_at: new Date().toISOString(),
+          parcel_code: cisloZasilky,
+          /*
+           * Štítek se veze s vyskladněním, ne na disku: je to jediná kopie,
+           * kterou máme, a `parcelPrinting` by ho sice dotiskl, ale jen dokud
+           * zásilka existuje v evidenci.
+           */
+          ...(stitekBase64 ? { label_pdf_base64: stitekBase64 } : {}),
+          ...(dobirka ? { cod_amount: dobirka.castka, cod_vs: dobirka.variabilniSymbol } : {}),
+        },
+        labels: [
+          {
+            tracking_number: cisloZasilky,
+            tracking_url: `https://www.postaonline.cz/trackandtrace/-/zasilka/cislo?parcelNumbers=${cisloZasilky}`,
+            label_url: "",
+          },
+        ],
+      }
+    } catch (error: any) {
+      return rucne(`podání u České pošty selhalo: ${error?.message ?? error}`)
+    }
+  }
+
+  /**
+   * Dobírka z objednávky — nebo výslovné „nevím".
+   *
+   * Provider běží v kontejneru fulfillment modulu, kde `payment_collections`
+   * nejsou a dotáhnout je nelze. Fakta o dobírce proto do `order.metadata`
+   * zapisuje `shipMerchantOrderWorkflow`, které je stejně už načítá.
+   *
+   * Když klíč chybí, znamená to „bez dobírky". To je bezpečné jen proto, že ho
+   * to workflow zapisuje **vždy** — i s nulou. Kdyby se sem objednávka dostala
+   * jinudy, zásilka odejde bez dobírky a peníze se nevyberou; na to je ten
+   * kontrolní klíč `cp_dobirka_zjistena`.
+   */
+  private dobirkaZObjednavky(
+    order: Partial<FulfillmentOrderDTO> | undefined
+  ): { castka: number; variabilniSymbol: string } | null {
+    const metadata = (order?.metadata ?? {}) as Record<string, unknown>
+
+    if (metadata.cp_dobirka_zjistena !== true) {
+      this.logger_.warn(
+        `[ceska-posta] Objednávka ${order?.display_id ?? order?.id}: chybí údaj o dobírce ` +
+          `(cp_dobirka_zjistena). Podávám bez dobírky — ověř, že se nemá vybírat hotovost.`
+      )
+      return null
+    }
+
+    const castka = Number(metadata.cp_dobirka_czk ?? 0)
+    if (!Number.isFinite(castka) || castka <= 0) return null
 
     return {
-      data: {
-        mode: "manual" satisfies FulfillmentMode,
-        service_code: serviceCode,
-        weight_kg: this.parcelWeight(items),
-        recorded_at: new Date().toISOString(),
-        pending_carrier_integration: true,
-      },
-      labels: [],
+      /* Půlhaléře ČP odmítá (chyba 36) a zásilku vrací bez možnosti opravy. */
+      castka: Math.round(castka),
+      variabilniSymbol: variabilniSymbol(order?.display_id ?? order?.id ?? 0),
     }
   }
 
@@ -357,17 +581,31 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
     return Number(this.options_.default_parcel_weight_kg ?? 2.5)
   }
 
+  /**
+   * Zrušení zásilky — u České pošty se dělá rukama, ne přes API.
+   *
+   * **Žádný takový endpoint neexistuje.** Ověřeno proti všem publikovaným
+   * specifikacím B2B (ZSK 1.5.0 i 1.13.0): jediná dvě `DELETE` v celé rodině
+   * ruší podací místo a dispozici na boxu, nikoli zásilku.
+   *
+   * Prakticky se nepodaná zásilka prostě nepředá při svozu. Číslo ale zůstává
+   * v evidenci ČP **13 měsíců** a pokus o jeho recyklaci vrátí
+   * `101 DUPLICATE_PARCEL_CODE`.
+   *
+   * Tohle se tedy nedá „doimplementovat" — proto tu není TODO, ale vysvětlení.
+   */
   async cancelFulfillment(fulfillment: Record<string, unknown>): Promise<any> {
     const mode = (fulfillment as any)?.data?.mode ?? (fulfillment as any)?.mode
+    const cislo = (fulfillment as any)?.data?.parcel_code
 
     if (mode === "api") {
-      // P4-2: cancel the booked parcel with the carrier here.
       this.logger_.warn(
-        "[ceska-posta] Zrušení zásilky u dopravce zatím není implementované (P4-2)."
+        `[ceska-posta] Zásilka ${cislo ?? "?"} je u České pošty podaná a API pro storno nemá. ` +
+          `Nepředávej ji při svozu; pokud už odešla, řeš ji v portálu ČP.`
       )
     }
 
-    // Nothing to undo in record-only mode — no carrier was ever told.
+    // V režimu bez napojení není co rušit — dopravci se nikdy nic neřeklo.
     return {}
   }
 

@@ -12,6 +12,7 @@ import {
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 import { assertShipGateStep } from "./steps/assert-ship-gate"
+import { stampDobirkaStep } from "./steps/stamp-dobirka"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
 
 /**
@@ -125,6 +126,18 @@ export const shipMerchantOrderWorkflow = createWorkflow(
     // Before anything native is touched, so a blocked order has nothing to
     // compensate: no fulfilment, no inventory movement, no stage change.
     assertShipGateStep(gateInput)
+
+    /*
+     * Hned za bránou a před vyskladněním: provider se k platbám nedostane, tak
+     * mu částku dobírky necháme na objednávce. Viz `stampDobirkaStep`.
+     */
+    stampDobirkaStep(
+      transform({ input, gateInput }, ({ input, gateInput }) => ({
+        order_id: input.order_id,
+        payment_collections: gateInput.payment_collections,
+        total: gateInput.total,
+      }))
+    )
 
     const plan = transform({ orderQuery }, ({ orderQuery }) => {
       const order = (orderQuery.data || [])[0] as any
