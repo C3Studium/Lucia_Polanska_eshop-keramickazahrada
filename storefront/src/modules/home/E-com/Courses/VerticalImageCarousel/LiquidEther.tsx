@@ -179,6 +179,8 @@ export default function LiquidEther({
       docTarget: Document | null = null
       listenerTarget: Window | null = null
       isHoverInside = false
+      /* Máme už někdy zapsanou polohu? Viz `markSample`. */
+      hasSample = false
       hasUserControl = false
       isAutoActive = false
       autoIntensity = 2.0
@@ -260,6 +262,7 @@ export default function LiquidEther({
         const nx = (x - rect.left) / rect.width
         const ny = (y - rect.top) / rect.height
         this.coords.set(nx * 2 - 1, -(ny * 2 - 1))
+        this.markSample()
         this.mouseMoved = true
         this.timer = window.setTimeout(() => {
           this.mouseMoved = false
@@ -267,12 +270,51 @@ export default function LiquidEther({
       }
       setNormalized(nx: number, ny: number) {
         this.coords.set(nx, ny)
+        this.markSample()
         this.mouseMoved = true
+      }
+      /*
+       * První poloha nesmí vyrobit rozdíl.
+       *
+       * `coords` i `coords_old` startují na (0,0) — jenže to není „nikde",
+       * to je střed plátna. První pohyb myší po načtení stránky tedy zapsal
+       * skutečnou polohu kurzoru a nejbližší snímek z ní spočítal rozdíl přes
+       * půl obrazovky. Ten jde rovnou do síly kurzoru (`Mouse.diff` ×
+       * `mouse_force`), takže shader dostal jednorázový úder — přesně ten
+       * trhanec po obnovení stránky a po návratu na úvodní stránku.
+       *
+       * Pojistka na to v `update` byla, ale mířila vedle: ptala se
+       * `coords_old` až POTÉ, co do něj zapsala aktuální polohu. Spustila se
+       * proto jedině tehdy, když kurzor stál přesně na středu plátna — kde
+       * naopak zahodila platný pohyb.
+       *
+       * Správné místo je tady: první zapsaná poloha se rovnou stane i tou
+       * předchozí, takže z ní žádný rozdíl vzniknout nemůže.
+       */
+      private markSample() {
+        if (this.hasSample) return
+        this.coords_old.copy(this.coords)
+        this.diff.set(0, 0)
+        this.hasSample = true
       }
       onDocumentMouseMove(event: MouseEvent) {
         if (!this.updateHoverState(event.clientX, event.clientY)) return
+
+        /*
+         * Čte se PŘED ohlášením interakce, a to je celá pointa.
+         *
+         * `onInteract` zastaví samopohyb a ten při zastavení shodí
+         * `isAutoActive`. Dokud stálo volání nad touhle podmínkou, byla
+         * podmínka vždycky nepravdivá a plynulé převzetí se nespustilo ani
+         * jednou — řízení se pokaždé přebíralo skokem na polohu kurzoru
+         * a rozdíl za jediný snímek se protlačil do síly kurzoru.
+         */
+        const prevzitPoSamopohybu =
+          this.isAutoActive && !this.hasUserControl && !this.takeoverActive
+
         if (this.onInteract) this.onInteract()
-        if (this.isAutoActive && !this.hasUserControl && !this.takeoverActive) {
+
+        if (prevzitPoSamopohybu) {
           if (!this.container) return
           const rect = this.container.getBoundingClientRect()
           const nx = (event.clientX - rect.left) / rect.width
@@ -326,8 +368,8 @@ export default function LiquidEther({
         }
         this.diff.subVectors(this.coords, this.coords_old)
         this.coords_old.copy(this.coords)
-        if (this.coords_old.x === 0 && this.coords_old.y === 0)
-          this.diff.set(0, 0)
+        /* Pojistka na první snímek bydlí v `markSample` — tady stávala verze,
+           která se ptala už přepsané hodnoty, viz komentář tam. */
         if (this.isAutoActive && !this.takeoverActive)
           this.diff.multiplyScalar(this.autoIntensity)
       }
@@ -394,6 +436,12 @@ export default function LiquidEther({
           this.current.copy(this.mouse.coords)
           this.lastTime = now
           this.activationTime = now
+          /*
+           * Řízení si bere zpátky samopohyb, takže příznak „řídí člověk" musí
+           * spadnout — jinak zůstane zapnutý od prvního pohybu myší navždy
+           * a další příchod kurzoru se odbude skokem místo plynulého převzetí.
+           */
+          this.mouse.hasUserControl = false
         }
         if (!this.active) return
         this.mouse.isAutoActive = true

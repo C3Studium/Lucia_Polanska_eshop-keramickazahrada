@@ -39,6 +39,13 @@ type ProductButtonProps = {
   isRouteActive?: boolean
   /** False when the catalogue returned nothing to put in the menu. */
   hasMenu?: boolean
+  /**
+   * Název na tlačítku, z CMS (`menu.e-shop`). Výchozí je záloha pro výpadek —
+   * nepojmenované tlačítko je nepoužitelné a nikdo ho tak nemyslel.
+   */
+  label?: string
+  /** Atributy překryvu ValeCMS pro ten název. */
+  editAttrs?: Record<string, string | undefined>
 }
 
 type CollectionListProps = {
@@ -163,6 +170,8 @@ export function ProductButton({
   isActive,
   isRouteActive = false,
   hasMenu = true,
+  label = "E-shop",
+  editAttrs,
 }: ProductButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const isRealHover = useIsRealHover()
@@ -178,7 +187,11 @@ export function ProductButton({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <ProductButtonFace highlighted={isHovered || isRouteActive} />
+        <ProductButtonFace
+          highlighted={isHovered || isRouteActive}
+          label={label}
+          editAttrs={editAttrs}
+        />
       </LocalizedClientLink>
     )
   }
@@ -209,12 +222,20 @@ export function ProductButton({
       }}
       onPointerLeave={() => setIsHovered(false)}
     >
-      <ProductButtonFace highlighted={highlighted} />
+      <ProductButtonFace highlighted={highlighted} label={label} editAttrs={editAttrs} />
     </LocalizedClientLink>
   )
 }
 
-function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
+function ProductButtonFace({
+  highlighted,
+  label,
+  editAttrs,
+}: {
+  highlighted: boolean
+  label: string
+  editAttrs?: Record<string, string | undefined>
+}) {
   return (
     <>
       <motion.span
@@ -232,7 +253,10 @@ function ProductButtonFace({ highlighted }: { highlighted: boolean }) {
       <span
         className={`${styles.buttonLabel} ${highlighted ? styles.buttonLabelOn : ""}`}
       >
-        E-shop
+        {/* Vlastní `<span>`, ne holý text: překryv edituje ten element, na kterém
+            sedí `editable()`, a kdyby to byl celý řádek, spolkl by při uložení
+            i šipku vedle názvu. */}
+        <span {...editAttrs}>{label}</span>
         <motion.span animate={highlighted ? arrowTilted : arrowFlat} transition={menuFadeTransition}>
           {highlighted ? <ArrowRight size={12} color="white" /> : <Arrow size={12} />}
         </motion.span>

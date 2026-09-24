@@ -155,6 +155,25 @@ export const itemValue = (
   block?.items?.find((item) => item.label === label)?.value
 
 /**
+ * Cesta k poli té položky, pro `editable()`.
+ *
+ * `itemValue` hledá podle popisku, protože pořadí položek v bloku není
+ * smlouva. Překryv ale adresuje indexem (`items.2.value`), takže ho někdo
+ * spočítat musí — a rozhodně ne komponenta cyklem, který by se od čtečky
+ * nad ní mohl rozejít.
+ *
+ * Vrací `undefined`, když položka v bloku není: `editable()` s cestou, která
+ * nikam nevede, by v editoru nabídlo pole, jehož uložení se nemá kam zapsat.
+ */
+export const itemFieldPath = (
+  block: CopyBlock | undefined,
+  label: string
+): string | undefined => {
+  const index = block?.items?.findIndex((item) => item.label === label) ?? -1
+  return index >= 0 ? `items.${index}.value` : undefined
+}
+
+/**
  * Přepínač sekce.
  *
  * Chybějící hodnota znamená ZAPNUTO: nová stránka má být vidět, dokud někdo
@@ -212,15 +231,19 @@ export const button = (
  * Prázdný text z CMS je záloha, ne prázdné tlačítko: nepojmenované tlačítko
  * je nepoužitelné a nikdo ho tak nemyslel.
  */
+/* Tentýž tvar parametru jako `button()` výš, a ze stejného důvodu: bere se
+   obojí — celá mapa stránky i samotná mapa tlačítek. Užší typ tady nutil
+   volajícího s mapou tlačítek (navbar, patička) buď přetypovat, nebo si
+   `?.label?.trim() || fallback` opsat znovu. */
 export const buttonLabel = (
-  copy: CopyBlocks | undefined,
+  copy: Record<string, unknown> | undefined,
   klic: string,
   fallback: string
 ): string => button(copy, klic)?.label?.trim() || fallback
 
 /** Adresa tlačítka mimo web, se zálohou. */
 export const buttonHref = (
-  copy: CopyBlocks | undefined,
+  copy: Record<string, unknown> | undefined,
   klic: string,
   fallback: string
 ): string => button(copy, klic)?.href?.trim() || fallback

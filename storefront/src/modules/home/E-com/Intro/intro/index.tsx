@@ -2,7 +2,7 @@
 import { useInView, motion, Easing } from "framer-motion";
 import Image from "next/image";
 import { useRef } from "react";
-import { itemValue, paragraphs, type CopyBlock } from "@lib/util/site-copy";
+import { itemFieldPath, itemValue, paragraphs, type CopyBlock } from "@lib/util/site-copy";
 import { editable } from "@c3studium/valecms/edit"
 
 /*
@@ -184,7 +184,11 @@ export default function Intro ({
                         {charSplit(title2, isInView, line2Delay)}
                     </h2>
                 </div>
-                <h2>
+                {/* Třetí řádek nadpisu sedí v `items` pod popiskem „title3", takže
+                    cesta k poli se musí dopočítat — `itemFieldPath`. Bez téhle
+                    anotace se dal řádek v CMS změnit, ale ne kliknutím na stránce,
+                    na rozdíl od dvou řádků nad ním. */}
+                <h2 {...editable(block, itemFieldPath(block, "title3") ?? "")}>
                     {charSplit(title3, isInView, line3Delay)}
                 </h2>
             </div>

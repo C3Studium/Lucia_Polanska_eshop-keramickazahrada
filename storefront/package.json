@@ -24,7 +24,7 @@
     "webpack": "^5"
   },
   "dependencies": {
-    "@c3studium/valecms": "0.1.47",
+    "@c3studium/valecms": "file:..\\..\\valecms",
     "@headlessui/react": "^2.2.7",
     "@hookform/error-message": "^2.0.1",
     "@medusajs/icons": "2.18.0",

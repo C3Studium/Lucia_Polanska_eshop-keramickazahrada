@@ -144,7 +144,30 @@
   z-index: 1;
   min-height: 100vh;
   color: var(--legal-ink);
-  background:
+  /*
+   * Podklad je barva, ne jen dva přelivy — a je to funkční požadavek, ne
+   * kosmetika.
+   *
+   * Patička si svůj odstín bere z prvku, který jí předchází: přečte jeho
+   * `backgroundColor` a obarví se stejně (`layout/Footer/index.tsx`,
+   * `getVisualSurface`). Dokud tu stála zkratka `background` jen s přelivy,
+   * byla `background-color` podle specifikace `transparent`, tedy alfa 0.
+   * Vzorkovač ji přeskočil, přešel na rodiče — `body` ani `html` pod 1921px
+   * žádné pozadí nemají — a spadl na svou výchozí šalvějovou barvu. Proto
+   * měla patička na všech šesti právních stránkách zelenou proti krémové
+   * stránce nad sebou.
+   *
+   * Barva je tedy vlastní deklarace a přelivy jdou na `background-image`,
+   * odkud zkratka nemá co přepsat.
+   *
+   * Hodnota není vybraná od oka: spodní zarážka přelivu je `cream-06` při .74,
+   * takže nad plným `cream-06` vyjde přesně `cream-06`. Dolní hrana stránky
+   * tím dostane pojmenovanou barvu místo té, na kterou zrovna vyšlo plátno —
+   * a patička čte tutéž. Horní zarážka se tím prohloubí o 3–5 z 255, což je
+   * pod prahem viditelnosti.
+   */
+  background-color: var(--cream-06);
+  background-image:
     radial-gradient(circle at 79% 7%, rgb(var(--cream-06-rgb) / .62), transparent 31rem),
     linear-gradient(180deg, rgb(var(--cream-03-rgb) / .88), rgb(var(--cream-06-rgb) / .74));
 

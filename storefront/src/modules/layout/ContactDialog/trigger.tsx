@@ -23,11 +23,14 @@ type ContactTriggerProps = {
   index?: number
   isActive?: boolean
   onActiveChange?: (index: number | null) => void
+  /** Atributy překryvu ValeCMS pro název tlačítka; předávají se dál do `Button`. */
+  editAttrs?: Record<string, string | undefined>
 }
 
 /** The button that opens the site-wide contact dialog. Visuals unchanged from the old CTA. */
 export default function ContactTrigger({
   text,
+  editAttrs,
   img,
   alt = "Dekorativní pozadí tlačítka",
   className,
@@ -48,6 +51,7 @@ export default function ContactTrigger({
           alt={alt}
           Kind="Button"
           title={text}
+          editAttrs={editAttrs}
           className={className}
           /* An open dialog is „being on Kontakt" — the button holds the same
              active look the nav links get on their own routes. Když tlačítko řídí

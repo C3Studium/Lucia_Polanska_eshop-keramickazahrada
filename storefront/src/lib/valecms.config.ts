@@ -189,14 +189,18 @@ export default defineSite({
      */
     reviews: false,
     /*
-     * E-maily posílá Medusa, ne CMS.
+     * ZÁKAZNICKÉ e-maily posílá Medusa; CMS posílá jen ty svoje.
      *
      * Backend má vlastní resend modul a šablony: potvrzení objednávky,
      * rezervace kurzu, připomínka tři dny předem, zrušený termín, vrácení
-     * peněz. Kdyby část psalo i CMS, zákazník dostane dva různé hlasy z jedné
-     * firmy a nikdo neví, který systém co odeslal.
+     * peněz. To zůstává — pošta CMS k zákazníkovi nikdy nemluví. Posílá
+     * pozvánky do Studia (přístup + heslo pro Luciu a redakci) a hlášení
+     * o publikovaných změnách správci; s `mail: false` se pozvánky tvářily,
+     * že odešly „jinou cestou", a reálně nechodily vůbec. Odesílatele čte
+     * z CMS_MAIL_FROM + RESEND_API_KEY v .env.local — stejná ověřená doména
+     * jako Medusa, jiný obsah i příjemci.
      */
-    mail: false,
+    mail: true,
     // Co `_app` vykresluje pod každou routou — patička, kontakt. Publikace
     // takového bloku sáhne na každou stránku, a proto se to říká tady nahlas.
     //

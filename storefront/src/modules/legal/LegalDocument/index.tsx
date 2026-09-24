@@ -1,6 +1,6 @@
 "use client"
 
-import { editable } from "@c3studium/valecms/edit"
+import { editable, editableMirror } from "@c3studium/valecms/edit"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import type { CopyBlock } from "@lib/util/site-copy"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
@@ -262,9 +262,11 @@ export default function LegalDocument({
             seznamem a odroluje stránku místo něj. */}
         <aside className={styles.index} aria-label="Obsah dokumentu" data-lenis-prevent>
           <div className={styles.indexHeading}>
-            {/* Názvy položek pod tím jsou `section.title`, tedy popisky kapitol z CMS —
-                přejmenovaná kapitola se v rejstříku přejmenuje sama. Kotva zůstává, ta
-                visí na `id` z kódu, aby uložený odkaz nepřestal platit. */}
+            {/* Názvy položek pod tím jsou tentýž text jako nadpisy kapitol — po uložení
+                `section.title` z CMS, během psaní v editoru je dorovnává `editableMirror`
+                na témže poli, kterým je anotovaný `<h2>` kapitoly. Přejmenovaná kapitola
+                se tedy v rejstříku přejmenuje sama, a to hned.
+                Kotva zůstává: visí na `id` z kódu, aby uložený odkaz nepřestal platit. */}
             <span>{indexHeading}</span>
             <span>{String(sections.length).padStart(2, "0")}</span>
           </div>
@@ -280,7 +282,7 @@ export default function LegalDocument({
                     onClick={() => goToChapter(section.id)}
                   >
                     <span>{String(index + 1).padStart(2, "0")}</span>
-                    <strong>{section.title}</strong>
+                    <strong {...editableMirror(block, `items.${index}.label`)}>{section.title}</strong>
                     <i aria-hidden="true" />
                   </button>
                 </li>

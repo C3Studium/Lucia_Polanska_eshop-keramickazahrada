@@ -22,7 +22,8 @@ import {
 } from "./productsButton"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 import { useContactDialog } from "@modules/layout/ContactDialog"
-import type { CopyButton } from "@lib/util/site-copy"
+import { editable } from "@c3studium/valecms/edit"
+import { button, buttonLabel, type CopyButton } from "@lib/util/site-copy"
 import NavbarSearch from "./navbarSearch"
 
 type NavbarProps = {
@@ -32,9 +33,16 @@ type NavbarProps = {
   wishlistItems?: any[]
   navigationCollections?: NavigationCollection[]
   /**
-   * Tlačítka z CMS. Navbar sám je nepoužívá — předává je jen mobilní nabídce,
-   * která je jediná z celého horního pruhu má editovatelné. Ta rozvaha je
-   * v `mobileNav`.
+   * Tlačítka z CMS — odtud se berou **názvy** odkazů v liště.
+   *
+   * Jsou to tytéž záznamy (`menu.*`), ze kterých čte mobilní nabídka: je to
+   * jedna navigace ve dvou podobách, takže přejmenovat „Výroba" se má na
+   * jednom místě a projevit na obou. Kdyby měl horní pruh vlastní sadu, byly
+   * by to dva texty, které mají být jeden — a rozejdou se při první úpravě.
+   *
+   * Adresy v CMS nejsou a nebudou: všechno tu vede dovnitř webu, takže cíl je
+   * routa téhle aplikace. Jeden překlep v CMS by stačil k odkazu, který nikam
+   * nevede, a projevil by se až návštěvníkovi.
    */
   buttons?: Record<string, CopyButton>
 }
@@ -218,7 +226,8 @@ export default function Navbar({
             Kind="Link"
             img="/assets/links/home_img.png"
             alt=""
-            title="Dotazy"
+            title={buttonLabel(buttons, "menu.dotazy", "Dotazy")}
+            editAttrs={editable(button(buttons, "menu.dotazy"), "label")}
             href="/dotazy"
             index={1}
             isActive={getButtonIsActive(1)}
@@ -239,7 +248,8 @@ export default function Navbar({
               Kind="Link"
               img="/assets/links/home_img.png"
               alt=""
-              title="Výroba"
+              title={buttonLabel(buttons, "menu.vyroba", "Výroba")}
+              editAttrs={editable(button(buttons, "menu.vyroba"), "label")}
               href="/vyroba"
               index={2}
               isActive={getButtonIsActive(2)}
@@ -251,7 +261,8 @@ export default function Navbar({
               Kind="Link"
               img="/assets/links/home_img.png"
               alt=""
-              title="Kurzy"
+              title={buttonLabel(buttons, "menu.kurzy", "Kurzy")}
+              editAttrs={editable(button(buttons, "menu.kurzy"), "label")}
               href="/kurzy"
               index={3}
               isActive={getButtonIsActive(3)}
@@ -264,11 +275,14 @@ export default function Navbar({
             isActive={isOpen}
             isRouteActive={isCatalogueRoute}
             hasMenu={navigationCollections.length > 0}
+            label={buttonLabel(buttons, "menu.e-shop", "E-shop")}
+            editAttrs={editable(button(buttons, "menu.e-shop"), "label")}
           />
           <div className="navbar__center-side navbar__center-side--right">
             <ContactTrigger
               className="navbar__nav-link"
-              text="Kontakt"
+              text={buttonLabel(buttons, "menu.kontakt", "Kontakt")}
+              editAttrs={editable(button(buttons, "menu.kontakt"), "label")}
               img="/assets/links/home_img.png"
               alt=""
               index={kontaktIdx}
@@ -280,7 +294,8 @@ export default function Navbar({
               Kind="Link"
               img="/assets/links/home_img.png"
               alt=""
-              title="O mně"
+              title={buttonLabel(buttons, "menu.o-mne", "O mně")}
+              editAttrs={editable(button(buttons, "menu.o-mne"), "label")}
               href="/o-mne"
               index={4}
               isActive={getButtonIsActive(4)}

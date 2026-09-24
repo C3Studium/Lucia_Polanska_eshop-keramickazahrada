@@ -78,15 +78,21 @@ const BUTTONS = [
     // ── Produkt
     { klic: "produkt.proces", label: "Objevit proces", kde: "Produkt/chapter → /vyroba" },
 
-    // ── Mobilní menu (hamburger). Všechno vede dovnitř webu, takže jen názvy.
+    // ── Navigace. Jedna sada názvů pro horní lištu i pro mobilní nabídku:
+    //    jsou to tytéž odkazy, takže přejmenovat „Výroba" se má na jednom
+    //    místě a projevit na obou. Všechno vede dovnitř webu, takže jen názvy,
+    //    žádné adresy.
     //    „Kontakt" není routa — otevírá kontaktní dialog —, ale název se mění
     //    stejně jako u ostatních, takže patří do téhož seznamu.
-    { klic: "menu.uvod", label: "Úvod", kde: "Mobilní menu → /" },
-    { klic: "menu.vyroba", label: "Výroba", kde: "Mobilní menu → /vyroba" },
-    { klic: "menu.kurzy", label: "Kurzy", kde: "Mobilní menu → /kurzy" },
-    { klic: "menu.dotazy", label: "Dotazy", kde: "Mobilní menu → /dotazy" },
-    { klic: "menu.o-mne", label: "O mně", kde: "Mobilní menu → /o-mne" },
-    { klic: "menu.kontakt", label: "Kontakt", kde: "Mobilní menu → dialog" },
+    //    „E-shop" je naopak jen v horní liště; mobilní nabídka ho nemá,
+    //    protože v telefonu stojí jako vlastní tlačítko vedle ní.
+    { klic: "menu.uvod", label: "Úvod", kde: "Navigace → /" },
+    { klic: "menu.vyroba", label: "Výroba", kde: "Navigace → /vyroba" },
+    { klic: "menu.kurzy", label: "Kurzy", kde: "Navigace → /kurzy" },
+    { klic: "menu.dotazy", label: "Dotazy", kde: "Navigace → /dotazy" },
+    { klic: "menu.o-mne", label: "O mně", kde: "Navigace → /o-mne" },
+    { klic: "menu.kontakt", label: "Kontakt", kde: "Navigace → dialog" },
+    { klic: "menu.e-shop", label: "E-shop", kde: "Horní lišta → /store" },
 
     // ── Patička — jediná dvě tlačítka, která vedou mimo web, a proto jediná
     //    dvě s adresou.

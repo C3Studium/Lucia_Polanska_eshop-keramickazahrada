@@ -5,6 +5,7 @@ import LocalizedClientLink from '@modules/common/components/localized-client-lin
 import Image from 'next/image';
 import { useState } from 'react';
 import ArrowRight from '@modules/common/icons/arrow-right';
+import { DOC_ATTR, FIELD_ATTR, MIRROR_ATTR } from '@c3studium/valecms/edit';
 
 type NavButton = {
     title?: string;
@@ -21,6 +22,14 @@ type NavButton = {
     isActive?: boolean
     animationKey?: number
     onActiveChange?: (index: number | null) => void
+    /**
+     * Atributy překryvu ValeCMS pro název tlačítka.
+     *
+     * Dostane je jen PŘEDNÍ stěna první ze dvou barevných kopií; zbylé tři
+     * nesou `data-cms-mirror` odvozený z týchž atributů a překryv je při
+     * psaní dorovnává sám. Editovat se má jedno místo, ne čtyři.
+     */
+    editAttrs?: Record<string, string | undefined>
 }
 
 /* A hover flip at 750ms is still turning over well after the pointer has arrived. 420ms keeps
@@ -68,7 +77,17 @@ const backTextLabel = {
   active: { opacity: 1, paddingLeft: "0.25rem", transition: t },
 }
 
-export default function Button({title, href, img = "/assets/links/home_img.png", alt = 'bg__image', icon1, icon2, Kind, onClickAction, onTagAction, className, index, isActive = false, animationKey = 0, onActiveChange}: NavButton) {
+export default function Button({title, href, img = "/assets/links/home_img.png", alt = 'bg__image', icon1, icon2, Kind, onClickAction, onTagAction, className, index, isActive = false, animationKey = 0, onActiveChange, editAttrs}: NavButton) {
+    /* Název stojí v tomhle tlačítku čtyřikrát — proč, viz `PerspectiveText`.
+       Editovatelná je jedna kopie; zbylé tři dostanou `data-cms-mirror` na
+       stejné pole a dorovnává je sám překryv. Doc i field se čtou z
+       `editAttrs`, takže volající předává pořád jen jedno. Mimo editor jsou
+       `editAttrs` prázdné a zrcadla s nimi. */
+    const mirrorDoc = editAttrs?.[DOC_ATTR]
+    const mirrorField = editAttrs?.[FIELD_ATTR]
+    const mirrorAttrs =
+        mirrorDoc && mirrorField ? { [MIRROR_ATTR]: `${mirrorDoc}:${mirrorField}` } : undefined
+
     const [isTagActive, setIsTagActive] = useState<boolean>(false)
     const isControlled = index !== undefined && onActiveChange !== undefined
 
@@ -149,10 +168,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
                     <PerspectiveImage img={img} alt={"bg__img"}/>
                 </motion.div>
                 <motion.div className={styles.el} style={styleObj}>
-                    <PerspectiveText label={title} color="var(--blackText)" />
+                    <PerspectiveText label={title} color="var(--blackText)" editAttrs={editAttrs} mirrorAttrs={mirrorAttrs} />
                 </motion.div>
                 <motion.div className={styles.el} style={styleObj}>
-                    <PerspectiveText label={title} color="var(--whiteText)" />
+                    <PerspectiveText label={title} color="var(--whiteText)" mirrorAttrs={mirrorAttrs} />
                 </motion.div>
             </motion.div>
         </LocalizedClientLink>
@@ -173,10 +192,10 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
                     <PerspectiveImage img={img} alt={"bg__img"}/>
                 </motion.div>
                 <motion.div className={styles.el} style={styleObj}>
-                    <PerspectiveText label={title} color="var(--blackText)" />
+                    <PerspectiveText label={title} color="var(--blackText)" editAttrs={editAttrs} mirrorAttrs={mirrorAttrs} />
                 </motion.div>
                 <motion.div className={styles.el} style={styleObj}>
-                <PerspectiveText label={title} color="var(--whiteText)" />
+                <PerspectiveText label={title} color="var(--whiteText)" mirrorAttrs={mirrorAttrs} />
                 </motion.div>
             </motion.div>
         </button>
@@ -185,12 +204,32 @@ export default function Button({title, href, img = "/assets/links/home_img.png",
   )
 }
 
+/**
+ * Popisek tlačítka ve dvou stěnách, které se při hoveru překlápějí.
+ *
+ * ## Proč je text ve `<span>`, a ne přímo v `<p>`
+ *
+ * Kvůli editaci na stránce. Překryv ValeCMS edituje **ten element**, na kterém
+ * visí `editable()` — rozepsaný stav je u něj DOM. Zadní stěna měla v sobě
+ * vedle textu i šipku, takže by překryv nabídl k úpravě „Kurzy" i tu šipku
+ * a při uložení by ji spolkl.
+ *
+ * Text má proto vlastní `<span>` v obou stěnách. `editable()` sedí na tom
+ * předním; zbylé kopie nesou `data-cms-mirror` a překryv je při psaní
+ * dorovnává sám. Šipka zůstává sourozencem textu a úprava se jí nedotkne.
+ */
 function PerspectiveText({
   label,
   color,
+  editAttrs,
+  mirrorAttrs,
 }: {
   label?: string
   color: string
+  /** Atributy překryvu. Dostane je jen JEDNA ze čtyř kopií popisku. */
+  editAttrs?: Record<string, string | undefined>
+  /** Zrcadlo téhož pole pro zbylé kopie — viz `Button`. */
+  mirrorAttrs?: Record<string, string | undefined>
 }) {
   return (
     <motion.div
@@ -199,10 +238,10 @@ function PerspectiveText({
       style={styleObj2}
     >
       <motion.p variants={frontText} style={{ color }}>
-        {label}
+        <span {...(editAttrs ?? mirrorAttrs)}>{label}</span>
       </motion.p>
       <motion.p variants={backTextLabel} style={backFace}>
-        {label}
+        <span {...mirrorAttrs}>{label}</span>
         <span>
             <ArrowRight size={15} color="var(--whiteText)"/>
         </span>
