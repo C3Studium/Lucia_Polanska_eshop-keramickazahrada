@@ -38,6 +38,7 @@ import {
 } from "../lib/dobirka-fee";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { requireShippableCart } from "../lib/require-shippable-cart";
+import { requireStockableCart } from "../lib/require-stockable-cart";
 import { throttleResetPassword } from "../lib/reset-password-throttle";
 import { PostOsireleUctySchema } from "./admin/osirele-ucty/route";
 import { PostAdminDocumentSchema } from "./admin/dokumenty/route";
@@ -230,6 +231,20 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/shipping-methods",
       methods: ["POST"],
       middlewares: [requireShippableCart()],
+    },
+    /*
+     * Prodej bez skladu musí jít dokončit. Klientka si přála objednávku i mimo
+     * sklad (`allow_backorder`), jenže Medusa při dokončení zakládá rezervaci a
+     * položka bez úrovně zásoby na skladu ji shodí na „is not stocked at
+     * location" — až po zaplacení. Middleware běží PŘED nativním /complete a
+     * chybějící úroveň doplní nulou, takže rezervace má kam dosednout. Pokrývá
+     * i kus, který subscriber ani startovní sweep ještě nestihly. Viz
+     * `lib/require-stockable-cart.ts`.
+     */
+    {
+      matcher: "/store/carts/:id/complete",
+      methods: ["POST"],
+      middlewares: [requireStockableCart()],
     },
     /*
      * Doběrečné. Výběr platby je jediné hrdlo, kterým si KAŽDÁ pokladna
