@@ -34,11 +34,19 @@ export const listProducts = async ({
   queryParams,
   countryCode,
   regionId,
+  cacheMode = "force-cache",
 }: {
   pageParam?: number
   queryParams?: StoreProductListQuery
   countryCode?: string
   regionId?: string
+  /**
+   * „force-cache" (výchozí) pro statické seznamy (homepage apod.). Interaktivní
+   * katalog obchodu musí vracet ŽIVÁ data — jinak se zakešuje jeden výsledek
+   * (třeba prázdný filtr z chvíle, kdy data nebyla hotová) a drží se, dokud
+   * něco nerevaliduje tag. Proto listStoreCatalogue posílá "no-store".
+   */
+  cacheMode?: "force-cache" | "no-store"
 }): Promise<{
   response: { products: (HttpTypes.StoreProduct & {
     bundle?: Omit<BundleProduct, "items">
@@ -73,9 +81,9 @@ export const listProducts = async ({
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("products")),
-  }
+  // Živá data se nekešují ani netagují — jinak by se tag revalidace minul
+  // s dotazem a Next by stejně servíroval uloženou podobu.
+  const next = cacheMode === "no-store" ? {} : { ...(await getCacheOptions("products")) }
 
   return sdk.client
     .fetch<{ products: (HttpTypes.StoreProduct & { bundle?: Omit<BundleProduct, "items"> })[]; count: number }>(
@@ -90,7 +98,7 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: "force-cache",
+        cache: cacheMode,
       }
     )
     .then(({ products, count }) => {
@@ -367,6 +375,7 @@ export const listStoreCatalogue = async ({
       queryParams,
       countryCode,
       regionId,
+      cacheMode: "no-store",
     })
 
     return { products, count }
@@ -378,6 +387,7 @@ export const listStoreCatalogue = async ({
       queryParams: pageQuery,
       countryCode,
       regionId,
+      cacheMode: "no-store",
     })
     const gathered = [...firstPage.response.products]
     const pageCount = Math.ceil(firstPage.response.count / pageQuery.limit!)
@@ -390,6 +400,7 @@ export const listStoreCatalogue = async ({
         queryParams: pageQuery,
         countryCode,
         regionId,
+        cacheMode: "no-store",
       })
 
       gathered.push(...products)
