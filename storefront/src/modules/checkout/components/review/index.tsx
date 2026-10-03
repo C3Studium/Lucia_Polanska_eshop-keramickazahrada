@@ -88,6 +88,24 @@ const Review = ({
     (line) => commissionComplete[line.id]
   )
 
+  /* Kolik se zaplatí TEĎ. U zakázky to NENÍ cena košíku — je to zvolená záloha
+     (default), půlka, celek nebo vlastní částka ze slideru; zbytek se doplatí
+     po dokončení. Tlačítko i rekapitulace proto musí ukazovat tuhle částku, ne
+     cart.total (jinak tlačítko lže „Zaplatit 4450", i když brána vezme jen zálohu).
+     Běžný košík bez zakázky platí celek = cart.total. */
+  const chargeNowForMode = (mode: ProductionPaymentMode) =>
+    mode.mode === "full"
+      ? mode.full_amount
+      : mode.mode === "custom"
+        ? mode.custom?.amount ?? mode.deposit_amount
+        : mode.deposit_amount
+  const [mtoChargeNow, setMtoChargeNow] = useState<number>(
+    productionMode?.has_made_to_order ? chargeNowForMode(productionMode) : 0
+  )
+  const chargeNow = productionMode?.has_made_to_order
+    ? mtoChargeNow
+    : cart?.total ?? 0
+
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
@@ -97,7 +115,7 @@ const Review = ({
     (cart.payment_collection || paidByGiftcard || comgateMethod)
 
   const payLabel = `Zaplatit ${convertToLocale({
-    amount: cart?.total ?? 0,
+    amount: chargeNow,
     currency_code: cart?.currency_code ?? "czk",
   })}`
 
@@ -218,9 +236,15 @@ const Review = ({
               <motion.div variants={rowVariants} initial="hidden" animate="visible">
                 <ProductionPaymentModeChoice
                   initial={productionMode}
-                  onSelect={(mode, amount) =>
-                    selectProductionPaymentMode(cart.id, mode, amount)
-                  }
+                  onSelect={(mode, amount) => {
+                    // Tlačítko „Zaplatit …" hned reaguje na zvolenou částku.
+                    if (typeof amount === "number") setMtoChargeNow(amount)
+                    else if (mode === "full")
+                      setMtoChargeNow(productionMode.full_amount)
+                    else if (mode === "deposit")
+                      setMtoChargeNow(productionMode.deposit_amount)
+                    return selectProductionPaymentMode(cart.id, mode, amount)
+                  }}
                 />
               </motion.div>
             )}
