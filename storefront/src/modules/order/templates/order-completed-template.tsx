@@ -7,13 +7,12 @@ import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
-import { addOrderCommissionNote } from "@lib/data/commission-actions"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
-import CommissionBrief from "@modules/checkout/components/commission-brief"
+import OrderCommissionDiary from "@modules/order/components/commission-diary"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -132,18 +131,7 @@ export default async function OrderCompletedTemplate({
             zakázka — an ordinary order has no diary and gets no box. */}
         {commissionNotes && (
           <section className={s.commission} aria-label="Zakázková výroba">
-            <CommissionBrief
-              variant="order"
-              note=""
-              photos={[]}
-              notes={commissionNotes}
-              onSubmitAction={async (input) =>
-                addOrderCommissionNote(order.id, {
-                  note: input.note,
-                  newPhotos: input.newPhotos,
-                })
-              }
-            />
+            <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
           </section>
         )}
 
