@@ -16,6 +16,7 @@ import {
 import { retrieveCustomer } from "./customer"
 import { getRegion } from "./regions"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import {
   normalizujDic,
   normalizujIco,
@@ -305,8 +306,37 @@ export async function initiatePaymentSession(
     const headers = {
       ...(await getAuthHeaders()),
     }
+
+    /*
+     * Zakázka = jen ZÁLOHA teď, zbytek později. Standardní založení platební
+     * relace vytvoří payment collection na PLNOU částku košíku, takže by brána
+     * naúčtovala celek. `/made-to-order-payment` spočítá správnou částku k
+     * úhradě (plná cena běžných položek + záloha u zakázek — i v míchaném košíku)
+     * a nastaví ji na collection. Relaci pak zakládáme PŘÍMO na téhle collection,
+     * ať se neudělá nová na plnou částku. U běžného košíku se nic nemění.
+     */
+    let activeCart = cart
+    if (((cart?.items ?? []) as any[]).some(isMadeToOrderLine)) {
+      const prep = await sdk.client.fetch<{
+        payment?: { payment_collection_id?: string }
+      }>(`/store/carts/${cart.id}/made-to-order-payment`, {
+        method: "POST",
+        headers,
+      })
+      const pcId = prep?.payment?.payment_collection_id
+      if (pcId) {
+        activeCart = {
+          ...cart,
+          payment_collection: {
+            ...((cart as any)?.payment_collection ?? {}),
+            id: pcId,
+          },
+        } as any
+      }
+    }
+
     const resp = await sdk.store.payment.initiatePaymentSession(
-      cart,
+      activeCart,
       data,
       {},
       headers
