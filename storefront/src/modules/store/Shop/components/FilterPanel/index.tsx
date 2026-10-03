@@ -49,6 +49,7 @@ export default function FilterPanel({
     filters.priceRange,
     filters.isNew,
     filters.onSale,
+    filters.kind,
   ].filter(Boolean).length
   const closeRef = useRef<HTMLButtonElement>(null)
 
@@ -200,6 +201,22 @@ export default function FilterPanel({
         <FilterGroup index="02" title="Výběr">
           <Toggle label="Novinky" active={filters.isNew} onClick={() => onChange({ isNew: !filters.isNew })} />
           <Toggle label="Ve slevě" active={filters.onSale} onClick={() => onChange({ onSale: !filters.onSale })} />
+          {/* Druh kusu — pseudo-kategorie, ne skutečná kategorie. Vzájemně
+              výlučné přes jediné pole `kind`. */}
+          <Toggle
+            label="Poškozené"
+            active={filters.kind === "clearance"}
+            onClick={() =>
+              onChange({ kind: filters.kind === "clearance" ? "" : "clearance" })
+            }
+          />
+          <Toggle
+            label="Balíčky"
+            active={filters.kind === "bundle"}
+            onClick={() =>
+              onChange({ kind: filters.kind === "bundle" ? "" : "bundle" })
+            }
+          />
         </FilterGroup>
 
         <div className={styles.footer}>

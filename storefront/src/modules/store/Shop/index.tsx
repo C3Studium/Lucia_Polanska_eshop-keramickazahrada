@@ -73,9 +73,15 @@ const emptyFilters: ShopFilters = {
   collectionId: "",
   isNew: false,
   onSale: false,
+  kind: "",
   priceRange: "",
   search: "",
   sort: "featured",
+}
+
+const kindLabels: Record<string, string> = {
+  clearance: "Poškozené",
+  bundle: "Balíčky",
 }
 
 const priceLabels: Record<string, string> = {
@@ -429,6 +435,12 @@ export default function ECom({
         label: "Ve slevě",
         onRemove: () => updateFilters({ onSale: false }),
       })
+    if (filters.kind)
+      chips.push({
+        id: "kind",
+        label: kindLabels[filters.kind] ?? filters.kind,
+        onRemove: () => updateFilters({ kind: "" }),
+      })
     return chips
   }, [
     categories,
@@ -436,6 +448,7 @@ export default function ECom({
     filters.collectionId,
     filters.isNew,
     filters.onSale,
+    filters.kind,
     filters.priceRange,
     initialFilterLabel,
     updateFilters,

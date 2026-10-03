@@ -112,6 +112,8 @@ export type StoreCatalogueFilters = {
   collectionId: string
   isNew: boolean
   onSale: boolean
+  /** Druh kusu — "" | "clearance" | "bundle". Pseudo-kategorie, filtruje se lokálně. */
+  kind?: "" | "clearance" | "bundle"
   priceRange: string
   search: string
   sort: "featured" | "newest" | "price-asc" | "price-desc"
@@ -307,9 +309,14 @@ export const listStoreCatalogue = async ({
     filters.sort === "price-asc" ||
     filters.sort === "price-desc"
   )
+  // Druh kusu (poškozené/balíčky) se taky filtruje lokálně: poškozený se pozná
+  // z `metadata.clearance`, balíček z `product.bundle` — ani jedno neumí
+  // odfiltrovat store API, takže se načte celá sada a profiltruje se tady.
+  const needsKindFilter = Boolean(filters.kind)
   // Both taxonomy-widened search and price work need the whole result set here
   // before it can be filtered, ordered and paged locally.
-  const needsLocalAssembly = needsCalculatedPriceRefinement || searchAcrossTaxonomy
+  const needsLocalAssembly =
+    needsCalculatedPriceRefinement || searchAcrossTaxonomy || needsKindFilter
 
   const queryParams: StoreProductListQuery = {
     limit: needsLocalAssembly ? 100 : normalizedLimit,
@@ -327,7 +334,7 @@ export const listStoreCatalogue = async ({
      * backend, který přidání do košíku normálně přijal.
      */
     fields:
-      "*bundle,*type,*categories,*images,+variants.inventory_quantity,+variants.allow_backorder",
+      "*bundle,*type,*categories,*images,+variants.inventory_quantity,+variants.allow_backorder,+metadata",
   }
 
   if (searchTerm) {
@@ -440,6 +447,18 @@ export const listStoreCatalogue = async ({
     }
 
     if (filters.onSale && cheapestPrice?.price_type !== "sale") {
+      return false
+    }
+
+    // Druh kusu — pseudo-kategorie. Balíček nese `product.bundle`, poškozený
+    // `metadata.clearance === true`.
+    if (filters.kind === "bundle" && !(product as any).bundle) {
+      return false
+    }
+    if (
+      filters.kind === "clearance" &&
+      (product.metadata as Record<string, unknown> | null)?.clearance !== true
+    ) {
       return false
     }
 

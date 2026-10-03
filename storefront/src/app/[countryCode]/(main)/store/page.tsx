@@ -26,6 +26,7 @@ const defaultFilters: ShopFilters = {
   collectionId: "",
   isNew: false,
   onSale: false,
+  kind: "",
   priceRange: "",
   search: "",
   sort: "featured",
