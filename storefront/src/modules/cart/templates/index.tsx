@@ -7,11 +7,7 @@ import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
 import { getProductionPaymentMode } from "@lib/data/made-to-order"
-import { readCommissionBrief } from "@lib/util/made-to-order"
-import { commissionPrompt, isMadeToOrderLine } from "@lib/util/commission"
-import CartCommissionBlock, {
-  type CartCommissionLine,
-} from "@modules/cart/components/commission-block"
+import CartCommissionBlock from "@modules/cart/components/commission-block"
 
 import s from "./index.module.scss"
 
@@ -26,23 +22,11 @@ const CartTemplate = async ({
 
   /* Asked here as well as at checkout: a commission's deposit is the thing most likely to
      surprise someone at the till, and the basket is where they are still deciding. The choice
-     lives on the cart, so whatever is set here is what checkout opens on. */
+     lives on the cart, so whatever is set here is what checkout opens on. (Brief — popis a
+     fotky — do košíku NEpatří; sbírá se až v pokladně, viz CartCommissionBlock.) */
   const productionMode = cart?.id
     ? await getProductionPaymentMode(cart.id)
     : null
-
-  /* The commissioned lines, so the basket can collect their briefs — the description and
-     photos moved here from the product page. Every signal counts (category, product marker, or a
-     brief already on the line), same as the checkout's detection, so a profile-only zakázka is
-     caught too. `prompt` is the owner's „co poslat" instruction, mirrored onto the product. */
-  const commissionLines: CartCommissionLine[] = ((cart?.items ?? []) as any[])
-    .filter(isMadeToOrderLine)
-    .map((item) => ({
-      id: item.id as string,
-      title: (item.product_title || item.title) as string,
-      prompt: commissionPrompt(item),
-      brief: readCommissionBrief(item),
-    }))
 
   return (
     <>
@@ -69,11 +53,9 @@ const CartTemplate = async ({
                 </>
               )}
               <ItemsTemplate cart={cart} />
-              {(commissionLines.length > 0 ||
-                productionMode?.has_made_to_order) && (
+              {productionMode?.has_made_to_order && (
                 <CartCommissionBlock
                   cartId={cart.id}
-                  lines={commissionLines}
                   productionMode={productionMode}
                 />
               )}

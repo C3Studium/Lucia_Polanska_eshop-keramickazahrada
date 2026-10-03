@@ -1,63 +1,31 @@
 "use client"
 
-import { saveCommissionBrief } from "@lib/data/commission-actions"
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
-import type {
-  CommissionBrief as CommissionBriefData,
-  ProductionPaymentMode,
-} from "@lib/util/made-to-order"
-import CommissionBrief from "@modules/checkout/components/commission-brief"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
-
-export type CartCommissionLine = {
-  id: string
-  title: string
-  /** Owner's „co poslat" instruction, mirrored from the production profile. */
-  prompt: string
-  brief: CommissionBriefData
-}
 
 type Props = {
   cartId: string
-  lines: CartCommissionLine[]
   productionMode: ProductionPaymentMode | null
 }
 
 /**
- * Everything a commission needs from the customer, together in the basket: the description
- * with its photos (per commissioned line), and below it how much of the total to pay now.
- * The product page only announces the terms; this is where the zakázka is actually briefed —
- * whatever is written and chosen here is what checkout opens on.
+ * Výše zálohy u zakázky — kolik zaplatit hned — rovnou v košíku, kde se zákazník
+ * ještě rozhoduje. Brief (popis + fotky) tu VĚDOMĚ není: sbírá se až v pokladně
+ * (a v express v kroku doručení), ať košík zůstane o penězích. Majitelčino přání.
  */
-export default function CartCommissionBlock({
-  cartId,
-  lines,
-  productionMode,
-}: Props) {
-  return (
-    <>
-      {lines.map((line) => (
-        <CommissionBrief
-          key={line.id}
-          variant="checkout"
-          title={line.title}
-          prompt={line.prompt}
-          // The text is the specification; older lines may still carry it as `note`.
-          note={line.brief.specification || line.brief.note || ""}
-          photos={line.brief.photos ?? []}
-          onSubmitAction={async (input) => saveCommissionBrief(line.id, input)}
-        />
-      ))}
+export default function CartCommissionBlock({ cartId, productionMode }: Props) {
+  if (!productionMode?.has_made_to_order) {
+    return null
+  }
 
-      {productionMode?.has_made_to_order && (
-        <ProductionPaymentModeChoice
-          variant="cart"
-          initial={productionMode}
-          onSelect={(mode, amount) =>
-            selectProductionPaymentMode(cartId, mode, amount)
-          }
-        />
-      )}
-    </>
+  return (
+    <ProductionPaymentModeChoice
+      variant="cart"
+      initial={productionMode}
+      onSelect={(mode, amount) =>
+        selectProductionPaymentMode(cartId, mode, amount)
+      }
+    />
   )
 }
