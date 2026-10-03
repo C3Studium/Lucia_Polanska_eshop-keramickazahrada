@@ -2,6 +2,7 @@ import {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http";
+import { Modules } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import { AdminCreateProduct } from "@medusajs/medusa/api/admin/products/validators";
 import {
@@ -51,8 +52,37 @@ export async function POST(
   res: MedusaResponse
 ) {
   const payload = req.validatedBody || req.body;
+
+  /*
+   * Prodejní kanál + marker druhu, bez kterých balíček „zmizí".
+   *
+   * createProductsWorkflow (na rozdíl od admin product.create) sám nepřipojí
+   * výchozí prodejní kanál — balíček tak vznikl bez kanálu a store API ho
+   * nevrátilo vůbec (naměřeno 3. 10. 2026: balíček „TEST" bez kanálu, v obchodě
+   * neviditelný). A `metadata.is_bundle` dává balíčku stejný rozpoznatelný
+   * marker jako má poškozený (clearance) a zakázka (made_to_order), takže ho
+   * filtr druhu najde v adminu i na storefrontu.
+   */
+  const storeModule = req.scope.resolve(Modules.STORE);
+  const [store] = await storeModule.listStores(
+    {},
+    { select: ["id", "default_sales_channel_id"] as never }
+  );
+  const defaultSalesChannelId = (store as any)?.default_sales_channel_id as
+    | string
+    | undefined;
+
+  const productInput = {
+    ...payload.product,
+    metadata: { ...((payload.product as any).metadata ?? {}), is_bundle: true },
+    ...(defaultSalesChannelId
+      ? { sales_channels: [{ id: defaultSalesChannelId }] }
+      : {}),
+  };
+
   const workflowPayload = {
     ...payload,
+    product: productInput,
     items: payload.items.map((item) => ({
       ...item,
       fixed_variant_id: item.fixed_variant_id || item.variant_id || null,

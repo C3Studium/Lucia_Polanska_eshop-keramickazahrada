@@ -450,9 +450,11 @@ export const listStoreCatalogue = async ({
       return false
     }
 
-    // Druh kusu — pseudo-kategorie. Balíček nese `product.bundle`, poškozený
-    // `metadata.clearance === true`.
-    if (filters.kind === "bundle" && !(product as any).bundle) {
+    // Druh kusu — pseudo-kategorie přes metadata (store API `product.bundle`
+    // nevrací). Balíček = `metadata.is_bundle`, poškozený = `metadata.clearance`,
+    // zakázka = `metadata.made_to_order`.
+    const meta = product.metadata as Record<string, unknown> | null
+    if (filters.kind === "bundle" && meta?.is_bundle !== true) {
       return false
     }
     if (
