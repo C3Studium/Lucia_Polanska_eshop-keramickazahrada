@@ -491,7 +491,7 @@ export const Shipping = ({
       {commissionLines.length > 0 && !allCommissionsComplete && (
         <p className={styles.restrictionNote}>
           U zakázky nejdřív prosím napište, co si představujete — text nebo
-          fotku — a uložte to tlačítkem „Uložit k zakázce".
+          fotku — a uložte to tlačítkem Uložit k zakázce.
         </p>
       )}
 
