@@ -3,6 +3,7 @@ import {
   ArrowUpRightOnBox,
   ChevronDown,
   FlyingBox,
+  Photo,
   TagSolid,
 } from "@medusajs/icons";
 import {
@@ -24,7 +25,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BundleEditor } from "../../components/bundle-editor";
 import { VariantsEditor } from "../../components/variants-editor";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
@@ -519,6 +520,8 @@ const ProductsInner = () => {
   const [catalog, setCatalog] = useState<CatalogFilter>(EMPTY_CATALOG_FILTER);
   /* Klik na miniaturu otevře fotky v plné velikosti (sdílený ProductLightbox). */
   const [lightbox, setLightbox] = useState<{ id: string; title: string } | null>(null);
+  /* Klik na kartu v mřížce vede na detail produktu (fotky mají vlastní ikonu). */
+  const navigate = useNavigate();
   /* Rozpracované přepínače (Rozdělení pattern): flip nezapisuje, jen se drží
      tady. Uloží se až Potvrdit (řádek) / Potvrdit vše (lišta), nebo zahodí.
      Když je označeno víc produktů checkboxem, flip na označeném řádku
@@ -741,18 +744,29 @@ const ProductsInner = () => {
      patří řádkům; tady je vizuální kontrola, výběr a cesta na detail. */
   const renderGridCard = (product: WorkbenchProduct) => {
     const worstStock = worstStockOf(product);
+    /* Celá karta vede na detail; fotky mají vlastní ikonu (viz níž) — majitelka
+       klikala na kartu a čekala detail, místo toho jí vyskakoval lightbox. */
+    const openDetail = () => navigate(`/produkt/${product.id}`);
     return (
       <figure
         key={product.id}
-        className="border-ui-border-base overflow-hidden rounded-lg border"
+        role="link"
+        tabIndex={0}
+        title="Otevřít detail produktu"
+        onClick={openDetail}
+        onKeyDown={(e) => {
+          // Jen když je zaměřená samotná karta — ne checkbox/tlačítko uvnitř
+          // (jejich keydown sem bublá a mezerník by jinak navigoval).
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openDetail();
+          }
+        }}
+        className="border-ui-border-base hover:border-ui-border-strong focus-visible:shadow-borders-focus group block cursor-pointer overflow-hidden rounded-lg border outline-none transition-colors"
       >
         <div className="relative">
-          <button
-            type="button"
-            title="Zvětšit fotku"
-            className="bg-ui-bg-subtle block aspect-square w-full"
-            onClick={() => setLightbox({ id: product.id, title: product.title })}
-          >
+          <div className="bg-ui-bg-subtle block aspect-square w-full">
             {product.thumbnail ? (
               <img
                 src={product.thumbnail}
@@ -765,20 +779,24 @@ const ProductsInner = () => {
                 <Text size="xsmall">—</Text>
               </div>
             )}
-          </button>
+          </div>
+          {/* Výběr pro hromadné akce — nesmí spustit přechod na detail. */}
           <input
             type="checkbox"
             className="absolute left-2 top-2 size-4"
             checked={selected.has(product.id)}
+            onClick={(e) => e.stopPropagation()}
             onChange={(e) => toggleSelected(product.id, e.target.checked)}
           />
         </div>
         <figcaption className="flex flex-col gap-1 p-2">
-          <Link to={`/produkt/${product.id}`} className="block hover:underline">
-            <Text size="small" weight="plus" className="truncate">
-              {product.title}
-            </Text>
-          </Link>
+          <Text
+            size="small"
+            weight="plus"
+            className="truncate group-hover:underline"
+          >
+            {product.title}
+          </Text>
           <div className="flex items-center justify-between gap-1">
             <div className="flex flex-wrap items-center gap-1">
               {product.status !== "published" && (
@@ -792,7 +810,24 @@ const ProductsInner = () => {
                 </Badge>
               )}
             </div>
-            <PublishToggle product={product} />
+            {/* Vlastní ovládání — klik nesmí propadnout do přechodu na detail. */}
+            <div
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                title="Zobrazit fotky"
+                aria-label="Zobrazit fotky"
+                className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover flex size-6 items-center justify-center rounded-md transition-colors"
+                onClick={() =>
+                  setLightbox({ id: product.id, title: product.title })
+                }
+              >
+                <Photo />
+              </button>
+              <PublishToggle product={product} />
+            </div>
           </div>
         </figcaption>
       </figure>
