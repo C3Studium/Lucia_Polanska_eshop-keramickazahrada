@@ -1066,6 +1066,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     typeof product.metadata?.clearance_damage === "string"
       ? (product.metadata.clearance_damage as string)
       : null;
+  const madeToOrderPrompt =
+    typeof product.metadata?.made_to_order_prompt === "string"
+      ? (product.metadata.made_to_order_prompt as string)
+      : null;
   const backorderAll =
     (product.variants ?? []).length > 0 &&
     (product.variants ?? []).every((variant) => variant.allow_backorder);
@@ -1508,6 +1512,27 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     </div>
                     <Text size="xsmall" className="text-ui-fg-muted mt-1">
                       Vidí ho zákazník na stránce kusu.
+                    </Text>
+                  </div>
+                )}
+                {production?.enabled && (
+                  <div className="sm:col-span-2">
+                    <FieldLabel>Poznámka pro zákazníka</FieldLabel>
+                    <div className="mt-1">
+                      <InlineTextarea
+                        value={madeToOrderPrompt}
+                        rows={3}
+                        placeholder="Co od zákazníka potřebujete k zakázce — rozměry, barvu, fotku místa, popis…"
+                        onSave={(next) =>
+                          saveFlags.mutateAsync({
+                            made_to_order_prompt: next || null,
+                          })
+                        }
+                      />
+                    </div>
+                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                      Ukáže se zákazníkovi u zakázky v košíku i v pokladně jako
+                      výzva, co poslat. Prázdné → obecný text.
                     </Text>
                   </div>
                 )}

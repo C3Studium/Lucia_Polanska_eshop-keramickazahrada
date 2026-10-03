@@ -5,7 +5,6 @@ import {
   Label,
   Switch,
   Text,
-  Textarea,
   toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +31,6 @@ type ProfileForm = {
   production_time_min_days: string;
   production_time_max_days: string;
   specification_required: boolean;
-  specification_prompt: string;
   contact_customer_after_order: boolean;
   allow_final_price_adjustment: boolean;
 };
@@ -46,7 +44,6 @@ const toForm = (profile: any): ProfileForm => ({
   production_time_min_days: String(profile?.production_time_min_days ?? 14),
   production_time_max_days: String(profile?.production_time_max_days ?? 42),
   specification_required: profile?.specification_required ?? true,
-  specification_prompt: profile?.specification_prompt ?? "",
   contact_customer_after_order:
     profile?.contact_customer_after_order ?? true,
   allow_final_price_adjustment:
@@ -114,8 +111,6 @@ export const ProductionProfileEditor = ({
             production_time_min_days: minDays,
             production_time_max_days: maxDays,
             specification_required: payload.specification_required,
-            specification_prompt:
-              payload.specification_prompt.trim() || null,
             contact_customer_after_order:
               payload.contact_customer_after_order,
             allow_final_price_adjustment:
@@ -262,28 +257,11 @@ export const ProductionProfileEditor = ({
                 />
               </div>
 
-              <div>
-                <Label htmlFor="spec-prompt">
-                  Co má zákazník poslat (otázka pro zákazníka)
-                </Label>
-                <Textarea
-                  id="spec-prompt"
-                  rows={3}
-                  placeholder="Např.: Napište rozměry a barvu, přiložte fotku místa, kam socha přijde."
-                  value={form.specification_prompt}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      specification_prompt: event.target.value,
-                    })
-                  }
-                />
-                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                  Ukáže se zákazníkovi u této zakázky v košíku i v pokladně jako
-                  výzva nad polem pro poznámku a fotky — napište, co od něj
-                  potřebujete (rozměry, barvu, fotky, popis).
-                </Text>
-              </div>
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                Co má zákazník poslat (rozměry, barvu, fotku místa…) napíšete na
+                stránce produktu v poli „Poznámka pro zákazníka" pod Podtitulkem.
+                Ukáže se mu pak v košíku i v pokladně.
+              </Text>
             </>
           )}
         </Drawer.Body>

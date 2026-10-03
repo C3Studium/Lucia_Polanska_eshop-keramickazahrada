@@ -74,6 +74,14 @@ const PatchFlagsSchema = z
      * zákazníkovi (storefront čte `metadata.clearance_damage`). `null` maže.
      */
     clearance_damage: z.string().trim().max(2000).nullable().optional(),
+    /**
+     * Zakázka: „co má zákazník poslat" — rozměry, barvu, fotku místa. Edituje
+     * se na stránce produktu (pod Podtitulkem, jen u zakázek) a ukazuje se
+     * zákazníkovi jako instrukce v poznámkovém bloku v košíku i v Přehledu
+     * (storefront čte `metadata.made_to_order_prompt`). `null` maže → spadne na
+     * obecný text. Viz [[zakazka-poznamkovy-blok]].
+     */
+    made_to_order_prompt: z.string().trim().max(2000).nullable().optional(),
     /** Whether the piece survives frost — pots and garden pieces care. */
     frost_resistant: z.boolean().optional(),
   })
