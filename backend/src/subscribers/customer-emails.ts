@@ -135,7 +135,17 @@ const onPaymentCaptured = async ({
 const onBalanceRequested = async ({
   event: { data },
   container,
-}: SubscriberArgs<{ order_id: string; payment_request_id: string }>) => {
+}: SubscriberArgs<{
+  order_id: string
+  payment_request_id: string
+  /**
+   * Set only by „Poslat připomínku" — a per-click token that makes the reminder
+   * a genuinely new e-mail instead of a duplicate of the first výzva. The first
+   * výzva carries none, so its key stays `paylink:{request}`; a redelivery of
+   * the same reminder event carries the same token and is still deduped.
+   */
+  reminder_token?: string
+}>) => {
   if (!data?.order_id || !data?.payment_request_id) {
     return
   }
@@ -168,9 +178,12 @@ const onBalanceRequested = async ({
   await sendCustomerEmail(container, {
     template: "payment-pending",
     to: order.email,
-    // Keyed on the request, so re-sending the same link — which is what
-    // „Připomenout" does — never produces a second e-mail.
-    key: `paylink:${request.id}`,
+    // Keyed on the request so at-least-once delivery never doubles the first
+    // výzva. „Poslat připomínku" passes a per-click token, so a reminder is a
+    // new e-mail (same link) rather than a silently-dropped duplicate.
+    key: data.reminder_token
+      ? `paylink:${request.id}:${data.reminder_token}`
+      : `paylink:${request.id}`,
     orderId: order.id,
     data: {
       ...common(order),

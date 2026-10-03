@@ -415,7 +415,15 @@ export const POST = async (
   }
 
   if (body.action === "request_balance") {
-    requireStage(productionOrder.stage, ["awaiting_balance"])
+    // Výzvu k doplacení lze poslat kdykoli během živé zakázky (ne jen po
+    // dokončení výroby) — majitelka chce umět vyžádat doplatek hned, jakmile je
+    // jasné, co zbývá. Terminální stavy a plně zaplacenou zakázku to vynechá.
+    requireStage(productionOrder.stage, [
+      "specification_pending",
+      "confirmed",
+      "in_production",
+      "awaiting_balance",
+    ])
     const order = await loadOrder(req)
     const payments = await madeToOrder.listProductionPaymentRequests({
       production_order_id: productionOrder.id,
@@ -435,11 +443,14 @@ export const POST = async (
         ready_to_ship_at: now,
       })
     } else {
+      // Znovu se použije jen odkaz na STEJNOU částku — jinak by příplatek
+      // přidaný po první výzvě nechal zákazníka zaplatit starou, nižší sumu.
       const reusable = payments.find(
         (payment: any) =>
           payment.type === "balance" &&
           ["pending", "sent"].includes(payment.status) &&
-          payment.payment_url
+          payment.payment_url &&
+          Math.abs(toNumber(payment.amount) - outstanding) <= 0.01
       ) as any
 
       if (reusable) {
@@ -560,7 +571,12 @@ export const POST = async (
   }
 
   if (body.action === "remind_balance") {
-    requireStage(productionOrder.stage, ["awaiting_balance"])
+    requireStage(productionOrder.stage, [
+      "specification_pending",
+      "confirmed",
+      "in_production",
+      "awaiting_balance",
+    ])
     const payments = await madeToOrder.listProductionPaymentRequests({
       production_order_id: productionOrder.id,
     } as any)
@@ -578,15 +594,18 @@ export const POST = async (
       )
     }
 
-    // The same request, therefore the same e-mail dedupe key: a reminder is a
-    // re-send of one link, not a second demand for money. The subscriber's key
-    // is `paylink:{request}`, so the notification module recognises this and
-    // does not deliver twice — which is the behaviour the confirm dialog
-    // promises her.
+    // A reminder re-sends the SAME payment link, but as a genuinely new e-mail:
+    // the per-click `reminder_token` makes the subscriber's dedupe key unique,
+    // so the customer is actually reminded. A redelivery of this same event
+    // carries the same token and is still deduped.
     const eventBus2 = req.scope.resolve<IEventBusModuleService>(Modules.EVENT_BUS)
     await eventBus2.emit({
       name: "made-to-order.balance-requested",
-      data: { order_id: req.params.orderId, payment_request_id: open.id },
+      data: {
+        order_id: req.params.orderId,
+        payment_request_id: open.id,
+        reminder_token: now.toISOString(),
+      },
     })
 
     productionOrder = await madeToOrder.updateProductionPaymentRequests({

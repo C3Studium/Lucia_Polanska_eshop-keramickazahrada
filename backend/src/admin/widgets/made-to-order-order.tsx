@@ -68,6 +68,7 @@ type ProductionAction =
   | "start_production"
   | "complete_production"
   | "request_balance"
+  | "remind_balance"
   | "cancel";
 
 const queryClient = adminQueryClient;
@@ -94,7 +95,8 @@ const actionForStage: Partial<
   },
   confirmed: { action: "start_production", label: "Začít výrobu" },
   in_production: { action: "complete_production", label: "Výroba dokončena" },
-  awaiting_balance: { action: "request_balance", label: "Požádat o doplatek" },
+  // Doplatek NEřeší „další krok" podle fáze — má vlastní tlačítko, které se
+  // ukáže vždy, když něco zbývá doplatit (viz balanceAction níž).
 };
 
 const toNum = (value: unknown): number => {
@@ -132,12 +134,18 @@ const MadeToOrderOrderWidgetInner = ({
         method: "POST",
         body: payload,
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({
         queryKey: ["made-to-order-order", order.id],
       });
       setEditingSurcharge(false);
-      toast.success("Zakázka byla aktualizována");
+      const message =
+        variables.action === "request_balance"
+          ? "Výzva k doplacení odeslána zákazníkovi e-mailem"
+          : variables.action === "remind_balance"
+            ? "Připomínka doplatku odeslána e-mailem"
+            : "Zakázka byla aktualizována";
+      toast.success(message);
     },
     onError: (error) =>
       toast.error(
@@ -169,6 +177,21 @@ const MadeToOrderOrderWidgetInner = ({
   );
   const surcharge = toNum(productionOrder.surcharge);
   const currency = productionOrder.currency_code;
+
+  // Doplatek: tlačítko „Poslat výzvu k doplacení" se ukáže vždy, když něco
+  // zbývá doplatit a zakázka ještě běží. Když už výzva běží (pending/sent),
+  // nabídne se připomínka + odkaz, který zákazník dostal.
+  const outstanding = toNum(productionOrder.outstanding_amount);
+  const openBalance = payments.find(
+    (payment) =>
+      payment.type === "balance" &&
+      (payment.status === "pending" || payment.status === "sent")
+  );
+  const canRequestBalance =
+    outstanding > 0.005 &&
+    !["ready_to_ship", "completed", "cancelled"].includes(
+      productionOrder.stage
+    );
 
   return (
     <Container className="divide-y p-0">
@@ -249,6 +272,36 @@ const MadeToOrderOrderWidgetInner = ({
             >
               {nextAction.label}
             </Button>
+          )}
+
+          {/* Doplatek — pošle zákazníkovi e-mail s platebním odkazem. Vidět
+              vždy, když něco zbývá doplatit, ne jen ve fázi „čeká na doplatek". */}
+          {canRequestBalance && (
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <Button
+                variant={nextAction ? "secondary" : "primary"}
+                isLoading={runAction.isPending}
+                onClick={() =>
+                  runAction.mutate({
+                    action: openBalance ? "remind_balance" : "request_balance",
+                  })
+                }
+              >
+                {openBalance
+                  ? "Poslat připomínku doplatku"
+                  : "Poslat výzvu k doplacení"}
+              </Button>
+              {openBalance?.payment_url && (
+                <a
+                  href={openBalance.payment_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-ui-fg-muted text-xs underline"
+                >
+                  Platební odkaz zákazníka
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>
