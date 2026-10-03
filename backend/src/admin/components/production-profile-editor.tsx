@@ -263,11 +263,13 @@ export const ProductionProfileEditor = ({
               </div>
 
               <div>
-                <Label htmlFor="spec-prompt">Otázka pro zákazníka</Label>
+                <Label htmlFor="spec-prompt">
+                  Co má zákazník poslat (otázka pro zákazníka)
+                </Label>
                 <Textarea
                   id="spec-prompt"
-                  rows={2}
-                  placeholder="Např.: Popište barvu, velikost a k čemu má sloužit."
+                  rows={3}
+                  placeholder="Např.: Napište rozměry a barvu, přiložte fotku místa, kam socha přijde."
                   value={form.specification_prompt}
                   onChange={(event) =>
                     setForm({
@@ -276,6 +278,11 @@ export const ProductionProfileEditor = ({
                     })
                   }
                 />
+                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                  Ukáže se zákazníkovi u této zakázky v košíku i v pokladně jako
+                  výzva nad polem pro poznámku a fotky — napište, co od něj
+                  potřebujete (rozměry, barvu, fotky, popis).
+                </Text>
               </div>
             </>
           )}

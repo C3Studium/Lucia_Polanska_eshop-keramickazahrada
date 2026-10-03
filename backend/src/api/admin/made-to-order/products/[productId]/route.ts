@@ -4,18 +4,25 @@ import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
 /**
- * Zrcadlo „je to zakázka" do product.metadata.made_to_order.
+ * Zrcadlo „je to zakázka" + „co má zákazník poslat" do product.metadata.
  *
- * Zakázku jinak pozná jen join na `product_production_profile` — což admin
- * katalog (Produkty+) dělá, ale Rozdělení ani storefront ne, takže tam zakázka
- * „zmizí". Marker v metadatech pozná KAŽDÉ místo stejně (jako clearance), bez
- * speciálního joinu. Čte se z `+metadata`. Read-modify-write, protože nativní
- * update metadata NAHRAZUJE celý objekt.
+ * - `made_to_order` (bool): zakázku jinak pozná jen join na
+ *   `product_production_profile` — což admin katalog (Produkty+) dělá, ale
+ *   Rozdělení ani storefront ne, takže tam zakázka „zmizí". Marker v metadatech
+ *   pozná KAŽDÉ místo stejně (jako clearance), bez speciálního joinu.
+ * - `made_to_order_prompt` (text): „Otázka pro zákazníka" (specification_prompt)
+ *   z profilu. Storefront ji ukáže v poznámkovém bloku v Přehledu jako instrukci,
+ *   co poslat (rozměry, fotky, …). Zrcadlí se sem, aby ji řádek košíku nesl přes
+ *   `+items.product.metadata` bez dalšího dotazu na profil.
+ *
+ * Čte se z `+metadata`. Read-modify-write, protože nativní update metadata
+ * NAHRAZUJE celý objekt.
  */
 const mirrorMadeToOrderFlag = async (
   req: MedusaRequest,
   productId: string,
-  value: boolean
+  value: boolean,
+  prompt?: string | null
 ) => {
   const productModule = req.scope.resolve(Modules.PRODUCT)
   const [product] = await productModule.listProducts(
@@ -24,8 +31,15 @@ const mirrorMadeToOrderFlag = async (
   )
   if (!product) return
   const metadata = { ...(((product as any).metadata as Record<string, unknown>) ?? {}) }
-  if (value) metadata.made_to_order = true
-  else delete metadata.made_to_order
+  if (value) {
+    metadata.made_to_order = true
+    const trimmed = typeof prompt === "string" ? prompt.trim() : ""
+    if (trimmed) metadata.made_to_order_prompt = trimmed
+    else delete metadata.made_to_order_prompt
+  } else {
+    delete metadata.made_to_order
+    delete metadata.made_to_order_prompt
+  }
   await productModule.updateProducts(productId, { metadata } as never)
 }
 
@@ -165,7 +179,12 @@ export const PATCH = async (
     }
   }
 
-  await mirrorMadeToOrderFlag(req, productId, profilePayload.enabled)
+  await mirrorMadeToOrderFlag(
+    req,
+    productId,
+    profilePayload.enabled,
+    profilePayload.specification_prompt
+  )
 
   const result = await loadProfile(req)
   res.status(200).json({ product: { ...result, profile } })
