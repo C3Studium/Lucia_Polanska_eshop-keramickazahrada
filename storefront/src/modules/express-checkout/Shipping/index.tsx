@@ -97,6 +97,22 @@ export const Shipping = ({
       brief: readCommissionBrief(item),
     }))
 
+  /* U zakázky se nedá dál k platbě, dokud není brief vyplněný — aspoň text NEBO
+     fotka. Počáteční stav z už uloženého briefu; CommissionBrief po uložení hlásí
+     změnu. Pozor: klik na dopravu u hotové adresy jinak auto-přeskočí na platbu. */
+  const briefHasContent = (b: ReturnType<typeof readCommissionBrief>) =>
+    Boolean(b.specification || b.note || (b.photos?.length ?? 0))
+  const [commissionComplete, setCommissionComplete] = useState<
+    Record<string, boolean>
+  >(() =>
+    Object.fromEntries(
+      commissionLines.map((line) => [line.id, briefHasContent(line.brief)])
+    )
+  )
+  const allCommissionsComplete = commissionLines.every(
+    (line) => commissionComplete[line.id]
+  )
+
   /* What the cart already knows wins; a logged-in customer's saved address
      fills the rest — the account should never be asked to retype itself. */
   const [address, setAddress] = useState<AddressState>({
@@ -158,8 +174,9 @@ export const Shipping = ({
     () =>
       Object.values(address).every((value) => value.trim().length > 0) &&
       !!shippingMethodId &&
-      (!isPacketa || !!packetaPoint),
-    [address, shippingMethodId, isPacketa, packetaPoint]
+      (!isPacketa || !!packetaPoint) &&
+      allCommissionsComplete,
+    [address, shippingMethodId, isPacketa, packetaPoint, allCommissionsComplete]
   )
 
   const countryLabel =
@@ -244,7 +261,20 @@ export const Shipping = ({
     const needsPacketaPoint =
       methodId === packetaShippingMethodId && !packetaPoint
 
-    if (!methodId || !addressComplete || needsPacketaPoint || isSubmitting) {
+    if (
+      !methodId ||
+      !addressComplete ||
+      needsPacketaPoint ||
+      isSubmitting ||
+      // Zakázka bez vyplněného briefu (text/fotka) nesmí přeskočit na platbu —
+      // ani klikem na dopravu (ten jinak auto-pokračuje).
+      !allCommissionsComplete
+    ) {
+      if (!allCommissionsComplete) {
+        setError(
+          "U zakázky nejdřív prosím napište, co si představujete (text nebo fotka), a uložte to."
+        )
+      }
       return
     }
 
@@ -448,8 +478,22 @@ export const Shipping = ({
           onSubmitAction={async (input) =>
             saveCommissionBrief(line.id, input, cart.id)
           }
+          onCompletionChange={(complete) =>
+            setCommissionComplete((current) =>
+              current[line.id] === complete
+                ? current
+                : { ...current, [line.id]: complete }
+            )
+          }
         />
       ))}
+
+      {commissionLines.length > 0 && !allCommissionsComplete && (
+        <p className={styles.restrictionNote}>
+          U zakázky nejdřív prosím napište, co si představujete — text nebo
+          fotku — a uložte to tlačítkem „Uložit k zakázce".
+        </p>
+      )}
 
       <PremiumActionButton
         text={

@@ -44,6 +44,12 @@ type Props = {
     keepPhotos: string[]
     newPhotos: CommissionUpload[]
   }) => Promise<{ success: boolean; message?: string; photos?: string[]; notes?: CommissionNote[] }>
+  /**
+   * Volá se po ULOŽENÍ s tím, jestli brief má obsah (text NEBO fotka). Checkout
+   * i express podle toho pouští/blokují krok k platbě — u zakázky musí být
+   * vyplněná aspoň jedna věc. Rodič si počáteční stav seeduje sám z uloženého briefu.
+   */
+  onCompletionChange?: (complete: boolean) => void
 }
 
 const readAsBase64 = (file: File) =>
@@ -74,6 +80,7 @@ export default function CommissionBrief({
   notes = [],
   variant,
   onSubmitAction,
+  onCompletionChange,
 }: Props) {
   const [text, setText] = useState(note)
   const [kept, setKept] = useState(photos)
@@ -155,6 +162,13 @@ export default function CommissionBrief({
       }
       setDrafts([])
       setStatus({ kind: "saved" })
+
+      // Krok k platbě se odemyká podle ULOŽENÉHO briefu: text nebo aspoň jedna
+      // fotka. (Order varianta je deník, žádnou bránu neřídí.)
+      if (variant === "checkout") {
+        const savedPhotos = result.photos ?? kept
+        onCompletionChange?.(Boolean(text.trim()) || savedPhotos.length > 0)
+      }
     })
   }
 

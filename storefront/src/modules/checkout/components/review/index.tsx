@@ -34,6 +34,11 @@ import styles from "./style.module.scss"
 
 import { TERMS_VERSION } from "@lib/constants"
 
+const COMMISSION_GATE_HINT =
+  "U zakázky nejdřív prosím napište, co si představujete — text nebo fotku — a uložte to."
+const CONSENT_GATE_HINT =
+  "Než budete pokračovat, potvrďte prosím souhlas s podmínkami."
+
 const Review = ({
   cart,
   countryCode,
@@ -67,6 +72,22 @@ const Review = ({
       brief: readCommissionBrief(item),
     }))
 
+  /* U zakázky se nedá k platbě, dokud není brief vyplněný — aspoň text NEBO
+     fotka. Počáteční stav z už uloženého briefu; CommissionBrief po uložení
+     nahlásí změnu. (Jen zakázky; běžný košík pole `commissionLines` nemá.) */
+  const briefHasContent = (b: ReturnType<typeof readCommissionBrief>) =>
+    Boolean(b.specification || b.note || (b.photos?.length ?? 0))
+  const [commissionComplete, setCommissionComplete] = useState<
+    Record<string, boolean>
+  >(() =>
+    Object.fromEntries(
+      commissionLines.map((line) => [line.id, briefHasContent(line.brief)])
+    )
+  )
+  const allCommissionsComplete = commissionLines.every(
+    (line) => commissionComplete[line.id]
+  )
+
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
@@ -96,7 +117,7 @@ const Review = ({
   }
 
   const payWithComgate = async () => {
-    if (isPaying || !accepted || !comgateMethod) {
+    if (isPaying || !accepted || !comgateMethod || !allCommissionsComplete) {
       return
     }
 
@@ -180,6 +201,13 @@ const Review = ({
                   onSubmitAction={async (input) =>
                     saveCommissionBrief(line.id, input)
                   }
+                  onCompletionChange={(complete) =>
+                    setCommissionComplete((current) =>
+                      current[line.id] === complete
+                        ? current
+                        : { ...current, [line.id]: complete }
+                    )
+                  }
                 />
               </motion.div>
             ))}
@@ -254,18 +282,18 @@ const Review = ({
                     type="button"
                     className={styles.payButton}
                     onClick={payWithComgate}
-                    disabled={!accepted || isPaying}
+                    disabled={!accepted || !allCommissionsComplete || isPaying}
                     data-testid="submit-order-button"
                   >
                     {isPaying ? "Přesměrováváme k platbě…" : payLabel}
                   </button>
-                  {!accepted && (
-                    <p className={styles.gateHint}>
-                      Než budete pokračovat, potvrďte prosím souhlas s podmínkami.
-                    </p>
-                  )}
+                  {!allCommissionsComplete ? (
+                    <p className={styles.gateHint}>{COMMISSION_GATE_HINT}</p>
+                  ) : !accepted ? (
+                    <p className={styles.gateHint}>{CONSENT_GATE_HINT}</p>
+                  ) : null}
                 </>
-              ) : accepted ? (
+              ) : accepted && allCommissionsComplete ? (
                 <PaymentButton
                   cart={cart}
                   data-testid="submit-order-button"
@@ -277,7 +305,9 @@ const Review = ({
                 />
               ) : (
                 <p className={styles.gateHint}>
-                  Než budete pokračovat, potvrďte prosím souhlas s podmínkami.
+                  {!allCommissionsComplete
+                    ? COMMISSION_GATE_HINT
+                    : CONSENT_GATE_HINT}
                 </p>
               )}
             </motion.div>
