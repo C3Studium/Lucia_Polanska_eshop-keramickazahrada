@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache"
 
 import { sdk } from "@lib/config"
 import { getAuthHeaders, getCacheTag, getCartId } from "./cookies"
+import { retrieveCart } from "./cart"
 import {
   addCommissionNote,
   listCommissionNotes,
@@ -59,11 +60,28 @@ export async function saveCommissionBrief(
 
     const headers = { ...(await getAuthHeaders()) }
 
+    /*
+     * Medusa u update položky vyžaduje `quantity` — jen `{ metadata }` padá na
+     * 400. Vezmeme aktuální množství řádku, ať ho tímhle uložením nezměníme.
+     */
+    const cart = await retrieveCart(cartId)
+    const line = ((cart?.items ?? []) as any[]).find(
+      (item) => item.id === lineId
+    )
+    const quantity = Number(line?.quantity) > 0 ? Number(line.quantity) : 1
+
     await sdk.store.cart.updateLineItem(
       cartId,
       lineId,
       {
-        metadata: madeToOrderMetadata(input.note, { photos }).made_to_order,
+        quantity,
+        /*
+         * Celý objekt `{ made_to_order: {...} }`, ne jen jeho vnitřek: backend
+         * (detail objednávky, order-edit guard, merchant fronta) i storefront
+         * (`readCommissionBrief`) čtou `metadata.made_to_order`. Uložení plochých
+         * klíčů by brief nikde nezobrazilo.
+         */
+        metadata: madeToOrderMetadata(input.note, { photos }),
       } as never,
       {},
       headers
