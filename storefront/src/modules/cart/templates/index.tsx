@@ -6,10 +6,11 @@ import SignInPrompt from "../components/sign-in-prompt"
 import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
-import { getProductionPaymentMode } from "@lib/data/made-to-order"
-import CartCommissionBlock from "@modules/cart/components/commission-block"
-
 import s from "./index.module.scss"
+
+/* Zakázkový blok (volba zálohy „Kolik chcete zaplatit hned?" i brief s fotkami)
+   do KOŠÍKU NEPATŘÍ — majitelčino přání. Sbírá se až v pokladně (Přehled) a v
+   express v kroku doručení. Košík zůstává jen o položkách a souhrnu. */
 
 const CartTemplate = async ({
   cart,
@@ -19,14 +20,6 @@ const CartTemplate = async ({
   customer: HttpTypes.StoreCustomer | null
 }) => {
   const itemCount = cart?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
-
-  /* Asked here as well as at checkout: a commission's deposit is the thing most likely to
-     surprise someone at the till, and the basket is where they are still deciding. The choice
-     lives on the cart, so whatever is set here is what checkout opens on. (Brief — popis a
-     fotky — do košíku NEpatří; sbírá se až v pokladně, viz CartCommissionBlock.) */
-  const productionMode = cart?.id
-    ? await getProductionPaymentMode(cart.id)
-    : null
 
   return (
     <>
@@ -53,12 +46,6 @@ const CartTemplate = async ({
                 </>
               )}
               <ItemsTemplate cart={cart} />
-              {productionMode?.has_made_to_order && (
-                <CartCommissionBlock
-                  cartId={cart.id}
-                  productionMode={productionMode}
-                />
-              )}
               </div>
               <div className={s.right}>
                 <div className={s.sticky}>
