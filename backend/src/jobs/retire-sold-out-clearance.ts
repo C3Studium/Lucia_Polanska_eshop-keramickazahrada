@@ -51,10 +51,17 @@ export default async function retireSoldOutClearance(
     return
   }
 
+  // Draft (zmizí z webu) A ZÁROVEŇ archiv (metadata.archived) — aby vyprodaný
+  // kus spadl do záložky Archivované i s cenou, odkud se dá obnovit, kdyby se
+  // poškodil další stejný. Po produktech, ať se každému metadata jen doplní,
+  // ne přepíšou. (archived čte workbench/products i ArchiveToggle.)
   await updateProductsWorkflow(container).run({
     input: {
-      selector: { id: retired.map((product) => product.id) },
-      update: { status: "draft" },
+      products: retired.map((product) => ({
+        id: product.id,
+        status: "draft" as const,
+        metadata: { ...(product.metadata ?? {}), archived: true },
+      })),
     },
   })
 

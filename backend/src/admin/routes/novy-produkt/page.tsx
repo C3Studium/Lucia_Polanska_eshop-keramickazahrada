@@ -6,6 +6,7 @@ import {
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateBundledProduct from "../../components/create-bundled-product";
+import CreateDamagedProduct from "../../components/create-damaged-product";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 
@@ -222,7 +223,7 @@ const NovyProduktInner = () => {
         })}
       </div>
 
-      {selectedCard && selectedCard.id !== "balicek" && (
+      {(selectedCard?.id === "produkt" || selectedCard?.id === "zakazka") && (
         <div className="flex flex-wrap items-end gap-3 px-6 py-5">
           <div className="min-w-64 flex-1">
             <Label htmlFor="new-product-name">Název</Label>
@@ -251,6 +252,22 @@ const NovyProduktInner = () => {
           <Text size="xsmall" className="text-ui-fg-subtle w-full">
             Fotky, cenu a případné varianty doplníte hned potom v editoru
             produktu.
+          </Text>
+        </div>
+      )}
+
+      {selectedCard?.id === "poskozeny" && (
+        <div className="px-6 py-5">
+          <CreateDamagedProduct
+            onCreated={(productId) => {
+              if (productId) {
+                navigate(`/produkt/${productId}`);
+              }
+            }}
+          />
+          <Text size="xsmall" className="text-ui-fg-subtle mt-3">
+            Vyberte původní produkt — fotky, popis, materiál a rozměry se
+            zkopírují. Dodáte jen akční cenu, fotky vady a popis poškození.
           </Text>
         </div>
       )}

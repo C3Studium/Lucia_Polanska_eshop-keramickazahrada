@@ -17,6 +17,7 @@ import { GetAdminReviewsSchema } from "./admin/reviews/route";
 import { PostAdminUpdateReviewsStatusSchema } from "./admin/reviews/status/route";
 import { PostAddCustomLineItemSchema } from "./store/carts/[id]/line-items-custom/route";
 import { PostBundledProductsSchema } from "./admin/bundled-products/route";
+import { PostDamagedProductSchema } from "./admin/damaged-products/route";
 import { PatchBundledProductsSchema } from "./admin/bundled-products/[id]/route";
 import { PostCartsBundledLineItemsSchema } from "./store/carts/[id]/line-item-bundles/route";
 import {
@@ -113,6 +114,15 @@ export default defineMiddlewares({
       matcher: "/admin/bundled-products",
       methods: ["GET"],
       middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    {
+      // Poškozený kus z existujícího produktu — viz admin/damaged-products/route.ts.
+      matcher: "/admin/damaged-products",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("user", ["bearer", "session"]),
+        validateAndTransformBody(PostDamagedProductSchema),
+      ],
     },
     {
       matcher: "/admin/bundled-products/:id",

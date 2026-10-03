@@ -624,6 +624,30 @@
   line-height: 1.45;
 }
 
+/* Poškozený kus — popis vady. Vlastní rámeček, aby bylo jasné, že nejde
+   o běžný popis, ale o stav tohohle konkrétního kusu. */
+.product__clearanceNote {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(var(--cream-06-rgb) / .18);
+  border-radius: 0.5rem;
+  background: rgb(var(--cream-06-rgb) / .04);
+
+  p {
+    margin: 0.35rem 0 0;
+    color: rgb(var(--cream-06-rgb) / .72);
+    font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+    line-height: 1.45;
+  }
+}
+
+.product__clearanceNoteLabel {
+  font-size: clamp(0.6875rem, 0.9vw, 0.78rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--cream-06-rgb) / .5);
+}
+
 .product__buyBlock {
   margin-top: auto;
   padding-top: clamp(2.375rem, 6vh, 4rem);

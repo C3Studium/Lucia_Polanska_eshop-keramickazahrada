@@ -119,6 +119,18 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const variantNote =
     typeof variantMeta?.note === "string" ? variantMeta.note.trim() : ""
 
+  /* Poškozený kus: popis poškození se drží na produktu (metadata), zakládá ho
+     flow „Výprodej / poškozený kus". Ukazuje se zákazníkovi, aby věděl, co
+     kupuje — jeden konkrétní kus s touhle vadou. */
+  const productMeta = (product.metadata ?? null) as Record<
+    string,
+    unknown
+  > | null
+  const clearanceDamage =
+    typeof productMeta?.clearance_damage === "string"
+      ? productMeta.clearance_damage.trim()
+      : ""
+
   const availability = useMemo(
     () => variantAvailability(selectedVariant),
     [selectedVariant]
@@ -363,6 +375,14 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                   )}
 
                   <div className="product__buyBlock">
+                    {clearanceDamage && (
+                      <div className="product__clearanceNote">
+                        <span className="product__clearanceNoteLabel">
+                          Poškození
+                        </span>
+                        <p>{clearanceDamage}</p>
+                      </div>
+                    )}
                     {isMadeToOrder && productionProfile && (
                       <MadeToOrderPanel
                         profile={productionProfile}
