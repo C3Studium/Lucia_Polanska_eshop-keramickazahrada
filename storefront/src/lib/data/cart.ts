@@ -242,8 +242,10 @@ export async function deleteLineItem(lineId: string) {
 
   const cartId = await getCartId()
 
+  // Bez košíku není co mazat (cookie vypršela, objednávka se dokončila a košík
+  // se smazal, …). Tiše skonči — házet 500 na akci z lišty/dropdownu je k ničemu.
   if (!cartId) {
-    throw new Error("Missing cart ID when deleting line item")
+    return
   }
 
   const headers = {
