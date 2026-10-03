@@ -218,7 +218,9 @@ const OrderEmailsWidget = ({ data }: DetailWidgetProps<AdminOrder>) => (
 );
 
 export const config = defineWidgetConfig({
-  zone: "order.details.after",
+  // Odeslané e-maily patří k „Aktivitě" → do pravého baru, ne na konec hlavního
+  // sloupce. (Majitelčino přání — přehlednější workflow.)
+  zone: "order.details.side.after",
   id: "keramicka-zahrada:order-emails",
 });
 

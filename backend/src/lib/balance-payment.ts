@@ -58,9 +58,10 @@ export const outstandingFor = (
   const paid = requests
     .filter((request) => request?.status === "paid")
     .reduce((sum, request) => sum + toNumber(request.amount), 0)
-  const total = toNumber(
-    productionOrder.agreed_total ?? productionOrder.original_total
-  )
+  // Příplatek navyšuje, co zákazník dluží — doplatek ho tedy zahrnuje.
+  const total =
+    toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+    toNumber(productionOrder.surcharge)
   return roundMoney(Math.max(0, total - paid))
 }
 

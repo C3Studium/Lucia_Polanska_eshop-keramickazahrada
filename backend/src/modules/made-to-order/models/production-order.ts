@@ -18,6 +18,10 @@ export const ProductionOrder = model.define("production_order", {
     .default("specification_pending"),
   deposit_percentage: model.number(),
   agreed_total: model.bigNumber().nullable(),
+  // Příplatek — vlastní částka navíc nad domluvenou/původní cenu (např. víc práce,
+  // než se čekalo). Vlastní „entita" vedle ceny: cenu nemění, jen navyšuje, co
+  // zákazník dluží (outstanding = (agreed_total ?? original_total) + surcharge − paid).
+  surcharge: model.bigNumber().nullable(),
   original_total: model.bigNumber(),
   currency_code: model.text(),
   estimated_completion_at: model.dateTime().nullable(),

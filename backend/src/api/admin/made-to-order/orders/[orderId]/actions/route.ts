@@ -22,6 +22,8 @@ import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/tra
 
 type ProductionAction =
   | "confirm_specification"
+  | "adjust_surcharge"
+  | "set_internal_note"
   | "start_production"
   | "complete_production"
   | "request_balance"
@@ -32,6 +34,8 @@ type ProductionAction =
 type ActionBody = {
   action: ProductionAction
   agreed_total?: number
+  /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
+  surcharge?: number
   internal_note?: string | null
   estimated_completion_at?: string | null
   /** announce_delay: shown to the customer in the delay e-mail. */
@@ -221,6 +225,8 @@ export const POST = async (
   const body = req.body || ({} as ActionBody)
   const actions: ProductionAction[] = [
     "confirm_specification",
+    "adjust_surcharge",
+    "set_internal_note",
     "start_production",
     "complete_production",
     "request_balance",
@@ -253,37 +259,10 @@ export const POST = async (
   const now = new Date()
   if (body.action === "confirm_specification") {
     requireStage(productionOrder.stage, ["specification_pending"])
-    const requestedTotal = Number(body.agreed_total)
-    if (!Number.isFinite(requestedTotal) || requestedTotal <= 0) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Domluvená celková cena musí být vyšší než nula."
-      )
-    }
 
-    // P6-2. The deposit is already in the bank; agreeing a price below it would
-    // leave the shop owing money the moment the specification is confirmed,
-    // which is a refund conversation and not something to stumble into by
-    // typing a number. The card warns about this too, but the check has to live
-    // here — the card is not the only way to reach this route.
-    const paidSoFar = (
-      await madeToOrder.listProductionPaymentRequests({
-        production_order_id: productionOrder.id,
-      } as any)
-    )
-      .filter((payment: any) => payment.status === "paid")
-      .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
-
-    if (requestedTotal < paidSoFar - 0.005) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        `Cena nemůže být nižší než už zaplacená záloha (${roundMoney(paidSoFar)}). ` +
-          `Přeplatek vraťte v detailu objednávky.`
-      )
-    }
-
-    // Dates: a deadline in the past is always a typo, and it would immediately
-    // show the commission as overdue on Přehled.
+    // Cena se tu NEEDITUJE (majitelčino přání) — potvrdí se za domluvenou =
+    // původní. Navýšení ceny řeší vlastní akce `adjust_surcharge` (příplatek).
+    // Volitelně se uloží termín dokončení a interní poznámka.
     if (body.estimated_completion_at) {
       const deadline = new Date(body.estimated_completion_at)
       if (Number.isNaN(deadline.getTime())) {
@@ -301,29 +280,52 @@ export const POST = async (
         )
       }
     }
-    const order = await loadOrder(req)
-    const finalTotal = await adjustNativeOrderTotal(req, order, requestedTotal)
     productionOrder = await madeToOrder.updateProductionOrders({
       id: productionOrder.id,
       stage: "confirmed",
-      agreed_total: finalTotal,
+      agreed_total: toNumber(
+        productionOrder.agreed_total ?? productionOrder.original_total
+      ),
       final_total_confirmed_at: now,
       specification_confirmed_at: now,
       estimated_completion_at: body.estimated_completion_at
         ? new Date(body.estimated_completion_at)
         : productionOrder.estimated_completion_at,
-      internal_note: body.internal_note?.trim() || productionOrder.internal_note,
+      ...(body.internal_note !== undefined
+        ? { internal_note: body.internal_note?.trim() || null }
+        : {}),
     })
     await setMerchantStage(req, req.params.orderId, "working")
-    // §16 #6 — the customer agreed a price and a piece is now being made for
-    // them. Emitted rather than sent inline so a mail problem cannot fail the
-    // Order Edit chain that just adjusted the money.
     await eventBus.emit({
       name: "made-to-order.specification-confirmed",
       data: {
         order_id: req.params.orderId,
         production_order_id: productionOrder.id,
       },
+    })
+  }
+
+  // Příplatek — vlastní částka navíc nad cenu. Jde nastavit v kterémkoli
+  // aktivním stavu (víc práce se ukáže kdykoli), navýší doplatek (outstanding).
+  if (body.action === "adjust_surcharge") {
+    const surcharge = roundMoney(Number(body.surcharge))
+    if (!Number.isFinite(surcharge) || surcharge < 0) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Příplatek musí být nula nebo kladná částka."
+      )
+    }
+    productionOrder = await madeToOrder.updateProductionOrders({
+      id: productionOrder.id,
+      surcharge,
+    })
+  }
+
+  // Interní poznámka — uloží se samostatně (v pravém baru u zákazníka).
+  if (body.action === "set_internal_note") {
+    productionOrder = await madeToOrder.updateProductionOrders({
+      id: productionOrder.id,
+      internal_note: body.internal_note?.trim() || null,
     })
   }
 
@@ -345,9 +347,9 @@ export const POST = async (
     const paid = payments
       .filter((payment: any) => payment.status === "paid")
       .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
-    const total = toNumber(
-      productionOrder.agreed_total ?? productionOrder.original_total
-    )
+    const total =
+      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+      toNumber(productionOrder.surcharge)
     const fullyPaid = paid >= total - 0.005
     productionOrder = await madeToOrder.updateProductionOrders({
       id: productionOrder.id,
@@ -421,9 +423,9 @@ export const POST = async (
     const paid = payments
       .filter((payment: any) => payment.status === "paid")
       .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
-    const total = toNumber(
-      productionOrder.agreed_total ?? productionOrder.original_total
-    )
+    const total =
+      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+      toNumber(productionOrder.surcharge)
     const outstanding = roundMoney(Math.max(0, total - paid))
 
     if (outstanding <= 0.005) {
