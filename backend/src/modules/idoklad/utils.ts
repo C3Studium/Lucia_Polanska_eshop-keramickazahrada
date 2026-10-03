@@ -368,6 +368,13 @@ export const buildContactPayload = (
 export const vatRateTypeFor = (vatPayer: boolean): number =>
   vatPayer ? VAT_RATE_TYPE_BASIC : VAT_RATE_TYPE_ZERO
 
+/** Jedna faktura = jeden řádek na danou částku (záloha/doplatek u zakázky). */
+export const singleInvoiceLine = (
+  name: string,
+  amount: number,
+  vatPayer: boolean
+): IdokladInvoiceItemPayload => invoiceLine(name, 1, amount, vatPayer)
+
 const invoiceLine = (
   name: string,
   amount: number,
@@ -469,6 +476,10 @@ type InvoicePayloadInput = {
   currencyId?: number
   /** Balné share of the shipping price — splits Poštovné/Balné when known. */
   packagingCzk?: number | null
+  /** Vlastní položky (záloha/doplatek u zakázky) místo rozpadu objednávky. */
+  items?: IdokladInvoiceItemPayload[]
+  /** Vlastní popis dokladu (jinak „Objednávka #X"). */
+  description?: string
 }
 
 export const buildInvoicePayload = (
@@ -483,14 +494,17 @@ export const buildInvoicePayload = (
     DateOfIssue: today,
     DateOfTaxing: today,
     DateOfMaturity: defaults.DateOfMaturity || today,
-    Description: `Objednávka #${order.display_id ?? order.id}`,
+    Description:
+      input.description || `Objednávka #${order.display_id ?? order.id}`,
     DocumentSerialNumber: defaults.DocumentSerialNumber,
     // EET has been abolished; the flag stays required by the API.
     IsEet: false,
     IsIncomeTax: defaults.IsIncomeTax ?? true,
-    Items: buildInvoiceItems(order, input.vatPayer, {
-      packagingCzk: input.packagingCzk,
-    }),
+    Items:
+      input.items ??
+      buildInvoiceItems(order, input.vatPayer, {
+        packagingCzk: input.packagingCzk,
+      }),
     NumericSequenceId: input.numericSequenceId ?? defaults.NumericSequenceId,
     OrderNumber: truncate(order.display_id ?? "", 25) || undefined,
     PartnerId: input.partnerId,

@@ -9,6 +9,7 @@ import {
   sendCustomerEmail,
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
+import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 
@@ -213,6 +214,10 @@ const onBalancePaid = async ({
       paymentMethod: "Doplatek",
     },
   })
+
+  // Doplatková faktura (povinná jako záloha) — teď je doplatek zaplacený.
+  // Idempotentní; chyba fakturace nesmí shodit potvrzovací e-mail.
+  await ensureMadeToOrderInvoices(container, data.order_id).catch(() => undefined)
 }
 
 const isPickupOrder = (order: any): boolean =>

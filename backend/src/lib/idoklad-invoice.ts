@@ -4,6 +4,7 @@ import { getOrderDetailWorkflow } from "@medusajs/medusa/core-flows"
 import { IDOKLAD_MODULE } from "../modules/idoklad"
 import type IdokladModuleService from "../modules/idoklad/service"
 import {
+  IDOKLAD_BALANCE_METADATA_KEYS,
   IDOKLAD_METADATA_KEYS,
   type IdokladInvoiceState,
 } from "../modules/idoklad/types"
@@ -12,7 +13,10 @@ import {
   buildInvoicePayload,
   pickPaymentOptionId,
   pragueDate,
+  singleInvoiceLine,
 } from "../modules/idoklad/utils"
+import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
+import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import {
   customerName,
   formatMoney,
@@ -314,6 +318,9 @@ const sendInvoiceEmail = async (
       invoiceNumber: state.invoice_number ?? "",
       invoicePdfUrl: state.pdf_url ?? "",
       totalAmount: formatMoney(order.total, order.currency_code),
+      // Celý rozpis objednávky do faktury — stejný obsah jako potvrzení.
+      order,
+      invoiceKind: "full",
     },
   }).catch((error) => {
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -490,6 +497,237 @@ export const ensureInvoiceForOrder = async (
       await reportFailure(container, order, "issue", message)
       return { status: "failed", reason: message }
     }
+  })
+}
+
+/**
+ * Faktury u ZAKÁZKY — záloha a doplatek zvlášť.
+ *
+ * Zakázka se platí na dvakrát (záloha hned, doplatek po dokončení) a na obě
+ * platby je faktura POVINNÁ. Proto tu nejede jedna faktura na celek jako u
+ * běžné objednávky, ale dvě jednořádkové: „Záloha k zakázce" (na zaplacenou
+ * zálohu) a „Doplatek zakázky" (na zaplacený doplatek). Každá se vystaví, jakmile
+ * je ta platba zaplacená, hned se v iDokladu označí jako uhrazená a pošle se
+ * zákazníkovi. Idempotentní přes metadata (záloha = idoklad_invoice_*, doplatek
+ * = idoklad_balance_invoice_*). Neplátce DPH → jeden řádek bez DPH.
+ */
+export const ensureMadeToOrderInvoices = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<IdokladActionResult> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  if (await jeZkusebniRezim(container)) {
+    return { status: "skipped", reason: "Zkušební režim — faktura se nevystavuje." }
+  }
+  const idoklad = resolveIdokladService(container)
+  if (!idoklad) {
+    return { status: "skipped", reason: "iDoklad není nakonfigurován." }
+  }
+
+  return withOrderLock(orderId, async () => {
+    const order = await loadInvoiceOrder(container, orderId)
+    if (!order) {
+      return { status: "skipped", reason: "Objednávka nebyla nalezena." }
+    }
+
+    const mto = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
+    const [productionOrder] = await mto.listProductionOrders({
+      order_id: orderId,
+    } as never)
+    if (!productionOrder) {
+      return { status: "skipped", reason: "Objednávka není zakázka." }
+    }
+    const requests = (await mto.listProductionPaymentRequests({
+      production_order_id: productionOrder.id,
+    } as never)) as any[]
+
+    const round2 = (value: number) => Math.round(value * 100) / 100
+    const paidDeposit = requests.find(
+      (r) => r.type === "deposit" && r.status === "paid"
+    )
+    const paidBalance = requests.find(
+      (r) => r.type === "balance" && r.status === "paid"
+    )
+
+    // Kontakt + výchozí agendu připravíme nejvýš jednou, a jen když opravdu
+    // nějakou fakturu vystavujeme.
+    let partnerId: number | null = null
+    let defaults: any = null
+    let paymentOptionId: number | undefined
+    let currencyId: number | undefined
+    const prepareBits = async () => {
+      if (partnerId !== null) return
+      const email = String(order.email ?? "").trim()
+      let contact = email ? await idoklad.findContactByEmail(email) : null
+      if (!contact) {
+        const countryCode = (order.billing_address?.country_code ??
+          order.shipping_address?.country_code ??
+          "cz") as string
+        const countryId = await idoklad
+          .findCountryIdByCode(countryCode)
+          .catch(() => undefined)
+        contact = await idoklad.createContact(
+          buildContactPayload(order, countryId)
+        )
+      }
+      partnerId = contact.Id
+      defaults = await idoklad.getInvoiceDefault()
+      const paymentOptions = await idoklad.listPaymentOptions().catch(() => [])
+      paymentOptionId = pickPaymentOptionId(paymentOptions, {
+        cod: false,
+        defaultId: defaults.PaymentOptionId,
+      })
+      const currencyCode = String(order.currency_code ?? "czk").toUpperCase()
+      currencyId =
+        currencyCode === "CZK"
+          ? undefined
+          : await idoklad
+              .findCurrencyIdByCode(currencyCode)
+              .catch(() => undefined)
+    }
+
+    const issuePhase = async (
+      keys: {
+        invoiceId: string
+        invoiceNumber: string
+        pdfUrl: string
+        issuedAt: string
+        paidAt: string
+        error: string
+      },
+      amount: number,
+      label: string,
+      kind: "deposit" | "balance",
+      balanceRemaining?: number
+    ): Promise<boolean> => {
+      const already = Number(
+        (order.metadata as Record<string, unknown> | undefined)?.[keys.invoiceId]
+      )
+      if (Number.isFinite(already) && already > 0) return false
+      const rounded = round2(amount)
+      if (rounded <= 0) return false
+
+      try {
+        await prepareBits()
+        const invoice = await idoklad.createInvoice(
+          buildInvoicePayload({
+            order,
+            defaults,
+            partnerId: partnerId!,
+            vatPayer: idoklad.vatPayer,
+            paymentOptionId,
+            numericSequenceId: idoklad.numericSequenceId,
+            currencyId,
+            items: [singleInvoiceLine(label, rounded, idoklad.vatPayer)],
+            description: `${label} — obj. #${order.display_id ?? order.id}`,
+          })
+        )
+        const issuedAt = new Date().toISOString()
+        const stamp: Record<string, unknown> = {
+          [keys.invoiceId]: invoice.Id,
+          [keys.invoiceNumber]: invoice.DocumentNumber ?? "",
+          [keys.issuedAt]: issuedAt,
+          [keys.error]: null,
+        }
+        await patchOrderMetadata(container, order, stamp)
+        order.metadata = {
+          ...((order.metadata ?? {}) as Record<string, unknown>),
+          ...stamp,
+        }
+        logger.info(
+          `[idoklad] ${label} ${invoice.DocumentNumber} (${invoice.Id}) k zakázce #${order.display_id}.`
+        )
+
+        const pdfUrl = await storeInvoicePdf(
+          container,
+          idoklad,
+          invoice.Id,
+          invoice.DocumentNumber ?? String(invoice.Id)
+        )
+        if (pdfUrl) {
+          await patchOrderMetadata(container, order, { [keys.pdfUrl]: pdfUrl })
+          ;(order.metadata as Record<string, unknown>)[keys.pdfUrl] = pdfUrl
+        }
+
+        // Ta platba je zaplacená → faktura rovnou jako uhrazená.
+        try {
+          await idoklad.fullyPayInvoice(invoice.Id, pragueDate())
+          const paidStamp = new Date().toISOString()
+          await patchOrderMetadata(container, order, {
+            [keys.paidAt]: paidStamp,
+          })
+          ;(order.metadata as Record<string, unknown>)[keys.paidAt] = paidStamp
+        } catch (error) {
+          logger.warn(
+            `[idoklad] Úhradu faktury ${invoice.DocumentNumber} se nepodařilo zapsat: ${describeError(
+              error
+            )}`
+          )
+        }
+
+        await sendCustomerEmail(container, {
+          template: "invoice-issued",
+          to: order.email,
+          key: `invoice:${invoice.Id}`,
+          orderId: order.id,
+          data: {
+            customerName: customerName(order),
+            orderNumber: orderNumber(order),
+            orderLink: orderLink(order),
+            invoiceNumber: invoice.DocumentNumber ?? "",
+            invoicePdfUrl: pdfUrl ?? "",
+            totalAmount: formatMoney(rounded, order.currency_code),
+            // Celý rozpis zakázky + (u zálohy) kolik ještě zbývá doplatit.
+            order,
+            invoiceKind: kind,
+            balanceRemaining:
+              kind === "deposit" &&
+              typeof balanceRemaining === "number" &&
+              balanceRemaining > 0
+                ? formatMoney(balanceRemaining, order.currency_code)
+                : undefined,
+          },
+        }).catch((error) =>
+          logger.warn(
+            `[idoklad] E-mail s fakturou ${invoice.DocumentNumber} se nepodařilo odeslat: ${describeError(
+              error
+            )}`
+          )
+        )
+        return true
+      } catch (error) {
+        const message = describeError(error)
+        await reportFailure(container, order, "issue", message)
+        return false
+      }
+    }
+
+    let created = false
+    if (paidDeposit) {
+      // Co po zaplacené záloze zbývá doplatit — z celku objednávky mínus záloha
+      // (surcharge/doplatek upřesní její vlastní faktura později).
+      const remaining = round2(
+        toAmount(order.total) - toAmount(paidDeposit.amount)
+      )
+      created =
+        (await issuePhase(
+          IDOKLAD_METADATA_KEYS,
+          toAmount(paidDeposit.amount),
+          `Záloha k zakázce č. ${order.display_id ?? order.id}`,
+          "deposit",
+          remaining
+        )) || created
+    }
+    if (paidBalance) {
+      created =
+        (await issuePhase(
+          IDOKLAD_BALANCE_METADATA_KEYS,
+          toAmount(paidBalance.amount),
+          `Doplatek zakázky č. ${order.display_id ?? order.id}`,
+          "balance"
+        )) || created
+    }
+    return { status: created ? "created" : "exists" }
   })
 }
 

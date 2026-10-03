@@ -11,6 +11,7 @@ import {
 import MadeToOrderModuleService from "../modules/made-to-order/service"
 import { MERCHANT_ORDER_MODULE } from "../modules/merchant-order"
 import MerchantOrderModuleService from "../modules/merchant-order/service"
+import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -198,6 +199,17 @@ export default async function initializeMerchantOrder({
     last_checked_at: new Date(),
     production_order_id: productionOrder.id,
   } as any)
+
+  /*
+   * Zálohová faktura hned, jakmile je záloha zaplacená — faktura i jen za zálohu
+   * je povinná. Spouští se TADY (ne jen z payment.captured), protože produkční
+   * objednávka + zaplacená záloha teď prokazatelně existují; captured event může
+   * přijít dřív, než tohle doběhne. Idempotentní (metadata), chyba fakturace
+   * nesmí shodit založení zakázky.
+   */
+  if (paid) {
+    await ensureMadeToOrderInvoices(container, order.id).catch(() => undefined)
+  }
 }
 
 export const config: SubscriberConfig = {

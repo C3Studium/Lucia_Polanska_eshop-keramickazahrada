@@ -195,6 +195,19 @@ export const IDOKLAD_METADATA_KEYS = {
   error: "idoklad_invoice_error",
 } as const
 
+/**
+ * Doplatková faktura u zakázky — druhý doklad vedle zálohové (ta jede na
+ * klíčích výše). Zakázka = záloha (povinná faktura) + doplatek (druhá faktura).
+ */
+export const IDOKLAD_BALANCE_METADATA_KEYS = {
+  invoiceId: "idoklad_balance_invoice_id",
+  invoiceNumber: "idoklad_balance_invoice_number",
+  pdfUrl: "idoklad_balance_invoice_pdf_url",
+  issuedAt: "idoklad_balance_invoice_issued_at",
+  paidAt: "idoklad_balance_invoice_paid_at",
+  error: "idoklad_balance_invoice_error",
+} as const
+
 export type IdokladInvoiceState = {
   invoice_id: number | null
   invoice_number: string | null

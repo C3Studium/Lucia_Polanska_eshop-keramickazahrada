@@ -3,11 +3,14 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   DOBIRKA_PROVIDER_ID,
   ensureInvoiceForOrder,
+  ensureMadeToOrderInvoices,
   isDobirkaOrder,
   loadInvoiceOrder,
   markInvoicePaidForOrder,
   resolveIdokladService,
 } from "../lib/idoklad-invoice"
+import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
+import type MadeToOrderModuleService from "../modules/made-to-order/service"
 
 /**
  * When an order becomes an invoice (FINISHINGTODOLIST §1).
@@ -58,6 +61,22 @@ const onPaymentCaptured = async ({
   }
 
   const isDobirka = payment.provider_id === DOBIRKA_PROVIDER_ID
+
+  // Zakázka fakturuje JINAK — záloha i doplatek zvlášť (dvě povinné faktury).
+  // Nesmí projít plnou fakturou na celek. Hlavní spouštěče jsou u vytvoření
+  // zakázky (záloha) a u doplatku; tady jen backstop (idempotentní).
+  try {
+    const mto = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
+    const [productionOrder] = await mto.listProductionOrders({
+      order_id: orderId,
+    } as never)
+    if (productionOrder) {
+      await ensureMadeToOrderInvoices(container, orderId)
+      return
+    }
+  } catch {
+    // Modul zakázek nedostupný → ber to jako běžnou objednávku.
+  }
 
   await ensureInvoiceForOrder(container, orderId, {
     source: "payment",
