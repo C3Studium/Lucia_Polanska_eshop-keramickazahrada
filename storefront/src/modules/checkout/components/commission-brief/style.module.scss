@@ -70,6 +70,47 @@
   opacity: 0.66;
 }
 
+/* Order variant: the single column it always was, same rhythm as the section around it. */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* Checkout/cart: note and photos sit side by side when there is room and fall under each other
+   on a phone. flex-wrap does the stacking by itself from the flex-basis floors below — no
+   breakpoint, because what decides it is the panel's own width, not the screen's. The note gets
+   the larger share; the photo column only needs room for two tiles across. */
+.fieldsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.85rem, 1.6vw, 1.4rem);
+  align-items: flex-start;
+}
+
+.noteCol {
+  flex: 3 1 17rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.photosCol {
+  flex: 2 1 13rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* The textarea carries the column's height, so on the desktop two-column it stands as tall as the
+   photo grid beside it rather than collapsing to a few lines. */
+.noteCol .textarea {
+  flex: 1;
+  min-height: clamp(7rem, 16vh, 11rem);
+}
+
 .textarea {
   width: 100%;
   padding: clamp(0.55rem, 1.2vh, 0.85rem) clamp(0.7rem, 0.9vw, 0.95rem);

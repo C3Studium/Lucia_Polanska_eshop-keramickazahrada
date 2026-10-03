@@ -8,7 +8,7 @@ import { HttpTypes } from "@medusajs/types"
 
 import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import { readCommissionBrief } from "@lib/util/made-to-order"
-import { isCommissionLine } from "@lib/util/commission"
+import { commissionPrompt, isMadeToOrderLine } from "@lib/util/commission"
 import CartCommissionBlock, {
   type CartCommissionLine,
 } from "@modules/cart/components/commission-block"
@@ -32,13 +32,15 @@ const CartTemplate = async ({
     : null
 
   /* The commissioned lines, so the basket can collect their briefs — the description and
-     photos moved here from the product page. Either signal counts (category or metadata
-     marker), same as the checkout's detection. */
+     photos moved here from the product page. Every signal counts (category, product marker, or a
+     brief already on the line), same as the checkout's detection, so a profile-only zakázka is
+     caught too. `prompt` is the owner's „co poslat" instruction, mirrored onto the product. */
   const commissionLines: CartCommissionLine[] = ((cart?.items ?? []) as any[])
-    .filter((item) => isCommissionLine(item) || item?.metadata?.made_to_order)
+    .filter(isMadeToOrderLine)
     .map((item) => ({
       id: item.id as string,
       title: (item.product_title || item.title) as string,
+      prompt: commissionPrompt(item),
       brief: readCommissionBrief(item),
     }))
 

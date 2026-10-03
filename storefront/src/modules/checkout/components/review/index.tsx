@@ -12,7 +12,7 @@ import {
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { isCommissionLine } from "@lib/util/commission"
+import { commissionPrompt, isMadeToOrderLine } from "@lib/util/commission"
 import { readCommissionBrief } from "@lib/util/made-to-order"
 import { saveCommissionBrief } from "@lib/data/commission-actions"
 import CommissionBrief from "../commission-brief"
@@ -53,17 +53,17 @@ const Review = ({
   const comgateMethod = searchParams.get("method")
 
   /*
-   * Which lines are commissions. Either signal counts — the catalogue category or an enabled
-   * production profile — because today only the first is set on any product, and the brief
-   * has to appear for the pieces she actually sells as zakázky.
+   * Which lines are commissions. Every signal counts — the catalogue category, the product's
+   * made-to-order marker, or a brief already on the line — so the brief box appears for a zakázka
+   * driven only by a production profile too (that was the one the deposit slider showed but the
+   * brief missed). `prompt` is the owner's „co poslat" instruction, mirrored onto the product.
    */
   const commissionLines = ((cart?.items ?? []) as any[])
-    .filter(
-      (item) => isCommissionLine(item) || item?.metadata?.made_to_order
-    )
+    .filter(isMadeToOrderLine)
     .map((item) => ({
       id: item.id as string,
       title: (item.product_title || item.title) as string,
+      prompt: commissionPrompt(item),
       brief: readCommissionBrief(item),
     }))
 
@@ -173,6 +173,7 @@ const Review = ({
                 <CommissionBrief
                   variant="checkout"
                   title={line.title}
+                  prompt={line.prompt}
                   // The text is the specification; older lines may still carry it as `note`.
                   note={line.brief.specification || line.brief.note || ""}
                   photos={line.brief.photos ?? []}

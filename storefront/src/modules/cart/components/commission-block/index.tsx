@@ -12,6 +12,8 @@ import ProductionPaymentModeChoice from "@modules/checkout/components/production
 export type CartCommissionLine = {
   id: string
   title: string
+  /** Owner's „co poslat" instruction, mirrored from the production profile. */
+  prompt: string
   brief: CommissionBriefData
 }
 
@@ -39,6 +41,7 @@ export default function CartCommissionBlock({
           key={line.id}
           variant="checkout"
           title={line.title}
+          prompt={line.prompt}
           // The text is the specification; older lines may still carry it as `note`.
           note={line.brief.specification || line.brief.note || ""}
           photos={line.brief.photos ?? []}

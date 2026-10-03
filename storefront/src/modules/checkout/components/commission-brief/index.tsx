@@ -23,6 +23,12 @@ type Props = {
   photos: string[]
   /** What the piece is, for the heading. */
   title?: string
+  /**
+   * The owner's instruction — „co mi pošlete": rozměry, fotku místa, barvu… Set per product in
+   * the admin (production profile → „Otázka pro zákazníka"), mirrored onto the product and shown
+   * here as the brief's lede. Empty → the generic lede stands in.
+   */
+  prompt?: string
   /** Diary entries, when this is rendering against a placed order. */
   notes?: CommissionNote[]
   /**
@@ -61,6 +67,7 @@ export default function CommissionBrief({
   note,
   photos,
   title,
+  prompt,
   notes = [],
   variant,
   onSubmitAction,
@@ -157,6 +164,8 @@ export default function CommissionBrief({
         <p className={styles.lede}>
           {variant === "order"
             ? "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce."
+            : prompt?.trim()
+            ? prompt
             : "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím."}
         </p>
       </header>
@@ -195,66 +204,78 @@ export default function CommissionBrief({
         </ol>
       )}
 
-      <label className={styles.label} htmlFor={fieldId}>
-        Poznámka
-      </label>
-      <textarea
-        id={fieldId}
-        className={styles.textarea}
-        value={text}
-        rows={variant === "order" ? 3 : 5}
-        maxLength={2000}
-        placeholder="Rozměry, barva, nápis, kam to přijde…"
-        onChange={(event) => {
-          setText(event.target.value)
-          setStatus({ kind: "idle" })
-        }}
-        disabled={isPending}
-        data-testid="commission-note-input"
-      />
-
-      <div className={styles.photos}>
-        {kept.map((url) => (
-          <figure key={url} className={styles.photo}>
-            <Image src={url} alt="" width={120} height={120} unoptimized />
-            <button
-              type="button"
-              onClick={() => setKept((current) => current.filter((u) => u !== url))}
-              disabled={isPending}
-              aria-label="Odebrat fotku"
-            >
-              ×
-            </button>
-          </figure>
-        ))}
-        {drafts.map((draft) => (
-          <figure key={draft.id} className={styles.photoDraft}>
-            <Image src={draft.preview} alt="" width={120} height={120} unoptimized />
-            <button
-              type="button"
-              onClick={() =>
-                setDrafts((current) => current.filter((d) => d.id !== draft.id))
-              }
-              disabled={isPending}
-              aria-label="Odebrat fotku"
-            >
-              ×
-            </button>
-          </figure>
-        ))}
-
-        {total < MAX_PHOTOS && (
-          <button
-            type="button"
-            className={styles.add}
-            onClick={() => fileInput.current?.click()}
+      {/* Note on the left, photos on the right — side by side where there is room, stacked on a
+          phone (the grid wraps on its own). The order variant keeps the single column it had, so
+          the diary above still reads as one thread. */}
+      <div className={variant === "order" ? styles.fields : styles.fieldsGrid}>
+        <div className={styles.noteCol}>
+          <label className={styles.label} htmlFor={fieldId}>
+            Poznámka
+          </label>
+          <textarea
+            id={fieldId}
+            className={styles.textarea}
+            value={text}
+            rows={variant === "order" ? 3 : 6}
+            maxLength={2000}
+            placeholder="Rozměry, barva, nápis, kam to přijde…"
+            onChange={(event) => {
+              setText(event.target.value)
+              setStatus({ kind: "idle" })
+            }}
             disabled={isPending}
-            data-testid="commission-add-photo"
-          >
-            <span aria-hidden="true">+</span>
-            Přidat fotku
-          </button>
-        )}
+            data-testid="commission-note-input"
+          />
+        </div>
+
+        <div className={styles.photosCol}>
+          <span className={styles.label}>Fotky</span>
+          <div className={styles.photos}>
+            {kept.map((url) => (
+              <figure key={url} className={styles.photo}>
+                <Image src={url} alt="" width={120} height={120} unoptimized />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setKept((current) => current.filter((u) => u !== url))
+                  }
+                  disabled={isPending}
+                  aria-label="Odebrat fotku"
+                >
+                  ×
+                </button>
+              </figure>
+            ))}
+            {drafts.map((draft) => (
+              <figure key={draft.id} className={styles.photoDraft}>
+                <Image src={draft.preview} alt="" width={120} height={120} unoptimized />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDrafts((current) => current.filter((d) => d.id !== draft.id))
+                  }
+                  disabled={isPending}
+                  aria-label="Odebrat fotku"
+                >
+                  ×
+                </button>
+              </figure>
+            ))}
+
+            {total < MAX_PHOTOS && (
+              <button
+                type="button"
+                className={styles.add}
+                onClick={() => fileInput.current?.click()}
+                disabled={isPending}
+                data-testid="commission-add-photo"
+              >
+                <span aria-hidden="true">+</span>
+                Přidat fotku
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <input
