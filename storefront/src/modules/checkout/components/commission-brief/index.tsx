@@ -229,52 +229,76 @@ export default function CommissionBrief({
         </div>
 
         <div className={styles.photosCol}>
-          <span className={styles.label}>Fotky</span>
-          <div className={styles.photos}>
-            {kept.map((url) => (
-              <figure key={url} className={styles.photo}>
-                <Image src={url} alt="" width={120} height={120} unoptimized />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setKept((current) => current.filter((u) => u !== url))
-                  }
-                  disabled={isPending}
-                  aria-label="Odebrat fotku"
-                >
-                  ×
-                </button>
-              </figure>
-            ))}
-            {drafts.map((draft) => (
-              <figure key={draft.id} className={styles.photoDraft}>
-                <Image src={draft.preview} alt="" width={120} height={120} unoptimized />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDrafts((current) => current.filter((d) => d.id !== draft.id))
-                  }
-                  disabled={isPending}
-                  aria-label="Odebrat fotku"
-                >
-                  ×
-                </button>
-              </figure>
-            ))}
+          <span className={styles.label}>
+            Fotky <em className={styles.labelHint}>nepovinné</em>
+          </span>
 
-            {total < MAX_PHOTOS && (
-              <button
-                type="button"
-                className={styles.add}
-                onClick={() => fileInput.current?.click()}
-                disabled={isPending}
-                data-testid="commission-add-photo"
-              >
-                <span aria-hidden="true">+</span>
-                Přidat fotku
-              </button>
-            )}
-          </div>
+          {/* Empty state is one big dropzone that fills the column next to the note, so the right
+              half is an invitation rather than a small button adrift in whitespace. Once a photo is
+              in, it becomes the thumbnail grid with a small add tile. */}
+          {total === 0 ? (
+            <button
+              type="button"
+              className={styles.dropzone}
+              onClick={() => fileInput.current?.click()}
+              disabled={isPending}
+              data-testid="commission-add-photo"
+            >
+              <span className={styles.dropIcon} aria-hidden="true">
+                +
+              </span>
+              <span className={styles.dropText}>Přidat fotky</span>
+              <span className={styles.dropHint}>
+                JPG nebo PNG, až {MAX_PHOTOS} fotek
+              </span>
+            </button>
+          ) : (
+            <div className={styles.photos}>
+              {kept.map((url) => (
+                <figure key={url} className={styles.photo}>
+                  <Image src={url} alt="" width={120} height={120} unoptimized />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setKept((current) => current.filter((u) => u !== url))
+                    }
+                    disabled={isPending}
+                    aria-label="Odebrat fotku"
+                  >
+                    ×
+                  </button>
+                </figure>
+              ))}
+              {drafts.map((draft) => (
+                <figure key={draft.id} className={styles.photoDraft}>
+                  <Image src={draft.preview} alt="" width={120} height={120} unoptimized />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDrafts((current) => current.filter((d) => d.id !== draft.id))
+                    }
+                    disabled={isPending}
+                    aria-label="Odebrat fotku"
+                  >
+                    ×
+                  </button>
+                </figure>
+              ))}
+
+              {total < MAX_PHOTOS && (
+                <button
+                  type="button"
+                  className={styles.add}
+                  onClick={() => fileInput.current?.click()}
+                  disabled={isPending}
+                  data-testid="commission-add-photo"
+                >
+                  <span aria-hidden="true">+</span>
+                  Přidat
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
