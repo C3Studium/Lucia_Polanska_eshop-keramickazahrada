@@ -1,7 +1,33 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
+
+/**
+ * Zrcadlo „je to zakázka" do product.metadata.made_to_order.
+ *
+ * Zakázku jinak pozná jen join na `product_production_profile` — což admin
+ * katalog (Produkty+) dělá, ale Rozdělení ani storefront ne, takže tam zakázka
+ * „zmizí". Marker v metadatech pozná KAŽDÉ místo stejně (jako clearance), bez
+ * speciálního joinu. Čte se z `+metadata`. Read-modify-write, protože nativní
+ * update metadata NAHRAZUJE celý objekt.
+ */
+const mirrorMadeToOrderFlag = async (
+  req: MedusaRequest,
+  productId: string,
+  value: boolean
+) => {
+  const productModule = req.scope.resolve(Modules.PRODUCT)
+  const [product] = await productModule.listProducts(
+    { id: productId } as never,
+    { take: 1, select: ["id", "metadata"] as never }
+  )
+  if (!product) return
+  const metadata = { ...(((product as any).metadata as Record<string, unknown>) ?? {}) }
+  if (value) metadata.made_to_order = true
+  else delete metadata.made_to_order
+  await productModule.updateProducts(productId, { metadata } as never)
+}
 
 type VariantProfileInput = {
   variant_id: string
@@ -139,6 +165,8 @@ export const PATCH = async (
     }
   }
 
+  await mirrorMadeToOrderFlag(req, productId, profilePayload.enabled)
+
   const result = await loadProfile(req)
   res.status(200).json({ product: { ...result, profile } })
 }
@@ -151,6 +179,7 @@ export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
   if (existing[0]) {
     await service.deleteProductProductionProfiles(existing[0].id)
   }
+  await mirrorMadeToOrderFlag(req, req.params.productId, false)
   res.status(200).json({ id: req.params.productId, deleted: Boolean(existing[0]) })
 }
 

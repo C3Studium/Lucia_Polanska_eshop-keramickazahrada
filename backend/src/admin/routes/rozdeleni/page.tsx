@@ -97,7 +97,7 @@ const Inner = () => {
   });
   const { data: productsData } = useQuery<any>({
     queryKey: ["workbench-products-all"],
-    queryFn: () => sdk.client.fetch("/admin/workbench/products?limit=200"),
+    queryFn: () => sdk.client.fetch("/admin/workbench/products?limit=1000"),
     refetchOnWindowFocus: true,
   });
 

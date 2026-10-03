@@ -50,7 +50,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
    * A larger default does not make truncation impossible, only unlikely; `count` below is
    * the filtered total so a caller can always tell, and both workbenches now say so.
    */
-  const limit = Math.min(Number(req.query.limit) || 200, 200)
+  // Strop 1000, ne 200: Rozdělení si bere celý katalog naráz (nemá stránkování)
+  // a při 266 produktech mu 200 uřízlo konec — kus z konce (třeba poškozený)
+  // tam pak „nešel najít". Interní čtení je stejně take: 1000.
+  const limit = Math.min(Number(req.query.limit) || 200, 1000)
   const offset = Math.max(Number(req.query.offset) || 0, 0)
   const search =
     typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : null

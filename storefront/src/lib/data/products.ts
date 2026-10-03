@@ -112,8 +112,8 @@ export type StoreCatalogueFilters = {
   collectionId: string
   isNew: boolean
   onSale: boolean
-  /** Druh kusu — "" | "clearance" | "bundle". Pseudo-kategorie, filtruje se lokálně. */
-  kind?: "" | "clearance" | "bundle"
+  /** Druh kusu — pseudo-kategorie, filtruje se lokálně. */
+  kind?: "" | "clearance" | "bundle" | "madeToOrder"
   priceRange: string
   search: string
   sort: "featured" | "newest" | "price-asc" | "price-desc"
@@ -458,6 +458,12 @@ export const listStoreCatalogue = async ({
     if (
       filters.kind === "clearance" &&
       (product.metadata as Record<string, unknown> | null)?.clearance !== true
+    ) {
+      return false
+    }
+    if (
+      filters.kind === "madeToOrder" &&
+      (product.metadata as Record<string, unknown> | null)?.made_to_order !== true
     ) {
       return false
     }

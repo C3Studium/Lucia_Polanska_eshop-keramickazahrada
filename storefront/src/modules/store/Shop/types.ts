@@ -5,9 +5,10 @@ export type ShopSort = "featured" | "newest" | "price-asc" | "price-desc"
 /**
  * Pseudo-kategorie podle druhu kusu — ne skutečná kategorie z backendu, jen
  * filtr nad daty, která produkt už nese: balíček (`product.bundle`), poškozený
- * (`metadata.clearance`). Vzájemně výlučné; "" = bez omezení.
+ * (`metadata.clearance`), zakázka (`metadata.made_to_order`). Vzájemně výlučné;
+ * "" = bez omezení.
  */
-export type ShopKind = "" | "clearance" | "bundle"
+export type ShopKind = "" | "clearance" | "bundle" | "madeToOrder"
 
 export type ShopFilters = {
   categoryId: string

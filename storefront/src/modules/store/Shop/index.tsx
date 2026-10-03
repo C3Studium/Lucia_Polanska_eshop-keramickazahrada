@@ -82,6 +82,7 @@ const emptyFilters: ShopFilters = {
 const kindLabels: Record<string, string> = {
   clearance: "Poškozené",
   bundle: "Balíčky",
+  madeToOrder: "Zakázky",
 }
 
 const priceLabels: Record<string, string> = {

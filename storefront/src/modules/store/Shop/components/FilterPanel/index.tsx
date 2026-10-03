@@ -217,6 +217,15 @@ export default function FilterPanel({
               onChange({ kind: filters.kind === "bundle" ? "" : "bundle" })
             }
           />
+          <Toggle
+            label="Zakázky"
+            active={filters.kind === "madeToOrder"}
+            onClick={() =>
+              onChange({
+                kind: filters.kind === "madeToOrder" ? "" : "madeToOrder",
+              })
+            }
+          />
         </FilterGroup>
 
         <div className={styles.footer}>
