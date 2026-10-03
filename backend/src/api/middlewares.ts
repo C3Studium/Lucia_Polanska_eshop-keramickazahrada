@@ -232,6 +232,15 @@ export default defineMiddlewares({
       methods: ["POST"],
       middlewares: [validateAndTransformBody(PostProductionPaymentModeSchema)],
     },
+    // Fotky k zakázce jdou jako base64 v JSON — jedna fotka klidně přes 8 MB.
+    // Výchozí limit těla je malý, takže i jediná fotka padala na 413. Klient je
+    // posílá po jedné (lib/data/made-to-order.ts), tenhle strop nese jednu fotku
+    // (max 6 MB → ~8 MB base64) s rezervou.
+    {
+      matcher: "/store/made-to-order/media",
+      methods: ["POST"],
+      bodyParser: { sizeLimit: "12mb" },
+    },
     /*
      * Výběr dopravy je poslední společné hrdlo před penězi. Kus bez profilu
      * dopravy se tu odmítne, protože po zaplacení už by bylo pozdě — Medusa
