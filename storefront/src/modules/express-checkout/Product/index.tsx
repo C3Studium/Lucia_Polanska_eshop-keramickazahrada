@@ -98,10 +98,14 @@ export const Product = ({
     [bundle, bundleSelections]
   )
 
+  /* Zakázka se vyrábí na objednávku — nemá (a nemusí mít) skladem, takže
+     skladová kontrola ji nesmí zablokovat, jinak se přes „Koupit hned" nedá
+     dostat do doručení. Marker `made_to_order` je na produktu. */
+  const madeToOrder = Boolean((product.metadata as any)?.made_to_order)
   const ready = bundle
     ? selectedBundleVariants.length === bundle.items.length &&
       selectedBundleVariants.every(isAvailable)
-    : isAvailable(selectedVariant)
+    : isAvailable(selectedVariant) || (!!selectedVariant && madeToOrder)
 
   const amount =
     selectedVariant?.calculated_price?.calculated_amount ??

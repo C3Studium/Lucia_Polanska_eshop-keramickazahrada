@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { isBalikovnaOption } from "@lib/util/balikovna"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import { deliveryAllowedUnder, deliveryRestrictionFor } from "@lib/util/fragile"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
@@ -346,6 +347,14 @@ export async function startExpressBuyNow({
 
   const options = (await listCartShippingMethods(cartId)) ?? []
   const cart = await retrieveCart(cartId)
+
+  /* Zakázka se NIKDY neskáče rovnou na platbu: v kroku doručení musí zákazník
+     napsat brief (co si představuje + fotky) a vybrat z omezených dopravy
+     (křehká pošta / osobní odběr). Auto-výběr dopravy níž by ho o oboje připravil. */
+  if ((cart?.items ?? []).some(isMadeToOrderLine)) {
+    return { success: true, step: "delivery" }
+  }
+
   /* Fragile / zakázka baskets may only travel as křehký balík or be collected —
      the same rule the classic checkout enforces. Only the ČP options that rule
      permits are candidates here. */

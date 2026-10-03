@@ -3,6 +3,9 @@
 import { isComgate, TERMS_VERSION } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { setExpressCartMetadata } from "@lib/data/express-cart"
+import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
   extractComgateRedirectUrl,
@@ -28,6 +31,8 @@ type PaymentProps = {
   comgateMethods: ComgatePaymentMethod[]
   countryCode: string
   handle: string
+  /** Zakázka: volba zálohy (kolik zaplatit hned). `null` u běžného produktu. */
+  productionMode?: ProductionPaymentMode | null
 }
 
 const legacyComgateMethods = [
@@ -55,6 +60,7 @@ export const Payment = ({
   comgateMethods,
   countryCode,
   handle,
+  productionMode,
 }: PaymentProps) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (session) => session.status === "pending"
@@ -228,6 +234,17 @@ export const Payment = ({
           </span>
         </div>
       </div>
+
+      {/* Zakázka: kolik zaplatit hned (záloha / celá částka). Volba se ukládá na
+          košík, platba pak vezme zvolenou částku — stejně jako v běžné pokladně. */}
+      {productionMode?.has_made_to_order && (
+        <ProductionPaymentModeChoice
+          initial={productionMode}
+          onSelect={(mode, amount) =>
+            selectProductionPaymentMode(cart.id, mode, amount)
+          }
+        />
+      )}
 
       <div className={styles.methodSection}>
         <div className={styles.methodHeading}>

@@ -3,6 +3,7 @@ import {
   retrieveExpressCart,
 } from "@lib/data/express-cart"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import {
   listCartPaymentMethods,
   listComgatePaymentMethods,
@@ -27,7 +28,7 @@ export default async function ExpressCheckoutPage({ params }: Params) {
     queryParams: {
       handle,
       fields:
-        "*bundle,*images,*options,*variants,*variants.options,*variants.calculated_price,+variants.inventory_quantity",
+        "*bundle,*images,*options,*variants,*variants.options,*variants.calculated_price,+variants.inventory_quantity,+metadata",
     },
   }).then(({ response }) => response.products[0])
 
@@ -41,20 +42,27 @@ export default async function ExpressCheckoutPage({ params }: Params) {
     : undefined
 
   const cart = await retrieveExpressCart()
-  const [shippingMethods, paymentMethods, comgateMethods, prefillAddress] =
-    await Promise.all([
-      cart ? listCartShippingMethods(cart.id) : Promise.resolve([]),
-      listCartPaymentMethods(region.id),
-      cart
-        ? listComgatePaymentMethods({
-            currencyCode: cart.currency_code,
-            countryCode: cart.shipping_address?.country_code || countryCode,
-            total: cart.total,
-          })
-        : Promise.resolve([]),
-      // Logged-in customers get the delivery form already filled in.
-      getExpressPrefillAddress(countryCode),
-    ])
+  const [
+    shippingMethods,
+    paymentMethods,
+    comgateMethods,
+    prefillAddress,
+    productionMode,
+  ] = await Promise.all([
+    cart ? listCartShippingMethods(cart.id) : Promise.resolve([]),
+    listCartPaymentMethods(region.id),
+    cart
+      ? listComgatePaymentMethods({
+          currencyCode: cart.currency_code,
+          countryCode: cart.shipping_address?.country_code || countryCode,
+          total: cart.total,
+        })
+      : Promise.resolve([]),
+    // Logged-in customers get the delivery form already filled in.
+    getExpressPrefillAddress(countryCode),
+    // Zakázka: kolik zaplatit hned (záloha) — potřebuje to krok platby.
+    cart ? getProductionPaymentMode(cart.id) : Promise.resolve(null),
+  ])
 
   return (
     <Router
@@ -67,6 +75,7 @@ export default async function ExpressCheckoutPage({ params }: Params) {
       comgateMethods={comgateMethods}
       handle={handle}
       countryCode={countryCode}
+      productionMode={productionMode}
       packetaApiKey={process.env.NEXT_PUBLIC_PACKETA_API_KEY}
       packetaShippingMethodId={
         process.env.NEXT_PUBLIC_PACKETA_SHIPPING_METHOD_ID

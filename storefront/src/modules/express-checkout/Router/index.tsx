@@ -17,6 +17,7 @@ import { Product } from "../Product"
 import { Shipping } from "../Shipping"
 import styles from "../style.module.scss"
 import type { ComgatePaymentMethod } from "@lib/util/comgate"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 type ActiveStep = "selection" | "delivery" | "payment"
@@ -37,6 +38,8 @@ type RouterProps = {
   packetaShippingMethodId?: string
   /** Logged-in customer's saved address — the delivery form starts filled. */
   prefillAddress?: ExpressPrefillAddress | null
+  /** Zakázka: volba zálohy (kolik zaplatit hned) pro krok platby. */
+  productionMode?: ProductionPaymentMode | null
 }
 
 /**
@@ -58,6 +61,7 @@ export const Router = ({
   packetaApiKey,
   packetaShippingMethodId,
   prefillAddress,
+  productionMode,
 }: RouterProps) => {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -288,6 +292,7 @@ export const Router = ({
                 comgateMethods={comgateMethods}
                 countryCode={countryCode}
                 handle={handle}
+                productionMode={productionMode}
               />
             )}
           </motion.section>

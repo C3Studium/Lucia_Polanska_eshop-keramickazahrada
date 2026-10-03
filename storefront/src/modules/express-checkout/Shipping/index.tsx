@@ -304,22 +304,6 @@ export const Shipping = ({
         </p>
       </div>
 
-      {/* Zakázka: co si zákazník představuje + fotky. Ukládá se do EXPRESS košíku
-          (jiný cookie), proto se cart.id předává explicitně. */}
-      {commissionLines.map((line) => (
-        <CommissionBrief
-          key={line.id}
-          variant="checkout"
-          title={line.title}
-          prompt={line.prompt}
-          note={line.brief.specification || line.brief.note || ""}
-          photos={line.brief.photos ?? []}
-          onSubmitAction={async (input) =>
-            saveCommissionBrief(line.id, input, cart.id)
-          }
-        />
-      ))}
-
       <div className={styles.fields}>
         <Field
           label="Jméno"
@@ -450,6 +434,22 @@ export const Shipping = ({
           </button>
         )}
       </div>
+
+      {/* Zakázka: co si zákazník představuje + fotky. Až ZA způsobem doručení.
+          Ukládá se do EXPRESS košíku (jiný cookie), proto se cart.id předává. */}
+      {commissionLines.map((line) => (
+        <CommissionBrief
+          key={line.id}
+          variant="checkout"
+          title={line.title}
+          prompt={line.prompt}
+          note={line.brief.specification || line.brief.note || ""}
+          photos={line.brief.photos ?? []}
+          onSubmitAction={async (input) =>
+            saveCommissionBrief(line.id, input, cart.id)
+          }
+        />
+      ))}
 
       <PremiumActionButton
         text={
