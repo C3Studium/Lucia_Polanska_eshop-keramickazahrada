@@ -121,9 +121,28 @@ export async function POST(
   const thumbnail = copiedImages[0]?.url ?? source.thumbnail ?? undefined
   const damage = body.damage?.trim() || ""
 
+  /*
+   * Prodejní kanál — bez něj je kus pro obchod NEVIDITELNÝ.
+   *
+   * createProductsWorkflow (narozdíl od admin product.create) výchozí prodejní
+   * kanál nepřipojí, takže poškozený kus store API vůbec nevrátilo („not_found"
+   * i po publikaci) a filtr „Poškozené" byl prázdný. Stejná past jako u balíčků.
+   */
+  const storeModule = req.scope.resolve(Modules.STORE)
+  const [store] = await storeModule.listStores(
+    {},
+    { select: ["id", "default_sales_channel_id"] as never }
+  )
+  const defaultSalesChannelId = (store as any)?.default_sales_channel_id as
+    | string
+    | undefined
+
   const productInput: any = {
     title: body.title?.trim() || `${source.title} — poškozený`,
     status: "draft",
+    ...(defaultSalesChannelId
+      ? { sales_channels: [{ id: defaultSalesChannelId }] }
+      : {}),
     subtitle: source.subtitle ?? undefined,
     description: source.description ?? undefined,
     material: source.material ?? undefined,
