@@ -68,6 +68,12 @@ const PatchFlagsSchema = z
      * native length/width/height on the product page. `null` clears it.
      */
     dimensions: z.string().trim().max(200).nullable().optional(),
+    /**
+     * Popis poškození u výprodejového kusu — co je za vadu. Zakládá ho flow
+     * „poškozený kus z produktu" a edituje se na stránce produktu; ukazuje se
+     * zákazníkovi (storefront čte `metadata.clearance_damage`). `null` maže.
+     */
+    clearance_damage: z.string().trim().max(2000).nullable().optional(),
     /** Whether the piece survives frost — pots and garden pieces care. */
     frost_resistant: z.boolean().optional(),
   })

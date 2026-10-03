@@ -1062,6 +1062,10 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     typeof product.metadata?.dimensions === "string"
       ? (product.metadata.dimensions as string)
       : null;
+  const clearanceDamage =
+    typeof product.metadata?.clearance_damage === "string"
+      ? (product.metadata.clearance_damage as string)
+      : null;
   const backorderAll =
     (product.variants ?? []).length > 0 &&
     (product.variants ?? []).every((variant) => variant.allow_backorder);
@@ -1490,6 +1494,23 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     />
                   </div>
                 </div>
+                {clearance && (
+                  <div className="sm:col-span-2">
+                    <FieldLabel>Popis poškození</FieldLabel>
+                    <div className="mt-1">
+                      <InlineText
+                        value={clearanceDamage}
+                        placeholder="co je za vadu — ukáže se zákazníkovi"
+                        onSave={(next) =>
+                          saveFlags.mutateAsync({ clearance_damage: next || null })
+                        }
+                      />
+                    </div>
+                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                      Vidí ho zákazník na stránce kusu.
+                    </Text>
+                  </div>
+                )}
                 {expert && (
                   <div>
                     <FieldLabel>Adresa v obchodě</FieldLabel>
