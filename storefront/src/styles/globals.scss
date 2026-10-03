@@ -279,13 +279,21 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
 
 /*
  * ---------------------------------------------------------------------------------------------
- * 16:10 page frame.
+ * 16:9 page frame — for ULTRAWIDE windows only.
  *
- * Up to and including 1920px wide the page is full-bleed and nothing here applies — 1920x1080 is
- * the reference desktop and it is left exactly as it was. Past that the content is capped to a
- * 16:10 block and centred, so an ultrawide shows a composed frame rather than a layout stretched
- * across a metre of glass. Because the cap is an aspect ratio, the width follows the viewport
- * height: 2560x1080 gives a 1728px frame, 3440x1440 gives 2304px.
+ * Full-bleed is the rule, the frame the exception. A classic 16:9 monitor at any size — 1920x1080
+ * and 2560x1440 alike — runs edge to edge: the `xxl` rem ramp below already scales every clamp
+ * cap up to just past 2560, so a 2K screen gets a grown-up layout, not the 1920 design with empty
+ * bands beside it. (Measured before the ramp existed: not one heading was a pixel larger.)
+ *
+ * The frame exists for the window the layout was never drawn for: a 21:9 or 32:9 monitor run
+ * full-screen. There the content is capped to a 16:9 block and centred, so an ultrawide shows a
+ * composed frame rather than a layout stretched across a metre of glass. The trigger is therefore
+ * the ASPECT RATIO (≥ 2:1), not the width — a maximized window on a 16:9 screen reports ~1.85:1
+ * once the browser chrome eats some height, so 2:1 keeps every real 16:9 monitor full-bleed while
+ * catching every real ultrawide (21:9 is 2.33, 32:9 is 3.56). Because the cap follows the
+ * viewport height at 16:9, half of a 32:9 monitor comes out EXACTLY right: 5120x1440 full-screen
+ * gives a 2560px frame — the same classic 2K the user would get by snapping the window to half.
  *
  * Two variables carry it. `--page-max-w` sizes the frame; `--page-inset` is the band beside it.
  * The inset exists because `position: fixed` resolves against the viewport, not against the
@@ -335,9 +343,11 @@ html[data-app="studio"] *::-webkit-scrollbar-thumb {
   --nav-side-inset: clamp(0.75rem, 1.4vw, 1.75rem);
 }
 
-@media (min-width: 1921px) {
+/* 1.7778 je 16/9, napsané číslem: uvnitř calc() by `16 / 9` prošlo, ale Sass na lomítko
+   historicky sahá a tahle hodnota je příliš nosná na to, aby visela na chování preprocesoru. */
+@media (min-width: 1921px) and (min-aspect-ratio: 2 / 1) {
   :root {
-    --page-max-w: min(100vw, calc(100svh * 1.6));
+    --page-max-w: min(100vw, calc(100svh * 1.7778));
     --page-inset: calc((100vw - var(--page-max-w)) / 2);
   }
 
