@@ -1790,13 +1790,12 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ fragile: next })}
               />
-              <FlagRow
-                label="Personalizace"
-                description="Cena se počítá podle rozměrů, které zákazník zadá v obchodě."
-                checked={flagOf(product, "is_personalized")}
-                disabled={saveFlags.isPending}
-                onChange={(next) => saveFlags.mutate({ is_personalized: next })}
-              />
+              {/* Personalizace (cena podle rozměrů zadaných zákazníkem) je
+                  z rozhraní schválně skrytá — obchod prodává za pevné ceny
+                  (i zakázky, jen se zálohou), takže ji nikdo nepoužíval (0/266).
+                  Funkce i flag `is_personalized` na backendu zůstávají spící
+                  (flags endpoint, validate-personalized-product.ts), takže se
+                  dá kdykoli vrátit vrácením tohoto přepínače. */}
               <div className="flex items-start justify-between gap-4 py-3">
                 <div>
                   <Text size="small" weight="plus">
