@@ -139,6 +139,30 @@ export default function ProductionPaymentModeChoice({
     jump(Math.min(bounds.maximum, Math.max(bounds.minimum, parsed)))
   }
 
+  /**
+   * Psaní do pole se ukládá SAMO — po krátké pauze (jako posuvník), ne až na
+   * blur/Enter. Majitelka hlásila, že ručně zadaná částka se „nepotvrdila":
+   * commit byl jen na opuštění pole. Clamping až tady, ne při každém stisku,
+   * aby šlo číslo napsat po číslicích. pendingAmount drží flush při odchodu.
+   */
+  const onTypeExact = (raw: string) => {
+    const cleaned = raw.replace(/[^\d\s]/g, "")
+    setTyped(cleaned)
+    if (commitTimer.current) window.clearTimeout(commitTimer.current)
+    const parsed = Math.round(Number(cleaned.replace(/\s+/g, "")))
+    if (!cleaned.trim() || Number.isNaN(parsed)) {
+      pendingAmount.current = null
+      return
+    }
+    const clamped = Math.min(bounds.maximum, Math.max(bounds.minimum, parsed))
+    pendingAmount.current = clamped
+    commitTimer.current = window.setTimeout(() => {
+      setTyped(null)
+      setDraft(clamped)
+      commit(clamped)
+    }, 650)
+  }
+
   return (
     <section
       className={variant === "cart" ? styles.rootCart : styles.root}
@@ -191,9 +215,49 @@ export default function ProductionPaymentModeChoice({
         <span>{money(bounds.maximum)}</span>
       </div>
 
-      <div className={styles.exact}>
-        <label htmlFor={`${sliderId}-exact`}>Nebo napište přesnou částku</label>
+      {/* Předvolby + ruční částka na JEDNÉ řadě (dřív tři bloky pod sebou).
+          Rozsah ukazuje škála nad tím, takže popisek i nápověda jsou pryč. */}
+      <div className={styles.controls}>
+        <div className={styles.presets}>
+          <button
+            type="button"
+            className={atFloor ? styles.presetActive : styles.preset}
+            onClick={() => jump(bounds.minimum)}
+            disabled={isPending}
+            data-testid="production-preset-deposit"
+          >
+            Jen zálohu
+          </button>
+          {span > 0 && (
+            <button
+              type="button"
+              className={styles.preset}
+              onClick={() =>
+                jump(Math.round((bounds.minimum + bounds.maximum) / 2))
+              }
+              disabled={isPending}
+              data-testid="production-preset-half"
+            >
+              Půlku
+            </button>
+          )}
+          {state.can_pay_full && (
+            <button
+              type="button"
+              className={atCeiling ? styles.presetActive : styles.preset}
+              onClick={() => jump(bounds.maximum)}
+              disabled={isPending}
+              data-testid="production-preset-full"
+            >
+              Celou částku
+            </button>
+          )}
+        </div>
+
         <div className={styles.exactField}>
+          <span className={styles.exactPrefix} aria-hidden="true">
+            nebo
+          </span>
           <input
             id={`${sliderId}-exact`}
             type="text"
@@ -201,9 +265,7 @@ export default function ProductionPaymentModeChoice({
             autoComplete="off"
             value={typed ?? String(draft)}
             disabled={isPending || span === 0}
-            onChange={(event) =>
-              setTyped(event.target.value.replace(/[^\d\s]/g, ""))
-            }
+            onChange={(event) => onTypeExact(event.target.value)}
             onBlur={commitTyped}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -211,52 +273,15 @@ export default function ProductionPaymentModeChoice({
                 commitTyped()
               }
             }}
-            aria-describedby={`${sliderId}-exact-hint`}
+            aria-label={`Přesná částka — mezi ${money(bounds.minimum)} a ${money(
+              bounds.maximum
+            )}`}
             data-testid="production-payment-input"
           />
           <span aria-hidden="true">
             {currency_code === "czk" ? "Kč" : currency_code.toUpperCase()}
           </span>
         </div>
-        <p className={styles.exactHint} id={`${sliderId}-exact-hint`}>
-          Cokoliv mezi {money(bounds.minimum)} a {money(bounds.maximum)}.
-        </p>
-      </div>
-
-      <div className={styles.presets}>
-        <button
-          type="button"
-          className={atFloor ? styles.presetActive : styles.preset}
-          onClick={() => jump(bounds.minimum)}
-          disabled={isPending}
-          data-testid="production-preset-deposit"
-        >
-          Jen zálohu
-        </button>
-        {span > 0 && (
-          <button
-            type="button"
-            className={styles.preset}
-            onClick={() =>
-              jump(Math.round((bounds.minimum + bounds.maximum) / 2))
-            }
-            disabled={isPending}
-            data-testid="production-preset-half"
-          >
-            Půlku
-          </button>
-        )}
-        {state.can_pay_full && (
-          <button
-            type="button"
-            className={atCeiling ? styles.presetActive : styles.preset}
-            onClick={() => jump(bounds.maximum)}
-            disabled={isPending}
-            data-testid="production-preset-full"
-          >
-            Celou částku
-          </button>
-        )}
       </div>
     </section>
   )

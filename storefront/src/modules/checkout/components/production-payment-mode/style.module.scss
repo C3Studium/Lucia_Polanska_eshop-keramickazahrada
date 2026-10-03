@@ -10,7 +10,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.55rem;
   /* Svisle na výšce okna, vodorovně na šířce, krajní členy v rem — v px se strop 26
      zasekl a na 2552 byl ten samý jako na 1366, zatímco částka vedle vyrostla 1.33×.
      Svisle: podlaha .9rem do 655px výšky, strop 1.6rem od 1164 — na 1366×768 vyjde
@@ -18,7 +18,7 @@
      Vodorovně: podlaha 1.125rem do 900px šířky, strop 1.625rem od 1300 — na celém
      landscape pásmu tedy stejných 24–26px jako dosud, jen teď v rem, takže je ramp
      nad 1921 zvedne (2552: 34.6px). */
-  padding: clamp(.9rem, 2.2vh, 1.6rem) clamp(1.125rem, 2vw, 1.625rem);
+  padding: clamp(.75rem, 1.7vh, 1.25rem) clamp(1.125rem, 2vw, 1.625rem);
   border: 1px solid rgb(var(--ink-05-rgb) / .18);
   border-left: 2px solid var(--commission-accent);
   background: rgb(var(--clay-17-rgb) / .05);
@@ -35,7 +35,7 @@
 .header {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.15rem;
 }
 
 .eyebrow {
@@ -167,17 +167,19 @@
   opacity: 0.78;
 }
 
-.exact {
-  display: grid;
-  gap: 0.35rem;
+/* Předvolby + ruční částka na jedné řadě; na úzku se zalomí pod sebe. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.9rem;
 }
 
-.exact > label {
+.exactPrefix {
   font-family: "Sansation-Light", sans-serif;
-  font-size: 0.8125rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.78;
+  font-size: 0.85rem;
+  opacity: 0.68;
 }
 
 .exactField {
