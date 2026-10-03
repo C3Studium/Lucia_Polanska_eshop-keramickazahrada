@@ -7,11 +7,14 @@ import type {
   CommissionNote,
   CommissionUpload,
 } from "@lib/util/made-to-order"
+import { compressImage } from "@lib/util/compress-image"
 
 import styles from "./style.module.scss"
 
 const MAX_PHOTOS = 6
-const MAX_BYTES = 6 * 1024 * 1024
+/* Horní mez pro VSTUPNÍ soubor — komprese ho pak stlačí na pár set kB. Není to
+   limit uploadu (ten řeší komprese), jen pojistka proti nesmyslně velkému souboru. */
+const MAX_SOURCE_BYTES = 40 * 1024 * 1024
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic"
 
 type Draft = { id: string; name: string; preview: string; upload: CommissionUpload }
@@ -97,20 +100,26 @@ export default function CommissionBrief({
 
     const accepted: Draft[] = []
     for (const file of Array.from(files).slice(0, room)) {
-      if (file.size > MAX_BYTES) {
+      if (file.size > MAX_SOURCE_BYTES) {
         setStatus({
           kind: "error",
-          message: `„${file.name}" je větší než 6 MB — přidejte prosím menší.`,
+          message: `„${file.name}" je moc velká — přidejte prosím menší.`,
         })
         continue
       }
-      const data = await readAsBase64(file).catch(() => null)
-      if (!data) continue
+      // Zmenšit a zkomprimovat (cíl ~800 kB). Když to prohlížeč neumí (typicky
+      // HEIC na desktopu), vezmi originál — backend má na fotku dost velký strop.
+      let upload = await compressImage(file).catch(() => null)
+      if (!upload) {
+        const data = await readAsBase64(file).catch(() => null)
+        if (!data) continue
+        upload = { filename: file.name, mime_type: file.type, data }
+      }
       accepted.push({
         id: `${file.name}-${file.size}-${accepted.length}`,
         name: file.name,
-        preview: data,
-        upload: { filename: file.name, mime_type: file.type, data },
+        preview: upload.data,
+        upload,
       })
     }
 

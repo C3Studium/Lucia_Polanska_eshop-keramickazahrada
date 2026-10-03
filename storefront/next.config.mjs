@@ -44,6 +44,17 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   outputFileTracingRoot: __dirname,
+  experimental: {
+    /*
+     * Fotky k zakázce jdou do server action `saveCommissionBrief` jako base64.
+     * I po kompresi na klientovi (~800 kB/fotka) dávka 6 fotek přeroste výchozí
+     * 1MB limit server action a padala by ještě před backendem. 12 MB ji nese
+     * s rezervou (backend má vlastní strop na /store/made-to-order/media).
+     */
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
+  },
   sassOptions: {
     includePaths: [path.join(__dirname, "src")],
   },
