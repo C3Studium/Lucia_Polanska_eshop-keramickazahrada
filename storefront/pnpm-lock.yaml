@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@c3studium/valecms':
-        specifier: file:..\..\valecms
-        version: file:../../valecms(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))
+        specifier: 0.1.52
+        version: 0.1.52(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
       '@headlessui/react':
         specifier: ^2.2.7
         version: 2.2.7(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
@@ -258,30 +258,14 @@ packages:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
 
-  '@c3studium/valecms@file:../../valecms':
-    resolution: {directory: ../../valecms, type: directory}
+  '@c3studium/valecms@0.1.52':
+    resolution: {integrity: sha512-zoInrG3LcPF0I+vUp+y7lE+YZJhHjLXRSHJtRAma3cqqh0NDh5H2DTRA7S6+JHeJgf4e11/A3Bv9UVC56Xw0kQ==, tarball: https://npm.pkg.github.com/download/@c3studium/valecms/0.1.52/5015d4bb45fe391dcb8284602c5b3cb8c330807c}
     engines: {node: '>=18.18'}
     hasBin: true
     peerDependencies:
-      '@react-email/render': '*'
-      '@supabase/supabase-js': '*'
       next: '>=15'
-      pg: '*'
       react: '>=18'
       react-dom: '>=18'
-      resend: '*'
-      sharp: '*'
-    peerDependenciesMeta:
-      '@react-email/render':
-        optional: true
-      '@supabase/supabase-js':
-        optional: true
-      pg:
-        optional: true
-      resend:
-        optional: true
-      sharp:
-        optional: true
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -5358,16 +5342,11 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@c3studium/valecms@file:../../valecms(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(pg@8.16.3)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(resend@6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)))(sharp@0.35.4(@types/node@24.2.1))':
+  '@c3studium/valecms@0.1.52(next@15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0))(react-dom@19.0.5(react@19.0.5))(react@19.0.5)':
     dependencies:
       next: 15.5.21(@babel/core@7.28.0)(@playwright/test@1.54.2)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)(sass@1.90.0)
       react: 19.0.5
       react-dom: 19.0.5(react@19.0.5)
-    optionalDependencies:
-      '@react-email/render': 2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
-      pg: 8.16.3
-      resend: 6.0.1(@react-email/render@2.1.0(react-dom@19.0.5(react@19.0.5))(react@19.0.5))
-      sharp: 0.35.4(@types/node@24.2.1)
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 

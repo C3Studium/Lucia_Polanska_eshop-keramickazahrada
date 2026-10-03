@@ -1,4 +1,0 @@
-# patchedDependencies je prázdné schválně: jediný patch (zámek překryvu
-# propouští textová pole) je od 0.1.48 přenesený přímo do ValeCMS
-# (src/edit/overlay/lock.js). Soubor patches/@c3studium__valecms@0.1.47.patch
-# už nic nepoužívá — smaž ho při commitu.
