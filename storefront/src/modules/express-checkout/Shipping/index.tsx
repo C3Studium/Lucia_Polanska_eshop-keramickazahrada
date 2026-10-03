@@ -10,11 +10,28 @@ import {
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import { withCount } from "@lib/util/plurals"
+import {
+  commissionPrompt,
+  isMadeToOrderLine,
+} from "@lib/util/commission"
+import {
+  cartHasFragile,
+  deliveryAllowedUnder,
+  restrictionNotice,
+  type DeliveryRestriction,
+} from "@lib/util/fragile"
+import { readCommissionBrief } from "@lib/util/made-to-order"
+import { saveCommissionBrief } from "@lib/data/commission-actions"
+import CommissionBrief from "@modules/checkout/components/commission-brief"
 import { HttpTypes } from "@medusajs/types"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useMemo, useState } from "react"
 import styles from "../style.module.scss"
+
+/** Pickup se pozná z typu fulfillment setu — stejně jako v běžném checkoutu. */
+const isPickupOption = (option: HttpTypes.StoreCartShippingOption) =>
+  (option as any).service_zone?.fulfillment_set?.type === "pickup"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -49,6 +66,37 @@ export const Shipping = ({
   onContinueAction,
 }: ShippingProps) => {
   const current = cart.shipping_address
+
+  /* Zakázka i křehký kus smí jen křehkým balíkem nebo osobním odběrem — stejné
+     omezení jako v běžném checkoutu (express ho dosud neměl, ukazoval všechny
+     dopravy). Nepovolené se odfiltrují pryč. */
+  const restriction: DeliveryRestriction = cartHasFragile(cart)
+    ? "fragile"
+    : (cart.items ?? []).some(isMadeToOrderLine)
+      ? "commission"
+      : null
+  const shownMethods = useMemo(
+    () =>
+      restriction
+        ? shippingMethods.filter((method) =>
+            deliveryAllowedUnder(method, isPickupOption(method))
+          )
+        : shippingMethods,
+    [shippingMethods, restriction]
+  )
+
+  /* Brief k zakázce (co si zákazník představuje + fotky). Sbírá se tady v kroku
+     doručení: zakázka jde stejně jen na odběr/křehkou poštu, express nemá
+     rekapitulaci, a v kroku platby se předtím nezobrazoval vůbec. */
+  const commissionLines = (cart.items ?? [])
+    .filter(isMadeToOrderLine)
+    .map((item) => ({
+      id: item.id as string,
+      title: (item.product_title || item.title) as string,
+      prompt: commissionPrompt(item),
+      brief: readCommissionBrief(item),
+    }))
+
   /* What the cart already knows wins; a logged-in customer's saved address
      fills the rest — the account should never be asked to retype itself. */
   const [address, setAddress] = useState<AddressState>({
@@ -71,7 +119,7 @@ export const Shipping = ({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const calculated = shippingMethods.filter(
+    const calculated = shownMethods.filter(
       (method) => method.price_type === "calculated"
     )
     if (!calculated.length) return
@@ -89,9 +137,9 @@ export const Shipping = ({
         }, {} as Record<string, number>)
       )
     })
-  }, [cart.id, shippingMethods])
+  }, [cart.id, shownMethods])
 
-  const selectedMethod = shippingMethods.find(
+  const selectedMethod = shownMethods.find(
     (method) => method.id === shippingMethodId
   )
   const isPacketa = shippingMethodId === packetaShippingMethodId
@@ -100,11 +148,11 @@ export const Shipping = ({
      still changeable). Packeta is exempt: preselecting it would pop the pickup
      point widget at nobody's request. */
   useEffect(() => {
-    if (shippingMethodId || shippingMethods.length !== 1) return
-    const only = shippingMethods[0]
+    if (shippingMethodId || shownMethods.length !== 1) return
+    const only = shownMethods[0]
     if (only.id === packetaShippingMethodId) return
     setShippingMethodId(only.id)
-  }, [shippingMethodId, shippingMethods, packetaShippingMethodId])
+  }, [shippingMethodId, shownMethods, packetaShippingMethodId])
 
   const valid = useMemo(
     () =>
@@ -256,6 +304,22 @@ export const Shipping = ({
         </p>
       </div>
 
+      {/* Zakázka: co si zákazník představuje + fotky. Ukládá se do EXPRESS košíku
+          (jiný cookie), proto se cart.id předává explicitně. */}
+      {commissionLines.map((line) => (
+        <CommissionBrief
+          key={line.id}
+          variant="checkout"
+          title={line.title}
+          prompt={line.prompt}
+          note={line.brief.specification || line.brief.note || ""}
+          photos={line.brief.photos ?? []}
+          onSubmitAction={async (input) =>
+            saveCommissionBrief(line.id, input, cart.id)
+          }
+        />
+      ))}
+
       <div className={styles.fields}>
         <Field
           label="Jméno"
@@ -325,15 +389,20 @@ export const Shipping = ({
         <div className={styles.methodHeading}>
           <span className={styles.eyebrow}>Způsob doručení</span>
           <span>
-            {withCount(shippingMethods.length, "možnost", "možnosti", "možností")}
+            {withCount(shownMethods.length, "možnost", "možnosti", "možností")}
           </span>
         </div>
+        {restriction && (
+          <p className={styles.restrictionNote}>
+            {restrictionNotice[restriction]}
+          </p>
+        )}
         <div
           className={styles.methodList}
           role="group"
           aria-label="Způsob doručení"
         >
-          {shippingMethods.map((method) => {
+          {shownMethods.map((method) => {
             const selected = method.id === shippingMethodId
             const amount =
               method.price_type === "flat" ? method.amount : prices[method.id]

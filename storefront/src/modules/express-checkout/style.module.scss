@@ -766,6 +766,17 @@ $consent-pull: calc((#{$consent} - 2.75rem) / 2);
   text-transform: uppercase;
 }
 
+/* Proč jsou u zakázky/křehkého jen dvě dopravy — stejné sdělení jako v běžném checkoutu. */
+.restrictionNote {
+  margin: 0;
+  padding: clamp(.55rem, 1.2vh, .8rem) clamp(.7rem, 1.4vw, 1rem);
+  border-left: 2px solid var(--clay-04);
+  background: rgb(var(--clay-17-rgb) / .06);
+  color: rgb(var(--ink-05-rgb) / .82);
+  font: 400 clamp(.86rem, 1.1vw, .98rem)/1.5 "Sansation-Light", sans-serif;
+  border-radius: 4px;
+}
+
 .methodList {
   display: flex;
   flex-direction: column;

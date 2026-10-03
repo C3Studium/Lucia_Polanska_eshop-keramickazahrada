@@ -37,10 +37,15 @@ export async function saveCommissionBrief(
     note: string
     keepPhotos: string[]
     newPhotos: CommissionUpload[]
-  }
+  },
+  /**
+   * Explicit cart id. Express checkout drží košík v jiném cookie
+   * (`getExpressCartId`), takže tam `getCartId()` nestačí — předá se sem.
+   */
+  cartIdOverride?: string
 ): Promise<BriefResult> {
   try {
-    const cartId = await getCartId()
+    const cartId = cartIdOverride || (await getCartId())
     if (!cartId) {
       return { success: false, message: "Košík se nepovedlo najít." }
     }
