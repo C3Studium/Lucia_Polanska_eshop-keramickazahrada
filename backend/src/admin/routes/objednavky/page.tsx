@@ -20,7 +20,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Fragment, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionDiary } from "../../components/production-diary";
@@ -681,6 +681,7 @@ const OrdersInner = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
   const expert = useExpertMode();
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [batchStage, setBatchStage] = useState<string>("");
@@ -998,7 +999,30 @@ const OrdersInner = () => {
             return (
               <Fragment key={order.id}>
               <article
-                className="grid gap-3 px-6 py-4 lg:grid-cols-[110px_minmax(0,1.3fr)_170px_190px_minmax(0,1fr)_auto] lg:items-center"
+                role="link"
+                tabIndex={0}
+                title={`Otevřít detail objednávky #${order.display_id}`}
+                onClick={(e) => {
+                  // Klik na řádek → detail objednávky. Klik na ovládací prvky
+                  // uvnitř (checkbox, Rozbalit/Deník, Detail, tlačítka) necháme
+                  // být — jinak by se navigace prala s jejich akcí.
+                  if (
+                    (e.target as HTMLElement).closest(
+                      "button, a, input, label, [role='checkbox']"
+                    )
+                  ) {
+                    return;
+                  }
+                  navigate(`/orders/${order.id}`);
+                }}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/orders/${order.id}`);
+                  }
+                }}
+                className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus grid cursor-pointer gap-3 px-6 py-4 outline-none transition-colors lg:grid-cols-[160px_minmax(0,1.3fr)_170px_190px_minmax(0,1fr)_auto] lg:items-center"
               >
                 <div className="flex items-center gap-3">
                   <Checkbox
@@ -1013,11 +1037,14 @@ const OrdersInner = () => {
                       setSelected(next);
                     }}
                   />
-                  <div>
+                  <div className="min-w-0">
                     <Text size="small" weight="plus">
                       #{order.display_id}
                     </Text>
-                    <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                    <Text
+                      size="xsmall"
+                      className="text-ui-fg-subtle mt-1 whitespace-nowrap"
+                    >
                       {formatDateTime(order.created_at)}
                     </Text>
                     {expert && <CopyId value={order.id} />}
