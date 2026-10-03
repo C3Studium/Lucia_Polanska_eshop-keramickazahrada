@@ -161,6 +161,10 @@ export async function POST(
     thumbnail,
     metadata: {
       [CLEARANCE_METADATA_KEY]: true,
+      // Poškozený jedinečný kus je z definice křehký — rozbije se a druhý není.
+      // `fragile` omezí dopravu na křehký balík + osobní odběr (lib/util/fragile).
+      // Výchozí zapnuto; Lucia může u konkrétního kusu vypnout na stránce produktu.
+      fragile: true,
       clearance_source_product_id: source.id,
       clearance_source_variant_id: sourceVariant.id,
       clearance_original_price: originalPrice,

@@ -55,7 +55,7 @@ export async function retrieveCart(cartId?: string) {
            vyjmenované, ne ponechané na `*items` — je to jediné místo, kde se
            dá poznat, že se na ně někdo spoléhá. */
         fields:
-          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, +items.is_discountable, +items.compare_at_unit_price, *promotions, +shipping_methods.name, +items.product.categories.handle",
+          "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, +items.is_discountable, +items.compare_at_unit_price, *promotions, +shipping_methods.name, +items.product.categories.handle, +items.product.metadata",
       },
       headers,
       next,

@@ -546,7 +546,16 @@ const Shipping: React.FC<ShippingProps> = ({
                     void handleSetShippingMethod(v, { advance })
                   }}
                 >
-                  {deliveryOptions.map((option) => {
+                  {deliveryOptions
+                    .filter((option) => {
+                      // Při omezení (křehké / zakázka) nepovolené dopravy vůbec
+                      // nenabízíme — zůstane jen křehký balík a osobní odběr.
+                      // Dřív se zobrazovaly zašedlé s hláškou, což mátlo.
+                      if (!restriction) return true
+                      const isPickup = getFulfillmentType(option) === "pickup"
+                      return deliveryAllowedUnder(option, isPickup)
+                    })
+                    .map((option) => {
                     const isPickup = getFulfillmentType(option) === "pickup"
                     const address = isPickup
                       ? formatAddress(
