@@ -134,11 +134,27 @@ const resolveGroup = (method: ComgatePaymentMethod): MethodGroup | null => {
   const id = method.id.toUpperCase()
   const group = method.group.toUpperCase()
 
+  // Apple Pay i Google Pay mají u ComGate group=CARD; poznáme je podle id a
+  // odkloníme do vlastní „peněženkové" skupiny (ať nejsou pod platební kartou).
   if (id.includes("APPLE") || id.includes("GOOGLE")) return "wallet"
   if (group === "BANK" || id.startsWith("BANK_")) return "bank"
-  if (group === "LATER" || id.startsWith("LATER_")) return null
-  return "card"
+  // Jen SKUTEČNÁ karta. Vše ostatní — odložené (LATER) i splátkové (PART):
+  // Twisto, Skip Pay, PlatímPak, ESSOX, Cofidis — se u nás NENABÍZÍ, aby pod
+  // „Platební kartou" nebyly žádné pod-možnosti (karta = jen karta).
+  if (group === "CARD") return "card"
+  return null
 }
+
+/* „Platební karta" je po vyřazení splátek vždy jediná metoda → klik ji rovnou
+   vybere (karta nemá mít pod-možnosti). Peněženka naopak vždy ukáže, co zařízení
+   umí: na Applu Apple i Google Pay, na Windows jen Google (tak to vrací ComGate
+   podle user-agenta) — ať si zákazník vybere sám a neskočí to na „Vybrali jste". */
+const isExpandable = (group: MethodGroup, count: number) =>
+  count > 1 || (group === "wallet" && count >= 1)
+
+/* Česká shoda: 1 možnost, 2–4 možnosti, 5+ možností. */
+const pluralMoznosti = (n: number) =>
+  n === 1 ? "možnost" : n >= 2 && n <= 4 ? "možnosti" : "možností"
 
 const legacyMethodId = (optionId: string) => {
   if (optionId === "pp_comgate_card") return "CARD_ALL"
@@ -295,7 +311,7 @@ export default function ComgatePaymentSelector({
   const open = (group: MethodGroup, groupMethods: SelectorMethod[]) => {
     if (disabled || isSubmitting) return
 
-    if (groupMethods.length === 1) {
+    if (!isExpandable(group, groupMethods.length)) {
       void choose(groupMethods[0])
       return
     }
@@ -407,7 +423,7 @@ export default function ComgatePaymentSelector({
                     data-group={id}
                     data-active={expanded}
                     aria-expanded={
-                      groupMethods.length > 1 ? expanded : undefined
+                      isExpandable(id, groupMethods.length) ? expanded : undefined
                     }
                     onClick={() => open(id, groupMethods)}
                     disabled={disabled || isSubmitting}
@@ -426,7 +442,11 @@ export default function ComgatePaymentSelector({
                       ))}
                     </span>
                     <span className={styles.groupArrow} aria-hidden="true">
-                      {groupMethods.length > 1 ? (expanded ? "−" : "+") : "↗"}
+                      {isExpandable(id, groupMethods.length)
+                        ? expanded
+                          ? "−"
+                          : "+"
+                        : "↗"}
                     </span>
                   </motion.button>
                 )
@@ -463,7 +483,7 @@ export default function ComgatePaymentSelector({
             </div>
 
             <AnimatePresence initial={false}>
-              {openGroup && activeGroupMethods.length > 1 && (
+              {openGroup && isExpandable(openGroup, activeGroupMethods.length) && (
                 <motion.div
                   className={styles.pickerWrap}
                   key={openGroup}
@@ -479,7 +499,10 @@ export default function ComgatePaymentSelector({
                           ? "Vyberte banku"
                           : groupMeta[openGroup].title}
                       </span>
-                      <small>{activeGroupMethods.length} možností</small>
+                      <small>
+                        {activeGroupMethods.length}{" "}
+                        {pluralMoznosti(activeGroupMethods.length)}
+                      </small>
                     </div>
 
                     {isBankOpen && (
