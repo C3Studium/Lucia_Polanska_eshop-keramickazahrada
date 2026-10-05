@@ -1,8 +1,24 @@
 import styles from "./style.module.scss"
 
-/** The three outcomes the backend redirects with after a balance payment (§4.6). */
+/**
+ * Výsledky, se kterými se zákazník vrací po doplatku (§4.6).
+ *
+ * `paid` / `zruseno` / `ceka` posílá ComGate na stránku objednávky po platbě;
+ * `chyba` / `neplatny-odkaz` posílá backendová pay-balance route při chybě.
+ */
 const MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
-  paid: { tone: "ok", text: "Doplatek je zaplacený. Děkujeme!" },
+  paid: {
+    tone: "ok",
+    text: "Doplatek je zaplacený — objednávka je teď plně uhrazená. Děkujeme!",
+  },
+  zruseno: {
+    tone: "warn",
+    text: "Platba doplatku byla zrušená. Zkusit to můžete znovu z e-mailu, nebo nám napište.",
+  },
+  ceka: {
+    tone: "warn",
+    text: "Platba doplatku se zpracovává. Jakmile dorazí, dáme vám vědět.",
+  },
   chyba: {
     tone: "warn",
     text: "Platbu se nepovedlo otevřít. Napište nám prosím.",

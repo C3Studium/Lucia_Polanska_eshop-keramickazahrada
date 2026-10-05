@@ -56,6 +56,23 @@ export const orderLink = (order: any): string => {
 }
 
 /**
+ * Relativní cesta na stránku objednávky — pro ComGate `url_paid` / `url_cancelled`
+ * / `url_pending`, které se v comgate modulu resolvují proti STOREFRONT_PUBLIC_URL,
+ * a proto MUSÍ začínat „/" (viz `resolveStorefrontReturnUrl`). Sem se vrací
+ * zákazník po zaplacení DOPLATKU: bez toho ComGate padal na neexistující
+ * `/{country}/payment/{session}/confirmed` → 404. Stránka `order/[id]/confirmed`
+ * je balance-aware a `?platba=` si přečte (i pro hosta přes OrderStateShell).
+ */
+export const orderConfirmedPath = (
+  orderId: string,
+  platba?: string
+): string => {
+  const country = (process.env.STOREFRONT_COUNTRY || "cz").toLowerCase()
+  const query = platba ? `?platba=${encodeURIComponent(platba)}` : ""
+  return `/${country}/order/${orderId}/confirmed${query}`
+}
+
+/**
  * A product page — `app/[countryCode]/(main)/products/[handle]`.
  *
  * By **handle**, not id. An id produces a page that does not exist, which is

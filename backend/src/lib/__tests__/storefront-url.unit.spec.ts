@@ -1,6 +1,7 @@
 import {
   accountOrdersLink,
   cartRecoverLink,
+  orderConfirmedPath,
   orderLink,
   productLink,
   storefrontBase,
@@ -107,6 +108,22 @@ describe("customer e-mail links", () => {
     expect(productLink("miska-modra")).toBe("")
     expect(cartRecoverLink("cart_01")).toBe("")
     expect(storeLink()).toBe("")
+  })
+
+  it("builds the ComGate balance-return path as a storefront-relative path (starts with /)", () => {
+    // Musí začínat „/" — comgate `resolveStorefrontReturnUrl` jinak spadne na
+    // fallback (/payment/{session}/confirmed → 404). Bez query i s ní.
+    expect(orderConfirmedPath("order_01")).toBe("/cz/order/order_01/confirmed")
+    expect(orderConfirmedPath("order_01", "paid")).toBe(
+      "/cz/order/order_01/confirmed?platba=paid"
+    )
+  })
+
+  it("honours STOREFRONT_COUNTRY on the balance-return path too", () => {
+    process.env.STOREFRONT_COUNTRY = "SK"
+    expect(orderConfirmedPath("order_01", "zruseno")).toBe(
+      "/sk/order/order_01/confirmed?platba=zruseno"
+    )
   })
 
   it("falls back to MEDUSA_STOREFRONT_URL", () => {

@@ -6,6 +6,7 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
+import { orderConfirmedPath } from "./storefront-url"
 
 /**
  * Getting a customer a link to pay what they still owe on a commission.
@@ -173,6 +174,11 @@ export const ensureBalancePaymentLink = async (
           name: `Doplatek objednávky ${order.display_id || order.id}`,
           lang: "cs",
           production_payment_request_id: (request as any).id,
+          // Návrat z ComGate po doplatku na reálnou stránku objednávky, ne na
+          // neexistující /payment/{session}/confirmed (to byl ten 404).
+          url_paid: orderConfirmedPath(order.id, "paid"),
+          url_cancelled: orderConfirmedPath(order.id, "zruseno"),
+          url_pending: orderConfirmedPath(order.id, "ceka"),
         },
       },
     })

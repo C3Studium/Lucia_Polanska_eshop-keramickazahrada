@@ -17,6 +17,7 @@ import {
 import type { IEventBusModuleService } from "@medusajs/framework/types"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
+import { orderConfirmedPath } from "../../../../../../lib/storefront-url"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
 
@@ -567,6 +568,11 @@ export const POST = async (
                 name: `Doplatek objednávky ${order.display_id || order.id}`,
                 lang: "cs",
                 production_payment_request_id: request.id,
+                // Návrat z ComGate po doplatku na reálnou stránku objednávky,
+                // ne na neexistující /payment/{session}/confirmed (404).
+                url_paid: orderConfirmedPath(order.id, "paid"),
+                url_cancelled: orderConfirmedPath(order.id, "zruseno"),
+                url_pending: orderConfirmedPath(order.id, "ceka"),
               },
             },
           })
