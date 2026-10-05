@@ -140,15 +140,6 @@ export default async function OrderCompletedTemplate({
           />
         </section>
 
-        {/* The conversation about a commissioned piece does not end at checkout: it runs
-            until the piece does. Only rendered when the backend says this order is a
-            zakázka — an ordinary order has no diary and gets no box. */}
-        {commissionNotes && (
-          <section className={s.commission} aria-label="Zakázková výroba">
-            <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
-          </section>
-        )}
-
         {/* BACKEND-HOOKED: These values come from the retrieved StoreOrder response. */}
         <section className={s.orderMeta} aria-label="Údaje objednávky">
           {pickupPoint && (
@@ -303,6 +294,15 @@ export default async function OrderCompletedTemplate({
             </div>
           </aside>
         </div>
+
+        {/* Deník zakázky — co zákazník napsal a vyfotil, a místo, kam může
+            dopsat další. POD souhrnem (ne nahoře, kde zabíral půl stránky),
+            stejně jako brief v checkoutu sedí pod souhrnem. Jen u zakázky. */}
+        {commissionNotes && (
+          <section className={s.commission} aria-label="Zakázková výroba">
+            <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
+          </section>
+        )}
 
         {/* BACKEND-HOOKED: Delivery, contact, shipping method and payment data come from StoreOrder. */}
         <section className={s.details}>
