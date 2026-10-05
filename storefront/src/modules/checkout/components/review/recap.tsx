@@ -9,24 +9,10 @@ import { pickupPointLabel } from "@lib/util/pickup-point"
  * What the customer is about to pay for, in one block: the objects, where they are going,
  * and the total including VAT. This is the "let me check everything once more" moment.
  */
-export default function OrderRecap({
-  cart,
-  chargeNow,
-  balanceLater,
-}: {
-  cart: any
-  /** U zakázky: kolik se zaplatí teď (záloha). Jinak se řádky neukážou. */
-  chargeNow?: number
-  /** U zakázky: kolik zbývá doplatit po dokončení. */
-  balanceLater?: number
-}) {
+export default function OrderRecap({ cart }: { cart: any }) {
   const currency_code = cart?.currency_code ?? "czk"
   const money = (amount?: number | null) =>
     convertToLocale({ amount: amount ?? 0, currency_code })
-  const showDeposit =
-    typeof chargeNow === "number" &&
-    typeof balanceLater === "number" &&
-    balanceLater > 0.005
 
   const address = cart?.shipping_address
   const shippingMethod = cart?.shipping_methods?.at(-1)
@@ -117,20 +103,6 @@ export default function OrderRecap({
               <dt>Celkem</dt>
               <dd>{money(cart?.total)}</dd>
             </div>
-            {/* Zakázka se platí na dvakrát — ať „Přehled" říká totéž co tlačítko
-                „Zaplatit …": kolik teď a kolik potom. */}
-            {showDeposit && (
-              <>
-                <div className={styles.depositRow}>
-                  <dt>Zaplatíte teď</dt>
-                  <dd>{money(chargeNow)}</dd>
-                </div>
-                <div className={styles.balanceRow}>
-                  <dt>Doplatek po dokončení</dt>
-                  <dd>{money(balanceLater)}</dd>
-                </div>
-              </>
-            )}
           </dl>
           {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. Bez daně by ta věta
               tvrdila, že v ceně nějaká je. */}

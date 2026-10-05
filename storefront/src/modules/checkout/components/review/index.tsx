@@ -34,7 +34,7 @@ import styles from "./style.module.scss"
 import { TERMS_VERSION } from "@lib/constants"
 
 const COMMISSION_GATE_HINT =
-  "U zakázky nejdřív prosím napište, co si představujete — text nebo fotku — a uložte to."
+  "Tohle je výroba na míru — než objednávku zaplatíte, nám prosím napište nebo nahrajte fotku, co si představujete, a dejte Uložit k zakázce. Bez toho nevíme, co máme vyrobit."
 const CONSENT_GATE_HINT =
   "Než budete pokračovat, potvrďte prosím souhlas s podmínkami."
 
@@ -189,20 +189,7 @@ const Review = ({
             exit="exit"
           >
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
-              <OrderRecap
-                cart={cart}
-                /* U zakázky souhrn ukáže, kolik se platí TEĎ (záloha) a kolik
-                   zbývá — ať „Přehled" sedí s tlačítkem „Zaplatit …", ne jen
-                   s „Celkem". */
-                chargeNow={
-                  productionMode?.has_made_to_order ? chargeNow : undefined
-                }
-                balanceLater={
-                  productionMode?.has_made_to_order
-                    ? Math.max(0, (cart?.total ?? 0) - chargeNow)
-                    : undefined
-                }
-              />
+              <OrderRecap cart={cart} />
             </motion.div>
 
             {/* The brief, one per commissioned line: what they want, and pictures of it.
@@ -290,6 +277,13 @@ const Review = ({
             </AnimatePresence>
 
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
+              {/* U zakázky bez vyplněného briefu je tlačítko zamčené — spousta
+                  lidí by jinak nechápala, proč „nejde zaplatit". Výrazný callout
+                  NAD tlačítkem říká, že nejdřív musí napsat/nahrát, co si
+                  představují. */}
+              {!allCommissionsComplete && (
+                <p className={styles.commissionGate}>{COMMISSION_GATE_HINT}</p>
+              )}
               {comgateMethod ? (
                 <>
                   <button
@@ -301,9 +295,7 @@ const Review = ({
                   >
                     {isPaying ? "Přesměrováváme k platbě…" : payLabel}
                   </button>
-                  {!allCommissionsComplete ? (
-                    <p className={styles.gateHint}>{COMMISSION_GATE_HINT}</p>
-                  ) : !accepted ? (
+                  {allCommissionsComplete && !accepted ? (
                     <p className={styles.gateHint}>{CONSENT_GATE_HINT}</p>
                   ) : null}
                 </>
@@ -317,13 +309,9 @@ const Review = ({
                      odběr, dobírka) get it here, before placing the order. */
                   onBeforePlaceAction={recordConsent}
                 />
-              ) : (
-                <p className={styles.gateHint}>
-                  {!allCommissionsComplete
-                    ? COMMISSION_GATE_HINT
-                    : CONSENT_GATE_HINT}
-                </p>
-              )}
+              ) : allCommissionsComplete ? (
+                <p className={styles.gateHint}>{CONSENT_GATE_HINT}</p>
+              ) : null}
             </motion.div>
           </motion.div>
         )}
