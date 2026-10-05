@@ -1,0 +1,18 @@
+/*
+ * Obal briefu v pravém sloupci. Jen rozvržení a odsazení — žádný podklad:
+ * brief (`CommissionBrief` varianta „order") si nese vlastní krémovou kartu,
+ * takže druhá karta přes ni by dělala kartu v kartě.
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.kicker {
+  color: rgb(var(--ink-05-rgb) / 0.5);
+  font: 600 0.62rem/1 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

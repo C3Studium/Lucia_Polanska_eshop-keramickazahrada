@@ -300,6 +300,26 @@
   gap: clamp(3rem, 6vw, 7rem);
 }
 
+/* Levý sloupec: údaje (Doručení + Platba) nahoře, pak objednané kusy. */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 6vh, 5rem);
+  min-width: 0;
+}
+
+/* Pravý sloupec: souhrn a hned pod ním brief / deník zakázky. Lepkavý jako
+   celek (dřív jen doklad); u běžné objednávky je v něm jen souhrn, takže je
+   nízký a drží u horního okraje jako dřív. */
+.rail {
+  position: sticky;
+  top: clamp(6rem, 10vh, 8rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vh, 2.25rem);
+  min-width: 0;
+}
+
 .objects { min-width: 0; }
 
 .sectionHead {
@@ -405,10 +425,10 @@
   font: 400 1.02rem/1.4 "Sansation-Regular", sans-serif;
 }
 
+/* Lepkavost přešla na `.rail` (celý pravý sloupec: souhrn + brief). Doklad
+   zůstává `relative`, aby jeho rámeček `::before` měl vůči čemu stát. */
 .receipt {
-  position: sticky;
-  top: clamp(6rem, 10vh, 8rem);
-  z-index: 1;
+  position: relative;
   color: var(--paper);
   background: var(--ink);
   box-shadow: 26px 32px 70px -48px rgb(var(--black-01-rgb) / .95);
@@ -525,14 +545,15 @@
  * (adresa ve trech sloupcich, platba ve dvou) mackaly do poloviny stranky
  * a rostly do vysky. Pod sebou ma kazda celou sirku, vejde se na min radku
  * a cely blok je nakonec nizsi, ne vyssi.
+ *
+ * Blok teď stojí NAHOŘE v levém sloupci (dřív byl utopený dole pod vším),
+ * takže horní odsazení a linka, co ho oddělovaly od předchozí sekce, odpadly
+ * — mezeru k seznamu kusů pod ním řeší `gap` na `.main`.
  */
 .details {
   display: grid;
   grid-template-columns: 1fr;
   gap: clamp(2rem, 4vh, 3.25rem);
-  margin-top: clamp(4rem, 8vh, 7rem);
-  padding-top: clamp(2.5rem, 5vh, 4.5rem);
-  border-top: 1px solid var(--line);
 }
 
 .detailCard {
@@ -658,8 +679,14 @@
 
 @include below-px(1120px) {
   .purchaseGrid { grid-template-columns: 1fr; }
-  .receipt { position: relative; top: 0; width: min(100%, 34rem); margin-left: auto; }
-  .details { grid-template-columns: 1fr; }
+  /* Pod sebou jde souhrn + brief NAD údaje a kusy — stejné pořadí čtení jako
+     na telefonu (souhrn → brief → údaje → kusy). `.rail` přestává být lepkavý,
+     protože vedle něj už nic nestojí, u čeho by měl držet. */
+  .rail {
+    position: static;
+    order: -1;
+    width: min(100%, 34rem);
+  }
   .support { grid-template-columns: 1fr 1fr; }
   .actions { grid-column: 1 / -1; }
 }
@@ -730,34 +757,23 @@
   /* Cara jen mezi nimi, ne za miniaturou. */
   .itemQuantity { grid-column: 2; border-left: 0; }
   .itemTotal { grid-column: 3; }
-  .receipt { width: calc(100% - 13px); margin-left: 0; }
 
   /*
-   * Na uzke obrazovce jde souhrn pred seznam.
+   * Na uzke obrazovce jde souhrn (+ brief) pred seznam.
    *
    * Vedle sebe se to na sirokem okne cte najednou; pod sebou znamena poradi
    * v kodu poradi ctení, a seznam peti kusu odsune castku, kvuli ktere clovek
-   * na tuhle stranku prisel, o par obrazovek nize. Adresa a platba jdou hned
-   * za souhrn — to jsou dalsi dve veci, ktere si zakaznik kontroluje; seznam
-   * kusu je az pod tim, k prohlednuti.
+   * na tuhle stranku prisel, o par obrazovek nize. Pravy sloupec (`.rail`:
+   * souhrn + brief) proto skace nahoru pred `.main` (adresa, platba, kusy) —
+   * to resi uz blok `below-px(1120px)` vys pres `order: -1` na `.rail`, takze
+   * tady uz zadne prepocitavani poradi pres `display: contents` netreba:
+   * `.purchaseGrid` zustava normalni blok v toku stranky.
    *
-   * `display: contents` na `.purchaseGrid` je tu proto, ze `.objects`
-   * a `.receipt` jsou jeho deti, kdezto `.details` je jeho sourozenec —
-   * bez toho by se mezi ne `.details` nedaly vlozit. Poradi dostavaji
-   * VSICHNI sourozenci, ne jen ty tri: `order` se pocita v ramci celeho
-   * kontejneru, takze bez cisel u ostatnich by hlavicka i paticka skocily
-   * na zacatek.
+   * Rail na plnou sirku; doklad o 13px uzsi, aby se jeho odsazeny ramecek
+   * (`::before`, +13px vpravo) vesel a neutekl pod oriznuti `.root`u.
    */
-  .container { display: grid; grid-template-columns: 1fr; }
-  .purchaseGrid { display: contents; }
-  .masthead { order: 1; }
-  .hero { order: 2; }
-  .orderMeta { order: 3; }
-  .receipt { order: 4; }
-  .details { order: 5; }
-  .objects { order: 6; }
-  .support { order: 7; }
-  .footer { order: 8; }
+  .rail { width: 100%; }
+  .receipt { width: calc(100% - 13px); }
   .detailHeading { grid-template-columns: 1.6rem 1fr; }
   .support { grid-template-columns: 1fr; padding: 2.4rem 1.5rem; }
   .actions { grid-column: auto; align-items: flex-start; flex-direction: column; }
@@ -859,9 +875,10 @@
       grid-column: 2;
     }
 
-    /* Souhrn na 90 vw a na střed — blok 1120 ho drží na 34rem a tlačí doprava,
-       což je psané pro tvar, kde vedle něj ještě něco stojí. */
-    .receipt {
+    /* Pravý sloupec (souhrn + brief) na 90 vw a na střed — blok 1120 ho drží
+       na 34rem, což je psané pro tvar, kde vedle něj ještě něco stojí. Doklad
+       i brief uvnitř se roztáhnou s railem. */
+    .rail {
       width: 90vw;
       max-width: none;
       margin-inline: auto;

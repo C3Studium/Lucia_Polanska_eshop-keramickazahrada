@@ -59,21 +59,24 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       <AccountSectionReveal
         className={s.accountOrderDetailsLayout}
       >
+        {/* Údaje (doručení + platba) nahoře, teprve pak seznam kusů — stejné
+            pořadí jako na potvrzení objednávky: co si zákazník kontroluje, je
+            hned nahoře, seznam kusů je až pod tím k prohlédnutí. */}
         <div className={s.accountOrderDetailsMain}>
           <section className={s.accountOrderDetailsSection}>
-            <span>01 · výrobky</span>
-            <h2>Co jste objednali</h2>
-            <Items order={order} />
-          </section>
-
-          <section className={s.accountOrderDetailsSection}>
-            <span>02 · cesta</span>
+            <span>01 · cesta</span>
             <ShippingDetails order={order} />
           </section>
 
           <section className={s.accountOrderDetailsSection}>
-            <span>03 · úhrada</span>
+            <span>02 · úhrada</span>
             <PaymentDetails order={order} />
+          </section>
+
+          <section className={s.accountOrderDetailsSection}>
+            <span>03 · výrobky</span>
+            <h2>Co jste objednali</h2>
+            <Items order={order} />
           </section>
         </div>
 

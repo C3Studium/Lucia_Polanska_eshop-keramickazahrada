@@ -110,10 +110,14 @@
     grid-template-columns: 1fr;
   }
 
+  /* Pod sebou jde souhrn nahoru, před údaje a kusy — stejné pořadí čtení jako
+     na potvrzení objednávky (souhrn → údaje → kusy). Když vede, drží se vlevo,
+     ne u pravého okraje. */
   .accountOrderDetailsAside {
     position: static;
+    order: -1;
     width: min(100%, 520px);
-    justify-self: end;
+    justify-self: start;
   }
 }
 

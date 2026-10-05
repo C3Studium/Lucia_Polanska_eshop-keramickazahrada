@@ -13,6 +13,7 @@ import CarrierDamageNotice, {
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import OrderCommissionDiary from "@modules/order/components/commission-diary"
+import OrderBriefRail from "@modules/order/components/order-brief-rail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -170,214 +171,230 @@ export default async function OrderCompletedTemplate({
           </div>
         </section>
 
-        {/* BACKEND-HOOKED: Products, quantities, prices, discounts and totals come from StoreOrder. */}
+        {/*
+         * Dvousloupcové tělo objednávky:
+         *  — LEVÝ sloupec (`.main`): nejdřív údaje (Doručení + Platba), které dřív
+         *    byly utopené úplně dole, pak seznam objednaných kusů.
+         *  — PRAVÝ sloupec (`.rail`): souhrn (doklad) a HNED POD NÍM brief / deník
+         *    zakázky, přesně jako brief v checkoutu sedí pod přehledem. U běžné
+         *    objednávky brief není a v railu je jen souhrn.
+         * Na úzké obrazovce se to skládá pod sebe v pořadí souhrn → brief →
+         * údaje → kusy (viz stylopis).
+         */}
         <div className={s.purchaseGrid}>
-          <section className={s.objects}>
-            <div className={s.sectionHead}>
-              <div>
-                <p>01 · Co jste objednali</p>
-                <h2>Souhrn</h2>
+          <div className={s.main}>
+            {/* BACKEND-HOOKED: Delivery, contact, shipping method and payment data come from StoreOrder. */}
+            <section className={s.details}>
+              <article className={s.detailCard}>
+                <div className={s.detailHeading}>
+                  <span>01</span>
+                  <div>
+                    <p>Doručení</p>
+                    <h2>Vaše adresa</h2>
+                  </div>
+                </div>
+
+                <div className={s.detailGrid}>
+                  <div data-testid="shipping-address-summary">
+                    <span>Adresa</span>
+                    <strong>
+                      {order.shipping_address?.first_name}{" "}
+                      {order.shipping_address?.last_name}
+                    </strong>
+                    <p>
+                      {order.shipping_address?.address_1}
+                      {order.shipping_address?.address_2
+                        ? `, ${order.shipping_address.address_2}`
+                        : ""}
+                      <br />
+                      {order.shipping_address?.postal_code}{" "}
+                      {order.shipping_address?.city}
+                      <br />
+                      {order.shipping_address?.country_code?.toUpperCase()}
+                    </p>
+                  </div>
+                  <div data-testid="shipping-contact-summary">
+                    <span>Kontakt</span>
+                    <strong>{order.email}</strong>
+                    <p>{order.shipping_address?.phone || "Telefon neuveden"}</p>
+                  </div>
+                  <div data-testid="shipping-method-summary">
+                    <span>Způsob dopravy</span>
+                    <strong>{shippingMethod?.name || "Ještě upřesníme"}</strong>
+                    <p>
+                      {shippingMethod
+                        ? money(shippingMethod.total ?? shippingMethod.amount)
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </article>
+
+              <article className={s.detailCard}>
+                <div className={s.detailHeading}>
+                  <span>02</span>
+                  <div>
+                    <p>Platba</p>
+                    <h2>Vaše platba</h2>
+                  </div>
+                </div>
+
+                <div className={s.paymentGrid}>
+                  <div>
+                    <span>Metoda</span>
+                    <strong data-testid="payment-method">{paymentTitle}</strong>
+                  </div>
+                  <div>
+                    <span>Stav</span>
+                    <strong>{paymentStatusLabel}</strong>
+                  </div>
+                  <div>
+                    <span>{showDeposit ? "Zaplaceno teď" : "Částka"}</span>
+                    <strong data-testid="payment-amount">
+                      {money(showDeposit ? paidNow : payment?.amount ?? order.total)}
+                    </strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            {/* BACKEND-HOOKED: Products, quantities, prices, discounts and totals come from StoreOrder. */}
+            <section className={s.objects}>
+              <div className={s.sectionHead}>
+                <div>
+                  <p>03 · Vaše položky</p>
+                  <h2>Co jste objednali</h2>
+                </div>
+                <span>
+                  {items.reduce((count, item) => count + item.quantity, 0)} ks
+                </span>
               </div>
-              <span>
-                {items.reduce((count, item) => count + item.quantity, 0)} ks
-              </span>
-            </div>
 
-            <div className={s.itemList} data-testid="products-table">
-              {items.map((item, index) => {
-                const unitPrice = item.unit_price ?? 0
-                const lineTotal =
-                  (item as HttpTypes.StoreOrderLineItem & { total?: number })
-                    .total ?? unitPrice * item.quantity
+              <div className={s.itemList} data-testid="products-table">
+                {items.map((item, index) => {
+                  const unitPrice = item.unit_price ?? 0
+                  const lineTotal =
+                    (item as HttpTypes.StoreOrderLineItem & { total?: number })
+                      .total ?? unitPrice * item.quantity
 
-                return (
-                  <article
-                    className={s.item}
-                    key={item.id}
-                    data-testid="product-row"
-                  >
-                    <span className={s.itemIndex}>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <div className={s.thumbnail}>
-                      <Thumbnail thumbnail={item.thumbnail} size="square" />
-                    </div>
-                    <div className={s.itemCopy}>
-                      <p>Z ateliéru</p>
-                      <h3 data-testid="product-name">{item.product_title}</h3>
-                      <div className={s.variant}>
-                        <LineItemOptions
-                          variant={item.variant}
-                          data-testid="product-variant"
-                        />
+                  return (
+                    <article
+                      className={s.item}
+                      key={item.id}
+                      data-testid="product-row"
+                    >
+                      <span className={s.itemIndex}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className={s.thumbnail}>
+                        <Thumbnail thumbnail={item.thumbnail} size="square" />
                       </div>
+                      <div className={s.itemCopy}>
+                        <p>Z ateliéru</p>
+                        <h3 data-testid="product-name">{item.product_title}</h3>
+                        <div className={s.variant}>
+                          <LineItemOptions
+                            variant={item.variant}
+                            data-testid="product-variant"
+                          />
+                        </div>
+                      </div>
+                      <div className={s.itemQuantity}>
+                        <span>Množství</span>
+                        <strong data-testid="product-quantity">
+                          {item.quantity} × {money(unitPrice)}
+                        </strong>
+                      </div>
+                      <div className={s.itemTotal}>
+                        <span>Celkem</span>
+                        <strong>{money(lineTotal)}</strong>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+          </div>
+
+          <aside className={s.rail}>
+            {/* BACKEND-HOOKED: Products, quantities, prices, discounts and totals come from StoreOrder. */}
+            <div className={s.receipt}>
+              <div className={s.receiptInner}>
+                <p className={s.receiptNote}>
+                  Bezpečná platba · pečlivé balení
+                </p>
+                <span className={s.receiptEyebrow}>04 · Souhrn</span>
+                <h2>Souhrn</h2>
+
+                <div className={s.totalRows}>
+                  <div>
+                    <span>Mezisoučet</span>
+                    <strong>{money(order.item_total)}</strong>
+                  </div>
+                  {order.discount_total > 0 && (
+                    <div>
+                      <span>Sleva</span>
+                      <strong>− {money(order.discount_total)}</strong>
                     </div>
-                    <div className={s.itemQuantity}>
-                      <span>Množství</span>
-                      <strong data-testid="product-quantity">
-                        {item.quantity} × {money(unitPrice)}
-                      </strong>
+                  )}
+                  {order.gift_card_total > 0 && (
+                    <div>
+                      <span>Dárkový poukaz</span>
+                      <strong>− {money(order.gift_card_total)}</strong>
                     </div>
-                    <div className={s.itemTotal}>
-                      <span>Celkem</span>
-                      <strong>{money(lineTotal)}</strong>
+                  )}
+                  <div>
+                    <span>Doprava</span>
+                    <strong>{money(order.shipping_total)}</strong>
+                  </div>
+                  {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
+                  {PLATCE_DPH && (
+                    <div>
+                      <span>Daně</span>
+                      <strong>{money(order.tax_total)}</strong>
                     </div>
-                  </article>
-                )
-              })}
+                  )}
+                </div>
+
+                <div className={s.grandTotal}>
+                  <span>Celkem</span>
+                  <strong>{money(order.total)}</strong>
+                </div>
+
+                {/* Zakázka: kolik se zaplatilo teď (záloha) a kolik zbývá — ať
+                    souhrn neříká „Zaplaceno" u objednávky, kde je zaplacená jen
+                    záloha. */}
+                {showDeposit && (
+                  <div className={s.depositSplit}>
+                    <div>
+                      <span>Zaplaceno teď (záloha)</span>
+                      <strong>{money(paidNow)}</strong>
+                    </div>
+                    <div>
+                      <span>Zbývá doplatit</span>
+                      <strong>{money(remaining)}</strong>
+                    </div>
+                  </div>
+                )}
+
+                <div className={s.receiptStatus}>
+                  <span>Platba</span>
+                  <strong>{paymentStatusLabel}</strong>
+                </div>
+              </div>
             </div>
-          </section>
 
-          <aside className={s.receipt}>
-            <div className={s.receiptInner}>
-              <p className={s.receiptNote}>
-                Bezpečná platba · pečlivé balení
-              </p>
-              <span className={s.receiptEyebrow}>02 · Souhrn</span>
-              <h2>Souhrn</h2>
-
-              <div className={s.totalRows}>
-                <div>
-                  <span>Mezisoučet</span>
-                  <strong>{money(order.item_total)}</strong>
-                </div>
-                {order.discount_total > 0 && (
-                  <div>
-                    <span>Sleva</span>
-                    <strong>− {money(order.discount_total)}</strong>
-                  </div>
-                )}
-                {order.gift_card_total > 0 && (
-                  <div>
-                    <span>Dárkový poukaz</span>
-                    <strong>− {money(order.gift_card_total)}</strong>
-                  </div>
-                )}
-                <div>
-                  <span>Doprava</span>
-                  <strong>{money(order.shipping_total)}</strong>
-                </div>
-                {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
-                {PLATCE_DPH && (
-                  <div>
-                    <span>Daně</span>
-                    <strong>{money(order.tax_total)}</strong>
-                  </div>
-                )}
-              </div>
-
-              <div className={s.grandTotal}>
-                <span>Celkem</span>
-                <strong>{money(order.total)}</strong>
-              </div>
-
-              {/* Zakázka: kolik se zaplatilo teď (záloha) a kolik zbývá — ať
-                  souhrn neříká „Zaplaceno" u objednávky, kde je zaplacená jen
-                  záloha. */}
-              {showDeposit && (
-                <div className={s.depositSplit}>
-                  <div>
-                    <span>Zaplaceno teď (záloha)</span>
-                    <strong>{money(paidNow)}</strong>
-                  </div>
-                  <div>
-                    <span>Zbývá doplatit</span>
-                    <strong>{money(remaining)}</strong>
-                  </div>
-                </div>
-              )}
-
-              <div className={s.receiptStatus}>
-                <span>Platba</span>
-                <strong>{paymentStatusLabel}</strong>
-              </div>
-            </div>
+            {/* Deník zakázky — co zákazník napsal a vyfotil, a místo, kam může
+                dopsat další. POD souhrnem v pravém sloupci, stejně jako brief
+                v checkoutu sedí pod přehledem. Jen u zakázky; běžná objednávka
+                má v railu jen souhrn. */}
+            {commissionNotes && (
+              <OrderBriefRail>
+                <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
+              </OrderBriefRail>
+            )}
           </aside>
         </div>
-
-        {/* Deník zakázky — co zákazník napsal a vyfotil, a místo, kam může
-            dopsat další. POD souhrnem (ne nahoře, kde zabíral půl stránky),
-            stejně jako brief v checkoutu sedí pod souhrnem. Jen u zakázky. */}
-        {commissionNotes && (
-          <section className={s.commission} aria-label="Zakázková výroba">
-            <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
-          </section>
-        )}
-
-        {/* BACKEND-HOOKED: Delivery, contact, shipping method and payment data come from StoreOrder. */}
-        <section className={s.details}>
-          <article className={s.detailCard}>
-            <div className={s.detailHeading}>
-              <span>03</span>
-              <div>
-                <p>Doručení</p>
-                <h2>Vaše adresa</h2>
-              </div>
-            </div>
-
-            <div className={s.detailGrid}>
-              <div data-testid="shipping-address-summary">
-                <span>Adresa</span>
-                <strong>
-                  {order.shipping_address?.first_name}{" "}
-                  {order.shipping_address?.last_name}
-                </strong>
-                <p>
-                  {order.shipping_address?.address_1}
-                  {order.shipping_address?.address_2
-                    ? `, ${order.shipping_address.address_2}`
-                    : ""}
-                  <br />
-                  {order.shipping_address?.postal_code}{" "}
-                  {order.shipping_address?.city}
-                  <br />
-                  {order.shipping_address?.country_code?.toUpperCase()}
-                </p>
-              </div>
-              <div data-testid="shipping-contact-summary">
-                <span>Kontakt</span>
-                <strong>{order.email}</strong>
-                <p>{order.shipping_address?.phone || "Telefon neuveden"}</p>
-              </div>
-              <div data-testid="shipping-method-summary">
-                <span>Způsob dopravy</span>
-                <strong>{shippingMethod?.name || "Ještě upřesníme"}</strong>
-                <p>
-                  {shippingMethod
-                    ? money(shippingMethod.total ?? shippingMethod.amount)
-                    : "—"}
-                </p>
-              </div>
-            </div>
-          </article>
-
-          <article className={s.detailCard}>
-            <div className={s.detailHeading}>
-              <span>04</span>
-              <div>
-                <p>Platba</p>
-                <h2>Vaše platba</h2>
-              </div>
-            </div>
-
-            <div className={s.paymentGrid}>
-              <div>
-                <span>Metoda</span>
-                <strong data-testid="payment-method">{paymentTitle}</strong>
-              </div>
-              <div>
-                <span>Stav</span>
-                <strong>{paymentStatusLabel}</strong>
-              </div>
-              <div>
-                <span>{showDeposit ? "Zaplaceno teď" : "Částka"}</span>
-                <strong data-testid="payment-amount">
-                  {money(showDeposit ? paidNow : payment?.amount ?? order.total)}
-                </strong>
-              </div>
-            </div>
-          </article>
-        </section>
 
         <section className={s.support}>
           <div>
