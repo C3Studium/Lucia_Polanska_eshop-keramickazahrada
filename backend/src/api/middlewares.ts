@@ -531,6 +531,30 @@ export default defineMiddlewares({
       methods: ["GET"],
       middlewares: [authenticate("customer", ["bearer", "session"])],
     },
+    // Hostovská self-service objednávky z e-mailu (editace, reklamace/vrácení):
+    // podepsaný token v query/body je důkaz sám o sobě, přihlášený zákazník
+    // dorazí i bez něj. Volitelná auth pustí HOSTA bez session k handleru
+    // (jinak by ho default /store/orders autorizace odmítla dřív, než se k
+    // tokenu dostane — fungovalo by to přihlášenému, ne hostovi). Handler pak
+    // ověří token sám. Stejný vzor jako self-service kurzů níž.
+    {
+      matcher: "/store/orders/:id/guest-edit",
+      methods: ["GET", "POST", "DELETE"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    {
+      matcher: "/store/orders/:id/guest-refund",
+      methods: ["GET", "POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
     // Course reservations: auth is *optional* — a logged-in booker gets
     // linked to their account (customer_id lands on the reservation), a guest
     // passes through untouched. Validation is inline in the handler.
