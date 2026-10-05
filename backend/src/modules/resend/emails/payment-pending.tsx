@@ -39,6 +39,12 @@ interface PaymentPendingEmailProps {
   orderLink?: string;
   /** Whole sentence, e.g. „Platba se obvykle potvrdí do několika minut." */
   estimatedConfirmationTime?: string;
+  /** Kolik už je zaplaceno zálohou (naformátované) — ať je jasné, co proběhlo. */
+  depositPaid?: string | null;
+  /** Odkaz na zálohovou (první) fakturu v PDF. */
+  depositInvoiceUrl?: string | null;
+  /** Číslo zálohové faktury (do textu odkazu). */
+  depositInvoiceNumber?: string | null;
 }
 
 function PaymentPendingEmailComponent({
@@ -50,6 +56,9 @@ function PaymentPendingEmailComponent({
   orderLink = "",
   estimatedConfirmationTime = "Platba se obvykle potvrdí do několika minut.",
   makingPhotoUrl,
+  depositPaid,
+  depositInvoiceUrl,
+  depositInvoiceNumber,
 }: PaymentPendingEmailProps) {
   const payUrl = paymentLink || orderLink || storeLink()
 
@@ -72,11 +81,23 @@ function PaymentPendingEmailComponent({
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {depositPaid ? (
+        <LedgerRow label="Zaplaceno zálohou" value={depositPaid} />
+      ) : null}
       <LedgerRow label="Způsob platby" value={paymentMethod} />
       {paymentAmount ? (
         <LedgerRow label="Zbývá doplatit" value={paymentAmount} strong tone="clay" />
       ) : null}
       <LedgerEnd />
+
+      {depositInvoiceUrl ? (
+        <P small style={{ margin: "0 0 4px" }}>
+          Zálohovou fakturu
+          {depositInvoiceNumber ? ` ${depositInvoiceNumber}` : ""} si můžete
+          stáhnout <a href={depositInvoiceUrl}>zde</a>. Fakturu na doplatek vám
+          pošleme po jeho zaplacení.
+        </P>
+      ) : null}
 
       {makingPhotoUrl && (
         <>
@@ -133,6 +154,9 @@ const mockPaymentPending: PaymentPendingEmailProps = {
   makingPhotoUrl:
     "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
   estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
+  depositPaid: "1 225 Kč",
+  depositInvoiceUrl: "https://keramickazahrada.cz/faktura-20260002.pdf",
+  depositInvoiceNumber: "20260002",
 }
 
 export default () => <PaymentPendingEmailComponent {...mockPaymentPending} />

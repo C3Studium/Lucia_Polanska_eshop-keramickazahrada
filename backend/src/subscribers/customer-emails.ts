@@ -39,6 +39,7 @@ const ORDER_FIELDS = [
   "email",
   "currency_code",
   "total",
+  "metadata",
   "items.*",
   "customer.first_name",
   "customer.last_name",
@@ -176,6 +177,26 @@ const onBalanceRequested = async ({
     return
   }
 
+  // Co už proběhlo: kolik je zaplaceno zálohou + zálohová (první) faktura. Ať
+  // doplatkový e-mail ukáže „co a za co se platilo" a přiloží odkaz na fakturu.
+  const siblingRequests = (await madeToOrder
+    .listProductionPaymentRequests({
+      production_order_id: request.production_order_id,
+    } as never)
+    .catch(() => [])) as any[]
+  const depositPaid = siblingRequests
+    .filter((r) => r.type === "deposit" && r.status === "paid")
+    .reduce((sum, r) => sum + Number(r.amount ?? 0), 0)
+  const meta = (order.metadata ?? {}) as Record<string, unknown>
+  const depositInvoiceUrl =
+    typeof meta.idoklad_invoice_pdf_url === "string"
+      ? meta.idoklad_invoice_pdf_url
+      : null
+  const depositInvoiceNumber =
+    typeof meta.idoklad_invoice_number === "string"
+      ? meta.idoklad_invoice_number
+      : null
+
   await sendCustomerEmail(container, {
     template: "payment-pending",
     to: order.email,
@@ -196,6 +217,13 @@ const onBalanceRequested = async ({
       estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
       // Obrázek objednaného produktu zakázky (ne fotka od zákazníka).
       makingPhotoUrl: commissionProductImage(order),
+      // Co už je zaplaceno (záloha) a první faktura — ať je jasné, co a za co.
+      depositPaid:
+        depositPaid > 0
+          ? formatMoney(depositPaid, request.currency_code)
+          : null,
+      depositInvoiceUrl,
+      depositInvoiceNumber,
     },
   })
 }

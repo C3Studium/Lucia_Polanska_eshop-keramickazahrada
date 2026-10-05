@@ -1,6 +1,9 @@
 import { retrieveOrder } from "@lib/data/orders"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
-import { listCommissionNotes } from "@lib/data/made-to-order"
+import {
+  listCommissionNotes,
+  reconcileOrderBalance,
+} from "@lib/data/made-to-order"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -19,8 +22,20 @@ export const metadata: Metadata = {
 
 export default async function OrderConfirmedPage(props: Props) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams])
-  const order = await retrieveOrder(params.id).catch(() => null)
   const outcome = searchParams.platba
+
+  /*
+   * Návrat z platby doplatku (`?platba=paid|ceka`): dorovnat HNED — doplatek
+   * nemá vlastní „dokončovací" krok jako záloha v checkoutu, takže bez tohohle
+   * by se čekalo na webhook (notif. URL v portálu) nebo 30min job. Reconcile
+   * dotáhne stav z brány, označí zaplaceno, zaúčtuje a pošle potvrzení + fakturu.
+   * Idempotentní; běží před načtením objednávky, ať stránka ukáže už zaplacený stav.
+   */
+  if (outcome === "paid" || outcome === "ceka") {
+    await reconcileOrderBalance(params.id).catch(() => null)
+  }
+
+  const order = await retrieveOrder(params.id).catch(() => null)
   // Null for a guest, for someone else's order, or while the merchant workflow has no stage.
   const progress = order ? await getOrderProgress(params.id) : null
 

@@ -65,6 +65,22 @@ export const setProductionPaymentMode = async (
  * `url_paid`). That path only knows the session id, so this resolves it to the
  * order the customer should land on. `null` when it cannot be mapped.
  */
+/**
+ * Dorovnání doplatku po návratu z ComGate — „dokončovací" krok, který doplatku
+ * chyběl. Volá se na stránce potvrzení objednávky, když se člověk vrací z platby
+ * (`?platba=…`): dotáhne stav z brány a při zaplacení označí doplatek, zaúčtuje
+ * a pošle potvrzení + fakturu. Idempotentní (bezpečné volat vícekrát).
+ */
+export const reconcileOrderBalance = async (
+  orderId: string
+): Promise<{ status: string } | null> =>
+  sdk.client
+    .fetch<{ status: string }>(
+      `/store/made-to-order/${orderId}/reconcile-balance`,
+      { method: "POST", cache: "no-store" }
+    )
+    .catch(() => null)
+
 export const retrieveOrderIdByPaymentSession = async (
   sessionId: string
 ): Promise<string | null> =>

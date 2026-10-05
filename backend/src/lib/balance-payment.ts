@@ -1,6 +1,11 @@
-import { MedusaError } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import {
+  capturePaymentWorkflow,
   createOrderPaymentCollectionWorkflow,
   createPaymentSessionsWorkflow,
 } from "@medusajs/medusa/core-flows"
@@ -221,4 +226,162 @@ export const ensureBalancePaymentLink = async (
       }`
     )
   }
+}
+
+export type BalanceReconcileResult = {
+  /** "paid" = právě dorovnáno/už zaplaceno, "pending" = brána ještě nepotvrdila,
+   *  "failed" = zrušeno/vypršelo, "none" = není co dorovnávat. */
+  status: "paid" | "pending" | "failed" | "none"
+  request_id: string | null
+}
+
+/**
+ * Dorovnání doplatku PO NÁVRATU z ComGate — „storefront-complete" krok, který
+ * doplatku chyběl (záloha ho má v checkoutu). Zeptá se brány na stav otevřené
+ * žádosti o doplatek a při zaplacení: zaúčtuje nativní platbu, označí žádost
+ * jako zaplacenou, posune fázi na „připraveno" a emituje `made-to-order.balance-paid`
+ * (= potvrzení zákazníkovi + doplatková faktura, obojí visí na tom eventu).
+ *
+ * Nezávislé na webhooku (ten potřebuje notif. URL v portálu ČP/ComGate) i na
+ * 30min jobu — tentýž výsledek, hned po návratu z platby. Idempotentní: bere jen
+ * žádosti ve stavu pending/sent a `onBalancePaid` dedupuje e-mail i fakturu, takže
+ * pozdní webhook/job to nezdvojí. Reflektuje jen to, co brána potvrdí — nic nehádá.
+ */
+export const reconcileOrderBalance = async (
+  container: MedusaContainer,
+  orderId: string
+): Promise<BalanceReconcileResult> => {
+  const madeToOrder = container.resolve<MadeToOrderModuleService>(
+    MADE_TO_ORDER_MODULE
+  )
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  const [productionOrder] = (await madeToOrder.listProductionOrders({
+    order_id: orderId,
+  } as never)) as any[]
+  if (!productionOrder) {
+    return { status: "none", request_id: null }
+  }
+
+  const requests = (await madeToOrder.listProductionPaymentRequests({
+    production_order_id: productionOrder.id,
+  } as never)) as any[]
+  const request = requests.find(
+    (r) =>
+      r.type === "balance" &&
+      ["pending", "sent"].includes(r.status) &&
+      r.payment_session_id
+  )
+  if (!request) {
+    return { status: "none", request_id: null }
+  }
+
+  const paymentModule = container.resolve(Modules.PAYMENT)
+  const [session] = await paymentModule.listPaymentSessions({
+    id: request.payment_session_id,
+  } as never)
+  if (!session) {
+    return { status: "pending", request_id: request.id }
+  }
+
+  let status = ""
+  try {
+    const provider = container.resolve(
+      `pp_${(session as any).provider_id ?? ""}`.replace(/^pp_pp_/, "pp_")
+    ) as any
+    const result = await provider.getPaymentStatus({
+      data: (session as any).data ?? {},
+    })
+    status = String(result?.status ?? "").toLowerCase()
+  } catch (error) {
+    logger.warn(
+      `[balance] Stav doplatku ${request.id} se při návratu nepodařilo ověřit: ${
+        error instanceof Error ? error.message : "neznámá chyba"
+      }`
+    )
+    return { status: "pending", request_id: request.id }
+  }
+
+  const now = new Date()
+
+  if (status === "captured" || status === "authorized") {
+    // 1 — zaúčtovat nativní platbu (když je co), ať objednávka sedí i nativně.
+    //     Best-effort: produkční strana níž je to hlavní pro fakturu i e-mail.
+    try {
+      const query = container.resolve(ContainerRegistrationKeys.QUERY)
+      const { data: collections } = await query.graph({
+        entity: "payment_collection",
+        fields: [
+          "id",
+          "payments.id",
+          "payments.captured_at",
+          "payments.canceled_at",
+        ],
+        filters: { id: request.payment_collection_id },
+      })
+      const payment = ((collections[0] as any)?.payments ?? []).find(
+        (p: any) => !p?.captured_at && !p?.canceled_at
+      )
+      if (payment?.id) {
+        await capturePaymentWorkflow(container).run({
+          input: { payment_id: payment.id },
+        })
+      }
+    } catch (error) {
+      logger.warn(
+        `[balance] Nativní zaúčtování doplatku ${request.id} se nepodařilo: ${
+          error instanceof Error ? error.message : "neznámá chyba"
+        }`
+      )
+    }
+
+    // 2 — produkční strana: žádost zaplacena + fáze „připraveno".
+    await madeToOrder.updateProductionPaymentRequests({
+      id: request.id,
+      status: "paid",
+      provider_status: "PAID",
+      paid_at: request.paid_at || now,
+      last_checked_at: now,
+    } as never)
+    if (
+      !["completed", "cancelled", "ready_to_ship"].includes(
+        productionOrder.stage
+      )
+    ) {
+      await madeToOrder.updateProductionOrders({
+        id: productionOrder.id,
+        stage: "ready_to_ship",
+        ready_to_ship_at: productionOrder.ready_to_ship_at || now,
+      } as never)
+    }
+
+    // 3 — potvrzení zákazníkovi + doplatková faktura (customer-emails onBalancePaid).
+    await container.resolve(Modules.EVENT_BUS).emit({
+      name: "made-to-order.balance-paid",
+      data: {
+        order_id: orderId,
+        production_order_id: productionOrder.id,
+        payment_request_id: request.id,
+        amount: request.amount,
+        currency_code: request.currency_code,
+      },
+    })
+
+    logger.info(
+      `[balance] Doplatek ${request.id} dorovnán po návratu z brány (objednávka ${orderId}).`
+    )
+    return { status: "paid", request_id: request.id }
+  }
+
+  if (["canceled", "cancelled", "error", "expired"].includes(status)) {
+    await madeToOrder.updateProductionPaymentRequests({
+      id: request.id,
+      status: "expired",
+      provider_status: status.toUpperCase(),
+      last_checked_at: now,
+    } as never)
+    return { status: "failed", request_id: request.id }
+  }
+
+  return { status: "pending", request_id: request.id }
 }
