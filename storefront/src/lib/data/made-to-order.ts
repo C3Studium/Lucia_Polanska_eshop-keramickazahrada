@@ -57,6 +57,25 @@ export const setProductionPaymentMode = async (
     )
     .catch(() => null)
 
+/**
+ * Which order a ComGate payment session belongs to.
+ *
+ * After a balance payment, ComGate may return the customer to the fallback
+ * `/{country}/payment/{session}/confirmed` (older links whose session carried no
+ * `url_paid`). That path only knows the session id, so this resolves it to the
+ * order the customer should land on. `null` when it cannot be mapped.
+ */
+export const retrieveOrderIdByPaymentSession = async (
+  sessionId: string
+): Promise<string | null> =>
+  sdk.client
+    .fetch<{ order_id: string | null }>(
+      `/store/made-to-order/payment-session/${sessionId}`,
+      { cache: "no-store" }
+    )
+    .then(({ order_id }) => order_id ?? null)
+    .catch(() => null)
+
 /* ---------------------------------------------------------------------------
  * The brief: what the customer writes and photographs about a commission.
  * ------------------------------------------------------------------------ */
