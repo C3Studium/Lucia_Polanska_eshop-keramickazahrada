@@ -65,6 +65,8 @@ const templateLabels: Record<string, string> = {
   "password-reset": "Obnovení hesla",
   "user-invited": "Pozvánka do administrace",
   "merchant-notification": "Upozornění pro vás",
+  "invoice-issued": "Faktura",
+  "surcharge-notice": "Příplatek k zakázce",
 };
 
 const statusMeta: Record<

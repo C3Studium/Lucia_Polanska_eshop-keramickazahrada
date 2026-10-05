@@ -453,6 +453,46 @@ const onSpecificationConfirmed = async ({
 }
 
 /**
+ * „K zakázce přibyl příplatek" — only ever her click on „Informovat o příplatku".
+ * D4 holds: nothing tells the customer about a price change on its own. The
+ * per-click `token` makes each deliberate send a real e-mail, while a redelivery
+ * of the same event (same token) stays deduped.
+ */
+const onSurchargeNotified = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{
+  order_id: string
+  production_order_id?: string
+  surcharge: number
+  outstanding: number
+  reason?: string | null
+  token?: string
+}>) => {
+  if (!data?.order_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+  await sendCustomerEmail(container, {
+    template: "surcharge-notice",
+    to: order.email,
+    key: `surcharge:${data.production_order_id ?? order.id}:${
+      data.token ?? data.surcharge
+    }`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      surchargeAmount: formatMoney(data.surcharge, order.currency_code),
+      newBalance: formatMoney(data.outstanding, order.currency_code),
+      reason: data.reason?.trim() || undefined,
+    },
+  })
+}
+
+/**
  * „Výroba se protáhne" — only ever her click on „Oznámit zpoždění" (the
  * announce_delay admin action). D4 holds: the system never decides a delay
  * on its own, it only delivers the one she announced.
@@ -561,6 +601,7 @@ const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
+  "made-to-order.surcharge-notified": onSurchargeNotified,
   "made-to-order.delay-announced": onDelayAnnounced,
   "shipment.created": onShipmentCreated,
   "delivery.created": onDeliveryCreated,
@@ -582,6 +623,7 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
+    "made-to-order.surcharge-notified",
     "made-to-order.delay-announced",
     "shipment.created",
     "delivery.created",

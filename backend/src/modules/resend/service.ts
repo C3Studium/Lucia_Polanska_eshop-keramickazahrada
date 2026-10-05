@@ -43,6 +43,7 @@ import { RefundRequestEmail } from "./emails/refund-request";
 import { ReturnRejectedEmail } from "./emails/return-rejected";
 import { PriceDropEmail } from "./emails/price-drop";
 import { InvoiceIssuedEmail } from "./emails/invoice-issued";
+import { SurchargeNoticeEmail } from "./emails/surcharge-notice";
 import { CourseReservationConfirmedEmail } from "./emails/course-reservation-confirmed";
 import { CourseTermCancelledEmail } from "./emails/course-term-cancelled";
 import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
@@ -98,6 +99,8 @@ enum Templates {
   // iDoklad (FINISHINGTODOLIST §1): sent with a link to our own copy of the
   // invoice PDF once the invoice is issued.
   INVOICE_ISSUED = "invoice-issued",
+  // Zakázka: „k zakázce přibyl příplatek" — ruční informování zákazníka.
+  SURCHARGE_NOTICE = "surcharge-notice",
   // Kurzy (docs/kurzy-system.md): the reservation confirmation (paid online /
   // pay on site variants) and the term-cancelled notice.
   COURSE_RESERVATION_CONFIRMED = "course-reservation-confirmed",
@@ -168,6 +171,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
   [Templates.PRICE_DROP]: PriceDropEmail,
   [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
+  [Templates.SURCHARGE_NOTICE]: SurchargeNoticeEmail,
   [Templates.COURSE_RESERVATION_CONFIRMED]: CourseReservationConfirmedEmail,
   [Templates.COURSE_TERM_CANCELLED]: CourseTermCancelledEmail,
   [Templates.COURSE_PAYMENT_EXPIRED]: CoursePaymentExpiredEmail,
@@ -211,6 +215,7 @@ export enum EmailTemplates {
   RETURN_REJECTED = "return-rejected",
   PRICE_DROP = "price-drop",
   INVOICE_ISSUED = "invoice-issued",
+  SURCHARGE_NOTICE = "surcharge-notice",
   COURSE_RESERVATION_CONFIRMED = "course-reservation-confirmed",
   COURSE_TERM_CANCELLED = "course-term-cancelled",
   COURSE_PAYMENT_EXPIRED = "course-payment-expired",

@@ -23,6 +23,7 @@ import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/tra
 type ProductionAction =
   | "confirm_specification"
   | "adjust_surcharge"
+  | "notify_surcharge"
   | "set_internal_note"
   | "start_production"
   | "complete_production"
@@ -36,6 +37,8 @@ type ActionBody = {
   agreed_total?: number
   /** adjust_surcharge: příplatek v Kč (hlavní jednotka). Navyšuje doplatek. */
   surcharge?: number
+  /** notify_surcharge: nepovinný důvod příplatku, uvidí ho zákazník v e-mailu. */
+  reason?: string | null
   internal_note?: string | null
   estimated_completion_at?: string | null
   /** announce_delay: shown to the customer in the delay e-mail. */
@@ -226,6 +229,7 @@ export const POST = async (
   const actions: ProductionAction[] = [
     "confirm_specification",
     "adjust_surcharge",
+    "notify_surcharge",
     "set_internal_note",
     "start_production",
     "complete_production",
@@ -318,6 +322,48 @@ export const POST = async (
     productionOrder = await madeToOrder.updateProductionOrders({
       id: productionOrder.id,
       surcharge,
+    })
+  }
+
+  // Informovat zákazníka o příplatku — RUČNÍ e-mail (ne automaticky po uložení).
+  // Příplatek je navýšení nad cenu, na kterou zákazník kývnul u objednávky, tak
+  // se o něm dozví dřív, než mu přijde výzva k doplacení. Platí se pak běžnou
+  // výzvou k doplacení, ne odtud. Token dělá každé kliknutí reálný e-mail.
+  if (body.action === "notify_surcharge") {
+    requireStage(productionOrder.stage, [
+      "specification_pending",
+      "confirmed",
+      "in_production",
+      "awaiting_balance",
+    ])
+    const surcharge = toNumber(productionOrder.surcharge)
+    if (surcharge <= 0.005) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Zakázka nemá žádný příplatek, o kterém by šlo informovat."
+      )
+    }
+    const order = await loadOrder(req)
+    const payments = await madeToOrder.listProductionPaymentRequests({
+      production_order_id: productionOrder.id,
+    } as any)
+    const paid = payments
+      .filter((payment: any) => payment.status === "paid")
+      .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
+    const total =
+      toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+      surcharge
+    const outstanding = roundMoney(Math.max(0, total - paid))
+    await eventBus.emit({
+      name: "made-to-order.surcharge-notified",
+      data: {
+        order_id: req.params.orderId,
+        production_order_id: productionOrder.id,
+        surcharge: roundMoney(surcharge),
+        outstanding,
+        reason: body.reason?.trim() || null,
+        token: now.toISOString(),
+      },
     })
   }
 

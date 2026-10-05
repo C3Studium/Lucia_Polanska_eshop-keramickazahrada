@@ -8,6 +8,7 @@ import {
   Input,
   Skeleton,
   Text,
+  Textarea,
   toast,
 } from "@medusajs/ui";
 import {
@@ -65,6 +66,7 @@ type ProductionResponse = {
 type ProductionAction =
   | "confirm_specification"
   | "adjust_surcharge"
+  | "notify_surcharge"
   | "start_production"
   | "complete_production"
   | "request_balance"
@@ -127,9 +129,15 @@ const MadeToOrderOrderWidgetInner = ({
 
   const [editingSurcharge, setEditingSurcharge] = useState(false);
   const [surchargeDraft, setSurchargeDraft] = useState("");
+  const [notifyingSurcharge, setNotifyingSurcharge] = useState(false);
+  const [surchargeReason, setSurchargeReason] = useState("");
 
   const runAction = useMutation({
-    mutationFn: (payload: { action: ProductionAction; surcharge?: number }) =>
+    mutationFn: (payload: {
+      action: ProductionAction;
+      surcharge?: number;
+      reason?: string;
+    }) =>
       sdk.client.fetch(`/admin/made-to-order/orders/${order.id}/actions`, {
         method: "POST",
         body: payload,
@@ -139,12 +147,18 @@ const MadeToOrderOrderWidgetInner = ({
         queryKey: ["made-to-order-order", order.id],
       });
       setEditingSurcharge(false);
+      if (variables.action === "notify_surcharge") {
+        setNotifyingSurcharge(false);
+        setSurchargeReason("");
+      }
       const message =
         variables.action === "request_balance"
           ? "Výzva k doplacení odeslána zákazníkovi e-mailem"
           : variables.action === "remind_balance"
             ? "Připomínka doplatku odeslána e-mailem"
-            : "Zakázka byla aktualizována";
+            : variables.action === "notify_surcharge"
+              ? "Zákazník byl informován o příplatku e-mailem"
+              : "Zakázka byla aktualizována";
       toast.success(message);
     },
     onError: (error) =>
@@ -250,18 +264,68 @@ const MadeToOrderOrderWidgetInner = ({
               </Button>
             </div>
           ) : (
-            <Button
-              size="small"
-              variant="secondary"
-              onClick={() => {
-                setSurchargeDraft(surcharge > 0 ? String(surcharge) : "");
-                setEditingSurcharge(true);
-              }}
-            >
-              {surcharge > 0
-                ? `Příplatek ${formatAmount(surcharge, currency)} · upravit`
-                : "+ Přidat příplatek"}
-            </Button>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <Button
+                size="small"
+                variant="secondary"
+                onClick={() => {
+                  setSurchargeDraft(surcharge > 0 ? String(surcharge) : "");
+                  setEditingSurcharge(true);
+                }}
+              >
+                {surcharge > 0
+                  ? `Příplatek ${formatAmount(surcharge, currency)} · upravit`
+                  : "+ Přidat příplatek"}
+              </Button>
+
+              {/* Informovat zákazníka o příplatku — ruční e-mail s vysvětlením
+                  a novou částkou k doplacení. Ukáže se, jen když příplatek je. */}
+              {surcharge > 0 && !notifyingSurcharge && (
+                <Button
+                  size="small"
+                  variant="transparent"
+                  onClick={() => setNotifyingSurcharge(true)}
+                >
+                  Informovat zákazníka o příplatku
+                </Button>
+              )}
+
+              {surcharge > 0 && notifyingSurcharge && (
+                <div className="flex w-64 max-w-full flex-col gap-2">
+                  <Textarea
+                    rows={2}
+                    autoFocus
+                    placeholder="Důvod příplatku (nepovinné) — uvidí ho zákazník"
+                    value={surchargeReason}
+                    onChange={(e) => setSurchargeReason(e.target.value)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="small"
+                      isLoading={runAction.isPending}
+                      onClick={() =>
+                        runAction.mutate({
+                          action: "notify_surcharge",
+                          reason: surchargeReason.trim() || undefined,
+                        })
+                      }
+                    >
+                      Odeslat zákazníkovi
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      onClick={() => {
+                        setNotifyingSurcharge(false);
+                        setSurchargeReason("");
+                      }}
+                    >
+                      Zrušit
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {nextAction && (
