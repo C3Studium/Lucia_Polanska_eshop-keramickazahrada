@@ -1,11 +1,8 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
 import { balancePaymentUrl } from "../lib/balance-payment-link";
-import {
-  accountOrderLink,
-  complaintLink,
-  withdrawalLink,
-} from "../lib/storefront-url";
+import { orderEditUrl } from "../lib/order-access-link";
+import { complaintLink, withdrawalLink } from "../lib/storefront-url";
 import { resolveBalanceStep } from "./steps/resolve-balance";
 import { sendNotificationStep } from "./steps/send-notification";
 
@@ -99,9 +96,11 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               balance_due: balance.outstanding,
               balance_currency: balance.currency_code,
               ...(payment_method ? { payment_method } : {}),
-              // Správa objednávky z e-mailu: úprava (detail v účtu — vyžaduje
-              // přihlášení), reklamace/vrácení a odstoupení od smlouvy do 14 dnů.
-              edit_order_url: accountOrderLink(id),
+              // Správa objednávky z e-mailu. Úprava přes PODEPSANÝ TOKEN
+              // (`/order/:id/edit?token=`) — funguje i hostovi bez přihlášení.
+              // Reklamace/vrácení + odstoupení zatím na právní stránky (až bude
+              // /order/:id/refund, přepne se i tohle na tokenový odkaz).
+              edit_order_url: orderEditUrl(id),
               complaint_url: complaintLink(),
               withdrawal_url: withdrawalLink(),
               balance_payment_url: balance.outstanding > 0

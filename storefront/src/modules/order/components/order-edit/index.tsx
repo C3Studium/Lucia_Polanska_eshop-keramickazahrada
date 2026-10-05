@@ -7,6 +7,10 @@ import {
   type EditAction,
   type OrderEditContext,
 } from "@lib/data/order-edit"
+import {
+  cancelGuestOrderEdit,
+  submitGuestOrderEdit,
+} from "@lib/data/guest-order-edit"
 import styles from "./style.module.scss"
 
 /**
@@ -22,10 +26,23 @@ const czk = (value: number) =>
 export default function OrderEdit({
   orderId,
   context,
+  token,
 }: {
   orderId: string
   context: OrderEditContext
+  /**
+   * Když je zadaný, editace jede přes hostovský endpoint s tímhle podepsaným
+   * tokenem (odkaz z e-mailu, bez přihlášení). Bez něj jede zákaznická cesta
+   * (přihlášený v účtu). Stejná komponenta, jen jiný dveřník.
+   */
+  token?: string
 }) {
+  const submit = (actions: EditAction[]) =>
+    token
+      ? submitGuestOrderEdit(orderId, actions, token)
+      : submitOrderEdit(orderId, actions)
+  const cancel = () =>
+    token ? cancelGuestOrderEdit(orderId, token) : cancelOrderEdit(orderId)
   const [open, setOpen] = useState(false)
   const [swaps, setSwaps] = useState<Record<string, string>>({})
   const [removed, setRemoved] = useState<Set<string>>(new Set())
@@ -78,7 +95,7 @@ export default function OrderEdit({
           className={styles.secondary}
           onClick={() =>
             startTransition(async () => {
-              await cancelOrderEdit(orderId)
+              await cancel()
               window.location.reload()
             })
           }
@@ -198,7 +215,7 @@ export default function OrderEdit({
           onClick={() =>
             startTransition(async () => {
               setError(null)
-              const outcome = await submitOrderEdit(orderId, actions)
+              const outcome = await submit(actions)
               if ("error" in outcome) {
                 setError(outcome.error)
                 return
