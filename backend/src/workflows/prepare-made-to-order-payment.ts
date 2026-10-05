@@ -85,6 +85,9 @@ const calculateMadeToOrderPaymentStep = createStep(
         "items.quantity",
         "items.unit_price",
         "items.total",
+        // Nezlevněný řádek (před akčními úpravami) — záloha se počítá z NĚJ,
+        // aby sleva padla celá na doplatek, ne na zálohu (přání majitelky).
+        "items.subtotal",
         "items.metadata",
       ],
       filters: { id: cart_id },
@@ -165,6 +168,11 @@ const calculateMadeToOrderPaymentStep = createStep(
       const lineTotal = toNumber(
         item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
       )
+      // Základ pro zálohu je NEZLEVNĚNÁ cena řádku; sleva tak zůstane celá
+      // v doplatku. Fallback na zlevněný řádek, kdyby subtotal chyběl.
+      const lineBase = toNumber(
+        item.subtotal ?? item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
+      )
       const specification = readSpecification(item.metadata)
 
       if (profile.specification_required && !specification) {
@@ -174,7 +182,11 @@ const calculateMadeToOrderPaymentStep = createStep(
         )
       }
 
-      const depositAmount = roundMoney((lineTotal * depositPercentage) / 100)
+      // Záloha z původní ceny, ale nikdy víc, než kolik řádek po slevě stojí
+      // (u „plné platby" = 100 % to tak vyjde přesně na zlevněnou cenu).
+      const depositAmount = roundMoney(
+        Math.min((lineBase * depositPercentage) / 100, lineTotal)
+      )
       productionLinesTotal += lineTotal
       depositTotal += depositAmount
       productionLines.push({

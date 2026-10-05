@@ -72,6 +72,8 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
       "items.quantity",
       "items.unit_price",
       "items.total",
+      // Nezlevněný řádek — záloha se počítá z něj, sleva padá na doplatek.
+      "items.subtotal",
     ],
     filters: { id: cartId },
   })
@@ -141,7 +143,12 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     const lineTotal = toNumber(
       item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
     )
-    const lineFloor = roundMoney((lineTotal * percentage) / 100)
+    // Záloha z NEZLEVNĚNÉ ceny (sleva jde celá do doplatku), clamp na zlevněný
+    // řádek. Strop slideru = zlevněný řádek (víc než po slevě se platit nedá).
+    const lineBase = toNumber(
+      item.subtotal ?? item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
+    )
+    const lineFloor = roundMoney(Math.min((lineBase * percentage) / 100, lineTotal))
     productionTotal += lineTotal
     depositTotal += lineFloor
     splitLines.push({
