@@ -111,6 +111,25 @@ export const accountOrdersLink = (): string => {
 }
 
 /**
+ * Reklamace / vrácení zboží — `app/[countryCode]/(main)/reklamacni-protokol`.
+ * Stránka s reklamačním řádem a formulářem (vada zboží, 24 měsíců).
+ */
+export const complaintLink = (): string => {
+  const base = storefrontBase()
+  return base ? `${base}/reklamacni-protokol` : ""
+}
+
+/**
+ * Odstoupení od smlouvy do 14 dnů —
+ * `app/[countryCode]/(main)/odstoupeni-od-smlouvy`. Vzor oznámení dle §1829
+ * (zrušení objednávky / vrácení bez udání důvodu u zásilkového prodeje).
+ */
+export const withdrawalLink = (): string => {
+  const base = storefrontBase()
+  return base ? `${base}/odstoupeni-od-smlouvy` : ""
+}
+
+/**
  * E-mail verification — `app/[countryCode]/(main)/verify-email`.
  *
  * Used to be built inline in two places (the customer.created subscriber and

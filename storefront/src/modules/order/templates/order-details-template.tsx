@@ -89,13 +89,8 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <section className={s.accountOrderDetailsSection}>
           <span>05 · vrácení</span>
           <ReturnRequest
-            orderId={order.id}
+            orderDisplayId={String(order.display_id)}
             email={order.email ?? ""}
-            customerName={
-              [order.shipping_address?.first_name, order.shipping_address?.last_name]
-                .filter(Boolean)
-                .join(" ") || undefined
-            }
           />
         </section>
       </AccountSectionReveal>

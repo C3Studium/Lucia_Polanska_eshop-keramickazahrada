@@ -1,7 +1,11 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
 import { balancePaymentUrl } from "../lib/balance-payment-link";
-import { accountOrderLink } from "../lib/storefront-url";
+import {
+  accountOrderLink,
+  complaintLink,
+  withdrawalLink,
+} from "../lib/storefront-url";
 import { resolveBalanceStep } from "./steps/resolve-balance";
 import { sendNotificationStep } from "./steps/send-notification";
 
@@ -95,9 +99,11 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               balance_due: balance.outstanding,
               balance_currency: balance.currency_code,
               ...(payment_method ? { payment_method } : {}),
-              // Signed, so the customer can pay from the e-mail without an
-              // account. Absent when nothing is owed.
+              // Správa objednávky z e-mailu: úprava (detail v účtu — vyžaduje
+              // přihlášení), reklamace/vrácení a odstoupení od smlouvy do 14 dnů.
               edit_order_url: accountOrderLink(id),
+              complaint_url: complaintLink(),
+              withdrawal_url: withdrawalLink(),
               balance_payment_url: balance.outstanding > 0
                 ? balancePaymentUrl(id)
                 : null,

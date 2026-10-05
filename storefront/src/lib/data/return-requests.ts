@@ -10,19 +10,18 @@ import { toCzechErrorMessage } from "@lib/util/error-messages"
  * nothing and does not model the outcome.
  */
 export async function submitReturnRequest(input: {
-  order_id: string
+  /** Číslo objednávky jak je na potvrzení (display_id) — backend ověřuje vlastnictví přes číslo + e-mail. */
+  order_display_id: string
   email: string
   reason: string
-  customer_name?: string
 }): Promise<{ success: boolean; message?: string }> {
   try {
     await sdk.client.fetch(`/store/return-requests`, {
       method: "POST",
       body: {
-        order_id: input.order_id,
+        order_display_id: input.order_display_id,
         email: input.email,
         reason: input.reason.trim(),
-        ...(input.customer_name ? { customer_name: input.customer_name } : {}),
       },
     })
 

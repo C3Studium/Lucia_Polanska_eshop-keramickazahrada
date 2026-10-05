@@ -7,9 +7,9 @@ import { submitReturnRequest } from "@lib/data/return-requests"
 import styles from "./style.module.scss"
 
 type Props = {
-  orderId: string
+  /** Číslo objednávky (display_id), ne ULID — backend ho ověřuje proti e-mailu. */
+  orderDisplayId: string
   email: string
-  customerName?: string
 }
 
 /**
@@ -19,7 +19,7 @@ type Props = {
  * The form asks only for the reason. Everything else the backend needs it already knows from
  * the order, and a longer form is a reason not to finish it.
  */
-export default function ReturnRequest({ orderId, email, customerName }: Props) {
+export default function ReturnRequest({ orderDisplayId, email }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [reason, setReason] = useState("")
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle")
@@ -33,10 +33,9 @@ export default function ReturnRequest({ orderId, email, customerName }: Props) {
     setError(null)
 
     const result = await submitReturnRequest({
-      order_id: orderId,
+      order_display_id: orderDisplayId,
       email,
       reason,
-      customer_name: customerName,
     })
 
     if (result.success) {

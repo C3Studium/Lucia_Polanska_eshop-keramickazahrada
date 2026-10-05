@@ -36,6 +36,12 @@ type OrderPlacedEmailProps = {
    * is simply omitted rather than guessed.
    */
   payment_method?: string
+  /** Detail objednávky v účtu, kde se dá upravit (vyžaduje přihlášení). */
+  edit_order_url?: string
+  /** Reklamace / vrácení zboží (reklamační protokol). */
+  complaint_url?: string
+  /** Odstoupení od smlouvy do 14 dnů (vzor §1829). */
+  withdrawal_url?: string
 }
 
 function OrderPlacedEmailComponent({
@@ -45,6 +51,9 @@ function OrderPlacedEmailComponent({
   balance_payment_url,
   balance_currency,
   payment_method,
+  edit_order_url,
+  complaint_url,
+  withdrawal_url,
 }: OrderPlacedEmailProps) {
   const owes = typeof balance_due === "number" && balance_due > 0
   const balanceText = owes
@@ -294,6 +303,46 @@ function OrderPlacedEmailComponent({
           <EmailButton href={email_banner.url} variant="ghost">
             Prohlédnout
           </EmailButton>
+        </Section>
+      )}
+
+      {/* Správa objednávky: úprava (detail v účtu), reklamace/vrácení a
+          odstoupení od smlouvy do 14 dnů — práva zákazníka na dosah z e-mailu. */}
+      {(edit_order_url || complaint_url || withdrawal_url) && (
+        <Section
+          style={{
+            margin: "32px 0 0",
+            borderTop: `1px solid ${brand.line}`,
+            paddingTop: "24px",
+          }}
+        >
+          <Eyebrow index="05">Správa objednávky</Eyebrow>
+          <P>
+            Potřebujete něco změnit? Objednávku upravíte ve svém účtu. Zboží
+            můžete reklamovat, nebo do 14 dnů od převzetí odstoupit od smlouvy.
+          </P>
+          {edit_order_url ? (
+            <ButtonRow>
+              <EmailButton href={edit_order_url} variant="ghost">
+                Upravit objednávku
+              </EmailButton>
+            </ButtonRow>
+          ) : null}
+          {(complaint_url || withdrawal_url) && (
+            <P small style={{ margin: "14px 0 0", color: brand.faint }}>
+              {complaint_url ? (
+                <a href={complaint_url} style={{ color: brand.ink }}>
+                  Reklamace a vrácení zboží
+                </a>
+              ) : null}
+              {complaint_url && withdrawal_url ? "   ·   " : null}
+              {withdrawal_url ? (
+                <a href={withdrawal_url} style={{ color: brand.ink }}>
+                  Odstoupení od smlouvy do 14 dnů
+                </a>
+              ) : null}
+            </P>
+          )}
         </Section>
       )}
 
@@ -642,5 +691,8 @@ export default () => (
   <OrderPlacedEmailComponent
     {...mockOrder}
     payment_method="Dobírka — zaplatíte při převzetí"
+    edit_order_url="https://keramickazahrada.cz/cz/account/orders/details/order_12345"
+    complaint_url="https://keramickazahrada.cz/cz/reklamacni-protokol"
+    withdrawal_url="https://keramickazahrada.cz/cz/odstoupeni-od-smlouvy"
   />
 )

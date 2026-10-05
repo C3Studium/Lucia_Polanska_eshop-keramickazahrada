@@ -1,12 +1,14 @@
 import {
   accountOrdersLink,
   cartRecoverLink,
+  complaintLink,
   orderConfirmedPath,
   orderLink,
   productLink,
   storefrontBase,
   storeLink,
   verifyEmailLink,
+  withdrawalLink,
 } from "../storefront-url"
 
 /**
@@ -80,6 +82,15 @@ describe("customer e-mail links", () => {
     expect(storeLink()).toBe("https://keramickazahrada.cz/cz/store")
     expect(accountOrdersLink()).toBe(
       "https://keramickazahrada.cz/cz/account/orders"
+    )
+  })
+
+  it("links to reklamace and odstoupení — the pages the storefront serves", () => {
+    expect(complaintLink()).toBe(
+      "https://keramickazahrada.cz/cz/reklamacni-protokol"
+    )
+    expect(withdrawalLink()).toBe(
+      "https://keramickazahrada.cz/cz/odstoupeni-od-smlouvy"
     )
   })
 
