@@ -26,6 +26,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       entity: "product",
       fields: [
         "id",
+        "title",
         "status",
         "variants.id",
         "variants.prices.amount",
@@ -34,7 +35,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       filters: { status: "published" } as never,
       pagination: { take: 500, skip: 0 },
     })
-    let unbuyable = 0
+    const unbuyable: { id: string; title: string }[] = []
     for (const product of products as any[]) {
       const variants = product.variants ?? []
       const priced = variants.some((variant: any) =>
@@ -42,12 +43,25 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           (price: any) => String(price.currency_code).toLowerCase() === "czk"
         )
       )
-      if (!variants.length || !priced) unbuyable += 1
+      if (!variants.length || !priced) {
+        unbuyable.push({ id: product.id, title: product.title || "Bez názvu" })
+      }
     }
-    if (unbuyable > 0) {
+    // „Vyřešit" vede rovnou na ten produkt, co to nemá — ne do obecného seznamu.
+    // U víc produktů se vypíše každý zvlášť (s odkazem na sebe), ať se dá
+    // rozkliknout přímo; nad limit se zbytek shrne do jednoho řádku.
+    const MAX_LISTED = 5
+    for (const product of unbuyable.slice(0, MAX_LISTED)) {
       problems.push({
-        text: `${unbuyable} zveřejněných produktů nejde koupit (chybí cena v Kč nebo varianty).`,
-        path: "/produkty-workbench",
+        text: `Produkt „${product.title}" nejde koupit (chybí cena v Kč nebo varianty).`,
+        path: `/products/${product.id}`,
+        severity: "bad",
+      })
+    }
+    if (unbuyable.length > MAX_LISTED) {
+      problems.push({
+        text: `…a dalších ${unbuyable.length - MAX_LISTED} zveřejněných produktů nejde koupit.`,
+        path: "/products",
         severity: "bad",
       })
     }
@@ -69,7 +83,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     if (!(options as any[]).length) {
       problems.push({
         text: "Neexistuje žádná možnost dopravy — objednávku nejde dokončit.",
-        path: null,
+        path: "/settings/locations",
         severity: "bad",
       })
     } else if (
@@ -79,7 +93,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     ) {
       problems.push({
         text: "Osobní odběr zatím nemá možnost dopravy (zákazník ho v pokladně neuvidí).",
-        path: null,
+        path: "/settings/locations",
         severity: "warn",
       })
     }
