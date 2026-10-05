@@ -384,4 +384,4 @@ export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
     .run({ input: { order_id: order.id } as never })
     .catch(() => {})
   res.status(200).json({ cancelled: true })
-}
+} 
