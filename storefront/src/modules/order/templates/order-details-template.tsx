@@ -13,6 +13,8 @@ import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
 import PaymentDetails from "@modules/order/components/payment-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
+import CommissionConversation from "@modules/order/components/commission-conversation"
+import type { CommissionNote } from "@lib/util/made-to-order"
 import {
   AccountPageReveal,
   AccountSectionReveal,
@@ -24,11 +26,14 @@ type OrderDetailsTemplateProps = {
   /* Načítá ho stránka, ne tahle šablona: je klientská a datová vrstva je
      `server-only`. Viz komentář v `carrier-damage`. */
   claimForm?: { title: string; url: string } | null
+  /** Vlákno zakázky. `null` = není zakázka → konverzace se nevykreslí. */
+  commissionNotes?: CommissionNote[] | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
   claimForm = null,
+  commissionNotes = null,
 }) => {
   return (
     <AccountPageReveal
@@ -83,6 +88,14 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <aside className={s.accountOrderDetailsAside}>
           <span>04 · souhrn</span>
           <OrderSummary order={order} />
+          {/* Konverzace s ateliérem — jen u zakázky; stejný popup komponent jako
+              na potvrzení i na stránkách úpravy/reklamace. */}
+          {commissionNotes && (
+            <CommissionConversation
+              orderId={order.id}
+              notes={commissionNotes}
+            />
+          )}
         </aside>
       </AccountSectionReveal>
 

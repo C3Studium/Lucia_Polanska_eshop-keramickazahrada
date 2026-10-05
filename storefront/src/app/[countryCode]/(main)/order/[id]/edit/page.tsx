@@ -1,5 +1,7 @@
 import { getGuestOrderEditContext } from "@lib/data/guest-order-edit"
+import { listCommissionNotes } from "@lib/data/made-to-order"
 import OrderEdit from "@modules/order/components/order-edit"
+import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
 
@@ -28,6 +30,9 @@ export default async function OrderEditPage(props: Props) {
   const context = token
     ? await getGuestOrderEditContext(params.id, token)
     : null
+  // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
+  // takže funguje i hostovi z e-mailu (bez přihlášení).
+  const commissionNotes = await listCommissionNotes(params.id)
 
   if (!context) {
     return (
@@ -53,6 +58,9 @@ export default async function OrderEditPage(props: Props) {
       primary={{ href: "/account/orders", label: "Moje objednávky" }}
     >
       <OrderEdit orderId={params.id} context={context} token={token} />
+      {commissionNotes && (
+        <CommissionConversation orderId={params.id} notes={commissionNotes} />
+      )}
     </OrderStateShell>
   )
 }

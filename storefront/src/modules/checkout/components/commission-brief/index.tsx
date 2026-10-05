@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useId, useRef, useState, useTransition } from "react"
+import { useEffect, useId, useRef, useState, useTransition } from "react"
 
 import type {
   CommissionNote,
@@ -39,6 +39,11 @@ type Props = {
    * in it, so the saved entries are listed above the box.
    */
   variant: "checkout" | "order"
+  /**
+   * Skryje vlastní hlavičku (eyebrow + nadpis + lede) — pro použití v popupu,
+   * kde titulek nese chrome modalu (`Modal.Title`) a druhý nadpis by byl navíc.
+   */
+  hideHeader?: boolean
   onSubmitAction: (input: {
     note: string
     keepPhotos: string[]
@@ -79,6 +84,7 @@ export default function CommissionBrief({
   prompt,
   notes = [],
   variant,
+  hideHeader = false,
   onSubmitAction,
   onCompletionChange,
 }: Props) {
@@ -86,6 +92,20 @@ export default function CommissionBrief({
   const [kept, setKept] = useState(photos)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [entries, setEntries] = useState(notes)
+
+  /*
+   * Když rodič pošle čerstvé vlákno (popup ho po otevření načte znovu, ať tam
+   * jsou i odpovědi ateliéru, co přišly po načtení stránky), překresli zápisy.
+   * Jen varianta „order" má vlákno. Klíčujeme přes množinu id — ne přes identitu
+   * pole —, jinak by prázdný default `[]` (vzniká při každém renderu) spouštěl
+   * smyčku. Vlastní přidání (`setEntries` po odeslání) prop nemění, takže ho to
+   * nepřepíše.
+   */
+  const notesSignature = notes.map((entry) => entry.id).join("|")
+  useEffect(() => {
+    if (variant === "order") setEntries(notes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notesSignature, variant])
   const [status, setStatus] = useState<{ kind: "idle" | "saved" | "error"; message?: string }>({
     kind: "idle",
   })
@@ -178,20 +198,22 @@ export default function CommissionBrief({
       aria-busy={isPending || undefined}
       data-testid="commission-brief"
     >
-      <header className={styles.header}>
-        <p className={styles.eyebrow}>Zakázková výroba</p>
-        <h3 className={styles.heading}>
-          {variant === "order" ? "Napište mi" : "Co si představujete?"}
-        </h3>
-        {title && <p className={styles.piece}>{title}</p>}
-        <p className={styles.lede}>
-          {variant === "order"
-            ? "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce."
-            : prompt?.trim()
-            ? prompt
-            : "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím."}
-        </p>
-      </header>
+      {!hideHeader && (
+        <header className={styles.header}>
+          <p className={styles.eyebrow}>Zakázková výroba</p>
+          <h3 className={styles.heading}>
+            {variant === "order" ? "Napište mi" : "Co si představujete?"}
+          </h3>
+          {title && <p className={styles.piece}>{title}</p>}
+          <p className={styles.lede}>
+            {variant === "order"
+              ? "Napadlo vás ještě něco? Napište mi a klidně přiložte fotky — čtu to u rozdělané práce."
+              : prompt?.trim()
+              ? prompt
+              : "Napište, jak si to představujete, a přiložte fotky. Podle toho to vyrobím."}
+          </p>
+        </header>
+      )}
 
       {/* data-lenis-prevent: the thread scrolls itself, otherwise Lenis eats the wheel
           and touch and scrolls the page instead of the conversation. */}

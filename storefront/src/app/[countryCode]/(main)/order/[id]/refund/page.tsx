@@ -1,5 +1,7 @@
 import { getGuestRefundContext } from "@lib/data/guest-refund"
+import { listCommissionNotes } from "@lib/data/made-to-order"
 import RefundRequest from "@modules/order/components/refund-request"
+import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
 
@@ -27,6 +29,9 @@ export default async function OrderRefundPage(props: Props) {
   const context = token
     ? await getGuestRefundContext(params.id, token)
     : null
+  // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
+  // takže funguje i hostovi z e-mailu (bez přihlášení).
+  const commissionNotes = await listCommissionNotes(params.id)
 
   if (!context) {
     return (
@@ -51,6 +56,9 @@ export default async function OrderRefundPage(props: Props) {
       primary={{ href: "/account/orders", label: "Moje objednávky" }}
     >
       <RefundRequest context={context} />
+      {commissionNotes && (
+        <CommissionConversation orderId={params.id} notes={commissionNotes} />
+      )}
     </OrderStateShell>
   )
 }

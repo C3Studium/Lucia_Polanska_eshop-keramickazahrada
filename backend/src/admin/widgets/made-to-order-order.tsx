@@ -160,6 +160,16 @@ const MadeToOrderOrderWidgetInner = ({
               ? "Zákazník byl informován o příplatku e-mailem"
               : "Zakázka byla aktualizována";
       toast.success(message);
+
+      // Výzva k doplacení zakládá NATIVNÍ platební kolekci objednávky
+      // (createOrderPaymentCollectionWorkflow). Tenhle widget se obnoví sám,
+      // ale nativní části detailu — Aktivita, Souhrn plateb, stav v záhlaví —
+      // běží na vlastním query klientu Medusy, který náš invalidate nevidí,
+      // takže by zůstaly viset na staré částce. Po zobrazení hlášky proto
+      // stránku načteme znovu, ať objednávka sedí celá.
+      if (variables.action === "request_balance") {
+        setTimeout(() => window.location.reload(), 1200);
+      }
     },
     onError: (error) =>
       toast.error(

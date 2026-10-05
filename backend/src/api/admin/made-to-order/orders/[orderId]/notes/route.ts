@@ -49,6 +49,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       text: note.text,
       image_url: note.image_url,
       visible_to_customer: Boolean(note.visible_to_customer),
+      // Kdo zápis napsal — ať „Konverzace se zákazníkem" čte jako chat a
+      // majitelka pozná novou zprávu zákazníka od vlastní poznámky. Zákazník
+      // píše přes store route s `created_by: "customer"`; všechno ostatní
+      // (text i foto z dílny) je ateliér.
+      author: note.created_by === "customer" ? "customer" : "atelier",
       created_at: note.created_at,
     })),
   })

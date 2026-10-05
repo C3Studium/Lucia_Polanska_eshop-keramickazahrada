@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Drawer,
   Switch,
@@ -7,7 +8,7 @@ import {
   toast,
 } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
 
@@ -30,6 +31,8 @@ type DiaryNote = {
   text: string | null;
   image_url: string | null;
   visible_to_customer: boolean;
+  /** „customer" = napsal zákazník, jinak ateliér (její zápisy a fotky). */
+  author?: "customer" | "atelier";
   created_at: string;
 };
 
@@ -51,12 +54,19 @@ export const ProductionDiary = ({
   const fileInput = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery<{ notes: DiaryNote[] }>({
+  const { data, isLoading, refetch } = useQuery<{ notes: DiaryNote[] }>({
     queryKey: ["production-diary", orderId],
     queryFn: () =>
       sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/notes`),
     enabled: open,
   });
+
+  // Nové zprávy od zákazníka přicházejí ze storefrontu — administrace o nich
+  // sama neví. Při každém otevření drawer proto vytáhneme vlákno načisto, ať
+  // tam i právě doručená zpráva je (jinak se ukáže jen stav z minulého otevření).
+  useEffect(() => {
+    if (open) void refetch();
+  }, [open, refetch]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["production-diary", orderId] });
@@ -222,45 +232,65 @@ export const ProductionDiary = ({
             </Text>
           )}
 
-          {(data?.notes ?? []).map((note) => (
-            <div
-              key={note.id}
-              className="border-ui-border-base rounded-lg border p-3"
-            >
-              {note.image_url && (
-                <a href={note.image_url} target="_blank" rel="noreferrer">
-                  <img
-                    src={note.image_url}
-                    alt=""
-                    className="mb-2 max-h-56 w-full rounded-md object-cover"
-                  />
-                </a>
-              )}
-              {note.text && <Text size="small">{note.text}</Text>}
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <Text size="xsmall" className="text-ui-fg-muted">
-                  {formatDateTime(note.created_at)}
-                  {note.visible_to_customer ? " · zákazník vidí" : ""}
-                </Text>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    className="text-ui-fg-interactive txt-small hover:underline"
-                    onClick={() => toggleVisibility.mutate(note)}
-                  >
-                    {note.visible_to_customer ? "Skrýt" : "Ukázat zákazníkovi"}
-                  </button>
-                  <button
-                    type="button"
-                    className="text-ui-fg-subtle txt-small hover:underline"
-                    onClick={() => removeNote.mutate(note.id)}
-                  >
-                    Smazat
-                  </button>
+          {(data?.notes ?? []).map((note) => {
+            const fromCustomer = note.author === "customer";
+            return (
+              <div
+                key={note.id}
+                className={
+                  fromCustomer
+                    ? "border-ui-border-interactive bg-ui-bg-highlight rounded-lg border p-3"
+                    : "border-ui-border-base rounded-lg border p-3"
+                }
+              >
+                <div className="mb-2">
+                  <Badge size="2xsmall" color={fromCustomer ? "blue" : "grey"}>
+                    {fromCustomer ? "Zákazník" : "Ateliér"}
+                  </Badge>
+                </div>
+                {note.image_url && (
+                  <a href={note.image_url} target="_blank" rel="noreferrer">
+                    <img
+                      src={note.image_url}
+                      alt=""
+                      className="mb-2 max-h-56 w-full rounded-md object-cover"
+                    />
+                  </a>
+                )}
+                {note.text && <Text size="small">{note.text}</Text>}
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    {formatDateTime(note.created_at)}
+                    {!fromCustomer && note.visible_to_customer
+                      ? " · zákazník vidí"
+                      : ""}
+                  </Text>
+                  <div className="flex gap-3">
+                    {/* Zprávu zákazníka vidí zákazník vždy (je jeho) — přepínač
+                        viditelnosti by tu nedával smysl, zůstává jen smazání. */}
+                    {!fromCustomer && (
+                      <button
+                        type="button"
+                        className="text-ui-fg-interactive txt-small hover:underline"
+                        onClick={() => toggleVisibility.mutate(note)}
+                      >
+                        {note.visible_to_customer
+                          ? "Skrýt"
+                          : "Ukázat zákazníkovi"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="text-ui-fg-subtle txt-small hover:underline"
+                      onClick={() => removeNote.mutate(note.id)}
+                    >
+                      Smazat
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </Drawer.Body>
       </Drawer.Content>
     </Drawer>

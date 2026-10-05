@@ -12,8 +12,7 @@ import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
-import OrderCommissionDiary from "@modules/order/components/commission-diary"
-import OrderBriefRail from "@modules/order/components/order-brief-rail"
+import CommissionConversation from "@modules/order/components/commission-conversation"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -384,14 +383,12 @@ export default async function OrderCompletedTemplate({
               </div>
             </div>
 
-            {/* Deník zakázky — co zákazník napsal a vyfotil, a místo, kam může
-                dopsat další. POD souhrnem v pravém sloupci, stejně jako brief
-                v checkoutu sedí pod přehledem. Jen u zakázky; běžná objednávka
-                má v railu jen souhrn. */}
+            {/* Konverzace s ateliérem — co zákazník napsal a vyfotil a místo,
+                kam dopsat další, jako POPUP pod souhrnem (jeden znovupoužitelný
+                komponent napříč stránkami objednávky). Jen u zakázky; běžná
+                objednávka má v railu jen souhrn. */}
             {commissionNotes && (
-              <OrderBriefRail>
-                <OrderCommissionDiary orderId={order.id} notes={commissionNotes} />
-              </OrderBriefRail>
+              <CommissionConversation orderId={order.id} notes={commissionNotes} />
             )}
           </aside>
         </div>
