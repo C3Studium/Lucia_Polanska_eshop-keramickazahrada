@@ -1,8 +1,14 @@
 import type { AuthenticatedMedusaRequest, MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
+import {
+  customerName,
+  orderLink,
+  orderNumber,
+  sendCustomerEmail,
+} from "../../../../../../lib/customer-email"
 
 /**
  * Deník výroby — the diary of one zakázka (feature-ideas 2.1/2.2).
@@ -76,13 +82,57 @@ export const POST = async (
     )
   }
 
-  const note = await service.createProductionNotes({
+  const created = (await service.createProductionNotes({
     order_id: req.params.orderId,
     text: (parsed.data.text ?? "").trim() || null,
     image_url: parsed.data.image_url ?? null,
     visible_to_customer: parsed.data.visible_to_customer ?? false,
     created_by: req.auth_context?.actor_id ?? null,
-  } as never)
+  } as never)) as any
+  const note = Array.isArray(created) ? created[0] : created
+
+  /*
+   * Druhá polovina chatu: zápis VIDITELNÝ zákazníkovi = zpráva pro něj →
+   * e-mail „nová zpráva k vaší zakázce" (interní poznámky se neposílají).
+   * Keyed podle id zápisu, aby každá zpráva dorazila jednou. Chyba e-mailu
+   * nesmí shodit uložení zápisu.
+   */
+  if (parsed.data.visible_to_customer) {
+    try {
+      const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+      const { data: orders } = await query.graph({
+        entity: "order",
+        fields: [
+          "id",
+          "display_id",
+          "email",
+          "customer.first_name",
+          "customer.last_name",
+          "shipping_address.first_name",
+          "shipping_address.last_name",
+        ],
+        filters: { id: req.params.orderId },
+      })
+      const order = orders[0] as any
+      if (order?.email) {
+        await sendCustomerEmail(req.scope, {
+          template: "commission-message",
+          to: order.email,
+          key: `commission-msg:${note?.id ?? req.params.orderId}`,
+          orderId: order.id,
+          data: {
+            customerName: customerName(order),
+            orderNumber: orderNumber(order),
+            orderLink: orderLink(order),
+            message: (parsed.data.text ?? "").trim() || "",
+            photoUrl: parsed.data.image_url ?? "",
+          },
+        }).catch(() => undefined)
+      }
+    } catch {
+      // E-mail je doplněk — bez něj zápis platí dál.
+    }
+  }
 
   res.status(201).json({ note })
 }

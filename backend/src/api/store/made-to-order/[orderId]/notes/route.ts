@@ -1,8 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
+import { notifyMerchant } from "../../../../../lib/notify"
 
 /**
  * The customer's half of a zakázka's diary.
@@ -118,7 +119,36 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           },
         ]
 
-  await service.createProductionNotes(rows as never)
+  const created = (await service.createProductionNotes(rows as never)) as any
+  const createdList = Array.isArray(created) ? created : [created]
+
+  /*
+   * Zpráva od zákazníka k zakázce → upozornění majitelce do schránky (D7:
+   * nezodpovězená zpráva = zákazník, co čeká). Klíč podle id zápisu, aby KAŽDÁ
+   * zpráva zacinkala (ne jen první). Chyba notifikace nesmí shodit uložení.
+   */
+  try {
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: orders } = await query.graph({
+      entity: "order",
+      fields: ["id", "display_id"],
+      filters: { id: req.params.orderId },
+    })
+    const displayId = (orders[0] as any)?.display_id
+    const preview = trimmed
+      ? trimmed.slice(0, 180)
+      : `${image_urls.length} ${image_urls.length === 1 ? "fotka" : "fotky"}`
+    await notifyMerchant(req.scope, {
+      key: `mn:cust-msg:${createdList[0]?.id ?? req.params.orderId}`,
+      title: `Nová zpráva od zákazníka k zakázce #${displayId ?? "?"}`,
+      description: preview,
+      audience: "owner",
+      email: true,
+      resource: { id: req.params.orderId, type: "order" },
+    }).catch(() => undefined)
+  } catch {
+    // Upozornění je doplněk — bez něj zápis platí dál.
+  }
 
   const notes = (await service.listProductionNotes(
     { order_id: req.params.orderId } as never,

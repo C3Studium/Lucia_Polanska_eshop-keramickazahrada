@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client";
+import { ProductionDiary } from "../components/production-diary";
 
 type ProductionOrder = {
   id: string;
@@ -93,8 +94,20 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
 
   return (
     <Container className="divide-y p-0">
-      <div className="px-6 py-4">
+      <div className="flex items-center justify-between gap-x-2 px-6 py-4">
         <Heading level="h2">Od zákazníka</Heading>
+        {/* Celá konverzace se zákazníkem (deník zakázky) jako popup — jsou tam
+            i NOVÉ zprávy od zákazníka, které se v bloku výš neukazovaly, a dá se
+            rovnou odpovědět (odpověď viditelná zákazníkovi mu přijde e-mailem). */}
+        <ProductionDiary
+          orderId={order.id}
+          label={`#${order.display_id}`}
+          trigger={
+            <Button size="small" variant="secondary">
+              Konverzace se zákazníkem
+            </Button>
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-y-4 px-6 py-4">
