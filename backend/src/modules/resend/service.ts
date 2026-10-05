@@ -27,6 +27,8 @@ import { PaymentRefundedEmail } from "./emails/payment-refunded";
 import { OrderShipmentEmail } from "./emails/order-shipment";
 import { OrderCancelledEmail } from "./emails/order-cancelled";
 import { OrderProcessingEmail } from "./emails/order-processing";
+import { OrderReadyEmail } from "./emails/order-ready";
+import { CommissionCompletedEmail } from "./emails/commission-completed";
 import { OrderRefundedEmail } from "./emails/order-refunded";
 import { OrderReviewEmail } from "./emails/order-review";
 import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
@@ -83,6 +85,10 @@ enum Templates {
   ORDER_SHIPMENT = "order-shipment",
   ORDER_CANCELLED = "order-cancelled",
   ORDER_PROCESSING = "order-processing",
+  // „Objednávka je připravená k odeslání" — mezikrok u běžného zboží.
+  ORDER_READY = "order-ready",
+  // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
+  COMMISSION_COMPLETED = "commission-completed",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -161,6 +167,8 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_SHIPMENT]: OrderShipmentEmail,
   [Templates.ORDER_CANCELLED]: OrderCancelledEmail,
   [Templates.ORDER_PROCESSING]: OrderProcessingEmail,
+  [Templates.ORDER_READY]: OrderReadyEmail,
+  [Templates.COMMISSION_COMPLETED]: CommissionCompletedEmail,
   [Templates.ORDER_REFUNDED]: OrderRefundedEmail,
   [Templates.ORDER_REVIEW]: OrderReviewEmail,
   [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
@@ -207,6 +215,10 @@ export enum EmailTemplates {
   ORDER_SHIPMENT = "order-shipment",
   ORDER_CANCELLED = "order-cancelled",
   ORDER_PROCESSING = "order-processing",
+  // „Objednávka je připravená k odeslání" — mezikrok u běžného zboží.
+  ORDER_READY = "order-ready",
+  // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
+  COMMISSION_COMPLETED = "commission-completed",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -374,6 +386,10 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Objednávka zrušena"
       case Templates.ORDER_PROCESSING:
         return "Zadání potvrzeno — začínáme"
+      case Templates.ORDER_READY:
+        return "Objednávka je připravená k odeslání"
+      case Templates.COMMISSION_COMPLETED:
+        return "Vaše zakázka je hotová"
       case Templates.ORDER_REFUNDED:
         return "Objednávka vrácena"
       case Templates.ORDER_REVIEW:

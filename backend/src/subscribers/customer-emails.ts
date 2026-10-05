@@ -65,6 +65,20 @@ const common = (order: any) => ({
 })
 
 /**
+ * Náhledový obrázek zakázky = obrázek objednaného produktu (ne fotka, kterou
+ * poslal sám zákazník). Dřív se do e-mailů tahala „nejnovější sdílená fotka",
+ * jenže viditelné jsou i zákazníkovy vlastní zprávy → vracela se zpátky jeho
+ * fotka. Bereme náhled položky zakázky, jinak první položky.
+ */
+const commissionProductImage = (order: any): string | null => {
+  const items = (order?.items || []) as any[]
+  const item =
+    items.find((i: any) => Boolean((i?.metadata as any)?.made_to_order)) ??
+    items[0]
+  return (item?.thumbnail as string) || null
+}
+
+/**
  * #2 „Platba přijata".
  *
  * Skipped when the capture happened within five minutes of the order being
@@ -162,19 +176,6 @@ const onBalanceRequested = async ({
     return
   }
 
-  // The approval moment (feature-ideas 2.3): the balance request carries the
-  // newest photo she chose to share, so „look what is finished" and „pay the
-  // rest" are one e-mail — approving IS the payment.
-  const [latestShared] = (await madeToOrder
-    .listProductionNotes(
-      {
-        order_id: data.order_id,
-        visible_to_customer: true,
-      } as never,
-      { order: { created_at: "DESC" }, take: 1 } as never
-    )
-    .catch(() => [])) as any[]
-
   await sendCustomerEmail(container, {
     template: "payment-pending",
     to: order.email,
@@ -193,7 +194,8 @@ const onBalanceRequested = async ({
       paymentLink:
         request.payment_url || balancePaymentUrl(order.id) || orderLink(order),
       estimatedConfirmationTime: "Platba se obvykle potvrdí do několika minut.",
-      makingPhotoUrl: latestShared?.image_url ?? null,
+      // Obrázek objednaného produktu zakázky (ne fotka od zákazníka).
+      makingPhotoUrl: commissionProductImage(order),
     },
   })
 }
@@ -285,18 +287,17 @@ const onShipmentCreated = async ({
     return
   }
 
+  // Osobní odběr: vytvoření zásilky = okamžik vyzvednutí (`completePersonalPickup`
+  // podá + odešle naráz). „Připraveno k vyzvednutí" se posílá dřív, při přechodu
+  // do „K odeslání" (viz onMerchantStageChanged). Tady už zákazník zboží má →
+  // „Objekty jsou u vás".
   if (isPickupOrder(order)) {
     await sendCustomerEmail(container, {
-      template: "order-ready-pickup",
+      template: "order-delivered",
       to: order.email,
       key: `ship:${fulfillment.id}`,
       orderId: order.id,
-      data: {
-        ...common(order),
-        pickupLocation: "Ateliér Keramická zahrada",
-        pickupAddress: "Putim 229, 397 01 Písek",
-        readyDate: new Date().toLocaleDateString("cs-CZ"),
-      },
+      data: { ...common(order) },
     })
     return
   }
@@ -598,13 +599,119 @@ const onReturnRequested = async ({
   })
 }
 
+/**
+ * „Objednávka je připravená k odeslání" — merchant přesune objednávku do fáze
+ * „K odeslání" (zabaleno, čeká na předání dopravci). Mezikrok mezi potvrzením a
+ * odesláním, který u běžného zboží chyběl. NEposílá se u:
+ *  - osobního odběru (má „k vyzvednutí" na shipment.created);
+ *  - čistě zakázkové objednávky (má „zakázka hotová" na dokončení výroby) —
+ *    jinak by u ní přišel generický „připraveno" i „hotová".
+ * U smíšené (produkty + zakázka) se pošle normálně, vedle zakázkových e-mailů.
+ */
+const onMerchantStageChanged = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ order_id: string; stage: string }>) => {
+  if (data?.stage !== "shipping" || !data?.order_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  // Osobní odběr má vlastní e-mail „připraveno k vyzvednutí" (zákazník si má
+  // přijít). Posílá se právě tady, ve chvíli, kdy je objednávka připravená —
+  // ne až při vyzvednutí. (Při vyzvednutí jde „máte u sebe", viz onShipmentCreated.)
+  if (isPickupOrder(order)) {
+    await sendCustomerEmail(container, {
+      template: "order-ready-pickup",
+      to: order.email,
+      key: `ready-pickup:${order.id}`,
+      orderId: order.id,
+      data: {
+        ...common(order),
+        pickupLocation: "Ateliér Keramická zahrada",
+        pickupAddress: "Putim 229, 397 01 Písek",
+        readyDate: new Date().toLocaleDateString("cs-CZ"),
+      },
+    })
+    return
+  }
+
+  // Čistě zakázková objednávka má „připraveno" = „zakázka hotová"; generický
+  // e-mail by u ní dubloval. Posíláme jen když je ve hře i běžné zboží.
+  const items = (order.items || []) as any[]
+  const pureCommission =
+    items.length > 0 &&
+    items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))
+  if (pureCommission) {
+    return
+  }
+
+  await sendCustomerEmail(container, {
+    template: "order-ready",
+    to: order.email,
+    // At-least-once: klíč na objednávku, ať návrat do „K odeslání" neposílá znovu.
+    key: `ready:${order.id}`,
+    orderId: order.id,
+    data: { ...common(order) },
+  })
+}
+
+/**
+ * „Vaše zakázka je hotová" — dokončení výroby na zakázku (complete_production).
+ * Doplatek zůstává RUČNÍ (tlačítko); u nezaplaceného zůstatku e-mail napoví, že
+ * výzva k doplacení přijde. Přiloží nejnovější sdílenou fotku, pokud nějaká je.
+ */
+const onProductionCompleted = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{
+  order_id: string
+  production_order_id?: string
+  fully_paid?: boolean
+  outstanding?: number
+}>) => {
+  if (!data?.order_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+
+  const fullyPaid = data.fully_paid !== false
+  const outstanding =
+    typeof data.outstanding === "number" ? data.outstanding : 0
+
+  await sendCustomerEmail(container, {
+    template: "commission-completed",
+    to: order.email,
+    key: `mto-done:${data.production_order_id ?? order.id}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      fullyPaid,
+      balanceDue:
+        !fullyPaid && outstanding > 0
+          ? formatMoney(outstanding, order.currency_code)
+          : null,
+      // Obrázek objednaného produktu zakázky (ne fotka od zákazníka).
+      makingPhotoUrl: commissionProductImage(order),
+    },
+  })
+}
+
 const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "payment.captured": onPaymentCaptured,
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
+  "made-to-order.production-completed": onProductionCompleted,
   "made-to-order.surcharge-notified": onSurchargeNotified,
   "made-to-order.delay-announced": onDelayAnnounced,
+  "merchant-order.stage-changed": onMerchantStageChanged,
   "shipment.created": onShipmentCreated,
   "delivery.created": onDeliveryCreated,
   "order.canceled": onOrderCanceled,
@@ -625,8 +732,10 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
+    "made-to-order.production-completed",
     "made-to-order.surcharge-notified",
     "made-to-order.delay-announced",
+    "merchant-order.stage-changed",
     "shipment.created",
     "delivery.created",
     "order.canceled",

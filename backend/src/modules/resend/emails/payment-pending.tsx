@@ -81,7 +81,7 @@ function PaymentPendingEmailComponent({
       {makingPhotoUrl && (
         <>
           <P small style={{ margin: "24px 0 8px" }}>
-            Takhle vaše zakázka právě vypadá:
+            Vaše zakázka:
           </P>
           <img
             src={makingPhotoUrl}

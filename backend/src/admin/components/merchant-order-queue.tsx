@@ -417,6 +417,31 @@ export const OrderRow = ({
     },
   });
 
+  // Osobní odběr: „připraveno k vyzvednutí" — přesune objednávku do fáze
+  // „K odeslání" (tu u odběru čteme jako „připraveno") a zákazník dostane
+  // e-mail, že si může přijít. Samotné vyzvednutí pak potvrdí „Vyzvednuto
+  // a zaplaceno".
+  const pickupReady = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
+        method: "PATCH",
+        body: { stage: "shipping" },
+      }),
+    onSuccess: async () => {
+      setLastFailure(null);
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      toast.success(
+        "Zákazník dostal e-mail, že si může přijít pro objednávku."
+      );
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Akci se nepodařilo dokončit";
+      setLastFailure(message);
+      toast.error(message);
+    },
+  });
+
   const targetStage = nextStage[order.stage];
   // A1: a parcel that exists but has not left. The next step is not „ship" —
   // that already happened as far as packing goes — it is her confirming she
@@ -571,6 +596,23 @@ export const OrderRow = ({
             Štítek na balík
           </Button>
         )}
+
+        {/*
+          Osobní odběr: nejdřív „připraveno k vyzvednutí" (dá zákazníkovi vědět,
+          ať si přijde), teprve pak „Vyzvednuto a zaplaceno". Tlačítko „připraveno"
+          je vidět, dokud objednávka nedošla do fáze „K odeslání".
+        */}
+        {order.is_personal_pickup &&
+          ["received", "working"].includes(order.stage) && (
+            <Button
+              variant="secondary"
+              size="small"
+              isLoading={pickupReady.isPending}
+              onClick={() => pickupReady.mutate()}
+            >
+              Připraveno k vyzvednutí
+            </Button>
+          )}
 
         {/*
           Personal collection never ships: the customer arrives, pays and

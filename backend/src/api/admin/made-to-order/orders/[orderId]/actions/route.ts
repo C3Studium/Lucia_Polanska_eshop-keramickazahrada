@@ -404,6 +404,19 @@ export const POST = async (
       production_completed_at: now,
       ready_to_ship_at: fullyPaid ? now : null,
     })
+
+    // Dokončení výroby → e-mail „zakázka je hotová" (zákaznický subscriber).
+    // Doplatek zůstává RUČNÍ (tlačítko) — tady se jen oznámí dokončení; u
+    // nezaplaceného zůstatku e-mail napoví, že výzva k doplacení přijde.
+    await eventBus.emit({
+      name: "made-to-order.production-completed",
+      data: {
+        order_id: req.params.orderId,
+        production_order_id: productionOrder.id,
+        fully_paid: fullyPaid,
+        outstanding: roundMoney(Math.max(0, total - paid)),
+      },
+    })
   }
 
   if (body.action === "announce_delay") {
