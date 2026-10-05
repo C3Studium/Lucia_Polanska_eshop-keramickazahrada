@@ -51,6 +51,8 @@ export const ProductionDiary = ({
   const [text, setText] = useState("");
   const [share, setShare] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // Fotka otevřená přes celou obrazovku (zvětšení z vlákna).
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -162,9 +164,13 @@ export const ProductionDiary = ({
   };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={setOpen}>
       <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
-      <Drawer.Content>
+      {/* Širší okno — konverzace s fotkami se do úzkého sloupce nevešla. */}
+      <Drawer.Content
+        style={{ width: "min(46rem, 94vw)", maxWidth: "min(46rem, 94vw)" }}
+      >
         <Drawer.Header>
           <Drawer.Title>Deník výroby — {label}</Drawer.Title>
         </Drawer.Header>
@@ -249,13 +255,18 @@ export const ProductionDiary = ({
                   </Badge>
                 </div>
                 {note.image_url && (
-                  <a href={note.image_url} target="_blank" rel="noreferrer">
+                  <button
+                    type="button"
+                    className="mb-2 block w-full cursor-zoom-in overflow-hidden rounded-md"
+                    onClick={() => setLightbox(note.image_url)}
+                    title="Zvětšit fotku"
+                  >
                     <img
                       src={note.image_url}
                       alt=""
-                      className="mb-2 max-h-56 w-full rounded-md object-cover"
+                      className="max-h-56 w-full object-cover"
                     />
-                  </a>
+                  </button>
                 )}
                 {note.text && <Text size="small">{note.text}</Text>}
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -294,5 +305,23 @@ export const ProductionDiary = ({
         </Drawer.Body>
       </Drawer.Content>
     </Drawer>
+
+      {/* Fotka přes celou obrazovku — klik kamkoli zavře. z-index nad drawer. */}
+      {lightbox && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setLightbox(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt=""
+            className="max-h-full max-w-full rounded-lg object-contain"
+          />
+        </div>
+      )}
+    </>
   );
 };

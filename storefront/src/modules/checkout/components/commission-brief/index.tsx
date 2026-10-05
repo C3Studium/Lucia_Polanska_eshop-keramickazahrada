@@ -109,6 +109,8 @@ export default function CommissionBrief({
   const [status, setStatus] = useState<{ kind: "idle" | "saved" | "error"; message?: string }>({
     kind: "idle",
   })
+  /** Fotka otevřená přes celou obrazovku (zvětšení z vlákna). */
+  const [lightbox, setLightbox] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const fileInput = useRef<HTMLInputElement>(null)
   const fieldId = useId()
@@ -235,14 +237,14 @@ export default function CommissionBrief({
               </span>
               {entry.text && <p className={styles.entryText}>{entry.text}</p>}
               {entry.image_url && (
-                <a
-                  href={entry.image_url}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
                   className={styles.entryPhoto}
+                  onClick={() => setLightbox(entry.image_url!)}
+                  aria-label="Zvětšit fotku"
                 >
                   <Image src={entry.image_url} alt="" width={220} height={160} unoptimized />
-                </a>
+                </button>
               )}
             </li>
           ))}
@@ -383,6 +385,26 @@ export default function CommissionBrief({
             : `${total}/${MAX_PHOTOS} fotek`}
         </span>
       </div>
+
+      {/* Zvětšení fotky z vlákna přes celou obrazovku — klik kamkoli zavře. */}
+      {lightbox && (
+        <div
+          className={styles.lightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Fotka přes celou obrazovku"
+          onClick={() => setLightbox(null)}
+        >
+          <Image
+            src={lightbox}
+            alt=""
+            width={1600}
+            height={1600}
+            unoptimized
+            className={styles.lightboxImg}
+          />
+        </div>
+      )}
     </section>
   )
 }

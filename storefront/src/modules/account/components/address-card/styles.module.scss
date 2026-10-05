@@ -90,8 +90,13 @@
 .medium {
   max-width: 45rem;
 }
+/* `width` i `max-width`: základ `.panel` drží width na min(100%, 45rem), takže
+   samotné `max-width` velikost nerozšíří (strop je nad skutečnou šířkou).
+   Stejná specificita + pozdější pořadí → šířka tady přebije base. Širší okno
+   pro konverzaci k zakázce (vlákno + fotky). */
 .large {
-  max-width: 60rem;
+  width: min(100%, 64rem);
+  max-width: 64rem;
 }
 .transparent {
   border: 0;

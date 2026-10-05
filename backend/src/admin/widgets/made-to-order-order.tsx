@@ -157,7 +157,7 @@ const MadeToOrderOrderWidgetInner = ({
           : variables.action === "remind_balance"
             ? "Připomínka doplatku odeslána e-mailem"
             : variables.action === "notify_surcharge"
-              ? "Zákazník byl informován o příplatku e-mailem"
+              ? "Potvrzení příplatku odesláno zákazníkovi e-mailem"
               : "Zakázka byla aktualizována";
       toast.success(message);
 
@@ -288,7 +288,8 @@ const MadeToOrderOrderWidgetInner = ({
                   : "+ Přidat příplatek"}
               </Button>
 
-              {/* Informovat zákazníka o příplatku — ruční e-mail s vysvětlením
+              {/* Potvrdit příplatek zákazníkovi — ruční e-mail s písemným
+                  potvrzením příplatku dohodnutého jinou cestou (telefon/e-mail)
                   a novou částkou k doplacení. Ukáže se, jen když příplatek je. */}
               {surcharge > 0 && !notifyingSurcharge && (
                 <Button
@@ -296,7 +297,7 @@ const MadeToOrderOrderWidgetInner = ({
                   variant="transparent"
                   onClick={() => setNotifyingSurcharge(true)}
                 >
-                  Informovat zákazníka o příplatku
+                  Potvrdit příplatek zákazníkovi
                 </Button>
               )}
 
@@ -305,7 +306,7 @@ const MadeToOrderOrderWidgetInner = ({
                   <Textarea
                     rows={2}
                     autoFocus
-                    placeholder="Důvod příplatku (nepovinné) — uvidí ho zákazník"
+                    placeholder="Na čem jste se domluvili (telefon/e-mail) — uvidí zákazník (nepovinné)"
                     value={surchargeReason}
                     onChange={(e) => setSurchargeReason(e.target.value)}
                   />
@@ -320,7 +321,7 @@ const MadeToOrderOrderWidgetInner = ({
                         })
                       }
                     >
-                      Odeslat zákazníkovi
+                      Potvrdit a odeslat
                     </Button>
                     <Button
                       size="small"

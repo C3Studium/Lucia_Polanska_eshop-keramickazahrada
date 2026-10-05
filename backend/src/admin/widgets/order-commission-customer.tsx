@@ -32,6 +32,14 @@ type ProductionResponse = {
   production_order?: ProductionOrder | null;
 };
 
+type DiaryNote = {
+  id: string;
+  text: string | null;
+  image_url: string | null;
+  author?: "customer" | "atelier";
+  created_at: string;
+};
+
 const queryClient = adminQueryClient;
 
 /**
@@ -52,6 +60,16 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
     retry: false,
   });
   const production = data?.production_order;
+
+  // Celé vlákno — ať „Od zákazníka" ukazuje to NEJNOVĚJŠÍ, co zákazník poslal
+  // (ne jen původní zadání z objednávky). Sdílí klíč s drawerem konverzace,
+  // takže se po odpovědi/nové zprávě obnoví obojí najednou. Backend řadí DESC.
+  const notesQuery = useQuery<{ notes: DiaryNote[] }>({
+    queryKey: ["production-diary", order.id],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/made-to-order/orders/${order.id}/notes`),
+    retry: false,
+  });
 
   const [note, setNote] = useState("");
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -87,10 +105,24 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
   }
   if (isError || !production) return null;
 
-  const wish = production.customer_specification || production.customer_note;
-  const photos = Array.isArray(production.customer_photos)
+  // „Od zákazníka" = to NEJNOVĚJŠÍ dle data. Zprávy zákazníka (vlákno) chodí
+  // DESC z backendu; původní zadání z objednávky (metadata) slouží jako záloha,
+  // když ještě žádná zpráva není. Fotky řadíme nejnovější první a odduplikujeme
+  // (původní zadání se do vlákna zrcadlí, URL by se jinak objevila dvakrát).
+  const customerNotes = (notesQuery.data?.notes ?? []).filter(
+    (note) => note.author === "customer"
+  );
+  const wish =
+    customerNotes.find((note) => note.text && note.text.trim())?.text ||
+    production.customer_specification ||
+    production.customer_note;
+  const notePhotos = customerNotes
+    .map((note) => note.image_url)
+    .filter((url): url is string => Boolean(url));
+  const briefPhotos = Array.isArray(production.customer_photos)
     ? production.customer_photos
     : [];
+  const photos = Array.from(new Set([...notePhotos, ...briefPhotos]));
 
   return (
     <Container className="divide-y p-0">

@@ -67,6 +67,7 @@ const templateLabels: Record<string, string> = {
   "merchant-notification": "Upozornění pro vás",
   "invoice-issued": "Faktura",
   "surcharge-notice": "Příplatek k zakázce",
+  "surcharge-confirmed": "Potvrzení příplatku",
   "commission-message": "Zpráva k zakázce",
 };
 

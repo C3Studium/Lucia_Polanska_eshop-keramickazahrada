@@ -44,6 +44,7 @@ import { ReturnRejectedEmail } from "./emails/return-rejected";
 import { PriceDropEmail } from "./emails/price-drop";
 import { InvoiceIssuedEmail } from "./emails/invoice-issued";
 import { SurchargeNoticeEmail } from "./emails/surcharge-notice";
+import { SurchargeConfirmedEmail } from "./emails/surcharge-confirmed";
 import { CommissionMessageEmail } from "./emails/commission-message";
 import { CourseReservationConfirmedEmail } from "./emails/course-reservation-confirmed";
 import { CourseTermCancelledEmail } from "./emails/course-term-cancelled";
@@ -102,6 +103,8 @@ enum Templates {
   INVOICE_ISSUED = "invoice-issued",
   // Zakázka: „k zakázce přibyl příplatek" — ruční informování zákazníka.
   SURCHARGE_NOTICE = "surcharge-notice",
+  // Zakázka: písemné potvrzení příplatku dohodnutého jinou cestou (telefon/e-mail).
+  SURCHARGE_CONFIRMED = "surcharge-confirmed",
   // Zakázka: nová zpráva od ateliéru v deníku (chat) — viditelný zápis.
   COMMISSION_MESSAGE = "commission-message",
   // Kurzy (docs/kurzy-system.md): the reservation confirmation (paid online /
@@ -175,6 +178,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.PRICE_DROP]: PriceDropEmail,
   [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
   [Templates.SURCHARGE_NOTICE]: SurchargeNoticeEmail,
+  [Templates.SURCHARGE_CONFIRMED]: SurchargeConfirmedEmail,
   [Templates.COMMISSION_MESSAGE]: CommissionMessageEmail,
   [Templates.COURSE_RESERVATION_CONFIRMED]: CourseReservationConfirmedEmail,
   [Templates.COURSE_TERM_CANCELLED]: CourseTermCancelledEmail,
@@ -220,6 +224,7 @@ export enum EmailTemplates {
   PRICE_DROP = "price-drop",
   INVOICE_ISSUED = "invoice-issued",
   SURCHARGE_NOTICE = "surcharge-notice",
+  SURCHARGE_CONFIRMED = "surcharge-confirmed",
   COMMISSION_MESSAGE = "commission-message",
   COURSE_RESERVATION_CONFIRMED = "course-reservation-confirmed",
   COURSE_TERM_CANCELLED = "course-term-cancelled",

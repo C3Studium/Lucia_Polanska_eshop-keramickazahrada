@@ -598,7 +598,9 @@ export const ensureMadeToOrderInvoices = async (
       amount: number,
       label: string,
       kind: "deposit" | "balance",
-      balanceRemaining?: number
+      balanceRemaining?: number,
+      /** Příplatek, který je součástí TÉTO částky — na faktuře vlastní řádek. */
+      surcharge?: number
     ): Promise<boolean> => {
       const already = Number(
         (order.metadata as Record<string, unknown> | undefined)?.[keys.invoiceId]
@@ -606,6 +608,25 @@ export const ensureMadeToOrderInvoices = async (
       if (Number.isFinite(already) && already > 0) return false
       const rounded = round2(amount)
       if (rounded <= 0) return false
+
+      // Příplatek jako SAMOSTATNÁ položka doplatku (ne schovaný v jedné sumě):
+      // základ „Doplatek" + řádek „Příplatek". Součet dá přesně zaplacenou
+      // částku (ořízneme příplatek stropem částky, ať se nikdy nerozejdou).
+      const surchargeLine = round2(Math.min(Math.max(0, surcharge ?? 0), rounded))
+      const baseLine = round2(rounded - surchargeLine)
+      const items =
+        surchargeLine > 0.005
+          ? [
+              ...(baseLine > 0.005
+                ? [singleInvoiceLine(label, baseLine, idoklad.vatPayer)]
+                : []),
+              singleInvoiceLine(
+                `Příplatek — zakázka č. ${order.display_id ?? order.id}`,
+                surchargeLine,
+                idoklad.vatPayer
+              ),
+            ]
+          : [singleInvoiceLine(label, rounded, idoklad.vatPayer)]
 
       try {
         await prepareBits()
@@ -618,7 +639,7 @@ export const ensureMadeToOrderInvoices = async (
             paymentOptionId,
             numericSequenceId: idoklad.numericSequenceId,
             currencyId,
-            items: [singleInvoiceLine(label, rounded, idoklad.vatPayer)],
+            items,
             description: `${label} — obj. #${order.display_id ?? order.id}`,
           })
         )
@@ -719,12 +740,17 @@ export const ensureMadeToOrderInvoices = async (
         )) || created
     }
     if (paidBalance) {
+      // Příplatek je celý v doplatku (záloha se počítá z původní ceny) → na
+      // faktuře doplatku ho vyčleníme jako vlastní řádek.
+      const surcharge = round2(toAmount(productionOrder.surcharge))
       created =
         (await issuePhase(
           IDOKLAD_BALANCE_METADATA_KEYS,
           toAmount(paidBalance.amount),
           `Doplatek zakázky č. ${order.display_id ?? order.id}`,
-          "balance"
+          "balance",
+          undefined,
+          surcharge
         )) || created
     }
     return { status: created ? "created" : "exists" }

@@ -1,5 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
+import { generateCpLabelWorkflow } from "../../../../../workflows/generate-cp-label"
 
 /**
  * The carrier label for an order's parcel, as a downloadable PDF.
@@ -27,7 +32,11 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 type LabelResponse = {
   available: boolean
   reason?: string
-  labels: Array<{ url: string; tracking_number: string | null }>
+  labels: Array<{
+    url: string
+    tracking_number: string | null
+    pdf_base64?: string | null
+  }>
   /**
    * Kam zásilka jede — u Balíkovny podle manuálu ČP: adresa štítku je
    * „BALÍKOVNA, {ZIP} {NAME}" (PSČ výhradně z pole zip widgetu, ne z adresy).
@@ -43,6 +52,14 @@ type LabelResponse = {
   } | null
   /** Co je špatně, ale nebrání odpovědi — admin je ukáže oranžově. */
   warnings?: string[]
+  /** Jsou nastavené ČP přístupy? Widget podle toho nabídne „Vygenerovat". */
+  credentials_ready?: boolean
+  /** Trvalý odkaz na PDF štítku v úložišti (MinIO), když už byl vygenerován. */
+  label_url?: string | null
+  /** Název souboru pro stažení: `Stitek-Jmeno-Prijmeni-0026.pdf`. */
+  filename?: string | null
+  /** Kdy byl štítek vygenerován (ISO), když byl. */
+  generated_at?: string | null
 }
 
 const fold = (value: string) =>
@@ -112,10 +129,33 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "Objednávka jede do Balíkovny, ale nemá uložené výdejní místo — bez něj štítek nepůjde vystavit. Zkontrolujte, že zákazník místo vybral (metadata objednávky)."
     )
   }
+
+  // Trvalá kopie štítku + stav přístupů — pro widget na detailu objednávky.
+  const credentialsReady = Boolean(
+    process.env.BALIKOVNA_API_TOKEN && process.env.BALIKOVNA_API_SECRET
+  )
+  const labelUrl =
+    typeof orderMeta.cp_label_url === "string" && orderMeta.cp_label_url
+      ? orderMeta.cp_label_url
+      : null
+  const labelFilename =
+    typeof orderMeta.cp_label_filename === "string" && orderMeta.cp_label_filename
+      ? orderMeta.cp_label_filename
+      : null
+  const labelGeneratedAt =
+    typeof orderMeta.cp_label_generated_at === "string" &&
+    orderMeta.cp_label_generated_at
+      ? orderMeta.cp_label_generated_at
+      : null
+
   const withContext = (body: LabelResponse): LabelResponse => ({
     ...body,
     destination,
     warnings,
+    credentials_ready: credentialsReady,
+    label_url: labelUrl,
+    filename: labelFilename,
+    generated_at: labelGeneratedAt,
   })
 
   // ?parcel=stock|zakazka — a mixed order ships as TWO parcels when she
@@ -229,4 +269,208 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   res.status(200).json(withContext({ available: true, labels }))
+}
+
+/**
+ * Název souboru štítku: dohledatelný podle zákazníka a čísla objednávky.
+ * `Stitek-Jmeno-Prijmeni-0026.pdf` — bez diakritiky a mezer, ať projde všude.
+ */
+const labelFilenameFor = (order: any): string => {
+  const name = [
+    order?.shipping_address?.first_name ?? order?.customer?.first_name,
+    order?.shipping_address?.last_name ?? order?.customer?.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim()
+  const slug = fold(name || "zakaznik")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+  const id = order?.display_id ?? String(order?.id ?? "").slice(-6)
+  return `Stitek-${slug || "zakaznik"}-${id}.pdf`
+}
+
+/**
+ * „Vygenerovat štítek" — podá zásilku České poště (vznikne štítek + číslo
+ * zásilky) BEZ odeslání, uloží PDF do úložiště a vrátí trvalý odkaz. Objednávka
+ * zůstane „K odeslání"; zákazníkovi nic nechodí (to až na „Zásilku jsem předala
+ * dopravci"). Viz `generateCpLabelWorkflow`.
+ */
+export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  if (!process.env.BALIKOVNA_API_TOKEN || !process.env.BALIKOVNA_API_SECRET) {
+    res.status(200).json({
+      available: false,
+      labels: [],
+      credentials_ready: false,
+      reason:
+        "Štítek zatím nejde vytvořit — čekáme na přístupy k České poště (B2B účet). Jakmile budou nastavené, tlačítko začne fungovat.",
+    } as LabelResponse)
+    return
+  }
+
+  const { data: orders } = await query.graph({
+    entity: "order",
+    fields: [
+      "id",
+      "display_id",
+      "email",
+      "metadata",
+      "shipping_address.first_name",
+      "shipping_address.last_name",
+      "customer.first_name",
+      "customer.last_name",
+      "shipping_methods.name",
+      "shipping_methods.data",
+      "shipping_methods.shipping_option.provider_id",
+      "fulfillments.id",
+      "fulfillments.canceled_at",
+      "fulfillments.shipped_at",
+      "fulfillments.data",
+    ],
+    filters: { id: req.params.orderId },
+  })
+  const order = orders[0] as any
+  if (!order) {
+    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
+  }
+
+  // Osobní odběr se neposílá — není co podávat.
+  const isPersonalPickup = (order.shipping_methods ?? []).some((method: any) => {
+    const data = method?.data || {}
+    return data.personal_pickup === true || data.service_code === "PICKUP"
+  })
+  if (isPersonalPickup) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Objednávka je na osobní odběr — žádný štítek se nevystavuje."
+    )
+  }
+
+  // Jen zásilky České pošty (Balíkovna / Do ruky). Jiní dopravci sem nepatří —
+  // štítek by se tím stejně nevygeneroval.
+  const viaCp = (order.shipping_methods ?? []).some((method: any) => {
+    const provider = String(method?.shipping_option?.provider_id ?? "")
+    return (
+      provider.includes("ceska-posta") ||
+      fold(String(method?.name ?? "")).includes("balikovna") ||
+      fold(String(method?.name ?? "")).includes("balik") ||
+      fold(String(method?.name ?? "")).includes("posta")
+    )
+  })
+  if (!viaCp) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Tahle objednávka nejede Českou poštou — štítek odsud vytvořit nejde."
+    )
+  }
+
+  // Podání u ČP (vznikne štítek) bez odeslání. Brána i razítko dobírky jsou
+  // uvnitř workflow — případné „nezaplaceno" vyhodí srozumitelnou hlášku sem.
+  await generateCpLabelWorkflow(req.scope).run({
+    input: {
+      order_id: req.params.orderId,
+      created_by: (req as any).auth_context?.actor_id ?? null,
+    },
+  })
+
+  // Po podání načteme štítek z fulfillmentu (base64 od ČP).
+  const { data: afterOrders } = await query.graph({
+    entity: "order",
+    fields: [
+      "id",
+      "display_id",
+      "metadata",
+      "shipping_address.first_name",
+      "shipping_address.last_name",
+      "customer.first_name",
+      "customer.last_name",
+      "fulfillments.id",
+      "fulfillments.canceled_at",
+      "fulfillments.shipped_at",
+      "fulfillments.data",
+    ],
+    filters: { id: req.params.orderId },
+  })
+  const afterOrder = afterOrders[0] as any
+  const fulfillment = (afterOrder?.fulfillments || []).find(
+    (item: any) => !item?.canceled_at
+  )
+  const pdfBase64 =
+    typeof fulfillment?.data?.label_pdf_base64 === "string" &&
+    fulfillment.data.label_pdf_base64
+      ? (fulfillment.data.label_pdf_base64 as string)
+      : null
+  const trackingNumber =
+    typeof fulfillment?.data?.parcel_code === "string"
+      ? (fulfillment.data.parcel_code as string)
+      : null
+
+  if (!pdfBase64) {
+    const recordOnly = fulfillment?.data?.mode === "manual"
+    res.status(200).json({
+      available: false,
+      labels: [],
+      credentials_ready: true,
+      reason: recordOnly
+        ? "Zásilka se podala jen jako záznam (bez napojení na ČP) — štítek nevznikl. Zkontrolujte ČP přístupy."
+        : "Česká pošta zatím štítek nevrátila. Zkuste to prosím za chvíli.",
+    } as LabelResponse)
+    return
+  }
+
+  // Trvalá kopie do úložiště (MinIO) — ČP nemá reprint API, tak ať štítek
+  // nezávisí jen na jednom záznamu. Název podle zákazníka a čísla objednávky.
+  const filename = labelFilenameFor(afterOrder)
+  let labelUrl: string | null = null
+  try {
+    const fileModule = req.scope.resolve(Modules.FILE)
+    const [uploaded] = await fileModule.createFiles([
+      {
+        filename,
+        mimeType: "application/pdf",
+        content: pdfBase64,
+        access: "public" as const,
+      },
+    ])
+    labelUrl = uploaded?.url ?? null
+  } catch {
+    // Úložiště je doplněk — i bez něj se štítek stáhne z base64 níž.
+  }
+
+  const generatedAt = new Date().toISOString()
+  try {
+    const orderModule = req.scope.resolve(Modules.ORDER) as any
+    await orderModule.updateOrders([
+      {
+        id: afterOrder.id,
+        metadata: {
+          ...((afterOrder.metadata ?? {}) as Record<string, unknown>),
+          cp_label_url: labelUrl,
+          cp_label_filename: filename,
+          cp_label_tracking: trackingNumber,
+          cp_label_generated_at: generatedAt,
+        },
+      },
+    ])
+  } catch {
+    // Razítko je jen pro rychlé zobrazení v GET — štítek vracíme tak jako tak.
+  }
+
+  res.status(200).json({
+    available: true,
+    credentials_ready: true,
+    label_url: labelUrl,
+    filename,
+    generated_at: generatedAt,
+    labels: [
+      {
+        url: labelUrl ?? "",
+        tracking_number: trackingNumber,
+        pdf_base64: pdfBase64,
+      },
+    ],
+  } as LabelResponse)
 }

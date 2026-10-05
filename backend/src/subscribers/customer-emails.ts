@@ -477,7 +477,9 @@ const onSurchargeNotified = async ({
     return
   }
   await sendCustomerEmail(container, {
-    template: "surcharge-notice",
+    // Písemné potvrzení příplatku dohodnutého jinou cestou (telefon/e-mail) —
+    // ne oznámení ceny z čista jasna. Viz `emails/surcharge-confirmed`.
+    template: "surcharge-confirmed",
     to: order.email,
     key: `surcharge:${data.production_order_id ?? order.id}:${
       data.token ?? data.surcharge
