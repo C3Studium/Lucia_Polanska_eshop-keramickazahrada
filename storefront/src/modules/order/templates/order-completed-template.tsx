@@ -76,6 +76,20 @@ export default async function OrderCompletedTemplate({
     ? paymentMethodTitle(payment.provider_id)
     : "Čeká na přiřazení"
 
+  /*
+   * Zakázka se platí na dvakrát (záloha teď, doplatek po dokončení). Souhrn
+   * ukazoval „Celkem … / Zaplaceno", i když člověk zaplatil jen zálohu — vypadalo
+   * to, že je to celé zaplacené. Dopočítáme, kolik reálně zaplatil a kolik zbývá.
+   * `commissionNotes != null` = tahle objednávka je zakázka.
+   */
+  const isCommission = commissionNotes != null
+  const paidNow = (order.payment_collections ?? [])
+    .flatMap((collection: any) => collection?.payments ?? [])
+    .reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0)
+  const remaining = Math.max(0, (order.total ?? 0) - paidNow)
+  const showDeposit = isCommission && paidNow > 0 && remaining > 0.005
+  const paymentStatusLabel = showDeposit ? "Záloha zaplacena" : paymentStatus
+
   return (
     <main className={s.root}>
       <div className={s.ambient} aria-hidden="true">
@@ -155,7 +169,9 @@ export default async function OrderCompletedTemplate({
           </div>
           <div>
             <span>Stav platby</span>
-            <strong data-testid="order-payment-status">{paymentStatus}</strong>
+            <strong data-testid="order-payment-status">
+              {paymentStatusLabel}
+            </strong>
           </div>
           <div>
             <span>Číslo objednávky</span>
@@ -264,9 +280,25 @@ export default async function OrderCompletedTemplate({
                 <strong>{money(order.total)}</strong>
               </div>
 
+              {/* Zakázka: kolik se zaplatilo teď (záloha) a kolik zbývá — ať
+                  souhrn neříká „Zaplaceno" u objednávky, kde je zaplacená jen
+                  záloha. */}
+              {showDeposit && (
+                <div className={s.depositSplit}>
+                  <div>
+                    <span>Zaplaceno teď (záloha)</span>
+                    <strong>{money(paidNow)}</strong>
+                  </div>
+                  <div>
+                    <span>Zbývá doplatit</span>
+                    <strong>{money(remaining)}</strong>
+                  </div>
+                </div>
+              )}
+
               <div className={s.receiptStatus}>
                 <span>Platba</span>
-                <strong>{paymentStatus}</strong>
+                <strong>{paymentStatusLabel}</strong>
               </div>
             </div>
           </aside>
@@ -335,12 +367,12 @@ export default async function OrderCompletedTemplate({
               </div>
               <div>
                 <span>Stav</span>
-                <strong>{paymentStatus}</strong>
+                <strong>{paymentStatusLabel}</strong>
               </div>
               <div>
-                <span>Částka</span>
+                <span>{showDeposit ? "Zaplaceno teď" : "Částka"}</span>
                 <strong data-testid="payment-amount">
-                  {money(payment?.amount ?? order.total)}
+                  {money(showDeposit ? paidNow : payment?.amount ?? order.total)}
                 </strong>
               </div>
             </div>

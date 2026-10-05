@@ -490,6 +490,34 @@
   font: 400 .78rem/1 "Sansation-Regular", sans-serif;
 }
 
+/* Zakázka: záloha teď + co zbývá. „Zaplaceno teď" zvýrazněné, „Zbývá doplatit"
+   v sage akcentu, ať je hned jasné, že se ještě doplácí. */
+.depositSplit {
+  padding-block: 1rem;
+  border-bottom: 1px solid rgb(var(--cream-06-rgb) / .18);
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.depositSplit > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.depositSplit span {
+  color: rgb(var(--cream-06-rgb) / .65);
+  font: 300 .98rem/1.4 "Sansation-Light", sans-serif;
+}
+.depositSplit strong {
+  color: var(--paper);
+  font: 400 1.03rem/1 "Sansation-Regular", sans-serif;
+}
+.depositSplit > div:last-child span,
+.depositSplit > div:last-child strong {
+  color: var(--sage-01);
+}
+
 /*
  * Doruceni a platba pod sebou, ne vedle.
  *

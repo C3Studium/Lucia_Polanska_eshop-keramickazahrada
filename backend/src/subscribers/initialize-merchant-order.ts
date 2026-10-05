@@ -125,10 +125,20 @@ export default async function initializeMerchantOrder({
    */
   const briefs = (order.items ?? [])
     .map((item: any) => item?.metadata?.made_to_order)
-    .filter(Boolean) as { note?: unknown; photos?: unknown }[]
+    .filter(Boolean) as { note?: unknown; specification?: unknown; photos?: unknown }[]
 
+  // Text briefu drží checkout pod `specification` (ne `note`) — bez tohohle byl
+  // diář u zakázky s fotkou, ale bez textu („co si přejí"). Fallback na `note`.
   const customerNotes = briefs
-    .map((brief) => (typeof brief.note === "string" ? brief.note.trim() : ""))
+    .map((brief) => {
+      const text =
+        typeof brief.specification === "string"
+          ? brief.specification
+          : typeof brief.note === "string"
+            ? brief.note
+            : ""
+      return text.trim()
+    })
     .filter(Boolean)
   const customerPhotos = briefs.flatMap((brief) =>
     Array.isArray(brief.photos)
