@@ -140,6 +140,17 @@ export const prepareBundleCartDataStep = createStep(
       targetBundlePrice = fixedAmount
     }
 
+    // Balíček ručně vyloučený ze slevových kódů („Bez slev. kódů" v Produkty+)
+    // → `product.discountable === false` na složeném produktu. Balíček se do
+    // košíku přidává jako JEDNOTLIVÉ komponenty, takže se příznak musí promítnout
+    // na ně; nativní prepare-line-item-data respektuje `is_discountable` z inputu
+    // (jinak padne na discountable samotné komponenty — ta zůstane zachovaná).
+    const bundleProductForFlags = Array.isArray(bundle.product)
+      ? bundle.product[0]
+      : bundle.product
+    const bundleNotDiscountable =
+      (bundleProductForFlags as any)?.discountable === false
+
     const groupId = randomUUID()
     const bundleItems = resolved.map((entry) => {
       const unitPrice = bundle.pricing_mode === "component_sum"
@@ -153,6 +164,9 @@ export const prepareBundleCartDataStep = createStep(
         variant_id: entry.variantId,
         quantity: entry.requestedQuantity,
         ...(unitPrice !== undefined ? { unit_price: unitPrice } : {}),
+        // Jen když je celý balíček vyloučený — jinak se nechá rozhodnout
+        // discountable samotné komponenty (může být výprodej/no_promo sama o sobě).
+        ...(bundleNotDiscountable ? { is_discountable: false } : {}),
         metadata: {
           bundle_id: bundle.id,
           bundle_title: bundle.title,

@@ -57,6 +57,16 @@ export const noSaleMembership: SaleMembership = {
 }
 
 /**
+ * Ručně vypnuté slevové kódy — přepínač „Bez slev. kódů" v Produkty+.
+ *
+ * Zapisuje se jako `metadata.no_promo` (ne přímo do `product.discountable`, ten
+ * by noční přepočet přepsal). Je to vstup pravidla, ne výsledek.
+ */
+export const isNoPromoProduct = (product: DiscountableProduct): boolean =>
+  (product?.metadata as Record<string, unknown> | null | undefined)?.no_promo ===
+  true
+
+/**
  * Smí tenhle produkt dostat slevový kód?
  *
  * Čisté a vyvezené zvlášť, protože právě tohle je to rozhodnutí — zbytek
@@ -67,6 +77,10 @@ export const smiDostatSlevu = (
   membership: SaleMembership = noSaleMembership
 ): boolean => {
   if (!product?.id) {
+    return false
+  }
+  // Ručně vyloučené (zakázky, balíčky, konkrétní kusy) — přepínač v Produkty+.
+  if (isNoPromoProduct(product)) {
     return false
   }
   if (isClearanceProduct(product)) {

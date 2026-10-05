@@ -84,6 +84,15 @@ const PatchFlagsSchema = z
     made_to_order_prompt: z.string().trim().max(2000).nullable().optional(),
     /** Whether the piece survives frost — pots and garden pieces care. */
     frost_resistant: z.boolean().optional(),
+    /**
+     * „Bez slevových kódů" — ruční vyloučení ze slevových kódů (přepínač
+     * v Produkty+, i hromadně přes záložku). Čte ho `lib/discountable.ts`
+     * (`smiDostatSlevu`), takže zápis sem přes `product.updated` srovná
+     * `product.discountable` a nativní Medusa pak na položku kód nepustí.
+     * U balíčků se promítá i na položky komponent v košíku (balíček jde do
+     * košíku jako komponenty, ne jako složený produkt).
+     */
+    no_promo: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: "Neposlali jste žádnou změnu.",

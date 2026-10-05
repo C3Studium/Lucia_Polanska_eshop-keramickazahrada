@@ -28,6 +28,9 @@ export const addBundleToCartWorkflow = createWorkflow(
       fields: [
         "*",
         "product.id",
+        // Zda je balíček ručně vyloučený ze slevových kódů („Bez slev. kódů").
+        // Promítne se na položky komponent (balíček jde do košíku jako komponenty).
+        "product.discountable",
         "product.variants.id",
         "product.variants.calculated_price.*",
         "items.*",

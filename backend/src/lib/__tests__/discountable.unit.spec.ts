@@ -40,6 +40,18 @@ describe("smiDostatSlevu", () => {
     ).toBe(true)
   })
 
+  it("ručně vyloučený kus (`no_promo`) kód nepřijme", () => {
+    expect(
+      smiDostatSlevu(produkt("prod_1", { metadata: { no_promo: true } }))
+    ).toBe(false)
+  })
+
+  it("`no_promo: false` nic nevylučuje", () => {
+    expect(
+      smiDostatSlevu(produkt("prod_1", { metadata: { no_promo: false } }))
+    ).toBe(true)
+  })
+
   it("produkt bez id nerozhoduje nic", () => {
     expect(smiDostatSlevu({ id: "" })).toBe(false)
   })

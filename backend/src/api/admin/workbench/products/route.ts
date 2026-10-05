@@ -228,6 +228,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
             : null,
         bundle,
         clearance,
+        /* Ručně vyloučené ze slevových kódů (přepínač „Bez slev. kódů").
+           Čte ho discountable engine; u balíčků se promítá i na komponenty. */
+        no_promo: Boolean((product.metadata as any)?.no_promo),
         // The handshake: what she edits, seen as the customer sees it.
         store_url: product.status === "published" ? productLink(product.handle) : null,
         thumbnail: product.thumbnail,

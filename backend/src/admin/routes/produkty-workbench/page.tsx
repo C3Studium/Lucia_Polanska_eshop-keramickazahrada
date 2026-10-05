@@ -96,6 +96,8 @@ type WorkbenchProduct = {
   packaging_price: number | null;
   bundle: { id: string; title: string } | null;
   clearance: boolean;
+  /** Ručně vyloučený ze slevových kódů (přepínač „Bez slev. kódů"). */
+  no_promo: boolean;
   thumbnail: string | null;
   collection: string | null;
   categories: string[];
@@ -527,7 +529,7 @@ const ProductsInner = () => {
      Když je označeno víc produktů checkboxem, flip na označeném řádku
      rozpracuje tutéž hodnotu pro všechny označené. */
   const [pendingFlags, setPendingFlags] = useState<
-    Record<string, { cod_allowed?: boolean; clearance?: boolean }>
+    Record<string, { cod_allowed?: boolean; clearance?: boolean; no_promo?: boolean }>
   >({});
 
   /* Deep link z Rozdělení: ?produkt=<id>&druh=<kind> přepne na správnou
@@ -663,9 +665,13 @@ const ProductsInner = () => {
                 : [];
   const rows = applyCatalogFilter(tabRows, catalog);
 
-  type FlagKey = "cod_allowed" | "clearance";
+  type FlagKey = "cod_allowed" | "clearance" | "no_promo";
   const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>
-    key === "cod_allowed" ? product.cod_allowed : product.clearance;
+    key === "cod_allowed"
+      ? product.cod_allowed
+      : key === "no_promo"
+        ? product.no_promo
+        : product.clearance;
   const effectiveFlag = (product: WorkbenchProduct, key: FlagKey) =>
     pendingFlags[product.id]?.[key] ?? savedFlag(product, key);
 
@@ -1121,6 +1127,15 @@ const ProductsInner = () => {
                 checked={effectiveFlag(product, "clearance")}
                 dirty={pendingFlags[product.id]?.clearance !== undefined}
                 onFlip={() => stageFlag(product, "clearance")}
+              />
+            )}
+            {active !== "oblibene" && active !== "archivovane" && (
+              <FlagSwitch
+                label="Bez slev. kódů"
+                title="Slevové kódy se na tento produkt nevztahují (ani do budoucna). Vyber víc kusů a přepni je naráz — třeba celou záložku Zakázky nebo Balíčky."
+                checked={effectiveFlag(product, "no_promo")}
+                dirty={pendingFlags[product.id]?.no_promo !== undefined}
+                onFlip={() => stageFlag(product, "no_promo")}
               />
             )}
             {pendingFlags[product.id] && (
