@@ -185,6 +185,26 @@ export default async function reconcileBalancePayments(
           `[balance] Doplatek ${request.id} byl u ComGate zaplacený, doplňujeme to zpětně.`
         )
 
+        // Webhook nedorazil → event „doplatek zaplacen" nevznikl, takže zákazník
+        // nedostal potvrzení ani doplatkovou fakturu (obojí visí na tomhle eventu
+        // v customer-emails onBalancePaid). Doženeme to tady — stejný payload jako
+        // webhook. Idempotentní: onBalancePaid dedupuje e-mail (balpaid:{request})
+        // i fakturu (metadata), takže pozdní webhook to nezdvojí. Jen pro doplatek;
+        // záloha má vlastní cestu (initialize-merchant-order).
+        if (request.type === "balance" && production?.order_id) {
+          const eventBus = container.resolve(Modules.EVENT_BUS)
+          await eventBus.emit({
+            name: "made-to-order.balance-paid",
+            data: {
+              order_id: production.order_id,
+              production_order_id: request.production_order_id,
+              payment_request_id: request.id,
+              amount: request.amount,
+              currency_code: request.currency_code,
+            },
+          })
+        }
+
         await notifyMerchant(container, {
           key: `mn:balpaid:${request.id}`,
           title: "Doplatek přijat",
