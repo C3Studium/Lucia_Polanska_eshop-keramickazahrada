@@ -191,6 +191,35 @@
   font: 400 clamp(1.25rem, 1.67vw, 1.62rem)/1.3 "Sentient-Regular", serif;
 }
 
+/* Zakázka: „Zaplatíte teď" (záloha) a „Doplatek po dokončení". Oddělené od
+   Celkem tenkou linkou; záloha zvýrazněná, doplatek tlumený. */
+.depositRow {
+  margin-top: clamp(.3rem, .56vh, .5rem);
+  padding-top: clamp(.5rem, .93vh, .8rem);
+  border-top: 1px dashed var(--review-rule);
+}
+
+.depositRow dt,
+.depositRow dd {
+  color: var(--review-ink);
+  font: 500 clamp(1rem, 1.33vw, 1.3rem)/1.3 "Sansation-Regular", sans-serif;
+}
+
+.balanceRow dt,
+.balanceRow dd {
+  color: var(--review-label);
+  font: 400 clamp(.875rem, 1.16vw, 1.12rem)/1.4 "Sansation-Regular", sans-serif;
+}
+
+/* Brief (poznámka + fotky) bydlí na širokém v pravém sloupci (souhrn, pod
+   slevovým kódem). Tahle kopie v toku Přehledu je jen pro telefon a tablet na
+   výšku — nad 1020px (dvousloupcové rozvržení) se schová, tam je v souhrnu. */
+@media (min-width: 1020px) {
+  .briefsMobile {
+    display: none;
+  }
+}
+
 .vatNote {
   margin: clamp(.5rem, .93vh, .8rem) 0 0;
   color: var(--review-label);

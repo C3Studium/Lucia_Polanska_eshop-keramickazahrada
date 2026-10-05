@@ -1,5 +1,6 @@
 import OrderSummaryDisclosure from "@modules/checkout/components/order-summary-disclosure"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
 import styles from "./style.module.scss"
@@ -26,6 +27,16 @@ const CheckoutSummary = ({ cart }: { cart: any }) => {
             <DiscountCode cart={cart} />
           </div>
         </OrderSummaryDisclosure>
+      </div>
+
+      {/*
+        Brief zakázky (poznámka + fotky) pod slevovým kódem v pravém sloupci —
+        jen na širokém rozvržení. Na telefonu/tabletu na výšku je schovaný
+        (`commissionBriefs` ho pod 1020px skryje) a ukáže se v toku Přehledu.
+        Pro běžný košík (bez zakázky) komponenta nevykreslí nic.
+      */}
+      <div className={styles.commissionBriefs}>
+        <CheckoutCommissionBriefs cart={cart} />
       </div>
     </div>
   )

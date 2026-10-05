@@ -12,10 +12,9 @@ import {
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { commissionPrompt, isMadeToOrderLine } from "@lib/util/commission"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import { readCommissionBrief } from "@lib/util/made-to-order"
-import { saveCommissionBrief } from "@lib/data/commission-actions"
-import CommissionBrief from "../commission-brief"
+import CheckoutCommissionBriefs from "../commission-briefs"
 
 import PaymentButton from "../payment-button"
 import ProductionPaymentModeChoice from "../production-payment-mode"
@@ -67,25 +66,18 @@ const Review = ({
     .filter(isMadeToOrderLine)
     .map((item) => ({
       id: item.id as string,
-      title: (item.product_title || item.title) as string,
-      prompt: commissionPrompt(item),
       brief: readCommissionBrief(item),
     }))
 
   /* U zakázky se nedá k platbě, dokud není brief vyplněný — aspoň text NEBO
-     fotka. Počáteční stav z už uloženého briefu; CommissionBrief po uložení
-     nahlásí změnu. (Jen zakázky; běžný košík pole `commissionLines` nemá.) */
+     fotka. Čte se z KOŠÍKU, ne z klientského callbacku: brief teď bydlí v pravém
+     sloupci (na širokém) i v toku (na mobilu), a obě kopie ukládají na tutéž
+     položku. Po uložení se košík revaliduje → tenhle výpočet se přepočítá a gate
+     se otevře. (Jen zakázky; běžný košík pole `commissionLines` nemá.) */
   const briefHasContent = (b: ReturnType<typeof readCommissionBrief>) =>
     Boolean(b.specification || b.note || (b.photos?.length ?? 0))
-  const [commissionComplete, setCommissionComplete] = useState<
-    Record<string, boolean>
-  >(() =>
-    Object.fromEntries(
-      commissionLines.map((line) => [line.id, briefHasContent(line.brief)])
-    )
-  )
-  const allCommissionsComplete = commissionLines.every(
-    (line) => commissionComplete[line.id]
+  const allCommissionsComplete = commissionLines.every((line) =>
+    briefHasContent(line.brief)
   )
 
   /* Kolik se zaplatí TEĎ. U zakázky to NENÍ cena košíku — je to zvolená záloha
@@ -197,38 +189,36 @@ const Review = ({
             exit="exit"
           >
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
-              <OrderRecap cart={cart} />
+              <OrderRecap
+                cart={cart}
+                /* U zakázky souhrn ukáže, kolik se platí TEĎ (záloha) a kolik
+                   zbývá — ať „Přehled" sedí s tlačítkem „Zaplatit …", ne jen
+                   s „Celkem". */
+                chargeNow={
+                  productionMode?.has_made_to_order ? chargeNow : undefined
+                }
+                balanceLater={
+                  productionMode?.has_made_to_order
+                    ? Math.max(0, (cart?.total ?? 0) - chargeNow)
+                    : undefined
+                }
+              />
             </motion.div>
 
             {/* The brief, one per commissioned line: what they want, and pictures of it.
-                Placed before the money, because it is the thing being bought. */}
-            {commissionLines.map((line) => (
+                On a wide screen it lives in the right summary column (under the
+                discount code); here it shows only on a phone/tablet, in the flow.
+                `briefsMobile` hides this copy from 1020px up — see style. */}
+            {commissionLines.length > 0 && (
               <motion.div
-                key={line.id}
+                className={styles.briefsMobile}
                 variants={rowVariants}
                 initial="hidden"
                 animate="visible"
               >
-                <CommissionBrief
-                  variant="checkout"
-                  title={line.title}
-                  prompt={line.prompt}
-                  // The text is the specification; older lines may still carry it as `note`.
-                  note={line.brief.specification || line.brief.note || ""}
-                  photos={line.brief.photos ?? []}
-                  onSubmitAction={async (input) =>
-                    saveCommissionBrief(line.id, input)
-                  }
-                  onCompletionChange={(complete) =>
-                    setCommissionComplete((current) =>
-                      current[line.id] === complete
-                        ? current
-                        : { ...current, [line.id]: complete }
-                    )
-                  }
-                />
+                <CheckoutCommissionBriefs cart={cart} />
               </motion.div>
-            ))}
+            )}
 
             {/* Commissioned pieces: pay a deposit now or the whole amount. Rendered only when
                 the cart actually contains one — the API says so, we do not infer it. */}
