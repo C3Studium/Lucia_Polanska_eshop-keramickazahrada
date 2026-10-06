@@ -1,6 +1,7 @@
 import { retrieveOrder } from "@lib/data/orders"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
 import {
+  getCommissionBalance,
   listCommissionNotes,
   reconcileOrderBalance,
 } from "@lib/data/made-to-order"
@@ -45,6 +46,9 @@ export default async function OrderConfirmedPage(props: Props) {
    * empty array means "a zakázka with nothing said yet", which still deserves the box.
    */
   const commissionNotes = order ? await listCommissionNotes(params.id) : null
+  // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
+  // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit.
+  const commissionBalance = order ? await getCommissionBalance(params.id) : null
 
   /*
    * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
@@ -80,6 +84,7 @@ export default async function OrderConfirmedPage(props: Props) {
         progress={progress}
         progressFallback={fallbackStageLabel(order)}
         commissionNotes={commissionNotes}
+        commissionBalance={commissionBalance}
       />
     </>
   )

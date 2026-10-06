@@ -7,6 +7,7 @@ import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
+import type { CommissionBalance } from "@lib/data/made-to-order"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
@@ -26,6 +27,8 @@ type OrderCompletedTemplateProps = {
   progressFallback?: string
   /** The zakázka's diary, when this order has one. Absent for ordinary orders. */
   commissionNotes?: CommissionNote[] | null
+  /** Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení). */
+  commissionBalance?: CommissionBalance | null
 }
 
 const formatDate = (date: string | Date) =>
@@ -42,6 +45,7 @@ export default async function OrderCompletedTemplate({
   progress = null,
   progressFallback = "Přijato",
   commissionNotes = null,
+  commissionBalance = null,
 }: OrderCompletedTemplateProps) {
   const money = (amount?: number | null) =>
     convertToLocale({
@@ -78,16 +82,29 @@ export default async function OrderCompletedTemplate({
 
   /*
    * Zakázka se platí na dvakrát (záloha teď, doplatek po dokončení). Souhrn
-   * ukazoval „Celkem … / Zaplaceno", i když člověk zaplatil jen zálohu — vypadalo
-   * to, že je to celé zaplacené. Dopočítáme, kolik reálně zaplatil a kolik zbývá.
-   * `commissionNotes != null` = tahle objednávka je zakázka.
+   * ukazoval „Celkem … / Zaplaceno", i když člověk zaplatil jen zálohu — doplatek
+   * totiž žije v modulu zakázky, ne v nativní ceně objednávky (ta po záloze
+   * vypadá zaplaceně). Bereme to proto PŘEDNOSTNĚ z `/balance`; dopočet z plateb
+   * je jen záloha, kdyby endpoint selhal.
    */
-  const isCommission = commissionNotes != null
   const paidNow = (order.payment_collections ?? [])
     .flatMap((collection: any) => collection?.payments ?? [])
     .reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0)
-  const remaining = Math.max(0, (order.total ?? 0) - paidNow)
-  const showDeposit = isCommission && paidNow > 0 && remaining > 0.005
+  const fallbackRemaining = Math.max(0, (order.total ?? 0) - paidNow)
+
+  const isCommission =
+    commissionBalance?.is_commission ?? commissionNotes != null
+  const outstanding =
+    typeof commissionBalance?.outstanding === "number"
+      ? commissionBalance.outstanding
+      : fallbackRemaining
+  const depositPaid =
+    typeof commissionBalance?.deposit_paid === "number" &&
+    commissionBalance.deposit_paid > 0
+      ? commissionBalance.deposit_paid
+      : paidNow
+  const payBalanceUrl = commissionBalance?.pay_url ?? null
+  const showDeposit = isCommission && outstanding > 0.005
   const paymentStatusLabel = showDeposit ? "Záloha zaplacena" : paymentStatus
 
   return (
@@ -367,11 +384,11 @@ export default async function OrderCompletedTemplate({
                   <div className={s.depositSplit}>
                     <div>
                       <span>Zaplaceno teď (záloha)</span>
-                      <strong>{money(paidNow)}</strong>
+                      <strong>{money(depositPaid)}</strong>
                     </div>
                     <div>
                       <span>Zbývá doplatit</span>
-                      <strong>{money(remaining)}</strong>
+                      <strong>{money(outstanding)}</strong>
                     </div>
                   </div>
                 )}
@@ -380,6 +397,15 @@ export default async function OrderCompletedTemplate({
                   <span>Platba</span>
                   <strong>{paymentStatusLabel}</strong>
                 </div>
+
+                {/* Doplatit zbytek — podepsaný odkaz vede na backend, který
+                    založí platbu a přesměruje na ComGate; po návratu se doplatek
+                    dorovná (viz reconcile na /confirmed). */}
+                {showDeposit && payBalanceUrl && (
+                  <a className={s.payBalanceBtn} href={payBalanceUrl}>
+                    Doplatit {money(outstanding)}
+                  </a>
+                )}
               </div>
             </div>
 

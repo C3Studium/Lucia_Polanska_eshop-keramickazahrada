@@ -65,6 +65,32 @@ export const setProductionPaymentMode = async (
  * `url_paid`). That path only knows the session id, so this resolves it to the
  * order the customer should land on. `null` when it cannot be mapped.
  */
+export type CommissionBalance = {
+  is_commission: boolean
+  stage?: string
+  currency_code?: string
+  deposit_paid?: number
+  balance_paid?: number
+  outstanding?: number
+  /** Podepsaný odkaz na doplacení (funguje i bez přihlášení); null = není co platit. */
+  pay_url?: string | null
+}
+
+/**
+ * Stav doplatku zakázky — kolik je zaplaceno zálohou, kolik zbývá, odkaz na
+ * doplacení. Pro Souhrn na potvrzení objednávky, aby u zakázky ukázal „jen
+ * záloha" + tlačítko doplatit (doplatek žije v modulu zakázky, ne v objednávce).
+ * `null` / `is_commission:false` = běžná objednávka.
+ */
+export const getCommissionBalance = async (
+  orderId: string
+): Promise<CommissionBalance | null> =>
+  sdk.client
+    .fetch<CommissionBalance>(`/store/made-to-order/${orderId}/balance`, {
+      cache: "no-store",
+    })
+    .catch(() => null)
+
 /**
  * Dorovnání doplatku po návratu z ComGate — „dokončovací" krok, který doplatku
  * chyběl. Volá se na stránce potvrzení objednávky, když se člověk vrací z platby
