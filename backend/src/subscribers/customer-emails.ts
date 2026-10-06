@@ -12,6 +12,8 @@ import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
+import { RETURN_REQUEST_MODULE } from "../modules/return-request"
+import type ReturnRequestModuleService from "../modules/return-request/service"
 
 /**
  * The customer lifecycle e-mails (WorkflowPlan.md §16).
@@ -580,6 +582,30 @@ const onReturnRequested = async ({
   const order = await loadOrder(container, data.order_id)
   if (!order) {
     return
+  }
+
+  // Pojistka proti dvojímu e-mailu: je-li k objednávce ROZHODNUTÁ žádost z modulu
+  // „Vrácení" (ta už poslala vlastní return-approved / return-rejected), nativní
+  // Medusa return by poslal druhý. Tehdy tenhle e-mail přeskočíme. Fail-open:
+  // když kontrola selže, e-mail raději pošleme (dvojí e-mail < žádný e-mail).
+  try {
+    const returnRequests = container.resolve<ReturnRequestModuleService>(
+      RETURN_REQUEST_MODULE
+    )
+    const decided = (await returnRequests.listReturnRequests({
+      order_id: data.order_id,
+      status: ["approved", "rejected"],
+    } as never)) as any[]
+    if (decided.length) {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .info(
+          `[emails] Přeskakuji nativní return-approved pro objednávku ${data.order_id} — modul Vrácení už rozhodl a e-mail poslal.`
+        )
+      return
+    }
+  } catch {
+    // Kontrola selhala — e-mail pošleme tak jako tak.
   }
 
   // Which objects are coming back, by name — return items point at order line

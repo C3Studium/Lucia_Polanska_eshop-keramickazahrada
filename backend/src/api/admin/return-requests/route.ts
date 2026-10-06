@@ -25,8 +25,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const limit = Math.min(asPositiveInt(req.query.limit, 50), 200)
   const offset = asPositiveInt(req.query.offset, 0)
   const status = typeof req.query.status === "string" ? req.query.status : ""
+  // Filtr podle objednávky — pro widget na detailu objednávky.
+  const orderId =
+    typeof req.query.order_id === "string" && req.query.order_id.trim()
+      ? req.query.order_id.trim()
+      : null
 
-  const filters =
+  const statusFilter =
     status === "all"
       ? {}
       : status === "decided"
@@ -36,6 +41,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
               ? status
               : "pending",
           }
+  const filters = orderId
+    ? { ...statusFilter, order_id: orderId }
+    : statusFilter
 
   const [requests, count] = await service.listAndCountReturnRequests(
     filters as never,
