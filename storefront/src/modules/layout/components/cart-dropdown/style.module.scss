@@ -307,6 +307,29 @@
         .goToCartBtn {
           width: 100%;
         }
+
+        /* „Smazat košík" — jemná podtržená akce pod hlavním tlačítkem. */
+        .clearCartBtn {
+          align-self: center;
+          margin-top: -0.2rem;
+          padding: 0.25rem 0.5rem;
+          background: none;
+          border: 0;
+          color: var(--ui-fg-base);
+          opacity: 0.6;
+          font-size: 0.82rem;
+          text-decoration: underline;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+
+          &:hover:not(:disabled) {
+            opacity: 1;
+          }
+          &:disabled {
+            opacity: 0.4;
+            cursor: default;
+          }
+        }
       }
 
       /*

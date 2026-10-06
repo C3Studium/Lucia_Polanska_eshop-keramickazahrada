@@ -21,7 +21,8 @@ import Cart from "@modules/common/icons/cart"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
 import { useDismiss } from "@lib/hooks/use-dismiss"
-import { Fragment, useCallback, useEffect, useRef, useState, type WheelEvent } from "react"
+import { clearCart } from "@lib/data/cart"
+import { Fragment, useCallback, useEffect, useRef, useState, useTransition, type WheelEvent } from "react"
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 import CartDropdownQuantity from "./quantity"
@@ -39,6 +40,15 @@ const CartDropdown = ({
   const open = () => setCartDropdownOpen(true)
   /* Stable, so the dismiss listeners bind once per open rather than once per render. */
   const close = useCallback(() => setCartDropdownOpen(false), [])
+
+  // „Smazat košík" — vysype celý košík naráz (i uložené věci), pak zavře panel.
+  const [clearing, startClearing] = useTransition()
+  const handleClearCart = () => {
+    startClearing(async () => {
+      await clearCart()
+      close()
+    })
+  }
 
   /*
    * The panel is rendered `static`, so Headless UI hands its open state to us and stops managing
@@ -309,6 +319,16 @@ const CartDropdown = ({
                       data-testid="go-to-cart-button"
                     />
                   </LocalizedClientLink>
+                  <button
+                    type="button"
+                    className={styles.clearCartBtn}
+                    onClick={handleClearCart}
+                    disabled={clearing}
+                    aria-busy={clearing || undefined}
+                    data-testid="clear-cart-button"
+                  >
+                    {clearing ? "Mažu…" : "Smazat košík"}
+                  </button>
                 </div>
               </>
             ) : (

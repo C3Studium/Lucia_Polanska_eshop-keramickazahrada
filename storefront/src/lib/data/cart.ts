@@ -202,6 +202,54 @@ export async function addToCart({
   }
 }
 
+/**
+ * Košík už byl dokončen do objednávky. Objednávku teď zakládá server z ověřené
+ * platby, takže prohlížeč `removeCartId` nemusí nikdy spustit — cookie dál
+ * ukazuje na dokončený (neměnitelný) košík. Operace na něj (smazat/změnit
+ * položku) pak Medusa odmítne „already completed". Není to chyba uživatele a
+ * nesmí to shodit UI 500.
+ */
+const isCompletedCartError = (error: any): boolean =>
+  typeof error?.message === "string" &&
+  (error.message.includes("already completed") ||
+    error.message.includes("is completed"))
+
+/** Zapomene zapomenutou cookie dokončeného košíku a obnoví lištu/odznak. */
+const forgetCompletedCart = async () => {
+  await removeCartId()
+  const cartCacheTag = await getCacheTag("carts")
+  if (cartCacheTag) revalidateTag(cartCacheTag)
+}
+
+/**
+ * „Smazat košík" — vysype celý košík naráz (všechny položky i uložené věci,
+ * třeba brief u zakázky). Maže JEDNOTLIVÉ položky (ne jen cookie), takže košík
+ * zůstane prázdný a nespustí „opuštěný košík" e-mail. Dokončený/neexistující
+ * košík jen zapomene. Best-effort po položkách, ať jedna selhaná nezastaví zbytek.
+ */
+export async function clearCart(): Promise<void> {
+  const cart = await retrieveCart()
+  if (!cart?.id) {
+    await forgetCompletedCart()
+    return
+  }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  for (const item of cart.items ?? []) {
+    await sdk.store.cart
+      .deleteLineItem(cart.id, item.id, {}, headers)
+      .catch(() => undefined)
+  }
+
+  const cartCacheTag = await getCacheTag("carts")
+  if (cartCacheTag) revalidateTag(cartCacheTag)
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  if (fulfillmentCacheTag) revalidateTag(fulfillmentCacheTag)
+}
+
 export async function updateLineItem({
   lineId,
   quantity,
@@ -232,7 +280,13 @@ export async function updateLineItem({
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       if (fulfillmentCacheTag) revalidateTag(fulfillmentCacheTag)
     })
-    .catch(medusaError)
+    .catch(async (error) => {
+      if (isCompletedCartError(error)) {
+        await forgetCompletedCart()
+        return
+      }
+      medusaError(error)
+    })
 }
 
 export async function deleteLineItem(lineId: string) {
@@ -261,7 +315,13 @@ export async function deleteLineItem(lineId: string) {
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
     })
-    .catch(medusaError)
+    .catch(async (error) => {
+      if (isCompletedCartError(error)) {
+        await forgetCompletedCart()
+        return
+      }
+      medusaError(error)
+    })
 }
 
 export async function setShippingMethod({
