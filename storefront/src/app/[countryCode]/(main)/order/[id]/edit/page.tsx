@@ -1,4 +1,5 @@
 import { getGuestOrderEditContext } from "@lib/data/guest-order-edit"
+import { retrieveCustomer } from "@lib/data/customer"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import OrderEdit from "@modules/order/components/order-edit"
 import CommissionConversation from "@modules/order/components/commission-conversation"
@@ -36,6 +37,11 @@ export default async function OrderEditPage(props: Props) {
   const commissionNotes = await listCommissionNotes(params.id)
   // Doplatek zakázky (zbývá-li co doplatit) → panel s tlačítkem „Doplatit".
   const commissionBalance = await getCommissionBalance(params.id)
+  // „Moje objednávky" jen přihlášenému (host žádný výpis nemá).
+  const customer = await retrieveCustomer().catch(() => null)
+  const myOrdersAction = customer
+    ? { href: "/account/orders", label: "Moje objednávky" }
+    : undefined
 
   if (!context) {
     return (
@@ -45,7 +51,7 @@ export default async function OrderEditPage(props: Props) {
         title="Odkaz nejde otevřít."
         description="Odkaz na úpravu je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo se nám ozvěte a upravíme to spolu."
         status="pending"
-        primary={{ href: "/account/orders", label: "Moje objednávky" }}
+        primary={myOrdersAction}
       />
     )
   }
@@ -58,7 +64,7 @@ export default async function OrderEditPage(props: Props) {
       accent="Dokud ji nezabalíme."
       description="Vyměňte variantu nebo odeberte položku — rozdíl ceny uvidíte ještě před uložením. Zakázkové kusy upravujeme po telefonu."
       status="pending"
-      primary={{ href: "/account/orders", label: "Moje objednávky" }}
+      primary={myOrdersAction}
     >
       <OrderEdit orderId={params.id} context={context} token={token} />
       <BalancePayPanel balance={commissionBalance} />

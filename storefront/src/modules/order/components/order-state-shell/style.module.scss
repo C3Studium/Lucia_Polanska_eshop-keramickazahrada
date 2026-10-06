@@ -465,6 +465,10 @@
   /* The last flat vertical measure in the text column — the kicker and the description already
      ride on vh, and this one has to give way with them: 22px at 768, 31px at 1080, 39px at 1351. */
   margin-top: clamp(1.25rem, 2.9vh, 2.6rem);
+  /* Vzduch POD akcemi, ať tlačítko („Moje objednávky") nelepí na patičku —
+     na reklamační stránce stálo těsně nad ní. Na vh, aby se na nízkém okně
+     sevřelo s ostatními svislými mezerami v sloupci. */
+  margin-bottom: clamp(1.5rem, 4vh, 3rem);
 
   /* Same 2.9vh coefficient as the base, banded for a landscape phone, and moved up from `phl` to
      the stop that covers the whole band — it was the third of the three gaps in this column that
