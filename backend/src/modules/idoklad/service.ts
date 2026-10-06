@@ -208,4 +208,32 @@ export default class IdokladModuleService {
     )
     return Buffer.from(base64, "base64")
   }
+
+  /**
+   * Opravný daňový doklad (dobropis) k vystavené faktuře.
+   *
+   * iDoklad v3: `GET /CreditNotes/Default/{invoiceId}` vrátí předvyplněný návrh
+   * (obrácené položky původní faktury), `POST /CreditNotes` ho založí. Plný
+   * dobropis na celou fakturu — částečný (jen některé položky) se řeší ručně.
+   */
+  async createCreditNoteForInvoice(
+    invoiceId: number
+  ): Promise<IdokladIssuedInvoice> {
+    const draft = await this.request<Record<string, unknown>>(
+      `/CreditNotes/Default/${invoiceId}`
+    )
+    return this.request<IdokladIssuedInvoice>("/CreditNotes", {
+      method: "POST",
+      body: draft,
+    })
+  }
+
+  /** Tisk dobropisu jako PDF (API vrací base64 v obálce). */
+  async getCreditNotePdf(creditNoteId: number): Promise<Buffer> {
+    const base64 = await this.request<string>(
+      `/Reports/CreditNote/${creditNoteId}/Pdf`,
+      { query: { compressed: false, language: REPORT_LANGUAGE_CZ } }
+    )
+    return Buffer.from(base64, "base64")
+  }
 }

@@ -820,3 +820,124 @@ export const markInvoicePaidForOrder = async (
     }
   })
 }
+
+/**
+ * Opravný daňový doklad (dobropis) při vrácení peněz — modul reklamací, fáze 2.
+ *
+ * Jen PLNÉ vrácení = plný dobropis na celou fakturu; částečné se nechá na ruční
+ * vystavení (přesné položky), majitelku na to upozorníme. Best-effort a
+ * idempotentní (metadata `idoklad_credit_note_id`): chyba vrácení peněz
+ * neshodí, jen se zapíše a pošle vývojáři. Zkušební režim i nenastavený iDoklad
+ * se přeskakují stejně jako u faktur.
+ */
+export const issueCreditNoteForOrder = async (
+  container: MedusaContainer,
+  order: any,
+  opts: { amount: number }
+): Promise<{
+  status: "issued" | "skipped" | "exists" | "error"
+  number?: string
+  pdf_url?: string
+  reason?: string
+}> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  if (await jeZkusebniRezim(container)) {
+    return { status: "skipped", reason: "Zkušební režim — dobropis se nevystavuje." }
+  }
+  const idoklad = resolveIdokladService(container)
+  if (!idoklad) {
+    return { status: "skipped", reason: "iDoklad není nakonfigurován." }
+  }
+
+  const metadata = (order.metadata ?? {}) as Record<string, any>
+  if (metadata.idoklad_credit_note_id) {
+    return {
+      status: "exists",
+      number: metadata.idoklad_credit_note_number ?? undefined,
+      pdf_url: metadata.idoklad_credit_note_pdf_url ?? undefined,
+    }
+  }
+
+  const state = invoiceStateOf(order)
+  if (!state.invoice_id) {
+    return {
+      status: "skipped",
+      reason: "K objednávce není faktura — dobropis nelze vystavit.",
+    }
+  }
+
+  // Jen plné vrácení → plný dobropis. Částečné radši ručně, ať sedí položky.
+  const full =
+    opts.amount >= toAmount(order.total) - epsilonFor(order.currency_code)
+  if (!full) {
+    await notifyMerchant(container, {
+      key: `idoklad-credit-partial:${order.id}`,
+      title: `Dobropis k objednávce #${order.display_id} vystavte ručně`,
+      description:
+        "Vrácena jen část částky — opravný daňový doklad prosím vystavte v iDokladu podle skutečně vrácených položek.",
+      audience: "owner",
+      email: true,
+      resource: { id: order.id, type: "order" },
+    }).catch(() => undefined)
+    return { status: "skipped", reason: "Částečné vrácení — dobropis ručně." }
+  }
+
+  return withOrderLock(order.id, async () => {
+    try {
+      const creditNote = (await idoklad.createCreditNoteForInvoice(
+        state.invoice_id as number
+      )) as any
+      const creditId = Number(creditNote?.Id)
+      const creditNumber =
+        typeof creditNote?.DocumentNumber === "string" && creditNote.DocumentNumber
+          ? creditNote.DocumentNumber
+          : String(creditId)
+
+      let pdfUrl: string | null = null
+      try {
+        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const fileModule = container.resolve(Modules.FILE)
+        const [uploaded] = await fileModule.createFiles([
+          {
+            filename: `dobropis-${creditNumber}.pdf`,
+            mimeType: "application/pdf",
+            content: pdf.toString("base64"),
+            access: "public" as const,
+          },
+        ])
+        pdfUrl = uploaded?.url ?? null
+      } catch (pdfError) {
+        logger.warn(
+          `[idoklad] PDF dobropisu ${creditNumber} se nepodařilo uložit: ${describeError(pdfError)}`
+        )
+      }
+
+      await patchOrderMetadata(container, order, {
+        idoklad_credit_note_id: creditId,
+        idoklad_credit_note_number: creditNumber,
+        idoklad_credit_note_pdf_url: pdfUrl,
+        idoklad_credit_note_issued_at: new Date().toISOString(),
+      })
+
+      logger.info(
+        `[idoklad] Dobropis ${creditNumber} k objednávce #${order.display_id} vystaven.`
+      )
+      return { status: "issued", number: creditNumber, pdf_url: pdfUrl ?? undefined }
+    } catch (error) {
+      const message = describeError(error)
+      logger.error(
+        `[idoklad] Dobropis k objednávce #${order.display_id} se nepodařilo vystavit: ${message}`
+      )
+      await notifyMerchant(container, {
+        key: `idoklad-credit:${order.id}`,
+        title: `iDoklad: dobropis k objednávce #${order.display_id} se nepodařilo vystavit`,
+        description: message,
+        audience: "dev",
+        email: true,
+        resource: { id: order.id, type: "order" },
+      }).catch(() => undefined)
+      return { status: "error", reason: message }
+    }
+  })
+}

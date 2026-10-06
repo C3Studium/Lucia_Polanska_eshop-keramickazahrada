@@ -6,6 +6,7 @@ import {
 } from "@medusajs/framework/utils"
 import { refundPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { formatMoney, orderLink } from "../../../../../lib/customer-email"
+import { issueCreditNoteForOrder } from "../../../../../lib/idoklad-invoice"
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return-request"
 import type ReturnRequestModuleService from "../../../../../modules/return-request/service"
 
@@ -180,14 +181,30 @@ export const POST = async (
       })
   }
 
+  // Dobropis (opravný daňový doklad) k vrácení — best-effort. Jen plné vrácení
+  // s existující fakturou a mimo zkušební režim; chyba nic neshodí, peníze jsou
+  // vrácené tak jako tak. Částečné vrácení majitelce připomene ruční dobropis.
+  const creditNote = await issueCreditNoteForOrder(req.scope, order, {
+    amount,
+  }).catch(() => ({ status: "error" as const, reason: "neznámá chyba" }))
+
+  const baseMessage =
+    method === "comgate"
+      ? `Vráceno ${formatMoney(amount, order.currency_code)} na kartu přes ComGate.`
+      : `Zaznamenáno ${formatMoney(amount, order.currency_code)} k ručnímu vrácení (objednávka nebyla placená kartou).`
+  const creditMessage =
+    creditNote.status === "issued"
+      ? ` Dobropis ${creditNote.number ?? ""} vystaven.`
+      : creditNote.status === "exists"
+        ? " Dobropis už byl vystaven."
+        : ""
+
   res.status(200).json({
     refunded: true,
     method,
     amount,
+    credit_note: creditNote,
     return_request: updated,
-    message:
-      method === "comgate"
-        ? `Vráceno ${formatMoney(amount, order.currency_code)} na kartu přes ComGate.`
-        : `Zaznamenáno ${formatMoney(amount, order.currency_code)} k ručnímu vrácení (objednávka nebyla placená kartou).`,
+    message: `${baseMessage}${creditMessage}`,
   })
 }
