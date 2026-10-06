@@ -282,6 +282,10 @@
            bottom, ~747 to 1067 for the gap: on a short laptop all three sit on their floors, on
            a 1080 screen all three are at the value they had before. */
         padding: clamp(0.85rem, 1.85vh, 1.25rem) 1.35rem clamp(0.95rem, 2vh, 1.35rem);
+        /* „Smazat košík" visí vpravo dole v absolutní pozici → kotva + strip
+           pod hlavním tlačítkem, ať netvoří vlastní centrovaný řádek. */
+        position: relative;
+        padding-bottom: clamp(1.85rem, 3.4vh, 2.35rem);
         display: flex;
         flex-direction: column;
         gap: clamp(0.7rem, 1.5vh, 1rem);
@@ -308,16 +312,18 @@
           width: 100%;
         }
 
-        /* „Smazat košík" — jemná podtržená akce pod hlavním tlačítkem. */
+        /* „Smazat košík" — jemná podtržená akce vpravo dole, mimo tok (absolute),
+           ať nezabírá vlastní řádek a nestrká do „Přejít do košíku". */
         .clearCartBtn {
-          align-self: center;
-          margin-top: -0.2rem;
-          padding: 0.25rem 0.5rem;
+          position: absolute;
+          right: 1.35rem;
+          bottom: clamp(0.35rem, 0.9vh, 0.6rem);
+          padding: 0.2rem 0.3rem;
           background: none;
           border: 0;
           color: var(--ui-fg-base);
-          opacity: 0.6;
-          font-size: 0.82rem;
+          opacity: 0.55;
+          font-size: 0.8rem;
           text-decoration: underline;
           cursor: pointer;
           transition: opacity 0.2s ease;
