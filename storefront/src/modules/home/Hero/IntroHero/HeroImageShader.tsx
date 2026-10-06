@@ -12,6 +12,12 @@ type HeroImageShaderProps = {
   src: string
   pointerX: MotionValue<number>
   pointerY: MotionValue<number>
+  /**
+   * Fotka pro zálohu (bez WebGL / než shader naběhne / při chybě). Vlastní pole
+   * z CMS — druhý obrázek galerie hera. Chybí-li, zálohou je `src`, takže se bez
+   * druhé fotky nic nemění.
+   */
+  fallbackSrc?: string
   /** Overrides on top of `HERO_SETTINGS` below; omitted keys keep it. */
   settings?: ShaderSettingsOverride
 }
@@ -74,11 +80,12 @@ export default function HeroImageShader({
   src,
   pointerX,
   pointerY,
+  fallbackSrc,
   settings,
 }: HeroImageShaderProps) {
   const images = useMemo(
-    () => [{ src, aspect: 16 / 9 }] as const,
-    [src]
+    () => [{ src, fallbackSrc, aspect: 16 / 9 }] as const,
+    [src, fallbackSrc]
   )
 
   /* Memoised for the same reason `HERO_SETTINGS` is module-level: a new object every render

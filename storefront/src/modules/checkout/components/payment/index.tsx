@@ -27,6 +27,9 @@ import PaymentContainer from "@modules/checkout/components/payment-container"
 import ComgatePaymentSelector, {
   type ExtraPaymentOption,
 } from "@modules/common/components/comgate-payment-selector"
+import ProductionPaymentModeChoice from "@modules/checkout/components/production-payment-mode"
+import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -39,6 +42,7 @@ const Payment = ({
   hasPickupShipping = false,
   allowsDobirka = false,
   dobirkaFeeCzk = 0,
+  productionMode,
 }: {
   cart: any
   availablePaymentMethods: any[]
@@ -49,6 +53,8 @@ const Payment = ({
   allowsDobirka?: boolean
   /** Doběrečné from the admin setting — shown next to the tile; 0 hides it. */
   dobirkaFeeCzk?: number
+  /** Zakázková výroba: kolik zaplatit teď. Volba se dělá TADY (ne v Přehledu). */
+  productionMode?: ProductionPaymentMode | null
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
@@ -303,6 +309,23 @@ const Payment = ({
       </div>
       <div>
         <div className={isOpen ? styles.open : styles.closed}>
+          {/* Zakázková výroba: kolik zaplatit teď. Rozhodnutí patří SEM, nad
+              výběr způsobu platby — zákazník nejdřív zvolí částku (záloha /
+              půlka / celek / vlastní), pak teprve metodu. Volba se uloží na
+              košík; Přehled i pravý souhrn ji pak jen čtou. Vykreslí se jen
+              když košík zakázku opravdu obsahuje (říká API, neodhadujeme). */}
+          {productionMode?.has_made_to_order && (
+            <div className={styles.productionPayment}>
+              <ProductionPaymentModeChoice
+                initial={productionMode}
+                onSelect={(mode, amount) =>
+                  selectProductionPaymentMode(cart.id, mode, amount)
+                }
+              />
+              <Divider className={styles.divider} />
+            </div>
+          )}
+
           {!paidByGiftcard && availablePaymentMethods?.length > 0 && (
             <>
               <div className={styles.methodIntro}>

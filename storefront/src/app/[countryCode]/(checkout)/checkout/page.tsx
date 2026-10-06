@@ -1,5 +1,6 @@
 import { retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getProductionPaymentMode } from "@lib/data/made-to-order"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
@@ -22,6 +23,9 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   }
 
   const customer = await retrieveCustomer()
+  // Jednou tady a předané oběma stranám (formulář i souhrn) — fetch je
+  // `no-store`, takže dvojí volání by znamenalo dvě cesty na backend.
+  const productionMode = await getProductionPaymentMode(cart.id)
   const itemCount = cart.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
 
   return (
@@ -42,11 +46,16 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
       </header>
       <section className={styles.ledger}>
         <PaymentWrapper cart={cart}>
-          <CheckoutForm cart={cart} customer={customer} countryCode={countryCode} />
+          <CheckoutForm
+            cart={cart}
+            customer={customer}
+            countryCode={countryCode}
+            productionMode={productionMode}
+          />
         </PaymentWrapper>
       </section>
       <aside className={styles.order}>
-        <CheckoutSummary cart={cart} />
+        <CheckoutSummary cart={cart} productionMode={productionMode} />
       </aside>
     </div>
   )

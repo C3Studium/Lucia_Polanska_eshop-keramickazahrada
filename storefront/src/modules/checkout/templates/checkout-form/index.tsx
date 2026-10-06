@@ -16,7 +16,7 @@ import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
-import { getProductionPaymentMode } from "@lib/data/made-to-order"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
 import styles from "./style.module.scss"
 
@@ -24,10 +24,13 @@ export default async function CheckoutForm({
   cart,
   customer,
   countryCode,
+  productionMode,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
   countryCode: string
+  /** Z `page.tsx` — jeden `no-store` fetch sdílený formulářem i souhrnem. */
+  productionMode?: ProductionPaymentMode | null
 }) {
   if (!cart) {
     return null
@@ -35,7 +38,6 @@ export default async function CheckoutForm({
 
   const regionID = cart.region?.id ?? ""
 
-  const productionMode = await getProductionPaymentMode(cart.id)
   const shippingMethods = await listCartShippingMethods(cart.id)
   const paymentMethods = await listCartPaymentMethods(regionID)
 
@@ -131,6 +133,7 @@ export default async function CheckoutForm({
         hasPickupShipping={hasPickupShipping}
         allowsDobirka={allowsDobirka}
         dobirkaFeeCzk={dobirkaFeeCzk}
+        productionMode={productionMode}
       />
       <Review
         cart={cart}

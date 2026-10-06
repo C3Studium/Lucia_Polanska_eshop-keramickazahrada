@@ -104,6 +104,22 @@
 }
 
 /*
+ * Připomínka zálohy — jen na širokém rozvržení, stejně jako brief. Obal řeší
+ * jen viditelnost a odstup; krémovou kartu nese sama komponenta. Prázdný obal
+ * (běžný košík → komponenta vrací null) je bez vlastního povrchu neviditelný.
+ */
+.paymentRecap {
+  display: none;
+}
+
+@media (min-width: 1020px) {
+  .paymentRecap {
+    display: block;
+    margin-top: clamp(1.5rem, 3vh, 2.25rem);
+  }
+}
+
+/*
  * ─── Svisle: hlavička souhrnu jako titulek bloku ────────────────────────────
  *
  * Tady souhrn stojí jako první věc pod hlavičkou stránky a je zabalený do tří

@@ -1,0 +1,60 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+  Zjednodušená připomínka zálohy v pravém souhrnu. Krémová karta jako brief
+  vedle ní — tmavý text na světlém podkladu, protože sloupec souhrnu je tmavý
+  a částky mají být čitelné jako u briefu. Viditelnost (jen široké rozvržení)
+  řídí obal `.paymentRecap` v `checkout-summary` — stejně jako u briefu.
+*/
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(.625rem, 1.2vh, 1rem);
+  padding: clamp(1.1rem, 1.6vw, 1.6rem);
+  color: var(--ink-05);
+  background: var(--cream-06);
+  box-shadow: 1.25rem 1.5rem 3.5rem -2.5rem rgb(var(--black-01-rgb) / .85);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--olive-19);
+  font-size: clamp(.7rem, .95vw, .8rem);
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.label {
+  color: rgb(var(--ink-05-rgb) / .7);
+  font: 400 clamp(.85rem, .95vw, 1rem)/1.4 "Sansation-Light", sans-serif;
+}
+
+.now {
+  font: 400 clamp(1.5rem, 2vw, 2rem)/1 "Sentient-Regular", serif;
+  letter-spacing: -.02em;
+}
+
+.later {
+  color: var(--ink-05);
+  font: 400 clamp(.95rem, 1.1vw, 1.15rem)/1 "Sansation-Light", sans-serif;
+}
+
+.note {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .6);
+  font: 400 clamp(.75rem, .9vw, .85rem)/1.5 "Sansation-Light", sans-serif;
+}

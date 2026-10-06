@@ -1,11 +1,19 @@
 import OrderSummaryDisclosure from "@modules/checkout/components/order-summary-disclosure"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CheckoutCommissionBriefs from "@modules/checkout/components/commission-briefs"
+import ProductionPaymentRecap from "@modules/checkout/components/production-payment-recap"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
+import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import styles from "./style.module.scss"
 
-const CheckoutSummary = ({ cart }: { cart: any }) => {
+const CheckoutSummary = ({
+  cart,
+  productionMode,
+}: {
+  cart: any
+  productionMode?: ProductionPaymentMode | null
+}) => {
   return (
     <div className={styles.root}>
       <div className={styles.summary}>
@@ -27,6 +35,16 @@ const CheckoutSummary = ({ cart }: { cart: any }) => {
             <DiscountCode cart={cart} />
           </div>
         </OrderSummaryDisclosure>
+      </div>
+
+      {/*
+        Zjednodušená připomínka zálohy („zaplatíte teď / zbývá doplatit") nad
+        briefem — plný widget se slajderem je v kroku Platba, tady je jen
+        přehled zvolené částky. Jen na širokém rozvržení, stejně jako brief:
+        na telefonu ji supluje widget v toku Platby.
+      */}
+      <div className={styles.paymentRecap}>
+        <ProductionPaymentRecap mode={productionMode} />
       </div>
 
       {/*

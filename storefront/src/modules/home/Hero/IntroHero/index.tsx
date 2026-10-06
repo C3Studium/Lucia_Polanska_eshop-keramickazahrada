@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { easeReveal } from "@lib/motion-tokens";
 import { useStateContext } from "@lib/context/StateContext";
-import { paragraphs } from "@lib/util/site-copy";
+import { galleryUrl, paragraphs } from "@lib/util/site-copy";
 import type { CopyBlock, CopyButton } from "@lib/util/site-copy";
-import { editable } from "@c3studium/valecms/edit";
+import { editable, editableSet } from "@c3studium/valecms/edit";
 import WebButton from "@modules/common/components/Buttons/webButton";
 import HeroImageShader from "./HeroImageShader";
 import HeroNotices from "./HeroNotices";
@@ -117,7 +117,13 @@ export default function IntroHero({
     // const reduceMotion = useSiteReducedMotion();
     // Z CMS přichází hotová adresa v úložišti — žádný builder jako u Sanity,
     // kde se rozměr a kvalita skládaly do URL. Velikosti řeší `next/image`.
-    const heroImage = block?.gallery?.[0]?.url ?? "/assets/img/img/2.jpg";
+    //
+    // Dvě fotky, dva sloty galerie: `gallery.0` kreslí shader, `gallery.1` je
+    // záloha (bez WebGL / než shader naběhne / při chybě). Druhý slot spadne na
+    // první, takže dokud majitelka druhou fotku nezadá, záloha ukazuje tutéž
+    // fotku jako shader — žádná změna vzhledu, jen navíc napojené pole v CMS.
+    const heroImage = galleryUrl(block, 0, "/assets/img/img/2.jpg");
+    const heroBackupImage = galleryUrl(block, 1, heroImage);
 
     /*
      * Krátké texty hera z CMS, s dosavadním zněním jako záložní hodnotou.
@@ -473,15 +479,23 @@ export default function IntroHero({
                         variants={PreloaderAnimImage2}
                         style={mediaInnerStyle}
                     >
-                        {/* Fotka hero je první položka galerie bloku — proto
-                            `gallery.0`, ne `image`. Obal, protože atributy musí
-                            sedět na elementu, který překryv najde v DOM. */}
+                        {/* Dvě fotky, jeden slot galerie bloku: `gallery.0`
+                            kreslí shader, `gallery.1` je záloha (bez WebGL / než
+                            shader naběhne / při chybě). Záloha je neviditelná,
+                            kdykoli shader běží, takže vlastní vnitřní „hotspot"
+                            by nešlo trefit; proto `editableSet` nad celou
+                            galerií — ve Studiu se obě fotky spravují v jedné
+                            „Sadě obrázků" (přidat, přeřadit, smazat), pořadí
+                            rozhoduje, co je shader (první) a co záloha (druhá).
+                            Obal, protože atributy musí sedět na elementu, který
+                            překryv najde v DOM. */}
                         <div
                             className="Hero__Intro__Media__Editable"
-                            {...editable(block, "gallery.0", "image")}
+                            {...editableSet(block, "gallery")}
                         >
                             <HeroImageShader
                                 src={heroImage}
+                                fallbackSrc={heroBackupImage}
                                 pointerX={pointerX}
                                 pointerY={pointerY}
                             />

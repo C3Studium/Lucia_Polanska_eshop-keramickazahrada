@@ -17,8 +17,6 @@ import { readCommissionBrief } from "@lib/util/made-to-order"
 import CheckoutCommissionBriefs from "../commission-briefs"
 
 import PaymentButton from "../payment-button"
-import ProductionPaymentModeChoice from "../production-payment-mode"
-import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import OrderRecap from "./recap"
 import {
@@ -84,18 +82,19 @@ const Review = ({
      (default), půlka, celek nebo vlastní částka ze slideru; zbytek se doplatí
      po dokončení. Tlačítko i rekapitulace proto musí ukazovat tuhle částku, ne
      cart.total (jinak tlačítko lže „Zaplatit 4450", i když brána vezme jen zálohu).
-     Běžný košík bez zakázky platí celek = cart.total. */
+     Běžný košík bez zakázky platí celek = cart.total.
+
+     Volba částky se dělá v kroku Platba (widget je přesunutý tam) a ukládá se na
+     košík; `selectProductionPaymentMode` košík revaliduje, takže sem už přijde
+     `productionMode` s aktuální volbou při přechodu na Přehled — čteme ji rovnou. */
   const chargeNowForMode = (mode: ProductionPaymentMode) =>
     mode.mode === "full"
       ? mode.full_amount
       : mode.mode === "custom"
         ? mode.custom?.amount ?? mode.deposit_amount
         : mode.deposit_amount
-  const [mtoChargeNow, setMtoChargeNow] = useState<number>(
-    productionMode?.has_made_to_order ? chargeNowForMode(productionMode) : 0
-  )
   const chargeNow = productionMode?.has_made_to_order
-    ? mtoChargeNow
+    ? chargeNowForMode(productionMode)
     : cart?.total ?? 0
 
   const paidByGiftcard =
@@ -207,24 +206,9 @@ const Review = ({
               </motion.div>
             )}
 
-            {/* Commissioned pieces: pay a deposit now or the whole amount. Rendered only when
-                the cart actually contains one — the API says so, we do not infer it. */}
-            {productionMode?.has_made_to_order && (
-              <motion.div variants={rowVariants} initial="hidden" animate="visible">
-                <ProductionPaymentModeChoice
-                  initial={productionMode}
-                  onSelect={(mode, amount) => {
-                    // Tlačítko „Zaplatit …" hned reaguje na zvolenou částku.
-                    if (typeof amount === "number") setMtoChargeNow(amount)
-                    else if (mode === "full")
-                      setMtoChargeNow(productionMode.full_amount)
-                    else if (mode === "deposit")
-                      setMtoChargeNow(productionMode.deposit_amount)
-                    return selectProductionPaymentMode(cart.id, mode, amount)
-                  }}
-                />
-              </motion.div>
-            )}
+            {/* „Kolik zaplatit teď" se volí v kroku Platba (widget je přesunutý
+                tam) a shrnuje v pravém souhrnu — v Přehledu už je jen tlačítko
+                s výslednou částkou. */}
 
             <motion.div
               className={styles.consent}

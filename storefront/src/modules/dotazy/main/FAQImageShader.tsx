@@ -180,6 +180,13 @@ type FAQImageShaderProps = {
 export type GlazeImage = {
   src: string
   aspect: number
+  /*
+   * Obrázek pro zálohu (nenačte-li se shader: bez WebGL, při chybě, než naběhne).
+   * Shader kreslí vždy `src`; když `fallbackSrc` chybí, kreslí ho i záloha, takže
+   * pro volající, co posílají jen `src` (dotazy, o mně), se nic nemění. Hero tím
+   * napojuje vlastní „záložní" fotku z CMS, nezávislou na té pro shader.
+   */
+  fallbackSrc?: string
 }
 
 /*
@@ -1392,7 +1399,7 @@ export default function FAQImageShader({
               the two are not supposed to have.
             */}
             <Image
-              src={image.src}
+              src={image.fallbackSrc ?? image.src}
               alt=""
               fill
               sizes="(max-width: 640px) 70vw, 32vw"

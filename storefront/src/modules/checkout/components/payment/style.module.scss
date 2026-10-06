@@ -71,6 +71,12 @@ $summary-col-gap: clamp(1rem, 1.6vw, 1.75rem);
     display: none;
   }
 
+  /* Widget „kolik zaplatit teď" nad výběrem metody. Oddělovač pod ním nese
+     vlastní `.divider` (margin-top), tady stačí drobný dech nad celým blokem. */
+  .productionPayment {
+    margin-top: clamp(.25rem, 1vh, .75rem);
+  }
+
   .methodIntro {
     display: flex;
     align-items: flex-end;
