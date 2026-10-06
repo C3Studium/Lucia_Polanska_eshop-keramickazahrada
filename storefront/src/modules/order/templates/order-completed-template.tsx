@@ -14,6 +14,7 @@ import CarrierDamageNotice, {
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import CommissionConversation from "@modules/order/components/commission-conversation"
+import BalancePayPanel from "@modules/order/components/balance-pay"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -103,7 +104,6 @@ export default async function OrderCompletedTemplate({
     commissionBalance.deposit_paid > 0
       ? commissionBalance.deposit_paid
       : paidNow
-  const payBalanceUrl = commissionBalance?.pay_url ?? null
   const showDeposit = isCommission && outstanding > 0.005
   const paymentStatusLabel = showDeposit ? "Záloha zaplacena" : paymentStatus
 
@@ -397,17 +397,13 @@ export default async function OrderCompletedTemplate({
                   <span>Platba</span>
                   <strong>{paymentStatusLabel}</strong>
                 </div>
-
-                {/* Doplatit zbytek — podepsaný odkaz vede na backend, který
-                    založí platbu a přesměruje na ComGate; po návratu se doplatek
-                    dorovná (viz reconcile na /confirmed). */}
-                {showDeposit && payBalanceUrl && (
-                  <a className={s.payBalanceBtn} href={payBalanceUrl}>
-                    Doplatit {money(outstanding)}
-                  </a>
-                )}
               </div>
             </div>
+
+            {/* „Doplatit" POD Souhrnem — jen u zakázky a jen když ještě něco
+                zbývá. Rozpis (zaplaceno zálohou / zbývá) už nese Souhrn výš,
+                tady proto jen tlačítko. */}
+            <BalancePayPanel balance={commissionBalance} variant="button" />
 
             {/* Konverzace s ateliérem — co zákazník napsal a vyfotil a místo,
                 kam dopsat další, jako POPUP pod souhrnem (jeden znovupoužitelný

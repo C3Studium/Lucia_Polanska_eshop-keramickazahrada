@@ -2,7 +2,10 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { outstandingFor } from "../../../../../lib/balance-payment"
-import { balancePaymentUrl } from "../../../../../lib/balance-payment-link"
+import {
+  balancePaymentUrl,
+  signBalanceToken,
+} from "../../../../../lib/balance-payment-link"
 
 /**
  * Stav doplatku zakázky pro stránku potvrzení objednávky.
@@ -46,6 +49,31 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     .filter((r) => r.type === "balance" && r.status === "paid")
     .reduce((sum, r) => sum + toNumber(r.amount), 0)
 
+  // Podepsaný odkaz na doplacení — jen když je co doplácet a zakázka není ve
+  // finále. `balancePaymentUrl` čte base z env (BACKEND_PUBLIC_URL/MEDUSA_BACKEND_URL);
+  // když nejsou nastavené, vrací null a tlačítko by zmizelo — proto fallback na
+  // host z requestu, ať je odkaz vždy.
+  const canPay =
+    outstanding > 0.005 &&
+    !["cancelled", "completed"].includes(productionOrder.stage)
+  let payUrl: string | null = null
+  if (canPay) {
+    payUrl = balancePaymentUrl(req.params.orderId)
+    if (!payUrl) {
+      const proto =
+        (req.headers["x-forwarded-proto"] as string | undefined) || "https"
+      const host =
+        (req.headers["x-forwarded-host"] as string | undefined) ||
+        (req.headers.host as string | undefined) ||
+        ""
+      if (host) {
+        payUrl = `${proto}://${host}/made-to-order/${
+          req.params.orderId
+        }/pay-balance?token=${signBalanceToken(req.params.orderId)}`
+      }
+    }
+  }
+
   res.status(200).json({
     is_commission: true,
     stage: productionOrder.stage,
@@ -53,12 +81,6 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     deposit_paid: depositPaid,
     balance_paid: balancePaid,
     outstanding,
-    // Podepsaný odkaz (funguje i bez přihlášení) — jen když je co doplácet a
-    // zakázka není ve finále.
-    pay_url:
-      outstanding > 0.005 &&
-      !["cancelled", "completed"].includes(productionOrder.stage)
-        ? balancePaymentUrl(req.params.orderId)
-        : null,
+    pay_url: payUrl,
   })
 }

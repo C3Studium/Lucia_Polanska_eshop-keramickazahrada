@@ -16,9 +16,13 @@ import s from "./style.module.scss"
 export default function BalancePayPanel({
   balance,
   className,
+  variant = "full",
 }: {
   balance: CommissionBalance | null
   className?: string
+  /** `full` = s rozpisem (zaplaceno zálohou / zbývá); `button` = jen tlačítko
+   *  (tam, kde rozpis nese už něco jiného, třeba Souhrn na potvrzení). */
+  variant?: "full" | "button"
 }) {
   const outstanding = balance?.outstanding ?? 0
   if (!balance?.is_commission || !balance.pay_url || outstanding <= 0.005) {
@@ -37,18 +41,20 @@ export default function BalancePayPanel({
       aria-label="Doplatek zakázky"
     >
       <p className={s.eyebrow}>Zakázková výroba</p>
-      <div className={s.rows}>
-        {balance.deposit_paid ? (
+      {variant === "full" && (
+        <div className={s.rows}>
+          {balance.deposit_paid ? (
+            <div className={s.row}>
+              <span>Zaplaceno zálohou</span>
+              <strong>{money(balance.deposit_paid)}</strong>
+            </div>
+          ) : null}
           <div className={s.row}>
-            <span>Zaplaceno zálohou</span>
-            <strong>{money(balance.deposit_paid)}</strong>
+            <span>Zbývá doplatit</span>
+            <strong className={s.outstanding}>{money(outstanding)}</strong>
           </div>
-        ) : null}
-        <div className={s.row}>
-          <span>Zbývá doplatit</span>
-          <strong className={s.outstanding}>{money(outstanding)}</strong>
         </div>
-      </div>
+      )}
       <a className={s.payBtn} href={balance.pay_url}>
         Doplatit {money(outstanding)}
       </a>
