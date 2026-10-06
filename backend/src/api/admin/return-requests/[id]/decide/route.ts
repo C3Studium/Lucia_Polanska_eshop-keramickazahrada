@@ -1,6 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import { orderLink, sendCustomerEmail } from "../../../../../lib/customer-email"
+import {
+  buildAndStoreProtocol,
+  protocolNumberFor,
+} from "../../../../../lib/reklamacni-protokol"
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return-request"
 import type ReturnRequestModuleService from "../../../../../modules/return-request/service"
 
@@ -67,12 +71,40 @@ export const POST = async (
   // an empty href would be worse than that.
   const link = orderLink({ id: request.order_id })
 
+  const decidedAt = new Date()
   const updated = await service.updateReturnRequests({
     id: request.id,
     status: body.decision === "approve" ? "approved" : "rejected",
     decision_note: note || null,
-    decided_at: new Date(),
+    decided_at: decidedAt,
   })
+
+  // Reklamační protokol se dogeneruje s VYŘÍZENÍM (způsob + datum + poznámka) —
+  // zákonné potvrzení o vyřízení. Přepíše verzi z uplatnění; odkaz jde do e-mailu.
+  const protocol = await buildAndStoreProtocol(req.scope, {
+    protocolNumber:
+      request.protocol_number ||
+      protocolNumberFor(request.kind ?? null, request.order_display_id),
+    kind: request.kind ?? null,
+    orderDisplayId: request.order_display_id,
+    customerName: request.customer_name ?? null,
+    email: request.email,
+    createdAt: request.created_at ? new Date(request.created_at) : decidedAt,
+    reason: request.reason,
+    items: typeof request.items === "string" ? request.items : null,
+    resolution: {
+      outcome: body.decision === "approve" ? "Schváleno" : "Zamítnuto",
+      note: note || null,
+      decidedAt,
+    },
+  }).catch(() => ({ url: null as string | null, number: request.protocol_number ?? "" }))
+  await service
+    .updateReturnRequests({
+      id: request.id,
+      protocol_url: protocol.url,
+      ...(protocol.number ? { protocol_number: protocol.number } : {}),
+    })
+    .catch(() => undefined)
 
   if (body.decision === "approve") {
     // NOTE: if she ALSO creates a native Medusa return for this order, the
@@ -95,6 +127,7 @@ export const POST = async (
         returnMethod: "Zásilka na adresu ateliéru",
         returnAddress: RETURN_ADDRESS,
         ...(link ? { orderLink: link } : {}),
+        ...(protocol.url ? { protocolUrl: protocol.url } : {}),
       },
     })
   } else {
@@ -114,6 +147,7 @@ export const POST = async (
         rejectionReason: note,
         ...(itemsText ? { rejectedItems: itemsText } : {}),
         ...(link ? { orderLink: link } : {}),
+        ...(protocol.url ? { protocolUrl: protocol.url } : {}),
       },
     })
   }

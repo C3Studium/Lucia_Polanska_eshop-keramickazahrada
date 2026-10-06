@@ -22,6 +22,8 @@ interface ReturnRejectedEmailProps {
   appealInstructions?: string;
   orderLink?: string;
   supportEmail?: string;
+  /** Odkaz na PDF reklamační protokol (potvrzení o vyřízení / zamítnutí). */
+  protocolUrl?: string;
 }
 
 /**
@@ -37,6 +39,7 @@ function ReturnRejectedEmailComponent({
   appealInstructions = "Ozvat se nám můžete do 14 dní od obdržení tohoto e-mailu",
   orderLink = "",
   supportEmail = CONTACT_EMAIL,
+  protocolUrl,
 }: ReturnRejectedEmailProps) {
   return (
     <EmailLayout
@@ -80,6 +83,12 @@ function ReturnRejectedEmailComponent({
           </>
         ) : null}
       </ButtonRow>
+
+      {protocolUrl ? (
+        <ButtonRow>
+          <EmailButton href={protocolUrl}>Stáhnout protokol (PDF)</EmailButton>
+        </ButtonRow>
+      ) : null}
 
       <P small>
         {appealInstructions}. Připomínáme, že vrácené objekty přijímáme

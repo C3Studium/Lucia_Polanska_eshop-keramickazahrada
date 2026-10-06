@@ -20,6 +20,8 @@ interface RefundRequestEmailProps {
   refundReason?: string;
   orderLink?: string;
   estimatedProcessingTime?: string;
+  /** Odkaz na PDF reklamační protokol (zákonné potvrzení o uplatnění). */
+  protocolUrl?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ function RefundRequestEmailComponent({
   refundReason,
   orderLink = "",
   estimatedProcessingTime = "3–5 pracovních dnů",
+  protocolUrl,
 }: RefundRequestEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
@@ -64,6 +67,12 @@ function RefundRequestEmailComponent({
       {orderUrl ? (
         <ButtonRow>
           <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
+
+      {protocolUrl ? (
+        <ButtonRow>
+          <EmailButton href={protocolUrl}>Stáhnout protokol (PDF)</EmailButton>
         </ButtonRow>
       ) : null}
 

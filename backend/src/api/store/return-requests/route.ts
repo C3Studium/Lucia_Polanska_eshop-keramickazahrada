@@ -11,6 +11,10 @@ import {
   sendCustomerEmail,
 } from "../../../lib/customer-email"
 import { notifyMerchant } from "../../../lib/notify"
+import {
+  buildAndStoreProtocol,
+  protocolNumberFor,
+} from "../../../lib/reklamacni-protokol"
 import { RETURN_REQUEST_MODULE } from "../../../modules/return-request"
 import type ReturnRequestModuleService from "../../../modules/return-request/service"
 import { PostStoreCreateReturnRequest } from "./validators"
@@ -205,6 +209,31 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     status: "pending",
   })
 
+  // Reklamační protokol (PDF) — zákonné písemné potvrzení o uplatnění. Uloží se
+  // k žádosti a odkaz jde do potvrzovacího e-mailu. Chyba generování/úložiště
+  // žádost neshodí (url zůstane null, protokol se dá vygenerovat později).
+  const protocolNumber = protocolNumberFor(
+    body.kind ?? null,
+    String(order.display_id)
+  )
+  const protocol = await buildAndStoreProtocol(req.scope, {
+    protocolNumber,
+    kind: body.kind ?? null,
+    orderDisplayId: String(order.display_id),
+    customerName: realCustomerName(order),
+    email: order.email,
+    createdAt: new Date(),
+    reason: request.reason,
+    items: typeof body.items === "string" ? body.items : null,
+  }).catch(() => ({ url: null as string | null, number: protocolNumber }))
+  await service
+    .updateReturnRequests({
+      id: request.id,
+      protocol_url: protocol.url,
+      protocol_number: protocol.number,
+    })
+    .catch(() => undefined)
+
   // §16 confirmation to the customer. No `refundAmount`: nothing has been
   // decided yet, and the template only renders the amount row with a real one.
   await sendCustomerEmail(req.scope, {
@@ -218,6 +247,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       orderLink: orderLink(order),
       refundReason: request.reason,
       estimatedProcessingTime: "3–5 pracovních dnů",
+      ...(protocol.url ? { protocolUrl: protocol.url } : {}),
     },
   })
 

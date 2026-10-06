@@ -55,6 +55,8 @@ type ReturnRequestRow = {
   refund_amount: number | null;
   refund_method: string | null;
   refunded_at: string | null;
+  protocol_url: string | null;
+  protocol_number: string | null;
   status: "pending" | "approved" | "rejected";
   decision_note: string | null;
   decided_at: string | null;
@@ -484,6 +486,19 @@ const VraceniInner = () => {
                           ))}
                         </div>
                       )}
+                      {request.protocol_url && (
+                        <a
+                          href={request.protocol_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-ui-fg-interactive txt-small mt-2 inline-block hover:underline"
+                        >
+                          Protokol (PDF)
+                          {request.protocol_number
+                            ? ` · ${request.protocol_number}`
+                            : ""}
+                        </a>
+                      )}
                     </Table.Cell>
                     <Table.Cell>
                       <Text size="small" className="text-ui-fg-subtle">
@@ -594,6 +609,16 @@ const VraceniInner = () => {
                         ? "(ComGate)"
                         : "(ručně)"}
                     </Text>
+                  )}
+                  {request.protocol_url && (
+                    <a
+                      href={request.protocol_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ui-fg-interactive txt-small block truncate hover:underline"
+                    >
+                      Protokol (PDF)
+                    </a>
                   )}
                 </div>
                 <Text size="small" className="text-ui-fg-muted lg:text-right">

@@ -38,6 +38,9 @@ const ReturnRequest = model.define("return_request", {
   /** "comgate" (karta) nebo "manual" (hotovost/dobírka/osobní odběr). */
   refund_method: model.text().nullable(),
   refunded_at: model.dateTime().nullable(),
+  /** Reklamační protokol (PDF v úložišti) a jeho číslo — fáze 2. */
+  protocol_url: model.text().nullable(),
+  protocol_number: model.text().nullable(),
   status: model
     .enum(["pending", "approved", "rejected"])
     .index()

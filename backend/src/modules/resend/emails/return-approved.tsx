@@ -24,6 +24,8 @@ interface ReturnApprovedEmailProps {
   returnAddress?: string;
   returnInstructions?: string;
   orderLink?: string;
+  /** Odkaz na PDF reklamační protokol (potvrzení o vyřízení). */
+  protocolUrl?: string;
 }
 
 /**
@@ -41,6 +43,7 @@ function ReturnApprovedEmailComponent({
   returnAddress = "Keramická zahrada, Putim 229, 397 01 Písek",
   returnInstructions = "Přiložte prosím doklad o nákupu a objekty vraťte v původním balení",
   orderLink = "",
+  protocolUrl,
 }: ReturnApprovedEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
@@ -73,6 +76,12 @@ function ReturnApprovedEmailComponent({
       {orderUrl ? (
         <ButtonRow>
           <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+        </ButtonRow>
+      ) : null}
+
+      {protocolUrl ? (
+        <ButtonRow>
+          <EmailButton href={protocolUrl}>Stáhnout protokol (PDF)</EmailButton>
         </ButtonRow>
       ) : null}
 
