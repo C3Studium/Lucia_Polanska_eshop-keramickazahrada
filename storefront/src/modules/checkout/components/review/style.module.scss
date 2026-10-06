@@ -92,21 +92,38 @@
      stejné dva jako dnes. */
   gap: clamp(1.25rem, 1.8vw, 2rem);
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  /* Předěl mezi „Co objednáváte" a sekcemi Doručení/Platba. Mezera z `.recap`
+     zůstává nad čárou, padding pod ní, ať nadpisy nelepí na linku. */
+  padding-top: clamp(.9rem, 1.8vh, 1.5rem);
+  border-top: 1px solid var(--review-rule);
 }
 
 .itemList {
   display: grid;
   margin: 0;
   padding: 0;
-  gap: clamp(.5rem, .93vh, .8rem);
+  /* Rozestup mezi produkty nese padding položky (ne gap), aby jemný předěl
+     níž seděl přesně uprostřed mezi dvěma řádky, ne nalepený na jeden z nich. */
+  gap: 0;
   list-style: none;
 }
 
 .itemList li {
   display: grid;
   align-items: baseline;
+  padding: clamp(.5rem, .93vh, .8rem) 0;
   gap: .875rem;
   grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.itemList li:first-child {
+  padding-top: 0;
+}
+
+/* Jemný předěl mezi produkty — čitelnější dlouhý seznam. Slabší (.1) než
+   předěly sekcí (`--review-rule` je .18), ať nekřičí. */
+.itemList li:not(:last-child) {
+  border-bottom: 1px solid rgb(var(--ink-05-rgb) / .1);
 }
 
 .itemTitle {

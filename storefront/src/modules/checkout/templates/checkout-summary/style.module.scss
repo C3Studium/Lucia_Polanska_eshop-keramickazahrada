@@ -120,6 +120,19 @@
 }
 
 /*
+  Prázdný obal = žádná prázdná krémová karta. Když komponenta uvnitř vrátí
+  `null` (běžný košík bez zakázky, nebo zakázka, jejíž položka nemá per-line
+  marker), zůstával tu po ní jen prázdný krémový obdélník — „zbytek po zakázce".
+  `:empty` platí, protože React při `null` nevloží do obalu žádný uzel; vyšší
+  specificita přebije i `display:flex/block` z media query výš, takže se obal
+  schová i na širokém. Jakmile je co ukázat, obal není prázdný a chová se jako dřív.
+*/
+.commissionBriefs:empty,
+.paymentRecap:empty {
+  display: none;
+}
+
+/*
  * ─── Svisle: hlavička souhrnu jako titulek bloku ────────────────────────────
  *
  * Tady souhrn stojí jako první věc pod hlavičkou stránky a je zabalený do tří
