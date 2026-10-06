@@ -37,6 +37,14 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+# Zbytek podob .env — výčet výš by `.env.test` s přístupy k databázi
+# propustil do commitu.
+.env.*
+!.env.example
+
+# Zálohy databáze CMS — jsou v nich texty i média webu.
+/.migrace/
+/migrace-*.sql
 
 # vercel
 .vercel

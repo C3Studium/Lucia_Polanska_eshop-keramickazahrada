@@ -1266,3 +1266,148 @@ comment on table public.cms_reaction is
 
 comment on column public.cms_reaction.ip_hash is
   'sha256(IP + CMS_IP_HASH_SALT). Adresa se neukládá — viz hlavička migrace.';
+
+-- ===== 0013_cms_translation.sql =====
+-- Vícejazyčnost, vrstva 1 — cms_document_translation, cms_document_revision.lang.
+--
+-- Run after 0012_cms_reaction.sql (Supabase SQL editor, nebo psql s připojovacím
+-- řetězcem z Project Settings -> Database). Re-runnable: každý objekt vzniká
+-- s IF NOT EXISTS, politika se před vytvořením zahazuje.
+--
+-- Implementuje docs/I18N.md, oddíl 2. Kdo mění tvar níž, mění nejdřív ten
+-- dokument — je to smlouva, podle které píše paralelně jádro i Studio.
+--
+-- ---------------------------------------------------------------------------
+-- Proč vedlejší tabulka a ne sloupce v cms_document
+-- ---------------------------------------------------------------------------
+-- Dvě cesty, které se nabízejí, jsou obě dražší:
+--
+--   `data_en jsonb`     sloupec na jazyk znamená migraci pokaždé, když někdo
+--                       v Nastavení přidá jazyk. Seznam jazyků přitom bydlí
+--                       v `cms_setting` právě proto, aby se přidával bez
+--                       nasazení.
+--   řádek na jazyk      tedy `cms_document` s `lang`: změní se tím primární
+--                       klíč dokumentu, a `id` je to, na co ukazuje
+--                       `editable(doc.id, …)`, revize, reakce i recenze.
+--                       Migrace dat u dvou běžících webů.
+--
+-- Takhle se nemigruje nic. Základní řádek `cms_document` JE výchozí jazyk
+-- a zdroj všech nepřekládaných polí; překlad je overlay nad ním. Chybějící
+-- překlad proto není větev v kódu, ale prázdný merge — a dokud nikdo druhý
+-- jazyk nepřidá, tahle tabulka zůstane prázdná a nikdo do ní nesáhne.
+--
+-- ---------------------------------------------------------------------------
+-- Proč má překlad vlastní `status` a `published_at`
+-- ---------------------------------------------------------------------------
+-- Protože se publikuje po jazycích (I18N.md, oddíl 1). Kdyby stav držel jen
+-- základní řádek, znamenalo by publikování češtiny „pusť ven i rozdělanou
+-- angličtinu" — a to je přesně ten druh tiché škody, kterou u textů na webu
+-- nikdo nezpozoruje, dokud se na to někdo nezeptá v cizím jazyce.
+--
+-- `draft ?? data` je tady stejná Smlouva 3 jako u dokumentu, takže nad
+-- překladem funguje náhled i „zahodit koncept" bez druhého pravidla.
+
+create extension if not exists pgcrypto;
+
+-- gen_random_uuid
+
+
+-- ---------------------------------------------------------------------------
+-- cms_document_translation
+-- ---------------------------------------------------------------------------
+-- Klíč je dvojice (dokument, jazyk) a ne vlastní `id`: druhý překlad téhož
+-- dokumentu do téhož jazyka není nová věc, je to překlep. Databáze ho odmítne
+-- dřív, než vzniknou dvě pravdy, mezi kterými by čtení muselo vybírat.
+--
+-- `on delete cascade` je tu správně a u revize (0007) by bylo špatně: tenhle
+-- řádek NENÍ záznam o tom, co se stalo — je to část dokumentu. Když dokument
+-- zmizí, překlad jeho polí nepopisuje nic a přežít nemá co.
+--
+-- `lang` je BCP 47 (`cs`, `en`, `de`, `pt-BR`). Kontrola je záměrně na tvar
+-- a ne na seznam jazyků z `cms_setting`: seznam se mění z prohlížeče a cizí
+-- klíč na něj by znamenal, že vypnutí jazyka v Nastavení maže obsah.
+-- Nepoužívaný překlad má zůstat ležet — jazyk se vypíná a zapíná, ne překládá
+-- znovu.
+--
+-- `updated_by` je ON DELETE SET NULL, jako cms_setting.updated_by: překlad
+-- nesmí zmizet proto, že člověk, který ho napsal, odešel.
+
+create table if not exists public.cms_document_translation (
+  document_id  uuid not null references public.cms_document (id) on delete cascade,
+  lang         text not null check (lang ~ '^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$'),
+  data         jsonb not null default '{}'::jsonb,
+  draft        jsonb,
+  status       text not null default 'draft' check (status in ('draft','published')),
+  published_at timestamptz,
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid references public.cms_user (id) on delete set null,
+
+  primary key (document_id, lang)
+);
+
+-- Veřejné čtení se ptá vždycky stejně: „překlady těchhle dokumentů do tohohle
+-- jazyka, jen publikované". Primární klíč začíná `document_id`, takže na tenhle
+-- dotaz nestačí; index je částečný přesně na ten predikát, ze stejného důvodu
+-- jako živý index v 0003 — Postgres částečný index použije jen na dotaz,
+-- o kterém umí dokázat, že ho WHERE pokrývá.
+create index if not exists cms_document_translation_live_idx
+  on public.cms_document_translation (lang, document_id)
+  where status = 'published';
+
+-- ---------------------------------------------------------------------------
+-- updated_at
+-- ---------------------------------------------------------------------------
+-- Stejný trigger jako u `cms_setting` v 0006 a u dokumentu v 0001, jenom se
+-- nezakládá třetí funkce, která by dělala potřetí totéž: `cms_touch_updated_at()`
+-- z 0001 už existuje a `set search_path` má v sobě. Tři kopie jedné dvouřádkové
+-- funkce jsou tři místa, která se rozejdou.
+--
+-- Že tu opravdu je, se ověřuje níž — spuštění 0013 na databázi bez 0001 má
+-- skončit větou, ne chybějícím razítkem, kterého si nikdo nevšimne.
+
+do $$
+begin
+  if to_regprocedure('public.cms_touch_updated_at()') is null then
+    raise exception 'public.cms_touch_updated_at() chybí — spusť nejdřív 0001_cms_tables.sql';
+  end if;
+end
+$$;
+
+drop trigger if exists cms_document_translation_touch on public.cms_document_translation;
+
+create trigger cms_document_translation_touch
+  before update on public.cms_document_translation
+  for each row execute function public.cms_touch_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- cms_document_revision.lang
+-- ---------------------------------------------------------------------------
+-- NULL = výchozí jazyk, tedy přesně to, co v tom sloupci má každá dosavadní
+-- revize — a proto se nic nedoplňuje. Bez toho by archiv uměl jen okamžik
+-- celého webu: „co web říkal 3. března" by v němčině vrátilo českou větu,
+-- protože revize překladu by se nedala odlišit od revize základu.
+--
+-- Čtení bez jazyka proto od 0013 filtruje `lang is null` (server/site/archive.js).
+-- Na dnešních datech to nemění ani jeden řádek; potřebné to je až ve chvíli,
+-- kdy vedle základní revize leží revize překladu téhož dokumentu, jinak by
+-- jedna zastínila druhou.
+
+alter table public.cms_document_revision
+  add column if not exists lang text;
+
+-- Přehrání okamžiku v jednom jazyce. Částečný, protože revizí základu bude vždy
+-- většina a ty už obsluhují indexy z 0007.
+create index if not exists cms_document_revision_lang_idx
+  on public.cms_document_revision (lang, changed_at desc)
+  where lang is not null;
+
+-- ---------------------------------------------------------------------------
+-- Kdo sem smí
+-- ---------------------------------------------------------------------------
+-- V téhle řadě nikdo jiný než vlastník připojení: role `anon` ani `service_role`
+-- v holém Postgresu neexistují, takže granty a politika z číslované migrace
+-- odsud vypadly. Co platí dál a vynucuje to server: veřejné čtení se ptá nejdřív
+-- na dokumenty a překlady dohledává k jejich `id`, takže osamocený publikovaný
+-- překlad staženého dokumentu nemá se čím spojit.
+
+drop policy if exists cms_document_translation_public_read on public.cms_document_translation;

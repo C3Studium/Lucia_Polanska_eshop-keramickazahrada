@@ -2,6 +2,17 @@
 .env
 .env.test
 .env.*.local
+# Všechny další podoby .env — dřív sem spadalo jen `.env`, `.env.test` a
+# `.env.*.local`, takže soubor typu `.env.migrace` s přístupy k databázi by se
+# zacommitoval. Hvězdička to uzavírá; `.env.example` má výjimku níž.
+.env.*
+!.env.example
+!.env.template
+
+# Zálohy databáze — obsahují objednávky a adresy zákazníků.
+*.sql.gz
+/zaloha-*.sql
+/.migrace/
 .DS_Store
 /uploads
 /node_modules
