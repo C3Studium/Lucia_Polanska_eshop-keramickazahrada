@@ -1,0 +1,72 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Panel doplatku — stejná krémová karta s linkou vlevo jako konverzace, ať
+   doplatek patří viditelně k zakázce na kterékoli stránce objednávky. */
+.root {
+  --bp-accent: var(--clay-04);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: clamp(1rem, 2.2vh, 1.5rem) clamp(1.1rem, 1.6vw, 1.6rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-left: 2px solid var(--bp-accent);
+  border-radius: 6px;
+  background: rgb(var(--clay-17-rgb) / 0.07);
+  color: var(--blackText);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--bp-accent);
+  font: 400 clamp(0.7rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: "Sansation-Light", sans-serif;
+  font-size: clamp(0.9rem, 1.1vw, 1.02rem);
+
+  span {
+    opacity: 0.72;
+  }
+  strong {
+    font-weight: 400;
+  }
+}
+
+.outstanding {
+  color: var(--bp-accent);
+  font-family: "Sansation-Regular", sans-serif;
+}
+
+.payBtn {
+  display: block;
+  margin-top: 0.3rem;
+  padding: 0.75rem 1.15rem;
+  border-radius: 999px;
+  background: var(--bp-accent);
+  color: var(--white);
+  text-align: center;
+  text-decoration: none;
+  font-family: "Sansation-Regular", sans-serif;
+  font-size: clamp(0.9rem, 1.1vw, 1rem);
+  transition: opacity 0.2s ease;
+}
+
+@include fine-pointer {
+  .payBtn:hover {
+    opacity: 0.9;
+  }
+}

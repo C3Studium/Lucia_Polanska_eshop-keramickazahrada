@@ -4,7 +4,7 @@ import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import OrderEdit from "@modules/order/components/order-edit"
 import { getOrderEditContext } from "@lib/data/order-edit"
-import { listCommissionNotes } from "@lib/data/made-to-order"
+import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -41,6 +41,8 @@ export default async function OrderDetailPage(props: Props) {
   // `null` = není zakázka (route 404) → konverzace se nevykreslí; prázdné pole
   // = zakázka, kde se zatím nepsalo, a ta tlačítko mít má.
   const commissionNotes = await listCommissionNotes(order.id)
+  // Doplatek zakázky (zbývá-li co doplatit) → panel s tlačítkem „Doplatit".
+  const commissionBalance = await getCommissionBalance(order.id)
 
   return (
     <>
@@ -49,6 +51,7 @@ export default async function OrderDetailPage(props: Props) {
         order={order}
         claimForm={claimForm}
         commissionNotes={commissionNotes}
+        commissionBalance={commissionBalance}
       />
     </>
   )

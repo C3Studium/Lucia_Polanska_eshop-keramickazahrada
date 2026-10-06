@@ -14,7 +14,9 @@ import OrderSummary from "@modules/order/components/order-summary"
 import PaymentDetails from "@modules/order/components/payment-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import CommissionConversation from "@modules/order/components/commission-conversation"
+import BalancePayPanel from "@modules/order/components/balance-pay"
 import type { CommissionNote } from "@lib/util/made-to-order"
+import type { CommissionBalance } from "@lib/data/made-to-order"
 import {
   AccountPageReveal,
   AccountSectionReveal,
@@ -28,12 +30,15 @@ type OrderDetailsTemplateProps = {
   claimForm?: { title: string; url: string } | null
   /** Vlákno zakázky. `null` = není zakázka → konverzace se nevykreslí. */
   commissionNotes?: CommissionNote[] | null
+  /** Stav doplatku zakázky → panel „Doplatit", když něco zbývá. */
+  commissionBalance?: CommissionBalance | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
   claimForm = null,
   commissionNotes = null,
+  commissionBalance = null,
 }) => {
   return (
     <AccountPageReveal
@@ -88,6 +93,8 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <aside className={s.accountOrderDetailsAside}>
           <span>04 · souhrn</span>
           <OrderSummary order={order} />
+          {/* Doplatek zakázky — „Doplatit", když ještě něco zbývá. */}
+          <BalancePayPanel balance={commissionBalance} />
           {/* Konverzace s ateliérem — jen u zakázky; stejný popup komponent jako
               na potvrzení i na stránkách úpravy/reklamace. */}
           {commissionNotes && (
