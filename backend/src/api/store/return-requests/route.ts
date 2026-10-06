@@ -1,5 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
 import {
   customerName,
   orderLink,
@@ -30,10 +34,93 @@ import { PostStoreCreateReturnRequest } from "./validators"
 
 const GENERIC_RESPONSE = { received: true }
 
+/**
+ * Zákonná lhůta na vyřízení podle druhu: reklamace do 30 dnů (§19 ZOS),
+ * odstoupení a vrácení = vrátit peníze do 14 dnů (§1832). Počítá se ode dne
+ * žádosti. Neznámý druh → bez lhůty (admin ji doplní ručně).
+ */
+const RESOLVE_DAYS: Record<string, number> = {
+  reklamace: 30,
+  vraceni: 14,
+  odstoupeni: 14,
+}
+
+const resolveByFor = (kind: string | undefined): Date | null => {
+  const days = kind ? RESOLVE_DAYS[kind] : undefined
+  return days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null
+}
+
 /** The real person's name, or null — never a stored „Vážený zákazníku". */
 const realCustomerName = (order: any): string | null => {
   const name = customerName(order)
   return name === "Vážený zákazníku" ? null : name
+}
+
+// Fotky vady / zboží — stejný kontrakt jako `store/made-to-order/media`:
+// base64 (s `data:` prefixem i bez), limit počtu a velikosti, jen obrázky.
+const MAX_PHOTOS = 6
+const MAX_PHOTO_BYTES = 6 * 1024 * 1024
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+])
+
+const decodePhoto = (data: string): Buffer => {
+  const comma = data.indexOf(",")
+  const payload =
+    data.startsWith("data:") && comma > -1 ? data.slice(comma + 1) : data
+  return Buffer.from(payload, "base64")
+}
+
+const safePhotoName = (filename: string): string => {
+  const cleaned = filename
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(-120)
+  return cleaned || "reklamace-foto"
+}
+
+/**
+ * Nahraje fotky vady do úložiště a vrátí jejich URL. Volá se AŽ po ověření
+ * vlastnictví (číslo + e-mail), takže anonym nemá jak něco nahrát. Chybná fotka
+ * (špatný formát / prázdná / moc velká) se přeskočí — žádost o reklamaci kvůli
+ * jedné fotce nepadá.
+ */
+const uploadReturnPhotos = async (
+  req: MedusaRequest,
+  photos: { filename: string; mime_type: string; data: string }[]
+): Promise<string[]> => {
+  const prepared = photos
+    .slice(0, MAX_PHOTOS)
+    .map((photo) => {
+      if (!ALLOWED_MIME.has(photo.mime_type.toLowerCase())) return null
+      const buffer = decodePhoto(photo.data)
+      if (!buffer.length || buffer.length > MAX_PHOTO_BYTES) return null
+      return {
+        filename: safePhotoName(photo.filename),
+        mimeType: photo.mime_type,
+        content: buffer.toString("base64"),
+        access: "public" as const,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
+  if (!prepared.length) return []
+
+  try {
+    const fileModule = req.scope.resolve(Modules.FILE)
+    const uploaded = await fileModule.createFiles(prepared)
+    return (Array.isArray(uploaded) ? uploaded : [uploaded])
+      .map((file: any) => file?.url)
+      .filter((url: unknown): url is string => typeof url === "string")
+  } catch {
+    // Úložiště je doplněk — bez fotek žádost platí dál (zákazník je dopošle).
+    return []
+  }
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
@@ -91,15 +178,27 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(200).json(GENERIC_RESPONSE)
   }
 
+  // Fotky vady nahrajeme až TEĎ — po ověření vlastnictví, ať nejde zneužít
+  // k anonymnímu plnění úložiště. Výsledek jsou URL, která uložíme k žádosti.
+  const photoUrls = body.photos?.length
+    ? await uploadReturnPhotos(req, body.photos)
+    : []
+
   const request = await service.createReturnRequests({
     order_id: order.id,
     order_display_id: String(order.display_id),
     email: order.email,
     customer_name: realCustomerName(order) ?? undefined,
+    kind: body.kind ?? null,
+    resolve_by: resolveByFor(body.kind),
     reason: body.reason,
     // jsonb stores a bare string just fine; the generated DTO merely types the
     // json column as an object, hence the cast.
     items: (body.items?.length ? body.items : null) as unknown as Record<
+      string,
+      unknown
+    >,
+    photos: (photoUrls.length ? photoUrls : null) as unknown as Record<
       string,
       unknown
     >,
@@ -127,9 +226,15 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   await notifyMerchant(req.scope, {
     key: `mn:return-req:${request.id}`,
     title: `Žádost o vrácení k objednávce #${order.display_id}`,
-    description: body.items?.length
-      ? `Důvod: ${request.reason} · Objekty: ${body.items}`
-      : `Důvod: ${request.reason}`,
+    description: [
+      `Důvod: ${request.reason}`,
+      body.items?.length ? `Objekty: ${body.items}` : null,
+      photoUrls.length
+        ? `${photoUrls.length} ${photoUrls.length === 1 ? "fotka" : "fotky"} vady`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     audience: "owner",
     urgent: false,
     email: true,

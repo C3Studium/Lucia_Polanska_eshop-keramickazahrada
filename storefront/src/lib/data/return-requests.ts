@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import type { CommissionUpload } from "@lib/util/made-to-order"
 
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 
@@ -13,7 +14,11 @@ export async function submitReturnRequest(input: {
   /** Číslo objednávky jak je na potvrzení (display_id) — backend ověřuje vlastnictví přes číslo + e-mail. */
   order_display_id: string
   email: string
+  /** Druh žádosti — ať backend zná typ i bez parsování textu (filtr + lhůta). */
+  kind?: "reklamace" | "vraceni" | "odstoupeni"
   reason: string
+  /** Fotky vady (base64) — zákazník ukáže, co je špatně. Backend je nahraje po ověření vlastnictví. */
+  photos?: CommissionUpload[]
 }): Promise<{ success: boolean; message?: string }> {
   try {
     await sdk.client.fetch(`/store/return-requests`, {
@@ -21,7 +26,9 @@ export async function submitReturnRequest(input: {
       body: {
         order_display_id: input.order_display_id,
         email: input.email,
+        ...(input.kind ? { kind: input.kind } : {}),
         reason: input.reason.trim(),
+        ...(input.photos?.length ? { photos: input.photos } : {}),
       },
     })
 

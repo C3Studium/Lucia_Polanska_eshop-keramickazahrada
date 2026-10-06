@@ -3,6 +3,7 @@ import {
   Button,
   Container,
   Heading,
+  Input,
   Label,
   Prompt,
   Skeleton,
@@ -46,12 +47,47 @@ type ReturnRequestRow = {
   order_display_id: string;
   email: string;
   customer_name: string | null;
+  kind: "reklamace" | "vraceni" | "odstoupeni" | null;
   reason: string;
   items: string | null;
+  photos: string[] | null;
+  resolve_by: string | null;
+  refund_amount: number | null;
+  refund_method: string | null;
+  refunded_at: string | null;
   status: "pending" | "approved" | "rejected";
   decision_note: string | null;
   decided_at: string | null;
   created_at: string;
+};
+
+const KIND_META: Record<
+  string,
+  { label: string; color: "orange" | "blue" | "purple" }
+> = {
+  reklamace: { label: "Reklamace", color: "orange" },
+  vraceni: { label: "Vrácení", color: "blue" },
+  odstoupeni: { label: "Odstoupení §1829", color: "purple" },
+};
+
+/**
+ * Zbývající dny do zákonné lhůty (reklamace 30 dnů, odstoupení/vrácení 14 dnů)
+ * + barva varování. `null`, když lhůta není známá (starší žádost bez druhu).
+ */
+const deadlineInfo = (resolveBy: string | null) => {
+  if (!resolveBy) return null;
+  const days = Math.ceil(
+    (new Date(resolveBy).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
+  );
+  const overdue = days < 0;
+  const label = overdue
+    ? `Po lhůtě o ${Math.abs(days)} ${Math.abs(days) === 1 ? "den" : "dní"}`
+    : days === 0
+      ? "Lhůta je dnes"
+      : `Zbývá ${days} ${days === 1 ? "den" : days < 5 ? "dny" : "dní"}`;
+  const color: "red" | "orange" | "grey" =
+    overdue || days <= 3 ? "red" : days <= 7 ? "orange" : "grey";
+  return { days, overdue, label, color };
 };
 
 type ListResponse = {
@@ -202,6 +238,97 @@ const RejectForm = ({
   );
 };
 
+const useRefund = (requestId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { amount?: number }) =>
+      sdk.client.fetch<{ message?: string }>(
+        `/admin/return-requests/${requestId}/refund`,
+        { method: "POST", body }
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["return-requests"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Vrácení se nepodařilo"
+      );
+    },
+  });
+};
+
+/**
+ * „Vrátit peníze" — malý formulář s částkou. Prázdné = celá zaplacená částka.
+ * Karta se vrátí přes ComGate, jinak se jen zaznamená ruční vrácení; zákazník
+ * dostane e-mail. Dobropis (iDoklad) přijde ve fázi 2.
+ */
+const RefundForm = ({
+  request,
+  onClose,
+}: {
+  request: ReturnRequestRow;
+  onClose: () => void;
+}) => {
+  const [amount, setAmount] = useState("");
+  const mutation = useRefund(request.id);
+  const parsed = Number(amount.replace(",", "."));
+
+  return (
+    <form
+      className="flex w-full flex-col gap-y-3 rounded-lg border p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        mutation.mutate(
+          {
+            amount:
+              Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
+          },
+          {
+            onSuccess: (result) => {
+              toast.success(result?.message ?? "Peníze byly vráceny.");
+              onClose();
+            },
+          }
+        );
+      }}
+    >
+      <div className="flex flex-col gap-y-1">
+        <Label size="xsmall" htmlFor={`refund-amount-${request.id}`}>
+          Kolik vrátit (prázdné = celá zaplacená částka)
+        </Label>
+        <Input
+          id={`refund-amount-${request.id}`}
+          type="number"
+          min={0}
+          placeholder="celá částka"
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          autoFocus
+          className="max-w-48"
+        />
+      </div>
+      <Text size="small" className="text-ui-fg-subtle">
+        Placeno kartou → vrátí se přes ComGate. Jinak se zaznamená k ručnímu
+        vrácení (hotovost / dobírka / osobní odběr). Zákazník dostane e-mail
+        „vrácení peněz".
+      </Text>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="small"
+          variant="primary"
+          type="submit"
+          isLoading={mutation.isPending}
+        >
+          Vrátit peníze
+        </Button>
+        <Button size="small" variant="secondary" type="button" onClick={onClose}>
+          Zpět
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 const decidedMeta: Record<
   "approved" | "rejected",
   { label: string; color: "green" | "red" }
@@ -212,6 +339,7 @@ const decidedMeta: Record<
 
 const VraceniInner = () => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
 
   const pendingQuery = useQuery<ListResponse>({
     queryKey: ["return-requests", "pending"],
@@ -307,7 +435,25 @@ const VraceniInner = () => {
                       )}
                     </Table.Cell>
                     <Table.Cell className="max-w-md">
-                      <Text size="small" className="whitespace-normal">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {request.kind && KIND_META[request.kind] && (
+                          <Badge
+                            size="2xsmall"
+                            color={KIND_META[request.kind].color}
+                          >
+                            {KIND_META[request.kind].label}
+                          </Badge>
+                        )}
+                        {(() => {
+                          const d = deadlineInfo(request.resolve_by);
+                          return d ? (
+                            <Badge size="2xsmall" color={d.color}>
+                              {d.label}
+                            </Badge>
+                          ) : null;
+                        })()}
+                      </div>
+                      <Text size="small" className="mt-1 whitespace-normal">
                         {request.reason}
                       </Text>
                       {request.items && (
@@ -318,6 +464,26 @@ const VraceniInner = () => {
                           Objekty: {request.items}
                         </Text>
                       )}
+                      {request.photos && request.photos.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {request.photos.map((url) => (
+                            <a
+                              key={url}
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block h-14 w-14 overflow-hidden rounded-md border"
+                              title="Otevřít fotku vady"
+                            >
+                              <img
+                                src={url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </Table.Cell>
                     <Table.Cell>
                       <Text size="small" className="text-ui-fg-subtle">
@@ -327,6 +493,17 @@ const VraceniInner = () => {
                     <Table.Cell>
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         <ApproveButton request={request} />
+                        <Button
+                          size="small"
+                          variant="secondary"
+                          onClick={() =>
+                            setRefundingId(
+                              refundingId === request.id ? null : request.id
+                            )
+                          }
+                        >
+                          Vrátit peníze
+                        </Button>
                         <Button
                           size="small"
                           variant="danger"
@@ -348,6 +525,16 @@ const VraceniInner = () => {
                         <RejectForm
                           request={request}
                           onClose={() => setRejectingId(null)}
+                        />
+                      </td>
+                    </Table.Row>
+                  )}
+                  {refundingId === request.id && (
+                    <Table.Row>
+                      <td colSpan={5} className="px-6 py-3">
+                        <RefundForm
+                          request={request}
+                          onClose={() => setRefundingId(null)}
                         />
                       </td>
                     </Table.Row>
@@ -398,6 +585,14 @@ const VraceniInner = () => {
                   {request.decision_note && (
                     <Text size="xsmall" className="text-ui-fg-muted truncate">
                       Poznámka: {request.decision_note}
+                    </Text>
+                  )}
+                  {request.refunded_at && (
+                    <Text size="xsmall" className="text-ui-fg-muted truncate">
+                      Vráceno {request.refund_amount} Kč{" "}
+                      {request.refund_method === "comgate"
+                        ? "(ComGate)"
+                        : "(ručně)"}
                     </Text>
                   )}
                 </div>

@@ -241,6 +241,13 @@ export default defineMiddlewares({
       methods: ["POST"],
       bodyParser: { sizeLimit: "12mb" },
     },
+    // Žádost o reklamaci/vrácení nese fotky vady jako base64 v JSON (jako fotky
+    // zakázky výš) — výchozí limit těla by je shodil na 413.
+    {
+      matcher: "/store/return-requests",
+      methods: ["POST"],
+      bodyParser: { sizeLimit: "12mb" },
+    },
     /*
      * Výběr dopravy je poslední společné hrdlo před penězi. Kus bez profilu
      * dopravy se tu odmítne, protože po zaplacení už by bylo pozdě — Medusa

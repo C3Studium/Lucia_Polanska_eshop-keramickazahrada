@@ -102,6 +102,98 @@
   border-color: var(--olive-07);
 }
 
+/* Fotky vady — mřížka náhledů + dlaždice „Přidat". */
+.photos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.photosLabel {
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 400 clamp(0.72rem, 0.9vw, 0.82rem) / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.photosLabel em {
+  font-style: normal;
+  opacity: 0.7;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.photoGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.photo {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.625rem;
+}
+
+.photo :global(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo button {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  display: grid;
+  width: 1.4rem;
+  height: 1.4rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(var(--ink-05-rgb) / 0.72);
+  color: var(--cream-06);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.photoAdd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 5rem;
+  height: 5rem;
+  border: 1px dashed rgb(var(--ink-05-rgb) / 0.3);
+  border-radius: 0.625rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+  color: rgb(var(--ink-05-rgb) / 0.7);
+  cursor: pointer;
+  font: 300 0.7rem / 1.2 "Sansation-Light", sans-serif;
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.photoAdd span {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.photoAdd:hover:not(:disabled) {
+  border-color: var(--olive-07);
+}
+
+.photoAdd:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .error {
   margin: 0;
   color: var(--clay-06);
