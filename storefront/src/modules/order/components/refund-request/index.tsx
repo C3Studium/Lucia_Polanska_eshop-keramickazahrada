@@ -42,13 +42,26 @@ const REASON_LABEL: Record<Kind, string> = {
  * Právo: odstoupení do 14 dnů (§1829) se u zboží na míru NENABÍZÍ (§1837) —
  * když je celá objednávka zakázková, ta volba je zamčená s vysvětlením.
  */
+const isKind = (value: unknown): value is Kind =>
+  value === "reklamace" || value === "vraceni" || value === "odstoupeni"
+
 export default function RefundRequest({
   context,
+  initialKind,
 }: {
   context: GuestRefundContext
+  /** Předvolený druh z odkazu (`?kind=`) — „Zrušit objednávku" míří na odstoupení,
+      „Reklamace" na reklamaci. Neznámá/chybějící hodnota → výchozí reklamace. */
+  initialKind?: string
 }) {
   const withdrawalBlocked = context.all_made_to_order
-  const [kind, setKind] = useState<Kind>("reklamace")
+  // Odstoupení je u zboží na míru zamčené — v tom případě předvolbu nebereme.
+  const preselected =
+    isKind(initialKind) &&
+    !(initialKind === "odstoupeni" && withdrawalBlocked)
+      ? initialKind
+      : "reklamace"
+  const [kind, setKind] = useState<Kind>(preselected)
   const [detail, setDetail] = useState("")
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"

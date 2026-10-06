@@ -44,6 +44,8 @@ export type MerchantOrder = {
   customer_name: string | null;
   currency_code: string;
   total: number | string | null;
+  /** Kolik už reálně došlo (captured). U zakázky = záloha, dokud se nedoplatí. */
+  paid_total: number | null;
   item_count: number;
   shipping_method: string | null;
 
@@ -162,6 +164,26 @@ export const paymentStatusMeta: Record<
   canceled: { label: "Platba zrušena", color: "grey" },
   refunded: { label: "Vráceno", color: "grey" },
   partially_refunded: { label: "Vráceno částečně", color: "orange" },
+};
+
+/**
+ * Fáze zakázkové výroby v češtině, s barvou. Syrový klíč (`specification_pending`)
+ * se nikdy nezobrazuje. Stejné popisky jako widget na detailu objednávky
+ * (`admin/widgets/made-to-order-order.tsx`) — ať badge ve frontě a stav na
+ * detailu mluví stejně. Neznámý klíč se vypíše tak, jak přišel (šedě), ať se
+ * nová fáze neztratí potichu.
+ */
+export const productionStageMeta: Record<
+  string,
+  { label: string; color: "blue" | "orange" | "green" | "red" | "grey" }
+> = {
+  specification_pending: { label: "Čeká na upřesnění", color: "orange" },
+  confirmed: { label: "Domluveno", color: "blue" },
+  in_production: { label: "Ve výrobě", color: "orange" },
+  awaiting_balance: { label: "Čeká na doplatek", color: "orange" },
+  ready_to_ship: { label: "Plně zaplaceno", color: "green" },
+  completed: { label: "Dokončeno", color: "green" },
+  cancelled: { label: "Zrušeno", color: "grey" },
 };
 
 /** One page of a queue. 50 keeps a page scannable without endless scrolling. */
@@ -477,10 +499,19 @@ export const OrderRow = ({
           {order.shipping_method || "Doprava není zvolena"}
         </Text>
         {order.is_made_to_order && (
-          <Badge color="purple" className="mt-2">
-            Zakázková výroba
-            {order.production_stage ? ` · ${order.production_stage}` : ""}
-          </Badge>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge color="purple">Zakázková výroba</Badge>
+            {order.production_stage && (
+              <Badge
+                color={
+                  productionStageMeta[order.production_stage]?.color ?? "grey"
+                }
+              >
+                {productionStageMeta[order.production_stage]?.label ??
+                  order.production_stage}
+              </Badge>
+            )}
+          </div>
         )}
       </div>
 
@@ -540,21 +571,47 @@ export const OrderRow = ({
         <Text size="large" weight="plus" className="mt-1">
           {formatAmount(order.total, order.currency_code)}
         </Text>
-        <div className="mt-1">
-          {order.payment_status ? (
-            <Badge
-              size="2xsmall"
-              color={paymentStatusMeta[order.payment_status]?.color ?? "grey"}
-            >
-              {paymentStatusMeta[order.payment_status]?.label ??
-                order.payment_status}
+        {/*
+          U zakázky se platí zálohou, takže „Celkem" je plná cena, ale reálně
+          došla jen záloha. Nativní stav platby přitom může hlásit „Zaplaceno"
+          (kolekce zálohy je plně zachycená) — to by u plné částky klamalo. Když
+          tedy došlo míň, než je celek, ukážeme vlastní stav „Zaplaceno zčásti"
+          a kolik zbývá; jinak necháme nativní stav beze změny.
+        */}
+        {order.is_made_to_order &&
+        order.paid_total !== null &&
+        order.paid_total > 0.005 &&
+        order.paid_total < Number(order.total) - 0.005 ? (
+          <div className="mt-1">
+            <Badge size="2xsmall" color="orange">
+              Zaplaceno zčásti
             </Badge>
-          ) : (
-            <Text size="xsmall" className="text-ui-fg-muted">
-              Stav platby neznámý
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              {formatAmount(order.paid_total, order.currency_code)} z{" "}
+              {formatAmount(order.total, order.currency_code)} · zbývá{" "}
+              {formatAmount(
+                Number(order.total) - order.paid_total,
+                order.currency_code
+              )}
             </Text>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="mt-1">
+            {order.payment_status ? (
+              <Badge
+                size="2xsmall"
+                color={paymentStatusMeta[order.payment_status]?.color ?? "grey"}
+              >
+                {paymentStatusMeta[order.payment_status]?.label ??
+                  order.payment_status}
+              </Badge>
+            ) : (
+              <Text size="xsmall" className="text-ui-fg-muted">
+                Stav platby neznámý
+              </Text>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">

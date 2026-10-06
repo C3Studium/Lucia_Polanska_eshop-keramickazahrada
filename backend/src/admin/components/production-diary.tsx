@@ -30,67 +30,47 @@ type DiaryNote = {
   id: string;
   text: string | null;
   image_url: string | null;
+  /** Fotky zprávy. Jedno odeslání = jeden řádek s polem fotek. */
+  images?: string[] | null;
   visible_to_customer: boolean;
   /** „customer" = napsal zákazník, jinak ateliér (její zápisy a fotky). */
   author?: "customer" | "atelier";
   created_at: string;
-  /** Jedno odeslání = jeden batch. Řádky se stejným batch_id = jedna zpráva. */
-  batch_id?: string | null;
 };
 
-/** Jedna zpráva ve vlákně — text + všechny fotky z jednoho odeslání. */
+/** Jedna zpráva ve vlákně — text + všechny její fotky. */
 type DiaryMessage = {
   key: string;
   author?: "customer" | "atelier";
   created_at: string;
   text: string | null;
   photos: string[];
-  /** Id všech řádků batche — „Smazat" smaže celou zprávu. */
+  /** Id řádku — „Smazat" smaže zprávu. */
   ids: string[];
-  /** Jediný zápis (bez batche) — nese přepínač viditelnosti u ateliéru. */
+  /** Samotný zápis — nese přepínač viditelnosti u ateliéru. */
   single?: DiaryNote;
 };
 
 /**
- * Slepí řádky deníku do zpráv podle `batch_id`: víc fotek odeslaných naráz =
- * JEDNA zpráva (text + mřížka fotek), ne N samostatných. Zápisy bez batch_id
- * (jednotlivé poznámky ateliéru) zůstávají samostatné.
+ * Každý řádek deníku je JEDNA zpráva: text + jeho fotky (`images`, u starých
+ * řádků `image_url`). Žádné slepování přes `batch_id` — zpráva je atomická už
+ * v DB, takže se vlákno nemůže rozpadnout na N bublin.
  */
-const groupDiaryNotes = (notes: DiaryNote[]): DiaryMessage[] => {
-  const out: DiaryMessage[] = [];
-  const byBatch = new Map<string, DiaryMessage>();
-  for (const note of notes) {
-    if (note.batch_id) {
-      let group = byBatch.get(note.batch_id);
-      if (!group) {
-        group = {
-          key: note.batch_id,
-          author: note.author,
-          created_at: note.created_at,
-          text: note.text?.trim() ? note.text : null,
-          photos: [],
-          ids: [],
-        };
-        byBatch.set(note.batch_id, group);
-        out.push(group);
-      }
-      group.ids.push(note.id);
-      if (note.text?.trim() && !group.text) group.text = note.text;
-      if (note.image_url) group.photos.push(note.image_url);
-    } else {
-      out.push({
-        key: note.id,
-        author: note.author,
-        created_at: note.created_at,
-        text: note.text?.trim() ? note.text : null,
-        photos: note.image_url ? [note.image_url] : [],
-        ids: [note.id],
-        single: note,
-      });
-    }
-  }
-  return out;
-};
+const toDiaryMessages = (notes: DiaryNote[]): DiaryMessage[] =>
+  notes.map((note) => ({
+    key: note.id,
+    author: note.author,
+    created_at: note.created_at,
+    text: note.text?.trim() ? note.text : null,
+    photos:
+      note.images && note.images.length
+        ? note.images
+        : note.image_url
+          ? [note.image_url]
+          : [],
+    ids: [note.id],
+    single: note,
+  }));
 
 export const ProductionDiary = ({
   orderId,
@@ -298,7 +278,7 @@ export const ProductionDiary = ({
             </Text>
           )}
 
-          {groupDiaryNotes(data?.notes ?? []).map((msg) => {
+          {toDiaryMessages(data?.notes ?? []).map((msg) => {
             const fromCustomer = msg.author === "customer";
             return (
               <div

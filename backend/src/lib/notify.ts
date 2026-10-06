@@ -31,6 +31,7 @@
 
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { getMerchantSettings } from "./merchant-settings"
 
 /** D7: technical failures go to the developer, business events to the owner. */
 export type MerchantNotificationAudience = "owner" | "dev"
@@ -95,10 +96,32 @@ export const resolveAllRecipients = (addresses: {
     )
   )
 
-const configuredAddresses = () => ({
-  dev: process.env.DEV_NOTIFICATION_EMAIL,
-  owner: process.env.OWNER_NOTIFICATION_EMAIL,
-})
+/**
+ * Efektivní adresy pro oznámení: nastavení z administrace (merchant-settings)
+ * MÁ PŘEDNOST, prázdné spadne na env (`OWNER/DEV_NOTIFICATION_EMAIL`), aby se
+ * nic nerozbilo, než klientka adresy v adminu vyplní. Nastavení se čte přes
+ * container; bez něj (test, chybí DB) spadne čtení do catch a jedou jen env
+ * adresy. D7 routing beze změny — jen zdroj adresy je teď nastavitelný.
+ * `getMerchantSettings` nevtahuje `lib/constants` (žádný assert DATABASE_URL),
+ * takže statický import je bezpečný i pro testy oznámení.
+ */
+export const getNotificationAddresses = async (
+  container: MedusaContainer
+): Promise<{ dev?: string | null; owner?: string | null }> => {
+  let ownerSetting = ""
+  let devSetting = ""
+  try {
+    const settings = await getMerchantSettings(container)
+    ownerSetting = (settings.owner_notification_email ?? "").trim()
+    devSetting = (settings.dev_notification_email ?? "").trim()
+  } catch {
+    // Bez nastavení (např. test bez DB) jedou jen env adresy.
+  }
+  return {
+    dev: devSetting || process.env.DEV_NOTIFICATION_EMAIL,
+    owner: ownerSetting || process.env.OWNER_NOTIFICATION_EMAIL,
+  }
+}
 
 /**
  * Builds the feed notification exactly as the bell expects it. Exported so the
@@ -163,7 +186,10 @@ export const notifyMerchant = async (
   let email: MerchantNotificationOutcome["email"] = "not-requested"
 
   if (input.urgent || input.email) {
-    const recipient = resolveRecipient(input.audience, configuredAddresses())
+    const recipient = resolveRecipient(
+      input.audience,
+      await getNotificationAddresses(container)
+    )
 
     if (recipient) {
       payloads.push(buildEmailNotification(input, recipient))

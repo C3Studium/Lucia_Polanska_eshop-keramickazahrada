@@ -1,5 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { notifyMerchant } from "../lib/notify"
@@ -122,9 +123,14 @@ export default async function reconcileBalancePayments(
     {} as never
   )) as any[]
 
+  // Gate jen na otevřený stav + existující relaci. DŘÍV tu bylo i
+  // `&& request.provider_transaction_id`, jenže self-service / e-mailové
+  // doplatky ho neměly nastavený → úloha je přeskakovala a zaplacený doplatek
+  // „zmizel". Stav čteme z relace (`session.data`) níž, transId k tomu není
+  // potřeba — stejně jako sesterská úloha u checkoutu gatuje jen na relaci.
   const open = requests.filter(
     (request) =>
-      OPEN_STATUSES.includes(request.status) && request.provider_transaction_id
+      OPEN_STATUSES.includes(request.status) && request.payment_session_id
   )
 
   if (!open.length) {
@@ -157,6 +163,30 @@ export default async function reconcileBalancePayments(
       const status = String(result?.status ?? "").toLowerCase()
 
       if (status === "captured" || status === "authorized") {
+        // Nativní zaúčtování: relace doplatku byla jen VYTVOŘENÁ, ne
+        // autorizovaná, takže v kolekci není žádný `Payment` k zachycení —
+        // `processPaymentWorkflow` s `captured` relaci autorizuje do platby
+        // A zachytí (táž cesta jako ověřený webhook i dohled checkoutu). Bez
+        // toho zůstane kolekce doplatku `not_paid`, i když je u brány zaplaceno.
+        // Best-effort — produkční strana (žádost/fáze/event) jede tak jako tak.
+        try {
+          await processPaymentWorkflow(container).run({
+            input: {
+              action: "captured",
+              data: {
+                session_id: request.payment_session_id,
+                amount: request.amount,
+              },
+            } as never,
+          })
+        } catch (error) {
+          logger.warn(
+            `[balance] Nativní zaúčtování doplatku ${request.id} se nepodařilo: ${
+              error instanceof Error ? error.message : "neznámá chyba"
+            }`
+          )
+        }
+
         await madeToOrder.updateProductionPaymentRequests({
           id: request.id,
           status: "paid",

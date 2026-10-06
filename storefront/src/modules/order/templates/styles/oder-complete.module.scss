@@ -293,6 +293,72 @@
   text-overflow: ellipsis;
 }
 
+/* Vedle stavu objednávky: co se s ní dá udělat — úprava, zrušení, reklamace.
+   Lead vlevo, tlačítka vpravo („na druhé straně přijato"). */
+.selfService {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(.75rem, 2vw, 1.5rem);
+  margin-top: clamp(1rem, 2.4vh, 1.75rem);
+}
+
+.selfServiceLead {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .62);
+  font: 400 clamp(.9rem, 1vw, 1.05rem)/1.4 "Sansation-Light", sans-serif;
+}
+
+.selfServiceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  margin-left: auto;
+}
+
+.selfServiceBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: .7rem 1.25rem;
+  border: 1px solid var(--olive);
+  border-radius: 999px;
+  background: var(--olive);
+  color: var(--cream-06);
+  font: 400 clamp(.85rem, .95vw, 1rem)/1 "Sansation-Regular", sans-serif;
+  letter-spacing: .01em;
+  text-decoration: none;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+
+  &:hover {
+    background: transparent;
+    color: var(--olive);
+  }
+}
+
+.selfServiceBtnGhost {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink);
+
+  &:hover {
+    border-color: var(--olive);
+    background: transparent;
+    color: var(--olive);
+  }
+}
+
+@include below-px(560px) {
+  .selfServiceActions {
+    width: 100%;
+  }
+
+  .selfServiceBtn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 .purchaseGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(22rem, 27vw, 29rem);

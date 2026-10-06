@@ -7,7 +7,7 @@ import type {
   CommissionNote,
   CommissionUpload,
 } from "@lib/util/made-to-order"
-import { groupCommissionNotes } from "@lib/util/made-to-order"
+import { toCommissionMessages } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
 
 import styles from "./style.module.scss"
@@ -226,7 +226,7 @@ export default function CommissionBrief({
           data-lenis-prevent
           data-testid="commission-thread"
         >
-          {groupCommissionNotes(entries).map((msg) => (
+          {toCommissionMessages(entries).map((msg) => (
             <li
               key={msg.key}
               className={

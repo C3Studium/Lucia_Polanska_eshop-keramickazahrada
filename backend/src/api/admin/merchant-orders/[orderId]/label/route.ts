@@ -5,6 +5,24 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { generateCpLabelWorkflow } from "../../../../../workflows/generate-cp-label"
+import { notifyMerchant } from "../../../../../lib/notify"
+
+/**
+ * Přístupy k ČP jsou KOMPLETNÍ až se všemi šesti údaji — stejná podmínka, jakou
+ * má fulfillment provider (`ceskaPostaFulfillment` hasCredentials). Dřív se tu
+ * kontroloval jen TOKEN+SECRET, takže tlačítko „Vygenerovat štítek" svítilo,
+ * i když chyběl POST_CODE / LOCATION_NUMBER — a podání pak spadlo do režimu
+ * „jen záznam" (bez štítku). Teď gate odpovídá realitě podání.
+ */
+const cpCredentialsReady = (): boolean =>
+  Boolean(
+    process.env.BALIKOVNA_API_URL &&
+      process.env.BALIKOVNA_API_TOKEN &&
+      process.env.BALIKOVNA_API_SECRET &&
+      process.env.BALIKOVNA_API_CUSTOMER_ID &&
+      process.env.BALIKOVNA_API_POST_CODE &&
+      process.env.BALIKOVNA_API_LOCATION_NUMBER
+  )
 
 /**
  * The carrier label for an order's parcel, as a downloadable PDF.
@@ -131,9 +149,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   // Trvalá kopie štítku + stav přístupů — pro widget na detailu objednávky.
-  const credentialsReady = Boolean(
-    process.env.BALIKOVNA_API_TOKEN && process.env.BALIKOVNA_API_SECRET
-  )
+  const credentialsReady = cpCredentialsReady()
   const labelUrl =
     typeof orderMeta.cp_label_url === "string" && orderMeta.cp_label_url
       ? orderMeta.cp_label_url
@@ -300,13 +316,16 @@ const labelFilenameFor = (order: any): string => {
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  if (!process.env.BALIKOVNA_API_TOKEN || !process.env.BALIKOVNA_API_SECRET) {
+  if (!cpCredentialsReady()) {
     res.status(200).json({
       available: false,
       labels: [],
       credentials_ready: false,
       reason:
-        "Štítek zatím nejde vytvořit — čekáme na přístupy k České poště (B2B účet). Jakmile budou nastavené, tlačítko začne fungovat.",
+        "Štítek zatím nejde vytvořit — chybí kompletní přístupy k České poště. " +
+        "Potřeba je BALIKOVNA_API_URL, TOKEN, SECRET, CUSTOMER_ID, POST_CODE a " +
+        "LOCATION_NUMBER (to se tahá z ČP endpointu podle CONTRACT_NUMBER). " +
+        "Jakmile budou nastavené, tlačítko začne fungovat.",
     } as LabelResponse)
     return
   }
@@ -410,12 +429,22 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
   if (!pdfBase64) {
     const recordOnly = fulfillment?.data?.mode === "manual"
+    // Konkrétní důvod od brány (když nějaký je) — např. 247 neplatná adresa
+    // v testovacím prostředí, 250 chybí e-mail, 261 velikost. Lepší než obecné
+    // „zkontrolujte přístupy".
+    const carrierError =
+      typeof fulfillment?.data?.carrier_error === "string"
+        ? (fulfillment.data.carrier_error as string)
+        : null
     res.status(200).json({
       available: false,
       labels: [],
-      credentials_ready: true,
+      credentials_ready: cpCredentialsReady(),
       reason: recordOnly
-        ? "Zásilka se podala jen jako záznam (bez napojení na ČP) — štítek nevznikl. Zkontrolujte ČP přístupy."
+        ? carrierError
+          ? `Zásilka se podala jen jako záznam — Česká pošta ji nepřijala: ${carrierError}`
+          : "Zásilka se podala jen jako záznam (bez napojení na ČP) — štítek nevznikl. " +
+            "Nejspíš chybí přístupy (BALIKOVNA_API_POST_CODE / LOCATION_NUMBER). Zkontrolujte ČP přístupy."
         : "Česká pošta zatím štítek nevrátila. Zkuste to prosím za chvíli.",
     } as LabelResponse)
     return
@@ -457,6 +486,30 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     ])
   } catch {
     // Razítko je jen pro rychlé zobrazení v GET — štítek vracíme tak jako tak.
+  }
+
+  // Štítek i majitelce do schránky (adresa z Nastavení → E-maily, jinak env),
+  // ať ho má po ruce i mimo administraci. Odkaz na PDF + podací číslo; chyba
+  // e-mailu nesmí shodit vrácení štítku. Klíč na den, ať reprint nezahltí.
+  try {
+    await notifyMerchant(req.scope, {
+      key: `mn:cp-label:${afterOrder.id}:${generatedAt.slice(0, 10)}`,
+      title: `Štítek České pošty je připravený — objednávka #${
+        afterOrder.display_id ?? ""
+      }`,
+      description: [
+        filename,
+        trackingNumber ? `podací číslo ${trackingNumber}` : null,
+        labelUrl ? `stáhnout: ${labelUrl}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      audience: "owner",
+      email: true,
+      resource: { id: afterOrder.id, type: "order" },
+    }).catch(() => undefined)
+  } catch {
+    // Upozornění je doplněk — štítek vracíme tak jako tak.
   }
 
   res.status(200).json({

@@ -5,9 +5,9 @@ import {
 } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import {
-  capturePaymentWorkflow,
   createOrderPaymentCollectionWorkflow,
   createPaymentSessionsWorkflow,
+  processPaymentWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
@@ -197,6 +197,12 @@ export const ensureBalancePaymentLink = async (
       id: (request as any).id,
       payment_session_id: (session as any)?.id ?? null,
       payment_url: paymentUrl,
+      // KLÍČOVÉ: bez `provider_transaction_id` 30min záchranná úloha doplatek
+      // přeskočí (bere jen požadavky, co ho mají — stejně jako záloha a admin
+      // „Požádat o doplatek"). Když tedy webhook nedorazí, doplatek by „zmizel".
+      // ComGate ho vrací v `session.data.transId`.
+      provider_transaction_id:
+        (session as any)?.data?.transId ?? (session as any)?.data?.id ?? null,
       create_state: "created",
       status: "pending",
     } as never)
@@ -305,28 +311,24 @@ export const reconcileOrderBalance = async (
   const now = new Date()
 
   if (status === "captured" || status === "authorized") {
-    // 1 — zaúčtovat nativní platbu (když je co), ať objednávka sedí i nativně.
-    //     Best-effort: produkční strana níž je to hlavní pro fakturu i e-mail.
+    // 1 — zaúčtovat NATIVNÍ platbu. Relace doplatku byla jen VYTVOŘENÁ, ne
+    //     autorizovaná, takže v kolekci žádný `Payment` ještě není — hledat
+    //     ho a volat `capturePaymentWorkflow` nemělo co zachytit a kolekce
+    //     zůstávala `not_paid`. `processPaymentWorkflow` s `captured` relaci
+    //     autorizuje do platby A zachytí (stejná cesta jako ověřený webhook
+    //     i dohled u checkoutu). Kolekce doplatku není navázaná na košík, tak
+    //     se nespouští dokončení košíku. Best-effort — produkční strana níž
+    //     nese fakturu i e-mail.
     try {
-      const query = container.resolve(ContainerRegistrationKeys.QUERY)
-      const { data: collections } = await query.graph({
-        entity: "payment_collection",
-        fields: [
-          "id",
-          "payments.id",
-          "payments.captured_at",
-          "payments.canceled_at",
-        ],
-        filters: { id: request.payment_collection_id },
+      await processPaymentWorkflow(container).run({
+        input: {
+          action: "captured",
+          data: {
+            session_id: request.payment_session_id,
+            amount: request.amount,
+          },
+        } as never,
       })
-      const payment = ((collections[0] as any)?.payments ?? []).find(
-        (p: any) => !p?.captured_at && !p?.canceled_at
-      )
-      if (payment?.id) {
-        await capturePaymentWorkflow(container).run({
-          input: { payment_id: payment.id },
-        })
-      }
     } catch (error) {
       logger.warn(
         `[balance] Nativní zaúčtování doplatku ${request.id} se nepodařilo: ${

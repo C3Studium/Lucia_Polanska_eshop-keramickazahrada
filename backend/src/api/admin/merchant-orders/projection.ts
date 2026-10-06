@@ -25,6 +25,12 @@ export type MerchantOrderRow = {
   customer_name: string | null
   currency_code: string
   total: number | string | null
+  /**
+   * Kolik už reálně došlo — součet `captured_amount` přes platební kolekce.
+   * U zakázky placené zálohou je to záloha (ne `total`), dokud se nedoplatí;
+   * fronta tak může ukázat „zaplaceno X, zbývá Y" místo plné částky.
+   */
+  paid_total: number | null
   item_count: number
   shipping_method: string | null
 
@@ -104,6 +110,14 @@ export const toMerchantOrderRow = (
   // only adds detail.
   const derivedReason = paymentProblemReason(order?.payment_status)
 
+  // Reálně zachycené peníze napříč kolekcemi. `captured_amount` je ve stejných
+  // (hlavních) jednotkách jako `order.total`, takže se dají rovnou porovnat.
+  const capturedTotal = (order?.payment_collections || []).reduce(
+    (sum: number, collection: any) =>
+      sum + Number(collection?.captured_amount || 0),
+    0
+  )
+
   // The same verdict the ship workflow will reach, so the UI hides the action
   // for exactly the orders the backend would reject — never one more, never one
   // fewer. Only meaningful for orders that are still on their way out.
@@ -134,6 +148,7 @@ export const toMerchantOrderRow = (
     customer_name: customerName(order),
     currency_code: String(order?.currency_code || "czk"),
     total: order?.total ?? null,
+    paid_total: order ? capturedTotal : null,
     item_count: itemCount(order),
     shipping_method: shippingMethod(order),
 

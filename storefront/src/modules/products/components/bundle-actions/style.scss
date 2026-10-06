@@ -68,100 +68,49 @@
 }
 
 .bundleInline__previews {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(90px, 1fr));
-  // vodorovná mezera mřížky → vw; živé pásmo 1111–1667 px šířky
-  gap: clamp(0.625rem, 0.9vw, 0.9375rem);
+  /*
+   * Posuvník, ne mřížka. Dřív to byla třísloupcová mřížka
+   * (`grid-template-columns: repeat(3, …)`), takže sada se 4 a víc kusy
+   * zalomila na druhý řádek — a tím POSUNULA nákupní blok i tlačítko „Přidat
+   * vše do košíku" dolů (panel je flex sloupec `.bundleInline` a
+   * `.bundleInline__purchase` se drží dole přes `margin-top: auto`, takže každý
+   * řádek náhledů navíc tlačil tlačítko níž).
+   *
+   * Flex pás s vodorovným scroll-snapem drží náhledy na JEDNOM řádku bez ohledu
+   * na počet kusů: vidět jsou vždy tři (viz šířka karty v `.bundleInline__preview`),
+   * zbytek se odsune vodorovně. Výška panelu je tím konstantní a tlačítko se
+   * nehýbe. Vzor je `.soldProducts__viewport` (Sold/style.scss) — scroll-snap,
+   * schovaná lišta, `-webkit-overflow-scrolling: touch`.
+   */
+  --preview-gap: clamp(0.625rem, 0.9vw, 0.9375rem);
+  display: flex;
+  gap: var(--preview-gap);
   // svisle → vh; živá pásma 667–1200 (nahoře) a 667–1167 (dole)
   padding: clamp(0.625rem, 1.5vh, 1.125rem) 0 clamp(1rem, 2.4vh, 1.75rem);
   border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
   border-bottom: 1px solid rgb(var(--cream-06-rgb) / .2);
 
-  /*
-   * Obě osy napsané, i když se scrolluje jen jedna. Se samotným
-   * `overflow-x: auto` dopočítá prohlížeč druhou osu z `visible` taky na
-   * `auto` — naměřeno `ovf=auto/auto` na všech sedmi viewportech, takže tenhle
-   * pruh byl i svislý scroll kontejner, aniž o to někdo požádal. Svisle přetéct
-   * nemá čím (scrollHeight = clientHeight na všech sedmi), proto `hidden`.
-   *
-   * Bez `data-lenis-prevent`, schválně: Lenis se na skutečném dotyku vůbec
-   * nekonstruuje (`lib/context/LenisContext.tsx` má early return na
-   * `(hover: none) and (pointer: coarse)`) a po opravě stopy níž nemá tenhle
-   * prvek na žádném měřeném viewportu vodorovné přetečení (scrollWidth =
-   * clientWidth), takže by kolo ani prst neměly co scrollovat. Atribut by tady
-   * jenom zastavil stránku pod prstem, který leží na náhledech — přesný opak
-   * toho, k čemu je. Kdyby sada někdy dostala sloupec užší než 290px, patří
-   * sem i on, stejně jako ho má `.soldProducts__viewport`.
-   */
+  // Jízda jen vodorovná; svisle není čím přetéct. Skok po kartách = scroll-snap.
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 
-  /*
-   * Obě stopy mění DRUH stopy mřížky, ne velikost: zahazují 90px minimum, aby
-   * se tři náhledy vešly do užšího sloupce místo aby jely vodorovně. Mřížka
-   * s minimem měří 3 × 90 + 2 × 10 = 290px; kde je nákupní sloupec užší,
-   * přeteče a `overflow-x` z ní udělá scroll, který tam nikdo nechtěl.
-   *
-   * v(xs) 320, ne v(lg) 1000. Na 320×568 je sloupec 288px široký
-   * (`.product__story` má v `below-px(560px)` padding-inline
-   * clamp(1rem, 4vw, 1.5rem), tedy na podlaze 16px), takže 290px mřížky
-   * přetékalo — naměřeno scrollWidth 290 proti clientWidth 288 a třetí náhled
-   * na [216,306] proti rodiči končícímu na 304. v(xs) je min-width 320 +
-   * portrait, takže jedním pravidlem pokrývá i to, proč tu v(lg) stálo:
-   * portrétní tablet drží v `v(lg)` desktopovou třísloupcovou mřížku a nechává
-   * na sadu 256px, tedy míň než 290px minima. Dvě stopy s toutéž deklarací by
-   * emitovaly tentýž řádek CSS dvakrát; Options/Colors/Select i
-   * Options/Sizes/Select udělaly týž krok. Naměřeno po opravě:
-   * 320 → 3 × 89.33, 390 → 3 × 112.66, 430 → 3 × 126, všude
-   * scrollWidth = clientWidth.
-   *
-   * h(sm) 900px drží landscape a živý je na tabletu: 1024×768 dává sloupec
-   * 219.66px (bez minima 3 × 66.55 + 20 = 219.66, s minimem by to bylo 290,
-   * tedy 70px ven). Telefony na šířku ho nepotřebují ani jeden — po foldu
-   * `below-with-phone(sm)` v product/style.scss je sloupec 522.55px na 568×320
-   * a 720px na 932×430, takže 290px se tam vejde tak jako tak (naměřeno
-   * 3 × 167.52 a 3 × 233.33, scrollWidth = clientWidth). phs stejně tuhle
-   * stopu nesplňuje (568 < 900) a nic mu nechybí.
-   *
-   * SVISLÝ TABLET: tři sloupce ZŮSTÁVAJÍ, jízda se nezavádí. `v(xs)` je
-   * min-width 320 + portrait, tedy nadmnožina celého tabletového pásma, takže
-   * je to hotové jedním pravidlem a další stopa sem nepatří. Přeměřeno po
-   * převážení stop v product/style.scss: 600 → 3 × 84.00, 768 → 3 × 95.98,
-   * 834 → 3 × 104.81, 1024 → 3 × 78.66; mezera všude 10px (0.9vw je na
-   * tabletu hluboko pod podlahou 0.625rem, což je správně — v úzkém sloupci
-   * se mezera zužovat nemá) a všude scrollWidth = clientWidth, tedy nic
-   * nepřetéká a `overflow-x` výše zůstává bez práce.
-   *
-   * Dotykový cíl karty: `.bundleInline__preview` je `<button>`, takže na něj
-   * sedí `min-height: 44px !important` z globals.scss r. 422. Ta podlaha je
-   * na tabletu stejně nečinná — naměřená karta je 84 × 111 px na 600 a
-   * 95.98 × 123 px na 768, protože nese čtvercový náhled přes celou šířku.
-   *
-   * Co se na tabletu NEVEJDE a schválně se s tím nic nedělá: název v kartě.
-   * `strong` má `white-space: nowrap` + `text-overflow: ellipsis` a na 768
-   * mu zbývá 68.94–72.11px (karta 95.98 minus pořadové číslo 15.88–19.08
-   * a mezera 8), zatímco nejkratší ze tří názvů („Dekorativní tyčky
-   * a zápichy") měří 187.03px inkoustu — dvě ze tří karet proto vysadí
-   * shodné „Keramic…". Ořez ale NENÍ tabletová regrese, je to stav všech
-   * úzkých sloupců: 1220×660 dává kartu 81.17px a 1024×768 jen 66.55px, tedy
-   * míň než tablet. Nepomáhá ani ta největší obrazovka — na 2552×1351 je
-   * karta 156.75px, jenže nad 1921 zvětšuje ramp v témž poměru i písmo
-   * názvu, takže se podíl ořezu nemění. Jediný viewport v celé matici, kde se
-   * název vešel celý, byl starý 768×1024 (karta 228.84px) — a to jen proto,
-   * že tam panel dostával 707px roztaženého telefonu. Identita karty visí na
-   * náhledu a pořadovém čísle; kdyby se to mělo změnit, je to změna návrhu
-   * celého pásu náhledů, ne tabletová oprava, a musela by platit i pro noťas.
-   */
-  @include v(xs) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  @include h(sm) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  // Lišta posuvníku schovaná — pás je nízký a lišta by rušila (vzor Sold).
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
 .bundleInline__preview {
+  /*
+   * Tři náhledy na šířku: od 100 % odečti dvě mezery (mezi třemi kartami) a
+   * vyděl třemi. Čtvrtý a další kus tím nezalomí — přečuhuje do posuvníku.
+   * `--preview-gap` dědí z `.bundleInline__previews`.
+   */
+  flex: 0 0 calc((100% - 2 * var(--preview-gap)) / 3);
+  scroll-snap-align: start;
   display: grid;
   grid-template-columns: auto 1fr;
   // Typografické mezery uvnitř karty, ne pás soupeřící o výšku okna → rem.

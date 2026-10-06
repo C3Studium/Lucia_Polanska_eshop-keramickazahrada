@@ -31,6 +31,21 @@ export const retrieveOrder = async (id: string) => {
 }
 
 /**
+ * Podepsaný token pro self-service odkazy jedné objednávky (úprava / reklamace /
+ * odstoupení), aby je šlo nabídnout rovnou na potvrzovací stránce, ne jen
+ * v e-mailu. `null`, když se nepovede (třeba neexistující id) → tlačítka se
+ * prostě nevykreslí. Token ověřuje a pravidla soudí až backend stránek
+ * `/order/:id/edit` a `/order/:id/refund`.
+ */
+export const getOrderAccessToken = async (id: string): Promise<string | null> =>
+  sdk.client
+    .fetch<{ token: string }>(`/store/orders/${id}/self-service`, {
+      cache: "no-store",
+    })
+    .then(({ token }) => token ?? null)
+    .catch(() => null)
+
+/**
  * Someone's orders, or `null` when nobody is signed in.
  *
  * Not signed in is a state, not a failure. This used to go through `medusaError`, which logs the

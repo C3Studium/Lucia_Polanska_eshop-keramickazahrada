@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  Transition,
-} from "@headlessui/react"
+import { Transition } from "@headlessui/react"
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
@@ -141,14 +136,22 @@ const CartDropdown = ({
       onMouseEnter={openAndCancel}
       onMouseLeave={close}
     >
-      <Popover className={styles.popover}>
-        <PopoverButton
+      <div className={styles.popover}>
+        {/*
+          Košíková ikona je ODKAZ na /cart: klik = přejít do košíku (dřív jen
+          přepínal panel). Náhled košíku se otevírá HOVEREM — `onMouseEnter` na
+          obalu výš. Na dotyku, kde hover není, panel stejně vyskočí při přidání
+          položky (efekt `timedOpen` níž) a zavře ho křížek; ťuknutí na ikonu
+          tam rovnou vede do /cart, což je na telefonu beztak přívětivější.
+        */}
+        <LocalizedClientLink
+          href="/cart"
           className={styles.popoverButton}
-          onClick={() => setCartDropdownOpen((current) => !current)}
           aria-label={`Košík, ${totalItems} položek`}
-          aria-expanded={cartDropdownOpen}
+          data-testid="nav-cart-link"
+          onClick={close}
         >
-          <span className={styles.cartLink} data-testid="nav-cart-link">
+          <span className={styles.cartLink}>
             <Magnetic>
               <Cart  size={40}/>
               <p className={styles.cartCount}>
@@ -156,7 +159,7 @@ const CartDropdown = ({
               </p>
             </Magnetic>
           </span>
-        </PopoverButton>
+        </LocalizedClientLink>
         <Transition
           show={cartDropdownOpen}
           as={Fragment}
@@ -167,8 +170,7 @@ const CartDropdown = ({
           leaveFrom="opacity-100 translate-y-0"
           leaveTo="opacity-0 translate-y-1"
         >
-          <PopoverPanel
-            static
+          <div
             className={styles.popoverPanel}
             data-testid="nav-cart-dropdown"
           >
@@ -354,9 +356,9 @@ const CartDropdown = ({
                 </div>
               </div>
             )}
-          </PopoverPanel>
+          </div>
         </Transition>
-      </Popover>
+      </div>
     </div>
   )
 }

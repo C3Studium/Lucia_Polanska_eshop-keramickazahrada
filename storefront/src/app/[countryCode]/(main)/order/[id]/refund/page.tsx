@@ -7,7 +7,7 @@ import { Metadata } from "next"
 
 type Props = {
   params: Promise<{ id: string; countryCode: string }>
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; kind?: string }>
 }
 
 export const metadata: Metadata = {
@@ -55,7 +55,7 @@ export default async function OrderRefundPage(props: Props) {
       status="pending"
       primary={{ href: "/account/orders", label: "Moje objednávky" }}
     >
-      <RefundRequest context={context} />
+      <RefundRequest context={context} initialKind={searchParams.kind} />
       {commissionNotes && (
         <CommissionConversation orderId={params.id} notes={commissionNotes} />
       )}

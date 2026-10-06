@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getOrdersListWorkflow } from "@medusajs/medusa/core-flows"
-import { resolveAllRecipients } from "../lib/notify"
+import { getNotificationAddresses, resolveAllRecipients } from "../lib/notify"
 
 /**
  * The Monday-morning weekly summary.
@@ -57,15 +57,15 @@ export default async function sendWeeklySummary(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const notifications = container.resolve(Modules.NOTIFICATION)
 
-  const recipients = resolveAllRecipients({
-    dev: process.env.DEV_NOTIFICATION_EMAIL,
-    owner: process.env.OWNER_NOTIFICATION_EMAIL,
-  })
+  // Adresy z administrace mají přednost, prázdné spadnou na env.
+  const recipients = resolveAllRecipients(
+    await getNotificationAddresses(container)
+  )
 
   if (!recipients.length) {
     logger.warn(
-      "[digest] Týdenní souhrn se neodesílá: DEV_NOTIFICATION_EMAIL ani " +
-        "OWNER_NOTIFICATION_EMAIL nejsou nastavené."
+      "[digest] Týdenní souhrn se neodesílá: adresa pro oznámení není nastavená " +
+        "(Nastavení → E-maily, ani env OWNER/DEV_NOTIFICATION_EMAIL)."
     )
     return
   }

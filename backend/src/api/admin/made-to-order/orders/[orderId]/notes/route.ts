@@ -48,6 +48,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       id: note.id,
       text: note.text,
       image_url: note.image_url,
+      // Jeden řádek = jedna zpráva se svými fotkami (`images`). Staré řádky
+      // (jedna fotka na řádek) spadnou na `image_url`.
+      images: Array.isArray(note.images)
+        ? note.images
+        : note.image_url
+          ? [note.image_url]
+          : [],
       visible_to_customer: Boolean(note.visible_to_customer),
       // Kdo zápis napsal — ať „Konverzace se zákazníkem" čte jako chat a
       // majitelka pozná novou zprávu zákazníka od vlastní poznámky. Zákazník
@@ -55,7 +62,6 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       // (text i foto z dílny) je ateliér.
       author: note.created_by === "customer" ? "customer" : "atelier",
       created_at: note.created_at,
-      batch_id: note.batch_id ?? null,
     })),
   })
 }
@@ -91,6 +97,10 @@ export const POST = async (
   const created = (await service.createProductionNotes({
     order_id: req.params.orderId,
     text: (parsed.data.text ?? "").trim() || null,
+    // Dílna přikládá jednu fotku na zápis; i tak píšeme do `images`, ať je
+    // tvar zprávy jednotný s tím, co posílá zákazník. `image_url` necháváme
+    // kvůli zpětné čitelnosti (e-mail „nová zpráva k zakázce").
+    images: parsed.data.image_url ? [parsed.data.image_url] : null,
     image_url: parsed.data.image_url ?? null,
     visible_to_customer: parsed.data.visible_to_customer ?? false,
     created_by: req.auth_context?.actor_id ?? null,

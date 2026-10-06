@@ -30,6 +30,11 @@ type OrderCompletedTemplateProps = {
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení). */
   commissionBalance?: CommissionBalance | null
+  /**
+   * Podepsaný token pro self-service odkazy (úprava / zrušení / reklamace).
+   * `null` → tlačítka se nevykreslí (nešlo ho získat).
+   */
+  selfServiceToken?: string | null
 }
 
 const formatDate = (date: string | Date) =>
@@ -47,6 +52,7 @@ export default async function OrderCompletedTemplate({
   progressFallback = "Přijato",
   commissionNotes = null,
   commissionBalance = null,
+  selfServiceToken = null,
 }: OrderCompletedTemplateProps) {
   const money = (amount?: number | null) =>
     convertToLocale({
@@ -145,6 +151,39 @@ export default async function OrderCompletedTemplate({
             a real fulfillment timeline — until then the confirmation states only what is true. */}
 
         <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
+
+        {/* Co se dá s objednávkou ještě udělat — vedle stavu „Přijato": úprava
+            (jen než ji zabalíme), zrušení (odstoupení od smlouvy) a reklamace /
+            vrácení. Každé otevře příslušnou stránku s podepsaným tokenem; ta si
+            ho ověří a pravidla pohlídá sama (reklamace zvlášť, úprava jen včas).
+            Dřív šly tyhle stránky otevřít jen z e-mailu — teď jsou i tady. */}
+        {selfServiceToken && (
+          <section className={s.selfService} aria-label="Co s objednávkou">
+            <p className={s.selfServiceLead}>
+              Potřebujete s objednávkou něco udělat?
+            </p>
+            <div className={s.selfServiceActions}>
+              <LocalizedClientLink
+                className={s.selfServiceBtn}
+                href={`/order/${order.id}/edit?token=${selfServiceToken}`}
+              >
+                Upravit objednávku
+              </LocalizedClientLink>
+              <LocalizedClientLink
+                className={s.selfServiceBtn}
+                href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=odstoupeni`}
+              >
+                Zrušit objednávku
+              </LocalizedClientLink>
+              <LocalizedClientLink
+                className={`${s.selfServiceBtn} ${s.selfServiceBtnGhost}`}
+                href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=reklamace`}
+              >
+                Reklamace nebo vrácení
+              </LocalizedClientLink>
+            </div>
+          </section>
+        )}
 
         {/* Carrier deliveries only — Osobní odběr has no courier to inspect in front
             of and no carrier to claim against. */}

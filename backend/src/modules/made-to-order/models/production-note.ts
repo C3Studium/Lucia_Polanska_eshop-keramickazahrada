@@ -16,12 +16,18 @@ export const ProductionNote = model.define("production_note", {
   id: model.id().primaryKey(),
   order_id: model.text(),
   text: model.text().nullable(),
+  // Jedno odeslání = JEDEN řádek = jedna zpráva. Víc fotek (až 6) z jednoho
+  // odeslání jde do `images` (pole URL), ne po řádku. Dřív to bylo N řádků
+  // slepovaných přes `batch_id` — to se v praxi nezapisovalo (NULL) a vlákno
+  // se tím rozpadalo na N zpráv. Teď je zpráva atomická: jeden řádek nese text
+  // i všechny své fotky.
+  images: model.json().nullable(),
+  // Pozůstatek po jedné-fotce-na-řádek. Nové zápisy ho plní první fotkou kvůli
+  // zpětné čitelnosti; čtení bere `images`, a když chybí, spadne na `image_url`
+  // (staré řádky). `batch_id` zůstává jen aby se nemusela měnit stará migrace;
+  // nová logika ho nepoužívá.
   image_url: model.text().nullable(),
   visible_to_customer: model.boolean().default(false),
   created_by: model.text().nullable(),
-  // Jedno odeslání = jedna zpráva. Víc fotek (až 6) jde do DB po řádku (jeden
-  // image_url na řádek), ale sdílí `batch_id`, takže se ve vlákně i v deníku
-  // slepí do JEDNÉ zprávy s jedním textem a mřížkou fotek — ne N samostatných.
-  // Prázdné = samostatný zápis (např. jednotlivá poznámka ateliéru).
   batch_id: model.text().nullable(),
 })

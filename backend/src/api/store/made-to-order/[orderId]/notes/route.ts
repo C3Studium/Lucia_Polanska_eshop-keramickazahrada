@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
@@ -76,10 +75,15 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       .map((note) => ({
         id: note.id,
         text: note.text,
-        image_url: note.image_url,
+        // Jeden řádek = jedna zpráva se svými fotkami. `images` je nové pole;
+        // staré řádky (jedna fotka na řádek) spadnou na `image_url`.
+        images: Array.isArray(note.images)
+          ? note.images
+          : note.image_url
+            ? [note.image_url]
+            : [],
         author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
         created_at: note.created_at,
-        batch_id: note.batch_id ?? null,
       })),
   })
 }
@@ -98,35 +102,19 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const trimmed = (text ?? "").trim()
 
   /*
-   * One row per photo, and the text rides on the first of them. The diary is a
-   * flat list of entries by design — the admin renders it as one — so a note
-   * with three photos as one row would need the admin to learn a second shape.
+   * Jedno odeslání = JEDEN řádek: text + VŠECHNY fotky (`images`) pohromadě.
+   * Dřív to byl řádek na fotku slepovaný přes `batch_id` — to se v praxi
+   * nezapisovalo a vlákno se rozpadalo na N zpráv. `image_url` plníme první
+   * fotkou kvůli zpětné čitelnosti (staré čtečky, e-maily).
    */
-  // Jedno odeslání = jedna zpráva: všechny řádky dostanou stejný `batch_id`,
-  // takže se ve vlákně i v deníku slepí do jedné zprávy (text + mřížka fotek).
-  const batchId = randomUUID()
-  const rows =
-    image_urls.length > 0
-      ? image_urls.map((url, index) => ({
-          order_id: req.params.orderId,
-          text: index === 0 && trimmed ? trimmed : null,
-          image_url: url,
-          visible_to_customer: true,
-          created_by: CUSTOMER_AUTHOR,
-          batch_id: batchId,
-        }))
-      : [
-          {
-            order_id: req.params.orderId,
-            text: trimmed,
-            image_url: null,
-            visible_to_customer: true,
-            created_by: CUSTOMER_AUTHOR,
-            batch_id: batchId,
-          },
-        ]
-
-  const created = (await service.createProductionNotes(rows as never)) as any
+  const created = (await service.createProductionNotes({
+    order_id: req.params.orderId,
+    text: trimmed || null,
+    images: image_urls.length > 0 ? image_urls : null,
+    image_url: image_urls[0] ?? null,
+    visible_to_customer: true,
+    created_by: CUSTOMER_AUTHOR,
+  } as never)) as any
   const createdList = Array.isArray(created) ? created : [created]
 
   /*
@@ -171,10 +159,15 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       .map((note) => ({
         id: note.id,
         text: note.text,
-        image_url: note.image_url,
+        // Jeden řádek = jedna zpráva se svými fotkami. `images` je nové pole;
+        // staré řádky (jedna fotka na řádek) spadnou na `image_url`.
+        images: Array.isArray(note.images)
+          ? note.images
+          : note.image_url
+            ? [note.image_url]
+            : [],
         author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
         created_at: note.created_at,
-        batch_id: note.batch_id ?? null,
       })),
   })
 }

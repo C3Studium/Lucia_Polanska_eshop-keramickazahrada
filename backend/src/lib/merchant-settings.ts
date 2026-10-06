@@ -124,6 +124,17 @@ const KEY_SCHEMAS = {
   announcement_text: z.string().max(300),
   /** Where the announcement's button leads — mapa, událost, článek. */
   announcement_link: z.string().url().or(z.literal("")),
+  /**
+   * Kam chodí provozní e-maily OBCHODU (majitelce/klientce) — nová objednávka,
+   * zakázka, doplatek, štítek, denní souhrn. Prázdné = spadne na env
+   * `OWNER_NOTIFICATION_EMAIL`, aby se nic nerozbilo, než se nastaví v adminu.
+   */
+  owner_notification_email: z.string().email().or(z.literal("")),
+  /**
+   * Kam chodí VÝVOJÁŘSKÉ e-maily o obchodu (nezdařené e-maily, chyby dopravce,
+   * technické hlídky). Prázdné = spadne na env `DEV_NOTIFICATION_EMAIL`.
+   */
+  dev_notification_email: z.string().email().or(z.literal("")),
 } as const
 
 /** Full settings object — every key present, defaults filled in. */
@@ -145,6 +156,9 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   announcement_enabled: false,
   announcement_text: "",
   announcement_link: "",
+  /* Prázdné: dokud klientka nevyplní, berou se adresy z env (zpětně kompatibilní). */
+  owner_notification_email: "",
+  dev_notification_email: "",
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */
   company_purchase_enabled: true,

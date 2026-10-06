@@ -59,15 +59,20 @@ export default async function sendDailySummary(container: MedusaContainer) {
     return
   }
 
+  // Adresy z administrace mají přednost, prázdné spadnou na env.
   const recipients = resolveAllRecipients({
-    dev: process.env.DEV_NOTIFICATION_EMAIL,
-    owner: process.env.OWNER_NOTIFICATION_EMAIL,
+    dev:
+      (settings.dev_notification_email || "").trim() ||
+      process.env.DEV_NOTIFICATION_EMAIL,
+    owner:
+      (settings.owner_notification_email || "").trim() ||
+      process.env.OWNER_NOTIFICATION_EMAIL,
   })
 
   if (!recipients.length) {
     logger.warn(
-      "[digest] Denní souhrn se neodesílá: DEV_NOTIFICATION_EMAIL ani " +
-        "OWNER_NOTIFICATION_EMAIL nejsou nastavené."
+      "[digest] Denní souhrn se neodesílá: adresa pro oznámení není nastavená " +
+        "(Nastavení → E-maily, ani env OWNER/DEV_NOTIFICATION_EMAIL)."
     )
     return
   }
