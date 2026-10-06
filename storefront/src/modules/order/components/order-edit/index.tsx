@@ -50,6 +50,10 @@ export default function OrderEdit({
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
+  // Zabalená objednávka (K odeslání): jen výměna varianty za stejnou cenu —
+  // žádné odebírání, v nabídce jen stejně drahé varianty. Server to i tak soudí.
+  const swapOnly = Boolean(context.swap_only)
+
   const priceOf = (item: OrderEditContext["items"][number], variantId?: string) => {
     const chosen = variantId ?? item.variant_id ?? undefined
     const variant = item.variants.find((v) => v.id === chosen)
@@ -123,6 +127,13 @@ export default function OrderEdit({
   return (
     <div className={styles.box}>
       <h3 className={styles.title}>Úprava objednávky</h3>
+      {swapOnly && (
+        <p className={styles.note}>
+          Objednávka je připravená k odeslání — vyměnit jde už jen varianta
+          (třeba barva) za <strong>stejnou cenu</strong>. Větší změny vyřešíme po
+          telefonu.
+        </p>
+      )}
       {context.items.map((item) => (
         <div key={item.id} className={styles.row}>
           <div className={styles.itemInfo}>
@@ -135,41 +146,55 @@ export default function OrderEdit({
               </span>
             )}
           </div>
-          {!item.is_made_to_order && !removed.has(item.id) && (
-            <div className={styles.controls}>
-              {item.variants.length > 1 && (
-                <select
-                  className={styles.select}
-                  value={swaps[item.id] ?? item.variant_id ?? ""}
-                  onChange={(e) =>
-                    setSwaps((s) => ({ ...s, [item.id]: e.target.value }))
-                  }
-                >
-                  {item.variants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.title ?? "Varianta"}
-                      {variant.price_czk !== null &&
-                      variant.price_czk !== item.unit_price
-                        ? ` (${variant.price_czk > item.unit_price ? "+" : ""}${czk(variant.price_czk - item.unit_price)})`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <button
-                className={styles.linklike}
-                disabled={!removableLeft}
-                title={
-                  removableLeft
-                    ? undefined
-                    : "Poslední položka — úprava není zrušení objednávky."
-                }
-                onClick={() => setRemoved((r) => new Set(r).add(item.id))}
-              >
-                Odebrat
-              </button>
-            </div>
-          )}
+          {!item.is_made_to_order && !removed.has(item.id) && (() => {
+            // V swap_only nabízíme jen varianty za stejnou cenu (+ tu aktuální);
+            // jinak všechny, s rozdílem ceny v závorce.
+            const variantOptions = swapOnly
+              ? item.variants.filter(
+                  (v) =>
+                    v.price_czk === item.unit_price || v.id === item.variant_id
+                )
+              : item.variants
+            return (
+              <div className={styles.controls}>
+                {variantOptions.length > 1 && (
+                  <select
+                    className={styles.select}
+                    value={swaps[item.id] ?? item.variant_id ?? ""}
+                    onChange={(e) =>
+                      setSwaps((s) => ({ ...s, [item.id]: e.target.value }))
+                    }
+                  >
+                    {variantOptions.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.title ?? "Varianta"}
+                        {!swapOnly &&
+                        variant.price_czk !== null &&
+                        variant.price_czk !== item.unit_price
+                          ? ` (${variant.price_czk > item.unit_price ? "+" : ""}${czk(variant.price_czk - item.unit_price)})`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {/* Odebrat jen při plné editaci — u zabalené objednávky ne. */}
+                {!swapOnly && (
+                  <button
+                    className={styles.linklike}
+                    disabled={!removableLeft}
+                    title={
+                      removableLeft
+                        ? undefined
+                        : "Poslední položka — úprava není zrušení objednávky."
+                    }
+                    onClick={() => setRemoved((r) => new Set(r).add(item.id))}
+                  >
+                    Odebrat
+                  </button>
+                )}
+              </div>
+            )
+          })()}
           {removed.has(item.id) && (
             <button
               className={styles.linklike}

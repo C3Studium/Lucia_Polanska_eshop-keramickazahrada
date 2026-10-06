@@ -22,6 +22,11 @@ export type EditableItem = {
 }
 export type OrderEditContext = {
   editable: boolean
+  /**
+   * Zabalená objednávka (K odeslání): jde JEN výměna varianty za stejnou cenu —
+   * editor skryje odebírání a nabídne jen stejně drahé varianty.
+   */
+  swap_only?: boolean
   reason: string | null
   payment: "card" | "pickup" | "dobirka"
   currency_code: string

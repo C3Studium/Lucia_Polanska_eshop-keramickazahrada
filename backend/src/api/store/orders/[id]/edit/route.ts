@@ -24,10 +24,12 @@ import {
 } from "../../../../../lib/order-edit-rules"
 import { paymentUrlFromSession } from "../../../../../lib/balance-payment"
 import { notifyMerchant } from "../../../../../lib/notify"
+import {
+  editabilityMode,
+  SWAP_ONLY_NOTE,
+} from "../../../../../lib/order-edit-gate"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
-import { MERCHANT_ORDER_MODULE } from "../../../../../modules/merchant-order"
-import type MerchantOrderModuleService from "../../../../../modules/merchant-order/service"
 
 /**
  * Zákaznická editace objednávky (Matěj, 2026-08-07).
@@ -94,37 +96,12 @@ const paymentKind = (order: any): "card" | "pickup" | "dobirka" => {
   return "card"
 }
 
-const editabilityGate = async (req: AuthenticatedMedusaRequest, order: any) => {
-  // Co je zabalené, to jede: editovat jde jen v Nové/Připravujeme.
-  const merchant = req.scope.resolve<MerchantOrderModuleService>(MERCHANT_ORDER_MODULE)
-  const [state] = (await merchant.listMerchantOrderStates({ order_id: order.id } as never)) as any[]
-  const stage = state?.stage ?? "received"
-  if (!["received", "working"].includes(stage)) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Objednávka už se chystá na cestu — úpravy vyřešíme po telefonu."
-    )
-  }
-  if ((order.fulfillments ?? []).some((f: any) => !f?.canceled_at)) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Část objednávky je už vypravená — úpravy vyřešíme po telefonu."
-    )
-  }
-}
-
 export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) => {
   const order = await loadOwnOrder(req, req.params.id)
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  let editable = true
-  let reason: string | null = null
-  try {
-    await editabilityGate(req, order)
-  } catch (error) {
-    editable = false
-    reason = error instanceof Error ? error.message : null
-  }
+  const { mode, reason } = await editabilityMode(req.scope, order)
+  const editable = mode !== "none"
 
   // Varianty stejného produktu = nabídka pro „změnit barvu".
   const productIds = [...new Set((order.items ?? []).map((i: any) => i.product_id).filter(Boolean))]
@@ -165,6 +142,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 
   res.status(200).json({
     editable,
+    swap_only: mode === "swap_only",
     reason,
     payment: paymentKind(order),
     currency_code: order.currency_code,
@@ -189,7 +167,16 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
   const actions = parsed.data.actions as EditAction[]
 
   const order = await loadOwnOrder(req, req.params.id)
-  await editabilityGate(req, order)
+  const { mode, reason: gateReason } = await editabilityMode(req.scope, order)
+  if (mode === "none") {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      gateReason ?? "Objednávku teď upravit nejde."
+    )
+  }
+  if (mode === "swap_only" && actions.some((a) => a.type !== "swap")) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, SWAP_ONLY_NOTE)
+  }
 
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
   const lines = (order.items ?? []).map((item: any) => ({
@@ -273,6 +260,14 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
     const toNum = (v: unknown) =>
       Number(typeof v === "object" && v !== null ? ((v as any).value ?? (v as any).numeric_ ?? 0) : v) || 0
     const difference = Math.round((toNum(preview?.total) - toNum(order.total)) * 100) / 100
+
+    if (mode === "swap_only" && Math.abs(difference) > 0.005) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "V téhle fázi jde vyměnit jen varianta za STEJNOU cenu. S doplatkem nebo vrácením rozdílu nám prosím zavolejte."
+      )
+    }
+
     const settlement = decideSettlement(difference, paymentKind(order))
 
     if (settlement.kind === "collect") {
