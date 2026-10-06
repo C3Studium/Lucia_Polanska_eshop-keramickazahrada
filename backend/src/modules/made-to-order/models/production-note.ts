@@ -19,4 +19,9 @@ export const ProductionNote = model.define("production_note", {
   image_url: model.text().nullable(),
   visible_to_customer: model.boolean().default(false),
   created_by: model.text().nullable(),
+  // Jedno odeslání = jedna zpráva. Víc fotek (až 6) jde do DB po řádku (jeden
+  // image_url na řádek), ale sdílí `batch_id`, takže se ve vlákně i v deníku
+  // slepí do JEDNÉ zprávy s jedním textem a mřížkou fotek — ne N samostatných.
+  // Prázdné = samostatný zápis (např. jednotlivá poznámka ateliéru).
+  batch_id: model.text().nullable(),
 })

@@ -7,6 +7,7 @@ import type {
   CommissionNote,
   CommissionUpload,
 } from "@lib/util/made-to-order"
+import { groupCommissionNotes } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
 
 import styles from "./style.module.scss"
@@ -225,26 +226,31 @@ export default function CommissionBrief({
           data-lenis-prevent
           data-testid="commission-thread"
         >
-          {entries.map((entry) => (
+          {groupCommissionNotes(entries).map((msg) => (
             <li
-              key={entry.id}
+              key={msg.key}
               className={
-                entry.author === "customer" ? styles.entryMine : styles.entryAtelier
+                msg.author === "customer" ? styles.entryMine : styles.entryAtelier
               }
             >
               <span className={styles.entryWho}>
-                {entry.author === "customer" ? "Vy" : "Ateliér"}
+                {msg.author === "customer" ? "Vy" : "Ateliér"}
               </span>
-              {entry.text && <p className={styles.entryText}>{entry.text}</p>}
-              {entry.image_url && (
-                <button
-                  type="button"
-                  className={styles.entryPhoto}
-                  onClick={() => setLightbox(entry.image_url!)}
-                  aria-label="Zvětšit fotku"
-                >
-                  <Image src={entry.image_url} alt="" width={220} height={160} unoptimized />
-                </button>
+              {msg.text && <p className={styles.entryText}>{msg.text}</p>}
+              {msg.photos.length > 0 && (
+                <div className={styles.entryPhotos}>
+                  {msg.photos.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      className={styles.entryPhoto}
+                      onClick={() => setLightbox(url)}
+                      aria-label="Zvětšit fotku"
+                    >
+                      <Image src={url} alt="" width={220} height={160} unoptimized />
+                    </button>
+                  ))}
+                </div>
               )}
             </li>
           ))}

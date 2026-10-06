@@ -55,6 +55,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       // (text i foto z dílny) je ateliér.
       author: note.created_by === "customer" ? "customer" : "atelier",
       created_at: note.created_at,
+      batch_id: note.batch_id ?? null,
     })),
   })
 }

@@ -83,6 +83,57 @@ export type CommissionNote = {
   image_url?: string | null
   author: "customer" | "atelier"
   created_at: string
+  /** Jedno odeslání = jeden batch. Řádky se stejným batch_id = jedna zpráva. */
+  batch_id?: string | null
+}
+
+/** Jedna zpráva ve vlákně — text + všechny fotky z jednoho odeslání. */
+export type CommissionMessage = {
+  key: string
+  author: "customer" | "atelier"
+  created_at: string
+  text: string | null
+  photos: string[]
+}
+
+/**
+ * Slepí řádky deníku do zpráv: víc fotek odeslaných naráz (stejný `batch_id`) =
+ * JEDNA zpráva s jedním textem a mřížkou fotek, ne N samostatných. Zápisy bez
+ * batch_id (např. jednotlivá poznámka ateliéru) zůstávají samostatné. Pořadí
+ * vstupu se zachová (bere se pozice prvního řádku batche).
+ */
+export const groupCommissionNotes = (
+  notes: CommissionNote[]
+): CommissionMessage[] => {
+  const out: CommissionMessage[] = []
+  const byBatch = new Map<string, CommissionMessage>()
+  for (const note of notes) {
+    if (note.batch_id) {
+      let group = byBatch.get(note.batch_id)
+      if (!group) {
+        group = {
+          key: note.batch_id,
+          author: note.author,
+          created_at: note.created_at,
+          text: note.text?.trim() ? note.text : null,
+          photos: [],
+        }
+        byBatch.set(note.batch_id, group)
+        out.push(group)
+      }
+      if (note.text?.trim() && !group.text) group.text = note.text
+      if (note.image_url) group.photos.push(note.image_url)
+    } else {
+      out.push({
+        key: note.id,
+        author: note.author,
+        created_at: note.created_at,
+        text: note.text?.trim() ? note.text : null,
+        photos: note.image_url ? [note.image_url] : [],
+      })
+    }
+  }
+  return out
 }
 
 /** What the customer wrote and photographed, as it rides on the line item. */

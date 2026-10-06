@@ -440,6 +440,16 @@
   }
 }
 
+/* Víc fotek z jednoho odeslání = mřížka náhledů v jedné zprávě (ne N zpráv). */
+.entryPhotos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.entryPhotos .entryPhoto {
+  width: clamp(4.5rem, 8vw, 7rem);
+}
+
 /* Fotka přes celou obrazovku — klik kamkoli zavře (jako zvětšení u produktů). */
 .lightbox {
   position: fixed;

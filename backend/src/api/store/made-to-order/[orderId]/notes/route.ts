@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
@@ -78,6 +79,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         image_url: note.image_url,
         author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
         created_at: note.created_at,
+        batch_id: note.batch_id ?? null,
       })),
   })
 }
@@ -100,6 +102,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
    * flat list of entries by design — the admin renders it as one — so a note
    * with three photos as one row would need the admin to learn a second shape.
    */
+  // Jedno odeslání = jedna zpráva: všechny řádky dostanou stejný `batch_id`,
+  // takže se ve vlákně i v deníku slepí do jedné zprávy (text + mřížka fotek).
+  const batchId = randomUUID()
   const rows =
     image_urls.length > 0
       ? image_urls.map((url, index) => ({
@@ -108,6 +113,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           image_url: url,
           visible_to_customer: true,
           created_by: CUSTOMER_AUTHOR,
+          batch_id: batchId,
         }))
       : [
           {
@@ -116,6 +122,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
             image_url: null,
             visible_to_customer: true,
             created_by: CUSTOMER_AUTHOR,
+            batch_id: batchId,
           },
         ]
 
@@ -167,6 +174,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         image_url: note.image_url,
         author: note.created_by === CUSTOMER_AUTHOR ? "customer" : "atelier",
         created_at: note.created_at,
+        batch_id: note.batch_id ?? null,
       })),
   })
 }

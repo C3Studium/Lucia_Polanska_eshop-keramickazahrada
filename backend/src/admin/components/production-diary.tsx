@@ -34,6 +34,62 @@ type DiaryNote = {
   /** „customer" = napsal zákazník, jinak ateliér (její zápisy a fotky). */
   author?: "customer" | "atelier";
   created_at: string;
+  /** Jedno odeslání = jeden batch. Řádky se stejným batch_id = jedna zpráva. */
+  batch_id?: string | null;
+};
+
+/** Jedna zpráva ve vlákně — text + všechny fotky z jednoho odeslání. */
+type DiaryMessage = {
+  key: string;
+  author?: "customer" | "atelier";
+  created_at: string;
+  text: string | null;
+  photos: string[];
+  /** Id všech řádků batche — „Smazat" smaže celou zprávu. */
+  ids: string[];
+  /** Jediný zápis (bez batche) — nese přepínač viditelnosti u ateliéru. */
+  single?: DiaryNote;
+};
+
+/**
+ * Slepí řádky deníku do zpráv podle `batch_id`: víc fotek odeslaných naráz =
+ * JEDNA zpráva (text + mřížka fotek), ne N samostatných. Zápisy bez batch_id
+ * (jednotlivé poznámky ateliéru) zůstávají samostatné.
+ */
+const groupDiaryNotes = (notes: DiaryNote[]): DiaryMessage[] => {
+  const out: DiaryMessage[] = [];
+  const byBatch = new Map<string, DiaryMessage>();
+  for (const note of notes) {
+    if (note.batch_id) {
+      let group = byBatch.get(note.batch_id);
+      if (!group) {
+        group = {
+          key: note.batch_id,
+          author: note.author,
+          created_at: note.created_at,
+          text: note.text?.trim() ? note.text : null,
+          photos: [],
+          ids: [],
+        };
+        byBatch.set(note.batch_id, group);
+        out.push(group);
+      }
+      group.ids.push(note.id);
+      if (note.text?.trim() && !group.text) group.text = note.text;
+      if (note.image_url) group.photos.push(note.image_url);
+    } else {
+      out.push({
+        key: note.id,
+        author: note.author,
+        created_at: note.created_at,
+        text: note.text?.trim() ? note.text : null,
+        photos: note.image_url ? [note.image_url] : [],
+        ids: [note.id],
+        single: note,
+      });
+    }
+  }
+  return out;
 };
 
 export const ProductionDiary = ({
@@ -111,11 +167,15 @@ export const ProductionDiary = ({
     onError: () => toast.error("Změna se nepodařila."),
   });
 
-  const removeNote = useMutation({
-    mutationFn: (noteId: string) =>
-      sdk.client.fetch(`/admin/made-to-order/notes/${noteId}`, {
-        method: "DELETE",
-      }),
+  // Smaže celou zprávu — u batche (víc fotek) všechny jeho řádky naráz.
+  const removeMessage = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        await sdk.client
+          .fetch(`/admin/made-to-order/notes/${id}`, { method: "DELETE" })
+          .catch(() => undefined);
+      }
+    },
     onSuccess: async () => {
       await invalidate();
       toast.success("Zápis smazán.");
@@ -238,11 +298,11 @@ export const ProductionDiary = ({
             </Text>
           )}
 
-          {(data?.notes ?? []).map((note) => {
-            const fromCustomer = note.author === "customer";
+          {groupDiaryNotes(data?.notes ?? []).map((msg) => {
+            const fromCustomer = msg.author === "customer";
             return (
               <div
-                key={note.id}
+                key={msg.key}
                 className={
                   fromCustomer
                     ? "border-ui-border-interactive bg-ui-bg-highlight rounded-lg border p-3"
@@ -254,38 +314,44 @@ export const ProductionDiary = ({
                     {fromCustomer ? "Zákazník" : "Ateliér"}
                   </Badge>
                 </div>
-                {note.image_url && (
-                  <button
-                    type="button"
-                    className="mb-2 block w-full cursor-zoom-in overflow-hidden rounded-md"
-                    onClick={() => setLightbox(note.image_url)}
-                    title="Zvětšit fotku"
-                  >
-                    <img
-                      src={note.image_url}
-                      alt=""
-                      className="max-h-56 w-full object-cover"
-                    />
-                  </button>
+                {/* Víc fotek z jednoho odeslání = mřížka v jedné zprávě. */}
+                {msg.photos.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {msg.photos.map((url) => (
+                      <button
+                        key={url}
+                        type="button"
+                        className="h-24 w-28 cursor-zoom-in overflow-hidden rounded-md"
+                        onClick={() => setLightbox(url)}
+                        title="Zvětšit fotku"
+                      >
+                        <img
+                          src={url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
                 )}
-                {note.text && <Text size="small">{note.text}</Text>}
+                {msg.text && <Text size="small">{msg.text}</Text>}
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <Text size="xsmall" className="text-ui-fg-muted">
-                    {formatDateTime(note.created_at)}
-                    {!fromCustomer && note.visible_to_customer
+                    {formatDateTime(msg.created_at)}
+                    {!fromCustomer && msg.single?.visible_to_customer
                       ? " · zákazník vidí"
                       : ""}
                   </Text>
                   <div className="flex gap-3">
                     {/* Zprávu zákazníka vidí zákazník vždy (je jeho) — přepínač
                         viditelnosti by tu nedával smysl, zůstává jen smazání. */}
-                    {!fromCustomer && (
+                    {!fromCustomer && msg.single && (
                       <button
                         type="button"
                         className="text-ui-fg-interactive txt-small hover:underline"
-                        onClick={() => toggleVisibility.mutate(note)}
+                        onClick={() => toggleVisibility.mutate(msg.single!)}
                       >
-                        {note.visible_to_customer
+                        {msg.single.visible_to_customer
                           ? "Skrýt"
                           : "Ukázat zákazníkovi"}
                       </button>
@@ -293,7 +359,7 @@ export const ProductionDiary = ({
                     <button
                       type="button"
                       className="text-ui-fg-subtle txt-small hover:underline"
-                      onClick={() => removeNote.mutate(note.id)}
+                      onClick={() => removeMessage.mutate(msg.ids)}
                     >
                       Smazat
                     </button>
