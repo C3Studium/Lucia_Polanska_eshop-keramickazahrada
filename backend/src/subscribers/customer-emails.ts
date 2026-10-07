@@ -29,10 +29,12 @@ import type ReturnRequestModuleService from "../modules/return-request/service"
  *
  * ## What deliberately does *not* send
  *
- * „Připravujeme" for an ordinary order (§16: noise — she packs within a day and
- * the customer does not need a progress report), anything claiming delivery
- * without a real signal, and reminders of any kind (D4 — the balance flow is
- * manual, the system only ever notifies *her*).
+ * Anything claiming delivery without a real signal, and reminders of any kind
+ * (D4 — the balance flow is manual, the system only ever notifies *her*).
+ *
+ * („Připravujeme" for an ordinary order used to be on this list; it now sends
+ * when the merchant moves the order into the „working" stage — see
+ * onMerchantStageChanged.)
  */
 
 const ORDER_FIELDS = [
@@ -666,11 +668,42 @@ const onMerchantStageChanged = async ({
   event: { data },
   container,
 }: SubscriberArgs<{ order_id: string; stage: string }>) => {
-  if (data?.stage !== "shipping" || !data?.order_id) {
+  if (
+    (data?.stage !== "shipping" && data?.stage !== "working") ||
+    !data?.order_id
+  ) {
     return
   }
   const order = await loadOrder(container, data.order_id)
   if (!order) {
+    return
+  }
+
+  // „Připravujeme" — běžná skladová objednávka vstoupila do fáze „working"
+  // (merchantská fáze s popiskem „Připravujeme", zabalení před předáním).
+  // Mezikrok mezi potvrzením a „připraveno k odeslání", který u běžného zboží
+  // chyběl.
+  if (data.stage === "working") {
+    // Čistě zakázková objednávka má „začínáme" přes onSpecificationConfirmed
+    // (potvrzení zadání ji taky posune do „working"); generický „připravujeme"
+    // by u ní byl matoucí a dubloval by. Posíláme jen, je-li ve hře běžné zboží.
+    const items = (order.items || []) as any[]
+    const pureCommission =
+      items.length > 0 &&
+      items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))
+    if (pureCommission) {
+      return
+    }
+
+    await sendCustomerEmail(container, {
+      template: "order-preparing",
+      to: order.email,
+      // At-least-once: klíč na objednávku, ať návrat do „Připravujeme"
+      // (např. z „payment_problem") neposílá znovu.
+      key: `working:${order.id}`,
+      orderId: order.id,
+      data: { ...common(order) },
+    })
     return
   }
 

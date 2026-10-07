@@ -69,6 +69,7 @@ const templateLabels: Record<string, string> = {
   "surcharge-notice": "Příplatek k zakázce",
   "surcharge-confirmed": "Potvrzení příplatku",
   "commission-message": "Zpráva k zakázce",
+  "order-preparing": "Připravujeme",
   "order-ready": "Připraveno k odeslání",
   "commission-completed": "Zakázka hotová",
 };
