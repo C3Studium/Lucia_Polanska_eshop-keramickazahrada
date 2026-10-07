@@ -106,11 +106,19 @@ export const ensureBalancePaymentLink = async (
   }
 
   // 1 — a link that already exists and is still valid.
+  //
+  // Jen když sedí ČÁSTKA na aktuální nedoplatek. Bez téhle kontroly by příplatek
+  // přidaný po vygenerování odkazu nechal zákazníka zaplatit starou (nižší)
+  // sumu — doplatek by se „zaplatil", ale backend by dál chtěl zbytek. Když
+  // částka nesedí, spadneme níž a vznikne odkaz na správnou (vyšší) částku pod
+  // novým idempotency klíčem. (Reuse kolekce i admin „Požádat o doplatek"
+  // částku kontrolují taky — tahle větev byla jediná, co ne.)
   const reusable = requests.find(
     (request) =>
       request.type === "balance" &&
       ["pending", "sent"].includes(request.status) &&
-      request.payment_url
+      request.payment_url &&
+      Math.abs(toNumber(request.amount) - outstanding) <= 0.01
   )
   if (reusable) {
     return {

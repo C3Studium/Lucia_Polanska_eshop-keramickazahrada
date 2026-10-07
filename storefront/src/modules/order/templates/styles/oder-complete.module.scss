@@ -646,6 +646,14 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Doplatek u „Vaše platba" — nedrží se na plnou šířku sloupce (karta s tlačítkem
+   vypadá líp sevřená), zarovnaná vlevo pod platbou. */
+.balancePay {
+  align-self: start;
+  width: 100%;
+  max-width: 34rem;
+}
+
 .detailHeading {
   display: grid;
   grid-template-columns: 2rem 1fr;

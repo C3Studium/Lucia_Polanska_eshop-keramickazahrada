@@ -311,6 +311,18 @@ export default async function OrderCompletedTemplate({
                   </div>
                 </div>
               </article>
+
+              {/* Doplatek zakázky HNED u platby — kdo chce, doplatí zbytek
+                  rovnou odsud, nemusí čekat na e-mail. Self-service odkaz nese
+                  podepsaný token (funguje i bez přihlášení) → ComGate → zpět na
+                  tohle potvrzení, kde se platba srovná (reconcileOrderBalance).
+                  Panel se sám skryje, když není co doplácet nebo nejde o
+                  zakázku. */}
+              <BalancePayPanel
+                className={s.balancePay}
+                balance={commissionBalance}
+                variant="full"
+              />
             </section>
 
             {/* BACKEND-HOOKED: Products, quantities, prices, discounts and totals come from StoreOrder. */}
@@ -439,10 +451,9 @@ export default async function OrderCompletedTemplate({
               </div>
             </div>
 
-            {/* „Doplatit" POD Souhrnem — jen u zakázky a jen když ještě něco
-                zbývá. Rozpis (zaplaceno zálohou / zbývá) už nese Souhrn výš,
-                tady proto jen tlačítko. */}
-            <BalancePayPanel balance={commissionBalance} variant="button" />
+            {/* Doplatek je teď u „Vaše platba" v levém sloupci (viditelnější
+                než tady dole v railu). Rozpis „zaplaceno zálohou / zbývá" nese
+                Souhrn výš. */}
 
             {/* Konverzace s ateliérem — co zákazník napsal a vyfotil a místo,
                 kam dopsat další, jako POPUP pod souhrnem (jeden znovupoužitelný
