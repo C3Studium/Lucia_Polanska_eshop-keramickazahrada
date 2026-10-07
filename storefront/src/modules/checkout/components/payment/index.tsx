@@ -73,6 +73,15 @@ const Payment = ({
   })
 
   /*
+   * U ZAKÁZKY je záloha POVINNÁ a platí se PŘEDEM (ComGate) — i při osobním
+   * odběru. „Zaplatíte při vyzvednutí" i dobírka zálohu nepokryjí (platilo by se
+   * až později/na místě), proto se u zakázky nenabízejí a na zálohu zbývá jen
+   * ComGate (karta / peněženka / banka). Doplatek u odběru se vyrovná na místě,
+   * balík dál dobírkou. Osobní odběr jako DORUČENÍ zůstává — mění se jen platba.
+   */
+  const depositByCard = Boolean(productionMode?.has_made_to_order)
+
+  /*
    * "Zaplatím při vyzvednutí" exists only for Osobní odběr — the customer collects from the
    * workshop and pays there. It is not dobírka and must never be offered for a carrier
    * shipment, so it is filtered out unless collection is the chosen delivery.
@@ -85,11 +94,11 @@ const Payment = ({
           // The backend still lists a provider left over from a rename; a session on it
           // fails, so offering it only ever gives the customer a dead end.
           !isRetiredPayment(provider.id) &&
-          (hasPickupShipping || !isPickupPayment(provider.id)) &&
+          ((hasPickupShipping && !depositByCard) || !isPickupPayment(provider.id)) &&
           // Dobírka is opt-in per product, Česká pošta only, Czechia only.
-          (allowsDobirka || !isDobirkaPayment(provider.id))
+          ((allowsDobirka && !depositByCard) || !isDobirkaPayment(provider.id))
       ),
-    [availablePaymentMethods, hasPickupShipping, allowsDobirka]
+    [availablePaymentMethods, hasPickupShipping, allowsDobirka, depositByCard]
   )
 
   /*
@@ -118,11 +127,19 @@ const Payment = ({
   )
 
   // Switching away from Osobní odběr must clear a pickup payment already chosen.
+  // U zakázky stejně tak smaž už zvolený odběr/dobírku — zálohu platit nemůžou.
   useEffect(() => {
-    if (!hasPickupShipping && isPickupPayment(selectedPaymentMethod)) {
+    const blockedForDeposit =
+      depositByCard &&
+      (isPickupPayment(selectedPaymentMethod) ||
+        isDobirkaPayment(selectedPaymentMethod))
+    if (
+      (!hasPickupShipping && isPickupPayment(selectedPaymentMethod)) ||
+      blockedForDeposit
+    ) {
       setSelectedPaymentMethod("")
     }
-  }, [hasPickupShipping, selectedPaymentMethod])
+  }, [hasPickupShipping, selectedPaymentMethod, depositByCard])
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -331,9 +348,11 @@ const Payment = ({
               <div className={styles.methodIntro}>
                 <span>Jak chcete zaplatit?</span>
                 <p>
-                  {hasComgate
-                    ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
-                    : "Platit budete bezpečně až v dalším kroku."}
+                  {depositByCard
+                    ? "Zálohu u zakázky platíte předem kartou (nebo přes peněženku či banku). Při osobním odběru pak na místě doplatíte zbytek."
+                    : hasComgate
+                      ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
+                      : "Platit budete bezpečně až v dalším kroku."}
                 </p>
               </div>
               {/* One grid, not two lists. Osobní odběr's „Zaplatíte při vyzvednutí" joins

@@ -60,6 +60,22 @@ export type ShipGatePaymentCollection = {
 /** Cash on delivery: the carrier collects, so „zaplaceno" happens at the door. */
 export const DOBIRKA_PROVIDER_ID = "pp_dobirka_ceska-posta"
 
+/**
+ * „Zaplatíte při vyzvednutí" — the customer pays at the workshop, nothing up
+ * front. Like dobírka, it collects money only later, which a made-to-order
+ * deposit cannot ride on. The composite id is `pp_<service>_<registration>`;
+ * the service was renamed to `osobni-odber`, and the retired id is recognised
+ * so the same rules keep applying to a cart that still carries it.
+ */
+export const PICKUP_PAYMENT_PROVIDER_ID = "pp_osobni-odber_pickup"
+export const RETIRED_PICKUP_PAYMENT_PROVIDER_IDS = ["pp_pickup_pickup"]
+
+/** Any „pay later" payment provider — pickup-at-workshop or cash on delivery. */
+export const isPayLaterPaymentProvider = (providerId?: string | null): boolean =>
+  providerId === PICKUP_PAYMENT_PROVIDER_ID ||
+  providerId === DOBIRKA_PROVIDER_ID ||
+  (!!providerId && RETIRED_PICKUP_PAYMENT_PROVIDER_IDS.includes(providerId))
+
 export type ShipGateProductionOrder = {
   agreed_total?: unknown
   original_total?: unknown

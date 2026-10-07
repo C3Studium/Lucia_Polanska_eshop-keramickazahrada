@@ -4,8 +4,9 @@ import {
   dobirkaFeeCompletionProblem,
   isDobirkaFeeLine,
 } from "../../lib/dobirka-fee"
+import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
-import { DOBIRKA_PROVIDER_ID } from "../../lib/ship-gate"
+import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
 
 /**
  * Server-side dobírka rules, enforced where the order is born.
@@ -53,6 +54,43 @@ completeCartWorkflow.hooks.validate(
         session?.provider_id === DOBIRKA_PROVIDER_ID &&
         session?.status !== "canceled"
     )
+
+    /*
+     * Zakázková záloha je povinná a jen předem kartou.
+     *
+     * U zakázky (produkt s výrobním profilem) se platí záloha dopředu. Osobní
+     * odběr i tak jde — zbytek se doplatí při vyzvednutí — ale ZÁLOHU je nutné
+     * poslat kartou (ComGate / peněženka / banka) hned. „Zaplatíte při
+     * vyzvednutí" ani dobírka zálohu nepokryjí: obě vybírají peníze až později,
+     * takže by zakázka vznikla nezaplacená a majitelka by do ní šla naslepo.
+     *
+     * Pokladna tyhle dvě metody u zakázky vůbec nenabízí; tohle je zadní vrátka
+     * pro ručně složený požadavek. Detekce zakázky jde přes výrobní profil, ne
+     * přes `metadata.made_to_order` na řádku — ten se razí až v zálohovém toku,
+     * kterým by obcházející košík právě neprošel (viz
+     * `lib/made-to-order-detection.ts`).
+     */
+    const usesPayLater = sessions.some(
+      (session: any) =>
+        session?.status !== "canceled" &&
+        isPayLaterPaymentProvider(session?.provider_id)
+    )
+    if (usesPayLater) {
+      const productIds = [
+        ...new Set(
+          ((fullCart.items ?? []) as any[])
+            .filter((item) => !isDobirkaFeeLine(item))
+            .map((item) => item?.product_id)
+            .filter(Boolean) as string[]
+        ),
+      ]
+      if (await productsHaveMadeToOrder(container, productIds)) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "U zakázky je záloha povinná a platí se předem kartou. Osobní odběr i dobírka zálohu nepokryjí — zvolte prosím platbu kartou (u osobního odběru pak zbytek doplatíte při vyzvednutí)."
+        )
+      }
+    }
 
     /*
      * Doběrečné — the completion-time backstop. The fee line is added and
