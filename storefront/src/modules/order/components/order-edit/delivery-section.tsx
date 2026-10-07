@@ -2,6 +2,7 @@
 
 import { createPortal } from "react-dom"
 import { useEffect, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import {
   changeOrderDelivery,
   type DeliveryAddressInput,
@@ -39,11 +40,16 @@ export default function OrderDeliverySection({
   token: string
   delivery: OrderDeliveryContext
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Optimistické zrcadlo aktuálního cíle — po úspěchu ukážeme nový rovnou.
+  // Lokální stav zůstává kvůli okamžité odezvě; `router.refresh()` po úspěchu
+  // k tomu překreslí serverovou část stránky (prop `delivery` a vše kolem)
+  // z čerstvých dat a zároveň zahodí klientskou router cache, takže ani
+  // návrat Zpět na potvrzení nevytáhne starou adresu.
   const [point, setPoint] = useState<BalikovnaPoint | null>(
     delivery.pickup_point
       ? {
@@ -87,6 +93,7 @@ export default function OrderDeliverySection({
       }
       setPoint(picked)
       setResult("Doručení jsme změnili.")
+      router.refresh()
     })
 
   /* Widget hlásí výběr postMessage zprávou `pickerResult` z originu ČP —
@@ -148,6 +155,7 @@ export default function OrderDeliverySection({
       setAddress(payload)
       setFormOpen(false)
       setResult("Doručení jsme změnili.")
+      router.refresh()
     })
 
   const addressLine = (a: DeliveryAddressInput) =>

@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { sdk } from "@lib/config"
 import type { BalikovnaPoint } from "@lib/util/balikovna"
 import { getAuthHeaders } from "./cookies"
@@ -122,16 +123,46 @@ export type ChangeDeliveryInput =
   | { kind: "balikovna"; point: BalikovnaPoint }
   | { kind: "address"; address: DeliveryAddressInput }
 
+/**
+ * Stránky, které doručovací adresu objednávky vykreslují — po změně cíle se
+ * musí vykreslit znovu. Tvar cesty = cesta souboru v `app/` VČETNĚ skupiny
+ * `(main)` a slotu `@dashboard`: implicitní značka stránky, se kterou
+ * `revalidatePath(…, "page")` porovnává, se staví z `routeModule.definition.page`
+ * (viz `app-paths-manifest`: `/[countryCode]/(main)/store/page`), ne z URL.
+ * Bez skupiny by se značka neshodla a server by nezneplatnil nic.
+ */
+const ORDER_PAGE_PATHS = [
+  "/[countryCode]/(main)/order/[id]/confirmed",
+  "/[countryCode]/(main)/order/[id]/edit",
+  "/[countryCode]/(main)/account/@dashboard/orders/details/[id]",
+]
+
 export async function changeOrderDelivery(
   orderId: string,
   token: string,
   input: ChangeDeliveryInput
 ): Promise<{ ok: true; kind: string } | { error: string }> {
   try {
-    return await sdk.client.fetch<{ ok: true; kind: string }>(
+    const result = await sdk.client.fetch<{ ok: true; kind: string }>(
       `/store/orders/${orderId}/delivery`,
       { method: "POST", body: { token, ...input } }
     )
+    /*
+     * Zahodit uloženou podobu stránek objednávky, ať návrat na potvrzení
+     * (tlačítko Zpět) ukáže nový cíl.
+     *
+     * Samotné načtení objednávky (`retrieveOrder`) jde bez cache, takže server
+     * by vykreslil čerstvě — jenže klientský router Nextu si drží už jednou
+     * vykreslený RSC payload potvrzovací stránky a při zpětné navigaci ho
+     * použije beze slova, bez ohledu na `staleTimes`. Nic ho k novému dotazu
+     * nenutilo: tahle akce jen poslala POST a vrátila se. `revalidatePath`
+     * uvnitř server action nastaví `pathWasRevalidated`, odpověď akce pak nese
+     * znovu vykreslený strom a klient kvůli tomu celou router cache zahodí
+     * (server-action-reducer: „server actions have to invalidate the entire
+     * cache"). Zpět → chybí uzel → stránka se stáhne znovu.
+     */
+    for (const path of ORDER_PAGE_PATHS) revalidatePath(path, "page")
+    return result
   } catch (error: any) {
     return { error: error?.message ?? "Doručení se nepodařilo změnit." }
   }
