@@ -4,6 +4,7 @@ import {
   createWorkflow,
   StepResponse,
   transform,
+  when,
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk"
 import {
@@ -41,6 +42,9 @@ type PaymentCalculation = {
   payment_amount: number
   currency_code: string
   production_lines: ProductionLineSnapshot[]
+  /** The cart's existing payment collection, if any — reused instead of recreated. */
+  existing_payment_collection_id: string | null
+  existing_payment_collection_metadata: Record<string, unknown> | null
 }
 
 const toNumber = (value: unknown): number => {
@@ -91,6 +95,10 @@ const calculateMadeToOrderPaymentStep = createStep(
         // aby sleva padla celá na doplatek, ne na zálohu (přání majitelky).
         "items.subtotal",
         "items.metadata",
+        // Existující platební kolekce košíku — ať ji při druhém pokusu o platbu
+        // znovu použijeme, ne abychom zakládali druhou (core flow by hodil chybu).
+        "payment_collection.id",
+        "payment_collection.metadata",
       ],
       filters: { id: cart_id },
     })
@@ -282,12 +290,19 @@ const calculateMadeToOrderPaymentStep = createStep(
       )
     }
 
+    const existingCollection = (cart as any).payment_collection as
+      | { id?: string; metadata?: Record<string, unknown> | null }
+      | null
+      | undefined
+
     return new StepResponse<PaymentCalculation>({
       is_made_to_order: productionLines.length > 0,
       original_total: originalTotal,
       payment_amount: paymentAmount,
       currency_code: String(cart.currency_code || "czk").toLowerCase(),
       production_lines: productionLines,
+      existing_payment_collection_id: existingCollection?.id ?? null,
+      existing_payment_collection_metadata: existingCollection?.metadata ?? null,
     })
   }
 )
@@ -299,18 +314,43 @@ export const prepareMadeToOrderPaymentWorkflow = createWorkflow(
     acquireLockStep({ key: lockKey, timeout: 10, ttl: 60 })
 
     const calculation = calculateMadeToOrderPaymentStep(input)
-    const paymentCollection = createPaymentCollectionForCartWorkflow.runAsStep({
-      input: { cart_id: input.cart_id },
-    })
+
+    // Kolekci zakládej JEN když košík ještě žádnou nemá. `createPaymentCollection
+    // ForCartWorkflow` jinak hodí „Cart already has a payment collection" při
+    // druhém pokusu o platbu na témž košíku (opakovaný checkout, přepnutá
+    // doprava/platba). Existující se použije a jen přepíše částka + metadata —
+    // workflow je tak idempotentní.
+    const createdCollection = when(
+      "create-mto-payment-collection",
+      { calculation },
+      ({ calculation }) => !calculation.existing_payment_collection_id
+    ).then(() =>
+      createPaymentCollectionForCartWorkflow.runAsStep({
+        input: { cart_id: input.cart_id },
+      })
+    )
+
+    const collection = transform(
+      { calculation, createdCollection },
+      ({ calculation, createdCollection }) => ({
+        id:
+          calculation.existing_payment_collection_id ||
+          (createdCollection as any)?.id,
+        metadata:
+          calculation.existing_payment_collection_metadata ||
+          (createdCollection as any)?.metadata ||
+          {},
+      })
+    )
 
     const updateInput = transform(
-      { calculation, paymentCollection },
-      ({ calculation, paymentCollection }) => ({
-        selector: { id: paymentCollection.id },
+      { calculation, collection },
+      ({ calculation, collection }) => ({
+        selector: { id: collection.id },
         update: {
           amount: calculation.payment_amount,
           metadata: {
-            ...(paymentCollection.metadata || {}),
+            ...(collection.metadata || {}),
             made_to_order: calculation.is_made_to_order,
             original_cart_total: calculation.original_total,
             checkout_payment_amount: calculation.payment_amount,
@@ -324,10 +364,10 @@ export const prepareMadeToOrderPaymentWorkflow = createWorkflow(
 
     return new WorkflowResponse(
       transform(
-        { calculation, paymentCollection },
-        ({ calculation, paymentCollection }) => ({
+        { calculation, collection },
+        ({ calculation, collection }) => ({
           ...calculation,
-          payment_collection_id: paymentCollection.id,
+          payment_collection_id: collection.id,
         })
       )
     )
