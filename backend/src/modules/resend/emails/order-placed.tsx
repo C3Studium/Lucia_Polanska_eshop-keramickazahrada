@@ -88,6 +88,17 @@ function OrderPlacedEmailComponent({
   const isPickup = (order.shipping_methods ?? []).some(
     (method) => (method?.data as Record<string, unknown> | null)?.personal_pickup === true
   )
+  // Výdejna (Balíkovna): doručovací adresa je VÝDEJNA, ne domácí adresa
+  // zákazníka. Bere se z metadat (point zapisuje jen tam), ať e-mail neukazuje
+  // adresu zákazníka domů u zásilky, co míří na výdejnu.
+  const meta = (order as { metadata?: Record<string, unknown> | null }).metadata
+  const balikovnaName =
+    typeof meta?.balikovna_point_name === "string" ? meta.balikovna_point_name : ""
+  const balikovnaAddress =
+    typeof meta?.balikovna_point_address === "string" ? meta.balikovna_point_address : ""
+  const pickupPoint = balikovnaName
+    ? [balikovnaName, balikovnaAddress].filter(Boolean).join(", ")
+    : ""
   const address = order.shipping_address
   const addressNode = address ? (
     <>
@@ -231,11 +242,13 @@ function OrderPlacedEmailComponent({
       {/* Doručení a platba — the two answers every confirmation gets asked
           for: kam to přijde a jak se to platí. Rows render only from real
           data; nothing here is guessed. */}
-      {(payment_method || isPickup || addressNode) && (
+      {(payment_method || isPickup || pickupPoint || addressNode) && (
         <Section style={{ margin: "32px 0 0" }}>
           <Eyebrow index="04">Doručení a platba</Eyebrow>
           {isPickup ? (
             <LedgerRow label="Doručení" value="Osobní odběr v ateliéru" />
+          ) : pickupPoint ? (
+            <LedgerRow label="Výdejní místo" value={`Balíkovna — ${pickupPoint}`} />
           ) : addressNode ? (
             <LedgerRow label="Doručovací adresa" value={addressNode} />
           ) : null}

@@ -21,6 +21,9 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
         "currency_code",
         "total",
         "items.*",
+        // Výdejna (Balíkovna) žije v metadatech — e-mail ji čte odsud, ať
+        // „Doručovací adresa" neukazuje domácí adresu u zásilky na výdejnu.
+        "metadata",
         "shipping_address.*",
         "billing_address.*",
         "shipping_methods.*",
