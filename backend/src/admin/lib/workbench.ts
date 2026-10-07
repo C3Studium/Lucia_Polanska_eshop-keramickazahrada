@@ -40,10 +40,10 @@ export const stageLabels: Record<string, string> = {
  */
 export const productionStageLabels: Record<string, string> = {
   specification_pending: "Čeká na potvrzení zadání",
-  confirmed: "Potvrzeno",
+  confirmed: "Zadání potvrzeno",
   in_production: "Ve výrobě",
-  awaiting_balance: "Čeká na doplatek",
-  ready_to_ship: "Připraveno k odeslání",
+  awaiting_balance: "Hotová — čeká na doplatek",
+  ready_to_ship: "Hotová a zaplacená",
   completed: "Dokončeno",
   cancelled: "Zrušeno",
 };

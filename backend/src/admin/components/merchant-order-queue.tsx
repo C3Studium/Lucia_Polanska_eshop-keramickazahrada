@@ -178,10 +178,10 @@ export const productionStageMeta: Record<
   { label: string; color: "blue" | "orange" | "green" | "red" | "grey" }
 > = {
   specification_pending: { label: "Čeká na potvrzení zadání", color: "orange" },
-  confirmed: { label: "Domluveno", color: "blue" },
+  confirmed: { label: "Zadání potvrzeno", color: "blue" },
   in_production: { label: "Ve výrobě", color: "orange" },
-  awaiting_balance: { label: "Čeká na doplatek", color: "orange" },
-  ready_to_ship: { label: "Plně zaplaceno", color: "green" },
+  awaiting_balance: { label: "Hotová — čeká na doplatek", color: "orange" },
+  ready_to_ship: { label: "Hotová a zaplacená", color: "green" },
   completed: { label: "Dokončeno", color: "green" },
   cancelled: { label: "Zrušeno", color: "grey" },
 };
