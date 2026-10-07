@@ -154,12 +154,15 @@
   font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
 }
 
+/* Výdejní místo stávalo stěsnané v úzkém levém sloupci Doručení. Teď je to
+   plnošířková sekce pod řádkem Doručení/Platba (přímý potomek `.recap`, takže
+   drží celou šířku souhrnu) a odděluje ji TÝŽ horní předěl jako `.recapColumns`
+   a `.totalRow` — žádný nový vzhled, jen linka + padding na stejné ose. */
 .pickupPoint {
   display: grid;
-  margin: clamp(.65rem, 1.11vh, .95rem) 0 0;
-  padding: clamp(.65rem, 1.11vh, .95rem) .875rem;
-  border: 1px solid var(--review-rule);
-  border-radius: .625rem;
+  margin: 0;
+  padding-top: clamp(.9rem, 1.8vh, 1.5rem);
+  border-top: 1px solid var(--review-rule);
   color: var(--review-ink);
   font: 400 clamp(.9375rem, 1.25vw, 1.22rem)/1.45 "Sansation-Regular", sans-serif;
   gap: .25rem;

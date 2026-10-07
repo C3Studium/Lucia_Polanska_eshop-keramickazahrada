@@ -87,3 +87,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Editovatelná varianta čísla. Skládá se s `.value`, takže výšku, svislé
+   oddělovače, písmo i barvu dědí a vypadá jako prostý text — jen jde přepsat.
+   Zapíná ji prop `editable` (dnes jen panel košíku); stránka košíku dál
+   vykresluje `<output>` a nic z tohohle se jí netýká. */
+.valueInput {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  /* Svislé čáry kolem čísla kreslí `.value` přes border-left/right — ty musí
+     zůstat, takže se ruší jen vlastní vodorovné orámování inputu, ne všechny
+     strany (border: 0 by čáry smazal taky). */
+  border-top: 0;
+  border-bottom: 0;
+  text-align: center;
+  background: transparent;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+

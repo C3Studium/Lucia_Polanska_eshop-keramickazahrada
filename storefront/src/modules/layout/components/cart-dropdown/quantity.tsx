@@ -71,6 +71,7 @@ const CartDropdownQuantity = ({
         max={strop}
         disabled={updating}
         onChange={zmenit}
+        editable
         decreaseLabel={
           item.quantity <= 1 ? "Odebrat z košíku" : "Snížit množství"
         }

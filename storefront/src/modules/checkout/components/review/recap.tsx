@@ -61,14 +61,6 @@ export default function OrderRecap({ cart }: { cart: any }) {
               {money(shippingMethod.total ?? shippingMethod.amount)}
             </p>
           )}
-          {/* The pickup point is the single detail most often lost between checkout and the
-              confirmation; showing it here is the customer's last chance to catch a wrong one. */}
-          {pickupPoint && (
-            <p className={styles.pickupPoint}>
-              <span>Výdejní místo</span>
-              {pickupPoint}
-            </p>
-          )}
         </section>
 
         <section className={styles.recapBlock} aria-labelledby="recap-total">
@@ -113,6 +105,17 @@ export default function OrderRecap({ cart }: { cart: any }) {
           )}
         </section>
       </div>
+
+      {/* The pickup point is the single detail most often lost between checkout and the
+          confirmation; showing it here is the customer's last chance to catch a wrong one.
+          Full-width section pod řádkem Doručení/Platba, oddělená stejnou horní linkou jako
+          ostatní sekce souhrnu — ne stěsnaná v úzkém levém sloupci Doručení. */}
+      {pickupPoint && (
+        <p className={styles.pickupPoint}>
+          <span>Výdejní místo</span>
+          {pickupPoint}
+        </p>
+      )}
     </div>
   )
 }
