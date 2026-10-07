@@ -11,6 +11,7 @@ import {
   cancelGuestOrderEdit,
   submitGuestOrderEdit,
 } from "@lib/data/guest-order-edit"
+import OrderDeliverySection from "./delivery-section"
 import styles from "./style.module.scss"
 
 /**
@@ -88,6 +89,27 @@ export default function OrderEdit({
   const removableLeft =
     context.items.filter((i) => !removed.has(i.id)).length > 1
 
+  /*
+   * Změna cíle doručení je vlastní sekce vedle editace položek a vykresluje se
+   * nezávisle na tom, jestli je editor položek rozbalený. Jede přes podepsaný
+   * token (hostovský endpoint `/delivery`), takže jen v tokenové cestě z e-mailu
+   * — v přihlášené cestě (účet, bez tokenu) by POST neměl čím ověřit. Nabízí se
+   * jen u dopravy, kde má změna smysl: Balíkovna (výdejna) a pošta domů (adresa).
+   */
+  const deliveryMethod = context.delivery?.method
+  const deliveryNode =
+    token &&
+    context.editable &&
+    context.delivery &&
+    (deliveryMethod === "balikovna" || deliveryMethod === "home") ? (
+      <OrderDeliverySection
+        orderId={orderId}
+        token={token}
+        delivery={context.delivery}
+      />
+    ) : null
+
+  const editorNode = (() => {
   if (context.pending_change) {
     return (
       <div className={styles.box}>
@@ -261,5 +283,13 @@ export default function OrderEdit({
         </button>
       </div>
     </div>
+  )
+  })()
+
+  return (
+    <>
+      {deliveryNode}
+      {editorNode}
+    </>
   )
 }

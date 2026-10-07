@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import type { BalikovnaPoint } from "@lib/util/balikovna"
 import { getAuthHeaders } from "./cookies"
 
 /**
@@ -95,5 +96,43 @@ export async function cancelOrderEdit(orderId: string): Promise<void> {
     })
   } catch {
     // rušení je best-effort
+  }
+}
+
+/**
+ * Změna DORUČENÍ (cíle) z hostovského odkazu — nová výdejna Balíkovny
+ * (`balikovna`) nebo nová adresa „pošta domů" (`address`). Mění jen cíl v rámci
+ * už zvolené dopravy, ne samotnou dopravu. Autorizace = podepsaný token z odkazu
+ * (jako `submitGuestOrderEdit`), takže se posílá BEZ auth hlaviček a token jde
+ * v těle. Soudcem je backend (`POST /store/orders/:id/delivery`); tady jen
+ * posíláme a vracíme výsledek, nebo `{ error }` s jeho hláškou.
+ */
+export type DeliveryAddressInput = {
+  first_name: string
+  last_name: string
+  address_1: string
+  address_2: string
+  city: string
+  postal_code: string
+  country_code: string
+  phone: string
+}
+
+export type ChangeDeliveryInput =
+  | { kind: "balikovna"; point: BalikovnaPoint }
+  | { kind: "address"; address: DeliveryAddressInput }
+
+export async function changeOrderDelivery(
+  orderId: string,
+  token: string,
+  input: ChangeDeliveryInput
+): Promise<{ ok: true; kind: string } | { error: string }> {
+  try {
+    return await sdk.client.fetch<{ ok: true; kind: string }>(
+      `/store/orders/${orderId}/delivery`,
+      { method: "POST", body: { token, ...input } }
+    )
+  } catch (error: any) {
+    return { error: error?.message ?? "Doručení se nepodařilo změnit." }
   }
 }
