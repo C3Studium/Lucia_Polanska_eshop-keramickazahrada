@@ -24,6 +24,7 @@ import {
 } from "../../../../../lib/order-edit-rules"
 import { paymentUrlFromSession } from "../../../../../lib/balance-payment"
 import { notifyMerchant } from "../../../../../lib/notify"
+import { deliveryContext } from "../../../../../lib/order-delivery-context"
 import {
   editabilityMode,
   SWAP_ONLY_NOTE,
@@ -72,6 +73,8 @@ const loadOwnOrder = async (req: AuthenticatedMedusaRequest, orderId: string) =>
       "metadata",
       "items.id", "items.title", "items.quantity", "items.variant_id",
       "items.product_id", "items.unit_price", "items.metadata",
+      "shipping_address.*",
+      "shipping_methods.name",
       "shipping_methods.shipping_option.provider_id",
       "payment_collections.payments.provider_id",
       "payment_collections.payments.captured_at",
@@ -142,6 +145,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 
   res.status(200).json({
     editable,
+    delivery: deliveryContext(order),
     swap_only: mode === "swap_only",
     reason,
     payment: paymentKind(order),

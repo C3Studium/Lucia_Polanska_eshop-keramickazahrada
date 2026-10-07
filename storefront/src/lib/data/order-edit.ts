@@ -20,8 +20,27 @@ export type EditableItem = {
   is_made_to_order: boolean
   variants: EditVariant[]
 }
+export type OrderDeliveryContext = {
+  /** `balikovna` → změna výdejny widgetem; `home` → změna adresy popupem;
+   *  `pickup`/`other` → doručení se needituje. */
+  method: "balikovna" | "home" | "pickup" | "other"
+  shipping_address: {
+    first_name: string
+    last_name: string
+    address_1: string
+    address_2: string
+    city: string
+    postal_code: string
+    country_code: string
+    phone: string
+  } | null
+  pickup_point: { id: string; zip: string; name: string; address: string } | null
+}
+
 export type OrderEditContext = {
   editable: boolean
+  /** Aktuální doručení — z čeho frontend pozná, co a jak nabídnout změnit. */
+  delivery?: OrderDeliveryContext
   /**
    * Zabalená objednávka (K odeslání): jde JEN výměna varianty za stejnou cenu —
    * editor skryje odebírání a nabídne jen stejně drahé varianty.

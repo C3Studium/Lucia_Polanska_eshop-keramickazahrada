@@ -23,6 +23,7 @@ import {
   type EditAction,
 } from "../../../../../lib/order-edit-rules"
 import { verifyOrderAccessToken } from "../../../../../lib/order-access-link"
+import { deliveryContext } from "../../../../../lib/order-delivery-context"
 import { paymentUrlFromSession } from "../../../../../lib/balance-payment"
 import { notifyMerchant } from "../../../../../lib/notify"
 import {
@@ -85,6 +86,8 @@ const loadOrderByToken = async (
       "metadata",
       "items.id", "items.title", "items.quantity", "items.variant_id",
       "items.product_id", "items.unit_price", "items.metadata",
+      "shipping_address.*",
+      "shipping_methods.name",
       "shipping_methods.shipping_option.provider_id",
       "payment_collections.payments.provider_id",
       "payment_collections.payments.captured_at",
@@ -155,6 +158,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.status(200).json({
     editable,
+    delivery: deliveryContext(order),
     // Zabalená objednávka: jen výměna varianty za stejnou cenu (editor zúží UI).
     swap_only: mode === "swap_only",
     reason,
