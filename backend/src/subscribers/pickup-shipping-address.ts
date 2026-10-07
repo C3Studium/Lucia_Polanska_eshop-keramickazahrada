@@ -1,6 +1,8 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
+import { balikovnaShippingAddress } from "../lib/balikovna-shipping-address"
+
 /**
  * U Balíkovny je doručovací adresa VÝDEJNA, ne domácí adresa zákazníka.
  *
@@ -89,18 +91,16 @@ export default async function applyPickupShippingAddress({
     const update: Record<string, any> = {
       id: orderId,
       // Výdejna jako doručovací adresa; jméno + telefon zůstávají (příjemce na
-      // štítku). company ZÁMĚRNĚ prázdná — jinak ČP vezme firmu místo jména.
-      shipping_address: {
-        first_name: home.first_name ?? "",
-        last_name: home.last_name ?? "",
-        phone: home.phone ?? "",
-        company: "",
-        address_1: "Balíkovna",
-        address_2: [name, pointAddress].filter(Boolean).join(", "),
-        city: name,
-        postal_code: zip,
-        country_code: country,
-      },
+      // štítku). Sdílené s endpointem pro změnu výdejny v úpravě objednávky.
+      shipping_address: balikovnaShippingAddress(
+        { zip, name, address: pointAddress },
+        {
+          first_name: home.first_name,
+          last_name: home.last_name,
+          phone: home.phone,
+          country_code: country,
+        }
+      ),
       metadata: { ...metadata, pickup_address_applied: true },
     }
 

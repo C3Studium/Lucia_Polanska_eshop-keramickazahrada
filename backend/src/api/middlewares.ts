@@ -553,6 +553,18 @@ export default defineMiddlewares({
         }),
       ],
     },
+    // Změna doručení (adresa / výdejna) v úpravě objednávky — podepsaný token,
+    // takže i host bez přihlášení. Handler token ověří sám; stejný vzor jako
+    // guest-edit (jinak by default /store/orders autorizace hosta odmítla).
+    {
+      matcher: "/store/orders/:id/delivery",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
     {
       matcher: "/store/orders/:id/guest-refund",
       methods: ["GET", "POST"],
