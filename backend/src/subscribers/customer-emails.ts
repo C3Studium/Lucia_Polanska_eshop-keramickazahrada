@@ -339,7 +339,11 @@ const onShipmentCreated = async ({
   await sendCustomerEmail(container, {
     template: "order-shipment",
     to: order.email,
-    key: `ship:${fulfillment.id}`,
+    // Klíč na OBJEDNÁVKU (ne fulfillment) — sdílený s „Označit jako odeslané"
+    // (onMerchantStageChanged fáze shipped), ať zákazník nedostane „odesláno"
+    // dvakrát, když se objednávka označí za odeslanou A zároveň vznikne nativní
+    // zásilka.
+    key: `ship:${order.id}`,
     orderId: order.id,
     data: {
       ...common(order),
@@ -669,7 +673,9 @@ const onMerchantStageChanged = async ({
   container,
 }: SubscriberArgs<{ order_id: string; stage: string }>) => {
   if (
-    (data?.stage !== "shipping" && data?.stage !== "working") ||
+    (data?.stage !== "shipping" &&
+      data?.stage !== "working" &&
+      data?.stage !== "shipped") ||
     !data?.order_id
   ) {
     return
@@ -703,6 +709,35 @@ const onMerchantStageChanged = async ({
       key: `working:${order.id}`,
       orderId: order.id,
       data: { ...common(order) },
+    })
+    return
+  }
+
+  // „Označit jako odeslané" (fáze → shipped) = e-mail „odesláno" zákazníkovi.
+  // „Odesláno" je teď lehká akce (jen stav + e-mail, bez Medusa zásilky/štítku),
+  // takže e-mail visí na změně fáze, ne na shipment.created. Osobní odběr
+  // přeskakujeme — ten má vlastní tok (připraveno k vyzvednutí / máte u sebe).
+  // Dedupe klíč `ship:${order.id}` je SDÍLENÝ s onShipmentCreated, takže pozdní
+  // nativní zásilka nepošle „odesláno" podruhé.
+  if (data.stage === "shipped") {
+    if (isPickupOrder(order)) {
+      return
+    }
+    const tracking =
+      typeof (order.metadata as any)?.cp_label_tracking === "string"
+        ? ((order.metadata as any).cp_label_tracking as string)
+        : ""
+    await sendCustomerEmail(container, {
+      template: "order-shipment",
+      to: order.email,
+      key: `ship:${order.id}`,
+      orderId: order.id,
+      data: {
+        ...common(order),
+        carrierName: (order.shipping_methods || [])[0]?.name ?? "",
+        trackingNumber: tracking,
+        trackingLink: "",
+      },
     })
     return
   }

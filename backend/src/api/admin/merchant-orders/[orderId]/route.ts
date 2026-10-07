@@ -5,11 +5,11 @@ import { MERCHANT_ORDER_MODULE } from "../../../../modules/merchant-order"
 import MerchantOrderModuleService from "../../../../modules/merchant-order/service"
 import { isMerchantOrderStage } from "../../../../modules/merchant-order/stages"
 import type { MerchantOrderStage } from "../../../../modules/merchant-order/stages"
-import { notifyMerchant } from "../../../../lib/notify"
 import { completePersonalPickupWorkflow } from "../../../../workflows/complete-personal-pickup"
 import { confirmMerchantHandoverWorkflow } from "../../../../workflows/confirm-merchant-handover"
-import { shipMerchantOrderWorkflow } from "../../../../workflows/ship-merchant-order"
 import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
+import { evaluateShipGate } from "../../../../lib/ship-gate"
+import { loadShipGateInput } from "../../../../lib/require-ship-gate"
 import { toMerchantOrderRow } from "../projection"
 
 const ORDER_FIELDS = [
@@ -128,42 +128,25 @@ export const PATCH = async (
     return
   }
 
-  // "Odesláno" is not a label change — it is the moment goods leave. It therefore runs
-  // the native fulfilment and shipment workflows, and only records the merchant stage
-  // once Medusa has accepted both.
+  // „Označit jako odeslané" = JEN stav + e-mail zákazníkovi (přání majitelky
+  // 7. 10. 2026). Štítek (ČP podání) i případná Medusa zásilka jsou samostatné
+  // akce — tohle objednávku NEfulfilluje ani negeneruje štítek, jen ji posune
+  // na „Odesláno". E-mail „odesláno" pošle subscriber na změnu fáze.
+  //
+  // Pojistka A2 ale zůstává: nezaplacenou zásilku (zakázka s nedoplaceným
+  // doplatkem) takhle označit nejde — jinak by šlo odeslat neuhrazené zboží.
   if (req.body.stage === "shipped") {
-    try {
-      const { result } = await shipMerchantOrderWorkflow(req.scope).run({
-        input: { order_id: req.params.orderId, created_by: changedBy },
-      })
-      res.status(200).json({ merchant_order_state: result })
-      return
-    } catch (error) {
-      // Notification #10. A failed dispatch is the one failure that looks like
-      // success from across the workshop: the parcel is packed and the order
-      // looks handled, but nothing left. The stage is deliberately unchanged,
-      // so the order stays in K odeslání and can simply be retried.
-      //
-      // Keyed by the hour so a customer who clicks repeatedly gets one alert
-      // per hour rather than one per click, while a failure that persists into
-      // the next hour is reported again.
-      const hourKey = new Date().toISOString().slice(0, 13)
-      const message =
-        error instanceof Error ? error.message : "Neznámá chyba."
-
-      await notifyMerchant(req.scope, {
-        key: `mn:shipfail:${req.params.orderId}:${hourKey}`,
-        title: "Zásilku se nepodařilo vytvořit",
-        description: `${message} Objednávka zůstává v kroku K odeslání a můžete to zkusit znovu.`,
-        audience: "dev",
-        urgent: true,
-        resource: { id: req.params.orderId, type: "order" },
-      }).catch(() => {
-        // Never let a notification problem replace the real error below.
-      })
-
-      throw error
+    const gateInput = await loadShipGateInput(req.scope, req.params.orderId)
+    const verdict = gateInput
+      ? evaluateShipGate(gateInput)
+      : { allowed: true, reason: null }
+    if (!verdict.allowed) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        verdict.reason || "Objednávku zatím nelze označit za odeslanou."
+      )
     }
+    // Projde dál na obecný přechod fáze (transitionMerchantOrderWorkflow níž).
   }
 
   const { result } = await transitionMerchantOrderWorkflow(req.scope).run({
