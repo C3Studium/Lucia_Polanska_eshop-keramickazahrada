@@ -386,14 +386,49 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
+  // Testovací generování (?test=1): dočasně nasadíme zkušební výdejnu (zip
+  // 10000), kterou ČP TEST prostředí zná — reálnou výdejnu z widgetu test
+  // odmítá (247 INVALID_ADDRESS). Slouží k ověření celého toku štítku (PDF,
+  // e-mail, uložení) na testovacím účtu. Razítko hned zase smažeme, ať na
+  // objednávce nezůstane a nepřepíše reálnou výdejnu.
+  const isTest =
+    String(req.query.test ?? "") === "1" || req.query.test === "true"
+  const orderModule = req.scope.resolve(Modules.ORDER) as any
+
+  if (isTest) {
+    await orderModule.updateOrders([
+      {
+        id: req.params.orderId,
+        metadata: { ...(order.metadata ?? {}), cp_test_zip: "10000" },
+      },
+    ])
+  }
+
   // Podání u ČP (vznikne štítek) bez odeslání. Brána i razítko dobírky jsou
   // uvnitř workflow — případné „nezaplaceno" vyhodí srozumitelnou hlášku sem.
-  await generateCpLabelWorkflow(req.scope).run({
-    input: {
-      order_id: req.params.orderId,
-      created_by: (req as any).auth_context?.actor_id ?? null,
-    },
-  })
+  try {
+    await generateCpLabelWorkflow(req.scope).run({
+      input: {
+        order_id: req.params.orderId,
+        created_by: (req as any).auth_context?.actor_id ?? null,
+      },
+    })
+  } finally {
+    if (isTest) {
+      // Smaž cp_test_zip, ZACHOVEJ zbytek (workflow mezitím razítkuje
+      // cp_dobirka/cp_email) — proto čteme čerstvá metadata.
+      const { data: fresh } = await query.graph({
+        entity: "order",
+        fields: ["id", "metadata"],
+        filters: { id: req.params.orderId },
+      })
+      const freshMeta = { ...(((fresh[0] as any)?.metadata ?? {}) as Record<string, unknown>) }
+      delete freshMeta.cp_test_zip
+      await orderModule
+        .updateOrders([{ id: req.params.orderId, metadata: freshMeta }])
+        .catch(() => undefined)
+    }
+  }
 
   // Po podání načteme štítek z fulfillmentu (base64 od ČP).
   const { data: afterOrders } = await query.graph({

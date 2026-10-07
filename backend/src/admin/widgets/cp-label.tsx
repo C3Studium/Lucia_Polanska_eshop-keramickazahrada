@@ -93,15 +93,20 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
     enabled: isCeskaPosta && !isPersonalPickup,
   });
 
-  const generate = useMutation<LabelResponse>({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/merchant-orders/${order.id}/label`, {
-        method: "POST",
-      }),
-    onSuccess: async (result) => {
+  const generate = useMutation<LabelResponse, Error, boolean>({
+    mutationFn: (test: boolean) =>
+      sdk.client.fetch(
+        `/admin/merchant-orders/${order.id}/label${test ? "?test=1" : ""}`,
+        { method: "POST" }
+      ),
+    onSuccess: async (result, test) => {
       await queryClient.invalidateQueries({ queryKey: ["cp-label", order.id] });
       if (result.available) {
-        toast.success("Štítek byl vygenerován a uložen u objednávky");
+        toast.success(
+          test
+            ? "Testovací štítek vygenerován (zkušební výdejna) — zkontrolujte PDF a e-mail"
+            : "Štítek byl vygenerován a uložen u objednávky"
+        );
       } else {
         toast.info(result.reason ?? "Štítek se zatím nepodařilo vytvořit");
       }
@@ -242,16 +247,33 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
                     {data?.reason ??
                       "Zatím bez štítku. Podáním u České pošty vznikne štítek i číslo zásilky."}
                   </Text>
-                  <div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="small"
                       variant="primary"
-                      isLoading={generate.isPending}
-                      onClick={() => generate.mutate()}
+                      isLoading={generate.isPending && generate.variables !== true}
+                      disabled={generate.isPending}
+                      onClick={() => generate.mutate(false)}
                     >
                       Vygenerovat štítek pro Českou poštu
                     </Button>
+                    <Button
+                      size="small"
+                      variant="secondary"
+                      isLoading={generate.isPending && generate.variables === true}
+                      disabled={generate.isPending}
+                      onClick={() => generate.mutate(true)}
+                    >
+                      Testovací generování
+                    </Button>
                   </div>
+                  <Text size="xsmall" className="text-ui-fg-muted">
+                    Testovací generování použije zkušební výdejnu, kterou ČP
+                    testovací prostředí zná (reálnou výdejnu z widgetu test odmítá
+                    přes chybu 247). Slouží jen k ověření, jak štítek vypadá, že
+                    dorazí e-mailem a jak se uloží — reálnou výdejnu objednávky
+                    nemění.
+                  </Text>
                 </div>
               )
             )}

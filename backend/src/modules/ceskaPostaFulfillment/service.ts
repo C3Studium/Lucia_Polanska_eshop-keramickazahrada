@@ -33,6 +33,16 @@ import {
 export const vydejnaZMetadat = (
   metadata: Record<string, unknown> | null | undefined
 ): VydejnaBalikovny | null => {
+  // Testovací generování štítku: zkušební výdejna, kterou ČP TEST prostředí ZNÁ
+  // (reálné výdejny z widgetu test odmítá přes 247 INVALID_ADDRESS). Slouží jen
+  // k ověření celého toku štítku (PDF, e-mail, uložení) na testovacím účtu.
+  // Klíč `cp_test_zip` razítkuje a hned maže label routa — na objednávce
+  // natrvalo nezůstává, reálnou výdejnu nepřepisuje.
+  const testZip = String((metadata as any)?.cp_test_zip ?? "").trim()
+  if (testZip) {
+    return { zip: testZip, name: "Testovací výdejna (zkušební)" }
+  }
+
   const zip = String((metadata as any)?.balikovna_point_zip ?? "").trim()
   if (!zip) return null
   return { zip, name: String((metadata as any)?.balikovna_point_name ?? "").trim() }
