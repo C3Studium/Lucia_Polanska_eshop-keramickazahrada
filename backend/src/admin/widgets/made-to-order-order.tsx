@@ -79,7 +79,7 @@ const stageMeta: Record<
   ProductionStage,
   { label: string; color: "blue" | "orange" | "green" | "red" | "grey" }
 > = {
-  specification_pending: { label: "Čeká na upřesnění", color: "orange" },
+  specification_pending: { label: "Čeká na potvrzení zadání", color: "orange" },
   confirmed: { label: "Domluveno", color: "blue" },
   in_production: { label: "Ve výrobě", color: "orange" },
   awaiting_balance: { label: "Čeká na doplatek", color: "orange" },

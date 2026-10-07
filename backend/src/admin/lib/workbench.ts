@@ -39,7 +39,7 @@ export const stageLabels: Record<string, string> = {
  * statistics ended up printing `specification_pending: 3` in English.
  */
 export const productionStageLabels: Record<string, string> = {
-  specification_pending: "Čeká na zadání",
+  specification_pending: "Čeká na potvrzení zadání",
   confirmed: "Potvrzeno",
   in_production: "Ve výrobě",
   awaiting_balance: "Čeká na doplatek",
