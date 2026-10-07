@@ -17,6 +17,8 @@ interface ReturnRejectedEmailProps {
   customerName?: string;
   orderNumber?: string;
   returnNumber?: string;
+  /** „reklamace" | „vraceni" | „odstoupeni". */
+  kind?: string | null;
   rejectedItems?: string;
   rejectionReason?: string;
   appealInstructions?: string;
@@ -29,30 +31,42 @@ interface ReturnRejectedEmailProps {
 /**
  * Číslo vrácení a seznam objektů se vykreslí jen s reálnými daty — vymyšlená
  * výchozí hodnota by v ostrém e-mailu tvrdila, že se zamítá něco jiného.
+ *
+ * Zamítnutí reklamace musí být písemně odůvodněno (§19/3 ZOS) a spotřebitel
+ * má právo na mimosoudní řešení sporu u ČOI — obě věty jsou tu natvrdo, ať na
+ * ně žádný volající nezapomene.
  */
 function ReturnRejectedEmailComponent({
   customerName,
   orderNumber = "",
   returnNumber,
+  kind,
   rejectedItems,
   rejectionReason,
-  appealInstructions = "Ozvat se nám můžete do 14 dní od obdržení tohoto e-mailu",
+  appealInstructions = "Ozvat se nám můžete kdykoli — rádi to s vámi probereme",
   orderLink = "",
   supportEmail = CONTACT_EMAIL,
   protocolUrl,
 }: ReturnRejectedEmailProps) {
+  const isClaim = kind === "reklamace"
+  const eyebrow = isClaim ? "Reklamace" : "Vrácení"
+  const h1 = isClaim ? "Reklamaci" : "Vrácení"
+  const intro = isClaim
+    ? "vaši reklamaci jsme pečlivě posoudili. Je nám líto, ale tentokrát ji nemůžeme uznat — odůvodnění uvádíme níže."
+    : "vaši žádost o vrácení jsme pečlivě posoudili. Je nám líto, ale tentokrát jí nemůžeme vyhovět — důvod uvádíme níže."
   return (
     <EmailLayout
-      preview={`Žádosti o vrácení k objednávce ${orderNumber} bohužel nemůžeme vyhovět.`}
+      preview={
+        isClaim
+          ? `Reklamaci k objednávce ${orderNumber} bohužel nemůžeme uznat.`
+          : `Žádosti o vrácení k objednávce ${orderNumber} bohužel nemůžeme vyhovět.`
+      }
     >
-      <Eyebrow>Vrácení</Eyebrow>
-      <EmailH1 accent="nemůžeme přijmout.">Vrácení</EmailH1>
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <EmailH1 accent="nemůžeme přijmout.">{h1}</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        vaši žádost o vrácení jsme pečlivě posoudili. Je nám líto, ale
-        tentokrát jí nemůžeme vyhovět — důvod uvádíme níže.
-      </P>
+      <P>{intro}</P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
@@ -91,8 +105,9 @@ function ReturnRejectedEmailComponent({
       ) : null}
 
       <P small>
-        {appealInstructions}. Připomínáme, že vrácené objekty přijímáme
-        nepoužité a v původním stavu, do 30 dnů od doručení.
+        {appealInstructions}. Nesouhlasíte-li s vyřízením, máte právo obrátit
+        se na Českou obchodní inspekci (www.coi.cz) jako subjekt mimosoudního
+        řešení spotřebitelských sporů, případně na soud.
       </P>
       <Signature />
     </EmailLayout>
@@ -107,10 +122,9 @@ export const ReturnRejectedEmail = (props: ReturnRejectedEmailProps) => (
 const mockReturnRejected: ReturnRejectedEmailProps = {
   customerName: "Jan Novák",
   orderNumber: "#12345",
-  returnNumber: "RTN12345",
+  kind: "reklamace",
   rejectedItems: "Keramický hrnek — modrý",
-  rejectionReason: "Objekt nese stopy používání",
-  appealInstructions: "Ozvat se nám můžete do 14 dní od obdržení tohoto e-mailu",
+  rejectionReason: "Objekt nese stopy mechanického poškození, nejde o vadu výrobku",
   orderLink: "https://keramickazahrada.cz/orders/12345",
   supportEmail: CONTACT_EMAIL,
 }

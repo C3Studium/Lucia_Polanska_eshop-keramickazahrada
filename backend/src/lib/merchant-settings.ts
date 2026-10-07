@@ -135,6 +135,17 @@ const KEY_SCHEMAS = {
    * technické hlídky). Prázdné = spadne na env `DEV_NOTIFICATION_EMAIL`.
    */
   dev_notification_email: z.string().email().or(z.literal("")),
+  /**
+   * Adresa, kam zákazník posílá zboží zpět (reklamace, vrácení, odstoupení).
+   * Víceřádkový text; jde do e-mailu „schváleno" i na stránku stavu žádosti.
+   * Nahrazuje tři natvrdo zapsané „Putim 229" (docs/reklamace-a-zruseni.md §5).
+   */
+  return_address: z.string().max(500),
+  /**
+   * Pokyny k vrácení („zabalte pečlivě, přiložte číslo objednávky"). Volitelné;
+   * prázdné = e-mail i stránka pokyny vynechají.
+   */
+  return_instructions: z.string().max(1000),
 } as const
 
 /** Full settings object — every key present, defaults filled in. */
@@ -159,6 +170,9 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Prázdné: dokud klientka nevyplní, berou se adresy z env (zpětně kompatibilní). */
   owner_notification_email: "",
   dev_notification_email: "",
+  /* Dnešní adresa ateliéru — stejná, jaká byla natvrdo v e-mailech. */
+  return_address: "Keramická zahrada\nPutim 229\n397 01 Písek",
+  return_instructions: "",
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */
   company_purchase_enabled: true,

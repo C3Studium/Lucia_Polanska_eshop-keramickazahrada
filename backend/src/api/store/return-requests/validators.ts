@@ -6,6 +6,8 @@ export const PostStoreCreateReturnRequest = z.object({
   email: z.string().trim().email(),
   /** Typovaný druh — ať se podle něj dá v adminu filtrovat a počítat lhůta. */
   kind: z.enum(["reklamace", "vraceni", "odstoupeni"]).optional(),
+  /** Jen reklamace (§19/1 ZOS): co zákazník požaduje. Server ho u reklamace vyžaduje. */
+  requested_resolution: z.enum(["repair", "replace", "refund"]).optional(),
   reason: z.string().trim().min(1).max(2000),
   /** Free text — which pieces are coming back, in the customer's own words. */
   items: z.string().trim().max(2000).optional(),

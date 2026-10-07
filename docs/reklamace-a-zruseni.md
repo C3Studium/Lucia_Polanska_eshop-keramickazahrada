@@ -1,0 +1,133 @@
+# Reklamace a zrušení objednávky — jednotný modul (kontrakt)
+
+Datum: 7. 10. 2026. Nahrazuje roztříštěný stav (tab „Vrácení" v Přehledu + widget +
+tři nespojené akce). Zásada č. 1: **peníze se nikdy nevrací automaticky.** Každý
+případ jde cestou *žádost → protokol → rozhodnutí majitelky → (zboží zpět) →
+refundace → dobropis → potvrzení o vyřízení.*
+
+## 1. Zákonný rámec, který modul vynucuje
+
+| Co | Pravidlo | Kde v modulu |
+|---|---|---|
+| Odstoupení (zrušení) spotřebitelem | 14 dnů od převzetí, bez důvodu (§1829 OZ) | `can_withdraw` + `withdrawal_deadline` ze serveru |
+| Výjimka zakázka | zboží na míru — bez práva odstoupit (§1837 d) | server odmítne `odstoupeni`/`vraceni` u čisté zakázky; majitelka může přesto schválit ručně založenou žádost (dobrá vůle) |
+| Potvrzení přijetí odstoupení | textově bez odkladu | e-mail `refund-request` |
+| Vrácení peněz | do 14 dnů, **smí počkat na zboží zpět** (§1832/4) | refundace u `odstoupeni`/`vraceni` jen ve stavu `received` (nebo s vědomým `skip_goods_check`) |
+| Krácení za opotřebení | §1833 | částečná refundace (částka = rozhodnutí majitelky) |
+| Reklamace — protokol při uplatnění | §19/1 ZOS: datum, co, požadovaný způsob, kontakt | PDF při intake, `requested_resolution` povinné u reklamace |
+| Reklamace — vyřízení | do 30 dnů, vyrozumět; zamítnutí písemně odůvodnit (§19/3 ZOS) | `resolve_by` 30 d, job hlídá; `decision_note` povinný u zamítnutí; e-mail + protokol s vyřízením |
+| Způsob vyřízení reklamace | oprava / výměna / sleva / odstoupení (§2169–2172) | `resolution` ∈ repair, replace, discount, refund |
+| Domněnka vady 12 měsíců, 2 roky | §2161/5, §2165 | jen informace (bez gatingu) |
+| Dobropis | opravný doklad při refundaci | `issueCreditNoteForOrder` (plná) / upozornění (částečná) — existuje |
+
+## 2. Datový model — `return_request` (modul `return-request`)
+
+Stávající pole zůstávají. **Nové / změněné** (migrace + úprava CHECK constraintu na `status`):
+
+| Pole | Typ | Význam |
+|---|---|---|
+| `status` | enum | `pending` → `approved` → `received` → `resolved` \| `rejected` \| `cancelled` (viz §3) |
+| `requested_resolution` | text null | co ŽÁDÁ zákazník (jen reklamace): `repair` \| `replace` \| `refund` |
+| `resolution` | text null | co ROZHODLA majitelka při schválení: reklamace `repair` \| `replace` \| `discount` \| `refund`; odstoupení/vrácení vždy `refund` |
+| `goods_received_at` | dateTime null | zboží dorazilo zpět / přijato k opravě |
+| `goods_tracking` | text null | číslo zásilky, kterou zákazník poslal zpět (volitelné, zadává zákazník) |
+| `resolved_at` | dateTime null | vyřízeno |
+| `resolution_note` | text null | text do „potvrzení o vyřízení" |
+| `refunds` | json null | pole `{ amount, method: "comgate"\|"manual", at, note? }` — umožňuje částečné a opakované vrácení |
+| `refund_amount` | number null | **součet** `refunds` (zůstává kvůli zpětné kompatibilitě) |
+| `refunded_at` | dateTime null | poslední refundace |
+| `withdrawal_deadline` | dateTime null | snapshot lhůty 14 dnů v okamžiku žádosti (u `odstoupeni`/`vraceni`) |
+
+`kind` zůstává `reklamace` \| `vraceni` \| `odstoupeni`. („Zrušení objednávky" ze storefrontu = `odstoupeni`.)
+
+Číslo protokolu: `REK|VRA|ODS-<rok>-<display_id>`; druhá a další žádost na téže objednávce v roce dostane příponu `-2`, `-3` (žádné přepisy PDF).
+
+## 3. Stavy a přechody
+
+```
+pending ──approve──▶ approved ──received──▶ received ──refund(do 0)/resolve──▶ resolved
+   │                    │                                                  
+   │                    └──resolve (oprava/výměna bez peněz, nebo nic se nevrací)──▶ resolved
+   └──reject (note povinný)──▶ rejected
+(kterýkoli nefinální) ──cancel (note)──▶ cancelled
+```
+Finální: `resolved`, `rejected`, `cancelled`. Z finálního se nikam nejde.
+
+**Pravidla refundace (jádro):**
+- povoleno jen ve stavu `approved` nebo `received`;
+- u `odstoupeni`/`vraceni` jen ve stavu `received`, pokud tělo nemá `skip_goods_check: true` (majitelka vědomě — např. zboží nikdy neodešlo); důvod se zapíše do `refunds[].note`;
+- u `reklamace` povoleno ve stavu `approved` jen když `resolution ∈ {refund, discount}`, jinak až `received`;
+- částka: výchozí = zbývá (zachyceno − dosud vráceno přes modul i `refund_history`), lze zadat nižší; nikdy přes zbývá; částečné a opakované povoleno;
+- když zbývá == 0 nebo tělo `mark_resolved: true` → stav `resolved` + e-mail „potvrzení o vyřízení";
+- **jediný** e-mail zákazníkovi za refundaci (potlačit duplicitní `payment-refunded` pro refundace z modulu).
+
+**Zrušení objednávky (jen u `odstoupeni`/`vraceni`):** akce `cancel-order` je dostupná **až** když je žádost `resolved` **nebo** na objednávce nezbývá nic zachyceného. Teprve pak `cancelOrderWorkflow` (jeho vlastní refundace je díky tomu no-op) + merchantská fáze `cancelled` + uvolnění skladu. Při selhání nativního zrušení (např. doručená zásilka) alespoň fáze `cancelled` + poznámka.
+
+**Pojistka proti skryté refundaci:** `POST /admin/orders/:id/cancel` (nativní) i „Zrušit zakázku" odmítnou zrušení, dokud má objednávka zachyceno − vráceno > 0, s hláškou „Vrácení peněz vyřiďte v Reklamace a zrušení, pak objednávku zrušte." UI u zakázky přestane tvrdit, že se refundace „nestane sama".
+
+## 4. API
+
+### Store (zákazník, podepsaný token `verifyOrderAccessToken`, middleware `allowUnauthenticated` jako `guest-edit`)
+- `GET /store/orders/:id/claims?token=` →
+  ```json
+  { "can_withdraw": bool, "withdrawal_deadline": iso|null, "withdraw_block_reason": string|null,
+    "return_address": string, "return_instructions": string|null,
+    "all_made_to_order": bool,
+    "requests": [{ "id","kind","status","created_at","resolve_by","requested_resolution","resolution",
+                   "protocol_url","refund_amount","refunds":[...],"goods_received_at","goods_tracking",
+                   "resolved_at","decision_note" (jen u rejected),"reason" }] }
+  ```
+  `can_withdraw` = není čistá zakázka ∧ (ještě neodesláno ∨ dnes ≤ withdrawal_deadline) ∧ žádná otevřená žádost. Lhůta = `max(fulfillments.shipped_at)` + 14 d; bez odeslání = bez lhůty (lze odstoupit).
+- `POST /store/orders/:id/claims` tělo `{ token, kind, reason, requested_resolution?, photos?: [{filename,mime_type,data}] }` → `{ received: true, id }`. Server vynucuje: §1837 (čistá zakázka → 400 pro `odstoupeni`/`vraceni`), lhůtu 14 d pro `odstoupeni`/`vraceni` (400 po lhůtě), max 1 **otevřená** žádost na objednávku, `requested_resolution` povinné u `reklamace`. Fotky jako dnes (MinIO, max 6). Stávající `POST /store/return-requests` (číslo+e-mail) zůstává funkční jako záložní cesta, ale storefront ho už nepoužívá.
+- `POST /store/orders/:id/claims/:claimId/tracking` tělo `{ token, tracking }` → uloží `goods_tracking` (jen ve stavu `approved`).
+
+### Admin
+- `GET /admin/return-requests?status=pending|approved|received|resolved|rejected|cancelled|open|all&kind=&q=&limit=&offset=` (`open` = nefinální; `q` hledá v čísle objednávky, e-mailu, jménu). Odpověď `{ return_requests, count, limit, offset }` + ke každé žádosti `captured_total`, `refunded_total`, `remaining` (dopočítané).
+- `GET /admin/return-requests/counts` → `{ pending, approved, received, resolved, rejected, cancelled, overdue }` (pro badge v tabech).
+- `POST /admin/return-requests/:id/decide` `{ decision: "approve"|"reject", note?, resolution? }` — `approve` u reklamace vyžaduje `resolution`; u odstoupení/vrácení se `resolution = "refund"` doplní; `reject` vyžaduje `note`. Protokol se regeneruje s rozhodnutím. E-mail `return-approved` (text podle `resolution` + adresa pro vrácení z nastavení + lhůta 14/30 podle druhu) nebo `return-rejected` (s odůvodněním + poučení o ČOI).
+- `POST /admin/return-requests/:id/received` `{ note? }` → `received`, `goods_received_at`; e-mail `return-received`.
+- `POST /admin/return-requests/:id/resolve` `{ note? }` → `resolved` (pro `repair`/`replace`, nebo když se nic nevrací); protokol → „potvrzení o vyřízení"; e-mail `return-resolved`.
+- `POST /admin/return-requests/:id/refund` `{ amount?, note?, skip_goods_check?, mark_resolved? }` — pravidla §3; odpověď `{ refunded, method, amount, remaining, status, credit_note, message }`. Opravy: částky přes `toNumber` (BigNumber tvar), `refund_history` se **nepřepíše** dobropisem (čerstvě načíst metadata před patchem), jeden e-mail.
+- `POST /admin/return-requests/:id/cancel` `{ note }` → `cancelled` (žádost stažena/stornována); e-mail zákazníkovi není nutný (volitelně).
+- `POST /admin/return-requests/:id/cancel-order` → viz §3 „Zrušení objednávky"; odpověď `{ cancelled: bool, message }`.
+- Middleware: `POST /admin/orders/:id/cancel` → pojistka z §3.
+
+## 5. Nastavení (merchant-settings)
+- `return_address` (víceřádkový text; výchozí dnešní „Keramická zahrada, Putim 229, 397 01 Písek") — nahrazuje 3 natvrdo zapsané adresy (`decide/route.ts`, `vraceni/page.tsx`, `customer-emails.ts`).
+- `return_instructions` (text, volitelné; např. „zabalte pečlivě, přiložte číslo objednávky").
+- Editace tam, kde se dnes edituje `owner_notification_email`.
+
+## 6. E-maily (šablony `modules/resend/emails`, registrace v `service.ts` + štítek v `prehled/emaily`)
+- `refund-request` — předmět a text **podle druhu** („Reklamaci jsme přijali" / „Žádost o vrácení zboží jsme přijali" / „Odstoupení od smlouvy jsme přijali"), odkaz na protokol, lhůta (30 / 14 d), odkaz na stav žádosti ve storefrontu.
+- `return-approved` — podle `resolution`; u vrácení zboží adresa + instrukce z nastavení + lhůta; u opravy/výměny co bude následovat.
+- `return-rejected` — odůvodnění + ČOI věta; opravit „do 30 dnů od doručení".
+- **nové** `return-received` — „zboží k nám dorazilo, kontrolujeme".
+- **nové** `return-resolved` — potvrzení o vyřízení (datum, způsob, částka/oprava/výměna; §19/3 ZOS).
+- `order-refunded` — ponechat pro refundaci; `payment-refunded` **neposílat** pro refundace z modulu (dedupe přes `refund_history` posledního záznamu s `return_request_id`).
+- `order-cancelled` — nesmí slibovat „vrátíme do 3–5 dnů" bezpodmínečně.
+
+## 7. Job `watch-return-deadlines`
+Hlídá **všechny nefinální** stavy (`pending`, `approved`, `received`): před lhůtou 3 d upozorní, po lhůtě denně urgentně; po `resolved`/`rejected`/`cancelled` mlčí.
+
+## 8. Admin UI — nový top-level modul
+`backend/src/admin/routes/reklamace/page.tsx`, `defineRouteConfig({ label: "Reklamace a zrušení", icon })`.
+- Taby s počty: **Nové** (pending) · **Schválené – čeká na zboží** (approved) · **Zboží přijato** (received) · **Vyřízené** (resolved) · **Zamítnuté** (rejected) · Stornované (cancelled). Filtr druhu, hledání.
+- Řádek: číslo objednávky, zákazník, druh, požadované vyřízení, stav, lhůta (badge, po lhůtě červeně), zbývá vrátit.
+- Detail (drawer/sekce): časová osa (přijato → rozhodnuto → zboží přijato → vyřízeno), důvod, fotky (lightbox), protokol PDF, platby (zachyceno / vráceno / zbývá), číslo vrácené zásilky, poznámky.
+- Akce **podle stavu** (jiné se nezobrazují):
+  - `pending`: **Schválit** (u reklamace výběr způsobu vyřízení: oprava / výměna / sleva / vrácení peněz) · **Zamítnout** (odůvodnění povinné).
+  - `approved`: **Zboží přijato** · **Vrátit peníze** (jen reklamace s `refund`/`discount`; u vrácení zboží skryto, místo toho přepínač „Zboží neodešlo / vracím bez čekání" = `skip_goods_check`) · **Vyřízeno** (oprava/výměna) · Stornovat žádost.
+  - `received`: **Vrátit peníze** (částka předvyplněná = zbývá, lze snížit; opakovaně) · **Vyřízeno**.
+  - `resolved` + odstoupení/vrácení: **Zrušit objednávku a uvolnit sklad**.
+  - finální: jen čtení.
+- Tab „Vrácení" v Přehledu → odkaz do modulu (nebo krátký souhrn + odkaz). Widget `order-returns` na detailu objednávky: stav + odkaz do modulu; žádné tlačítko refundace mimo pravidla.
+- Zakázka: tlačítko „Zrušit zakázku" + text opravit (viz §3 pojistka).
+
+## 9. Storefront
+- Formulář `/order/[id]/refund?token=&kind=`: druh (reklamace / vrácení / odstoupení), **u reklamace povinně „co požadujete" (oprava / výměna / vrácení peněz)**, popis, až 6 fotek; **gating ze serveru** (`can_withdraw`, `withdrawal_deadline`, `withdraw_block_reason` → zakázka §1837 nebo po lhůtě → volba nedostupná s vysvětlením); odeslání přes `POST /store/orders/:id/claims` (token).
+- **Stav žádosti pro zákazníka**: na potvrzení objednávky sekce „Reklamace a vrácení" (když existuje žádost) s časovou osou + protokol + pokyny; samostatná stránka `/order/[id]/claims?token=` se vším; u `approved` vrácení pole „číslo zásilky, kterou jsem poslal/a" → `tracking`.
+- Účet → detail objednávky: nahradit starý formulář (jen důvod) stejnou komponentou jako výše (druh + fotky + požadované vyřízení).
+- Texty: „Zrušit objednávku" = odstoupení od smlouvy (14 dnů); u zakázky tlačítko místo toho vysvětlí §1837 a nabídne reklamaci / kontakt.
+
+## 10. Mimo rozsah (teď)
+Kurzy (vlastní refundace rezervací), nativní Medusa returns/claims, per-položkové reklamace (items zůstávají text).

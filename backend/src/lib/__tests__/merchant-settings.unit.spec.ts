@@ -20,6 +20,8 @@ describe("merchant settings allowlist", () => {
       "low_stock_default_threshold",
       "onboarding_dismissals",
       "production_started_email_enabled",
+      "return_address",
+      "return_instructions",
       "review_request_days",
       "test_mode_enabled",
       "vacation_enabled",

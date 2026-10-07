@@ -53,7 +53,7 @@ const groups: Tab[][] = [
     { key: "zasoby", label: "Zásoby", to: "/prehled/zasoby" },
     { key: "slevy", label: "Slevy a akce", to: "/prehled/slevy" },
     { key: "recenze", label: "Recenze", to: "/prehled/recenze" },
-    { key: "vraceni", label: "Vrácení", to: "/prehled/vraceni" },
+    { key: "vraceni", label: "Reklamace", to: "/prehled/vraceni" },
   ],
   [
     { key: "emaily", label: "Odeslané e-maily", to: "/prehled/emaily" },

@@ -5,206 +5,320 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { refundPaymentWorkflow } from "@medusajs/medusa/core-flows"
-import { formatMoney, orderLink } from "../../../../../lib/customer-email"
+import { formatMoney, orderLink, sendCustomerEmail } from "../../../../../lib/customer-email"
 import { issueCreditNoteForOrder } from "../../../../../lib/idoklad-invoice"
-import { RETURN_REQUEST_MODULE } from "../../../../../modules/return-request"
-import type ReturnRequestModuleService from "../../../../../modules/return-request/service"
+import {
+  claimEmailBase,
+  claimService,
+  decisionOutcome,
+  protocolRefundsOf,
+  regenerateProtocol,
+  retrieveClaim,
+  sendResolvedEmail,
+} from "../../../../../lib/claims/admin"
+import { kindLabel } from "../../../../../lib/claims/constants"
+import { loadOrderMoney } from "../../../../../lib/claims/money"
+import {
+  canRefund,
+  capturedPayments,
+  clampRefundAmount,
+  MONEY_EPSILON,
+  paymentRemaining,
+  requestRefunds,
+  round2,
+  type RefundEntry,
+  type RefundHistoryEntry,
+} from "../../../../../lib/claims/refund-rules"
 
 /**
- * POST /admin/return-requests/:id/refund — vrácení peněz k jedné žádosti.
+ * POST /admin/return-requests/:id/refund — vrácení peněz k jedné žádosti
+ * (docs/reklamace-a-zruseni.md §3 „Pravidla refundace").
  *
- * Reuse téhož enginu jako „Vrátit rozdíl" (merchant-orders/refund-difference):
- * placeno kartou → ComGate přes `refundPaymentWorkflow` (idempotentní, hlídá
- * přeplatek), jinak „manual" (hotovost/dobírka/osobní odběr — majitelka vrací
- * ručně). Částku zadá admin; výchozí je celá zachycená částka a sevře se do
- * toho, co reálně došlo. Zapíše se na žádost (`refund_*`) i do peněžní stopy
- * objednávky a zákazník dostane e-mail „vrácení peněz". Dvojí vrácení nejde.
+ * Gating je v `canRefund` (čistá funkce, testovaná): jen `approved`/`received`,
+ * u odstoupení/vrácení až po zboží (nebo s vědomým `skip_goods_check`), u
+ * reklamace ve stavu `approved` jen s rozhodnutím refund/discount. Částka:
+ * výchozí = zbývá, nikdy přes zbývá, částečné a opakované povoleno; každá
+ * refundace se PŘIDÁ do `refunds` a `refund_amount` je součet. Když nezbývá
+ * nic (nebo `mark_resolved`), žádost se uzavře a jde JEDINÝ e-mail
+ * „potvrzení o vyřízení"; jinak `order-refunded` za tuhle částku.
  *
- * Pozn.: dobropis v iDokladu je fáze 2 — tady se peníze jen vrací a eviduje.
+ * Reuse téhož enginu jako „Vrátit rozdíl": karta → ComGate přes
+ * `refundPaymentWorkflow` (idempotentní, hlídá přeplatek), jinak „manual".
+ *
+ * ## Pořadí kroků a proč
+ *
+ * 1. Stopa do `refund_history` jde PŘED refundací. `payment.refunded` ze
+ *    workflow stihne subscriber `onPaymentRefunded` dřív, než se sem vrátí
+ *    řízení — a ten podle poslední položky historie pozná, že má mlčet
+ *    (jeden e-mail za refundaci). Když ComGate selže, stopa se zase odebere.
+ * 2. Metadata se před každým patchem čtou ČERSTVĚ. Dobropis
+ *    (`issueCreditNoteForOrder`) patchuje metadata z objektu, který dostane —
+ *    dostává ten s právě zapsanou historií, takže ji nepřepíše (dřívější chyba).
+ * 3. Částky přes `toNumber` (BigNumber tvar z query.graph).
  */
 
-type RefundBody = { amount?: number; note?: string | null }
-
-const KIND_LABEL: Record<string, string> = {
-  reklamace: "Reklamace",
-  vraceni: "Vrácení zboží",
-  odstoupeni: "Odstoupení od smlouvy",
+type RefundBody = {
+  amount?: number
+  note?: string | null
+  skip_goods_check?: boolean
+  mark_resolved?: boolean
 }
+
+const COMGATE_PROVIDER_ID = "pp_comgate_comgate"
+
+const readFreshMetadata = async (
+  scope: MedusaRequest["scope"],
+  orderId: string
+): Promise<Record<string, unknown>> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "order",
+    fields: ["id", "metadata"],
+    filters: { id: orderId },
+  })
+  return ((data[0] as any)?.metadata ?? {}) as Record<string, unknown>
+}
+
+const historyOf = (metadata: Record<string, unknown>): RefundHistoryEntry[] =>
+  Array.isArray(metadata.refund_history)
+    ? (metadata.refund_history as RefundHistoryEntry[])
+    : []
+
+const sameEntry = (a: RefundHistoryEntry, b: RefundHistoryEntry) =>
+  a?.return_request_id === b.return_request_id && a?.refunded_at === b.refunded_at
 
 export const POST = async (
   req: MedusaRequest<RefundBody>,
   res: MedusaResponse
 ) => {
   const body = (req.body || {}) as RefundBody
-  const service = req.scope.resolve<ReturnRequestModuleService>(
-    RETURN_REQUEST_MODULE
-  )
+  const service = claimService(req.scope)
+  const request = await retrieveClaim(req.scope, req.params.id)
 
-  let request: any
-  try {
-    request = await service.retrieveReturnRequest(req.params.id)
-  } catch {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      "Žádost o vrácení nebyla nalezena."
-    )
-  }
-
-  if (request.refunded_at) {
+  const verdict = canRefund(request, body)
+  if (!verdict.allowed) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      "Peníze u téhle žádosti už byly vráceny."
+      verdict.reason ?? "Peníze u této žádosti teď vrátit nejde."
     )
   }
 
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { data: orders } = await query.graph({
-    entity: "order",
-    fields: [
-      "id",
-      "display_id",
-      "email",
-      "currency_code",
-      "total",
-      "metadata",
-      "customer.first_name",
-      "payment_collections.payments.id",
-      "payment_collections.payments.provider_id",
-      "payment_collections.payments.amount",
-      "payment_collections.payments.captured_at",
-      "payment_collections.payments.canceled_at",
-    ],
-    filters: { id: request.order_id },
-  })
-  const order = orders[0] as any
-  if (!order) {
+  const money = await loadOrderMoney(req.scope, request.order_id)
+  if (!money) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
       "Objednávka k této žádosti nebyla nalezena."
     )
   }
+  const { order, state } = money
+  const currency = order.currency_code ?? "czk"
 
-  const captured = (order.payment_collections ?? [])
-    .flatMap((collection: any) => collection?.payments ?? [])
-    .filter((payment: any) => payment?.captured_at && !payment?.canceled_at)
-  const capturedTotal = captured.reduce(
-    (sum: number, payment: any) => sum + Number(payment?.amount || 0),
-    0
-  )
-
-  // Částka: zadaná adminem, jinak celá zachycená. Sevřená do zachycené částky,
-  // ať nejde vrátit víc, než reálně došlo (ComGate by to stejně odmítl).
-  const requested =
-    typeof body.amount === "number" && body.amount > 0
-      ? body.amount
-      : capturedTotal
-  const amount = capturedTotal > 0 ? Math.min(requested, capturedTotal) : requested
-
-  if (!(amount > 0)) {
+  const { amount, clamped } = clampRefundAmount(body.amount, state.remaining)
+  if (!(amount > MONEY_EPSILON)) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "U této objednávky není co vrátit — žádná zachycená platba."
+      `Není co vrátit — zachyceno ${formatMoney(state.captured, currency)}, vráceno ${formatMoney(
+        state.refunded,
+        currency
+      )}. Je-li žádost hotová, použijte „Vyřízeno".`
     )
   }
 
-  const cardPayment = captured.find(
-    (payment: any) => payment?.provider_id === "pp_comgate_comgate"
-  )
-
-  let method: "comgate" | "manual" = "manual"
-  if (cardPayment) {
-    await refundPaymentWorkflow(req.scope).run({
-      input: {
-        payment_id: cardPayment.id,
-        amount,
-        note:
-          (typeof body.note === "string" && body.note.trim()) ||
-          `Vrácení k žádosti (${KIND_LABEL[request.kind] ?? "vrácení"}) — objednávka #${order.display_id}`,
-      } as never,
-    })
-    method = "comgate"
-  }
+  const userNote = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null
+  // Vědomé vrácení bez čekání na zboží se zapíše k refundaci — §1832/4 dává
+  // právo počkat a tady se ho majitelka výslovně vzdala.
+  const skippedGoods =
+    body.skip_goods_check === true &&
+    request.status === "approved" &&
+    (request.kind === "odstoupeni" || request.kind === "vraceni")
+  const note = [userNote, skippedGoods ? "vráceno bez čekání na zboží" : null]
+    .filter(Boolean)
+    .join(" — ") || null
 
   const now = new Date()
-  const updated = await service.updateReturnRequests({
-    id: request.id,
-    refund_amount: amount,
-    refund_method: method,
-    refunded_at: now,
-  })
-
-  // Peněžní stopa na objednávce — stejný tvar jako „Vrátit rozdíl", ať je
-  // vrácení dohledatelné na jednom místě.
-  const metadata = (order.metadata ?? {}) as Record<string, any>
-  const history = Array.isArray(metadata.refund_history)
-    ? metadata.refund_history
-    : []
-  const orderModule = req.scope.resolve(Modules.ORDER) as any
-  await orderModule.updateOrders([
-    {
-      id: order.id,
-      metadata: {
-        ...metadata,
-        refund_history: [
-          ...history,
-          {
-            amount,
-            currency_code: order.currency_code,
-            reason: `return:${request.kind ?? "vraceni"}`,
-            method,
-            refunded_at: now.toISOString(),
-            return_request_id: request.id,
-          },
-        ],
-      },
-    },
-  ])
-
-  if (order.email) {
-    const notifications = req.scope.resolve(Modules.NOTIFICATION)
-    await notifications
-      .createNotifications({
-        to: order.email,
-        channel: "email",
-        template: "order-refunded",
-        data: {
-          customerName: order.customer?.first_name ?? undefined,
-          orderNumber: `#${order.display_id}`,
-          refundAmount: formatMoney(amount, order.currency_code),
-          refundReason: KIND_LABEL[request.kind] ?? "Vrácení peněz",
-          orderLink: orderLink(order) || undefined,
-        },
-        idempotency_key: `return-refund:${request.id}`,
-      } as never)
-      .catch(() => {
-        // Peníze se vrátily — nepovedený e-mail je vidět v Přehled → E-maily.
-      })
+  const historyEntry: RefundHistoryEntry & Record<string, unknown> = {
+    amount,
+    currency_code: currency,
+    reason: `return:${request.kind ?? "vraceni"}`,
+    method: "manual",
+    refunded_at: now.toISOString(),
+    return_request_id: request.id,
+    ...(note ? { note } : {}),
   }
 
-  // Dobropis (opravný daňový doklad) k vrácení — best-effort. Jen plné vrácení
-  // s existující fakturou a mimo zkušební režim; chyba nic neshodí, peníze jsou
-  // vrácené tak jako tak. Částečné vrácení majitelce připomene ruční dobropis.
-  const creditNote = await issueCreditNoteForOrder(req.scope, order, {
-    amount,
+  const orderModule = req.scope.resolve(Modules.ORDER) as any
+  const writeHistory = async (
+    mutate: (history: RefundHistoryEntry[]) => RefundHistoryEntry[]
+  ) => {
+    const fresh = await readFreshMetadata(req.scope, order.id)
+    await orderModule.updateOrders([
+      { id: order.id, metadata: { ...fresh, refund_history: mutate(historyOf(fresh)) } },
+    ])
+  }
+
+  // Karta: refundace přes ComGate — po platbách s nevyčerpaným zbytkem (záloha
+  // + doplatek jsou dvě platby). Co karty nepokryjí, vrací majitelka ručně.
+  const cardPayments = capturedPayments(order).filter(
+    (payment) =>
+      payment.provider_id === COMGATE_PROVIDER_ID &&
+      paymentRemaining(payment) > MONEY_EPSILON
+  )
+  const method: "comgate" | "manual" = cardPayments.length ? "comgate" : "manual"
+  historyEntry.method = method
+
+  // 1) stopa napřed (viz hlavička) …
+  await writeHistory((history) => [...history, historyEntry])
+
+  // 2) … pak peníze. Selhání: stopu zúžit na to, co reálně odešlo, nebo odebrat.
+  let left = amount
+  let refundedByCard = 0
+  try {
+    for (const payment of cardPayments) {
+      if (left <= MONEY_EPSILON) break
+      const part = round2(Math.min(left, paymentRemaining(payment)))
+      if (part <= MONEY_EPSILON) continue
+      await refundPaymentWorkflow(req.scope).run({
+        input: {
+          payment_id: payment.id,
+          amount: part,
+          note:
+            userNote ??
+            `Vrácení k žádosti (${kindLabel(request.kind)}) — objednávka #${order.display_id}`,
+        } as never,
+      })
+      refundedByCard = round2(refundedByCard + part)
+      left = round2(left - part)
+    }
+  } catch (error) {
+    await writeHistory((history) =>
+      refundedByCard > MONEY_EPSILON
+        ? history.map((entry) =>
+            sameEntry(entry, historyEntry) ? { ...entry, amount: refundedByCard } : entry
+          )
+        : history.filter((entry) => !sameEntry(entry, historyEntry))
+    ).catch(() => undefined)
+    if (refundedByCard > MONEY_EPSILON) {
+      // Část už odešla — zapsat na žádost, ať součet sedí s realitou.
+      await service
+        .updateReturnRequests({
+          id: request.id,
+          refunds: [
+            ...requestRefunds(request),
+            { amount: refundedByCard, method: "comgate", at: now.toISOString(), note },
+          ] as unknown as Record<string, unknown>,
+          refund_amount: round2(
+            requestRefunds(request).reduce((sum, entry) => sum + entry.amount, 0) +
+              refundedByCard
+          ),
+          refund_method: "comgate",
+          refunded_at: now,
+        })
+        .catch(() => undefined)
+    }
+    throw new MedusaError(
+      MedusaError.Types.UNEXPECTED_STATE,
+      `ComGate refundaci odmítl${
+        refundedByCard > MONEY_EPSILON
+          ? ` po ${formatMoney(refundedByCard, currency)} z ${formatMoney(amount, currency)}`
+          : ""
+      }: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+  const manualPart = method === "comgate" ? left : amount
+
+  // 3) žádost: přidat refundaci, přepočítat součet, případně uzavřít.
+  const refunds: RefundEntry[] = [
+    ...requestRefunds(request),
+    { amount, method, at: now.toISOString(), note },
+  ]
+  const refundedSum = round2(refunds.reduce((sum, entry) => sum + entry.amount, 0))
+  const remainingAfter = Math.max(0, round2(state.remaining - amount))
+  const resolveNow = remainingAfter <= MONEY_EPSILON || body.mark_resolved === true
+
+  const updated = await service.updateReturnRequests({
+    id: request.id,
+    refunds: refunds as unknown as Record<string, unknown>,
+    refund_amount: refundedSum,
+    refund_method: method,
+    refunded_at: now,
+    ...(resolveNow
+      ? {
+          status: "resolved",
+          resolved_at: now,
+          resolution_note: userNote ?? request.resolution_note ?? null,
+          resolution: request.resolution ?? "refund",
+        }
+      : {}),
+  })
+
+  // 4) dobropis — s ČERSTVÝMI metadaty včetně historie (viz hlavička). Součet
+  //    za žádost: dvě částečné, které dají celek, vystaví plný dobropis až na
+  //    konci; částečná jen připomene ruční vystavení.
+  const freshOrder = { ...order, metadata: await readFreshMetadata(req.scope, order.id) }
+  const creditNote = await issueCreditNoteForOrder(req.scope, freshOrder, {
+    amount: refundedSum,
   }).catch(() => ({ status: "error" as const, reason: "neznámá chyba" }))
+
+  // 5) protokol s řádky refundací; u uzavření jako potvrzení o vyřízení.
+  const protocol = await regenerateProtocol(req.scope, updated, {
+    outcome: decisionOutcome(updated),
+    note: updated.resolution_note ?? request.decision_note ?? null,
+    decidedAt: now,
+    confirmation: resolveNow,
+    refunds: protocolRefundsOf(updated, currency),
+  })
+
+  // 6) JEDEN e-mail: potvrzení o vyřízení, nebo „vracíme peníze" za dílčí částku.
+  if (resolveNow) {
+    await sendResolvedEmail(req.scope, updated, {
+      protocolUrl: protocol.url,
+      currency,
+      note: updated.resolution_note ?? null,
+    })
+  } else {
+    await sendCustomerEmail(req.scope, {
+      template: "order-refunded",
+      to: request.email,
+      key: `return-refund:${request.id}:${refunds.length}`,
+      orderId: request.order_id,
+      data: {
+        ...claimEmailBase(updated, protocol.url),
+        refundAmount: formatMoney(amount, currency),
+        refundReason: kindLabel(request.kind),
+        orderLink: orderLink(order) || undefined,
+      },
+    })
+  }
 
   const baseMessage =
     method === "comgate"
-      ? `Vráceno ${formatMoney(amount, order.currency_code)} na kartu přes ComGate.`
-      : `Zaznamenáno ${formatMoney(amount, order.currency_code)} k ručnímu vrácení (objednávka nebyla placená kartou).`
+      ? `Vráceno ${formatMoney(amount - manualPart, currency)} na kartu přes ComGate.${
+          manualPart > MONEY_EPSILON
+            ? ` Zbývajících ${formatMoney(manualPart, currency)} karta nepokryla — vraťte ručně.`
+            : ""
+        }`
+      : `Zaznamenáno ${formatMoney(amount, currency)} k ručnímu vrácení (objednávka nebyla placená kartou).`
+  const clampMessage = clamped
+    ? ` Částka seříznuta na zbývajících ${formatMoney(amount, currency)}.`
+    : ""
   const creditMessage =
     creditNote.status === "issued"
       ? ` Dobropis ${creditNote.number ?? ""} vystaven.`
       : creditNote.status === "exists"
         ? " Dobropis už byl vystaven."
         : ""
+  const closeMessage = resolveNow
+    ? " Žádost je vyřízená, zákazník dostal potvrzení."
+    : ` Zbývá ${formatMoney(remainingAfter, currency)}.`
 
   res.status(200).json({
     refunded: true,
     method,
     amount,
+    remaining: remainingAfter,
+    status: updated.status,
     credit_note: creditNote,
-    return_request: updated,
-    message: `${baseMessage}${creditMessage}`,
+    return_request: { ...updated, protocol_url: protocol.url ?? updated.protocol_url },
+    message: `${baseMessage}${clampMessage}${creditMessage}${closeMessage}`,
   })
 }

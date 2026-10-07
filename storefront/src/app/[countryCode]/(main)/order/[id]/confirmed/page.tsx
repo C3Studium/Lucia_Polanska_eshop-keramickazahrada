@@ -1,4 +1,5 @@
 import { retrieveOrder, getOrderAccessToken } from "@lib/data/orders"
+import { getOrderClaims } from "@lib/data/claims"
 import { fallbackStageLabel, getOrderProgress } from "@lib/data/order-progress"
 import {
   getCommissionBalance,
@@ -54,6 +55,12 @@ export default async function OrderConfirmedPage(props: Props) {
   // Podepsaný token pro „Upravit / Zrušit / Reklamace" rovnou odtud (stránky
   // jinak chtějí token z e-mailu). `null` → tlačítka se nevykreslí.
   const selfServiceToken = order ? await getOrderAccessToken(params.id) : null
+  // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
+  // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
+  // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
+  const claims = selfServiceToken
+    ? await getOrderClaims(params.id, selfServiceToken)
+    : null
 
   /*
    * The backend redirects here after a balance payment (§4.6). That link is e-mailed, so it is
@@ -91,6 +98,7 @@ export default async function OrderConfirmedPage(props: Props) {
         commissionNotes={commissionNotes}
         commissionBalance={commissionBalance}
         selfServiceToken={selfServiceToken}
+        claims={claims}
       />
     </>
   )

@@ -56,6 +56,7 @@ import { PostAnnounceBundleSchema } from "./admin/newsletter/announce-bundle/rou
 import { PostNewsletterPreviewSchema } from "./admin/newsletter/preview/route";
 import { PostNewsletterTestSchema } from "./admin/newsletter/test/route";
 import { PostNewsletterDraftSchema } from "./admin/newsletter/drafts/route";
+import { requireRefundedBeforeCancel } from "../lib/claims/money";
 
 export default defineMiddlewares({
   routes: [
@@ -101,6 +102,15 @@ export default defineMiddlewares({
       matcher: "/admin/orders/:id/fulfillments/:fulfillment_id/shipments",
       methods: ["POST"],
       middlewares: [requireShipGate()],
+    },
+    // Pojistka proti skryté refundaci (docs/reklamace-a-zruseni.md §3): nativní
+    // zrušení objednávky vrací zachycené platby SAMO a potichu. Dokud má
+    // objednávka zachyceno − vráceno > 0, zrušení se odmítne s odkazem na modul
+    // Reklamace a zrušení. Stejná kontrola sedí i v „Zrušit zakázku".
+    {
+      matcher: "/admin/orders/:id/cancel",
+      methods: ["POST"],
+      middlewares: [requireRefundedBeforeCancel()],
     },
     {
       matcher: "/admin/bundled-products",
@@ -568,6 +578,38 @@ export default defineMiddlewares({
     {
       matcher: "/store/orders/:id/guest-refund",
       methods: ["GET", "POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    // Modul „Reklamace a zrušení" (docs/reklamace-a-zruseni.md §4): kontext +
+    // založení žádosti + číslo vrácené zásilky, vše přes podepsaný token
+    // (stejný vzor jako guest-edit). POST nese fotky vady jako base64 v JSON —
+    // stejný strop těla jako záložní /store/return-requests.
+    {
+      matcher: "/store/orders/:id/claims",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    {
+      matcher: "/store/orders/:id/claims",
+      methods: ["POST"],
+      bodyParser: { sizeLimit: "12mb" },
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    {
+      matcher: "/store/orders/:id/claims/:claimId/tracking",
+      methods: ["POST"],
       middlewares: [
         authenticate("customer", ["bearer", "session"], {
           allowUnauthenticated: true,

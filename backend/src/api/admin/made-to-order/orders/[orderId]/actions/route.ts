@@ -18,6 +18,7 @@ import type { IEventBusModuleService } from "@medusajs/framework/types"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
 import { orderConfirmedPath } from "../../../../../../lib/storefront-url"
+import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
 
@@ -691,6 +692,15 @@ export const POST = async (
       "in_production",
       "awaiting_balance",
     ])
+    /*
+     * Pojistka proti skryté refundaci (docs/reklamace-a-zruseni.md §3): dokud
+     * má objednávka zachyceno − vráceno > 0 (typicky záloha), zakázku zrušit
+     * nejde — `cancelOrderWorkflow` níž by peníze vrátil sám a potichu, bez
+     * protokolu a dobropisu. Vrácení zálohy se vyřídí v Reklamace a zrušení,
+     * pak jde zakázka zrušit. Kontrola je PŘED první změnou, ať se výroba
+     * nezruší napůl.
+     */
+    await assertNoMoneyLeft(req.scope, req.params.orderId)
     productionOrder = await madeToOrder.updateProductionOrders({
       id: productionOrder.id,
       stage: "cancelled",

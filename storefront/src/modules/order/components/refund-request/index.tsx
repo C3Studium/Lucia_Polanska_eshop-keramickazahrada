@@ -1,12 +1,23 @@
 "use client"
 
 import Image from "next/image"
+import { useParams, useRouter } from "next/navigation"
 import { useId, useRef, useState } from "react"
 
-import { submitReturnRequest } from "@lib/data/return-requests"
-import type { GuestRefundContext } from "@lib/data/guest-refund"
+import { submitClaim } from "@lib/data/claims"
+import {
+  REQUESTED_RESOLUTION_LABEL,
+  findOpenClaim,
+  formatClaimDate,
+  isClaimKind,
+  withdrawBlockText,
+  type ClaimKind,
+  type ClaimRequestedResolution,
+  type OrderClaims,
+} from "@lib/util/claims"
 import type { CommissionUpload } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
+import ClaimStatus from "@modules/order/components/claim-status"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
@@ -31,60 +42,75 @@ const readAsBase64 = (file: File) =>
     reader.readAsDataURL(file)
   })
 
-type Kind = "reklamace" | "vraceni" | "odstoupeni"
-
-const KINDS: { value: Kind; label: string; help: string }[] = [
+const KINDS: { value: ClaimKind; label: string; help: string }[] = [
   {
     value: "reklamace",
-    label: "Reklamace (vada zboží)",
+    label: "Reklamace",
     help: "Zboží dorazilo vadné nebo poškozené, nebo se vada objevila později.",
   },
   {
     value: "vraceni",
     label: "Vrácení zboží",
-    help: "Chci zboží vrátit.",
+    help: "Chci zboží vrátit a dostat peníze zpět.",
   },
   {
     value: "odstoupeni",
-    label: "Odstoupení od smlouvy do 14 dnů",
+    label: "Odstoupení od smlouvy (zrušení objednávky)",
     help: "Bez udání důvodu, do 14 dnů od převzetí (§1829).",
   },
 ]
 
-const REASON_LABEL: Record<Kind, string> = {
-  reklamace: "Reklamace (vada zboží)",
-  vraceni: "Vrácení zboží",
-  odstoupeni: "Odstoupení od smlouvy do 14 dnů",
-}
+const RESOLUTIONS: {
+  value: ClaimRequestedResolution
+  help: string
+}[] = [
+  { value: "repair", help: "Vadu opravíme." },
+  { value: "replace", help: "Pošleme nový kus." },
+  { value: "refund", help: "Vrátíme vám peníze." },
+]
 
 /**
- * Žádost o reklamaci / vrácení / odstoupení k JEDNÉ objednávce — otevřená z
- * e-mailu (token už prokázal vlastnictví, číslo + e-mail nese kontext). Odešle
- * do veřejného intake `/store/return-requests`; majitelka pak rozhodne v adminu.
+ * Žádost o reklamaci / vrácení / odstoupení k JEDNÉ objednávce — z e-mailu,
+ * z potvrzení i z účtu (všude s podepsaným tokenem). Odesílá do
+ * `POST /store/orders/:id/claims`; majitelka pak rozhodne v modulu
+ * „Reklamace a zrušení".
  *
- * Právo: odstoupení do 14 dnů (§1829) se u zboží na míru NENABÍZÍ (§1837) —
- * když je celá objednávka zakázková, ta volba je zamčená s vysvětlením.
+ * Gating je ZE SERVERU (`GET …/claims`): `can_withdraw` + `withdraw_block_reason`
+ * říkají, zda jde odstoupit / vrátit (zakázka §1837, lhůta 14 dnů §1829,
+ * otevřená žádost). Tady se jen zamkne volba a ukáže důvod. U reklamace je
+ * povinné „co požadujete" (oprava / výměna / vrácení peněz — §19/1 ZOS).
+ *
+ * Když už k objednávce běží otevřená žádost, místo formuláře se ukáže její
+ * stav — server by druhou odmítl a zákazník by jen hádal proč.
  */
-const isKind = (value: unknown): value is Kind =>
-  value === "reklamace" || value === "vraceni" || value === "odstoupeni"
-
 export default function RefundRequest({
-  context,
+  orderId,
+  token,
+  claims,
   initialKind,
+  currencyCode = "czk",
 }: {
-  context: GuestRefundContext
-  /** Předvolený druh z odkazu (`?kind=`) — „Zrušit objednávku" míří na odstoupení,
-      „Reklamace" na reklamaci. Neznámá/chybějící hodnota → výchozí reklamace. */
+  orderId: string
+  token: string
+  claims: OrderClaims
+  /** Předvolený druh z odkazu (`?kind=`) — „Zrušit objednávku" míří na
+      odstoupení, „Reklamace" na reklamaci. Zamčená/neznámá hodnota → reklamace. */
   initialKind?: string
+  currencyCode?: string
 }) {
-  const withdrawalBlocked = context.all_made_to_order
-  // Odstoupení je u zboží na míru zamčené — v tom případě předvolbu nebereme.
-  const preselected =
-    isKind(initialKind) &&
-    !(initialKind === "odstoupeni" && withdrawalBlocked)
-      ? initialKind
-      : "reklamace"
-  const [kind, setKind] = useState<Kind>(preselected)
+  const router = useRouter()
+  const { countryCode } = useParams<{ countryCode: string }>()
+  const openClaim = findOpenClaim(claims)
+  const withdrawBlocked = !claims.can_withdraw
+  const blockText = withdrawBlockText(claims)
+  const isLocked = (kind: ClaimKind) => kind !== "reklamace" && withdrawBlocked
+
+  const preselected: ClaimKind =
+    isClaimKind(initialKind) && !isLocked(initialKind) ? initialKind : "reklamace"
+  const [kind, setKind] = useState<ClaimKind>(preselected)
+  const [resolution, setResolution] = useState<ClaimRequestedResolution | null>(
+    null
+  )
   const [detail, setDetail] = useState("")
   const [photos, setPhotos] = useState<PhotoDraft[]>([])
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
@@ -127,42 +153,84 @@ export default function RefundRequest({
     if (fileInput.current) fileInput.current.value = ""
   }
 
+  const needsResolution = kind === "reklamace"
+  const canSend =
+    Boolean(detail.trim()) &&
+    (!needsResolution || resolution !== null) &&
+    state !== "sending"
+
   const send = async () => {
-    if (!detail.trim() || state === "sending") return
+    if (!canSend) return
     setState("sending")
     setError(null)
-    // Druh zapisujeme do důvodu, aby ho majitelka viděla všude, kde se žádost
-    // zobrazuje (notifikace, admin „Vrácení").
-    const reason = `${REASON_LABEL[kind]} — ${detail.trim()}`
-    const result = await submitReturnRequest({
-      order_display_id: context.order_display_id,
-      email: context.email,
+    const result = await submitClaim(orderId, token, {
       kind,
-      reason,
+      reason: detail.trim(),
+      requested_resolution: needsResolution ? resolution ?? undefined : undefined,
       photos: photos.length ? photos.map((p) => p.upload) : undefined,
     })
-    if (result.success) {
-      setState("sent")
+    if ("error" in result) {
+      setState("error")
+      setError(result.error)
       return
     }
-    setState("error")
-    setError(result.message ?? null)
+    setState("sent")
+    // Stav žádosti žije na vlastní stránce (časová osa, protokol, pokyny).
+    router.push(
+      `/${countryCode}/order/${orderId}/claims?token=${encodeURIComponent(token)}`
+    )
+  }
+
+  // Už běží žádost → její stav místo formuláře (server druhou odmítne).
+  if (openClaim) {
+    return (
+      <div className={styles.root}>
+        <p className={styles.openLead}>
+          K této objednávce už máme otevřenou žádost. Jakmile se něco pohne,
+          ozveme se e-mailem; další žádost půjde podat, až bude tahle uzavřená.
+        </p>
+        <ClaimStatus
+          orderId={orderId}
+          token={token}
+          claims={claims}
+          currencyCode={currencyCode}
+          only={[openClaim]}
+          showAllLink={claims.requests.length > 1}
+        />
+      </div>
+    )
   }
 
   if (state === "sent") {
     return (
       <p className={styles.sent} role="status">
-        Máme to. Ozveme se vám e-mailem, jakmile si vaši žádost projdeme.
+        Máme to. Potvrzení posíláme e-mailem — a stav žádosti můžete sledovat{" "}
+        <LocalizedClientLink
+          href={`/order/${orderId}/claims?token=${encodeURIComponent(token)}`}
+        >
+          tady
+        </LocalizedClientLink>
+        .
       </p>
     )
   }
+
+  const deadlineHelp =
+    claims.can_withdraw && claims.withdrawal_deadline
+      ? ` Lhůta běží do ${formatClaimDate(claims.withdrawal_deadline)}.`
+      : ""
 
   return (
     <div className={styles.root}>
       <fieldset className={styles.kinds}>
         <legend className={styles.legend}>Co chcete řešit?</legend>
         {KINDS.map((k) => {
-          const disabled = k.value === "odstoupeni" && withdrawalBlocked
+          const disabled = isLocked(k.value)
+          const help = disabled
+            ? blockText
+            : k.value === "odstoupeni"
+              ? `${k.help}${deadlineHelp}`
+              : k.help
           return (
             <label
               key={k.value}
@@ -178,19 +246,48 @@ export default function RefundRequest({
               />
               <span className={styles.kindText}>
                 <span className={styles.kindLabel}>{k.label}</span>
-                <span className={styles.kindHelp}>
-                  {disabled
-                    ? "Zboží na míru — ze zákona od něj nelze odstoupit (§1837)."
-                    : k.help}
-                </span>
+                <span className={styles.kindHelp}>{help}</span>
               </span>
             </label>
           )
         })}
       </fieldset>
 
+      {/* §19/1 ZOS: protokol musí nést požadovaný způsob vyřízení. */}
+      {needsResolution && (
+        <fieldset className={styles.resolutions}>
+          <legend className={styles.legend}>
+            Co požadujete? <i>(povinné)</i>
+          </legend>
+          <div className={styles.resolutionGrid}>
+            {RESOLUTIONS.map((r) => (
+              <label key={r.value} className={styles.resolution}>
+                <input
+                  type="radio"
+                  name="requested-resolution"
+                  value={r.value}
+                  checked={resolution === r.value}
+                  onChange={() => setResolution(r.value)}
+                />
+                <span className={styles.kindText}>
+                  <span className={styles.kindLabel}>
+                    {REQUESTED_RESOLUTION_LABEL[r.value]}
+                  </span>
+                  <span className={styles.kindHelp}>{r.help}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <label htmlFor={fieldId} className={styles.label}>
-        Napište nám detail <i>(povinné)</i>
+        {kind === "reklamace"
+          ? "Popište vadu"
+          : kind === "vraceni"
+            ? "Co vracíte"
+            : "Napište nám pár slov"}{" "}
+        <i>(povinné)</i>
       </label>
       <textarea
         id={fieldId}
@@ -198,14 +295,21 @@ export default function RefundRequest({
         rows={4}
         value={detail}
         onChange={(event) => setDetail(event.target.value)}
-        placeholder="Co se stalo, nebo co chcete vrátit — pár slov stačí."
+        placeholder={
+          kind === "reklamace"
+            ? "Co je špatně a kdy jste si toho všimli — pár slov stačí."
+            : kind === "vraceni"
+              ? "Které kusy vracíte a proč — pár slov stačí."
+              : "Důvod udávat nemusíte; napište aspoň, že odstupujete od celé objednávky, nebo kterých kusů se to týká."
+        }
         required
       />
 
       {/* Fotky vady — ať zákazník ukáže, co je špatně (u reklamace nejcennější). */}
       <div className={styles.photos}>
         <span className={styles.photosLabel}>
-          Fotky <em>nepovinné</em> — ukažte, co je špatně
+          Fotky <em>nepovinné</em> —{" "}
+          {kind === "reklamace" ? "ukažte, co je špatně" : "stav zboží"}
         </span>
         <div className={styles.photoGrid}>
           {photos.map((photo) => (
@@ -264,13 +368,16 @@ export default function RefundRequest({
           type="button"
           className={styles.submit}
           onClick={send}
-          disabled={!detail.trim() || state === "sending"}
+          disabled={!canSend}
         >
           {state === "sending" ? "Odesíláme…" : "Odeslat žádost"}
         </button>
       </div>
 
       <p className={styles.legal}>
+        {kind === "reklamace"
+          ? "Reklamaci vyřídíme do 30 dnů a o výsledku vás vyrozumíme e-mailem; protokol dostanete hned po odeslání. "
+          : "Peníze vracíme do 14 dnů od odstoupení; smíme počkat, než k nám zboží dorazí. "}
         Podrobnosti najdete v{" "}
         <LocalizedClientLink href="/reklamacni-protokol">
           reklamačním řádu

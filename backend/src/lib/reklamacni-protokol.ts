@@ -48,6 +48,8 @@ export type ProtocolData = {
   reason: string
   /** Které zboží, slovy zákazníka (volitelné). */
   items?: string | null
+  /** Co zákazník POŽADUJE (jen reklamace, §19/1 ZOS) — český popisek. */
+  requestedResolution?: string | null
   /** Vyplněné až při vyřízení — jinak je to „potvrzení o uplatnění". */
   resolution?: {
     /** „Schváleno — vrácení peněz" / „Zamítnuto" apod. */
@@ -55,8 +57,24 @@ export type ProtocolData = {
     note?: string | null
     decidedAt: Date
   } | null
-  /** Když se vracely peníze. */
-  refund?: { amount: number; currency: string; method: string; at: Date } | null
+  /** Když se vracely peníze — jedna položka (zpětná kompatibilita). */
+  refund?: ProtocolRefund | null
+  /** Všechny refundace (částečné a opakované) — řádek za každou. */
+  refunds?: ProtocolRefund[] | null
+  /**
+   * „Potvrzení o vyřízení" (§19/3 ZOS): hlavička to řekne, zákonná poznámka
+   * mluví o vyřízení, ne o lhůtě. Bez něj je to potvrzení o uplatnění, případně
+   * s rozhodnutím.
+   */
+  confirmation?: boolean
+}
+
+export type ProtocolRefund = {
+  amount: number
+  currency: string
+  method: string
+  at: Date
+  note?: string | null
 }
 
 const fmtDate = (value: Date) =>
@@ -139,9 +157,10 @@ export const generateProtocolPdf = async (
   }
 
   // ── Hlavička ──────────────────────────────────────────────────────────────
-  text(PROTOCOL_TITLE[data.kind ?? "reklamace"] ?? "Protokol o žádosti", {
+  const title = PROTOCOL_TITLE[data.kind ?? "reklamace"] ?? "Protokol o žádosti"
+  text(data.confirmation ? `Potvrzení o vyřízení — ${title}` : title, {
     font: bold,
-    size: 18,
+    size: data.confirmation ? 16 : 18,
     gap: 4,
   })
   text(`č. ${data.protocolNumber}`, { color: muted, size: 10, gap: 12 })
@@ -167,32 +186,62 @@ export const generateProtocolPdf = async (
   field("Datum uplatnění", fmtDate(data.createdAt))
   field("Popis / důvod", data.reason)
   if (data.items) field("Zboží", data.items)
+  if (data.requestedResolution) {
+    field("Požadovaný způsob vyřízení", data.requestedResolution)
+  }
 
   // ── Vyřízení ──────────────────────────────────────────────────────────────
   if (data.resolution) {
     rule()
-    text("Vyřízení", { font: bold, size: 11, gap: 6 })
+    text(data.confirmation ? "Vyřízení" : "Rozhodnutí", {
+      font: bold,
+      size: 11,
+      gap: 6,
+    })
     field("Způsob vyřízení", data.resolution.outcome)
-    field("Datum vyřízení", fmtDate(data.resolution.decidedAt))
+    field(
+      data.confirmation ? "Datum vyřízení" : "Datum rozhodnutí",
+      fmtDate(data.resolution.decidedAt)
+    )
     if (data.resolution.note) field("Poznámka", data.resolution.note)
   }
-  if (data.refund) {
+  // Refundace — každá na vlastním řádku (částečné a opakované vrácení, §1833).
+  const refunds: ProtocolRefund[] = [
+    ...(data.refunds ?? []),
+    ...(data.refund && !(data.refunds ?? []).length ? [data.refund] : []),
+  ]
+  const fmtRefund = (refund: ProtocolRefund) =>
+    `${new Intl.NumberFormat("cs-CZ", {
+      style: "currency",
+      currency: (refund.currency || "CZK").toUpperCase(),
+      maximumFractionDigits: 2,
+    }).format(refund.amount)} (${
+      refund.method === "comgate" ? "na platební kartu" : "ručně"
+    }, ${fmtDate(refund.at)})${refund.note ? ` — ${refund.note}` : ""}`
+  if (refunds.length === 1) {
+    field("Vrácená částka", fmtRefund(refunds[0]))
+  } else if (refunds.length > 1) {
+    refunds.forEach((refund, index) =>
+      field(`Vrácená částka ${index + 1}`, fmtRefund(refund))
+    )
+    const total = refunds.reduce((sum, refund) => sum + refund.amount, 0)
     field(
-      "Vrácená částka",
-      `${new Intl.NumberFormat("cs-CZ", {
+      "Vráceno celkem",
+      new Intl.NumberFormat("cs-CZ", {
         style: "currency",
-        currency: (data.refund.currency || "CZK").toUpperCase(),
-        maximumFractionDigits: 0,
-      }).format(data.refund.amount)} (${
-        data.refund.method === "comgate" ? "na platební kartu" : "ručně"
-      }, ${fmtDate(data.refund.at)})`
+        currency: (refunds[0].currency || "CZK").toUpperCase(),
+        maximumFractionDigits: 2,
+      }).format(total)
     )
   }
 
   // ── Zákonná poznámka ──────────────────────────────────────────────────────
   space(10)
-  const legal =
-    data.kind === "reklamace"
+  const legal = data.confirmation
+    ? data.kind === "reklamace"
+      ? "Toto je písemné potvrzení o datu a způsobu vyřízení reklamace (§ 19 odst. 3 zákona č. 634/1992 Sb., o ochraně spotřebitele). Nesouhlasíte-li s vyřízením, můžete se obrátit na Českou obchodní inspekci (www.coi.cz), případně na soud."
+      : "Toto je písemné potvrzení o vyřízení odstoupení od smlouvy / vrácení zboží. Přijaté peněžní prostředky se vrací do 14 dnů (§ 1832 občanského zákoníku), přičemž prodávající smí vyčkat na vrácení zboží (§ 1832 odst. 4)."
+    : data.kind === "reklamace"
       ? "Reklamace se vyřizuje bez zbytečného odkladu, nejpozději do 30 dnů od uplatnění (§ 19 zákona č. 634/1992 Sb., o ochraně spotřebitele), nedohodnou-li se strany jinak."
       : "Při odstoupení od smlouvy vrátí prodávající všechny přijaté peněžní prostředky do 14 dnů (§ 1832 občanského zákoníku); u zboží vyrobeného na míru nelze od smlouvy odstoupit (§ 1837)."
   text(legal, { size: 9, color: muted, gap: 4 })
@@ -225,15 +274,38 @@ export const generateProtocolPdf = async (
   return await doc.save()
 }
 
-/** Číslo protokolu z druhu, roku a čísla objednávky. */
+/**
+ * Číslo protokolu z druhu, roku a čísla objednávky: `REK|VRA|ODS-<rok>-<obj>`.
+ * Druhá a další žádost na téže objednávce v roce dostane příponu `-2`, `-3`
+ * (`sequence`), ať se PDF nepřepisují.
+ */
 export const protocolNumberFor = (
   kind: string | null,
   orderDisplayId: string,
-  when: Date = new Date()
+  when: Date = new Date(),
+  sequence = 1
 ): string => {
   const prefix =
     kind === "odstoupeni" ? "ODS" : kind === "vraceni" ? "VRA" : "REK"
-  return `${prefix}-${when.getFullYear()}-${orderDisplayId}`
+  const suffix = sequence > 1 ? `-${sequence}` : ""
+  return `${prefix}-${when.getFullYear()}-${orderDisplayId}${suffix}`
+}
+
+/**
+ * Pořadí NOVÉ žádosti na objednávce v daném roce = kolik jich už v tom roce je
+ * + 1. Počítá se před založením řádku (volající předá stávající žádosti).
+ */
+export const nextProtocolSequence = (
+  existingRequests: Array<{ created_at?: string | Date | null }>,
+  when: Date = new Date()
+): number => {
+  const year = when.getFullYear()
+  const sameYear = existingRequests.filter((request) => {
+    if (!request?.created_at) return false
+    const created = new Date(request.created_at)
+    return !Number.isNaN(created.getTime()) && created.getFullYear() === year
+  })
+  return sameYear.length + 1
 }
 
 /**

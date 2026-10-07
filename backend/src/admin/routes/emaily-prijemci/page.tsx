@@ -1,7 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Envelope } from "@medusajs/icons";
 import {
-  Button, Container, Heading, Input, Text, Toaster, toast,
+  Button, Container, Heading, Input, Text, Textarea, Toaster, toast,
 } from "@medusajs/ui";
 import {
   QueryClientProvider, useMutation, useQuery, useQueryClient,
@@ -29,12 +29,16 @@ const Inner = () => {
 
   const [owner, setOwner] = useState("");
   const [dev, setDev] = useState("");
+  const [returnAddress, setReturnAddress] = useState("");
+  const [returnInstructions, setReturnInstructions] = useState("");
 
   useEffect(() => {
     const s = data?.settings;
     if (!s) return;
     setOwner(s.owner_notification_email ?? "");
     setDev(s.dev_notification_email ?? "");
+    setReturnAddress(s.return_address ?? "");
+    setReturnInstructions(s.return_instructions ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -44,11 +48,13 @@ const Inner = () => {
         body: {
           owner_notification_email: owner.trim(),
           dev_notification_email: dev.trim(),
+          return_address: returnAddress.trim(),
+          return_instructions: returnInstructions.trim(),
         },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
-      toast.success("Uloženo — další e-maily půjdou na tyhle adresy.");
+      toast.success("Uloženo — další e-maily půjdou podle tohoto nastavení.");
     },
     onError: (error) =>
       toast.error(
@@ -63,7 +69,9 @@ const Inner = () => {
         <Heading>E-maily obchodu</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
           Kam posílat zprávy o obchodu. Zákaznické e-maily (potvrzení objednávky
-          apod.) chodí vždy zákazníkovi — tohle je jen pro vás dva.
+          apod.) chodí vždy zákazníkovi — tohle je jen pro vás dva. Dole je
+          navíc adresa a pokyny pro vrácení zboží, které zákazník dostane při
+          schválené reklamaci či vrácení.
         </Text>
       </header>
 
@@ -101,6 +109,42 @@ const Inner = () => {
         <Text size="xsmall" className="text-ui-fg-muted">
           Necháte-li pole prázdné, použije se adresa z nastavení serveru
           (OWNER/DEV_NOTIFICATION_EMAIL).
+        </Text>
+      </section>
+
+      <section className="flex flex-col gap-y-2 px-6 py-5">
+        <Text size="small" weight="plus">Adresa pro vrácení zboží</Text>
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          Kam má zákazník poslat zboží zpět při schválené reklamaci, vrácení
+          nebo odstoupení. Dostane ji v e-mailu o schválení a uvidí ji ve stavu
+          žádosti na e-shopu. Víceřádkově, jak se píše na balík.
+        </Text>
+        <Textarea
+          rows={3}
+          value={returnAddress}
+          placeholder={"Keramická zahrada\nPutim 229\n397 01 Písek"}
+          onChange={(e) => setReturnAddress(e.target.value)}
+        />
+      </section>
+
+      <section className="flex flex-col gap-y-2 px-6 py-5">
+        <Text size="small" weight="plus">Pokyny k vrácení (volitelné)</Text>
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          Doplní se pod adresu do e-mailu o schválení — např. jak zabalit a co
+          přiložit. Prázdné = bez pokynů.
+        </Text>
+        <Textarea
+          rows={3}
+          value={returnInstructions}
+          placeholder="Zabalte prosím pečlivě do původní krabice a přiložte číslo objednávky."
+          onChange={(e) => setReturnInstructions(e.target.value)}
+        />
+      </section>
+
+      <section className="px-6 py-4">
+        <Text size="xsmall" className="text-ui-fg-muted">
+          Prázdná adresa = použije se výchozí adresa ateliéru (Keramická
+          zahrada, Putim 229, 397 01 Písek).
         </Text>
       </section>
 

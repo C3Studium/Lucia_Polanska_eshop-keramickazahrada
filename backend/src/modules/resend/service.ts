@@ -44,6 +44,8 @@ import { PromotionalEmail } from "./emails/promotional";
 import { bundlePublishedEmail } from "./emails/bundle-published";
 import { RefundRequestEmail } from "./emails/refund-request";
 import { ReturnRejectedEmail } from "./emails/return-rejected";
+import { ReturnReceivedEmail } from "./emails/return-received";
+import { ReturnResolvedEmail } from "./emails/return-resolved";
 import { PriceDropEmail } from "./emails/price-drop";
 import { InvoiceIssuedEmail } from "./emails/invoice-issued";
 import { SurchargeNoticeEmail } from "./emails/surcharge-notice";
@@ -106,6 +108,9 @@ enum Templates {
   BUNDLE_PUBLISHED = "bundle-published",
   REFUND_REQUEST = "refund-request",
   RETURN_REJECTED = "return-rejected",
+  // Modul „Reklamace a zrušení": zboží dorazilo zpět / potvrzení o vyřízení.
+  RETURN_RECEIVED = "return-received",
+  RETURN_RESOLVED = "return-resolved",
   PRICE_DROP = "price-drop",
   // iDoklad (FINISHINGTODOLIST §1): sent with a link to our own copy of the
   // invoice PDF once the invoice is issued.
@@ -187,6 +192,8 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.BUNDLE_PUBLISHED]: bundlePublishedEmail,
   [Templates.REFUND_REQUEST]: RefundRequestEmail,
   [Templates.RETURN_REJECTED]: ReturnRejectedEmail,
+  [Templates.RETURN_RECEIVED]: ReturnReceivedEmail,
+  [Templates.RETURN_RESOLVED]: ReturnResolvedEmail,
   [Templates.PRICE_DROP]: PriceDropEmail,
   [Templates.INVOICE_ISSUED]: InvoiceIssuedEmail,
   [Templates.SURCHARGE_NOTICE]: SurchargeNoticeEmail,
@@ -239,6 +246,8 @@ export enum EmailTemplates {
   BUNDLE_PUBLISHED = "bundle-published",
   REFUND_REQUEST = "refund-request",
   RETURN_REJECTED = "return-rejected",
+  RETURN_RECEIVED = "return-received",
+  RETURN_RESOLVED = "return-resolved",
   PRICE_DROP = "price-drop",
   INVOICE_ISSUED = "invoice-issued",
   SURCHARGE_NOTICE = "surcharge-notice",
@@ -426,9 +435,15 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.BUNDLE_PUBLISHED:
         return "Nový balíček z ateliéru je k nahlédnutí"
       case Templates.REFUND_REQUEST:
+        // Výchozí; intake posílá předmět podle druhu v `data.subject`
+        // („Reklamaci jsme přijali" / „Odstoupení od smlouvy jsme přijali").
         return "Žádost o vrácení jsme přijali"
       case Templates.RETURN_REJECTED:
         return "Žádost o vrácení nemůžeme přijmout"
+      case Templates.RETURN_RECEIVED:
+        return "Zboží k nám dorazilo"
+      case Templates.RETURN_RESOLVED:
+        return "Potvrzení o vyřízení"
       case Templates.PRICE_DROP:
         return "Objekt změnil cenu"
       case Templates.INVOICE_ISSUED:

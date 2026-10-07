@@ -348,6 +348,21 @@
   }
 }
 
+/* Místo „Zrušit objednávku", když odstoupit nejde (zakázka §1837, po lhůtě):
+   jedna věta s důvodem pod tlačítky, přes celou šířku řádku. */
+.selfServiceNote {
+  flex: 1 1 100%;
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .68);
+  font: 300 clamp(.85rem, .95vw, .98rem)/1.5 "Sansation-Light", sans-serif;
+
+  strong {
+    color: var(--ink);
+    font-weight: 400;
+    font-family: "Sansation-Regular", sans-serif;
+  }
+}
+
 @include below-px(560px) {
   .selfServiceActions {
     width: 100%;

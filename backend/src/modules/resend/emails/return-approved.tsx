@@ -17,79 +17,144 @@ interface ReturnApprovedEmailProps {
   customerName?: string;
   orderNumber?: string;
   returnNumber?: string;
+  /** „reklamace" | „vraceni" | „odstoupeni". */
+  kind?: string | null;
+  /** Rozhodnutí: „repair" | „replace" | „discount" | „refund" (odstoupení/vrácení = refund). */
+  resolution?: string | null;
+  /** Český popisek rozhodnutí („oprava", „výměna za nový kus", …). */
+  resolutionLabel?: string;
   approvedItems?: string;
   returnReason?: string;
   returnMethod?: string;
   returnDeadline?: string;
+  /** Adresa z nastavení (víceřádkově). Bez ní se řádek nevykreslí. */
   returnAddress?: string;
+  /** Pokyny z nastavení (volitelné). */
   returnInstructions?: string;
+  /** Musí zboží cestovat zpět? (ne u slevy — zboží zůstává zákazníkovi) */
+  goodsReturnRequired?: boolean;
   orderLink?: string;
-  /** Odkaz na PDF reklamační protokol (potvrzení o vyřízení). */
+  claimsUrl?: string;
+  /** Odkaz na PDF reklamační protokol s rozhodnutím. */
   protocolUrl?: string;
+}
+
+/** Co bude následovat — podle rozhodnutí (docs/reklamace-a-zruseni.md §6). */
+const NEXT_STEP: Record<string, string> = {
+  repair:
+    "Objekt opravíme a pošleme vám ho zpět. O přijetí zásilky i o odeslání opraveného kusu vás budeme informovat e-mailem.",
+  replace:
+    "Jakmile k nám objekt dorazí, pošleme vám nový kus. O přijetí zásilky i o odeslání výměny vás budeme informovat e-mailem.",
+  discount:
+    "Objekt zůstává u vás a část ceny vám vrátíme stejnou cestou, jakou k nám platba přišla. Nic posílat nemusíte.",
+  refund:
+    "Jakmile k nám objekty dorazí a projdou kontrolou, vrátíme vám peníze stejnou cestou, jakou k nám platba přišla.",
 }
 
 /**
  * Číslo vrácení a seznam objektů se vykreslí jen s reálnými daty — vymyšlená
  * výchozí hodnota by v ostrém e-mailu tvrdila, že se vrací něco jiného.
+ * Adresa a pokyny přicházejí z nastavení obchodu; šablona žádnou nevymýšlí.
  */
 function ReturnApprovedEmailComponent({
   customerName,
   orderNumber = "",
   returnNumber,
+  kind,
+  resolution,
+  resolutionLabel,
   approvedItems,
   returnReason,
   returnMethod = "Zásilka na adresu ateliéru",
-  returnDeadline = "30 dní od schválení",
-  returnAddress = "Keramická zahrada, Putim 229, 397 01 Písek",
-  returnInstructions = "Přiložte prosím doklad o nákupu a objekty vraťte v původním balení",
+  returnDeadline,
+  returnAddress,
+  returnInstructions,
+  goodsReturnRequired,
   orderLink = "",
+  claimsUrl,
   protocolUrl,
 }: ReturnApprovedEmailProps) {
   const orderUrl = orderLink || storeLink()
+  const isClaim = kind === "reklamace"
+  const outcome = resolution ?? "refund"
+  // Zboží se vrací vždy, kromě slevy; starší volající bez vlajky = vrací se.
+  const goodsBack = goodsReturnRequired ?? outcome !== "discount"
+  const eyebrow = isClaim ? "Reklamace" : "Vrácení"
+  const h1 = isClaim ? "Reklamace" : "Vrácení"
+  const accent = isClaim ? "uznána." : "schváleno."
+  const intro = isClaim
+    ? "vaši reklamaci jsme posoudili a uznali. Níže najdete, jak ji vyřídíme a co bude následovat."
+    : "vaší žádosti o vrácení jsme vyhověli. Níže najdete vše potřebné — kam objekty poslat a dokdy."
+  const deadline =
+    returnDeadline ||
+    (isClaim ? "vyřídíme do 30 dnů od uplatnění" : "peníze vrátíme do 14 dnů od přijetí zboží")
+
   return (
     <EmailLayout
-      preview={`Vrácení k objednávce ${orderNumber} jsme schválili.`}
+      preview={
+        isClaim
+          ? `Reklamaci k objednávce ${orderNumber} jsme uznali.`
+          : `Vrácení k objednávce ${orderNumber} jsme schválili.`
+      }
     >
-      <Eyebrow>Vrácení</Eyebrow>
-      <EmailH1 accent="schváleno.">Vrácení</EmailH1>
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <EmailH1 accent={accent}>{h1}</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        vaší žádosti o vrácení jsme vyhověli. Níže najdete vše potřebné —
-        které kousky se vracejí, kam je poslat a dokdy.
-      </P>
+      <P>{intro}</P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
       {approvedItems ? <LedgerRow label="Objekty" value={approvedItems} /> : null}
       {returnReason ? <LedgerRow label="Důvod" value={returnReason} /> : null}
-      <LedgerRow label="Způsob vrácení" value={returnMethod} />
-      <LedgerRow label="Adresa" value={returnAddress} />
-      <LedgerRow label="Lhůta" value={returnDeadline} strong tone="clay" />
+      {resolutionLabel ? (
+        <LedgerRow label="Způsob vyřízení" value={resolutionLabel} strong tone="olive" />
+      ) : null}
+      {goodsBack ? <LedgerRow label="Způsob vrácení" value={returnMethod} /> : null}
+      {goodsBack && returnAddress ? (
+        <LedgerRow
+          label="Adresa"
+          value={returnAddress.split("\n").map((line, index) => (
+            <span key={index}>
+              {line}
+              <br />
+            </span>
+          ))}
+        />
+      ) : null}
+      <LedgerRow label="Lhůta" value={deadline} strong tone="clay" />
       <LedgerEnd />
 
-      <Note tone="olive">
-        Jakmile k nám objekty dorazí a projdou kontrolou, vrátíme vám peníze
-        na původní platební metodu.
-      </Note>
+      <Note tone="olive">{NEXT_STEP[outcome] ?? NEXT_STEP.refund}</Note>
 
-      {orderUrl ? (
+      {claimsUrl || orderUrl ? (
         <ButtonRow>
-          <EmailButton href={orderUrl}>Zobrazit objednávku</EmailButton>
+          <EmailButton href={claimsUrl || orderUrl}>
+            {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
+          </EmailButton>
+          {protocolUrl ? (
+            <>
+              <span style={{ display: "inline-block", width: "12px" }} />
+              <EmailButton href={protocolUrl} variant="ghost">
+                Protokol (PDF)
+              </EmailButton>
+            </>
+          ) : null}
         </ButtonRow>
-      ) : null}
-
-      {protocolUrl ? (
+      ) : protocolUrl ? (
         <ButtonRow>
           <EmailButton href={protocolUrl}>Stáhnout protokol (PDF)</EmailButton>
         </ButtonRow>
       ) : null}
 
-      <P small>
-        {returnInstructions}. Kousky prosím pečlivě zabalte, ať cestu zpět
-        přečkají ve zdraví. O přijetí zásilky i o vrácení peněz vás budeme
-        informovat e-mailem.
-      </P>
+      {goodsBack ? (
+        <P small>
+          {returnInstructions ? `${returnInstructions} ` : ""}
+          Kousky prosím pečlivě zabalte, ať cestu zpět přečkají ve zdraví, a
+          přiložte číslo objednávky. Číslo zásilky nám můžete zapsat na
+          stránce žádosti. O přijetí zásilky vás budeme informovat e-mailem.
+        </P>
+      ) : null}
       <Signature />
     </EmailLayout>
   )
@@ -103,13 +168,15 @@ export const ReturnApprovedEmail = (props: ReturnApprovedEmailProps) => (
 const mockReturnApproved: ReturnApprovedEmailProps = {
   customerName: "Jan Novák",
   orderNumber: "#12345",
-  returnNumber: "RTN12345",
+  kind: "vraceni",
+  resolution: "refund",
+  resolutionLabel: "vrácení peněz",
   approvedItems: "Keramický hrnek — modrý, Keramický talíř — bílý",
   returnReason: "Požadavek zákazníka",
   returnMethod: "Zásilka na adresu ateliéru",
-  returnDeadline: "30 dní od schválení",
-  returnAddress: "Ateliér Keramická zahrada, Písek",
-  returnInstructions: "Přiložte prosím doklad o nákupu a objekty vraťte v původním balení",
+  returnDeadline: "peníze vrátíme do 14 dnů od přijetí zboží",
+  returnAddress: "Keramická zahrada\nPutim 229\n397 01 Písek",
+  returnInstructions: "Přiložte prosím číslo objednávky.",
   orderLink: "https://keramickazahrada.cz/orders/12345",
 }
 

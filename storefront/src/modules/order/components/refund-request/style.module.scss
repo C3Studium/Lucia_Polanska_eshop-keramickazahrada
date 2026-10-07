@@ -59,6 +59,79 @@
   cursor: not-allowed;
 }
 
+/* Zamčená volba nese důvod (zakázka §1837 / lhůta) — ať je čitelný i přes
+   zeslabení celé karty. */
+.kindDisabled .kindHelp {
+  color: var(--clay-06);
+}
+
+/* „Co požadujete" u reklamace — tři menší karty vedle sebe, na úzké
+   obrazovce pod sebou. Stejný tvar jako výběr druhu, jen hustší. */
+.resolutions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.resolutionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.resolution {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  input { margin-top: 0.2rem; }
+
+  &:hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
+
+  &:has(input:checked) {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+  }
+
+  .kindLabel {
+    font-size: clamp(0.9rem, 1.05vw, 1rem);
+  }
+
+  .kindHelp {
+    font-size: clamp(0.76rem, 0.9vw, 0.84rem);
+  }
+}
+
+@include below-px(560px) {
+  .resolutionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.legend i {
+  font-style: normal;
+  opacity: 0.7;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Úvod nad stavem už otevřené žádosti (místo formuláře). */
+.openLead {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.75);
+  font: 300 1rem / 1.5 "Sansation-Light", sans-serif;
+}
+
 .kindText {
   display: flex;
   flex-direction: column;
@@ -245,4 +318,9 @@
   margin: 0 auto;
   color: var(--ink-05);
   font: 400 clamp(1rem, 1.3vw, 1.2rem) / 1.5 "Sansation-Regular", sans-serif;
+}
+
+.sent a {
+  color: var(--ink-05);
+  text-decoration: underline;
 }

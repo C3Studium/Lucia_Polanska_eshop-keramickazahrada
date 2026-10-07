@@ -8,6 +8,11 @@ import { model } from "@medusajs/framework/utils"
  * door. It deliberately stores a *snapshot* of the order facts it needs
  * (`order_display_id`, `email`, `customer_name`) so the decision e-mails can be
  * sent from the request alone, without re-deriving who asked.
+ *
+ * Od 7. 10. 2026 je to zároveň jádro modulu „Reklamace a zrušení"
+ * (docs/reklamace-a-zruseni.md): stavy `pending → approved → received →
+ * resolved | rejected | cancelled`, požadované vs. rozhodnuté vyřízení,
+ * částečné a opakované refundace v `refunds`.
  */
 const ReturnRequest = model.define("return_request", {
   id: model.id().primaryKey(),
@@ -33,16 +38,52 @@ const ReturnRequest = model.define("return_request", {
    * upozorňuje, ať nic nepropadne.
    */
   resolve_by: model.dateTime().nullable(),
-  /** Vrácená částka (hlavní jednotky), když se peníze vracely. */
+  /**
+   * Co ŽÁDÁ zákazník — jen u reklamace (§19/1 ZOS chce „požadovaný způsob"
+   * v protokolu): "repair" | "replace" | "refund".
+   */
+  requested_resolution: model.text().nullable(),
+  /**
+   * Co ROZHODLA majitelka při schválení: u reklamace "repair" | "replace" |
+   * "discount" | "refund" (§2169–2172), u odstoupení/vrácení vždy "refund".
+   */
+  resolution: model.text().nullable(),
+  /** Zboží dorazilo zpět / bylo přijato k opravě. */
+  goods_received_at: model.dateTime().nullable(),
+  /** Číslo zásilky, kterou zákazník poslal zboží zpět (zadává zákazník). */
+  goods_tracking: model.text().nullable(),
+  /** Vyřízeno (finální stav `resolved`). */
+  resolved_at: model.dateTime().nullable(),
+  /** Text do „potvrzení o vyřízení" (protokol + e-mail). */
+  resolution_note: model.text().nullable(),
+  /**
+   * Jednotlivé refundace `{ amount, method, at, note? }` — umožňuje částečné a
+   * opakované vrácení (krácení za opotřebení §1833, sleva z ceny).
+   */
+  refunds: model.json().nullable(),
+  /** SOUČET `refunds` (hlavní jednotky) — zůstává kvůli zpětné kompatibilitě. */
   refund_amount: model.number().nullable(),
-  /** "comgate" (karta) nebo "manual" (hotovost/dobírka/osobní odběr). */
+  /** "comgate" (karta) nebo "manual" (hotovost/dobírka/osobní odběr) — poslední. */
   refund_method: model.text().nullable(),
+  /** Poslední refundace. */
   refunded_at: model.dateTime().nullable(),
+  /**
+   * Snapshot 14denní lhůty pro odstoupení (§1829) v okamžiku žádosti —
+   * `max(fulfillments.shipped_at) + 14 d`; null = zboží ještě neodešlo.
+   */
+  withdrawal_deadline: model.dateTime().nullable(),
   /** Reklamační protokol (PDF v úložišti) a jeho číslo — fáze 2. */
   protocol_url: model.text().nullable(),
   protocol_number: model.text().nullable(),
   status: model
-    .enum(["pending", "approved", "rejected"])
+    .enum([
+      "pending",
+      "approved",
+      "received",
+      "resolved",
+      "rejected",
+      "cancelled",
+    ])
     .index()
     .default("pending"),
   /** Her words on the decision — for a rejection, the customer sees them. */

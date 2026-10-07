@@ -88,6 +88,33 @@
   letter-spacing: -.05em;
 }
 
+/* Formulář reklamace sdílený se stránkou z e-mailu je psaný na střed úzkého
+   panelu (`max-width: 34rem; margin: 0 auto`); v účtu sedí k levému okraji
+   sekce jako všechno ostatní. Potomkový selektor přebije třídu komponenty. */
+.accountOrderDetailsClaims > div {
+  max-width: 40rem;
+  margin: 0;
+}
+
+.accountOrderClaimsLink {
+  justify-self: start;
+  color: var(--ink-05);
+  font: 400 calc(var(--account-zoom, 1) * clamp(.85rem, 0.9vw, 1rem))/1.4 "Sansation-Regular", sans-serif;
+  text-decoration: underline;
+}
+
+.accountOrderClaimsFallback {
+  max-width: 40rem;
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / .72);
+  font: 300 calc(var(--account-zoom, 1) * clamp(.95rem, 1vw, 1.1rem))/1.5 "Sansation-Light", sans-serif;
+
+  a {
+    color: var(--ink-05);
+    text-decoration: underline;
+  }
+}
+
 .accountOrderDetailsAside {
   position: sticky;
   top: 120px;

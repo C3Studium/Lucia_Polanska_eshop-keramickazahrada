@@ -466,10 +466,10 @@ export const ProductionOrderActions = ({
           title={`Zrušit zakázku #${order.display_id ?? ""}?`}
           description={
             order.paid_total > 0
-              ? `Zakázka se zruší a nezaplacené platby se stornují. Zákazník už zaplatil ${formatAmount(
+              ? `Zákazník už zaplatil ${formatAmount(
                   order.paid_total,
                   order.currency_code
-                )} — vrácení peněz proveďte v detailu objednávky, samo se nestane.`
+                )}. Zrušení projde až po vyřízení vrácení peněz v „Reklamace a zrušení" — dokud na objednávce zbývá nevrácená částka, server zrušení odmítne. Nezaplacené platby se stornují.`
               : "Zakázka se zruší a zmizí z fronty."
           }
           confirmLabel="Zrušit zakázku"

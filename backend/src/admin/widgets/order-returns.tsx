@@ -1,124 +1,141 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import type { DetailWidgetProps, AdminOrder } from "@medusajs/framework/types";
-import {
-  Badge,
-  Button,
-  Container,
-  Heading,
-  Prompt,
-  Text,
-  Toaster,
-  toast,
-} from "@medusajs/ui";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useState } from "react";
+import { Badge, Button, Container, Heading, Text } from "@medusajs/ui";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { sdk } from "../lib/sdk";
+import { formatDateTime } from "../lib/format";
 import { adminQueryClient } from "../lib/query-client";
+import {
+  asNumber,
+  deadlineInfo,
+  isFinalStatus,
+  KIND_META,
+  reklamaceLink,
+  RESOLUTION_LABEL,
+  STATUS_META,
+  type ReturnRequest,
+  type ReturnRequestListResponse,
+} from "../lib/return-requests";
+import { sdk } from "../lib/sdk";
+import { formatCzk } from "../lib/workbench";
 
 /**
- * Reklamace / vrácení na detailu objednávky — ať majitelka vidí stav i tady,
- * ne jen v „Vrácení". Stav, druh, lhůta, protokol a tlačítko „Vrátit peníze"
- * (celou částku); schválení/zamítnutí a částečné vrácení řeší stránka Vrácení.
- * Bez žádostí se widget nevykreslí.
+ * Reklamace a zrušení na detailu objednávky — ať majitelka vidí stav i tady.
+ *
+ * Jen čtení + odkaz do modulu. Schválení, přijetí zboží i vrácení peněz se
+ * dělá výhradně v „Reklamace a zrušení", kde se akce nabízejí podle stavu
+ * (docs/reklamace-a-zruseni.md §3, §8) — tlačítko „vrátit celou částku" tu
+ * záměrně není, obcházelo pravidla. Bez žádostí se widget nevykreslí.
  */
 
-type ReturnRow = {
-  id: string;
-  order_display_id: string;
-  kind: "reklamace" | "vraceni" | "odstoupeni" | null;
-  reason: string;
-  resolve_by: string | null;
-  refunded_at: string | null;
-  refund_amount: number | null;
-  protocol_url: string | null;
-  status: "pending" | "approved" | "rejected";
+/** Co teď čeká na majitelku, jednou větou. */
+const nextStep = (request: ReturnRequest): string => {
+  switch (request.status) {
+    case "pending":
+      return "Čeká na vaše rozhodnutí — schválit, nebo zamítnout.";
+    case "approved":
+      if (
+        request.kind === "reklamace" &&
+        (request.resolution === "refund" || request.resolution === "discount")
+      ) {
+        return "Schváleno — můžete vrátit peníze, nebo počkat na zboží.";
+      }
+      if (request.resolution === "repair" || request.resolution === "replace") {
+        return "Schváleno — čeká se na zboží k opravě / výměně.";
+      }
+      return "Schváleno — čeká se, až zákazník pošle zboží zpět.";
+    case "received":
+      return asNumber(request.remaining) > 0
+        ? "Zboží je u vás — vraťte peníze a žádost vyřiďte."
+        : "Zboží je u vás — zbývá potvrdit vyřízení.";
+    case "resolved":
+      return request.kind === "reklamace"
+        ? "Vyřízeno."
+        : "Vyřízeno — objednávku můžete zrušit a uvolnit sklad.";
+    case "rejected":
+      return "Zamítnuto.";
+    case "cancelled":
+      return "Žádost stornována.";
+    default:
+      return "";
+  }
 };
 
-const KIND_LABEL: Record<string, string> = {
-  reklamace: "Reklamace",
-  vraceni: "Vrácení",
-  odstoupeni: "Odstoupení §1829",
-};
-
-const STATUS_META: Record<
-  string,
-  { label: string; color: "orange" | "green" | "red" }
-> = {
-  pending: { label: "Čeká na vyřízení", color: "orange" },
-  approved: { label: "Schváleno", color: "green" },
-  rejected: { label: "Zamítnuto", color: "red" },
-};
-
-const deadlineBadge = (resolveBy: string | null) => {
-  if (!resolveBy) return null;
-  const days = Math.ceil(
-    (new Date(resolveBy).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
-  );
-  const overdue = days < 0;
-  const label = overdue
-    ? `Po lhůtě o ${Math.abs(days)} dní`
-    : days === 0
-      ? "Lhůta dnes"
-      : `Zbývá ${days} dní`;
-  const color: "red" | "orange" | "grey" =
-    overdue || days <= 3 ? "red" : days <= 7 ? "orange" : "grey";
-  return { label, color };
-};
-
-const RefundButton = ({ request }: { request: ReturnRow }) => {
-  const [open, setOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch<{ message?: string }>(
-        `/admin/return-requests/${request.id}/refund`,
-        { method: "POST", body: {} }
-      ),
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["order-returns"] });
-      await queryClient.invalidateQueries({ queryKey: ["return-requests"] });
-      toast.success(result?.message ?? "Peníze byly vráceny.");
-      setOpen(false);
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Vrácení se nepodařilo"),
-  });
+const RequestRow = ({ request }: { request: ReturnRequest }) => {
+  const deadline = isFinalStatus(request.status)
+    ? null
+    : deadlineInfo(request.resolve_by);
+  const captured = asNumber(request.captured_total);
+  const refunded = asNumber(request.refunded_total);
+  const remaining = asNumber(request.remaining);
 
   return (
-    <Prompt open={open} onOpenChange={setOpen}>
-      <Prompt.Trigger asChild>
-        <Button size="small" variant="secondary">
-          Vrátit peníze
-        </Button>
-      </Prompt.Trigger>
-      <Prompt.Content>
-        <Prompt.Header>
-          <Prompt.Title>Vrátit celou zaplacenou částku?</Prompt.Title>
-          <Prompt.Description>
-            Placeno kartou → vrátí se přes ComGate, jinak se zaznamená k ručnímu
-            vrácení. Zákazník dostane e-mail. Pro částečné vrácení použijte
-            stránku Vrácení.
-          </Prompt.Description>
-        </Prompt.Header>
-        <Prompt.Footer>
-          <Prompt.Cancel>Zpět</Prompt.Cancel>
-          <Prompt.Action onClick={() => mutation.mutate()}>
-            Vrátit peníze
-          </Prompt.Action>
-        </Prompt.Footer>
-      </Prompt.Content>
-    </Prompt>
+    <div className="flex flex-col gap-y-2 px-6 py-4">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {request.kind && (
+          <Badge size="2xsmall" color={KIND_META[request.kind].color}>
+            {KIND_META[request.kind].label}
+          </Badge>
+        )}
+        <Badge size="2xsmall" color={STATUS_META[request.status].color}>
+          {STATUS_META[request.status].label}
+        </Badge>
+        {deadline && (
+          <Badge size="2xsmall" color={deadline.color}>
+            {deadline.label}
+          </Badge>
+        )}
+        {request.resolution && request.status !== "pending" && (
+          <Badge size="2xsmall" color="grey">
+            {RESOLUTION_LABEL[request.resolution]}
+          </Badge>
+        )}
+      </div>
+
+      <Text size="small" className="text-ui-fg-subtle">
+        {request.reason}
+      </Text>
+
+      <Text size="xsmall" weight="plus">
+        {nextStep(request)}
+      </Text>
+
+      {captured > 0 && (
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          Zachyceno {formatCzk(captured)} · vráceno {formatCzk(refunded)} · zbývá{" "}
+          {formatCzk(remaining)}
+        </Text>
+      )}
+
+      <Text size="xsmall" className="text-ui-fg-muted">
+        Přijato {formatDateTime(request.created_at)}
+        {request.protocol_number ? ` · ${request.protocol_number}` : ""}
+      </Text>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          to={reklamaceLink(request)}
+          className="text-ui-fg-interactive txt-small hover:underline"
+        >
+          Otevřít v Reklamace a zrušení
+        </Link>
+        {request.protocol_url && (
+          <a
+            href={request.protocol_url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-ui-fg-interactive txt-small hover:underline"
+          >
+            Protokol (PDF)
+          </a>
+        )}
+      </div>
+    </div>
   );
 };
 
 const Inner = ({ orderId }: { orderId: string }) => {
-  const { data } = useQuery<{ return_requests: ReturnRow[] }>({
+  const { data } = useQuery<ReturnRequestListResponse>({
     queryKey: ["order-returns", orderId],
     queryFn: () =>
       sdk.client.fetch("/admin/return-requests", {
@@ -133,62 +150,24 @@ const Inner = ({ orderId }: { orderId: string }) => {
 
   return (
     <Container className="divide-y p-0">
-      <Toaster />
       <div className="flex items-center justify-between px-6 py-4">
-        <Heading level="h2">Reklamace a vrácení</Heading>
+        <Heading level="h2">Reklamace a zrušení</Heading>
         <Button size="small" variant="transparent" asChild>
-          <Link to="/prehled/vraceni">Otevřít Vrácení</Link>
+          <Link to="/reklamace">Otevřít modul</Link>
         </Button>
       </div>
 
-      {requests.map((request) => {
-        const deadline = deadlineBadge(request.resolve_by);
-        const statusMeta = STATUS_META[request.status];
-        return (
-          <div key={request.id} className="flex flex-col gap-y-2 px-6 py-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {request.kind && KIND_LABEL[request.kind] && (
-                <Badge size="2xsmall" color="purple">
-                  {KIND_LABEL[request.kind]}
-                </Badge>
-              )}
-              {statusMeta && (
-                <Badge size="2xsmall" color={statusMeta.color}>
-                  {statusMeta.label}
-                </Badge>
-              )}
-              {request.status === "pending" && deadline && (
-                <Badge size="2xsmall" color={deadline.color}>
-                  {deadline.label}
-                </Badge>
-              )}
-              {request.refunded_at && (
-                <Badge size="2xsmall" color="green">
-                  Vráceno {request.refund_amount} Kč
-                </Badge>
-              )}
-            </div>
+      {requests.map((request) => (
+        <RequestRow key={request.id} request={request} />
+      ))}
 
-            <Text size="small" className="text-ui-fg-subtle">
-              {request.reason}
-            </Text>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {request.protocol_url && (
-                <a
-                  href={request.protocol_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-ui-fg-interactive txt-small hover:underline"
-                >
-                  Protokol (PDF)
-                </a>
-              )}
-              {!request.refunded_at && <RefundButton request={request} />}
-            </div>
-          </div>
-        );
-      })}
+      <div className="px-6 py-3">
+        <Text size="xsmall" className="text-ui-fg-muted">
+          Rozhodnutí, přijetí zboží i vrácení peněz se dělá jen v modulu
+          Reklamace a zrušení — podle stavu žádosti. Nativní „Zrušit objednávku"
+          projde až po vyřízení vrácení peněz.
+        </Text>
+      </div>
     </Container>
   );
 };

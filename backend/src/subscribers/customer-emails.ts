@@ -9,7 +9,9 @@ import {
   sendCustomerEmail,
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
+import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
+import { getMerchantSettings } from "../lib/merchant-settings"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { RETURN_REQUEST_MODULE } from "../modules/return-request"
@@ -383,7 +385,15 @@ const onDeliveryCreated = async ({
   })
 }
 
-/** #15 „Objednávka zrušena". */
+/**
+ * #15 „Objednávka zrušena".
+ *
+ * O penězích mluví jen tehdy, když je refundace OPRAVDU zapsaná
+ * (`refund_history`) — šablona dřív slibovala „vrátíme do 3–5 dnů" i u
+ * nezaplacené dobírky. Pojistka v `lib/claims/money` navíc zrušení s
+ * nevyrovnanými penězi vůbec nepustí, takže zrušená objednávka buď nic
+ * neplatila, nebo má vše vrácené.
+ */
 const onOrderCanceled = async ({
   event: { data },
   container,
@@ -396,12 +406,23 @@ const onOrderCanceled = async ({
     return
   }
 
+  const refunded = refundHistoryOf(order).reduce(
+    (sum, entry) => sum + toNumber(entry.amount),
+    0
+  )
+
   await sendCustomerEmail(container, {
     template: "order-cancelled",
     to: order.email,
     key: `cancel:${order.id}`,
     orderId: order.id,
-    data: { ...common(order) },
+    data: {
+      ...common(order),
+      refundRecorded: refunded > 0,
+      ...(refunded > 0
+        ? { refundAmount: formatMoney(refunded, order.currency_code) }
+        : {}),
+    },
   })
 }
 
@@ -443,8 +464,26 @@ const onPaymentRefunded = async ({
     return
   }
 
+  // Refundace z modulu „Reklamace a zrušení" posílá vlastní e-mail (potvrzení
+  // o vyřízení / „vracíme peníze"), a to JEDEN. Modul zapíše stopu do
+  // `refund_history` ještě PŘED refundací, takže poslední položka s
+  // `return_request_id` a čerstvým časem znamená: tohle je ta refundace, mlč.
+  const history = refundHistoryOf(order)
+  const last = history[history.length - 1]
+  if (last?.return_request_id && last.refunded_at) {
+    const age = Date.now() - new Date(last.refunded_at).getTime()
+    if (Number.isFinite(age) && Math.abs(age) < 10 * 60 * 1000) {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .info(
+          `[emails] Přeskakuji payment-refunded pro objednávku ${order.id} — refundace z modulu reklamací (${last.return_request_id}) má vlastní e-mail.`
+        )
+      return
+    }
+  }
+
   const refunded = (payment.refunds || []).reduce(
-    (sum: number, refund: any) => sum + Number(refund?.amount ?? 0),
+    (sum: number, refund: any) => sum + toNumber(refund?.amount),
     0
   )
 
@@ -600,7 +639,7 @@ const onReturnRequested = async ({
     )
     const decided = (await returnRequests.listReturnRequests({
       order_id: data.order_id,
-      status: ["approved", "rejected"],
+      status: ["approved", "received", "resolved", "rejected"],
     } as never)) as any[]
     if (decided.length) {
       container
@@ -645,6 +684,9 @@ const onReturnRequested = async ({
     // The e-mail is still worth sending without the item list.
   }
 
+  // Adresa pro vrácení z nastavení obchodu (Nastavení → Reklamace), ne natvrdo.
+  const settings = await getMerchantSettings(container).catch(() => null)
+
   await sendCustomerEmail(container, {
     template: "return-approved",
     to: order.email,
@@ -653,8 +695,14 @@ const onReturnRequested = async ({
     data: {
       ...common(order),
       ...(approvedItems ? { approvedItems } : {}),
+      resolution: "refund",
+      goodsReturnRequired: true,
       returnMethod: "Zásilka na adresu ateliéru",
-      returnAddress: "Keramická zahrada, Putim 229, 397 01 Písek",
+      returnAddress:
+        settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
+      ...(settings?.return_instructions?.trim()
+        ? { returnInstructions: settings.return_instructions.trim() }
+        : {}),
     },
   })
 }

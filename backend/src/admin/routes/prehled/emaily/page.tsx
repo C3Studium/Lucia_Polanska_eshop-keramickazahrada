@@ -72,6 +72,13 @@ const templateLabels: Record<string, string> = {
   "order-preparing": "Připravujeme",
   "order-ready": "Připraveno k odeslání",
   "commission-completed": "Zakázka hotová",
+  "refund-request": "Žádost přijata (reklamace / vrácení)",
+  "return-approved": "Žádost schválena",
+  "return-rejected": "Žádost zamítnuta",
+  "return-received": "Zboží přijato zpět",
+  "return-resolved": "Potvrzení o vyřízení",
+  "order-refunded": "Vrácení peněz",
+  "payment-refunded": "Platba vrácena",
 };
 
 const statusMeta: Record<

@@ -79,3 +79,15 @@ export const orderRefundUrl = (orderId: string): string => {
     ? `${base}/order/${orderId}/refund?token=${signOrderAccessToken(orderId)}`
     : ""
 }
+
+/**
+ * Absolutní URL na stránku „stav reklamace / vrácení" (`/order/:id/claims`) —
+ * časová osa žádosti, protokol, číslo vrácené zásilky. Do e-mailů modulu
+ * reklamací (potvrzení přijetí, schválení, přijetí zboží, vyřízení).
+ */
+export const orderClaimsUrl = (orderId: string): string => {
+  const base = storefrontBase()
+  return base && orderId
+    ? `${base}/order/${orderId}/claims?token=${signOrderAccessToken(orderId)}`
+    : ""
+}

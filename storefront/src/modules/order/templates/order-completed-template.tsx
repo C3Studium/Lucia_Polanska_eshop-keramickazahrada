@@ -15,6 +15,8 @@ import CarrierDamageNotice, {
 import { getSiteDocument } from "@lib/data/documents"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
+import ClaimsSummary from "@modules/order/components/claim-status/summary"
+import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -35,6 +37,11 @@ type OrderCompletedTemplateProps = {
    * `null` → tlačítka se nevykreslí (nešlo ho získat).
    */
   selfServiceToken?: string | null
+  /**
+   * Reklamace a vrácení k objednávce + zda jde ještě odstoupit (ze serveru,
+   * stejným tokenem). `null` → sekce se nevykreslí, tlačítka zůstanou jako dřív.
+   */
+  claims?: OrderClaims | null
 }
 
 const formatDate = (date: string | Date) =>
@@ -53,6 +60,7 @@ export default async function OrderCompletedTemplate({
   commissionNotes = null,
   commissionBalance = null,
   selfServiceToken = null,
+  claims = null,
 }: OrderCompletedTemplateProps) {
   const money = (amount?: number | null) =>
     convertToLocale({
@@ -113,6 +121,16 @@ export default async function OrderCompletedTemplate({
   const showDeposit = isCommission && outstanding > 0.005
   const paymentStatusLabel = showDeposit ? "Záloha zaplacena" : paymentStatus
 
+  /*
+   * „Zrušit objednávku" = odstoupení od smlouvy do 14 dnů (§1829). Server říká,
+   * zda to ještě jde: u zakázky ne (§1837), po lhůtě ne, s otevřenou žádostí ne.
+   * Místo tlačítka pak stojí jedna věta s důvodem — reklamace zůstává. Když se
+   * `claims` nenačetly, tlačítko necháme; pravidla pohlídá stránka formuláře.
+   */
+  const hasClaims = Boolean(claims && claims.requests.length > 0)
+  const cancelBlocked = claims ? claims.all_made_to_order || !claims.can_withdraw : false
+  const cancelBlockedText = claims ? withdrawBlockText(claims) : null
+
   return (
     <main className={s.root}>
       <div className={s.ambient} aria-hidden="true">
@@ -169,20 +187,44 @@ export default async function OrderCompletedTemplate({
               >
                 Upravit objednávku
               </LocalizedClientLink>
-              <LocalizedClientLink
-                className={s.selfServiceBtn}
-                href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=odstoupeni`}
-              >
-                Zrušit objednávku
-              </LocalizedClientLink>
-              <LocalizedClientLink
-                className={`${s.selfServiceBtn} ${s.selfServiceBtnGhost}`}
-                href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=reklamace`}
-              >
-                Reklamace nebo vrácení
-              </LocalizedClientLink>
+              {/* S existující žádostí nesou „Zrušit / Reklamace" sekci
+                  „Reklamace a vrácení" níž (stav + odkaz) — tady by se tloukly. */}
+              {!hasClaims && !cancelBlocked && (
+                <LocalizedClientLink
+                  className={s.selfServiceBtn}
+                  href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=odstoupeni`}
+                >
+                  Zrušit objednávku
+                </LocalizedClientLink>
+              )}
+              {!hasClaims && (
+                <LocalizedClientLink
+                  className={`${s.selfServiceBtn} ${s.selfServiceBtnGhost}`}
+                  href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=reklamace`}
+                >
+                  Reklamace nebo vrácení
+                </LocalizedClientLink>
+              )}
             </div>
+            {!hasClaims && cancelBlocked && cancelBlockedText && (
+              <p className={s.selfServiceNote}>
+                <strong>Zrušení objednávky:</strong> {cancelBlockedText}
+                {claims?.all_made_to_order
+                  ? " Reklamovat zboží můžete, nebo nám napište a domluvíme se."
+                  : ""}
+              </p>
+            )}
           </section>
+        )}
+
+        {/* Reklamace a vrácení — stav každé žádosti + odkaz na stránku se vším
+            (časová osa, protokol, adresa pro vrácení, číslo zásilky). */}
+        {selfServiceToken && claims && hasClaims && (
+          <ClaimsSummary
+            orderId={order.id}
+            token={selfServiceToken}
+            claims={claims}
+          />
         )}
 
         {/* Carrier deliveries only — Osobní odběr has no courier to inspect in front

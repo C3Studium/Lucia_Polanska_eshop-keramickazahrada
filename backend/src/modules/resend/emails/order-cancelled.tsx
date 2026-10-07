@@ -18,6 +18,14 @@ interface OrderCancelledEmailProps {
   orderNumber?: string;
   /** Only when somebody actually stated one — no fabricated default. */
   reason?: string;
+  /**
+   * Jen když je refundace OPRAVDU zapsaná (refund_history). Bez vlajky e-mail o
+   * penězích mlčí — slib „vrátíme do 3–5 dnů" u nezaplacené dobírky byl lež a u
+   * zaplacené karty slib, který nikdo nehlídal.
+   */
+  refundRecorded?: boolean;
+  /** Formátovaná vrácená částka (jen s `refundRecorded`). */
+  refundAmount?: string;
 }
 
 /**
@@ -27,7 +35,9 @@ interface OrderCancelledEmailProps {
 function OrderCancelledEmailComponent({
   customerName,
   orderNumber = "",
-  reason
+  reason,
+  refundRecorded,
+  refundAmount,
 }: OrderCancelledEmailProps) {
   const shopUrl = storeLink()
   return (
@@ -44,14 +54,20 @@ function OrderCancelledEmailComponent({
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {reason ? <LedgerRow label="Důvod zrušení" value={reason} /> : null}
+      {refundRecorded && refundAmount ? (
+        <LedgerRow label="Vráceno" value={refundAmount} strong tone="olive" />
+      ) : null}
       <LedgerEnd />
 
       <Note tone="danger">Objednávka byla zrušena.</Note>
 
-      <P>
-        Pokud už byla objednávka uhrazena, částku vám vrátíme zpět na účet
-        během 3–5 pracovních dnů.
-      </P>
+      {refundRecorded ? (
+        <P>
+          Zaplacenou částku{refundAmount ? ` ${refundAmount}` : ""} jsme vám
+          vrátili stejnou cestou, jakou k nám platba přišla. Připsání závisí
+          na vaší bance, obvykle do několika pracovních dnů.
+        </P>
+      ) : null}
 
       {shopUrl ? (
         <ButtonRow>
@@ -61,7 +77,12 @@ function OrderCancelledEmailComponent({
         </ButtonRow>
       ) : null}
 
-      <P small>Omlouváme se za případné nepříjemnosti.</P>
+      <P small>
+        Omlouváme se za případné nepříjemnosti.
+        {refundRecorded
+          ? ""
+          : " Máte-li k platbě nebo ke zrušení dotaz, stačí odpovědět na tento e-mail."}
+      </P>
       <Signature />
     </EmailLayout>
   )
@@ -75,7 +96,9 @@ export const OrderCancelledEmail = (props: OrderCancelledEmailProps) => (
 const mockOrderCancelled: OrderCancelledEmailProps = {
   customerName: "Anna Dvořáková",
   orderNumber: "#12345",
-  reason: "na žádost zákazníka"
+  reason: "na žádost zákazníka",
+  refundRecorded: true,
+  refundAmount: "1 250 Kč",
 }
 
 export default () => <OrderCancelledEmailComponent {...mockOrderCancelled} />

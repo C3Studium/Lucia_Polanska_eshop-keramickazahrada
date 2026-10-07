@@ -1,6 +1,8 @@
+import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
 import { listCommissionNotes } from "@lib/data/made-to-order"
+import { findOpenClaim } from "@lib/util/claims"
 import RefundRequest from "@modules/order/components/refund-request"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -18,8 +20,11 @@ export const metadata: Metadata = {
 
 /**
  * Reklamace / vrácení / odstoupení od smlouvy k jedné objednávce — z e-mailu,
- * bez přihlášení, autorizováno podepsaným tokenem (`?token=`). Neplatný token =
- * slušné vysvětlení, ne 404. U zboží na míru se odstoupení nenabízí (§1837).
+ * z potvrzení i z účtu, bez přihlášení, autorizováno podepsaným tokenem
+ * (`?token=`). Neplatný token = slušné vysvětlení, ne 404.
+ *
+ * Co jde podat, říká SERVER (`GET /store/orders/:id/claims`): zakázka §1837,
+ * lhůta 14 dnů, otevřená žádost. Formulář jen zamkne volbu a ukáže důvod.
  */
 export default async function OrderRefundPage(props: Props) {
   const [params, searchParams] = await Promise.all([
@@ -27,9 +32,13 @@ export default async function OrderRefundPage(props: Props) {
     props.searchParams,
   ])
   const token = searchParams.token
-  const context = token
-    ? await getGuestRefundContext(params.id, token)
-    : null
+  const [claims, context] = token
+    ? await Promise.all([
+        getOrderClaims(params.id, token),
+        // Jen kvůli číslu objednávky a měně v hlavičce; gating je z `claims`.
+        getGuestRefundContext(params.id, token),
+      ])
+    : [null, null]
   // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
   // takže funguje i hostovi z e-mailu (bez přihlášení).
   const commissionNotes = await listCommissionNotes(params.id)
@@ -40,29 +49,63 @@ export default async function OrderRefundPage(props: Props) {
     ? { href: "/account/orders", label: "Moje objednávky" }
     : undefined
 
-  if (!context) {
+  if (!token || !claims) {
+    // Token prošel (legacy kontext se načetl), jen stav žádostí ne → není to
+    // neplatný odkaz, ale výpadek; říct to tak, ať člověk nehledá nový e-mail.
+    const tokenOk = Boolean(token && context)
     return (
       <OrderStateShell
         eyebrow="Objednávka · reklamace"
-        kicker="Reklamace a vrácení"
-        title="Odkaz nejde otevřít."
-        description="Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na info@keramickazahrada.cz."
+        kicker={
+          tokenOk && context
+            ? `Objednávka #${context.order_display_id}`
+            : "Reklamace a vrácení"
+        }
+        title={tokenOk ? "Teď to nejde načíst." : "Odkaz nejde otevřít."}
+        description={
+          tokenOk
+            ? "Stav reklamací se nám teď nepodařilo načíst. Zkuste to prosím za chvíli znovu, nebo nám napište na info@keramickazahrada.cz."
+            : "Odkaz je neplatný nebo vypršel. Otevřete prosím ten z posledního e-mailu, nebo nám napište na info@keramickazahrada.cz."
+        }
         status="pending"
         primary={myOrdersAction}
       />
     )
   }
 
+  const openClaim = findOpenClaim(claims)
+  const kicker = context
+    ? `Objednávka #${context.order_display_id}`
+    : "Reklamace a vrácení"
+
   return (
     <OrderStateShell
       eyebrow="Objednávka · reklamace"
-      kicker={`Objednávka #${context.order_display_id}`}
-      title="Reklamace, vrácení nebo odstoupení."
-      description="Vyberte, co chcete řešit, napište pár slov a odešlete. Ozveme se vám e-mailem."
+      kicker={kicker}
+      title={openClaim ? "Vaše žádost běží." : "Reklamace, vrácení nebo odstoupení."}
+      description={
+        openClaim
+          ? "Tady vidíte, v jaké fázi žádost je. Jakmile rozhodneme nebo k nám dorazí zboží, dáme vám vědět e-mailem."
+          : "Vyberte, co chcete řešit, napište pár slov a odešlete. Potvrzení s protokolem přijde e-mailem."
+      }
       status="pending"
       primary={myOrdersAction}
+      secondary={
+        claims.requests.length
+          ? {
+              href: `/order/${params.id}/claims?token=${encodeURIComponent(token)}`,
+              label: "Stav žádostí",
+            }
+          : undefined
+      }
     >
-      <RefundRequest context={context} initialKind={searchParams.kind} />
+      <RefundRequest
+        orderId={params.id}
+        token={token}
+        claims={claims}
+        initialKind={searchParams.kind}
+        currencyCode={context?.currency_code}
+      />
       {commissionNotes && (
         <CommissionConversation orderId={params.id} notes={commissionNotes} />
       )}

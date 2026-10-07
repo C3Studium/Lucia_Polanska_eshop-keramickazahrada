@@ -105,8 +105,8 @@
   gap: clamp(.5rem, .7vw, .95rem);
 }
 
-/* Same triple as return-request .trigger / .submit / .cancel — one button size
-   on the whole order-detail page instead of two that never meet. */
+/* One button size on the whole order-detail page instead of two that never
+   meet (the refund-request form's .submit shares the pill shape). */
 .primary,
 .secondary {
   display: inline-flex;
