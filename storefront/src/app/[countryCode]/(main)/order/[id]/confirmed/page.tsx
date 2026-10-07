@@ -26,15 +26,17 @@ export default async function OrderConfirmedPage(props: Props) {
   const outcome = searchParams.platba
 
   /*
-   * Návrat z platby doplatku (`?platba=paid|ceka`): dorovnat HNED — doplatek
-   * nemá vlastní „dokončovací" krok jako záloha v checkoutu, takže bez tohohle
-   * by se čekalo na webhook (notif. URL v portálu) nebo 30min job. Reconcile
-   * dotáhne stav z brány, označí zaplaceno, zaúčtuje a pošle potvrzení + fakturu.
-   * Idempotentní; běží před načtením objednávky, ať stránka ukáže už zaplacený stav.
+   * Dorovnat doplatek při KAŽDÉM otevření potvrzení, ne jen po návratu z brány
+   * (`?platba`). Doplatek nemá vlastní „dokončovací" krok jako záloha v
+   * checkoutu; webhook potřebuje notif. URL v portálu a job běží po 30 min —
+   * bez tohohle mohl zaplacený doplatek viset „nedorovnaný", dokud někdo
+   * nedoběhl. reconcileOrderBalance je idempotentní a zkratuje, když není
+   * otevřený doplatek (jen pár dotazů do DB), takže běžné načtení skoro nic
+   * nestojí; u otevřeného doplatku se zeptá brány a při zaplacení HNED srovná
+   * (označí zaplaceno, zaúčtuje, pošle potvrzení + fakturu). Pozdní webhook/job
+   * to pak nezdvojí (onBalancePaid dedupuje).
    */
-  if (outcome === "paid" || outcome === "ceka") {
-    await reconcileOrderBalance(params.id).catch(() => null)
-  }
+  await reconcileOrderBalance(params.id).catch(() => null)
 
   const order = await retrieveOrder(params.id).catch(() => null)
   // Null for a guest, for someone else's order, or while the merchant workflow has no stage.

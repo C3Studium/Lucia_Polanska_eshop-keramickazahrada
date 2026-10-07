@@ -287,6 +287,14 @@ export const reconcileOrderBalance = async (
       r.payment_session_id
   )
   if (!request) {
+    // Diagnostika: proč se doplatek „neregistruje". Žádná otevřená žádost =
+    // buď už zaplaceno (fajn), nebo žádost nevznikla / nemá relaci.
+    const balances = requests.filter((r) => r.type === "balance")
+    logger.info(
+      `[balance] reconcile ${orderId}: žádný otevřený doplatek k dorovnání (balance žádostí: ${balances.length}; stavy: ${balances
+        .map((r) => `${r.status}/${r.create_state}${r.payment_session_id ? "+session" : "-session"}`)
+        .join(", ") || "—"}).`
+    )
     return { status: "none", request_id: null }
   }
 
@@ -307,6 +315,9 @@ export const reconcileOrderBalance = async (
       data: (session as any).data ?? {},
     })
     status = String(result?.status ?? "").toLowerCase()
+    logger.info(
+      `[balance] reconcile ${orderId}: doplatek ${request.id}, relace ${request.payment_session_id} — brána hlásí stav „${status || "?"}".`
+    )
   } catch (error) {
     logger.warn(
       `[balance] Stav doplatku ${request.id} se při návratu nepodařilo ověřit: ${
@@ -393,5 +404,8 @@ export const reconcileOrderBalance = async (
     return { status: "failed", request_id: request.id }
   }
 
+  logger.info(
+    `[balance] reconcile ${orderId}: doplatek ${request.id} zatím nedorovnán — brána hlásí „${status || "?"}" (čeká se na zaplacení).`
+  )
   return { status: "pending", request_id: request.id }
 }
