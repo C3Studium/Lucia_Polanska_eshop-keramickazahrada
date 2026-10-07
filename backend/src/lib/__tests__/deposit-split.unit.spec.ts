@@ -1,4 +1,4 @@
-import { splitCustomPayment } from "../deposit-split"
+import { splitChargeNow, splitCustomPayment } from "../deposit-split"
 
 /**
  * The slider's server-side guard. Two properties matter more than any single
@@ -144,5 +144,67 @@ describe("splitCustomPayment", () => {
         expect(amount).toBeLessThanOrEqual(lines[index].ceiling + 0.005)
       })
     }
+  })
+})
+
+/**
+ * Postage sits OUTSIDE the deposit: a commission's „jen zálohu" is goods only,
+ * the postage falls into the doplatek. The two anchors matter most — the
+ * deposit floor charges no postage, „pay everything" charges all of it — and
+ * in between the slider fills the goods first and spills onto postage only once
+ * production is maxed.
+ */
+describe("splitChargeNow", () => {
+  const lines = [{ floor: 250, ceiling: 1000 }]
+
+  it("charges no postage at the deposit floor", () => {
+    // goodsNonProd 0, floor 250 → minimum 250.
+    const result = splitChargeNow(lines, 150, 0, 250)
+    expect(result.chargeNow).toBe(250)
+    expect(result.shippingPaidNow).toBe(0)
+    expect(result.productionAmounts).toEqual([250])
+  })
+
+  it("charges all the postage at pay-everything", () => {
+    // goodsNonProd 0 + ceiling 1000 + postage 150 → maximum 1150.
+    const result = splitChargeNow(lines, 150, 0, 1150)
+    expect(result.chargeNow).toBe(1150)
+    expect(result.shippingPaidNow).toBe(150)
+    expect(result.productionAmounts).toEqual([1000])
+  })
+
+  it("fills the goods before it touches postage", () => {
+    // Below the production ceiling: still no postage.
+    const mid = splitChargeNow(lines, 150, 0, 600)
+    expect(mid.productionAmounts).toEqual([600])
+    expect(mid.shippingPaidNow).toBe(0)
+
+    // Above the production ceiling: the spill lands on postage, capped there.
+    const over = splitChargeNow(lines, 150, 0, 1050)
+    expect(over.productionAmounts).toEqual([1000])
+    expect(over.shippingPaidNow).toBe(50)
+    expect(over.chargeNow).toBe(1050)
+  })
+
+  it("keeps non-production goods in the floor, postage out of it", () => {
+    // A 500 Kč stock item rides along: paid now, but postage still deferred.
+    const result = splitChargeNow(lines, 150, 500, 750)
+    expect(result.chargeNow).toBe(750)
+    expect(result.shippingPaidNow).toBe(0)
+  })
+
+  it("has no postage to add for personal pickup", () => {
+    const result = splitChargeNow(lines, 0, 0, 1000)
+    expect(result.chargeNow).toBe(1000)
+    expect(result.shippingPaidNow).toBe(0)
+    expect(result.productionAmounts).toEqual([1000])
+  })
+
+  it("still reaches full postage when the line forbids full prepayment", () => {
+    // ceiling === floor: production caps at 250, but postage is still payable.
+    const result = splitChargeNow([{ floor: 250, ceiling: 250 }], 150, 0, 400)
+    expect(result.productionAmounts).toEqual([250])
+    expect(result.shippingPaidNow).toBe(150)
+    expect(result.chargeNow).toBe(400)
   })
 })

@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
-import { splitCustomPayment } from "../../../../../lib/deposit-split"
+import { splitChargeNow } from "../../../../../lib/deposit-split"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
@@ -64,6 +64,8 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     fields: [
       "id",
       "total",
+      // Poštovné — u zakázky je MIMO zálohu (doplatí se až před odesláním).
+      "shipping_total",
       "currency_code",
       "metadata",
       "items.id",
@@ -159,6 +161,10 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
   }
 
   const cartTotal = toNumber(cart.total)
+  // Poštovné stojí mimo zálohu: záloha je jen za zboží, poštovné padá do
+  // doplatku (jako u osobního odběru, jen s poštou na konci). Doplatek to
+  // sedne sám — `agreed_total` zůstává celý košík a outstanding = agreed − paid.
+  const shippingNow = roundMoney(Math.max(0, toNumber(cart.shipping_total)))
   const metadata = cart.metadata as Record<string, unknown> | null
   const storedMode = metadata?.production_payment_mode
   const mode =
@@ -166,30 +172,30 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
       ? (storedMode as "full" | "custom")
       : "deposit"
 
-  // What the slider may legally cover, as charge-now totals: non-production
-  // lines are always paid in full, so the slider moves only the production
-  // portion between Σfloor and Σceiling.
-  const nonProductionNow = roundMoney(cartTotal - productionTotal)
-  const sliderCeiling = roundMoney(
-    nonProductionNow +
-      splitLines.reduce((sum, line) => sum + line.ceiling, 0)
+  // Non-production goods are always paid now — but WITHOUT postage. The slider
+  // then moves the production portion between Σfloor and Σceiling, and postage
+  // is pulled in only as it approaches „pay everything".
+  const goodsNonProductionNow = roundMoney(
+    cartTotal - productionTotal - shippingNow
   )
+  const ceilingSum = splitLines.reduce((sum, line) => sum + line.ceiling, 0)
+  // „Jen zálohu" = zboží mimo zakázku + Σzáloh, bez poštovného.
   const depositNow = hasProduction
-    ? roundMoney(nonProductionNow + depositTotal)
+    ? roundMoney(goodsNonProductionNow + depositTotal)
+    : cartTotal
+  // „Zaplatit vše" = vše vč. poštovného; kdo platí celé, nemá co doplácet.
+  const sliderCeiling = hasProduction
+    ? roundMoney(goodsNonProductionNow + ceilingSum + shippingNow)
     : cartTotal
 
   // The stored custom choice, re-clamped against today's cart — items may
-  // have been added or removed since it was made.
+  // have been added or removed since it was made. `splitChargeNow` naturally
+  // clamps to [depositNow, sliderCeiling].
   const storedAmount = toNumber(metadata?.production_payment_amount)
   const customNow =
     mode === "custom" && storedAmount > 0
-      ? roundMoney(
-          nonProductionNow +
-            splitCustomPayment(
-              splitLines,
-              roundMoney(storedAmount - nonProductionNow)
-            ).applied
-        )
+      ? splitChargeNow(splitLines, shippingNow, goodsNonProductionNow, storedAmount)
+          .chargeNow
       : null
 
   return {
@@ -199,15 +205,13 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     has_made_to_order: hasProduction,
     can_pay_full: hasProduction && allowFull,
     mode,
-    /** Charged now if the deposit option is taken. */
-    deposit_amount: hasProduction
-      ? roundMoney(cartTotal - productionTotal + depositTotal)
-      : cartTotal,
-    /** Charged now if „pay everything" is taken. */
+    /** Charged now if the deposit option is taken — goods only, no postage. */
+    deposit_amount: depositNow,
+    /** Charged now if „pay everything" is taken — includes postage. */
     full_amount: cartTotal,
-    /** Owed later under the deposit option — zero when paying in full. */
+    /** Owed later under the deposit option — the rest of the goods plus postage. */
     balance_later: hasProduction
-      ? roundMoney(productionTotal - depositTotal)
+      ? roundMoney(cartTotal - depositNow)
       : 0,
     /**
      * The slider. `minimum` is the owner's floor as a charge-now total —

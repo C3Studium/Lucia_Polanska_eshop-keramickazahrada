@@ -12,7 +12,7 @@ import {
   releaseLockStep,
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
-import { splitCustomPayment } from "../lib/deposit-split"
+import { splitChargeNow } from "../lib/deposit-split"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import {
   MADE_TO_ORDER_MODULE,
@@ -77,6 +77,8 @@ const calculateMadeToOrderPaymentStep = createStep(
       fields: [
         "id",
         "total",
+        // Poštovné — u zakázky je MIMO zálohu, doplatí se až před odesláním.
+        "shipping_total",
         "currency_code",
         "metadata",
         "items.id",
@@ -134,8 +136,14 @@ const calculateMadeToOrderPaymentStep = createStep(
     )
 
     const productionLines: ProductionLineSnapshot[] = []
+    // Strop „zaplatit teď" pro každý řádek (souběžně s productionLines). Plná
+    // platba není jiné procento zálohy — je to posun na strop; poštovné pak
+    // padá na doplatek. Řádek, který plnou platbu předem zakazuje, má strop =
+    // podlaha. Vše po proudu (outstanding produkční objednávky, ship gate, bar
+    // Zakázky) čte `agreed_total − paid`, takže plná platba dosedne jako
+    // „zaplaceno" bez větve kdekoli jinde.
+    const ceilings: number[] = []
     let productionLinesTotal = 0
-    let depositTotal = 0
 
     for (const item of items) {
       const profile: any = profilesByProduct.get(item.product_id)
@@ -143,28 +151,17 @@ const calculateMadeToOrderPaymentStep = createStep(
 
       const override: any = profilesByVariant.get(item.variant_id)
 
-      // Paying in full is expressed as a deposit of 100 %, not as a separate
-      // flag. Everything downstream — the production order's outstanding sum,
-      // the ship gate, the Zakázky bar, the „čeká na doplatek" tile — is
-      // derived from `agreed_total − paid`, so a full prepayment simply lands
-      // as „already paid" with no branch anywhere. A `paid_in_full` boolean
-      // would have to be honoured in each of those places, and the one that got
-      // missed would be a way to ship something unpaid.
-      const prepayFull = payFullRequested && profile.allow_full_prepayment !== false
-
-      const depositPercentage = prepayFull
-        ? 100
-        : Math.min(
-            100,
-            Math.max(
-              1,
-              toNumber(
-                override?.deposit_percentage_override ??
-                  profile.default_deposit_percentage ??
-                  25
-              )
-            )
+      const depositPercentage = Math.min(
+        100,
+        Math.max(
+          1,
+          toNumber(
+            override?.deposit_percentage_override ??
+              profile.default_deposit_percentage ??
+              25
           )
+        )
+      )
       const lineTotal = toNumber(
         item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
       )
@@ -182,13 +179,14 @@ const calculateMadeToOrderPaymentStep = createStep(
         )
       }
 
-      // Záloha z původní ceny, ale nikdy víc, než kolik řádek po slevě stojí
-      // (u „plné platby" = 100 % to tak vyjde přesně na zlevněnou cenu).
+      // Záloha z původní ceny, ale nikdy víc, než kolik řádek po slevě stojí.
       const depositAmount = roundMoney(
         Math.min((lineBase * depositPercentage) / 100, lineTotal)
       )
       productionLinesTotal += lineTotal
-      depositTotal += depositAmount
+      ceilings.push(
+        profile.allow_full_prepayment === false ? depositAmount : lineTotal
+      )
       productionLines.push({
         line_item_id: item.id,
         product_id: item.product_id,
@@ -228,42 +226,53 @@ const calculateMadeToOrderPaymentStep = createStep(
     }
 
     const originalTotal = toNumber(cart.total)
-    let paymentAmount = productionLines.length
-      ? roundMoney(originalTotal - productionLinesTotal + depositTotal)
-      : originalTotal
+    // Poštovné je mimo zálohu: záloha je jen za zboží, poštovné padá do
+    // doplatku (outstanding = agreed_total − paid to sedne samo, agreed_total
+    // zůstává celý košík). U osobního odběru je nula.
+    const shippingNow = roundMoney(Math.max(0, toNumber((cart as any).shipping_total)))
+    let paymentAmount = originalTotal
 
-    if (customRequested && productionLines.length) {
-      // The slider. The stored amount is a charge-now total; the production
-      // portion of it is distributed across lines proportionally to headroom
-      // by the same function the checkout summary uses, so the number shown
-      // and the number charged cannot drift. Clamped, not rejected: the cart
-      // may have changed since the choice was stored (an item added, one
-      // removed), and failing the whole payment over a stale slider position
-      // helps nobody — the floor still holds, which is the rule that matters.
-      const nonProductionNow = roundMoney(originalTotal - productionLinesTotal)
-      const requestedProduction = roundMoney(
-        toNumber(cartMetadata?.production_payment_amount) - nonProductionNow
+    if (productionLines.length) {
+      // Zboží mimo zakázku se platí vždy celé a hned, ale BEZ poštovného.
+      const goodsNonProductionNow = roundMoney(
+        originalTotal - productionLinesTotal - shippingNow
       )
-      const split = splitCustomPayment(
-        productionLines.map((line) => ({
-          floor: line.deposit_amount,
-          ceiling:
-            profilesByProduct.get(line.product_id)?.allow_full_prepayment ===
-            false
-              ? line.deposit_amount
-              : line.line_total,
-        })),
-        requestedProduction
-      )
+      const splitLines = productionLines.map((line, index) => ({
+        floor: line.deposit_amount,
+        ceiling: ceilings[index],
+      }))
+      const floorSum = splitLines.reduce((sum, line) => sum + line.floor, 0)
+      const ceilingSum = splitLines.reduce((sum, line) => sum + line.ceiling, 0)
+      // „Jen zálohu" bez poštovného … „zaplatit vše" vč. poštovného.
+      const minimum = roundMoney(goodsNonProductionNow + floorSum)
+      const maximum = roundMoney(goodsNonProductionNow + ceilingSum + shippingNow)
 
-      split.amounts.forEach((amount, index) => {
+      // Kolik zaplatit teď: celé (posuv na strop + poštovné), posuvník (uložená
+      // částka — sevře se do [minimum, maximum]), nebo jen záloha. Rozpad je
+      // stejná funkce, jakou kreslí checkout, takže se zobrazené a účtované
+      // číslo nemůžou rozejít. Sevření, ne odmítnutí: košík se mohl od volby
+      // změnit a shodit celou platbu kvůli zastaralému posuvníku nikomu nepomůže
+      // — podlaha drží, a to je pravidlo, na kterém záleží.
+      const target = payFullRequested
+        ? maximum
+        : customRequested
+          ? toNumber(cartMetadata?.production_payment_amount)
+          : minimum
+
+      const breakdown = splitChargeNow(
+        splitLines,
+        shippingNow,
+        goodsNonProductionNow,
+        target
+      )
+      paymentAmount = breakdown.chargeNow
+      breakdown.productionAmounts.forEach((amount, index) => {
         const line = productionLines[index]
         line.deposit_amount = amount
         line.deposit_percentage = line.line_total
           ? roundMoney((amount / line.line_total) * 100)
           : line.deposit_percentage
       })
-      paymentAmount = roundMoney(nonProductionNow + split.applied)
     }
 
     if (paymentAmount < 0 || !Number.isFinite(paymentAmount)) {

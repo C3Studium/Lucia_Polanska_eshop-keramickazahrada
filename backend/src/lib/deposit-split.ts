@@ -134,3 +134,58 @@ export const splitCustomPayment = (
 
   return { applied, amounts, clamped }
 }
+
+export type ChargeNowBreakdown = {
+  /** Per production line, same order as `lines`, goods only — feeds the snapshots. */
+  productionAmounts: number[]
+  /** How much of the postage is collected now (0 at the deposit floor, all of it at full). */
+  shippingPaidNow: number
+  /** The total charged now: `goodsNonProdNow + ΣproductionAmounts + shippingPaidNow`. */
+  chargeNow: number
+}
+
+/**
+ * The charge-now total split across goods and postage, for a commission cart.
+ *
+ * ## Why postage is layered on top, not mixed into the split
+ *
+ * U zakázky je poštovné **mimo zálohu**: záloha je jen za zboží (25 % z ceny
+ * kusu), poštovné se doplatí až v doplatku před odesláním — jako kdyby šlo o
+ * osobní odběr, jen s poštou na konci. Takže:
+ *
+ * - **floor** (jen záloha) = `goodsNonProdNow + Σfloor`, bez koruny poštovného;
+ * - **ceiling** (zaplatit vše) = `goodsNonProdNow + Σceiling + shipping`, včetně
+ *   poštovného — kdo platí celé, nemá pak co doplácet;
+ * - mezi tím posuvník **nejdřív doplní zboží** (production lines do stropu) a
+ *   teprve zbytek pustí na poštovné.
+ *
+ * Postage is a single scalar, never a line in `splitCustomPayment`: that
+ * function's per-line `amounts` map 1:1 back to production lines and feed the
+ * production order's deposit snapshots, so slipping a shipping „line" in would
+ * book postage as a deposit on a product. Keeping it separate leaves the split
+ * pristine and the snapshots honest.
+ */
+export const splitChargeNow = (
+  lines: DepositSplitLine[],
+  shipping: number,
+  goodsNonProdNow: number,
+  target: number
+): ChargeNowBreakdown => {
+  const postage = round(Math.max(0, shipping))
+  const base = round(goodsNonProdNow)
+  // Everything the customer wants to pay beyond the always-now non-production
+  // goods. The production split clamps it to [Σfloor, Σceiling]; whatever is
+  // asked for above the production ceiling spills onto postage, capped there.
+  const aboveBase = round(target - base)
+  const split = splitCustomPayment(lines, aboveBase)
+  const shippingPaidNow = Math.min(
+    postage,
+    Math.max(0, round(aboveBase - split.applied))
+  )
+
+  return {
+    productionAmounts: split.amounts,
+    shippingPaidNow,
+    chargeNow: round(base + split.applied + shippingPaidNow),
+  }
+}
