@@ -43,13 +43,29 @@ export default function OrderStateShell({
         <span>Keramická zahrada</span>
       </div>
 
-      <section className={s.content}>
-        <div className={s.mark} aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <strong>{status === "pending" ? "…" : status === "success" ? "✓" : "×"}</strong>
-        </div>
+      {/*
+        Dvě podoby téhož rozvržení, podle toho, jestli stránka něco nabízí.
+
+        **Bez ovládacích prvků** (hotová objednávka, zrušená platba) je to
+        oznámení: dekorativní značka vlevo, text vpravo. Nic jiného tu není
+        a široká půlka pro ni je v pořádku.
+
+        **S ovládacími prvky** (úprava objednávky, reklamace) to přestává
+        platit. Formulář se vykresloval uvnitř textového sloupce, takže všechno
+        — nadpis, odstavec, výběr výdejny i tlačítka — se mačkalo do pravé
+        poloviny, zatímco levá držela kroužek. Prvky, se kterými se pracuje,
+        proto dostanou tu širokou stranu a text ustoupí vedle. Značka
+        v té podobě mizí: pod formulářem by byla jen šum.
+      */}
+      <section className={s.content} data-panels={children ? "ano" : "ne"}>
+        {!children && (
+          <div className={s.mark} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <strong>{status === "pending" ? "…" : status === "success" ? "✓" : "×"}</strong>
+          </div>
+        )}
 
         <div className={s.copy}>
           <p className={s.kicker}>
@@ -65,8 +81,6 @@ export default function OrderStateShell({
             {accent && <em>{accent}</em>}
           </h1>
           <p className={s.description}>{description}</p>
-
-          {children}
 
           {(primary || secondary) && (
             <div className={s.actions}>
@@ -84,6 +98,11 @@ export default function OrderStateShell({
             </div>
           )}
         </div>
+
+        {/* Až za textem v DOM, ale nalevo od něj v mřížce. Na úzké obrazovce,
+            kde se to skládá pod sebe, je pořadí „nejdřív o co jde, pak co
+            vyplnit" to správné — a odečítač obrazovky čte DOM, ne mřížku. */}
+        {children && <div className={s.panels}>{children}</div>}
       </section>
 
       <div className={s.footer}>

@@ -61,7 +61,7 @@ export default async function OrderEditPage(props: Props) {
       eyebrow="Objednávka · úprava"
       kicker="Úprava objednávky"
       title="Upravte si objednávku."
-      accent="Dokud ji nezabalíme."
+      accent="Dokud ji nepošleme."
       description="Vyměňte variantu nebo odeberte položku — rozdíl ceny uvidíte ještě před uložením. Zakázkové kusy upravujeme po telefonu."
       status="pending"
       primary={myOrdersAction}

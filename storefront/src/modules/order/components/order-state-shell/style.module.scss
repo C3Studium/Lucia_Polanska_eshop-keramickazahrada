@@ -178,6 +178,26 @@
     justify-items: stretch;
     gap: clamp(3rem, 9vw, 11rem);
     padding-block: 0;
+
+    /*
+     * Se stránkou, která něco nabízí, se poměr obrací.
+     *
+     * Nahoře dostává širokou půlku text, protože vedle něj stojí jen značka.
+     * Jakmile jsou tu ovládací prvky — výběr výdejny, formulář reklamace,
+     * vlákno zprávy —, je to naopak ono, co potřebuje místo: je v tom výběr,
+     * delší popisky i tlačítka vedle sebe. Text si vystačí s užším sloupcem,
+     * je to pár vět.
+     *
+     * Mezera je taky menší. 11rem mezi dekorací a textem je kompozice; mezi
+     * formulářem a jeho vysvětlením je to propast, přes kterou oko nepřeskočí.
+     */
+    &[data-panels="ano"] {
+      grid-template-columns: minmax(20rem, 1.15fr) minmax(16rem, .85fr);
+      /* Formulář roste dolů, text ne — svisle vystředěný text by se vedle
+         dlouhého formuláře odplavil doprostřed ničeho. */
+      align-items: start;
+      gap: clamp(2rem, 5vw, 5rem);
+    }
   }
 
   /* 568x320. Two columns here too, but sized off the mark rather than a fraction: side by side
@@ -376,6 +396,44 @@
   max-width: 42rem;
 }
 
+/*
+ * Ovládací prvky stránky — výběr výdejny, formulář reklamace, vlákno zpráv.
+ *
+ * Vlastní blok, ne potomci `.copy`: uvnitř textového sloupce dědily jeho
+ * `max-width: 42rem` a mačkaly se do poloviny, kterou má text. Tady si berou
+ * celou svou buňku.
+ */
+.panels {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  /* Svisle, tedy na vh — je to odstup mezi samostatnými panely nad sebou. */
+  gap: clamp(1.25rem, 2.4vh, 2rem);
+}
+
+/* Na úzké obrazovce stojí panely pod textem a potřebují od něj odrazit. */
+.content[data-panels="ano"] .panels {
+  margin-top: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+/*
+ * Na širokém okně mění mřížka pořadí: panely nalevo, text napravo. V DOM je
+ * to obráceně, a schválně — viz poznámka u `children` v komponentě.
+ */
+@include h(xs) {
+  .content[data-panels="ano"] .copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .content[data-panels="ano"] .panels {
+    grid-column: 1;
+    grid-row: 1;
+    /* Odstup je tu mezerou mřížky, ne okrajem panelu. */
+    margin-top: 0;
+  }
+}
+
 .kicker {
   margin: 0 0 clamp(1rem, 2.5vh, 1.8rem);
   font: .75rem/1.2 "Sansation-Regular", sans-serif;
@@ -407,6 +465,25 @@
      revive the 7vw term would grow the type faster than its measure and break long headings back
      into four lines — which is what the old 2K 10rem override did to ?stav=neplatny-odkaz. */
   @include h(xs) { font-size: clamp(3.4rem, 7vw, 7.5rem); }
+
+  /*
+   * Na stránce s formulářem je nadpis o stupeň menší.
+   *
+   * Sedmivwový nadpis je psaný pro oznámení, kde je to jediná věc na
+   * obrazovce. Vedle formuláře stojí v užším sloupci a „Upravte si
+   * objednávku." se v něm lámalo na dva řádky, takže z nadpisu a jeho
+   * kurzívy byly čtyři — půl obrazovky, než se čtenář dostane k tomu,
+   * co má udělat.
+   *
+   * Strop 3.25rem je odvozený, ne odhadnutý: sloupec textu je .85fr
+   * ze 78rem po odečtení mezery, tedy zhruba 28rem. „Upravte si
+   * objednávku." má 22 znaků a Sentient má v tomhle řezu průměrnou
+   * šířku kolem .46em, takže 22 × .46 × 3.25rem ≈ 33rem — s dělením
+   * slov na dvě slova na řádek, ne na čtyři.
+   */
+  .content[data-panels="ano"] & {
+    @include h(xs) { font-size: clamp(2.125rem, 3.4vw, 3.25rem); }
+  }
 
   /* The second pair this file keeps on purpose. Type belongs on the vw axis, and on that axis
      these two are not one line: 39.76px at 568 is 7.00vw, 51.26px at 932 is 5.50vw, and the phs
