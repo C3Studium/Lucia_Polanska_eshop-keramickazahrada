@@ -41,23 +41,18 @@ const reconcile = async (
   })
 }
 
-/**
- * A fulfilment exists, so the goods are packed. The order belongs in "K odeslání" at the
- * latest — but never drag it backwards out of `shipped`, and never out of a terminal stage.
+/*
+ * POZOR — fáze se NEMĚNÍ vytvořením fulfillmentu (přání majitelky, 7. 10. 2026).
+ *
+ * Dřív `order.fulfillment_created` posunul objednávku do „K odeslání". Jenže
+ * fulfillment vzniká i vygenerováním ČP štítku (`generate-cp-label` volá
+ * `createOrderFulfillmentWorkflow`) — a tím se stav posouval „přes štítek".
+ * Majitelka chce fázi měnit JEN tlačítky ve frontě, ne jako vedlejšák štítku.
+ * Proto tenhle reflex padá: „K odeslání" nastaví tlačítko „Připraveno k
+ * odeslání", odeslání tlačítko „Vytvořit zásilku a odeslat" (to fázi posune
+ * samo, viz `ship-merchant-order` — nespoléhá na tenhle subscriber). Reflexe
+ * zrušení fulfillmentu i odeslání (`shipment.created`) zůstávají.
  */
-const onFulfillmentCreated = async (
-  container: SubscriberArgs["container"],
-  data: { order_id?: string }
-) => {
-  if (!data?.order_id) {
-    return
-  }
-  const stage = await stageFor(container, data.order_id)
-  if (stage === null || ["shipping", "shipped", "cancelled"].includes(stage)) {
-    return
-  }
-  await reconcile(container, data.order_id, "shipping")
-}
 
 /**
  * A shipment exists, so the goods have left. This fires both when the merchant used the
@@ -186,8 +181,6 @@ export default async function reconcileMerchantOrder({
   const data = (event.data || {}) as Record<string, any>
 
   switch (event.name) {
-    case "order.fulfillment_created":
-      return onFulfillmentCreated(container, data)
     case "shipment.created":
       return onShipmentCreated(container, data)
     case "order.fulfillment_canceled":
@@ -203,7 +196,8 @@ export default async function reconcileMerchantOrder({
 
 export const config: SubscriberConfig = {
   event: [
-    "order.fulfillment_created",
+    // „order.fulfillment_created" ZÁMĚRNĚ není — fáze se nemění vygenerováním
+    // štítku (viz komentář nahoře); jen tlačítky a reálnými událostmi níž.
     "shipment.created",
     "order.fulfillment_canceled",
     "payment.captured",
