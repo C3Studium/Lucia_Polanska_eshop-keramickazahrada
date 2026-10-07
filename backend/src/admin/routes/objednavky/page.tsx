@@ -853,6 +853,61 @@ const OrdersInner = () => {
       toast.error(error instanceof Error ? error.message : "Předání se nepodařilo."),
   });
 
+  /* Hromadné „Označit jako odeslané" — lehká akce: posune stav na „Odesláno"
+     a pošle zákazníkovi e-mail. Nezakládá zásilku ani štítek. Backend vrací
+     u každé objednávky, jestli se povedla, a případný důvod, proč ji přeskočil
+     (např. nedoplacená zakázka) — ty vypíšeme, ať je vidět, co se nestalo. */
+  const markShipped = useMutation({
+    mutationFn: (orderIds: string[]) =>
+      sdk.client.fetch(`/admin/merchant-orders/mark-shipped`, {
+        method: "POST",
+        body: { order_ids: orderIds },
+      }) as Promise<{
+        shipped: number;
+        total: number;
+        results: { order_id: string; shipped: boolean; reason?: string }[];
+      }>,
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      const labelFor = new Map(allRows.map((order) => [order.id, order.display_id]));
+      if (result.shipped > 0) {
+        toast.success(
+          `Označeno jako odeslané: ${result.shipped} z ${result.total}. Zákazníkům odešel e-mail.`
+        );
+      }
+      for (const entry of result.results.filter((item) => !item.shipped)) {
+        toast.warning(
+          `#${labelFor.get(entry.order_id) ?? entry.order_id} přeskočeno${
+            entry.reason ? `: ${entry.reason}` : "."
+          }`
+        );
+      }
+      setSelected(new Set());
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Označení se nepodařilo."
+      ),
+  });
+
+  /* „Vybrat vše na stránce": tri-state podle toho, kolik z načtených řádků je
+     vybráno. Pracuje jen s tím, co je právě vidět (aktivní filtr/stránka). */
+  const pageAllSelected =
+    rows.length > 0 && rows.every((order) => selected.has(order.id));
+  const pageSomeSelected = rows.some((order) => selected.has(order.id));
+  const toggleSelectAllOnPage = (checked: boolean) => {
+    const next = new Set(selected);
+    for (const order of rows) {
+      if (checked) {
+        next.add(order.id);
+      } else {
+        next.delete(order.id);
+      }
+    }
+    setSelected(next);
+  };
+
   return (
     <Container className="divide-y p-0">
       <Toaster />
@@ -967,11 +1022,19 @@ const OrdersInner = () => {
           </Select>
           <Button
             size="small"
+            variant="secondary"
             disabled={!batchStage}
             isLoading={batchMove.isPending}
             onClick={() => batchMove.mutate()}
           >
             Přesunout
+          </Button>
+          <Button
+            size="small"
+            isLoading={markShipped.isPending}
+            onClick={() => markShipped.mutate([...selected])}
+          >
+            Označit jako odeslané ({selected.size})
           </Button>
           <Button
             size="small"
@@ -993,6 +1056,23 @@ const OrdersInner = () => {
 
       {active !== "statistiky" && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
+          <div className="bg-ui-bg-subtle flex items-center gap-3 px-6 py-2">
+            <Checkbox
+              checked={
+                pageAllSelected
+                  ? true
+                  : pageSomeSelected
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={(checked) =>
+                toggleSelectAllOnPage(checked === true)
+              }
+            />
+            <Text size="xsmall" weight="plus" className="text-ui-fg-subtle">
+              Vybrat vše na stránce
+            </Text>
+          </div>
           {rows.map((order) => {
             const unpaid = order.total - order.paid > 0.009;
 

@@ -143,7 +143,7 @@ export const nextStage: Partial<
 export const nextStageLabel: Partial<Record<MerchantOrderStage, string>> = {
   received: "Začít připravovat",
   working: "Připraveno k odeslání",
-  shipping: "Vytvořit zásilku a odeslat",
+  shipping: "Označit jako odeslané",
 };
 
 /**
@@ -298,34 +298,13 @@ export const OrderRow = ({
       await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
       toast.success(
         stage === "shipping"
-          ? "Zásilka je připravená. Až ji předáte dopravci, potvrďte to tlačítkem."
+          ? "Objednávka je označená jako odeslaná a zákazník dostal e-mail."
           : "Stav objednávky byl změněn"
       );
     },
     onError: (error) => {
       const message =
         error instanceof Error ? error.message : "Stav se nepodařilo změnit";
-      setLastFailure(message);
-      toast.error(message);
-    },
-  });
-  const handover = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/merchant-orders/${order.order_id}`, {
-        method: "PATCH",
-        body: { stage: "handover_confirmed" },
-      }),
-    onSuccess: async (result: any) => {
-      await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
-      toast.success(
-        result?.confirmed
-          ? "Zásilka byla předána dopravci a zákazník dostal e-mail"
-          : (result?.message ?? "Tato zásilka už je předaná dopravci.")
-      );
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : "Předání se nepodařilo potvrdit";
       setLastFailure(message);
       toast.error(message);
     },
@@ -465,10 +444,6 @@ export const OrderRow = ({
   });
 
   const targetStage = nextStage[order.stage];
-  // A1: a parcel that exists but has not left. The next step is not „ship" —
-  // that already happened as far as packing goes — it is her confirming she
-  // has physically handed it over.
-  const needsHandover = order.awaiting_handover;
   // The reason comes from the server, computed by the same rules the ship
   // workflow enforces — so the button is hidden for exactly the orders the
   // backend would reject, and the merchant is told why instead of being left
@@ -532,11 +507,6 @@ export const OrderRow = ({
         {blockedFromShipping && (
           <Text size="small" className="text-ui-fg-error mt-1">
             {order.ship_block_reason}
-          </Text>
-        )}
-        {needsHandover && !blockedFromShipping && (
-          <Text size="small" className="text-ui-fg-subtle mt-1">
-            Čeká na ruční podání zásilky.
           </Text>
         )}
         {order.refund_due && (
@@ -704,21 +674,9 @@ export const OrderRow = ({
           </Button>
         )}
 
-        {needsHandover && !blockedFromShipping && !order.is_personal_pickup && (
-          <Button
-            variant="primary"
-            size="small"
-            isLoading={handover.isPending}
-            onClick={() => handover.mutate()}
-          >
-            Zásilku jsem předala dopravci
-          </Button>
-        )}
-
         {targetStage &&
           order.stage !== "payment_problem" &&
           !blockedFromShipping &&
-          !needsHandover &&
           !order.is_personal_pickup && (
             <Button
               variant="primary"

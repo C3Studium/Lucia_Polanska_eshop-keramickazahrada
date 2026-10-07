@@ -55,7 +55,7 @@ const fold = (value: string) =>
  *
  * „Vygenerovat štítek" podá zásilku ČP (vznikne štítek + číslo zásilky) BEZ
  * odeslání — objednávka zůstane „K odeslání" a zákazníkovi nic nechodí, to až
- * na „Zásilku jsem předala dopravci". Štítek se uloží do úložiště (MinIO), ať
+ * na „Označit jako odeslané". Štítek se uloží do úložiště (MinIO), ať
  * nezávisí jen na jednom záznamu (ČP nemá reprint). Pak jde stáhnout (soubor
  * `Stitek-Jmeno-Prijmeni-0026.pdf`), sdílet do telefonu (tisk přes mobil) nebo
  * otevřít. Jen pro zásilky ČP; osobní odběr a jiní dopravci widget skryjí.
@@ -237,7 +237,7 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
                 </Text>
                 <Text size="xsmall" className="text-ui-fg-muted">
                   Objednávka se tím neoznačí jako odeslaná — to až tlačítkem
-                  „Zásilku jsem předala dopravci" v Denní práci.
+                  „Označit jako odeslané" v Denní práci.
                 </Text>
               </div>
             ) : (
