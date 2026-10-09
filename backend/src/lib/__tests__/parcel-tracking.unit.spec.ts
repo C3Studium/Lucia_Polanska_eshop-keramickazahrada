@@ -199,7 +199,7 @@ describe("plánovač — průběh a konce", () => {
   it("75/51 → in_transit bez spouštěčů; 82 → stored s razítkem", () => {
     const transit = planParcelUpdate(handedOver(), [ev("21", "2026-10-07"), ev("75", "2026-10-08")], "cp", NOW)
     expect(transit.patch.phase).toBe("in_transit")
-    expect(transit.triggers).toEqual({ handed_over: false, returned: false, damaged: false, never_appeared: false })
+    expect(transit.triggers).toEqual({ handed_over: false, delivered: false, returned: false, damaged: false, never_appeared: false })
 
     const stored = planParcelUpdate(
       handedOver(),
