@@ -12,6 +12,10 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { assertShipGateStep } from "./steps/assert-ship-gate"
 import { stampDobirkaStep } from "./steps/stamp-dobirka"
+import {
+  fulfillmentItemsOf,
+  OUTSTANDING_ITEM_FIELDS,
+} from "../lib/parcel-tracking/shipment-items"
 
 /**
  * „Vygenerovat štítek" bez odeslání — podá zásilku České poště (čímž vznikne
@@ -63,7 +67,7 @@ export const generateCpLabelWorkflow = createWorkflow(
         "currency_code",
         "total",
         "items.*",
-        "items.detail.fulfilled_quantity",
+        ...OUTSTANDING_ITEM_FIELDS,
         "summary.*",
         "payment_collections.status",
         "payment_collections.amount",
@@ -128,20 +132,11 @@ export const generateCpLabelWorkflow = createWorkflow(
 
     const plan = transform({ orderQuery }, ({ orderQuery }) => {
       const order = (orderQuery.data || [])[0] as any
-      const items = (order?.items || []) as any[]
-
       // Jen fyzické položky se vyskladňují. Případný už existující (třeba
       // z nativní stránky) otevřený fulfillment se znovupoužije — jeho štítek
       // čte route; druhý fulfillment pro totéž zboží nevznikne.
-      const shippableItems = items.filter((item) => item?.requires_shipping)
-      const itemsToFulfill = shippableItems
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) -
-            toNumber(item.detail?.fulfilled_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
+      // BigNumber-safe převod — viz lib/parcel-tracking/shipment-items.ts.
+      const itemsToFulfill = fulfillmentItemsOf(order)
 
       const openFulfillment = (order?.fulfillments || []).find(
         (fulfillment: any) =>

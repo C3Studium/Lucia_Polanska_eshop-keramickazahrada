@@ -1,7 +1,10 @@
 import { classifyByText, classifyState } from "../parcel-tracking/classify"
 import { napiCredentials, parseNapiCurrentStatus } from "../parcel-tracking/napi"
 import { planParcelUpdate } from "../parcel-tracking/plan"
-import { shipmentItemsOf } from "../parcel-tracking/shipment-items"
+import {
+  fulfillmentItemsOf,
+  shipmentItemsOf,
+} from "../parcel-tracking/shipment-items"
 
 /**
  * nAPI ČP (B2B) jako zdroj sledování: názvy z oficiálního číselníku → fáze,
@@ -159,6 +162,20 @@ describe("položky k odeslání (BigNumber z query.graph)", () => {
       })),
     }
     expect(shipmentItemsOf(order)).toHaveLength(7)
+  })
+
+  it("k vyskladnění počítá z fulfilled_quantity, i když je BigNumber", () => {
+    const order = {
+      items: [
+        { id: "a", requires_shipping: true, quantity: { value: "2" }, detail: { fulfilled_quantity: { value: "2" }, shipped_quantity: { value: "0" } } },
+        { id: "b", requires_shipping: true, quantity: { value: "2" }, detail: { fulfilled_quantity: { value: "1" }, shipped_quantity: { value: "0" } } },
+      ],
+    }
+    expect(fulfillmentItemsOf(order)).toEqual([{ id: "b", quantity: 1 }])
+    expect(shipmentItemsOf(order)).toEqual([
+      { id: "a", quantity: 2 },
+      { id: "b", quantity: 2 },
+    ])
   })
 })
 

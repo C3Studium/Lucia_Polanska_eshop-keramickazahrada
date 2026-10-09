@@ -14,6 +14,11 @@ import {
 import { assertShipGateStep } from "./steps/assert-ship-gate"
 import { stampDobirkaStep } from "./steps/stamp-dobirka"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
+import {
+  fulfillmentItemsOf,
+  OUTSTANDING_ITEM_FIELDS,
+  shipmentItemsOf,
+} from "../lib/parcel-tracking/shipment-items"
 
 /**
  * Turns the merchant's single "Označit jako odeslané" click into the complete native
@@ -69,14 +74,13 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         // payment collections are what the A2 gate does its arithmetic on.
         "total",
         "items.*",
-        "items.detail.fulfilled_quantity",
-        "items.detail.shipped_quantity",
+        ...OUTSTANDING_ITEM_FIELDS,
         "summary.*",
         "payment_collections.status",
         "payment_collections.amount",
         "payment_collections.captured_amount",
         "payment_collections.refunded_amount",
-  "payment_collections.payments.provider_id",
+        "payment_collections.payments.provider_id",
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",
@@ -142,28 +146,12 @@ export const shipMerchantOrderWorkflow = createWorkflow(
     const plan = transform({ orderQuery }, ({ orderQuery }) => {
       const order = (orderQuery.data || [])[0] as any
 
-      const items = (order?.items || []) as any[]
-
       // Only physical items participate in fulfilment. Medusa's validation rejects a
       // mixed batch, so digital/no-shipping lines are excluded rather than filtered later.
-      const shippableItems = items.filter((item) => item?.requires_shipping)
-
-      const itemsToFulfill = shippableItems
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) -
-            toNumber(item.detail?.fulfilled_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
-
-      const itemsToShip = shippableItems
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) - toNumber(item.detail?.shipped_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
+      // BigNumber-safe (lib/parcel-tracking/shipment-items.ts): `detail.*_quantity`
+      // chodí jako objekt a naivní Number() dával 0 → shipment nikdy nevznikl.
+      const itemsToFulfill = fulfillmentItemsOf(order)
+      const itemsToShip = shipmentItemsOf(order)
 
       // A fulfilment created earlier on the native order page is reused instead of
       // creating a second one for the same goods.

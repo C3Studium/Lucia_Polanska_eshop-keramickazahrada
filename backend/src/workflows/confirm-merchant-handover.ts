@@ -11,6 +11,10 @@ import {
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
+import {
+  OUTSTANDING_ITEM_FIELDS,
+  shipmentItemsOf,
+} from "../lib/parcel-tracking/shipment-items"
 
 /**
  * „Zásilku jsem předala dopravci" — phase two of the A1 dispatch invariant.
@@ -55,10 +59,7 @@ export const confirmMerchantHandoverWorkflow = createWorkflow(
       entity: "order",
       fields: [
         "id",
-        "items.id",
-        "items.quantity",
-        "items.requires_shipping",
-        "items.detail.shipped_quantity",
+        ...OUTSTANDING_ITEM_FIELDS,
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",
@@ -69,16 +70,10 @@ export const confirmMerchantHandoverWorkflow = createWorkflow(
 
     const plan = transform({ orderQuery }, ({ orderQuery }) => {
       const order = (orderQuery.data || [])[0] as any
-      const items = (order?.items || []) as any[]
 
-      const itemsToShip = items
-        .filter((item) => item?.requires_shipping)
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) - toNumber(item.detail?.shipped_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
+      // BigNumber-safe — naivní Number() tu dával 0 a shipment nikdy nevznikl
+      // (viz lib/parcel-tracking/shipment-items.ts).
+      const itemsToShip = shipmentItemsOf(order)
 
       // The fulfilment that exists but has not left. If there is none, the
       // parcel either never got packed or has already gone.

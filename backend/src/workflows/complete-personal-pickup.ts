@@ -16,6 +16,11 @@ import {
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
+import {
+  fulfillmentItemsOf,
+  OUTSTANDING_ITEM_FIELDS,
+  shipmentItemsOf,
+} from "../lib/parcel-tracking/shipment-items"
 
 /**
  * „Vyzvednuto a zaplaceno" — the customer collected the piece and paid at the
@@ -124,8 +129,7 @@ export const completePersonalPickupWorkflow = createWorkflow(
       fields: [
         "id",
         "items.*",
-        "items.detail.fulfilled_quantity",
-        "items.detail.shipped_quantity",
+        ...OUTSTANDING_ITEM_FIELDS,
         "shipping_methods.*",
         "shipping_methods.shipping_option.provider_id",
         "payment_collections.amount",
@@ -163,24 +167,10 @@ export const completePersonalPickupWorkflow = createWorkflow(
     })
 
     const plan = transform({ order }, ({ order }) => {
-      const items = (order?.items || []) as any[]
-      const shippable = items.filter((item) => item?.requires_shipping)
-
-      const toFulfill = shippable
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) - toNumber(item.detail?.fulfilled_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
-
-      const toShip = shippable
-        .map((item) => ({
-          id: item.id,
-          quantity:
-            toNumber(item.quantity) - toNumber(item.detail?.shipped_quantity),
-        }))
-        .filter((item) => item.quantity > 0)
+      // BigNumber-safe (lib/parcel-tracking/shipment-items.ts) — naivní
+      // Number() na `detail.*_quantity` dával 0 a shipment nikdy nevznikl.
+      const toFulfill = fulfillmentItemsOf(order)
+      const toShip = shipmentItemsOf(order)
 
       const openFulfillment = (order?.fulfillments || []).find(
         (fulfillment: any) =>
