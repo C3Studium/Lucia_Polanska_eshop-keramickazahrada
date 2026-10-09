@@ -1,0 +1,13 @@
+# „Zaplaceno na místě" — doplatek zakázky mimo bránu
+
+Datum: 9. 10. 2026. Změřeno na #31 (zakázka, osobní odběr): záloha přes ComGate, doplatek = druhá kolekce `not_paid` bez platby; „Vyzvednuto a zaplaceno" neměl co zachytit a objednávku i tak vydal. Rozhodnutí majitelky: vyzvednutí zakázky se vyrovnává **ručně jedním tlačítkem**, které platbu zapíše **a** pošle fakturu.
+
+**Kde:** panel zakázky (Zakázky i widget „Výroba na zakázku" na detailu objednávky) → tlačítko **„Zaplaceno na místě"**, vidět vždy, když něco zbývá doplatit a zakázka není zrušená — i u už vydané/odeslané objednávky. Drawer: částka (jen ke čtení = celý dluh), způsob (Hotově / Kartou v ateliéru / Převodem na účet), poznámka.
+
+**Akce:** `POST /admin/made-to-order/orders/:orderId/actions` `{ "action": "settle_balance_offline", "method": "cash" | "card_on_site" | "bank_transfer", "amount"?: number, "note"?: string }` → `200 { settled, amount, currency_code, method, request_id, payment_collection_id, display_id, message }` (`settled: false, reason: "nic nezbývá"` když je zaplaceno). `amount` je nepovinná a musí se rovnat dluhu — jen celý doplatek, částečné platby nejsou.
+
+**Co se stane** (`lib/balance-settlement.settleBalanceOffline`): (1) nativně — otevřená `not_paid` kolekce doplatku se znovu použije (částka se srovná na skutečný dluh vč. příplatku), jinak `createOrderPaymentCollectionWorkflow`; metadata `{ offline_method, offline_note, recorded_by }`; `markPaymentCollectionAsPaidWorkflow` (systémová platba + capture → brána odeslání sedí). (2) produkční strana stejně jako doplatek z ComGate (`markBalanceRequestPaid`, sdílené s `reconcileOrderBalance`): žádost → `paid` (`provider_status: PAID_OFFLINE`, `selected_method`), fáze → `ready_to_ship`, event `made-to-order.balance-paid` → e-mail „Doplatek přijat" + doplatková faktura (iDoklad) + zvoneček majitelce. Bez otevřené žádosti se žádost založí rovnou jako zaplacená.
+
+**Bez dvojího e-mailu:** `customer-emails.onPaymentCaptured` mlčí, když kolekce nese `offline_method` nebo když k objednávce patří zaplacená žádost o doplatek na tutéž kolekci / označená v posledních 5 min (`captureCoveredByBalanceMail`). Když zákazník mezitím zaplatil online, ComGate odmítne pustit svou relaci a akce skončí českou chybou — hotovost se nezapíše.
+
+**Zámek:** `complete-personal-pickup.assertPersonalPickup` — bez platby k zachycení a s dluhem > 0 (kolekce `canceled`/`failed` se nepočítají) → `NOT_ALLOWED` „Zůstatek X Kč není zaplacený — nejdřív ho zaznamenejte tlačítkem „Zaplaceno na místě" (zakázka) nebo pošlete výzvu k doplacení." Fronta u osobního odběru ukazuje nápovědu „Zbývá doplatek X Kč". Po vydání se objednávka nativně dokončí (`completeOrderWorkflow`), pokud už není `completed`/`canceled`.

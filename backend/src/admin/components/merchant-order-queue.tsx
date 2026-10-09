@@ -55,6 +55,8 @@ export type MerchantOrder = {
 
   is_made_to_order: boolean;
   production_stage: string | null;
+  /** Co na zakázce ještě zbývá doplatit (vč. příplatku); null u běžné objednávky. */
+  production_outstanding: number | null;
 
   /** Czech reason dispatch is blocked (A2), or null when it is not. */
   ship_block_reason: string | null;
@@ -656,6 +658,24 @@ export const OrderRow = ({
             >
               Vyzvednuto a zaplaceno
             </Button>
+          )}
+
+        {/*
+          Zakázka s osobním odběrem a nezaplaceným doplatkem: „Vyzvednuto a
+          zaplaceno" nemá co zachytit (doplatek je kolekce bez platby) a server
+          ji zamítne — #31. Hotovost z pultu se zapisuje v panelu zakázky
+          tlačítkem „Zaplaceno na místě"; tady jen nápověda, proč tlačítko
+          výš zatím neprojde. Chyba serveru se po kliknutí ukáže toastem.
+        */}
+        {order.is_personal_pickup &&
+          !["shipped", "cancelled"].includes(order.stage) &&
+          (order.production_outstanding ?? 0) > 0.005 && (
+            <Text size="xsmall" className="text-ui-fg-error basis-full lg:text-right">
+              Zbývá doplatek{" "}
+              {formatAmount(order.production_outstanding, order.currency_code)} —
+              zaznamenejte ho v panelu zakázky („Zaplaceno na místě" v detailu
+              objednávky), teprve pak jde potvrdit vyzvednutí.
+            </Text>
           )}
 
         {/*

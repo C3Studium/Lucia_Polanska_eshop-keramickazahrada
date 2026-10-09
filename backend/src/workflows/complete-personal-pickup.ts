@@ -10,6 +10,7 @@ import {
 import {
   acquireLockStep,
   capturePaymentWorkflow,
+  completeOrderWorkflow,
   createOrderFulfillmentWorkflow,
   createOrderShipmentWorkflow,
   releaseLockStep,
@@ -17,6 +18,7 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
 import { toNumber } from "../lib/order-quantity"
+import { formatMoney } from "../lib/ship-gate"
 import {
   fulfillmentItemsOf,
   OUTSTANDING_ITEM_FIELDS,
@@ -54,6 +56,22 @@ import {
  * the counter is the one exception to „no money, no goods" (D1), and an
  * exception that can be applied to any order is not an exception — it is a
  * hole.
+ *
+ * ## Zámek: bez platby k zachycení a s dluhem se nevydává
+ *
+ * ZMĚŘENO 9. 10. 2026 na #31 (zakázka, osobní odběr): záloha zachycená přes
+ * ComGate, doplatek = druhá kolekce `not_paid` BEZ platby. Krok 1 nenašel co
+ * zachytit, tiše ho přeskočil a kroky 2–3 objednávku „odeslaly" s 3 225 Kč
+ * nezaplacenými. Výjimka D1 platí pro autorizovanou platbu u pultu (je co
+ * zachytit) — ne pro dluh, který nemá žádnou platbu. Ten se nejdřív zapíše
+ * tlačítkem „Zaplaceno na místě" v panelu zakázky (lib/balance-settlement),
+ * teprve pak jde vydat.
+ *
+ * ## Vyzvednuto = hotová objednávka
+ *
+ * Po vydání se objednávka nativně dokončí (`completeOrderWorkflow`): u osobního
+ * odběru nic dalšího nepřijde — žádný dopravce, žádné doručení. Přání
+ * majitelky; stejně jako převzetí zásilky u sledování ČP.
  */
 
 export type CompletePersonalPickupInput = {
@@ -97,11 +115,32 @@ export const assertPersonalPickup = (order: any): {
     (payment: any) => !payment?.captured_at && !payment?.canceled_at
   )
 
-  const amountDue = collections.reduce(
-    (sum: number, collection: any) =>
-      sum + (toNumber(collection.amount) - toNumber(collection.captured_amount)),
-    0
-  )
+  // Zrušená/neúspěšná kolekce (vypršelý odkaz na doplatek) nic nedluží —
+  // bez téhle výjimky by vydání blokovala navždy. Stejné stavy jako brána
+  // odeslání (`ship-gate` SETTLED_COLLECTION_STATUSES).
+  const amountDue = collections
+    .filter(
+      (collection: any) =>
+        !["canceled", "failed"].includes(String(collection?.status ?? ""))
+    )
+    .reduce(
+      (sum: number, collection: any) =>
+        sum +
+        (toNumber(collection.amount) - toNumber(collection.captured_amount)),
+      0
+    )
+
+  // Dluh bez platby, kterou by šlo zachytit = nezaplacený doplatek zakázky
+  // (nebo rozdíl po úpravě). Vydat nejde — nejdřív se peníze zapíší.
+  if (!outstanding && amountDue > 0.005) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      `Zůstatek ${formatMoney(
+        amountDue,
+        order?.currency_code
+      )} není zaplacený — nejdřív ho zaznamenejte tlačítkem „Zaplaceno na místě" (zakázka) nebo pošlete výzvu k doplacení.`
+    )
+  }
 
   return { paymentId: outstanding?.id ?? null, amountDue }
 }
@@ -124,10 +163,14 @@ export const completePersonalPickupWorkflow = createWorkflow(
       entity: "order",
       fields: [
         "id",
+        // `status` pro „už dokončená/zrušená se znovu nedokončuje", měna pro hlášku zámku.
+        "status",
+        "currency_code",
         "items.*",
         ...OUTSTANDING_ITEM_FIELDS,
         "shipping_methods.*",
         "shipping_methods.shipping_option.provider_id",
+        "payment_collections.status",
         "payment_collections.amount",
         "payment_collections.captured_amount",
         "payment_collections.payments.id",
@@ -223,6 +266,20 @@ export const completePersonalPickupWorkflow = createWorkflow(
           stage: "shipped",
           changed_by: input.created_by ?? null,
         },
+      })
+    })
+
+    // 4 — vyzvednuto = hotová objednávka. Nativní `completed`, protože u
+    //     osobního odběru už nic nepřijde. Dokončená se nedokončuje znovu a
+    //     zrušenou by modul objednávek odmítl (a ani by sem neměla dojít).
+    when(
+      "complete-on-pickup",
+      { order },
+      ({ order }) =>
+        !["completed", "canceled"].includes(String(order?.status ?? ""))
+    ).then(() => {
+      completeOrderWorkflow.runAsStep({
+        input: { orderIds: [input.order_id] },
       })
     })
 

@@ -4,7 +4,11 @@ import {
   moneyState,
   requestRefundedTotal,
 } from "../../../lib/claims/refund-rules"
-import { DOBIRKA_PROVIDER_ID, evaluateShipGate } from "../../../lib/ship-gate"
+import {
+  DOBIRKA_PROVIDER_ID,
+  evaluateShipGate,
+  productionOutstanding,
+} from "../../../lib/ship-gate"
 import { paymentProblemReason } from "../../../modules/merchant-order/payment-state"
 import type { MerchantOrderStage } from "../../../modules/merchant-order/stages"
 
@@ -68,6 +72,12 @@ export type MerchantOrderRow = {
 
   is_made_to_order: boolean
   production_stage: string | null
+  /**
+   * Co zákazník na zakázce ještě dluží (včetně příplatku), zaokrouhleno; null
+   * u běžné objednávky. Fronta tím u osobního odběru napoví, že „Vyzvednuto a
+   * zaplaceno" zámek odmítne, dokud se doplatek nezapíše „Zaplaceno na místě".
+   */
+  production_outstanding: number | null
 
   /**
    * True when the parcel is packed but nobody has handed it over yet — the
@@ -295,6 +305,9 @@ export const toMerchantOrderRow = (
 
     is_made_to_order: Boolean(productionOrder),
     production_stage: productionOrder?.stage ?? null,
+    production_outstanding: productionOrder
+      ? Math.round(Math.max(0, productionOutstanding(productionOrder)) * 100) / 100
+      : null,
 
     ship_block_reason: gate.allowed ? null : gate.reason,
 

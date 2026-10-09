@@ -133,7 +133,8 @@ export const epsilonFor = (currencyCode?: string | null): number => {
   return toAmount(getEpsilonFromDecimalPrecision(decimalDigits))
 }
 
-const formatMoney = (amount: number, currencyCode?: string | null): string =>
+/** Česky formátovaná částka pro hlášky bráně/zámkům — sdílené, ať se liší jen text, ne formát. */
+export const formatMoney = (amount: number, currencyCode?: string | null): string =>
   new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currency: String(currencyCode || "CZK").toUpperCase(),

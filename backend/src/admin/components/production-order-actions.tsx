@@ -1,8 +1,10 @@
 import {
   Button,
+  Drawer,
   Input,
   Label,
   Prompt,
+  Select,
   Text,
   Textarea,
   toast,
@@ -43,8 +45,18 @@ type Action =
   | "complete_production"
   | "request_balance"
   | "remind_balance"
+  | "settle_balance_offline"
   | "announce_delay"
   | "cancel";
+
+/** Jak zákazník doplatek zaplatil mimo bránu — hodnoty zrcadlí `lib/balance-settlement`. */
+type OfflineMethod = "cash" | "card_on_site" | "bank_transfer";
+
+const offlineMethodLabels: Record<OfflineMethod, string> = {
+  cash: "Hotově",
+  card_on_site: "Kartou v ateliéru",
+  bank_transfer: "Převodem na účet",
+};
 
 const useAction = (orderId: string) => {
   const queryClient = useQueryClient();
@@ -305,6 +317,171 @@ const AnnounceDelay = ({ order }: { order: ProductionOrderSummary }) => {
   );
 };
 
+/**
+ * „Zaplaceno na místě" — doplatek zakázky zaplacený u pultu / převodem, mimo
+ * bránu (docs/zaplaceno-na-miste.md).
+ *
+ * Jedno tlačítko, které platbu ZAPÍŠE (nativně k objednávce i u zakázky) a
+ * zároveň pošle zákazníkovi potvrzení s doplatkovou fakturou — přání
+ * majitelky po #31, kde se zakázka s osobním odběrem vydala, aniž by šlo
+ * hotovost z pultu kamkoli zapsat. Částka je jen ke čtení: zapisuje se vždy
+ * celý dluh (částečné platby server odmítne). Sdílené pro panel Zakázky i
+ * widget na detailu objednávky, ať obě místa nabízejí totéž.
+ */
+export const SettleBalanceOffline = ({
+  orderId,
+  displayId,
+  outstanding,
+  currencyCode,
+  variant = "secondary",
+  onSettled,
+}: {
+  orderId: string;
+  displayId?: number | string | null;
+  outstanding: number;
+  currencyCode: string;
+  variant?: "primary" | "secondary";
+  /** Po zápisu — widget na detailu si přes to obnoví nativní části stránky. */
+  onSettled?: () => void | Promise<unknown>;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [method, setMethod] = useState<OfflineMethod>("cash");
+  const [note, setNote] = useState("");
+  const queryClient = useQueryClient();
+
+  const settle = useMutation<{ settled: boolean; message?: string }>({
+    mutationFn: () =>
+      sdk.client.fetch(`/admin/made-to-order/orders/${orderId}/actions`, {
+        method: "POST",
+        body: {
+          action: "settle_balance_offline",
+          method,
+          note: note.trim() || undefined,
+        },
+      }),
+    onSuccess: async (result) => {
+      // Mění se fronta zakázek, fronta objednávek, souhrn i widget na detailu.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["production-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["merchant-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["operations-summary"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["made-to-order-order", orderId],
+        }),
+      ]);
+      if (result?.settled === false) {
+        toast.info(result.message ?? "Zakázka je zaplacená — není co zaznamenat.");
+      } else {
+        toast.success(result?.message ?? "Doplatek zaznamenán.");
+      }
+      setOpen(false);
+      setNote("");
+      await onSettled?.();
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Platbu se nepodařilo zaznamenat"
+      );
+    },
+  });
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger asChild>
+        <Button size="small" variant={variant}>
+          Zaplaceno na místě
+        </Button>
+      </Drawer.Trigger>
+      <Drawer.Content>
+        <Drawer.Header>
+          <Drawer.Title>
+            Zaplaceno na místě{displayId ? ` — zakázka #${displayId}` : ""}
+          </Drawer.Title>
+          <Drawer.Description>
+            Zákazník doplatil mimo platební bránu. Zapíšeme platbu k objednávce
+            a pošleme mu potvrzení s doplatkovou fakturou.
+          </Drawer.Description>
+        </Drawer.Header>
+
+        <Drawer.Body className="flex flex-col gap-y-4 overflow-y-auto">
+          <div className="flex flex-col gap-y-1">
+            <Label size="small" weight="plus" htmlFor={`settle-amount-${orderId}`}>
+              Částka
+            </Label>
+            <Input
+              id={`settle-amount-${orderId}`}
+              value={formatAmount(outstanding, currencyCode)}
+              readOnly
+              disabled
+            />
+            <Text size="xsmall" className="text-ui-fg-muted">
+              Vždy celý zbývající doplatek. Část se zaznamenat nedá — zbytek
+              domluvte se zákazníkem zvlášť.
+            </Text>
+          </div>
+
+          <div className="flex flex-col gap-y-1">
+            <Label size="small" weight="plus" htmlFor={`settle-method-${orderId}`}>
+              Způsob platby
+            </Label>
+            <Select
+              value={method}
+              onValueChange={(value) => setMethod(value as OfflineMethod)}
+            >
+              <Select.Trigger id={`settle-method-${orderId}`}>
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content>
+                {(Object.keys(offlineMethodLabels) as OfflineMethod[]).map(
+                  (key) => (
+                    <Select.Item key={key} value={key}>
+                      {offlineMethodLabels[key]}
+                    </Select.Item>
+                  )
+                )}
+              </Select.Content>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-y-1">
+            <Label size="small" weight="plus" htmlFor={`settle-note-${orderId}`}>
+              Poznámka (nepovinné, jen pro vás)
+            </Label>
+            <Textarea
+              id={`settle-note-${orderId}`}
+              rows={2}
+              placeholder="Např. zaplaceno při vyzvednutí 9. 10."
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </div>
+
+          <Text size="small" className="text-ui-fg-subtle">
+            Co se stane: objednávka bude zaplacená, zakázka se přesune mezi
+            hotové a zaplacené, zákazníkovi odejde e-mail „Doplatek přijat"
+            s fakturou. Teprve potom půjde potvrdit „Vyzvednuto a zaplaceno".
+          </Text>
+        </Drawer.Body>
+
+        <Drawer.Footer>
+          <Drawer.Close asChild>
+            <Button size="small" variant="secondary" type="button">
+              Zpět
+            </Button>
+          </Drawer.Close>
+          <Button
+            size="small"
+            isLoading={settle.isPending}
+            onClick={() => settle.mutate()}
+          >
+            Zaznamenat {formatAmount(outstanding, currencyCode)}
+          </Button>
+        </Drawer.Footer>
+      </Drawer.Content>
+    </Drawer>
+  );
+};
+
 /** Actions that need a confirmation because they move money or are visible. */
 const ConfirmedAction = ({
   order,
@@ -448,6 +625,20 @@ export const ProductionOrderActions = ({
           )} a zákazník dostane odkaz k zaplacení. Opakované kliknutí pošle stejný odkaz, nevytvoří nový.`}
           confirmLabel="Poslat žádost"
           successMessage="Žádost o doplatek byla vytvořena"
+        />
+      )}
+
+      {/*
+        Doplatek zaplacený mimo bránu (u pultu při vyzvednutí, převodem). Vidět
+        v KAŽDÉ živé fázi, kde něco zbývá — ne jen „čeká na doplatek": příplatek
+        přidaný po dokončení, nebo zakázka už vydaná s nezaplaceným zůstatkem.
+      */}
+      {order.outstanding > 0.005 && order.stage !== "cancelled" && (
+        <SettleBalanceOffline
+          orderId={order.order_id}
+          displayId={order.display_id}
+          outstanding={order.outstanding}
+          currencyCode={order.currency_code}
         />
       )}
 

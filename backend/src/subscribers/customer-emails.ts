@@ -9,6 +9,7 @@ import {
   sendCustomerEmail,
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
+import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
@@ -113,6 +114,8 @@ const onPaymentCaptured = async ({
       "currency_code",
       "captured_at",
       "provider_id",
+      "payment_collection.id",
+      "payment_collection.metadata",
       "payment_collection.order.id",
       "payment_collection.order.created_at",
     ],
@@ -128,6 +131,37 @@ const onPaymentCaptured = async ({
   const capturedAt = new Date(payment.captured_at ?? Date.now()).getTime()
   if (Number.isFinite(placedAt) && capturedAt - placedAt < 5 * 60 * 1000) {
     return
+  }
+
+  // Doplatek zakázky má vlastní e-mail „Doplatek přijat" (onBalancePaid na
+  // `made-to-order.balance-paid`). Zachycení, které k němu patří — ruční
+  // „Zaplaceno na místě" (kolekce s `offline_method`) i doplatek z brány
+  // (zaplacená žádost na tutéž kolekci) — by tu poslalo druhé „Platba přijata",
+  // u hotovosti navíc s nepravdivým „Online platba". Pravidlo v
+  // lib/balance-settlement.captureCoveredByBalanceMail. Fail-open: když se
+  // žádosti nenačtou, e-mail raději odejde (dvojí < žádný).
+  try {
+    const madeToOrder = container.resolve<MadeToOrderModuleService>(
+      MADE_TO_ORDER_MODULE
+    )
+    const [productionOrder] = (await madeToOrder.listProductionOrders({
+      order_id: orderRef.id,
+    } as never)) as any[]
+    const balanceRequests = productionOrder
+      ? ((await madeToOrder.listProductionPaymentRequests({
+          production_order_id: productionOrder.id,
+        } as never)) as any[])
+      : []
+    if (captureCoveredByBalanceMail(payment, balanceRequests)) {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .info(
+          `[emails] Přeskakuji payment-received pro objednávku ${orderRef.id} — doplatek zakázky má vlastní e-mail (balance-paid).`
+        )
+      return
+    }
+  } catch {
+    // Kontrola selhala — e-mail pošleme tak jako tak.
   }
 
   const order = await loadOrder(container, orderRef.id)

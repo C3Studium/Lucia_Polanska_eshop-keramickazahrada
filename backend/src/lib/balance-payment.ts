@@ -254,6 +254,104 @@ export type BalanceReconcileResult = {
   request_id: string | null
 }
 
+export type MarkBalanceRequestPaidInput = {
+  /** Otevřená (nebo právě založená) žádost o doplatek. */
+  request: any
+  productionOrder: any
+  orderId: string
+  /** Kdo doplatek potvrdil: platební brána, nebo ruční záznam „Zaplaceno na místě". */
+  gateway: "comgate" | "offline"
+  /** Offline: hotově / kartou v ateliéru / převodem — uloží se k žádosti. */
+  method?: string | null
+  /**
+   * Jen offline: skutečně přijatá částka, když se liší od částky žádosti (odkaz
+   * vznikl před příplatkem). Bere ji event i doplatková faktura — jinak by
+   * faktura zněla na starou, nižší sumu.
+   */
+  amount?: number
+  /** Offline: nativní kolekce, do které se platba zapsala (žádost ji dřív nemusela mít). */
+  paymentCollectionId?: string | null
+}
+
+/**
+ * Společný „ocas" zaplaceného doplatku — JEDNA cesta pro bránu i ruční záznam.
+ *
+ * Doplatek může být potvrzen dvěma dveřmi: ComGate (návrat z brány / webhook /
+ * 30min job) a tlačítkem „Zaplaceno na místě" (zakázka vyzvednutá v ateliéru,
+ * zaplacená u pultu). Co se pak má stát, je totéž a musí zůstat totéž: žádost →
+ * `paid` + `paid_at`, fáze zakázky → „připraveno" (nikdy zpátky z terminální),
+ * a event `made-to-order.balance-paid`, na kterém visí potvrzení zákazníkovi,
+ * doplatková faktura (customer-emails `onBalancePaid`) i zvoneček majitelce
+ * (merchant-notifications). Dvě kopie téhle sekvence = dřív či později dvě
+ * verze toho, co „zaplaceno" znamená; proto je tu jednou.
+ *
+ * Idempotentní: `paid_at` se nepřepisuje, fáze se nemění z terminální, a
+ * odběratelé eventu dedupují e-mail i fakturu per žádost.
+ */
+export const markBalanceRequestPaid = async (
+  container: MedusaContainer,
+  {
+    request,
+    productionOrder,
+    orderId,
+    gateway,
+    method,
+    amount,
+    paymentCollectionId,
+  }: MarkBalanceRequestPaidInput
+): Promise<void> => {
+  const madeToOrder = container.resolve<MadeToOrderModuleService>(
+    MADE_TO_ORDER_MODULE
+  )
+  const now = new Date()
+  const paidAmount = amount !== undefined ? roundMoney(amount) : request.amount
+
+  // 1 — produkční strana: žádost zaplacena. U offline platby nese
+  //     `provider_status` „PAID_OFFLINE" a `selected_method` způsob, ať je v
+  //     datech vidět, že peníze nepřišly přes bránu (účetnictví, dohledání).
+  await madeToOrder.updateProductionPaymentRequests({
+    id: request.id,
+    status: "paid",
+    provider_status: gateway === "offline" ? "PAID_OFFLINE" : "PAID",
+    ...(gateway === "offline"
+      ? {
+          selected_method: method ?? null,
+          create_state: "created",
+          provider_error_reason: null,
+          payment_collection_id:
+            paymentCollectionId ?? request.payment_collection_id ?? null,
+        }
+      : {}),
+    ...(amount !== undefined ? { amount: paidAmount } : {}),
+    paid_at: request.paid_at || now,
+    last_checked_at: now,
+  } as never)
+
+  // 2 — fáze „připraveno". Terminální fáze se nikdy neotvírají zpět.
+  if (
+    !["completed", "cancelled", "ready_to_ship"].includes(productionOrder.stage)
+  ) {
+    await madeToOrder.updateProductionOrders({
+      id: productionOrder.id,
+      stage: "ready_to_ship",
+      ready_to_ship_at: productionOrder.ready_to_ship_at || now,
+    } as never)
+  }
+
+  // 3 — potvrzení zákazníkovi + doplatková faktura + zvoneček majitelce.
+  //     Stejný tvar payloadu jako webhook a 30min job.
+  await container.resolve(Modules.EVENT_BUS).emit({
+    name: "made-to-order.balance-paid",
+    data: {
+      order_id: orderId,
+      production_order_id: productionOrder.id,
+      payment_request_id: request.id,
+      amount: paidAmount,
+      currency_code: request.currency_code,
+    },
+  })
+}
+
 /**
  * Dorovnání doplatku PO NÁVRATU z ComGate — „storefront-complete" krok, který
  * doplatku chyběl (záloha ho má v checkoutu). Zeptá se brány na stav otevřené
@@ -361,36 +459,14 @@ export const reconcileOrderBalance = async (
       )
     }
 
-    // 2 — produkční strana: žádost zaplacena + fáze „připraveno".
-    await madeToOrder.updateProductionPaymentRequests({
-      id: request.id,
-      status: "paid",
-      provider_status: "PAID",
-      paid_at: request.paid_at || now,
-      last_checked_at: now,
-    } as never)
-    if (
-      !["completed", "cancelled", "ready_to_ship"].includes(
-        productionOrder.stage
-      )
-    ) {
-      await madeToOrder.updateProductionOrders({
-        id: productionOrder.id,
-        stage: "ready_to_ship",
-        ready_to_ship_at: productionOrder.ready_to_ship_at || now,
-      } as never)
-    }
-
-    // 3 — potvrzení zákazníkovi + doplatková faktura (customer-emails onBalancePaid).
-    await container.resolve(Modules.EVENT_BUS).emit({
-      name: "made-to-order.balance-paid",
-      data: {
-        order_id: orderId,
-        production_order_id: productionOrder.id,
-        payment_request_id: request.id,
-        amount: request.amount,
-        currency_code: request.currency_code,
-      },
+    // 2+3 — produkční strana: žádost zaplacena, fáze „připraveno", event pro
+    //     potvrzení zákazníkovi + doplatkovou fakturu. Společný ocas s ručním
+    //     „Zaplaceno na místě" (`markBalanceRequestPaid`), ať obě cesty dělají totéž.
+    await markBalanceRequestPaid(container, {
+      request,
+      productionOrder,
+      orderId,
+      gateway: "comgate",
     })
 
     logger.info(

@@ -18,6 +18,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { SettleBalanceOffline } from "../components/production-order-actions";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
@@ -377,6 +378,24 @@ const MadeToOrderOrderWidgetInner = ({
                 </a>
               )}
             </div>
+          )}
+
+          {/* Doplatek zaplacený mimo bránu — u pultu při vyzvednutí, převodem.
+              Vidět vždy, když něco zbývá (i u ready_to_ship/completed s
+              příplatkem a u už vydané objednávky), jen ne u zrušené zakázky.
+              Po zápisu se mění nativní stav platby, který náš query klient
+              nevidí → reload jako u výzvy k doplacení výš. */}
+          {outstanding > 0.005 && productionOrder.stage !== "cancelled" && (
+            <SettleBalanceOffline
+              orderId={order.id}
+              displayId={order.display_id}
+              outstanding={outstanding}
+              currencyCode={currency}
+              variant={canRequestBalance ? "secondary" : "primary"}
+              onSettled={() => {
+                setTimeout(() => window.location.reload(), 1200);
+              }}
+            />
           )}
         </div>
       </div>

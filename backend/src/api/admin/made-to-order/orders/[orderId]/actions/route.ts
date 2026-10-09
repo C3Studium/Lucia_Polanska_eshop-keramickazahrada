@@ -18,6 +18,12 @@ import type { IEventBusModuleService } from "@medusajs/framework/types"
 import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
 import { orderConfirmedPath } from "../../../../../../lib/storefront-url"
+import {
+  isOfflineSettlementMethod,
+  OFFLINE_METHOD_LABELS,
+  settleBalanceOffline,
+} from "../../../../../../lib/balance-settlement"
+import { formatMoney } from "../../../../../../lib/ship-gate"
 import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
 import {
   LINE_QUANTITY_FIELDS,
@@ -35,6 +41,7 @@ type ProductionAction =
   | "complete_production"
   | "request_balance"
   | "remind_balance"
+  | "settle_balance_offline"
   | "announce_delay"
   | "cancel"
 
@@ -49,7 +56,15 @@ type ActionBody = {
   estimated_completion_at?: string | null
   /** announce_delay: shown to the customer in the delay e-mail. */
   delay_reason?: string | null
+  /**
+   * request_balance: metoda ComGate (ALL/CARD…). settle_balance_offline:
+   * `cash` | `card_on_site` | `bank_transfer` — jak zákazník zaplatil na místě.
+   */
   method?: string
+  /** settle_balance_offline: nepovinná částka; musí se rovnat dluhu (jen celý doplatek). */
+  amount?: number | null
+  /** settle_balance_offline: poznámka k platbě (jen pro majitelku, do metadat kolekce). */
+  note?: string | null
 }
 
 const COMGATE_PROVIDER_ID = "pp_comgate_comgate"
@@ -246,6 +261,9 @@ export const POST = async (
     // says nothing chases a customer on its own, so the only reminder that ever
     // goes out is one she chose to send.
     "remind_balance",
+    // „Zaplaceno na místě" — doplatek zakázky zaplacený u pultu / převodem,
+    // mimo bránu. Zapíše peníze k objednávce A pošle fakturu s potvrzením.
+    "settle_balance_offline",
     "announce_delay",
     "cancel",
   ]
@@ -688,6 +706,43 @@ export const POST = async (
     } as any)
 
     res.status(200).json({ reminded: true, payment_url: open.payment_url ?? null })
+    return
+  }
+
+  /*
+   * „Zaplaceno na místě" (docs/zaplaceno-na-miste.md). Jde v KTERÉKOLI živé
+   * fázi i u už vyzvednuté/odeslané objednávky (#31: odeslána s nezaplaceným
+   * doplatkem) — jediná podmínka je, že zakázka není zrušená a něco zbývá.
+   * Celý tok (nativní zápis + žádost + event → e-mail + faktura) je v
+   * lib/balance-settlement; tady jen validace vstupu a česká hláška.
+   */
+  if (body.action === "settle_balance_offline") {
+    if (!isOfflineSettlementMethod(body.method)) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Způsob platby musí být hotově, kartou v ateliéru nebo převodem na účet."
+      )
+    }
+    const result = await settleBalanceOffline(req.scope, {
+      order_id: req.params.orderId,
+      method: body.method,
+      amount: body.amount ?? null,
+      note: body.note ?? null,
+      actor: (req as any).auth_context?.actor_id || null,
+    })
+    if (!result.settled) {
+      res.status(200).json({
+        ...result,
+        message: "Zakázka je zaplacená — není co zaznamenat.",
+      })
+      return
+    }
+    res.status(200).json({
+      ...result,
+      message: `Doplatek ${formatMoney(result.amount, result.currency_code)} zaznamenán (${
+        OFFLINE_METHOD_LABELS[result.method]
+      }). Faktura a potvrzení odešly zákazníkovi.`,
+    })
     return
   }
 
