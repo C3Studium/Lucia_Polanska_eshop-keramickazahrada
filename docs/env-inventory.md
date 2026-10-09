@@ -64,6 +64,9 @@ table follows that file's order.
 | `IDOKLAD_NUMERIC_SEQUENCE_ID` | FINISHINGTODOLIST §1 | Pins the iDoklad číselná řada for issued invoices (ostrá řada at go-live) | agenda default sequence is used |
 | `IDOKLAD_TEST_MODE` | FINISHINGTODOLIST §5 | Informational: the credentials above belong to a trial/test agenda (iDoklad has no sandbox — testing = separate free account); the admin widget shows a „Test" badge | treated as production credentials, no badge |
 | `CNB_PRICE_MARKUP_PERCENT` | ČNB currency sync (2026-08-16) | Percent padding on CZK→foreign conversions (daily `sync-currency-prices` job, official ČNB fixing, no key) to absorb drift between fixings | conversion runs at the raw fixing (0 %) |
+| `GOOGLE_REVIEW_URL` | Sledování zásilek + recenze (`docs/sledovani-zasilek.md` §6) | Celá adresa pro „Napsat recenzi na Google" (krátký odkaz z Firemního profilu). Má přednost před `GOOGLE_PLACE_ID` | spadne na `GOOGLE_PLACE_ID` |
+| `GOOGLE_PLACE_ID` | Sledování zásilek + recenze (§6) | Place ID provozovny → `https://search.google.com/local/writereview?placeid=<id>` (otevře Googlí dialog pro recenzi) | e-mail s prosbou o recenzi vede jen na hodnocení produktu na webu |
+| `CP_TRACKING_SIMULATE` | Sledování zásilek (§5) | `1` zapne ve widgetu „Zásilka u České pošty" simulaci stavů ČP (předáno · na cestě · uloženo · doručeno · vráceno · poškozeno). Simulace jde touž cestou jako ostrý stav — odejde e-mail zákazníkovi, změní se fáze. Automaticky zapnuto i tam, kde `BALIKOVNA_API_URL` obsahuje `b2b-test` | na ostro simulace schovaná (API vrací 403) |
 
 The daily summary (07:05) goes to **both** notification addresses; if both are
 empty the digest job logs a warning and sends nothing.

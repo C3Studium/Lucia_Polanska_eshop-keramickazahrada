@@ -12,6 +12,7 @@ import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { getMerchantSettings } from "../lib/merchant-settings"
+import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { RETURN_REQUEST_MODULE } from "../modules/return-request"
@@ -274,6 +275,33 @@ const isPickupOrder = (order: any): boolean =>
     (method: any) => method?.data?.personal_pickup === true
   )
 
+/**
+ * Dopravce + sledování do e-mailu „předáno dopravci" (docs/sledovani-zasilek.md §3).
+ *
+ * Číslo zásilky je `order.metadata.cp_label_tracking` (razítko label route);
+ * odkaz vede na Track & Trace ČP, ale JEN když číslo je — bez něj e-mail
+ * odejde bez tlačítka, nikdy s odkazem do prázdna (§16). Název dopravce
+ * podle služby (`NB` Balíkovna / `DR` Do ruky), jinak název dopravní metody.
+ * Sdílené pro obě cesty k „odesláno" (změna fáze i nativní shipment), ať
+ * zákazník dostane totéž bez ohledu na to, která doběhla první.
+ */
+const shipmentTracking = (
+  order: any,
+  fallback?: { number?: string | null; url?: string | null }
+) => {
+  const method = (order.shipping_methods || [])[0]
+  const fromMeta =
+    typeof (order.metadata as any)?.cp_label_tracking === "string"
+      ? ((order.metadata as any).cp_label_tracking as string).trim()
+      : ""
+  const trackingNumber = fromMeta || (fallback?.number ?? "")
+  return {
+    carrierName: cpCarrierName(method?.data?.service_code, method?.name ?? ""),
+    trackingNumber,
+    trackingLink: fromMeta ? cpTrackingUrl(fromMeta) : (fallback?.url ?? ""),
+  }
+}
+
 const loadFulfillmentOrder = async (
   container: SubscriberArgs["container"],
   fulfillmentId: string
@@ -349,11 +377,12 @@ const onShipmentCreated = async ({
     orderId: order.id,
     data: {
       ...common(order),
-      // The shipping method's own name, or nothing — the template omits the
-      // row rather than claiming a carrier the order never used.
-      carrierName: (order.shipping_methods || [])[0]?.name ?? "",
-      trackingNumber: label?.tracking_number ?? "",
-      trackingLink: label?.tracking_url ?? "",
+      // Číslo z metadat objednávky, jinak ze štítku fulfillmentu; bez obojího
+      // odejde e-mail bez řádku dopravce i bez tlačítka — nic se nevymýšlí.
+      ...shipmentTracking(order, {
+        number: label?.tracking_number,
+        url: label?.tracking_url,
+      }),
     },
   })
 }
@@ -771,10 +800,8 @@ const onMerchantStageChanged = async ({
     if (isPickupOrder(order)) {
       return
     }
-    const tracking =
-      typeof (order.metadata as any)?.cp_label_tracking === "string"
-        ? ((order.metadata as any).cp_label_tracking as string)
-        : ""
+    // Odkaz „Sledovat zásilku" na Track & Trace ČP — jen když číslo zásilky
+    // existuje (štítek); sledování zásilek na něj navazuje (sledovani-zasilek.md §3).
     await sendCustomerEmail(container, {
       template: "order-shipment",
       to: order.email,
@@ -782,9 +809,7 @@ const onMerchantStageChanged = async ({
       orderId: order.id,
       data: {
         ...common(order),
-        carrierName: (order.shipping_methods || [])[0]?.name ?? "",
-        trackingNumber: tracking,
-        trackingLink: "",
+        ...shipmentTracking(order),
       },
     })
     return

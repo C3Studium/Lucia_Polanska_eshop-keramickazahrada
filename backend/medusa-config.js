@@ -221,6 +221,10 @@ const medusaConfig = {
       resolve: "./src/modules/return-request",
     },
     {
+      // Sledování zásilek ČP — viz docs/sledovani-zasilek.md.
+      resolve: "./src/modules/parcel-tracking",
+    },
+    {
       resolve: "./src/modules/price-watch",
     },
     {

@@ -17,6 +17,7 @@ import {
 } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client";
+import { isCeskaPosta, isPersonalPickup } from "../lib/cp-shipping";
 import {
   otevritStitek,
   sdiletStitek,
@@ -44,12 +45,6 @@ type LabelResponse = {
   generated_at?: string | null;
 };
 
-const fold = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
-
 /**
  * Štítek České pošty na detailu objednávky (doplněk k frontě Denní práce).
  *
@@ -63,24 +58,9 @@ const fold = (value: string) =>
 const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
   const queryClient = useQueryClient();
 
-  const methods = (order.shipping_methods ?? []) as any[];
-  const isPersonalPickup = methods.some((method) => {
-    const data = method?.data || {};
-    return data.personal_pickup === true || data.service_code === "PICKUP";
-  });
-  const isCeskaPosta = methods.some((method) => {
-    const data = method?.data || {};
-    const provider = String(method?.shipping_option?.provider_id ?? "");
-    const name = fold(String(method?.name ?? ""));
-    return (
-      provider.includes("ceska-posta") ||
-      data.service_code === "NB" ||
-      data.service_code === "DR" ||
-      name.includes("balikovna") ||
-      name.includes("balik") ||
-      name.includes("posta")
-    );
-  });
+  // Sdílené s widgetem sledování (lib/cp-shipping.ts), ať se oba shodnou.
+  const ceskaPosta = isCeskaPosta(order);
+  const personalPickup = isPersonalPickup(order);
 
   const labelQuery = useQuery<LabelResponse>({
     queryKey: ["cp-label", order.id],
@@ -90,7 +70,7 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
       }),
     retry: false,
     // Jen pro zásilky ČP, které nejsou osobní odběr.
-    enabled: isCeskaPosta && !isPersonalPickup,
+    enabled: ceskaPosta && !personalPickup,
   });
 
   const generate = useMutation<LabelResponse, Error, boolean>({
@@ -118,7 +98,7 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
   });
 
   // Osobní odběr ani cizí dopravce tu nemají co dělat.
-  if (!isCeskaPosta || isPersonalPickup) {
+  if (!ceskaPosta || personalPickup) {
     return null;
   }
 

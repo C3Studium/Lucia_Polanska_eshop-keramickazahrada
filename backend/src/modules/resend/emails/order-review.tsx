@@ -11,6 +11,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import { googleReviewUrl } from "../../../lib/google-review-url"
 import { storeLink } from "../../../lib/storefront-url"
 
 interface OrderReviewEmailProps {
@@ -19,14 +20,22 @@ interface OrderReviewEmailProps {
   productName?: string;
   productImage?: string;
   productLink?: string;
+  /** Hodnocení produktu na webu (`…/products/<handle>#hodnoceni`). */
   reviewLink?: string;
+  /** Recenze na Google — job ji dodá z env; prázdná = bez Googlu. */
+  googleReviewLink?: string;
   orderLink?: string;
 }
 
 /**
- * Fotka i tlačítka se vykreslí jen s reálnými daty — job posílá prázdné
- * řetězce, když produkt nemá fotku či handle, a prázdný `src` se v poště
- * ukazuje jako rozbitý obrázek, prázdný `href` jako mrtvé tlačítko.
+ * Prosba o recenzi týden po převzetí (docs/sledovani-zasilek.md §6).
+ *
+ * Hlavní tlačítko vede na Google (GOOGLE_REVIEW_URL / GOOGLE_PLACE_ID —
+ * otevře rovnou dialog pro napsání recenze), vedlejší na hodnocení produktu
+ * na našem webu. Bez Googlu je hlavní tlačítko web a vedlejší „Zobrazit
+ * objekt". Fotka i tlačítka se vykreslí jen s reálnými daty — job posílá
+ * prázdné řetězce, když produkt nemá fotku či handle, a prázdný `src` se v
+ * poště ukazuje jako rozbitý obrázek, prázdný `href` jako mrtvé tlačítko.
  */
 function OrderReviewEmailComponent({
   customerName,
@@ -35,19 +44,34 @@ function OrderReviewEmailComponent({
   productImage = "",
   productLink = "",
   reviewLink = "",
+  googleReviewLink,
   orderLink = ""
 }: OrderReviewEmailProps) {
-  const reviewUrl = reviewLink || productLink || storeLink()
+  // Job předává odkaz z env; když ho šablona dostane bez něj (náhled), zkusí
+  // env sama — obojí přes jeden helper, ať existuje jen jedna pravda.
+  const googleUrl = googleReviewLink ?? googleReviewUrl() ?? ""
+  const siteReviewUrl = reviewLink || productLink || ""
+  const primaryUrl = googleUrl || siteReviewUrl || storeLink()
+  const primaryLabel = googleUrl ? "Napsat recenzi na Google" : "Napsat recenzi"
+
+  const secondary = googleUrl
+    ? siteReviewUrl && siteReviewUrl !== primaryUrl
+      ? { href: siteReviewUrl, label: "Ohodnotit na našem webu" }
+      : null
+    : productLink && productLink !== primaryUrl
+      ? { href: productLink, label: "Zobrazit objekt" }
+      : null
+
   return (
-    <EmailLayout preview="Jak se vám líbí váš nový kousek z ateliéru?">
+    <EmailLayout preview="Kousek z ateliéru je u vás už týden — jak se mu daří?">
       <Eyebrow>Vaše dojmy</Eyebrow>
       <EmailH1 accent="radost?">Dělá vám</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        před časem k vám z našeho ateliéru putoval nový kousek. Rádi bychom
-        věděli, jak se mu u vás daří — vaše dojmy pomáhají nám i těm, kdo si
-        objekty teprve vybírají.
+        kousek z našeho ateliéru je u vás už týden. Rádi bychom věděli, jak se
+        mu daří — vaše dojmy pomáhají nám i těm, kdo si objekty teprve
+        vybírají.
       </P>
 
       <Section style={{ margin: "8px 0 0" }}>
@@ -110,15 +134,22 @@ function OrderReviewEmailComponent({
         <LedgerEnd />
       </Section>
 
+      {googleUrl ? (
+        <P small>
+          Pár slov na Googlu nám pomůže nejvíc — najdou nás podle nich další
+          lidé, kterým by keramika z ateliéru udělala radost.
+        </P>
+      ) : null}
+
       <ButtonRow>
-        {reviewUrl ? (
-          <EmailButton href={reviewUrl}>Napsat recenzi</EmailButton>
+        {primaryUrl ? (
+          <EmailButton href={primaryUrl}>{primaryLabel}</EmailButton>
         ) : null}
-        {productLink && reviewUrl !== productLink ? (
+        {secondary ? (
           <>
             <span style={{ display: "inline-block", width: "12px" }} />
-            <EmailButton href={productLink} variant="ghost">
-              Zobrazit objekt
+            <EmailButton href={secondary.href} variant="ghost">
+              {secondary.label}
             </EmailButton>
           </>
         ) : null}
@@ -144,7 +175,8 @@ const mockOrderReview: OrderReviewEmailProps = {
   productName: "Keramický hrnek - modrý",
   productImage: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
   productLink: "https://keramickazahrada.cz/products/hrnek-modry",
-  reviewLink: "https://keramickazahrada.cz/reviews/write?product=hrnek-modry&order=12345",
+  reviewLink: "https://keramickazahrada.cz/products/hrnek-modry#hodnoceni",
+  googleReviewLink: "https://search.google.com/local/writereview?placeid=ChIJexample",
   orderLink: "https://keramickazahrada.cz/orders/12345"
 }
 

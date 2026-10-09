@@ -65,7 +65,7 @@ const KEY_SCHEMAS = {
   low_stock_default_threshold: z.number().int().min(0).max(10_000),
   /** Used when a product has no weight of its own (D2). */
   default_parcel_weight_kg: z.number().positive().max(50),
-  /** Days after shipping before the review request is sent (§12). */
+  /** Days after the parcel was received before the review request is sent (§12, sledovani-zasilek.md §6). */
   review_request_days: z.number().int().min(1).max(365),
   /** „Výroba začala" customer e-mail — default off on purpose (§16 #7). */
   production_started_email_enabled: z.boolean(),
@@ -182,7 +182,10 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   dobirka_fee_czk: 39,
   low_stock_default_threshold: 3,
   default_parcel_weight_kg: 2.5,
-  review_request_days: 10,
+  /* Týden od PŘEVZETÍ (sledování zásilek ČP zná den doručení), ne od
+     odeslání — proto 7, dřív 10 „ať balík stihne dojít". Viz
+     docs/sledovani-zasilek.md §6. */
+  review_request_days: 7,
   production_started_email_enabled: false,
   daily_digest_enabled: true,
   onboarding_dismissals: {},

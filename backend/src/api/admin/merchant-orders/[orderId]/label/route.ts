@@ -6,6 +6,7 @@ import {
 } from "@medusajs/framework/utils"
 import { generateCpLabelWorkflow } from "../../../../../workflows/generate-cp-label"
 import { notifyMerchant } from "../../../../../lib/notify"
+import { ensureParcelTracking } from "../../../../../lib/parcel-tracking/start"
 
 /**
  * Přístupy k ČP jsou KOMPLETNÍ až se všemi šesti údaji — stejná podmínka, jakou
@@ -521,6 +522,36 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     ])
   } catch {
     // Razítko je jen pro rychlé zobrazení v GET — štítek vracíme tak jako tak.
+  }
+
+  // Sledování zásilky začíná štítkem (docs/sledovani-zasilek.md §4): záznam
+  // s podacím číslem, fáze „label", job se pak ptá ČP. Testovací štítek
+  // (?test=1) záznam zakládá TAKÉ — s poznámkou, ať jde simulace vyzkoušet.
+  // Fail-open: chyba sledování nikdy nesmí shodit vrácení štítku.
+  if (trackingNumber) {
+    try {
+      await ensureParcelTracking(req.scope, {
+        order_id: afterOrder.id,
+        parcel_code: trackingNumber,
+        service_code:
+          typeof fulfillment?.data?.service_code === "string"
+            ? String(fulfillment.data.service_code).toUpperCase()
+            : ((order.shipping_methods ?? [])
+                .map((method: any) => method?.data?.service_code)
+                .find((code: unknown) => typeof code === "string" && code) as
+                | string
+                | undefined) ?? null,
+        note: isTest ? "test label" : null,
+      })
+    } catch (error) {
+      req.scope
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `[sledování] Záznam sledování pro ${trackingNumber} se nepodařilo založit: ${
+            (error as Error)?.message ?? String(error)
+          }`
+        )
+    }
   }
 
   // Štítek i majitelce do schránky (adresa z Nastavení → E-maily, jinak env),
