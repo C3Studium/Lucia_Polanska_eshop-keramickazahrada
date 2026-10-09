@@ -68,6 +68,8 @@ export type TrackingPatch = {
 export type ParcelTriggers = {
   /** První předání dopravci — shipment, fáze „odesláno", e-mail zákazníkovi. */
   handed_over: boolean
+  /** První převzetí zákazníkem — objednávka se nativně dokončí (completed). */
+  delivered: boolean
   /** Zásilka se vrací / vrátila — upozornit majitelku. */
   returned: boolean
   /** ČP hlásí poškození — upozornit majitelku, sledovat dál. */
@@ -165,6 +167,7 @@ export const planParcelUpdate = (
 
   const triggers: ParcelTriggers = {
     handed_over: false,
+    delivered: false,
     returned: false,
     damaged: false,
     never_appeared: false,
@@ -235,7 +238,11 @@ export const planParcelUpdate = (
           triggers.handed_over = true
           phase = nextPhase(phase, "handed_over")
         }
-        if (!deliveredAt) deliveredAt = at
+        if (!deliveredAt) {
+          deliveredAt = at
+          // Převzato = objednávka je hotová (nativní „completed" dělá apply).
+          triggers.delivered = true
+        }
         done = true
         break
       case "returned":

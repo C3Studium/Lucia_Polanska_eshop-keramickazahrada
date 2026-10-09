@@ -255,7 +255,7 @@ describe("posloupnosti z nAPI (úložna, vrácení)", () => {
     expect(delivered.patch.phase).toBe("delivered")
     expect(delivered.patch.delivered_at).not.toBeNull()
     expect(delivered.patch.done).toBe(true)
-    expect(delivered.triggers).toEqual({ handed_over: false, returned: false, damaged: false, never_appeared: false })
+    expect(delivered.triggers).toEqual({ handed_over: false, delivered: true, returned: false, damaged: false, never_appeared: false })
   })
 
   it("PŘEDANÁ DATA 30 dnů bez podání = vzdáno s upozorněním", () => {

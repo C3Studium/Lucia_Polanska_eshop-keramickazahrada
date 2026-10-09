@@ -23,7 +23,10 @@
 
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { createOrderShipmentWorkflow } from "@medusajs/medusa/core-flows"
+import {
+  completeOrderWorkflow,
+  createOrderShipmentWorkflow,
+} from "@medusajs/medusa/core-flows"
 import { MERCHANT_ORDER_MODULE } from "../../modules/merchant-order"
 import type MerchantOrderModuleService from "../../modules/merchant-order/service"
 import type { MerchantOrderStage } from "../../modules/merchant-order/stages"
@@ -299,6 +302,23 @@ export const applyParcelEvents = async (
         resource: { id: updated.order_id, type: "order" },
       })
       actions.push(`majitelka: ${PHASE_LABEL[currentPhase]}`)
+    })
+  }
+
+  // Převzato zákazníkem = objednávka je hotová i pro Medusu (status
+  // „completed"). Dřív zůstávala navždy „pending", protože nikdo dokončení
+  // nevolal. Zrušenou / už dokončenou nechá workflow být; chyba se jen zaloguje.
+  if (plan.triggers.delivered) {
+    await run("dokončení objednávky", async () => {
+      const order = await loadOrder(container, updated.order_id)
+      if (!order || order.status === "canceled" || order.status === "completed") {
+        actions.push(`objednávka ${order?.status ?? "neznámá"} — bez dokončení`)
+        return
+      }
+      await completeOrderWorkflow(container).run({
+        input: { orderIds: [updated.order_id] },
+      })
+      actions.push("objednávka dokončena")
     })
   }
 
