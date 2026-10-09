@@ -37,7 +37,7 @@ import { cpTrackingUrl } from "./carrier"
 import { classifyState, PHASE_LABEL, type ParcelPhase } from "./classify"
 import type { ParcelEventInput } from "./client"
 import { planParcelUpdate, type ParcelEventSource, type ParcelPlan } from "./plan"
-import { shipmentItemsOf } from "./shipment-items"
+import { OUTSTANDING_ITEM_FIELDS, shipmentItemsOf } from "./shipment-items"
 
 /** Kdo je v historii fáze podepsaný pod automatickým přechodem. */
 export const TRACKING_ACTOR = "cp-tracking"
@@ -56,12 +56,9 @@ const ORDER_FIELDS = [
   "id",
   "display_id",
   "status",
-  "items.id",
-  "items.quantity",
-  "items.raw_quantity",
-  "items.requires_shipping",
-  "items.detail.shipped_quantity",
-  "items.detail.raw_shipped_quantity",
+  // Včetně items.detail.quantity — explicitní items.quantity z query.graph
+  // nepřijde (změřeno 9. 10. 2026 na #36), množství je na detailu.
+  ...OUTSTANDING_ITEM_FIELDS,
   "fulfillments.id",
   "fulfillments.shipped_at",
   "fulfillments.canceled_at",
