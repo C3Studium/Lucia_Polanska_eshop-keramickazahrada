@@ -95,6 +95,132 @@
   }
 }
 
+/* Štítek „Poškozeno přepravou" (§11.3) — hlína jako u upozornění „Než zásilku
+   převezmete": je to varování, které mění, kdo co řeší, ne stav žádosti. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 1.5rem;
+  margin-top: 0.2rem;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid rgb(var(--clay-06-rgb) / 0.5);
+  border-radius: 999px;
+  color: var(--clay-06);
+  font: 400 0.68rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Položky žádosti (§11.1) ─────────────────────────────────────────────
+   Náhled · název / varianta · počet · částka, pod tím součet „Cena vybraných
+   položek" a — když už se vracelo — „Vráceno". Světlejší vložka v kartě, ať
+   se čte jako výpis, ne jako další karta. */
+.lineItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.1);
+  border-radius: 0.5rem;
+  background: rgb(var(--white-rgb) / 0.35);
+}
+
+.lineList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineItem {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lineThumb {
+  width: 2.75rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.45rem;
+}
+
+.lineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lineTitle {
+  font: 400 0.92rem / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.lineMeta {
+  color: rgb(var(--ink-05-rgb) / 0.6);
+  font: 300 0.8rem / 1.35 "Sansation-Light", sans-serif;
+}
+
+.lineAmount {
+  font: 400 0.92rem / 1.3 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
+}
+
+.lineSum {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgb(var(--ink-05-rgb) / 0.18);
+
+  div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  dt {
+    color: rgb(var(--ink-05-rgb) / 0.62);
+    font: 400 0.72rem / 1.3 "Sansation-Regular", sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+    white-space: nowrap;
+  }
+
+  /* Vráceno celé = olivově (hotovo); část = inkem, poznámka pod tím vysvětlí. */
+  div[data-tone="full"] dd { color: var(--olive-07); }
+}
+
+.lineNote {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 300 0.82rem / 1.4 "Sansation-Light", sans-serif;
+}
+
+.lineItemsCompact {
+  gap: 0.45rem;
+  padding: 0.5rem 0.65rem;
+
+  .lineItem { grid-template-columns: 2.25rem minmax(0, 1fr) auto; }
+  .lineThumb { width: 2.25rem; }
+  .lineTitle,
+  .lineAmount { font-size: 0.88rem; }
+  .lineSum dd { font-size: 0.9rem; }
+}
+
 /* ── Časová osa ───────────────────────────────────────────────────────── */
 .timeline {
   display: flex;
@@ -451,4 +577,14 @@
     color: rgb(var(--ink-05-rgb) / 0.68);
     font: 300 0.9rem / 1.45 "Sansation-Light", sans-serif;
   }
+
+  .badge { margin: 0.3rem 0 0.1rem; }
+
+  .lineItems { margin-top: 0.55rem; }
+}
+
+.summaryBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }

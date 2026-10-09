@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import type {
+  ClaimDamageCause,
   ClaimKind,
   ClaimRequestedResolution,
   OrderClaims,
@@ -41,6 +42,14 @@ export type SubmitClaimInput = {
   requested_resolution?: ClaimRequestedResolution
   /** Fotky vady (base64, max 6) — jako dnes. */
   photos?: CommissionUpload[]
+  /**
+   * Vybrané položky (§11.1): u `reklamace` povinné (≥ 1), u `vraceni` volitelné
+   * (prázdné = celá objednávka), u `odstoupeni` se neposílají. Server ověří, že
+   * id patří objednávce a `quantity ≤ objednané`.
+   */
+  items?: { id: string; quantity: number }[]
+  /** `"carrier"` = poškozeno přepravou (§11.3) → server vyžaduje ≥ 1 fotku. */
+  damage_cause?: ClaimDamageCause
 }
 
 export async function submitClaim(
@@ -61,6 +70,8 @@ export async function submitClaim(
             ? { requested_resolution: input.requested_resolution }
             : {}),
           ...(input.photos?.length ? { photos: input.photos } : {}),
+          ...(input.items?.length ? { items: input.items } : {}),
+          ...(input.damage_cause ? { damage_cause: input.damage_cause } : {}),
         },
       }
     )

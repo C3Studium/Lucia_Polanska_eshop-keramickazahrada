@@ -131,3 +131,59 @@ Hlídá **všechny nefinální** stavy (`pending`, `approved`, `received`): pře
 
 ## 10. Mimo rozsah (teď)
 Kurzy (vlastní refundace rezervací), nativní Medusa returns/claims, per-položkové reklamace (items zůstávají text).
+
+## 11. Rozšíření (9. 10. 2026 večer): položky, poškození přepravou, kategorie
+
+### 11.1 Položky žádosti
+Nové sloupce `return_request`: `line_items` jsonb null =
+`[{ line_item_id, title, variant_title, thumbnail, quantity, unit_price, total, currency_code }]`
+(`unit_price`/`total` **po slevě, s DPH** — z objednávky: `per_unit = item.total / item.quantity`,
+`total = per_unit × quantity`), `damage_cause` text null (`"carrier"` = poškozeno
+přepravou). Stará textová `items` zůstává jako záloha pro staré řádky.
+
+Store `POST /store/orders/:id/claims` navíc: `items?: [{ id, quantity }]` — u
+**reklamace povinné** (aspoň jedna položka), u **vrácení** volitelné (bez
+položek = vše), u **odstoupení** se ignoruje (celá objednávka). Server ověří,
+že id patří objednávce a `quantity ≤ objednané`. `damage_cause?: "carrier"` —
+pak jsou **fotky povinné** (≥ 1), jinak 400.
+
+`GET /store/orders/:id/claims` navíc vrací `order_items: [{ id, title,
+variant_title, thumbnail, quantity, unit_price, total }]` (pro výběr ve
+formuláři) a každá žádost nese `line_items` a `damage_cause`.
+
+### 11.2 Částka refundace
+Když má žádost `line_items`, je výchozí částka **cena vybraných položek**:
+`suggested_amount = min(remaining, Σ line_items.total)`. Seznam i detail v
+adminu ji nesou (`suggested_amount`), panel „Vrátit peníze" ji předvyplní
+s popiskem „Cena vybraných položek"; majitelka ji smí změnit do výše
+`remaining`. Bez položek zůstává výchozí `remaining`. ComGate dílčí
+refundace už umí (§3).
+
+### 11.3 Poškozeno přepravou
+`damage_cause === "carrier"` → při založení žádosti navíc `notifyMerchant`
+owner **s e-mailem**: „Zásilka #N dorazila poškozená — podejte reklamaci u
+České pošty" + číslo zásilky (`cp_label_tracking` / sledování) + odkaz na
+formulář ČP (`https://www.ceskaposta.cz/reklamace` — konstanta
+`CP_CLAIM_FORM_URL`, ověřit) + připomínka lhůty (poškození hlásit ČP
+neprodleně, nejpozději do 2 pracovních dnů od dodání). V adminu badge
+„Poškozeno přepravou", v protokolu a e-mailech věta. Pro zákazníka jde dál
+běžná reklamace (schválit → zboží zpět → vrátit cenu položek).
+
+### 11.4 Kategorie v Objednávky+
+Projekce `/admin/merchant-orders` ke každému řádku přidá `claim` (poslední
+žádost k objednávce) = `{ id, kind, status, reason, damage_cause,
+refund_amount, remaining, suggested_amount, created_at } | null` a
+`cancel_reason` (u fáze `cancelled`: důvod z žádosti o odstoupení, jinak
+poznámka z historie fáze). Filtr `?category=cancelled|refunds|claims`:
+`cancelled` = fáze cancelled, `refunds` = existuje žádost druhu
+vraceni/odstoupeni, `claims` = druhu reklamace. V Objednávky+ tři nové
+záložky **Zrušené · Vrácení peněz · Reklamace**; řádek ukazuje druh, stav
+žádosti, důvod (zkrácený, celý v titulku), vrácenou částku, badge
+„Poškozeno přepravou" a odkaz „Otevřít v Reklamace a zrušení" (deep link
+`/reklamace?status=…&id=…`).
+
+### 11.5 E-maily, protokol, stavová stránka
+Kde se dnes vypisuje textové `items`, vypisují se přednostně `line_items`
+(název · varianta · N ks · částka). Storefront: formulář má výběr položek
+(checkbox + počet) a přepínač „Balík dorazil poškozený (přepravou)";
+stavová stránka a souhrn na potvrzení ukazují vybrané položky a částku.

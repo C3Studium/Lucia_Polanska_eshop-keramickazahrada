@@ -13,6 +13,7 @@ import {
   RESOLUTIONS,
   type Resolution,
 } from "../../../../../lib/claims/constants"
+import { claimItemsText } from "../../../../../lib/claims/line-items"
 import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
 import { MONEY_EPSILON } from "../../../../../lib/claims/refund-rules"
 
@@ -89,10 +90,9 @@ export const POST = async (
     }
   }
 
-  const itemsText =
-    typeof request.items === "string" && request.items.trim().length
-      ? request.items.trim()
-      : null
+  // Položky slovy — přednostně vybrané `line_items` (název · varianta · ks ·
+  // částka), u starých řádků text zákazníka (§11.5).
+  const itemsText = claimItemsText(request)
 
   const decidedAt = new Date()
   const updated = await service.updateReturnRequests({

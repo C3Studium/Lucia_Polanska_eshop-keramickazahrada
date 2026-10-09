@@ -31,6 +31,15 @@ import {
   stageLabels,
 } from "../../lib/workbench";
 import { formatDateTime } from "../../lib/format";
+import {
+  asNumber,
+  isReturnKind,
+  isReturnStatus,
+  KIND_META,
+  reklamaceLink,
+  STATUS_META,
+} from "../../lib/return-requests";
+import { DamageBadge } from "../../components/return-line-items";
 import { otevritStitek, type StitekZasilky } from "../../lib/stitky";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
@@ -92,8 +101,271 @@ const filterTabs = [
   { key: "naposta", label: "Na poštu" },
   { key: "payment_problem", label: "Problém s platbou" },
   { key: "dluzi", label: "Čeká na doplatek" },
+  /* §11.4 — kategorie z modulu Reklamace a zrušení: zrušené objednávky,
+     vrácení peněz (vrácení zboží / odstoupení) a reklamace. Jen čtení
+     a odkaz do modulu; žádné hromadné akce. */
+  { key: "zrusene", label: "Zrušené" },
+  { key: "vraceni", label: "Vrácení peněz" },
+  { key: "reklamace", label: "Reklamace" },
   { key: "statistiky", label: "Statistiky" },
 ];
+
+/* ------------------------------- Zrušené · Vrácení peněz · Reklamace ---- */
+
+type ClaimCategory = "cancelled" | "refunds" | "claims";
+
+/**
+ * §11.4 — poslední žádost k objednávce, jak ji nese projekce
+ * `/admin/merchant-orders`. Všechno kromě `id` je volitelné: starší server
+ * pole nemá a řádek se pak vykreslí bez něj, ne s chybou.
+ */
+type ClaimSummary = {
+  id: string;
+  kind?: string | null;
+  status?: string | null;
+  reason?: string | null;
+  damage_cause?: string | null;
+  refund_amount?: number | string | null;
+  remaining?: number | string | null;
+  suggested_amount?: number | string | null;
+  created_at?: string | null;
+};
+
+/** Řádek projekce `/admin/merchant-orders` — jen pole, která tyhle záložky čtou. */
+type ClaimCategoryRow = {
+  id?: string;
+  order_id: string;
+  display_id: number | string | null;
+  created_at: string | null;
+  email: string | null;
+  customer_name: string | null;
+  stage: string;
+  total: number | string | null;
+  paid_total?: number | null;
+  is_made_to_order?: boolean;
+  claim?: ClaimSummary | null;
+  /** U fáze cancelled: důvod z odstoupení, jinak poznámka z historie fáze. */
+  cancel_reason?: string | null;
+};
+
+type ClaimCategoryResponse = {
+  orders: ClaimCategoryRow[];
+  count?: number;
+  limit?: number;
+  offset?: number;
+};
+
+const claimTabs: { key: string; label: string; category: ClaimCategory }[] = [
+  { key: "zrusene", label: "Zrušené", category: "cancelled" },
+  { key: "vraceni", label: "Vrácení peněz", category: "refunds" },
+  { key: "reklamace", label: "Reklamace", category: "claims" },
+];
+
+const claimCategoryFor = (key: string): ClaimCategory | null =>
+  claimTabs.find((tab) => tab.key === key)?.category ?? null;
+
+/** `/admin/merchant-orders` stropuje `limit` na 100 — dál se jde hledáním. */
+const CLAIM_PAGE_MAX = 100;
+
+const truncate = (text: string, max = 80): string => {
+  const flat = text.trim().replace(/\s+/g, " ");
+  return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
+};
+
+/** Hledání nad načtenými řádky — číslo přesně, e-mail a jméno jako podřetězec. */
+const matchesClaimSearch = (row: ClaimCategoryRow, needle: string): boolean => {
+  const q = needle.toLowerCase().replace(/^#/, "");
+  if (!q) return true;
+  return (
+    String(row.display_id ?? "").toLowerCase() === q ||
+    (row.email ?? "").toLowerCase().includes(q) ||
+    (row.customer_name ?? "").toLowerCase().includes(q)
+  );
+};
+
+const claimEmptyState = (
+  category: ClaimCategory,
+  searching: boolean
+): { title: string; description: string } => {
+  if (searching) {
+    return {
+      title: "Nic neodpovídá hledání",
+      description: "Hledá se v načtených řádcích této záložky — zkuste jiné číslo nebo e-mail.",
+    };
+  }
+  switch (category) {
+    case "cancelled":
+      return {
+        title: "Žádná zrušená objednávka",
+        description:
+          "Objednávky se sem dostanou po zrušení — z modulu Reklamace a zrušení, nebo přepnutím fáze.",
+      };
+    case "refunds":
+      return {
+        title: "Žádné vrácení peněz",
+        description:
+          "Objeví se tu objednávky, u kterých zákazník žádá vrácení zboží nebo odstoupil od smlouvy.",
+      };
+    default:
+      return {
+        title: "Žádná reklamace",
+        description: "Objeví se tu objednávky s uplatněnou reklamací.",
+      };
+  }
+};
+
+/**
+ * Řádek v záložkách Zrušené / Vrácení peněz / Reklamace. Klik vede na detail
+ * objednávky; rozhodování o žádosti zůstává v modulu Reklamace a zrušení,
+ * kam vede hluboký odkaz (správný tab + otevřený detail).
+ */
+const ClaimOrderRow = ({
+  order,
+  category,
+  expert,
+}: {
+  order: ClaimCategoryRow;
+  category: ClaimCategory;
+  expert: boolean;
+}) => {
+  const navigate = useNavigate();
+  const claim = order.claim ?? null;
+  const kind = claim && isReturnKind(claim.kind) ? claim.kind : null;
+  const status = claim && isReturnStatus(claim.status) ? claim.status : null;
+  const reason =
+    category === "cancelled"
+      ? order.cancel_reason || claim?.reason || ""
+      : claim?.reason ?? "";
+  const refunded = asNumber(claim?.refund_amount);
+  const remaining =
+    claim?.remaining === undefined || claim?.remaining === null
+      ? null
+      : asNumber(claim.remaining);
+  const total = asNumber(order.total);
+  const link = claim
+    ? status
+      ? reklamaceLink({ id: claim.id, status })
+      : `/reklamace?id=${encodeURIComponent(claim.id)}`
+    : null;
+  const detailHref = `/orders/${order.order_id}`;
+
+  return (
+    <article
+      role="link"
+      tabIndex={0}
+      title={`Otevřít detail objednávky #${order.display_id ?? ""}`}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button, a, input, label")) {
+          return;
+        }
+        navigate(detailHref);
+      }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(detailHref);
+        }
+      }}
+      className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus grid cursor-pointer gap-3 px-6 py-4 outline-none transition-colors lg:grid-cols-[150px_minmax(0,1.1fr)_220px_minmax(0,1.5fr)_170px_auto] lg:items-center"
+    >
+      <div className="min-w-0">
+        <Text size="small" weight="plus">
+          #{order.display_id ?? "—"}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-1 whitespace-nowrap">
+          {formatDateTime(order.created_at)}
+        </Text>
+        {expert && <CopyId value={order.order_id} />}
+      </div>
+
+      <div className="min-w-0">
+        <Text size="small" className="truncate">
+          {order.customer_name || order.email || "—"}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle mt-1 truncate">
+          {order.customer_name && order.email ? order.email : ""}
+          {order.is_made_to_order ? (order.customer_name && order.email ? " · " : "") + "zakázka" : ""}
+        </Text>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {category === "cancelled" && (
+          <Badge size="2xsmall" color={stageColors[order.stage] ?? "grey"}>
+            {stageLabels[order.stage] ?? order.stage}
+          </Badge>
+        )}
+        {kind && (
+          <Badge size="2xsmall" color={KIND_META[kind].color}>
+            {KIND_META[kind].label}
+          </Badge>
+        )}
+        {status && (
+          <Badge size="2xsmall" color={STATUS_META[status].color}>
+            {STATUS_META[status].label}
+          </Badge>
+        )}
+        <DamageBadge cause={claim?.damage_cause} />
+        {!claim && category !== "cancelled" && (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            bez žádosti
+          </Text>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        {reason ? (
+          <Text size="xsmall" className="text-ui-fg-subtle" title={reason}>
+            {truncate(reason, 80)}
+          </Text>
+        ) : (
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {category === "cancelled" ? "bez uvedeného důvodu" : "—"}
+          </Text>
+        )}
+        {claim?.created_at && (
+          <Text size="xsmall" className="text-ui-fg-muted mt-1">
+            žádost {formatDateTime(claim.created_at)}
+          </Text>
+        )}
+      </div>
+
+      <div>
+        {claim ? (
+          <>
+            <Text size="small" weight="plus">
+              {refunded > 0 ? `vráceno ${formatCzk(refunded)}` : "zatím nevráceno"}
+            </Text>
+            <Text size="xsmall" className={`mt-1 ${remaining !== null && remaining > 0 ? "text-ui-fg-error" : "text-ui-fg-subtle"}`}>
+              {remaining !== null
+                ? remaining > 0
+                  ? `zbývá vrátit ${formatCzk(remaining)}`
+                  : "nic nezbývá"
+                : total > 0
+                  ? `z ${formatCzk(total)}`
+                  : ""}
+            </Text>
+          </>
+        ) : (
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            {total > 0 ? formatCzk(total) : "—"}
+          </Text>
+        )}
+      </div>
+
+      <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
+        {link && (
+          <Link to={link} className="text-ui-fg-interactive txt-small hover:underline">
+            Otevřít v Reklamace a zrušení
+          </Link>
+        )}
+        <Link to={detailHref} className="text-ui-fg-interactive txt-small hover:underline">
+          Detail
+        </Link>
+      </div>
+    </article>
+  );
+};
 
 /** Objednávky+ → Statistiky: 12 months, AOV, providers, lead time, refunds. */
 const OrderStats = () => {
@@ -735,9 +1007,15 @@ const OrdersInner = () => {
     params.set("expert", "1");
   }
 
+  /* Záložky Zrušené / Vrácení peněz / Reklamace čtou projekci
+     /admin/merchant-orders s ?category= (§11.4) — ta nese `claim` a
+     `cancel_reason`, pracovní seznam /admin/workbench/orders ne. */
+  const claimCategory = claimCategoryFor(active);
+  const isClaimTab = claimCategory !== null;
+
   const { data, isLoading, isError } = useQuery<WorkbenchOrdersResponse>({
     queryKey: ["workbench-orders", active, search, expert, pageLimit],
-    enabled: active !== "statistiky",
+    enabled: active !== "statistiky" && !isClaimTab,
     queryFn: () =>
       sdk.client.fetch(`/admin/workbench/orders?${params.toString()}`),
     refetchOnWindowFocus: true,
@@ -748,6 +1026,37 @@ const OrdersInner = () => {
     active === "naposta"
       ? allRows.filter((order) => order.awaiting_handover)
       : allRows;
+
+  const claimLimit = Math.min(pageLimit, CLAIM_PAGE_MAX);
+  const claimsQuery = useQuery<ClaimCategoryResponse>({
+    queryKey: ["merchant-orders", "category", claimCategory, claimLimit],
+    enabled: isClaimTab,
+    queryFn: () =>
+      sdk.client.fetch(`/admin/merchant-orders`, {
+        query: { category: claimCategory, limit: claimLimit, offset: 0 },
+      }),
+    refetchOnWindowFocus: true,
+  });
+  const claimRowsAll = claimsQuery.data?.orders ?? [];
+  /* Hledání nad touto projekcí server neumí — filtruje se, co je načtené. */
+  const claimRows = search
+    ? claimRowsAll.filter((row) => matchesClaimSearch(row, search))
+    : claimRowsAll;
+
+  /* Počet v záložce = `count` z poslední odpovědi; po návštěvě záložky
+     zůstává vidět, dokud se nenačte znovu. Žádné tři dotazy navíc při každém
+     otevření stránky. */
+  const [claimCounts, setClaimCounts] = useState<Record<string, number>>({});
+  const claimCount = claimsQuery.data?.count;
+  useEffect(() => {
+    if (!isClaimTab || typeof claimCount !== "number") return;
+    setClaimCounts((current) =>
+      current[active] === claimCount ? current : { ...current, [active]: claimCount }
+    );
+  }, [active, isClaimTab, claimCount]);
+
+  const listLoading = isClaimTab ? claimsQuery.isLoading : isLoading;
+  const listError = isClaimTab ? claimsQuery.isError : isError;
 
   /* Hromadné předání celé tašky u přepážky — jeden klik místo N. Sequential
      on purpose: each confirm sends the customer's shipment e-mail. */
@@ -937,15 +1246,26 @@ const OrdersInner = () => {
         tabs={filterTabs.map((tab) => ({
           ...tab,
           count:
-            tab.key === "statistiky" ? undefined : data?.counts?.[tab.key],
+            tab.key === "statistiky"
+              ? undefined
+              : claimCategoryFor(tab.key)
+                ? claimCounts[tab.key]
+                : data?.counts?.[tab.key],
         }))}
         active={active}
-        onSelect={setActive}
+        onSelect={(key) => {
+          setActive(key);
+          // V záložkách žádostí se nic hromadně nedělá — výběr z jiné
+          // záložky by tu jen strašil s tlačítky, která sem nepatří.
+          if (claimCategoryFor(key)) {
+            setSelected(new Set());
+          }
+        }}
       />
 
       {active === "statistiky" && <OrderStats />}
 
-      {active !== "statistiky" && isLoading && (
+      {active !== "statistiky" && listLoading && (
         <div className="flex flex-col gap-y-3 px-6 py-5">
           <Skeleton className="h-12 rounded-lg" />
           <Skeleton className="h-12 rounded-lg" />
@@ -953,23 +1273,38 @@ const OrdersInner = () => {
         </div>
       )}
 
-      {active !== "statistiky" && isError && (
+      {active !== "statistiky" && listError && (
         <EmptyState
           title="Objednávky se nepodařilo načíst"
-          description="Zkuste stránku obnovit."
-        />
-      )}
-
-      {active !== "statistiky" && !isLoading && !isError && rows.length === 0 && (
-        <EmptyState
-          title={active === "naposta" ? "Nic nečeká na předání" : "Nic tu není"}
           description={
-            active === "naposta"
-              ? "Všechny zabalené zásilky už jsou u dopravce."
-              : "Žádná objednávka neodpovídá zvolenému filtru."
+            isClaimTab && claimsQuery.error instanceof Error
+              ? claimsQuery.error.message
+              : "Zkuste stránku obnovit."
           }
         />
       )}
+
+      {active !== "statistiky" &&
+        !isClaimTab &&
+        !isLoading &&
+        !isError &&
+        rows.length === 0 && (
+          <EmptyState
+            title={active === "naposta" ? "Nic nečeká na předání" : "Nic tu není"}
+            description={
+              active === "naposta"
+                ? "Všechny zabalené zásilky už jsou u dopravce."
+                : "Žádná objednávka neodpovídá zvolenému filtru."
+            }
+          />
+        )}
+
+      {claimCategory &&
+        !claimsQuery.isLoading &&
+        !claimsQuery.isError &&
+        claimRows.length === 0 && (
+          <EmptyState {...claimEmptyState(claimCategory, Boolean(search))} />
+        )}
 
       {/* „Na poštu": jedna taška, jedno tlačítko. */}
       {active === "naposta" && !isLoading && rows.length > 0 && (
@@ -999,7 +1334,7 @@ const OrdersInner = () => {
         </div>
       )}
 
-      {selected.size > 0 && (
+      {selected.size > 0 && !isClaimTab && (
         <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-3 px-6 py-3">
           <Text size="small" weight="plus">
             Vybráno: {selected.size}
@@ -1054,7 +1389,7 @@ const OrdersInner = () => {
         </div>
       )}
 
-      {active !== "statistiky" && !isLoading && !isError && rows.length > 0 && (
+      {active !== "statistiky" && !isClaimTab && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
           <div className="bg-ui-bg-subtle flex items-center gap-3 px-6 py-2">
             <Checkbox
@@ -1256,9 +1591,56 @@ const OrdersInner = () => {
         </div>
       )}
 
+      {claimCategory &&
+        !claimsQuery.isLoading &&
+        !claimsQuery.isError &&
+        claimRows.length > 0 && (
+          <div className="divide-y">
+            <div className="bg-ui-bg-subtle px-6 py-2">
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                {claimCategory === "cancelled"
+                  ? "Zrušené objednávky s důvodem. Rozhodnutí o vrácení peněz se dělá v modulu Reklamace a zrušení."
+                  : "Jen čtení — schválit, přijmout zboží nebo vrátit peníze jde v modulu Reklamace a zrušení (odkaz v řádku)."}
+              </Text>
+            </div>
+            {claimRows.map((order) => (
+              <ClaimOrderRow
+                key={order.id ?? order.order_id}
+                order={order}
+                category={claimCategory}
+                expert={expert}
+              />
+            ))}
+          </div>
+        )}
+
+      {isClaimTab &&
+        !claimsQuery.isLoading &&
+        !claimsQuery.isError &&
+        (claimsQuery.data?.count ?? 0) > claimRowsAll.length && (
+          <div className="flex items-center justify-center gap-3 px-6 py-4">
+            {claimLimit >= CLAIM_PAGE_MAX ? (
+              <Text size="small" className="text-ui-fg-subtle">
+                Zobrazeno prvních {CLAIM_PAGE_MAX} — starší najdete v modulu Reklamace a zrušení.
+              </Text>
+            ) : (
+              <Button
+                size="small"
+                variant="secondary"
+                onClick={() =>
+                  setPageLimit((current) => Math.min(current + 50, CLAIM_PAGE_MAX))
+                }
+              >
+                Načíst další ({claimRowsAll.length} z {claimsQuery.data?.count})
+              </Button>
+            )}
+          </div>
+        )}
+
       {/* Stránkování: server teď posílá skutečný počet pro aktivní filtr. */}
       {active !== "statistiky" &&
         active !== "naposta" &&
+        !isClaimTab &&
         !isLoading &&
         (data?.count ?? 0) > allRows.length && (
           <div className="flex items-center justify-center gap-3 px-6 py-4">

@@ -6,6 +6,7 @@ import { submitClaimTracking } from "@lib/data/claims"
 import {
   CLAIM_KIND_LABEL,
   CLAIM_STATUS_LABEL,
+  DAMAGE_CAUSE_LABEL,
   REQUESTED_RESOLUTION_LABEL,
   RESOLUTION_LABEL,
   claimExpectsGoods,
@@ -17,6 +18,7 @@ import {
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import ClaimLineItems from "./line-items"
 import styles from "./style.module.scss"
 
 /**
@@ -294,6 +296,11 @@ function ClaimCard({
           <strong className={styles.status}>
             {CLAIM_STATUS_LABEL[claim.status]}
           </strong>
+          {/* §11.3 — majitelka řeší i reklamaci u dopravce; zákazník vidí,
+              že jsme to tak zapsali. */}
+          {claim.damage_cause === "carrier" && (
+            <span className={styles.badge}>{DAMAGE_CAUSE_LABEL.carrier}</span>
+          )}
         </div>
         <dl className={styles.meta}>
           <div>
@@ -314,6 +321,10 @@ function ClaimCard({
           )}
         </dl>
       </header>
+
+      {/* §11.1 — kterých kusů se žádost týká a kolik stály; u vyřízené
+          i kolik se vrátilo oproti ceně položek. */}
+      <ClaimLineItems claim={claim} currencyCode={currencyCode} />
 
       <ol className={styles.timeline}>
         {steps.map((step) => (

@@ -134,6 +134,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
                 token={selfServiceToken}
                 claims={claims}
                 currencyCode={order.currency_code}
+                claimForm={claimForm}
               />
               {claims.requests.length > 0 && (
                 <LocalizedClientLink

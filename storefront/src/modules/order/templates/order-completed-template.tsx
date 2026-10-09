@@ -245,6 +245,7 @@ export default async function OrderCompletedTemplate({
             orderId={order.id}
             token={selfServiceToken}
             claims={claims}
+            currencyCode={order.currency_code}
           />
         )}
 

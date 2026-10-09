@@ -125,6 +125,223 @@
   letter-spacing: 0;
 }
 
+/* ── Které produkty? — výběr položek (§11.1) ──────────────────────────────
+   Jeden řádek na položku: zaškrtávátko, náhled, název · varianta, kolik bylo
+   objednáno a za kolik, vpravo počet kusů (jen když je z čeho vybírat).
+   Stejná karta jako výběr druhu; zaškrtnutá zezelená stejně jako vybraný druh.
+   Na úzkém telefonu se stepper zalomí pod text a zarovná pod náhled. */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.itemsHelp {
+  margin: -0.25rem 0 0;
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.45rem 0.75rem 0.45rem 0.35rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &[data-checked] {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+  }
+}
+
+@include fine-pointer {
+  .item:hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
+  .item[data-checked]:hover { border-color: var(--olive-07); }
+}
+
+/* Celý řádek je popisek zaškrtávátka — klepnout jde kamkoli na název i náhled.
+   Sloupec 44px pro zaškrtávátko = dotykový cíl, i když samo má 1.1rem. */
+.itemMain {
+  flex: 1 1 14rem;
+  display: grid;
+  grid-template-columns: 44px 3.25rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 44px;
+  cursor: pointer;
+
+  input {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    justify-self: center;
+    accent-color: var(--olive-07);
+    cursor: pointer;
+  }
+}
+
+.itemThumb {
+  width: 3.25rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.itemTitle {
+  font: 400 clamp(0.92rem, 1.1vw, 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.itemMeta {
+  color: rgb(var(--ink-05-rgb) / 0.6);
+  font: 300 0.8rem / 1.4 "Sansation-Light", sans-serif;
+}
+
+/* − [n] + z N — tlačítka 44px (dotykový cíl), číslo jde i napsat. */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+
+  button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+    border-radius: 50%;
+    background: rgb(var(--cream-06-rgb) / 0.75);
+    color: var(--ink-05);
+    cursor: pointer;
+    font: 400 1.15rem / 1 "Sansation-Regular", sans-serif;
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+  }
+
+  input {
+    width: 3rem;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+    border-radius: 0.625rem;
+    background: rgb(var(--cream-06-rgb) / 0.75);
+    color: var(--ink-05);
+    font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--olive-07);
+    }
+
+    &:disabled { opacity: 0.5; }
+  }
+}
+
+@include fine-pointer {
+  .stepper button:hover:not(:disabled) { border-color: var(--ink-05); }
+}
+
+.stepperOf {
+  margin-left: 0.15rem;
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 300 0.8rem / 1 "Sansation-Light", sans-serif;
+  white-space: nowrap;
+}
+
+@include below-px(480px) {
+  /* Pod text, zarovnáno pod náhled (sloupec zaškrtávátka + mezera). */
+  .stepper { margin-left: calc(44px + 0.5rem); }
+}
+
+/* ── Poškozeno přepravou (§11.3) ──────────────────────────────────────────
+   Jedno zaškrtávátko ve tvaru karty druhu; zapnuté se obarví hlínou — je to
+   upozornění, které mění pravidla (fotky povinné), ne jen další volba. */
+.carrier {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  input {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0.2rem 0 0;
+    accent-color: var(--clay-06);
+    cursor: pointer;
+  }
+
+  .kindHelp a {
+    color: var(--ink-05);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+@include fine-pointer {
+  .carrier:hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
+}
+
+.carrierOn {
+  border-color: var(--clay-06);
+  background: rgb(var(--clay-06-rgb) / 0.07);
+
+  &:hover { border-color: var(--clay-06); }
+}
+
+/* Vnitřní validace (chybí položka / fotka) — hlínou, ale bez role=alert:
+   není to chyba ze serveru, jen co ještě doplnit, než půjde odeslat. */
+.hint {
+  margin: 0;
+  color: var(--clay-06);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+}
+
 /* Úvod nad stavem už otevřené žádosti (místo formuláře). */
 .openLead {
   margin: 0;

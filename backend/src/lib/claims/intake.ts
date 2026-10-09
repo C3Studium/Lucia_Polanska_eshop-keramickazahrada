@@ -8,6 +8,7 @@ import {
 } from "../customer-email"
 import { notifyMerchant } from "../notify"
 import { orderClaimsUrl } from "../order-access-link"
+import { parcelCodeOf } from "../parcel-tracking/start"
 import {
   buildAndStoreProtocol,
   nextProtocolSequence,
@@ -16,14 +17,19 @@ import {
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
 import {
+  CP_CLAIM_FORM_URL,
+  CP_DAMAGE_REPORT_DEADLINE_TEXT,
+  damageCauseLabel,
   deadlineTextFor,
   isClaimKind,
+  isDamageCause,
   isOpenStatus,
   kindLabel,
   REQUESTED_RESOLUTIONS,
   resolutionLabel,
   resolveByFor,
   type ClaimKind,
+  type DamageCause,
   type RequestedResolution,
 } from "./constants"
 import {
@@ -34,6 +40,13 @@ import {
   withdrawalDeadlineFor,
   type ClaimOrder,
 } from "./context"
+import {
+  lineItemsText,
+  PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE,
+  resolveClaimLineItems,
+  type ClaimItemSelection,
+  type ClaimLineItem,
+} from "./line-items"
 
 /**
  * Sdílený intake žádosti (docs/reklamace-a-zruseni.md §4) — JEDNA cesta pro
@@ -127,6 +140,13 @@ export type ClaimIntakeInput = {
   requested_resolution?: RequestedResolution | string | null
   /** Free text — which pieces are coming back (jen záložní routa). */
   items?: string | null
+  /**
+   * Vybrané položky `{ id, quantity }` (§11.1) — tokenová routa posílá vždy
+   * pole (i prázdné); null/undefined = volající bez výběru položek.
+   */
+  line_items?: ClaimItemSelection[] | null
+  /** `"carrier"` = zásilka dorazila poškozená (§11.3) → fotky povinné. */
+  damage_cause?: DamageCause | string | null
   photos?: IntakePhoto[] | null
 }
 
@@ -135,10 +155,13 @@ export type ClaimRuleVerdict =
   | { ok: false; message: string }
 
 /**
- * Serverová pravidla §4 — čistá funkce (testovatelná bez kontejneru):
+ * Serverová pravidla §4 + §11.1 — čistá funkce (testovatelná bez kontejneru):
  * - §1837: čistá zakázka → `odstoupeni`/`vraceni` nejde;
  * - 14 dnů od odeslání pro `odstoupeni`/`vraceni` (bez odeslání = bez lhůty);
  * - u `reklamace` je `requested_resolution` povinné (§19/1 ZOS);
+ * - položky: u reklamace aspoň jedna (když volající výběr má), id patří
+ *   objednávce, množství ≤ objednané (`resolveClaimLineItems`);
+ * - poškození přepravou → aspoň jedna fotka (bez ní nejde reklamovat u ČP);
  * - nejvýš jedna OTEVŘENÁ žádost na objednávku.
  */
 export const checkClaimRules = (
@@ -165,6 +188,13 @@ export const checkClaimRules = (
           "U reklamace prosím uveďte, co požadujete — opravu, výměnu, nebo vrácení peněz (§ 19 zákona o ochraně spotřebitele).",
       }
     }
+  }
+  const items = resolveClaimLineItems(order, input.kind, input.line_items)
+  if (items.ok === false) {
+    return items
+  }
+  if (isDamageCause(input.damage_cause) && !(input.photos?.length ?? 0)) {
+    return { ok: false, message: PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE }
   }
   if (existingRequests.some((request) => isOpenStatus(request.status))) {
     return { ok: false, message: WITHDRAW_BLOCK_OPEN_REQUEST }
@@ -207,10 +237,22 @@ export const createClaim = async (
     ? await uploadReturnPhotos(container, input.photos)
     : []
 
-  const itemsText =
+  const legacyItemsText =
     typeof input.items === "string" && input.items.trim().length
       ? input.items.trim()
       : null
+
+  // Snapshot vybraných položek (§11.1) — pravidla už prošla v `checkClaimRules`,
+  // tady se jen sestaví; kdyby přece jen neprošla (volající pravidla přeskočil),
+  // žádost se založí bez položek, ne s rozbitými.
+  const resolved = resolveClaimLineItems(order, kind, input.line_items)
+  const lineItems: ClaimLineItem[] | null =
+    resolved.ok && resolved.line_items?.length ? resolved.line_items : null
+  const damageCause: DamageCause | null = isDamageCause(input.damage_cause)
+    ? input.damage_cause
+    : null
+  // Položky slovy — přednostně formátovaný seznam, jinak starý text zákazníka.
+  const itemsText = lineItemsText(lineItems) ?? legacyItemsText
 
   // Snapshot lhůty pro odstoupení (jen tam, kde dává smysl) — později odeslaná
   // zásilka už lhůtu téhle žádosti nepohne.
@@ -232,7 +274,9 @@ export const createClaim = async (
     withdrawal_deadline: withdrawalDeadline,
     // jsonb stores a bare string just fine; the generated DTO merely types the
     // json column as an object, hence the cast.
-    items: itemsText as unknown as Record<string, unknown>,
+    items: legacyItemsText as unknown as Record<string, unknown>,
+    line_items: lineItems as unknown as Record<string, unknown>,
+    damage_cause: damageCause,
     photos: (photoUrls.length ? photoUrls : null) as unknown as Record<
       string,
       unknown
@@ -258,6 +302,7 @@ export const createClaim = async (
     createdAt: now,
     reason: request.reason,
     items: itemsText,
+    damageCause: damageCauseLabel(damageCause),
     requestedResolution:
       kind === "reklamace" ? resolutionLabel(input.requested_resolution) : null,
   }).catch(() => ({ url: null as string | null, number: protocolNumber }))
@@ -288,6 +333,8 @@ export const createClaim = async (
       ...(kind === "reklamace" && input.requested_resolution
         ? { requestedResolution: resolutionLabel(input.requested_resolution) }
         : {}),
+      ...(itemsText ? { items: itemsText } : {}),
+      ...(damageCause === "carrier" ? { carrierDamage: true } : {}),
       deadlineText: deadlineTextFor(kind),
       ...(claimsUrl ? { claimsUrl } : {}),
       ...(protocol.url ? { protocolUrl: protocol.url } : {}),
@@ -296,29 +343,85 @@ export const createClaim = async (
 
   // She works from her inbox (D7), and an unanswered return request is a
   // customer left waiting — so this one is bell + e-mail, not bell-only.
+  // Položky každá na svém řádku (šablona ctí `\n`), ostatní jedním řádkem.
+  const photosLine = photoUrls.length
+    ? `${photoUrls.length} ${photoUrls.length === 1 ? "fotka" : "fotky"} vady`
+    : null
   await notifyMerchant(container, {
     key: `mn:return-req:${request.id}`,
     title: `${kindLabel(kind)} k objednávce #${order.display_id}`,
     description: [
-      `Důvod: ${request.reason}`,
-      kind === "reklamace" && input.requested_resolution
-        ? `Požaduje: ${resolutionLabel(input.requested_resolution)}`
-        : null,
-      itemsText ? `Objekty: ${itemsText}` : null,
-      photoUrls.length
-        ? `${photoUrls.length} ${photoUrls.length === 1 ? "fotka" : "fotky"} vady`
-        : null,
+      [
+        `Důvod: ${request.reason}`,
+        kind === "reklamace" && input.requested_resolution
+          ? `Požaduje: ${resolutionLabel(input.requested_resolution)}`
+          : null,
+        damageCause ? damageCauseLabel(damageCause) : null,
+        photosLine,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      itemsText ? `Zboží:\n${itemsText}` : null,
     ]
       .filter(Boolean)
-      .join(" · "),
+      .join("\n"),
     audience: "owner",
     urgent: false,
     email: true,
     resource: { id: order.id, type: "order" },
   })
 
+  // Poškozeno přepravou (§11.3): druhé, URGENTNÍ upozornění s e-mailem —
+  // reklamaci u České pošty musí podat majitelka (odesílatel), a to do dvou
+  // pracovních dnů od dodání; zákazníkova žádost sama o sobě lhůtu nehlídá.
+  if (damageCause === "carrier") {
+    await notifyMerchant(container, {
+      key: `mn:carrier-damage:${request.id}`,
+      title: `Zásilka #${order.display_id} dorazila poškozená — podejte reklamaci u České pošty`,
+      description: carrierDamageDescription({
+        parcelCode: parcelCodeOf(order),
+        itemsText,
+        photoUrls,
+        reason: request.reason,
+      }),
+      audience: "owner",
+      urgent: true,
+      email: true,
+      resource: { id: order.id, type: "order" },
+    }).catch(() => undefined)
+  }
+
   return { request, protocolUrl: protocol.url }
 }
+
+/**
+ * Text upozornění „poškozeno přepravou" (§11.3) — čistá funkce, ať jde
+ * ověřit bez kontejneru: číslo zásilky (nebo že chybí), odkaz na formulář ČP,
+ * lhůta, fotky od zákazníka a co je poškozené.
+ */
+export const carrierDamageDescription = (input: {
+  parcelCode: string | null
+  itemsText: string | null
+  photoUrls: string[]
+  reason: string
+}): string =>
+  [
+    input.parcelCode
+      ? `Číslo zásilky: ${input.parcelCode}`
+      : "Číslo zásilky se nepodařilo dohledat (objednávka nemá podací číslo ČP) — doplňte ho z podacího archu.",
+    `Formulář reklamace ČP: ${CP_CLAIM_FORM_URL}`,
+    CP_DAMAGE_REPORT_DEADLINE_TEXT,
+    `Zákazník popisuje: ${input.reason}`,
+    input.itemsText ? `Poškozené zboží:\n${input.itemsText}` : null,
+    // Fotky jsou u poškození přepravou povinné — prázdný seznam znamená, že
+    // se je nepodařilo uložit, ne že je zákazník neposlal.
+    input.photoUrls.length
+      ? `Fotky od zákazníka (${input.photoUrls.length}):\n${input.photoUrls.join("\n")}`
+      : "Fotky se nepodařilo uložit — vyžádejte je od zákazníka e-mailem (ČP je k reklamaci potřebuje).",
+    "Pro zákazníka jde dál o běžnou reklamaci — schválit, zboží zpět, vrátit cenu položek.",
+  ]
+    .filter(Boolean)
+    .join("\n")
 
 /** Předmět potvrzení o přijetí podle druhu (§6). */
 export const REFUND_REQUEST_SUBJECT: Record<string, string> = {

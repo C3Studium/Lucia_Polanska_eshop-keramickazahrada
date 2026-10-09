@@ -1,6 +1,7 @@
 import {
   CLAIM_KIND_LABEL,
   CLAIM_STATUS_LABEL,
+  DAMAGE_CAUSE_LABEL,
   RESOLUTION_LABEL,
   claimExpectsGoods,
   formatClaimDate,
@@ -10,6 +11,7 @@ import {
 } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import ClaimLineItems from "./line-items"
 import styles from "./style.module.scss"
 
 /**
@@ -17,6 +19,9 @@ import styles from "./style.module.scss"
  * druh, stav a jedna věta, co se právě děje, plus odkaz na stránku se vším
  * (časová osa, protokol, adresa pro vrácení, číslo zásilky). Serverová
  * komponenta — nic neklikatelného kromě odkazu.
+ *
+ * Když žádost nese položky (§11.1), ukáže i ty — s cenou vybraných kusů a
+ * případně kolik už se vrátilo; u poškození přepravou štítek (§11.3).
  */
 const headline = (claim: OrderClaim) => {
   switch (claim.status) {
@@ -47,10 +52,13 @@ export default function ClaimsSummary({
   orderId,
   token,
   claims,
+  currencyCode = "czk",
 }: {
   orderId: string
   token: string
   claims: OrderClaims
+  /** Měna objednávky pro částky položek; výchozí koruny. */
+  currencyCode?: string
 }) {
   if (!claims.requests.length) return null
   const sorted = [...claims.requests].sort((a, b) =>
@@ -77,11 +85,15 @@ export default function ClaimsSummary({
             data-status={claim.status}
           >
             <span className={styles.dot} aria-hidden="true" />
-            <div>
+            <div className={styles.summaryBody}>
               <strong>
                 {CLAIM_KIND_LABEL[claim.kind]} · {CLAIM_STATUS_LABEL[claim.status]}
               </strong>
+              {claim.damage_cause === "carrier" && (
+                <span className={styles.badge}>{DAMAGE_CAUSE_LABEL.carrier}</span>
+              )}
               <p>{headline(claim)}</p>
+              <ClaimLineItems claim={claim} currencyCode={currencyCode} compact />
             </div>
           </li>
         ))}

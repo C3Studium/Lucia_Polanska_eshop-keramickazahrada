@@ -28,8 +28,23 @@ const ReturnRequest = model.define("return_request", {
    * ať netřeba řešit migraci nativního enum typu.
    */
   kind: model.text().nullable(),
-  /** The customer's own free-text list of what they want to send back. */
+  /**
+   * The customer's own free-text list of what they want to send back — záloha
+   * pro staré řádky a záložní routu bez výběru položek (§11.1).
+   */
   items: model.json().nullable(),
+  /**
+   * Vybrané řádky objednávky (§11.1): `[{ line_item_id, title, variant_title,
+   * thumbnail, quantity, unit_price, total, currency_code }]`, ceny PO slevě
+   * a S DPH. Snapshot v okamžiku žádosti — z něj je výchozí částka refundace
+   * („cena vybraných položek", §11.2). Null = celá objednávka / bez výběru.
+   */
+  line_items: model.json().nullable(),
+  /**
+   * `"carrier"` = zásilka dorazila poškozená (§11.3) → majitelka reklamuje u
+   * České pošty; pro zákazníka jde dál běžná reklamace. Null = běžná vada.
+   */
+  damage_cause: model.text().nullable(),
   /** Fotky vady / zboží (pole URL v úložišti), aby zákazník ukázal, co je špatně. */
   photos: model.json().nullable(),
   /**

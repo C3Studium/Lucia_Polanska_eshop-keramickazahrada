@@ -133,3 +133,35 @@ export const resolutionLabel = (value: string | null | undefined): string =>
     : value && value in REQUESTED_RESOLUTION_LABEL
       ? REQUESTED_RESOLUTION_LABEL[value as RequestedResolution]
       : ""
+
+/**
+ * Příčina poškození (§11.3). Zatím jediná typovaná hodnota: `"carrier"` =
+ * zásilka dorazila poškozená → majitelka reklamuje u dopravce.
+ */
+export type DamageCause = "carrier"
+
+export const DAMAGE_CAUSES: readonly DamageCause[] = ["carrier"]
+
+export const isDamageCause = (value: unknown): value is DamageCause =>
+  typeof value === "string" &&
+  (DAMAGE_CAUSES as readonly string[]).includes(value)
+
+export const DAMAGE_CAUSE_LABEL: Record<DamageCause, string> = {
+  carrier: "Poškozeno přepravou",
+}
+
+export const damageCauseLabel = (value: unknown): string | null =>
+  isDamageCause(value) ? DAMAGE_CAUSE_LABEL[value] : null
+
+/**
+ * Formulář České pošty pro reklamaci zásilky (§11.3).
+ *
+ * OVĚŘIT: adresa je z dokumentu (`https://www.ceskaposta.cz/reklamace`) a ČP
+ * stránky občas přesouvá; než se na ni majitelka poprvé spolehne, otevřít a
+ * případně přepsat (jediné místo, odkud se bere).
+ */
+export const CP_CLAIM_FORM_URL = "https://www.ceskaposta.cz/reklamace"
+
+/** Lhůta pro hlášení poškození dopravci — do e-mailu majitelce. */
+export const CP_DAMAGE_REPORT_DEADLINE_TEXT =
+  "Poškození hlaste České poště neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu propadá."

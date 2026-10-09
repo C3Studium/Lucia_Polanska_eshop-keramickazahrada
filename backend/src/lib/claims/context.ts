@@ -1,9 +1,11 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getMerchantSettings } from "../merchant-settings"
+import { LINE_QUANTITY_FIELDS } from "../order-quantity"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
-import { isOpenStatus, WITHDRAWAL_DAYS } from "./constants"
+import { isDamageCause, isOpenStatus, WITHDRAWAL_DAYS } from "./constants"
+import { claimLineItemsOf, orderItemsForClaims } from "./line-items"
 import { requestRefunds, requestRefundedTotal } from "./refund-rules"
 
 /**
@@ -19,6 +21,15 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 export type ClaimOrderItem = {
   id?: string
+  title?: string | null
+  product_title?: string | null
+  variant_title?: string | null
+  thumbnail?: string | null
+  unit_price?: unknown
+  total?: unknown
+  quantity?: unknown
+  raw_quantity?: unknown
+  detail?: { quantity?: unknown; raw_quantity?: unknown } | null
   metadata?: Record<string, unknown> | null
   product?: { metadata?: Record<string, unknown> | null } | null
 }
@@ -26,38 +37,53 @@ export type ClaimOrderItem = {
 export type ClaimOrderFulfillment = {
   shipped_at?: string | Date | null
   canceled_at?: string | Date | null
+  data?: Record<string, unknown> | null
+  labels?: Array<{ tracking_number?: string | null }> | null
 }
 
 export type ClaimOrder = {
   id: string
   display_id?: number | string
   email?: string | null
+  currency_code?: string | null
+  metadata?: Record<string, unknown> | null
   items?: ClaimOrderItem[] | null
   fulfillments?: ClaimOrderFulfillment[] | null
 }
 
-/** Pole objednávky, která kontext i intake potřebují — jeden seznam pro obě routy. */
+/**
+ * Pole objednávky, která kontext i intake potřebují — jeden seznam pro obě routy.
+ *
+ * `total` + `items.*` jsou tu kvůli položkám (§11.1): teprve `total` na
+ * objednávce spustí v modulu objednávek `decorateCartTotals`, který na řádky
+ * dopočítá `item.total` PO slevě a S DPH (jinak řádek `total` vůbec nemá).
+ * Množství se čte přes `lineQuantityOf` (`LINE_QUANTITY_FIELDS`) — výslovné
+ * `items.quantity` z `query.graph` je nespolehlivé (lib/order-quantity).
+ * `metadata` + `fulfillments.data/labels` = zdroje podacího čísla pro
+ * reklamaci u dopravce (`parcelCodeOf`, §11.3).
+ */
 export const CLAIM_ORDER_FIELDS = [
   "id",
   "display_id",
   "email",
   "created_at",
   "currency_code",
+  "total",
+  "metadata",
   "customer.first_name",
   "customer.last_name",
   "shipping_address.first_name",
   "shipping_address.last_name",
   "billing_address.first_name",
   "billing_address.last_name",
-  "items.id",
-  "items.title",
-  "items.product_title",
-  "items.quantity",
-  "items.metadata",
+  "items.*",
+  ...LINE_QUANTITY_FIELDS,
   "items.product.metadata",
   "fulfillments.id",
   "fulfillments.shipped_at",
   "fulfillments.canceled_at",
+  "fulfillments.data",
+  "fulfillments.labels.tracking_number",
 ]
 
 export const loadClaimOrder = async (
@@ -169,8 +195,10 @@ const iso = (value: unknown): string | null => {
 }
 
 /**
- * Veřejný tvar žádosti pro zákazníka (§4). `decision_note` jen u zamítnutí —
- * u schválení je to interní poznámka majitelky.
+ * Veřejný tvar žádosti pro zákazníka (§4, §11.1). `decision_note` jen u
+ * zamítnutí — u schválení je to interní poznámka majitelky. `line_items` =
+ * vybrané položky (null = celá objednávka), `damage_cause` = „carrier" u
+ * poškození přepravou.
  */
 export const serializeClaim = (request: any) => ({
   id: request.id,
@@ -189,6 +217,10 @@ export const serializeClaim = (request: any) => ({
   decision_note:
     request.status === "rejected" ? (request.decision_note ?? null) : null,
   reason: request.reason,
+  line_items: Array.isArray(request.line_items) && request.line_items.length
+    ? claimLineItemsOf(request.line_items)
+    : null,
+  damage_cause: isDamageCause(request.damage_cause) ? request.damage_cause : null,
 })
 
 export const listOrderClaims = async (
@@ -221,6 +253,8 @@ export const buildClaimsContext = async (
       settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
     return_instructions: settings?.return_instructions?.trim() || null,
     all_made_to_order: allMadeToOrder(order),
+    // Pro výběr položek ve formuláři (§11.1) — ceny po slevě, s DPH.
+    order_items: orderItemsForClaims(order),
     requests: rows.map(serializeClaim),
   }
 }

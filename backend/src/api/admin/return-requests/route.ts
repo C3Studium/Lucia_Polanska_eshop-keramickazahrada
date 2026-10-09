@@ -18,7 +18,9 @@ import type ReturnRequestModuleService from "../../../modules/return-request/ser
  *
  * Ke každému řádku se dopočítá `captured_total` / `refunded_total` /
  * `remaining` — tlačítko „Vrátit peníze" potřebuje vědět, co zbývá, ještě než
- * se klikne.
+ * se klikne — a `suggested_amount` (§11.2: cena vybraných položek, bez
+ * položek = zbývá). Řádek nese i `line_items` a `damage_cause` z modelu
+ * (§11.1) pro badge „Poškozeno přepravou" a seznam položek v detailu.
  */
 
 const asPositiveInt = (value: unknown, fallback: number) => {

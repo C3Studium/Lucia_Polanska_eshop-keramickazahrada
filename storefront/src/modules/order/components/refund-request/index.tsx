@@ -12,13 +12,16 @@ import {
   isClaimKind,
   withdrawBlockText,
   type ClaimKind,
+  type ClaimOrderItem,
   type ClaimRequestedResolution,
   type OrderClaims,
 } from "@lib/util/claims"
 import type { CommissionUpload } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
+import { convertToLocale } from "@lib/util/money"
 import ClaimStatus from "@modules/order/components/claim-status"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import Thumbnail from "@modules/products/components/thumbnail"
 
 import styles from "./style.module.scss"
 
@@ -69,6 +72,10 @@ const RESOLUTIONS: {
   { value: "refund", help: "Vrátíme vám peníze." },
 ]
 
+/** Počet kusů sevřený do 1..objednáno — z tlačítek i z ručně psaného čísla. */
+const clampQty = (value: number, max: number) =>
+  Math.min(Math.max(1, Math.floor(Number(value) || 1)), Math.max(1, max))
+
 /**
  * Žádost o reklamaci / vrácení / odstoupení k JEDNÉ objednávce — z e-mailu,
  * z potvrzení i z účtu (všude s podepsaným tokenem). Odesílá do
@@ -80,6 +87,16 @@ const RESOLUTIONS: {
  * otevřená žádost). Tady se jen zamkne volba a ukáže důvod. U reklamace je
  * povinné „co požadujete" (oprava / výměna / vrácení peněz — §19/1 ZOS).
  *
+ * Položky (§11.1): server posílá `order_items`, zákazník zaškrtne, kterých kusů
+ * se to týká, a kolik. U reklamace povinně aspoň jedna, u vrácení volitelně
+ * (nic = celá objednávka), u odstoupení se nevybírá (celá objednávka). Když
+ * server `order_items` ještě neposílá, výběr se nevykreslí a formulář funguje
+ * jako dřív.
+ *
+ * Poškozeno přepravou (§11.3): přepínač u reklamace. Zapnutý → fotky povinné
+ * (server bez nich vrátí 400) a posílá se `damage_cause: "carrier"`, majitelka
+ * dostane pokyn podat reklamaci u České pošty; zákazníkova reklamace běží dál.
+ *
  * Když už k objednávce běží otevřená žádost, místo formuláře se ukáže její
  * stav — server by druhou odmítl a zákazník by jen hádal proč.
  */
@@ -89,6 +106,7 @@ export default function RefundRequest({
   claims,
   initialKind,
   currencyCode = "czk",
+  claimForm = null,
 }: {
   orderId: string
   token: string
@@ -97,6 +115,9 @@ export default function RefundRequest({
       odstoupení, „Reklamace" na reklamaci. Zamčená/neznámá hodnota → reklamace. */
   initialKind?: string
   currencyCode?: string
+  /** Dokument „co dělat s poškozenou zásilkou" (týž jako u „Než zásilku
+      převezmete"); když je, nápověda u přepínače na něj odkáže. */
+  claimForm?: { title: string; url: string } | null
 }) {
   const router = useRouter()
   const { countryCode } = useParams<{ countryCode: string }>()
@@ -113,12 +134,40 @@ export default function RefundRequest({
   )
   const [detail, setDetail] = useState("")
   const [photos, setPhotos] = useState<PhotoDraft[]>([])
+  /** id položky → počet kusů; nezaškrtnuté položky v mapě nejsou. */
+  const [selected, setSelected] = useState<Record<string, number>>({})
+  const [carrierDamage, setCarrierDamage] = useState(false)
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   )
   const [error, setError] = useState<string | null>(null)
   const fieldId = useId()
   const fileInput = useRef<HTMLInputElement>(null)
+
+  const money = (amount: number) =>
+    convertToLocale({ amount, currency_code: currencyCode })
+
+  // Jen položky, které dávají smysl vybrat (kladný počet); poplatky a nuly ne.
+  const orderItems: ClaimOrderItem[] = (claims.order_items ?? []).filter(
+    (item) => item && item.id && Number(item.quantity) > 0
+  )
+  const hasOrderItems = orderItems.length > 0
+
+  const toggleItem = (item: ClaimOrderItem) =>
+    setSelected((current) => {
+      if (item.id in current) {
+        const { [item.id]: _removed, ...rest } = current
+        return rest
+      }
+      return { ...current, [item.id]: 1 }
+    })
+
+  const setQty = (item: ClaimOrderItem, value: number) =>
+    setSelected((current) =>
+      item.id in current
+        ? { ...current, [item.id]: clampQty(value, item.quantity) }
+        : current
+    )
 
   const pickPhotos = async (files: FileList | null) => {
     if (!files?.length) return
@@ -154,9 +203,24 @@ export default function RefundRequest({
   }
 
   const needsResolution = kind === "reklamace"
+  // Výběr položek: u odstoupení se neukazuje (jde o celou objednávku),
+  // u reklamace je povinný, u vrácení volitelný.
+  const showItems = hasOrderItems && kind !== "odstoupeni"
+  const needsItems = kind === "reklamace" && hasOrderItems
+  const selectedItems = orderItems
+    .filter((item) => item.id in selected)
+    .map((item) => ({ id: item.id, quantity: selected[item.id] }))
+  // Přepínač žije jen u reklamace; u jiného druhu se neposílá, i když zůstal
+  // zaškrtnutý z dřívějška.
+  const carrierOn = kind === "reklamace" && carrierDamage
+  const photosRequired = carrierOn
+  const photosMissing = photosRequired && photos.length === 0
+
   const canSend =
     Boolean(detail.trim()) &&
     (!needsResolution || resolution !== null) &&
+    (!needsItems || selectedItems.length > 0) &&
+    !photosMissing &&
     state !== "sending"
 
   const send = async () => {
@@ -168,6 +232,9 @@ export default function RefundRequest({
       reason: detail.trim(),
       requested_resolution: needsResolution ? resolution ?? undefined : undefined,
       photos: photos.length ? photos.map((p) => p.upload) : undefined,
+      // Odstoupení = celá objednávka, výběr se neposílá (server ho ignoruje).
+      items: showItems && selectedItems.length ? selectedItems : undefined,
+      damage_cause: carrierOn ? "carrier" : undefined,
     })
     if ("error" in result) {
       setState("error")
@@ -253,6 +320,102 @@ export default function RefundRequest({
         })}
       </fieldset>
 
+      {/* §11.1: kterých kusů se to týká. Bez `order_items` ze serveru se
+          nevykreslí a žádost jde jako dřív (jen text). */}
+      {showItems && (
+        <fieldset className={styles.items}>
+          <legend className={styles.legend}>
+            Které produkty? <i>{needsItems ? "(povinné)" : "(nepovinné)"}</i>
+          </legend>
+          {!needsItems && (
+            <p className={styles.itemsHelp}>
+              Nic nevybráno = vracíte celou objednávku.
+            </p>
+          )}
+          <ul className={styles.itemList}>
+            {orderItems.map((item) => {
+              const checked = item.id in selected
+              const qty = checked ? selected[item.id] : 1
+              const inputId = `${fieldId}-qty-${item.id}`
+              return (
+                <li
+                  key={item.id}
+                  className={styles.item}
+                  data-checked={checked || undefined}
+                >
+                  <label className={styles.itemMain}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={state === "sending"}
+                      onChange={() => toggleItem(item)}
+                    />
+                    <span className={styles.itemThumb}>
+                      <Thumbnail thumbnail={item.thumbnail} size="square" />
+                    </span>
+                    <span className={styles.itemBody}>
+                      <span className={styles.itemTitle}>{item.title}</span>
+                      <span className={styles.itemMeta}>
+                        {item.variant_title ? `${item.variant_title} · ` : ""}
+                        objednáno {item.quantity} ks · {money(item.unit_price)}
+                        {item.quantity > 1 ? "/ks" : ""}
+                      </span>
+                    </span>
+                  </label>
+                  {/* Počet kusů jen tam, kde je z čeho vybírat — u jediného
+                      kusu by stepper jen zabíral místo. */}
+                  {item.quantity > 1 && (
+                    <div
+                      className={styles.stepper}
+                      role="group"
+                      aria-label={`Počet kusů — ${item.title}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setQty(item, qty - 1)}
+                        disabled={!checked || qty <= 1 || state === "sending"}
+                        aria-label="Méně kusů"
+                      >
+                        −
+                      </button>
+                      <input
+                        id={inputId}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={item.quantity}
+                        value={qty}
+                        disabled={!checked || state === "sending"}
+                        onChange={(event) =>
+                          setQty(item, Number(event.target.value))
+                        }
+                        aria-label="Počet kusů"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQty(item, qty + 1)}
+                        disabled={
+                          !checked || qty >= item.quantity || state === "sending"
+                        }
+                        aria-label="Více kusů"
+                      >
+                        +
+                      </button>
+                      <span className={styles.stepperOf}>z {item.quantity}</span>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          {needsItems && selectedItems.length === 0 && (
+            <p className={styles.hint}>
+              Zaškrtněte aspoň jeden produkt, kterého se reklamace týká.
+            </p>
+          )}
+        </fieldset>
+      )}
+
       {/* §19/1 ZOS: protokol musí nést požadovaný způsob vyřízení. */}
       {needsResolution && (
         <fieldset className={styles.resolutions}>
@@ -281,6 +444,41 @@ export default function RefundRequest({
         </fieldset>
       )}
 
+      {/* §11.3: poškozeno přepravou — reklamaci u ČP podává majitelka,
+          zákazníkova reklamace běží dál; fotky jsou pak povinné. */}
+      {kind === "reklamace" && (
+        <label
+          className={`${styles.carrier} ${carrierDamage ? styles.carrierOn : ""}`}
+        >
+          <input
+            type="checkbox"
+            checked={carrierDamage}
+            disabled={state === "sending"}
+            onChange={(event) => setCarrierDamage(event.target.checked)}
+          />
+          <span className={styles.kindText}>
+            <span className={styles.kindLabel}>
+              Balík dorazil poškozený (přepravou)
+            </span>
+            <span className={styles.kindHelp}>
+              Reklamaci u České pošty podáme my — vaše reklamace u nás běží dál
+              jako obvykle. Potřebujeme k tomu aspoň jednu fotku obalu a
+              poškozeného zboží.
+              {claimForm?.url ? (
+                <>
+                  {" "}
+                  Co dělat s poškozenou zásilkou:{" "}
+                  <a href={claimForm.url} target="_blank" rel="noreferrer">
+                    {claimForm.title || "postup a formulář"}
+                  </a>
+                  .
+                </>
+              ) : null}
+            </span>
+          </span>
+        </label>
+      )}
+
       <label htmlFor={fieldId} className={styles.label}>
         {kind === "reklamace"
           ? "Popište vadu"
@@ -299,17 +497,24 @@ export default function RefundRequest({
           kind === "reklamace"
             ? "Co je špatně a kdy jste si toho všimli — pár slov stačí."
             : kind === "vraceni"
-              ? "Které kusy vracíte a proč — pár slov stačí."
+              ? hasOrderItems
+                ? "Proč vracíte — pár slov stačí."
+                : "Které kusy vracíte a proč — pár slov stačí."
               : "Důvod udávat nemusíte; napište aspoň, že odstupujete od celé objednávky, nebo kterých kusů se to týká."
         }
         required
       />
 
-      {/* Fotky vady — ať zákazník ukáže, co je špatně (u reklamace nejcennější). */}
+      {/* Fotky vady — ať zákazník ukáže, co je špatně (u reklamace nejcennější;
+          u poškození přepravou povinné). */}
       <div className={styles.photos}>
         <span className={styles.photosLabel}>
-          Fotky <em>nepovinné</em> —{" "}
-          {kind === "reklamace" ? "ukažte, co je špatně" : "stav zboží"}
+          Fotky <em>{photosRequired ? "povinné" : "nepovinné"}</em> —{" "}
+          {photosRequired
+            ? "obal i poškozené zboží"
+            : kind === "reklamace"
+              ? "ukažte, co je špatně"
+              : "stav zboží"}
         </span>
         <div className={styles.photoGrid}>
           {photos.map((photo) => (
@@ -355,6 +560,12 @@ export default function RefundRequest({
           hidden
           onChange={(event) => void pickPhotos(event.target.files)}
         />
+        {photosMissing && (
+          <p className={styles.hint} aria-live="polite">
+            U poškození přepravou potřebujeme aspoň jednu fotku obalu a zboží —
+            bez ní žádost nejde odeslat.
+          </p>
+        )}
       </div>
 
       {error && (

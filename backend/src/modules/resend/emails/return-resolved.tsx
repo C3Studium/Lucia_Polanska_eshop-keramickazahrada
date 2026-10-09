@@ -7,6 +7,7 @@ import {
   Greeting,
   LedgerEnd,
   LedgerRow,
+  MultiLine,
   Note,
   P,
   Signature,
@@ -20,6 +21,10 @@ interface ReturnResolvedEmailProps {
   /** „repair" | „replace" | „discount" | „refund". */
   resolution?: string | null;
   resolutionLabel?: string;
+  /** Položky žádosti — řádek za položku („název · varianta · N ks · částka"). */
+  items?: string;
+  /** Vada vznikla přepravou (§11.3) — do potvrzení patří. */
+  carrierDamage?: boolean;
   /** Datum vyřízení (formátované) — povinná náležitost potvrzení (§19/3 ZOS). */
   resolvedAt?: string;
   /** Vrácená částka celkem (formátovaná) — jen když se peníze vracely. */
@@ -52,6 +57,8 @@ function ReturnResolvedEmailComponent({
   kind,
   resolution,
   resolutionLabel,
+  items,
+  carrierDamage = false,
   resolvedAt,
   refundAmount,
   refundMethod,
@@ -81,6 +88,10 @@ function ReturnResolvedEmailComponent({
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {items ? <LedgerRow label="Zboží" value={<MultiLine value={items} />} /> : null}
+      {carrierDamage ? (
+        <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
+      ) : null}
       {resolvedAt ? <LedgerRow label="Vyřízeno dne" value={resolvedAt} /> : null}
       {resolutionLabel ? (
         <LedgerRow label="Způsob vyřízení" value={resolutionLabel} />

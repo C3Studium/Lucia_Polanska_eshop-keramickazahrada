@@ -1,6 +1,33 @@
+import { isDamageCause } from "../../../lib/claims/constants"
+import { suggestedRefundAmount } from "../../../lib/claims/line-items"
+import {
+  moneyState,
+  requestRefundedTotal,
+} from "../../../lib/claims/refund-rules"
 import { DOBIRKA_PROVIDER_ID, evaluateShipGate } from "../../../lib/ship-gate"
 import { paymentProblemReason } from "../../../modules/merchant-order/payment-state"
 import type { MerchantOrderStage } from "../../../modules/merchant-order/stages"
+
+/**
+ * Poslední žádost modulu „Reklamace a zrušení" k objednávce
+ * (docs/reklamace-a-zruseni.md §11.4) — pro záložky Zrušené · Vrácení peněz ·
+ * Reklamace v Objednávky+ a odkaz „Otevřít v Reklamace a zrušení".
+ */
+export type MerchantOrderClaim = {
+  id: string
+  kind: string | null
+  status: string | null
+  reason: string | null
+  /** „carrier" = poškozeno přepravou (badge). */
+  damage_cause: string | null
+  /** Vráceno přes TUTO žádost (součet jejích refundací). */
+  refund_amount: number
+  /** Zachyceno − vráceno na celé objednávce (všechny žádosti + refund_history). */
+  remaining: number
+  /** Výchozí částka refundace (§11.2): cena vybraných položek, bez položek zbývá. */
+  suggested_amount: number
+  created_at: Date | string | null
+}
 
 /**
  * Flat, merchant-facing row.
@@ -72,6 +99,86 @@ export type MerchantOrderRow = {
    * Lives on the order's metadata under `refund_due`.
    */
   refund_due: { amount: number; currency_code: string; reason?: string } | null
+
+  /**
+   * Poslední žádost (reklamace / vrácení / odstoupení) k objednávce, nebo
+   * null (§11.4). Vyplní se jen tam, kde volající žádosti načetl (seznam
+   * Objednávky+); detail a souhrn operací je zatím neposílají → null.
+   */
+  claim: MerchantOrderClaim | null
+
+  /**
+   * Proč je objednávka zrušená (jen fáze `cancelled`): důvod z žádosti o
+   * odstoupení / vrácení, jinak poznámka u přechodu do `cancelled` v historii
+   * fází. Null mimo fázi cancelled nebo bez důvodu.
+   */
+  cancel_reason: string | null
+}
+
+const timeOf = (value: unknown): number => {
+  if (!value) return 0
+  const time = new Date(value as string).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+/** Nejnovější žádost podle `created_at` (bez data = nejstarší). */
+export const latestRequestOf = (requests: any[] | null | undefined): any | null => {
+  if (!requests?.length) return null
+  return [...requests].sort(
+    (a, b) => timeOf(b?.created_at) - timeOf(a?.created_at)
+  )[0]
+}
+
+/**
+ * `claim` pro řádek: poslední žádost + peníze přes celou objednávku
+ * (`moneyState` počítá se VŠEMI žádostmi, aby „zbývá" sedělo s modulem).
+ * `order` null (objednávka nenačtená) → zachyceno 0, zbývá 0.
+ */
+export const claimSummaryFor = (
+  order: any | null,
+  requests: any[] | null | undefined
+): MerchantOrderClaim | null => {
+  const latest = latestRequestOf(requests)
+  if (!latest) return null
+  const state = moneyState(order ?? {}, requests ?? [])
+  return {
+    id: latest.id,
+    kind: latest.kind ?? null,
+    status: latest.status ?? null,
+    reason: typeof latest.reason === "string" ? latest.reason : null,
+    damage_cause: isDamageCause(latest.damage_cause) ? latest.damage_cause : null,
+    refund_amount: requestRefundedTotal(latest),
+    remaining: state.remaining,
+    suggested_amount: suggestedRefundAmount(state.remaining, latest.line_items),
+    created_at: latest.created_at ?? null,
+  }
+}
+
+/**
+ * Důvod zrušení (§11.4): žádost o odstoupení / vrácení má přednost (to je
+ * zákazníkův důvod), jinak poznámka z posledního přechodu do `cancelled`.
+ */
+export const cancelReasonFor = (
+  state: any,
+  requests: any[] | null | undefined
+): string | null => {
+  if (state?.stage !== "cancelled") return null
+  const withdrawal = latestRequestOf(
+    (requests ?? []).filter(
+      (request) => request?.kind === "odstoupeni" || request?.kind === "vraceni"
+    )
+  )
+  if (withdrawal && typeof withdrawal.reason === "string" && withdrawal.reason.trim()) {
+    return withdrawal.reason.trim()
+  }
+  const history: any[] = Array.isArray(state?.stage_history) ? state.stage_history : []
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const entry = history[index]
+    if (entry?.to === "cancelled" && typeof entry?.note === "string" && entry.note.trim()) {
+      return entry.note.trim()
+    }
+  }
+  return null
 }
 
 const customerName = (order: any): string | null => {
@@ -103,7 +210,9 @@ export const toMerchantOrderRow = (
   state: any,
   order: any | null,
   productionOrder: any | null,
-  orderChanges: any[] = []
+  orderChanges: any[] = [],
+  /** Žádosti modulu reklamací k TÉTO objednávce (§11.4); undefined = nenačteno → `claim: null`. */
+  returnRequests?: any[]
 ): MerchantOrderRow => {
   // Medusa's payment status is authoritative. A stored flag can go stale (a payment that
   // succeeded after the order was flagged), so the derived signal wins and the stored one
@@ -201,5 +310,8 @@ export const toMerchantOrderRow = (
             reason: order.metadata.refund_due.reason,
           }
         : null,
+
+    claim: returnRequests ? claimSummaryFor(order, returnRequests) : null,
+    cancel_reason: cancelReasonFor(state, returnRequests),
   }
 }

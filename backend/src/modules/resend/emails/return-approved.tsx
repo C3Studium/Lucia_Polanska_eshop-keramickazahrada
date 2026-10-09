@@ -7,6 +7,7 @@ import {
   Greeting,
   LedgerEnd,
   LedgerRow,
+  MultiLine,
   Note,
   P,
   Signature,
@@ -23,7 +24,12 @@ interface ReturnApprovedEmailProps {
   resolution?: string | null;
   /** Český popisek rozhodnutí („oprava", „výměna za nový kus", …). */
   resolutionLabel?: string;
+  /** Položky — řádek za položku („název · varianta · N ks · částka"), nebo slova zákazníka. */
   approvedItems?: string;
+  /** Totéž ze společného základu e-mailů (`claimEmailBase`) — záloha za `approvedItems`. */
+  items?: string;
+  /** Balík dorazil poškozený (§11.3). */
+  carrierDamage?: boolean;
   returnReason?: string;
   returnMethod?: string;
   returnDeadline?: string;
@@ -66,6 +72,8 @@ function ReturnApprovedEmailComponent({
   resolution,
   resolutionLabel,
   approvedItems,
+  items,
+  carrierDamage = false,
   returnReason,
   returnMethod = "Zásilka na adresu ateliéru",
   returnDeadline,
@@ -80,6 +88,7 @@ function ReturnApprovedEmailComponent({
   const orderUrl = orderLink || storeLink()
   const isClaim = kind === "reklamace"
   const outcome = resolution ?? "refund"
+  const objects = approvedItems || items
   // Zboží se vrací vždy, kromě slevy; starší volající bez vlajky = vrací se.
   const goodsBack = !nothingToReturn && (goodsReturnRequired ?? outcome !== "discount")
   const eyebrow = isClaim ? "Reklamace" : "Vrácení"
@@ -110,8 +119,11 @@ function ReturnApprovedEmailComponent({
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
-      {approvedItems ? <LedgerRow label="Objekty" value={approvedItems} /> : null}
+      {objects ? <LedgerRow label="Objekty" value={<MultiLine value={objects} />} /> : null}
       {returnReason ? <LedgerRow label="Důvod" value={returnReason} /> : null}
+      {carrierDamage ? (
+        <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
+      ) : null}
       {resolutionLabel ? (
         <LedgerRow label="Způsob vyřízení" value={resolutionLabel} strong tone="olive" />
       ) : null}
@@ -134,6 +146,9 @@ function ReturnApprovedEmailComponent({
         {nothingToReturn
           ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátíme to stejnou cestou, jakou k nám platba přišla; jinak je tím vše vyřízené."
           : (NEXT_STEP[outcome] ?? NEXT_STEP.refund)}
+        {carrierDamage
+          ? " Poškození při přepravě reklamujeme u dopravce my — vás se to netýká."
+          : ""}
       </Note>
 
       {claimsUrl || orderUrl ? (

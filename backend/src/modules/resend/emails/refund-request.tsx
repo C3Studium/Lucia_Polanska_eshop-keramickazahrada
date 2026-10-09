@@ -7,6 +7,7 @@ import {
   Greeting,
   LedgerEnd,
   LedgerRow,
+  MultiLine,
   Note,
   P,
   Signature,
@@ -22,6 +23,10 @@ interface RefundRequestEmailProps {
   refundReason?: string;
   /** Jen reklamace: co zákazník požaduje (oprava / výměna / vrácení peněz). */
   requestedResolution?: string;
+  /** Vybrané položky — řádek za položku („název · varianta · N ks · částka"). */
+  items?: string;
+  /** Balík dorazil poškozený (§11.3) — věta, že dopravce reklamujeme my. */
+  carrierDamage?: boolean;
   orderLink?: string;
   /** Stav žádosti ve storefrontu (podepsaný odkaz z e-mailu). */
   claimsUrl?: string;
@@ -104,6 +109,8 @@ function RefundRequestEmailComponent({
   refundAmount,
   refundReason,
   requestedResolution,
+  items,
+  carrierDamage = false,
   orderLink = "",
   claimsUrl,
   deadlineText,
@@ -122,7 +129,11 @@ function RefundRequestEmailComponent({
       <P>{copy.intro}</P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
+      {items ? <LedgerRow label="Zboží" value={<MultiLine value={items} />} /> : null}
       {refundReason ? <LedgerRow label="Důvod" value={refundReason} /> : null}
+      {carrierDamage ? (
+        <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
+      ) : null}
       {requestedResolution ? (
         <LedgerRow label="Požadujete" value={requestedResolution} />
       ) : null}
@@ -132,7 +143,12 @@ function RefundRequestEmailComponent({
       ) : null}
       <LedgerEnd />
 
-      <Note tone="olive">{copy.note}</Note>
+      <Note tone="olive">
+        {copy.note}
+        {carrierDamage
+          ? " Poškození zásilky reklamujeme u dopravce my — vy nic dalšího řešit nemusíte, pro vás jde o běžnou reklamaci."
+          : ""}
+      </Note>
 
       {claimsUrl ? (
         <ButtonRow>

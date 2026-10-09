@@ -15,16 +15,18 @@ import {
 
 /**
  * Reklamace / vrácení / odstoupení z e-mailového odkazu — BEZ přihlášení,
- * autorizace podepsaným tokenem (docs/reklamace-a-zruseni.md §4).
+ * autorizace podepsaným tokenem (docs/reklamace-a-zruseni.md §4, §11.1).
  *
  * GET vrací kontext pro storefront: smí zákazník odstoupit (`can_withdraw`),
- * dokdy, proč ne, adresu pro vrácení z nastavení a stav všech žádostí k
- * objednávce. POST zakládá žádost přes SDÍLENÝ intake (`lib/claims/intake`),
- * stejný jako záložní `/store/return-requests`.
+ * dokdy, proč ne, adresu pro vrácení z nastavení, položky objednávky k výběru
+ * (`order_items`) a stav všech žádostí k objednávce (každá s `line_items` a
+ * `damage_cause`). POST zakládá žádost přes SDÍLENÝ intake
+ * (`lib/claims/intake`), stejný jako záložní `/store/return-requests`.
  *
  * Token odemyká JEN přihlášení. Pravidla (§1837, 14 dnů, jedna otevřená
- * žádost, požadované vyřízení u reklamace) platí na serveru beze změny —
- * gating v prohlížeči je jen zrcadlo téhle odpovědi.
+ * žádost, požadované vyřízení u reklamace, položky u reklamace, fotky u
+ * poškození přepravou) platí na serveru beze změny — gating v prohlížeči je
+ * jen zrcadlo téhle odpovědi.
  */
 
 const PostSchema = z.object({
@@ -32,6 +34,22 @@ const PostSchema = z.object({
   kind: z.enum(["reklamace", "vraceni", "odstoupeni"]),
   reason: z.string().trim().min(1).max(2000),
   requested_resolution: z.enum(["repair", "replace", "refund"]).optional(),
+  /**
+   * Vybrané položky `{ id, quantity }` (§11.1): u reklamace povinné (aspoň
+   * jedna), u vrácení volitelné (bez položek = vše), u odstoupení se ignorují.
+   * Příslušnost k objednávce a strop množství hlídá `checkClaimRules`.
+   */
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(120),
+        quantity: z.coerce.number().int().min(1).max(10_000),
+      })
+    )
+    .max(200)
+    .optional(),
+  /** `"carrier"` = balík dorazil poškozený (§11.3) → fotky povinné. */
+  damage_cause: z.enum(["carrier"]).nullable().optional(),
   photos: z
     .array(
       z.object({
@@ -87,6 +105,10 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     kind: body.kind,
     reason: body.reason,
     requested_resolution: body.requested_resolution ?? null,
+    // Vždy pole: tahle routa výběr položek MÁ, takže u reklamace platí
+    // „aspoň jedna" (null by znamenalo volajícího bez výběru — záložní routa).
+    line_items: body.items ?? [],
+    damage_cause: body.damage_cause ?? null,
     photos: body.photos ?? null,
   }
   const verdict = checkClaimRules(order, existing, input)

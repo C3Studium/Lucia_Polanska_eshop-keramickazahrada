@@ -30,6 +30,35 @@ export type ClaimRefund = {
   note?: string | null
 }
 
+/** Příčina poškození (§11.3) — zatím jen přeprava. */
+export type ClaimDamageCause = "carrier"
+
+/**
+ * Položka objednávky nabídnutá k výběru ve formuláři (§11.1, `order_items`).
+ * `unit_price`/`total` jsou po slevě, s DPH — tak, jak je zákazník zaplatil.
+ */
+export type ClaimOrderItem = {
+  id: string
+  title: string
+  variant_title?: string | null
+  thumbnail?: string | null
+  quantity: number
+  unit_price: number
+  total: number
+}
+
+/** Položka uložená u žádosti (§11.1, `line_items`) — snímek z doby podání. */
+export type ClaimLineItem = {
+  line_item_id?: string
+  title: string
+  variant_title?: string | null
+  thumbnail?: string | null
+  quantity: number
+  unit_price: number
+  total: number
+  currency_code?: string | null
+}
+
 export type OrderClaim = {
   id: string
   kind: ClaimKind
@@ -47,6 +76,10 @@ export type OrderClaim = {
   /** Jen u `rejected` — písemné odůvodnění (§19/3 ZOS). */
   decision_note?: string | null
   reason: string | null
+  /** Vybrané položky (§11.1). Starší žádosti je nemají → nic se nevypíše. */
+  line_items?: ClaimLineItem[] | null
+  /** `"carrier"` = balík dorazil poškozený přepravou (§11.3). */
+  damage_cause?: ClaimDamageCause | null
 }
 
 export type OrderClaims = {
@@ -57,6 +90,8 @@ export type OrderClaims = {
   return_instructions: string | null
   all_made_to_order: boolean
   requests: OrderClaim[]
+  /** Položky objednávky pro výběr ve formuláři (§11.1). Bez nich se výběr skryje. */
+  order_items?: ClaimOrderItem[]
 }
 
 export const CLAIM_KINDS: ClaimKind[] = ["reklamace", "vraceni", "odstoupeni"]
@@ -107,6 +142,26 @@ export const RESOLUTION_LABEL: Record<ClaimResolution, string> = {
   replace: "Výměna",
   discount: "Sleva z ceny",
   refund: "Vrácení peněz",
+}
+
+export const DAMAGE_CAUSE_LABEL: Record<ClaimDamageCause, string> = {
+  carrier: "Poškozeno přepravou",
+}
+
+/** Položky žádosti bez děr — staré řádky `line_items` nemají vůbec. */
+export const claimLineItems = (claim: OrderClaim): ClaimLineItem[] =>
+  (claim.line_items ?? []).filter(
+    (item) => item && typeof item === "object" && Number(item.quantity) > 0
+  )
+
+/**
+ * „Cena vybraných položek" = Σ `line_items.total` (§11.2). `null`, když žádost
+ * položky nenese — pak se částka nevypisuje, nic se tu nedopočítává z objednávky.
+ */
+export const claimItemsTotal = (claim: OrderClaim): number | null => {
+  const items = claimLineItems(claim)
+  if (!items.length) return null
+  return items.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
 }
 
 /**

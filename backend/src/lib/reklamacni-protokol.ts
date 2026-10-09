@@ -46,8 +46,13 @@ export type ProtocolData = {
   createdAt: Date
   /** Zákazníkův popis vady / důvodu (prostý text). */
   reason: string
-  /** Které zboží, slovy zákazníka (volitelné). */
+  /**
+   * Které zboží — formátovaný seznam z `line_items` (řádek za položku,
+   * oddělené `\n`), nebo slova zákazníka u starých žádostí (volitelné).
+   */
   items?: string | null
+  /** „Poškozeno přepravou" (§11.3) — český popisek, nebo null. */
+  damageCause?: string | null
   /** Co zákazník POŽADUJE (jen reklamace, §19/1 ZOS) — český popisek. */
   requestedResolution?: string | null
   /** Vyplněné až při vyřízení — jinak je to „potvrzení o uplatnění". */
@@ -143,6 +148,8 @@ export const generateProtocolPdf = async (
     })
     y -= 10
   }
+  // Hodnota s `\n` (seznam položek) jde řádek po řádku — `text()` láme jen
+  // podle šířky a konec řádku by jinak splynul s dalším.
   const field = (label: string, value: string) => {
     page.drawText(label.toUpperCase(), {
       x: margin,
@@ -152,7 +159,13 @@ export const generateProtocolPdf = async (
       color: muted,
     })
     y -= 12
-    text(value || "—", { size: 11, gap: 4 })
+    const lines = String(value || "—")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length)
+    for (const line of lines.length ? lines : ["—"]) {
+      text(line, { size: 11, gap: 4 })
+    }
     space(4)
   }
 
@@ -186,6 +199,14 @@ export const generateProtocolPdf = async (
   field("Datum uplatnění", fmtDate(data.createdAt))
   field("Popis / důvod", data.reason)
   if (data.items) field("Zboží", data.items)
+  // Poškození přepravou: v protokolu musí být vidět, že vada vznikla při
+  // dopravě — reklamaci u dopravce podává prodávající, zákazník to nemusí řešit.
+  if (data.damageCause) {
+    field(
+      "Příčina poškození",
+      `${data.damageCause} — zásilka dorazila poškozená; reklamaci u dopravce uplatňuje prodávající.`
+    )
+  }
   if (data.requestedResolution) {
     field("Požadovaný způsob vyřízení", data.requestedResolution)
   }

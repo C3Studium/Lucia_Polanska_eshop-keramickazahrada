@@ -219,6 +219,28 @@ export const LedgerRow = ({
   )
 }
 
+/**
+ * Víceřádková hodnota do `LedgerRow` (adresa, seznam položek „název · varianta
+ * · N ks · částka"): `\n` → `<br/>`. E-mailové klienty `white-space: pre-line`
+ * v tabulkách nectí spolehlivě, proto skutečné zalomení.
+ */
+export const MultiLine = ({ value }: { value: string }) => {
+  const lines = String(value ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length)
+  return (
+    <>
+      {lines.map((line, index) => (
+        <span key={index}>
+          {line}
+          {index < lines.length - 1 ? <br /> : null}
+        </span>
+      ))}
+    </>
+  )
+}
+
 /** Uzavírací vlasová linka pod blokem LedgerRow. */
 export const LedgerEnd = () => (
   <Section style={{ borderTop: `1px solid ${brand.line}`, height: "1px" }} />

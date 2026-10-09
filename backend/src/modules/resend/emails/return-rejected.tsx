@@ -8,6 +8,7 @@ import {
   Greeting,
   LedgerEnd,
   LedgerRow,
+  MultiLine,
   Note,
   P,
   Signature,
@@ -19,7 +20,10 @@ interface ReturnRejectedEmailProps {
   returnNumber?: string;
   /** „reklamace" | „vraceni" | „odstoupeni". */
   kind?: string | null;
+  /** Položky — řádek za položku („název · varianta · N ks · částka"), nebo slova zákazníka. */
   rejectedItems?: string;
+  /** Totéž ze společného základu e-mailů (`claimEmailBase`) — záloha za `rejectedItems`. */
+  items?: string;
   rejectionReason?: string;
   appealInstructions?: string;
   orderLink?: string;
@@ -42,6 +46,7 @@ function ReturnRejectedEmailComponent({
   returnNumber,
   kind,
   rejectedItems,
+  items,
   rejectionReason,
   appealInstructions = "Ozvat se nám můžete kdykoli — rádi to s vámi probereme",
   orderLink = "",
@@ -49,6 +54,7 @@ function ReturnRejectedEmailComponent({
   protocolUrl,
 }: ReturnRejectedEmailProps) {
   const isClaim = kind === "reklamace"
+  const objects = rejectedItems || items
   const eyebrow = isClaim ? "Reklamace" : "Vrácení"
   const h1 = isClaim ? "Reklamaci" : "Vrácení"
   const intro = isClaim
@@ -70,7 +76,7 @@ function ReturnRejectedEmailComponent({
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {returnNumber ? <LedgerRow label="Vrácení" value={returnNumber} /> : null}
-      {rejectedItems ? <LedgerRow label="Objekty" value={rejectedItems} /> : null}
+      {objects ? <LedgerRow label="Objekty" value={<MultiLine value={objects} />} /> : null}
       {rejectionReason ? (
         <LedgerRow label="Důvod zamítnutí" value={rejectionReason} tone="danger" />
       ) : null}

@@ -6,6 +6,8 @@
  * souhrn v Přehledu, aby se barvy badge a názvy stavů nerozešly.
  */
 
+import { formatCzk } from "./workbench";
+
 export type ReturnKind = "reklamace" | "vraceni" | "odstoupeni";
 
 export type ReturnStatus =
@@ -28,6 +30,25 @@ export type ReturnRefund = {
   at: string;
   note?: string | null;
 };
+
+/**
+ * Vybraná položka žádosti (§11.1). `unit_price` / `total` jsou po slevě,
+ * s DPH — z objednávky, ne z ceníku. Staré žádosti mají místo toho jen
+ * textové `items`.
+ */
+export type ReturnLineItem = {
+  line_item_id: string;
+  title: string;
+  variant_title?: string | null;
+  thumbnail?: string | null;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  currency_code?: string | null;
+};
+
+/** Příčina poškození — zatím jen „přepravou" (§11.3). */
+export type DamageCause = "carrier";
 
 export type ReturnRequest = {
   id: string;
@@ -63,6 +84,14 @@ export type ReturnRequest = {
   /** `false` = zboží k zákazníkovi nikdy neodešlo (odstoupení před odesláním). */
   goods_shipped?: boolean;
   currency_code?: string | null;
+  /**
+   * §11 — volitelné, starší řádky i starší server je nemají. Bez `line_items`
+   * se UI chová jako dřív (textové `items`, výchozí částka = zbývá).
+   */
+  line_items?: ReturnLineItem[] | null;
+  damage_cause?: DamageCause | null;
+  /** `min(remaining, Σ line_items.total)` — dopočítané serverem (§11.2). */
+  suggested_amount?: number | null;
   created_at: string;
   updated_at?: string | null;
 };
@@ -141,6 +170,57 @@ export const RESOLUTION_LABEL: Record<ReturnResolution, string> = {
   discount: "Sleva z ceny",
   refund: "Vrácení peněz",
 };
+
+export const isDamageCause = (value: unknown): value is DamageCause =>
+  value === "carrier";
+
+export const DAMAGE_CAUSE_LABEL: Record<DamageCause, string> = {
+  carrier: "Poškozeno přepravou",
+};
+
+/** Barva badge: červená — poškození se ČP hlásí do 2 pracovních dnů. */
+export const DAMAGE_CAUSE_COLOR: Record<DamageCause, BadgeColor> = {
+  carrier: "red",
+};
+
+/** Jednořádková nápověda k badge; odkaz na formulář ČP šel majitelce e-mailem. */
+export const DAMAGE_CAUSE_HINT: Record<DamageCause, string> = {
+  carrier:
+    "Podejte reklamaci u České pošty (odkaz je v upozornění majitelce) — nejpozději do 2 pracovních dnů od dodání.",
+};
+
+/** Součet cen vybraných položek (po slevě, s DPH). */
+export const lineItemsTotal = (
+  items: ReturnLineItem[] | null | undefined
+): number =>
+  (items ?? []).reduce((sum, item) => sum + asNumber(item.total), 0);
+
+/** Součet kusů přes vybrané položky. */
+export const lineItemsQuantity = (
+  items: ReturnLineItem[] | null | undefined
+): number =>
+  (items ?? []).reduce((sum, item) => sum + asNumber(item.quantity), 0);
+
+/** Jedna položka: „název · varianta · N ks · částka" (§11.5). */
+export const formatLineItem = (item: ReturnLineItem): string =>
+  [
+    item.title,
+    item.variant_title && item.variant_title !== "Default variant"
+      ? item.variant_title
+      : null,
+    `${asNumber(item.quantity)} ks`,
+    formatCzk(asNumber(item.total)),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+/**
+ * Celý seznam, jedna položka na řádek — do `title` tooltipů, e-mailových
+ * náhledů a všude, kde se dřív vypisovalo textové `items`.
+ */
+export const formatLineItems = (
+  items: ReturnLineItem[] | null | undefined
+): string => (items ?? []).map(formatLineItem).join("\n");
 
 /**
  * Zbývající dny do zákonné lhůty (reklamace 30 dnů, odstoupení/vrácení 14 dnů)

@@ -17,6 +17,7 @@ import {
   sendResolvedEmail,
 } from "../../../../../lib/claims/admin"
 import { kindLabel } from "../../../../../lib/claims/constants"
+import { suggestedRefundAmount } from "../../../../../lib/claims/line-items"
 import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
 import {
   canRefund,
@@ -37,8 +38,9 @@ import {
  * Gating je v `canRefund` (čistá funkce, testovaná): jen `approved`/`received`,
  * u odstoupení/vrácení až po zboží (nebo s vědomým `skip_goods_check`), u
  * reklamace ve stavu `approved` jen s rozhodnutím refund/discount. Částka:
- * výchozí = zbývá, nikdy přes zbývá, částečné a opakované povoleno; každá
- * refundace se PŘIDÁ do `refunds` a `refund_amount` je součet. Když nezbývá
+ * výchozí = cena vybraných položek (`line_items`, §11.2), bez položek zbývá;
+ * nikdy přes zbývá, částečné a opakované povoleno; každá refundace se PŘIDÁ
+ * do `refunds` a `refund_amount` je součet. Když nezbývá
  * nic (nebo `mark_resolved`), žádost se uzavře a jde JEDINÝ e-mail
  * „potvrzení o vyřízení"; jinak `order-refunded` za tuhle částku.
  *
@@ -115,7 +117,13 @@ export const POST = async (
     )
   }
 
-  const { amount, clamped } = clampRefundAmount(body.amount, state.remaining)
+  // Bez částky v těle = výchozí podle položek (§11.2): min(zbývá, Σ položek);
+  // bez položek celé zbývá. Zadaná částka má přednost, strop „zbývá" platí vždy.
+  const wanted =
+    body.amount !== undefined && body.amount !== null && Number(body.amount) > 0
+      ? body.amount
+      : suggestedRefundAmount(state.remaining, request.line_items)
+  const { amount, clamped } = clampRefundAmount(wanted, state.remaining)
   if (!(amount > MONEY_EPSILON)) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,

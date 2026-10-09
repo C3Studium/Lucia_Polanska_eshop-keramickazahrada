@@ -14,7 +14,8 @@ import {
 } from "../reklamacni-protokol"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
-import { resolutionLabel } from "./constants"
+import { damageCauseLabel, resolutionLabel } from "./constants"
+import { claimItemsText, suggestedRefundAmount } from "./line-items"
 import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
 import {
   moneyState,
@@ -108,7 +109,10 @@ export const regenerateProtocol = async (
     email: request.email,
     createdAt,
     reason: request.reason,
-    items: typeof request.items === "string" ? request.items : null,
+    // Položky přednostně z `line_items` (název · varianta · ks · částka), u
+    // starých řádků text zákazníka (§11.5).
+    items: claimItemsText(request),
+    damageCause: damageCauseLabel(request.damage_cause),
     requestedResolution:
       request.kind === "reklamace"
         ? resolutionLabel(request.requested_resolution) || null
@@ -134,7 +138,11 @@ export const regenerateProtocol = async (
   return protocol
 }
 
-/** Společný základ `data` pro e-maily modulu — jen reálné hodnoty, žádné výplně. */
+/**
+ * Společný základ `data` pro e-maily modulu — jen reálné hodnoty, žádné výplně.
+ * `items` = položky slovy (přednostně `line_items`), `carrierDamage` = věta
+ * „Poškozeno přepravou" v šablonách, které ji umí (§11.3, §11.5).
+ */
 export const claimEmailBase = (
   request: any,
   protocolUrl?: string | null
@@ -142,12 +150,15 @@ export const claimEmailBase = (
   const link = orderLink({ id: request.order_id })
   const claimsUrl = orderClaimsUrl(request.order_id)
   const label = resolutionLabel(request.resolution)
+  const items = claimItemsText(request)
   return {
     ...(request.customer_name ? { customerName: request.customer_name } : {}),
     orderNumber: `#${request.order_display_id}`,
     kind: request.kind ?? null,
     resolution: request.resolution ?? null,
     ...(label ? { resolutionLabel: label } : {}),
+    ...(items ? { items } : {}),
+    ...(request.damage_cause === "carrier" ? { carrierDamage: true } : {}),
     ...(link ? { orderLink: link } : {}),
     ...(claimsUrl ? { claimsUrl } : {}),
     ...(protocolUrl ? { protocolUrl } : {}),
@@ -191,6 +202,9 @@ export const sendResolvedEmail = async (
  * Dopočet `captured_total` / `refunded_total` / `remaining` ke každému řádku
  * seznamu — z plateb objednávky a ze VŠECH žádostí k ní (sourozenci se počítají
  * do „vráceno" taky). Jeden dotaz na objednávky, jeden na sourozence.
+ *
+ * `suggested_amount` (§11.2) = výchozí částka pro „Vrátit peníze": s položkami
+ * `min(remaining, Σ line_items.total)`, bez položek `remaining`.
  */
 export const enrichWithMoney = async (
   container: MedusaContainer,
@@ -205,6 +219,7 @@ export const enrichWithMoney = async (
       captured_total: 0,
       refunded_total: 0,
       remaining: 0,
+      suggested_amount: 0,
     }))
   }
 
@@ -239,6 +254,7 @@ export const enrichWithMoney = async (
       captured_total: state.captured,
       refunded_total: state.refunded,
       remaining: state.remaining,
+      suggested_amount: suggestedRefundAmount(state.remaining, request.line_items),
       // Odstoupení před odesláním: zboží nikdy neodešlo → nic se nevrací,
       // refundace jde rovnou a nabízí se zrušení objednávky.
       goods_shipped: order ? goodsShipped(order) : false,

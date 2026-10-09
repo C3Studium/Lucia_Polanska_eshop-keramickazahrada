@@ -3,11 +3,14 @@ import type { DetailWidgetProps, AdminOrder } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Text } from "@medusajs/ui";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { DamageBadge, LineItemsList } from "../components/return-line-items";
 import { formatDateTime } from "../lib/format";
 import { adminQueryClient } from "../lib/query-client";
 import {
   asNumber,
+  DAMAGE_CAUSE_HINT,
   deadlineInfo,
+  isDamageCause,
   isFinalStatus,
   KIND_META,
   reklamaceLink,
@@ -90,11 +93,22 @@ const RequestRow = ({ request }: { request: ReturnRequest }) => {
             {RESOLUTION_LABEL[request.resolution]}
           </Badge>
         )}
+        <DamageBadge cause={request.damage_cause} />
       </div>
+
+      {isDamageCause(request.damage_cause) && (
+        <Text size="xsmall" className="text-ui-tag-red-text">
+          {DAMAGE_CAUSE_HINT[request.damage_cause]}
+        </Text>
+      )}
 
       <Text size="small" className="text-ui-fg-subtle">
         {request.reason}
       </Text>
+
+      {request.line_items && request.line_items.length > 0 && (
+        <LineItemsList items={request.line_items} showTotal />
+      )}
 
       <Text size="xsmall" weight="plus">
         {nextStep(request)}

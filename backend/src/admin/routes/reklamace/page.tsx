@@ -27,16 +27,22 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../../components/empty-state";
+import { DamageBadge, LineItemsList } from "../../components/return-line-items";
 import { SubTabs } from "../../components/work-tabs";
 import { formatDateTime } from "../../lib/format";
 import { adminQueryClient } from "../../lib/query-client";
 import {
   asNumber,
+  DAMAGE_CAUSE_HINT,
   deadlineInfo,
+  formatLineItems,
+  isDamageCause,
   isFinalStatus,
   isReturnKind,
   isReturnStatus,
   KIND_META,
+  lineItemsQuantity,
+  lineItemsTotal,
   RESOLUTION_LABEL,
   STATUS_META,
   type CancelOrderResponse,
@@ -505,7 +511,22 @@ const RefundPanel = ({
   onClose,
 }: PanelProps & { skipGoodsCheck: boolean }) => {
   const remaining = asNumber(request.remaining);
-  const [amount, setAmount] = useState(String(remaining));
+  // §11.2: s vybranými položkami je výchozí částka jejich cena (server posílá
+  // `suggested_amount` = min(zbývá, Σ položek); když chybí, spočítá se tu
+  // stejně). Bez položek zůstává výchozí „zbývá". Strop je VŽDY „zbývá" —
+  // položky ho nikdy nezvednou.
+  const lineItems = request.line_items ?? [];
+  const suggestedRaw =
+    request.suggested_amount ??
+    (lineItems.length > 0 ? lineItemsTotal(lineItems) : null);
+  const suggested =
+    lineItems.length > 0 && suggestedRaw !== null && suggestedRaw !== undefined
+      ? Math.round(Math.min(asNumber(suggestedRaw), remaining) * 100) / 100
+      : null;
+  const useSuggested = suggested !== null && suggested > 0;
+  const [amount, setAmount] = useState(
+    String(useSuggested ? suggested : remaining)
+  );
   const [note, setNote] = useState("");
   const [markResolved, setMarkResolved] = useState(true);
   const mutation = useReturnAction<RefundResponse>(request.id, "refund");
@@ -568,6 +589,14 @@ const RefundPanel = ({
             onChange={(event) => setAmount(event.target.value)}
             autoFocus
           />
+          {useSuggested && (
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              Cena vybraných položek: {formatCzk(suggested)}
+              {nearlyZero(suggested - remaining)
+                ? ""
+                : " — předvyplněno, můžete změnit až do výše, která zbývá vrátit."}
+            </Text>
+          )}
           <Text size="xsmall" className="text-ui-fg-subtle">
             Zbývá vrátit {formatCzk(remaining)}
             {asNumber(request.refunded_total) > 0
@@ -575,6 +604,24 @@ const RefundPanel = ({
               : ""}
             .
           </Text>
+          {useSuggested && !nearlyZero(suggested - remaining) && (
+            <div className="flex flex-wrap gap-x-3">
+              <button
+                type="button"
+                className="text-ui-fg-interactive txt-small hover:underline"
+                onClick={() => setAmount(String(suggested))}
+              >
+                Cena položek
+              </button>
+              <button
+                type="button"
+                className="text-ui-fg-interactive txt-small hover:underline"
+                onClick={() => setAmount(String(remaining))}
+              >
+                Vše, co zbývá
+              </button>
+            </div>
+          )}
           {amount !== "" && !amountValid && (
             <Text size="xsmall" className="text-ui-fg-error">
               Částka musí být větší než 0 a nejvýš {formatCzk(remaining)}.
@@ -1046,6 +1093,7 @@ const RequestDetail = ({
                       {deadline.label}
                     </Badge>
                   )}
+                  <DamageBadge cause={request.damage_cause} />
                   {request.kind === "reklamace" && request.requested_resolution && (
                     <Badge size="2xsmall" color="grey">
                       Žádá: {RESOLUTION_LABEL[request.requested_resolution]}
@@ -1065,6 +1113,12 @@ const RequestDetail = ({
                     <Link to={`/orders/${request.order_id}`}>Detail objednávky</Link>
                   </Button>
                 </div>
+
+                {isDamageCause(request.damage_cause) && (
+                  <Text size="xsmall" className="text-ui-tag-red-text">
+                    {DAMAGE_CAUSE_HINT[request.damage_cause]}
+                  </Text>
+                )}
 
                 <section className="border-ui-border-base rounded-lg border p-4">
                   <SectionTitle>Akce</SectionTitle>
@@ -1149,12 +1203,23 @@ const RequestDetail = ({
                   </section>
                 </div>
 
+                {request.line_items && request.line_items.length > 0 && (
+                  <section>
+                    <SectionTitle>Položky</SectionTitle>
+                    <div className="mt-2 max-w-xl">
+                      <LineItemsList items={request.line_items} showTotal />
+                    </div>
+                  </section>
+                )}
+
                 <section>
                   <SectionTitle>Důvod</SectionTitle>
                   <Text size="small" className="mt-2 whitespace-pre-wrap">
                     {request.reason}
                   </Text>
-                  {request.items && (
+                  {/* Textové `items` jsou záloha pro staré žádosti — s
+                      vybranými položkami nahoře by byly dvakrát. */}
+                  {request.items && !(request.line_items && request.line_items.length > 0) && (
                     <Text size="xsmall" className="text-ui-fg-subtle mt-2 whitespace-pre-wrap">
                       Objekty: {request.items}
                     </Text>
@@ -1262,6 +1327,9 @@ const ReklamaceInner = () => {
     return isReturnStatus(fromUrl) ? fromUrl : "pending";
   });
   const [kind, setKind] = useState<"all" | ReturnKind>("all");
+  // „Jen poškozené přepravou" — pošle se serveru (až ho bude umět) a pro
+  // jistotu se přefiltruje i načtená stránka.
+  const [damagedOnly, setDamagedOnly] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
@@ -1299,12 +1367,13 @@ const ReklamaceInner = () => {
   });
 
   const listQuery = useQuery<ReturnRequestListResponse>({
-    queryKey: ["return-requests", "list", active, kind, search, offset],
+    queryKey: ["return-requests", "list", active, kind, search, damagedOnly, offset],
     queryFn: () =>
       sdk.client.fetch("/admin/return-requests", {
         query: {
           status: active,
           ...(kind !== "all" ? { kind } : {}),
+          ...(damagedOnly ? { damage_cause: "carrier" } : {}),
           ...(search ? { q: search } : {}),
           limit: PAGE_SIZE,
           offset,
@@ -1313,7 +1382,9 @@ const ReklamaceInner = () => {
     refetchOnWindowFocus: true,
   });
 
-  const rows = listQuery.data?.return_requests ?? [];
+  const rows = (listQuery.data?.return_requests ?? []).filter(
+    (row) => !damagedOnly || isDamageCause(row.damage_cause)
+  );
   const total = listQuery.data?.count ?? 0;
   const counts = countsQuery.data;
 
@@ -1382,6 +1453,16 @@ const ReklamaceInner = () => {
             onChange={(event) => setSearchInput(event.target.value)}
             className="w-72"
           />
+          <label className="flex items-center gap-x-2">
+            <Checkbox
+              checked={damagedOnly}
+              onCheckedChange={(checked) => {
+                setDamagedOnly(checked === true);
+                setOffset(0);
+              }}
+            />
+            <Text size="small">Jen poškozené přepravou</Text>
+          </label>
         </div>
       </header>
 
@@ -1418,14 +1499,14 @@ const ReklamaceInner = () => {
       {!listQuery.isLoading && !listQuery.isError && rows.length === 0 && (
         <EmptyState
           title={
-            search || kind !== "all"
+            search || kind !== "all" || damagedOnly
               ? "Nic neodpovídá filtru"
               : active === "pending"
                 ? "Žádné nové žádosti"
                 : `V tomto stavu nic není`
           }
           description={
-            search || kind !== "all"
+            search || kind !== "all" || damagedOnly
               ? "Zkuste jiný druh nebo jiné hledání."
               : active === "pending"
                 ? "Jakmile zákazník uplatní reklamaci, vrácení nebo odstoupení přes e-shop, objeví se tady a dostanete upozornění e-mailem."
@@ -1487,6 +1568,21 @@ const ReklamaceInner = () => {
                         <Badge size="2xsmall" color={KIND_META[request.kind].color}>
                           {KIND_META[request.kind].label}
                         </Badge>
+                      )}
+                      {isDamageCause(request.damage_cause) && (
+                        <div className="mt-1">
+                          <DamageBadge cause={request.damage_cause} />
+                        </div>
+                      )}
+                      {request.line_items && request.line_items.length > 0 && (
+                        <Text
+                          size="xsmall"
+                          className="text-ui-fg-subtle mt-1"
+                          title={formatLineItems(request.line_items)}
+                        >
+                          {lineItemsQuantity(request.line_items)} ks ·{" "}
+                          {formatCzk(lineItemsTotal(request.line_items))}
+                        </Text>
                       )}
                       {request.kind === "reklamace" && request.requested_resolution && (
                         <Text size="xsmall" className="text-ui-fg-subtle mt-1">
