@@ -10,6 +10,7 @@ import {
   CP_STATE_TEXTS,
   isSimulatableState,
   SIMULATABLE_STATES,
+  SIMULATED_NAPI_EVENTS,
 } from "../../../../../lib/parcel-tracking/classify"
 import {
   fetchParcelEvents,
@@ -212,15 +213,22 @@ export const POST = async (
         )
       }
       const today = new Date().toISOString().slice(0, 10)
+      // Tvar události podle toho, kudy jede ostrý provoz: s přístupy k nAPI
+      // `cis:…` + oficiální název (přesně to, co vrací parcelStatuses/current),
+      // bez nich id veřejného sledování. Test tak prochází stejnou větví.
+      const shape =
+        trackingSource() === "napi"
+          ? SIMULATED_NAPI_EVENTS[state]
+          : { id: state, text: CP_STATE_TEXTS[state] }
       const result = await applyParcelEvents(
         req.scope,
         tracking,
         [
           {
-            id: state,
-            text: `${CP_STATE_TEXTS[state]} (simulace)`,
+            id: shape.id,
+            text: `${shape.text} (simulace)`,
             date: today,
-            postoffice: null,
+            postoffice: trackingSource() === "napi" ? "simulace" : null,
             postcode: null,
           },
         ],

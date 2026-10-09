@@ -74,6 +74,25 @@ const KNOWN_KINDS: Record<string, StateKind> = {
 export const SIMULATABLE_STATES = ["21", "75", "82", "91", "95", "8E"] as const
 export type SimulatableState = (typeof SIMULATABLE_STATES)[number]
 
+/**
+ * Tatáž simulace ve tvaru nAPI (CISService číselník, ověřeno 9. 10. 2026):
+ * `cis:<statusID>/<reasonID>` + oficiální název. S přístupy k nAPI jde ostrá
+ * cesta tudy, takže simulace má vkládat PŘESNĚ tenhle tvar — jinak by test
+ * ověřoval jinou větev klasifikace než provoz. „Poškozeno" v CIS není;
+ * nejbližší problémový stav je ÚLOŽNA (nevyzvednuto, čeká na vrácení).
+ */
+export const SIMULATED_NAPI_EVENTS: Record<
+  SimulatableState,
+  { id: string; text: string }
+> = {
+  "21": { id: "cis:21/00", text: "PODÁNO" },
+  "75": { id: "cis:44/01", text: "V PŘEPRAVĚ" },
+  "82": { id: "cis:51/20", text: "ULOŽENO" },
+  "91": { id: "cis:91/00", text: "DORUČENO" },
+  "95": { id: "cis:95/00", text: "VRACÍ SE" },
+  "8E": { id: "cis:99/00", text: "ÚLOŽNA BALÍKOVNA" },
+}
+
 export const isSimulatableState = (value: unknown): value is SimulatableState =>
   typeof value === "string" &&
   (SIMULATABLE_STATES as readonly string[]).includes(value)

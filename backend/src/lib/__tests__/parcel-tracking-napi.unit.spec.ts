@@ -273,6 +273,18 @@ describe("posloupnosti z nAPI (úložna, vrácení)", () => {
   })
 })
 
+describe("simulace ve tvaru nAPI", () => {
+  it("každý simulovatelný stav se klasifikuje stejně jako jeho veřejná podoba", () => {
+    const { SIMULATED_NAPI_EVENTS, SIMULATABLE_STATES } = require("../parcel-tracking/classify")
+    const expected = { "21": "handed_over", "75": "in_transit", "82": "stored", "91": "delivered", "95": "returned", "8E": "problem" }
+    for (const state of SIMULATABLE_STATES) {
+      const shape = SIMULATED_NAPI_EVENTS[state]
+      expect(classifyState(shape.id, `${shape.text} (simulace)`).kind).toBe(expected[state])
+      expect(classifyState(state).kind).toBe(expected[state])
+    }
+  })
+})
+
 describe("přístupy k nAPI", () => {
   it("jen se všemi třemi hodnotami", () => {
     expect(napiCredentials({})).toBeNull()
