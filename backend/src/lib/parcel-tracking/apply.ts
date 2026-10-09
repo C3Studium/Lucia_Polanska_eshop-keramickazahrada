@@ -49,6 +49,9 @@ export type ApplyParcelEventsResult = {
   actions: string[]
 }
 
+const sample0 = (item: any, key: string): unknown =>
+  item && typeof item === "object" ? item[key] : undefined
+
 const ORDER_FIELDS = [
   "id",
   "display_id",
@@ -111,9 +114,18 @@ const createShipmentForOpenFulfillment = async (
     }
   }
   if (!items.length) {
+    // Diagnostika: surový tvar první položky, ať je vidět, co query.graph
+    // doopravdy vrací (9. 10. 2026 — sedm položek, nula k odeslání, proč?).
+    const sample = allItems[0]
+      ? JSON.stringify({
+          quantity: sample0(allItems[0], "quantity"),
+          raw_quantity: sample0(allItems[0], "raw_quantity"),
+          detail: allItems[0]?.detail ?? null,
+        }).slice(0, 400)
+      : "bez položek"
     return {
       created: false,
-      reason: `žádné položky k odeslání (položek ${allItems.length}, requires_shipping ${allItems.filter((item) => item?.requires_shipping).length})`,
+      reason: `žádné položky k odeslání (položek ${allItems.length}, requires_shipping ${allItems.filter((item) => item?.requires_shipping).length}; vzorek ${sample})`,
     }
   }
 
