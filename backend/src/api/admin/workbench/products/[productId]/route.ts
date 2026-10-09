@@ -1,6 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getInventoryAlerts } from "../../../../../lib/inventory-alerts"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
 import { productLink } from "../../../../../lib/storefront-url"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
@@ -82,7 +86,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       .catch(() => [] as any[]) as Promise<any[]>,
     query.graph({
       entity: "order",
-      fields: ["id", "created_at", "items.product_id", "items.quantity"],
+      // Množství přes detail i řádek — výslovné `items.quantity` z query.graph
+      // nechodí (lib/order-quantity); měsíční prodeje by byly tiše 0.
+      fields: ["id", "created_at", "items.product_id", ...LINE_QUANTITY_FIELDS],
       filters: { created_at: { $gte: since.toISOString() } } as never,
       pagination: { take: 1000, skip: 0 },
     }),
@@ -136,10 +142,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     if (!soldByMonth.has(key)) continue
     for (const item of order.items ?? []) {
       if (item?.product_id === productId) {
-        soldByMonth.set(
-          key,
-          (soldByMonth.get(key) ?? 0) + (Number(item.quantity) || 0)
-        )
+        soldByMonth.set(key, (soldByMonth.get(key) ?? 0) + lineQuantityOf(item))
       }
     }
   }

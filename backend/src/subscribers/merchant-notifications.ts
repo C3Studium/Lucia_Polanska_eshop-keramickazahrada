@@ -2,6 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getLastPaymentStatus } from "@medusajs/medusa/core-flows"
 import { notifyMerchant } from "../lib/notify"
+import { toNumber } from "../lib/order-quantity"
 import { isPaymentProblem } from "../modules/merchant-order/payment-state"
 
 /**
@@ -21,10 +22,12 @@ import { isPaymentProblem } from "../modules/merchant-order/payment-state"
  */
 
 const formatMoney = (amount: unknown, currencyCode?: string | null): string => {
-  const numeric = Number(amount)
-  if (!Number.isFinite(numeric)) {
+  // Chybějící částka = pomlčka; jinak BigNumber-safe převod (`{ value }` z
+  // query.graph by s naivním Number() dával NaN → „—" u reálné částky).
+  if (amount === null || amount === undefined || amount === "") {
     return "—"
   }
+  const numeric = toNumber(amount)
   return new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currency: (currencyCode || "CZK").toUpperCase(),

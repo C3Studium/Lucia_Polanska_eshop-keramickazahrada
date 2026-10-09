@@ -3,6 +3,10 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isClearanceProduct, isSoldOut } from "../../../../../lib/clearance"
 import { outstandingFor } from "../../../../../lib/balance-payment"
 import { getInventoryAlerts } from "../../../../../lib/inventory-alerts"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { PRODUCT_REVIEW_MODULE } from "../../../../../modules/product-review"
@@ -75,7 +79,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "id",
           "created_at",
           "items.product_id",
-          "items.quantity",
+          // Množství přes detail i řádek — výslovné `items.quantity` z
+          // query.graph nechodí (lib/order-quantity).
+          ...LINE_QUANTITY_FIELDS,
           "items.total",
           "items.metadata",
         ],
@@ -139,7 +145,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           qty: 0,
           revenue: 0,
         }
-        entry.qty += Number(item.quantity) || 0
+        entry.qty += lineQuantityOf(item)
         entry.revenue = round(entry.revenue + toNumber(item.total))
         map.set(item.product_id, entry)
       }
@@ -198,7 +204,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       const bundleId = (item?.metadata as any)?.bundle_id
       if (!bundleId) continue
       const entry = bundleSales.get(bundleId) ?? { qty: 0, revenue: 0 }
-      entry.qty += Number(item.quantity) || 0
+      entry.qty += lineQuantityOf(item)
       entry.revenue = round(entry.revenue + toNumber(item.total))
       bundleSales.set(bundleId, entry)
     }

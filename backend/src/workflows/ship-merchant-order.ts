@@ -47,11 +47,6 @@ export type ShipMerchantOrderInput = {
   no_notification?: boolean
 }
 
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export const shipMerchantOrderWorkflow = createWorkflow(
   "ship-merchant-order",
   (input: ShipMerchantOrderInput) => {
@@ -98,6 +93,8 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         "order_id",
         "agreed_total",
         "original_total",
+        // Příplatek — brána ho započítá do dluhu (ship-gate.productionOutstanding).
+        "surcharge",
         "payment_requests.status",
         "payment_requests.amount",
       ],

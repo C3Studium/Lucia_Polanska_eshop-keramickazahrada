@@ -79,6 +79,8 @@ export const isPayLaterPaymentProvider = (providerId?: string | null): boolean =
 export type ShipGateProductionOrder = {
   agreed_total?: unknown
   original_total?: unknown
+  /** Příplatek (modul zakázky) — navyšuje, co zákazník dluží. */
+  surcharge?: unknown
   payment_requests?: Array<{ status?: string | null; amount?: unknown }> | null
 }
 
@@ -145,14 +147,24 @@ const pendingDifferenceOf = (summary: ShipGateInput["summary"]): number => {
   return toAmount(record?.pending_difference)
 }
 
-/** What the customer still owes on a commission, from the module's own snapshots. */
+/**
+ * What the customer still owes on a commission, from the module's own snapshots.
+ *
+ * JEDNA definice „co zákazník dluží": (dohodnutá ?? původní cena) + příplatek
+ * − zaplacené žádosti. Doplatek (`balance-payment.outstandingFor`), výzva k
+ * doplacení i fronta zakázek počítají přes tuhle funkci. Dřív brána příplatek
+ * ignorovala — zakázka s nezaplaceným příplatkem šla odeslat, zatímco e-mail
+ * zákazníkovi tvrdil, že ještě dluží.
+ */
 export const productionOutstanding = (
   production: ShipGateProductionOrder | null | undefined
 ): number => {
   if (!production) {
     return 0
   }
-  const total = toAmount(production.agreed_total ?? production.original_total)
+  const total =
+    toAmount(production.agreed_total ?? production.original_total) +
+    toAmount(production.surcharge)
   const paid = (production.payment_requests || [])
     .filter((request) => request?.status === "paid")
     .reduce((sum, request) => sum + toAmount(request.amount), 0)

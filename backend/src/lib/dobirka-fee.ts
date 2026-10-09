@@ -45,6 +45,7 @@ import type {
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { refreshPaymentCollectionForCartWorkflow } from "@medusajs/medusa/core-flows"
 import { getMerchantSetting } from "./merchant-settings"
+import { toNumber } from "./order-quantity"
 import { DOBIRKA_PROVIDER_ID } from "./ship-gate"
 
 /** Line-item metadata marker. The one fact every guard keys on. */
@@ -80,11 +81,6 @@ export const isDobirkaFeeLine = (item: FeeLineLike | null | undefined): boolean 
   Boolean(item?.metadata?.[DOBIRKA_FEE_MARKER]) &&
   !item?.variant_id &&
   !item?.product_id
-
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
 
 /**
  * Whether the fee belongs on this cart at all. The currency guard mirrors the

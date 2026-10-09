@@ -39,11 +39,6 @@ export type ConfirmMerchantHandoverInput = {
   no_notification?: boolean
 }
 
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export const confirmMerchantHandoverWorkflow = createWorkflow(
   "confirm-merchant-handover",
   (input: ConfirmMerchantHandoverInput) => {

@@ -6,6 +6,7 @@ import {
   balancePaymentUrl,
   signBalanceToken,
 } from "../../../../../lib/balance-payment-link"
+import { toNumber } from "../../../../../lib/order-quantity"
 
 /**
  * Stav doplatku zakázky pro stránku potvrzení objednávky.
@@ -18,11 +19,6 @@ import {
  * `is_commission: false` = není to zakázka → Souhrn se chová jako u běžné
  * objednávky.
  */
-const toNumber = (value: unknown): number => {
-  const n = Number(value ?? 0)
-  return Number.isFinite(n) ? n : 0
-}
-
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(
     MADE_TO_ORDER_MODULE

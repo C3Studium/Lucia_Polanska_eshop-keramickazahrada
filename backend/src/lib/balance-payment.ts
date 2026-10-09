@@ -11,6 +11,7 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
+import { productionOutstanding } from "./ship-gate"
 import { orderConfirmedPath } from "./storefront-url"
 
 /**
@@ -56,20 +57,24 @@ export const paymentUrlFromSession = (session: any): string | null => {
   return null
 }
 
-/** What the customer still owes, from the module's own snapshots. */
+/**
+ * What the customer still owes, from the module's own snapshots.
+ *
+ * Stejná aritmetika jako brána odeslání (`ship-gate.productionOutstanding`):
+ * (dohodnutá ?? původní) + příplatek − zaplaceno. Jedna funkce, aby doplatek
+ * a brána nikdy nevyprávěly dvě verze téhož dluhu. Tady navíc zaokrouhleno a
+ * nikdy pod nulu — přeplatek je otázka vratky, ne záporný doplatek.
+ */
 export const outstandingFor = (
   productionOrder: any,
   requests: any[]
-): number => {
-  const paid = requests
-    .filter((request) => request?.status === "paid")
-    .reduce((sum, request) => sum + toNumber(request.amount), 0)
-  // Příplatek navyšuje, co zákazník dluží — doplatek ho tedy zahrnuje.
-  const total =
-    toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
-    toNumber(productionOrder.surcharge)
-  return roundMoney(Math.max(0, total - paid))
-}
+): number =>
+  roundMoney(
+    Math.max(
+      0,
+      productionOutstanding({ ...productionOrder, payment_requests: requests })
+    )
+  )
 
 export type BalanceLinkResult = {
   /** `null` when nothing is owed. */

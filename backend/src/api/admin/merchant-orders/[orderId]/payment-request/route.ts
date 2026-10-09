@@ -9,6 +9,7 @@ import {
   orderNumber,
   sendCustomerEmail,
 } from "../../../../../lib/customer-email"
+import { toNumber } from "../../../../../lib/order-quantity"
 
 /**
  * „Pošlete zákazníkovi výzvu k zaplacení."
@@ -59,11 +60,6 @@ const ORDER_FIELDS = [
   "payment_collections.payments.canceled_at",
   "payment_collections.payments.refunds.amount",
 ]
-
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
 
 /**
  * Kolik z objednávky opravdu dorazilo — zachycené mínus vrácené.

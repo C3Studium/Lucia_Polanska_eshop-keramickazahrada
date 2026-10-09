@@ -4,6 +4,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
+import { toNumber } from "./order-quantity"
 
 /**
  * The order-edit rules, enforced on the NATIVE admin endpoints.
@@ -22,7 +23,68 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
  * Lookup failures log and let the request through: a broken guard that blocks
  * every legitimate admin edit would be worse than the rare bypass, and the
  * customer route still enforces the full matrix.
+ *
+ * ## `:id` na `/admin/order-edits/:id/request` i `/confirm` je ID OBJEDNÁVKY
+ *
+ * Ověřeno v `@medusajs/medusa/dist/api/admin/order-edits/[id]/request/route.js`
+ * a `confirm/route.js`: obě předávají `req.params.id` jako `order_id` do
+ * `requestOrderEditRequestWorkflow` / `confirmOrderEditRequestWorkflow`.
+ * Dřívější verze stráže filtrovala `order_change` podle `id = :id`, takže
+ * nikdy nic nenašla a VŽDY pustila dál — pravidlo 2 bylo jen na papíře.
+ * Otevřená změna se proto hledá podle `order_id`.
  */
+
+/** Stavy, ve kterých změna ještě běží — ta, na kterou request/confirm sahá. */
+const OPEN_CHANGE_STATUSES = ["pending", "requested"]
+
+export type OpenChangeCandidate = {
+  id?: string
+  status?: string | null
+  created_at?: unknown
+  version?: unknown
+}
+
+const timeOf = (value: unknown): number => {
+  if (!value) return 0
+  const time = new Date(value as string).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+/**
+ * ČISTÉ: otevřená změna objednávky, na kterou `/request` či `/confirm` zrovna
+ * sahá — nejnovější z `pending`/`requested` (Medusa jich víc otevřených
+ * nedrží, ale kdyby, rozhoduje čas založení a pak verze). `null` = nic
+ * otevřeného → stráž nemá co hlídat.
+ */
+export const pickOpenOrderChange = <T extends OpenChangeCandidate>(
+  changes: T[] | null | undefined
+): T | null => {
+  const open = (changes ?? []).filter((change) =>
+    OPEN_CHANGE_STATUSES.includes(String(change?.status ?? ""))
+  )
+  if (!open.length) return null
+  return [...open].sort(
+    (a, b) =>
+      timeOf(b.created_at) - timeOf(a.created_at) ||
+      toNumber(b.version) - toNumber(a.version)
+  )[0]
+}
+
+/**
+ * ČISTÉ: nechal by náhled změny objednávku bez jediného kusu? Množství z
+ * náhledu je BigNumber (instance s `numeric_`, nebo `{ value }`) — dřívější
+ * čtení jen `.value` počítalo instanci jako 0, takže běžná úprava mohla
+ * vypadat jako vyprázdnění. Prázdný seznam položek není „vyprázdnění", to je
+ * náhled bez položek (nic k hlídání).
+ */
+export const editEmptiesOrder = (
+  items: Array<{ quantity?: unknown }> | null | undefined
+): boolean => {
+  const list = items ?? []
+  if (!list.length) return false
+  const remaining = list.reduce((sum, item) => sum + toNumber(item?.quantity), 0)
+  return remaining <= 0
+}
 
 /** Blocks quantity updates / removals that touch a made-to-order line. */
 export const blockMtoLineEdits = () => {
@@ -110,32 +172,22 @@ export const blockEmptyingConfirm = () => {
     next: MedusaNextFunction
   ) => {
     try {
-      const changeId = req.params.id
-      if (!changeId) return next()
+      // `:id` je ID objednávky (viz hlavička) — změna se hledá podle order_id.
+      const orderId = req.params.id
+      if (!orderId) return next()
 
       const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
       const { data: changes } = await query.graph({
         entity: "order_change",
-        fields: ["id", "order_id"],
-        filters: { id: changeId },
+        fields: ["id", "order_id", "status", "created_at", "version"],
+        filters: { order_id: orderId },
       })
-      const orderId = (changes[0] as any)?.order_id
-      if (!orderId) return next()
+      const open = pickOpenOrderChange(changes as OpenChangeCandidate[])
+      if (!open) return next()
 
       const orderModule = req.scope.resolve(Modules.ORDER) as any
       const preview = await orderModule.previewOrderChange(orderId)
-      const items = (preview?.items ?? []) as any[]
-      const toNumber = (value: unknown) =>
-        Number(
-          typeof value === "object" && value !== null
-            ? ((value as any).value ?? 0)
-            : value
-        ) || 0
-      const remaining = items.reduce(
-        (sum, item) => sum + toNumber(item?.quantity),
-        0
-      )
-      if (items.length > 0 && remaining <= 0) {
+      if (editEmptiesOrder((preview?.items ?? []) as any[])) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,
           "Úprava by objednávku úplně vyprázdnila. Prázdná objednávka je storno — použijte zrušení objednávky, ať se vyrovnají peníze."

@@ -6,6 +6,10 @@ import {
 } from "@medusajs/framework/utils"
 import { generateCpLabelWorkflow } from "../../../../../workflows/generate-cp-label"
 import { notifyMerchant } from "../../../../../lib/notify"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
 import { ensureParcelTracking } from "../../../../../lib/parcel-tracking/start"
 
 /**
@@ -97,7 +101,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "metadata",
       "items.id",
       "items.title",
-      "items.quantity",
+      // Množství přes detail i řádek — výslovné `items.quantity` z query.graph
+      // nechodí (lib/order-quantity).
+      ...LINE_QUANTITY_FIELDS,
       "items.metadata",
       "shipping_methods.name",
       "fulfillments.id",
@@ -227,7 +233,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       parcel,
       items: parcelItems.map((item: any) => ({
         title: item.title,
-        quantity: item.quantity,
+        quantity: lineQuantityOf(item),
       })),
     } as never)
     return

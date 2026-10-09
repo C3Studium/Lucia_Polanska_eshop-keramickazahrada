@@ -19,6 +19,10 @@ import { MADE_TO_ORDER_MODULE } from "../../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../../modules/made-to-order/service"
 import { orderConfirmedPath } from "../../../../../../lib/storefront-url"
 import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../../lib/order-quantity"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
 
@@ -108,7 +112,9 @@ const loadOrder = async (req: MedusaRequest) => {
       "currency_code",
       "total",
       "items.id",
-      "items.quantity",
+      // Množství přes detail i řádek — výslovné `items.quantity` z query.graph
+      // nechodí (lib/order-quantity); delta ceny se dělí množstvím řádku.
+      ...LINE_QUANTITY_FIELDS,
       "items.unit_price",
       "items.metadata",
       "payment_collections.id",
@@ -155,7 +161,7 @@ const adjustNativeOrderTotal = async (
     )
   }
 
-  const quantity = Math.max(1, toNumber(item.quantity))
+  const quantity = Math.max(1, lineQuantityOf(item))
   const unitPrice = toNumber(item.unit_price)
   const nextUnitPrice = roundMoney(unitPrice + delta / quantity)
   if (nextUnitPrice < 0) {

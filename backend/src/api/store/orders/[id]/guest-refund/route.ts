@@ -1,6 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { verifyOrderAccessToken } from "../../../../../lib/order-access-link"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
 
 /**
  * Předvyplnění stránky reklamace / vrácení / odstoupení (`/order/:id/refund`)
@@ -33,7 +37,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       "items.id",
       "items.title",
       "items.product_title",
-      "items.quantity",
+      // Množství z detailu i řádku — výslovné `items.quantity` z query.graph
+      // nechodí (lib/order-quantity).
+      ...LINE_QUANTITY_FIELDS,
       "items.metadata",
       "items.product.metadata",
     ],
@@ -51,7 +57,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return {
       id: item.id,
       title: item.product_title || item.title,
-      quantity: item.quantity,
+      quantity: lineQuantityOf(item),
       is_made_to_order: madeToOrder,
     }
   })

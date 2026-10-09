@@ -73,6 +73,8 @@ export const loadShipGateInput = async (
         "id",
         "agreed_total",
         "original_total",
+        // Příplatek — brána ho započítá do dluhu (ship-gate.productionOutstanding).
+        "surcharge",
         "payment_requests.status",
         "payment_requests.amount",
       ],

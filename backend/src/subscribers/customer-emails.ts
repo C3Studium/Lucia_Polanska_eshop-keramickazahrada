@@ -10,6 +10,7 @@ import {
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
+import { lineQuantityOf } from "../lib/order-quantity"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
@@ -689,7 +690,9 @@ const onReturnRequested = async ({
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data: returns } = await query.graph({
       entity: "return",
-      fields: ["id", "display_id", "items.item_id", "items.quantity"],
+      // `return_item.quantity` je BigNumber sloupec — číslo i `raw_quantity`
+      // (objekt), ať „(N ks)" nezmizí, když přijde objekt (lib/order-quantity).
+      fields: ["id", "display_id", "items.item_id", "items.quantity", "items.raw_quantity"],
       filters: { id: data.return_id },
     })
     const returnRow = returns[0] as any
@@ -702,7 +705,7 @@ const onReturnRequested = async ({
         if (!item) {
           return null
         }
-        const quantity = Number(returnItem.quantity)
+        const quantity = lineQuantityOf(returnItem)
         return quantity > 1
           ? `${item.product_title ?? item.title} (${quantity} ks)`
           : item.product_title ?? item.title

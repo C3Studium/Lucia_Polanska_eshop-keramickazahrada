@@ -1,5 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
 import { MERCHANT_ORDER_MODULE } from "../../../../../modules/merchant-order"
 import type MerchantOrderModuleService from "../../../../../modules/merchant-order/service"
 
@@ -42,7 +46,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "items.title",
           "items.thumbnail",
           "items.variant_title",
-          "items.quantity",
+          // Množství přes detail i řádek — výslovné `items.quantity` z
+          // query.graph nechodí (lib/order-quantity).
+          ...LINE_QUANTITY_FIELDS,
           "items.unit_price",
           "items.total",
           "items.metadata",
@@ -196,7 +202,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       title: item.title,
       variant_title: item.variant_title ?? null,
       thumbnail: item.thumbnail ?? null,
-      quantity: item.quantity,
+      quantity: lineQuantityOf(item),
       unit_price: Number(item.unit_price) || 0,
       total: Number(item.total) || 0,
       specification:

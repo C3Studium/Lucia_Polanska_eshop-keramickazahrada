@@ -11,6 +11,7 @@ import type {
   Logger,
 } from "@medusajs/framework/types"
 import { callCeskaPosta } from "./client"
+import { rozhodniDobirku } from "./dobirka"
 import {
   chybaZOdpovedi,
   prectiOdpoved,
@@ -442,7 +443,17 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
       const kod: KodSluzby = serviceCode === CP_SERVICE_CODES.balikovna ? "NB" : "DR"
       const metadata = (order?.metadata ?? {}) as Record<string, unknown>
       const vydejna = vydejnaZMetadat(metadata)
-      const dobirka = this.dobirkaZObjednavky(order)
+
+      /*
+       * Tvrdá zastávka: objednávka na dobírku bez částky se NEPODÁVÁ. Tiché
+       * podání bez dobírky = zboží odejde, peníze nepřijdou (viz ./dobirka).
+       */
+      const rozhodnuti = this.dobirkaZObjednavky(order)
+      // `=== false`, ne `!ok`: bez strictNullChecks TS unii přes pravdivost nezúží.
+      if (rozhodnuti.ok === false) {
+        return rucne(rozhodnuti.duvod)
+      }
+      const dobirka = rozhodnuti.dobirka
 
       const telo = sestavPodani({
         serviceCode: kod,
@@ -541,37 +552,43 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   /**
-   * Dobírka z objednávky — nebo výslovné „nevím".
+   * Dobírka z objednávky — nebo výslovné „nevím", nebo tvrdé „nepodávat".
    *
    * Provider běží v kontejneru fulfillment modulu, kde `payment_collections`
    * nejsou a dotáhnout je nelze. Fakta o dobírce proto do `order.metadata`
-   * zapisuje `shipMerchantOrderWorkflow`, které je stejně už načítá.
+   * zapisuje `stampDobirkaStep` (odeslání i štítek), které platby stejně už
+   * načítá — i to, JESTLI je platba dobírkou (`cp_dobirka`).
    *
-   * Když klíč chybí, znamená to „bez dobírky". To je bezpečné jen proto, že ho
-   * to workflow zapisuje **vždy** — i s nulou. Kdyby se sem objednávka dostala
-   * jinudy, zásilka odejde bez dobírky a peníze se nevyberou; na to je ten
-   * kontrolní klíč `cp_dobirka_zjistena`.
+   * Když razítko chybí, znamená to „bez dobírky" (s varováním): objednávka
+   * přišla jinudy, třeba nativní stránkou. Když razítko říká „dobírka", ale
+   * částka chybí, podání se ODMÍTNE — rozhodnutí je čisté v `./dobirka`.
    */
   private dobirkaZObjednavky(
     order: Partial<FulfillmentOrderDTO> | undefined
-  ): { castka: number; variabilniSymbol: string } | null {
+  ):
+    | { ok: true; dobirka: { castka: number; variabilniSymbol: string } | null }
+    | { ok: false; duvod: string } {
     const metadata = (order?.metadata ?? {}) as Record<string, unknown>
+    const rozhodnuti = rozhodniDobirku(metadata)
 
-    if (metadata.cp_dobirka_zjistena !== true) {
+    if (rozhodnuti.ok === false) {
+      return rozhodnuti
+    }
+    if (rozhodnuti.varovani) {
       this.logger_.warn(
-        `[ceska-posta] Objednávka ${order?.display_id ?? order?.id}: chybí údaj o dobírce ` +
-          `(cp_dobirka_zjistena). Podávám bez dobírky — ověř, že se nemá vybírat hotovost.`
+        `[ceska-posta] Objednávka ${order?.display_id ?? order?.id}: ${rozhodnuti.varovani}`
       )
-      return null
+    }
+    if (!rozhodnuti.dobirka) {
+      return { ok: true, dobirka: null }
     }
 
-    const castka = Number(metadata.cp_dobirka_czk ?? 0)
-    if (!Number.isFinite(castka) || castka <= 0) return null
-
     return {
-      /* Půlhaléře ČP odmítá (chyba 36) a zásilku vrací bez možnosti opravy. */
-      castka: Math.round(castka),
-      variabilniSymbol: variabilniSymbol(order?.display_id ?? order?.id ?? 0),
+      ok: true,
+      dobirka: {
+        castka: rozhodnuti.dobirka.castka,
+        variabilniSymbol: variabilniSymbol(order?.display_id ?? order?.id ?? 0),
+      },
     }
   }
 

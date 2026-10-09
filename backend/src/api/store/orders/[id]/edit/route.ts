@@ -26,6 +26,10 @@ import { paymentUrlFromSession } from "../../../../../lib/balance-payment"
 import { notifyMerchant } from "../../../../../lib/notify"
 import { deliveryContext } from "../../../../../lib/order-delivery-context"
 import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../../lib/order-quantity"
+import {
   editabilityMode,
   SWAP_ONLY_NOTE,
 } from "../../../../../lib/order-edit-gate"
@@ -71,7 +75,10 @@ const loadOwnOrder = async (req: AuthenticatedMedusaRequest, orderId: string) =>
     fields: [
       "id", "display_id", "customer_id", "email", "currency_code", "total",
       "metadata",
-      "items.id", "items.title", "items.quantity", "items.variant_id",
+      // Množství přes LINE_QUANTITY_FIELDS, ne jen `items.quantity`: výslovný
+      // výběr ho z query.graph nevrací (žije na detail) — výměna varianty by
+      // pak tiše vznikla s množstvím 1 (lib/order-quantity).
+      "items.id", "items.title", ...LINE_QUANTITY_FIELDS, "items.variant_id",
       "items.product_id", "items.unit_price", "items.metadata",
       "shipping_address.*",
       "shipping_methods.name",
@@ -153,7 +160,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
     items: (order.items ?? []).map((item: any) => ({
       id: item.id,
       title: item.title,
-      quantity: item.quantity,
+      quantity: lineQuantityOf(item),
       variant_id: item.variant_id,
       unit_price: Number(item.unit_price) || 0,
       is_made_to_order: Boolean((item.metadata as any)?.made_to_order),
@@ -185,7 +192,7 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
   const madeToOrder = req.scope.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
   const lines = (order.items ?? []).map((item: any) => ({
     id: item.id,
-    quantity: item.quantity,
+    quantity: lineQuantityOf(item),
     is_made_to_order: Boolean((item.metadata as any)?.made_to_order),
   }))
   const verdict = validateEditActions(lines, actions)
@@ -246,10 +253,13 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
           input: { order_id: order.id, items: [{ id: action.item_id, quantity: 0 }] } as never,
         })
         const original = (order.items ?? []).find((i: any) => i.id === action.item_id)
+        // Výměna zachovává množství původního řádku. Čte se BigNumber-safe
+        // s detailem — `original?.quantity ?? 1` dělalo z „3 ks" tiše 1 ks.
+        const originalQuantity = Math.max(1, lineQuantityOf(original))
         await orderEditAddNewItemWorkflow(req.scope).run({
           input: {
             order_id: order.id,
-            items: [{ variant_id: action.variant_id, quantity: original?.quantity ?? 1 }],
+            items: [{ variant_id: action.variant_id, quantity: originalQuantity }],
           } as never,
         })
       } else {

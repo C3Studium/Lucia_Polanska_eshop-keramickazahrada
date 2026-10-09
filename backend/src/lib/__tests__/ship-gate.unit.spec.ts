@@ -383,4 +383,74 @@ describe("evaluateShipGate — commissions", () => {
     expect(productionOutstanding(null)).toBe(0)
     expect(productionOutstanding(undefined)).toBe(0)
   })
+
+  it("nezaplacený příplatek blokuje odeslání", () => {
+    // Záloha i doplatek na dohodnutou cenu zaplacené, ale příplatek 250 Kč
+    // (víc práce) ještě ne — zákazník dluží, zásilka nesmí odejít.
+    const order = paidOrder({
+      production_order: {
+        agreed_total: 6000,
+        original_total: 6000,
+        surcharge: 250,
+        payment_requests: [
+          { status: "paid", amount: 1500 },
+          { status: "paid", amount: 4500 },
+        ],
+      },
+    })
+    const verdict = evaluateShipGate(order)
+
+    expect(verdict.allowed).toBe(false)
+    expect(verdict.code).toBe("mto_outstanding")
+    expect(verdict.reason).toContain("250")
+  })
+
+  it("příplatek se počítá i u dobírky a i jako BigNumber", () => {
+    expect(
+      productionOutstanding({
+        agreed_total: 6000,
+        surcharge: { value: "250" },
+        payment_requests: [{ status: "paid", amount: 6000 }],
+      })
+    ).toBe(250)
+
+    const dobirka: ShipGateInput = {
+      currency_code: "czk",
+      total: 6000,
+      summary: { pending_difference: 0 },
+      payment_collections: [
+        {
+          status: "pending",
+          amount: 6000,
+          captured_amount: 1500,
+          refunded_amount: 0,
+          payments: [{ provider_id: "pp_dobirka_ceska-posta" }],
+        },
+      ],
+      order_changes: [],
+      production_order: {
+        agreed_total: 6000,
+        surcharge: 250,
+        payment_requests: [
+          { status: "paid", amount: 1500 },
+          { status: "paid", amount: 4500 },
+        ],
+      },
+    }
+    expect(evaluateShipGate(dobirka).code).toBe("mto_outstanding")
+  })
+
+  it("zaplacený příplatek odeslání nebrání", () => {
+    const order = paidOrder({
+      production_order: {
+        agreed_total: 6000,
+        surcharge: 250,
+        payment_requests: [
+          { status: "paid", amount: 1500 },
+          { status: "paid", amount: 4750 },
+        ],
+      },
+    })
+    expect(evaluateShipGate(order).allowed).toBe(true)
+  })
 })

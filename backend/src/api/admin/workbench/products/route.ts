@@ -3,6 +3,10 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isClearanceProduct } from "../../../../lib/clearance"
 import { productLink } from "../../../../lib/storefront-url"
 import { getInventoryAlerts } from "../../../../lib/inventory-alerts"
+import {
+  LINE_QUANTITY_FIELDS,
+  lineQuantityOf,
+} from "../../../../lib/order-quantity"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
 import { PRODUCT_REVIEW_MODULE } from "../../../../modules/product-review"
@@ -91,7 +95,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       reviews.listReviews({ status: "schváleno" } as never) as Promise<any[]>,
       query.graph({
         entity: "order",
-        fields: ["id", "created_at", "items.product_id", "items.quantity"],
+        // Množství přes detail i řádek — výslovné `items.quantity` z
+        // query.graph nechodí a „prodáno za 30 dní" bylo tiše 0
+        // (lib/order-quantity).
+        fields: ["id", "created_at", "items.product_id", ...LINE_QUANTITY_FIELDS],
         filters: { created_at: { $gte: since.toISOString() } } as never,
         pagination: { take: 1000, skip: 0 },
       }),
@@ -154,8 +161,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       if (!item?.product_id) continue
       sold30ByProduct.set(
         item.product_id,
-        (sold30ByProduct.get(item.product_id) ?? 0) +
-          (Number(item.quantity) || 0)
+        (sold30ByProduct.get(item.product_id) ?? 0) + lineQuantityOf(item)
       )
     }
   }

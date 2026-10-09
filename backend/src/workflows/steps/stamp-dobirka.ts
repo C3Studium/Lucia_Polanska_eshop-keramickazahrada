@@ -1,5 +1,10 @@
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
+import { toNumber } from "../../lib/order-quantity"
 import { DOBIRKA_PROVIDER_ID } from "../../lib/ship-gate"
 
 /**
@@ -17,13 +22,25 @@ import { DOBIRKA_PROVIDER_ID } from "../../lib/ship-gate"
  * fakt o dobírce dostane až k podání zásilky — a tohle workflow platby stejně
  * už načítá kvůli kontrole před odesláním.
  *
- * ## Proč se zapisuje i nula
+ * ## Proč se zapisuje i nula — a navíc `cp_dobirka`
  *
  * Aby „klíč chybí" znamenalo něco jiného než „bez dobírky". Provider
  * kontroluje `cp_dobirka_zjistena` a když ho nenajde, **nahlásí to** místo aby
  * tiše podal zásilku bez dobírky. Zásilka bez dobírky u objednávky na dobírku
  * znamená, že zboží odejde a peníze nepřijdou — a pozná se to až podle toho,
  * že nikdy nedorazí.
+ *
+ * `cp_dobirka` (JE to dobírka?) jde zvlášť od částky: provider tak rozezná
+ * „karta, nic nevybírat" (false, 0) od „dobírka, ale částka se nezjistila"
+ * (true, 0) — a tu druhou odmítne podat (`modules/ceskaPostaFulfillment/dobirka`).
+ *
+ * ## Proč tenhle krok odmítne dobírku bez částky už tady
+ *
+ * `total` z `query.graph` může přijít jako číslo, BigNumber objekt nebo vůbec
+ * (změřeno: s `items.*` chodí číslo, bez něj nula). `Number(objekt)` je NaN a
+ * `Math.round(NaN)` by do metadat zapsalo NaN → JSON `null` → provider by
+ * podal bez dobírky. Proto BigNumber-safe převod a tvrdá chyba PŘED
+ * vyskladněním, dokud ještě není co kompenzovat.
  */
 export const stampDobirkaStep = createStep(
   "stamp-dobirka-on-order",
@@ -42,7 +59,16 @@ export const stampDobirkaStep = createStep(
      * Vybírá se celá částka objednávky. Je to totéž, co ukazuje admin na kartě
      * objednávky („DOBÍRKA — vybrat …"), takže se ty dvě čísla nemůžou rozejít.
      */
-    const castka = jeDobirka ? Math.round(Number(input.total ?? 0)) : 0
+    const celkem = toNumber(input.total)
+    if (jeDobirka && !(celkem > 0)) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Objednávka ${input.order_id} je na dobírku, ale částka k vybrání se nepodařila zjistit ` +
+          `(celkem = ${JSON.stringify(input.total ?? null)}). Zásilka se nepodá — bez částky by ` +
+          `odešla bez dobírky a peníze by nepřišly. Zkontrolujte celkovou cenu objednávky.`
+      )
+    }
+    const castka = jeDobirka ? Math.round(celkem) : 0
 
     const [objednavka] = await orderModule.listOrders(
       { id: input.order_id },
@@ -68,6 +94,7 @@ export const stampDobirkaStep = createStep(
         metadata: {
           ...puvodni,
           cp_dobirka_zjistena: true,
+          cp_dobirka: jeDobirka,
           cp_dobirka_czk: castka,
           cp_email: email,
         },

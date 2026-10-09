@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { outstandingFor } from "../../../../lib/balance-payment"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
 
@@ -100,6 +101,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       .filter((request: any) => request?.status === "paid")
       .reduce((sum: number, request: any) => sum + toNumber(request.amount), 0)
     const agreed = toNumber(production.agreed_total ?? production.original_total)
+    const surcharge = toNumber(production.surcharge)
     const order = orderById.get(production.order_id)
 
     const name = [order?.customer?.first_name, order?.customer?.last_name]
@@ -124,8 +126,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
       // The money picture, which is the whole point of this list.
       agreed_total: agreed,
+      surcharge,
       paid_total: paid,
-      outstanding: Math.max(0, agreed - paid),
+      // Včetně příplatku — stejná definice dluhu jako brána odeslání a výzva
+      // k doplacení (`outstandingFor`). `agreed − paid` příplatek vynechávalo,
+      // takže fronta hlásila „zaplaceno", zatímco zákazník ještě dlužil.
+      outstanding: outstandingFor(production, requests),
       deposit_percentage: toNumber(production.deposit_percentage),
       has_open_balance_request: Boolean(openBalance),
       balance_requested_at: production.balance_requested_at ?? null,

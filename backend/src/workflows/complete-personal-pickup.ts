@@ -16,6 +16,7 @@ import {
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 import { transitionMerchantOrderWorkflow } from "./transition-merchant-order"
+import { toNumber } from "../lib/order-quantity"
 import {
   fulfillmentItemsOf,
   OUTSTANDING_ITEM_FIELDS,
@@ -58,11 +59,6 @@ import {
 export type CompletePersonalPickupInput = {
   order_id: string
   created_by?: string | null
-}
-
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
 }
 
 /**
