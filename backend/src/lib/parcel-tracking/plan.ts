@@ -262,7 +262,11 @@ export const planParcelUpdate = (
   // Po 30 dnech od štítku bez jediné skutečné události: balík nejspíš nikdy
   // neodešel (štítek vytištěn, krabice zůstala v ateliéru). Dál se neptáme.
   const createdAt = toDate(tracking.created_at)
-  const hasRealEvents = existing.length + newEvents.length > 0
+  // „Skutečná" událost = cokoli mimo štítek: nAPI hlásí PŘEDANÁ / ZPRACOVANÁ
+  // DATA i u balíku, který nikdy neodešel — to není důkaz, že ČP balík má.
+  const hasRealEvents = [...existing, ...newEvents].some(
+    (event) => classifyState(event.id, event.text).kind !== "label"
+  )
   if (
     isCheck &&
     !done &&

@@ -179,6 +179,82 @@ describe("položky k odeslání (BigNumber z query.graph)", () => {
   })
 })
 
+describe("posloupnosti z nAPI (úložna, vrácení)", () => {
+  const snapshot = (over = {}) => ({
+    phase: "label",
+    events: [],
+    handed_over_at: null,
+    stored_at: null,
+    delivered_at: null,
+    returned_at: null,
+    done: false,
+    note: null,
+    check_count: 0,
+    created_at: NOW,
+    ...over,
+  })
+  const cis = (statusID, reasonID, name, date = "2026-10-09") =>
+    parseNapiCurrentStatus({ parcelStatus: { statusID, reasonID, date, statusDescription: name } })
+
+  it("ULOŽENO → ÚLOŽNA (nevyzvednuto) = problém s upozorněním, stored_at zůstává", () => {
+    const stored = planParcelUpdate(snapshot(), cis("51", "20", "ULOŽENO"), "cp", NOW)
+    expect(stored.patch.phase).toBe("stored")
+    expect(stored.patch.stored_at).not.toBeNull()
+    expect(stored.triggers.handed_over).toBe(true)
+
+    const ulozna = planParcelUpdate(
+      { ...stored.patch, created_at: NOW } as never,
+      cis("99", "00", "ÚLOŽNA BALÍKOVNA", "2026-10-16"),
+      "cp",
+      new Date("2026-10-16T10:00:00.000Z")
+    )
+    expect(ulozna.patch.phase).toBe("problem")
+    expect(ulozna.triggers.damaged).toBe(true)
+    expect(ulozna.patch.stored_at).toEqual(stored.patch.stored_at)
+    expect(ulozna.patch.done).toBe(false)
+  })
+
+  it("VRACÍ SE uzavře sledování jako vrácené a spustí upozornění", () => {
+    const back = planParcelUpdate(
+      snapshot({ phase: "problem", handed_over_at: NOW, stored_at: NOW }),
+      cis("95", "00", "VRACÍ SE"),
+      "cp",
+      NOW
+    )
+    expect(back.patch.phase).toBe("returned")
+    expect(back.patch.done).toBe(true)
+    expect(back.triggers.returned).toBe(true)
+    expect(back.triggers.handed_over).toBe(false)
+  })
+
+  it("DORUČENO po ULOŽENO = převzato, hotovo, bez dalšího upozornění", () => {
+    const delivered = planParcelUpdate(
+      snapshot({ phase: "stored", handed_over_at: NOW, stored_at: NOW }),
+      cis("91", "00", "DORUČENO"),
+      "cp",
+      NOW
+    )
+    expect(delivered.patch.phase).toBe("delivered")
+    expect(delivered.patch.delivered_at).not.toBeNull()
+    expect(delivered.patch.done).toBe(true)
+    expect(delivered.triggers).toEqual({ handed_over: false, returned: false, damaged: false, never_appeared: false })
+  })
+
+  it("PŘEDANÁ DATA 30 dnů bez podání = vzdáno s upozorněním", () => {
+    const created = new Date("2026-09-01T10:00:00.000Z")
+    const plan = planParcelUpdate(
+      snapshot({ created_at: created }),
+      cis("13", "00", "PŘEDANÁ DATA", "2026-09-01"),
+      "cp",
+      new Date("2026-10-09T10:00:00.000Z")
+    )
+    // „PŘEDANÁ DATA" je jen štítek — skutečná událost to není, takže po 30 dnech se vzdává.
+    expect(plan.patch.phase).toBe("label")
+    expect(plan.patch.done).toBe(true)
+    expect(plan.triggers.never_appeared).toBe(true)
+  })
+})
+
 describe("přístupy k nAPI", () => {
   it("jen se všemi třemi hodnotami", () => {
     expect(napiCredentials({})).toBeNull()
