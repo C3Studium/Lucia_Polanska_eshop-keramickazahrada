@@ -30,6 +30,18 @@ const quantityOf = (
   return toNumber(item?.[`raw_${field}`])
 }
 
+/**
+ * Objednané množství položky. ZMĚŘENO 9. 10. 2026 na #36: při výslovném
+ * výběru `items.quantity` přijde položka BEZ `quantity` — množství žije na
+ * `detail` (OrderItem) a do položky ho dopočítává jen `items.*`. Proto se
+ * zkouší položka i detail, v obou číslo i raw podoba.
+ */
+const orderedQuantityOf = (item: any): number => {
+  const own = quantityOf(item, "quantity")
+  if (own > 0) return own
+  return quantityOf(item?.detail, "quantity")
+}
+
 /** Položky s `requires_shipping`, u kterých `quantity − detail.<field>` > 0. */
 export const outstandingItemsOf = (
   order: any,
@@ -39,7 +51,7 @@ export const outstandingItemsOf = (
     .filter((item) => item?.requires_shipping)
     .map((item) => ({
       id: String(item.id),
-      quantity: quantityOf(item, "quantity") - quantityOf(item?.detail, field),
+      quantity: orderedQuantityOf(item) - quantityOf(item?.detail, field),
     }))
     .filter((item) => item.quantity > 0)
 
@@ -57,6 +69,8 @@ export const OUTSTANDING_ITEM_FIELDS = [
   "items.quantity",
   "items.raw_quantity",
   "items.requires_shipping",
+  "items.detail.quantity",
+  "items.detail.raw_quantity",
   "items.detail.fulfilled_quantity",
   "items.detail.raw_fulfilled_quantity",
   "items.detail.shipped_quantity",

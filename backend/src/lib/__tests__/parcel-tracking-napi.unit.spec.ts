@@ -164,6 +164,24 @@ describe("položky k odeslání (BigNumber z query.graph)", () => {
     expect(shipmentItemsOf(order)).toHaveLength(7)
   })
 
+  it("#36 (změřeno): položka bez quantity, množství jen na detail → 7 kusů k odeslání", () => {
+    const order = {
+      items: Array.from({ length: 7 }, (_, i) => ({
+        id: `ordli_${i}`,
+        requires_shipping: true,
+        detail: {
+          quantity: 1,
+          raw_quantity: { value: "1", precision: 20 },
+          shipped_quantity: 0,
+          raw_shipped_quantity: { value: "0", precision: 20 },
+        },
+      })),
+    }
+    expect(shipmentItemsOf(order)).toHaveLength(7)
+    expect(shipmentItemsOf(order)[0]).toEqual({ id: "ordli_0", quantity: 1 })
+    expect(fulfillmentItemsOf({ items: [{ id: "x", requires_shipping: true, detail: { quantity: 2, fulfilled_quantity: 2 } }] })).toEqual([])
+  })
+
   it("k vyskladnění počítá z fulfilled_quantity, i když je BigNumber", () => {
     const order = {
       items: [
