@@ -95,8 +95,9 @@ const stageOf = async (
 const createShipmentForOpenFulfillment = async (
   container: MedusaContainer,
   order: any
-): Promise<boolean> => {
-  const items = ((order?.items || []) as any[])
+): Promise<{ created: boolean; reason: string }> => {
+  const allItems = (order?.items || []) as any[]
+  const items = allItems
     .filter((item) => item?.requires_shipping)
     .map((item) => ({
       id: item.id,
@@ -104,11 +105,23 @@ const createShipmentForOpenFulfillment = async (
     }))
     .filter((item) => item.quantity > 0)
 
-  const open = ((order?.fulfillments || []) as any[]).find(
+  const fulfillments = (order?.fulfillments || []) as any[]
+  const open = fulfillments.find(
     (fulfillment) => !fulfillment?.canceled_at && !fulfillment?.shipped_at
   )
-  if (!open?.id || !items.length) {
-    return false
+  // Důvod se vrací slovy — bez něj se „shipment nevznikl" nedá rozlišit od
+  // „nebylo co odesílat" (změřeno 9. 10. 2026 na #36, kde oboje existovalo).
+  if (!open?.id) {
+    return {
+      created: false,
+      reason: `bez otevřeného fulfillmentu (fulfillmentů ${fulfillments.length})`,
+    }
+  }
+  if (!items.length) {
+    return {
+      created: false,
+      reason: `žádné položky k odeslání (položek ${allItems.length}, requires_shipping ${allItems.filter((item) => item?.requires_shipping).length})`,
+    }
   }
 
   await createOrderShipmentWorkflow(container).run({
@@ -119,7 +132,7 @@ const createShipmentForOpenFulfillment = async (
       created_by: TRACKING_ACTOR,
     },
   })
-  return true
+  return { created: true, reason: `shipment ${open.id}, položek ${items.length}` }
 }
 
 /** První `21`: shipment + fáze „odesláno" za bránou — viz hlavičku souboru. */
@@ -161,8 +174,12 @@ const onHandedOver = async (
   if (stage === "shipped") {
     // Už označeno jako odeslané (lehké tlačítko) — jen doplnit shipped_at.
     // Fáze se nemění (no-op) a e-mail „odesláno" je deduplikovaný klíčem.
-    const created = await createShipmentForOpenFulfillment(container, order)
-    actions.push(created ? "shipment doplněn (fáze už odesláno)" : "fáze už odesláno")
+    const shipment = await createShipmentForOpenFulfillment(container, order)
+    actions.push(
+      shipment.created
+        ? `shipment doplněn (fáze už odesláno; ${shipment.reason})`
+        : `fáze už odesláno; ${shipment.reason}`
+    )
     return
   }
 
@@ -187,8 +204,8 @@ const onHandedOver = async (
     return
   }
 
-  const created = await createShipmentForOpenFulfillment(container, order)
-  actions.push(created ? "shipment vytvořen" : "bez otevřeného fulfillmentu")
+  const shipment = await createShipmentForOpenFulfillment(container, order)
+  actions.push(shipment.created ? `shipment vytvořen (${shipment.reason})` : shipment.reason)
 
   // Posun fáze rovnou (reconcile = hlásíme fakt, ne přání): subscriber na
   // shipment.created by to udělal taky, ale bez fulfillmentu žádný shipment

@@ -20,6 +20,7 @@ import {
   ensureParcelTracking,
   findParcelTracking,
   parcelCodeOf,
+  resetParcelTracking,
   serviceCodeOf,
 } from "../../../../../lib/parcel-tracking/start"
 
@@ -42,6 +43,8 @@ type TrackingResponse = {
   carrier_label: string
   /** `napi` = B2B nAPI s přístupy (oficiální číselník), `public` = veřejný JSON. */
   source: TrackingSource
+  /** Jen po POST: co se při zpracování opravdu stalo (shipment, fáze, e-maily). */
+  actions?: string[]
 }
 
 const ORDER_FIELDS = [
@@ -71,7 +74,11 @@ const loadOrder = async (req: MedusaRequest) => {
   return order
 }
 
-const buildResponse = (order: any, tracking: any | null): TrackingResponse => {
+const buildResponse = (
+  order: any,
+  tracking: any | null,
+  actions?: string[]
+): TrackingResponse => {
   const parcelCode = tracking?.parcel_code ?? parcelCodeOf(order)
   const serviceCode = tracking?.service_code ?? serviceCodeOf(order)
   const methodName = (order.shipping_methods ?? [])[0]?.name ?? ""
@@ -82,6 +89,16 @@ const buildResponse = (order: any, tracking: any | null): TrackingResponse => {
     simulate_allowed: isSimulateAllowed(),
     carrier_label: cpCarrierName(serviceCode, methodName) || "Česká pošta",
     source: trackingSource(),
+    ...(actions ? { actions } : {}),
+  }
+}
+
+/** Totéž, co loguje job — ať je z logu vidět, co simulace/refresh provedly. */
+const logActions = (req: MedusaRequest, code: string, actions: string[]) => {
+  if (actions.length) {
+    req.scope
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .info(`[sledování] ${code}: ${actions.join(", ")}.`)
   }
 }
 
@@ -94,6 +111,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 type TrackingAction =
   | { action: "start" }
   | { action: "refresh" }
+  | { action: "reset" }
   | { action: "simulate"; state?: string }
 
 export const POST = async (
@@ -144,7 +162,29 @@ export const POST = async (
         return
       }
       const result = await applyParcelEvents(req.scope, tracking, events, "cp")
-      res.status(200).json(buildResponse(order, result.tracking))
+      logActions(req, tracking.parcel_code, result.actions)
+      res.status(200).json(buildResponse(order, result.tracking, result.actions))
+      return
+    }
+
+    // Jen testovací prostředí: vrátit sledování na „štítek", ať jde simulaci
+    // (předání → … → převzato) zopakovat na téže objednávce.
+    case "reset": {
+      if (!isSimulateAllowed()) {
+        res.status(403).json({
+          type: "not_allowed",
+          message: "Reset sledování je dostupný jen v testovacím prostředí.",
+        })
+        return
+      }
+      if (!tracking) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `Zásilka se zatím nesleduje — není co resetovat.`
+        )
+      }
+      const reset = await resetParcelTracking(req.scope, tracking.id)
+      res.status(200).json(buildResponse(order, reset, ["sledování vráceno na štítek"]))
       return
     }
 
@@ -186,14 +226,15 @@ export const POST = async (
         ],
         "simulated"
       )
-      res.status(200).json(buildResponse(order, result.tracking))
+      logActions(req, tracking.parcel_code, result.actions)
+      res.status(200).json(buildResponse(order, result.tracking, result.actions))
       return
     }
 
     default:
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "Neznámá akce. Povolené: start, refresh, simulate."
+        "Neznámá akce. Povolené: start, refresh, simulate, reset."
       )
   }
 }

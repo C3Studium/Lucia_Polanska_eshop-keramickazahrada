@@ -64,6 +64,34 @@ export const findParcelTracking = async (
   return rows[0] ?? null
 }
 
+/**
+ * Vrátí sledování na začátek (jen testovací prostředí — akce `reset` v routě):
+ * fáze „štítek", bez událostí a razítek, ať jde simulaci zopakovat od předání.
+ * Číslo zásilky, dopravce i poznámka zůstávají.
+ */
+export const resetParcelTracking = async (
+  container: MedusaContainer,
+  trackingId: string
+): Promise<any> => {
+  const service = container.resolve<ParcelTrackingModuleService>(
+    PARCEL_TRACKING_MODULE
+  )
+  return service.updateParcelTrackings({
+    id: trackingId,
+    phase: "label",
+    events: [],
+    handed_over_at: null,
+    stored_at: null,
+    delivered_at: null,
+    returned_at: null,
+    last_state_id: null,
+    last_state_text: null,
+    last_checked_at: null,
+    check_count: 0,
+    done: false,
+  } as never)
+}
+
 export type EnsureParcelTrackingInput = {
   order_id: string
   parcel_code: string
