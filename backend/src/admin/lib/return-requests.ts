@@ -60,6 +60,8 @@ export type ReturnRequest = {
   captured_total: number;
   refunded_total: number;
   remaining: number;
+  /** `false` = zboží k zákazníkovi nikdy neodešlo (odstoupení před odesláním). */
+  goods_shipped?: boolean;
   currency_code?: string | null;
   created_at: string;
   updated_at?: string | null;

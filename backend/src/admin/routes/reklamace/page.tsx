@@ -889,18 +889,30 @@ const Actions = ({
 
   if (request.status === "approved") {
     const canRefundNow = isReklamace && moneyResolution && remaining > 0;
+    // Odstoupení/vrácení PŘED odesláním: zboží nikdy neodešlo, takže se
+    // nečeká na „zboží přijato" — peníze jdou rovnou, při nule jde objednávku
+    // rovnou zrušit (server to povolí: remaining == 0).
+    const goodsNeverShipped = isReturnKindGoods && request.goods_shipped === false;
     return (
       <div className="flex flex-col gap-y-3">
         <div className="flex flex-wrap gap-2">
-          <Button size="small" variant="primary" onClick={() => setPanel("received")}>
-            Zboží přijato
-          </Button>
+          {!goodsNeverShipped && (
+            <Button size="small" variant="primary" onClick={() => setPanel("received")}>
+              Zboží přijato
+            </Button>
+          )}
           {canRefundNow && (
             <Button size="small" variant="secondary" onClick={() => setPanel("refund")}>
               Vrátit peníze
             </Button>
           )}
-          {isReturnKindGoods && skipGoods && remaining > 0 && (
+          {goodsNeverShipped && remaining > 0 && (
+            <Button size="small" variant="primary" onClick={() => setPanel("refund")}>
+              Vrátit peníze
+            </Button>
+          )}
+          {goodsNeverShipped && remaining <= 0 && <CancelOrderPrompt request={request} />}
+          {!goodsNeverShipped && isReturnKindGoods && skipGoods && remaining > 0 && (
             <Button size="small" variant="secondary" onClick={() => setPanel("refund")}>
               Vrátit peníze bez čekání na zásilku
             </Button>
@@ -915,7 +927,16 @@ const Actions = ({
           </Button>
         </div>
 
-        {isReturnKindGoods && (
+        {goodsNeverShipped && (
+          <Text size="xsmall" className="text-ui-fg-subtle">
+            Zboží k zákazníkovi neodešlo — není co vracet.{" "}
+            {remaining > 0
+              ? "Vraťte peníze a pak objednávku zrušte."
+              : "Nebylo zaplaceno nic; objednávku můžete rovnou zrušit a uvolnit sklad."}
+          </Text>
+        )}
+
+        {isReturnKindGoods && !goodsNeverShipped && (
           <label className="flex items-start gap-x-2">
             <Checkbox
               checked={skipGoods}

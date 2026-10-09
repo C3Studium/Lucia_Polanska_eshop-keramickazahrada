@@ -199,6 +199,8 @@ export type RefundRuleRequest = {
   kind?: string | null
   status?: string | null
   resolution?: string | null
+  /** `false` = zboží nikdy neodešlo (odstoupení před odesláním) → nečeká se na něj. */
+  goods_shipped?: boolean | null
 }
 
 export type RefundRuleBody = {
@@ -248,7 +250,9 @@ export const canRefund = (
   const skipGoodsCheck = body.skip_goods_check === true
 
   if (request.kind === "odstoupeni" || request.kind === "vraceni") {
-    if (status === "approved" && !skipGoodsCheck) {
+    // Zboží, které nikdy neodešlo, se nemůže vrátit — § 1832/4 tu nemá na co čekat.
+    const goodsNeverShipped = request.goods_shipped === false
+    if (status === "approved" && !skipGoodsCheck && !goodsNeverShipped) {
       return {
         allowed: false,
         reason:

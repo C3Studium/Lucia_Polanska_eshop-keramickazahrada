@@ -33,6 +33,8 @@ interface ReturnApprovedEmailProps {
   returnInstructions?: string;
   /** Musí zboží cestovat zpět? (ne u slevy — zboží zůstává zákazníkovi) */
   goodsReturnRequired?: boolean;
+  /** Odstoupení před odesláním — zboží nikdy neodešlo, nic se neposílá. */
+  nothingToReturn?: boolean;
   orderLink?: string;
   claimsUrl?: string;
   /** Odkaz na PDF reklamační protokol s rozhodnutím. */
@@ -70,6 +72,7 @@ function ReturnApprovedEmailComponent({
   returnAddress,
   returnInstructions,
   goodsReturnRequired,
+  nothingToReturn = false,
   orderLink = "",
   claimsUrl,
   protocolUrl,
@@ -78,13 +81,15 @@ function ReturnApprovedEmailComponent({
   const isClaim = kind === "reklamace"
   const outcome = resolution ?? "refund"
   // Zboží se vrací vždy, kromě slevy; starší volající bez vlajky = vrací se.
-  const goodsBack = goodsReturnRequired ?? outcome !== "discount"
+  const goodsBack = !nothingToReturn && (goodsReturnRequired ?? outcome !== "discount")
   const eyebrow = isClaim ? "Reklamace" : "Vrácení"
-  const h1 = isClaim ? "Reklamace" : "Vrácení"
-  const accent = isClaim ? "uznána." : "schváleno."
+  const h1 = isClaim ? "Reklamace" : nothingToReturn ? "Objednávka" : "Vrácení"
+  const accent = isClaim ? "uznána." : nothingToReturn ? "zrušena." : "schváleno."
   const intro = isClaim
     ? "vaši reklamaci jsme posoudili a uznali. Níže najdete, jak ji vyřídíme a co bude následovat."
-    : "vaší žádosti o vrácení jsme vyhověli. Níže najdete vše potřebné — kam objekty poslat a dokdy."
+    : nothingToReturn
+      ? "vaší žádosti jsme vyhověli. Objednávka k vám ještě neodešla, takže nic posílat nemusíte — rušíme ji."
+      : "vaší žádosti o vrácení jsme vyhověli. Níže najdete vše potřebné — kam objekty poslat a dokdy."
   const deadline =
     returnDeadline ||
     (isClaim ? "vyřídíme do 30 dnů od uplatnění" : "peníze vrátíme do 14 dnů od přijetí zboží")
@@ -125,7 +130,11 @@ function ReturnApprovedEmailComponent({
       <LedgerRow label="Lhůta" value={deadline} strong tone="clay" />
       <LedgerEnd />
 
-      <Note tone="olive">{NEXT_STEP[outcome] ?? NEXT_STEP.refund}</Note>
+      <Note tone="olive">
+        {nothingToReturn
+          ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátíme to stejnou cestou, jakou k nám platba přišla; jinak je tím vše vyřízené."
+          : (NEXT_STEP[outcome] ?? NEXT_STEP.refund)}
+      </Note>
 
       {claimsUrl || orderUrl ? (
         <ButtonRow>

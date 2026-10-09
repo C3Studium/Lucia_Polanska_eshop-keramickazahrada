@@ -4,6 +4,7 @@ import { getLastPaymentStatus } from "@medusajs/medusa/core-flows"
 import { notifyMerchant } from "../lib/notify"
 import { toNumber } from "../lib/order-quantity"
 import { isPaymentProblem } from "../modules/merchant-order/payment-state"
+import { isPayLaterPaymentProvider } from "../lib/ship-gate"
 
 /**
  * Merchant awareness — the first five notifications of WorkflowPlan.md §15.
@@ -103,10 +104,18 @@ const onOrderPlaced = async ({
 
   const itemCount = (order.items || []).length
 
+  // Platba při převzetí (osobní odběr u pultu, dobírka) je jen autorizovaná —
+  // „zaplacená" by majitelce lhala (#37, 9. 10. 2026).
+  const paysLater = ((order.payment_collections || []) as any[])
+    .flatMap((collection) => collection?.payments ?? [])
+    .some((payment) => isPayLaterPaymentProvider(String(payment?.provider_id ?? "")))
+
   if (!isPaymentProblem(paymentStatus)) {
     await notifyMerchant(container, {
       key: `mn:new-order:${order.id}`,
-      title: `Nová zaplacená objednávka #${order.display_id}`,
+      title: paysLater
+        ? `Nová objednávka #${order.display_id} — platba při převzetí`
+        : `Nová zaplacená objednávka #${order.display_id}`,
       description: `${customerName(order)} · ${formatMoney(
         order.total,
         order.currency_code

@@ -33,7 +33,17 @@ export const MONEY_STATE_FIELDS = [
   "payment_collections.payments.captured_at",
   "payment_collections.payments.canceled_at",
   "payment_collections.payments.refunds.amount",
+  // Odešlo zboží? Odstoupení PŘED odesláním nemá co vracet — peníze jdou
+  // rovnou a žádost se nedrží na „zboží přijato" (změřeno 9. 10. 2026 na #37).
+  "fulfillments.shipped_at",
+  "fulfillments.canceled_at",
 ]
+
+/** Opustilo zboží ateliér (nezrušený fulfillment s datem odeslání)? */
+export const goodsShipped = (order: any): boolean =>
+  ((order?.fulfillments ?? []) as any[]).some(
+    (fulfillment) => fulfillment?.shipped_at && !fulfillment?.canceled_at
+  )
 
 /** Plná objednávka pro refundaci a dobropis — navíc e-mail, zákazník a celek. */
 export const MONEY_ORDER_FIELDS = [

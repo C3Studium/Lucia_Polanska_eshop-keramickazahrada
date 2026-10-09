@@ -13,6 +13,8 @@ import {
   RESOLUTIONS,
   type Resolution,
 } from "../../../../../lib/claims/constants"
+import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
+import { MONEY_EPSILON } from "../../../../../lib/claims/refund-rules"
 
 /**
  * POST /admin/return-requests/:id/decide — her one decision on a request
@@ -112,6 +114,27 @@ export const POST = async (
   if (body.decision === "approve") {
     const settings = await getMerchantSettings(req.scope).catch(() => null)
     const effective = resolution ?? "refund"
+
+    // Odstoupení / vrácení PŘED odesláním (změřeno 9. 10. 2026 na #37, osobní
+    // odběr zrušený hned po objednání): zboží nikdy neodešlo, takže zákazník
+    // nic neposílá; peníze (jsou-li) jdou rovnou a při nule je žádost
+    // vyřízená hned — majitelce zbývá jen „Zrušit objednávku a uvolnit sklad".
+    const money =
+      request.kind === "odstoupeni" || request.kind === "vraceni"
+        ? await loadOrderMoney(req.scope, request.order_id).catch(() => null)
+        : null
+    const nothingToReturn = Boolean(money && !goodsShipped(money.order))
+    const nothingToRefund = Boolean(money && money.state.remaining <= MONEY_EPSILON)
+    const resolvedNow = nothingToReturn && nothingToRefund
+    if (resolvedNow) {
+      await service.updateReturnRequests({
+        id: request.id,
+        status: "resolved",
+        resolved_at: decidedAt,
+        resolution_note:
+          "Objednávka neodešla a nebylo nic zaplaceno — není co vracet; zbývá zrušit objednávku.",
+      })
+    }
     // NOTE: if she ALSO creates a native Medusa return for this order, the
     // `order.return_requested` subscriber sends its own „return-approved"
     // under a different key — it checks for a decided request here and skips.
@@ -127,14 +150,20 @@ export const POST = async (
         returnReason: request.reason,
         ...(itemsText ? { approvedItems: itemsText } : {}),
         returnMethod: "Zásilka na adresu ateliéru",
-        // Zboží se vrací vždy kromě slevy — ta ho nechává u zákazníka.
-        goodsReturnRequired: effective !== "discount",
+        // Zboží se vrací vždy kromě slevy — ta ho nechává u zákazníka — a kromě
+        // odstoupení před odesláním, kde nikdy neodešlo.
+        goodsReturnRequired: effective !== "discount" && !nothingToReturn,
+        nothingToReturn,
         returnAddress:
           settings?.return_address || "Keramická zahrada\nPutim 229\n397 01 Písek",
         ...(settings?.return_instructions?.trim()
           ? { returnInstructions: settings.return_instructions.trim() }
           : {}),
-        returnDeadline: deadlineCopy(request.kind ?? null, effective),
+        returnDeadline: nothingToReturn
+          ? nothingToRefund
+            ? "nebylo zaplaceno — není co vracet"
+            : "peníze vrátíme do 14 dnů"
+          : deadlineCopy(request.kind ?? null, effective),
       },
     })
   } else {

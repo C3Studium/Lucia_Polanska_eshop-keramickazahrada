@@ -15,7 +15,7 @@ import {
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
 import { resolutionLabel } from "./constants"
-import { MONEY_STATE_FIELDS } from "./money"
+import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
 import {
   moneyState,
   requestRefundedTotal,
@@ -239,6 +239,9 @@ export const enrichWithMoney = async (
       captured_total: state.captured,
       refunded_total: state.refunded,
       remaining: state.remaining,
+      // Odstoupení před odesláním: zboží nikdy neodešlo → nic se nevrací,
+      // refundace jde rovnou a nabízí se zrušení objednávky.
+      goods_shipped: order ? goodsShipped(order) : false,
     }
   })
 }

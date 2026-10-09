@@ -17,7 +17,7 @@ import {
   sendResolvedEmail,
 } from "../../../../../lib/claims/admin"
 import { kindLabel } from "../../../../../lib/claims/constants"
-import { loadOrderMoney } from "../../../../../lib/claims/money"
+import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
 import {
   canRefund,
   capturedPayments,
@@ -95,14 +95,6 @@ export const POST = async (
   const service = claimService(req.scope)
   const request = await retrieveClaim(req.scope, req.params.id)
 
-  const verdict = canRefund(request, body)
-  if (!verdict.allowed) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      verdict.reason ?? "Peníze u této žádosti teď vrátit nejde."
-    )
-  }
-
   const money = await loadOrderMoney(req.scope, request.order_id)
   if (!money) {
     throw new MedusaError(
@@ -112,6 +104,16 @@ export const POST = async (
   }
   const { order, state } = money
   const currency = order.currency_code ?? "czk"
+
+  // Odstoupení před odesláním: zboží nikdy neodešlo → není na co čekat.
+  const goodsNeverShipped = !goodsShipped(order)
+  const verdict = canRefund({ ...request, goods_shipped: !goodsNeverShipped }, body)
+  if (!verdict.allowed) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      verdict.reason ?? "Peníze u této žádosti teď vrátit nejde."
+    )
+  }
 
   const { amount, clamped } = clampRefundAmount(body.amount, state.remaining)
   if (!(amount > MONEY_EPSILON)) {
@@ -131,7 +133,11 @@ export const POST = async (
     body.skip_goods_check === true &&
     request.status === "approved" &&
     (request.kind === "odstoupeni" || request.kind === "vraceni")
-  const note = [userNote, skippedGoods ? "vráceno bez čekání na zboží" : null]
+  const note = [
+    userNote,
+    skippedGoods ? "vráceno bez čekání na zboží" : null,
+    goodsNeverShipped && request.status === "approved" ? "zboží neodešlo" : null,
+  ]
     .filter(Boolean)
     .join(" — ") || null
 
