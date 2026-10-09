@@ -1,14 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import {
-  customerName,
-  orderLink,
-  orderNumber,
-  productLink,
-  sendCustomerEmail,
-} from "../lib/customer-email"
-import { googleReviewUrl } from "../lib/google-review-url"
 import { getMerchantSettings } from "../lib/merchant-settings"
+import { REVIEW_ORDER_FIELDS, sendReviewRequest } from "../lib/review-request"
 import {
   claimVerdict,
   isInReviewWindow,
@@ -52,27 +45,6 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Bounded so one long-dormant deployment cannot mail years of history. */
 const MAX_PER_RUN = 50
-
-const ORDER_FIELDS = [
-  "id",
-  "status",
-  "email",
-  "display_id",
-  "customer.first_name",
-  "customer.last_name",
-  "shipping_address.first_name",
-  "shipping_address.last_name",
-  "shipping_methods.name",
-  "shipping_methods.data",
-  "shipping_methods.shipping_option.provider_id",
-  "fulfillments.shipped_at",
-  "fulfillments.canceled_at",
-  "items.title",
-  "items.product_title",
-  "items.thumbnail",
-  "items.product_id",
-  "items.variant.product.handle",
-]
 
 export default async function requestReviews(container: MedusaContainer) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -131,7 +103,7 @@ export default async function requestReviews(container: MedusaContainer) {
 
   const ids = [...orderIds]
   const [{ data: orders }, trackings, claims] = await Promise.all([
-    query.graph({ entity: "order", fields: ORDER_FIELDS, filters: { id: ids } }),
+    query.graph({ entity: "order", fields: REVIEW_ORDER_FIELDS, filters: { id: ids } }),
     trackingService.listParcelTrackings({ order_id: ids } as never) as Promise<any[]>,
     claimsService.listReturnRequests({ order_id: ids } as never) as Promise<any[]>,
   ])
@@ -171,30 +143,9 @@ export default async function requestReviews(container: MedusaContainer) {
       continue
     }
 
-    const item = (order.items || [])[0]
-    // Handle, not id — the storefront routes products by handle.
-    const handle = item?.variant?.product?.handle ?? null
-    const link = productLink(handle)
-
-    const ok = await sendCustomerEmail(container, {
-      template: "order-review",
-      to: order.email,
-      // Per order, so a multi-parcel order still asks once.
-      key: `review-request:${order.id}`,
-      orderId: order.id,
-      data: {
-        customerName: customerName(order),
-        orderNumber: orderNumber(order),
-        orderLink: orderLink(order),
-        // `product_title` is the product's name; a line item's `title` is the
-        // variant („Ø 32 cm"), which reads like nonsense as a product name.
-        productName: item?.product_title ?? item?.title ?? "váš kousek",
-        productImage: item?.thumbnail ?? "",
-        productLink: link,
-        reviewLink: link ? `${link}#hodnoceni` : "",
-        googleReviewLink: googleReviewUrl() ?? "",
-      },
-    })
+    // Data šablony i dedupe klíč (per objednávka) sdílí `lib/review-request`
+    // s ručním odesláním z adminu.
+    const ok = await sendReviewRequest(container, order)
 
     if (ok) {
       sent += 1
