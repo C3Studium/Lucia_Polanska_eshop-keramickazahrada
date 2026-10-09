@@ -32,6 +32,77 @@ import { orderConfirmedPath } from "./storefront-url"
 
 export const COMGATE_PROVIDER_ID = "pp_comgate_comgate"
 
+/** Značka v metadatech kolekce doplatku — ať jde poznat mezi ostatními. */
+export const BALANCE_COLLECTION_FLAG = "made_to_order_balance"
+
+const openCollectionStatus = (collection: any): boolean =>
+  ["not_paid", "awaiting"].includes(String(collection?.status || "").toLowerCase()) &&
+  toNumber(collection?.captured_amount) <= 0.005
+
+/**
+ * Otevřená kolekce doplatku objednávky (nic nezachyceno). Přednost má ta se
+ * značkou `made_to_order_balance`, pak kterákoli otevřená — starší objednávky
+ * značku nemají, ale víc než jednu otevřenou kolekci mít nesmí (viz
+ * `ensureBalanceCollection`). ČISTÁ funkce, testovaná.
+ */
+export const findOpenBalanceCollection = (order: any): any | null => {
+  const open = ((order?.payment_collections || []) as any[]).filter(openCollectionStatus)
+  return (
+    open.find((collection) => Boolean(collection?.metadata?.[BALANCE_COLLECTION_FLAG])) ??
+    open[0] ??
+    null
+  )
+}
+
+/**
+ * Zajistí JEDINOU otevřenou kolekci doplatku na přesně `outstanding` Kč.
+ *
+ * Proč (změřeno 9. 10. 2026): dokud výzva k doplacení neodešla, kolekce
+ * doplatku neexistovala a Medusa hlásila objednávku „zaplaceno" už po záloze
+ * (#27: zachyceno 1 225 z 4 450). A po příplatku vznikala DRUHÁ kolekce na
+ * novou částku, stará `not_paid` zůstala viset → objednávka se jevila
+ * nedoplacená i po zaplacení. Proto: existující otevřená kolekce se srovná na
+ * aktuální dluh (příplatek, úprava ceny), jinak vznikne jedna nová se značkou.
+ * Platební relace řeší volající (`createPaymentSessionsWorkflow` starou
+ * relaci kolekce nahradí).
+ */
+export const ensureBalanceCollection = async (
+  container: MedusaContainer,
+  order: any,
+  outstanding: number
+): Promise<any> => {
+  const paymentModule = container.resolve(Modules.PAYMENT) as any
+  const existing = findOpenBalanceCollection(order)
+
+  if (existing) {
+    const patch: Record<string, unknown> = {}
+    if (Math.abs(toNumber(existing.amount) - outstanding) > 0.01) {
+      patch.amount = outstanding
+    }
+    if (!existing.metadata?.[BALANCE_COLLECTION_FLAG]) {
+      patch.metadata = { ...(existing.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true }
+    }
+    if (!Object.keys(patch).length) {
+      return existing
+    }
+    const [updated] = await paymentModule.updatePaymentCollections(
+      { id: existing.id },
+      patch
+    )
+    return updated ?? { ...existing, ...patch }
+  }
+
+  const { result } = await createOrderPaymentCollectionWorkflow(container).run({
+    input: { order_id: order.id, amount: outstanding },
+  })
+  const created = result[0]
+  const [flagged] = await paymentModule.updatePaymentCollections(
+    { id: created.id },
+    { metadata: { ...(created.metadata ?? {}), [BALANCE_COLLECTION_FLAG]: true } }
+  )
+  return flagged ?? created
+}
+
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0
   if (typeof value === "string") {
@@ -134,22 +205,9 @@ export const ensureBalancePaymentLink = async (
     }
   }
 
-  // 2 — an open collection for this amount, so a half-finished attempt is
-  // picked up rather than duplicated.
-  const existingCollection = (order.payment_collections || []).find(
-    (collection: any) =>
-      ["not_paid", "awaiting"].includes(
-        String(collection.status || "").toLowerCase()
-      ) && Math.abs(toNumber(collection.amount) - outstanding) <= 0.01
-  )
-
-  const collection = existingCollection
-    ? existingCollection
-    : (
-        await createOrderPaymentCollectionWorkflow(container).run({
-          input: { order_id: order.id, amount: outstanding },
-        })
-      ).result[0]
+  // 2 — JEDINÁ otevřená kolekce doplatku, srovnaná na aktuální dluh (vznikla
+  // už při objednání; po příplatku se jen přepíše částka, žádná druhá).
+  const collection = await ensureBalanceCollection(container, order, outstanding)
 
   // 3 — the request row, keyed so a retry updates rather than duplicates.
   const idempotencyKey = `balance:${productionOrder.id}:${outstanding}`

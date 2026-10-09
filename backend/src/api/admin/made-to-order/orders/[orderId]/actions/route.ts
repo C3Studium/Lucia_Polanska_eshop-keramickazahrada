@@ -24,6 +24,7 @@ import {
   settleBalanceOffline,
 } from "../../../../../../lib/balance-settlement"
 import { formatMoney } from "../../../../../../lib/ship-gate"
+import { ensureBalanceCollection } from "../../../../../../lib/balance-payment"
 import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
 import {
   LINE_QUANTITY_FIELDS,
@@ -349,6 +350,38 @@ export const POST = async (
       id: productionOrder.id,
       surcharge,
     })
+
+    // Kolekce doplatku se hned srovná na nový dluh (dohodnuto + příplatek −
+    // zaplaceno), ať nativní „Nesplacená částka" sedí a nevznikne druhá
+    // kolekce při výzvě. Fail-open: příplatek je uložený i bez toho.
+    try {
+      const order = await loadOrder(req)
+      const payments = await madeToOrder.listProductionPaymentRequests({
+        production_order_id: productionOrder.id,
+      } as any)
+      const paid = payments
+        .filter((payment: any) => payment.status === "paid")
+        .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
+      const owed = roundMoney(
+        Math.max(
+          0,
+          toNumber(productionOrder.agreed_total ?? productionOrder.original_total) +
+            surcharge -
+            paid
+        )
+      )
+      if (owed > 0.005) {
+        await ensureBalanceCollection(req.scope, order, owed)
+      }
+    } catch (error) {
+      req.scope
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `[zakázka] Kolekci doplatku u ${req.params.orderId} se po příplatku nepodařilo srovnat: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+    }
   }
 
   // Informovat zákazníka o příplatku — RUČNÍ e-mail (ne automaticky po uložení).
@@ -552,20 +585,8 @@ export const POST = async (
           sent_at: now,
         })
       } else {
-        const existingCollection = (order.payment_collections || []).find(
-          (collection: any) =>
-            ["not_paid", "awaiting"].includes(
-              String(collection.status || "").toLowerCase()
-            ) &&
-            Math.abs(toNumber(collection.amount) - outstanding) <= 0.01
-        )
-        const collection = existingCollection
-          ? existingCollection
-          : (
-              await createOrderPaymentCollectionWorkflow(req.scope).run({
-                input: { order_id: order.id, amount: outstanding },
-              })
-            ).result[0]
+        // Jediná otevřená kolekce doplatku, srovnaná na dluh (lib/balance-payment).
+        const collection = await ensureBalanceCollection(req.scope, order, outstanding)
 
         const idempotencyKey = `balance:${productionOrder.id}:${outstanding}`
         const previous = payments.find(

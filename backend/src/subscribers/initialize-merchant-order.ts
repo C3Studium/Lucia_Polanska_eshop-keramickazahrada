@@ -12,6 +12,7 @@ import MadeToOrderModuleService from "../modules/made-to-order/service"
 import { MERCHANT_ORDER_MODULE } from "../modules/merchant-order"
 import MerchantOrderModuleService from "../modules/merchant-order/service"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
+import { ensureBalanceCollection } from "../lib/balance-payment"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -219,6 +220,26 @@ export default async function initializeMerchantOrder({
    */
   if (paid) {
     await ensureMadeToOrderInvoices(container, order.id).catch(() => undefined)
+  }
+
+  /*
+   * Kolekce doplatku HNED, ne až s výzvou k doplacení. Bez ní Medusa hlásila
+   * zakázku „zaplaceno" už po záloze (změřeno 9. 10. 2026, #27: zachyceno
+   * 1 225 z 4 450) — stav platby, fronta i nativní „Nesplacená částka" lhaly.
+   * S otevřenou kolekcí na zbytek je od začátku „částečně zaplaceno" a výzva
+   * k doplacení ji později jen použije. Fail-open: zakázka vznikla i bez ní.
+   */
+  const balance = Math.round((originalTotal - depositAmount) * 100) / 100
+  if (balance > 0.005) {
+    await ensureBalanceCollection(container, order, balance).catch((error) => {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `[zakázka] Kolekci doplatku u ${order.id} se nepodařilo založit: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+    })
   }
 }
 
