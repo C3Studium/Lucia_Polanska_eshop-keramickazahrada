@@ -21,7 +21,27 @@ shipment vzniknout → tracking ho založí.
 
 ## 1. Zdroj dat
 
-Veřejný JSON ČP, bez autentizace (ověřeno živě 9. 10. 2026):
+**Primárně nAPI B2B** (s přístupy `BALIKOVNA_API_URL/TOKEN/SECRET`, podpis jako u
+podání — `lib/parcel-tracking/napi.ts`, ověřeno živě 9. 10. 2026 na
+testovacím prostředí, které testovací zásilky z podání zná):
+
+```
+GET /ZSKService/v1/parcelStatuses/current/idParcel/<parcel_code>
+→ { idParcel, parcelStatus: { statusID, reasonID, date, datetime, statusDescription, postOffice, postOfficeName } }
+neznámá zásilka → HTTP 404
+```
+
+Číselník `GET /CISService/v1/statusesOverview` (598 položek) — totéž `statusID`
+má podle `reasonID` jiný význam (51 = V PŘEPRAVĚ i ULOŽENO, 88 = VRÁCENO
+ODESILATELI i DORUČENO), proto se klasifikuje podle **názvu**:
+ZPRACOVANÁ DATA / PŘEDANÁ DATA → `label` · PODÁNO → `handed_over` ·
+V PŘEPRAVĚ → `in_transit` · ULOŽENO / ULOŽENO! → `stored` · DORUČENO →
+`delivered` · VRACÍ SE / VRÁCENO ODESILATELI → `returned` · POŠTOVNÍ ÚLOŽNA /
+ÚLOŽNA BALÍKOVNA → `problem`. Událost nese id `cis:<statusID>/<reasonID>`.
+(`POST /parcelStatus {parcelIds[], language}` dává historii v id veřejného
+sledování — nepoužíváme, stačí aktuální stav každých 30 min.)
+
+**Záloha bez přístupů:** veřejný JSON ČP, bez autentizace (ověřeno živě 9. 10. 2026):
 
 ```
 GET https://b2c.cpost.cz/services/ParcelHistory/getDataAsJson?idParcel=<parcel_code>
@@ -99,6 +119,12 @@ jen vpřed; `problem` neposouvá zpět).
 | `8E` | fáze `problem`, `notifyMerchant` owner (email) „ČP hlásí poškození zásilky #N". Sledovat dál. |
 | `88` | `done`, bez změny fáze. |
 | `-3`/`-4` | nic; `check_count`++; po 30 dnech od `created_at` → `done`, `note`, `notifyMerchant` owner „zásilka se u ČP neobjevila" (štítek vytištěn, balík neodešel?). |
+
+**E-mail majitelce při každé změně fáze** (přání 9. 10.): `notifyMerchant`
+owner + e-mail, klíč `mn:cp-phase:<order>:<fáze>`, titulek „Zásilka #N (kód):
+Předáno dopravci / Na cestě / Uloženo k vyzvednutí / Převzato zákazníkem",
+u simulace s dovětkem „— simulace"; v textu poslední hláška ČP, datum, pošta
+a odkaz na sledování.
 
 E-mail `order-shipment` (handler `onMerchantStageChanged`, stage `shipped`):
 doplnit `trackingLink` = `https://www.postaonline.cz/trackandtrace/-/zasilka/cislo?parcelNumbers=<cp_label_tracking>` (jen když číslo je) a `carrierName`

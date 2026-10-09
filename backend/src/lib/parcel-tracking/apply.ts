@@ -33,6 +33,8 @@ import { transitionMerchantOrderWorkflow } from "../../workflows/transition-merc
 import { notifyMerchant } from "../notify"
 import { loadShipGateInput } from "../require-ship-gate"
 import { evaluateShipGate } from "../ship-gate"
+import { cpTrackingUrl } from "./carrier"
+import { classifyState, PHASE_LABEL, type ParcelPhase } from "./classify"
 import type { ParcelEventInput } from "./client"
 import { planParcelUpdate, type ParcelEventSource, type ParcelPlan } from "./plan"
 
@@ -253,6 +255,34 @@ export const applyParcelEvents = async (
     await run("předání dopravci", () => onHandedOver(container, updated, actions))
   }
 
+  // Každá změna fáze = e-mail majitelce (přání 9. 10. 2026: „ať se na e-mailu
+  // obchodu pozná, že sledování téhle objednávky funguje"). Klíč na fázi, takže
+  // opakovaný dotaz se stejným stavem nic nepošle; simulace je v titulku
+  // označená, aby se v poště nepletla s ostrou zásilkou.
+  const previousPhase = (tracking.phase ?? "label") as ParcelPhase
+  const currentPhase = (updated.phase ?? previousPhase) as ParcelPhase
+  if (currentPhase !== previousPhase) {
+    await run("e-mail majitelce o fázi", async () => {
+      const order = await loadOrder(container, updated.order_id)
+      const display = order?.display_id ? `#${order.display_id}` : number
+      const last = plan.newEvents[plan.newEvents.length - 1]
+      const when = [last?.date, last?.postoffice].filter(Boolean).join(", ")
+      await notifyMerchant(container, {
+        key: `mn:cp-phase:${updated.order_id}:${currentPhase}`,
+        title: `Zásilka ${display} (${updated.parcel_code}): ${PHASE_LABEL[currentPhase]}${
+          source === "simulated" ? " — simulace" : ""
+        }`,
+        description:
+          `Česká pošta hlásí: ${last?.text ?? updated.last_state_text ?? PHASE_LABEL[currentPhase]}` +
+          `${when ? ` (${when})` : ""}. Sledování: ${cpTrackingUrl(updated.parcel_code)}`,
+        audience: "owner",
+        email: true,
+        resource: { id: updated.order_id, type: "order" },
+      })
+      actions.push(`majitelka: ${PHASE_LABEL[currentPhase]}`)
+    })
+  }
+
   if (plan.triggers.returned) {
     await run("upozornění na vrácení", async () => {
       const order = await loadOrder(container, updated.order_id)
@@ -273,12 +303,18 @@ export const applyParcelEvents = async (
     await run("upozornění na poškození", async () => {
       const order = await loadOrder(container, updated.order_id)
       const display = order?.display_id ? `#${order.display_id}` : number
-      const damagedEvent = plan.newEvents.find((event) => event.id === "8E")
+      // „Problém" není jen poškození (8E z veřejného sledování) — z nAPI je to
+      // i ÚLOŽNA (nevyzvednuto, čeká na vrácení). Titulek nese text ČP.
+      const problemEvent =
+        [...plan.newEvents]
+          .reverse()
+          .find((event) => classifyState(event.id, event.text).kind === "problem") ??
+        plan.newEvents[plan.newEvents.length - 1]
       await notifyMerchant(container, {
-        // Na den — další hlášení poškození téže zásilky v jiný den projde.
-        key: `mn:cp-damaged:${updated.order_id}:${damagedEvent?.date ?? "x"}`,
-        title: `ČP hlásí poškození zásilky ${display}`,
-        description: `Zásilka ${updated.parcel_code}: ${damagedEvent?.text ?? "Poškozená"}. Sledování pokračuje — zjistěte u ČP, co se stalo.`,
+        // Na den — další hlášení téhož problému v jiný den projde.
+        key: `mn:cp-damaged:${updated.order_id}:${problemEvent?.date ?? "x"}`,
+        title: `ČP hlásí problém se zásilkou ${display}: ${problemEvent?.text ?? "Poškozená"}`,
+        description: `Zásilka ${updated.parcel_code}: ${problemEvent?.text ?? "Poškozená"}. Sledování pokračuje — zjistěte u ČP, co se stalo.`,
         audience: "owner",
         urgent: true,
         resource: { id: updated.order_id, type: "order" },

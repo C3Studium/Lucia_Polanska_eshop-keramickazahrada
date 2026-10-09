@@ -11,7 +11,11 @@ import {
   isSimulatableState,
   SIMULATABLE_STATES,
 } from "../../../../../lib/parcel-tracking/classify"
-import { fetchParcelHistory } from "../../../../../lib/parcel-tracking/client"
+import {
+  fetchParcelEvents,
+  trackingSource,
+  type TrackingSource,
+} from "../../../../../lib/parcel-tracking/source"
 import {
   ensureParcelTracking,
   findParcelTracking,
@@ -36,6 +40,8 @@ type TrackingResponse = {
   tracking_url: string | null
   simulate_allowed: boolean
   carrier_label: string
+  /** `napi` = B2B nAPI s přístupy (oficiální číselník), `public` = veřejný JSON. */
+  source: TrackingSource
 }
 
 const ORDER_FIELDS = [
@@ -75,6 +81,7 @@ const buildResponse = (order: any, tracking: any | null): TrackingResponse => {
     tracking_url: parcelCode ? cpTrackingUrl(parcelCode) : null,
     simulate_allowed: isSimulateAllowed(),
     carrier_label: cpCarrierName(serviceCode, methodName) || "Česká pošta",
+    source: trackingSource(),
   }
 }
 
@@ -127,7 +134,7 @@ export const POST = async (
       // na obecnou „unknown error" a widget by neměl co ukázat.
       let events
       try {
-        events = await fetchParcelHistory(tracking.parcel_code)
+        events = await fetchParcelEvents(tracking.parcel_code)
       } catch (error) {
         res.status(503).json({
           type: "unavailable",

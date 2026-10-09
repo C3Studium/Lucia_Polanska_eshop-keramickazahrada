@@ -1,15 +1,16 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { applyParcelEvents } from "../lib/parcel-tracking/apply"
-import { fetchParcelHistory } from "../lib/parcel-tracking/client"
+import { fetchParcelEvents } from "../lib/parcel-tracking/source"
 import { PARCEL_TRACKING_MODULE } from "../modules/parcel-tracking"
 import type ParcelTrackingModuleService from "../modules/parcel-tracking/service"
 
 /**
  * Sledování zásilek České pošty (docs/sledovani-zasilek.md §5).
  *
- * Každou půlhodinu se zeptá veřejného JSON ČP na neuzavřené zásilky a projde
- * odpověď přes `applyParcelEvents` — tutéž cestu jako simulace z widgetu.
+ * Každou půlhodinu se zeptá České pošty (nAPI s přístupy, jinak veřejný JSON —
+ * `lib/parcel-tracking/source`) na neuzavřené zásilky a projde odpověď přes
+ * `applyParcelEvents` — tutéž cestu jako simulace z widgetu.
  * Z první „Podaná zásilka" vznikne shipment, fáze „odesláno" a e-mail
  * „předáno dopravci"; z „Doručená" razítko, ze kterého za týden vyjde prosba
  * o recenzi. Zákazníkovi odsud nic jiného nechodí — komunikace končí
@@ -62,7 +63,7 @@ export default async function watchParcelTracking(container: MedusaContainer) {
 
     let events
     try {
-      events = await fetchParcelHistory(code)
+      events = await fetchParcelEvents(code)
     } catch (error) {
       failed++
       logger.warn(

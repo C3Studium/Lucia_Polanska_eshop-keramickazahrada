@@ -85,18 +85,26 @@ const fold = (value: string): string =>
     .toLowerCase()
 
 /**
- * Klasifikace podle textu pro id mimo číselník. Pořadí záleží: „Doručená
- * odesílateli" obsahuje „doruč" i „odesílatel" — vrácení musí vyhrát, jinak
- * by se vrácená zásilka tvářila jako doručená zákazníkovi.
+ * Klasifikace podle textu — pro id mimo tabulku a pro nAPI (`cis:…`), kde je
+ * název stavu jediný spolehlivý klíč (oficiální číselník CISService,
+ * staženo 9. 10. 2026: ZPRACOVANÁ DATA · PŘEDANÁ DATA · PODÁNO · V PŘEPRAVĚ ·
+ * ULOŽENO · ULOŽENO! · DORUČENO · VRACÍ SE · VRÁCENO ODESILATELI ·
+ * POŠTOVNÍ ÚLOŽNA / ÚLOŽNA BALÍKOVNA).
+ *
+ * Pořadí záleží: „Doručená odesílateli" obsahuje „doruč" i „odesílatel" —
+ * vrácení musí vyhrát; „úložna" (nevyzvednuto, čeká na vrácení) obsahuje
+ * „ulož" — problém musí vyhrát nad „uloženo".
  */
 export const classifyByText = (text: string): StateKind => {
   const t = fold(text ?? "")
   if (!t) return "in_transit"
+  if (t.includes("data") || t.includes("udaje")) return "label"
+  if (t.includes("ulozna")) return "problem"
   if (t.includes("vrac") || t.includes("odesilatel")) return "returned"
   if (t.includes("uloz")) return "stored"
   if (t.includes("doruc") || t.includes("dodan")) return "delivered"
   if (t.includes("podan") || t.includes("prevzat")) return "handed_over"
-  if (t.includes("poskoz")) return "problem"
+  if (t.includes("poskoz") || t.includes("problem")) return "problem"
   return "in_transit"
 }
 
