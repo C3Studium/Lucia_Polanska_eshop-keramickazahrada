@@ -1,4 +1,8 @@
-import { paymentMethodTitle } from "@lib/constants"
+import {
+  isDobirkaPayment,
+  isPickupPayment,
+  paymentMethodTitle,
+} from "@lib/constants"
 import { translateStatus } from "@lib/i18n/statuses"
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
@@ -119,7 +123,24 @@ export default async function OrderCompletedTemplate({
       ? commissionBalance.deposit_paid
       : paidNow
   const showDeposit = isCommission && outstanding > 0.005
-  const paymentStatusLabel = showDeposit ? "Záloha zaplacena" : paymentStatus
+
+  /*
+   * Platba až při převzetí (osobní odběr u pultu, dobírka u pošty) je v Meduse
+   * jen „autorizovaná" — pro zákazníka nic neříkající slovo, které navíc
+   * vypadá, jako by se něco strhlo. Dokud není zachyceno, říkáme, KDE zaplatí;
+   * po zachycení (u pultu / dopravce zúčtoval) už sedí běžné „Zaplaceno".
+   */
+  const paysLater =
+    order.payment_status !== "captured" &&
+    (isPickupPayment(payment?.provider_id) || isDobirkaPayment(payment?.provider_id))
+  const payLaterLabel = isPickupPayment(payment?.provider_id)
+    ? "Platba až na místě"
+    : "Platba při převzetí (dobírka)"
+  const paymentStatusLabel = showDeposit
+    ? "Záloha zaplacena"
+    : paysLater
+      ? payLaterLabel
+      : paymentStatus
 
   /*
    * „Zrušit objednávku" = odstoupení od smlouvy do 14 dnů (§1829). Server říká,
