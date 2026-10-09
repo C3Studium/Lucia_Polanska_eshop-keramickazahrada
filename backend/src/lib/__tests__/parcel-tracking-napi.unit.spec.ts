@@ -1,6 +1,7 @@
 import { classifyByText, classifyState } from "../parcel-tracking/classify"
 import { napiCredentials, parseNapiCurrentStatus } from "../parcel-tracking/napi"
 import { planParcelUpdate } from "../parcel-tracking/plan"
+import { shipmentItemsOf } from "../parcel-tracking/shipment-items"
 
 /**
  * nAPI ČP (B2B) jako zdroj sledování: názvy z oficiálního číselníku → fáze,
@@ -127,6 +128,37 @@ describe("parser parcelStatuses/current", () => {
     )
     expect(reason.newEvents).toHaveLength(1)
     expect(reason.triggers.handed_over).toBe(false)
+  })
+})
+
+describe("položky k odeslání (BigNumber z query.graph)", () => {
+  it("čísla, řetězce i objekty {value} dají totéž", () => {
+    const order = {
+      items: [
+        { id: "a", requires_shipping: true, quantity: 1, detail: { shipped_quantity: 0 } },
+        { id: "b", requires_shipping: true, quantity: { value: "2", precision: 20 }, detail: { shipped_quantity: { value: "1" } } },
+        { id: "c", requires_shipping: true, quantity: "3", detail: { shipped_quantity: "3" } },
+        { id: "d", requires_shipping: false, quantity: 5, detail: { shipped_quantity: 0 } },
+        { id: "e", requires_shipping: true, raw_quantity: { value: "4" }, detail: { raw_shipped_quantity: { value: "1" } } },
+      ],
+    }
+    expect(shipmentItemsOf(order)).toEqual([
+      { id: "a", quantity: 1 },
+      { id: "b", quantity: 1 },
+      { id: "e", quantity: 3 },
+    ])
+  })
+
+  it("objednávka #36 (9. 10. 2026): sedm kusů jako objekty → sedm položek, ne nula", () => {
+    const order = {
+      items: Array.from({ length: 7 }, (_, i) => ({
+        id: `ordli_${i}`,
+        requires_shipping: true,
+        quantity: { value: "1", precision: 20 },
+        detail: { shipped_quantity: { value: "0", precision: 20 } },
+      })),
+    }
+    expect(shipmentItemsOf(order)).toHaveLength(7)
   })
 })
 

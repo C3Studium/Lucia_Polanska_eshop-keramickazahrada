@@ -37,6 +37,7 @@ import { cpTrackingUrl } from "./carrier"
 import { classifyState, PHASE_LABEL, type ParcelPhase } from "./classify"
 import type { ParcelEventInput } from "./client"
 import { planParcelUpdate, type ParcelEventSource, type ParcelPlan } from "./plan"
+import { shipmentItemsOf } from "./shipment-items"
 
 /** Kdo je v historii fáze podepsaný pod automatickým přechodem. */
 export const TRACKING_ACTOR = "cp-tracking"
@@ -48,19 +49,16 @@ export type ApplyParcelEventsResult = {
   actions: string[]
 }
 
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value ?? 0)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 const ORDER_FIELDS = [
   "id",
   "display_id",
   "status",
   "items.id",
   "items.quantity",
+  "items.raw_quantity",
   "items.requires_shipping",
   "items.detail.shipped_quantity",
+  "items.detail.raw_shipped_quantity",
   "fulfillments.id",
   "fulfillments.shipped_at",
   "fulfillments.canceled_at",
@@ -97,13 +95,8 @@ const createShipmentForOpenFulfillment = async (
   order: any
 ): Promise<{ created: boolean; reason: string }> => {
   const allItems = (order?.items || []) as any[]
-  const items = allItems
-    .filter((item) => item?.requires_shipping)
-    .map((item) => ({
-      id: item.id,
-      quantity: toNumber(item.quantity) - toNumber(item.detail?.shipped_quantity),
-    }))
-    .filter((item) => item.quantity > 0)
+  // BigNumber-safe (viz shipment-items.ts) — naivní Number() tu dával 0.
+  const items = shipmentItemsOf(order)
 
   const fulfillments = (order?.fulfillments || []) as any[]
   const open = fulfillments.find(
