@@ -10,7 +10,10 @@ import {
   REQUESTED_RESOLUTION_LABEL,
   RESOLUTION_LABEL,
   claimExpectsGoods,
+  claimOrderCancelled,
+  claimRefunds,
   formatClaimDate,
+  isDamageCause,
   isFinalClaimStatus,
   type OrderClaim,
   type OrderClaims,
@@ -19,12 +22,18 @@ import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import ClaimLineItems from "./line-items"
+import ClaimRefundsList from "./refunds"
 import styles from "./style.module.scss"
 
 /**
  * Stav žádostí (reklamace / vrácení / odstoupení) pro zákazníka — časová osa
  * ke každé žádosti: Přijato → Rozhodnuto → Zboží přijato → Vyřízeno. Data
  * jsou z `GET /store/orders/:id/claims` (token), nic se tu nedopočítává.
+ *
+ * Když vyřízení skončilo zrušením objednávky (§12.5, auto-zrušení §13.1), je
+ * poslední krok „Objednávka zrušena" (před ním „Peníze vráceny", pokud se co
+ * vracelo). Refundace (§13.2–13.3) se vypisují pod osou: řádky košíku
+ * vrácení, způsob a dobropis.
  *
  * U schválené žádosti, kde se čeká na zboží, ukáže adresu a pokyny pro
  * vrácení (z nastavení majitelky) a pole „číslo zásilky, kterou jsem poslal/a"
@@ -56,7 +65,11 @@ const money = (amount: number, currencyCode: string) =>
   convertToLocale({ amount, currency_code: currencyCode })
 
 /** Kroky časové osy jedné žádosti — co se stalo, co se právě děje, co přijde. */
-const buildSteps = (claim: OrderClaim, currencyCode: string): Step[] => {
+const buildSteps = (
+  claim: OrderClaim,
+  currencyCode: string,
+  orderCancelled: boolean
+): Step[] => {
   const steps: Step[] = [
     {
       key: "received",
@@ -106,14 +119,17 @@ const buildSteps = (claim: OrderClaim, currencyCode: string): Step[] => {
     return steps
   }
 
-  // approved / received / resolved
+  // approved / received / resolved. U zrušení bez vrácených peněz (nic
+  // nezaplaceno, §13.1) by „Způsob vyřízení: Vrácení peněz" jen mátl.
+  const cancelledUnpaid = orderCancelled && !(Number(claim.refund_amount) > 0)
   steps.push({
     key: "decision",
     label: "Schváleno",
     tone: "done",
-    note: claim.resolution
-      ? `Způsob vyřízení: ${RESOLUTION_LABEL[claim.resolution]}.`
-      : undefined,
+    note:
+      claim.resolution && !cancelledUnpaid
+        ? `Způsob vyřízení: ${RESOLUTION_LABEL[claim.resolution]}.`
+        : undefined,
   })
 
   const expectsGoods = claimExpectsGoods(claim)
@@ -134,6 +150,29 @@ const buildSteps = (claim: OrderClaim, currencyCode: string): Step[] => {
 
   if (claim.status === "resolved") {
     const refunded = claim.refund_amount ?? 0
+    // Zrušená objednávka (§12.5): místo „Vyřízeno" stojí na konci „Objednávka
+    // zrušena"; vrácené peníze mají vlastní krok, ať je vidět, co se stalo.
+    if (orderCancelled) {
+      if (refunded > 0) {
+        steps.push({
+          key: "refunded",
+          label: "Peníze vráceny",
+          tone: "done",
+          note: `Vráceno ${money(refunded, currencyCode)}.`,
+        })
+      }
+      steps.push({
+        key: "cancelled",
+        label: "Objednávka zrušena",
+        date: claim.resolved_at,
+        tone: "done",
+        note:
+          refunded > 0
+            ? "Objednávka je zrušená — potvrzení máte v e-mailu."
+            : "Nic jste nezaplatili, nic neposíláte — potvrzení máte v e-mailu.",
+      })
+      return steps
+    }
     steps.push({
       key: "resolved",
       label: "Vyřízeno",
@@ -273,8 +312,10 @@ function ClaimCard({
   claims: OrderClaims
   currencyCode: string
 }) {
-  const steps = buildSteps(claim, currencyCode)
+  const orderCancelled = claimOrderCancelled(claim, claims)
+  const steps = buildSteps(claim, currencyCode, orderCancelled)
   const final = isFinalClaimStatus(claim.status)
+  const refunds = claimRefunds(claim)
   const showReturnBlock =
     claim.status === "approved" && claimExpectsGoods(claim)
   const goodsLead =
@@ -296,10 +337,12 @@ function ClaimCard({
           <strong className={styles.status}>
             {CLAIM_STATUS_LABEL[claim.status]}
           </strong>
-          {/* §11.3 — majitelka řeší i reklamaci u dopravce; zákazník vidí,
-              že jsme to tak zapsali. */}
-          {claim.damage_cause === "carrier" && (
-            <span className={styles.badge}>{DAMAGE_CAUSE_LABEL.carrier}</span>
+          {/* §11.3 / §13.7 — příčina poškození; u přepravy majitelka řeší i
+              reklamaci u dopravce, zákazník vidí, že jsme to tak zapsali. */}
+          {isDamageCause(claim.damage_cause) && (
+            <span className={styles.badge} data-cause={claim.damage_cause}>
+              {DAMAGE_CAUSE_LABEL[claim.damage_cause]}
+            </span>
           )}
         </div>
         <dl className={styles.meta}>
@@ -366,6 +409,17 @@ function ClaimCard({
         <p className={styles.trackingSaved}>
           Číslo zásilky: <strong>{claim.goods_tracking}</strong>
         </p>
+      )}
+
+      {/* §13.2–13.3 — každá refundace zvlášť: co se vrací (řádky košíku),
+          jak peníze dorazí a dobropis. Starší žádosti bez `refunds` nic. */}
+      {refunds.length > 0 && (
+        <ClaimRefundsList
+          claim={claim}
+          refunds={refunds}
+          orderItems={claims.order_items}
+          currencyCode={currencyCode}
+        />
       )}
 
       {(claim.reason || claim.protocol_url) && (

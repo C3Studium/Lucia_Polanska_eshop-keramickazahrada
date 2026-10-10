@@ -84,6 +84,14 @@ export const CLAIM_ORDER_FIELDS = [
   "fulfillments.canceled_at",
   "fulfillments.data",
   "fulfillments.labels.tracking_number",
+  // Auto-zrušení (§13.1): „nic zachyceno" se počítá ze zachycených plateb —
+  // stejná pole jako `MONEY_STATE_FIELDS`, ať `capturedTotal` čte totéž.
+  "payment_collections.payments.id",
+  "payment_collections.payments.provider_id",
+  "payment_collections.payments.amount",
+  "payment_collections.payments.captured_at",
+  "payment_collections.payments.canceled_at",
+  "payment_collections.payments.refunds.amount",
 ]
 
 export const loadClaimOrder = async (

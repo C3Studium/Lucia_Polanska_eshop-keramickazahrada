@@ -11,8 +11,11 @@ import {
   formatClaimDate,
   isClaimKind,
   withdrawBlockText,
+  type ClaimDamageCause,
+  type ClaimItemInput,
   type ClaimKind,
   type ClaimOrderItem,
+  type ClaimOrderItemComponent,
   type ClaimRequestedResolution,
   type OrderClaims,
 } from "@lib/util/claims"
@@ -72,9 +75,54 @@ const RESOLUTIONS: {
   { value: "refund", help: "Vrátíme vám peníze." },
 ]
 
+/**
+ * „Co se stalo" u reklamace (§13.7). `"defect"` = vada / nefunkčnost →
+ * `damage_cause` se neposílá; `"damaged"` a `"carrier"` jdou na server a
+ * vyžadují aspoň jednu fotku.
+ */
+type CauseChoice = "defect" | ClaimDamageCause
+
+const CAUSES: {
+  value: CauseChoice
+  label: string
+  help: string
+  /** Fotky povinné (server bez nich vrátí 400). */
+  photos: boolean
+}[] = [
+  {
+    value: "defect",
+    label: "Vada nebo nefunkčnost",
+    help: "Zboží nefunguje, jak má, nebo se vada objevila při používání.",
+    photos: false,
+  },
+  {
+    value: "damaged",
+    label: "Poškozený kus",
+    help: "Viditelné poškození — prasklina, odštípnutí, chybějící část. Potřebujeme aspoň jednu fotku poškození.",
+    photos: true,
+  },
+  {
+    value: "carrier",
+    label: "Balík dorazil poškozený — přepravou",
+    help: "Reklamaci u České pošty podáme my — vaše reklamace u nás běží dál jako obvykle. Potřebujeme k tomu aspoň jednu fotku obalu a poškozeného zboží.",
+    photos: true,
+  },
+]
+
 /** Počet kusů sevřený do 1..objednáno — z tlačítek i z ručně psaného čísla. */
 const clampQty = (value: number, max: number) =>
   Math.min(Math.max(1, Math.floor(Number(value) || 1)), Math.max(1, max))
+
+/** Komponenty balíčku (§13.5), které dávají smysl vybrat; bez nich = běžná položka. */
+const bundleComponents = (item: ClaimOrderItem): ClaimOrderItemComponent[] =>
+  (item.components ?? []).filter(
+    (component) =>
+      component && component.product_id && Number(component.quantity) > 0
+  )
+
+/** Kolik kusů komponenty objednávka nese celkem: na jeden balíček × objednané balíčky. */
+const componentMax = (item: ClaimOrderItem, component: ClaimOrderItemComponent) =>
+  Math.max(1, Math.floor(Number(component.quantity) || 1) * Math.max(1, item.quantity))
 
 /**
  * Žádost o reklamaci / vrácení / odstoupení k JEDNÉ objednávce — z e-mailu,
@@ -93,9 +141,20 @@ const clampQty = (value: number, max: number) =>
  * server `order_items` ještě neposílá, výběr se nevykreslí a formulář funguje
  * jako dřív.
  *
- * Poškozeno přepravou (§11.3): přepínač u reklamace. Zapnutý → fotky povinné
- * (server bez nich vrátí 400) a posílá se `damage_cause: "carrier"`, majitelka
- * dostane pokyn podat reklamaci u České pošty; zákazníkova reklamace běží dál.
+ * Balíček (§13.5): položka s `components` se po zaškrtnutí rozbalí a zákazník
+ * může označit jen postižené komponenty (počet ≤ kusů na balíček × objednané
+ * balíčky). Posílá se `items[].components` jen když něco zaškrtl; jinak jde
+ * celý balíček jako dřív.
+ *
+ * Co se stalo (§11.3, §13.7): u reklamace povinná volba — vada/nefunkčnost
+ * (`damage_cause` se neposílá), poškozený kus (`"damaged"`) nebo poškozeno
+ * přepravou (`"carrier"`). U obou poškození jsou fotky povinné (server bez
+ * nich vrátí 400); u přepravy majitelka dostane pokyn podat reklamaci u České
+ * pošty, zákazníkova reklamace běží dál.
+ *
+ * Auto-zrušení (§13.1): odstoupení / vrácení u nezaplacené a neodeslané
+ * objednávky server rovnou vyřídí a objednávku zruší (`auto_cancelled`). Pak
+ * se místo „posoudíme" řekne „zrušeno" a na stavovou stránku vede jen odkaz.
  *
  * Když už k objednávce běží otevřená žádost, místo formuláře se ukáže její
  * stav — server by druhou odmítl a zákazník by jen hádal proč.
@@ -136,10 +195,17 @@ export default function RefundRequest({
   const [photos, setPhotos] = useState<PhotoDraft[]>([])
   /** id položky → počet kusů; nezaškrtnuté položky v mapě nejsou. */
   const [selected, setSelected] = useState<Record<string, number>>({})
-  const [carrierDamage, setCarrierDamage] = useState(false)
+  /** id balíčku → (product_id komponenty → počet kusů); nezaškrtnuté chybí. */
+  const [components, setComponents] = useState<
+    Record<string, Record<string, number>>
+  >({})
+  /** „Co se stalo" u reklamace; `null` = ještě nevybráno (povinné). */
+  const [cause, setCause] = useState<CauseChoice | null>(null)
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   )
+  /** §13.1 — server žádost rovnou vyřídil a objednávku zrušil. */
+  const [autoCancelled, setAutoCancelled] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fieldId = useId()
   const fileInput = useRef<HTMLInputElement>(null)
@@ -153,7 +219,7 @@ export default function RefundRequest({
   )
   const hasOrderItems = orderItems.length > 0
 
-  const toggleItem = (item: ClaimOrderItem) =>
+  const toggleItem = (item: ClaimOrderItem) => {
     setSelected((current) => {
       if (item.id in current) {
         const { [item.id]: _removed, ...rest } = current
@@ -161,13 +227,68 @@ export default function RefundRequest({
       }
       return { ...current, [item.id]: 1 }
     })
+    // Odškrtnutý balíček zapomene i výběr komponent — ať se neodešle nic,
+    // co zákazník na obrazovce už nevidí.
+    setComponents((current) => {
+      if (!(item.id in current)) return current
+      const { [item.id]: _removed, ...rest } = current
+      return rest
+    })
+  }
 
-  const setQty = (item: ClaimOrderItem, value: number) =>
+  const setQty = (item: ClaimOrderItem, value: number) => {
     setSelected((current) =>
       item.id in current
         ? { ...current, [item.id]: clampQty(value, item.quantity) }
         : current
     )
+    // Méně balíčků = nižší strop komponent; sevřít, co by přes něj přetékalo.
+    setComponents((current) => {
+      const forItem = current[item.id]
+      if (!forItem) return current
+      const next: Record<string, number> = {}
+      for (const component of bundleComponents(item)) {
+        if (component.product_id in forItem) {
+          next[component.product_id] = clampQty(
+            forItem[component.product_id],
+            componentMax(item, component)
+          )
+        }
+      }
+      return { ...current, [item.id]: next }
+    })
+  }
+
+  const toggleComponent = (
+    item: ClaimOrderItem,
+    component: ClaimOrderItemComponent
+  ) =>
+    setComponents((current) => {
+      const forItem = { ...(current[item.id] ?? {}) }
+      if (component.product_id in forItem) {
+        delete forItem[component.product_id]
+      } else {
+        forItem[component.product_id] = 1
+      }
+      return { ...current, [item.id]: forItem }
+    })
+
+  const setComponentQty = (
+    item: ClaimOrderItem,
+    component: ClaimOrderItemComponent,
+    value: number
+  ) =>
+    setComponents((current) => {
+      const forItem = current[item.id]
+      if (!forItem || !(component.product_id in forItem)) return current
+      return {
+        ...current,
+        [item.id]: {
+          ...forItem,
+          [component.product_id]: clampQty(value, componentMax(item, component)),
+        },
+      }
+    })
 
   const pickPhotos = async (files: FileList | null) => {
     if (!files?.length) return
@@ -207,18 +328,36 @@ export default function RefundRequest({
   // u reklamace je povinný, u vrácení volitelný.
   const showItems = hasOrderItems && kind !== "odstoupeni"
   const needsItems = kind === "reklamace" && hasOrderItems
-  const selectedItems = orderItems
+  const selectedItems: ClaimItemInput[] = orderItems
     .filter((item) => item.id in selected)
-    .map((item) => ({ id: item.id, quantity: selected[item.id] }))
-  // Přepínač žije jen u reklamace; u jiného druhu se neposílá, i když zůstal
-  // zaškrtnutý z dřívějška.
-  const carrierOn = kind === "reklamace" && carrierDamage
-  const photosRequired = carrierOn
+    .map((item) => {
+      // Komponenty jen když zákazník nějakou zaškrtl — jinak jde celý balíček
+      // a server se chová jako u běžné položky (§13.5).
+      const picked = bundleComponents(item)
+        .filter((component) => (components[item.id]?.[component.product_id] ?? 0) > 0)
+        .map((component) => ({
+          product_id: component.product_id,
+          quantity: components[item.id][component.product_id],
+        }))
+      return picked.length
+        ? { id: item.id, quantity: selected[item.id], components: picked }
+        : { id: item.id, quantity: selected[item.id] }
+    })
+  // „Co se stalo" žije jen u reklamace; u jiného druhu se neposílá, i když
+  // zůstalo vybrané z dřívějška.
+  const needsCause = kind === "reklamace"
+  const activeCause = needsCause ? cause : null
+  const damageCause: ClaimDamageCause | undefined =
+    activeCause === "carrier" || activeCause === "damaged" ? activeCause : undefined
+  const photosRequired = Boolean(
+    CAUSES.find((entry) => entry.value === activeCause)?.photos
+  )
   const photosMissing = photosRequired && photos.length === 0
 
   const canSend =
     Boolean(detail.trim()) &&
     (!needsResolution || resolution !== null) &&
+    (!needsCause || cause !== null) &&
     (!needsItems || selectedItems.length > 0) &&
     !photosMissing &&
     state !== "sending"
@@ -234,7 +373,8 @@ export default function RefundRequest({
       photos: photos.length ? photos.map((p) => p.upload) : undefined,
       // Odstoupení = celá objednávka, výběr se neposílá (server ho ignoruje).
       items: showItems && selectedItems.length ? selectedItems : undefined,
-      damage_cause: carrierOn ? "carrier" : undefined,
+      // Vada/nefunkčnost = bez příčiny; poškození jde na server (§13.7).
+      damage_cause: damageCause,
     })
     if ("error" in result) {
       setState("error")
@@ -242,6 +382,11 @@ export default function RefundRequest({
       return
     }
     setState("sent")
+    if (result.auto_cancelled) {
+      // §13.1 — hotovo hned: zůstat tady a říct to, stavová stránka je jen odkaz.
+      setAutoCancelled(true)
+      return
+    }
     // Stav žádosti žije na vlastní stránce (časová osa, protokol, pokyny).
     router.push(
       `/${countryCode}/order/${orderId}/claims?token=${encodeURIComponent(token)}`
@@ -269,15 +414,21 @@ export default function RefundRequest({
   }
 
   if (state === "sent") {
+    const claimsHref = `/order/${orderId}/claims?token=${encodeURIComponent(token)}`
+    // §13.1 — nezaplaceno + neodesláno: server už zrušil, není co posuzovat.
+    if (autoCancelled) {
+      return (
+        <p className={styles.sent} role="status">
+          Objednávka je zrušená. Nic jste nezaplatili, nic neposíláte —
+          potvrzení máte v e-mailu. Podrobnosti najdete{" "}
+          <LocalizedClientLink href={claimsHref}>tady</LocalizedClientLink>.
+        </p>
+      )
+    }
     return (
       <p className={styles.sent} role="status">
         Máme to. Potvrzení posíláme e-mailem — a stav žádosti můžete sledovat{" "}
-        <LocalizedClientLink
-          href={`/order/${orderId}/claims?token=${encodeURIComponent(token)}`}
-        >
-          tady
-        </LocalizedClientLink>
-        .
+        <LocalizedClientLink href={claimsHref}>tady</LocalizedClientLink>.
       </p>
     )
   }
@@ -404,6 +555,112 @@ export default function RefundRequest({
                       <span className={styles.stepperOf}>z {item.quantity}</span>
                     </div>
                   )}
+
+                  {/* §13.5: balíček se po zaškrtnutí rozepíše na komponenty —
+                      zákazník označí jen ty postižené. Nic zaškrtnuté = celý
+                      balíček. */}
+                  {checked && bundleComponents(item).length > 0 && (
+                    <fieldset className={styles.components}>
+                      <legend className={styles.componentsLegend}>
+                        Které části balíčku? <i>(nepovinné — nic = celý balíček)</i>
+                      </legend>
+                      <ul className={styles.componentList}>
+                        {bundleComponents(item).map((component) => {
+                          const picked = components[item.id]?.[component.product_id]
+                          const componentChecked = (picked ?? 0) > 0
+                          const max = componentMax(item, component)
+                          const componentQty = componentChecked ? picked : 1
+                          return (
+                            <li
+                              key={component.product_id}
+                              className={styles.component}
+                              data-checked={componentChecked || undefined}
+                            >
+                              <label className={styles.componentMain}>
+                                <input
+                                  type="checkbox"
+                                  checked={componentChecked}
+                                  disabled={state === "sending"}
+                                  onChange={() => toggleComponent(item, component)}
+                                />
+                                <span className={styles.componentThumb}>
+                                  <Thumbnail
+                                    thumbnail={component.thumbnail}
+                                    size="square"
+                                  />
+                                </span>
+                                <span className={styles.itemBody}>
+                                  <span className={styles.componentTitle}>
+                                    {component.title}
+                                  </span>
+                                  <span className={styles.itemMeta}>
+                                    {component.quantity} ks v každém balíčku
+                                    {typeof component.unit_share === "number" &&
+                                    component.unit_share > 0
+                                      ? ` · ${money(component.unit_share)}/ks`
+                                      : ""}
+                                  </span>
+                                </span>
+                              </label>
+                              {max > 1 && (
+                                <div
+                                  className={`${styles.stepper} ${styles.stepperSmall}`}
+                                  role="group"
+                                  aria-label={`Počet kusů — ${component.title}`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setComponentQty(item, component, componentQty - 1)
+                                    }
+                                    disabled={
+                                      !componentChecked ||
+                                      componentQty <= 1 ||
+                                      state === "sending"
+                                    }
+                                    aria-label="Méně kusů"
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={1}
+                                    max={max}
+                                    value={componentQty}
+                                    disabled={!componentChecked || state === "sending"}
+                                    onChange={(event) =>
+                                      setComponentQty(
+                                        item,
+                                        component,
+                                        Number(event.target.value)
+                                      )
+                                    }
+                                    aria-label="Počet kusů"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setComponentQty(item, component, componentQty + 1)
+                                    }
+                                    disabled={
+                                      !componentChecked ||
+                                      componentQty >= max ||
+                                      state === "sending"
+                                    }
+                                    aria-label="Více kusů"
+                                  >
+                                    +
+                                  </button>
+                                  <span className={styles.stepperOf}>z {max}</span>
+                                </div>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </fieldset>
+                  )}
                 </li>
               )
             })}
@@ -444,39 +701,50 @@ export default function RefundRequest({
         </fieldset>
       )}
 
-      {/* §11.3: poškozeno přepravou — reklamaci u ČP podává majitelka,
-          zákazníkova reklamace běží dál; fotky jsou pak povinné. */}
-      {kind === "reklamace" && (
-        <label
-          className={`${styles.carrier} ${carrierDamage ? styles.carrierOn : ""}`}
-        >
-          <input
-            type="checkbox"
-            checked={carrierDamage}
-            disabled={state === "sending"}
-            onChange={(event) => setCarrierDamage(event.target.checked)}
-          />
-          <span className={styles.kindText}>
-            <span className={styles.kindLabel}>
-              Balík dorazil poškozený (přepravou)
-            </span>
-            <span className={styles.kindHelp}>
-              Reklamaci u České pošty podáme my — vaše reklamace u nás běží dál
-              jako obvykle. Potřebujeme k tomu aspoň jednu fotku obalu a
-              poškozeného zboží.
-              {claimForm?.url ? (
-                <>
-                  {" "}
-                  Co dělat s poškozenou zásilkou:{" "}
-                  <a href={claimForm.url} target="_blank" rel="noreferrer">
-                    {claimForm.title || "postup a formulář"}
-                  </a>
-                  .
-                </>
-              ) : null}
-            </span>
-          </span>
-        </label>
+      {/* §13.7: co se stalo — vada (bez příčiny), poškozený kus nebo poškozeno
+          přepravou. U poškození jsou fotky povinné; u přepravy reklamaci u ČP
+          podává majitelka, zákazníkova reklamace běží dál (§11.3). */}
+      {needsCause && (
+        <fieldset className={styles.causes}>
+          <legend className={styles.legend}>
+            Co se stalo? <i>(povinné)</i>
+          </legend>
+          {CAUSES.map((entry) => (
+            <label
+              key={entry.value}
+              className={styles.cause}
+              data-tone={entry.photos ? "warn" : undefined}
+            >
+              <input
+                type="radio"
+                name="damage-cause"
+                value={entry.value}
+                checked={cause === entry.value}
+                disabled={state === "sending"}
+                onChange={() => setCause(entry.value)}
+              />
+              <span className={styles.kindText}>
+                <span className={styles.kindLabel}>{entry.label}</span>
+                <span className={styles.kindHelp}>
+                  {entry.help}
+                  {entry.value === "carrier" && claimForm?.url ? (
+                    <>
+                      {" "}
+                      Co dělat s poškozenou zásilkou:{" "}
+                      <a href={claimForm.url} target="_blank" rel="noreferrer">
+                        {claimForm.title || "postup a formulář"}
+                      </a>
+                      .
+                    </>
+                  ) : null}
+                </span>
+              </span>
+            </label>
+          ))}
+          {cause === null && (
+            <p className={styles.hint}>Vyberte, co se stalo.</p>
+          )}
+        </fieldset>
       )}
 
       <label htmlFor={fieldId} className={styles.label}>
@@ -510,11 +778,13 @@ export default function RefundRequest({
       <div className={styles.photos}>
         <span className={styles.photosLabel}>
           Fotky <em>{photosRequired ? "povinné" : "nepovinné"}</em> —{" "}
-          {photosRequired
+          {activeCause === "carrier"
             ? "obal i poškozené zboží"
-            : kind === "reklamace"
-              ? "ukažte, co je špatně"
-              : "stav zboží"}
+            : activeCause === "damaged"
+              ? "poškození zblízka"
+              : kind === "reklamace"
+                ? "ukažte, co je špatně"
+                : "stav zboží"}
         </span>
         <div className={styles.photoGrid}>
           {photos.map((photo) => (
@@ -562,8 +832,9 @@ export default function RefundRequest({
         />
         {photosMissing && (
           <p className={styles.hint} aria-live="polite">
-            U poškození přepravou potřebujeme aspoň jednu fotku obalu a zboží —
-            bez ní žádost nejde odeslat.
+            {activeCause === "carrier"
+              ? "U poškození přepravou potřebujeme aspoň jednu fotku obalu a zboží — bez ní žádost nejde odeslat."
+              : "U poškozeného kusu potřebujeme aspoň jednu fotku poškození — bez ní žádost nejde odeslat."}
           </p>
         )}
       </div>

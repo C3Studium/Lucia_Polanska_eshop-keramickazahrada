@@ -7,12 +7,14 @@ import {
 import { deliveryContext } from "../order-delivery-context"
 import { LINE_QUANTITY_FIELDS } from "../order-quantity"
 import { retrieveClaim } from "./admin"
+import { attachComponents, loadBundleComponentSources } from "./bundle-components"
 import { planClaimCase, type ClaimCasePlan, type ClaimFlags } from "./case"
 import { isDamageCause } from "./constants"
 import { claimFlagsOf } from "./flags"
 import { claimLineItemsOf, suggestedRefundAmount } from "./line-items"
 import { loadOrderRequests, MONEY_STATE_FIELDS } from "./money"
 import { buildClaimOrderItems, type ClaimOrderItemDetail } from "./order-items"
+import { shippingStateOf, type ShippingRefundState } from "./refund-lines"
 import {
   commissionPaidRemaining,
   loadClaimProduction,
@@ -58,6 +60,8 @@ export const CLAIM_DETAIL_ORDER_FIELDS = [
   "total",
   "subtotal",
   "shipping_total",
+  // Ceny komponent balíčku (§13.5) v regionu/měně objednávky.
+  "region_id",
   "items.*",
   ...LINE_QUANTITY_FIELDS,
   "items.detail.raw_fulfilled_quantity",
@@ -176,6 +180,8 @@ export type ClaimDetail = ClaimCasePlan & {
   }
   items: ClaimOrderItemDetail[]
   money: MoneyState & { refunds: ClaimMoneyRefund[] }
+  /** §13.2 — poštovné: celkem / už vráceno / lze vrátit (jednou). */
+  shipping: ShippingRefundState
   production: ClaimProduction | null
   flags: ClaimFlags
 }
@@ -196,12 +202,20 @@ export const buildClaimDetail = async (
   const state = moneyState(order, requests)
   const production = await loadClaimProduction(scope, order.id)
   const flags = claimFlagsOf(order, state, Boolean(production))
-  const items = buildClaimOrderItems({
+  const baseItems = buildClaimOrderItems({
     order,
     requests,
     request,
     commissionPaidRemaining: production ? commissionPaidRemaining(production.block) : null,
   })
+  // Balíček po komponentách (§13.5) — jen když objednávka nějaký má; dotaz
+  // na modul balíčků se jinak nespouští.
+  const items = attachComponents(
+    baseItems,
+    await loadBundleComponentSources(scope, order, baseItems),
+    requests
+  )
+  const shipping = shippingStateOf(order, requests)
   const plan = planClaimCase({
     request,
     flags,
@@ -253,6 +267,7 @@ export const buildClaimDetail = async (
     },
     items,
     money: { ...state, refunds: orderRefundsOf(order, requests) },
+    shipping,
     production: production?.block ?? null,
     flags,
     ...plan,

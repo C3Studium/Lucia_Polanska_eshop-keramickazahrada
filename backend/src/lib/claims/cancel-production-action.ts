@@ -3,6 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import {
   beginOrderEditOrderWorkflow,
   cancelBeginOrderEditWorkflow,
+  completeOrderWorkflow,
   confirmOrderEditRequestWorkflow,
   deleteOrderPaymentCollections,
   orderEditUpdateItemQuantityWorkflow,
@@ -53,8 +54,10 @@ import { MONEY_EPSILON, moneyState } from "./refund-rules"
  *      `cancelled` (`cancelOrderNatively`). ALE jen když na objednávce nezbývá
  *      nic zachyceného: `cancelOrderWorkflow` zachycené platby vrací SÁM a
  *      potichu, takže s ponechanou zálohou by „zálohu nevracet" prohrál o
- *      vteřinu později. S ponechanou zálohou se proto nativně neruší — fáze
- *      fronty je `cancelled`, objednávka v Medusa zůstává a hláška to řekne.
+ *      vteřinu později. S ponechanou zálohou se proto objednávka nativně
+ *      DOKONČÍ (`completeOrderWorkflow`, §13.6): zůstává zaplacená zálohou,
+ *      faktura za zálohu platí, fáze fronty je `cancelled`. Už zrušená /
+ *      dokončená objednávka se nedokončuje znovu.
  *    - SMÍŠENÁ objednávka → zakázkové řádky se odeberou nativní úpravou
  *      objednávky (begin → množství 0 → confirm; workflow přímo, ne HTTP —
  *      stráž `blockMtoLineEdits` hlídá jen nativní admin routu a tady je to
@@ -77,6 +80,8 @@ export type CancelProductionResult = {
   cancelled: true
   /** Objednávka zrušená nativně (jen čistá zakázka s vrácenou zálohou). */
   order_cancelled: boolean
+  /** Objednávka nativně dokončená (§13.6: čistá zakázka s ponechanou zálohou). */
+  order_completed: boolean
   /** Počet zakázkových řádků odebraných z objednávky (smíšená objednávka). */
   items_removed: number
   deposit: "refunded" | "kept" | "none"
@@ -219,22 +224,43 @@ export const cancelProductionForClaim = async (
 
   // 2) objednávka
   let orderCancelled = false
+  let orderCompleted = false
   let itemsRemoved = 0
   if (!hasRegularItems) {
     if (state.remaining > MONEY_EPSILON) {
       // Pojistka §3: nativní zrušení by zachycené peníze (ponechanou zálohu)
-      // vrátilo samo. Fáze fronty je „Zrušeno", objednávka v Medusa zůstává.
+      // vrátilo samo. Fáze fronty je „Zrušeno" a objednávka se nativně
+      // DOKONČÍ (§13.6) — zůstává zaplacená zálohou, faktura za zálohu platí.
       await transitionMerchantOrderWorkflow(scope)
         .run({
           input: { order_id: order.id, stage: "cancelled", changed_by: actor, reconcile: true },
         })
         .catch(() => undefined)
-      messages.push(
-        `Objednávka #${order.display_id} zůstává v Medusa otevřená — nativní zrušení by ponechanou zálohu ${formatMoney(
-          state.remaining,
-          currency
-        )} vrátilo. Ve frontě je „Zrušeno".`
-      )
+      const orderStatus = String(order.status ?? "")
+      if (orderStatus === "canceled" || orderStatus === "completed" || order.canceled_at) {
+        messages.push(
+          `Objednávka #${order.display_id} už je ${
+            orderStatus === "completed" ? "dokončená" : "zrušená"
+          }, záloha ${formatMoney(depositLeft, currency)} ponechána.`
+        )
+      } else {
+        try {
+          await completeOrderWorkflow(scope).run({ input: { orderIds: [order.id] } })
+          orderCompleted = true
+          messages.push(
+            `Objednávka #${order.display_id} dokončena, záloha ${formatMoney(
+              depositLeft,
+              currency
+            )} ponechána — faktura za zálohu platí.`
+          )
+        } catch (error) {
+          messages.push(
+            `Objednávku #${order.display_id} se nepodařilo nativně dokončit (${
+              error instanceof Error ? error.message : String(error)
+            }) — ve frontě je „Zrušeno", záloha ${formatMoney(depositLeft, currency)} ponechána.`
+          )
+        }
+      }
     } else {
       const result = await cancelOrderNatively(scope, order, actor)
       orderCancelled = result.cancelled
@@ -335,6 +361,7 @@ export const cancelProductionForClaim = async (
   return {
     cancelled: true,
     order_cancelled: orderCancelled,
+    order_completed: orderCompleted,
     items_removed: itemsRemoved,
     deposit,
     status: updated.status,

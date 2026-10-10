@@ -9,6 +9,7 @@ import { adminQueryClient } from "../lib/query-client";
 import {
   asNumber,
   DAMAGE_CAUSE_HINT,
+  DAMAGE_CAUSE_TEXT_CLASS,
   deadlineInfo,
   isDamageCause,
   isFinalStatus,
@@ -97,7 +98,7 @@ const RequestRow = ({ request }: { request: ReturnRequest }) => {
       </div>
 
       {isDamageCause(request.damage_cause) && (
-        <Text size="xsmall" className="text-ui-tag-red-text">
+        <Text size="xsmall" className={DAMAGE_CAUSE_TEXT_CLASS[request.damage_cause]}>
           {DAMAGE_CAUSE_HINT[request.damage_cause]}
         </Text>
       )}

@@ -32,8 +32,26 @@ import {
  * engine (`clampRefundAmount`).
  */
 
+/**
+ * Komponenta balíčku pro stránku žádosti (§13.5): `quantity` je na JEDEN
+ * balíček, `unit_share` poměrná cena komponenty (Σ přes komponenty = `unit_total`
+ * balíčku), `refundable_quantity` = `quantity × nevrácené balíčky − už vrácené
+ * kusy komponenty` (přes všechny žádosti objednávky).
+ */
+export type ClaimComponentDetail = {
+  product_id: string
+  variant_id: string | null
+  title: string
+  thumbnail: string | null
+  quantity: number
+  unit_share: number
+  refunded_quantity: number
+  refundable_quantity: number
+}
+
 export type ClaimOrderItemDetail = {
   line_item_id: string
+  product_id: string | null
   title: string
   variant_title: string | null
   thumbnail: string | null
@@ -43,32 +61,56 @@ export type ClaimOrderItemDetail = {
   /** `unit_total × quantity`. */
   line_total: number
   is_made_to_order: boolean
-  /** Σ `refunds[].items` přes všechny žádosti objednávky. */
+  /** Produkt je balíček (`product.metadata.is_bundle`, §13.5). */
+  is_bundle: boolean
+  /** Σ `refunds[].lines` (item) / `refunds[].items` přes všechny žádosti objednávky. */
   refunded_quantity: number
   refundable_quantity: number
   /** `unit_total × refundable_quantity`, u zakázky omezeno zaplaceným. */
   refundable_amount: number
   /** Kolik kusů téhle položky zákazník v žádosti vybral (0 = nevybral). */
   selected_in_claim: number
+  /** §13.5 — komponenty balíčku; null u běžné položky (nebo když se nenačetly). */
+  components?: ClaimComponentDetail[] | null
+  /** §13.5 — „rozděleno rovným dílem", když cena komponent není k dispozici. */
+  pricing_note?: string | null
 }
 
-/** Σ vrácených kusů za položku přes všechny žádosti objednávky. */
+/**
+ * Σ vrácených kusů za položku přes všechny žádosti objednávky.
+ *
+ * Záznam s `lines` (§13.2) je zdrojem pravdy a `items` je u něj jen zrcadlo
+ * pro starší čtenáře — číst obojí by tutéž mísu započítalo dvakrát. Starší
+ * záznamy bez `lines` se čtou z `items` jako dřív.
+ */
 export const refundedQuantitiesOf = (
   requests: MoneyRequest[]
 ): Map<string, number> => {
   const totals = new Map<string, number>()
+  const add = (id: string | null | undefined, quantity: unknown) => {
+    if (!id) return
+    totals.set(id, (totals.get(id) ?? 0) + Math.max(0, toNumber(quantity)))
+  }
   for (const request of requests) {
     for (const refund of requestRefunds(request)) {
+      const lines = refund.lines ?? []
+      if (lines.length) {
+        for (const line of lines) {
+          if (line.type === "item") add(line.line_item_id, line.quantity)
+        }
+        continue
+      }
       for (const item of refund.items ?? []) {
-        totals.set(
-          item.line_item_id,
-          (totals.get(item.line_item_id) ?? 0) + Math.max(0, toNumber(item.quantity))
-        )
+        add(item.line_item_id, item.quantity)
       }
     }
   }
   return totals
 }
+
+/** Produkt řádku je balíček (§13.5) — stejná značka jako v admin bundled-products. */
+export const isBundleItem = (item: ClaimOrderItem | null | undefined): boolean =>
+  Boolean((item?.product?.metadata as any)?.is_bundle)
 
 export type BuildClaimOrderItemsInput = {
   order: { items?: ClaimOrderItem[] | null }
@@ -113,6 +155,10 @@ export const buildClaimOrderItems = ({
       }
       return {
         line_item_id: id,
+        product_id:
+          typeof (item as any).product_id === "string" && (item as any).product_id
+            ? ((item as any).product_id as string)
+            : null,
         title: itemTitleOf(item),
         variant_title: item.variant_title?.trim() || null,
         thumbnail: item.thumbnail || null,
@@ -120,6 +166,7 @@ export const buildClaimOrderItems = ({
         unit_total: unit,
         line_total: round2(unit * quantity),
         is_made_to_order: madeToOrder,
+        is_bundle: isBundleItem(item),
         refunded_quantity: refundedQuantity,
         refundable_quantity: refundableQuantity,
         refundable_amount: refundableAmount,

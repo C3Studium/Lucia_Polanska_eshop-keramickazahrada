@@ -30,6 +30,8 @@ interface ReturnApprovedEmailProps {
   items?: string;
   /** Balík dorazil poškozený (§11.3). */
   carrierDamage?: boolean;
+  /** Poškozený kus (§13.7). */
+  damagedItem?: boolean;
   returnReason?: string;
   returnMethod?: string;
   returnDeadline?: string;
@@ -74,6 +76,7 @@ function ReturnApprovedEmailComponent({
   approvedItems,
   items,
   carrierDamage = false,
+  damagedItem = false,
   returnReason,
   returnMethod = "Zásilka na adresu ateliéru",
   returnDeadline,
@@ -123,6 +126,9 @@ function ReturnApprovedEmailComponent({
       {returnReason ? <LedgerRow label="Důvod" value={returnReason} /> : null}
       {carrierDamage ? (
         <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
+      ) : null}
+      {damagedItem ? (
+        <LedgerRow label="Příčina" value="Poškozený kus" tone="clay" />
       ) : null}
       {resolutionLabel ? (
         <LedgerRow label="Způsob vyřízení" value={resolutionLabel} strong tone="olive" />

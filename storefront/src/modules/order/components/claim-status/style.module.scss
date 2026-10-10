@@ -95,8 +95,10 @@
   }
 }
 
-/* Štítek „Poškozeno přepravou" (§11.3) — hlína jako u upozornění „Než zásilku
-   převezmete": je to varování, které mění, kdo co řeší, ne stav žádosti. */
+/* Štítek příčiny poškození (§11.3, §13.7). „Poškozeno přepravou" hlínou jako
+   u upozornění „Než zásilku převezmete": je to varování, které mění, kdo co
+   řeší. „Poškozený kus" (`data-cause="damaged"`) teplejší hnědou — poznámka,
+   ne výstraha. */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -111,6 +113,99 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+
+  &[data-cause="damaged"] {
+    border-color: rgb(var(--clay-07-rgb) / 0.55);
+    color: var(--clay-07);
+  }
+}
+
+/* ── Refundace (§13.2–13.3) ───────────────────────────────────────────────
+   Pod osou: každá refundace = částka + datum, řádky košíku vrácení, způsob
+   a dobropis. Stejná světlá vložka jako položky žádosti. */
+.refunds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.1);
+  border-radius: 0.5rem;
+  background: rgb(var(--white-rgb) / 0.35);
+}
+
+.refundsLabel {
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 400 0.72rem / 1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.refundList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refund {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+
+  & + & {
+    padding-top: 0.6rem;
+    border-top: 1px dashed rgb(var(--ink-05-rgb) / 0.18);
+  }
+}
+
+.refundHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  align-self: stretch;
+
+  strong {
+    color: var(--olive-07);
+    font: 400 1rem / 1.3 "Sansation-Regular", sans-serif;
+    white-space: nowrap;
+  }
+
+  time {
+    color: rgb(var(--ink-05-rgb) / 0.58);
+    font: 300 0.85rem / 1.3 "Sansation-Light", sans-serif;
+  }
+}
+
+.refundLines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font: 300 0.88rem / 1.4 "Sansation-Light", sans-serif;
+
+    span:first-child { overflow-wrap: anywhere; }
+    span:last-child { white-space: nowrap; }
+  }
+}
+
+.refundMethod,
+.refundNote {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.7);
+  font: 300 0.85rem / 1.45 "Sansation-Light", sans-serif;
 }
 
 /* ── Položky žádosti (§11.1) ─────────────────────────────────────────────

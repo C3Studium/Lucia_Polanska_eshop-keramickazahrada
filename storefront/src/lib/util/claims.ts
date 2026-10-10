@@ -23,19 +23,76 @@ export type ClaimRequestedResolution = "repair" | "replace" | "refund"
 /** Co ROZHODLA majitelka při schválení (§2169–2172). */
 export type ClaimResolution = "repair" | "replace" | "discount" | "refund"
 
-export type ClaimRefund = {
-  amount: number
-  method: "comgate" | "manual"
-  at: string
-  note?: string | null
+export type ClaimRefundMethod = "comgate" | "manual"
+
+/**
+ * Řádek košíku vrácení (§13.2) — co přesně se v jedné refundaci vrací. Částku
+ * (`amount`) a název (`title`/`label`) server ukládá jako snímek; když chybí,
+ * název se dohledá v položkách žádosti / objednávky.
+ */
+export type ClaimRefundLine =
+  | {
+      type: "item"
+      line_item_id: string
+      quantity: number
+      title?: string | null
+      amount?: number | null
+    }
+  | {
+      type: "component"
+      line_item_id: string
+      product_id: string
+      quantity: number
+      title?: string | null
+      amount?: number | null
+    }
+  | { type: "shipping"; amount?: number | null; label?: string | null }
+  | { type: "custom"; amount: number; label?: string | null }
+
+/** Dobropis k jedné refundaci (§13.3). `pdf_url` chybí ve zkušebním režimu. */
+export type ClaimCreditNote = {
+  status?: string | null
+  number?: string | null
+  pdf_url?: string | null
 }
 
-/** Příčina poškození (§11.3) — zatím jen přeprava. */
-export type ClaimDamageCause = "carrier"
+export type ClaimRefund = {
+  amount: number
+  method: ClaimRefundMethod
+  at: string
+  note?: string | null
+  /** §13.2 — řádky košíku vrácení; starší záznamy je nemají. */
+  lines?: ClaimRefundLine[] | null
+  /** §13.3 — dobropis vystavený k téhle refundaci. */
+  credit_note?: ClaimCreditNote | null
+}
+
+/**
+ * Příčina poškození (§11.3, §13.7): `"carrier"` = balík dorazil poškozený
+ * přepravou, `"damaged"` = poškozený kus (viditelné poškození). `null` = vada
+ * nebo nefunkčnost. U obou příčin jsou fotky povinné.
+ */
+export type ClaimDamageCause = "carrier" | "damaged"
+
+/**
+ * Komponenta balíčku (§13.5) — `quantity` je NA JEDEN balíček; kolik kusů
+ * komponenty objednávka celkem nese = `quantity × objednané balíčky`.
+ */
+export type ClaimOrderItemComponent = {
+  product_id: string
+  variant_id?: string | null
+  title: string
+  thumbnail?: string | null
+  quantity: number
+  unit_share?: number | null
+  refunded_quantity?: number | null
+  refundable_quantity?: number | null
+}
 
 /**
  * Položka objednávky nabídnutá k výběru ve formuláři (§11.1, `order_items`).
  * `unit_price`/`total` jsou po slevě, s DPH — tak, jak je zákazník zaplatil.
+ * Balíček (§13.5) nese navíc `components`; bez nich se vybírá jen celek.
  */
 export type ClaimOrderItem = {
   id: string
@@ -45,6 +102,17 @@ export type ClaimOrderItem = {
   quantity: number
   unit_price: number
   total: number
+  components?: ClaimOrderItemComponent[] | null
+}
+
+/** Vybraná komponenta balíčku v žádosti (§13.5) — tělo `items[].components`. */
+export type ClaimItemComponentInput = { product_id: string; quantity: number }
+
+/** Jedna položka těla `items` v `POST /store/orders/:id/claims`. */
+export type ClaimItemInput = {
+  id: string
+  quantity: number
+  components?: ClaimItemComponentInput[]
 }
 
 /** Položka uložená u žádosti (§11.1, `line_items`) — snímek z doby podání. */
@@ -75,11 +143,17 @@ export type OrderClaim = {
   resolved_at: string | null
   /** Jen u `rejected` — písemné odůvodnění (§19/3 ZOS). */
   decision_note?: string | null
+  /** Poznámka k vyřízení (např. „Záloha ponechána", „Objednávka zrušena"). */
+  resolution_note?: string | null
   reason: string | null
   /** Vybrané položky (§11.1). Starší žádosti je nemají → nic se nevypíše. */
   line_items?: ClaimLineItem[] | null
-  /** `"carrier"` = balík dorazil poškozený přepravou (§11.3). */
+  /** `"carrier"` = poškozeno přepravou (§11.3), `"damaged"` = poškozený kus (§13.7). */
   damage_cause?: ClaimDamageCause | null
+  /** §13.1 — žádost schválena a objednávka zrušena rovnou při podání. */
+  auto_cancelled?: boolean | null
+  /** Vyřízení skončilo zrušením objednávky (§12.5 „Objednávka zrušena"). */
+  order_cancelled?: boolean | null
 }
 
 export type OrderClaims = {
@@ -92,6 +166,9 @@ export type OrderClaims = {
   requests: OrderClaim[]
   /** Položky objednávky pro výběr ve formuláři (§11.1). Bez nich se výběr skryje. */
   order_items?: ClaimOrderItem[]
+  /** Stav objednávky, když ho server přibalí (`"canceled"` = zrušená). */
+  order_status?: string | null
+  order_cancelled?: boolean | null
 }
 
 export const CLAIM_KINDS: ClaimKind[] = ["reklamace", "vraceni", "odstoupeni"]
@@ -146,7 +223,98 @@ export const RESOLUTION_LABEL: Record<ClaimResolution, string> = {
 
 export const DAMAGE_CAUSE_LABEL: Record<ClaimDamageCause, string> = {
   carrier: "Poškozeno přepravou",
+  damaged: "Poškozený kus",
 }
+
+export const isDamageCause = (value: unknown): value is ClaimDamageCause =>
+  value === "carrier" || value === "damaged"
+
+/** Jak peníze dorazí (§13.3) — věta k refundaci na stavové stránce. */
+export const REFUND_METHOD_TEXT: Record<ClaimRefundMethod, string> = {
+  comgate: "Kartou zpět přes ComGate — na účtu do 3–5 pracovních dnů.",
+  manual: "Převodem na účet.",
+}
+
+/** Refundace žádosti bez děr — starší žádosti mají `null`, nebo jen `refund_amount`. */
+export const claimRefunds = (claim: OrderClaim): ClaimRefund[] =>
+  (claim.refunds ?? []).filter(
+    (refund) => refund && typeof refund === "object" && Number(refund.amount) > 0
+  )
+
+/** Řádky košíku vrácení (§13.2) jedné refundace — jen ty, které dávají smysl. */
+export const refundLines = (refund: ClaimRefund): ClaimRefundLine[] =>
+  (refund.lines ?? []).filter(
+    (line): line is ClaimRefundLine =>
+      Boolean(line) &&
+      typeof line === "object" &&
+      (line.type === "item" ||
+        line.type === "component" ||
+        line.type === "shipping" ||
+        line.type === "custom")
+  )
+
+/**
+ * Popisek řádku refundace: „Název × 2 ks" / „Poštovné" / „Jiná částka — proč".
+ * Název položky bere ze snímku v řádku; když ho server neuložil, dohledá ho
+ * ve vybraných položkách žádosti, případně v položkách objednávky.
+ */
+export const refundLineLabel = (
+  line: ClaimRefundLine,
+  claim: OrderClaim,
+  orderItems?: ClaimOrderItem[] | null
+): string => {
+  if (line.type === "shipping") return line.label || "Poštovné"
+  if (line.type === "custom") {
+    return line.label ? `Jiná částka — ${line.label}` : "Jiná částka"
+  }
+  const fromClaim = claimLineItems(claim).find(
+    (item) => item.line_item_id === line.line_item_id
+  )
+  const fromOrder = (orderItems ?? []).find((item) => item.id === line.line_item_id)
+  let title = line.title || fromClaim?.title || fromOrder?.title || "Položka"
+  if (line.type === "component" && !line.title) {
+    const component = (fromOrder?.components ?? []).find(
+      (entry) => entry.product_id === line.product_id
+    )
+    if (component?.title) title = `${component.title} (z balíčku ${title})`
+  }
+  const qty = Number(line.quantity) || 0
+  return qty > 0 ? `${title} × ${qty} ks` : title
+}
+
+/**
+ * Skončila žádost zrušením objednávky? Bere, co server pošle (`order_cancelled`
+ * na žádosti, nebo stav objednávky v kontextu); když nic z toho nepřibalí,
+ * pozná to z poznámky k vyřízení („Objednávka zrušena", auto-zrušení §13.1).
+ */
+export const claimOrderCancelled = (
+  claim: OrderClaim,
+  claims?: Pick<OrderClaims, "order_status" | "order_cancelled"> | null
+): boolean => {
+  if (claim.status !== "resolved") return false
+  if (typeof claim.order_cancelled === "boolean") return claim.order_cancelled
+  if (claim.auto_cancelled === true) return true
+  if (claims?.order_cancelled === true) return true
+  if (claims?.order_status === "canceled" || claims?.order_status === "cancelled") {
+    return true
+  }
+  const note = `${claim.resolution_note ?? ""} ${claim.decision_note ?? ""}`
+    .toLowerCase()
+    .trim()
+  return (
+    note.includes("objednávka zrušen") ||
+    note.includes("objednávku zrušen") ||
+    note.includes("nezaplaceno, neodesláno")
+  )
+}
+
+/** Objednávka je zrušená — podle kontextu, nebo podle kterékoli vyřízené žádosti. */
+export const orderCancelled = (claims: OrderClaims | null | undefined): boolean =>
+  Boolean(claims) &&
+  (claims!.order_cancelled === true ||
+    claims!.order_status === "canceled" ||
+    claims!.order_status === "cancelled" ||
+    claims!.requests.some((claim) => claimOrderCancelled(claim, claims)))
 
 /** Položky žádosti bez děr — staré řádky `line_items` nemají vůbec. */
 export const claimLineItems = (claim: OrderClaim): ClaimLineItem[] =>

@@ -1,7 +1,7 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
-import { findOpenClaim } from "@lib/util/claims"
+import { findOpenClaim, orderCancelled } from "@lib/util/claims"
 import ClaimStatus from "@modules/order/components/claim-status"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
@@ -65,6 +65,9 @@ export default async function OrderClaimsPage(props: Props) {
 
   const count = claims.requests.length
   const openClaim = findOpenClaim(claims)
+  // Vyřízení zrušením objednávky (§12.5, auto-zrušení §13.1): jiná věta a
+  // žádné „podat další" — k zrušené objednávce už není co podávat.
+  const cancelled = orderCancelled(claims)
   const kicker = context
     ? `Objednávka #${context.order_display_id}`
     : "Reklamace a vrácení"
@@ -79,14 +82,17 @@ export default async function OrderClaimsPage(props: Props) {
           ? "K této objednávce zatím žádnou reklamaci ani vrácení nemáme."
           : openClaim
             ? "Každý krok, který se stane, tu uvidíte — a zároveň vám přijde e-mail. Peníze vracíme až po rozhodnutí, u vrácení zboží zpravidla po jeho přijetí."
-            : "Všechny žádosti k této objednávce jsou uzavřené. Kdyby se objevilo něco dalšího, podejte novou."
+            : cancelled
+              ? "Objednávka je zrušená — potvrzení máte v e-mailu. Kdybyste cokoli potřebovali, napište nám na info@keramickazahrada.cz."
+              : "Všechny žádosti k této objednávce jsou uzavřené. Kdyby se objevilo něco dalšího, podejte novou."
       }
       status={openClaim ? "pending" : "success"}
       primary={myOrdersAction}
       // Další žádost až po uzavření té předchozí (server povolí jen jednu
-      // otevřenou). Prázdný výpis má vlastní tlačítko přímo ve výpisu.
+      // otevřenou) a jen u objednávky, která ještě existuje. Prázdný výpis má
+      // vlastní tlačítko přímo ve výpisu.
       secondary={
-        count > 0 && !openClaim
+        count > 0 && !openClaim && !cancelled
           ? {
               href: `/order/${params.id}/refund?token=${encodeURIComponent(token)}`,
               label: "Podat další žádost",

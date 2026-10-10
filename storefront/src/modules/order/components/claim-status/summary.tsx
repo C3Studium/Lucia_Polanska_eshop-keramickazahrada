@@ -4,8 +4,11 @@ import {
   DAMAGE_CAUSE_LABEL,
   RESOLUTION_LABEL,
   claimExpectsGoods,
+  claimOrderCancelled,
   formatClaimDate,
+  isDamageCause,
   isFinalClaimStatus,
+  orderCancelled,
   type OrderClaim,
   type OrderClaims,
 } from "@lib/util/claims"
@@ -21,9 +24,16 @@ import styles from "./style.module.scss"
  * komponenta — nic neklikatelného kromě odkazu.
  *
  * Když žádost nese položky (§11.1), ukáže i ty — s cenou vybraných kusů a
- * případně kolik už se vrátilo; u poškození přepravou štítek (§11.3).
+ * případně kolik už se vrátilo; u poškození štítek s příčinou (§11.3, §13.7).
+ * Vyřízení zrušením objednávky (§12.5, §13.1) říká „Objednávka zrušena".
  */
-const headline = (claim: OrderClaim) => {
+const headline = (claim: OrderClaim, cancelled: boolean) => {
+  if (claim.status === "resolved" && cancelled) {
+    const refunded = Number(claim.refund_amount) || 0
+    return `Objednávka zrušena ${formatClaimDate(claim.resolved_at)}${
+      refunded > 0 ? " — peníze jsme vrátili." : " — nic jste nezaplatili, nic neposíláte."
+    }`
+  }
   switch (claim.status) {
     case "pending":
       return claim.resolve_by
@@ -65,6 +75,8 @@ export default function ClaimsSummary({
     (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
   )
   const hasOpen = sorted.some((claim) => !isFinalClaimStatus(claim.status))
+  // Zrušená objednávka: další žádost nedává smysl, tlačítko by vedlo do prázdna.
+  const cancelled = orderCancelled(claims)
 
   return (
     <section className={styles.summary} aria-label="Reklamace a vrácení">
@@ -89,18 +101,20 @@ export default function ClaimsSummary({
               <strong>
                 {CLAIM_KIND_LABEL[claim.kind]} · {CLAIM_STATUS_LABEL[claim.status]}
               </strong>
-              {claim.damage_cause === "carrier" && (
-                <span className={styles.badge}>{DAMAGE_CAUSE_LABEL.carrier}</span>
+              {isDamageCause(claim.damage_cause) && (
+                <span className={styles.badge} data-cause={claim.damage_cause}>
+                  {DAMAGE_CAUSE_LABEL[claim.damage_cause]}
+                </span>
               )}
-              <p>{headline(claim)}</p>
+              <p>{headline(claim, claimOrderCancelled(claim, claims))}</p>
               <ClaimLineItems claim={claim} currencyCode={currencyCode} compact />
             </div>
           </li>
         ))}
       </ul>
       {/* Další žádost jde podat, až je ta předchozí uzavřená (server povolí
-          jen jednu otevřenou). */}
-      {!hasOpen && (
+          jen jednu otevřenou) — a jen u objednávky, která ještě existuje. */}
+      {!hasOpen && !cancelled && (
         <LocalizedClientLink
           className={styles.summaryGhost}
           href={`/order/${orderId}/refund?token=${token}`}

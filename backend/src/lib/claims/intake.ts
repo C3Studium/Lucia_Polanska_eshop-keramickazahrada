@@ -1,5 +1,5 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import {
   customerName,
   orderLink,
@@ -16,15 +16,19 @@ import {
 } from "../reklamacni-protokol"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
+import { shouldAutoCancel } from "./auto-cancel"
+import { autoCancelClaim } from "./auto-cancel-action"
 import {
   CP_CLAIM_FORM_URL,
   CP_DAMAGE_REPORT_DEADLINE_TEXT,
   damageCauseLabel,
+  damageCauseSentence,
   deadlineTextFor,
   isClaimKind,
   isDamageCause,
   isOpenStatus,
   kindLabel,
+  photosRequiredFor,
   REQUESTED_RESOLUTIONS,
   resolutionLabel,
   resolveByFor,
@@ -34,6 +38,7 @@ import {
 } from "./constants"
 import {
   allMadeToOrder,
+  isMadeToOrderItem,
   WITHDRAW_BLOCK_MADE_TO_ORDER,
   WITHDRAW_BLOCK_OPEN_REQUEST,
   withdrawBlockDeadline,
@@ -42,11 +47,14 @@ import {
 } from "./context"
 import {
   lineItemsText,
-  PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE,
+  photosRequiredMessage,
   resolveClaimLineItems,
   type ClaimItemSelection,
   type ClaimLineItem,
 } from "./line-items"
+import { goodsShipped } from "./money"
+import { loadClaimProduction } from "./production"
+import { capturedTotal, MONEY_EPSILON } from "./refund-rules"
 
 /**
  * Sdílený intake žádosti (docs/reklamace-a-zruseni.md §4) — JEDNA cesta pro
@@ -145,7 +153,10 @@ export type ClaimIntakeInput = {
    * pole (i prázdné); null/undefined = volající bez výběru položek.
    */
   line_items?: ClaimItemSelection[] | null
-  /** `"carrier"` = zásilka dorazila poškozená (§11.3) → fotky povinné. */
+  /**
+   * `"carrier"` = zásilka dorazila poškozená (§11.3), `"damaged"` = poškozený
+   * kus (§13.7) — u obou jsou fotky povinné.
+   */
   damage_cause?: DamageCause | string | null
   photos?: IntakePhoto[] | null
 }
@@ -161,7 +172,8 @@ export type ClaimRuleVerdict =
  * - u `reklamace` je `requested_resolution` povinné (§19/1 ZOS);
  * - položky: u reklamace aspoň jedna (když volající výběr má), id patří
  *   objednávce, množství ≤ objednané (`resolveClaimLineItems`);
- * - poškození přepravou → aspoň jedna fotka (bez ní nejde reklamovat u ČP);
+ * - poškození přepravou i poškozený kus → aspoň jedna fotka (§11.3, §13.7:
+ *   bez ní nejde reklamovat u ČP, resp. posoudit poškození);
  * - nejvýš jedna OTEVŘENÁ žádost na objednávku.
  */
 export const checkClaimRules = (
@@ -193,8 +205,8 @@ export const checkClaimRules = (
   if (items.ok === false) {
     return items
   }
-  if (isDamageCause(input.damage_cause) && !(input.photos?.length ?? 0)) {
-    return { ok: false, message: PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE }
+  if (photosRequiredFor(input.damage_cause) && !(input.photos?.length ?? 0)) {
+    return { ok: false, message: photosRequiredMessage(input.damage_cause) }
   }
   if (existingRequests.some((request) => isOpenStatus(request.status))) {
     return { ok: false, message: WITHDRAW_BLOCK_OPEN_REQUEST }
@@ -205,11 +217,18 @@ export const checkClaimRules = (
 export type CreatedClaim = {
   request: any
   protocolUrl: string | null
+  /** §13.1 — žádost rovnou schválena, vyřízena a objednávka zrušena. */
+  autoCancelled: boolean
 }
 
 /**
  * Založí žádost se všemi důsledky (fotky, protokol, e-maily). Pravidla
  * (`checkClaimRules`) si volající ověří PŘED tím — tady se už jen zakládá.
+ *
+ * Auto-zrušení (§13.1): odstoupení / vrácení bez zachycené platby a bez
+ * odeslání se hned schválí, vyřídí a objednávka zruší (`auto-cancel-action`;
+ * rozhodnutí samo je čisté v `auto-cancel.ts`). Zákazník pak dostane JEN
+ * „objednávka zrušena", ne potvrzení o přijetí; majitelka zvonek bez e-mailu.
  */
 export const createClaim = async (
   container: MedusaContainer,
@@ -302,7 +321,7 @@ export const createClaim = async (
     createdAt: now,
     reason: request.reason,
     items: itemsText,
-    damageCause: damageCauseLabel(damageCause),
+    damageCause: damageCauseSentence(damageCause),
     requestedResolution:
       kind === "reklamace" ? resolutionLabel(input.requested_resolution) : null,
   }).catch(() => ({ url: null as string | null, number: protocolNumber }))
@@ -313,6 +332,39 @@ export const createClaim = async (
       protocol_number: protocol.number,
     })
     .catch(() => undefined)
+
+  // Auto-zrušení (§13.1): nezaplaceno + neodesláno + žádná zakázka → hotovo
+  // bez majitelky. Rozhodnutí je čisté (`shouldAutoCancel`), vstupy z
+  // objednávky (`CLAIM_ORDER_FIELDS` nese platby i fulfillmenty) a z modulu
+  // zakázek. Selhání auto-zrušení žádost neshodí — spadne na běžnou cestu
+  // (potvrzení o přijetí + rozhodnutí majitelky) a zaloguje se.
+  if (kind === "odstoupeni" || kind === "vraceni") {
+    const production = await loadClaimProduction(container, order.id).catch(() => null)
+    const flags = {
+      kind,
+      nothing_captured: capturedTotal(order as any) <= MONEY_EPSILON,
+      goods_shipped: goodsShipped(order),
+      is_commission:
+        Boolean(production) || (order.items ?? []).some((item) => isMadeToOrderItem(item)),
+    }
+    if (shouldAutoCancel(flags)) {
+      try {
+        const result = await autoCancelClaim(container, {
+          request: { ...request, protocol_url: protocol.url, protocol_number: protocol.number },
+          order,
+        })
+        return { request: result.request, protocolUrl: result.protocolUrl, autoCancelled: true }
+      } catch (error) {
+        container
+          .resolve(ContainerRegistrationKeys.LOGGER)
+          .warn(
+            `[claims] Auto-zrušení žádosti ${request.id} selhalo (${
+              error instanceof Error ? error.message : String(error)
+            }) — pokračuje běžná cesta.`
+          )
+      }
+    }
+  }
 
   // Potvrzení přijetí (odstoupení: textově bez odkladu; reklamace: §19/1).
   // Předmět i text podle druhu; odkaz na stav žádosti ve storefrontu přes
@@ -335,6 +387,7 @@ export const createClaim = async (
         : {}),
       ...(itemsText ? { items: itemsText } : {}),
       ...(damageCause === "carrier" ? { carrierDamage: true } : {}),
+      ...(damageCause === "damaged" ? { damagedItem: true } : {}),
       deadlineText: deadlineTextFor(kind),
       ...(claimsUrl ? { claimsUrl } : {}),
       ...(protocol.url ? { protocolUrl: protocol.url } : {}),
@@ -391,7 +444,7 @@ export const createClaim = async (
     }).catch(() => undefined)
   }
 
-  return { request, protocolUrl: protocol.url }
+  return { request, protocolUrl: protocol.url, autoCancelled: false }
 }
 
 /**

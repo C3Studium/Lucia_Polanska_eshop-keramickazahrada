@@ -60,26 +60,143 @@ export type RefundItemEntry = {
   amount?: number
 }
 
+/**
+ * Řádek košíku vrácení (docs/reklamace-a-zruseni.md §13.2) tak, jak se UKLÁDÁ
+ * do `refunds[].lines` i `refund_history[].lines` — se snapshotem názvu a
+ * ceny, ať protokol i e-mail řeknou „za co", i kdyby se objednávka změnila.
+ *
+ * - `item`: celý řádek objednávky (`unit_total × quantity`, strop
+ *   `refundable_quantity` přes všechny žádosti);
+ * - `component`: komponenta balíčku (§13.5, `unit_share × quantity`, strop per
+ *   komponenta);
+ * - `shipping`: poštovné objednávky — JEDNOU (`shipping_refunded`);
+ * - `custom`: ručně zadaná částka s popiskem (i záloha zakázky a staré
+ *   `amount` tělo se mapují sem).
+ */
+export type RefundLineType = "item" | "component" | "shipping" | "custom"
+
+export type RefundLine = {
+  type: RefundLineType
+  /** `item` / `component` — řádek objednávky. */
+  line_item_id?: string | null
+  /** `component` — produkt komponenty balíčku. */
+  product_id?: string | null
+  variant_id?: string | null
+  quantity?: number
+  /** Snapshot názvu (item/component) nebo popisek (shipping/custom). */
+  title?: string | null
+  /** Za kus: `unit_total` položky, `unit_share` komponenty. */
+  unit_total?: number
+  /** Částka řádku — vždy. */
+  amount: number
+}
+
+export const REFUND_LINE_TYPES: readonly RefundLineType[] = [
+  "item",
+  "component",
+  "shipping",
+  "custom",
+]
+
+export const isRefundLineType = (value: unknown): value is RefundLineType =>
+  typeof value === "string" && (REFUND_LINE_TYPES as readonly string[]).includes(value)
+
+/** `lines` z libovolného záznamu refundace — jen validní řádky, cokoli jiného = []. */
+export const refundLinesOf = (value: unknown): RefundLine[] =>
+  Array.isArray(value)
+    ? value
+        .filter(
+          (entry) =>
+            entry && typeof entry === "object" && isRefundLineType((entry as any).type)
+        )
+        .map((entry: any) => ({
+          type: entry.type as RefundLineType,
+          line_item_id:
+            typeof entry.line_item_id === "string" && entry.line_item_id
+              ? entry.line_item_id
+              : null,
+          product_id:
+            typeof entry.product_id === "string" && entry.product_id ? entry.product_id : null,
+          variant_id:
+            typeof entry.variant_id === "string" && entry.variant_id ? entry.variant_id : null,
+          quantity: Math.max(0, toNumber(entry.quantity)),
+          title: typeof entry.title === "string" ? entry.title : null,
+          unit_total: toNumber(entry.unit_total),
+          amount: toNumber(entry.amount),
+        }))
+    : []
+
+/**
+ * Dobropis k jedné refundaci (§13.3) — snapshot výsledku `issueCreditNoteForRefund`
+ * na záznamu refundace, ať ho e-mail, protokol i admin čtou z jednoho místa.
+ * `skipped` + `reason` = zkušební režim / bez faktury; `error` = iDoklad
+ * odmítl (vývojář má upozornění).
+ */
+export type RefundCreditNote = {
+  status: "issued" | "exists" | "skipped" | "error"
+  number: string | null
+  pdf_url: string | null
+  reason?: string | null
+}
+
 /** Jedna položka `return_request.refunds`. */
 export type RefundEntry = {
+  /** `${request_id}:${pořadí}` — klíč pro dobropis a idempotenci (§13.3, §13.4). */
+  id?: string | null
   amount: number
   method: RefundMethod
   at: string
   note?: string | null
   /** §12.3 — rozsah; starší záznamy ho nemají. */
   scope?: RefundScope | null
-  /** §12.3 — vrácené položky (jen u `scope: "items"`). */
+  /** §12.3 — vrácené položky (jen u `scope: "items"`; od §13.2 odvozené z `lines`). */
   items?: RefundItemEntry[] | null
+  /** §13.2 — košík vrácení (starší záznamy ho nemají). */
+  lines?: RefundLine[] | null
+  /** §13.4 — kdo peníze vrátil: ComGate (karta) / ručně. */
+  provider?: RefundMethod | null
+  /** refId u ComGate = idempotency klíč Medusy (id řádku refundace). */
+  provider_ref?: string | null
+  provider_confirmed_at?: string | null
+  provider_test?: boolean | null
+  /** Součet vráceného na platbě podle dat relace ComGate (`refundedAmountMinor`). */
+  provider_refunded_total?: number | null
+  provider_status?: string | null
+  /** §13.3 — dobropis k téhle refundaci. */
+  credit_note?: RefundCreditNote | null
 }
 
 export type RefundHistoryEntry = {
   amount?: unknown
   return_request_id?: string | null
+  /** §13.3 — id záznamu refundace na žádosti (`refunds[].id`). */
+  refund_id?: string | null
   refunded_at?: string | null
   method?: string | null
   reason?: string | null
   scope?: RefundScope | null
   items?: RefundItemEntry[] | null
+  lines?: RefundLine[] | null
+}
+
+const creditNoteOf = (value: unknown): RefundCreditNote | null => {
+  if (!value || typeof value !== "object") return null
+  const source = value as Record<string, unknown>
+  const status = source.status
+  if (
+    status !== "issued" &&
+    status !== "exists" &&
+    status !== "skipped" &&
+    status !== "error"
+  ) {
+    return null
+  }
+  return {
+    status,
+    number: typeof source.number === "string" && source.number ? source.number : null,
+    pdf_url: typeof source.pdf_url === "string" && source.pdf_url ? source.pdf_url : null,
+    reason: typeof source.reason === "string" && source.reason ? source.reason : null,
+  }
 }
 
 /** `items` z libovolného záznamu refundace — jen validní položky, cokoli jiného = []. */
@@ -180,15 +297,44 @@ export const requestRefunds = (request: MoneyRequest): RefundEntry[] => {
       .filter((entry) => entry && typeof entry === "object")
       .map((entry: any) => {
         const items = refundItemsOf(entry.items)
+        const lines = refundLinesOf(entry.lines)
+        const method: RefundMethod = entry.method === "comgate" ? "comgate" : "manual"
         return {
+          id: typeof entry.id === "string" && entry.id ? entry.id : null,
           amount: toNumber(entry.amount),
-          method: entry.method === "comgate" ? "comgate" : "manual",
+          method,
           at: typeof entry.at === "string" ? entry.at : "",
           note: typeof entry.note === "string" ? entry.note : null,
           // Rozsah a položky (§12.3) se musí zachovat — z nich je
           // `refunded_quantity` a krok „Záloha vrácena" v průběhu.
           scope: isRefundScope(entry.scope) ? entry.scope : null,
           items: items.length ? items : null,
+          // §13.2 — košík; §13.4 — potvrzení ComGate; §13.3 — dobropis.
+          lines: lines.length ? lines : null,
+          provider:
+            entry.provider === "comgate" || entry.provider === "manual"
+              ? entry.provider
+              : null,
+          provider_ref:
+            typeof entry.provider_ref === "string" && entry.provider_ref
+              ? entry.provider_ref
+              : null,
+          provider_confirmed_at:
+            typeof entry.provider_confirmed_at === "string" && entry.provider_confirmed_at
+              ? entry.provider_confirmed_at
+              : null,
+          provider_test:
+            typeof entry.provider_test === "boolean" ? entry.provider_test : null,
+          provider_refunded_total:
+            entry.provider_refunded_total === null ||
+            entry.provider_refunded_total === undefined
+              ? null
+              : toNumber(entry.provider_refunded_total),
+          provider_status:
+            typeof entry.provider_status === "string" && entry.provider_status
+              ? entry.provider_status
+              : null,
+          credit_note: creditNoteOf(entry.credit_note),
         }
       })
   }

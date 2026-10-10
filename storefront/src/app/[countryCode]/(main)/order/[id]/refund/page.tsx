@@ -39,8 +39,9 @@ export default async function OrderRefundPage(props: Props) {
         getOrderClaims(params.id, token),
         // Jen kvůli číslu objednávky a měně v hlavičce; gating je z `claims`.
         getGuestRefundContext(params.id, token),
-        // Dokument „co dělat s poškozenou zásilkou" — nápověda u přepínače
-        // „Balík dorazil poškozený" na něj odkáže (§11.3). `null` = nenahráno.
+        // Dokument „co dělat s poškozenou zásilkou" — nápověda u volby
+        // „Balík dorazil poškozený — přepravou" na něj odkáže (§11.3, §13.7).
+        // `null` = nenahráno.
         getSiteDocument(CLAIM_FORM_KEY),
       ])
     : [null, null, null]

@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server"
+import { OrderRefundedEmail } from "../emails/order-refunded"
 import { RefundRequestEmail } from "../emails/refund-request"
 import { ReturnApprovedEmail } from "../emails/return-approved"
 import { ReturnRejectedEmail } from "../emails/return-rejected"
@@ -89,6 +90,89 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     expect(html).toContain("Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč")
     expect(html).toContain("Poškozeno přepravou")
     expect(html).toContain("1 695 Kč")
+  })
+
+  it("return-resolved (§13.3): košík, způsob, dobropis s odkazem; ručně = bez slibu 3–5 dnů", () => {
+    const card = renderToStaticMarkup(
+      ReturnResolvedEmail({
+        orderNumber: "#42",
+        kind: "odstoupeni",
+        resolution: "refund",
+        resolvedAt: "10. 10. 2026",
+        refundAmount: "629 Kč",
+        refundMethod: "na kartu přes ComGate — na účtu do 3–5 pracovních dnů",
+        refundLines: "Zahradní mísa · 1 ks · 500 Kč\nPoštovné a balné · 129 Kč",
+        creditNoteNumber: "DO-2026-3",
+        creditNoteUrl: "https://files.example/dobropis-DO-2026-3.pdf",
+      }) as React.ReactElement
+    )
+    expect(card).toContain("Zahradní mísa · 1 ks · 500 Kč")
+    expect(card).toMatch(/500 Kč<br\s*\/?>/)
+    expect(card).toContain("na kartu přes ComGate")
+    expect(card).toContain("č. DO-2026-3")
+    expect(card).toContain("https://files.example/dobropis-DO-2026-3.pdf")
+    expect(card).toContain("3–5 pracovních dnů")
+
+    const manual = renderToStaticMarkup(
+      ReturnResolvedEmail({
+        orderNumber: "#42",
+        kind: "vraceni",
+        resolution: "refund",
+        refundAmount: "500 Kč",
+        refundMethod: "ručně",
+        creditNoteNote: "Opravný daňový doklad (dobropis): Zkušební režim — dobropis se vystaví až v ostrém režimu.",
+      }) as React.ReactElement
+    )
+    expect(manual).not.toContain("3–5 pracovních dnů")
+    expect(manual).toContain("vracíme ručně")
+    expect(manual).toContain("vystaví až v ostrém režimu")
+    expect(manual).not.toContain("Dobropis (PDF)")
+  })
+
+  it("order-refunded (§13.3): karta slibuje 3–5 dnů, ruční ne; košík a dobropis", () => {
+    const card = renderToStaticMarkup(
+      OrderRefundedEmail({
+        orderNumber: "#42",
+        refundAmount: "500 Kč",
+        refundMethod: "na kartu přes ComGate — na účtu do 3–5 pracovních dnů",
+        refundLines: "Zahradní mísa · 1 ks · 500 Kč",
+        creditNoteNumber: "DO-2026-4",
+        creditNoteUrl: "https://files.example/do4.pdf",
+      }) as React.ReactElement
+    )
+    expect(card).toContain("do 3–5 pracovních dnů")
+    expect(card).toContain("Zahradní mísa · 1 ks · 500 Kč")
+    expect(card).toContain("č. DO-2026-4")
+    expect(card).toContain("https://files.example/do4.pdf")
+
+    const manual = renderToStaticMarkup(
+      OrderRefundedEmail({ orderNumber: "#42", refundAmount: "500 Kč", refundMethod: "ručně" }) as React.ReactElement
+    )
+    expect(manual).not.toContain("3–5 pracovních dnů")
+    expect(manual).toContain("ručně")
+
+    // Starší volající bez způsobu: původní text zůstává.
+    const legacy = renderToStaticMarkup(
+      OrderRefundedEmail({ orderNumber: "#42", refundAmount: "500 Kč" }) as React.ReactElement
+    )
+    expect(legacy).toContain("do 3–5 pracovních dnů")
+  })
+
+  it("poškozený kus (§13.7): věta v přijetí, schválení i potvrzení", () => {
+    for (const html of [
+      renderToStaticMarkup(
+        RefundRequestEmail({ orderNumber: "#42", kind: "reklamace", damagedItem: true }) as React.ReactElement
+      ),
+      renderToStaticMarkup(
+        ReturnApprovedEmail({ orderNumber: "#42", kind: "reklamace", resolution: "repair", damagedItem: true }) as React.ReactElement
+      ),
+      renderToStaticMarkup(
+        ReturnResolvedEmail({ orderNumber: "#42", kind: "reklamace", resolution: "repair", damagedItem: true }) as React.ReactElement
+      ),
+    ]) {
+      expect(html).toContain("Poškozený kus")
+      expect(html).not.toContain("Poškozeno přepravou")
+    }
   })
 
   it("return-rejected: položky řádek po řádku", () => {

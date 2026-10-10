@@ -51,7 +51,10 @@ export type ProtocolData = {
    * oddělené `\n`), nebo slova zákazníka u starých žádostí (volitelné).
    */
   items?: string | null
-  /** „Poškozeno přepravou" (§11.3) — český popisek, nebo null. */
+  /**
+   * Věta „Příčina poškození" (§11.3 dopravce, §13.7 poškozený kus) — hotový
+   * text z `damageCauseSentence`, tiskne se doslova; null = běžná vada.
+   */
   damageCause?: string | null
   /** Co zákazník POŽADUJE (jen reklamace, §19/1 ZOS) — český popisek. */
   requestedResolution?: string | null
@@ -80,6 +83,10 @@ export type ProtocolRefund = {
   method: string
   at: Date
   note?: string | null
+  /** Řádky košíku vrácení (§13.2) — „název · ks · částka", každý zvlášť. */
+  lines?: string[] | null
+  /** Číslo dobropisu k této refundaci (§13.3), nebo věta, proč není. */
+  creditNote?: string | null
 }
 
 const fmtDate = (value: Date) =>
@@ -199,13 +206,11 @@ export const generateProtocolPdf = async (
   field("Datum uplatnění", fmtDate(data.createdAt))
   field("Popis / důvod", data.reason)
   if (data.items) field("Zboží", data.items)
-  // Poškození přepravou: v protokolu musí být vidět, že vada vznikla při
-  // dopravě — reklamaci u dopravce podává prodávající, zákazník to nemusí řešit.
+  // Příčina poškození: u dopravce musí být vidět, že reklamaci u něj podává
+  // prodávající; u poškozeného kusu, že důkazem jsou fotky. Věta přichází
+  // hotová (`damageCauseSentence`), ať PDF nic neskládá.
   if (data.damageCause) {
-    field(
-      "Příčina poškození",
-      `${data.damageCause} — zásilka dorazila poškozená; reklamaci u dopravce uplatňuje prodávající.`
-    )
+    field("Příčina poškození", data.damageCause)
   }
   if (data.requestedResolution) {
     field("Požadovaný způsob vyřízení", data.requestedResolution)
@@ -237,14 +242,26 @@ export const generateProtocolPdf = async (
       currency: (refund.currency || "CZK").toUpperCase(),
       maximumFractionDigits: 2,
     }).format(refund.amount)} (${
-      refund.method === "comgate" ? "na platební kartu" : "ručně"
+      refund.method === "comgate" ? "na platební kartu přes ComGate" : "ručně"
     }, ${fmtDate(refund.at)})${refund.note ? ` — ${refund.note}` : ""}`
+  // Košík vrácení (§13.2) a dobropis (§13.3) pod každou refundací — potvrzení
+  // musí říkat „za co" a „jakým dokladem", ne jen kolik.
+  const refundDetails = (refund: ProtocolRefund) => {
+    if (refund.lines?.length) {
+      field("Vrácené položky", refund.lines.join("\n"))
+    }
+    if (refund.creditNote) {
+      field("Dobropis", refund.creditNote)
+    }
+  }
   if (refunds.length === 1) {
     field("Vrácená částka", fmtRefund(refunds[0]))
+    refundDetails(refunds[0])
   } else if (refunds.length > 1) {
-    refunds.forEach((refund, index) =>
+    refunds.forEach((refund, index) => {
       field(`Vrácená částka ${index + 1}`, fmtRefund(refund))
-    )
+      refundDetails(refund)
+    })
     const total = refunds.reduce((sum, refund) => sum + refund.amount, 0)
     field(
       "Vráceno celkem",

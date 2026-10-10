@@ -83,13 +83,15 @@ export const ApprovePanel = ({
   const mutation = useReturnAction<{ message?: string }>(request.id, "decide");
   const canSubmit = !isReklamace || resolution !== "";
 
-  // Odstoupení / vrácení v jednom kroku: zboží neodešlo → peníze hned a
-  // objednávku rovnou zrušit (výchozí zapnuto). Odeslané zboží → výchozí
-  // vypnuto (§ 1832/4: smíte počkat na zásilku), ale jde to vědomě zapnout.
+  // Odstoupení / vrácení v jednom kroku: „rovnou vrátit" je VŽDY výchozí
+  // vypnuté (§13.2 — žádná částka automaticky) a znamená celou objednávku
+  // (všechny zbývající položky + poštovné); jde vědomě zapnout. „Zrušit
+  // objednávku" má výchozí zapnuto, když zboží nikdy neodešlo — ale projde
+  // až po vrácení peněz (nebo když nebylo co vracet).
   const remaining = asNumber(request.remaining);
   const goodsNeverShipped = request.goods_shipped === false;
   const chainOffered = !isReklamace && allowChain;
-  const [refundNow, setRefundNow] = useState(chainOffered && goodsNeverShipped && remaining > 0);
+  const [refundNow, setRefundNow] = useState(false);
   const [cancelOrder, setCancelOrder] = useState(chainOffered && goodsNeverShipped);
   const chainRefund = chainOffered && refundNow && remaining > 0;
   const chainCancel = chainOffered && cancelOrder && (chainRefund || remaining <= 0);
@@ -156,12 +158,16 @@ export const ApprovePanel = ({
             <span>
               <Text size="small">
                 {remaining > 0
-                  ? `Rovnou vrátit peníze (${formatCzk(remaining)}) přes ComGate`
+                  ? `Rovnou vrátit celou objednávku (${formatCzk(remaining)}) přes ComGate`
                   : "Není co vracet — nic nebylo zaplaceno"}
               </Text>
-              {remaining > 0 && !goodsNeverShipped && (
+              {remaining > 0 && (
                 <Text size="xsmall" className="text-ui-fg-subtle">
-                  Zboží už odešlo. Zapnutím se vědomě vzdáváte práva počkat na jeho vrácení (§ 1832/4).
+                  Všechny zbývající položky i poštovné. Vypnuté = peníze vrátíte později z
+                  košíku vrácení (po položkách, poštovné, jiná částka).
+                  {!goodsNeverShipped
+                    ? " Zboží už odešlo — zapnutím se vědomě vzdáváte práva počkat na jeho vrácení (§ 1832/4)."
+                    : ""}
                 </Text>
               )}
             </span>

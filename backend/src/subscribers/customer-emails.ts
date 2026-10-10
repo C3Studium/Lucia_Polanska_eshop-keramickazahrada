@@ -10,6 +10,7 @@ import {
 } from "../lib/customer-email"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
+import { isAutoCancelledClaim } from "../lib/claims/auto-cancel"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
@@ -467,6 +468,22 @@ const onOrderCanceled = async ({
   }
   const order = await loadOrder(container, data.id)
   if (!order) {
+    return
+  }
+
+  // Auto-zrušení z žádosti (§13.1): zákazník už dostal „Objednávka zrušena"
+  // jako `return-approved` s `nothingToReturn` — druhý e-mail o téže události
+  // by byl šum. Poznává se podle žádosti vyřízené serverem (decision_note).
+  const claims = (await container
+    .resolve<ReturnRequestModuleService>(RETURN_REQUEST_MODULE)
+    .listReturnRequests({ order_id: order.id } as never)
+    .catch(() => [])) as any[]
+  if (claims.some((claim) => isAutoCancelledClaim(claim))) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .info(
+        `[emails] Přeskakuji order-cancelled pro objednávku ${order.id} — zrušeno automaticky ze žádosti (zákazník má return-approved).`
+      )
     return
   }
 

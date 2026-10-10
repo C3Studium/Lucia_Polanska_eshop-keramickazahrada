@@ -12,11 +12,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { MoneyCard } from "../../../components/claims/money-card";
 import {
-  initialSelection,
+  emptySelection,
   OrderItemsTable,
-  refundableQuantity,
-  selectionToRefund,
-  type ItemSelection,
+  type BasketSelection,
 } from "../../../components/claims/order-items-table";
 import {
   ApprovePanel,
@@ -31,7 +29,7 @@ import {
   ProductionCard,
   type ProductionPanel,
 } from "../../../components/claims/production-card";
-import { RefundPanel } from "../../../components/claims/refund-panel";
+import { RefundBasket } from "../../../components/claims/refund-basket";
 import { RequestBadges } from "../../../components/claims/request-badges";
 import { Timeline } from "../../../components/claims/timeline";
 import { LineItemsList } from "../../../components/return-line-items";
@@ -40,28 +38,32 @@ import { adminQueryClient } from "../../../lib/query-client";
 import {
   asNumber,
   DAMAGE_CAUSE_HINT,
+  DAMAGE_CAUSE_LABEL,
+  DAMAGE_CAUSE_TEXT_CLASS,
   deriveActions,
   fallbackSteps,
   isDamageCause,
   isFinalStatus,
   KIND_META,
   RESOLUTION_LABEL,
+  whatHappenedLabel,
   type ClaimActions,
-  type ClaimDetailItem,
-  type ClaimDetailResponse,
   type ClaimFlags,
+  type ClaimDetailResponse,
   type ReturnRequest,
 } from "../../../lib/return-requests";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 
 /**
- * Stránka žádosti — Reklamace a zrušení (docs/reklamace-a-zruseni.md §12).
+ * Stránka žádosti — Reklamace a zrušení (docs/reklamace-a-zruseni.md §12, §13).
  *
  * Drawer ukazoval jen žádost; tady majitelka vidí celou objednávku (položky,
- * platby, zakázku) a rozhoduje nad ní: vrátit peníze za vybrané položky nebo
- * za celou objednávku, u zakázky rozhodnout o záloze, u smíšené objednávky
- * obojí zvlášť. Průběh (kroky) skládá server podle případu; tlačítka se kreslí
+ * platby, zakázku) a rozhoduje nad ní. Peníze se vrací z KOŠÍKU VRÁCENÍ
+ * (§13.2): nic se nepředvyplňuje, majitelka částku sestaví z položek (i
+ * komponent balíčku), poštovného a „jiné částky"; vedle toho zůstávají
+ * výslovná tlačítka „Vrátit celou objednávku" a (v bloku Zakázka) „Vrátit
+ * zálohu". Průběh (kroky) skládá server podle případu; tlačítka se kreslí
  * přesně podle `actions` ze serveru — co tu není, server by stejně odmítl.
  *
  * Cesta: `/reklamace/:id` (seznam `/reklamace` sem naviguje; widget na
@@ -74,15 +76,7 @@ import { formatCzk } from "../../../lib/workbench";
  * a to rozhodnutí musí jít udělat odsud.
  */
 
-type Panel =
-  | null
-  | "approve"
-  | "reject"
-  | "received"
-  | "refund-items"
-  | "refund-all"
-  | "resolve"
-  | "cancel";
+type Panel = null | "approve" | "reject" | "received" | "resolve" | "cancel";
 
 const Card = ({
   title,
@@ -122,45 +116,29 @@ const ActionsCard = ({
   request,
   actions,
   flags,
-  items,
-  selection,
   hasProduction,
+  refundOpen,
   panel,
   setPanel,
   skipGoods,
   setSkipGoods,
-  onItemsRefunded,
 }: {
   request: ReturnRequest;
   actions: ClaimActions;
   flags: ClaimFlags;
-  items: ClaimDetailItem[];
-  selection: ItemSelection;
   hasProduction: boolean;
+  /** Košík vrácení je teď k dispozici (kreslí se pod akcemi). */
+  refundOpen: boolean;
   panel: Panel;
   setPanel: (panel: Panel) => void;
-  /** Přepínač „vracím bez čekání na zásilku" — drží ho stránka (řídí i tabulku). */
+  /** Přepínač „vracím bez čekání na zásilku" — drží ho stránka (řídí i tabulku a košík). */
   skipGoods: boolean;
   setSkipGoods: (value: boolean) => void;
-  onItemsRefunded: () => void;
 }) => {
   const remaining = asNumber(request.remaining);
   const goodsKind = request.kind === "vraceni" || request.kind === "odstoupeni";
   const goodsShipped = flags.goods_shipped ?? request.goods_shipped;
-
   const skipOffered = skipGoodsOffered(request, flags);
-  const skipActive = skipOffered && skipGoods;
-
-  const refundSelection = selectionToRefund(items, selection);
-  const selectedAmount = refundSelection.reduce((sum, item) => sum + item.amount, 0);
-  const anyRefundableItem = items.some((item) => refundableQuantity(item) > 0);
-
-  const canRefundItems =
-    items.length > 0 &&
-    anyRefundableItem &&
-    remaining > 0 &&
-    (actions.refund_items === true || skipActive);
-  const canRefundAll = remaining > 0 && (actions.refund_all === true || skipActive);
 
   const close = () => setPanel(null);
 
@@ -171,25 +149,6 @@ const ActionsCard = ({
   if (panel === "received") return <ReceivedPanel request={request} onClose={close} />;
   if (panel === "resolve") return <ResolvePanel request={request} onClose={close} />;
   if (panel === "cancel") return <CancelPanel request={request} onClose={close} />;
-  if (panel === "refund-items") {
-    return (
-      <RefundPanel
-        request={request}
-        scope="items"
-        selection={refundSelection}
-        skipGoodsCheck={skipActive}
-        onClose={() => {
-          close();
-          onItemsRefunded();
-        }}
-      />
-    );
-  }
-  if (panel === "refund-all") {
-    return (
-      <RefundPanel request={request} scope="all" skipGoodsCheck={skipActive} onClose={close} />
-    );
-  }
 
   const buttons: ReactNode[] = [];
   if (actions.approve) {
@@ -213,45 +172,12 @@ const ActionsCard = ({
       </Button>
     );
   }
-  if (canRefundItems) {
-    buttons.push(
-      <Button
-        key="refund-items"
-        size="small"
-        variant={actions.received ? "secondary" : "primary"}
-        disabled={refundSelection.length === 0}
-        onClick={() => setPanel("refund-items")}
-        title={
-          refundSelection.length === 0
-            ? "Nejdřív vyberte položky v tabulce objednávky."
-            : undefined
-        }
-      >
-        Vrátit peníze za vybrané položky
-        {refundSelection.length > 0
-          ? ` (${formatCzk(Math.round(Math.min(selectedAmount, remaining) * 100) / 100)})`
-          : ""}
-      </Button>
-    );
-  }
-  if (canRefundAll) {
-    buttons.push(
-      <Button
-        key="refund-all"
-        size="small"
-        variant={canRefundItems || actions.received ? "secondary" : "primary"}
-        onClick={() => setPanel("refund-all")}
-      >
-        Vrátit celou objednávku ({formatCzk(remaining)})
-      </Button>
-    );
-  }
   if (actions.resolve) {
     buttons.push(
       <Button
         key="resolve"
         size="small"
-        variant={buttons.length === 0 ? "primary" : "secondary"}
+        variant={buttons.length === 0 && !refundOpen ? "primary" : "secondary"}
         onClick={() => setPanel("resolve")}
       >
         Vyřízeno
@@ -288,7 +214,8 @@ const ActionsCard = ({
       {buttons.length > 0 ? (
         <div className="flex flex-wrap gap-2">{buttons}</div>
       ) : (
-        !finalText && (
+        !finalText &&
+        !refundOpen && (
           <Text size="small" className="text-ui-fg-subtle">
             {request.status === "approved" && goodsKind
               ? "Čeká se, až zákazník pošle zboží zpět. Až dorazí, klikněte „Zboží přijato\"."
@@ -297,6 +224,13 @@ const ActionsCard = ({
                 : "Teď tu není žádná akce — stav se změní odjinud (např. po vrácení peněz)."}
           </Text>
         )
+      )}
+
+      {refundOpen && (
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          Peníze vracíte z košíku vrácení níže — vyberte položky v tabulce objednávky,
+          případně poštovné nebo jinou částku.
+        </Text>
       )}
 
       {skipOffered && (
@@ -359,7 +293,7 @@ const ClaimPageInner = () => {
   const detail = detailQuery.data;
   const items = useMemo(() => detail?.items ?? [], [detail]);
 
-  // Žádost s dopočtem z `money` / `flags`, aby panely (Schválit, Vrátit…)
+  // Žádost s dopočtem z `money` / `flags`, aby panely (Schválit, košík…)
   // dostaly stejné „zbývá" a „zboží odešlo" jako stránka.
   const request = useMemo<ReturnRequest | null>(() => {
     if (!detail) return null;
@@ -375,7 +309,9 @@ const ClaimPageInner = () => {
 
   const [panel, setPanel] = useState<Panel>(null);
   const [productionPanel, setProductionPanel] = useState<ProductionPanel | null>(null);
-  const [selection, setSelection] = useState<ItemSelection>({});
+  // Košík: NIC se nepředvybírá (§13.2) — výběr začíná prázdný a čistí se po
+  // refundaci i při přechodu na jinou žádost.
+  const [selection, setSelection] = useState<BasketSelection>(emptySelection);
   const [skipGoods, setSkipGoods] = useState(false);
 
   // Nová žádost nebo změna stavu → zavřít rozpracované panely a přepínač.
@@ -385,10 +321,8 @@ const ClaimPageInner = () => {
     setSkipGoods(false);
   }, [detail?.request.id, detail?.request.status]);
 
-  // Předvýběr položek z žádosti — jednou na žádost; po refundaci se vyčistí.
   useEffect(() => {
-    setSelection(initialSelection(detail?.items ?? []));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSelection(emptySelection());
   }, [detail?.request.id]);
 
   const backLink = request ? `/reklamace?status=${request.status}` : "/reklamace";
@@ -457,13 +391,17 @@ const ClaimPageInner = () => {
   const customerName = order?.customer_name ?? request.customer_name;
   const email = order?.email ?? request.email;
   const kindLabel = request.kind ? KIND_META[request.kind].label : "Žádost";
-  // Výběr položek jen když teď jde vracet po položkách — podle serveru, nebo
-  // po vědomém zapnutí „bez čekání na zásilku" (stejná podmínka jako tlačítko).
-  const selectable =
-    items.length > 0 &&
-    !isFinalStatus(request.status) &&
-    asNumber(request.remaining) > 0 &&
-    (actions.refund_items === true || (skipGoods && skipGoodsOffered(request, flags)));
+  const remaining = asNumber(request.remaining);
+
+  // Vracení je teď možné podle serveru, nebo po vědomém zapnutí „bez čekání
+  // na zásilku" (stejná podmínka pro tabulku, košík i „celou objednávku").
+  const skipActive = skipGoods && skipGoodsOffered(request, flags);
+  const canRefundLines =
+    !isFinalStatus(request.status) && remaining > 0 && (actions.refund_items === true || skipActive);
+  const canRefundAll =
+    !isFinalStatus(request.status) && remaining > 0 && (actions.refund_all === true || skipActive);
+  const refundOpen = canRefundLines || canRefundAll;
+  const selectable = canRefundLines && items.length > 0;
 
   const orderHint = [
     order?.created_at ? `objednáno ${formatDate(order.created_at)}` : null,
@@ -540,7 +478,14 @@ const ClaimPageInner = () => {
             )}
           </Card>
 
-          <Card title="Objednávka" hint={orderHint || undefined}>
+          <Card
+            title="Objednávka"
+            hint={
+              [orderHint, selectable ? "zaškrtněte, co vracíte — částka se skládá v košíku vrácení" : null]
+                .filter(Boolean)
+                .join(" · ") || undefined
+            }
+          >
             <OrderItemsTable
               items={items}
               order={order}
@@ -548,11 +493,6 @@ const ClaimPageInner = () => {
               onChange={setSelection}
               selectable={selectable}
             />
-            {items.length === 0 && request.line_items && request.line_items.length > 0 && (
-              <div className="mt-3 max-w-xl">
-                <LineItemsList items={request.line_items} showTotal />
-              </div>
-            )}
           </Card>
 
           <Card title="Žádost">
@@ -572,6 +512,31 @@ const ClaimPageInner = () => {
                 )}
               </div>
 
+              {request.line_items && request.line_items.length > 0 && (
+                <div>
+                  <Text size="xsmall" className="text-ui-fg-subtle mb-1">
+                    Položky v žádosti
+                  </Text>
+                  <div className="max-w-xl">
+                    <LineItemsList items={request.line_items} showTotal />
+                  </div>
+                  <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                    Jen to, co zákazník vybral — do košíku vrácení se nic nepředvybírá.
+                  </Text>
+                </div>
+              )}
+
+              {request.kind === "reklamace" && (
+                <div>
+                  <Text size="xsmall" className="text-ui-fg-subtle">
+                    Co se stalo
+                  </Text>
+                  <Text size="small" className="mt-1">
+                    {whatHappenedLabel(request.damage_cause)}
+                  </Text>
+                </div>
+              )}
+
               {request.kind === "reklamace" && (
                 <div>
                   <Text size="xsmall" className="text-ui-fg-subtle">
@@ -589,8 +554,9 @@ const ClaimPageInner = () => {
               )}
 
               {isDamageCause(request.damage_cause) && (
-                <Text size="small" className="text-ui-tag-red-text">
-                  Poškozeno přepravou — {DAMAGE_CAUSE_HINT[request.damage_cause]}
+                <Text size="small" className={DAMAGE_CAUSE_TEXT_CLASS[request.damage_cause]}>
+                  {DAMAGE_CAUSE_LABEL[request.damage_cause]} —{" "}
+                  {DAMAGE_CAUSE_HINT[request.damage_cause]}
                 </Text>
               )}
 
@@ -644,19 +610,37 @@ const ClaimPageInner = () => {
               request={request}
               actions={actions}
               flags={flags}
-              items={items}
-              selection={selection}
               hasProduction={hasProduction}
+              refundOpen={refundOpen}
               panel={panel}
               setPanel={setPanel}
               skipGoods={skipGoods}
               setSkipGoods={setSkipGoods}
-              onItemsRefunded={() => setSelection({})}
             />
           </Card>
 
+          {refundOpen && (
+            <Card
+              title="Košík vrácení"
+              hint={`Zbývá vrátit ${formatCzk(remaining)} — nic není předvyplněné, částku sestavíte.`}
+            >
+              <RefundBasket
+                request={request}
+                items={items}
+                shipping={detail.shipping}
+                selection={selection}
+                onSelectionChange={setSelection}
+                skipGoodsCheck={skipActive}
+                canRefundLines={canRefundLines}
+                canRefundAll={canRefundAll}
+                hasProduction={hasProduction}
+                onRefunded={() => setSelection(emptySelection())}
+              />
+            </Card>
+          )}
+
           <Card title="Platby">
-            <MoneyCard money={detail.money} request={request} />
+            <MoneyCard money={detail.money} shipping={detail.shipping} request={request} />
           </Card>
 
           {production && (

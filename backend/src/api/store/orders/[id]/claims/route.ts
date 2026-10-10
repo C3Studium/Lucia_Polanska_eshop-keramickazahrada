@@ -25,8 +25,10 @@ import {
  *
  * Token odemyká JEN přihlášení. Pravidla (§1837, 14 dnů, jedna otevřená
  * žádost, požadované vyřízení u reklamace, položky u reklamace, fotky u
- * poškození přepravou) platí na serveru beze změny — gating v prohlížeči je
- * jen zrcadlo téhle odpovědi.
+ * poškození přepravou i poškozeného kusu) platí na serveru beze změny —
+ * gating v prohlížeči je jen zrcadlo téhle odpovědi. Odstoupení / vrácení
+ * nezaplacené a neodeslané objednávky se vyřídí hned (§13.1) — odpověď nese
+ * `auto_cancelled: true`.
  */
 
 const PostSchema = z.object({
@@ -48,8 +50,11 @@ const PostSchema = z.object({
     )
     .max(200)
     .optional(),
-  /** `"carrier"` = balík dorazil poškozený (§11.3) → fotky povinné. */
-  damage_cause: z.enum(["carrier"]).nullable().optional(),
+  /**
+   * `"carrier"` = balík dorazil poškozený (§11.3), `"damaged"` = poškozený kus
+   * (§13.7) → u obou fotky povinné (`checkClaimRules`).
+   */
+  damage_cause: z.enum(["carrier", "damaged"]).nullable().optional(),
   photos: z
     .array(
       z.object({
@@ -116,11 +121,17 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, verdict.message)
   }
 
-  const { request } = await createClaim(req.scope, {
+  const { request, autoCancelled } = await createClaim(req.scope, {
     order,
     input,
     existingRequests: existing,
   })
 
-  res.status(200).json({ received: true, id: request.id })
+  // §13.1: `auto_cancelled` → storefront místo „posoudíme" ukáže „Objednávka
+  // je zrušená".
+  res.status(200).json({
+    received: true,
+    id: request.id,
+    ...(autoCancelled ? { auto_cancelled: true } : {}),
+  })
 }

@@ -135,12 +135,15 @@ export const resolutionLabel = (value: string | null | undefined): string =>
       : ""
 
 /**
- * Příčina poškození (§11.3). Zatím jediná typovaná hodnota: `"carrier"` =
- * zásilka dorazila poškozená → majitelka reklamuje u dopravce.
+ * Příčina poškození (§11.3, §13.7):
+ * - `"carrier"` = zásilka dorazila poškozená → majitelka reklamuje u dopravce;
+ * - `"damaged"` = poškozený kus (viditelné poškození) — bez dopravce, ale
+ *   fotky jsou povinné stejně, protože bez nich se poškození nedá posoudit;
+ * - `null` = vada / nefunguje (fotky dobrovolné).
  */
-export type DamageCause = "carrier"
+export type DamageCause = "carrier" | "damaged"
 
-export const DAMAGE_CAUSES: readonly DamageCause[] = ["carrier"]
+export const DAMAGE_CAUSES: readonly DamageCause[] = ["carrier", "damaged"]
 
 export const isDamageCause = (value: unknown): value is DamageCause =>
   typeof value === "string" &&
@@ -148,10 +151,30 @@ export const isDamageCause = (value: unknown): value is DamageCause =>
 
 export const DAMAGE_CAUSE_LABEL: Record<DamageCause, string> = {
   carrier: "Poškozeno přepravou",
+  damaged: "Poškozený kus",
 }
 
 export const damageCauseLabel = (value: unknown): string | null =>
   isDamageCause(value) ? DAMAGE_CAUSE_LABEL[value] : null
+
+/**
+ * Věta do protokolu („Příčina poškození"). U dopravce musí být vidět, že
+ * reklamaci u něj podává prodávající; u poškozeného kusu, že důkazem jsou
+ * fotky z žádosti. Protokol ji tiskne doslova — žádné skládání v PDF.
+ */
+export const damageCauseSentence = (value: unknown): string | null => {
+  if (value === "carrier") {
+    return "Poškozeno přepravou — zásilka dorazila poškozená; reklamaci u dopravce uplatňuje prodávající."
+  }
+  if (value === "damaged") {
+    return "Poškozený kus — viditelné poškození zboží (fotky přiloženy k žádosti)."
+  }
+  return null
+}
+
+/** Fotky jsou povinné u obou příčin poškození (§11.3, §13.7). */
+export const photosRequiredFor = (value: unknown): boolean =>
+  value === "carrier" || value === "damaged"
 
 /**
  * Formulář České pošty pro reklamaci zásilky (§11.3).

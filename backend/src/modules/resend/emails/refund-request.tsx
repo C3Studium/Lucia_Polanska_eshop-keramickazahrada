@@ -27,6 +27,8 @@ interface RefundRequestEmailProps {
   items?: string;
   /** Balík dorazil poškozený (§11.3) — věta, že dopravce reklamujeme my. */
   carrierDamage?: boolean;
+  /** Poškozený kus (§13.7) — fotky jsou přiložené k žádosti. */
+  damagedItem?: boolean;
   orderLink?: string;
   /** Stav žádosti ve storefrontu (podepsaný odkaz z e-mailu). */
   claimsUrl?: string;
@@ -111,6 +113,7 @@ function RefundRequestEmailComponent({
   requestedResolution,
   items,
   carrierDamage = false,
+  damagedItem = false,
   orderLink = "",
   claimsUrl,
   deadlineText,
@@ -133,6 +136,9 @@ function RefundRequestEmailComponent({
       {refundReason ? <LedgerRow label="Důvod" value={refundReason} /> : null}
       {carrierDamage ? (
         <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
+      ) : null}
+      {damagedItem ? (
+        <LedgerRow label="Příčina" value="Poškozený kus" tone="clay" />
       ) : null}
       {requestedResolution ? (
         <LedgerRow label="Požadujete" value={requestedResolution} />

@@ -9,7 +9,7 @@ import {
 } from "../../lib/return-requests";
 import { formatCzk, productionStageLabels, stageColors } from "../../lib/workbench";
 import { PanelShell } from "./panels";
-import { RefundPanel } from "./refund-panel";
+import { DepositRefundPanel } from "./refund-panel";
 import { useReturnAction } from "./use-return-action";
 
 /**
@@ -193,9 +193,8 @@ export const ProductionCard = ({
 
   if (panel === "refund-deposit") {
     return (
-      <RefundPanel
+      <DepositRefundPanel
         request={request}
-        scope="deposit"
         depositAmount={depositLeft}
         onClose={() => setPanel(null)}
       />

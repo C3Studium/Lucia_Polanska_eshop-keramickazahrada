@@ -293,10 +293,133 @@
   .stepper { margin-left: calc(44px + 0.5rem); }
 }
 
-/* ── Poškozeno přepravou (§11.3) ──────────────────────────────────────────
-   Jedno zaškrtávátko ve tvaru karty druhu; zapnuté se obarví hlínou — je to
-   upozornění, které mění pravidla (fotky povinné), ne jen další volba. */
-.carrier {
+/* ── Které části balíčku? (§13.5) ─────────────────────────────────────────
+   Vložka pod zaškrtnutým balíčkem přes celou šířku řádku: menší karty na
+   komponenty, stejné zaškrtávátko a stepper jako u položky, jen hustší.
+   Odsazení zleva zarovnává komponenty pod náhled balíčku. */
+.components {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.15rem 0 0.25rem calc(44px + 0.5rem);
+  padding: 0;
+  border: 0;
+}
+
+.componentsLegend {
+  padding: 0 0 0.3rem;
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 400 0.72rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  i {
+    font-style: normal;
+    opacity: 0.7;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+.componentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.component {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  padding: 0.3rem 0.6rem 0.3rem 0.25rem;
+  border: 1px dashed rgb(var(--ink-05-rgb) / 0.22);
+  border-radius: 0.6rem;
+  background: rgb(var(--white-rgb) / 0.35);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &[data-checked] {
+    border-style: solid;
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+  }
+}
+
+@include fine-pointer {
+  .component:hover { border-color: rgb(var(--ink-05-rgb) / 0.45); }
+  .component[data-checked]:hover { border-color: var(--olive-07); }
+}
+
+.componentMain {
+  flex: 1 1 12rem;
+  display: grid;
+  grid-template-columns: 40px 2.5rem 1fr;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 40px;
+  cursor: pointer;
+
+  input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    justify-self: center;
+    accent-color: var(--olive-07);
+    cursor: pointer;
+  }
+}
+
+.componentThumb {
+  width: 2.5rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.45rem;
+}
+
+.componentTitle {
+  font: 400 clamp(0.86rem, 1vw, 0.94rem) / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+/* Stepper komponenty — o chlup menší než u položky, ať vložka nepřeroste řádek. */
+.stepperSmall {
+  button {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+  }
+
+  input {
+    width: 2.6rem;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+}
+
+@include below-px(480px) {
+  .components { margin-left: 0; }
+  .stepperSmall { margin-left: calc(40px + 0.45rem); }
+}
+
+/* ── Co se stalo? (§13.7) ─────────────────────────────────────────────────
+   Tři karty ve tvaru výběru druhu. Vada = běžná volba (olivově). Poškozený
+   kus a poškozeno přepravou (`data-tone="warn"`) se vybrané obarví hlínou —
+   mění pravidla (fotky povinné), u přepravy navíc kdo co řeší. */
+.causes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cause {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
@@ -309,11 +432,20 @@
   transition: border-color 0.2s ease, background-color 0.2s ease;
 
   input {
-    width: 1.1rem;
-    height: 1.1rem;
-    margin: 0.2rem 0 0;
-    accent-color: var(--clay-06);
+    margin-top: 0.2rem;
     cursor: pointer;
+  }
+
+  &[data-tone="warn"] input { accent-color: var(--clay-06); }
+
+  &:has(input:checked) {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+  }
+
+  &[data-tone="warn"]:has(input:checked) {
+    border-color: var(--clay-06);
+    background: rgb(var(--clay-06-rgb) / 0.07);
   }
 
   .kindHelp a {
@@ -324,14 +456,9 @@
 }
 
 @include fine-pointer {
-  .carrier:hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
-}
-
-.carrierOn {
-  border-color: var(--clay-06);
-  background: rgb(var(--clay-06-rgb) / 0.07);
-
-  &:hover { border-color: var(--clay-06); }
+  .cause:hover { border-color: rgb(var(--ink-05-rgb) / 0.4); }
+  .cause:has(input:checked):hover { border-color: var(--olive-07); }
+  .cause[data-tone="warn"]:has(input:checked):hover { border-color: var(--clay-06); }
 }
 
 /* Vnitřní validace (chybí položka / fotka) — hlínou, ale bez role=alert:

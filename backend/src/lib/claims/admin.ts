@@ -15,15 +15,18 @@ import {
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
 import { planClaimCase } from "./case"
-import { damageCauseLabel, resolutionLabel } from "./constants"
+import { damageCauseSentence, resolutionLabel } from "./constants"
 import { CLAIM_FLAG_ORDER_FIELDS, claimFlagsOf } from "./flags"
 import { claimItemsText, suggestedRefundAmount } from "./line-items"
 import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
 import { productionBlockOf } from "./production"
+import { refundLineText, requestRefundLinesText } from "./refund-lines"
 import {
   moneyState,
   requestRefundedTotal,
   requestRefunds,
+  type RefundCreditNote,
+  type RefundEntry,
 } from "./refund-rules"
 
 /**
@@ -50,21 +53,72 @@ export const retrieveClaim = async (
   }
 }
 
+/** Způsob vrácení slovy (§13.3) — do e-mailů i protokolu. */
 export const refundMethodLabel = (method: unknown): string =>
-  method === "comgate" ? "na platební kartu" : "ručně (hotově / převodem)"
+  method === "comgate"
+    ? "na kartu přes ComGate — na účtu do 3–5 pracovních dnů"
+    : "ručně"
 
-/** Refundace žádosti ve tvaru pro protokol. */
+/**
+ * Dobropis k refundaci slovy (§13.3): číslo, nebo proč zatím není. „Skipped"
+ * ve zkušebním režimu říká zákazníkovi i majitelce, že doklad přijde v
+ * ostrém režimu; chyba iDokladu se zákazníkovi nepíše (vývojář má upozornění).
+ */
+export const creditNoteText = (creditNote: RefundCreditNote | null | undefined): string | null => {
+  if (!creditNote) return null
+  if ((creditNote.status === "issued" || creditNote.status === "exists") && creditNote.number) {
+    return `č. ${creditNote.number}`
+  }
+  if (creditNote.status === "skipped" && creditNote.reason) {
+    return creditNote.reason
+  }
+  return null
+}
+
+/** Refundace žádosti ve tvaru pro protokol — s košíkem a dobropisem (§13.2–13.3). */
 export const protocolRefundsOf = (
   request: any,
   currency: string | null | undefined
-): ProtocolRefund[] =>
-  requestRefunds(request).map((refund) => ({
+): ProtocolRefund[] => {
+  const code = String(currency || "czk")
+  return requestRefunds(request).map((refund) => ({
     amount: refund.amount,
-    currency: String(currency || "czk"),
+    currency: code,
     method: refund.method,
     at: refund.at ? new Date(refund.at) : new Date(),
     note: refund.note ?? null,
+    lines: refund.lines?.length
+      ? refund.lines.map((line) => refundLineText(line, code))
+      : null,
+    creditNote: creditNoteText(refund.credit_note),
   }))
+}
+
+/**
+ * Data o dobropisu pro e-mail (`creditNoteNumber` / `creditNoteUrl`, nebo
+ * `creditNoteNote` = věta, proč doklad zatím není). Bere se poslední refundace
+ * žádosti, která nějaký výsledek nese.
+ */
+export const creditNoteEmailData = (
+  refunds: RefundEntry[],
+  override?: RefundCreditNote | null
+): Record<string, unknown> => {
+  const creditNote =
+    override ??
+    [...refunds].reverse().find((refund) => refund.credit_note)?.credit_note ??
+    null
+  if (!creditNote) return {}
+  if ((creditNote.status === "issued" || creditNote.status === "exists") && creditNote.number) {
+    return {
+      creditNoteNumber: creditNote.number,
+      ...(creditNote.pdf_url ? { creditNoteUrl: creditNote.pdf_url } : {}),
+    }
+  }
+  if (creditNote.status === "skipped" && creditNote.reason) {
+    return { creditNoteNote: `Opravný daňový doklad (dobropis): ${creditNote.reason}` }
+  }
+  return {}
+}
 
 /** „Schváleno — oprava" / „Zamítnuto" / „Žádost stornována" — do protokolu. */
 export const decisionOutcome = (
@@ -115,7 +169,7 @@ export const regenerateProtocol = async (
     // Položky přednostně z `line_items` (název · varianta · ks · částka), u
     // starých řádků text zákazníka (§11.5).
     items: claimItemsText(request),
-    damageCause: damageCauseLabel(request.damage_cause),
+    damageCause: damageCauseSentence(request.damage_cause),
     requestedResolution:
       request.kind === "reklamace"
         ? resolutionLabel(request.requested_resolution) || null
@@ -143,8 +197,9 @@ export const regenerateProtocol = async (
 
 /**
  * Společný základ `data` pro e-maily modulu — jen reálné hodnoty, žádné výplně.
- * `items` = položky slovy (přednostně `line_items`), `carrierDamage` = věta
- * „Poškozeno přepravou" v šablonách, které ji umí (§11.3, §11.5).
+ * `items` = položky slovy (přednostně `line_items`), `carrierDamage` /
+ * `damagedItem` = věta „Poškozeno přepravou" / „Poškozený kus" v šablonách,
+ * které ji umí (§11.3, §11.5, §13.7).
  */
 export const claimEmailBase = (
   request: any,
@@ -162,6 +217,7 @@ export const claimEmailBase = (
     ...(label ? { resolutionLabel: label } : {}),
     ...(items ? { items } : {}),
     ...(request.damage_cause === "carrier" ? { carrierDamage: true } : {}),
+    ...(request.damage_cause === "damaged" ? { damagedItem: true } : {}),
     ...(link ? { orderLink: link } : {}),
     ...(claimsUrl ? { claimsUrl } : {}),
     ...(protocolUrl ? { protocolUrl } : {}),
@@ -170,14 +226,25 @@ export const claimEmailBase = (
 
 /**
  * „Potvrzení o vyřízení" — JEDINÝ e-mail za uzavření žádosti, ať skončila
- * refundací, opravou nebo výměnou. Volá ho `resolve` i poslední `refund`.
+ * refundací, opravou nebo výměnou. Volá ho `resolve`, `cancel-production` i
+ * poslední `refund`. Když se vracely peníze, nese košík (řádky přes všechny
+ * refundace), způsob (karta ComGate / ručně) a dobropis (§13.3) — ten se čte
+ * ze záznamů refundací na žádosti, takže volající nic skládat nemusí.
  */
 export const sendResolvedEmail = async (
   container: MedusaContainer,
   request: any,
-  options: { protocolUrl?: string | null; currency?: string | null; note?: string | null }
+  options: {
+    protocolUrl?: string | null
+    currency?: string | null
+    note?: string | null
+    creditNote?: RefundCreditNote | null
+  }
 ): Promise<void> => {
   const total = requestRefundedTotal(request)
+  const currency = options.currency ?? "czk"
+  const refunds = requestRefunds(request)
+  const refundLines = requestRefundLinesText(request, currency)
   await sendCustomerEmail(container, {
     template: "return-resolved",
     to: request.email,
@@ -192,8 +259,10 @@ export const sendResolvedEmail = async (
       resolvedAt: formatDate(request.resolved_at ?? new Date()),
       ...(total > 0
         ? {
-            refundAmount: formatMoney(total, options.currency ?? "czk"),
+            refundAmount: formatMoney(total, currency),
             refundMethod: refundMethodLabel(request.refund_method),
+            ...(refundLines ? { refundLines } : {}),
+            ...creditNoteEmailData(refunds, options.creditNote),
           }
         : {}),
       ...(options.note ? { note: options.note } : {}),

@@ -117,6 +117,14 @@ export const ITEMS_QUANTITY_INVALID =
   "Počet kusů musí být celé číslo, aspoň 1."
 export const PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE =
   "U poškození přepravou prosím přiložte aspoň jednu fotku poškozené zásilky nebo zboží — bez ní nemůžeme reklamaci u dopravce uplatnit."
+export const PHOTOS_REQUIRED_FOR_DAMAGED_ITEM =
+  "U poškozeného kusu prosím přiložte aspoň jednu fotku poškození — bez ní nemůžeme vadu posoudit."
+
+/** Hláška „fotky povinné" podle příčiny (§11.3 dopravce, §13.7 poškozený kus). */
+export const photosRequiredMessage = (cause: unknown): string =>
+  cause === "damaged"
+    ? PHOTOS_REQUIRED_FOR_DAMAGED_ITEM
+    : PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE
 
 /**
  * Pravidla §11.1 a sestavení snapshotu v jednom kroku:

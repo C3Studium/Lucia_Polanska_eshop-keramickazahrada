@@ -25,12 +25,20 @@ interface ReturnResolvedEmailProps {
   items?: string;
   /** Vada vznikla přepravou (§11.3) — do potvrzení patří. */
   carrierDamage?: boolean;
+  /** Poškozený kus (§13.7). */
+  damagedItem?: boolean;
   /** Datum vyřízení (formátované) — povinná náležitost potvrzení (§19/3 ZOS). */
   resolvedAt?: string;
   /** Vrácená částka celkem (formátovaná) — jen když se peníze vracely. */
   refundAmount?: string;
-  /** „na platební kartu" / „ručně (hotově / převodem)". */
+  /** „na kartu přes ComGate — na účtu do 3–5 pracovních dnů" / „ručně". */
   refundMethod?: string;
+  /** Košík vrácení (§13.2) — řádek za řádek („název · N ks · částka"). */
+  refundLines?: string;
+  /** Dobropis (§13.3): číslo + odkaz na PDF, nebo věta, proč zatím není. */
+  creditNoteNumber?: string;
+  creditNoteUrl?: string;
+  creditNoteNote?: string;
   /** Text majitelky do potvrzení (volitelný). */
   note?: string;
   orderLink?: string;
@@ -59,9 +67,14 @@ function ReturnResolvedEmailComponent({
   resolutionLabel,
   items,
   carrierDamage = false,
+  damagedItem = false,
   resolvedAt,
   refundAmount,
   refundMethod,
+  refundLines,
+  creditNoteNumber,
+  creditNoteUrl,
+  creditNoteNote,
   note,
   orderLink = "",
   claimsUrl,
@@ -69,6 +82,10 @@ function ReturnResolvedEmailComponent({
 }: ReturnResolvedEmailProps) {
   const isClaim = kind === "reklamace"
   const outcome = OUTCOME[resolution ?? "refund"] ?? OUTCOME.refund
+  // Způsob vrácení řídí i větu o připsání: karta má lhůtu banky, ruční
+  // vrácení ne — slibovat „do několika dnů" u převodu, který majitelka teprve
+  // zadá, by byla lež.
+  const byCard = Boolean(refundMethod && /comgate|kart/i.test(refundMethod))
   return (
     <EmailLayout
       preview={
@@ -92,9 +109,15 @@ function ReturnResolvedEmailComponent({
       {carrierDamage ? (
         <LedgerRow label="Příčina" value="Poškozeno přepravou" tone="clay" />
       ) : null}
+      {damagedItem ? (
+        <LedgerRow label="Příčina" value="Poškozený kus" tone="clay" />
+      ) : null}
       {resolvedAt ? <LedgerRow label="Vyřízeno dne" value={resolvedAt} /> : null}
       {resolutionLabel ? (
         <LedgerRow label="Způsob vyřízení" value={resolutionLabel} />
+      ) : null}
+      {refundLines ? (
+        <LedgerRow label="Vrácené položky" value={<MultiLine value={refundLines} />} />
       ) : null}
       {refundAmount ? (
         <LedgerRow label="Vrácená částka" value={refundAmount} strong tone="olive" />
@@ -102,20 +125,23 @@ function ReturnResolvedEmailComponent({
       {refundAmount && refundMethod ? (
         <LedgerRow label="Vráceno" value={refundMethod} />
       ) : null}
+      {creditNoteNumber ? (
+        <LedgerRow label="Dobropis" value={`č. ${creditNoteNumber}`} />
+      ) : null}
       {note ? <LedgerRow label="Poznámka" value={note} /> : null}
       <LedgerEnd />
 
       <Note tone="olive">{outcome}</Note>
 
-      {protocolUrl || claimsUrl || orderLink ? (
+      {protocolUrl || claimsUrl || orderLink || creditNoteUrl ? (
         <ButtonRow>
           {protocolUrl ? (
             <EmailButton href={protocolUrl}>Potvrzení o vyřízení (PDF)</EmailButton>
-          ) : (
+          ) : claimsUrl || orderLink ? (
             <EmailButton href={claimsUrl || orderLink}>
               {claimsUrl ? "Stav žádosti" : "Zobrazit objednávku"}
             </EmailButton>
-          )}
+          ) : null}
           {protocolUrl && (claimsUrl || orderLink) ? (
             <>
               <span style={{ display: "inline-block", width: "12px" }} />
@@ -124,13 +150,29 @@ function ReturnResolvedEmailComponent({
               </EmailButton>
             </>
           ) : null}
+          {creditNoteUrl ? (
+            <>
+              {protocolUrl || claimsUrl || orderLink ? (
+                <span style={{ display: "inline-block", width: "12px" }} />
+              ) : null}
+              <EmailButton
+                href={creditNoteUrl}
+                variant={protocolUrl || claimsUrl || orderLink ? "ghost" : undefined}
+              >
+                Dobropis (PDF)
+              </EmailButton>
+            </>
+          ) : null}
         </ButtonRow>
       ) : null}
 
       <P small>
-        {refundAmount
-          ? "Připsání peněz závisí na vaší bance, obvykle do několika pracovních dnů. "
-          : ""}
+        {refundAmount && byCard
+          ? "Připsání peněz na účet závisí na vaší bance, obvykle do 3–5 pracovních dnů. "
+          : refundAmount
+            ? "Peníze vracíme ručně (převodem na účet nebo hotově); pokud od vás potřebujeme číslo účtu, ozveme se. "
+            : ""}
+        {creditNoteNote ? `${creditNoteNote} ` : ""}
         {isClaim
           ? "Nesouhlasíte-li s vyřízením, máte právo obrátit se na Českou obchodní inspekci (www.coi.cz), případně na soud. "
           : ""}

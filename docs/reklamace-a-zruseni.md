@@ -271,3 +271,86 @@ objednávku · Vrátit zálohu · Vyřízeno · Zrušit objednávku · Zrušit z
 Stornovat žádost. Seznam v `routes/reklamace/page.tsx` otvírá stránku
 (`/reklamace/<id>`), drawer se odstraní; widget na objednávce odkazuje na
 stránku. Deep linky `?status=&id=` přesměrují na stránku.
+
+## 13. Doplnění (10. 10. 2026 večer): auto-zrušení, košík vrácení, dobropis za refund, ComGate, balíček, poškození
+
+### 13.1 Nezaplaceno + neodesláno = zrušit hned
+Při založení žádosti (`POST /store/orders/:id/claims`, kind `odstoupeni`
+nebo `vraceni`) kdy na objednávce **není nic zachyceno** (`nothing_captured`)
+a **nic neodešlo** (`goods_shipped=false`): server žádost rovnou schválí
+(resolution refund, decision_note „Automaticky — nezaplaceno, neodesláno"),
+vyřídí (`resolved`) a zruší objednávku (`cancelOrderNatively` → nativní
+zrušení + fáze cancelled + případná zakázka uzavřena). Zákazník dostane jen
+e-mail „objednávka zrušena" (`return-approved` s `nothingToReturn`), Lucie
+upozornění (bez e-mailu). Odpověď `{ received: true, id, auto_cancelled: true }`;
+storefront místo „posoudíme" ukáže „Objednávka je zrušená". Zakázka se
+auto-neruší nikdy (§1837 — rozhoduje Lucie).
+
+### 13.2 Košík vrácení — žádná částka automaticky
+Nikde se částka nepředvyplňuje; Lucie ji **sestaví**. Refund tělo:
+`lines: Array<{ type: "item", line_item_id, quantity }
+ | { type: "component", line_item_id, product_id, quantity }
+ | { type: "shipping" }
+ | { type: "custom", amount, label }>` (+ `note`, `mark_resolved`,
+`skip_goods_check`). Server spočítá částku (item: `unit_total × qty`,
+component: poměrná cena komponenty balíčku × qty, shipping: `shipping_total`
+objednávky **jednou** — sleduje se `shipping_refunded`, custom: zadaná
+částka), ověří stropy (položka/komponenta jen jednou, celkem ≤ `remaining`)
+a uloží `lines` do záznamu refundace i `refund_history`. `scope: "all"` a
+`scope: "deposit"` zůstávají jako VÝSLOVNÁ tlačítka („Vrátit celou
+objednávku" = všechny zbývající položky + poštovné, „Vrátit zálohu"); staré
+`items`/`amount` tělo se mapuje na `lines`. V panelu „Schválit" je volba
+„rovnou vrátit" **vypnutá** (jde zapnout), a znamená celou objednávku.
+Detail (`GET …/detail`) navíc: `shipping: { total, refunded, refundable }`.
+
+### 13.3 Dobropis za každou refundaci (§45 ZDPH)
+`issueCreditNoteForRefund(container, order, refund)` — iDoklad
+`GET /CreditNotes/Default/{invoiceId}` dá návrh s obrácenými položkami; z
+něj se ponechají/zkrátí jen položky odpovídající `lines` (item/component:
+množství; shipping: řádek dopravy; custom: jeden řádek „Vrácení — {label}"
+s cenou vč. DPH a sazbou z původních položek), součet = vrácená částka;
+`POST /CreditNotes`, PDF do úložiště. Více dobropisů na objednávku:
+`order.metadata.idoklad_credit_notes: [{ refund_id, id, number, pdf_url, amount, issued_at }]`
+(stará `idoklad_credit_note_*` pole zůstávají pro plný dobropis jako
+alias). Zkušební režim → `skipped` jako u faktur (do zprávy i e-mailu se
+napíše, že doklad se vystaví až v ostrém režimu). Dobropis se vystavuje
+u reklamace, vrácení i odstoupení — vždy, když se vrací peníze z faktury.
+E-mail zákazníkovi (`return-resolved` / `order-refunded`) nese: vrácenou
+částku, řádky košíku, způsob (karta ComGate — na účtu do 3–5 pracovních
+dnů / ručně), odkaz na dobropis PDF; protokol totéž.
+
+### 13.4 ComGate — potvrzení refundu
+ComGate refund je synchronní (`/refund.json`, kód 0 = přijato); **webhook
+pro refund ComGate nemá** (notifikace chodí jen ke stavu platby). Potvrzení
+= odpověď ComGate: do záznamu refundace se uloží `provider: "comgate"`,
+`provider_ref` (refId = idempotency klíč), `provider_confirmed_at`,
+`provider_test: boolean` a po refundu se znovu načte `retrieveDetails`
+(status zůstává PAID, `refundedAmountMinor` v datech relace = součet
+vráceného) — uloží se jako `provider_refunded_total`. Admin u refundace
+ukáže „ComGate přijal (ref …, test)". Když ComGate odmítne, nic se nezapíše
+(jako dnes). Ruční metoda (`manual`) má `provider: "manual"`.
+
+### 13.5 Balíček po komponentách
+Položka s `product.metadata.is_bundle` se v detailu rozepíše:
+`components: [{ product_id, variant_id, title, thumbnail, quantity (na jeden
+balíček), unit_share, refunded_quantity, refundable_quantity }]` — `unit_share`
+= poměrná cena komponenty: aktuální cena varianty komponenty × množství,
+přepočtená tak, aby Σ komponent = `unit_total` balíčku. Refund `line.type:
+"component"` vrací `unit_share × qty`; sleduje se per komponenta.
+Storefront formulář nabízí u balíčku výběr komponent.
+
+### 13.6 Zakázka s ponechanou zálohou
+`cancel-production { keep_deposit: true }` u čisté zakázky: výrobní příkaz
+cancelled, fáze cancelled, a objednávka se nativně **dokončí**
+(`completeOrderWorkflow`) — zůstává zaplacená zálohou, faktura za zálohu platí,
+`resolution_note` „Záloha ponechána". Zrušit nativně nejde (workflow by
+zálohu vrátil).
+
+### 13.7 Poškozené kusy — fotky povinné
+`damage_cause`: `"carrier"` (poškozeno přepravou), **`"damaged"`**
+(poškozený kus — viditelné poškození), `null` (vada / nefunguje). Fotky
+povinné pro `carrier` i `damaged` (server 400, formulář hlídá). Storefront:
+u reklamace výběr „Co se stalo": *Vada nebo nefunkčnost* · *Poškozený kus
+(fotky)* · *Balík dorazil poškozený — přepravou (fotky)*. Admin badge
+„Poškozený kus" (oranžová) vedle „Poškozeno přepravou" (červená); protokol
+„Příčina: poškození".

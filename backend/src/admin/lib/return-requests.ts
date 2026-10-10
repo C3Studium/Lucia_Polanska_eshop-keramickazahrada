@@ -27,14 +27,122 @@ export type RequestedResolution = "repair" | "replace" | "refund";
 /** Rozsah refundace (§12.3): vybrané položky, celá objednávka, záloha zakázky. */
 export type RefundScope = "items" | "all" | "deposit";
 
+/**
+ * Řádek košíku vrácení v TĚLE refundace (§13.2) — přesně to, co posílá košík.
+ * Server částku počítá sám (item: `unit_total × qty`, component: `unit_share
+ * × qty`, shipping: poštovné objednávky jednou, custom: zadaná částka) a
+ * ohlídá stropy; z prohlížeče žádná cena nejde.
+ */
+export type RefundLineInput =
+  | { type: "item"; line_item_id: string; quantity: number }
+  | { type: "component"; line_item_id: string; product_id: string; quantity: number }
+  | { type: "shipping" }
+  | { type: "custom"; amount: number; label: string };
+
+export type RefundLineType = RefundLineInput["type"];
+
+/**
+ * Řádek tak, jak se VRACÍ v záznamu `refunds[].lines` (server
+ * `lib/claims/refund-rules.ts`): se snapshotem názvu (`title` — u custom je
+ * to popisek) a ceny (`unit_total`, `amount`). Volné, ať výpis přežije i
+ * starší / neúplný záznam; `label` se toleruje pro tvar vstupu.
+ */
+export type RefundLine = {
+  type: RefundLineType;
+  line_item_id?: string | null;
+  product_id?: string | null;
+  variant_id?: string | null;
+  quantity?: number | null;
+  title?: string | null;
+  label?: string | null;
+  unit_total?: number | null;
+  amount?: number | null;
+};
+
+export const REFUND_LINE_TYPE_LABEL: Record<RefundLineType, string> = {
+  item: "položka",
+  component: "komponenta balíčku",
+  shipping: "poštovné",
+  custom: "jiná částka",
+};
+
+export const isRefundLine = (value: unknown): value is RefundLine => {
+  if (!value || typeof value !== "object") return false;
+  const type = (value as { type?: unknown }).type;
+  return type === "item" || type === "component" || type === "shipping" || type === "custom";
+};
+
+/** Jeden řádek refundace do výpisu plateb: „název × N", „poštovné", „jiná částka: …". */
+export const formatRefundLine = (line: RefundLine): string => {
+  const quantity = asNumber(line.quantity);
+  switch (line.type) {
+    case "item":
+      return `${line.title || "položka"}${quantity > 0 ? ` × ${quantity}` : ""}`;
+    case "component":
+      return `komponenta: ${line.title || line.product_id || "?"}${quantity > 0 ? ` × ${quantity}` : ""}`;
+    case "shipping":
+      return line.title || "poštovné";
+    case "custom":
+      return `jiná částka: ${line.label || line.title || "částka"}`;
+    default:
+      return "";
+  }
+};
+
+/**
+ * Dobropis k jedné refundaci (§13.3) na záznamu `refunds[].credit_note`.
+ * Server posílá snapshot `{ status, number, pdf_url, reason? }` — `skipped`
+ * = zkušební režim / bez faktury (důvod v `reason`), `error` = iDoklad odmítl.
+ * Tolerují se i pole položky `order.metadata.idoklad_credit_notes[]`
+ * (`id`, `amount`, `issued_at`, `refund_id`) bez `status`.
+ */
+export type RefundCreditNote = {
+  status?: "issued" | "exists" | "skipped" | "error" | string | null;
+  id?: string | number | null;
+  number?: string | null;
+  pdf_url?: string | null;
+  reason?: string | null;
+  amount?: number | null;
+  issued_at?: string | null;
+  refund_id?: string | null;
+};
+
+export const isRefundCreditNote = (value: unknown): value is RefundCreditNote =>
+  Boolean(value) && typeof value === "object";
+
+/** Dobropis existuje (vystaven teď, nebo už byl) — má číslo / PDF. */
+export const creditNoteIssued = (note: RefundCreditNote | null | undefined): boolean =>
+  Boolean(note) &&
+  (note!.status === "issued" ||
+    note!.status === "exists" ||
+    (!note!.status && Boolean(note!.number || note!.pdf_url)));
+
 export type ReturnRefund = {
+  id?: string | null;
   amount: number;
   method: "comgate" | "manual" | string;
   at: string;
   note?: string | null;
-  /** §12.3 — za které položky se vracelo (jen `scope: "items"`). */
+  /** §12.3 — za které položky se vracelo (starší záznamy; nové mají `lines`). */
   items?: RefundItemRef[] | null;
   scope?: RefundScope | string | null;
+  /** §13.2 — řádky košíku vrácení. */
+  lines?: RefundLine[] | null;
+  /** §13.4 — potvrzení ComGate (`provider: "comgate"`) / ruční (`"manual"`). */
+  provider?: "comgate" | "manual" | string | null;
+  /** refId = idempotency klíč u ComGate. */
+  provider_ref?: string | null;
+  provider_confirmed_at?: string | null;
+  provider_test?: boolean | null;
+  /** `refundedAmountMinor` z relace ComGate po refundu — součet vráceného. */
+  provider_refunded_total?: number | null;
+  provider_status?: string | null;
+  /**
+   * §13.3 — dobropis (snapshot se `status`); starší tvar: `null` +
+   * `credit_note_skipped_reason` = zkušební režim.
+   */
+  credit_note?: RefundCreditNote | null;
+  credit_note_skipped_reason?: string | null;
 };
 
 /** Položka v těle refundace i v záznamu `refunds[].items`. */
@@ -60,8 +168,12 @@ export type ReturnLineItem = {
   currency_code?: string | null;
 };
 
-/** Příčina poškození — zatím jen „přepravou" (§11.3). */
-export type DamageCause = "carrier";
+/**
+ * Příčina poškození (§11.3, §13.7): `"carrier"` = poškozeno přepravou,
+ * `"damaged"` = poškozený kus (viditelné poškození); `null` = vada /
+ * nefunkčnost. U obou příčin jsou fotky povinné.
+ */
+export type DamageCause = "carrier" | "damaged";
 
 export type ReturnRequest = {
   id: string;
@@ -132,8 +244,10 @@ export type RefundResponse = {
   amount: number;
   remaining: number;
   status: ReturnStatus;
-  credit_note?: unknown;
+  credit_note?: RefundCreditNote | unknown;
   message: string;
+  scope?: RefundScope | string | null;
+  lines?: RefundLine[] | null;
 };
 
 export type CancelOrderResponse = {
@@ -188,6 +302,23 @@ export type ClaimDetailOrder = {
 };
 
 /**
+ * Komponenta balíčku (§13.5) — položka s `product.metadata.is_bundle` se
+ * rozepíše po komponentách. `quantity` je kusů NA JEDEN balíček; `unit_share`
+ * poměrná cena za kus komponenty (Σ komponent × quantity = `unit_total`
+ * balíčku). `refundable_quantity` je v kusech komponenty za celou položku.
+ */
+export type ClaimItemComponent = {
+  product_id: string;
+  variant_id?: string | null;
+  title: string;
+  thumbnail?: string | null;
+  quantity: number;
+  unit_share: number;
+  refunded_quantity?: number | null;
+  refundable_quantity?: number | null;
+};
+
+/**
  * Položka objednávky na stránce žádosti. `unit_total` = `item.total /
  * quantity` (po slevě, s DPH). `refundable_quantity` už odečítá dřívější
  * refundace po položkách; `refundable_amount` je u zakázkové položky navíc
@@ -205,8 +336,14 @@ export type ClaimDetailItem = {
   refunded_quantity?: number | null;
   refundable_quantity?: number | null;
   refundable_amount?: number | null;
-  /** Kolik kusů této položky zákazník vybral v žádosti (předvýběr). */
+  /**
+   * Kolik kusů této položky zákazník vybral v žádosti. Jen nápověda (badge
+   * „v žádosti N ks") — nic se nepředvybírá (§13.2).
+   */
   selected_in_claim?: number | null;
+  /** §13.5 — balíček rozepsaný po komponentách (jen když server posílá). */
+  is_bundle?: boolean | null;
+  components?: ClaimItemComponent[] | null;
 };
 
 export type ClaimMoney = {
@@ -214,6 +351,13 @@ export type ClaimMoney = {
   refunded: number;
   remaining: number;
   refunds?: ReturnRefund[] | null;
+};
+
+/** §13.2 — poštovné objednávky: vrací se nejvýš jednou (`shipping_refunded`). */
+export type ClaimShipping = {
+  total: number;
+  refunded: number;
+  refundable: number;
 };
 
 export type ClaimProduction = {
@@ -262,6 +406,8 @@ export type ClaimDetailResponse = {
   order?: ClaimDetailOrder | null;
   items?: ClaimDetailItem[] | null;
   money?: ClaimMoney | null;
+  /** §13.2 — bez něj košík řádek „Poštovné" nenabídne. */
+  shipping?: ClaimShipping | null;
   production?: ClaimProduction | null;
   flags?: ClaimFlags | null;
   case?: ClaimCase | string | null;
@@ -337,22 +483,51 @@ export const isRefundScope = (value: unknown): value is RefundScope =>
   value === "items" || value === "all" || value === "deposit";
 
 export const isDamageCause = (value: unknown): value is DamageCause =>
-  value === "carrier";
+  value === "carrier" || value === "damaged";
 
 export const DAMAGE_CAUSE_LABEL: Record<DamageCause, string> = {
   carrier: "Poškozeno přepravou",
+  damaged: "Poškozený kus",
 };
 
-/** Barva badge: červená — poškození se ČP hlásí do 2 pracovních dnů. */
+/**
+ * Barva badge: červená u přepravy — poškození se ČP hlásí do 2 pracovních
+ * dnů; oranžová u poškozeného kusu — běžná reklamace, jen s fotkami.
+ */
 export const DAMAGE_CAUSE_COLOR: Record<DamageCause, BadgeColor> = {
   carrier: "red",
+  damaged: "orange",
+};
+
+/** Barva textu nápovědy — stejná jako badge. */
+export const DAMAGE_CAUSE_TEXT_CLASS: Record<DamageCause, string> = {
+  carrier: "text-ui-tag-red-text",
+  damaged: "text-ui-tag-orange-text",
 };
 
 /** Jednořádková nápověda k badge; odkaz na formulář ČP šel majitelce e-mailem. */
 export const DAMAGE_CAUSE_HINT: Record<DamageCause, string> = {
   carrier:
     "Podejte reklamaci u České pošty (odkaz je v upozornění majitelce) — nejpozději do 2 pracovních dnů od dodání.",
+  damaged:
+    "Zákazník hlásí viditelně poškozený kus (fotky přiložené). Dál běžná reklamace: schválit → zboží zpět → vrátit cenu položky.",
 };
+
+/**
+ * „Co se stalo" — volba z formuláře reklamace (§13.7), i pro `null`
+ * (vada / nefunkčnost), ať je v žádosti vždy vidět, co zákazník zvolil.
+ */
+export const whatHappenedLabel = (cause: unknown): string => {
+  if (cause === "carrier") return "Balík dorazil poškozený — přepravou";
+  if (cause === "damaged") return "Poškozený kus (viditelné poškození)";
+  return "Vada nebo nefunkčnost";
+};
+
+/** Zaokrouhlení na haléře — součty košíku i porovnání se „zbývá". */
+export const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/** „Zbývá 0" nemá být 0.00000001. */
+export const nearlyZero = (value: number) => Math.abs(value) < 0.005;
 
 /** Součet cen vybraných položek (po slevě, s DPH). */
 export const lineItemsTotal = (

@@ -3,6 +3,7 @@
 import { sdk } from "@lib/config"
 import type {
   ClaimDamageCause,
+  ClaimItemInput,
   ClaimKind,
   ClaimRequestedResolution,
   OrderClaims,
@@ -45,20 +46,34 @@ export type SubmitClaimInput = {
   /**
    * Vybrané položky (§11.1): u `reklamace` povinné (≥ 1), u `vraceni` volitelné
    * (prázdné = celá objednávka), u `odstoupeni` se neposílají. Server ověří, že
-   * id patří objednávce a `quantity ≤ objednané`.
+   * id patří objednávce a `quantity ≤ objednané`. U balíčku (§13.5) může
+   * položka nést `components` — jen zaškrtnuté komponenty; bez nich = celý balíček.
    */
-  items?: { id: string; quantity: number }[]
-  /** `"carrier"` = poškozeno přepravou (§11.3) → server vyžaduje ≥ 1 fotku. */
+  items?: ClaimItemInput[]
+  /**
+   * `"carrier"` = poškozeno přepravou (§11.3), `"damaged"` = poškozený kus
+   * (§13.7) → server u obou vyžaduje ≥ 1 fotku. Vada/nefunkčnost = neposílá se.
+   */
   damage_cause?: ClaimDamageCause
+}
+
+export type SubmitClaimResult = {
+  received: true
+  id: string
+  /**
+   * §13.1 — nezaplaceno + neodesláno: server žádost rovnou schválil, vyřídil
+   * a objednávku zrušil. Storefront pak neříká „posoudíme", ale „zrušeno".
+   */
+  auto_cancelled?: boolean
 }
 
 export async function submitClaim(
   orderId: string,
   token: string,
   input: SubmitClaimInput
-): Promise<{ received: true; id: string } | { error: string }> {
+): Promise<SubmitClaimResult | { error: string }> {
   try {
-    return await sdk.client.fetch<{ received: true; id: string }>(
+    return await sdk.client.fetch<SubmitClaimResult>(
       `/store/orders/${orderId}/claims`,
       {
         method: "POST",

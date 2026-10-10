@@ -133,6 +133,46 @@ describe("iDoklad module service", () => {
     expect(pdf.toString()).toBe("%PDF-1.7 fake")
   })
 
+  it("credit note: posts the Default draft as-is, or as the modify callback shaped it (§13.3)", async () => {
+    const draft = {
+      CurrencyId: 1,
+      NumericSequenceId: 5,
+      Items: [{ Name: "Mísa", Amount: 2, UnitPrice: 500 }],
+    }
+    const fetchMock = jest.spyOn(global, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.startsWith("https://identity.idoklad.cz")) {
+        return tokenResponse()
+      }
+      if (url.includes("/CreditNotes/Default/")) {
+        return envelopeResponse(draft)
+      }
+      if (init?.method === "POST") {
+        return envelopeResponse({ Id: 77, DocumentNumber: "DO-2026-1" })
+      }
+      return envelopeResponse(null)
+    })
+
+    const service = createService()
+    const plain = await service.createCreditNoteForInvoice(123)
+    expect(plain.DocumentNumber).toBe("DO-2026-1")
+    const partial = await service.createCreditNoteForInvoice(123, (d) => ({
+      ...d,
+      Items: [{ Name: "Mísa", Amount: 1, UnitPrice: 500 }],
+    }))
+    expect(partial.Id).toBe(77)
+
+    const posts = fetchMock.mock.calls.filter(
+      ([input, init]) => String(input).endsWith("/CreditNotes") && init?.method === "POST"
+    )
+    expect(posts).toHaveLength(2)
+    expect(JSON.parse(String(posts[0][1]?.body))).toEqual(draft)
+    const modified = JSON.parse(String(posts[1][1]?.body))
+    expect(modified.NumericSequenceId).toBe(5)
+    expect(modified.Items).toEqual([{ Name: "Mísa", Amount: 1, UnitPrice: 500 }])
+    expect(String(posts[1][0])).toBe("https://api.idoklad.cz/v3/CreditNotes")
+  })
+
   it("propagates iDoklad errors with the API message", async () => {
     jest.spyOn(global, "fetch").mockImplementation(async (input) => {
       const url = String(input)

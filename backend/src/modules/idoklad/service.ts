@@ -213,18 +213,21 @@ export default class IdokladModuleService {
    * Opravný daňový doklad (dobropis) k vystavené faktuře.
    *
    * iDoklad v3: `GET /CreditNotes/Default/{invoiceId}` vrátí předvyplněný návrh
-   * (obrácené položky původní faktury), `POST /CreditNotes` ho založí. Plný
-   * dobropis na celou fakturu — částečný (jen některé položky) se řeší ručně.
+   * (obrácené položky původní faktury), `POST /CreditNotes` ho založí. Bez
+   * `modify` jde návrh beze změny = plný dobropis; s `modify` (§13.3 — dobropis
+   * za každou refundaci) si volající z návrhu ponechá jen vrácené položky
+   * (`lib/idoklad-invoice.issueCreditNoteForRefund` + `credit-note.ts`).
    */
   async createCreditNoteForInvoice(
-    invoiceId: number
+    invoiceId: number,
+    modify?: (draft: Record<string, unknown>) => Record<string, unknown>
   ): Promise<IdokladIssuedInvoice> {
     const draft = await this.request<Record<string, unknown>>(
       `/CreditNotes/Default/${invoiceId}`
     )
     return this.request<IdokladIssuedInvoice>("/CreditNotes", {
       method: "POST",
-      body: draft,
+      body: modify ? modify(draft) : draft,
     })
   }
 

@@ -14,7 +14,13 @@ import {
   pickPaymentOptionId,
   pragueDate,
   singleInvoiceLine,
+  vatRateTypeFor,
 } from "../modules/idoklad/utils"
+import {
+  buildCreditNoteItems,
+  type CreditNoteStrategy,
+} from "../modules/idoklad/credit-note"
+import type { RefundLine } from "./claims/refund-rules"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import {
@@ -933,6 +939,203 @@ export const issueCreditNoteForOrder = async (
         key: `idoklad-credit:${order.id}`,
         title: `iDoklad: dobropis k objednávce #${order.display_id} se nepodařilo vystavit`,
         description: message,
+        audience: "dev",
+        email: true,
+        resource: { id: order.id, type: "order" },
+      }).catch(() => undefined)
+      return { status: "error", reason: message }
+    }
+  })
+}
+
+/**
+ * Dobropis za KAŽDOU refundaci (docs/reklamace-a-zruseni.md §13.3, §45 ZDPH).
+ *
+ * Z návrhu `GET /CreditNotes/Default/{invoiceId}` se ponechají jen položky
+ * odpovídající košíku vrácení (`modules/idoklad/credit-note.ts`): plný
+ * dobropis = návrh beze změny, částečný = zkrácené položky, a když se košík
+ * na fakturu nedá spárovat, JEDEN řádek „Vrácení — …" na vrácenou částku vč.
+ * DPH. Více dobropisů na objednávku žije v
+ * `order.metadata.idoklad_credit_notes[]` (klíč `refund_id` = idempotence);
+ * u plného vrácení se navíc zapíší stará pole `idoklad_credit_note_*`, ať
+ * starší čtenáři (widget faktury) vidí plný dobropis jako dřív.
+ *
+ * Best-effort jako faktury: zkušební režim a nenastavený iDoklad = `skipped`
+ * s důvodem (jde do hlášky i e-mailu), chyba iDokladu = `error` + upozornění
+ * vývojáři; peníze se vrátily tak jako tak.
+ */
+export type CreditNoteRefundRef = {
+  /** `refunds[].id` ze žádosti — klíč idempotence. */
+  id: string
+  amount: number
+  lines?: RefundLine[] | null
+  currency?: string | null
+}
+
+export type CreditNoteForRefundResult = {
+  status: "issued" | "skipped" | "exists" | "error"
+  number?: string
+  pdf_url?: string
+  reason?: string
+  strategy?: CreditNoteStrategy
+}
+
+export type StoredCreditNote = {
+  refund_id: string
+  id: number
+  number: string
+  pdf_url: string | null
+  amount: number
+  issued_at: string
+  strategy?: CreditNoteStrategy
+}
+
+export const CREDIT_NOTES_METADATA_KEY = "idoklad_credit_notes"
+
+export const TEST_MODE_CREDIT_NOTE_REASON =
+  "Zkušební režim — dobropis se vystaví až v ostrém režimu."
+
+export const storedCreditNotesOf = (metadata: Record<string, unknown> | null | undefined): StoredCreditNote[] =>
+  Array.isArray(metadata?.[CREDIT_NOTES_METADATA_KEY])
+    ? (metadata![CREDIT_NOTES_METADATA_KEY] as unknown[]).filter(
+        (entry): entry is StoredCreditNote =>
+          Boolean(entry) && typeof entry === "object" && typeof (entry as any).refund_id === "string"
+      )
+    : []
+
+export const issueCreditNoteForRefund = async (
+  container: MedusaContainer,
+  order: any,
+  refund: CreditNoteRefundRef
+): Promise<CreditNoteForRefundResult> => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  if (await jeZkusebniRezim(container)) {
+    return { status: "skipped", reason: TEST_MODE_CREDIT_NOTE_REASON }
+  }
+  const idoklad = resolveIdokladService(container)
+  if (!idoklad) {
+    return { status: "skipped", reason: "iDoklad není nakonfigurován." }
+  }
+
+  const metadata = (order.metadata ?? {}) as Record<string, any>
+  const already = storedCreditNotesOf(metadata).find((entry) => entry.refund_id === refund.id)
+  if (already) {
+    return {
+      status: "exists",
+      number: already.number,
+      pdf_url: already.pdf_url ?? undefined,
+      strategy: already.strategy,
+    }
+  }
+
+  const state = invoiceStateOf(order)
+  if (!state.invoice_id) {
+    return {
+      status: "skipped",
+      reason: "K objednávce není faktura — dobropis nelze vystavit.",
+    }
+  }
+
+  const amount = Math.round(Number(refund.amount) * 100) / 100
+  if (!(amount > 0)) {
+    return { status: "skipped", reason: "Nulová částka — není co dobropisovat." }
+  }
+  const full = amount >= toAmount(order.total) - epsilonFor(order.currency_code)
+  // Plný dobropis vystavený starou cestou (před §13.3) — nevystavovat podruhé.
+  if (full && metadata.idoklad_credit_note_id && !storedCreditNotesOf(metadata).length) {
+    return {
+      status: "exists",
+      number: metadata.idoklad_credit_note_number ?? undefined,
+      pdf_url: metadata.idoklad_credit_note_pdf_url ?? undefined,
+    }
+  }
+
+  return withOrderLock(order.id, async () => {
+    let strategy: CreditNoteStrategy = "single"
+    try {
+      const creditNote = (await idoklad.createCreditNoteForInvoice(
+        state.invoice_id as number,
+        (draft) => {
+          const built = buildCreditNoteItems(draft, {
+            amount,
+            lines: refund.lines ?? null,
+            orderDisplayId: String(order.display_id ?? order.id),
+            vatRateTypeFallback: vatRateTypeFor(idoklad.vatPayer),
+          })
+          strategy = built.strategy
+          return { ...draft, Items: built.items }
+        }
+      )) as any
+      const creditId = Number(creditNote?.Id)
+      const creditNumber =
+        typeof creditNote?.DocumentNumber === "string" && creditNote.DocumentNumber
+          ? creditNote.DocumentNumber
+          : String(creditId)
+
+      let pdfUrl: string | null = null
+      try {
+        const pdf = await idoklad.getCreditNotePdf(creditId)
+        const fileModule = container.resolve(Modules.FILE)
+        const [uploaded] = await fileModule.createFiles([
+          {
+            filename: `dobropis-${creditNumber}.pdf`,
+            mimeType: "application/pdf",
+            content: pdf.toString("base64"),
+            access: "public" as const,
+          },
+        ])
+        pdfUrl = uploaded?.url ?? null
+      } catch (pdfError) {
+        logger.warn(
+          `[idoklad] PDF dobropisu ${creditNumber} se nepodařilo uložit: ${describeError(pdfError)}`
+        )
+      }
+
+      // Metadata ČERSTVĚ — mezitím mohla přibýt stopa v `refund_history`
+      // (refundační engine ji zapisuje před penězi) a přepsat ji nesmíme.
+      const orderModule = container.resolve(Modules.ORDER)
+      const [fresh] = await orderModule.listOrders({ id: order.id }, { select: ["id", "metadata"] } as never)
+      const freshMetadata = ((fresh as any)?.metadata ?? metadata) as Record<string, unknown>
+      const issuedAt = new Date().toISOString()
+      const stored: StoredCreditNote = {
+        refund_id: refund.id,
+        id: creditId,
+        number: creditNumber,
+        pdf_url: pdfUrl,
+        amount,
+        issued_at: issuedAt,
+        strategy,
+      }
+      await patchOrderMetadata(
+        container,
+        { id: order.id, metadata: freshMetadata },
+        {
+          [CREDIT_NOTES_METADATA_KEY]: [...storedCreditNotesOf(freshMetadata), stored],
+          ...(full
+            ? {
+                idoklad_credit_note_id: creditId,
+                idoklad_credit_note_number: creditNumber,
+                idoklad_credit_note_pdf_url: pdfUrl,
+                idoklad_credit_note_issued_at: issuedAt,
+              }
+            : {}),
+        }
+      )
+
+      logger.info(
+        `[idoklad] Dobropis ${creditNumber} (${strategy}) na ${amount} k objednávce #${order.display_id} vystaven.`
+      )
+      return { status: "issued", number: creditNumber, pdf_url: pdfUrl ?? undefined, strategy }
+    } catch (error) {
+      const message = describeError(error)
+      logger.error(
+        `[idoklad] Dobropis k objednávce #${order.display_id} (refundace ${refund.id}) se nepodařilo vystavit: ${message}`
+      )
+      await notifyMerchant(container, {
+        key: `idoklad-credit:${order.id}:${refund.id}`,
+        title: `iDoklad: dobropis k objednávce #${order.display_id} se nepodařilo vystavit`,
+        description: `${message} Vrácená částka: ${amount}. Opravný doklad prosím vystavte ručně.`,
         audience: "dev",
         email: true,
         resource: { id: order.id, type: "order" },

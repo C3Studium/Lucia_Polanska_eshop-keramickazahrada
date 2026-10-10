@@ -81,8 +81,9 @@ const ReklamaceInner = () => {
     return isReturnStatus(fromUrl) ? fromUrl : "pending";
   });
   const [kind, setKind] = useState<"all" | ReturnKind>("all");
-  // „Jen poškozené přepravou" — pošle se serveru (až ho bude umět) a pro
-  // jistotu se přefiltruje i načtená stránka.
+  // „Jen poškozené" = přepravou i poškozený kus (§13.7). Server zatím podle
+  // příčiny nefiltruje, takže se filtruje načtená stránka; parametr se
+  // neposílá, aby ho budoucí přesný filtr nevyložil jako „jen přepravou".
   const [damagedOnly, setDamagedOnly] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -125,7 +126,6 @@ const ReklamaceInner = () => {
         query: {
           status: active,
           ...(kind !== "all" ? { kind } : {}),
-          ...(damagedOnly ? { damage_cause: "carrier" } : {}),
           ...(search ? { q: search } : {}),
           limit: PAGE_SIZE,
           offset,
@@ -205,7 +205,7 @@ const ReklamaceInner = () => {
                 setOffset(0);
               }}
             />
-            <Text size="small">Jen poškozené přepravou</Text>
+            <Text size="small">Jen poškozené</Text>
           </label>
         </div>
       </header>
