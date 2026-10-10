@@ -71,6 +71,8 @@ export const loadShipGateInput = async (
       entity: "production_order",
       fields: [
         "id",
+        // Zrušená zakázka (smíšená objednávka) nic nedluží — brána čte `stage`.
+        "stage",
         "agreed_total",
         "original_total",
         // Příplatek — brána ho započítá do dluhu (ship-gate.productionOutstanding).

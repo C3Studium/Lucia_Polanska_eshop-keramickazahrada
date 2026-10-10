@@ -32,6 +32,19 @@ export const ProductionOrder = model.define("production_order", {
   final_total_confirmed_at: model.dateTime().nullable(),
   ready_to_ship_at: model.dateTime().nullable(),
   completed_at: model.dateTime().nullable(),
+  /**
+   * Zakázka zrušená (stage `cancelled`) — kdy. Fáze sama datum nenese a
+   * průběh žádosti v Reklamace a zrušení (docs/reklamace-a-zruseni.md §12.5)
+   * ho u kroku „Zakázka zrušena" ukazuje.
+   */
+  cancelled_at: model.dateTime().nullable(),
+  /**
+   * Kolik ze zaplacené zálohy už bylo vráceno přes Reklamace a zrušení
+   * (`scope: "deposit"`, §12.3). Rozhodnutí majitelky — zákazník na vrácení
+   * zálohy u zakázky nemá nárok (§1837 písm. d). Null = nic.
+   */
+  deposit_refunded: model.bigNumber().nullable(),
+  deposit_refunded_at: model.dateTime().nullable(),
   customer_note: model.text().nullable(),
   internal_note: model.text().nullable(),
   payment_requests: model.hasMany(() => ProductionPaymentRequest, {

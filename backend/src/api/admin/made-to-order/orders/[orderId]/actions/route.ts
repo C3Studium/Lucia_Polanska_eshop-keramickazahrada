@@ -30,6 +30,7 @@ import {
   LINE_QUANTITY_FIELDS,
   lineQuantityOf,
 } from "../../../../../../lib/order-quantity"
+import { cancelProductionStage } from "../../../../../../lib/production-cancel"
 import type { MerchantOrderStage } from "../../../../../../modules/merchant-order/stages"
 import { transitionMerchantOrderWorkflow } from "../../../../../../workflows/transition-merchant-order"
 
@@ -783,19 +784,12 @@ export const POST = async (
      * nezruší napůl.
      */
     await assertNoMoneyLeft(req.scope, req.params.orderId)
-    productionOrder = await madeToOrder.updateProductionOrders({
-      id: productionOrder.id,
-      stage: "cancelled",
+    // Výrobní strana (fáze `cancelled`, nezaplacené žádosti o platbu, event)
+    // sdílená s „Zrušit zakázku" v Reklamace a zrušení (lib/production-cancel).
+    productionOrder = await cancelProductionStage(req.scope, {
+      productionOrder,
+      orderId: req.params.orderId,
     })
-    const payments = await madeToOrder.listProductionPaymentRequests({
-      production_order_id: productionOrder.id,
-    } as any)
-    for (const payment of payments.filter((item: any) => item.status !== "paid")) {
-      await madeToOrder.updateProductionPaymentRequests({
-        id: payment.id,
-        status: "cancelled",
-      })
-    }
     await setMerchantStage(req, req.params.orderId, "cancelled")
 
     /*
@@ -860,11 +854,6 @@ export const POST = async (
         },
       ])
     }
-
-    await eventBus.emit({
-      name: "made-to-order.cancelled",
-      data: { order_id: req.params.orderId, production_order_id: productionOrder.id },
-    })
   }
 
   res.status(200).json({ production_order: productionOrder })

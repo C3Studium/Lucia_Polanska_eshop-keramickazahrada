@@ -7,6 +7,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
+import { LINE_QUANTITY_FIELDS } from "../order-quantity"
 import { MONEY_EPSILON, moneyState, type MoneyState } from "./refund-rules"
 
 /**
@@ -53,6 +54,10 @@ export const MONEY_ORDER_FIELDS = [
   // každou částečnou refundaci považoval za plnou.
   "total",
   "items.*",
+  // Refundace po položkách (§12.3): množství přes detail (lib/order-quantity)
+  // a značka zakázky na produktu — řádek zakázky má strop „co je zaplaceno".
+  ...LINE_QUANTITY_FIELDS,
+  "items.product.metadata",
   "customer.first_name",
   "customer.last_name",
 ]

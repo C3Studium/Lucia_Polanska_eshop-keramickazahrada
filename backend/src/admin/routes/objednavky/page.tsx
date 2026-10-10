@@ -242,11 +242,8 @@ const ClaimOrderRow = ({
       ? null
       : asNumber(claim.remaining);
   const total = asNumber(order.total);
-  const link = claim
-    ? status
-      ? reklamaceLink({ id: claim.id, status })
-      : `/reklamace?id=${encodeURIComponent(claim.id)}`
-    : null;
+  // Stránka žádosti (/reklamace/<id>, §12.6) — stav už odkaz nepotřebuje.
+  const link = claim ? reklamaceLink({ id: claim.id }) : null;
   const detailHref = `/orders/${order.order_id}`;
 
   return (

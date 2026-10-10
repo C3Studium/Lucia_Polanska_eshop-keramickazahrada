@@ -35,12 +35,41 @@ export const MONEY_EPSILON = 0.005
 
 export type RefundMethod = "comgate" | "manual"
 
+/**
+ * Rozsah refundace (docs/reklamace-a-zruseni.md §12.3): `items` = vybrané
+ * položky, `all` = celá objednávka (zbývá), `deposit` = záloha zakázky.
+ * Starší záznamy bez rozsahu = `null` (částka zadaná ručně / výchozí).
+ */
+export type RefundScope = "items" | "all" | "deposit"
+
+export const REFUND_SCOPES: readonly RefundScope[] = ["items", "all", "deposit"]
+
+export const isRefundScope = (value: unknown): value is RefundScope =>
+  typeof value === "string" && (REFUND_SCOPES as readonly string[]).includes(value)
+
+/**
+ * Položka vrácená v rámci jedné refundace (`refunds[].items`, §12.3). Z ní se
+ * počítá `refunded_quantity` — tutéž položku nejde vrátit dvakrát. `title`,
+ * `unit_total` a `amount` jsou snapshot pro protokol a seznam refundací.
+ */
+export type RefundItemEntry = {
+  line_item_id: string
+  quantity: number
+  title?: string | null
+  unit_total?: number
+  amount?: number
+}
+
 /** Jedna položka `return_request.refunds`. */
 export type RefundEntry = {
   amount: number
   method: RefundMethod
   at: string
   note?: string | null
+  /** §12.3 — rozsah; starší záznamy ho nemají. */
+  scope?: RefundScope | null
+  /** §12.3 — vrácené položky (jen u `scope: "items"`). */
+  items?: RefundItemEntry[] | null
 }
 
 export type RefundHistoryEntry = {
@@ -49,7 +78,29 @@ export type RefundHistoryEntry = {
   refunded_at?: string | null
   method?: string | null
   reason?: string | null
+  scope?: RefundScope | null
+  items?: RefundItemEntry[] | null
 }
+
+/** `items` z libovolného záznamu refundace — jen validní položky, cokoli jiného = []. */
+export const refundItemsOf = (value: unknown): RefundItemEntry[] =>
+  Array.isArray(value)
+    ? value
+        .filter(
+          (entry) =>
+            entry &&
+            typeof entry === "object" &&
+            typeof (entry as any).line_item_id === "string" &&
+            (entry as any).line_item_id
+        )
+        .map((entry: any) => ({
+          line_item_id: String(entry.line_item_id),
+          quantity: Math.max(0, toNumber(entry.quantity)),
+          title: typeof entry.title === "string" ? entry.title : null,
+          unit_total: toNumber(entry.unit_total),
+          amount: toNumber(entry.amount),
+        }))
+    : []
 
 export type MoneyPayment = {
   id?: string
@@ -127,12 +178,19 @@ export const requestRefunds = (request: MoneyRequest): RefundEntry[] => {
   if (Array.isArray(request.refunds)) {
     return request.refunds
       .filter((entry) => entry && typeof entry === "object")
-      .map((entry: any) => ({
-        amount: toNumber(entry.amount),
-        method: entry.method === "comgate" ? "comgate" : "manual",
-        at: typeof entry.at === "string" ? entry.at : "",
-        note: typeof entry.note === "string" ? entry.note : null,
-      }))
+      .map((entry: any) => {
+        const items = refundItemsOf(entry.items)
+        return {
+          amount: toNumber(entry.amount),
+          method: entry.method === "comgate" ? "comgate" : "manual",
+          at: typeof entry.at === "string" ? entry.at : "",
+          note: typeof entry.note === "string" ? entry.note : null,
+          // Rozsah a položky (§12.3) se musí zachovat — z nich je
+          // `refunded_quantity` a krok „Záloha vrácena" v průběhu.
+          scope: isRefundScope(entry.scope) ? entry.scope : null,
+          items: items.length ? items : null,
+        }
+      })
   }
   const legacy = toNumber(request.refund_amount)
   return legacy > 0 ? [{ amount: legacy, method: "manual", at: "" }] : []

@@ -187,3 +187,87 @@ Kde se dnes vypisuje textové `items`, vypisují se přednostně `line_items`
 (název · varianta · N ks · částka). Storefront: formulář má výběr položek
 (checkbox + počet) a přepínač „Balík dorazil poškozený (přepravou)";
 stavová stránka a souhrn na potvrzení ukazují vybrané položky a částku.
+
+## 12. Stránka žádosti (10. 10. 2026): celá objednávka, výběr položek, zakázka, průběh podle případu
+
+### 12.1 Proč
+Drawer vpravo ukazoval jen žádost. Majitelka potřebuje vidět **objednávku**
+(položky, platby, zakázku) a rozhodovat nad ní: vrátit peníze za vybrané
+položky nebo za celou objednávku, u zakázky rozhodnout o záloze, u smíšené
+objednávky obojí zvlášť. Průběh (kroky) se liší podle případu.
+
+### 12.2 Detail pro stránku — `GET /admin/return-requests/:id/detail`
+```
+{
+  request: ReturnRequest (+ line_items, damage_cause, suggested_amount, goods_shipped, refunds[]),
+  order: { id, display_id, status, email, customer_name, currency_code, total, subtotal, shipping_total,
+           created_at, payment_status, fulfillment_status, shipping_method: { name, is_pickup } },
+  items: [{ line_item_id, title, variant_title, thumbnail, quantity, unit_total, line_total,
+            is_made_to_order, refunded_quantity, refundable_quantity, refundable_amount,
+            selected_in_claim: number }],
+  money: { captured, refunded, remaining, refunds: [{ amount, method, at, note, items?, scope }] },
+  production: null | { id, stage, agreed_total, surcharge, deposit_paid, balance_paid, outstanding,
+                       deposit_refunded, balance_request_status },
+  flags: { goods_shipped, is_commission, is_mixed, paid_online, pay_later, nothing_captured },
+  case: "cancel_unpaid" | "cancel_paid_unshipped" | "withdrawal_shipped" | "return_shipped"
+      | "commission_cancel" | "claim" | "mixed_cancel",
+  steps: [{ key, label, state: "done" | "current" | "upcoming" | "skipped", at?: string | null }],
+  actions: { approve, reject, received, refund_items, refund_all, refund_deposit, resolve,
+             cancel_order, cancel_production, cancel_request }  // boolean = povoleno TEĎ
+}
+```
+`unit_total` = `item.total / quantity` (po slevě, s DPH). `refunded_quantity`
+= Σ `refunds[].items[]` pro tu položku; `refundable_amount = unit_total ×
+refundable_quantity`, u zakázkové položky navíc omezeno tím, co je skutečně
+zaplaceno (záloha). Případ `case` + `steps` se počítají na serveru (čistá
+funkce `planClaimCase(...)`, testovaná), ať UI jen vykresluje.
+
+### 12.3 Refund po položkách / celek / záloha — `POST /admin/return-requests/:id/refund`
+Tělo navíc: `scope?: "items" | "all" | "deposit"`, `items?: [{ line_item_id,
+quantity }]`. Pravidla:
+- `items`: částka = Σ `unit_total × quantity`, `quantity ≤ refundable_quantity`
+  (nelze vrátit tutéž položku dvakrát); položky se uloží do záznamu
+  refundace (`refunds[].items`) i do `refund_history`.
+- `all`: částka = `remaining` (celá objednávka).
+- `deposit`: jen zakázka; částka = zaplacená záloha (snížená o už vrácené);
+  zapíše `production.deposit_refunded`; je to rozhodnutí majitelky (zákazník
+  na vrácení zálohy u zakázky nemá nárok, §1837 — proto výslovné tlačítko).
+- `amount` v těle má přednost jen u `scope: "all"` (dílčí ruční částka).
+Gating zůstává (§3 + 11.2 + goods_shipped). Dílčí refundy opakovaně;
+`mark_resolved` / automaticky při zbývá 0.
+
+### 12.4 Zakázka
+- `cancel_production` (`POST /admin/return-requests/:id/cancel-production`):
+  zakázka → stage `cancelled`, výrobní příkaz uzavřen, nativní zrušení
+  objednávky JEN když objednávka nemá jiné (běžné) položky; u smíšené
+  objednávky se zakázková položka odstraní nativní úpravou objednávky (order
+  edit) a objednávka zůstává. Povoleno až když je záloha buď vrácená
+  (`deposit_refunded`), nebo majitelka výslovně zvolila „zálohu nevracet"
+  (`keep_deposit: true` v těle → zapíše se do žádosti jako `resolution_note`).
+- Smíšená objednávka (`is_mixed`): stránka ukazuje dvě části — **Produkty**
+  (výběr položek → refund_items) a **Zakázka** (záloha → refund_deposit /
+  nevracet → cancel_production). Průběh pak má kroky obou částí.
+
+### 12.5 Průběh podle případu (`case` → `steps`)
+- `cancel_unpaid` (odstoupení, nic zachyceno, neodesláno): Přijato → Schváleno → Objednávka zrušena.
+- `cancel_paid_unshipped`: Přijato → Schváleno → Peníze vráceny → Objednávka zrušena.
+- `withdrawal_shipped` / `return_shipped`: Přijato → Schváleno → Zboží přijato → Peníze vráceny → Vyřízeno (→ Objednávka zrušena, volitelně).
+- `commission_cancel` (zakázka): Přijato → Schváleno → Záloha: vrácena / ponechána → Zakázka zrušena.
+- `claim` (reklamace): Přijato → Rozhodnuto (způsob) → Zboží přijato → Vyřízeno (oprava/výměna) nebo Peníze vráceny → Vyřízeno.
+- `mixed_cancel`: kroky produktové + zakázkové části.
+Zamítnuto / Stornováno ukončují kteroukoli větev.
+
+### 12.6 Stránka `routes/reklamace/[id]/page.tsx`
+Celá stránka (ne drawer): hlavička (objednávka #, zákazník, druh, stav, lhůta,
+odkazy Detail objednávky / Protokol), **Průběh** (steps), **Objednávka**
+(tabulka položek s checkboxy + množstvím k vrácení, částka k vrácení, štítek
+„zakázka", „už vráceno N ks"; součty), **Platby** (zachyceno / vráceno /
+zbývá, seznam refundací s položkami), **Zakázka** (když je: záloha, doplatek,
+příplatek, tlačítka Vrátit zálohu / Zálohu nevracet / Zrušit zakázku),
+**Žádost** (důvod, fotky lightbox, co zákazník žádá, poškození přepravou),
+**Akce** podle `actions`: Schválit (s volbami jako dosud) · Zamítnout ·
+Zboží přijato · Vrátit peníze za vybrané položky (částka živě) · Vrátit celou
+objednávku · Vrátit zálohu · Vyřízeno · Zrušit objednávku · Zrušit zakázku ·
+Stornovat žádost. Seznam v `routes/reklamace/page.tsx` otvírá stránku
+(`/reklamace/<id>`), drawer se odstraní; widget na objednávce odkazuje na
+stránku. Deep linky `?status=&id=` přesměrují na stránku.

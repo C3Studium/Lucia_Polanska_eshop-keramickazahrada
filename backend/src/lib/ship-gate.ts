@@ -77,6 +77,8 @@ export const isPayLaterPaymentProvider = (providerId?: string | null): boolean =
   (!!providerId && RETIRED_PICKUP_PAYMENT_PROVIDER_IDS.includes(providerId))
 
 export type ShipGateProductionOrder = {
+  /** Zrušená zakázka (`cancelled`) už nic nedluží — viz `productionOutstanding`. */
+  stage?: string | null
   agreed_total?: unknown
   original_total?: unknown
   /** Příplatek (modul zakázky) — navyšuje, co zákazník dluží. */
@@ -156,11 +158,16 @@ const pendingDifferenceOf = (summary: ShipGateInput["summary"]): number => {
  * doplacení i fronta zakázek počítají přes tuhle funkci. Dřív brána příplatek
  * ignorovala — zakázka s nezaplaceným příplatkem šla odeslat, zatímco e-mail
  * zákazníkovi tvrdil, že ještě dluží.
+ *
+ * ZRUŠENÁ zakázka nedluží nic: u smíšené objednávky (běžné zboží + zakázka,
+ * docs/reklamace-a-zruseni.md §12.4) se zakázka zruší a běžné položky jedou
+ * dál — nedoplacený zbytek zrušené zakázky nesmí blokovat jejich odeslání
+ * ani vyrábět odkaz na doplatek. Volající proto musí vybírat i `stage`.
  */
 export const productionOutstanding = (
   production: ShipGateProductionOrder | null | undefined
 ): number => {
-  if (!production) {
+  if (!production || production.stage === "cancelled") {
     return 0
   }
   const total =

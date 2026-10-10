@@ -14,9 +14,12 @@ import {
 } from "../reklamacni-protokol"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
+import { planClaimCase } from "./case"
 import { damageCauseLabel, resolutionLabel } from "./constants"
+import { CLAIM_FLAG_ORDER_FIELDS, claimFlagsOf } from "./flags"
 import { claimItemsText, suggestedRefundAmount } from "./line-items"
 import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
+import { productionBlockOf } from "./production"
 import {
   moneyState,
   requestRefundedTotal,
@@ -198,13 +201,32 @@ export const sendResolvedEmail = async (
   })
 }
 
+/** Zakázka pro řádek seznamu — totéž, co čte detail (`productionBlockOf`). */
+const LIST_PRODUCTION_FIELDS = [
+  "id",
+  "order_id",
+  "stage",
+  "agreed_total",
+  "original_total",
+  "surcharge",
+  "deposit_refunded",
+  "deposit_refunded_at",
+  "cancelled_at",
+  "payment_requests.type",
+  "payment_requests.status",
+  "payment_requests.amount",
+  "payment_requests.created_at",
+]
+
 /**
  * Dopočet `captured_total` / `refunded_total` / `remaining` ke každému řádku
  * seznamu — z plateb objednávky a ze VŠECH žádostí k ní (sourozenci se počítají
- * do „vráceno" taky). Jeden dotaz na objednávky, jeden na sourozence.
+ * do „vráceno" taky). Jeden dotaz na objednávky, jeden na sourozence, jeden na
+ * zakázky (§12: `case` pro štítek případu v seznamu — žádné N+1).
  *
  * `suggested_amount` (§11.2) = výchozí částka pro „Vrátit peníze": s položkami
  * `min(remaining, Σ line_items.total)`, bez položek `remaining`.
+ * `case` (§12.5) = tentýž `planClaimCase` jako detail, bez položek.
  */
 export const enrichWithMoney = async (
   container: MedusaContainer,
@@ -220,6 +242,9 @@ export const enrichWithMoney = async (
       refunded_total: 0,
       remaining: 0,
       suggested_amount: 0,
+      case: null,
+      is_commission: false,
+      is_mixed: false,
     }))
   }
 
@@ -227,7 +252,7 @@ export const enrichWithMoney = async (
   const { data: orders } = await query
     .graph({
       entity: "order",
-      fields: MONEY_STATE_FIELDS,
+      fields: [...MONEY_STATE_FIELDS, "status", "canceled_at", ...CLAIM_FLAG_ORDER_FIELDS],
       filters: { id: orderIds },
     })
     .catch(() => ({ data: [] as any[] }))
@@ -243,11 +268,39 @@ export const enrichWithMoney = async (
     siblingsByOrder.set(sibling.order_id, list)
   }
 
+  // Zakázky ke všem objednávkám stránky jedním dotazem — link vede jen
+  // z `production_order` k objednávce, z objednávky se zakázka nedočte.
+  const { data: productions } = await query
+    .graph({
+      entity: "production_order",
+      fields: LIST_PRODUCTION_FIELDS,
+      filters: { order_id: orderIds },
+    })
+    .catch(() => ({ data: [] as any[] }))
+  const productionByOrder = new Map(
+    (productions as any[]).map((production) => [production.order_id, production])
+  )
+
   return requests.map((request) => {
     const order = byOrder.get(request.order_id)
     const state = order
       ? moneyState(order, siblingsByOrder.get(request.order_id) ?? [request])
       : { captured: 0, refunded: 0, remaining: 0 }
+    const productionRow = productionByOrder.get(request.order_id) ?? null
+    const production = productionRow
+      ? productionBlockOf(productionRow, productionRow.payment_requests ?? [])
+      : null
+    const flags = order ? claimFlagsOf(order, state, Boolean(production)) : null
+    const plan =
+      order && flags
+        ? planClaimCase({
+            request,
+            flags,
+            money: state,
+            production,
+            order: { status: order.status, canceled_at: order.canceled_at },
+          })
+        : null
     return {
       ...request,
       currency_code: order?.currency_code ?? "czk",
@@ -258,6 +311,9 @@ export const enrichWithMoney = async (
       // Odstoupení před odesláním: zboží nikdy neodešlo → nic se nevrací,
       // refundace jde rovnou a nabízí se zrušení objednávky.
       goods_shipped: order ? goodsShipped(order) : false,
+      case: plan?.case ?? null,
+      is_commission: flags?.is_commission ?? false,
+      is_mixed: flags?.is_mixed ?? false,
     }
   })
 }

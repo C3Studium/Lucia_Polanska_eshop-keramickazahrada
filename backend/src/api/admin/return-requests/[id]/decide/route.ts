@@ -216,6 +216,9 @@ export const POST = async (
   if (canChain && body.refund_now && !resolvedNowRef.value) {
     try {
       refund = await refundClaim(req.scope, request.id, {
+        // „Schválit a vrátit peníze" = celá objednávka (§12.3 `all`), ne jen
+        // cena vybraných položek.
+        scope: "all",
         skip_goods_check: nothingToReturnRef.value ? undefined : true,
         mark_resolved: true,
         ...(note ? { note } : {}),
