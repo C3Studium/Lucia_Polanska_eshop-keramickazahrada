@@ -548,7 +548,9 @@ export const refundClaim = async (
       amount,
       lines,
       currency,
-    }).catch((error) => ({
+      // Důvod opravného dokladu pro iDoklad (`CreditNoteReason`, povinné).
+      reason: kindLabel(request.kind),
+    } as never).catch((error) => ({
       status: "error" as const,
       reason: error instanceof Error ? error.message : "neznámá chyba",
     }))

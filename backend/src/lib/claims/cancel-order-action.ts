@@ -115,13 +115,16 @@ export const cancelOrderForClaim = async (
       "Objednávka k této žádosti nebyla nalezena."
     )
   }
-  if (request.status !== "resolved" && money.state.remaining > MONEY_EPSILON) {
+  // VŽDY, i u vyřízené žádosti (změřeno 10. 10. 2026 na #38: žádost byla
+  // „vyřízená" se zbytkem 90 Kč poštovného a nativní zrušení ho vrátilo samo
+  // — mimo protokol i dobropis). Zbytek se vrací jen košíkem.
+  if (money.state.remaining > MONEY_EPSILON) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      `Nejdřív vraťte peníze — na objednávce zbývá ${formatMoney(
+      `Nejdřív vraťte zbytek — na objednávce zbývá ${formatMoney(
         money.state.remaining,
         money.order.currency_code
-      )}. Zrušit ji půjde, až bude žádost vyřízená nebo nezbude nic zachyceného.`
+      )} (košík vrácení: položky / poštovné / jiná částka). Nativní zrušení by ho vrátilo samo, bez dobropisu.`
     )
   }
 

@@ -828,6 +828,17 @@ export const markInvoicePaidForOrder = async (
 }
 
 /**
+ * Důvod opravného daňového dokladu — iDoklad ho vyžaduje (max. délku drží
+ * konzervativně na 200 znacích). `reason` = druh žádosti („Odstoupení od
+ * smlouvy", „Reklamace"…), jinak obecné vrácení peněz.
+ */
+export const creditNoteReasonFor = (
+  reason: string | null | undefined,
+  orderDisplayId: string
+): string =>
+  `${reason?.trim() || "Vrácení peněz"} — objednávka #${orderDisplayId}`.slice(0, 200)
+
+/**
  * Opravný daňový doklad (dobropis) při vrácení peněz — modul reklamací, fáze 2.
  *
  * Jen PLNÉ vrácení = plný dobropis na celou fakturu; částečné se nechá na ruční
@@ -892,7 +903,15 @@ export const issueCreditNoteForOrder = async (
   return withOrderLock(order.id, async () => {
     try {
       const creditNote = (await idoklad.createCreditNoteForInvoice(
-        state.invoice_id as number
+        state.invoice_id as number,
+        // `CreditNoteReason` je u iDokladu povinný (viz issueCreditNoteForRefund).
+        (draft) => ({
+          ...draft,
+          CreditNoteReason: creditNoteReasonFor(
+            null,
+            String(order.display_id ?? order.id)
+          ),
+        })
       )) as any
       const creditId = Number(creditNote?.Id)
       const creditNumber =
@@ -1064,7 +1083,17 @@ export const issueCreditNoteForRefund = async (
             vatRateTypeFallback: vatRateTypeFor(idoklad.vatPayer),
           })
           strategy = built.strategy
-          return { ...draft, Items: built.items }
+          // iDoklad vyžaduje důvod opravného dokladu (`CreditNoteReason`) —
+          // bez něj API odmítne (změřeno 10. 10. 2026: „The CreditNoteReason
+          // field is required"). Důvod = druh žádosti + číslo objednávky.
+          return {
+            ...draft,
+            Items: built.items,
+            CreditNoteReason: creditNoteReasonFor(
+              (refund as { reason?: string | null }).reason ?? null,
+              String(order.display_id ?? order.id)
+            ),
+          }
         }
       )) as any
       const creditId = Number(creditNote?.Id)

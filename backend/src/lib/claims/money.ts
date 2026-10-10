@@ -61,7 +61,12 @@ export const MONEY_ORDER_FIELDS = [
   // Košík vrácení (§13.2): poštovné jednou; dobropis (§13.3) páruje řádek
   // dopravy podle názvu metody; ceny komponent balíčku (§13.5) v regionu.
   "shipping_total",
-  "shipping_methods.name",
+  // `shipping_total` se počítá z dopravních metod — bez `shipping_methods.*`
+  // (+ daně, úpravy) přijde 0 (změřeno 10. 10. 2026 na #38: poštovné 90 Kč,
+  // detail hlásil 0 → košík ho nenabídl a zbytek vrátila Medusa sama).
+  "shipping_methods.*",
+  "shipping_methods.tax_lines.*",
+  "shipping_methods.adjustments.*",
   "region_id",
   "customer.first_name",
   "customer.last_name",
