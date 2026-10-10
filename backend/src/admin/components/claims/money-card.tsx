@@ -1,5 +1,6 @@
-import { Badge, Text } from "@medusajs/ui";
+import { Badge, Button, Text, toast } from "@medusajs/ui";
 import { formatDateTime } from "../../lib/format";
+import { useReturnAction } from "./use-return-action";
 import {
   asNumber,
   creditNoteIssued,
@@ -27,7 +28,13 @@ import { formatCzk } from "../../lib/workbench";
 const methodLabel = (refund: ReturnRefund) =>
   (refund.provider ?? refund.method) === "comgate" ? "ComGate" : "ručně";
 
-const RefundRow = ({ refund }: { refund: ReturnRefund }) => {
+const RefundRow = ({ refund, requestId }: { refund: ReturnRefund; requestId: string }) => {
+  // Dobropis znovu (§13.3): peníze už jsou venku, doklad jde dovystavit —
+  // POST /refunds/:refundId/credit-note. Jen u záznamů s id (nové) a při chybě.
+  const retryCreditNote = useReturnAction<{ message?: string }>(
+    requestId,
+    `refunds/${encodeURIComponent(String(refund.id ?? ""))}/credit-note`
+  );
   const scope = isRefundScope(refund.scope) ? REFUND_SCOPE_LABEL[refund.scope] : null;
   const lines = (refund.lines ?? []).filter(isRefundLine);
   const items = refund.items ?? [];
@@ -124,10 +131,30 @@ const RefundRow = ({ refund }: { refund: ReturnRefund }) => {
         </Text>
       )}
       {creditNoteError && (
-        <Text size="xsmall" className="text-ui-fg-error" title={creditNote?.reason ?? undefined}>
-          Dobropis se nepodařilo vystavit
-          {creditNote?.reason ? ` — ${creditNote.reason}` : " (iDoklad odmítl; vývojář má upozornění)"}.
-        </Text>
+        <div className="flex flex-wrap items-center gap-2">
+          <Text size="xsmall" className="text-ui-fg-error" title={creditNote?.reason ?? undefined}>
+            Dobropis se nepodařilo vystavit
+            {creditNote?.reason ? ` — ${creditNote.reason}` : " (iDoklad odmítl; vývojář má upozornění)"}.
+          </Text>
+          {refund.id && (
+            <Button
+              size="small"
+              variant="secondary"
+              isLoading={retryCreditNote.isPending}
+              onClick={() =>
+                retryCreditNote.mutate(
+                  {},
+                  {
+                    onSuccess: (result) =>
+                      toast.success(result?.message ?? "Dobropis vystaven."),
+                  }
+                )
+              }
+            >
+              Vystavit dobropis znovu
+            </Button>
+          )}
+        </div>
       )}
 
       {refund.note && (
@@ -205,7 +232,7 @@ export const MoneyCard = ({
       {refunds.length > 0 && (
         <ul className="border-ui-border-base flex flex-col gap-y-2 border-t pt-3">
           {refunds.map((refund, index) => (
-            <RefundRow key={refund.id ?? index} refund={refund} />
+            <RefundRow key={refund.id ?? index} refund={refund} requestId={request.id} />
           ))}
         </ul>
       )}
