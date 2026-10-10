@@ -16,6 +16,8 @@ import {
 import { claimItemsText } from "../../../../../lib/claims/line-items"
 import { goodsShipped, loadOrderMoney } from "../../../../../lib/claims/money"
 import { MONEY_EPSILON } from "../../../../../lib/claims/refund-rules"
+import { refundClaim } from "../../../../../lib/claims/refund-action"
+import { cancelOrderForClaim } from "../../../../../lib/claims/cancel-order-action"
 
 /**
  * POST /admin/return-requests/:id/decide — her one decision on a request
@@ -33,6 +35,14 @@ type DecideBody = {
   decision?: "approve" | "reject"
   note?: string | null
   resolution?: string | null
+  /**
+   * Odstoupení / vrácení: rovnou vrátit vše, co zbývá (ComGate), a žádost
+   * vyřídit — jedno kliknutí místo „Schválit → Vrátit peníze". U zboží, které
+   * už odešlo, je to vědomé vzdání se čekání na zásilku (§ 1832/4).
+   */
+  refund_now?: boolean
+  /** Po vyřízení rovnou zrušit objednávku a uvolnit sklad (jen když nic nezbývá). */
+  cancel_order?: boolean
 }
 
 /** Lhůta do e-mailu „schváleno" — podle druhu a způsobu vyřízení. */
@@ -95,6 +105,9 @@ export const POST = async (
   const itemsText = claimItemsText(request)
 
   const decidedAt = new Date()
+  // Sdílené s řetězením na konci (refund_now / cancel_order).
+  const resolvedNowRef = { value: false }
+  const nothingToReturnRef = { value: false }
   const updated = await service.updateReturnRequests({
     id: request.id,
     status: body.decision === "approve" ? "approved" : "rejected",
@@ -126,6 +139,8 @@ export const POST = async (
     const nothingToReturn = Boolean(money && !goodsShipped(money.order))
     const nothingToRefund = Boolean(money && money.state.remaining <= MONEY_EPSILON)
     const resolvedNow = nothingToReturn && nothingToRefund
+    resolvedNowRef.value = resolvedNow
+    nothingToReturnRef.value = nothingToReturn
     if (resolvedNow) {
       await service.updateReturnRequests({
         id: request.id,
@@ -186,7 +201,57 @@ export const POST = async (
     })
   }
 
+  // „Schválit a vrátit peníze (a zrušit objednávku)" — odstoupení / vrácení
+  // v jednom kroku. Refund jde toutéž cestou jako tlačítko „Vrátit peníze";
+  // u zboží, které odešlo, se posílá vědomé `skip_goods_check`. Selhání
+  // refundu (ComGate) se vrátí jako zpráva — schválení už platí, majitelka to
+  // dokončí tlačítkem.
+  const canChain =
+    body.decision === "approve" &&
+    (request.kind === "odstoupeni" || request.kind === "vraceni")
+  let refund: Awaited<ReturnType<typeof refundClaim>> | null = null
+  let cancel: Awaited<ReturnType<typeof cancelOrderForClaim>> | null = null
+  const messages: string[] = ["Žádost schválena — zákazníkovi odešel e-mail."]
+
+  if (canChain && body.refund_now && !resolvedNowRef.value) {
+    try {
+      refund = await refundClaim(req.scope, request.id, {
+        skip_goods_check: nothingToReturnRef.value ? undefined : true,
+        mark_resolved: true,
+        ...(note ? { note } : {}),
+      })
+      messages.push(refund.message)
+    } catch (error) {
+      messages.push(
+        `Peníze se nepodařilo vrátit: ${
+          error instanceof Error ? error.message : String(error)
+        } Dokončete to tlačítkem „Vrátit peníze".`
+      )
+    }
+  }
+
+  if (canChain && body.cancel_order) {
+    try {
+      cancel = await cancelOrderForClaim(
+        req.scope,
+        request.id,
+        (req as any).auth_context?.actor_id || null
+      )
+      messages.push(cancel.message)
+    } catch (error) {
+      messages.push(
+        `Objednávka nebyla zrušena: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+  }
+
+  const latest = await retrieveClaim(req.scope, request.id).catch(() => updated)
   res.status(200).json({
-    return_request: { ...updated, protocol_url: protocol.url ?? updated.protocol_url },
+    return_request: { ...latest, protocol_url: latest.protocol_url ?? protocol.url ?? updated.protocol_url },
+    refund,
+    cancel,
+    message: messages.join(" "),
   })
 }

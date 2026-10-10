@@ -169,12 +169,27 @@ const ApprovePanel = ({ request, onClose }: PanelProps) => {
     isReklamace && request.requested_resolution ? request.requested_resolution : ""
   );
   const [note, setNote] = useState("");
-  const mutation = useReturnAction(request.id, "decide");
+  const mutation = useReturnAction<{ message?: string }>(request.id, "decide");
   const canSubmit = !isReklamace || resolution !== "";
+
+  // Odstoupení / vrácení v jednom kroku: zboží neodešlo → peníze hned a
+  // objednávku rovnou zrušit (výchozí zapnuto). Odeslané zboží → výchozí
+  // vypnuto (§ 1832/4: smíte počkat na zásilku), ale jde to vědomě zapnout.
+  const remaining = asNumber(request.remaining);
+  const goodsNeverShipped = request.goods_shipped === false;
+  const [refundNow, setRefundNow] = useState(!isReklamace && goodsNeverShipped && remaining > 0);
+  const [cancelOrder, setCancelOrder] = useState(!isReklamace && goodsNeverShipped);
+  const chainRefund = !isReklamace && refundNow && remaining > 0;
+  const chainCancel = !isReklamace && cancelOrder && (chainRefund || remaining <= 0);
 
   const explanation = (() => {
     if (!isReklamace) {
-      return "Zákazník dostane e-mail se schválením, adresou pro vrácení zboží (z nastavení E-maily obchodu) a lhůtou 14 dnů. Peníze se vrátí až po přijetí zboží.";
+      if (goodsNeverShipped) {
+        return remaining > 0
+          ? "Zboží k zákazníkovi neodešlo — nic neposílá. Zákazník dostane e-mail, že je objednávka zrušená; peníze se vrátí podle volby níže."
+          : "Zboží k zákazníkovi neodešlo a nebylo zaplaceno nic — není co vracet. Žádost se vyřídí hned; objednávku můžete rovnou zrušit.";
+      }
+      return "Zákazník dostane e-mail se schválením, adresou pro vrácení zboží (z nastavení E-maily obchodu) a lhůtou 14 dnů. Peníze se vrátí až po přijetí zboží — nebo hned, když to níže zapnete.";
     }
     switch (resolution) {
       case "repair":
@@ -200,11 +215,14 @@ const ApprovePanel = ({ request, onClose }: PanelProps) => {
             decision: "approve",
             ...(isReklamace ? { resolution } : {}),
             ...(note.trim() ? { note: note.trim() } : {}),
+            ...(chainRefund ? { refund_now: true } : {}),
+            ...(chainCancel ? { cancel_order: true } : {}),
           },
           {
-            onSuccess: () => {
+            onSuccess: (result) => {
               toast.success(
-                "Žádost byla schválena — zákazníkovi odešel e-mail s dalším postupem."
+                result?.message ??
+                  "Žádost byla schválena — zákazníkovi odešel e-mail s dalším postupem."
               );
               onClose();
             },
@@ -212,6 +230,44 @@ const ApprovePanel = ({ request, onClose }: PanelProps) => {
         );
       }}
     >
+      {!isReklamace && (
+        <div className="flex flex-col gap-y-2">
+          <label className="flex items-start gap-x-2">
+            <Checkbox
+              checked={refundNow}
+              disabled={remaining <= 0}
+              onCheckedChange={(checked) => setRefundNow(checked === true)}
+            />
+            <span>
+              <Text size="small">
+                {remaining > 0
+                  ? `Rovnou vrátit peníze (${formatCzk(remaining)}) přes ComGate`
+                  : "Není co vracet — nic nebylo zaplaceno"}
+              </Text>
+              {remaining > 0 && !goodsNeverShipped && (
+                <Text size="xsmall" className="text-ui-fg-subtle">
+                  Zboží už odešlo. Zapnutím se vědomě vzdáváte práva počkat na jeho vrácení (§ 1832/4).
+                </Text>
+              )}
+            </span>
+          </label>
+          <label className="flex items-start gap-x-2">
+            <Checkbox
+              checked={cancelOrder}
+              disabled={!(chainRefund || remaining <= 0)}
+              onCheckedChange={(checked) => setCancelOrder(checked === true)}
+            />
+            <span>
+              <Text size="small">Zrušit objednávku a uvolnit sklad</Text>
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                {chainRefund || remaining <= 0
+                  ? "Objednávka se zruší v Medusa a rezervované kusy se vrátí na sklad."
+                  : "Jde až po vrácení peněz — zapněte vrácení, nebo zrušte později z detailu."}
+              </Text>
+            </span>
+          </label>
+        </div>
+      )}
       {isReklamace && (
         <div className="flex flex-col gap-y-1">
           <Label size="xsmall" htmlFor={`resolution-${request.id}`}>
@@ -263,7 +319,13 @@ const ApprovePanel = ({ request, onClose }: PanelProps) => {
           isLoading={mutation.isPending}
           disabled={!canSubmit}
         >
-          Schválit a poslat e-mail
+          {chainRefund && chainCancel
+            ? "Schválit, vrátit peníze a zrušit objednávku"
+            : chainRefund
+              ? "Schválit a vrátit peníze"
+              : chainCancel
+                ? "Schválit a zrušit objednávku"
+                : "Schválit a poslat e-mail"}
         </Button>
         <Button size="small" variant="secondary" type="button" onClick={onClose}>
           Zpět
