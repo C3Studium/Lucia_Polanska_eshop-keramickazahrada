@@ -58,6 +58,30 @@ vzor jako celá stránka reklamace):
    se stane s penězi podle platby, jedno tlačítko „Uložit změny" /
    „Zaplatit rozdíl 240 Kč". Po uložení potvrzení + e-mail (existuje).
 
+## 3b. Doplnění po konzultaci (Matěj, 11. 10. 2026)
+
+**Rozhodnutí:** dokud Lucie neoznačí objednávku „připravena k odeslání"
+(fáze K odeslání), může si zákazník **přidat cokoli z obchodu a odebrat
+cokoli**, jen nesmí objednávku vyprázdnit. K tomu **mini obchod** uvnitř
+úpravy: mini výpis produktů + mini stránka produktu, kde místo „Do košíku"
+je „Přidat k objednávce #39".
+
+**Zhodnocení:** dává smysl, mění to jen bod „Doplnění" z §2 (ne jen stejná
+kolekce, ale celý katalog). Zbytek pravidel platí dál. Co to s sebou nese:
+
+| Téma | Návrh |
+|---|---|
+| Mini obchod = stávající komponenty | Nestavět druhý obchod. Výpis (`modules/store/Shop`) a stránka produktu (`modules/products/ProductPage`) dostanou „režim výběru": skryjí košík, tlačítko hlásí „Přidat k objednávce", výběr varianty a množství zůstává. Vlastní cesta `/order/:id/edit/pridat` (s tokenem), ne modal — kvůli mobilu a tlačítku Zpět. Vyhledávání + kategorie stačí, bez filtrů. |
+| Co se v mini obchodě NEnabízí | Zakázka (záloha, brief, výroba — nejde přes úpravu), poškozené/unikátní kusy jen 1 ks (pokud už je v jiné objednávce), balíčky (fáze 2), vyprodané bez backorderu (stejná pravidla jako obchod). |
+| Objednávka na dobírku | Přidat jde jen produkt s povolenou dobírkou (jinak by celá objednávka ztratila nárok). Částka dobírky se přepočítá; po štítku zamčeno (dnes). |
+| Poštovné | Přepočítat podle stejného pravidla jako pokladna (doprava zdarma od 1 000 Kč na výdejnu): přidáním přes hranici zlevní, odebráním pod hranici se doúčtuje. Souhrn to řekne nahlas. **Rozhodnout:** přepočítávat, nebo zmrazit původní poštovné. |
+| Slevový kód | Přidaný kus za aktuální cenu; sleva z kódu se na něj uplatní jen pokud kód platí (Medusa úpravy objednávky slevy na nové řádky automaticky nedávají — ověřit, jinak říct „na doplněné kusy se kód nevztahuje"). |
+| Objednávka se zakázkou (smíšená) | Běžné kusy přidat jde, doplatí kartou hned; zakázkový řádek zůstává zamčený. Čistá zakázka se zálohou: fáze 2 (kolekce doplatku). |
+| Po „připravena k odeslání" | Jako dosud: jen výměna za stejnou cenu, Lucie přebalí. Po štítku nic. |
+| Výměna varianty | Zůstává jako zkratka (odebrat + přidat by bylo totéž, ale pro zabalenou fázi je výměna jediná povolená akce). |
+
+Odhad navíc proti §4: +1 den na režim výběru v obchodě a stránce produktu.
+
 ## 4. Kroky implementace
 
 1. Pravidla: `order-edit-rules.ts` — akce `set_quantity`, zámky
