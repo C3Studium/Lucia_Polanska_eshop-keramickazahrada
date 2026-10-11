@@ -422,6 +422,12 @@
 /* Na úzké obrazovce stojí panely pod textem a potřebují od něj odrazit. */
 .content[data-panels="ano"] .panels {
   margin-top: clamp(1.5rem, 3vh, 2.5rem);
+  /* Celá šířka sloupce i na telefonu. Základ mřížky má `justify-items:
+     start` (shrink-to-fit) — a panel s kontejnerovým dotazem (úprava
+     objednávky: `container: … / inline-size`) má vlastní šířku nulovou, takže
+     se celý sloupec smrskl na pár pixelů a text se lámal po písmenech
+     (změřeno v Chromiu na 375 px: panely 0 px široké). */
+  justify-self: stretch;
 }
 
 /*
