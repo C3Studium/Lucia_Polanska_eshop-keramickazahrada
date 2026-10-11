@@ -272,6 +272,12 @@ z `allowed` (server je soudce i při POST).
   stránkování na serveru.
 - **Cena přidaného kusu v seznamu „Přidat"** je snímek z chvíle výběru
   (jen popisek); Bylo / Bude / Rozdíl je vždy ze serveru (`dry_run`).
+  Totéž u výměny za jiný výrobek (§3d.10): řádek ukáže „→ výrobek ·
+  varianta" a cenu ze snímku, rozdíl je ze serveru.
+- **Výměna za jiný výrobek bez nabídky ze serveru:** když katalog s
+  `?swap=` nevrátí `purpose: "swap"` + `item` (řádek zamčený, nebo backend
+  bez §3d.10), mini obchod výměnu odmítne s vysvětlením — nepřepadne do
+  „přidat", to by byla jiná akce, než zákazník chtěl.
 - **Sticky souhrn** potřebuje, aby stavová stránka (`OrderStateShell`)
   ořezávala přes `overflow: clip` místo `hidden` — změněno pro všechny
   stavové stránky (vizuálně beze změny). Prohlížeče bez `clip` (Safari < 16)

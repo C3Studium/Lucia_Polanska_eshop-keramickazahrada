@@ -2,24 +2,19 @@ import { Metadata } from "next"
 
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
-import {
-  getGuestOrderEditCatalog,
-  getGuestOrderEditContext,
-} from "@lib/data/guest-order-edit"
 import { listStoreCatalogue } from "@lib/data/products"
+import { resolvePickAccess } from "@modules/order/components/order-edit/pick-access"
 import OrderPickShop from "@modules/order/components/order-edit/pick-shop"
-import { editPath } from "@modules/order/components/order-edit/shared"
-import OrderStateShell from "@modules/order/components/order-state-shell"
 import type { ShopFilters, ShopNavCollection } from "@modules/store/Shop/types"
 
 type Props = {
   params: Promise<{ id: string; countryCode: string }>
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; swap?: string }>
 }
 
 export const metadata: Metadata = {
-  title: "Přidat k objednávce",
-  description: "Vyberte, co k objednávce přidat.",
+  title: "Výběr do objednávky",
+  description: "Vyberte, co k objednávce přidat nebo za co vyměnit.",
   robots: { index: false, follow: false },
 }
 
@@ -35,57 +30,25 @@ const defaultFilters: ShopFilters = {
 }
 
 /**
- * Mini obchod úpravy objednávky (plán §3c bod 2): stávající výpis obchodu
- * v režimu výběru, jen produkty, které server dovolí přidat (`allowed`
- * z `GET …/guest-edit/catalog`). Hledání a kategorie, bez filtrů. Klik na
- * produkt vede na jeho stránku v režimu výběru (`./[handle]`).
+ * Mini obchod úpravy objednávky (plán §3c bod 2, §3d bod 10): stávající
+ * výpis obchodu v režimu výběru, jen produkty, které server dovolí (`allowed`
+ * z `GET …/guest-edit/catalog`). Bez `swap` se vybírá kus navíc, se
+ * `swap=<item_id>` náhrada za ten řádek (nabídku zúží server). Hledání
+ * a kategorie, bez filtrů. Klik na produkt vede na jeho stránku v režimu
+ * výběru (`./[handle]`).
  */
 export default async function OrderEditPickPage(props: Props) {
   const [params, searchParams] = await Promise.all([
     props.params,
     props.searchParams,
   ])
-  const token = searchParams.token
-  const [context, catalog] = token
-    ? await Promise.all([
-        getGuestOrderEditContext(params.id, token),
-        getGuestOrderEditCatalog(params.id, token),
-      ])
-    : [null, null]
-
-  if (!token || !context || !catalog) {
-    return (
-      <OrderStateShell
-        eyebrow="Objednávka · úprava"
-        kicker="Přidat k objednávce"
-        title="Odkaz nejde otevřít."
-        description="Odkaz je neplatný nebo vypršel. Otevřete prosím úpravu objednávky z posledního e-mailu, nebo se nám ozvěte a doplníme to spolu."
-        status="pending"
-      />
-    )
-  }
-
-  /* Server je soudce: katalog říká, jestli jde přidávat. Čekající změna
-     (platba rozdílu) navíc blokuje každé další uložení, takže vybírat teď
-     nemá smysl. */
-  if (!catalog.can_add || context.pending_change) {
-    return (
-      <OrderStateShell
-        eyebrow="Objednávka · úprava"
-        kicker={`Objednávka #${context.order.display_id}`}
-        title="Teď přidat nejde."
-        description={
-          context.pending_change
-            ? "K objednávce čeká úprava na zaplacení rozdílu. Dokončete ji, nebo ji na stránce úpravy zrušte — pak můžete přidávat."
-            : catalog.reason ??
-              context.reason ??
-              "K téhle objednávce už nic přidat nejde. Kdybyste něco potřebovali, napište nám na info@keramickazahrada.cz."
-        }
-        status="pending"
-        primary={{ href: editPath(params.id, token), label: "Zpět na úpravu" }}
-      />
-    )
-  }
+  const access = await resolvePickAccess(
+    params.id,
+    searchParams.token,
+    searchParams.swap
+  )
+  if (!access.ok) return access.view
+  const { catalog } = access
 
   const productIds = Object.keys(catalog.allowed).filter(
     (productId) => (catalog.allowed[productId] ?? []).length > 0
@@ -107,7 +70,7 @@ export default async function OrderEditPickPage(props: Props) {
     }),
   ])
 
-  /* Kategorie a kolekce jen s něčím, co jde přidat — jinak by zákazník klikal
+  /* Kategorie a kolekce jen s něčím, co jde vybrat — jinak by zákazník klikal
      do prázdných výpisů. Skládá se stejně jako v obchodě (`/store`). */
   const pickCategories = categories.filter((category) =>
     hasAllowed(category.products)
@@ -136,8 +99,9 @@ export default async function OrderEditPickPage(props: Props) {
   return (
     <OrderPickShop
       orderId={params.id}
-      token={token}
-      orderNumber={context.order.display_id}
+      token={access.token}
+      orderNumber={access.orderNumber}
+      swap={access.swap}
       productIds={productIds}
       countryCode={params.countryCode}
       products={initial.products}

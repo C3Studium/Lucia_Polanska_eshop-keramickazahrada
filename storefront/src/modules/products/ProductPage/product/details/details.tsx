@@ -57,13 +57,20 @@ type ProductTemplateProps = {
  * Do skutečného košíku se nesahá.
  */
 export type ProductPickMode = {
-  /** Text tlačítka — „Přidat k objednávce #39". */
+  /** Text tlačítka — „Přidat k objednávce #39" / „Vyměnit za tento výrobek". */
   label: string
-  /** Varianty, které server dovolí přidat (`allowed[product.id]`). Ostatní
-      provedení jdou vybrat, ale tlačítko u nich řekne, že přidat nejdou. */
+  /** Varianty, které server dovolí (`allowed[product.id]`). Ostatní provedení
+      jdou vybrat, ale tlačítko u nich řekne, že nejdou. */
   allowedVariantIds: string[]
   /** Strop počtu kusů (kontrakt `add`: 1–20). */
   maxQuantity: number
+  /** Pevný počet kusů — výměna řádku za jiný výrobek (§3d.10) přebírá počet
+      řádku, stepper se proto nezobrazí. */
+  fixedQuantity?: number
+  /** Věta pod tlačítkem („Vyměníme 2 ks …"). */
+  note?: string
+  /** Věta k provedení, které server nedovolí. */
+  blockedText?: string
   onPick: (
     variant: HttpTypes.StoreProductVariant,
     quantity: number
@@ -199,7 +206,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     if (!pick || !selectedVariant?.id || pickBlocked || addState.kind === "added") {
       return
     }
-    const result = pick.onPick(selectedVariant, quantity)
+    const result = pick.onPick(selectedVariant, pick.fixedQuantity ?? quantity)
     setAddState(
       result.ok ? { kind: "added" } : { kind: "error", message: result.message }
     )
@@ -461,9 +468,10 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       availability={availability}
                       backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
                       codAllowed={productAllowsDobirka(product)}
-                      quantity={quantity}
+                      quantity={pick?.fixedQuantity ?? quantity}
                       maxQuantity={maxQuantity}
-                      onQuantityChange={setQuantity}
+                      // Pevný počet (výměna řádku) = žádný stepper.
+                      onQuantityChange={pick?.fixedQuantity ? undefined : setQuantity}
                       isValidVariant={isValidVariant}
                       handleAddToCart={pick ? handlePick : handleAddToCart}
                       pick={
@@ -471,6 +479,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                           ? {
                               label: pick.label,
                               blocked: pickBlocked,
+                              blockedText: pick.blockedText,
+                              note: pick.note,
                             }
                           : undefined
                       }

@@ -543,18 +543,15 @@ export default function ECom({
         {pick ? (
           <header className={styles.introduction}>
             <p>
-              Přidat k objednávce #{pick.orderNumber}
+              {pick.intro.eyebrow}
               <span className={styles.filterScope}>{filterScope}</span>
             </p>
             <h2>
-              Vyberte, co přidat,
+              {pick.intro.title}
               <br />
-              <em>pošleme to spolu.</em>
+              <em>{pick.intro.accent}</em>
             </h2>
-            <span>
-              Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné
-              uvidíte v souhrnu úpravy, ještě než cokoli uložíte.
-            </span>
+            <span>{pick.intro.text}</span>
           </header>
         ) : (
           <header className={styles.introduction}>

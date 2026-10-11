@@ -25,9 +25,25 @@ export const MAX_ADD_QUANTITY = 20
 /** Kontrakt §5: `set_quantity` 1–99 kusů. */
 export const MAX_SET_QUANTITY = 99
 
+/**
+ * Výměna za JINÝ výrobek (§3d.10) — snímek nového výrobku pro zobrazení
+ * v řádku („→ Miska · modrá"). Na server jde jen `variant_id`; cena je
+ * popisek, rozdíl spočítá server v náhledu.
+ */
+export type DraftSwapTarget = {
+  product_id: string
+  handle: string | null
+  title: string
+  variant_title: string | null
+  thumbnail: string | null
+  unit_price: number | null
+}
+
 /** Jedna změna na řádek objednávky — víc kontrakt nedovolí. */
 export type DraftLineChange =
-  | { type: "swap"; variant_id: string }
+  /** Bez `product` = jiná varianta téhož výrobku (z `item.variants`);
+      s `product` = výměna za jiný výrobek z mini obchodu. */
+  | { type: "swap"; variant_id: string; product?: DraftSwapTarget }
   | { type: "remove" }
   | { type: "set_quantity"; quantity: number }
 
@@ -64,6 +80,28 @@ const clampInt = (value: unknown, min: number, max: number) =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
+const stringOrNull = (value: unknown) => (typeof value === "string" ? value : null)
+
+const parseSwapTarget = (raw: unknown): DraftSwapTarget | undefined => {
+  if (!isRecord(raw) || typeof raw.product_id !== "string") return undefined
+  return {
+    product_id: raw.product_id,
+    handle: stringOrNull(raw.handle),
+    title: typeof raw.title === "string" ? raw.title : "Jiný výrobek",
+    variant_title: stringOrNull(raw.variant_title),
+    thumbnail: stringOrNull(raw.thumbnail),
+    unit_price:
+      typeof raw.unit_price === "number" && Number.isFinite(raw.unit_price)
+        ? raw.unit_price
+        : null,
+  }
+}
+
+const TOO_MANY_CHANGES =
+  "Víc změn najednou uložit nejde. Uložte prosím nejdřív ty rozpracované a pak pokračujte."
+const STORAGE_BLOCKED =
+  "Prohlížeč nám nedovolil volbu uložit (soukromé okno nebo vypnuté úložiště). Zkuste to prosím v běžném okně, nebo nám napište, co změnit."
+
 /** Ze `sessionStorage` může přijít cokoli (starší tvar, ruční zásah) — bereme
     jen to, co tvarem sedí, zbytek tiše zahodíme. */
 const parseDraft = (raw: unknown): OrderEditDraft => {
@@ -76,7 +114,10 @@ const parseDraft = (raw: unknown): OrderEditDraft => {
       if (change.type === "remove") {
         draft.lines[itemId] = { type: "remove" }
       } else if (change.type === "swap" && typeof change.variant_id === "string") {
-        draft.lines[itemId] = { type: "swap", variant_id: change.variant_id }
+        const product = parseSwapTarget(change.product)
+        draft.lines[itemId] = product
+          ? { type: "swap", variant_id: change.variant_id, product }
+          : { type: "swap", variant_id: change.variant_id }
       } else if (change.type === "set_quantity") {
         draft.lines[itemId] = {
           type: "set_quantity",
@@ -227,6 +268,16 @@ export function sanitizeDraft(
       if (quantity !== item.quantity) {
         clean.lines[itemId] = { type: "set_quantity", quantity }
       }
+    } else if (change.product) {
+      /* Výměna za jiný výrobek: varianta v `item.variants` není, takže tu jde
+         ověřit jen řádek a režim. Nabídku (sklad, cena po zabalení, dobírka)
+         zúžil server v katalogu a při náhledu i uložení soudí znovu. */
+      if (
+        (context.mode === "full" || context.mode === "swap_only") &&
+        change.variant_id !== item.variant_id
+      ) {
+        clean.lines[itemId] = change
+      }
     } else if (canSwapTo(item, change.variant_id, context.mode)) {
       clean.lines[itemId] = change
     }
@@ -260,11 +311,7 @@ export function addToDraft(
     existing.quantity = clampInt(existing.quantity + add.quantity, 1, max)
   } else {
     if (draftActionCount(draft) >= MAX_EDIT_ACTIONS) {
-      return {
-        ok: false,
-        message:
-          "Víc změn najednou uložit nejde. Uložte prosím nejdřív ty rozpracované a pak přidejte další kus.",
-      }
+      return { ok: false, message: TOO_MANY_CHANGES }
     }
     draft.adds.push({
       ...add,
@@ -272,12 +319,25 @@ export function addToDraft(
     })
   }
 
-  if (!writeDraft(orderId, draft)) {
-    return {
-      ok: false,
-      message:
-        "Prohlížeč nám nedovolil kus uložit (soukromé okno nebo vypnuté úložiště). Zkuste to prosím v běžném okně, nebo nám napište, co přidat.",
-    }
+  if (!writeDraft(orderId, draft)) return { ok: false, message: STORAGE_BLOCKED }
+  return { ok: true }
+}
+
+/**
+ * Zapíše změnu řádku (z mini obchodu: výměna za jiný výrobek). Nahradí
+ * jakoukoli jinou rozpracovanou změnu téhož řádku — kontrakt dovoluje jednu
+ * akci na řádek, stejně jako výměna varianty v sheetu na stránce úpravy.
+ */
+export function setDraftLine(
+  orderId: string,
+  itemId: string,
+  change: DraftLineChange
+): { ok: true } | { ok: false; message: string } {
+  const draft = readDraft(orderId)
+  if (!draft.lines[itemId] && draftActionCount(draft) >= MAX_EDIT_ACTIONS) {
+    return { ok: false, message: TOO_MANY_CHANGES }
   }
+  draft.lines[itemId] = change
+  if (!writeDraft(orderId, draft)) return { ok: false, message: STORAGE_BLOCKED }
   return { ok: true }
 }

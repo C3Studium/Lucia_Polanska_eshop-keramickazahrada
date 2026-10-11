@@ -123,17 +123,24 @@ export async function cancelGuestOrderEdit(
 /**
  * Mini obchod úpravy: které produkty a varianty jde k objednávce přidat
  * (bez zakázek, balíčků, poškozených kusů, vyprodaných bez backorderu; u
- * dobírky jen `cod_allowed`). Produkty samotné si storefront načte běžným
- * výpisem a ukáže jen ty z `allowed` — server je soudce i při uložení.
+ * dobírky jen `cod_allowed`). Se `swapItemId` (§3d.10) nabídka pro výměnu
+ * toho řádku za jiný výrobek — server ji zúží (bez vlastní varianty, sklad na
+ * počet kusů, po zabalení jen stejná cena). Produkty samotné si storefront
+ * načte běžným výpisem a ukáže jen ty z `allowed` — server je soudce i při
+ * uložení.
  */
 export async function getGuestOrderEditCatalog(
   orderId: string,
-  token: string
+  token: string,
+  swapItemId?: string
 ): Promise<OrderEditCatalog | null> {
   try {
     return await sdk.client.fetch<OrderEditCatalog>(
       `/store/orders/${orderId}/guest-edit/catalog`,
-      { query: { token }, cache: "no-store" }
+      {
+        query: swapItemId ? { token, swap: swapItemId } : { token },
+        cache: "no-store",
+      }
     )
   } catch {
     return null

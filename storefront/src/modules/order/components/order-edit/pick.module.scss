@@ -36,7 +36,10 @@
 
 .label {
   flex: 1 1 12rem;
+  min-width: 0;
   margin: 0;
+  /* U výměny tu stojí název výrobku — dlouhý název se láme, nepřetéká. */
+  overflow-wrap: anywhere;
   font: 400 0.78rem / 1.35 "Sansation-Regular", sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;

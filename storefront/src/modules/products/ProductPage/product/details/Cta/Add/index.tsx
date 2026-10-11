@@ -47,9 +47,10 @@ type CTAProps = {
    * k objednávce #N") a volá `handleAddToCart` předaný volajícím (ten nesahá
    * na košík). Oblíbené, „Koupit ihned" a věta o dobírce se schovají — nic se
    * tu nekupuje, platba je daná objednávkou. `blocked` = provedení, které
-   * server přidat nedovolí.
+   * server nedovolí (`blockedText` to řekne vlastními slovy), `note` = věta
+   * pod tlačítkem (u výměny kolik kusů se vymění).
    */
-  pick?: { label: string; blocked: boolean }
+  pick?: { label: string; blocked: boolean; blockedText?: string; note?: string }
 }
 
 export default function CTA({
@@ -82,12 +83,12 @@ export default function CTA({
   const label = !selectedVariant
     ? "Vyberte provedení"
     : pick?.blocked
-      ? "Tohle provedení přidat nejde"
+      ? "Tohle provedení nejde"
       : !inStock || !isValidVariant
         ? availabilityLabel["sold-out"]
         : pick
           ? addState.kind === "added"
-            ? "Přidáno — vracíme vás na úpravu…"
+            ? "Hotovo — vracíme vás na úpravu…"
             : pick.label
           : addState.kind === "added"
             ? "Přidáno do košíku"
@@ -174,14 +175,16 @@ export default function CTA({
       )}
       {addState.kind === "added" && (
         <p className="product__details__cta__confirm" role="status">
-          {pick ? "Kus je v návrhu úpravy." : "Máte to v košíku."}
+          {pick ? "Je to v návrhu úpravy." : "Máte to v košíku."}
         </p>
       )}
       {pick?.blocked && (
         <p className="product__details__cta__error">
-          Tohle provedení k objednávce přidat nejde — vyberte prosím jiné.
+          {pick.blockedText ??
+            "Tohle provedení k objednávce přidat nejde — vyberte prosím jiné."}
         </p>
       )}
+      {pick?.note && !pick.blocked && <p>{pick.note}</p>}
 
       {/* One vocabulary, shared with the cards and the badge: Skladem / Poslední kus /
           Prodáno / Na objednávku (spec §12). */}

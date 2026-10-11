@@ -22,19 +22,32 @@ export const signedCzk = (value: number) =>
     odsud otevře. */
 export const ORDER_EDIT_CONVERSATION_ID = "konverzace-zakazky"
 
-const withToken = (path: string, token: string) =>
-  `${path}?token=${encodeURIComponent(token)}`
+/** `?token=…` a u výměny za jiný výrobek (§3d.10) ještě `&swap=<item_id>` —
+    mini obchod podle něj pozná, že nevybírá kus navíc, ale náhradu řádku. */
+const withToken = (path: string, token: string, swapItemId?: string) =>
+  `${path}?token=${encodeURIComponent(token)}${
+    swapItemId ? `&swap=${encodeURIComponent(swapItemId)}` : ""
+  }`
 
 /* Cesty BEZ kódu země — `LocalizedClientLink` ho přidá sám; kde se naviguje
    ručně (`router.push`, `redirect`), přidá ho volající. */
 export const editPath = (orderId: string, token: string) =>
   withToken(`/order/${orderId}/edit`, token)
 
-export const pickShopPath = (orderId: string, token: string) =>
-  withToken(`/order/${orderId}/edit/pridat`, token)
+export const pickShopPath = (orderId: string, token: string, swapItemId?: string) =>
+  withToken(`/order/${orderId}/edit/pridat`, token, swapItemId)
 
-export const pickProductPath = (orderId: string, token: string, handle: string) =>
-  withToken(`/order/${orderId}/edit/pridat/${encodeURIComponent(handle)}`, token)
+export const pickProductPath = (
+  orderId: string,
+  token: string,
+  handle: string,
+  swapItemId?: string
+) =>
+  withToken(
+    `/order/${orderId}/edit/pridat/${encodeURIComponent(handle)}`,
+    token,
+    swapItemId
+  )
 
 export const refundPath = (orderId: string, token: string) =>
   withToken(`/order/${orderId}/refund`, token)

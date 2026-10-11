@@ -10,11 +10,13 @@ import type {
   ShopPickMode,
 } from "@modules/store/Shop/types"
 
-import PickBar from "./pick-bar"
+import PickBar, { type PickSwapInfo } from "./pick-bar"
 import { editPath, pickProductPath } from "./shared"
 
 /**
  * Mini obchod úpravy objednávky — stávající výpis obchodu v režimu výběru.
+ * Dvě podoby: přidání kusu k objednávce a výměna řádku za jiný výrobek
+ * (§3d.10, `swap`). Liší se texty a tím, kam vede karta; výpis je tentýž.
  *
  * Obal existuje kvůli hranici server/klient: režim výběru nese funkci (kam
  * vede karta), a tu serverová stránka předat neumí. Tady se z dat (id
@@ -24,6 +26,7 @@ export default function OrderPickShop({
   orderId,
   token,
   orderNumber,
+  swap = null,
   productIds,
   countryCode,
   products,
@@ -34,6 +37,8 @@ export default function OrderPickShop({
   orderId: string
   token: string
   orderNumber: number
+  /** Výměna řádku za jiný výrobek; `null` = přidání kusu. */
+  swap?: PickSwapInfo | null
   /** `allowed` z katalogu úpravy — jen tyhle produkty výpis ukáže. */
   productIds: string[]
   countryCode: string
@@ -44,15 +49,33 @@ export default function OrderPickShop({
 }) {
   const pick = useMemo<ShopPickMode>(
     () => ({
-      orderNumber,
+      intro: swap
+        ? {
+            eyebrow: `Výměna v objednávce #${orderNumber}`,
+            title: "Vyberte náhradu,",
+            accent: `za ${swap.title}.`,
+            text: swap.samePriceOnly
+              ? `Objednávka je zabalená, proto jen výrobky ve stejné ceně. Vyměníme ${swap.quantity} ks.`
+              : `Vyměníme ${swap.quantity} ks. Rozdíl ceny uvidíte v souhrnu úpravy, ještě než cokoli uložíte.`,
+          }
+        : {
+            eyebrow: `Přidat k objednávce #${orderNumber}`,
+            title: "Vyberte, co přidat,",
+            accent: "pošleme to spolu.",
+            text: "Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné uvidíte v souhrnu úpravy, ještě než cokoli uložíte.",
+          },
       productIds,
       productHref: (product) =>
-        pickProductPath(orderId, token, product.handle ?? product.id),
+        pickProductPath(orderId, token, product.handle ?? product.id, swap?.itemId),
       banner: (
-        <PickBar orderNumber={orderNumber} editHref={editPath(orderId, token)} />
+        <PickBar
+          orderNumber={orderNumber}
+          swap={swap}
+          editHref={editPath(orderId, token)}
+        />
       ),
     }),
-    [orderId, token, orderNumber, productIds]
+    [orderId, token, orderNumber, swap, productIds]
   )
 
   return (

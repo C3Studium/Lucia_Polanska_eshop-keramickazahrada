@@ -45,8 +45,16 @@ export type ShopNavCollection = {
  * stránku produktu v režimu výběru a z filtrů zůstane hledání a kategorie.
  */
 export type ShopPickMode = {
-  /** Číslo objednávky pro texty výpisu („Přidat k objednávce #39"). */
-  orderNumber: number
+  /** Hlavička výpisu — jiná pro přidání kusu a pro výměnu řádku za jiný
+      výrobek, a obojí jiná než u obchodu. */
+  intro: {
+    /** Řádek nad nadpisem („Přidat k objednávce #39"). */
+    eyebrow: string
+    title: string
+    /** Kurzívou na druhém řádku nadpisu. */
+    accent: string
+    text: string
+  }
   /** Jediné produkty, které výpis ukáže — `allowed` z katalogu úpravy. */
   productIds: string[]
   /** Kam vede karta produktu (bez kódu země) místo běžné stránky produktu. */

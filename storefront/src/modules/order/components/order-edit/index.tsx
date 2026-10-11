@@ -478,6 +478,15 @@ export default function OrderEditor({
           swapChange?.type === "swap" ? swapChange.variant_id : swapItem?.variant_id ?? null
         }
         quantityChanged={swapChange?.type === "set_quantity"}
+        /* Výměna za jiný výrobek (§3d.10) — jen u nezamčeného řádku, dokud
+           jdou položky upravovat; po zabalení mini obchod nabídne jen stejnou
+           cenu (zúží to server v katalogu). */
+        otherProductHref={
+          swapItem && !swapItem.lock && itemsEditable
+            ? pickShopPath(orderId, token, swapItem.id)
+            : null
+        }
+        otherProductChosen={swapChange?.type === "swap" && Boolean(swapChange.product)}
         onChoose={(variantId) => swapItem && chooseVariant(swapItem, variantId)}
         onClose={() => setSwapItemId(null)}
       />

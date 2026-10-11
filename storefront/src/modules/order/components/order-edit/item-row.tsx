@@ -2,7 +2,6 @@
 
 import type { EditableItem, OrderEditMode } from "@lib/data/order-edit"
 import {
-  canSwapTo,
   lineQuantityCap,
   type DraftAdd,
   type DraftLineChange,
@@ -101,24 +100,34 @@ export function EditItemRow({
   const name = item.product_title || item.title
   const locked = Boolean(item.lock)
   const removed = change?.type === "remove"
-  const swapped =
-    change?.type === "swap"
+  /** Výměna za jiný výrobek z mini obchodu (§3d.10) — nese vlastní snímek. */
+  const otherProduct = change?.type === "swap" ? change.product ?? null : null
+  /** Výměna za jinou variantu téhož výrobku. */
+  const swappedVariant =
+    change?.type === "swap" && !otherProduct
       ? item.variants.find((variant) => variant.id === change.variant_id)
       : undefined
+  const swapped = Boolean(otherProduct || swappedVariant)
+  const swapLabel = otherProduct
+    ? [otherProduct.title, otherProduct.variant_title].filter(Boolean).join(" · ")
+    : swappedVariant?.title ?? "Jiné provedení"
   const quantity = change?.type === "set_quantity" ? change.quantity : item.quantity
 
   /* Cena za kus z toho, co objednávka skutečně účtovala (`total` může nést
-     slevu), u výměny cena nové varianty. */
+     slevu), u výměny cena nové varianty / nového výrobku (snímek). */
   const paidUnit = item.quantity > 0 ? item.total / item.quantity : item.unit_price
-  const unitNow = swapped ? swapped.price_czk ?? item.unit_price : paidUnit
+  const unitNow = otherProduct
+    ? otherProduct.unit_price ?? paidUnit
+    : swappedVariant
+      ? swappedVariant.price_czk ?? item.unit_price
+      : paidUnit
   const totalNow = removed ? 0 : Math.round(unitNow * quantity)
 
   const interactive = editable && !locked && !removed
   const allowNew = canStartChange || Boolean(change)
-  const swapOptions = item.variants.filter((variant) =>
-    canSwapTo(item, variant.id, mode)
-  )
-  const showSwap = interactive && (swapOptions.length > 0 || Boolean(swapped))
+  /* Vyměnit jde každý nezamčený řádek: když nemá jinou variantu, sheet aspoň
+     nabídne výměnu za jiný výrobek (§3d.10) — i po zabalení, za stejnou cenu. */
+  const showSwap = interactive
   const showRemove = interactive && mode === "full"
   const showStepper = interactive && mode === "full"
 
@@ -142,12 +151,13 @@ export function EditItemRow({
           <span className={s.chips}>
             {swapped ? (
               <>
-                {item.variant_title && (
+                {item.variant_title && !otherProduct && (
                   <del className={s.chipOld}>{item.variant_title}</del>
                 )}
                 <span aria-hidden="true">→</span>
                 <span className={s.chip} data-tone="new">
-                  {swapped.title ?? "Jiné provedení"}
+                  {otherProduct && <span className="sr-only">Vyměnit za </span>}
+                  {swapLabel}
                 </span>
               </>
             ) : (
@@ -184,7 +194,7 @@ export function EditItemRow({
             tak to řádek řekne dřív, než se zákazník diví zamčenému stepperu. */}
         {swapped && mode === "full" && (
           <span className={s.rowNote}>
-            Výměna platí pro {item.quantity} ks — počet a provedení najednou
+            Výměna platí pro {item.quantity} ks — počet a výměnu najednou
             změnit nejde.
           </span>
         )}
@@ -205,7 +215,7 @@ export function EditItemRow({
               label={`Počet kusů — ${name}`}
               value={quantity}
               max={lineQuantityCap(item)}
-              disabled={Boolean(swapped) || !allowNew}
+              disabled={swapped || !allowNew}
               onChange={onQuantity}
             />
           ) : (

@@ -5,26 +5,35 @@ import { useRouter } from "next/navigation"
 import { useMemo } from "react"
 
 import { maxPurchasableQuantity } from "@lib/util/availability"
-import { MAX_ADD_QUANTITY, addToDraft } from "@lib/util/order-edit-draft"
+import {
+  MAX_ADD_QUANTITY,
+  addToDraft,
+  setDraftLine,
+} from "@lib/util/order-edit-draft"
 import Product from "@modules/products/ProductPage/product"
 import type { ProductPickMode } from "@modules/products/ProductPage/product/details/details"
 
-import PickBar from "./pick-bar"
+import PickBar, { type PickSwapInfo } from "./pick-bar"
 import { editPath, pickShopPath } from "./shared"
 import s from "./pick.module.scss"
 
 /**
  * Stránka produktu v režimu výběru (mini obchod úpravy objednávky).
  *
- * „Přidat k objednávce #N" zapíše akci `add` do návrhu úpravy
- * (`sessionStorage`, viz `order-edit-draft`) a vrátí zákazníka na stránku
- * úpravy — souhrn se tam přepočítá sám. Skutečného košíku se nic nedotkne:
- * žádné `addToCart`, žádné cookies košíku.
+ * Přidání: „Přidat k objednávce #N" zapíše akci `add` do návrhu úpravy.
+ * Výměna (§3d.10, `swap`): „Vyměnit za tento výrobek" zapíše `swap` toho
+ * řádku na vybranou variantu — počet kusů zůstává řádku, stepper tu proto
+ * není — a nahradí jakoukoli jinou rozpracovanou změnu téhož řádku.
+ *
+ * V obou případech návrh (`sessionStorage`, viz `order-edit-draft`) a návrat
+ * na stránku úpravy, kde se souhrn přepočítá sám. Skutečného košíku se nic
+ * nedotkne: žádné `addToCart`, žádné cookies košíku.
  */
 export default function OrderPickProduct({
   orderId,
   token,
   orderNumber,
+  swap = null,
   product,
   region,
   countryCode,
@@ -33,32 +42,70 @@ export default function OrderPickProduct({
   orderId: string
   token: string
   orderNumber: number
+  /** Výměna řádku za jiný výrobek; `null` = přidání kusu. */
+  swap?: PickSwapInfo | null
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   countryCode: string
-  /** `allowed[product.id]` z katalogu úpravy. */
+  /** `allowed[product.id]` z katalogu úpravy (u výměny už zúžené serverem). */
   allowedVariantIds: string[]
 }) {
   const router = useRouter()
 
-  const pick = useMemo<ProductPickMode>(
-    () => ({
+  const pick = useMemo<ProductPickMode>(() => {
+    /* Snímek pro zobrazení na stránce úpravy. U produktu s jediným provedením
+       je název varianty „Default" apod. — chip by jen mátl. */
+    const snapshot = (variant: HttpTypes.StoreProductVariant) => ({
+      product_id: product.id,
+      handle: product.handle ?? null,
+      title: product.title ?? (swap ? "Jiný výrobek" : "Přidaný kus"),
+      variant_title:
+        (product.variants?.length ?? 0) > 1 ? variant.title ?? null : null,
+      thumbnail: product.thumbnail ?? product.images?.[0]?.url ?? null,
+      unit_price: variant.calculated_price?.calculated_amount ?? null,
+    })
+    const backToEdit = () => router.push(`/${countryCode}${editPath(orderId, token)}`)
+
+    if (swap) {
+      return {
+        label: "Vyměnit za tento výrobek",
+        allowedVariantIds,
+        maxQuantity: swap.quantity,
+        fixedQuantity: swap.quantity,
+        note: swap.samePriceOnly
+          ? `Vyměníme ${swap.quantity} ks za stejnou cenu.`
+          : `Vyměníme ${swap.quantity} ks. Rozdíl ceny uvidíte v souhrnu úpravy.`,
+        blockedText: swap.samePriceOnly
+          ? "Tohle provedení za váš kus vyměnit nejde — po zabalení jen za stejnou cenu, nebo ho nemáme na počet kusů."
+          : "Tohle provedení za váš kus vyměnit nejde — vyberte prosím jiné.",
+        onPick: (variant) => {
+          const result = setDraftLine(orderId, swap.itemId, {
+            type: "swap",
+            variant_id: variant.id,
+            product: snapshot(variant),
+          })
+          if (result.ok) backToEdit()
+          return result
+        },
+      }
+    }
+
+    return {
       label: `Přidat k objednávce #${orderNumber}`,
       allowedVariantIds,
       maxQuantity: MAX_ADD_QUANTITY,
       onPick: (variant, quantity) => {
+        const { product_id, handle, title, variant_title, thumbnail, unit_price } =
+          snapshot(variant)
         const result = addToDraft(orderId, {
           variant_id: variant.id,
           quantity,
-          product_id: product.id,
-          handle: product.handle ?? null,
-          title: product.title ?? "Přidaný kus",
-          // U produktu s jediným provedením je název varianty „Default"
-          // apod. — chip by jen mátl.
-          variant_title:
-            (product.variants?.length ?? 0) > 1 ? variant.title ?? null : null,
-          thumbnail: product.thumbnail ?? product.images?.[0]?.url ?? null,
-          unit_price: variant.calculated_price?.calculated_amount ?? null,
+          product_id,
+          handle,
+          title,
+          variant_title,
+          thumbnail,
+          unit_price,
           max_quantity: Math.max(
             1,
             Math.min(
@@ -67,12 +114,11 @@ export default function OrderPickProduct({
             )
           ),
         })
-        if (result.ok) router.push(`/${countryCode}${editPath(orderId, token)}`)
+        if (result.ok) backToEdit()
         return result
       },
-    }),
-    [orderId, token, orderNumber, allowedVariantIds, product, countryCode, router]
-  )
+    }
+  }, [orderId, token, orderNumber, swap, allowedVariantIds, product, countryCode, router])
 
   return (
     <main>
@@ -80,8 +126,9 @@ export default function OrderPickProduct({
         <PickBar
           tone="dark"
           orderNumber={orderNumber}
+          swap={swap}
           editHref={editPath(orderId, token)}
-          shopHref={pickShopPath(orderId, token)}
+          shopHref={pickShopPath(orderId, token, swap?.itemId)}
         />
       </div>
       <Product

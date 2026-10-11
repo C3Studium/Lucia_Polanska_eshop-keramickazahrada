@@ -97,6 +97,8 @@ export type OrderEditContext = {
 
 /** Max 1 akce na řádek, max 30 akcí. */
 export type EditAction =
+  /** Varianta téhož výrobku, nebo (§3d.10) varianta jiného výrobku z nabídky
+      výměny; po zabalení server přijme jen rozdíl 0. Počet kusů zůstává. */
   | { type: "swap"; item_id: string; variant_id: string }
   | { type: "remove"; item_id: string }
   /** 1–99 */
@@ -141,12 +143,23 @@ export type EditResult =
       claim_request_id: string | null
     }
 
-/** Mini obchod úpravy — jen produkty a varianty, které jde přidat. */
+/**
+ * Mini obchod úpravy — jen produkty a varianty, které jde přidat, nebo
+ * (s `?swap=<item_id>`, §3d.10) za které jde vyměnit daný řádek.
+ */
 export type OrderEditCatalog = {
+  /** Jde teď vybírat (přidání i výměna). */
   can_add: boolean
   reason: string | null
   payment: "card" | "pickup" | "dobirka"
-  /** product_id → variant_id[] */
+  /** Bez `swap` „add" (jako dřív), se `swap` „swap". */
+  purpose: "add" | "swap"
+  /** Výměna po zabalení → jen výrobky ve stejné ceně. */
+  same_price_only: boolean
+  /** Vyměňovaný řádek (jen u `purpose: "swap"`). */
+  item: { id: string; title: string; quantity: number; unit_price: number } | null
+  /** product_id → variant_id[] — u výměny už zúžené (bez vlastní varianty
+      řádku, skladem aspoň na počet kusů, případně jen stejná cena). */
   allowed: Record<string, string[]>
 }
 

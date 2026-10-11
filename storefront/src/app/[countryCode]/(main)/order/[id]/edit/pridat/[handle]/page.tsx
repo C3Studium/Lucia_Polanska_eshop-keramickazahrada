@@ -1,12 +1,9 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import {
-  getGuestOrderEditCatalog,
-  getGuestOrderEditContext,
-} from "@lib/data/guest-order-edit"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { resolvePickAccess } from "@modules/order/components/order-edit/pick-access"
 import OrderPickProduct from "@modules/order/components/order-edit/pick-product"
 import {
   editPath,
@@ -16,12 +13,12 @@ import OrderStateShell from "@modules/order/components/order-state-shell"
 
 type Props = {
   params: Promise<{ id: string; countryCode: string; handle: string }>
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; swap?: string }>
 }
 
 export const metadata: Metadata = {
-  title: "Přidat k objednávce",
-  description: "Vyberte provedení a počet kusů.",
+  title: "Výběr do objednávky",
+  description: "Vyberte provedení.",
   robots: { index: false, follow: false },
 }
 
@@ -36,53 +33,23 @@ const decodeHandle = (value: string) => {
 }
 
 /**
- * Stránka produktu v režimu výběru (plán §3c bod 2): výběr provedení a počtu
- * jako na běžné stránce produktu, ale jen provedení z `allowed[product_id]`
- * a tlačítko „Přidat k objednávce #N" místo košíku.
+ * Stránka produktu v režimu výběru (plán §3c bod 2, §3d bod 10): výběr
+ * provedení jako na běžné stránce produktu, ale jen provedení z
+ * `allowed[product_id]`. Bez `swap` počet kusů a „Přidat k objednávce #N",
+ * se `swap=<item_id>` „Vyměnit za tento výrobek" s počtem kusů řádku.
  */
 export default async function OrderEditPickProductPage(props: Props) {
   const [params, searchParams] = await Promise.all([
     props.params,
     props.searchParams,
   ])
-  const token = searchParams.token
-  const [context, catalog] = token
-    ? await Promise.all([
-        getGuestOrderEditContext(params.id, token),
-        getGuestOrderEditCatalog(params.id, token),
-      ])
-    : [null, null]
-
-  if (!token || !context || !catalog) {
-    return (
-      <OrderStateShell
-        eyebrow="Objednávka · úprava"
-        kicker="Přidat k objednávce"
-        title="Odkaz nejde otevřít."
-        description="Odkaz je neplatný nebo vypršel. Otevřete prosím úpravu objednávky z posledního e-mailu, nebo se nám ozvěte a doplníme to spolu."
-        status="pending"
-      />
-    )
-  }
-
-  if (!catalog.can_add || context.pending_change) {
-    return (
-      <OrderStateShell
-        eyebrow="Objednávka · úprava"
-        kicker={`Objednávka #${context.order.display_id}`}
-        title="Teď přidat nejde."
-        description={
-          context.pending_change
-            ? "K objednávce čeká úprava na zaplacení rozdílu. Dokončete ji, nebo ji na stránce úpravy zrušte — pak můžete přidávat."
-            : catalog.reason ??
-              context.reason ??
-              "K téhle objednávce už nic přidat nejde. Kdybyste něco potřebovali, napište nám na info@keramickazahrada.cz."
-        }
-        status="pending"
-        primary={{ href: editPath(params.id, token), label: "Zpět na úpravu" }}
-      />
-    )
-  }
+  const access = await resolvePickAccess(
+    params.id,
+    searchParams.token,
+    searchParams.swap
+  )
+  if (!access.ok) return access.view
+  const { catalog, swap, token } = access
 
   const region = await getRegion(params.countryCode)
   if (!region) notFound()
@@ -107,12 +74,16 @@ export default async function OrderEditPickProductPage(props: Props) {
     return (
       <OrderStateShell
         eyebrow="Objednávka · úprava"
-        kicker={`Objednávka #${context.order.display_id}`}
-        title="Tenhle kus přidat nejde."
-        description="K objednávce jde přidat jen to, co máme k mání a co se s ní dá poslat — zakázky, balíčky a poškozené kusy ne. Vyberte si prosím z nabídky."
+        kicker={`Objednávka #${access.orderNumber}`}
+        title={swap ? "Za tenhle výrobek vyměnit nejde." : "Tenhle kus přidat nejde."}
+        description={
+          swap
+            ? "Výměna jde jen za výrobek, který máme na celý počet kusů — po zabalení navíc jen ve stejné ceně. Zakázky, balíčky a poškozené kusy ne. Vyberte si prosím z nabídky."
+            : "K objednávce jde přidat jen to, co máme k mání a co se s ní dá poslat — zakázky, balíčky a poškozené kusy ne. Vyberte si prosím z nabídky."
+        }
         status="pending"
         primary={{
-          href: pickShopPath(params.id, token),
+          href: pickShopPath(params.id, token, swap?.itemId),
           label: "Zpět do výběru",
         }}
         secondary={{ href: editPath(params.id, token), label: "Zpět na úpravu" }}
@@ -124,7 +95,8 @@ export default async function OrderEditPickProductPage(props: Props) {
     <OrderPickProduct
       orderId={params.id}
       token={token}
-      orderNumber={context.order.display_id}
+      orderNumber={access.orderNumber}
+      swap={swap}
       product={product}
       region={region}
       countryCode={params.countryCode}
