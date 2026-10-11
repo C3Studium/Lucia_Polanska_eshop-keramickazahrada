@@ -7,7 +7,12 @@
  * `server-only`. Tvary odpovídají kontraktu `docs/reklamace-a-zruseni.md` §4.
  */
 
-export type ClaimKind = "reklamace" | "vraceni" | "odstoupeni"
+/**
+ * `uprava` = vrácení rozdílu po zákaznické úpravě objednávky — zakládá ho
+ * server sám (docs/uprava-objednavky-plan.md §3c.6), formulářem se nepodává
+ * (`isClaimKind` ho proto nezná). Zboží se u něj nevrací.
+ */
+export type ClaimKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava"
 
 export type ClaimStatus =
   | "pending"
@@ -185,15 +190,26 @@ export const FINAL_CLAIM_STATUSES: ClaimStatus[] = [
 export const isFinalClaimStatus = (status: ClaimStatus) =>
   FINAL_CLAIM_STATUSES.includes(status)
 
-/** První NEUZAVŘENÁ žádost — server povolí max. jednu otevřenou na objednávku. */
+/**
+ * První NEUZAVŘENÁ žádost, která brání podat další — server povolí max. jednu
+ * otevřenou na objednávku. Vrácení rozdílu po úpravě (`uprava`) se nepočítá:
+ * zákazník ho nepodával a server kvůli němu reklamaci neodmítne
+ * (backend `blocksNewClaim`).
+ */
 export const findOpenClaim = (claims: OrderClaims | null | undefined) =>
-  claims?.requests.find((request) => !isFinalClaimStatus(request.status)) ??
-  null
+  claims?.requests.find(
+    (request) => !isFinalClaimStatus(request.status) && request.kind !== "uprava"
+  ) ?? null
+
+/** Běží u objednávky jakákoli žádost (i vrácení rozdílu po úpravě)? */
+export const hasOpenClaim = (claims: OrderClaims | null | undefined) =>
+  Boolean(claims?.requests.some((request) => !isFinalClaimStatus(request.status)))
 
 export const CLAIM_KIND_LABEL: Record<ClaimKind, string> = {
   reklamace: "Reklamace",
   vraceni: "Vrácení zboží",
   odstoupeni: "Odstoupení od smlouvy",
+  uprava: "Vrácení rozdílu po úpravě objednávky",
 }
 
 export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
@@ -338,9 +354,10 @@ export const claimItemsTotal = (claim: OrderClaim): number | null => {
  * zboží zpět nepotřebují — viz pravidla refundace v kontraktu §3).
  */
 export const claimExpectsGoods = (claim: OrderClaim) =>
+  claim.kind !== "uprava" && (
   claim.kind !== "reklamace" ||
   claim.resolution === "repair" ||
-  claim.resolution === "replace"
+  claim.resolution === "replace")
 
 export const formatClaimDate = (value: string | null | undefined) => {
   if (!value) return ""

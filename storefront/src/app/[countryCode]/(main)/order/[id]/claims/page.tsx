@@ -1,7 +1,7 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { getGuestRefundContext } from "@lib/data/guest-refund"
 import { retrieveCustomer } from "@lib/data/customer"
-import { findOpenClaim, orderCancelled } from "@lib/util/claims"
+import { findOpenClaim, hasOpenClaim, orderCancelled } from "@lib/util/claims"
 import ClaimStatus from "@modules/order/components/claim-status"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
@@ -64,7 +64,10 @@ export default async function OrderClaimsPage(props: Props) {
   }
 
   const count = claims.requests.length
-  const openClaim = findOpenClaim(claims)
+  // Stav stránky: běží cokoli (i vrácení rozdílu po úpravě); „Podat další"
+  // jen bez žádosti, která podání blokuje (stejné pravidlo jako server).
+  const openClaim = hasOpenClaim(claims)
+  const blockingClaim = findOpenClaim(claims)
   // Vyřízení zrušením objednávky (§12.5, auto-zrušení §13.1): jiná věta a
   // žádné „podat další" — k zrušené objednávce už není co podávat.
   const cancelled = orderCancelled(claims)
@@ -92,7 +95,7 @@ export default async function OrderClaimsPage(props: Props) {
       // otevřenou) a jen u objednávky, která ještě existuje. Prázdný výpis má
       // vlastní tlačítko přímo ve výpisu.
       secondary={
-        count > 0 && !openClaim && !cancelled
+        count > 0 && !blockingClaim && !cancelled
           ? {
               href: `/order/${params.id}/refund?token=${encodeURIComponent(token)}`,
               label: "Podat další žádost",
