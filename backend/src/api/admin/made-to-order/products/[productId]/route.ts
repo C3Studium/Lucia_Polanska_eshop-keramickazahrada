@@ -9,8 +9,12 @@ import MadeToOrderModuleService from "../../../../../modules/made-to-order/servi
  * Zakázku jinak pozná jen join na `product_production_profile` — což admin
  * katalog (Produkty+) dělá, ale Rozdělení ani storefront ne, takže tam zakázka
  * „zmizí". Marker v metadatech pozná KAŽDÉ místo stejně (jako clearance), bez
- * speciálního joinu. Čte se z `+metadata`. Read-modify-write, protože nativní
- * update metadata NAHRAZUJE celý objekt.
+ * speciálního joinu. Čte se z `+metadata`.
+ *
+ * Pozor: modulový update metadata SLUČUJE (`mergeMetadata` v
+ * MedusaInternalService) — vynechaný klíč zůstane. Mazat jde jen hodnotou
+ * `""`. Dřív tu bylo `delete` → vypnutá zakázka si nechala `made_to_order:
+ * true` a storefront/reklamace ji dál braly jako zakázku.
  *
  * `made_to_order_prompt` („co má zákazník poslat") sem NEZRCADLÍME z profilu:
  * edituje se inline na stránce produktu přes flags route a je jediným zdrojem
@@ -28,13 +32,9 @@ const mirrorMadeToOrderFlag = async (
     { take: 1, select: ["id", "metadata"] as never }
   )
   if (!product) return
-  const metadata = { ...(((product as any).metadata as Record<string, unknown>) ?? {}) }
-  if (value) {
-    metadata.made_to_order = true
-  } else {
-    delete metadata.made_to_order
-    delete metadata.made_to_order_prompt
-  }
+  const metadata: Record<string, unknown> = value
+    ? { made_to_order: true }
+    : { made_to_order: "", made_to_order_prompt: "" }
   await productModule.updateProducts(productId, { metadata } as never)
 }
 

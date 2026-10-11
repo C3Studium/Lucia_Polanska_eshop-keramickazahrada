@@ -39,13 +39,12 @@ export default async function resetIdokladMetadata({ container, args }: ExecArgs
     return
   }
 
-  const metadata = { ...((order.metadata ?? {}) as Record<string, unknown>) }
+  const current = (order.metadata ?? {}) as Record<string, unknown>
   const removed = Object.values(IDOKLAD_METADATA_KEYS).filter(
-    (key) => key in metadata
+    (key) => key in current
   )
-  for (const key of removed) {
-    delete metadata[key]
-  }
+  // Update metadata SLUČUJE — klíč smaže jen hodnota "" (mergeMetadata).
+  const metadata = Object.fromEntries(removed.map((key) => [key, ""]))
 
   if (!removed.length) {
     logger.info(
