@@ -108,6 +108,17 @@ Odhad navíc proti §4: +1 den na režim výběru v obchodě a stránce produktu
    položky se stepperem a výměnou v bottom-sheetu, sekce Přidat, Doručení,
    sticky souhrn s jedním tlačítkem. Staré inline UI odstranit.
 
+### 3d. Doplněno (Matěj, 11. 10. 2026 odpoledne) — závazné
+
+10. **Výměna za jiný výrobek** (ne jen variantu téhož): do „připravena
+    k odeslání" za libovolný výrobek z mini obchodu (rozdíl ceny se vyrovná
+    jako u jiných změn); po zabalení jen za výrobek ve **stejné ceně**.
+    Počet kusů řádku zůstává. Platí stejné filtry jako pro přidání
+    (zakázka, balíček, poškozený kus, vyprodané, dobírka jen `cod_allowed`).
+11. **E-mail zákazníkovi „Objednávka upravena"** po každé uložené úpravě
+    (hned, nebo po zaplacení rozdílu): nový obsah, bylo / nově, věta
+    o penězích, odkaz na objednávku.
+
 ## 4. Kroky implementace
 
 1. Pravidla: `order-edit-rules.ts` — akce `set_quantity`, zámky
@@ -205,6 +216,28 @@ Jen produkty a varianty, které jde přidat: bez zakázky (výrobní profil),
 balíčků, poškozených kusů, vyprodaných bez backorderu; u dobírky jen
 `cod_allowed`. Storefront si produkty načte běžným výpisem a ukáže jen ty
 z `allowed` (server je soudce i při POST).
+
+### Výměna za jiný výrobek (§3d.10)
+
+- `POST … { type: "swap", item_id, variant_id }` — `variant_id` smí být
+  i z jiného výrobku. Mode `full`: jakýkoli z nabídky výměny, rozdíl se
+  vyrovná podle matice. Mode `swap_only`: server přijme jen rozdíl 0.
+- `GET /store/orders/:id/guest-edit/catalog?token=&swap=<item_id>` → nabídka
+  pro výměnu konkrétního řádku:
+
+```ts
+{ can_add: boolean             // jde teď vybírat (add i swap)
+  reason: string | null
+  payment: "card" | "pickup" | "dobirka"
+  purpose: "add" | "swap"
+  same_price_only: boolean     // swap po zabalení → jen stejná cena
+  item: { id: string; title: string; quantity: number; unit_price: number } | null
+  allowed: Record<string, string[]> }
+```
+
+  U výměny: bez vlastní varianty řádku, jen varianty skladem aspoň na počet
+  kusů řádku; při `same_price_only` jen varianty s cenou = `item.unit_price`.
+  Bez `swap` se chová jako dřív (`purpose: "add"`, v `swap_only` prázdné).
 
 ## Otevřené body (zjištěno při implementaci)
 
