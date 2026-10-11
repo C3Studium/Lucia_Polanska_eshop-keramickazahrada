@@ -354,3 +354,32 @@ u reklamace výběr „Co se stalo": *Vada nebo nefunkčnost* · *Poškozený ku
 (fotky)* · *Balík dorazil poškozený — přepravou (fotky)*. Admin badge
 „Poškozený kus" (oranžová) vedle „Poškozeno přepravou" (červená); protokol
 „Příčina: poškození".
+
+## 14. Kam peníze odejdou a za co (11. 10. 2026)
+
+Zadání (Matěj): vrácení peněz musí opravdu proběhnout. U reklamace se vrací jen za výrobky, jinak celá objednávka. Nezaplacená objednávka nemá co vracet.
+
+### 14.1 Způsob podle platby
+
+| Platba objednávky | Co udělá „Vrátit peníze" | Co musí udělat majitelka |
+|---|---|---|
+| Karta / peněženka (ComGate) | Pošle refundaci přes ComGate na tutéž kartu (`refundPaymentWorkflow`) a zapíše potvrzení (§13.4). | Nic. Zákazník má peníze na účtu do 3–5 pracovních dnů. |
+| Dobírka, platba při osobním odběru | Zaznamená vrácení (`method: "manual"`), vystaví dobropis a pošle e-mail. | Pošle převod na účet z karty „Vrácení převodem" (účet, IBAN, VS = číslo objednávky). |
+| Nic nezaplaceno | Nic: „zbývá" je 0 a tlačítka vrácení se nenabízí. Odstoupení před odesláním objednávku rovnou zruší (§13.1). | Nic. |
+
+Číslo účtu sbírá formulář žádosti (`refund_account`):
+
+- Formulář ho chce u objednávky s nekartovou platbou, když už něco přišlo nebo zboží odešlo (`refundAccountNeeded`).
+- Povinné je u odstoupení, vrácení a u reklamace s požadavkem „vrácení peněz". U opravy nebo výměny je nepovinné.
+- Kontrola: český účet podle modulo 11 (vyhláška ČNB 169/2011), nebo IBAN podle modulo 97.
+- Majitelka může účet v adminu doplnit nebo opravit: `POST /admin/return-requests/:id/refund-account {account}`.
+
+Hláška po vrácení i e-mail zákazníkovi říkají, kam peníze jdou. Když účet chybí, hláška vyzve k jeho doplnění.
+
+### 14.2 Za co se vrací
+
+- **Odstoupení / vrácení:** „Vrátit celou objednávku" = všechny zbývající kusy (cena po slevě) + poštovné. Nikdy víc, než přišlo (seříznutí na zbývá).
+- **Reklamace:** jen cena výrobků. Poštovné košík odmítne (`REFUND_SHIPPING_CLAIM`). „Vrátit reklamované výrobky" = reklamované kusy (`selected_in_claim`), u starší žádosti bez výběru všechny zbývající kusy. Náklady na zaslání zpět jdou případně jako ruční částka.
+- **Rozdíl z úpravy (`uprava`):** jen rozdíl, viz plán úpravy objednávky.
+
+Jedna funkce `refundAllLines` (lib/claims/refund-lines.ts) počítá řádky pro refundaci se `scope: "all"` i pro náhled `refund_all` v detailu. Tlačítko v adminu tak ukazuje přesně tu částku, kterou server pošle.
