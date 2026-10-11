@@ -361,3 +361,35 @@ Neověřeno: token z účtu (přesměrování přihlášeného), smíšená obje
 zakázkou (záloha jde jen kartou přes ComGate, přes API ji nezaložím),
 zámek balíčku a poškozeného kusu naživo (testovací balíček nemá cenu,
 jediný poškozený kus je skutečný a kupovat ho nechci) — obojí kryjí testy.
+
+### Sleva z kódu v úpravě a vrácení peněz (11. 10. 2026 večer)
+
+Rozhodnuto (Matěj): úprava se počítá z FINÁLNÍ ceny — sleva z kódu platí
+i na přidané kusy; vrací se jen to, co zákazník skutečně zaplatil.
+
+- **Úprava:** změna se zakládá s `carry_over_promotions` (Medusa 2.18
+  `updateOrderChangeWorkflow`) → každá akce přepočítá slevu na všechny
+  řádky. Pojistka: když by přepočet sebral slevu řádku, na který úprava
+  nesáhla (kód mezitím neplatí), úprava se zopakuje bez přepočtu a souhrn to
+  řekne (`promo_note`).
+- **Vrácení (modul reklamací):** cena kusu se bere po slevě (`item.total`,
+  změřeno: pítko 490 → 441, tyčky 30 → 27) a součet vrácení je vždy
+  ≤ zaplaceno − vráceno. Tady se nic neměnilo — už to fungovalo.
+
+| Scénář (#43, odběr, SLEVA10, 495 Kč) | Rozdíl |
+|---|---|
+| + výrobek za 590 Kč | +531 (sleva i na nový kus) |
+| tyčky 2 → 3 | +27 (dřív +30) |
+| tyčky 2 → 1 | −27 (dřív by se vracelo 30) |
+| odebrat pítko | −441 (cena po slevě) |
+| výměna pítko 441 → výrobek 590 | +90 |
+| uloženo (+ výrobek) | přidaný řádek má slevu 59 Kč, objednávka 1 026 Kč / sleva 114 Kč; v reklamaci se nový kus vrací za 531 |
+
+### Dobírka a Balíkovna (11. 10. 2026 večer)
+
+Rozhodnuto (Matěj): do Balíkovny **žádná dobírka na žádné výdejní místo**
+(dřív jen boxy) — dobírka jen při doručení na adresu. Server dokončení
+košíku s dobírkou a Balíkovnou odmítne (ověřeno: 400 s vysvětlením,
+objednávka nevznikla). Pokladna dobírku u Balíkovny nenabídne a vysvětlí
+proč — v prohlížeči neproklikáno (košík z API pokladna nepřevzala celý,
+výběr výdejny jde jen přes okno ČP).
