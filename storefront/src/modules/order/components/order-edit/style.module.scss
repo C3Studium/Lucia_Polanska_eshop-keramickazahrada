@@ -546,7 +546,10 @@
 
   &[data-active] {
     position: sticky;
-    bottom: max(0.75rem, var(--bar-safe, 0rem));
+    /* + výška pruhu novinek (`--shop-banner-height`, publikuje ho lišta jen
+       když je vidět — stejně ho počítá patička). Bez toho pruh na telefonu
+       zakrýval větu o penězích pod tlačítkem (snímek z Chromia, 375 px). */
+    bottom: calc(max(0.75rem, var(--bar-safe, 0rem)) + var(--shop-banner-height, 0px));
     z-index: 5;
     border-color: rgb(var(--ink-05-rgb) / 0.35);
     background: var(--cream-06);
