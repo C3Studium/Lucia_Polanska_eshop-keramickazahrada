@@ -155,8 +155,8 @@
 }
 
 /* ── Položky: karty → tabulka ─────────────────────────────────────────────
-   Telefon: náhled | název, provedení | cena, pod tím přes celou šířku
-   stepper vlevo a akce vpravo. Široký kontejner: jeden řádek tabulky
+   Telefon: náhled | název, provedení a pod nimi cena, pod tím přes celou
+   šířku stepper vlevo a akce vpravo. Široký kontejner: jeden řádek tabulky
    náhled | položka | počet | cena | akce; `.controls` se rozpustí
    (`display: contents`) a jeho dvě části si sednou do vlastních sloupců.
    Sloupce tabulky jsou pevné, jinak by se pod sebou nezarovnaly. */
@@ -185,12 +185,16 @@
   span:nth-child(3) { text-align: right; }
 }
 
+/* Na telefonu stojí cena POD názvem, ne ve třetím sloupci: na 320px zbývá
+   v kartě ~228px a třetí sloupec s cenou by názvu nechal ~90px (tři řádky
+   na „Hrnek se dvěma oušky"). Takhle má název ~164px. */
 .row {
   display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
   grid-template-areas:
-    "thumb info price"
-    "controls controls controls";
+    "thumb info"
+    "thumb price"
+    "controls controls";
   align-items: start;
   gap: 0.6rem 0.75rem;
   padding: 0.7rem 0.75rem;
@@ -346,10 +350,9 @@
 .price {
   grid-area: price;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.1rem;
-  text-align: right;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
   white-space: nowrap;
 
   strong {
@@ -390,6 +393,14 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.35rem;
+  }
+
+  /* Ve vlastním sloupci pod sebou a doprava: přeškrtnutá, nová, za kus. */
+  .row .price {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    text-align: right;
   }
 }
 
@@ -553,10 +564,12 @@
   gap: 0.6rem 1rem;
 }
 
+/* Tři čísla vedle sebe se na 320px (~254px uvnitř souhrnu) vejdou jen
+   s menší mezerou; delší částky se zalomí na druhý řádek, nic nepřeteče. */
 .totals {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.1rem;
+  gap: 0.25rem 0.9rem;
   margin: 0;
   transition: opacity 0.2s ease;
 
