@@ -80,8 +80,12 @@ export const CLAIM_DETAIL_ORDER_FIELDS = [
   "shipping_address.last_name",
   "billing_address.first_name",
   "billing_address.last_name",
-  "shipping_methods.name",
-  "shipping_methods.data",
+  // `shipping_total` se počítá z dopravních metod — bez `shipping_methods.*`
+  // (+ daně, úpravy) přijde 0 a košík poštovné nenabídne (změřeno 11. 10. 2026
+  // na #36: poštovné 90 Kč, detail hlásil 0). Stejně jako MONEY_ORDER_FIELDS.
+  "shipping_methods.*",
+  "shipping_methods.tax_lines.*",
+  "shipping_methods.adjustments.*",
   "shipping_methods.shipping_option.provider_id",
   "payment_collections.id",
   "payment_collections.status",

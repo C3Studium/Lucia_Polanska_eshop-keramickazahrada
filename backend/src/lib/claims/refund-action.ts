@@ -395,7 +395,11 @@ export const refundClaim = async (
     [
       userNote,
       refundScope === "deposit" ? "vrácena záloha zakázky" : null,
-      refundScope === "all" ? "celá objednávka" : null,
+      refundScope === "all"
+        ? shipping.allowed
+          ? "celá objednávka"
+          : "reklamované výrobky"
+        : null,
       skippedGoods ? "vráceno bez čekání na zboží" : null,
       goodsNeverShipped && request.status === "approved" ? "zboží neodešlo" : null,
     ]
@@ -541,8 +545,16 @@ export const refundClaim = async (
   const editRefundSettled =
     isEditRefundKind(request.kind) &&
     refundedSum >= lineItemsTotal(request.line_items) - MONEY_EPSILON
+  // Reklamace: „Vrátit reklamované výrobky" (scope all bez poštovného) vrátí
+  // všechno, o co v žádosti šlo — „zbývá" na objednávce (ostatní zboží,
+  // poštovné) na nulu nespadne, žádost je ale vyřízená.
+  const claimProductsSettled =
+    refundScope === "all" && !shipping.allowed && !clamped && !explicitAmount
   const resolveNow =
-    remainingAfter <= MONEY_EPSILON || editRefundSettled || body.mark_resolved === true
+    remainingAfter <= MONEY_EPSILON ||
+    editRefundSettled ||
+    claimProductsSettled ||
+    body.mark_resolved === true
 
   // 3b) záloha zakázky: zapsat, kolik ze zálohy se vrátilo — z toho je krok
   //     „Záloha vrácena" a podmínka „Zrušit zakázku" (§12.4). Peníze už
@@ -658,7 +670,9 @@ export const refundClaim = async (
     refundScope === "deposit"
       ? " (záloha zakázky)"
       : refundScope === "all"
-        ? " (celá objednávka)"
+        ? shipping.allowed
+          ? " (celá objednávka)"
+          : " (reklamované výrobky)"
         : pieces > 0
           ? ` (${pieces} ks, ${lines.length} ${lines.length === 1 ? "řádek" : "řádky"} košíku)`
           : ""
