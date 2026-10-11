@@ -9,12 +9,14 @@ type ShopToolbarProps = {
   search: string
   sort: ShopSort
   filtersOpen?: boolean
+  /** Text tlačítka panelu — mini obchod úpravy nabízí jen kategorie, ne filtry. */
+  filterLabel?: string
   onOpenFilters: () => void
   onSearch: (value: string) => void
   onSort: (value: ShopSort) => void
 }
 
-export default function ShopToolbar({ chips, count, search, sort, filtersOpen = false, onOpenFilters, onSearch, onSort }: ShopToolbarProps) {
+export default function ShopToolbar({ chips, count, search, sort, filtersOpen = false, filterLabel = "Filtry", onOpenFilters, onSearch, onSort }: ShopToolbarProps) {
   return (
     <header className={styles.root}>
       <div className={styles.topline}>
@@ -44,7 +46,7 @@ export default function ShopToolbar({ chips, count, search, sort, filtersOpen = 
           onClick={onOpenFilters}
           aria-expanded={filtersOpen}
         >
-          Filtry{chips.length ? <b>{chips.length}</b> : null}
+          {filterLabel}{chips.length ? <b>{chips.length}</b> : null}
         </button>
 
         <label className={styles.sort}>

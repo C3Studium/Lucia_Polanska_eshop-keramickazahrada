@@ -291,18 +291,29 @@ export const listStoreCatalogue = async ({
   offset = 0,
   countryCode,
   regionId,
+  onlyProductIds,
 }: {
   filters: StoreCatalogueFilters
   limit?: number
   offset?: number
   countryCode?: string
   regionId?: string
+  /**
+   * Jen tyto produkty (mini obchod úpravy objednávky — `allowed` z katalogu
+   * úpravy). Filtruje se tady po načtení, ne parametrem `id` pro Medusu:
+   * stovky id v query stringu by narazily na limit délky adresy, a lokální
+   * skládání výpisu tu už stejně existuje (cena, druh kusu).
+   */
+  onlyProductIds?: string[]
 }): Promise<{
   products: HttpTypes.StoreProduct[]
   count: number
 }> => {
   const normalizedLimit = Math.min(Math.max(limit, 1), 48)
   const normalizedOffset = Math.max(offset, 0)
+
+  const onlyIds = onlyProductIds ? new Set(onlyProductIds) : null
+  if (onlyIds && onlyIds.size === 0) return { products: [], count: 0 }
 
   const searchTerm = filters.search.trim()
   const taxonomy = searchTerm
@@ -324,7 +335,10 @@ export const listStoreCatalogue = async ({
   // Both taxonomy-widened search and price work need the whole result set here
   // before it can be filtered, ordered and paged locally.
   const needsLocalAssembly =
-    needsCalculatedPriceRefinement || searchAcrossTaxonomy || needsKindFilter
+    needsCalculatedPriceRefinement ||
+    searchAcrossTaxonomy ||
+    needsKindFilter ||
+    Boolean(onlyIds)
 
   const queryParams: StoreProductListQuery = {
     limit: needsLocalAssembly ? 100 : normalizedLimit,
@@ -445,6 +459,8 @@ export const listStoreCatalogue = async ({
 
   const priceRange = parseCataloguePriceRange(filters.priceRange)
   const refinedProducts = uniqueProducts.filter((product) => {
+    if (onlyIds && !onlyIds.has(product.id)) return false
+
     const { cheapestPrice } = getProductPrice({ product })
     const price = cheapestPrice?.calculated_price_number
 

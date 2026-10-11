@@ -1,4 +1,5 @@
 import type { HttpTypes } from "@medusajs/types"
+import type { ReactNode } from "react"
 
 export type ShopSort = "featured" | "newest" | "price-asc" | "price-desc"
 
@@ -35,4 +36,21 @@ export type ShopNavCollection = {
   id: string
   title: string
   categories: ShopCategory[]
+}
+
+/**
+ * Režim výběru — týž výpis jako obchod, ale jako mini obchod uvnitř úpravy
+ * objednávky (`/order/:id/edit/pridat`). Nestaví se druhý obchod: výpis jen
+ * ukáže povolené produkty, schová košík a oblíbené na kartách, karta vede na
+ * stránku produktu v režimu výběru a z filtrů zůstane hledání a kategorie.
+ */
+export type ShopPickMode = {
+  /** Číslo objednávky pro texty výpisu („Přidat k objednávce #39"). */
+  orderNumber: number
+  /** Jediné produkty, které výpis ukáže — `allowed` z katalogu úpravy. */
+  productIds: string[]
+  /** Kam vede karta produktu (bez kódu země) místo běžné stránky produktu. */
+  productHref: (product: HttpTypes.StoreProduct) => string
+  /** Lišta nad výpisem („Vybíráte do objednávky #N · Zpět na úpravu"). */
+  banner?: ReactNode
 }

@@ -45,6 +45,29 @@ type ProductTemplateProps = {
   bundle?: BundleProduct
   isBundlePreview?: boolean
   productionProfile?: ProductionProfile | null
+  /** Režim výběru do úpravy objednávky — viz `ProductPickMode`. */
+  pick?: ProductPickMode
+}
+
+/**
+ * Režim výběru — stránka produktu jako „mini stránka" uvnitř úpravy
+ * objednávky (`/order/:id/edit/pridat/:handle`). Výběr provedení a počtu
+ * zůstává, ale košík, oblíbené, „Koupit ihned" a hlídání naskladnění zmizí;
+ * tlačítko místo „Do košíku" zavolá `onPick` („Přidat k objednávce #N").
+ * Do skutečného košíku se nesahá.
+ */
+export type ProductPickMode = {
+  /** Text tlačítka — „Přidat k objednávce #39". */
+  label: string
+  /** Varianty, které server dovolí přidat (`allowed[product.id]`). Ostatní
+      provedení jdou vybrat, ale tlačítko u nich řekne, že přidat nejdou. */
+  allowedVariantIds: string[]
+  /** Strop počtu kusů (kontrakt `add`: 1–20). */
+  maxQuantity: number
+  onPick: (
+    variant: HttpTypes.StoreProductVariant,
+    quantity: number
+  ) => { ok: true } | { ok: false; message: string }
 }
 
 const optionsAsKeymap = (
@@ -68,12 +91,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   bundle,
   isBundlePreview = false,
   productionProfile,
+  pick,
 }) => {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
 
-  const isMadeToOrder = Boolean(productionProfile?.enabled)
+  // V režimu výběru se zakázka nenabízí (server ji do `allowed` nedá), takže
+  // panel zakázky ani „zakázkový" košík tu nemají co dělat.
+  const isMadeToOrder = !pick && Boolean(productionProfile?.enabled)
   /* Zakázka has two signals — the catalogue category today, the production
      profile once profiles are filled in. Either one counts (they do not
      overlap yet), so the category alone must also keep „Koupit ihned" away. */
@@ -86,10 +112,16 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   // The confirmation is temporary; clear it if the customer leaves the page first.
   useEffect(() => () => window.clearTimeout(resetTimer.current), [])
 
+  /* Předvybrané provedení: první varianta — v režimu výběru první, kterou jde
+     k objednávce přidat, ať tlačítko nezačíná zamčené. */
+  const pickAllowed = pick?.allowedVariantIds
   useEffect(() => {
-    const firstVariant = product.variants?.[0]
+    const firstVariant =
+      (pickAllowed &&
+        product.variants?.find((variant) => pickAllowed.includes(variant.id))) ||
+      product.variants?.[0]
     if (firstVariant) setOptions(optionsAsKeymap(firstVariant.options))
-  }, [product.variants])
+  }, [product.variants, pickAllowed])
 
   const selectedVariant = useMemo(() => {
     return product.variants?.find((variant) =>
@@ -136,9 +168,17 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
     [selectedVariant]
   )
   const inStock = isPurchasable(availability)
+  const pickMax = pick?.maxQuantity
   const maxQuantity = useMemo(
-    () => maxPurchasableQuantity(selectedVariant),
-    [selectedVariant]
+    () =>
+      pickMax
+        ? Math.min(pickMax, maxPurchasableQuantity(selectedVariant, pickMax))
+        : maxPurchasableQuantity(selectedVariant),
+    [selectedVariant, pickMax]
+  )
+  /** Vybrané provedení server k objednávce přidat nedovolí. */
+  const pickBlocked = Boolean(
+    pick && selectedVariant && !pick.allowedVariantIds.includes(selectedVariant.id)
   )
 
   // Never leave a quantity above what the customer can actually buy.
@@ -148,6 +188,21 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
 
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((previous) => ({ ...previous, [optionId]: value }))
+    // Hláška „tohle přidat nejde" patří k předchozímu provedení.
+    if (pick && addState.kind === "error") setAddState({ kind: "idle" })
+  }
+
+  /* Režim výběru: žádný košík — kus jde do návrhu úpravy a volající vrátí
+     zákazníka na stránku úpravy. Chyba (strop změn, vypnuté úložiště) zůstane
+     pod tlačítkem. */
+  const handlePick = () => {
+    if (!pick || !selectedVariant?.id || pickBlocked || addState.kind === "added") {
+      return
+    }
+    const result = pick.onPick(selectedVariant, quantity)
+    setAddState(
+      result.ok ? { kind: "added" } : { kind: "error", message: result.message }
+    )
   }
 
   const handleAddToCart = async () => {
@@ -410,7 +465,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       maxQuantity={maxQuantity}
                       onQuantityChange={setQuantity}
                       isValidVariant={isValidVariant}
-                      handleAddToCart={handleAddToCart}
+                      handleAddToCart={pick ? handlePick : handleAddToCart}
+                      pick={
+                        pick
+                          ? {
+                              label: pick.label,
+                              blocked: pickBlocked,
+                            }
+                          : undefined
+                      }
                       options={options}
                       product={product}
                       wishlistItems={wishlistItems}
@@ -433,7 +496,8 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                 <span>Ateliér · Písek</span>
               </div>
 
-              {!bundle && selectedVariant && !inStock && (
+              {/* Hlídání naskladnění do výběru nepatří — tam jde jen to, co je k mání. */}
+              {!bundle && !pick && selectedVariant && !inStock && (
                 <RestockForm
                   variant={{
                     id: selectedVariant.id,

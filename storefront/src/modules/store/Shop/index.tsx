@@ -13,7 +13,13 @@ import FilterPanel from "./components/FilterPanel"
 import ProductGrid from "./components/ProductGrid"
 // import ShopHero from "./components/ShopHero"
 import ShopToolbar from "./components/ShopToolbar"
-import type { FilterChip, ShopCategory, ShopFilters, ShopNavCollection } from "./types"
+import type {
+  FilterChip,
+  ShopCategory,
+  ShopFilters,
+  ShopNavCollection,
+  ShopPickMode,
+} from "./types"
 import styles from "./style.module.scss"
 
 type EComProps = {
@@ -24,6 +30,8 @@ type EComProps = {
   totalCount?: number
   initialFilters?: Partial<ShopFilters>
   initialFilterLabel?: string
+  /** Režim výběru do úpravy objednávky — viz `ShopPickMode`. */
+  pick?: ShopPickMode
 }
 
 const PRODUCT_LIMIT = 16
@@ -113,7 +121,12 @@ export default function ECom({
   totalCount,
   initialFilters,
   initialFilterLabel,
+  pick,
 }: EComProps) {
+  /* V režimu výběru jen povolené produkty. Konstantní po celý život
+     komponenty (stránka mini obchodu je pokaždé nová), ale jde do závislostí
+     dotazů, ať to nikdo nemusí hlídat. */
+  const onlyProductIds = pick?.productIds
   const [products, setProducts] = useState(initialProducts)
   const [filters, setFilters] = useState<ShopFilters>(() => ({
     ...emptyFilters,
@@ -215,7 +228,9 @@ export default function ECom({
    * to `restoreStarted` — rozjede se jednou za život komponenty.
    */
   useEffect(() => {
-    if (restoreStarted.current) return
+    /* Mini obchod úpravy snímek nečte: patří běžnému obchodu (jiné filtry,
+       jiný výpis) a obnovit ho tady by ukázalo produkty mimo `allowed`. */
+    if (pick || restoreStarted.current) return
 
     const snapshot = peekShopSnapshot()
     if (!snapshot) return
@@ -286,7 +301,8 @@ export default function ECom({
    */
   useEffect(() => {
     const root = catalogueRef.current
-    if (!root) return
+    // Ani ho nezapisuje — návrat z výběru vede na stránku úpravy, ne sem.
+    if (!root || pick) return
 
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null
@@ -301,7 +317,7 @@ export default function ECom({
 
     root.addEventListener("click", handleClick, true)
     return () => root.removeEventListener("click", handleClick, true)
-  }, [filters, products.length])
+  }, [filters, products.length, pick])
 
   /*
    * Od téhle chvíle platí volba člověka, ne uložený snímek. Sedí to na
@@ -382,6 +398,7 @@ export default function ECom({
           limit: PRODUCT_LIMIT,
           offset: 0,
           countryCode,
+          onlyProductIds,
         })
         if (requestId !== requestSequence.current) return
 
@@ -401,7 +418,7 @@ export default function ECom({
       window.clearTimeout(timer)
       requestSequence.current += 1
     }
-  }, [countryCode, filters, requestVersion])
+  }, [countryCode, filters, requestVersion, onlyProductIds])
 
   const activeChips = useMemo<FilterChip[]>(() => {
     const chips: FilterChip[] = []
@@ -467,6 +484,7 @@ export default function ECom({
         limit: PRODUCT_LIMIT,
         offset: products.length,
         countryCode,
+        onlyProductIds,
       })
       if (requestId !== requestSequence.current) return
 
@@ -486,7 +504,7 @@ export default function ECom({
     } finally {
       if (requestId === requestSequence.current) setLoading(false)
     }
-  }, [allLoaded, countryCode, filters, loading, products])
+  }, [allLoaded, countryCode, filters, loading, products, onlyProductIds])
 
   /* Hero je schovaný — katalog teď stránku otevírá. Až se vrátí, vrátí se i tohle scrollování.
   const scrollToCatalogue = () => {
@@ -520,31 +538,52 @@ export default function ECom({
         data-scroll-label="Katalog"
         aria-label="Katalog produktů"
       >
-        <header className={styles.introduction}>
-          <p>
-            Co je právě k mání
-            <span className={styles.filterScope}>{filterScope}</span>
-          </p>
-          <h2>
-            Vyberte si něco,
-            <br />
-            <em>co vám zůstane.</em>
-          </h2>
-          <span>
-            Keramika na běžné používání, jednotlivé kusy i malé série. Drobné
-            odchylky nejsou vada — podle nich poznáte, že to dělal člověk.
-          </span>
-        </header>
+        {pick?.banner}
+
+        {pick ? (
+          <header className={styles.introduction}>
+            <p>
+              Přidat k objednávce #{pick.orderNumber}
+              <span className={styles.filterScope}>{filterScope}</span>
+            </p>
+            <h2>
+              Vyberte, co přidat,
+              <br />
+              <em>pošleme to spolu.</em>
+            </h2>
+            <span>
+              Jen kusy, které jde k objednávce přidat. Rozdíl ceny i poštovné
+              uvidíte v souhrnu úpravy, ještě než cokoli uložíte.
+            </span>
+          </header>
+        ) : (
+          <header className={styles.introduction}>
+            <p>
+              Co je právě k mání
+              <span className={styles.filterScope}>{filterScope}</span>
+            </p>
+            <h2>
+              Vyberte si něco,
+              <br />
+              <em>co vám zůstane.</em>
+            </h2>
+            <span>
+              Keramika na běžné používání, jednotlivé kusy i malé série. Drobné
+              odchylky nejsou vada — podle nich poznáte, že to dělal člověk.
+            </span>
+          </header>
+        )}
 
         <div className={styles.layout}>
           <FilterPanel
-        navCollections={navCollections}
+            navCollections={navCollections}
             categories={categories}
             filters={filters}
             isOpen={filtersOpen}
             onChange={updateFilters}
             onClose={closeFilters}
             onReset={resetFilters}
+            categoriesOnly={Boolean(pick)}
           />
 
           <div className={styles.results}>
@@ -554,6 +593,7 @@ export default function ECom({
               search={filters.search}
               sort={filters.sort}
               filtersOpen={filtersOpen}
+              filterLabel={pick ? "Kategorie" : undefined}
               onOpenFilters={openFilters}
               onSearch={(search) => updateFilters({ search })}
               onSort={(sort) => updateFilters({ sort })}
@@ -569,6 +609,8 @@ export default function ECom({
               onLoadMore={loadMore}
               onRetry={() => setRequestVersion((current) => current + 1)}
               onReset={resetFilters}
+              productHref={pick?.productHref}
+              hideCardActions={Boolean(pick)}
             />
           </div>
         </div>

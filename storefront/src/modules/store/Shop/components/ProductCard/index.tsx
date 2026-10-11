@@ -23,6 +23,12 @@ import { easeReveal } from "@lib/motion-tokens"
 type ProductCardProps = {
   product: HttpTypes.StoreProduct
   priority?: boolean
+  /** Cíl odkazu karty (bez kódu země) — v režimu výběru stránka produktu
+      úpravy objednávky. Výchozí je běžná stránka produktu. */
+  href?: string
+  /** Bez košíku a oblíbených — režim výběru do úpravy objednávky nic nekupuje
+      a do skutečného košíku sahat nesmí. */
+  hideActions?: boolean
 }
 
 /** A card is rendered once per product in the grid, so every object here is hoisted: an inline
@@ -115,7 +121,12 @@ const buttonAnim: Variants = {
   },
 }
 
-function ProductCard({ product, priority = false }: ProductCardProps) {
+function ProductCard({
+  product,
+  priority = false,
+  href,
+  hideActions = false,
+}: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
   const [addState, setAddState] = useState<
     "idle" | "adding" | "added" | "error"
@@ -189,7 +200,9 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
    * vyprodaný kus „Prodáno" a tlačítko se neukáže; po přepnutí naskočí samo.
    */
   const canQuickAdd =
-    Boolean(quickAddVariant && countryCode) && isPurchasable(availability)
+    !hideActions &&
+    Boolean(quickAddVariant && countryCode) &&
+    isPurchasable(availability)
 
   const handleQuickAdd = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -253,7 +266,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
       exit={cardExit}
     >
       <LocalizedClientLink
-        href={`/products/${product.handle}`}
+        href={href ?? `/products/${product.handle}`}
         className={styles.link}
       >
         <div className={styles.visual}>
@@ -343,7 +356,7 @@ function ProductCard({ product, priority = false }: ProductCardProps) {
       */}
       <div className={styles.actions}>
         <div className={styles.actionIcons}>
-          {wishlistVariantId && (
+          {wishlistVariantId && !hideActions && (
             <span className={styles.iconSlot}>
               <WishlistToggle variantId={wishlistVariantId} />
             </span>

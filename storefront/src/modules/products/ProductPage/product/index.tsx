@@ -2,7 +2,7 @@
 import { HttpTypes } from "@medusajs/types";
 import { BundleProduct } from "@lib/data/products";
 import { notFound } from "next/navigation";
-import ProductDetails from "./details/details";
+import ProductDetails, { type ProductPickMode } from "./details/details";
 import type { ProductionProfile } from "@lib/util/made-to-order";
 
 
@@ -19,9 +19,11 @@ type ProductTemplateProps = {
   initialCount?: number
   bundle?: BundleProduct
   isBundlePreview?: boolean
+  /** Režim výběru do úpravy objednávky — místo košíku „Přidat k objednávce #N". */
+  pick?: ProductPickMode
 }
 
-const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, hasSavedAddress, initialRating, initialCount, bundle, isBundlePreview, productionProfile }) => {
+const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode, categories, wishlistItems, isAuthenticated, hasSavedAddress, initialRating, initialCount, bundle, isBundlePreview, productionProfile, pick }) => {
 
     // If the product is not found return not found page
     if (!product || !product.id) {
@@ -36,7 +38,7 @@ const Product: React.FC<ProductTemplateProps> = ({ product, region, countryCode,
             data-scroll-section
             data-scroll-label="Výrobek"
         >
-            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} hasSavedAddress={hasSavedAddress} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} />
+            <ProductDetails product={product} categories={categories} region={region} countryCode={countryCode} wishlistItems={wishlistItems} isAuthenticated={isAuthenticated} hasSavedAddress={hasSavedAddress} initialRating={initialRating} initialCount={initialCount} bundle={bundle} isBundlePreview={isBundlePreview} productionProfile={productionProfile} pick={pick} />
         </section>
     )
 }

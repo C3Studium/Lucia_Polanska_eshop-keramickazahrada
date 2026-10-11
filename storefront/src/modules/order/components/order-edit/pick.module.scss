@@ -1,0 +1,123 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/*
+  Mini obchod úpravy objednávky — lišta „Vybíráte do objednávky #N" a obal
+  stránky produktu v režimu výběru.
+
+  Lišta stojí v toku stránky, ne `fixed`: nad obchodem i nad produktem visí
+  pevná navigace a pevná lišta by s ní soupeřila o tutéž horní hranu. Ve
+  výpisu sedí uvnitř `.catalogue` (jeho horní odsazení už navigaci obchází,
+  stejně jako úvodní nadpis), na stránce produktu ve vlastním obalu.
+*/
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  width: 100%;
+  /* `--shop-max` je šířka obsahu obchodu (definuje ji `.catalogue`); mimo
+     obchod platí celá šířka. */
+  max-width: var(--shop-max, 100%);
+  margin: 0 auto clamp(1.25rem, 3vh, 2rem);
+  padding: 0.55rem 0.55rem 0.55rem 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.22);
+  border-radius: 0.9rem;
+  background: rgb(var(--cream-06-rgb) / 0.75);
+  color: var(--ink-05);
+
+  &[data-tone="dark"] {
+    border-color: rgb(var(--cream-06-rgb) / 0.25);
+    background: rgb(var(--cream-06-rgb) / 0.06);
+    color: var(--cream-06);
+  }
+}
+
+.label {
+  flex: 1 1 12rem;
+  margin: 0;
+  font: 400 0.78rem / 1.35 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  strong {
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font: 400 0.88rem / 1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+
+  i { font-style: normal; }
+
+  &:not([data-primary]) { opacity: 0.8; }
+
+  @include touch { min-height: 44px; }
+}
+
+/* Hlavní cesta zpět je plná — inkoust na krému, krém na inkoustu. */
+.bar[data-tone="light"] .link[data-primary] {
+  border-color: var(--ink-05);
+  background: var(--ink-05);
+  color: var(--cream-06);
+}
+
+.bar[data-tone="dark"] .link[data-primary] {
+  border-color: var(--cream-06);
+  background: var(--cream-06);
+  color: var(--ink-05);
+}
+
+@include fine-pointer {
+  .link:not([data-primary]):hover { opacity: 1; }
+  .bar[data-tone="light"] .link[data-primary]:hover {
+    background: transparent;
+    color: var(--ink-05);
+  }
+  .bar[data-tone="dark"] .link[data-primary]:hover {
+    background: transparent;
+    color: var(--cream-06);
+  }
+}
+
+/*
+  Obal stránky produktu. Lišta obchází pevnou navigaci sama (její spodní hrana
+  + vzduch), a sekce produktu pod ní by navigaci obcházela podruhé — její
+  horní odsazení `clamp(5.125rem, 8.5vh, 6.5625rem)` je psané přesně na to.
+  Záporný spodní okraj tu druhou rezervu vrátí až na 1.5rem; obal má proto
+  `z-index`, aby ho tmavé pozadí sekce, která pod něj zajede, nepřekreslilo.
+  Pozadí stejným inkoustem jako stránka produktu — šev není vidět.
+*/
+.productTop {
+  position: relative;
+  z-index: 2;
+  margin-bottom: calc(1.5rem - clamp(5.125rem, 8.5vh, 6.5625rem));
+  padding: calc(var(--nav-top-inset, 0.625rem) + var(--nav-height, 3.5rem) + 1rem)
+    clamp(1rem, 3vw, 2rem) 0;
+  background: var(--ink-05);
+
+  .bar {
+    max-width: min(calc(94 * var(--fvw, 1vw)), 117.5rem);
+    margin-bottom: 0;
+  }
+}

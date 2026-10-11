@@ -24,9 +24,13 @@ type ProductGridProps = {
   onLoadMore: () => void
   onRetry: () => void
   onReset: () => void
+  /** Kam vede karta (režim výběru do úpravy objednávky); jinak stránka produktu. */
+  productHref?: (product: HttpTypes.StoreProduct) => string
+  /** Karty bez košíku a oblíbených (režim výběru — nic se nekupuje). */
+  hideCardActions?: boolean
 }
 
-export default function ProductGrid({ products, loading, refreshing, loadError, canLoadMore, total, loadedCount, onLoadMore, onRetry, onReset }: ProductGridProps) {
+export default function ProductGrid({ products, loading, refreshing, loadError, canLoadMore, total, loadedCount, onLoadMore, onRetry, onReset, productHref, hideCardActions = false }: ProductGridProps) {
   if (refreshing && !products.length) {
     return <ProductSkeleton />
   }
@@ -68,7 +72,15 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
 
       <motion.div layout className={styles.grid} animate={refreshing ? dimmed : undimmed} transition={gridTransition}>
         <AnimatePresence mode="popLayout">
-          {products.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
+          {products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              priority={index < 4}
+              href={productHref?.(product)}
+              hideActions={hideCardActions}
+            />
+          ))}
         </AnimatePresence>
       </motion.div>
 

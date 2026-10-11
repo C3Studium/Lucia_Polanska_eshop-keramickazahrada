@@ -13,6 +13,12 @@ type FilterPanelProps = {
   onChange: (patch: Partial<ShopFilters>) => void
   onClose: () => void
   onReset: () => void
+  /**
+   * Jen kategorie, bez ceny a výběru (novinky, sleva, druh kusu) — mini obchod
+   * úpravy objednávky má hledání a kategorie, filtry by tam jen překážely
+   * (a „Zakázky" / „Balíčky" by stejně nic nenašly, do úpravy nejdou).
+   */
+  categoriesOnly?: boolean
 }
 
 /* Cena jako rozsah: slider i dvojice inputů píší do téhož `min`/`max` stavu,
@@ -43,6 +49,7 @@ export default function FilterPanel({
   onChange,
   onClose,
   onReset,
+  categoriesOnly = false,
 }: FilterPanelProps) {
   const activeCount = [
     filters.categoryId || filters.collectionId,
@@ -90,7 +97,7 @@ export default function FilterPanel({
       >
         <div className={styles.heading}>
           <div>
-            <span>Filtry</span>
+            <span>{categoriesOnly ? "Kategorie" : "Filtry"}</span>
             <h2>Najděte, co hledáte</h2>
           </div>
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
@@ -191,46 +198,50 @@ export default function FilterPanel({
           </FilterGroup>
         )}
 
-        <FilterGroup index="01" title="Cena">
-          <PriceFilter
-            value={filters.priceRange}
-            onChange={(priceRange) => onChange({ priceRange })}
-          />
-        </FilterGroup>
+        {!categoriesOnly && (
+          <>
+            <FilterGroup index="01" title="Cena">
+              <PriceFilter
+                value={filters.priceRange}
+                onChange={(priceRange) => onChange({ priceRange })}
+              />
+            </FilterGroup>
 
-        <FilterGroup index="02" title="Výběr">
-          <Toggle label="Novinky" active={filters.isNew} onClick={() => onChange({ isNew: !filters.isNew })} />
-          <Toggle label="Ve slevě" active={filters.onSale} onClick={() => onChange({ onSale: !filters.onSale })} />
-          {/* Druh kusu — pseudo-kategorie, ne skutečná kategorie. Vzájemně
-              výlučné přes jediné pole `kind`. */}
-          <Toggle
-            label="Poškozené"
-            active={filters.kind === "clearance"}
-            onClick={() =>
-              onChange({ kind: filters.kind === "clearance" ? "" : "clearance" })
-            }
-          />
-          <Toggle
-            label="Balíčky"
-            active={filters.kind === "bundle"}
-            onClick={() =>
-              onChange({ kind: filters.kind === "bundle" ? "" : "bundle" })
-            }
-          />
-          <Toggle
-            label="Zakázky"
-            active={filters.kind === "madeToOrder"}
-            onClick={() =>
-              onChange({
-                kind: filters.kind === "madeToOrder" ? "" : "madeToOrder",
-              })
-            }
-          />
-        </FilterGroup>
+            <FilterGroup index="02" title="Výběr">
+              <Toggle label="Novinky" active={filters.isNew} onClick={() => onChange({ isNew: !filters.isNew })} />
+              <Toggle label="Ve slevě" active={filters.onSale} onClick={() => onChange({ onSale: !filters.onSale })} />
+              {/* Druh kusu — pseudo-kategorie, ne skutečná kategorie. Vzájemně
+                  výlučné přes jediné pole `kind`. */}
+              <Toggle
+                label="Poškozené"
+                active={filters.kind === "clearance"}
+                onClick={() =>
+                  onChange({ kind: filters.kind === "clearance" ? "" : "clearance" })
+                }
+              />
+              <Toggle
+                label="Balíčky"
+                active={filters.kind === "bundle"}
+                onClick={() =>
+                  onChange({ kind: filters.kind === "bundle" ? "" : "bundle" })
+                }
+              />
+              <Toggle
+                label="Zakázky"
+                active={filters.kind === "madeToOrder"}
+                onClick={() =>
+                  onChange({
+                    kind: filters.kind === "madeToOrder" ? "" : "madeToOrder",
+                  })
+                }
+              />
+            </FilterGroup>
+          </>
+        )}
 
         <div className={styles.footer}>
-          <span>{activeCount ? `${activeCount} ${activeCount < 5 ? "aktivní" : "aktivních"}` : "Zatím bez filtrů"}</span>
-          <button type="button" onClick={onReset} disabled={!activeCount}>Zrušit filtry</button>
+          <span>{activeCount ? `${activeCount} ${activeCount < 5 ? "aktivní" : "aktivních"}` : categoriesOnly ? "Všechny kategorie" : "Zatím bez filtrů"}</span>
+          <button type="button" onClick={onReset} disabled={!activeCount}>{categoriesOnly ? "Zobrazit vše" : "Zrušit filtry"}</button>
         </div>
       </motion.aside>
     </>

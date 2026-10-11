@@ -42,6 +42,14 @@ type CTAProps = {
   showBuyNow?: boolean
   /** Build-time hint (logged-in + saved address); the button re-probes live. */
   buyNowEligible?: boolean
+  /**
+   * Režim výběru do úpravy objednávky: tlačítko nese `label` („Přidat
+   * k objednávce #N") a volá `handleAddToCart` předaný volajícím (ten nesahá
+   * na košík). Oblíbené, „Koupit ihned" a věta o dobírce se schovají — nic se
+   * tu nekupuje, platba je daná objednávkou. `blocked` = provedení, které
+   * server přidat nedovolí.
+   */
+  pick?: { label: string; blocked: boolean }
 }
 
 export default function CTA({
@@ -63,18 +71,29 @@ export default function CTA({
   countryCode,
   showBuyNow = false,
   buyNowEligible = false,
+  pick,
 }: CTAProps) {
   // A stepper only makes sense where more than one can be bought.
-  const showStepper = Boolean(onQuantityChange) && isPurchasable(availability) && maxQuantity > 1
+  const showStepper =
+    Boolean(onQuantityChange) &&
+    isPurchasable(availability) &&
+    maxQuantity > 1 &&
+    !pick?.blocked
   const label = !selectedVariant
     ? "Vyberte provedení"
-    : !inStock || !isValidVariant
-      ? availabilityLabel["sold-out"]
-      : addState.kind === "added"
-        ? "Přidáno do košíku"
-        : addState.kind === "adding"
-          ? "Přidáváme…"
-          : "Přidat do košíku"
+    : pick?.blocked
+      ? "Tohle provedení přidat nejde"
+      : !inStock || !isValidVariant
+        ? availabilityLabel["sold-out"]
+        : pick
+          ? addState.kind === "added"
+            ? "Přidáno — vracíme vás na úpravu…"
+            : pick.label
+          : addState.kind === "added"
+            ? "Přidáno do košíku"
+            : addState.kind === "adding"
+              ? "Přidáváme…"
+              : "Přidat do košíku"
 
   return (
     <div className="product__details__cta__buy">
@@ -104,16 +123,25 @@ export default function CTA({
       )}
 
       <div className="product__details__cta__buy__buttons">
-        <div className="product__details__cta__buy__button__add">
-          <WishlistToggle
-            variantId={selectedVariant?.id}
-            wishlistItems={wishlistItems}
-            isAuthenticated={isAuthenticated}
-          />
-        </div>
+        {!pick && (
+          <div className="product__details__cta__buy__button__add">
+            <WishlistToggle
+              variantId={selectedVariant?.id}
+              wishlistItems={wishlistItems}
+              isAuthenticated={isAuthenticated}
+            />
+          </div>
+        )}
         <CartButton
           onClick={handleAddToCart}
-          disabled={!inStock || !selectedVariant || isAdding || !isValidVariant}
+          disabled={
+            !inStock ||
+            !selectedVariant ||
+            isAdding ||
+            !isValidVariant ||
+            Boolean(pick?.blocked) ||
+            Boolean(pick && addState.kind === "added")
+          }
           isLoading={isAdding}
           data-testid="add-product-button"
         >
@@ -127,7 +155,7 @@ export default function CTA({
             varianty jednoho rozhodnutí („chci to"), a pod sebou vypadaly jako
             dva různé kroky. Řada se umí zalomit (`flex-wrap`), takže na úzkém
             sloupci spadne druhé tlačítko pod první samo. */}
-        {showBuyNow && countryCode && inStock && isValidVariant && (
+        {!pick && showBuyNow && countryCode && inStock && isValidVariant && (
           <BuyNowButton
             variantId={selectedVariant?.id}
             quantity={quantity}
@@ -146,7 +174,12 @@ export default function CTA({
       )}
       {addState.kind === "added" && (
         <p className="product__details__cta__confirm" role="status">
-          Máte to v košíku.
+          {pick ? "Kus je v návrhu úpravy." : "Máte to v košíku."}
+        </p>
+      )}
+      {pick?.blocked && (
+        <p className="product__details__cta__error">
+          Tohle provedení k objednávce přidat nejde — vyberte prosím jiné.
         </p>
       )}
 
@@ -161,12 +194,16 @@ export default function CTA({
       )}
 
       {/* Dobírka, said before checkout — finding out at the payment step
-          feels like a trap, so the product page says it here. */}
-      <p className="product__details__cta__codNote">
-        {codAllowed
-          ? "Lze doručit na dobírku."
-          : "Dobírka není možná, tento kus se platí předem."}
-      </p>
+          feels like a trap, so the product page says it here. Ve výběru do
+          objednávky ne: platba je daná objednávkou a nedobírkové kusy server
+          do nabídky dobírkové objednávky vůbec nepustí. */}
+      {!pick && (
+        <p className="product__details__cta__codNote">
+          {codAllowed
+            ? "Lze doručit na dobírku."
+            : "Dobírka není možná, tento kus se platí předem."}
+        </p>
+      )}
     </div>
   )
 }
