@@ -219,3 +219,32 @@ z `allowed` (server je soudce i při POST).
   zůstává jen pro tyto starší případy.
 - **E-mail zákazníkovi o úpravě** neexistuje (plán §3 to mylně tvrdil);
   zákazník vidí potvrzení na stránce. Není v kontraktu — k rozhodnutí.
+
+### Storefront (11. 10. 2026)
+
+- **Výměna + změna počtu na jednom řádku najednou nejde.** Kontrakt dovoluje
+  1 akci na řádek, takže UI to nenabídne: s rozpracovanou výměnou je stepper
+  řádku zamčený (s vysvětlením) a výměna nahradí rozpracovanou změnu počtu
+  (sheet to předem řekne). Šlo by to složit jako `remove` + `add` nové
+  varianty — to ale mění význam (add jen z `allowed`, cena a slevový kód
+  jako nový řádek), proto ne bez rozhodnutí.
+- **Přihlášený zákazník:** odkaz „Upravit objednávku" v účtu vede na
+  `/order/:id/edit` bez tokenu; stránka si `access_token` vyzvedne
+  (`GET …/edit`) a přesměruje na `?token=`. Token tím stojí v adrese stejně
+  jako v odkazu z e-mailu (stránky úpravy mají `noindex`).
+- **Mini obchod filtruje `allowed` na storefrontu po načtení celého
+  katalogu** (`listStoreCatalogue` → `onlyProductIds`, dnes 3 dotazy po 100
+  kusech, stejná cesta jako řazení podle ceny). Id se do query Medusy
+  neposílají kvůli délce adresy. Při výrazně větším katalogu zvážit
+  stránkování na serveru.
+- **Cena přidaného kusu v seznamu „Přidat"** je snímek z chvíle výběru
+  (jen popisek); Bylo / Bude / Rozdíl je vždy ze serveru (`dry_run`).
+- **Sticky souhrn** potřebuje, aby stavová stránka (`OrderStateShell`)
+  ořezávala přes `overflow: clip` místo `hidden` — změněno pro všechny
+  stavové stránky (vizuálně beze změny). Prohlížeče bez `clip` (Safari < 16)
+  souhrn jen nepřilepí.
+- **Neověřeno živě** — backend v době psaní nebyl nasazený. Otestovat:
+  token z e-mailu i z účtu, náhled po každé změně, karta dráž (přesměrování
+  na platbu + panel čekající změny + zrušení), karta levněji (odkaz „Stav
+  vrácení rozdílu"), dobírka (mini obchod jen `cod_allowed`), zabaleno
+  (jen výměna za stejnou cenu), mini obchod → přidat → návrat se souhrnem.
