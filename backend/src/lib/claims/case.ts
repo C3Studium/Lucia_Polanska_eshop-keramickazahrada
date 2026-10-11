@@ -1,9 +1,11 @@
-import { isClaimKind, isFinalStatus, resolutionLabel } from "./constants"
+import { isClaimKind, isEditRefundKind, isFinalStatus, resolutionLabel } from "./constants"
+import { lineItemsTotal } from "./line-items"
 import {
   canRefund,
   MONEY_EPSILON,
   requestRefunds,
   round2,
+  toNumber,
   type MoneyRequest,
   type RefundEntry,
 } from "./refund-rules"
@@ -41,6 +43,8 @@ export type ClaimCase =
   | "commission_cancel"
   | "claim"
   | "mixed_cancel"
+  /** Vrácení rozdílu po zákaznické úpravě objednávky (druh `uprava`). */
+  | "edit_refund"
 
 export type ClaimStepState = "done" | "current" | "upcoming" | "skipped"
 
@@ -85,6 +89,8 @@ export type ClaimCaseRequest = MoneyRequest & {
   goods_received_at?: unknown
   resolved_at?: unknown
   updated_at?: unknown
+  /** U `uprava` nese jediný řádek = očekávaný rozdíl k vrácení. */
+  line_items?: unknown
 }
 
 export type ClaimCaseProduction = {
@@ -156,6 +162,7 @@ export const classifyClaimCase = (
   request: Pick<ClaimCaseRequest, "kind">,
   flags: ClaimFlags
 ): ClaimCase => {
+  if (isEditRefundKind(request.kind)) return "edit_refund"
   if (!isWithdrawalKind(request.kind)) return "claim"
   if (flags.is_mixed) return "mixed_cancel"
   if (flags.is_commission) return "commission_cancel"
@@ -339,6 +346,25 @@ export const planClaimCase = (input: ClaimCaseInput): ClaimCasePlan => {
         refundedProducts,
         depositStep,
         productionCancelled,
+        resolvedStep,
+      ]
+      break
+    }
+    case "edit_refund": {
+      // Rozdíl z úpravy objednávky: nic se fyzicky nevrací, na zboží se
+      // nečeká — jen vrátit peníze (košík vrácení + dobropis), tím vyřízeno.
+      // „Zbývá" na objednávce nespadne na nulu (zbytek je zaplacené zboží),
+      // proto se hotovo měří proti očekávanému rozdílu (řádek žádosti).
+      const expected = lineItemsTotal(request.line_items)
+      const refundedHere = round2(
+        refunds.reduce((sum, refund) => sum + toNumber(refund.amount), 0)
+      )
+      const settled =
+        refunds.length > 0 &&
+        (refundedHere >= expected - MONEY_EPSILON || status === "resolved")
+      drafts = [
+        received,
+        { ...refunded, done: settled, at: settled ? latestAt(refunds) : null },
         resolvedStep,
       ]
       break

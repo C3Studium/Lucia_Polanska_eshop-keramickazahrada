@@ -4,7 +4,7 @@ import { getMerchantSettings } from "../merchant-settings"
 import { LINE_QUANTITY_FIELDS } from "../order-quantity"
 import { RETURN_REQUEST_MODULE } from "../../modules/return-request"
 import type ReturnRequestModuleService from "../../modules/return-request/service"
-import { isDamageCause, isOpenStatus, WITHDRAWAL_DAYS } from "./constants"
+import { blocksNewClaim, isDamageCause, WITHDRAWAL_DAYS } from "./constants"
 import { claimLineItemsOf, orderItemsForClaims } from "./line-items"
 import { requestRefunds, requestRefundedTotal } from "./refund-rules"
 
@@ -186,7 +186,7 @@ export const withdrawalGate = (
       withdraw_block_reason: withdrawBlockDeadline(deadline),
     }
   }
-  if (requests.some((request) => isOpenStatus(request.status))) {
+  if (requests.some((request) => blocksNewClaim(request))) {
     return {
       can_withdraw: false,
       withdrawal_deadline: iso,

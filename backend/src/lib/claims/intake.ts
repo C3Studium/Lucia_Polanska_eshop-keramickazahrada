@@ -26,6 +26,7 @@ import {
   deadlineTextFor,
   isClaimKind,
   isDamageCause,
+  blocksNewClaim,
   isOpenStatus,
   kindLabel,
   photosRequiredFor,
@@ -178,7 +179,7 @@ export type ClaimRuleVerdict =
  */
 export const checkClaimRules = (
   order: ClaimOrder,
-  existingRequests: Array<{ status?: string | null }>,
+  existingRequests: Array<{ status?: string | null; kind?: string | null }>,
   input: ClaimIntakeInput,
   now: Date = new Date()
 ): ClaimRuleVerdict => {
@@ -208,7 +209,7 @@ export const checkClaimRules = (
   if (photosRequiredFor(input.damage_cause) && !(input.photos?.length ?? 0)) {
     return { ok: false, message: photosRequiredMessage(input.damage_cause) }
   }
-  if (existingRequests.some((request) => isOpenStatus(request.status))) {
+  if (existingRequests.some((request) => blocksNewClaim(request))) {
     return { ok: false, message: WITHDRAW_BLOCK_OPEN_REQUEST }
   }
   return { ok: true }

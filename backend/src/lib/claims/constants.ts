@@ -111,8 +111,31 @@ export const KIND_LABEL: Record<ClaimKind, string> = {
   odstoupeni: "Odstoupení od smlouvy",
 }
 
+/**
+ * Vrácení rozdílu po zákaznické úpravě objednávky (docs/uprava-objednavky-plan.md
+ * §3c.6). Záměrně MIMO `CLAIM_KINDS`: zákazník ho nepodává formulářem
+ * (`isClaimKind` hlídá příjem žádostí) — zakládá ho server sám, schválený,
+ * s rozdílem jako jediným řádkem (lib/order-edit/edit-refund-claim.ts).
+ */
+export const EDIT_REFUND_KIND = "uprava" as const
+
+export const isEditRefundKind = (kind: unknown): boolean => kind === EDIT_REFUND_KIND
+
+/**
+ * Blokuje otevřená žádost podání další? Ano — kromě vrácení rozdílu po úpravě:
+ * to zákazník nepodával a čekání na refundaci mu nesmí zavřít reklamaci.
+ */
+export const blocksNewClaim = (request: {
+  status?: string | null
+  kind?: string | null
+}): boolean => isOpenStatus(request.status) && !isEditRefundKind(request.kind)
+
 export const kindLabel = (kind: string | null | undefined): string =>
-  isClaimKind(kind) ? KIND_LABEL[kind] : "Žádost o vrácení"
+  isClaimKind(kind)
+    ? KIND_LABEL[kind]
+    : isEditRefundKind(kind)
+      ? "Vrácení rozdílu po úpravě objednávky"
+      : "Žádost o vrácení"
 
 export const REQUESTED_RESOLUTION_LABEL: Record<RequestedResolution, string> = {
   repair: "oprava",

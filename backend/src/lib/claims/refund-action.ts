@@ -25,7 +25,8 @@ import {
   providerConfirmationText,
   type ProviderConfirmation,
 } from "./comgate-confirmation"
-import { kindLabel } from "./constants"
+import { isEditRefundKind, kindLabel } from "./constants"
+import { lineItemsTotal } from "./line-items"
 import { goodsShipped, loadOrderMoney } from "./money"
 import { buildClaimOrderItems } from "./order-items"
 import {
@@ -493,7 +494,14 @@ export const refundClaim = async (
   const refunds: RefundEntry[] = [...existingRefunds, entry]
   const refundedSum = round2(refunds.reduce((sum, item) => sum + item.amount, 0))
   const remainingAfter = Math.max(0, round2(state.remaining - amount))
-  const resolveNow = remainingAfter <= MONEY_EPSILON || body.mark_resolved === true
+  // Rozdíl z úpravy objednávky (`uprava`): „zbývá" na nulu nespadne (zbytek
+  // je zaplacené zboží, které zákazník dostane) — vyřízeno je, když se vrátil
+  // celý očekávaný rozdíl (jediný řádek žádosti).
+  const editRefundSettled =
+    isEditRefundKind(request.kind) &&
+    refundedSum >= lineItemsTotal(request.line_items) - MONEY_EPSILON
+  const resolveNow =
+    remainingAfter <= MONEY_EPSILON || editRefundSettled || body.mark_resolved === true
 
   // 3b) záloha zakázky: zapsat, kolik ze zálohy se vrátilo — z toho je krok
   //     „Záloha vrácena" a podmínka „Zrušit zakázku" (§12.4). Peníze už

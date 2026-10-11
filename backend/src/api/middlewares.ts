@@ -578,6 +578,16 @@ export default defineMiddlewares({
         }),
       ],
     },
+    // Mini obchod úpravy objednávky — stejný dveřník (token) jako guest-edit.
+    {
+      matcher: "/store/orders/:id/guest-edit/catalog",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
     // Změna doručení (adresa / výdejna) v úpravě objednávky — podepsaný token,
     // takže i host bez přihlášení. Handler token ověří sám; stejný vzor jako
     // guest-edit (jinak by default /store/orders autorizace hosta odmítla).
