@@ -41,8 +41,7 @@ const Payment = ({
   comgateMethods,
   hasPickupShipping = false,
   allowsDobirka = false,
-  dobirkaAtPickupPoint = false,
-  dobirkaBlockedByBox = false,
+  dobirkaBlockedByPickupPoint = false,
   dobirkaFeeCzk = 0,
   productionMode,
 }: {
@@ -53,10 +52,8 @@ const Payment = ({
   hasPickupShipping?: boolean
   /** All three dobírka conditions hold: every piece allows it, ČP carriage, Czech address. */
   allowsDobirka?: boolean
-  /** Balíkovna: dobírka se platí při vyzvednutí na výdejně, ne doručovateli. */
-  dobirkaAtPickupPoint?: boolean
-  /** Dobírka by šla, ale vybraná výdejna je box (platí se tam jen předem online). */
-  dobirkaBlockedByBox?: boolean
+  /** Dobírka by šla (zboží, země), ale doprava je Balíkovna — tam jen předem kartou. */
+  dobirkaBlockedByPickupPoint?: boolean
   /** Doběrečné from the admin setting — shown next to the tile; 0 hides it. */
   dobirkaFeeCzk?: number
   /** Zakázková výroba: kolik zaplatit teď. Volba se dělá TADY (ne v Přehledu). */
@@ -113,11 +110,8 @@ const Payment = ({
    * Mastercard a další podporované karty" — including pay-on-collection, where no card is
    * involved and the money changes hands in the workshop.
    */
-  // Balíkovna nemá doručovatele — platí se při vyzvednutí na výdejně (na
-  // poště i kartou, u partnera hotově). Do boxu dobírka vůbec nejde.
-  const dobirkaDetail = dobirkaAtPickupPoint
-    ? "Zaplatíte při vyzvednutí na výdejně"
-    : "Zaplatíte doručovateli, až vám zásilku předá"
+  // Dobírka jen na adresu (Balíkovna ji nemá) — peníze vybere doručovatel.
+  const dobirkaDetail = "Zaplatíte doručovateli, až vám zásilku předá"
 
   const extraPaymentOptions = useMemo<ExtraPaymentOption[]>(
     () =>
@@ -369,12 +363,11 @@ const Payment = ({
                       ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
                       : "Platit budete bezpečně až v dalším kroku."}
                 </p>
-                {dobirkaBlockedByBox && !depositByCard && (
+                {dobirkaBlockedByPickupPoint && !depositByCard && (
                   <p>
-                    Na dobírku to do boxu poslat nejde. V boxu se dobírka platí
-                    jen předem kartou přes odkaz v SMS. Pokud chcete platit až
-                    při vyzvednutí, vyberte v Doručení výdejnu na poště nebo
-                    u partnera.
+                    Na výdejní místo Balíkovny posíláme jen s platbou předem
+                    kartou — zásilku si pak jen vyzvednete. Dobírku nabízíme
+                    při doručení na adresu.
                   </p>
                 )}
               </div>

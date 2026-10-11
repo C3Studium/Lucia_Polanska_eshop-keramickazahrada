@@ -18,8 +18,7 @@ import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
-import { resolveBalikovnaSubtype } from "@lib/data/balikovna-point"
-import { isBalikovnaBox, isBalikovnaOption } from "@lib/util/balikovna"
+import { isBalikovnaOption } from "@lib/util/balikovna"
 import styles from "./style.module.scss"
 
 export default async function CheckoutForm({
@@ -90,27 +89,20 @@ export default async function CheckoutForm({
   const chosenOption = shippingMethods.find((option) =>
     chosenOptionIds.has(option.id)
   )
-  const dobirkaOtherwiseAllowed =
-    cartAllowsDobirka(cart as any) &&
-    countryAllowsDobirka(cart as any, countryCode) &&
+  const dobirkaGoodsOk =
+    cartAllowsDobirka(cart as any) && countryAllowsDobirka(cart as any, countryCode)
+  const allowsDobirka =
+    dobirkaGoodsOk &&
     deliveryCollectsDobirka(
       chosenOption,
       (chosenOption as any)?.service_zone?.fulfillment_set?.type === "pickup"
     )
   /*
-   * Balíkovna do BOXU (AlzaBox, OX Point…): dobírka se tam platí jen předem
-   * kartou online, na místě ne — kdo chce platit při převzetí, nevyzvedne.
-   * Proto u boxu dobírka není; zákazník se dozví proč (`dobirkaBlockedByBox`).
-   * Typ místa uloží krok dopravy, u staršího výběru se dohledá u ČP.
+   * Balíkovna: dobírka na žádné výdejní místo (jen na adresu, viz
+   * `deliveryCollectsDobirka`). Když by ji zboží i země jinak dovolily,
+   * zákazník se v platbě dozví proč chybí (`dobirkaBlockedByPickupPoint`).
    */
-  const viaBalikovna = isBalikovnaOption(chosenOption)
-  const dobirkaBlockedByBox =
-    dobirkaOtherwiseAllowed &&
-    viaBalikovna &&
-    isBalikovnaBox(
-      await resolveBalikovnaSubtype(cart.metadata as Record<string, unknown>)
-    )
-  const allowsDobirka = dobirkaOtherwiseAllowed && !dobirkaBlockedByBox
+  const dobirkaBlockedByPickupPoint = dobirkaGoodsOk && isBalikovnaOption(chosenOption)
 
   /*
    * Doběrečné — the amount shown next to the dobírka tile, fetched rather
@@ -148,8 +140,7 @@ export default async function CheckoutForm({
         comgateMethods={comgateMethods}
         hasPickupShipping={hasPickupShipping}
         allowsDobirka={allowsDobirka}
-        dobirkaAtPickupPoint={viaBalikovna}
-        dobirkaBlockedByBox={dobirkaBlockedByBox}
+        dobirkaBlockedByPickupPoint={dobirkaBlockedByPickupPoint}
         dobirkaFeeCzk={dobirkaFeeCzk}
         productionMode={productionMode}
       />

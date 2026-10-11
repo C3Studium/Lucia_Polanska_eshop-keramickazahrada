@@ -78,12 +78,19 @@ const fold = (value: string) =>
     .replace(/[̀-ͯ]/g, "")
     .toLocaleLowerCase("cs")
 
-/** Česká pošta carriage, by the option's own name — the same handle the owner controls. */
+/**
+ * Česká pošta NA ADRESU, by the option's own name — the same handle the owner controls.
+ *
+ * Balíkovna se dobírkou neposílá na žádné výdejní místo (Matěj, 11. 10. 2026):
+ * do boxu se dobírka platí jen předem kartou online a na výdejnu chodí lidi
+ * zásilku jen vyzvednout — platí předem kartou. Dobírka tedy jen tam, kde
+ * peníze vybere doručovatel u dveří. Backend to hlídá taky (validate-dobirka).
+ */
 export const deliveryCollectsDobirka = (
   option: { name?: string | null } | null | undefined,
   isPickup: boolean
 ) => {
   if (isPickup) return false
   const name = fold(option?.name ?? "")
-  return name.includes("ceska posta") || name.includes("balikovna")
+  return name.includes("ceska posta") && !name.includes("balikovna")
 }
