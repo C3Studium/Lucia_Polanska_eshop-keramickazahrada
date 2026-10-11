@@ -948,7 +948,10 @@ describe("edit_refund — vrácení rozdílu po úpravě objednávky (druh `upra
     const result = plan({ request: editRequest(), money: money(1500) })
     expect(result.case).toBe("edit_refund")
     expect(states(result)).toEqual(["received:done", "refunded:current", "resolved:upcoming"])
-    expect(result.actions.refund_items || result.actions.refund_all).toBe(true)
+    expect(result.actions.refund_items).toBe(true)
+    // „Vrátit vše" by poslalo zpátky celou objednávku, zboží se nevrací.
+    expect(result.actions.refund_all).toBe(false)
+    expect(result.actions.received).toBe(false)
   })
 
   it("vrácený celý rozdíl = peníze vráceny, i když na objednávce dál něco zbývá", () => {

@@ -338,6 +338,31 @@ export const refundClaim = async (
       )}. Je-li žádost hotová, použijte „Vyřízeno".`
     )
   }
+  // Rozdíl z úpravy objednávky: přes tuhle žádost se vrací jen rozdíl, nikdy
+  // celá objednávka („vrátit vše" tu UI nenabízí, server to hlídá taky).
+  if (isEditRefundKind(request.kind)) {
+    const expected = lineItemsTotal(request.line_items)
+    const alreadyHere = round2(
+      ((Array.isArray(request.refunds) ? request.refunds : []) as any[]).reduce(
+        (sum, entry) => sum + (Number(entry?.amount) || 0),
+        0
+      )
+    )
+    if (refundScope === "all" || refundScope === "deposit") {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `U rozdílu z úpravy se vrací jen rozdíl ${fmt(expected)} — zadejte ho v košíku jako částku.`
+      )
+    }
+    if (round2(alreadyHere + amount) > expected + MONEY_EPSILON) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Rozdíl z úpravy je ${fmt(expected)}${
+          alreadyHere > MONEY_EPSILON ? `, vráceno už ${fmt(alreadyHere)}` : ""
+        } — víc přes tuto žádost vrátit nejde.`
+      )
+    }
+  }
   const refundItems: RefundItemEntry[] | null = (() => {
     const mirror = itemsMirrorOf(lines)
     return mirror.length ? mirror : null

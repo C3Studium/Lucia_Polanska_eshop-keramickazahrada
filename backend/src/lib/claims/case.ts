@@ -413,13 +413,17 @@ export const planClaimCase = (input: ClaimCaseInput): ClaimCasePlan => {
     ).allowed && money.remaining > MONEY_EPSILON
   const items = input.items ?? null
   const pureCommission = flags.is_commission && !flags.is_mixed
+  // Rozdíl z úpravy: žádné zboží se nevrací a „vrátit vše" by poslalo zpátky
+  // celou zaplacenou objednávku — jen košík (jiná částka) do výše rozdílu.
+  const editRefund = isEditRefundKind(kind)
 
   const actions: ClaimActions = {
     approve: pending,
     reject: pending,
     // Zboží, které nikdy neodešlo, nemůže „dorazit zpět" (odstoupení před odesláním).
-    received: status === "approved" && !(isWithdrawalKind(kind) && !flags.goods_shipped),
-    refund_all: refundable,
+    received:
+      status === "approved" && !editRefund && !(isWithdrawalKind(kind) && !flags.goods_shipped),
+    refund_all: refundable && !editRefund,
     refund_items:
       refundable &&
       (items
