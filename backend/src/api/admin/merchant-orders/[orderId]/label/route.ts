@@ -430,7 +430,11 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         filters: { id: req.params.orderId },
       })
       const freshMeta = { ...(((fresh[0] as any)?.metadata ?? {}) as Record<string, unknown>) }
-      delete freshMeta.cp_test_zip
+      // Medusa metadata při update SLUČUJE — vynechaný klíč zůstane (změřeno
+      // 11. 10. 2026 na #39: `delete` nechal cp_test_zip="10000" na objednávce,
+      // další ostrý štítek by jel na zkušební výdejnu). Klíč se maže prázdným
+      // řetězcem; i kdyby zůstal jako "", provider ho bere jako „není".
+      freshMeta.cp_test_zip = ""
       await orderModule
         .updateOrders([{ id: req.params.orderId, metadata: freshMeta }])
         .catch(() => undefined)
