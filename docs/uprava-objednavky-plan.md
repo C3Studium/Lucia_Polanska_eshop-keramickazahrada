@@ -297,6 +297,9 @@ agenda „TEST Firma", Česká pošta testovací prostředí.
 
 Neověřeno živě: storefront stránky v prohlížeči (agent ověřil typy a SCSS,
 ne vykreslení), token z účtu (přesměrování), cesta mini obchod → přidat →
-návrat se souhrnem, smíšená objednávka se zakázkou, e-mail „Rozdíl vrácen"
-(šablona upravená, vrácení na #32 ho poslalo na testovací adresu — obsah
-neviděn).
+návrat se souhrnem, smíšená objednávka se zakázkou. E-mail po vrácení
+rozdílu na #32 odešel (protokol e-mailů), ale s obecným předmětem
+„Vrácení vyřízeno — potvrzení" — opraveno na „Rozdíl po úpravě objednávky
+jsme vám vrátili" (830cc64). Vykreslení stránek na serveru ověřeno
+(store.matejforejt.com: #32 úprava i mini obchod, zabalená #6 bez sekce
+Přidat).
