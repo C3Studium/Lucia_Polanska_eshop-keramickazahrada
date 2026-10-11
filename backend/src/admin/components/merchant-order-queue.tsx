@@ -72,6 +72,9 @@ export type MerchantOrder = {
 
   /** Money owed back after a customer edit — the „Vrátit rozdíl" button. */
   refund_due: { amount: number; currency_code: string; reason?: string } | null;
+
+  /** Zákazník si objednávku upravil sám — kolikrát a o kolik naposledy. */
+  customer_edit?: { count: number; last_at: string | null; last_difference: number } | null;
 };
 
 export type MerchantOrdersResponse = {
@@ -509,6 +512,19 @@ export const OrderRow = ({
         {blockedFromShipping && (
           <Text size="small" className="text-ui-fg-error mt-1">
             {order.ship_block_reason}
+          </Text>
+        )}
+        {order.customer_edit && (
+          // Zákazník si objednávku upravil sám — ať je vidět dřív, než se
+          // začne balit podle starého obsahu.
+          <Text size="small" className="text-ui-tag-blue-text mt-1">
+            Zákazník upravil
+            {order.customer_edit.count > 1 ? ` ${order.customer_edit.count}×` : ""}
+            {Math.abs(order.customer_edit.last_difference) > 0.005
+              ? ` · naposledy ${order.customer_edit.last_difference > 0 ? "+" : "−"}${Math.abs(
+                  Math.round(order.customer_edit.last_difference)
+                )} Kč`
+              : " · beze změny ceny"}
           </Text>
         )}
         {order.refund_due && (

@@ -1,5 +1,6 @@
 import { isDamageCause } from "../../../lib/claims/constants"
 import { suggestedRefundAmount } from "../../../lib/claims/line-items"
+import { customerEditsOf } from "../../../lib/order-edit/log"
 import {
   moneyState,
   requestRefundedTotal,
@@ -109,6 +110,13 @@ export type MerchantOrderRow = {
    * Lives on the order's metadata under `refund_due`.
    */
   refund_due: { amount: number; currency_code: string; reason?: string } | null
+
+  /**
+   * Zákazník si objednávku upravil sám (docs/uprava-objednavky-plan.md) —
+   * kolikrát a o kolik se naposledy změnila cena. Ze záznamu
+   * `metadata.customer_edits` (lib/order-edit/log.ts); null = neupravoval.
+   */
+  customer_edit: { count: number; last_at: string | null; last_difference: number } | null
 
   /**
    * Poslední žádost (reklamace / vrácení / odstoupení) k objednávce, nebo
@@ -323,6 +331,18 @@ export const toMerchantOrderRow = (
             reason: order.metadata.refund_due.reason,
           }
         : null,
+
+    customer_edit: (() => {
+      const edits = customerEditsOf(order?.metadata)
+      const last = edits[edits.length - 1]
+      return last
+        ? {
+            count: edits.length,
+            last_at: last.at ?? null,
+            last_difference: Number(last.difference) || 0,
+          }
+        : null
+    })(),
 
     claim: returnRequests ? claimSummaryFor(order, returnRequests) : null,
     cancel_reason: cancelReasonFor(state, returnRequests),

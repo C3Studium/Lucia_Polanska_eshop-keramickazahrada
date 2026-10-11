@@ -928,3 +928,38 @@ describe("requestRefunds — rozsah a položky refundace se zachovají", () => {
     expect(refunds[3]).toMatchObject({ scope: null, items: null })
   })
 })
+
+describe("edit_refund — vrácení rozdílu po úpravě objednávky (druh `uprava`)", () => {
+  const editRequest = (over: Record<string, unknown> = {}) =>
+    request({
+      kind: "uprava",
+      status: "approved",
+      resolution: "refund",
+      decided_at: T.created,
+      line_items: [{ line_item_id: "uprava:ch_1", title: "Rozdíl z úpravy objednávky", quantity: 1, unit_price: 240, total: 240 }],
+      ...over,
+    })
+
+  it("je to vlastní případ, i u zakázky nebo po odeslání", () => {
+    expect(classifyClaimCase({ kind: "uprava" }, flags({ goods_shipped: true, is_commission: true }))).toBe("edit_refund")
+  })
+
+  it("Přijato → Peníze vráceny → Vyřízeno, bez kroku na zboží; vracet jde hned", () => {
+    const result = plan({ request: editRequest(), money: money(1500) })
+    expect(result.case).toBe("edit_refund")
+    expect(states(result)).toEqual(["received:done", "refunded:current", "resolved:upcoming"])
+    expect(result.actions.refund_items || result.actions.refund_all).toBe(true)
+  })
+
+  it("vrácený celý rozdíl = peníze vráceny, i když na objednávce dál něco zbývá", () => {
+    const result = plan({
+      request: editRequest({
+        status: "resolved",
+        resolved_at: T.resolved,
+        refunds: [{ id: "r1", amount: 240, at: T.refunded, method: "comgate" }],
+      }),
+      money: money(1500, 240),
+    })
+    expect(states(result)).toEqual(["received:done", "refunded:done", "resolved:done"])
+  })
+})

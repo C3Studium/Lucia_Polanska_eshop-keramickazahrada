@@ -8,7 +8,8 @@
 
 import { formatCzk } from "./workbench";
 
-export type ReturnKind = "reklamace" | "vraceni" | "odstoupeni";
+/** `uprava` = vrácení rozdílu po zákaznické úpravě objednávky (zakládá server). */
+export type ReturnKind = "reklamace" | "vraceni" | "odstoupeni" | "uprava";
 
 export type ReturnStatus =
   | "pending"
@@ -274,7 +275,8 @@ export type ClaimCase =
   | "return_shipped"
   | "commission_cancel"
   | "claim"
-  | "mixed_cancel";
+  | "mixed_cancel"
+  | "edit_refund";
 
 export type ClaimStepState = "done" | "current" | "upcoming" | "skipped";
 
@@ -428,7 +430,7 @@ export const isReturnStatus = (value: unknown): value is ReturnStatus =>
   typeof value === "string" && (RETURN_STATUSES as string[]).includes(value);
 
 export const isReturnKind = (value: unknown): value is ReturnKind =>
-  value === "reklamace" || value === "vraceni" || value === "odstoupeni";
+  value === "reklamace" || value === "vraceni" || value === "odstoupeni" || value === "uprava";
 
 /** Finální stavy — z nich se nikam nejde (§3 kontraktu). */
 export const isFinalStatus = (status: ReturnStatus) =>
@@ -440,6 +442,7 @@ export const KIND_META: Record<ReturnKind, { label: string; color: BadgeColor }>
   reklamace: { label: "Reklamace", color: "orange" },
   vraceni: { label: "Vrácení", color: "blue" },
   odstoupeni: { label: "Odstoupení §1829", color: "purple" },
+  uprava: { label: "Rozdíl z úpravy", color: "green" },
 };
 
 export const STATUS_META: Record<ReturnStatus, { label: string; color: BadgeColor }> = {
@@ -467,6 +470,7 @@ export const CASE_LABEL: Record<ClaimCase, string> = {
   commission_cancel: "Zrušení zakázky",
   claim: "Reklamace",
   mixed_cancel: "Smíšená objednávka",
+  edit_refund: "Vrácení rozdílu po úpravě objednávky",
 };
 
 export const isClaimCase = (value: unknown): value is ClaimCase =>

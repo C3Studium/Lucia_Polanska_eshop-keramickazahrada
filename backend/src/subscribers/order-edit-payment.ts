@@ -2,6 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { confirmOrderEditRequestWorkflow } from "@medusajs/medusa/core-flows"
 import { notifyMerchant } from "../lib/notify"
+import { recordCustomerEdit } from "../lib/order-edit/log"
 
 /**
  * Zaplacený rozdíl potvrzuje zákaznickou úpravu (Matěj, 2026-08-07).
@@ -59,6 +60,15 @@ export default async function orderEditPaymentHandler({
       )
     return
   }
+
+  // Stopa pro Objednávky+ („Zákazník upravil"), stejně jako u úprav bez
+  // doplatku (lib/order-edit/core.ts). Idempotentní podle change_id.
+  await recordCustomerEdit(container, orderId, {
+    change_id: changeId,
+    difference: Number(sessionData.edit_difference) || 0,
+    payment: "card",
+    settlement: "collect",
+  }).catch(() => undefined)
 
   const { data: orders } = await query
     .graph({

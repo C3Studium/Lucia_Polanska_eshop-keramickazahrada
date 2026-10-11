@@ -81,6 +81,9 @@ function ReturnResolvedEmailComponent({
   protocolUrl,
 }: ReturnResolvedEmailProps) {
   const isClaim = kind === "reklamace"
+  // Rozdíl po zákaznické úpravě objednávky (druh `uprava`) — nic se fyzicky
+  // nevracelo, jen peníze; „vrácení zboží" by mátlo.
+  const isEdit = kind === "uprava"
   const outcome = OUTCOME[resolution ?? "refund"] ?? OUTCOME.refund
   // Způsob vrácení řídí i větu o připsání: karta má lhůtu banky, ruční
   // vrácení ne — slibovat „do několika dnů" u převodu, který majitelka teprve
@@ -91,17 +94,25 @@ function ReturnResolvedEmailComponent({
       preview={
         isClaim
           ? `Reklamace k objednávce ${orderNumber} je vyřízená.`
-          : `Vrácení k objednávce ${orderNumber} je vyřízené.`
+          : isEdit
+            ? `Rozdíl po úpravě objednávky ${orderNumber} jsme vám vrátili.`
+            : `Vrácení k objednávce ${orderNumber} je vyřízené.`
       }
     >
-      <Eyebrow>{isClaim ? "Reklamace" : "Vrácení"}</Eyebrow>
-      <EmailH1 accent="vyřízeno.">{isClaim ? "Reklamace" : "Vrácení"}</EmailH1>
+      <Eyebrow>{isClaim ? "Reklamace" : isEdit ? "Úprava objednávky" : "Vrácení"}</Eyebrow>
+      {isEdit ? (
+        <EmailH1 accent="vrácen.">Rozdíl</EmailH1>
+      ) : (
+        <EmailH1 accent="vyřízeno.">{isClaim ? "Reklamace" : "Vrácení"}</EmailH1>
+      )}
 
       <Greeting name={customerName} />
       <P>
         {isClaim
           ? "vaše reklamace je vyřízená. Toto je písemné potvrzení o datu a způsobu vyřízení."
-          : "vaše vrácení je vyřízené. Níže je shrnutí, jak jsme je uzavřeli."}
+          : isEdit
+            ? "po vaší úpravě vyšla objednávka levněji — rozdíl jsme vám vrátili. Níže je shrnutí."
+            : "vaše vrácení je vyřízené. Níže je shrnutí, jak jsme je uzavřeli."}
       </P>
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}

@@ -3,6 +3,7 @@ import { enrichWithMoney } from "../../../lib/claims/admin"
 import {
   CLAIM_STATUSES,
   isClaimKind,
+  isEditRefundKind,
   OPEN_STATUSES,
 } from "../../../lib/claims/constants"
 import { RETURN_REQUEST_MODULE } from "../../../modules/return-request"
@@ -48,7 +49,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const offset = asPositiveInt(req.query.offset, 0)
   const status = typeof req.query.status === "string" ? req.query.status : ""
   const kind =
-    typeof req.query.kind === "string" && isClaimKind(req.query.kind)
+    typeof req.query.kind === "string" &&
+    (isClaimKind(req.query.kind) || isEditRefundKind(req.query.kind))
       ? req.query.kind
       : null
   // „#1234" i „1234" je totéž číslo objednávky.

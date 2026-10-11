@@ -68,6 +68,7 @@ const KIND_FILTERS: { value: "all" | ReturnKind; label: string }[] = [
   { value: "reklamace", label: "Reklamace" },
   { value: "vraceni", label: "Vrácení" },
   { value: "odstoupeni", label: "Odstoupení" },
+  { value: "uprava", label: "Rozdíl z úpravy" },
 ];
 
 const PAGE_SIZE = 25;
