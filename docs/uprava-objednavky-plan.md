@@ -82,6 +82,32 @@ kolekce, ale celý katalog). Zbytek pravidel platí dál. Co to s sebou nese:
 
 Odhad navíc proti §4: +1 den na režim výběru v obchodě a stránce produktu.
 
+## 3c. Rozhodnuto (Matěj, 11. 10. 2026) — závazné pro implementaci
+
+1. **Do „připravena k odeslání"** (merchant fáze `shipping`): přidat cokoli
+   z obchodu, odebrat cokoli, měnit množství, vyměnit variantu. Objednávka
+   nesmí zůstat prázdná. **Po** označení: jen výměna varianty za stejnou
+   cenu. Po štítku / zásilce: nic.
+2. **Mini obchod** uvnitř úpravy: cesta `/order/:id/edit/pridat` (+ token),
+   stávající výpis a stránka produktu v režimu výběru („Přidat k objednávce
+   #N"), hledání + kategorie. Nenabízí: zakázku, balíčky, poškozené/unikátní
+   kusy, vyprodané bez backorderu; u dobírkové objednávky jen `cod_allowed`.
+3. **Zamčené řádky:** zakázka (odkaz na chat), balíček, poškozený kus.
+4. **Poštovné se přepočítává** stejným pravidlem jako pokladna (zdarma od
+   1 000 Kč na výdejnu); souhrn to řekne.
+5. **Slevový kód:** přidané řádky za aktuální cenu; pokud Medusa kód na nové
+   řádky neuplatní, souhrn napíše „na doplněné kusy se kód nevztahuje".
+6. **Peníze:** dráž → zaplatit rozdíl kartou před potvrzením (dnes);
+   levněji → žádost v modulu Reklamace a zrušení (refundace + dobropis),
+   tlačítko „Vrátit rozdíl" se ruší; dobírka a odběr → vyrovná se při
+   předání, částka dobírky se přepočítá.
+7. **Smíšená objednávka:** běžné kusy editovat/přidat jde, zakázkový řádek
+   zamčený. Čistá zakázka se zálohou: úprava položek se nenabízí (fáze 2).
+8. **Limit:** 1 rozpracovaná změna, max 3 potvrzené úpravy, pak „ozvěte se".
+9. **UI:** samostatná stránka úpravy (vzor stránka reklamace): stavová lišta,
+   položky se stepperem a výměnou v bottom-sheetu, sekce Přidat, Doručení,
+   sticky souhrn s jedním tlačítkem. Staré inline UI odstranit.
+
 ## 4. Kroky implementace
 
 1. Pravidla: `order-edit-rules.ts` — akce `set_quantity`, zámky
