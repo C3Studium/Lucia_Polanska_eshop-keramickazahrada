@@ -234,12 +234,21 @@ const availabilityOf = async (
   return result
 }
 
+/**
+ * Značka zákaznické úpravy na order_change. `beginOrderEditOrderWorkflow`
+ * ukládá jen `description`, `internal_note` a `created_by` — `metadata`
+ * zahodí (změřeno 11. 10. 2026 na #32: metadata null). Dřívější kód značil
+ * metadaty, takže rozpracovanou úpravu ani počet úprav nikdy nepoznal.
+ */
+export const CUSTOMER_EDIT_DESCRIPTION = "Úprava zákazníkem"
+export const DRY_RUN_NOTE = "náhled — zahodí se"
+
 const customerEditChanges = async (container: MedusaContainer, orderId: string) => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query
     .graph({
       entity: "order_change",
-      fields: ["id", "status", "created_at", "metadata", "change_type"],
+      fields: ["id", "status", "created_at", "description", "internal_note", "change_type"],
       filters: { order_id: orderId } as never,
     })
     .catch(() => ({ data: [] as any[] }))
@@ -247,18 +256,19 @@ const customerEditChanges = async (container: MedusaContainer, orderId: string) 
 }
 
 const isActiveChange = (change: any) => ["pending", "requested"].includes(String(change?.status))
+const isCustomerEdit = (change: any) => change?.description === CUSTOMER_EDIT_DESCRIPTION
+const isDryRun = (change: any) => isCustomerEdit(change) && change?.internal_note === DRY_RUN_NOTE
 
 export const editCounts = async (container: MedusaContainer, orderId: string) => {
   const changes = await customerEditChanges(container, orderId)
   const confirmed = changes.filter(
-    (change) => change?.status === "confirmed" && change?.metadata?.customer_edit && !change?.metadata?.dry_run
+    (change) => change?.status === "confirmed" && isCustomerEdit(change) && !isDryRun(change)
   ).length
   const pending =
-    changes.find(
-      (change) => isActiveChange(change) && change?.metadata?.customer_edit && !change?.metadata?.dry_run
-    ) ?? null
-  const staleDryRun = changes.filter((change) => isActiveChange(change) && change?.metadata?.dry_run)
-  const foreignActive = changes.find((change) => isActiveChange(change) && !change?.metadata?.customer_edit) ?? null
+    changes.find((change) => isActiveChange(change) && isCustomerEdit(change) && !isDryRun(change)) ?? null
+  const staleDryRun = changes.filter((change) => isActiveChange(change) && isDryRun(change))
+  const foreignActive =
+    changes.find((change) => isActiveChange(change) && !isCustomerEdit(change)) ?? null
   return { confirmed, pending, staleDryRun, foreignActive }
 }
 
@@ -652,11 +662,9 @@ export const runCustomerEdit = async (
   const { result: change } = await beginOrderEditOrderWorkflow(container).run({
     input: {
       order_id: order.id,
-      metadata: {
-        customer_edit: true,
-        requested_by: options.requestedBy ?? order.customer_id ?? null,
-        ...(options.dryRun ? { dry_run: true } : {}),
-      },
+      description: CUSTOMER_EDIT_DESCRIPTION,
+      ...(options.dryRun ? { internal_note: DRY_RUN_NOTE } : {}),
+      created_by: options.requestedBy ?? order.customer_id ?? undefined,
     } as never,
   })
   const changeId = (change as any).id as string
