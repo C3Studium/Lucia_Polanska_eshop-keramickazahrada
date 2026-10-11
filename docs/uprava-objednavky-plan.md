@@ -342,3 +342,22 @@ rozdílu na #32 odešel (protokol e-mailů), ale s obecným předmětem
 jsme vám vrátili" (830cc64). Vykreslení stránek na serveru ověřeno
 (store.matejforejt.com: #32 úprava i mini obchod, zabalená #6 bez sekce
 Přidat).
+
+### Ověřeno — doplnění §3d (11. 10. 2026 odpoledne)
+
+API i **proklikání v prohlížeči** (Playwright, Chromium bez okna, proti
+store.matejforejt.com; 1280 px a telefon 375 px).
+
+| Scénář | Objednávka | Výsledek |
+|---|---|---|
+| Slevový kód | #41 (nová testovací, odběr, SLEVA10, 2 ks = 54 Kč) | přidaný výrobek i navýšený počet jsou za běžnou cenu (Medusa slevu v úpravě nepřepočítá: 3 ks = 84 Kč); souhrn to řekne; odhad v řádku opraven na 84 (dřív 81) |
+| Výměna za jiný výrobek — plný režim | #41 | nabídka 261 náhrad (bez vlastní varianty); náhled rozdílu; v prohlížeči: Vyměnit → „Vyměnit za jiný výrobek…" → lišta „Vybíráte náhradu za …" → výrobek → „Vyměnit za tento výrobek" → zpět se souhrnem; **uloženo přes UI**: 2× jiný výrobek + pítko = 5 490 Kč, platba při vyzvednutí obnovena na 5 490 Kč |
+| Výměna po zabalení | #6 | nabídka `same_price_only`, 0 výrobků za 30 Kč; dražší výrobek odmítnut „jen za výrobek nebo provedení ve STEJNÉ ceně" |
+| E-mail „Objednávka upravena" | #41 | odešel na testovací adresu (protokol e-mailů, šablona order-edited) |
+| Prohlížeč, počítač | #41 | +1 kus → souhrn 54 → 84 Kč; mini obchod → výrobek → „Přidat k objednávce #41" → zpět, souhrn 574 Kč + poznámka ke kódu; žádné chyby v konzoli |
+| Prohlížeč, telefon 375 px | #41 | **našla se a opravila chyba**: sloupec úpravy měl 0 px (kontejnerový dotaz editoru + `justify-items: start` stavové stránky) a text se lámal po písmenech → po opravě 343 px; přilepený souhrn zakrýval pruh novinek → posunut nad něj; bez vodorovného posunu, bez chyb |
+
+Neověřeno: token z účtu (přesměrování přihlášeného), smíšená objednávka se
+zakázkou (záloha jde jen kartou přes ComGate, přes API ji nezaložím),
+zámek balíčku a poškozeného kusu naživo (testovací balíček nemá cenu,
+jediný poškozený kus je skutečný a kupovat ho nechci) — obojí kryjí testy.
