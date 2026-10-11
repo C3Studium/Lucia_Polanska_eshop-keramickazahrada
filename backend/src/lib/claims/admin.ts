@@ -254,7 +254,9 @@ export const sendResolvedEmail = async (
       subject:
         request.kind === "reklamace"
           ? "Reklamace vyřízena — potvrzení"
-          : "Vrácení vyřízeno — potvrzení",
+          : request.kind === "uprava"
+            ? "Rozdíl po úpravě objednávky jsme vám vrátili"
+            : "Vrácení vyřízeno — potvrzení",
       ...claimEmailBase(request, options.protocolUrl),
       resolvedAt: formatDate(request.resolved_at ?? new Date()),
       ...(total > 0
