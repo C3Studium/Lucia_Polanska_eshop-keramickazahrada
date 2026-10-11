@@ -364,11 +364,13 @@ describe("poštovné a položky přes všechny žádosti (§13.2 stropy)", () =>
       total: 129,
       refunded: 129,
       refundable: 0,
+      allowed: true,
     })
     expect(shippingStateOf({ shipping_total: "129" }, [requests[1]])).toEqual({
       total: 129,
       refunded: 0,
       refundable: 129,
+      allowed: true,
     })
     // I přes `refund_history` bez žádosti.
     expect(

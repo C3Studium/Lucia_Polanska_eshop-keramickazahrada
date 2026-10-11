@@ -83,6 +83,13 @@ const ReturnRequest = model.define("return_request", {
   /** Poslední refundace. */
   refunded_at: model.dateTime().nullable(),
   /**
+   * Účet pro vrácení převodem (`lib/claims/refund-account.ts`) — u objednávek
+   * placených jinak než kartou (dobírka, osobní odběr). Normalizovaný zápis
+   * `19-2000145399/0800` nebo IBAN; zadává zákazník ve formuláři, případně
+   * doplní majitelka v adminu.
+   */
+  refund_account: model.text().nullable(),
+  /**
    * Snapshot 14denní lhůty pro odstoupení (§1829) v okamžiku žádosti —
    * `max(fulfillments.shipped_at) + 14 d`; null = zboží ještě neodešlo.
    */

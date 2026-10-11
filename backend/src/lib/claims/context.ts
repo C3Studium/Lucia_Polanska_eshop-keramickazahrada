@@ -7,6 +7,7 @@ import type ReturnRequestModuleService from "../../modules/return-request/servic
 import { blocksNewClaim, isDamageCause, WITHDRAWAL_DAYS } from "./constants"
 import { claimLineItemsOf, orderItemsForClaims } from "./line-items"
 import { requestRefunds, requestRefundedTotal } from "./refund-rules"
+import { refundAccountNeeded, storedRefundAccount } from "./refund-account"
 
 /**
  * Kontext „Reklamace a vrácení" pro zákazníka (docs/reklamace-a-zruseni.md §4,
@@ -229,6 +230,7 @@ export const serializeClaim = (request: any) => ({
     ? claimLineItemsOf(request.line_items)
     : null,
   damage_cause: isDamageCause(request.damage_cause) ? request.damage_cause : null,
+  refund_account: storedRefundAccount(request.refund_account)?.display ?? null,
 })
 
 export const listOrderClaims = async (
@@ -263,6 +265,8 @@ export const buildClaimsContext = async (
     all_made_to_order: allMadeToOrder(order),
     // Pro výběr položek ve formuláři (§11.1) — ceny po slevě, s DPH.
     order_items: orderItemsForClaims(order),
+    // Neplaceno kartou → peníze jdou převodem, formulář chce číslo účtu.
+    refund_account_needed: refundAccountNeeded(order as any),
     requests: rows.map(serializeClaim),
   }
 }

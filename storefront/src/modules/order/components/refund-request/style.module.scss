@@ -519,6 +519,13 @@
   border-color: var(--olive-07);
 }
 
+/* Účet pro vrácení převodem (dobírka, platba na místě). */
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 /* Fotky vady — mřížka náhledů + dlaždice „Přidat". */
 .photos {
   display: flex;

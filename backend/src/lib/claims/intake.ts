@@ -56,6 +56,13 @@ import {
 import { goodsShipped } from "./money"
 import { loadClaimProduction } from "./production"
 import { capturedTotal, MONEY_EPSILON } from "./refund-rules"
+import {
+  parseRefundAccount,
+  REFUND_ACCOUNT_REQUIRED,
+  refundAccountNeeded,
+  refundAccountRequiredFor,
+  storedRefundAccount,
+} from "./refund-account"
 
 /**
  * Sdílený intake žádosti (docs/reklamace-a-zruseni.md §4) — JEDNA cesta pro
@@ -160,6 +167,12 @@ export type ClaimIntakeInput = {
    */
   damage_cause?: DamageCause | string | null
   photos?: IntakePhoto[] | null
+  /**
+   * Účet pro vrácení převodem (`refund-account.ts`). `undefined` = volající
+   * pole nemá (záložní routa, starší storefront) → nehlídá se; řetězec / null
+   * = formulář ho má → u nekartové objednávky povinný podle druhu žádosti.
+   */
+  refund_account?: string | null
 }
 
 export type ClaimRuleVerdict =
@@ -205,6 +218,19 @@ export const checkClaimRules = (
   const items = resolveClaimLineItems(order, input.kind, input.line_items)
   if (items.ok === false) {
     return items
+  }
+  if (input.refund_account !== undefined) {
+    const account = parseRefundAccount(input.refund_account)
+    if (account && account.ok === false) {
+      return { ok: false, message: account.message }
+    }
+    if (
+      !account &&
+      refundAccountNeeded(order as any) &&
+      refundAccountRequiredFor(input.kind, input.requested_resolution)
+    ) {
+      return { ok: false, message: REFUND_ACCOUNT_REQUIRED }
+    }
   }
   if (photosRequiredFor(input.damage_cause) && !(input.photos?.length ?? 0)) {
     return { ok: false, message: photosRequiredMessage(input.damage_cause) }
@@ -273,6 +299,8 @@ export const createClaim = async (
     : null
   // Položky slovy — přednostně formátovaný seznam, jinak starý text zákazníka.
   const itemsText = lineItemsText(lineItems) ?? legacyItemsText
+  // Účet pro vrácení převodem — normalizovaný (pravidla už prošla).
+  const refundAccount = storedRefundAccount(input.refund_account)
 
   // Snapshot lhůty pro odstoupení (jen tam, kde dává smysl) — později odeslaná
   // zásilka už lhůtu téhle žádosti nepohne.
@@ -297,6 +325,7 @@ export const createClaim = async (
     items: legacyItemsText as unknown as Record<string, unknown>,
     line_items: lineItems as unknown as Record<string, unknown>,
     damage_cause: damageCause,
+    refund_account: refundAccount?.display ?? null,
     photos: (photoUrls.length ? photoUrls : null) as unknown as Record<
       string,
       unknown
@@ -412,6 +441,7 @@ export const createClaim = async (
           : null,
         damageCause ? damageCauseLabel(damageCause) : null,
         photosLine,
+        refundAccount ? `Účet pro vrácení: ${refundAccount.display}` : null,
       ]
         .filter(Boolean)
         .join(" · "),

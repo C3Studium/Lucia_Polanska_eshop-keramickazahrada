@@ -207,7 +207,10 @@ export default function RefundRequest({
   /** §13.1 — server žádost rovnou vyřídil a objednávku zrušil. */
   const [autoCancelled, setAutoCancelled] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** Účet pro vrácení převodem — jen u objednávek neplacených kartou. */
+  const [account, setAccount] = useState("")
   const fieldId = useId()
+  const accountId = useId()
   const fileInput = useRef<HTMLInputElement>(null)
 
   const money = (amount: number) =>
@@ -354,12 +357,21 @@ export default function RefundRequest({
   )
   const photosMissing = photosRequired && photos.length === 0
 
+  // Neplaceno kartou → peníze vracíme převodem. Účet je povinný, když se
+  // peníze vrací (odstoupení, vrácení, reklamace s „vrácením peněz"); u opravy
+  // či výměny nepovinný. Formát (kontrolní součet) hlídá server.
+  const accountNeeded = Boolean(claims.refund_account_needed)
+  const accountRequired =
+    accountNeeded && (kind !== "reklamace" || resolution === "refund")
+  const accountMissing = accountRequired && !account.trim()
+
   const canSend =
     Boolean(detail.trim()) &&
     (!needsResolution || resolution !== null) &&
     (!needsCause || cause !== null) &&
     (!needsItems || selectedItems.length > 0) &&
     !photosMissing &&
+    !accountMissing &&
     state !== "sending"
 
   const send = async () => {
@@ -375,6 +387,7 @@ export default function RefundRequest({
       items: showItems && selectedItems.length ? selectedItems : undefined,
       // Vada/nefunkčnost = bez příčiny; poškození jde na server (§13.7).
       damage_cause: damageCause,
+      ...(accountNeeded ? { refund_account: account } : {}),
     })
     if ("error" in result) {
       setState("error")
@@ -839,6 +852,34 @@ export default function RefundRequest({
         )}
       </div>
 
+      {accountNeeded && (
+        <div className={styles.account}>
+          <label htmlFor={accountId} className={styles.label}>
+            Číslo účtu pro vrácení peněz{" "}
+            <i>{accountRequired ? "(povinné)" : "(nepovinné)"}</i>
+          </label>
+          <input
+            id={accountId}
+            className={styles.input}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={account}
+            onChange={(event) => setAccount(event.target.value)}
+            placeholder="např. 123456789/0800 nebo 19-123456789/0800"
+            disabled={state === "sending"}
+          />
+          <p className={styles.hint}>
+            Objednávku jste neplatili kartou, takže peníze posíláme převodem na
+            účet. Stačí české číslo účtu, případně IBAN.
+            {kind === "reklamace" && !accountRequired
+              ? " U opravy nebo výměny ho vyplňovat nemusíte — hodí se, kdyby se nakonec vracely peníze."
+              : ""}
+          </p>
+        </div>
+      )}
+
       {error && (
         <p className={styles.error} role="alert">
           {error}
@@ -858,8 +899,8 @@ export default function RefundRequest({
 
       <p className={styles.legal}>
         {kind === "reklamace"
-          ? "Reklamaci vyřídíme do 30 dnů a o výsledku vás vyrozumíme e-mailem; protokol dostanete hned po odeslání. "
-          : "Peníze vracíme do 14 dnů od odstoupení; smíme počkat, než k nám zboží dorazí. "}
+          ? "Reklamaci vyřídíme do 30 dnů a o výsledku vás vyrozumíme e-mailem; protokol dostanete hned po odeslání. U uznané reklamace vracíme cenu reklamovaných výrobků. "
+          : "Peníze vracíme do 14 dnů od odstoupení (při vrácení celé objednávky i poštovné); smíme počkat, než k nám zboží dorazí. "}
         Podrobnosti najdete v{" "}
         <LocalizedClientLink href="/reklamacni-protokol">
           reklamačním řádu

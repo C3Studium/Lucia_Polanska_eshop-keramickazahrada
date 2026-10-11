@@ -53,7 +53,21 @@ export type ShippingRefundState = {
   /** 0, nebo celé `total`, když už poštovné jednou odešlo. */
   refunded: number
   refundable: number
+  /**
+   * Smí se u téhle žádosti poštovné vrátit? Jen u odstoupení / vrácení (celá
+   * objednávka včetně dopravy, §1832). Reklamace vrací jen cenu výrobků —
+   * pak `refundable` = 0 a košík řádek poštovného odmítne.
+   */
+  allowed: boolean
 }
+
+/**
+ * Poštovné jde vrátit jen u odstoupení a vrácení (11. 10. 2026, Matěj):
+ * „u reklamace jen za produkty, jinak celé". Reklamace, rozdíl z úpravy
+ * objednávky i neznámý druh ze starých řádků → bez poštovného.
+ */
+export const shippingRefundAllowedFor = (kind: unknown): boolean =>
+  kind === "odstoupeni" || kind === "vraceni"
 
 const hasShippingLine = (lines: RefundLine[] | null | undefined): boolean =>
   (lines ?? []).some((line) => line.type === "shipping")
@@ -73,11 +87,18 @@ export const shippingRefundedOf = (
 
 export const shippingStateOf = (
   order: MoneyOrder & { shipping_total?: unknown },
-  requests: MoneyRequest[]
+  requests: MoneyRequest[],
+  options: { allowRefund?: boolean } = {}
 ): ShippingRefundState => {
+  const allowed = options.allowRefund !== false
   const total = Math.max(0, round2(toNumber(order.shipping_total)))
   const refunded = shippingRefundedOf(requests, refundHistoryOf(order)) ? total : 0
-  return { total, refunded, refundable: Math.max(0, round2(total - refunded)) }
+  return {
+    total,
+    refunded,
+    refundable: allowed ? Math.max(0, round2(total - refunded)) : 0,
+    allowed,
+  }
 }
 
 export const SHIPPING_LINE_TITLE = "Poštovné a balné"
@@ -94,6 +115,8 @@ export const REFUND_SHIPPING_NONE =
   "Objednávka nemá poštovné, které by šlo vrátit."
 export const REFUND_SHIPPING_ALREADY =
   "Poštovné už bylo vráceno v dřívější refundaci."
+export const REFUND_SHIPPING_CLAIM =
+  "U reklamace se vrací jen cena výrobků, poštovné ne. Náklady na zaslání zpět můžete přidat jako ruční částku."
 export const REFUND_CUSTOM_INVALID =
   "Ruční částka musí být kladné číslo."
 export const REFUND_COMPONENT_NOT_BUNDLE =
@@ -145,8 +168,9 @@ export const legacyBodyToLines = (body: {
 
 /**
  * „Vrátit celou objednávku" (§13.2 `scope: "all"`): všechny zbývající kusy
- * každé položky + poštovné, pokud ještě neodešlo. Balíček se vrací jako celek
- * (položkou), ne po komponentách.
+ * každé položky + poštovné, pokud ještě neodešlo a žádost ho smí vracet
+ * (`allowed` — u reklamace ne). Balíček se vrací jako celek (položkou), ne po
+ * komponentách.
  */
 export const allRemainingLines = (
   items: ClaimOrderItemDetail[],
@@ -163,6 +187,40 @@ export const allRemainingLines = (
     }))
   if (shipping.refundable > MONEY_EPSILON) {
     lines.push({ type: "shipping" })
+  }
+  return lines
+}
+
+/**
+ * Co přesně vrací výslovné „Vrátit vše" (`scope: "all"`) — JEDNO pravidlo pro
+ * refundaci i náhled v adminu (`detail.ts` → `refund_all`), ať tlačítko ukazuje
+ * tutéž částku, jakou server pošle:
+ *
+ * - odstoupení / vrácení (`shipping.allowed`): celá objednávka — všechny
+ *   zbývající kusy + poštovné; když už žádný kus nezbývá a peníze ano, zbytek
+ *   jako částka;
+ * - reklamace (poštovné nejde): jen VÝROBKY — reklamované kusy
+ *   (`selected_in_claim`, nejvýš co ještě jde vrátit); bez výběru (starší
+ *   žádost) všechny zbývající kusy. Žádné poštovné, žádný „zbytek".
+ */
+export const refundAllLines = (
+  items: ClaimOrderItemDetail[],
+  shipping: ShippingRefundState,
+  remaining: number
+): RefundLineInput[] => {
+  if (!shipping.allowed) {
+    const claimed = items.filter((item) => item.selected_in_claim > 0)
+    const source = claimed.length
+      ? claimed.map((item) => ({
+          ...item,
+          refundable_quantity: Math.min(item.refundable_quantity, item.selected_in_claim),
+        }))
+      : items
+    return allRemainingLines(source, shipping)
+  }
+  const lines = allRemainingLines(items, shipping)
+  if (!lines.length && remaining > MONEY_EPSILON) {
+    return [{ type: "custom", amount: round2(remaining), label: "Zbývající částka" }]
   }
   return lines
 }
@@ -291,6 +349,9 @@ export const priceRefundLines = (input: PriceRefundLinesInput): RefundLinesVerdi
     return { ok: false, message: REFUND_SHIPPING_TWICE }
   }
   if (shippingCount === 1) {
+    if (input.shipping.allowed === false) {
+      return { ok: false, message: REFUND_SHIPPING_CLAIM }
+    }
     if (!(input.shipping.total > MONEY_EPSILON)) {
       return { ok: false, message: REFUND_SHIPPING_NONE }
     }

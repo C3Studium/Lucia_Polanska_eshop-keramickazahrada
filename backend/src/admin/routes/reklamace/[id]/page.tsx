@@ -30,6 +30,7 @@ import {
   type ProductionPanel,
 } from "../../../components/claims/production-card";
 import { RefundBasket } from "../../../components/claims/refund-basket";
+import { RefundAccountCard } from "../../../components/claims/refund-account-card";
 import { RequestBadges } from "../../../components/claims/request-badges";
 import { Timeline } from "../../../components/claims/timeline";
 import { LineItemsList } from "../../../components/return-line-items";
@@ -628,6 +629,7 @@ const ClaimPageInner = () => {
                 request={request}
                 items={items}
                 shipping={detail.shipping}
+                refundAll={detail.refund_all}
                 selection={selection}
                 onSelectionChange={setSelection}
                 skipGoodsCheck={skipActive}
@@ -638,6 +640,13 @@ const ClaimPageInner = () => {
               />
             </Card>
           )}
+
+          {detail.refund_account &&
+            (detail.refund_account.needed || detail.refund_account.display) && (
+              <Card title="Vrácení převodem">
+                <RefundAccountCard request={request} account={detail.refund_account} />
+              </Card>
+            )}
 
           <Card title="Platby">
             <MoneyCard money={detail.money} shipping={detail.shipping} request={request} />

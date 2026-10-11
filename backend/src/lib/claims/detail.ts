@@ -14,7 +14,14 @@ import { claimFlagsOf } from "./flags"
 import { claimLineItemsOf, suggestedRefundAmount } from "./line-items"
 import { loadOrderRequests, MONEY_STATE_FIELDS } from "./money"
 import { buildClaimOrderItems, type ClaimOrderItemDetail } from "./order-items"
-import { shippingStateOf, type ShippingRefundState } from "./refund-lines"
+import {
+  priceRefundLines,
+  refundAllLines,
+  shippingRefundAllowedFor,
+  shippingStateOf,
+  type ShippingRefundState,
+} from "./refund-lines"
+import { formatIban, refundAccountNeeded, storedRefundAccount } from "./refund-account"
 import {
   commissionPaidRemaining,
   loadClaimProduction,
@@ -27,6 +34,7 @@ import {
   toNumber,
   type MoneyState,
   type RefundEntry,
+  type RefundLine,
 } from "./refund-rules"
 
 /**
@@ -182,6 +190,22 @@ export type ClaimDetail = ClaimCasePlan & {
   money: MoneyState & { refunds: ClaimMoneyRefund[] }
   /** §13.2 — poštovné: celkem / už vráceno / lze vrátit (jednou). */
   shipping: ShippingRefundState
+  /**
+   * Náhled výslovného „Vrátit vše" (`refundAllLines` + ocenění) — přesně to,
+   * co pošle `scope: "all"`: u odstoupení / vrácení celá objednávka i
+   * s poštovným, u reklamace jen reklamované výrobky (`products_only`).
+   */
+  refund_all: {
+    amount: number
+    lines: RefundLine[]
+    products_only: boolean
+    problem: string | null
+  }
+  /**
+   * Účet pro vrácení převodem (`refund-account.ts`): `needed` = objednávka
+   * nebyla placená kartou, peníze posílá majitelka sama.
+   */
+  refund_account: { needed: boolean; display: string | null; iban: string | null }
   production: ClaimProduction | null
   flags: ClaimFlags
 }
@@ -215,7 +239,29 @@ export const buildClaimDetail = async (
     await loadBundleComponentSources(scope, order, baseItems),
     requests
   )
-  const shipping = shippingStateOf(order, requests)
+  // Poštovné jen u odstoupení / vrácení — reklamace vrací cenu výrobků.
+  const shipping = shippingStateOf(order, requests, {
+    allowRefund: shippingRefundAllowedFor(request.kind),
+  })
+  // Stejné řádky a ocenění jako `refundClaim` se `scope: "all"` (bez komponent).
+  const refundAll = (() => {
+    const productsOnly = !shipping.allowed
+    const raw = refundAllLines(baseItems, shipping, state.remaining)
+    if (!raw.length) {
+      return { amount: 0, lines: [] as RefundLine[], products_only: productsOnly, problem: null }
+    }
+    const priced = priceRefundLines({
+      items: baseItems,
+      shipping,
+      lines: raw,
+      remaining: state.remaining,
+      clampToRemaining: true,
+    })
+    return priced.ok === false
+      ? { amount: 0, lines: [] as RefundLine[], products_only: productsOnly, problem: priced.message }
+      : { amount: priced.amount, lines: priced.lines, products_only: productsOnly, problem: null }
+  })()
+  const account = storedRefundAccount(request.refund_account)
   const plan = planClaimCase({
     request,
     flags,
@@ -268,6 +314,12 @@ export const buildClaimDetail = async (
     items,
     money: { ...state, refunds: orderRefundsOf(order, requests) },
     shipping,
+    refund_all: refundAll,
+    refund_account: {
+      needed: refundAccountNeeded(order as any),
+      display: account?.display ?? null,
+      iban: account ? formatIban(account.iban) : null,
+    },
     production: production?.block ?? null,
     flags,
     ...plan,

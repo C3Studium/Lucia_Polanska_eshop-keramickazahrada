@@ -26,6 +26,7 @@ import {
   type ProviderConfirmation,
 } from "./comgate-confirmation"
 import { isEditRefundKind, kindLabel } from "./constants"
+import { storedRefundAccount } from "./refund-account"
 import { lineItemsTotal } from "./line-items"
 import { goodsShipped, loadOrderMoney } from "./money"
 import { buildClaimOrderItems } from "./order-items"
@@ -36,15 +37,16 @@ import {
   type LoadedClaimProduction,
 } from "./production"
 import {
-  allRemainingLines,
   clampLinesToRemaining,
   DEPOSIT_LINE_LABEL,
   itemsMirrorOf,
   legacyBodyToLines,
   MANUAL_AMOUNT_LABEL,
   priceRefundLines,
+  refundAllLines,
   refundLinesText,
   REFUND_LINES_REQUIRED,
+  shippingRefundAllowedFor,
   shippingStateOf,
   type RefundLineInput,
 } from "./refund-lines"
@@ -149,6 +151,17 @@ export type RefundClaimResult = {
 
 const COMGATE_PROVIDER_ID = "pp_comgate_comgate"
 
+/**
+ * Pokyn k ručnímu převodu do hlášky majitelce: účet ze žádosti + VS = číslo
+ * objednávky, nebo výzva účet doplnit (bez něj peníze nemá kam poslat).
+ */
+export const manualTransferText = (account: unknown, displayId: unknown): string => {
+  const stored = storedRefundAccount(account)
+  return stored
+    ? `pošlete převodem na účet ${stored.display} (VS ${displayId ?? ""}).`
+    : "pošlete převodem — zákazník číslo účtu nevyplnil: doplňte ho u žádosti (pole „Účet pro vrácení“), nebo si ho vyžádejte e-mailem."
+}
+
 /** `refunds[].id`: žádost + pořadí — stabilní klíč pro dobropis a historii. */
 export const refundEntryId = (requestId: string, index: number): string =>
   `${requestId}:${index}`
@@ -252,7 +265,10 @@ export const refundClaim = async (
     request,
     commissionPaidRemaining: production ? commissionPaidRemaining(production.block) : null,
   })
-  const shipping = shippingStateOf(order, money.requests)
+  // Poštovné jen u odstoupení / vrácení — reklamace vrací cenu výrobků.
+  const shipping = shippingStateOf(order, money.requests, {
+    allowRefund: shippingRefundAllowedFor(request.kind),
+  })
 
   // --- košík (§13.2) ----------------------------------------------------------
   let lines: RefundLine[]
@@ -284,18 +300,18 @@ export const refundClaim = async (
     let rawLines: unknown[] | null
     let clampToRemaining = false
     if (refundScope === "all") {
-      // „Vrátit celou objednávku": všechny zbývající kusy + poštovné; ruční
+      // „Vrátit vše" (`refundAllLines`): odstoupení / vrácení = celá
+      // objednávka i s poštovným, reklamace = jen reklamované výrobky. Ruční
       // částka v těle má přednost jen tady (dílčí ruční částka, §12.3).
       clampToRemaining = true
       rawLines = explicitAmount
         ? [{ type: "custom", amount: explicitAmount, label: MANUAL_AMOUNT_LABEL }]
-        : allRemainingLines(baseItems, shipping)
-      if (!rawLines.length) {
-        // Položky už vrácené, poštovné také — zbývá-li něco, je to ruční částka.
-        rawLines =
-          state.remaining > MONEY_EPSILON
-            ? [{ type: "custom", amount: state.remaining, label: "Zbývající částka" }]
-            : []
+        : refundAllLines(baseItems, shipping, state.remaining)
+      if (!rawLines.length && !shipping.allowed) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "Za reklamované výrobky už je všechno vrácené. Poštovné se u reklamace nevrací; jinou částku vraťte v košíku."
+        )
       }
     } else {
       rawLines = legacyBodyToLines(body)
@@ -626,7 +642,7 @@ export const refundClaim = async (
         ...claimEmailBase(updated, protocol.url),
         refundAmount: fmt(amount),
         refundReason: kindLabel(request.kind),
-        refundMethod: refundMethodLabel(method),
+        refundMethod: refundMethodLabel(method, request.refund_account),
         ...(refundLines ? { refundLines } : {}),
         ...creditNoteEmailData(refunds, creditNote),
         orderLink: orderLink(order) || undefined,
@@ -647,16 +663,18 @@ export const refundClaim = async (
           ? ` (${pieces} ks, ${lines.length} ${lines.length === 1 ? "řádek" : "řádky"} košíku)`
           : ""
   const providerText = providerConfirmationText(confirmation)
+  // Ruční část = převod, který posílá majitelka — hláška říká kam a s jakým VS.
+  const transferText = manualTransferText(request.refund_account, order.display_id)
   const baseMessage =
     method === "comgate"
       ? `Vráceno ${fmt(amount - manualPart)}${scopeLabel} na kartu přes ComGate${
           providerText ? ` — ${providerText}` : ""
         }.${
           manualPart > MONEY_EPSILON
-            ? ` Zbývajících ${fmt(manualPart)} karta nepokryla — vraťte ručně.`
+            ? ` Zbývajících ${fmt(manualPart)} karta nepokryla — ${transferText}`
             : ""
         }`
-      : `Zaznamenáno ${fmt(amount)}${scopeLabel} k ručnímu vrácení (objednávka nebyla placená kartou).`
+      : `Zaznamenáno ${fmt(amount)}${scopeLabel} — objednávka nebyla placená kartou, peníze teď ${transferText}`
   const clampMessage = clamped ? ` Částka seříznuta na zbývajících ${fmt(amount)}.` : ""
   const creditMessage =
     creditNote.status === "issued"

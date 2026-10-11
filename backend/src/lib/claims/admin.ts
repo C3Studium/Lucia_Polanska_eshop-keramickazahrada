@@ -21,6 +21,7 @@ import { claimItemsText, suggestedRefundAmount } from "./line-items"
 import { goodsShipped, MONEY_STATE_FIELDS } from "./money"
 import { productionBlockOf } from "./production"
 import { refundLineText, requestRefundLinesText } from "./refund-lines"
+import { storedRefundAccount } from "./refund-account"
 import {
   moneyState,
   requestRefundedTotal,
@@ -53,11 +54,20 @@ export const retrieveClaim = async (
   }
 }
 
-/** Způsob vrácení slovy (§13.3) — do e-mailů i protokolu. */
-export const refundMethodLabel = (method: unknown): string =>
-  method === "comgate"
-    ? "na kartu přes ComGate — na účtu do 3–5 pracovních dnů"
-    : "ručně"
+/**
+ * Způsob vrácení slovy (§13.3) — do e-mailů i protokolu. Ruční vrácení =
+ * převod; s účtem ze žádosti (`refund_account`) ho zákazník vidí, ať ví, kam
+ * peníze přijdou.
+ */
+export const refundMethodLabel = (method: unknown, account?: unknown): string => {
+  if (method === "comgate") {
+    return "na kartu přes ComGate — na účtu do 3–5 pracovních dnů"
+  }
+  const stored = storedRefundAccount(account)
+  return stored
+    ? `převodem na váš účet ${stored.display}`
+    : "převodem na váš účet (pokud číslo účtu ještě nemáme, ozveme se vám)"
+}
 
 /**
  * Dobropis k refundaci slovy (§13.3): číslo, nebo proč zatím není. „Skipped"
@@ -262,7 +272,7 @@ export const sendResolvedEmail = async (
       ...(total > 0
         ? {
             refundAmount: formatMoney(total, currency),
-            refundMethod: refundMethodLabel(request.refund_method),
+            refundMethod: refundMethodLabel(request.refund_method, request.refund_account),
             ...(refundLines ? { refundLines } : {}),
             ...creditNoteEmailData(refunds, options.creditNote),
           }

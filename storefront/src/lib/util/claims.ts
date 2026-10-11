@@ -171,6 +171,11 @@ export type OrderClaims = {
   requests: OrderClaim[]
   /** Položky objednávky pro výběr ve formuláři (§11.1). Bez nich se výběr skryje. */
   order_items?: ClaimOrderItem[]
+  /**
+   * Objednávka nebyla placená kartou (dobírka, platba na místě) → peníze se
+   * vrací převodem a formulář chce číslo účtu.
+   */
+  refund_account_needed?: boolean
   /** Stav objednávky, když ho server přibalí (`"canceled"` = zrušená). */
   order_status?: string | null
   order_cancelled?: boolean | null

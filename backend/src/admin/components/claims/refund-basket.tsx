@@ -14,6 +14,7 @@ import {
   nearlyZero,
   round2,
   type ClaimDetailItem,
+  type ClaimRefundAll,
   type ClaimShipping,
   type RefundLineInput,
   type RefundResponse,
@@ -69,11 +70,14 @@ export const RefundBasket = ({
   canRefundAll,
   hasProduction,
   onRefunded,
+  refundAll,
 }: {
   request: ReturnRequest;
   items: ClaimDetailItem[];
   /** §13.2 — bez něj (starší server) se řádek Poštovné nenabídne. */
   shipping?: ClaimShipping | null;
+  /** Náhled „Vrátit vše" ze serveru (u reklamace jen výrobky). */
+  refundAll?: ClaimRefundAll | null;
   selection: BasketSelection;
   onSelectionChange: (next: BasketSelection) => void;
   /** Vědomé „vracím bez čekání na zásilku" (§1832/4) — pak je poznámka povinná. */
@@ -99,8 +103,10 @@ export const RefundBasket = ({
 
   const shippingRefundable = shipping ? Math.max(0, asNumber(shipping.refundable)) : 0;
   const shippingAlreadyRefunded = Boolean(shipping) && asNumber(shipping?.refunded) > 0;
-  const shippingOffered = Boolean(shipping) && asNumber(shipping?.total) > 0;
-  const shippingSelected = shippingOn && shippingRefundable > 0;
+  // Reklamace (`allowed: false`): vrací se jen cena výrobků — řádek se nenabízí.
+  const shippingBlocked = shipping?.allowed === false;
+  const shippingOffered = Boolean(shipping) && asNumber(shipping?.total) > 0 && !shippingBlocked;
+  const shippingSelected = shippingOn && shippingRefundable > 0 && !shippingBlocked;
 
   const customAmount = custom.on ? parseAmount(custom.amount) : 0;
   const customValid =
@@ -246,6 +252,12 @@ export const RefundBasket = ({
               </Text>
             </label>
           )}
+          {shippingBlocked && asNumber(shipping?.total) > 0 && (
+            <Text size="xsmall" className="text-ui-fg-subtle">
+              Poštovné se u reklamace nevrací — jen cena výrobků. Náklady na
+              zaslání zpět můžete případně vrátit jako „Jinou částku".
+            </Text>
+          )}
           {!shipping && (
             <Text size="xsmall" className="text-ui-fg-muted">
               Server zatím neposílá poštovné — vraťte ho případně jako „Jinou částku".
@@ -358,9 +370,11 @@ export const RefundBasket = ({
           </label>
 
           <Text size="xsmall" className="text-ui-fg-subtle">
-            Placeno kartou → vrátí se přes ComGate; jinak se zaznamená k ručnímu
-            vrácení. Zákazník dostane e-mail s řádky a částkou; dobropis se
-            vystaví za tuto refundaci (v ostrém režimu).
+            Placeno kartou → peníze odejdou hned přes ComGate na tutéž kartu.
+            Dobírka / platba na místě → zaznamená se a peníze pošlete převodem
+            na účet z karty „Vrácení převodem". Zákazník dostane e-mail
+            s řádky a částkou; dobropis se vystaví za tuto refundaci (v ostrém
+            režimu).
           </Text>
 
           <div className="flex flex-wrap gap-2">
@@ -389,6 +403,7 @@ export const RefundBasket = ({
               request={request}
               items={items}
               shipping={shipping}
+              preview={refundAll}
               skipGoodsCheck={skipGoodsCheck}
               onDone={() => {
                 reset();
@@ -409,20 +424,24 @@ export const RefundBasket = ({
 };
 
 /**
- * „Vrátit celou objednávku" — `POST …/refund { scope: "all" }`: všechny
- * zbývající položky + poštovné = zbývá. Potvrzení vypíše, co to zahrnuje.
+ * „Vrátit vše" — `POST …/refund { scope: "all" }`. Co přesně se vrátí, říká
+ * server (`refund_all` v detailu = tatáž funkce, kterou refundace počítá):
+ * u odstoupení / vrácení celá objednávka i s poštovným, u reklamace jen
+ * reklamované výrobky. Starší server náhled neposílá → postaru (zbývá).
  * Při „bez čekání na zásilku" je důvod povinný (jde k refundaci).
  */
 export const RefundAllPrompt = ({
   request,
   items,
   shipping,
+  preview,
   skipGoodsCheck,
   onDone,
 }: {
   request: ReturnRequest;
   items: ClaimDetailItem[];
   shipping?: ClaimShipping | null;
+  preview?: ClaimRefundAll | null;
   skipGoodsCheck: boolean;
   onDone?: () => void;
 }) => {
@@ -431,59 +450,79 @@ export const RefundAllPrompt = ({
   const mutation = useReturnAction<RefundResponse>(request.id, "refund");
   const remaining = asNumber(request.remaining);
 
-  const remainingItems = items
-    .map((item) => ({ item, quantity: refundableQuantity(item) }))
-    .filter((entry) => entry.quantity > 0);
-  const shippingRefundable = shipping ? Math.max(0, asNumber(shipping.refundable)) : 0;
+  const productsOnly = preview?.products_only === true;
+  const amount = preview ? asNumber(preview.amount) : remaining;
+  const rows: Array<{ key: string; label: string; amount: number }> = preview
+    ? preview.lines.map((line, index) => ({
+        key: `${line.type}-${line.line_item_id ?? ""}-${index}`,
+        label:
+          line.type === "shipping"
+            ? "Poštovné"
+            : line.type === "custom"
+              ? line.title ?? line.label ?? "Částka"
+              : `${line.title ?? "Položka"}${line.quantity ? ` · ${line.quantity} ks` : ""}`,
+        amount: asNumber(line.amount),
+      }))
+    : [
+        ...items
+          .map((item) => ({ item, quantity: refundableQuantity(item) }))
+          .filter((entry) => entry.quantity > 0)
+          .map(({ item, quantity }) => ({
+            key: item.line_item_id,
+            label: `${item.title}${
+              item.variant_title && item.variant_title !== "Default variant"
+                ? ` · ${item.variant_title}`
+                : ""
+            } · ${quantity} ks`,
+            amount: round2(itemAmount(item, quantity)),
+          })),
+        ...(shipping && asNumber(shipping.refundable) > 0
+          ? [{ key: "shipping", label: "Poštovné", amount: asNumber(shipping.refundable) }]
+          : []),
+      ];
   const noteRequired = skipGoodsCheck;
-  const canConfirm = remaining > 0 && (!noteRequired || note.trim().length > 0);
+  const canConfirm = amount > 0 && (!noteRequired || note.trim().length > 0);
+  const title = productsOnly ? "Vrátit reklamované výrobky" : "Vrátit celou objednávku";
 
   return (
     <Prompt open={open} onOpenChange={setOpen}>
       <Prompt.Trigger asChild>
-        <Button size="small" variant="secondary" disabled={remaining <= 0}>
-          Vrátit celou objednávku ({formatCzk(remaining)})
+        <Button
+          size="small"
+          variant="secondary"
+          disabled={amount <= 0}
+          title={amount <= 0 ? preview?.problem ?? "Není co vrátit." : undefined}
+        >
+          {title} ({formatCzk(amount)})
         </Button>
       </Prompt.Trigger>
       <Prompt.Content>
         <Prompt.Header>
-          <Prompt.Title>Vrátit celou objednávku #{request.order_display_id}?</Prompt.Title>
+          <Prompt.Title>
+            {title} — #{request.order_display_id}?
+          </Prompt.Title>
           <Prompt.Description>
-            Vrátí se všechno, co na objednávce zbývá — {formatCzk(remaining)}. Zahrnuje:
+            {productsOnly
+              ? `Reklamace: vrací se jen cena reklamovaných výrobků (po slevě), poštovné ne — ${formatCzk(amount)}. Zahrnuje:`
+              : `Odstoupení / vrácení: vrací se celá objednávka včetně poštovného — ${formatCzk(amount)}. Zahrnuje:`}
           </Prompt.Description>
         </Prompt.Header>
         <div className="flex flex-col gap-y-3 px-6 pb-4">
           <ul className="flex flex-col gap-y-0.5">
-            {remainingItems.map(({ item, quantity }) => (
-              <li key={item.line_item_id} className="flex items-baseline justify-between gap-x-3">
-                <Text size="xsmall" className="min-w-0 truncate" title={item.title}>
-                  {item.title}
-                  {item.variant_title && item.variant_title !== "Default variant"
-                    ? ` · ${item.variant_title}`
-                    : ""}{" "}
-                  · {quantity} ks
+            {rows.map((row) => (
+              <li key={row.key} className="flex items-baseline justify-between gap-x-3">
+                <Text size="xsmall" className="min-w-0 truncate" title={row.label}>
+                  {row.label}
                 </Text>
                 <Text size="xsmall" className="whitespace-nowrap">
-                  {formatCzk(round2(itemAmount(item, quantity)))}
+                  {formatCzk(round2(row.amount))}
                 </Text>
               </li>
             ))}
-            {remainingItems.length === 0 && (
+            {rows.length === 0 && (
               <li>
                 <Text size="xsmall" className="text-ui-fg-muted">
-                  {items.length === 0
-                    ? "Položky objednávky se nenačetly — vrátí se zbývající částka."
-                    : "Všechny položky už jsou vrácené."}
-                </Text>
-              </li>
-            )}
-            {shipping && (
-              <li className="flex items-baseline justify-between gap-x-3">
-                <Text size="xsmall" className={shippingRefundable > 0 ? "" : "text-ui-fg-muted"}>
-                  Poštovné{shippingRefundable > 0 ? "" : " (už vrácené / žádné)"}
-                </Text>
-                <Text size="xsmall" className="whitespace-nowrap">
-                  {formatCzk(shippingRefundable)}
+                  {preview?.problem ?? "Není co vrátit — položky už jsou vrácené."}
                 </Text>
               </li>
             )}
@@ -492,7 +531,7 @@ export const RefundAllPrompt = ({
                 Celkem
               </Text>
               <Text size="xsmall" weight="plus" className="whitespace-nowrap">
-                {formatCzk(remaining)}
+                {formatCzk(amount)}
               </Text>
             </li>
           </ul>
@@ -511,8 +550,9 @@ export const RefundAllPrompt = ({
             </div>
           )}
           <Text size="xsmall" className="text-ui-fg-subtle">
-            Placeno kartou → ComGate, jinak ruční vrácení. Žádost se po vrácení všeho
-            uzavře; zákazník dostane e-mail a dobropis (v ostrém režimu).
+            Placeno kartou → peníze odejdou hned přes ComGate. Jinak se vrácení
+            zaznamená a peníze pošlete převodem na účet zákazníka. Zákazník
+            dostane e-mail a dobropis (v ostrém režimu).
           </Text>
         </div>
         <Prompt.Footer>
@@ -528,7 +568,7 @@ export const RefundAllPrompt = ({
                 },
                 {
                   onSuccess: (result) => {
-                    toast.success(result?.message ?? "Celá objednávka byla vrácena.");
+                    toast.success(result?.message ?? "Peníze byly vráceny.");
                     setOpen(false);
                     setNote("");
                     onDone?.();
@@ -537,7 +577,7 @@ export const RefundAllPrompt = ({
               )
             }
           >
-            Vrátit {formatCzk(remaining)}
+            Vrátit {formatCzk(amount)}
           </Prompt.Action>
         </Prompt.Footer>
       </Prompt.Content>

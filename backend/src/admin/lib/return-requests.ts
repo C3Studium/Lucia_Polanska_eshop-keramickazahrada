@@ -360,6 +360,24 @@ export type ClaimShipping = {
   total: number;
   refunded: number;
   refundable: number;
+  /** `false` = reklamace: poštovné se nevrací, jen cena výrobků. */
+  allowed?: boolean;
+};
+
+/** Náhled „Vrátit vše" — přesně to, co server pošle se `scope: "all"`. */
+export type ClaimRefundAll = {
+  amount: number;
+  lines: RefundLine[];
+  /** Reklamace: jen reklamované výrobky, bez poštovného. */
+  products_only: boolean;
+  problem?: string | null;
+};
+
+/** Účet pro vrácení převodem (objednávka neplacená kartou). */
+export type ClaimRefundAccount = {
+  needed: boolean;
+  display: string | null;
+  iban: string | null;
 };
 
 export type ClaimProduction = {
@@ -410,6 +428,8 @@ export type ClaimDetailResponse = {
   money?: ClaimMoney | null;
   /** §13.2 — bez něj košík řádek „Poštovné" nenabídne. */
   shipping?: ClaimShipping | null;
+  refund_all?: ClaimRefundAll | null;
+  refund_account?: ClaimRefundAccount | null;
   production?: ClaimProduction | null;
   flags?: ClaimFlags | null;
   case?: ClaimCase | string | null;

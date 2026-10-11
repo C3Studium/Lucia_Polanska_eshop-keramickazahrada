@@ -55,6 +55,12 @@ export type SubmitClaimInput = {
    * (§13.7) → server u obou vyžaduje ≥ 1 fotku. Vada/nefunkčnost = neposílá se.
    */
   damage_cause?: ClaimDamageCause
+  /**
+   * Účet pro vrácení převodem — posílá se (i prázdný), když kontext řekne
+   * `refund_account_needed` (objednávka nebyla placená kartou). Formát a
+   * povinnost hlídá server (`refund-account.ts`).
+   */
+  refund_account?: string
 }
 
 export type SubmitClaimResult = {
@@ -87,6 +93,9 @@ export async function submitClaim(
           ...(input.photos?.length ? { photos: input.photos } : {}),
           ...(input.items?.length ? { items: input.items } : {}),
           ...(input.damage_cause ? { damage_cause: input.damage_cause } : {}),
+          ...(input.refund_account !== undefined
+            ? { refund_account: input.refund_account.trim() }
+            : {}),
         },
       }
     )

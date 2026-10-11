@@ -242,7 +242,7 @@ export const generateProtocolPdf = async (
       currency: (refund.currency || "CZK").toUpperCase(),
       maximumFractionDigits: 2,
     }).format(refund.amount)} (${
-      refund.method === "comgate" ? "na platební kartu přes ComGate" : "ručně"
+      refund.method === "comgate" ? "na platební kartu přes ComGate" : "převodem na bankovní účet"
     }, ${fmtDate(refund.at)})${refund.note ? ` — ${refund.note}` : ""}`
   // Košík vrácení (§13.2) a dobropis (§13.3) pod každou refundací — potvrzení
   // musí říkat „za co" a „jakým dokladem", ne jen kolik.

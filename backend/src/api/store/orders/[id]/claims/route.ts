@@ -65,6 +65,12 @@ const PostSchema = z.object({
     )
     .max(MAX_PHOTOS)
     .optional(),
+  /**
+   * Účet pro vrácení převodem (dobírka, osobní odběr) — storefront ho posílá,
+   * když kontext řekne `refund_account_needed`; formát a povinnost hlídá
+   * `checkClaimRules`. Chybějící pole (starší storefront) se nehlídá.
+   */
+  refund_account: z.string().max(80).nullable().optional(),
 })
 
 const requireToken = (orderId: string, token: unknown) => {
@@ -115,6 +121,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     line_items: body.items ?? [],
     damage_cause: body.damage_cause ?? null,
     photos: body.photos ?? null,
+    refund_account: body.refund_account,
   }
   const verdict = checkClaimRules(order, existing, input)
   if (verdict.ok === false) {
