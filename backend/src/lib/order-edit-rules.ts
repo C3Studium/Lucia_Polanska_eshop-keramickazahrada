@@ -119,7 +119,7 @@ export const validateEditActions = (
     return {
       ok: false,
       reason:
-        "Objednávka je připravená k odeslání — vyměnit jde už jen varianta za stejnou cenu.",
+        "Objednávka je připravená k odeslání — vyměnit jde už jen za výrobek nebo provedení ve stejné ceně.",
     }
   }
 

@@ -752,7 +752,7 @@ export const runCustomerEdit = async (
     // Zabalená objednávka: výměna MUSÍ být za stejnou cenu — náhled je soudce.
     if (mode === "swap_only" && Math.abs(difference) > 0.005) {
       throw notAllowed(
-        "V téhle fázi jde vyměnit jen varianta za STEJNOU cenu. S doplatkem nebo vrácením rozdílu nám prosím zavolejte."
+        "Objednávka je už zabalená — vyměnit jde jen za výrobek nebo provedení ve STEJNÉ ceně. S doplatkem nebo vrácením rozdílu nám prosím zavolejte."
       )
     }
 

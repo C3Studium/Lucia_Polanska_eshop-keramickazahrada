@@ -55,4 +55,4 @@ export const editabilityMode = async (
 
 /** Čeština pro poznámku v editoru, když jde jen výměna za stejnou cenu. */
 export const SWAP_ONLY_NOTE =
-  "Objednávka je připravená k odeslání — vyměnit jde už jen varianta (třeba barva) za STEJNOU cenu. Větší změny vyřešíme po telefonu."
+  "Objednávka je připravená k odeslání — vyměnit jde už jen za výrobek nebo provedení ve STEJNÉ ceně. Větší změny vyřešíme po telefonu."
