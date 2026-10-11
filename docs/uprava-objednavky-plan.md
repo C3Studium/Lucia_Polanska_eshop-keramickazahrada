@@ -248,3 +248,55 @@ z `allowed` (server je soudce i při POST).
   na platbu + panel čekající změny + zrušení), karta levněji (odkaz „Stav
   vrácení rozdílu"), dobírka (mini obchod jen `cod_allowed`), zabaleno
   (jen výměna za stejnou cenu), mini obchod → přidat → návrat se souhrnem.
+
+### Backend (11. 10. 2026, při implementaci a živém testu)
+
+- **Medusa po úpravě ruší autorizovanou platbu** (dobírka, osobní odběr) a
+  zakládá novou nezaplacenou kolekci bez platby
+  (`createOrUpdateOrderPaymentCollectionWorkflow`). Týkalo se i staré úpravy.
+  Opraveno: `lib/order-edit/payments.ts` platbu „při převzetí" na novou
+  kolekci znovu založí a autorizuje na nový součet (ověřeno, viz Ověřeno).
+- **Metadata úpravy Medusa neukládá** (`beginOrderEditOrderWorkflow` bere jen
+  `description` / `internal_note` / `created_by`). Stará značka v metadatech
+  proto nikdy nefungovala: rozpracovaná úprava, počet úprav ani úklidový job
+  `expire-customer-edits`. Značka je teď `description = „Úprava zákazníkem"`.
+  Úpravy uložené před touto opravou (#32 v 12:11, #10 v 12:15) se do limitu
+  nepočítají.
+- **Doběrečné** se ukazovalo jako běžná položka (#39). Teď není mezi
+  upravitelnými řádky; v součtech zůstává.
+- **Detail fronty** `GET /admin/merchant-orders/:id` vrací `customer_edit:
+  null` — značku „Zákazník upravil" nese seznam fronty (karta v
+  Objednávky+), kde se zobrazuje. Detail ji nepotřebuje.
+- **Smíšená objednávka se zakázkou + zlevnění**: Medusa by snížila doplatek
+  zakázky a my bychom rozdíl zároveň vraceli. Doplatek se po úpravě vrací na
+  původní částku a běžné kusy se vyrovnají hned. Živě neověřeno — žádná
+  testovací smíšená objednávka v plné úpravě není.
+- **Výměna za jinou cenu v režimu zabaleno** je odmítnutá kódem (rozdíl z
+  náhledu), živě neověřeno — žádný testovací výrobek nemá varianty s různou
+  cenou.
+
+## Ověřeno (11. 10. 2026, živě proti produkčnímu backendu, testovací objednávky)
+
+Přes `GET /admin/merchant-orders/:id/self-service` (token) a
+`/store/orders/:id/guest-edit`. ComGate v testovacím režimu, iDoklad
+agenda „TEST Firma", Česká pošta testovací prostředí.
+
+| Scénář | Objednávka | Výsledek |
+|---|---|---|
+| Kontext stránky | #32 karta, #27 čistá zakázka, #39 po štítku, #10 odběr | správné režimy; čistá zakázka `items_editable: false` s důvodem; doběrečné skryté |
+| Mini obchod | #32 | 262 výrobků; zakázka s profilem (Pán lesa Dub) vynechaná |
+| Náhled (dry_run) | #32 | +2 ks = +60 Kč (doplatek kartou); odebrání pítek = −980 Kč (vrácení); ~0,6 s |
+| Karta levněji | #32: tyčky 4 → 2 | uloženo, součet 1 190 → 1 130; žádost „uprava" 60 Kč (případ edit_refund, bez kroku na zboží); vrácení 60 Kč přes ComGate test (PAID), dobropis 20260016, žádost sama vyřízena |
+| Karta dráž | #32: tyčky 2 → 3 | `awaiting_payment` + odkaz ComGate 30 Kč; stránka hlásí čekající úpravu; další úprava odmítnuta; zrušení smaže změnu i nezaplacenou kolekci 30 Kč |
+| Osobní odběr | #10: 1 → 3 → 2 ks | uloženo bez platby; Medusa původní platbu zrušila, oprava založila novou autorizovanou (90, pak 60 Kč); počítadlo úprav 1/3 |
+| Dobírka | #40 (nová testovací, Balíkovna pošta Praha 6): 2 → 4 ks | mini obchod jen 9 výrobků s dobírkou (bez poškozeného kusu); výrobek bez dobírky odmítnut; uloženo, dobírka obnovená na 249 Kč; testovací štítek ČP s dobírkou 249 Kč (NB1249245913U); po štítku úprava zamčená |
+| Zabaleno | #6 (odběr) posunutý do „K odeslání" | `swap_only`, mini obchod prázdný s důvodem; změna počtu / přidání / odebrání odmítnuty; výměna za stejnou cenu projde (rozdíl 0) |
+| Po štítku | #39, #40 | úprava odmítnuta „Část objednávky je už vypravená" |
+| Výměna za jiný výrobek | #6 | odmítnuta „jen za jinou variantu téhož výrobku" |
+| Objednávky+ | #10, #32, #40 | karta fronty: „Zákazník upravil 2× · naposledy −30 Kč" apod. |
+
+Neověřeno živě: storefront stránky v prohlížeči (agent ověřil typy a SCSS,
+ne vykreslení), token z účtu (přesměrování), cesta mini obchod → přidat →
+návrat se souhrnem, smíšená objednávka se zakázkou, e-mail „Rozdíl vrácen"
+(šablona upravená, vrácení na #32 ho poslalo na testovací adresu — obsah
+neviděn).
