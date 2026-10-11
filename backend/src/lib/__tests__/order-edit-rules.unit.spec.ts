@@ -86,10 +86,11 @@ describe("validateEditActions — zákony úpravy", () => {
     expect(result.ok).toBe(false)
   })
 
-  it("swap only to a variant of the same product", () => {
-    const lines = [line("a", false, { variant_ids: ["v1", "v2"] })]
+  it("swap to another variant OR another product (§3d.10); not to itself", () => {
+    const lines = [line("a", false, { variant_ids: ["v1", "v2"], variant_id: "v1" })]
     expect(validateEditActions(lines, [{ type: "swap", item_id: "a", variant_id: "v2" }]).ok).toBe(true)
-    expect(validateEditActions(lines, [{ type: "swap", item_id: "a", variant_id: "other" }]).ok).toBe(false)
+    expect(validateEditActions(lines, [{ type: "swap", item_id: "a", variant_id: "other_product_v" }]).ok).toBe(true)
+    expect(validateEditActions(lines, [{ type: "swap", item_id: "a", variant_id: "v1" }]).ok).toBe(false)
   })
 
   it("swap_only (zabaleno): nothing but swaps", () => {

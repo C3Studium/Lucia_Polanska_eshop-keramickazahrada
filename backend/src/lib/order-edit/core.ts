@@ -41,6 +41,7 @@ import {
 import { LINE_QUANTITY_FIELDS, lineQuantityOf, toNumber } from "../order-quantity"
 import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
+import { sendOrderEditedEmail } from "./customer-email"
 import { createEditRefundRequest } from "./edit-refund-claim"
 import { recordCustomerEdit } from "./log"
 import {
@@ -596,6 +597,7 @@ export const runCustomerEdit = async (
       is_made_to_order: line.lock === "made_to_order",
       lock: line.lock,
       variant_ids: line.siblings.map((variant) => variant.id),
+      variant_id: line.item.variant_id ?? null,
     })),
     actions,
     { mode, confirmedEdits: counts.confirmed }
@@ -604,12 +606,25 @@ export const runCustomerEdit = async (
     throw notAllowed(verdict.reason)
   }
 
-  // Cíle přidání: pravidla produktu (zakázka, balíček, poškozený kus,
-  // dobírka) a sklad. Výměna jde jen na variantu téhož výrobku — ten už
-  // v objednávce je, stačí sklad.
-  const addActions = actions.filter((a): a is Extract<EditAction, { type: "add" }> => a.type === "add")
-  const addVariants = await loadVariants(container, order, { id: addActions.map((a) => a.variant_id) })
-  if (addVariants.length !== new Set(addActions.map((a) => a.variant_id)).size) {
+  // Cíle přidání a výměny za JINÝ výrobek (§3d.10): pravidla produktu
+  // (zakázka, balíček, poškozený kus, dobírka) a sklad. Výměna za variantu
+  // téhož výrobku ta pravidla nepotřebuje — výrobek už v objednávce je.
+  const siblingIds = new Map(
+    lines.map((line) => [line.item.id, new Set(line.siblings.map((variant) => variant.id))])
+  )
+  const targetIds = [
+    ...new Set(
+      actions.flatMap((action) =>
+        action.type === "add"
+          ? [action.variant_id]
+          : action.type === "swap" && !siblingIds.get(action.item_id)?.has(action.variant_id)
+            ? [action.variant_id]
+            : []
+      )
+    ),
+  ]
+  const addVariants = await loadVariants(container, order, { id: targetIds })
+  if (addVariants.length !== targetIds.length) {
     throw notAllowed("Vybraný výrobek už v obchodě není.")
   }
   const addProfiles = await productionProductIds(
@@ -845,6 +860,16 @@ export const runCustomerEdit = async (
       resource: { id: order.id, type: "order" },
     }).catch(() => undefined)
 
+    // Potvrzení zákazníkovi (§3d.11) — s tou samou větou o penězích, jakou
+    // viděl v souhrnu.
+    await sendOrderEditedEmail(container, order.id, {
+      changeId,
+      difference,
+      moneySentence: summary.money_sentence,
+    }).catch((error) =>
+      logger.warn(`[úprava] E-mail o úpravě #${order.display_id} neodešel: ${error?.message}`)
+    )
+
     return {
       status: "confirmed",
       preview: summary,
@@ -884,27 +909,57 @@ export type EditCatalog = {
   can_add: boolean
   reason: string | null
   payment: PaymentKind
+  /** `add` = přidat kus, `swap` = náhrada za konkrétní řádek (§3d.10). */
+  purpose: "add" | "swap"
+  /** Výměna po zabalení — jen výrobky ve stejné ceně. */
+  same_price_only: boolean
+  item: { id: string; title: string; quantity: number; unit_price: number } | null
   allowed: Record<string, string[]>
 }
 
 /**
- * Co jde do objednávky přidat (§3c.2): publikované produkty prodejního kanálu
- * objednávky bez zakázky, balíčků a poškozených kusů; varianty jen skladem
- * (nebo s backorderem); u dobírky jen `cod_allowed`. Storefront produkty
- * načte běžným výpisem a ukáže jen tyhle — server je soudce i při uložení.
+ * Co jde do objednávky přidat (§3c.2), nebo čím jde nahradit řádek
+ * (`swapItemId`, §3d.10): publikované produkty prodejního kanálu objednávky
+ * bez zakázky, balíčků a poškozených kusů; varianty jen skladem (nebo
+ * s backorderem); u dobírky jen `cod_allowed`. Výměna: bez vlastní varianty
+ * řádku, skladem aspoň na počet kusů řádku, po zabalení jen stejná cena.
+ * Storefront produkty načte běžným výpisem a ukáže jen tyhle — server je
+ * soudce i při uložení.
  */
 export const buildEditCatalog = async (
   container: MedusaContainer,
-  order: any
+  order: any,
+  options: { swapItemId?: string | null } = {}
 ): Promise<EditCatalog> => {
   const context = await buildEditContext(container, order)
-  if (!context.can_add) {
-    return {
-      can_add: false,
-      reason: context.reason ?? "Přidávat jde jen do doby, než objednávku začneme balit.",
-      payment: context.payment,
-      allowed: {},
+  const purpose: EditCatalog["purpose"] = options.swapItemId ? "swap" : "add"
+  const swapItem =
+    purpose === "swap" ? context.items.find((item) => item.id === options.swapItemId) ?? null : null
+  const sameOnly = purpose === "swap" && context.mode === "swap_only"
+  const base = {
+    payment: context.payment,
+    purpose,
+    same_price_only: sameOnly,
+    item: swapItem
+      ? {
+          id: swapItem.id,
+          title: swapItem.title,
+          quantity: swapItem.quantity,
+          unit_price: swapItem.unit_price,
+        }
+      : null,
+  }
+  const closed = (reason: string): EditCatalog => ({ ...base, can_add: false, reason, allowed: {} })
+
+  if (purpose === "add" && !context.can_add) {
+    return closed(context.reason ?? "Přidávat jde jen do doby, než objednávku začneme balit.")
+  }
+  if (purpose === "swap") {
+    if (!swapItem) return closed("Položka v objednávce není.")
+    if (!context.editable || !context.items_editable || context.mode === "none") {
+      return closed(context.reason ?? "Objednávku už upravit nejde.")
     }
+    if (swapItem.lock) return closed(swapItem.lock_reason ?? "Tuhle položku vyměnit nejde.")
   }
 
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
@@ -927,25 +982,33 @@ export const buildEditCatalog = async (
         payment: context.payment,
       })
   )
-  const variants: VariantInfo[] = eligible.flatMap((product) =>
-    ((product?.variants ?? []) as any[]).map((variant) => ({
-      id: variant.id,
-      product_id: product.id,
-      title: null,
-      manage_inventory: variant.manage_inventory !== false,
-      allow_backorder: Boolean(variant.allow_backorder),
-      price: null,
-      product_metadata: product.metadata ?? null,
-    }))
-  )
+  // Ceny jen tam, kde rozhodují (výměna po zabalení) — jinak stačí sklad.
+  const variants: VariantInfo[] = sameOnly
+    ? await loadVariants(container, order, { product_id: eligible.map((product) => product.id) })
+    : eligible.flatMap((product) =>
+        ((product?.variants ?? []) as any[]).map((variant) => ({
+          id: variant.id,
+          product_id: product.id,
+          title: null,
+          manage_inventory: variant.manage_inventory !== false,
+          allow_backorder: Boolean(variant.allow_backorder),
+          price: null,
+          product_metadata: product.metadata ?? null,
+        }))
+      )
   const stock = await availabilityOf(container, order, variants)
+  const need = swapItem ? Math.max(1, swapItem.quantity) : 1
 
   const allowed: Record<string, string[]> = {}
   for (const variant of variants) {
+    if (swapItem && variant.id === swapItem.variant_id) continue
+    if (sameOnly && (variant.price === null || Math.abs(variant.price - (swapItem?.unit_price ?? 0)) > 0.005)) {
+      continue
+    }
     const free = stock.get(variant.id)
-    if (free === null || free === undefined || free > 0) {
+    if (free === null || free === undefined || free >= need) {
       ;(allowed[variant.product_id] ??= []).push(variant.id)
     }
   }
-  return { can_add: true, reason: null, payment: context.payment, allowed }
+  return { ...base, can_add: true, reason: null, allowed }
 }

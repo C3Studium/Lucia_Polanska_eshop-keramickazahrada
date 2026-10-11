@@ -34,9 +34,13 @@ export type OrderLineInfo = {
   is_made_to_order: boolean
   /** Zámek řádku; `is_made_to_order` stačí i bez něj (starší volající). */
   lock?: LineLock | null
-  /** Varianty téhož produktu — výměna smí jen na ně. Bez pole se nekontroluje. */
+  /** Varianty téhož produktu (pro UI výměny); výměna smí i na jiný výrobek. */
   variant_ids?: string[] | null
+  /** Aktuální varianta řádku — výměna sama za sebe nic nemění. */
+  variant_id?: string | null
 }
+
+const lineVariantOf = (line: OrderLineInfo): string | null => line.variant_id ?? null
 
 export type PaymentKind = "card" | "pickup" | "dobirka"
 
@@ -163,12 +167,11 @@ export const validateEditActions = (
       }
     }
 
-    if (action.type === "swap" && line.variant_ids && !line.variant_ids.includes(action.variant_id)) {
-      return {
-        ok: false,
-        reason: "Vyměnit jde jen za jinou variantu téhož výrobku — jiný kus přidejte zvlášť.",
-      }
+    if (action.type === "swap" && action.variant_id === lineVariantOf(line)) {
+      return { ok: false, reason: "Tohle je stejné provedení — není co měnit." }
     }
+    // Výměna za JINÝ výrobek je povolená (§3d.10): cíl kontroluje jádro stejně
+    // jako přidání (addTargetProblem + sklad), po zabalení jen stejná cena.
   }
 
   // Úprava ≠ zrušení: kolik kusů po akcích zbyde (zamčené řádky zůstávají).

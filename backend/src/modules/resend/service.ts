@@ -29,6 +29,7 @@ import { OrderCancelledEmail } from "./emails/order-cancelled";
 import { OrderProcessingEmail } from "./emails/order-processing";
 import { OrderPreparingEmail } from "./emails/order-preparing";
 import { OrderReadyEmail } from "./emails/order-ready";
+import { OrderEditedEmail } from "./emails/order-edited";
 import { CommissionCompletedEmail } from "./emails/commission-completed";
 import { OrderRefundedEmail } from "./emails/order-refunded";
 import { OrderReviewEmail } from "./emails/order-review";
@@ -92,6 +93,7 @@ enum Templates {
   ORDER_PREPARING = "order-preparing",
   // „Objednávka je připravená k odeslání" — mezikrok u běžného zboží.
   ORDER_READY = "order-ready",
+  ORDER_EDITED = "order-edited",
   // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
   COMMISSION_COMPLETED = "commission-completed",
   ORDER_REFUNDED = "order-refunded",
@@ -177,6 +179,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_PROCESSING]: OrderProcessingEmail,
   [Templates.ORDER_PREPARING]: OrderPreparingEmail,
   [Templates.ORDER_READY]: OrderReadyEmail,
+  [Templates.ORDER_EDITED]: OrderEditedEmail,
   [Templates.COMMISSION_COMPLETED]: CommissionCompletedEmail,
   [Templates.ORDER_REFUNDED]: OrderRefundedEmail,
   [Templates.ORDER_REVIEW]: OrderReviewEmail,
@@ -230,6 +233,7 @@ export enum EmailTemplates {
   ORDER_PREPARING = "order-preparing",
   // „Objednávka je připravená k odeslání" — mezikrok u běžného zboží.
   ORDER_READY = "order-ready",
+  ORDER_EDITED = "order-edited",
   // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
   COMMISSION_COMPLETED = "commission-completed",
   ORDER_REFUNDED = "order-refunded",
@@ -403,6 +407,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Zadání potvrzeno — začínáme"
       case Templates.ORDER_PREPARING:
         return "Vaši objednávku připravujeme"
+      case Templates.ORDER_EDITED:
+        return "Objednávka upravena"
       case Templates.ORDER_READY:
         return "Objednávka je připravená k odeslání"
       case Templates.COMMISSION_COMPLETED:

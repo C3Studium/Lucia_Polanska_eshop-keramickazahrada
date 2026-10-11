@@ -71,6 +71,7 @@ const templateLabels: Record<string, string> = {
   "commission-message": "Zpráva k zakázce",
   "order-preparing": "Připravujeme",
   "order-ready": "Připraveno k odeslání",
+  "order-edited": "Objednávka upravena",
   "commission-completed": "Zakázka hotová",
   "refund-request": "Žádost přijata (reklamace / vrácení)",
   "return-approved": "Žádost schválena",

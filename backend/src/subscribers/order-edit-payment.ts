@@ -2,6 +2,8 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { confirmOrderEditRequestWorkflow } from "@medusajs/medusa/core-flows"
 import { notifyMerchant } from "../lib/notify"
+import { formatMoney } from "../lib/customer-email"
+import { sendOrderEditedEmail } from "../lib/order-edit/customer-email"
 import { recordCustomerEdit } from "../lib/order-edit/log"
 
 /**
@@ -87,6 +89,15 @@ export default async function orderEditPaymentHandler({
     email: true,
     resource: { id: orderId, type: "order" },
   }).catch(() => {})
+
+  // Potvrzení zákazníkovi „Objednávka upravena" (§3d.11) — až teď, kdy úprava
+  // platí. Klíč na změnu, takže opakovaný webhook nepošle dvakrát.
+  const difference = Number(sessionData.edit_difference) || 0
+  await sendOrderEditedEmail(container, orderId, {
+    changeId,
+    difference,
+    moneySentence: `Rozdíl ${formatMoney(difference, "czk")} jste zaplatili kartou — úprava platí.`,
+  }).catch(() => undefined)
 }
 
 export const config: SubscriberConfig = {
