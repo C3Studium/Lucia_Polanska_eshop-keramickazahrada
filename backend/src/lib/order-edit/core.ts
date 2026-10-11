@@ -16,6 +16,7 @@ import {
   createPaymentSessionsWorkflow,
   orderEditAddNewItemWorkflow,
   orderEditUpdateItemQuantityWorkflow,
+  updateOrderChangeWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { paymentUrlFromSession } from "../balance-payment"
 import { isDobirkaFeeLine } from "../dobirka-fee"
@@ -540,6 +541,23 @@ const promoCodesOf = (order: any): string[] =>
 const adjustmentSum = (item: any): number =>
   ((item?.adjustments ?? []) as any[]).reduce((sum, adjustment) => sum + toNumber(adjustment?.amount), 0)
 
+/**
+ * Ztratil některý řádek, na který úprava nesáhla, slevu? (Přepočet se
+ * zhoršeným kódem — viz pojistka v `runCustomerEdit`.)
+ */
+const lostDiscountOnUntouched = (order: any, preview: any, actions: EditAction[]): boolean => {
+  const touched = new Set(
+    actions.flatMap((action) => (action.type === "add" ? [] : [action.item_id]))
+  )
+  const previewById = new Map(((preview?.items ?? []) as any[]).map((item) => [item?.id, item]))
+  return ((order.items ?? []) as any[]).some((item) => {
+    if (touched.has(item.id)) return false
+    const before = adjustmentSum(item)
+    if (!(before > 0.005)) return false
+    return adjustmentSum(previewById.get(item.id)) < before - 0.01
+  })
+}
+
 const promoNoteFor = (order: any, preview: any, actions: EditAction[]): string | null => {
   const codes = promoCodesOf(order)
   if (!codes.length) return null
@@ -575,7 +593,12 @@ export const runCustomerEdit = async (
   container: MedusaContainer,
   order: any,
   actions: EditAction[],
-  options: { dryRun: boolean; requestedBy?: string | null }
+  options: {
+    dryRun: boolean
+    requestedBy?: string | null
+    /** Přepočítat slevu z kódu na finální objednávku (výchozí ano). */
+    carryPromotions?: boolean
+  }
 ): Promise<EditRunResult> => {
   const [{ mode, reason: gateReason }, counts] = await Promise.all([
     editabilityMode(container, order),
@@ -707,6 +730,33 @@ export const runCustomerEdit = async (
       .catch(() => undefined)
   }
 
+  /*
+   * Sleva z kódu na FINÁLNÍ objednávku (Matěj, 11. 10. 2026): bez toho Medusa
+   * v úpravě slevu nepřepočítá — doplněné kusy byly za plnou cenu a odebraný
+   * kus se vracel za plnou cenu, i když zákazník zaplatil po slevě (změřeno
+   * na #41/#43). Příznak `carry_over_promotions` na změně zapne přepočet
+   * (`computeAdjustmentsForPreviewWorkflow` v každé akci úpravy) na všechny
+   * řádky. Když kód přepočet nesnese (nevhodná alokace), jede se bez něj.
+   */
+  const carryPromotions = options.carryPromotions !== false && promoCodesOf(order).length > 0
+  let carried = false
+  if (carryPromotions) {
+    try {
+      await updateOrderChangeWorkflow(container).run({
+        input: { id: changeId, carry_over_promotions: true } as never,
+      })
+      carried = true
+    } catch (error) {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `[úprava] Slevu #${order.display_id} nejde přepočítat na úpravu (${
+            error instanceof Error ? error.message : "?"
+          }) — úprava bez přepočtu.`
+        )
+    }
+  }
+
   try {
     // Výchozí součty z téže výpočetní cesty (náhled bez akcí) — „bylo" a
     // „bude" se tak počítají stejně a rozdíl nemůže vzniknout jen z toho,
@@ -743,6 +793,19 @@ export const runCustomerEdit = async (
     }
 
     let preview = await orderModule.previewOrderChange(order.id)
+
+    /*
+     * Pojistka: přepočet slevy nesmí zákazníkovi slevu SEBRAT. Když kód mezitím
+     * přestal platit (vypršel, vyčerpal se), přepočet by z nezměněných řádků
+     * slevu odstranil a úprava by zdražila i to, na co zákazník nesáhl. Pak
+     * úpravu zahodíme a spustíme znovu bez přepočtu — doplněné kusy půjdou za
+     * běžnou cenu a souhrn to řekne (promo_note).
+     */
+    if (carried && lostDiscountOnUntouched(order, preview, actions)) {
+      await discard()
+      return runCustomerEdit(container, order, actions, { ...options, carryPromotions: false })
+    }
+
     if (await applyShippingRecalculation(container, order, changeId, totalsOf(preview).item_total)) {
       preview = await orderModule.previewOrderChange(order.id)
     }

@@ -93,3 +93,11 @@ export const resolveBalikovnaPointSubtype = async (
 
 export const DOBIRKA_BOX_MESSAGE =
   "Do boxu nejde poslat zásilku na dobírku — v boxu se dobírka platí jen předem kartou online. Vyberte prosím výdejnu na poště nebo u partnera, nebo zaplaťte kartou."
+
+/**
+ * Balíkovna obecně (11. 10. 2026): dobírka jen na adresu, na žádnou výdejnu
+ * (validate-dobirka hook). Zpráva pro zákazníka, kdyby se k dokončení košíku
+ * dostala dobírka s Balíkovnou (starý košík, ručně složený požadavek).
+ */
+export const DOBIRKA_PICKUP_POINT_MESSAGE =
+  "Na výdejní místo Balíkovny posíláme jen s platbou předem kartou — dobírka jde jen při doručení na adresu. Zvolte prosím platbu kartou, nebo doručení na adresu."
