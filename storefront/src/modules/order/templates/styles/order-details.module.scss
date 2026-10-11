@@ -132,6 +132,55 @@
   color: rgb(var(--cream-06-rgb) / .5);
 }
 
+/* Vstup do úpravy objednávky v tmavém souhrnu — věta a krémová pilulka,
+   oddělené od součtů stejnou vlasovou linkou, jakou souhrn používá. */
+.accountOrderEdit {
+  display: grid;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid rgb(var(--cream-06-rgb) / .2);
+
+  p {
+    margin: 0;
+    color: rgb(var(--cream-06-rgb) / .78);
+    font: 300 calc(var(--account-zoom, 1) * clamp(.9rem, .95vw, 1rem))/1.5 "Sansation-Light", sans-serif;
+  }
+}
+
+.accountOrderEditLink {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: .75rem;
+  min-height: 46px;
+  padding: 0 .4rem 0 1.2rem;
+  border: 1px solid var(--cream-06);
+  border-radius: 999px;
+  background: var(--cream-06);
+  color: var(--ink-05);
+  font: 400 calc(var(--account-zoom, 1) * clamp(.9rem, .95vw, 1rem))/1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  transition: background-color .3s ease, color .3s ease;
+
+  i {
+    display: grid;
+    width: 1.9rem;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ink-05);
+    color: var(--cream-06);
+    font-style: normal;
+  }
+}
+
+@include fine-pointer {
+  .accountOrderEditLink:hover {
+    background: transparent;
+    color: var(--cream-06);
+  }
+}
+
 @container account-order (max-width: 980px) {
   .accountOrderDetailsLayout {
     grid-template-columns: 1fr;

@@ -3,7 +3,6 @@ import { getOrderClaims } from "@lib/data/claims"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
 import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
-import OrderEdit from "@modules/order/components/order-edit"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import { Metadata } from "next"
@@ -35,7 +34,17 @@ export default async function OrderDetailPage(props: Props) {
     notFound()
   }
 
+  /* Úprava objednávky má vlastní stránku (`/order/:id/edit`, stejná jako
+     z e-mailu); tady se jen nabídne odkaz, když je co upravit nebo dokončit.
+     Stránka úpravy si za přihlášeného token vyzvedne sama. */
   const editContext = await getOrderEditContext(order.id)
+  const edit =
+    editContext && (editContext.editable || editContext.pending_change)
+      ? {
+          mode: editContext.mode,
+          pending: Boolean(editContext.pending_change),
+        }
+      : null
   // Načítá se tady, protože tahle stránka je serverová — šablona pod ní
   // je klientská a datová vrstva `server-only`.
   const claimForm = await getSiteDocument(CLAIM_FORM_KEY)
@@ -52,16 +61,14 @@ export default async function OrderDetailPage(props: Props) {
     : null
 
   return (
-    <>
-      {editContext && <OrderEdit orderId={order.id} context={editContext} />}
-      <OrderDetailsTemplate
-        order={order}
-        claimForm={claimForm}
-        commissionNotes={commissionNotes}
-        commissionBalance={commissionBalance}
-        selfServiceToken={selfServiceToken}
-        claims={claims}
-      />
-    </>
+    <OrderDetailsTemplate
+      order={order}
+      claimForm={claimForm}
+      commissionNotes={commissionNotes}
+      commissionBalance={commissionBalance}
+      selfServiceToken={selfServiceToken}
+      claims={claims}
+      edit={edit}
+    />
   )
 }

@@ -10,6 +10,7 @@ import { isCarrierShippingMethod } from "@lib/util/carrier"
 import RefundRequest from "@modules/order/components/refund-request"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { OrderClaims } from "@lib/util/claims"
+import type { OrderEditMode } from "@lib/data/order-edit"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
@@ -42,6 +43,11 @@ type OrderDetailsTemplateProps = {
   selfServiceToken?: string | null
   /** Stav žádostí + zda jde odstoupit (ze serveru, tímtéž tokenem). */
   claims?: OrderClaims | null
+  /**
+   * Odkaz na úpravu objednávky (`/order/:id/edit`) — jen když jde něco
+   * upravit (`mode`) nebo dokončit čekající změnu (`pending`). `null` = nic.
+   */
+  edit?: { mode: OrderEditMode; pending: boolean } | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
@@ -51,6 +57,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   commissionBalance = null,
   selfServiceToken = null,
   claims = null,
+  edit = null,
 }) => {
   return (
     <AccountPageReveal
@@ -105,6 +112,26 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <aside className={s.accountOrderDetailsAside}>
           <span>04 · souhrn</span>
           <OrderSummary order={order} />
+          {/* Úprava objednávky — vlastní stránka (stejná jako z e-mailu); tady
+              jen věta, co jde, a vstup. */}
+          {edit && (
+            <div className={s.accountOrderEdit}>
+              <p>
+                {edit.pending
+                  ? "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte."
+                  : edit.mode === "swap_only"
+                    ? "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu."
+                    : "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu."}
+              </p>
+              <LocalizedClientLink
+                className={s.accountOrderEditLink}
+                href={`/order/${order.id}/edit`}
+              >
+                <span>{edit.pending ? "Dokončit úpravu" : "Upravit objednávku"}</span>
+                <i aria-hidden="true">↗</i>
+              </LocalizedClientLink>
+            </div>
+          )}
           {/* Doplatek zakázky — „Doplatit", když ještě něco zbývá. */}
           <BalancePayPanel balance={commissionBalance} />
           {/* Konverzace s ateliérem — jen u zakázky; stejný popup komponent jako

@@ -1,147 +1,893 @@
 @use "../../../../styles/system/_shortcuts.scss" as *;
 
 /*
-  Order edit panel — every size is a clamp, no media query.
-  Axis rule: horizontal + type on vw, vertical (padding, gaps, heights) on vh.
-  Floors and ceilings in rem so the >=1921 root ramp lifts them by itself.
-  px survives only where the thing is physical: 1px hairline, 999px pill shape.
-  The low laptop (1280x720 / 1366x768) is handled by the vh members below —
-  there is deliberately no lt rule in this file.
+  Úprava objednávky — stejný vizuální jazyk jako reklamace (claim-status,
+  refund-request): vlasová linka, rádius 0.75rem, krémový podklad, Sansation na
+  text, Sentient na nadpisy; olivová = změna / hotovo, hlína = pozor / dráž.
+
+  Psáno od nejmenšího: základ JE telefon (karty pod sebou), kontejnerový dotaz
+  `order-edit` přepíná na tabulku, až je na ni místo. Kontejner, ne viewport:
+  editor stojí ve sloupci stavové stránky, jehož šířka se s oknem mění jinak
+  než okno samo (na 1280 má ~39rem, na 1024 na šířku ~31rem).
+
+  Bez horizontálního scrollu: každý sloupec mřížky je `minmax(0, …)` nebo
+  pevný, texty se lámou (`overflow-wrap: anywhere`), dlaždice variant jedou
+  přes `auto-fill` s `min(100%, …)`. Okraj 16px dává stránce shell.
 */
 
+.root {
+  container: order-edit / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  color: var(--ink-05);
+  text-align: left;
+}
+
+/* ── Stavová lišta ────────────────────────────────────────────────────────
+   Jedna věta, co teď jde: otevřeno (olivově), zabaleno (inkoustem), konec
+   (hlínou). Vpravo kolik úprav zbývá — limit je 3 potvrzené. */
+.status {
+  --tone: var(--olive-07);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid var(--tone);
+  border-radius: 0.5rem;
+  background: rgb(var(--olive-07-rgb) / 0.07);
+
+  &[data-tone="packed"] {
+    --tone: var(--ink-05);
+    background: rgb(var(--ink-05-rgb) / 0.05);
+  }
+
+  &[data-tone="closed"] {
+    --tone: var(--clay-06);
+    background: rgb(var(--clay-06-rgb) / 0.07);
+  }
+}
+
+.statusText {
+  flex: 1 1 14rem;
+  margin: 0;
+  font: 400 clamp(0.95rem, 1.1vw, 1.05rem) / 1.45 "Sansation-Regular", sans-serif;
+}
+
+.statusMeta {
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 400 0.72rem / 1.3 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Oznámení: čeká na zaplacení / přesměrování na platbu ─────────────── */
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.2);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.6);
+
+  &[data-tone="pending"] {
+    border-color: rgb(var(--clay-06-rgb) / 0.45);
+    background: rgb(var(--clay-06-rgb) / 0.06);
+  }
+}
+
+.noticeTitle {
+  margin: 0;
+  font: 400 clamp(1.05rem, 1.3vw, 1.25rem) / 1.25 "Sentient-Regular", "Sentient", serif;
+  letter-spacing: -0.01em;
+}
+
+.noticeText {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.75);
+  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+}
+
+/* ── Sekce (Položky, Přidat, Doručení) ────────────────────────────────────
+   `.box` / `.title` / `.note` patří sekci Doručení (`delivery-section.tsx`) —
+   stejná karta jako ostatní sekce, ať stránka drží jeden tvar. */
+.section,
 .box {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--cream-02);
-  border-radius: clamp(.5rem, .65vw, .75rem);
-  padding: clamp(1rem, 2.2vh, 1.9rem) clamp(1rem, 1.5vw, 2rem);
-  margin: clamp(1rem, 2.4vh, 2.2rem) 0;
-  gap: clamp(.6rem, 1.3vh, 1.2rem);
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.18);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.5);
 }
 
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.sectionTitle,
 .title {
   margin: 0;
-  font-size: calc(var(--account-zoom, 1) * clamp(1.05rem, 1.12vw, 1.45rem));
-  font-weight: 600;
+  font: 400 clamp(1.15rem, 1.4vw, 1.4rem) / 1.2 "Sentient-Regular", "Sentient", serif;
+  letter-spacing: -0.01em;
+}
+
+.sectionMeta {
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 400 0.72rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionLead,
+.note {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.72);
+  font: 300 0.95rem / 1.5 "Sansation-Light", sans-serif;
+  overflow-wrap: anywhere;
+
+  strong {
+    color: var(--ink-05);
+    font-family: "Sansation-Regular", sans-serif;
+    font-weight: 400;
+  }
+}
+
+/* Co ještě doplnit / proč něco nejde — hlínou, bez role=alert: není to chyba
+   serveru, jen vysvětlení zamčeného tlačítka. */
+.hint {
+  margin: 0;
+  color: var(--clay-06);
+  font: 300 0.88rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+/* ── Položky: karty → tabulka ─────────────────────────────────────────────
+   Telefon: náhled | název, provedení | cena, pod tím přes celou šířku
+   stepper vlevo a akce vpravo. Široký kontejner: jeden řádek tabulky
+   náhled | položka | počet | cena | akce; `.controls` se rozpustí
+   (`display: contents`) a jeho dvě části si sednou do vlastních sloupců.
+   Sloupce tabulky jsou pevné, jinak by se pod sebou nezarovnaly. */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tableHead {
+  display: none;
+  grid-template-columns: 3.25rem minmax(0, 1fr) 8.5rem 6rem 7rem;
+  gap: 0 0.75rem;
+  /* Řádek má .75rem odsazení + 1px linku — hlavička stejně, ať sedí sloupce. */
+  padding: 0 calc(0.75rem + 1px);
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 400 0.7rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  span:first-child { grid-column: 1 / 3; }
+  span:nth-child(2) { text-align: center; }
+  span:nth-child(3) { text-align: right; }
 }
 
 .row {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "thumb info price"
+    "controls controls controls";
+  align-items: start;
+  gap: 0.6rem 0.75rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.14);
+  border-radius: 0.65rem;
+  background: rgb(var(--white-rgb) / 0.35);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &[data-state="changed"],
+  &[data-state="added"] {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.07);
+  }
+
+  &[data-state="removed"] {
+    border-style: dashed;
+    background: transparent;
+
+    .thumb,
+    .chips { opacity: 0.45; }
+
+    .name {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+  }
+
+  /* Zamčený řádek šedý — ale důvod ne: ten má být čitelný. */
+  &[data-state="locked"] {
+    background: rgb(var(--ink-05-rgb) / 0.04);
+
+    .thumb,
+    .name,
+    .chips,
+    .price,
+    .qtyStatic { opacity: 0.55; }
+  }
+}
+
+.thumb {
+  grid-area: thumb;
+  width: 3.25rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.info {
+  grid-area: info;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.name {
+  font: 400 clamp(0.92rem, 1.1vw, 1rem) / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font-size: 0.8rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  max-width: 100%;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+  border-radius: 999px;
+  color: var(--ink-05);
+  font: 400 0.78rem / 1.2 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+
+  &[data-tone="new"] {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.08);
+    color: var(--olive-07);
+  }
+}
+
+.chipOld {
+  color: rgb(var(--ink-05-rgb) / 0.5);
+  font: 300 0.78rem / 1.2 "Sansation-Light", sans-serif;
+}
+
+.lockReason {
+  color: rgb(var(--ink-05-rgb) / 0.72);
+  font: 300 0.85rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+.rowNote {
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 300 0.82rem / 1.4 "Sansation-Light", sans-serif;
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-05);
+  cursor: pointer;
+  font: 400 0.85rem / 1.4 "Sansation-Regular", sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* „Vrátit zpět" pod názvem stojí samo — na dotyku dostane plný cíl. Uvnitř
+   věty (důvod zámku) ne: tam by roztáhlo řádek textu. */
+.info > .textButton {
+  @include touch { min-height: 44px; }
+}
+
+.controls {
+  grid-area: controls;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: clamp(.4rem, .55vw, .75rem);
-  padding: clamp(.35rem, .8vh, .7rem) 0;
-  border-bottom: 1px dashed var(--cream-02);
-  font-size: calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem));
-}
-
-.itemInfo {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(.125rem, .3vh, .3rem);
+  gap: 0.5rem 0.75rem;
   min-width: 0;
 }
 
-.struck {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.locked {
-  color: var(--clay-25);
-  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
-}
-
-.controls {
+.qty {
   display: flex;
   align-items: center;
-  gap: clamp(.5rem, .7vw, .95rem);
 }
 
-.select {
-  min-height: clamp(2.25rem, 4.4vh, 2.9rem);
-  padding: clamp(.3rem, .7vh, .55rem) clamp(.5rem, .6vw, .8rem);
-  border: 1px solid var(--cream-02);
-  border-radius: clamp(.35rem, .47vw, .5rem);
-  background: var(--white);
-  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.904vw, 1.05rem));
+.qtyStatic {
+  color: rgb(var(--ink-05-rgb) / 0.75);
+  font: 400 0.9rem / 1.2 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
 }
 
-.linklike {
-  border: 0;
-  background: none;
-  color: var(--blue-01);
-  cursor: pointer;
-  font-size: calc(var(--account-zoom, 1) * clamp(.8rem, 0.856vw, 1rem));
-  text-decoration: underline;
-}
-
-.linklike:disabled {
-  color: var(--clay-34);
-  cursor: not-allowed;
-  text-decoration: none;
-}
-
-.summary {
-  padding-top: clamp(.25rem, .5vh, .45rem);
-  font-size: calc(var(--account-zoom, 1) * clamp(.85rem, 0.904vw, 1.05rem));
-}
-
-.note {
-  margin: 0;
-  color: var(--clay-11);
-  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
-}
-
-.error {
-  margin: 0;
-  color: var(--clay-16);
-  font-size: calc(var(--account-zoom, 1) * clamp(.78rem, 0.832vw, .95rem));
-}
-
+/* Řada tlačítek — v řádku položky i v sekci Doručení (a v patičce jejího
+   popupu s adresou). */
 .actions {
   display: flex;
-  gap: clamp(.5rem, .7vw, .95rem);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* One button size on the whole order-detail page instead of two that never
-   meet (the refund-request form's .submit shares the pill shape). */
+.price {
+  grid-area: price;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  text-align: right;
+  white-space: nowrap;
+
+  strong {
+    font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+  }
+
+  del {
+    color: rgb(var(--ink-05-rgb) / 0.5);
+    font: 300 0.8rem / 1.3 "Sansation-Light", sans-serif;
+  }
+}
+
+.unit {
+  color: rgb(var(--ink-05-rgb) / 0.55);
+  font: 300 0.75rem / 1.3 "Sansation-Light", sans-serif;
+}
+
+@container order-edit (min-width: 36rem) {
+  .section,
+  .box { padding: 1.1rem 1.25rem; }
+
+  .tableHead { display: grid; }
+
+  .row {
+    grid-template-columns: 3.25rem minmax(0, 1fr) 8.5rem 6rem 7rem;
+    grid-template-areas: "thumb info qty price actions";
+    align-items: center;
+  }
+
+  .row .controls { display: contents; }
+  .row .qty {
+    grid-area: qty;
+    justify-content: center;
+  }
+
+  .row .actions {
+    grid-area: actions;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+}
+
+/* − n + — kulatá tlačítka jako ve formuláři reklamace. Na dotyku 44px
+   (globals.scss to u <button> stejně vynutí), myší menší, ať se tabulka vejde. */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  button {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    place-items: center;
+    border: 1px solid rgb(var(--ink-05-rgb) / 0.25);
+    border-radius: 50%;
+    background: rgb(var(--cream-06-rgb) / 0.75);
+    color: var(--ink-05);
+    cursor: pointer;
+    font: 400 1.1rem / 1 "Sansation-Regular", sans-serif;
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+
+    @include touch {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
+  output {
+    min-width: 2rem;
+    font: 400 1rem / 1 "Sansation-Regular", sans-serif;
+    text-align: center;
+  }
+}
+
+@include fine-pointer {
+  .stepper button:hover:not(:disabled) { border-color: var(--ink-05); }
+}
+
+/* Malé tlačítko-pilulka: Vyměnit, Odebrat, Vrátit zpět, Zrušit úpravu. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-05);
+  cursor: pointer;
+  font: 400 0.85rem / 1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
+
+  &[data-tone="quiet"] {
+    border-color: rgb(var(--ink-05-rgb) / 0.22);
+    color: rgb(var(--ink-05-rgb) / 0.8);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  @include touch { min-height: 44px; }
+}
+
+@include fine-pointer {
+  .pill:hover:not(:disabled) {
+    border-color: var(--ink-05);
+    background: rgb(var(--white-rgb) / 0.4);
+  }
+}
+
+/* Vstup do mini obchodu — hlavní tlačítko sekce Přidat. */
+.addLink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 46px;
+  padding: 0 0.45rem 0 1.25rem;
+  border: 1px solid var(--ink-05);
+  border-radius: 999px;
+  background: var(--ink-05);
+  color: var(--cream-06);
+  font: 400 0.95rem / 1 "Sansation-Regular", sans-serif;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  i {
+    display: grid;
+    width: 2rem;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--cream-06);
+    color: var(--ink-05);
+    font-style: normal;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@include fine-pointer {
+  .addLink:hover {
+    background: transparent;
+    color: var(--ink-05);
+  }
+
+  .addLink:hover i {
+    background: var(--ink-05);
+    color: var(--cream-06);
+  }
+}
+
+/* ── Souhrn (sticky) ──────────────────────────────────────────────────────
+   Přilepený ke spodku okna jen když je co ukládat (`data-active`); jinak stojí
+   na svém místě na konci. Sticky funguje proto, že shell stránky ořezává
+   přes `overflow: clip`, ne `hidden` (ten by z něj udělal scrollovací
+   kontejner a lepení by se vztahovalo k němu).
+
+   `--bar-safe` je rezerva shellu pro spodní lištu navigace na telefonu (68px
+   + vzduch); dědí se sem, takže souhrn stojí nad lištou, ne pod ní, a na
+   stopech bez lišty spadne na .75rem. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.2);
+  border-radius: 0.75rem;
+  background: rgb(var(--cream-06-rgb) / 0.92);
+
+  &[data-active] {
+    position: sticky;
+    bottom: max(0.75rem, var(--bar-safe, 0rem));
+    z-index: 5;
+    border-color: rgb(var(--ink-05-rgb) / 0.35);
+    background: var(--cream-06);
+    box-shadow: 0 -0.5rem 1.5rem -1rem rgb(var(--ink-05-rgb) / 0.35);
+  }
+
+  &[data-tone="done"] { border-color: var(--olive-07); }
+}
+
+.summaryTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  margin: 0;
+  transition: opacity 0.2s ease;
+
+  &[data-stale] { opacity: 0.45; }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  dt {
+    color: rgb(var(--ink-05-rgb) / 0.55);
+    font: 400 0.68rem / 1.2 "Sansation-Regular", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font: 400 1rem / 1.25 "Sansation-Regular", sans-serif;
+    white-space: nowrap;
+  }
+
+  div[data-tone="up"] dd { color: var(--clay-06); }
+  div[data-tone="down"] dd { color: var(--olive-07); }
+}
+
+.save {
+  flex: 1 1 11rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--ink-05);
+  border-radius: 999px;
+  background: var(--ink-05);
+  color: var(--cream-06);
+  cursor: pointer;
+  font: 400 1rem / 1.15 "Sansation-Regular", sans-serif;
+  text-align: center;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+@include fine-pointer {
+  .save:hover:not(:disabled) {
+    background: transparent;
+    color: var(--ink-05);
+  }
+}
+
+@container order-edit (min-width: 36rem) {
+  .save { flex: 0 0 auto; }
+}
+
+.summaryNotes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &:empty { display: none; }
+}
+
+.summaryText {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.8);
+  font: 300 0.92rem / 1.5 "Sansation-Light", sans-serif;
+}
+
+.summaryMeta {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.62);
+  font: 300 0.84rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+.summaryError,
+.error {
+  margin: 0;
+  color: var(--clay-06);
+  font: 400 0.92rem / 1.5 "Sansation-Regular", sans-serif;
+}
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.confirmationTitle {
+  margin: 0;
+  color: var(--olive-07);
+  font: 400 clamp(1.05rem, 1.3vw, 1.25rem) / 1.25 "Sentient-Regular", "Sentient", serif;
+}
+
+.confirmationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+/* ── Výměna provedení: bottom-sheet / dialog ──────────────────────────────
+   Portál Headless UI na <body>. Na telefonu zespodu přes celou šířku, od
+   600px dialog uprostřed. z-index jako výběr Balíkovny — nad navigací. */
+.sheetRoot {
+  position: relative;
+  z-index: 1200;
+}
+
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(var(--ink-01-rgb) / 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.sheetFrame {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  @include from-px(600px) {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-height: 85svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 1rem 1rem 0 0;
+  background: var(--cream-06);
+  color: var(--ink-05);
+  box-shadow: 0 -1rem 2.5rem -1.5rem rgb(var(--ink-05-rgb) / 0.5);
+  animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @include from-px(600px) {
+    width: min(36rem, 100%);
+    max-height: min(85svh, 44rem);
+    padding: 1.25rem;
+    border-radius: 1rem;
+    animation-name: sheet-in;
+  }
+
+  @include reduced-motion { animation: none; }
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sheetTitle {
+  margin: 0;
+  font: 400 clamp(1.2rem, 1.5vw, 1.45rem) / 1.2 "Sentient-Regular", "Sentient", serif;
+}
+
+.sheetClose {
+  display: grid;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.2);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-05);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.sheetLead {
+  margin: 0;
+  color: rgb(var(--ink-05-rgb) / 0.72);
+  font: 300 0.92rem / 1.45 "Sansation-Light", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.sheetNote {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid var(--clay-06);
+  border-radius: 0.4rem;
+  background: rgb(var(--clay-06-rgb) / 0.06);
+  font: 300 0.86rem / 1.45 "Sansation-Light", sans-serif;
+}
+
+/* 8.5rem: na 320px telefonu (288px uvnitř) se vejdou dvě dlaždice vedle sebe. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  height: 100%;
+  min-height: 5.25rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.2);
+  border-radius: 0.75rem;
+  background: rgb(var(--white-rgb) / 0.45);
+  color: var(--ink-05);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &[data-chosen] {
+    border-color: var(--olive-07);
+    background: rgb(var(--olive-07-rgb) / 0.09);
+    box-shadow: inset 0 0 0 1px var(--olive-07);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+@include fine-pointer {
+  .tile:hover:not(:disabled) { border-color: var(--ink-05); }
+}
+
+.tileTitle {
+  font: 400 0.95rem / 1.3 "Sansation-Regular", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.tilePrice {
+  color: rgb(var(--ink-05-rgb) / 0.75);
+  font: 300 0.85rem / 1.3 "Sansation-Light", sans-serif;
+}
+
+.tileDiff {
+  margin-top: auto;
+  color: rgb(var(--ink-05-rgb) / 0.6);
+  font: 400 0.78rem / 1.2 "Sansation-Regular", sans-serif;
+  letter-spacing: 0.02em;
+
+  &[data-tone="up"] { color: var(--clay-06); }
+  &[data-tone="down"] { color: var(--olive-07); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Doručení (delivery-section.tsx) ───────────────────────────────────── */
 .primary,
 .secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(2.4rem, 4.8vh, 3.1rem);
-  padding: 0 clamp(1.1rem, 1.5vw, 2rem);
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
   border-radius: 999px;
   cursor: pointer;
-  font-size: calc(var(--account-zoom, 1) * clamp(.9rem, 0.96vw, 1.1rem));
+  font: 400 0.92rem / 1 "Sansation-Regular", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  @include touch { min-height: 44px; }
 }
 
 .primary {
-  border: 0;
-  background: var(--black-04);
-  color: var(--cream-08);
-}
-
-.primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  border: 1px solid var(--ink-05);
+  background: var(--ink-05);
+  color: var(--cream-06);
 }
 
 .secondary {
-  border: 1px solid var(--black-04);
+  border: 1px solid rgb(var(--ink-05-rgb) / 0.45);
   background: none;
+  color: var(--ink-05);
 }
 
-/* ─── Doručení ─────────────────────────────────────────────────────────────
-   Adresa v popupu dvě pole vedle sebe (jméno/příjmení, PSČ/město), adresa a
-   telefon přes celou šířku. Na úzkém panelu se mřížka složí do jednoho sloupce. */
+@include fine-pointer {
+  .primary:hover:not(:disabled) {
+    background: transparent;
+    color: var(--ink-05);
+  }
+
+  .secondary:hover:not(:disabled) { border-color: var(--ink-05); }
+}
+
+/* Adresa v popupu dvě pole vedle sebe (jméno/příjmení, PSČ/město), adresa a
+   telefon přes celou šířku. Na úzkém okně se mřížka složí do jednoho sloupce. */
 .deliveryForm {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(.6rem, 1.3vh, 1.1rem) clamp(.5rem, .7vw, .95rem);
+  gap: clamp(0.6rem, 1.3vh, 1.1rem) clamp(0.5rem, 0.7vw, 0.95rem);
 }
 
 .deliveryFormWide {
@@ -172,7 +918,7 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgb(var(--ink-01-rgb) / .55);
+  background: rgb(var(--ink-01-rgb) / 0.55);
   backdrop-filter: blur(4px);
   cursor: pointer;
 }
@@ -191,8 +937,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .75rem 1rem;
-  border-bottom: 1px solid rgb(var(--black-01-rgb) / .08);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgb(var(--black-01-rgb) / 0.08);
 
   button {
     display: grid;

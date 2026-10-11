@@ -56,7 +56,15 @@
      is under the fixed navbar's 66px bottom edge; 6rem holds the eyebrow rule 30px clear of it.
      The short laptop needs the opposite and gets it on its own axis, in the h(xs) block below. */
   padding: clamp(6rem, 12vh, 9rem) 1rem calc(clamp(2rem, 5vh, 4rem) + var(--bar-safe));
+  /* `clip`, ne `hidden`: ořízne šum a záři stejně, ale NEZALOŽÍ scrollovací
+     kontejner. S `hidden` by se `position: sticky` uvnitř (souhrn úpravy
+     objednávky přilepený ke spodku okna) vztahoval k tomuhle boxu, který se
+     nescrolluje — a nelepil by se vůbec. `hidden` zůstává jako záloha pro
+     prohlížeče bez `clip` (tam se souhrn jen nepřilepí). Flex kontejner si
+     vlastní formátovací kontext zakládá sám, takže okraje potomků se chovají
+     stejně jako dřív. */
   overflow: hidden;
+  overflow: clip;
   color: var(--ink-05);
   background:
     radial-gradient(circle at 76% 43%, color-mix(in srgb, var(--state-accent) 18%, transparent), transparent 30%),

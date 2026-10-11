@@ -1,11 +1,14 @@
 import { getGuestOrderEditContext } from "@lib/data/guest-order-edit"
+import { getOrderEditContext } from "@lib/data/order-edit"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
-import OrderEdit from "@modules/order/components/order-edit"
+import OrderEditor from "@modules/order/components/order-edit"
+import { ORDER_EDIT_CONVERSATION_ID } from "@modules/order/components/order-edit/shared"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
+import { redirect } from "next/navigation"
 
 type Props = {
   params: Promise<{ id: string; countryCode: string }>
@@ -15,13 +18,18 @@ type Props = {
 export const metadata: Metadata = {
   title: "Úprava objednávky",
   description: "Upravte si svou objednávku.",
+  // Stránka s osobním tokenem v adrese — do vyhledávače nepatří.
+  robots: { index: false, follow: false },
 }
 
 /**
- * Úprava objednávky z e-mailového odkazu — BEZ přihlášení, autorizováno
- * podepsaným tokenem (`?token=`). Když token chybí/neplatí, nejde o 404, ale
- * o slušné vysvětlení (odkaz vede z e-mailu, často ho otevře host). Pravidla
- * úprav soudí backend (žádné zakázky, nesmí zbýt prázdno, matice peněz).
+ * Úprava objednávky (plán §3c bod 9) — z e-mailového odkazu i z účtu.
+ *
+ * Jedna cesta pro oba: podepsaný token (`?token=`). Host ho má z e-mailu;
+ * přihlášený zákazník bez tokenu si ho vyzvedne přes `getOrderEditContext`
+ * (pole `access_token`, jen vlastníkovi) a stránka ho na tokenovou adresu
+ * přesměruje — odkaz „Upravit objednávku" v účtu tak nemusí token znát.
+ * Neplatný token = slušné vysvětlení, ne 404.
  */
 export default async function OrderEditPage(props: Props) {
   const [params, searchParams] = await Promise.all([
@@ -29,21 +37,27 @@ export default async function OrderEditPage(props: Props) {
     props.searchParams,
   ])
   const token = searchParams.token
-  const context = token
-    ? await getGuestOrderEditContext(params.id, token)
-    : null
-  // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
-  // takže funguje i hostovi z e-mailu (bez přihlášení).
-  const commissionNotes = await listCommissionNotes(params.id)
-  // Doplatek zakázky (zbývá-li co doplatit) → panel s tlačítkem „Doplatit".
-  const commissionBalance = await getCommissionBalance(params.id)
   // „Moje objednávky" jen přihlášenému (host žádný výpis nemá).
   const customer = await retrieveCustomer().catch(() => null)
   const myOrdersAction = customer
     ? { href: "/account/orders", label: "Moje objednávky" }
     : undefined
 
-  if (!context) {
+  if (!token && customer) {
+    const own = await getOrderEditContext(params.id)
+    if (own?.access_token) {
+      // Mimo try/catch: `redirect` hází řídicí výjimku, kterou Next zachytí sám.
+      redirect(
+        `/${params.countryCode}/order/${params.id}/edit?token=${encodeURIComponent(own.access_token)}`
+      )
+    }
+  }
+
+  const context = token
+    ? await getGuestOrderEditContext(params.id, token)
+    : null
+
+  if (!token || !context) {
     return (
       <OrderStateShell
         eyebrow="Objednávka · úprava"
@@ -56,20 +70,43 @@ export default async function OrderEditPage(props: Props) {
     )
   }
 
+  // `null` = není zakázka → konverzace se nevykreslí. Čte přes publishable key,
+  // takže funguje i hostovi z e-mailu (bez přihlášení).
+  const [commissionNotes, commissionBalance] = await Promise.all([
+    listCommissionNotes(params.id),
+    // Doplatek zakázky (zbývá-li co doplatit) → panel s tlačítkem „Doplatit".
+    getCommissionBalance(params.id),
+  ])
+
+  const description =
+    context.mode === "swap_only"
+      ? "Objednávka je zabalená — vyměnit jde už jen provedení za stejně drahé. Rozdíl ceny i to, co se stane s penězi, uvidíte ještě před uložením."
+      : context.mode === "full" && context.items_editable
+        ? "Změňte počet kusů, vyměňte provedení, odeberte nebo přidejte kus z obchodu. Rozdíl ceny i to, co se stane s penězi, uvidíte ještě před uložením."
+        : "Co se s objednávkou dá ještě udělat, najdete níž. Kdybyste potřebovali víc, napište nám na info@keramickazahrada.cz."
+
   return (
     <OrderStateShell
       eyebrow="Objednávka · úprava"
-      kicker="Úprava objednávky"
+      kicker={`Objednávka #${context.order.display_id}`}
       title="Upravte si objednávku."
       accent="Dokud ji nepošleme."
-      description="Vyměňte variantu nebo odeberte položku — rozdíl ceny uvidíte ještě před uložením. Zakázkové kusy upravujeme po telefonu."
+      description={description}
       status="pending"
       primary={myOrdersAction}
     >
-      <OrderEdit orderId={params.id} context={context} token={token} />
+      <OrderEditor
+        orderId={params.id}
+        token={token}
+        context={context}
+        hasConversation={Boolean(commissionNotes)}
+      />
       <BalancePayPanel balance={commissionBalance} />
       {commissionNotes && (
-        <CommissionConversation orderId={params.id} notes={commissionNotes} />
+        // Obal s id: zamčený zakázkový řádek odsud otevře konverzaci.
+        <div id={ORDER_EDIT_CONVERSATION_ID}>
+          <CommissionConversation orderId={params.id} notes={commissionNotes} />
+        </div>
       )}
     </OrderStateShell>
   )
