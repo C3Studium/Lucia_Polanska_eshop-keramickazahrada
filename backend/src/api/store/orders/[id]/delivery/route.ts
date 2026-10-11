@@ -5,6 +5,12 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { balikovnaShippingAddress } from "../../../../../lib/balikovna-shipping-address"
+import {
+  DOBIRKA_BOX_MESSAGE,
+  isBalikovnaBoxSubtype,
+  resolveBalikovnaPointSubtype,
+} from "../../../../../lib/balikovna-point"
+import { DOBIRKA_PROVIDER_ID } from "../../../../../lib/ship-gate"
 import { notifyMerchant } from "../../../../../lib/notify"
 import { verifyOrderAccessToken } from "../../../../../lib/order-access-link"
 import { editabilityMode } from "../../../../../lib/order-edit-gate"
@@ -38,7 +44,14 @@ type Body = {
   token?: unknown
   kind?: "address" | "balikovna"
   address?: AddressInput
-  point?: { id?: string; zip?: string; name?: string; address?: string }
+  point?: {
+    id?: string
+    zip?: string
+    name?: string
+    address?: string
+    /** Typ výdejny z widgetu (`POSTA` / `PARTNER` / `DEPO` / `BOX`). */
+    subtype?: string
+  }
 }
 
 const fold = (value: string) =>
@@ -69,6 +82,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       "shipping_methods.name",
       "fulfillments.id",
       "fulfillments.canceled_at",
+      // Dobírka do boxu nejde (lib/balikovna-point.ts) — platí i pro změnu výdejny.
+      "payment_collections.payments.provider_id",
+      "payment_collections.payments.canceled_at",
     ],
     filters: { id: req.params.id },
   })
@@ -116,6 +132,26 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       )
     }
     const pointAddress = str(body.point?.address)
+    const pointId = str(body.point?.id)
+
+    // Typ nové výdejny: z widgetu, jinak dohledaný podle id/PSČ. U dobírky do
+    // boxu změnu odmítneme — tam by se platilo jen předem kartou online.
+    const subtype =
+      str(body.point?.subtype).toUpperCase() ||
+      (await resolveBalikovnaPointSubtype({
+        balikovna_point_id: pointId,
+        balikovna_point_zip: zip,
+      })) ||
+      ""
+    const paysByDobirka = ((order.payment_collections ?? []) as any[])
+      .flatMap((collection) => collection?.payments ?? [])
+      .some(
+        (payment: any) =>
+          payment?.provider_id === DOBIRKA_PROVIDER_ID && !payment?.canceled_at
+      )
+    if (paysByDobirka && isBalikovnaBoxSubtype(subtype)) {
+      throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DOBIRKA_BOX_MESSAGE)
+    }
 
     await orderModule.updateOrders([
       {
@@ -131,10 +167,13 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         ),
         metadata: {
           ...metadata,
-          balikovna_point_id: str(body.point?.id) || metadata.balikovna_point_id || "",
+          balikovna_point_id: pointId || metadata.balikovna_point_id || "",
           balikovna_point_zip: zip,
           balikovna_point_name: name,
           balikovna_point_address: pointAddress,
+          // "" = neznámý typ → klíč se smaže (metadata se slučují), ať u nové
+          // výdejny nezůstane typ té staré.
+          balikovna_point_subtype: subtype,
           pickup_address_applied: true,
         },
       },

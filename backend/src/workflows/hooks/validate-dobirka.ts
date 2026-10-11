@@ -4,6 +4,11 @@ import {
   dobirkaFeeCompletionProblem,
   isDobirkaFeeLine,
 } from "../../lib/dobirka-fee"
+import {
+  DOBIRKA_BOX_MESSAGE,
+  isBalikovnaBoxSubtype,
+  resolveBalikovnaPointSubtype,
+} from "../../lib/balikovna-point"
 import { productsHaveMadeToOrder } from "../../lib/made-to-order-detection"
 import { getMerchantSetting } from "../../lib/merchant-settings"
 import { DOBIRKA_PROVIDER_ID, isPayLaterPaymentProvider } from "../../lib/ship-gate"
@@ -34,6 +39,10 @@ completeCartWorkflow.hooks.validate(
         "payment_collection.payment_sessions.provider_id",
         "payment_collection.payment_sessions.status",
         "shipping_methods.shipping_option.provider_id",
+        // Balíkovna do boxu: typ výdejny (metadata) a poznání Balíkovny.
+        "shipping_methods.name",
+        "shipping_methods.data",
+        "metadata",
         "items.product_id",
         // Feeds the fee-line identity (marker + no product behind the line) —
         // a client-forged `dobirka_fee` marker on a variant line stays a
@@ -138,6 +147,32 @@ completeCartWorkflow.hooks.validate(
         MedusaError.Types.NOT_ALLOWED,
         "Dobírka jde jen s dopravou Českou poštou. Zvolte prosím platbu kartou, nebo změňte dopravu."
       )
+    }
+
+    /*
+     * Balíkovna do BOXU: dobírka se tam platí jen předem kartou online, na
+     * místě ne (lib/balikovna-point.ts). Pokladna ji u boxu nenabízí; tohle je
+     * pojistka pro starý košík nebo ručně složený požadavek. Neznámý typ
+     * (API widgetu nedostupné) propouští — nechceme kvůli výpadku ČP zablokovat
+     * každou dobírku; zaloguje se.
+     */
+    const viaBalikovna = (fullCart.shipping_methods ?? []).some(
+      (method: any) =>
+        String(method?.data?.service_code ?? "").toUpperCase() === "NB" ||
+        /bal[ií]kovn/i.test(String(method?.name ?? ""))
+    )
+    if (viaBalikovna) {
+      const subtype = await resolveBalikovnaPointSubtype(fullCart.metadata)
+      if (isBalikovnaBoxSubtype(subtype)) {
+        throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DOBIRKA_BOX_MESSAGE)
+      }
+      if (!subtype) {
+        container
+          .resolve("logger")
+          .warn(
+            `[dobirka] Košík ${cartId}: typ výdejny Balíkovny se nepodařilo zjistit — dobírka propuštěna bez kontroly boxu.`
+          )
+      }
     }
 
     // The fee line is ours, not a product: it has no product_id, but the

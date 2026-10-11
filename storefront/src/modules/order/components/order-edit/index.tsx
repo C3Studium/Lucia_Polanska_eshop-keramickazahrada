@@ -106,6 +106,7 @@ export default function OrderEdit({
         orderId={orderId}
         token={token}
         delivery={context.delivery}
+        paysByDobirka={context.payment === "dobirka"}
       />
     ) : null
 

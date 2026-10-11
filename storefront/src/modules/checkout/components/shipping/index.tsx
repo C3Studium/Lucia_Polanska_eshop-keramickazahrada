@@ -127,6 +127,9 @@ const Shipping: React.FC<ShippingProps> = ({
           balikovna_point_zip: point.zip,
           balikovna_point_name: point.name,
           balikovna_point_address: point.address,
+          // Typ místa — u boxu se dobírka nenabízí (lib/util/balikovna.ts).
+          // "" smaže typ předchozí výdejny (metadata se na serveru slučují).
+          balikovna_point_subtype: point.subtype ?? "",
         },
         cart.id
       )

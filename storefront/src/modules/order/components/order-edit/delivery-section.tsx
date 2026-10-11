@@ -11,6 +11,7 @@ import {
 import {
   BALIKOVNA_WIDGET_ORIGIN,
   BALIKOVNA_WIDGET_URL,
+  BALIKOVNA_WIDGET_URL_NO_BOXES,
   formatBalikovnaPoint,
   parsePickerResult,
   type BalikovnaPoint,
@@ -35,10 +36,16 @@ export default function OrderDeliverySection({
   orderId,
   token,
   delivery,
+  paysByDobirka = false,
 }: {
   orderId: string
   token: string
   delivery: OrderDeliveryContext
+  /**
+   * Objednávka na dobírku: widget se otevře bez boxů — v boxu se dobírka platí
+   * jen předem kartou online (backend změnu na box u dobírky stejně odmítne).
+   */
+  paysByDobirka?: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -251,7 +258,11 @@ export default function OrderDeliverySection({
               </div>
               <iframe
                 title="Výběr místa pro vyzvednutí zásilky"
-                src={BALIKOVNA_WIDGET_URL}
+                src={
+                  paysByDobirka
+                    ? BALIKOVNA_WIDGET_URL_NO_BOXES
+                    : BALIKOVNA_WIDGET_URL
+                }
                 allow="geolocation"
                 className={styles.balikovnaFrame}
               />

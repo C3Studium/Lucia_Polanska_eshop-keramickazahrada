@@ -41,6 +41,8 @@ const Payment = ({
   comgateMethods,
   hasPickupShipping = false,
   allowsDobirka = false,
+  dobirkaAtPickupPoint = false,
+  dobirkaBlockedByBox = false,
   dobirkaFeeCzk = 0,
   productionMode,
 }: {
@@ -51,6 +53,10 @@ const Payment = ({
   hasPickupShipping?: boolean
   /** All three dobírka conditions hold: every piece allows it, ČP carriage, Czech address. */
   allowsDobirka?: boolean
+  /** Balíkovna: dobírka se platí při vyzvednutí na výdejně, ne doručovateli. */
+  dobirkaAtPickupPoint?: boolean
+  /** Dobírka by šla, ale vybraná výdejna je box (platí se tam jen předem online). */
+  dobirkaBlockedByBox?: boolean
   /** Doběrečné from the admin setting — shown next to the tile; 0 hides it. */
   dobirkaFeeCzk?: number
   /** Zakázková výroba: kolik zaplatit teď. Volba se dělá TADY (ne v Přehledu). */
@@ -107,6 +113,12 @@ const Payment = ({
    * Mastercard a další podporované karty" — including pay-on-collection, where no card is
    * involved and the money changes hands in the workshop.
    */
+  // Balíkovna nemá doručovatele — platí se při vyzvednutí na výdejně (na
+  // poště i kartou, u partnera hotově). Do boxu dobírka vůbec nejde.
+  const dobirkaDetail = dobirkaAtPickupPoint
+    ? "Zaplatíte při vyzvednutí na výdejně"
+    : "Zaplatíte doručovateli, až vám zásilku předá"
+
   const extraPaymentOptions = useMemo<ExtraPaymentOption[]>(
     () =>
       nonComgatePaymentMethods.map((provider) => ({
@@ -118,16 +130,18 @@ const Payment = ({
           ? dobirkaFeeCzk > 0
             ? // The surcharge, said up front — the amount comes from the
               // admin setting, never from a constant in this file.
-              `Zaplatíte doručovateli, až vám zásilku předá · + ${dobirkaFeeCzk} Kč doběrečné`
-            : "Zaplatíte doručovateli, až vám zásilku předá"
+              `${dobirkaDetail} · + ${dobirkaFeeCzk} Kč doběrečné`
+            : dobirkaDetail
           : "Zaplatíte v dalším kroku",
         logo: paymentInfoMap[provider.id]?.icon,
       })),
-    [nonComgatePaymentMethods, dobirkaFeeCzk]
+    [nonComgatePaymentMethods, dobirkaFeeCzk, dobirkaDetail]
   )
 
   // Switching away from Osobní odběr must clear a pickup payment already chosen.
   // U zakázky stejně tak smaž už zvolený odběr/dobírku — zálohu platit nemůžou.
+  // Stejně tak dobírka, která už nejde (výdejna změněná na box, jiná země…) —
+  // jinak by zůstala zvolená, i když dlaždice zmizela.
   useEffect(() => {
     const blockedForDeposit =
       depositByCard &&
@@ -135,11 +149,12 @@ const Payment = ({
         isDobirkaPayment(selectedPaymentMethod))
     if (
       (!hasPickupShipping && isPickupPayment(selectedPaymentMethod)) ||
+      (!allowsDobirka && isDobirkaPayment(selectedPaymentMethod)) ||
       blockedForDeposit
     ) {
       setSelectedPaymentMethod("")
     }
-  }, [hasPickupShipping, selectedPaymentMethod, depositByCard])
+  }, [hasPickupShipping, allowsDobirka, selectedPaymentMethod, depositByCard])
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -354,6 +369,14 @@ const Payment = ({
                       ? "Vyberte si způsob platby. V dalším kroku uvidíte celou objednávku a teprve pak budete platit."
                       : "Platit budete bezpečně až v dalším kroku."}
                 </p>
+                {dobirkaBlockedByBox && !depositByCard && (
+                  <p>
+                    Na dobírku to do boxu poslat nejde. V boxu se dobírka platí
+                    jen předem kartou přes odkaz v SMS. Pokud chcete platit až
+                    při vyzvednutí, vyberte v Doručení výdejnu na poště nebo
+                    u partnera.
+                  </p>
+                )}
               </div>
               {/* One grid, not two lists. Osobní odběr's „Zaplatíte při vyzvednutí" joins
                   ComGate's three as the fourth tile — and only when collection is the chosen

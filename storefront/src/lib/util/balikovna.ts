@@ -33,7 +33,28 @@ export type BalikovnaPoint = {
   zip: string
   name: string
   address: string
+  /**
+   * Typ místa z widgetu: `POSTA`, `DEPO`, `PARTNER` (Žabka, Allwyn…) nebo
+   * `BOX` (AlzaBox, OX Point…). U boxu se dobírka platí jen předem kartou
+   * online — proto ji tam nenabízíme (viz `isBalikovnaBox`). Prázdné u
+   * výběrů uložených před 11. 10. 2026.
+   */
+  subtype?: string
 }
+
+/**
+ * Box = samoobslužný box, kde se dobírka NEPLATÍ na místě, jen předem kartou
+ * online přes odkaz v SMS (Balíkovna). `BBOX` je BalíkoBOX — totéž.
+ */
+export const isBalikovnaBox = (subtype: string | null | undefined) =>
+  typeof subtype === "string" && /^b?box$/i.test(subtype.trim())
+
+/**
+ * Widget s vypnutými boxy (`disableBoxes` — parametr widgetu ČP, box pak nejde
+ * vybrat s hláškou „E-shop neumožňuje doručení do boxu"). Pro objednávku, která
+ * už je na dobírku a mění výdejnu.
+ */
+export const BALIKOVNA_WIDGET_URL_NO_BOXES = `${BALIKOVNA_WIDGET_URL}&disableBoxes`
 
 /** postMessage z widgetu → vybrané místo; cokoli jiného vrací null. */
 export const parsePickerResult = (data: unknown): BalikovnaPoint | null => {
@@ -50,6 +71,7 @@ export const parsePickerResult = (data: unknown): BalikovnaPoint | null => {
     zip: String(point.zip),
     name: String(point.name),
     address: point.address != null ? String(point.address) : "",
+    subtype: typeof point.subtype === "string" ? point.subtype.toUpperCase() : "",
   }
 }
 
@@ -72,6 +94,10 @@ export const balikovnaPointFromMetadata = (
     address:
       typeof metadata?.balikovna_point_address === "string"
         ? metadata.balikovna_point_address
+        : "",
+    subtype:
+      typeof metadata?.balikovna_point_subtype === "string"
+        ? metadata.balikovna_point_subtype
         : "",
   }
 }

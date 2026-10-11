@@ -67,6 +67,7 @@ const NEPRENASET = [
   "balikovna_point_zip",
   "balikovna_point_name",
   "balikovna_point_address",
+  "balikovna_point_subtype",
   "terms_accepted_at",
   "terms_version",
 ]
