@@ -537,18 +537,34 @@ const promoCodesOf = (order: any): string[] =>
   ]
 
 /** Nové řádky z náhledu (přidané úpravou) bez slevy → věta pro souhrn. */
+const adjustmentSum = (item: any): number =>
+  ((item?.adjustments ?? []) as any[]).reduce((sum, adjustment) => sum + toNumber(adjustment?.amount), 0)
+
 const promoNoteFor = (order: any, preview: any, actions: EditAction[]): string | null => {
   const codes = promoCodesOf(order)
-  if (!codes.length || !actions.some((action) => action.type === "add" || action.type === "swap")) {
-    return null
-  }
-  const originalIds = new Set(((order.items ?? []) as any[]).map((item) => item.id))
-  const added = ((preview?.items ?? []) as any[]).filter((item) => !originalIds.has(item?.id))
-  const discounted = added.some((item) =>
-    ((item?.adjustments ?? []) as any[]).some((adjustment) => toNumber(adjustment?.amount) > 0)
-  )
-  if (discounted) return null
-  return `Slevový kód ${codes.join(", ")} se na doplněné kusy nevztahuje — jsou za běžnou cenu.`
+  if (!codes.length) return null
+  const originals = new Map(((order.items ?? []) as any[]).map((item) => [item.id, item]))
+  const previewItems = (preview?.items ?? []) as any[]
+
+  // Nové řádky (přidání, výměna) bez slevy.
+  const added = previewItems.filter((item) => !originals.has(item?.id))
+  const addedUndiscounted =
+    added.length > 0 && !added.some((item) => adjustmentSum(item) > 0)
+
+  // Navýšený počet: Medusa slevu na řádku v úpravě nepřepočítá — doplněné
+  // kusy jsou za běžnou cenu (změřeno na #41: 2 ks 54 Kč → 3 ks 84 Kč).
+  const raisedUndiscounted = actions.some((action) => {
+    if (action.type !== "set_quantity") return false
+    const original = originals.get(action.item_id)
+    if (!original || action.quantity <= lineQuantityOf(original)) return false
+    if (!(adjustmentSum(original) > 0)) return false
+    const after = previewItems.find((item) => item?.id === action.item_id)
+    return adjustmentSum(after) <= adjustmentSum(original) + 0.005
+  })
+
+  return addedUndiscounted || raisedUndiscounted
+    ? `Slevový kód ${codes.join(", ")} se na doplněné kusy nevztahuje — jsou za běžnou cenu.`
+    : null
 }
 
 /**

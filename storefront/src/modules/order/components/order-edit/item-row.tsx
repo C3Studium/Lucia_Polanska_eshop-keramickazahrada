@@ -121,7 +121,14 @@ export function EditItemRow({
     : swappedVariant
       ? swappedVariant.price_czk ?? item.unit_price
       : paidUnit
-  const totalNow = removed ? 0 : Math.round(unitNow * quantity)
+  /* Navýšení počtu: doplněné kusy jsou za běžnou cenu — sleva z kódu se
+     v úpravě nepřepočítává (změřeno na #41: 2 ks se slevou 54 Kč + 1 ks =
+     84 Kč, ne 81). Odhad v řádku tak sedí se souhrnem ze serveru. */
+  const totalNow = removed
+    ? 0
+    : !swapped && quantity > item.quantity
+      ? Math.round(item.total + (quantity - item.quantity) * item.unit_price)
+      : Math.round(unitNow * quantity)
 
   const interactive = editable && !locked && !removed
   const allowNew = canStartChange || Boolean(change)
