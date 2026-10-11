@@ -120,3 +120,102 @@ Odhad navíc proti §4: +1 den na režim výběru v obchodě a stránce produktu
 5. Test: karta dráž, karta levněji (dobropis), dobírka, odběr, zabaleno.
 
 Odhad: 2 dny práce agentů + den testů.
+
+## 5. Rozhraní server ↔ storefront (implementace, 11. 10. 2026)
+
+Všechno jede přes **podepsaný token objednávky** (`?token=` / `body.token`),
+stejně jako dnes hostovská úprava. Přihlášený zákazník bez tokenu dostane
+token z `GET /store/orders/:id/edit` (pole `access_token`, jen vlastníkovi) a
+dál jede tokenovou cestou — jedna cesta pro hosta i účet.
+
+### `GET /store/orders/:id/guest-edit?token=` → `OrderEditContext`
+
+```ts
+type OrderEditContext = {
+  editable: boolean               // mode !== "none" && !limit_reached
+  mode: "full" | "swap_only" | "none"
+  swap_only: boolean              // = mode === "swap_only" (zpětná kompatibilita)
+  reason: string | null           // proč nejde (none / limit / čistá zakázka)
+  items_editable: boolean         // false u čisté zakázky (§3c.7)
+  can_add: boolean                // mode === "full" && items_editable
+  payment: "card" | "pickup" | "dobirka"
+  currency_code: string
+  order: { id: string; display_id: number; item_total: number;
+           shipping_total: number; total: number }
+  delivery: OrderDeliveryContext  // beze změny
+  items: Array<{
+    id: string; title: string; product_title: string | null
+    variant_title: string | null; thumbnail: string | null
+    product_id: string | null; product_handle: string | null
+    variant_id: string | null
+    quantity: number; unit_price: number; total: number
+    lock: null | "made_to_order" | "bundle" | "clearance"
+    lock_reason: string | null    // česká věta pro šedý řádek
+    is_made_to_order: boolean     // zpětná kompatibilita
+    max_quantity: number          // strop stepperu (sklad / 99)
+    variants: Array<{ id: string; title: string | null;
+                      price_czk: number | null; available: boolean }>
+  }>
+  pending_change: { id: string; awaiting_payment: boolean } | null
+  edits: { confirmed: number; limit: number; remaining: number }
+}
+```
+
+### `POST /store/orders/:id/guest-edit` body `{ token, actions, dry_run? }`
+
+```ts
+type EditAction =
+  | { type: "swap"; item_id: string; variant_id: string }   // varianta téhož produktu
+  | { type: "remove"; item_id: string }
+  | { type: "set_quantity"; item_id: string; quantity: number } // 1–99
+  | { type: "add"; variant_id: string; quantity: number }       // 1–20
+// max 1 akce na řádek, max 30 akcí
+
+type EditPreview = {
+  item_total_before: number; item_total_after: number
+  shipping_before: number;  shipping_after: number
+  total_before: number;     total_after: number
+  difference: number                       // total_after − total_before
+  settlement: { kind: "none" | "collect" | "refund_due"; amount: number }
+  money_sentence: string                   // co se stane s penězi, česky
+  shipping_note: string | null             // „Poštovné 90 Kč → 0 Kč." / null
+  promo_note: string | null                // „Slevový kód … se na doplněné kusy nevztahuje."
+}
+```
+
+- `dry_run: true` → `{ status: "preview", preview }` — nic se neuloží
+  (úprava se v Meduse založí, spočítá a hned zahodí). UI ho volá s debounce
+  po každé změně; jen jeden požadavek najednou.
+- jinak → `{ status: "awaiting_payment", preview, payment_url, message }`
+  (karta + dráž) nebo `{ status: "confirmed", preview, message,
+  claim_request_id: string | null }` (levněji na kartu → založená žádost).
+- chyba pravidla = HTTP 400/403 s českou `message`.
+
+### `DELETE /store/orders/:id/guest-edit?token=` — zruší čekající změnu.
+
+### `GET /store/orders/:id/guest-edit/catalog?token=` → mini obchod
+
+```ts
+{ can_add: boolean; reason: string | null
+  payment: "card" | "pickup" | "dobirka"
+  allowed: Record<string /* product_id */, string[] /* variant_id */> }
+```
+
+Jen produkty a varianty, které jde přidat: bez zakázky (výrobní profil),
+balíčků, poškozených kusů, vyprodaných bez backorderu; u dobírky jen
+`cod_allowed`. Storefront si produkty načte běžným výpisem a ukáže jen ty
+z `allowed` (server je soudce i při POST).
+
+## Otevřené body (zjištěno při implementaci)
+
+- **Doprava zdarma v pokladně dnes není nastavená.** Žádná doprava nemá
+  cenové pravidlo `item_total` a není ani automatická sleva na dopravu
+  (ověřeno přes admin API 11. 10.): Balíkovna 90 Kč, pošta na adresu 150 Kč
+  vždy. Stránka Doprava a platba přitom slibuje zdarma od 1 000 Kč. Přepočet
+  poštovného v úpravě používá stejná cenová pravidla jako pokladna, takže
+  dnes poštovné zůstane stejné a začne se měnit, až Lucie pravidlo nastaví.
+- **„Vrátit rozdíl" v Objednávky+** zapisuje i zrušení zakázky se zálohou
+  (`made-to-order … actions`). Úprava objednávky ho už nepoužívá; tlačítko
+  zůstává jen pro tyto starší případy.
+- **E-mail zákazníkovi o úpravě** neexistuje (plán §3 to mylně tvrdil);
+  zákazník vidí potvrzení na stránce. Není v kontraktu — k rozhodnutí.
