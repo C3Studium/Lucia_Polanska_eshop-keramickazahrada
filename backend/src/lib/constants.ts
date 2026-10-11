@@ -297,19 +297,21 @@ export const IDOKLAD_NUMERIC_SEQUENCE_ID = process.env.IDOKLAD_NUMERIC_SEQUENCE_
  */
 export const IDOKLAD_TEST_MODE = process.env.IDOKLAD_TEST_MODE
 /**
- * PublicId of the webhook registration in iDoklad (v3 API webhooks).
+ * iDoklad webhooky (hlášení o úhradách faktur → automatické „Peníze přišly"
+ * u dobírky). Dva údaje, oba z Developer portálu (developer.idoklad.cz), kde
+ * se webhook zakládá s cílovou URL `<BACKEND_PUBLIC_URL>/hooks/idoklad`:
  *
- * Register the webhook in iDoklad pointing at
- * `<BACKEND_PUBLIC_URL>/hooks/idoklad` for issued-invoice payment events
- * (EntityType 0 = IssuedInvoice, ActionType 4 = úhrada); the registration's
- * PublicId (GUID) goes here. iDoklad does not sign its deliveries, so this
- * id is the whole proof of origin — the route compares it constant-time and
- * refuses everything else. Unset means the route answers 503 (logged once)
- * and dobírky are paired manually via the admin button only.
+ * - `IDOKLAD_WEBHOOK_SECRET` — secret token webhooku. iDoklad jím podepisuje
+ *   každé doručení (`X-idoklad-signature: sha256=<HMAC>`); je to jediný důkaz
+ *   původu. Bez něj route odpovídá 503 a dobírky se párují jen tlačítkem.
+ * - `IDOKLAD_WEBHOOK_PUBLIC_ID` — PublicId (GUID) webhooku. Potřeba jen
+ *   k přihlášení agendy: `POST /admin/idoklad/webhooks` zavolá
+ *   `POST /v3/Webhooks { PublicId, EntityType: 0, ActionType: 4 }`.
  *
- * The route reads process.env directly (this module asserts DATABASE_URL at
- * import, which unit tests must not inherit); this export documents the var.
+ * Routes read process.env directly (this module asserts DATABASE_URL at
+ * import, which unit tests must not inherit); these exports document the vars.
  */
+export const IDOKLAD_WEBHOOK_SECRET = process.env.IDOKLAD_WEBHOOK_SECRET
 export const IDOKLAD_WEBHOOK_PUBLIC_ID = process.env.IDOKLAD_WEBHOOK_PUBLIC_ID
 
 /**

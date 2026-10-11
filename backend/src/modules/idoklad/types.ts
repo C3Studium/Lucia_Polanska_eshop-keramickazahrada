@@ -182,6 +182,17 @@ export type IdokladIssuedInvoice = {
   [key: string]: unknown
 }
 
+/** Přihlášení agendy k webhooku (`GET/POST /v3/Webhooks`). */
+export type IdokladWebhookSubscription = {
+  Id: number
+  /** PublicId webhooku z Developer portálu. */
+  PublicId: string
+  /** 0 = IssuedInvoice, … (viz lib/idoklad-webhook.ts). */
+  EntityType: number
+  /** 4 = PaymentCreated, … */
+  ActionType: number
+}
+
 /**
  * The `order.metadata.idoklad_*` keys — the single source of truth for
  * idempotency (FINISHINGTODOLIST §1: „nikdy dvakrát").

@@ -11,6 +11,7 @@ import {
   type IdokladOptions,
   type IdokladPagedList,
   type IdokladPaymentOption,
+  type IdokladWebhookSubscription,
 } from "./types"
 import {
   requestIdokladJson,
@@ -229,6 +230,34 @@ export default class IdokladModuleService {
       method: "POST",
       body: modify ? modify(draft) : draft,
     })
+  }
+
+  /**
+   * Přihlášení agendy k webhookům (`/v3/Webhooks`). Webhook samotný (URL +
+   * secret) se zakládá v Developer portálu; tady se jen říká, které události
+   * agenda na jeho PublicId posílá. Viz `lib/idoklad-webhook.ts`.
+   */
+  async listWebhooks(): Promise<IdokladWebhookSubscription[]> {
+    const page = await this.request<IdokladPagedList<IdokladWebhookSubscription>>(
+      "/Webhooks",
+      { query: { pagesize: 100 } }
+    )
+    return page.Items ?? []
+  }
+
+  async createWebhook(input: {
+    PublicId: string
+    EntityType: number
+    ActionType: number
+  }): Promise<IdokladWebhookSubscription> {
+    return this.request<IdokladWebhookSubscription>("/Webhooks", {
+      method: "POST",
+      body: input,
+    })
+  }
+
+  async deleteWebhook(id: number): Promise<void> {
+    await this.request<boolean>(`/Webhooks/${id}`, { method: "DELETE" })
   }
 
   /** Tisk dobropisu jako PDF (API vrací base64 v obálce). */

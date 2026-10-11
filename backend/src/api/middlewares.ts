@@ -389,6 +389,15 @@ export default defineMiddlewares({
       bodyParser: { preserveRawBody: true },
       middlewares: [],
     },
+    // Hlášení o úhradách z iDokladu — podpis `X-idoklad-signature` (HMAC nad
+    // surovým tělem) jde ověřit jen nad původními bajty, viz
+    // lib/idoklad-webhook.ts.
+    {
+      matcher: "/hooks/idoklad",
+      methods: ["POST"],
+      bodyParser: { preserveRawBody: true },
+      middlewares: [],
+    },
     // Composer drafts (autosave).
     {
       matcher: "/admin/newsletter/drafts",
@@ -429,6 +438,12 @@ export default defineMiddlewares({
     {
       matcher: "/admin/idoklad/orders/:orderId/mark-paid",
       methods: ["POST"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
+    // Napojení webhooku iDokladu (stav, přihlášení agendy, zkušební doručení).
+    {
+      matcher: "/admin/idoklad/webhooks",
+      methods: ["GET", "POST"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },
     // „Peníze přišly (dobírka)" — explicitly authenticated like the other
