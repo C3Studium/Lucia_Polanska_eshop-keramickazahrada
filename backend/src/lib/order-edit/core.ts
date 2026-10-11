@@ -18,6 +18,7 @@ import {
   orderEditUpdateItemQuantityWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { paymentUrlFromSession } from "../balance-payment"
+import { isDobirkaFeeLine } from "../dobirka-fee"
 import { notifyMerchant } from "../notify"
 import { deliveryContext, type OrderDeliveryContext } from "../order-delivery-context"
 import { editabilityMode } from "../order-edit-gate"
@@ -42,6 +43,12 @@ import { MADE_TO_ORDER_MODULE } from "../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../modules/made-to-order/service"
 import { createEditRefundRequest } from "./edit-refund-claim"
 import { recordCustomerEdit } from "./log"
+import {
+  balanceSnapshotOf,
+  cancelEditPaymentCollections,
+  payLaterProviderOf,
+  repairPaymentsAfterEdit,
+} from "./payments"
 
 /**
  * Jádro zákaznické úpravy objednávky — sdílené tokenovou routou
@@ -87,6 +94,9 @@ export const EDIT_ORDER_FIELDS = [
   "shipping_methods.shipping_option.provider_id",
   "payment_collections.id",
   "payment_collections.status",
+  "payment_collections.amount",
+  "payment_collections.captured_amount",
+  "payment_collections.metadata",
   "payment_collections.payments.provider_id",
   "payment_collections.payments.captured_at",
   "payment_collections.payments.canceled_at",
@@ -293,7 +303,10 @@ export type OrderEditContext = {
 
 /** Řádky objednávky se zámky (+ varianty téhož produktu pro výměnu). */
 const describeLines = async (container: MedusaContainer, order: any) => {
-  const items = (order.items ?? []) as any[]
+  // Doběrečné není zboží — patří k platbě, zákazník ho neupravuje ani
+  // neodebírá (změřeno na #39: bez filtru se ukázalo jako běžná položka).
+  // V součtech objednávky zůstává.
+  const items = ((order.items ?? []) as any[]).filter((item) => !isDobirkaFeeLine(item))
   const productIds = [...new Set(items.map((item) => item.product_id).filter(Boolean))] as string[]
   const [profiles, variants] = await Promise.all([
     productionProductIds(container, productIds),
@@ -761,13 +774,37 @@ export const runCustomerEdit = async (
       }
     }
 
+    // Stav plateb PŘED potvrzením — Medusa po něm autorizovanou platbu
+    // (dobírka / odběr) zruší a doplatek zakázky přepočítá (lib/order-edit/payments.ts).
+    const paymentsBefore = {
+      payLaterProvider: payLaterProviderOf(order),
+      balance: balanceSnapshotOf(order),
+    }
+
     await confirmOrderEditRequestWorkflow(container).run({
       input: { order_id: order.id, confirmed_by: options.requestedBy ?? order.customer_id ?? undefined } as never,
     })
 
     // Po potvrzení už nic nesmí shodit odpověď — změna platí. Návazné kroky
-    // (záznam, žádost o vrácení, zvonek) jsou best-effort s logem.
+    // (platby, záznam, žádost o vrácení, zvonek) jsou best-effort s logem.
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+    const repair = await repairPaymentsAfterEdit(container, order.id, paymentsBefore).catch((error) => {
+      logger.error(`[úprava] Platby po úpravě #${order.display_id} se nepodařilo srovnat: ${error?.message}`)
+      return { pay_later: "missing", balance: null } as const
+    })
+    if (paymentsBefore.payLaterProvider && repair.pay_later === "missing") {
+      // Bez platby „při převzetí" by štítek odešel bez dobírky — musí to vědět.
+      await notifyMerchant(container, {
+        key: `customer-edit-payment:${changeId}`,
+        title: `Objednávka #${order.display_id}: po úpravě chybí platba při převzetí`,
+        description:
+          "Zákazník upravil objednávku na dobírku / osobní odběr a platbu se nepodařilo obnovit. Před odesláním zkontrolujte platbu (dobírka by jinak nevznikla).",
+        audience: "owner",
+        email: true,
+        resource: { id: order.id, type: "order" },
+      }).catch(() => undefined)
+    }
     await recordCustomerEdit(container, order.id, {
       change_id: changeId,
       difference,
@@ -815,10 +852,20 @@ export const runCustomerEdit = async (
   }
 }
 
+/**
+ * Zákazník si rozpracovanou (nezaplacenou) úpravu rozmyslel: zrušit změnu
+ * i nezaplacenou kolekci doplatku, ať objednávka nevisí jako nedoplacená.
+ * Jen JEHO úpravu — změnu založenou u nás (admin) nechá být.
+ */
 export const cancelCustomerEdit = async (container: MedusaContainer, orderId: string) => {
+  const counts = await editCounts(container, orderId)
+  if (counts.foreignActive) {
+    return
+  }
   await cancelBeginOrderEditWorkflow(container)
     .run({ input: { order_id: orderId } as never })
     .catch(() => undefined)
+  await cancelEditPaymentCollections(container, orderId, counts.pending?.id ?? null).catch(() => 0)
 }
 
 /* ------------------------------------------------------------------------ */
