@@ -453,6 +453,12 @@ export default defineMiddlewares({
       methods: ["POST"],
       middlewares: [authenticate("user", ["bearer", "session"])],
     },
+    // Odkazy zákaznické samoobsluhy (úprava / reklamace) — jen pro admina.
+    {
+      matcher: "/admin/merchant-orders/:orderId/self-service",
+      methods: ["GET"],
+      middlewares: [authenticate("user", ["bearer", "session"])],
+    },
     {
       matcher: "/store/carts/:id/line-item-bundles",
       methods: ["POST"],
