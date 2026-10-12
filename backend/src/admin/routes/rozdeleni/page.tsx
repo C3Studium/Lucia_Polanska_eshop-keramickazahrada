@@ -958,7 +958,7 @@ const Inner = () => {
               </div>
               {pickerCandidates.length > 0 && (
                 <label className="flex w-fit cursor-pointer items-center gap-2 px-2">
-                  <input type="checkbox"
+                  <input type="checkbox" className="size-5 shrink-0 cursor-pointer"
                     checked={allPickerSelected}
                     onChange={(e) => {
                       const next = new Set(pickerSelected);
@@ -978,7 +978,7 @@ const Inner = () => {
                   .map((product) => (
                     <label key={product.id}
                       className="hover:bg-ui-bg-base-hover flex cursor-pointer items-center gap-2 rounded px-2 py-1.5">
-                      <input type="checkbox"
+                      <input type="checkbox" className="size-5 shrink-0 cursor-pointer"
                         checked={pickerSelected.has(product.id)}
                         onChange={(e) => {
                           const next = new Set(pickerSelected);
@@ -1022,7 +1022,7 @@ const Inner = () => {
           {listedProducts.length > 0 && (
             <div className="flex items-center gap-3 px-4 py-2">
               <label className="flex cursor-pointer items-center gap-3">
-                <input type="checkbox"
+                <input type="checkbox" className="size-5 shrink-0 cursor-pointer"
                   checked={allListedSelected}
                   onChange={(e) => {
                     const next = new Set(selected);
@@ -1072,7 +1072,7 @@ const Inner = () => {
                     </button>
                     <input
                       type="checkbox"
-                      className="absolute left-2 top-2 size-4"
+                      className="absolute left-2 top-2 size-5 shrink-0 cursor-pointer"
                       checked={selected.has(product.id)}
                       onChange={(e) => {
                         const next = new Set(selected);
@@ -1137,7 +1137,7 @@ const Inner = () => {
                     className="flex items-center gap-2 px-4 py-1.5"
                   >
                     <input
-                      type="checkbox"
+                      type="checkbox" className="size-5 shrink-0 cursor-pointer"
                       checked={selected.has(product.id)}
                       onChange={(e) => {
                         const next = new Set(selected);
@@ -1174,7 +1174,7 @@ const Inner = () => {
               return (
             <div key={product.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <input
-                type="checkbox"
+                type="checkbox" className="size-5 shrink-0 cursor-pointer"
                 checked={selected.has(product.id)}
                 onChange={(e) => {
                   const next = new Set(selected);

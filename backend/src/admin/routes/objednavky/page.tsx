@@ -3,7 +3,6 @@ import { DocumentText } from "@medusajs/icons";
 import {
   Badge,
   Button,
-  Checkbox,
   Container,
   Heading,
   Input,
@@ -43,6 +42,7 @@ import { DamageBadge } from "../../components/return-line-items";
 import { otevritStitek, type StitekZasilky } from "../../lib/stitky";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { SelectCheckbox } from "../../components/select-checkbox";
 
 /**
  * Objednávky — the advanced order worklist (admin-advanced-plan.md).
@@ -1389,17 +1389,11 @@ const OrdersInner = () => {
       {active !== "statistiky" && !isClaimTab && !isLoading && !isError && rows.length > 0 && (
         <div className="divide-y">
           <div className="bg-ui-bg-subtle flex items-center gap-3 px-6 py-2">
-            <Checkbox
-              checked={
-                pageAllSelected
-                  ? true
-                  : pageSomeSelected
-                    ? "indeterminate"
-                    : false
-              }
-              onCheckedChange={(checked) =>
-                toggleSelectAllOnPage(checked === true)
-              }
+            <SelectCheckbox
+              checked={pageAllSelected}
+              indeterminate={pageSomeSelected}
+              label="Vybrat vše na stránce"
+              onChange={(checked) => toggleSelectAllOnPage(checked)}
             />
             <Text size="xsmall" weight="plus" className="text-ui-fg-subtle">
               Vybrat vše na stránce
@@ -1437,9 +1431,10 @@ const OrdersInner = () => {
                 className="hover:bg-ui-bg-base-hover focus-visible:shadow-borders-focus grid cursor-pointer gap-3 px-6 py-4 outline-none transition-colors lg:grid-cols-[160px_minmax(0,1.3fr)_170px_190px_minmax(0,1fr)_auto] lg:items-center"
               >
                 <div className="flex items-center gap-3">
-                  <Checkbox
+                  <SelectCheckbox
                     checked={selected.has(order.id)}
-                    onCheckedChange={(checked) => {
+                    label={`Vybrat objednávku #${order.display_id}`}
+                    onChange={(checked) => {
                       const next = new Set(selected);
                       if (checked) {
                         next.add(order.id);

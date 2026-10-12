@@ -44,6 +44,7 @@ import { ProductionProfileEditor } from "../../components/production-profile-edi
 import { formatCzk, productionStageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ShippingProfileEditor } from "../../components/shipping-profile-editor";
+import { SelectCheckbox } from "../../components/select-checkbox";
 import { ArchiveToggle } from "../../components/archive-toggle";
 import { adminQueryClient } from "../../lib/query-client"
 
@@ -324,6 +325,57 @@ const FlagSwitch = ({
   </label>
 );
 
+/**
+ * Balení [cena] v řádku (Matěj 12. 10. 2026: neschovávat do okna). Píše se
+ * jako přepínače do rozpracovaných změn — uloží se Potvrdit / Potvrdit vše.
+ * Prázdné = bez ceny balení (zákazník uvidí „Balné 0,-").
+ */
+const PackagingInput = ({
+  value,
+  dirty,
+  onChange,
+}: {
+  value: number | null;
+  dirty: boolean;
+  onChange: (value: number | null) => void;
+}) => {
+  const [draft, setDraft] = useState(value === null ? "" : String(value));
+  useEffect(() => {
+    setDraft(value === null ? "" : String(value));
+  }, [value]);
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === "") return onChange(null);
+    const parsed = Number(trimmed.replace(",", "."));
+    if (Number.isFinite(parsed) && parsed >= 0) onChange(Math.round(parsed * 100) / 100);
+    else setDraft(value === null ? "" : String(value));
+  };
+  return (
+    <label
+      className="flex items-center gap-1.5"
+      title="Cena balení za kus — zákazník ji uvidí jako „Balné“ pod výrobkem."
+    >
+      <Text size="xsmall" className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}>
+        Balení
+      </Text>
+      <input
+        type="number"
+        min={0}
+        inputMode="decimal"
+        placeholder="0"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+        }}
+        className="border-ui-border-base bg-ui-bg-field txt-compact-xsmall w-16 rounded-md border px-2 py-1 text-right"
+      />
+      <Text size="xsmall" className="text-ui-fg-subtle">Kč</Text>
+    </label>
+  );
+};
+
 const StatsView = () => {
   const { data, isLoading } = useQuery<any>({
     queryKey: ["workbench-product-statistics"],
@@ -529,8 +581,20 @@ const ProductsInner = () => {
      Když je označeno víc produktů checkboxem, flip na označeném řádku
      rozpracuje tutéž hodnotu pro všechny označené. */
   const [pendingFlags, setPendingFlags] = useState<
-    Record<string, { cod_allowed?: boolean; clearance?: boolean; no_promo?: boolean }>
+    Record<
+      string,
+      {
+        cod_allowed?: boolean;
+        clearance?: boolean;
+        no_promo?: boolean;
+        fragile?: boolean;
+        /** Cena balení v Kč; null = smazat (= „Balné 0,-"). */
+        packaging_price?: number | null;
+      }
+    >
   >({});
+  /* Telefon: akce řádku schované pod „…" (na PC jsou vidět vždy). */
+  const [openActions, setOpenActions] = useState<string | null>(null);
 
   /* Deep link z Rozdělení: ?produkt=<id>&druh=<kind> přepne na správnou
      záložku a rovnou řádek rozbalí — rychlé akce bez hledání. Parametry se
@@ -665,13 +729,15 @@ const ProductsInner = () => {
                 : [];
   const rows = applyCatalogFilter(tabRows, catalog);
 
-  type FlagKey = "cod_allowed" | "clearance" | "no_promo";
+  type FlagKey = "cod_allowed" | "clearance" | "no_promo" | "fragile";
   const savedFlag = (product: WorkbenchProduct, key: FlagKey) =>
     key === "cod_allowed"
       ? product.cod_allowed
       : key === "no_promo"
         ? product.no_promo
-        : product.clearance;
+        : key === "fragile"
+          ? product.fragile
+          : product.clearance;
   const effectiveFlag = (product: WorkbenchProduct, key: FlagKey) =>
     pendingFlags[product.id]?.[key] ?? savedFlag(product, key);
 
@@ -702,6 +768,54 @@ const ProductsInner = () => {
       return next;
     });
   };
+
+  /* Balení: zadaná cena se rozpracuje pro řádek — na označeném řádku pro celý
+     výběr (stejně jako přepínače). Prázdné pole = null (balné 0,-). */
+  const savedPackaging = (product: WorkbenchProduct) => product.packaging_price ?? null;
+  const effectivePackaging = (product: WorkbenchProduct): number | null =>
+    pendingFlags[product.id] && "packaging_price" in pendingFlags[product.id]
+      ? (pendingFlags[product.id].packaging_price ?? null)
+      : savedPackaging(product);
+  const stagePackaging = (product: WorkbenchProduct, value: number | null) => {
+    const targets =
+      selected.size > 0 && selected.has(product.id) ? [...selected] : [product.id];
+    setPendingFlags((prev) => {
+      const next = { ...prev };
+      for (const id of targets) {
+        const target = rows.find((row) => row.id === id);
+        if (!target) continue;
+        const entry = { ...(next[id] ?? {}) };
+        if (savedPackaging(target) === value) delete entry.packaging_price;
+        else entry.packaging_price = value;
+        if (Object.keys(entry).length === 0) delete next[id];
+        else next[id] = entry;
+      }
+      return next;
+    });
+  };
+
+  /* Hromadné nastavení z lišty výběru — zapíše se hned všem označeným. */
+  const [bulkPackaging, setBulkPackaging] = useState("");
+  const bulkFlags = useMutation({
+    mutationFn: async (body: Record<string, unknown>) => {
+      for (const id of selected) {
+        await sdk.client.fetch(`/admin/workbench/products/${id}/flags`, {
+          method: "POST",
+          body,
+        });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
+      toast.success(`Nastaveno u ${selected.size} produktů.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Nastavení se nepodařilo."),
+  });
+  const bulkPackagingValue =
+    bulkPackaging.trim() === "" ? null : Number(bulkPackaging.replace(",", "."));
+  const bulkPackagingValid =
+    bulkPackagingValue === null ||
+    (Number.isFinite(bulkPackagingValue) && bulkPackagingValue >= 0);
 
   const applyFlags = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -787,13 +901,14 @@ const ProductsInner = () => {
             )}
           </div>
           {/* Výběr pro hromadné akce — nesmí spustit přechod na detail. */}
-          <input
-            type="checkbox"
-            className="absolute left-2 top-2 size-4"
-            checked={selected.has(product.id)}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => toggleSelected(product.id, e.target.checked)}
-          />
+          <span className="bg-ui-bg-base/80 absolute left-2 top-2 rounded-md">
+            <SelectCheckbox
+              className="m-0"
+              checked={selected.has(product.id)}
+              label={`Vybrat ${product.title}`}
+              onChange={(checked) => toggleSelected(product.id, checked)}
+            />
+          </span>
         </div>
         <figcaption className="flex flex-col gap-1 p-2">
           <Text
@@ -845,10 +960,10 @@ const ProductsInner = () => {
     const worstStock = worstStockOf(product);
     return (
       <div key={product.id} className="flex items-center gap-2 px-6 py-1.5">
-        <input
-          type="checkbox"
+        <SelectCheckbox
           checked={selected.has(product.id)}
-          onChange={(e) => toggleSelected(product.id, e.target.checked)}
+          label={`Vybrat ${product.title}`}
+          onChange={(checked) => toggleSelected(product.id, checked)}
         />
         <Thumb
           src={product.thumbnail}
@@ -894,15 +1009,13 @@ const ProductsInner = () => {
       <Fragment key={product.id}>
         <article
           id={`workbench-row-${product.id}`}
-          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.4fr)_150px_150px_170px_minmax(0,1fr)_auto] lg:items-center">
+          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.2fr)_130px_120px_150px_minmax(0,0.5fr)_auto] lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
-            <input type="checkbox" className="mt-1"
+            <SelectCheckbox
               checked={selected.has(product.id)}
-              onChange={(e) => {
-                const next = new Set(selected);
-                if (e.target.checked) next.add(product.id); else next.delete(product.id);
-                setSelected(next);
-              }} />
+              label={`Vybrat ${product.title}`}
+              onChange={(checked) => toggleSelected(product.id, checked)}
+            />
 
             <Thumb
               src={product.thumbnail}
@@ -929,6 +1042,16 @@ const ProductsInner = () => {
               </Text>
               {expert && <CopyId value={product.id} />}
             </div>
+            {/* Telefon: nastavení a akce řádku pod „…" — stejné jako na PC. */}
+            <button
+              type="button"
+              className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover ml-auto shrink-0 rounded-md px-3 py-1.5 text-lg leading-none lg:hidden"
+              aria-expanded={openActions === product.id}
+              aria-label="Další nastavení a akce"
+              onClick={() => setOpenActions(openActions === product.id ? null : product.id)}
+            >
+              …
+            </button>
           </div>
 
           <div>
@@ -1042,7 +1165,9 @@ const ProductsInner = () => {
           {/* Text is kept for what changes the piece's identity; the mechanical,
               every-row actions are icons and the two per-piece flags are small
               switches — state visible at a glance, still one click to flip. */}
-          <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+          <div
+            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center justify-start gap-3 lg:flex lg:justify-end`}
+          >
             <button
               type="button"
               title={expanded === product.id ? "Sbalit" : "Rozbalit"}
@@ -1121,6 +1246,22 @@ const ProductsInner = () => {
                 onFlip={() => stageFlag(product, "cod_allowed")}
               />
             )}
+            {active !== "oblibene" && active !== "archivovane" && (
+              <FlagSwitch
+                label="Křehké"
+                title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
+                checked={effectiveFlag(product, "fragile")}
+                dirty={pendingFlags[product.id]?.fragile !== undefined}
+                onFlip={() => stageFlag(product, "fragile")}
+              />
+            )}
+            {active !== "oblibene" && active !== "archivovane" && (
+              <PackagingInput
+                value={effectivePackaging(product)}
+                dirty={pendingFlags[product.id]?.packaging_price !== undefined}
+                onChange={(value) => stagePackaging(product, value)}
+              />
+            )}
             {(active === "produkty" || active === "poskozene") && (
               <FlagSwitch
                 label="Poškozené"
@@ -1172,7 +1313,7 @@ const ProductsInner = () => {
                 trigger={
                   <button
                     type="button"
-                    title="Doprava a balení"
+                    title="Profil dopravy (doprava a balení)"
                     className="text-ui-fg-subtle hover:text-ui-fg-base"
                   >
                     <FlyingBox />
@@ -1275,6 +1416,38 @@ const ProductsInner = () => {
             onClick={() => bulkHide.mutate()}>Skrýt z obchodu</Button>
           <Button size="small" variant="transparent"
             onClick={() => setSelected(new Set())}>Zrušit výběr</Button>
+          {active !== "oblibene" && active !== "archivovane" && (
+            <div className="border-ui-border-base flex w-full flex-wrap items-center gap-2 border-t pt-2">
+              <Text size="xsmall" className="text-ui-fg-subtle">Nastavit vybraným:</Text>
+              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
+                onClick={() => bulkFlags.mutate({ cod_allowed: true })}>Dobírka zapnout</Button>
+              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
+                onClick={() => bulkFlags.mutate({ cod_allowed: false })}>Dobírka vypnout</Button>
+              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
+                onClick={() => bulkFlags.mutate({ fragile: true })}>Křehké zapnout</Button>
+              <Button size="small" variant="secondary" disabled={bulkFlags.isPending}
+                onClick={() => bulkFlags.mutate({ fragile: false })}>Křehké vypnout</Button>
+              <span className="flex items-center gap-1.5">
+                <Text size="xsmall" className="text-ui-fg-subtle">Balení</Text>
+                <Input
+                  size="small"
+                  type="number"
+                  min={0}
+                  className="w-20"
+                  placeholder="0"
+                  value={bulkPackaging}
+                  onChange={(event) => setBulkPackaging(event.target.value)}
+                />
+                <Text size="xsmall" className="text-ui-fg-subtle">Kč</Text>
+                <Button size="small" variant="secondary"
+                  disabled={bulkFlags.isPending || !bulkPackagingValid}
+                  isLoading={bulkFlags.isPending}
+                  onClick={() => bulkFlags.mutate({ packaging_price: bulkPackagingValue })}>
+                  Nastavit
+                </Button>
+              </span>
+            </div>
+          )}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 px-6 py-4">

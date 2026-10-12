@@ -200,12 +200,10 @@ export default function CTA({
           feels like a trap, so the product page says it here. Ve výběru do
           objednávky ne: platba je daná objednávkou a nedobírkové kusy server
           do nabídky dobírkové objednávky vůbec nepustí. */}
-      {!pick && (
-        <p className="product__details__cta__codNote">
-          {codAllowed
-            ? "Lze doručit na dobírku (při doručení na adresu)."
-            : "Nelze objednat na dobírku."}
-        </p>
+      {/* Jen výjimka (Matěj 12. 10.): dobírka je výchozí, takže se říká jen
+          tam, kde NEJDE — zakázka, zahraničí, vypnutá u výrobku. */}
+      {!pick && !codAllowed && (
+        <p className="product__details__cta__codNote">Nelze objednat na dobírku.</p>
       )}
 
       {/* Balné (Matěj 12. 10.): bez částky, jen proč — každý kus má vlastní
