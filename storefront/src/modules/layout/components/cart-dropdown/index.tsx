@@ -5,7 +5,7 @@ import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import WebButton from "@modules/common/components/Buttons/webButton"
@@ -207,8 +207,10 @@ const CartDropdown = ({
                     })
                   )
                     .map((item) =>
-                      /* Balné jde s výrobkem — tenký řádek hned pod ním. */
+                      /* Balné je uvnitř karty výrobku (PackagingNote);
+                         samostatně jen balné bez výrobku v seznamu. */
                       isPackagingLine(item) ? (
+                        cartState.items!.some((other) => !isPackagingLine(other) && packagingFor(cartState.items, other) === item) ? null :
                         <PackagingLine
                           key={item.id}
                           item={item}
@@ -273,6 +275,10 @@ const CartDropdown = ({
                                   variant={item.variant}
                                   data-testid="cart-item-variant"
                                   data-value={item.variant}
+                                />
+                                <PackagingNote
+                                  item={packagingFor(cartState.items, item)}
+                                  currencyCode={cartState.currency_code}
                                 />
 
                               </div>

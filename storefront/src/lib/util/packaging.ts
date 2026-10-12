@@ -31,6 +31,21 @@ export const isServiceLine = (item: LineLike | null | undefined): boolean =>
 export const productLines = <T extends LineLike>(items: T[] | null | undefined): T[] =>
   (items ?? []).filter((item) => !isServiceLine(item))
 
+/**
+ * Součet balného (cena × kusy; balné se nezlevňuje) — pro rozpad mezisoučtu
+ * „Výrobky / Balné". `null`, když v seznamu žádné balné není.
+ */
+export const packagingSubtotal = (
+  items: Array<LineLike & { unit_price?: number | null; quantity?: number | null }> | null | undefined
+): number | null => {
+  const lines = (items ?? []).filter(isPackagingLine)
+  if (!lines.length) return null
+  return lines.reduce(
+    (sum, line) => sum + Number(line.unit_price ?? 0) * Number(line.quantity ?? 0),
+    0
+  )
+}
+
 const packagingVariantOf = (item: LineLike): string | null =>
   isPackagingLine(item) ? String(item.metadata?.packaging_variant_id ?? "") || null : null
 

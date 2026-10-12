@@ -68,6 +68,25 @@
       }
     }
 
+    /* Rozpad mezisoučtu (výrobky / balné) — odsazený, menší, tlumený. */
+    .breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: .1rem;
+      margin: -.1rem 0 .15rem;
+      padding-left: .9rem;
+      border-left: 1px solid rgb(0 0 0 / .12);
+    }
+
+    .subRow {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Sansation-Light";
+      font-weight: 300;
+      font-size: calc(var(--cart-summary-zoom, 1) * clamp(.8rem, 1vw, .9375rem));
+      opacity: .78;
+    }
+
     .taxRow {
       display: flex;
       justify-content: space-between;

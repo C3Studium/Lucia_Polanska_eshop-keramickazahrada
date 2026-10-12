@@ -4,7 +4,7 @@ import { Table } from "@medusajs/ui"
 import styles from "../styles/items.module.scss"
 
 import Item from "@modules/order/components/item"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { packagingFor } from "@modules/common/components/packaging-line"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
@@ -35,8 +35,9 @@ const Items = ({ order }: ItemsProps) => {
             })
           )
             .map((item) => {
-              // Balné jde s výrobkem — tenký řádek hned pod ním.
+              // Balné je uvnitř řádku výrobku; samostatně jen bez výrobku.
               if (isPackagingLine(item)) {
+                if (items.some((other: any) => !isPackagingLine(other) && packagingFor(items, other) === item)) return null
                 return (
                   <Table.Row key={item.id}>
                     {/* Nativní td: Table.Cell z @medusajs/ui colSpan netypuje. */}
@@ -50,6 +51,7 @@ const Items = ({ order }: ItemsProps) => {
                 <Item
                   key={item.id}
                   item={item}
+                  packaging={packagingFor(items, item)}
                   currencyCode={order.currency_code}
                 />
               )

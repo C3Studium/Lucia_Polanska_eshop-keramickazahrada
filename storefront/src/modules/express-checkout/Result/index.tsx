@@ -10,7 +10,7 @@ import styles from "./style.module.scss"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
 type ResultStatus = "success" | "pending" | "canceled" | "failed"
 
 const copy: Record<
@@ -129,6 +129,7 @@ export default function ExpressResult({
           {withPackagingUnderProducts(order.items ?? []).map((item) =>
             // Balné jde s výrobkem — tenký řádek hned pod ním.
             isPackagingLine(item) ? (
+              order.items!.some((other: any) => !isPackagingLine(other) && packagingFor(order.items!, other) === item) ? null :
               <PackagingLine key={item.id} item={item} currencyCode={order.currency_code} compact />
             ) : (
             <div className={styles.item} key={item.id}>
@@ -141,6 +142,7 @@ export default function ExpressResult({
               <div>
                 <strong>{item.product_title || item.title}</strong>
                 <small>{item.quantity} ks</small>
+                <PackagingNote item={packagingFor(order.items, item)} currencyCode={order.currency_code} />
               </div>
               <span>
                 {convertToLocale({

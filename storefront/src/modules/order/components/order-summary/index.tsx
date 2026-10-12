@@ -2,6 +2,7 @@ import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import styles from "../styles/order-summary.module.scss"
+import { packagingSubtotal } from "@lib/util/packaging"
 
 type OrderSummaryProps = {
   order: HttpTypes.StoreOrder
@@ -30,6 +31,19 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
               a sloupec nevycházel. */}
           <span>{getAmount(order.item_subtotal)}</span>
         </div>
+        {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. */}
+        {packagingSubtotal(order.items) !== null && (
+          <>
+            <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
+              <span>Výrobky</span>
+              <span>{getAmount(order.item_subtotal - (packagingSubtotal(order.items) ?? 0))}</span>
+            </div>
+            <div className={styles.row} style={{ paddingLeft: ".9rem", opacity: 0.78, fontSize: ".9em" }}>
+              <span>Balné</span>
+              <span>{getAmount(packagingSubtotal(order.items) ?? 0)}</span>
+            </div>
+          </>
+        )}
         <div className={styles.meta}>
           {order.item_discount_total > 0 && (
             <div className={styles.row}>

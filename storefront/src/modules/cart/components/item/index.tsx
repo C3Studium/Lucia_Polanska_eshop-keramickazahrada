@@ -6,7 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
 import { isPackagingLine } from "@lib/util/packaging"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { PackagingNote } from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -24,9 +24,11 @@ type ItemProps = {
   type?: "full" | "preview"
   currencyCode: string
   isMobile?: boolean
+  /** Balné tohoto výrobku (lib/util/packaging.ts) — ukáže se pod variantou. */
+  packaging?: HttpTypes.StoreCartLineItem | null
 }
 
-const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
+const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -111,6 +113,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           {!!item.metadata?.width && <span>Šířka · {item.metadata.width as number} cm</span>}
           {!!item.metadata?.height && <span>Výška · {item.metadata.height as number} cm</span>}
         </div>
+        {/* Balné patří k výrobku — přímo pod názvem a variantou. */}
+        <PackagingNote item={packaging} currencyCode={currencyCode} />
 
         {type === "full" && (
           <div className={s.mobileControls}>

@@ -4,7 +4,7 @@ import repeat from "@lib/util/repeat"
 import { HttpTypes } from "@medusajs/types"
 
 import { Item }from "@modules/cart/components/item"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { packagingFor } from "@modules/common/components/packaging-line"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 import s from "./preview.module.scss"
@@ -28,7 +28,12 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
                 })
               )
                 .map((item) => {
+                  // Balné se ukazuje UVNITŘ karty výrobku (PackagingNote);
+                  // samostatný řádek jen u balného bez výrobku v seznamu.
                   if (isPackagingLine(item)) {
+                    if ((items ?? []).some((other) => !isPackagingLine(other) && packagingFor(items, other) === item)) {
+                      return null
+                    }
                     return (
                       <PackagingLine
                         key={item.id}
@@ -42,6 +47,7 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
                     <Item
                       key={item.id}
                       item={item}
+                      packaging={packagingFor(items, item)}
                       type="preview"
                       currencyCode={cart.currency_code}
                     />

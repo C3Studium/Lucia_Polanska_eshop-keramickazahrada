@@ -30,6 +30,18 @@ const clearanceOriginal = (
   }
 }
 
+/**
+ * Balné k výrobku (backend lib/packaging.ts) — řečené hned u ceny, ať
+ * zákazníka v košíku nepřekvapí (Matěj 12. 10.). Cena balení je v Kč
+ * (`metadata.packaging_price`, prázdné = 0); v cizí měně ji košík přepočte
+ * kurzem ČNB a zaokrouhlí nahoru na 0,50 — tady se pak částka neukazuje.
+ */
+const packagingCzkOf = (product: HttpTypes.StoreProduct): number => {
+  const raw = (product.metadata as Record<string, unknown> | null)?.packaging_price
+  const parsed = typeof raw === "number" ? raw : Number(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
 export default function ProductPrice({
   product,
   variant,
@@ -58,7 +70,11 @@ export default function ProductPrice({
     ? clearanceOriginal(product, selectedPrice?.calculated_price_number)
     : null
 
+  const currency = String(selectedPrice?.currency_code ?? "czk").toLowerCase()
+  const packagingCzk = packagingCzkOf(product)
+
   return (
+    <>
     <div className="product__details__cta__price">
       <p>Cena |</p>
       <div className="product__details__cta__price__main">
@@ -111,5 +127,22 @@ export default function ProductPrice({
         )}
       </div>
     </div>
+    {hasPrice && (
+      <div className="product__details__cta__packaging" data-testid="product-packaging">
+        <p className="product__details__cta__packaging__amount">
+          + balné{" "}
+          {currency === "czk"
+            ? String(convertToLocale({ amount: packagingCzk, currency_code: "czk" }))
+                .replace(/czk/i, "")
+                .trim()
+            : "(přepočet kurzem ČNB)"}
+        </p>
+        <p className="product__details__cta__packaging__why">
+          Každý kus pečlivě zabalíme, aby k vám dorazil bez poškození. Balné
+          platí i při osobním odběru.
+        </p>
+      </div>
+    )}
+    </>
   )
 }

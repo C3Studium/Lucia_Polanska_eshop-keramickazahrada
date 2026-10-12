@@ -6,13 +6,16 @@ import LineItemOptions from "@modules/common/components/line-item-options"
 import LineItemPrice from "@modules/common/components/line-item-price"
 import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
 import Thumbnail from "@modules/products/components/thumbnail"
+import { PackagingNote } from "@modules/common/components/packaging-line"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
   currencyCode: string
+  /** Balné tohoto výrobku — ukáže se pod názvem a variantou. */
+  packaging?: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem | null
 }
 
-const Item = ({ item, currencyCode }: ItemProps) => {
+const Item = ({ item, currencyCode, packaging = null }: ItemProps) => {
   return (
     <Table.Row className={styles.row} data-testid="product-row">
       <Table.Cell className={styles.cellThumb}>
@@ -32,6 +35,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
           {!!item.metadata?.width && <div>Šířka: {item.metadata.width as number}cm</div>}
           {!!item.metadata?.height && <div>Výška: {item.metadata.height as number}cm</div>}
         </div>
+        <PackagingNote item={packaging as any} currencyCode={currencyCode} />
       </Table.Cell>
 
       <Table.Cell className={styles.cellPrice}>

@@ -27,7 +27,8 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
+import { packagingSubtotal } from "@lib/util/packaging"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -398,6 +399,7 @@ export default async function OrderCompletedTemplate({
               <div className={s.itemList} data-testid="products-table">
                 {items.map((item) => {
                   if (isPackagingLine(item)) {
+                    if (items.some((other: any) => !isPackagingLine(other) && packagingFor(items, other) === item)) return null
                     return (
                       <PackagingLine
                         key={item.id}
@@ -433,6 +435,7 @@ export default async function OrderCompletedTemplate({
                             data-testid="product-variant"
                           />
                         </div>
+                        <PackagingNote item={packagingFor(items, item)} currencyCode={order.currency_code} />
                       </div>
                       <div className={s.itemQuantity}>
                         <span>Množství</span>
@@ -466,6 +469,19 @@ export default async function OrderCompletedTemplate({
                     <span>Mezisoučet</span>
                     <strong>{money(order.item_total)}</strong>
                   </div>
+                  {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. */}
+                  {packagingSubtotal(order.items) !== null && (
+                    <>
+                    <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                      <span>Výrobky</span>
+                      <strong style={{ fontWeight: 300 }}>{money(order.item_total - (packagingSubtotal(order.items) ?? 0))}</strong>
+                    </div>
+                    <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                      <span>Balné</span>
+                      <strong style={{ fontWeight: 300 }}>{money(packagingSubtotal(order.items) ?? 0)}</strong>
+                    </div>
+                    </>
+                  )}
                   {order.discount_total > 0 && (
                     <div>
                       <span>Sleva</span>

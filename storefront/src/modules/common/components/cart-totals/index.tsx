@@ -2,6 +2,7 @@
 
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
+import { packagingSubtotal } from "@lib/util/packaging"
 import React from "react"
 import styles from "./style.module.scss"
 import { Divider } from "@medusajs/ui"
@@ -43,8 +44,18 @@ type CartTotalsProps = {
     gift_card_total?: number | null
     currency_code: string
     shipping_subtotal?: number | null
+    /** Položky košíku — z nich se mezisoučet rozloží na výrobky a balné. */
+    items?: Array<{
+      metadata?: Record<string, unknown> | null
+      variant_id?: string | null
+      product_id?: string | null
+      quantity?: number | null
+      unit_price?: number | null
+    }> | null
   }
 }
+
+
 
 const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
   const {
@@ -60,6 +71,9 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
     shipping_subtotal,
     shipping_total,
   } = totals
+  const subtotalAmount = item_subtotal ?? item_total ?? 0
+  // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.).
+  const packaging = packagingSubtotal(totals.items)
   return (
     <div className={styles.root}>
       <div className={styles.totalsList}>
@@ -75,11 +89,28 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
             data-value={item_subtotal ?? item_total ?? 0}
           >
             {convertToLocale({
-              amount: item_subtotal ?? item_total ?? 0,
+              amount: subtotalAmount,
               currency_code,
             })}
           </span>
         </div>
+        {/* Rozpad mezisoučtu: výrobky a balné, odsazeně pod ním. */}
+        {packaging !== null && (
+          <div className={styles.breakdown} data-testid="cart-subtotal-breakdown">
+            <div className={styles.subRow}>
+              <span>Výrobky</span>
+              <span>
+                {convertToLocale({ amount: subtotalAmount - packaging, currency_code })}
+              </span>
+            </div>
+            <div className={styles.subRow}>
+              <span>Balné</span>
+              <span data-testid="cart-packaging">
+                {convertToLocale({ amount: packaging, currency_code })}
+              </span>
+            </div>
+          </div>
+        )}
         {!!(item_discount_total ?? discount_total) && (
           <div className={styles.row}>
             <span className={styles.label}> sleva</span>

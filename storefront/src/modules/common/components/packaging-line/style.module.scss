@@ -32,3 +32,30 @@
   opacity: .9;
   white-space: nowrap;
 }
+
+/* Balné uvnitř karty výrobku — hned pod názvem a variantou. Tenká linka
+   nad ním ho odliší od varianty, menší písmo ho drží v podřízené roli. */
+.note {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  max-width: 22rem;
+  margin: .5rem 0 0;
+  padding-top: .4rem;
+  border-top: 1px dashed currentColor;
+  border-top-color: color-mix(in srgb, currentColor 22%, transparent);
+  font-size: .8125rem;
+  line-height: 1.35;
+}
+
+.noteLabel {
+  opacity: .72;
+}
+
+.notePrice {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  opacity: .9;
+  white-space: nowrap;
+}

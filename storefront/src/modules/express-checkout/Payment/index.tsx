@@ -25,7 +25,7 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import styles from "../style.module.scss"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
-import PackagingLine from "@modules/common/components/packaging-line"
+import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
 
 type PaymentProps = {
   cart: HttpTypes.StoreCart
@@ -190,6 +190,7 @@ export const Payment = ({
         {withPackagingUnderProducts(cart.items ?? []).map((item) =>
           // Balné jde s výrobkem — tenký řádek hned pod ním.
           isPackagingLine(item) ? (
+            cart.items!.some((other: any) => !isPackagingLine(other) && packagingFor(cart.items!, other) === item) ? null :
             <PackagingLine key={item.id} item={item} currencyCode={cart.currency_code} compact />
           ) : (
           <div className={styles.miniItem} key={item.id}>
@@ -206,6 +207,7 @@ export const Payment = ({
                   ?.map((option) => option.value)
                   .join(" · ")}
               </small>
+              <PackagingNote item={packagingFor(cart.items, item)} currencyCode={cart.currency_code} />
             </div>
             <span>{item.quantity}×</span>
           </div>
