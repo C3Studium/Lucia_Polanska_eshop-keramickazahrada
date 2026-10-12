@@ -669,25 +669,6 @@
   text-transform: uppercase;
 }
 
-/* Balné pod cenou — kolik a proč (Matěj 12. 10.). Přitažené k ceně, menší. */
-.product__details__cta__packaging {
-  margin: -0.75rem 0 1.25rem;
-  text-align: right;
-}
-
-.product__details__cta__packaging__amount {
-  margin: 0;
-  color: var(--pdp-cream, var(--cream-06));
-  font: 400 clamp(0.875rem, 1.1vw, 1rem)/1.35 "Sansation-Regular", sans-serif;
-}
-
-.product__details__cta__packaging__why {
-  margin: 0.2rem 0 0 auto;
-  max-width: 26rem;
-  color: rgb(var(--cream-06-rgb) / .62);
-  font: 300 clamp(0.75rem, 0.95vw, 0.875rem)/1.45 "Sansation-Light", sans-serif;
-}
-
 .product__details__cta__price__main {
   display: flex;
   flex-wrap: wrap;

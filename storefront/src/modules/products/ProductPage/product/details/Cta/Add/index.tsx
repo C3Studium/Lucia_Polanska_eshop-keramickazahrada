@@ -207,6 +207,15 @@ export default function CTA({
             : "Dobírka není možná, tento kus se platí předem."}
         </p>
       )}
+
+      {/* Balné (Matěj 12. 10.): bez částky, jen proč — každý kus má vlastní
+          balení proti poškození, v košíku je pak jako položka pod výrobkem. */}
+      {!pick && (
+        <p className="product__details__cta__codNote" data-testid="product-packaging-note">
+          Každý kus potřebuje vlastní balení, které ho ochrání před poškozením —
+          balné proto najdete v košíku u výrobku. Platí i při osobním odběru.
+        </p>
+      )}
     </div>
   )
 }
