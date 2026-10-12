@@ -1009,7 +1009,7 @@ const ProductsInner = () => {
       <Fragment key={product.id}>
         <article
           id={`workbench-row-${product.id}`}
-          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.2fr)_130px_120px_150px_minmax(0,0.5fr)_auto] lg:items-center">
+          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.6fr)_140px_130px_160px_minmax(0,0.8fr)] lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
             <SelectCheckbox
               checked={selected.has(product.id)}
@@ -1166,7 +1166,9 @@ const ProductsInner = () => {
               every-row actions are icons and the two per-piece flags are small
               switches — state visible at a glance, still one click to flip. */}
           <div
-            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center justify-start gap-3 lg:flex lg:justify-end`}
+            // Na PC celá šířka pod údaji (Matěj 12. 10.: širší ovládání, aby se
+            // vešlo Balení, Křehké i Dobírka a název produktu nezmizel).
+            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center justify-start gap-x-4 gap-y-2 lg:col-span-full lg:flex lg:justify-end lg:border-t lg:border-dashed lg:border-ui-border-base lg:pt-2`}
           >
             <button
               type="button"
