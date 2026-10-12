@@ -57,11 +57,16 @@ export default async function StorePage({
       return {
         id: collection.id,
         title: collection.title,
-        categories: categories.filter(
-          (category: any) =>
-            category.products?.some(({ id }: any) => productIds.has(id)) ||
-            (category.metadata as any)?.collection_id === collection.id
-        ),
+        /* Jen kategorie přiřazené k téhle kolekci (Rozdělení,
+           `metadata.collection_id`); bez přiřazení tam, kde má produkty.
+           Kategorie jiné kolekce sem nepatří, i když s ní sdílí produkt
+           (12. 10. 2026 — produkt může být ve víc kolekcích). */
+        categories: categories.filter((category: any) => {
+          const assigned = (category.metadata as any)?.collection_id
+          return assigned
+            ? assigned === collection.id
+            : category.products?.some(({ id }: any) => productIds.has(id))
+        }),
       }
     })
 
