@@ -320,7 +320,7 @@ const BaleniInner = () => {
             Co vás stojí zabalit každý kus — bublinková fólie, papír, páska
             i krabice. Zákazník ho platí jako položku „Balné" pod každým
             výrobkem (i u osobního odběru); v cizí měně kurzem ČNB, nahoru na
-            0,50. Prázdné pole = bez balného. Zdraží-li materiál, stačí čísla
+            0,50. Prázdné pole = 0 Kč (u výrobku „Balné 0,-"). Zdraží-li materiál, stačí čísla
             tady zvednout.
           </Text>
         </div>

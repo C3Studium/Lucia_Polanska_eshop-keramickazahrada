@@ -118,13 +118,20 @@ describe("planPackaging", () => {
     expect(plan.remove_ids.sort()).toEqual(["p2", "p3"])
   })
 
-  it("výrobek bez ceny balení balné nemá (a existující se odebere)", () => {
-    const plan = planPackaging({
-      items: [product("a", "v1", 1), packaging("p1", "v1", 1)],
+  it("výrobek bez ceny balení má balné za 0,- (položka je vždy)", () => {
+    const fresh = planPackaging({ items: [product("a", "v1", 2, "Zvonek")], unitPriceFor: () => 0 })
+    expect(fresh.add).toEqual([
+      { variant_id: "v1", product_id: "prod_v1", title: "Balné — Zvonek", quantity: 2, unit_price: 0 },
+    ])
+    // Lucie cenu balení smaže → existující balné zůstane, jen za 0.
+    const cleared = planPackaging({
+      items: [product("a", "v1", 1, "Zvonek"), packaging("p1", "v1", 1, 50, "Balné — Zvonek")],
       unitPriceFor: () => 0,
     })
-    expect(plan.remove_ids).toEqual(["p1"])
-    expect(plan.add).toEqual([])
+    expect(cleared.remove_ids).toEqual([])
+    expect(cleared.update).toEqual([
+      { id: "p1", quantity: 1, unit_price: 0, title: "Balné — Zvonek", quantity_changed: false },
+    ])
   })
 
   it("neznámá cena (chybí kurz) → nic nepřidá a existující nechá být", () => {

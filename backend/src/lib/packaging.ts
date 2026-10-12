@@ -4,7 +4,8 @@
  * ## Co platí
  *
  * - Každý produkt má cenu balení v Kč (`product.metadata.packaging_price`,
- *   admin „Cena balení"); nevyplněná = 0 Kč = žádná položka balného.
+ *   admin „Cena balení"); nevyplněná = 0 Kč — položka balného je i tak,
+ *   jen za „0,-" (Matěj 12. 10.: ať je balné vidět u každého výrobku).
  * - Balné se účtuje VŽDY — i u osobního odběru (rozhodnutí 12. 10.).
  * - Je to samostatná položka hned pod produktem: „Balné — <název>", stejný
  *   počet kusů jako produkt. Tím ho ukáže košík, objednávka, e-mail, admin
@@ -133,8 +134,9 @@ export type PackagingPlan = {
 /**
  * Čistý plánovač: z řádků košíku (produkty i už existující balné) a ceny
  * balení za kus (v měně košíku) určí, co přidat, upravit a smazat, aby u
- * každé varianty s nenulovým balným byla PRÁVĚ JEDNA položka balného se
- * stejným počtem kusů. Idempotentní — správný košík dá prázdný plán.
+ * KAŽDÉ varianty byla PRÁVĚ JEDNA položka balného se stejným počtem kusů —
+ * i za 0 Kč, když výrobek cenu balení nemá. Idempotentní — správný košík
+ * dá prázdný plán.
  *
  * `unitPriceFor` vrací `null`, když cenu nejde určit (chybí kurz): existující
  * položka se pak nechá být a nová se nepřidá — radši nic než špatné číslo.
@@ -172,8 +174,8 @@ export const planPackaging = (input: {
   for (const line of items.filter(isPackagingLine)) {
     const key = String(line.metadata?.[PACKAGING_VARIANT_KEY] ?? "")
     const product = products.get(key)
-    if (!product || seen.has(key) || product.quantity <= 0 || product.unit === 0) {
-      // Bez produktu, duplicitní, nebo produkt balné nemá (už) žádné.
+    if (!product || seen.has(key) || product.quantity <= 0) {
+      // Bez produktu (odebraný) nebo duplicitní.
       plan.remove_ids.push(String(line.id))
       continue
     }
@@ -194,7 +196,7 @@ export const planPackaging = (input: {
   }
   for (const product of products.values()) {
     if (seen.has(product.variant_id) || product.quantity <= 0) continue
-    if (product.unit === null || product.unit <= 0) continue
+    if (product.unit === null || product.unit < 0) continue
     plan.add.push({
       variant_id: product.variant_id,
       product_id: product.product_id,

@@ -1830,7 +1830,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     Balné za kus — zákazník ho uvidí jako vlastní položku
                     pod výrobkem (v košíku, objednávce i na faktuře), i u
                     osobního odběru. V cizí měně se přepočte kurzem ČNB
-                    a zaokrouhlí nahoru na 0,50. Prázdné = bez balného.
+                    a zaokrouhlí nahoru na 0,50. Prázdné = 0 Kč (ukáže se „Balné 0,-").
                   </Text>
                 </div>
                 <InlineNumber
