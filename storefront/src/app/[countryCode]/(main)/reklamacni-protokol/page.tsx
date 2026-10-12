@@ -41,7 +41,7 @@ const sections: LegalSectionData[] = [
     paragraphs: [
       "Zásilku si prosím prohlédněte hned při převzetí, ještě než ji podepíšete. Je-li obal promáčklý, protržený nebo něčím prosakuje, rozbalte ji přímo před doručovatelem. U keramiky to platí dvojnásob — rozbije se tiše a zvenku bývá krabice v pořádku.",
       "Reklamaci poškození způsobeného přepravou uplatňuje u dopravce příjemce zásilky, tedy vy. Jako odesílatel ji za vás podat nemůžeme. Podle podmínek České pošty je nutné poškození nahlásit při převzetí, nejpozději do dvou pracovních dnů od doručení — po této lhůtě už reklamaci nepřijme.",
-      "Reklamaci podáte na kterékoli pobočce České pošty nebo online v jejich eReklamaci (ceskaposta.cz/ereklamace). Přiložte fotografie obalu i obsahu a doklad o ceně zboží. Česká pošta má na vyřízení 15 dnů.",
+      "Reklamaci podáte na kterékoli pobočce České pošty nebo online — postup a formuláře najdete na ceskaposta.cz v části Reklamace a stížnosti (ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti). Přiložte fotografie obalu i obsahu a doklad o ceně zboží. Česká pošta má na vyřízení 15 dnů.",
       "Pokud zásilku převezmete bez výhrad a poškození nahlásíte až po uvedené lhůtě, dopravce reklamaci zamítne a zboží zůstává vaše — náhradu v takovém případě nemůžeme poskytnout. Proto prosíme: raději otevřít před doručovatelem.",
       "Dejte nám prosím vědět i tak. O poškozené zásilce chceme vědět, i když ji řeší dopravce, a rádi vám s postupem poradíme.",
     ],

@@ -22,8 +22,31 @@ export type ClaimStatus =
   | "rejected"
   | "cancelled"
 
-/** Co ŽÁDÁ zákazník (jen reklamace, §19/1 ZOS). */
+/**
+ * Co ŽÁDÁ zákazník (jen reklamace, §19/1 ZOS). `repair` jen u starých žádostí
+ * — nová reklamace nabízí `NEW_CLAIM_RESOLUTIONS`.
+ */
 export type ClaimRequestedResolution = "repair" | "replace" | "refund"
+
+/**
+ * Co jde požadovat v NOVÉ reklamaci (12. 10. 2026, Matěj: oprava z formuláře
+ * pryč — jen výměna nebo vrácení peněz). Zrcadlo serveru
+ * (`NEW_CLAIM_RESOLUTIONS` v `backend/src/lib/claims/constants.ts`), který
+ * opravu u nové žádosti odmítne.
+ */
+export const NEW_CLAIM_RESOLUTIONS: ClaimRequestedResolution[] = [
+  "replace",
+  "refund",
+]
+
+/**
+ * Reklamace zásilky u České pošty — oficiální stránka „Reklamace a stížnosti"
+ * (kdo reklamuje, lhůta 2 pracovní dny, online podání, formuláře). Ověřeno
+ * 12. 10. 2026; dřívější `ceskaposta.cz/reklamace` i `/ereklamace` vrací 404.
+ * Stejná adresa jako v e-mailech (`CP_CLAIM_FORM_URL` na backendu).
+ */
+export const CP_CLAIM_URL =
+  "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
 
 /** Co ROZHODLA majitelka při schválení (§2169–2172). */
 export type ClaimResolution = "repair" | "replace" | "discount" | "refund"

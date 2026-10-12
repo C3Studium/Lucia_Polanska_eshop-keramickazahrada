@@ -1,4 +1,5 @@
 import { Link } from "@react-email/components"
+import { CP_CLAIM_FORM_URL } from "../../../lib/claims/constants"
 import { brand, Note, P } from "./email-ui"
 
 /**
@@ -23,7 +24,13 @@ import { brand, Note, P } from "./email-ui"
  * is kinder than saying so afterwards.
  */
 
-export const CP_EREKLAMACE_URL = "https://www.ceskaposta.cz/ereklamace"
+/**
+ * Dřív `ceskaposta.cz/ereklamace` — 12. 10. 2026 ověřeno, že vrací 404. Teď
+ * jedna adresa pro celý obchod (`CP_CLAIM_FORM_URL`): stránka ČP „Reklamace
+ * a stížnosti" s online podáním i formuláři. Jméno konstanty zůstává kvůli
+ * stávajícím importům.
+ */
+export const CP_EREKLAMACE_URL = CP_CLAIM_FORM_URL
 
 /** Shown before the parcel arrives — what to do at the door. */
 export const CarrierDamageWarning = () => (
@@ -49,9 +56,9 @@ export const CarrierDamageClaim = ({
       <strong>Dorazila zásilka poškozená?</strong> Reklamaci u České pošty
       podává příjemce — tedy vy — a je na to čas jen{" "}
       <strong>dva pracovní dny</strong> od doručení. Stačí zajít na kteroukoli
-      pobočku, nebo ji podat online v{" "}
+      pobočku, nebo ji podat online — postup a formuláře jsou na{" "}
       <Link href={CP_EREKLAMACE_URL} style={{ color: brand.clay }}>
-        eReklamaci České pošty
+        stránce České pošty o reklamacích
       </Link>
       . Přiložte fotky poškození a doklad o ceně zboží
       {orderNumber ? ` (objednávka č. ${orderNumber})` : ""}.

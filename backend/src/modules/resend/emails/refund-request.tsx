@@ -1,4 +1,6 @@
+import { Link } from "@react-email/components"
 import {
+  brand,
   ButtonRow,
   EmailButton,
   EmailH1,
@@ -13,6 +15,10 @@ import {
   Signature,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
+import {
+  CP_CLAIM_FORM_URL,
+  CP_CUSTOMER_CLAIM_TEXT,
+} from "../../../lib/claims/constants"
 
 interface RefundRequestEmailProps {
   customerName?: string;
@@ -25,7 +31,11 @@ interface RefundRequestEmailProps {
   requestedResolution?: string;
   /** Vybrané položky — řádek za položku („název · varianta · N ks · částka"). */
   items?: string;
-  /** Balík dorazil poškozený (§11.3) — věta, že dopravce reklamujeme my. */
+  /**
+   * Balík dorazil poškozený (§11.3) — pokyn nahlásit poškození České poště
+   * do 2 pracovních dnů s odkazem na její stránku (reklamaci u přepravce
+   * podává příjemce; 12. 10. 2026, Matěj).
+   */
   carrierDamage?: boolean;
   /** Poškozený kus (§13.7) — fotky jsou přiložené k žádosti. */
   damagedItem?: boolean;
@@ -149,12 +159,17 @@ function RefundRequestEmailComponent({
       ) : null}
       <LedgerEnd />
 
-      <Note tone="olive">
-        {copy.note}
-        {carrierDamage
-          ? " Poškození zásilky reklamujeme u dopravce my — vy nic dalšího řešit nemusíte, pro vás jde o běžnou reklamaci."
-          : ""}
-      </Note>
+      <Note tone="olive">{copy.note}</Note>
+
+      {carrierDamage ? (
+        <Note tone="clay">
+          {CP_CUSTOMER_CLAIM_TEXT}{" "}
+          <Link href={CP_CLAIM_FORM_URL} style={{ color: brand.clay }}>
+            {CP_CLAIM_FORM_URL}
+          </Link>
+          . Vaše reklamace u nás tím běží dál beze změny.
+        </Note>
+      ) : null}
 
       {claimsUrl ? (
         <ButtonRow>
@@ -202,7 +217,7 @@ const mockRefundRequest: RefundRequestEmailProps = {
   orderNumber: "#12345",
   kind: "reklamace",
   refundReason: "Prasklina na glazuře po prvním použití",
-  requestedResolution: "oprava",
+  requestedResolution: "výměna za nový kus",
   deadlineText: "do 30 dnů od uplatnění reklamace",
   orderLink: "https://keramickazahrada.cz/orders/12345",
   claimsUrl: "https://keramickazahrada.cz/cz/order/order_12345/claims?token=abc",

@@ -4,6 +4,7 @@ import { RefundRequestEmail } from "../emails/refund-request"
 import { ReturnApprovedEmail } from "../emails/return-approved"
 import { ReturnRejectedEmail } from "../emails/return-rejected"
 import { ReturnResolvedEmail } from "../emails/return-resolved"
+import { CP_CLAIM_FORM_URL } from "../../../lib/claims/constants"
 
 /**
  * E-maily modulu „Reklamace a zrušení" po §11 (docs/reklamace-a-zruseni.md):
@@ -39,7 +40,11 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
     expect(html).toMatch(/1 305 Kč<br\s*\/?>/)
     expect(html).toContain("Poškozeno přepravou")
-    expect(html).toContain("reklamujeme u dopravce my")
+    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce — pokyn, lhůta a odkaz.
+    expect(html).not.toContain("reklamujeme u dopravce my")
+    expect(html).toContain("podává příjemce")
+    expect(html).toContain("2 pracovních dnů od doručení")
+    expect(html).toContain(CP_CLAIM_FORM_URL)
   })
 
   it("refund-request bez příčiny o dopravci mlčí", () => {
@@ -48,6 +53,21 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     )
     expect(html).not.toContain("Poškozeno přepravou")
     expect(html).not.toContain("dopravce")
+    expect(html).not.toContain(CP_CLAIM_FORM_URL)
+  })
+
+  it("refund-request u vrácení zboží vypíše vracené položky (12. 10. 2026)", () => {
+    const html = renderToStaticMarkup(
+      RefundRequestEmail({
+        orderNumber: "#42",
+        kind: "vraceni",
+        refundReason: "Vrácení zboží",
+        items: ITEMS,
+      }) as React.ReactElement
+    )
+    expect(html).toContain("Žádost o vrácení")
+    expect(html).toContain("Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč")
+    expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
   })
 
   it("return-approved: bere approvedItems, nebo items ze společného základu", () => {

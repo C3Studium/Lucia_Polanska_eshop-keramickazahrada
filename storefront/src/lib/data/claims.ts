@@ -38,16 +38,20 @@ export async function getOrderClaims(
 
 export type SubmitClaimInput = {
   kind: ClaimKind
-  reason: string
-  /** Povinné u `reklamace` (§19/1 ZOS) — server to vynucuje. */
+  /**
+   * Popis vady — povinný jen u `reklamace`. Odstoupení a vrácení ho nemají
+   * (12. 10. 2026, Matěj); server pak uloží výchozí větu podle druhu.
+   */
+  reason?: string
+  /** Povinné u `reklamace` (§19/1 ZOS) — jen výměna / vrácení peněz; server to vynucuje. */
   requested_resolution?: ClaimRequestedResolution
-  /** Fotky vady (base64, max 6) — jako dnes. */
+  /** Fotky vady (base64, max 6) — jen u reklamace. */
   photos?: CommissionUpload[]
   /**
-   * Vybrané položky (§11.1): u `reklamace` povinné (≥ 1), u `vraceni` volitelné
-   * (prázdné = celá objednávka), u `odstoupeni` se neposílají. Server ověří, že
-   * id patří objednávce a `quantity ≤ objednané`. U balíčku (§13.5) může
-   * položka nést `components` — jen zaškrtnuté komponenty; bez nich = celý balíček.
+   * Vybrané položky (§11.1): u `reklamace` i `vraceni` povinné (≥ 1), u
+   * `odstoupeni` se neposílají. Server ověří, že id patří objednávce a
+   * `quantity ≤ objednané`. U balíčku (§13.5) může položka nést `components`
+   * — jen zaškrtnuté komponenty; bez nich = celý balíček.
    */
   items?: ClaimItemInput[]
   /**
@@ -86,7 +90,7 @@ export async function submitClaim(
         body: {
           token,
           kind: input.kind,
-          reason: input.reason.trim(),
+          ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
           ...(input.requested_resolution
             ? { requested_resolution: input.requested_resolution }
             : {}),

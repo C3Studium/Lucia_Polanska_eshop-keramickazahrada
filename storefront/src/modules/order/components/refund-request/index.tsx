@@ -6,6 +6,7 @@ import { useId, useRef, useState } from "react"
 
 import { submitClaim } from "@lib/data/claims"
 import {
+  CP_CLAIM_URL,
   REQUESTED_RESOLUTION_LABEL,
   findOpenClaim,
   formatClaimDate,
@@ -57,7 +58,7 @@ const KINDS: { value: ClaimKind; label: string; help: string }[] = [
   {
     value: "vraceni",
     label: "Vrácení zboží",
-    help: "Chci zboží vrátit a dostat peníze zpět.",
+    help: "Chci zboží vrátit a dostat peníze zpět — stačí vybrat, které kusy.",
   },
   {
     value: "odstoupeni",
@@ -66,19 +67,25 @@ const KINDS: { value: ClaimKind; label: string; help: string }[] = [
   },
 ]
 
+/**
+ * Co zákazník u reklamace požaduje. 12. 10. 2026, Matěj: jen výměna nebo
+ * vrácení peněz — „Oprava" (`repair`) z formuláře zmizela a server ji
+ * u nové žádosti odmítne (`NEW_CLAIM_RESOLUTIONS`); staré žádosti s opravou
+ * dál ukazuje stav žádosti i admin.
+ */
 const RESOLUTIONS: {
   value: ClaimRequestedResolution
   help: string
 }[] = [
-  { value: "repair", help: "Vadu opravíme." },
   { value: "replace", help: "Pošleme nový kus." },
   { value: "refund", help: "Vrátíme vám peníze." },
 ]
 
 /**
- * „Co se stalo" u reklamace (§13.7). `"defect"` = vada / nefunkčnost →
- * `damage_cause` se neposílá; `"damaged"` a `"carrier"` jdou na server a
- * vyžadují aspoň jednu fotku.
+ * „Co se stalo" u reklamace (§13.7). `"defect"` = vada → `damage_cause` se
+ * neposílá; `"damaged"` (poškozený kus) a `"carrier"` (balík dorazil
+ * poškozený) jdou na server a vyžadují aspoň jednu fotku. Mapování na
+ * `damage_cause` zůstává beze změny (12. 10. 2026 se měnily jen popisky).
  */
 type CauseChoice = "defect" | ClaimDamageCause
 
@@ -91,8 +98,9 @@ const CAUSES: {
 }[] = [
   {
     value: "defect",
-    label: "Vada nebo nefunkčnost",
-    help: "Zboží nefunguje, jak má, nebo se vada objevila při používání.",
+    // 12. 10. 2026, Matěj: místo „Vada nebo nefunkčnost" jen „Vada".
+    label: "Vada",
+    help: "Praskliny, protéká, odprýsknutá glazura…",
     photos: false,
   },
   {
@@ -103,8 +111,9 @@ const CAUSES: {
   },
   {
     value: "carrier",
-    label: "Balík dorazil poškozený — přepravou",
-    help: "Reklamaci u České pošty podáme my — vaše reklamace u nás běží dál jako obvykle. Potřebujeme k tomu aspoň jednu fotku obalu a poškozeného zboží.",
+    label: "Balík dorazil poškozený",
+    // Pokyn pro Českou poštu se po výběru ukáže výrazně pod volbami.
+    help: "Zásilka přišla rozbitá nebo s poškozeným obalem. Potřebujeme aspoň jednu fotku obalu a poškozeného zboží.",
     photos: true,
   },
 ]
@@ -133,24 +142,32 @@ const componentMax = (item: ClaimOrderItem, component: ClaimOrderItemComponent) 
  * Gating je ZE SERVERU (`GET …/claims`): `can_withdraw` + `withdraw_block_reason`
  * říkají, zda jde odstoupit / vrátit (zakázka §1837, lhůta 14 dnů §1829,
  * otevřená žádost). Tady se jen zamkne volba a ukáže důvod. U reklamace je
- * povinné „co požadujete" (oprava / výměna / vrácení peněz — §19/1 ZOS).
+ * povinné „co požadujete" (výměna / vrácení peněz — §19/1 ZOS; oprava se od
+ * 12. 10. 2026 nenabízí).
+ *
+ * Co se vyplňuje podle druhu (12. 10. 2026, Matěj):
+ * - odstoupení (zrušení objednávky) — nic, jen potvrdit (případně účet),
+ *   bez popisu a bez fotek;
+ * - vrácení zboží — jen VÝBĚR kusů (povinný), bez popisu a bez fotek;
+ * - reklamace — kusy, co se stalo, co požaduje, popis vady a fotky.
+ * Server pak u odstoupení / vrácení uloží výchozí důvod podle druhu.
  *
  * Položky (§11.1): server posílá `order_items`, zákazník zaškrtne, kterých kusů
- * se to týká, a kolik. U reklamace povinně aspoň jedna, u vrácení volitelně
- * (nic = celá objednávka), u odstoupení se nevybírá (celá objednávka). Když
- * server `order_items` ještě neposílá, výběr se nevykreslí a formulář funguje
- * jako dřív.
+ * se to týká, a kolik. U reklamace i vrácení povinně aspoň jedna, u
+ * odstoupení se nevybírá (celá objednávka). Když server `order_items` ještě
+ * neposílá, výběr se nevykreslí.
  *
  * Balíček (§13.5): položka s `components` se po zaškrtnutí rozbalí a zákazník
  * může označit jen postižené komponenty (počet ≤ kusů na balíček × objednané
  * balíčky). Posílá se `items[].components` jen když něco zaškrtl; jinak jde
  * celý balíček jako dřív.
  *
- * Co se stalo (§11.3, §13.7): u reklamace povinná volba — vada/nefunkčnost
- * (`damage_cause` se neposílá), poškozený kus (`"damaged"`) nebo poškozeno
- * přepravou (`"carrier"`). U obou poškození jsou fotky povinné (server bez
- * nich vrátí 400); u přepravy majitelka dostane pokyn podat reklamaci u České
- * pošty, zákazníkova reklamace běží dál.
+ * Co se stalo (§11.3, §13.7): u reklamace povinná volba — vada
+ * (`damage_cause` se neposílá), poškozený kus (`"damaged"`) nebo balík dorazil
+ * poškozený (`"carrier"`). U obou poškození jsou fotky povinné (server bez
+ * nich vrátí 400). U přepravy se ukáže výrazný pokyn: reklamaci u České pošty
+ * podává příjemce, tedy zákazník, do 2 pracovních dnů od doručení (odkaz na
+ * stránku ČP, případně dokument `claimForm`); reklamace u nás běží dál.
  *
  * Auto-zrušení (§13.1): odstoupení / vrácení u nezaplacené a neodeslané
  * objednávky server rovnou vyřídí a objednávku zruší (`auto_cancelled`). Pak
@@ -328,9 +345,12 @@ export default function RefundRequest({
 
   const needsResolution = kind === "reklamace"
   // Výběr položek: u odstoupení se neukazuje (jde o celou objednávku),
-  // u reklamace je povinný, u vrácení volitelný.
+  // u reklamace i vrácení je povinný (12. 10. 2026, Matěj: u vrácení je to
+  // jediné, co zákazník vyplňuje — server bez něj žádost odmítne).
   const showItems = hasOrderItems && kind !== "odstoupeni"
-  const needsItems = kind === "reklamace" && hasOrderItems
+  const needsItems = (kind === "reklamace" || kind === "vraceni") && hasOrderItems
+  // Popis vady a fotky jen u reklamace — odstoupení ani vrácení je nemají.
+  const needsDetail = kind === "reklamace"
   const selectedItems: ClaimItemInput[] = orderItems
     .filter((item) => item.id in selected)
     .map((item) => {
@@ -358,15 +378,15 @@ export default function RefundRequest({
   const photosMissing = photosRequired && photos.length === 0
 
   // Neplaceno kartou → peníze vracíme převodem. Účet je povinný, když se
-  // peníze vrací (odstoupení, vrácení, reklamace s „vrácením peněz"); u opravy
-  // či výměny nepovinný. Formát (kontrolní součet) hlídá server.
+  // peníze vrací (odstoupení, vrácení, reklamace s „vrácením peněz"); u
+  // výměny nepovinný. Formát (kontrolní součet) hlídá server.
   const accountNeeded = Boolean(claims.refund_account_needed)
   const accountRequired =
     accountNeeded && (kind !== "reklamace" || resolution === "refund")
   const accountMissing = accountRequired && !account.trim()
 
   const canSend =
-    Boolean(detail.trim()) &&
+    (!needsDetail || Boolean(detail.trim())) &&
     (!needsResolution || resolution !== null) &&
     (!needsCause || cause !== null) &&
     (!needsItems || selectedItems.length > 0) &&
@@ -380,12 +400,14 @@ export default function RefundRequest({
     setError(null)
     const result = await submitClaim(orderId, token, {
       kind,
-      reason: detail.trim(),
+      // Popis a fotky jen u reklamace — i kdyby zůstaly z dřívějšího
+      // přepnutí druhu, k odstoupení / vrácení se neposílají.
+      reason: needsDetail ? detail.trim() : undefined,
       requested_resolution: needsResolution ? resolution ?? undefined : undefined,
-      photos: photos.length ? photos.map((p) => p.upload) : undefined,
+      photos: needsDetail && photos.length ? photos.map((p) => p.upload) : undefined,
       // Odstoupení = celá objednávka, výběr se neposílá (server ho ignoruje).
       items: showItems && selectedItems.length ? selectedItems : undefined,
-      // Vada/nefunkčnost = bez příčiny; poškození jde na server (§13.7).
+      // Vada = bez příčiny; poškození jde na server (§13.7).
       damage_cause: damageCause,
       ...(accountNeeded ? { refund_account: account } : {}),
     })
@@ -484,16 +506,25 @@ export default function RefundRequest({
         })}
       </fieldset>
 
+      {/* Odstoupení nemá popis ani fotky (12. 10. 2026, Matěj) — aspoň jedna
+          věta, co odeslání znamená, ať tlačítko nevisí bez kontextu. */}
+      {kind === "odstoupeni" && (
+        <p className={styles.itemsHelp}>
+          Odesláním odstupujete od celé objednávky — důvod udávat nemusíte.
+        </p>
+      )}
+
       {/* §11.1: kterých kusů se to týká. Bez `order_items` ze serveru se
-          nevykreslí a žádost jde jako dřív (jen text). */}
+          nevykreslí. */}
       {showItems && (
         <fieldset className={styles.items}>
           <legend className={styles.legend}>
-            Které produkty? <i>{needsItems ? "(povinné)" : "(nepovinné)"}</i>
+            {kind === "vraceni" ? "Které produkty vracíte?" : "Které produkty?"}{" "}
+            <i>{needsItems ? "(povinné)" : "(nepovinné)"}</i>
           </legend>
-          {!needsItems && (
+          {kind === "vraceni" && (
             <p className={styles.itemsHelp}>
-              Nic nevybráno = vracíte celou objednávku.
+              Zaškrtněte kusy, které nám pošlete zpět — peníze za ně vrátíme.
             </p>
           )}
           <ul className={styles.itemList}>
@@ -680,7 +711,9 @@ export default function RefundRequest({
           </ul>
           {needsItems && selectedItems.length === 0 && (
             <p className={styles.hint}>
-              Zaškrtněte aspoň jeden produkt, kterého se reklamace týká.
+              {kind === "vraceni"
+                ? "Zaškrtněte aspoň jeden produkt, který vracíte."
+                : "Zaškrtněte aspoň jeden produkt, kterého se reklamace týká."}
             </p>
           )}
         </fieldset>
@@ -714,9 +747,10 @@ export default function RefundRequest({
         </fieldset>
       )}
 
-      {/* §13.7: co se stalo — vada (bez příčiny), poškozený kus nebo poškozeno
-          přepravou. U poškození jsou fotky povinné; u přepravy reklamaci u ČP
-          podává majitelka, zákazníkova reklamace běží dál (§11.3). */}
+      {/* §13.7: co se stalo — vada (bez příčiny), poškozený kus nebo balík
+          dorazil poškozený. U poškození jsou fotky povinné; u přepravy musí
+          zákazník sám kontaktovat Českou poštu (pokyn pod volbami), jeho
+          reklamace u nás běží dál (§11.3). */}
       {needsCause && (
         <fieldset className={styles.causes}>
           <legend className={styles.legend}>
@@ -738,19 +772,7 @@ export default function RefundRequest({
               />
               <span className={styles.kindText}>
                 <span className={styles.kindLabel}>{entry.label}</span>
-                <span className={styles.kindHelp}>
-                  {entry.help}
-                  {entry.value === "carrier" && claimForm?.url ? (
-                    <>
-                      {" "}
-                      Co dělat s poškozenou zásilkou:{" "}
-                      <a href={claimForm.url} target="_blank" rel="noreferrer">
-                        {claimForm.title || "postup a formulář"}
-                      </a>
-                      .
-                    </>
-                  ) : null}
-                </span>
+                <span className={styles.kindHelp}>{entry.help}</span>
               </span>
             </label>
           ))}
@@ -760,97 +782,126 @@ export default function RefundRequest({
         </fieldset>
       )}
 
-      <label htmlFor={fieldId} className={styles.label}>
-        {kind === "reklamace"
-          ? "Popište vadu"
-          : kind === "vraceni"
-            ? "Co vracíte"
-            : "Napište nám pár slov"}{" "}
-        <i>(povinné)</i>
-      </label>
-      <textarea
-        id={fieldId}
-        className={styles.input}
-        rows={4}
-        value={detail}
-        onChange={(event) => setDetail(event.target.value)}
-        placeholder={
-          kind === "reklamace"
-            ? "Co je špatně a kdy jste si toho všimli — pár slov stačí."
-            : kind === "vraceni"
-              ? hasOrderItems
-                ? "Proč vracíte — pár slov stačí."
-                : "Které kusy vracíte a proč — pár slov stačí."
-              : "Důvod udávat nemusíte; napište aspoň, že odstupujete od celé objednávky, nebo kterých kusů se to týká."
-        }
-        required
-      />
+      {/* 12. 10. 2026, Matěj: balík poškozený přepravou → zákazník musí sám
+          kontaktovat Českou poštu do 2 pracovních dnů (reklamaci u přepravce
+          podává příjemce, my jako odesílatel za něj nemůžeme). Odkaz na
+          oficiální stránku ČP (stejná adresa jako v e-mailech), k tomu
+          dokument „co dělat s poškozenou zásilkou", je-li nahraný. */}
+      {needsCause && cause === "carrier" && (
+        <div className={styles.carrierNotice} role="note">
+          <p className={styles.carrierNoticeTitle}>
+            Nahlaste poškození i České poště — do 2 pracovních dnů
+          </p>
+          <p>
+            Reklamaci u přepravce podává příjemce, tedy vy — my jako odesílatel
+            ji za vás podat nemůžeme. Kontaktujte prosím Českou poštu{" "}
+            <strong>nejpozději do 2 pracovních dnů od doručení</strong>, na
+            kterékoli pobočce nebo online. Po této lhůtě už Česká pošta
+            reklamaci nepřijme.
+          </p>
+          <p>
+            Postup a formulář:{" "}
+            <a href={CP_CLAIM_URL} target="_blank" rel="noreferrer">
+              Reklamace u České pošty
+            </a>
+            {claimForm?.url ? (
+              <>
+                {" · "}
+                <a href={claimForm.url} target="_blank" rel="noreferrer">
+                  {claimForm.title || "Co dělat s poškozenou zásilkou"}
+                </a>
+              </>
+            ) : null}
+            . Mějte po ruce fotky obalu i zboží a číslo objednávky.
+          </p>
+          <p>Vaši reklamaci u nás tím odešlete níž jako obvykle.</p>
+        </div>
+      )}
+
+      {/* Popis vady a fotky jen u reklamace (12. 10. 2026, Matěj) —
+          odstoupení ani vrácení zboží je nepotřebují. */}
+      {needsDetail && (
+        <>
+          <label htmlFor={fieldId} className={styles.label}>
+            Popište vadu <i>(povinné)</i>
+          </label>
+          <textarea
+            id={fieldId}
+            className={styles.input}
+            rows={4}
+            value={detail}
+            onChange={(event) => setDetail(event.target.value)}
+            placeholder="Co je špatně a kdy jste si toho všimli — pár slov stačí."
+            required
+          />
+        </>
+      )}
 
       {/* Fotky vady — ať zákazník ukáže, co je špatně (u reklamace nejcennější;
-          u poškození přepravou povinné). */}
-      <div className={styles.photos}>
-        <span className={styles.photosLabel}>
-          Fotky <em>{photosRequired ? "povinné" : "nepovinné"}</em> —{" "}
-          {activeCause === "carrier"
-            ? "obal i poškozené zboží"
-            : activeCause === "damaged"
-              ? "poškození zblízka"
-              : kind === "reklamace"
-                ? "ukažte, co je špatně"
-                : "stav zboží"}
-        </span>
-        <div className={styles.photoGrid}>
-          {photos.map((photo) => (
-            <figure key={photo.id} className={styles.photo}>
-              <Image
-                src={photo.preview}
-                alt=""
-                width={96}
-                height={96}
-                unoptimized
-              />
+          u poškození povinné). */}
+      {needsDetail && (
+        <div className={styles.photos}>
+          <span className={styles.photosLabel}>
+            Fotky <em>{photosRequired ? "povinné" : "nepovinné"}</em> —{" "}
+            {activeCause === "carrier"
+              ? "obal i poškozené zboží"
+              : activeCause === "damaged"
+                ? "poškození zblízka"
+                : "ukažte, co je špatně"}
+          </span>
+          <div className={styles.photoGrid}>
+            {photos.map((photo) => (
+              <figure key={photo.id} className={styles.photo}>
+                <Image
+                  src={photo.preview}
+                  alt=""
+                  width={96}
+                  height={96}
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPhotos((current) =>
+                      current.filter((p) => p.id !== photo.id)
+                    )
+                  }
+                  disabled={state === "sending"}
+                  aria-label="Odebrat fotku"
+                >
+                  ×
+                </button>
+              </figure>
+            ))}
+            {photos.length < MAX_PHOTOS && (
               <button
                 type="button"
-                onClick={() =>
-                  setPhotos((current) =>
-                    current.filter((p) => p.id !== photo.id)
-                  )
-                }
+                className={styles.photoAdd}
+                onClick={() => fileInput.current?.click()}
                 disabled={state === "sending"}
-                aria-label="Odebrat fotku"
               >
-                ×
+                <span aria-hidden="true">+</span>
+                Přidat fotky
               </button>
-            </figure>
-          ))}
-          {photos.length < MAX_PHOTOS && (
-            <button
-              type="button"
-              className={styles.photoAdd}
-              onClick={() => fileInput.current?.click()}
-              disabled={state === "sending"}
-            >
-              <span aria-hidden="true">+</span>
-              Přidat fotky
-            </button>
+            )}
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={ACCEPT}
+            multiple
+            hidden
+            onChange={(event) => void pickPhotos(event.target.files)}
+          />
+          {photosMissing && (
+            <p className={styles.hint} aria-live="polite">
+              {activeCause === "carrier"
+                ? "U poškození přepravou potřebujeme aspoň jednu fotku obalu a zboží — bez ní žádost nejde odeslat."
+                : "U poškozeného kusu potřebujeme aspoň jednu fotku poškození — bez ní žádost nejde odeslat."}
+            </p>
           )}
         </div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept={ACCEPT}
-          multiple
-          hidden
-          onChange={(event) => void pickPhotos(event.target.files)}
-        />
-        {photosMissing && (
-          <p className={styles.hint} aria-live="polite">
-            {activeCause === "carrier"
-              ? "U poškození přepravou potřebujeme aspoň jednu fotku obalu a zboží — bez ní žádost nejde odeslat."
-              : "U poškozeného kusu potřebujeme aspoň jednu fotku poškození — bez ní žádost nejde odeslat."}
-          </p>
-        )}
-      </div>
+      )}
 
       {accountNeeded && (
         <div className={styles.account}>
@@ -874,7 +925,7 @@ export default function RefundRequest({
             Objednávku jste neplatili kartou, takže peníze posíláme převodem na
             účet. Stačí české číslo účtu, případně IBAN.
             {kind === "reklamace" && !accountRequired
-              ? " U opravy nebo výměny ho vyplňovat nemusíte — hodí se, kdyby se nakonec vracely peníze."
+              ? " U výměny ho vyplňovat nemusíte — hodí se, kdyby se nakonec vracely peníze."
               : ""}
           </p>
         </div>

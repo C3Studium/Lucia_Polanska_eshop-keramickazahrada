@@ -51,11 +51,57 @@ export const FINAL_STATUSES: readonly ClaimStatus[] = [
   "cancelled",
 ]
 
+/**
+ * Všechny hodnoty, které se v `requested_resolution` mohou objevit — i ve
+ * starých žádostech (popisky, admin, protokol). Pro NOVOU žádost platí užší
+ * `NEW_CLAIM_RESOLUTIONS`.
+ */
 export const REQUESTED_RESOLUTIONS: readonly RequestedResolution[] = [
   "repair",
   "replace",
   "refund",
 ]
+
+/**
+ * Co smí zákazník požadovat v NOVÉ reklamaci (12. 10. 2026, Matěj: „Oprava"
+ * z formuláře pryč — keramiku neopravujeme, jen vyměníme nebo vrátíme peníze).
+ * `repair` zůstává v typu i v popiscích, ať staré žádosti v adminu, protokolu
+ * a e-mailech čtou dál správně; nová žádost s ním neprojde (`checkClaimRules`).
+ */
+export const NEW_CLAIM_RESOLUTIONS: readonly RequestedResolution[] = [
+  "replace",
+  "refund",
+]
+
+export const isNewClaimResolution = (value: unknown): value is RequestedResolution =>
+  typeof value === "string" &&
+  (NEW_CLAIM_RESOLUTIONS as readonly string[]).includes(value)
+
+/**
+ * Výchozí „důvod" žádosti, když ho zákazník nepíše (12. 10. 2026, Matěj:
+ * odstoupení i vrácení jsou bez textu a bez fotek — důvod se ze zákona udávat
+ * nemusí). Uloží se místo prázdného řetězce, ať admin, protokol i e-maily
+ * dál čtou celou větu, ne prázdný řádek.
+ */
+export const DEFAULT_CLAIM_REASON: Record<ClaimKind, string> = {
+  reklamace: "Reklamace",
+  vraceni: "Vrácení zboží",
+  odstoupeni: "Odstoupení od smlouvy",
+}
+
+/**
+ * Důvod k uložení: text zákazníka, a když žádný není, výchozí věta podle
+ * druhu. U reklamace text povinný je (hlídá `checkClaimRules`), sem se tedy
+ * prázdný dostane jen u odstoupení / vrácení.
+ */
+export const claimReasonFor = (
+  kind: string | null | undefined,
+  reason: string | null | undefined
+): string => {
+  const text = (reason ?? "").trim()
+  if (text) return text
+  return isClaimKind(kind) ? DEFAULT_CLAIM_REASON[kind] : "Žádost o vrácení"
+}
 
 export const RESOLUTIONS: readonly Resolution[] = [
   "repair",
@@ -159,10 +205,12 @@ export const resolutionLabel = (value: string | null | undefined): string =>
 
 /**
  * Příčina poškození (§11.3, §13.7):
- * - `"carrier"` = zásilka dorazila poškozená → majitelka reklamuje u dopravce;
+ * - `"carrier"` = zásilka dorazila poškozená → u České pošty reklamuje
+ *   příjemce (zákazník) do 2 pracovních dnů od doručení; u nás běží reklamace
+ *   dál (12. 10. 2026, Matěj — viz `CP_CUSTOMER_CLAIM_TEXT`);
  * - `"damaged"` = poškozený kus (viditelné poškození) — bez dopravce, ale
  *   fotky jsou povinné stejně, protože bez nich se poškození nedá posoudit;
- * - `null` = vada / nefunguje (fotky dobrovolné).
+ * - `null` = vada (praskliny, protéká, odprýsknutá glazura…; fotky dobrovolné).
  */
 export type DamageCause = "carrier" | "damaged"
 
@@ -182,12 +230,13 @@ export const damageCauseLabel = (value: unknown): string | null =>
 
 /**
  * Věta do protokolu („Příčina poškození"). U dopravce musí být vidět, že
- * reklamaci u něj podává prodávající; u poškozeného kusu, že důkazem jsou
- * fotky z žádosti. Protokol ji tiskne doslova — žádné skládání v PDF.
+ * reklamaci u České pošty uplatňuje příjemce (podle podmínek ČP to odesílatel
+ * za něj udělat nemůže — 12. 10. 2026, Matěj); u poškozeného kusu, že důkazem
+ * jsou fotky z žádosti. Protokol ji tiskne doslova — žádné skládání v PDF.
  */
 export const damageCauseSentence = (value: unknown): string | null => {
   if (value === "carrier") {
-    return "Poškozeno přepravou — zásilka dorazila poškozená; reklamaci u dopravce uplatňuje prodávající."
+    return "Poškozeno přepravou — zásilka dorazila poškozená; reklamaci u České pošty uplatňuje příjemce do 2 pracovních dnů od doručení."
   }
   if (value === "damaged") {
     return "Poškozený kus — viditelné poškození zboží (fotky přiloženy k žádosti)."
@@ -200,14 +249,29 @@ export const photosRequiredFor = (value: unknown): boolean =>
   value === "carrier" || value === "damaged"
 
 /**
- * Formulář České pošty pro reklamaci zásilky (§11.3).
+ * Reklamace zásilky u České pošty (§11.3) — oficiální stránka „Reklamace
+ * a stížnosti": kdo reklamuje (poškozený obsah = adresát), lhůty (2 pracovní
+ * dny), online podání (aplikace Sledovat zásilku / Pošta Online) a formuláře
+ * ke stažení.
  *
- * OVĚŘIT: adresa je z dokumentu (`https://www.ceskaposta.cz/reklamace`) a ČP
- * stránky občas přesouvá; než se na ni majitelka poprvé spolehne, otevřít a
- * případně přepsat (jediné místo, odkud se bere).
+ * Ověřeno 12. 10. 2026: dřívější `ceskaposta.cz/reklamace` i
+ * `ceskaposta.cz/ereklamace` vrací 404; samotná eReklamace
+ * (`postaonline.cz/ereklamace`) chce přihlášení a hlásila „aplikace je
+ * momentálně nedostupná" — proto odkaz na rozcestník ČP, ne přímo na aplikaci.
+ * Stejnou adresu nese storefront (`CP_CLAIM_URL` v `@lib/util/claims`).
  */
-export const CP_CLAIM_FORM_URL = "https://www.ceskaposta.cz/reklamace"
+export const CP_CLAIM_FORM_URL =
+  "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
 
 /** Lhůta pro hlášení poškození dopravci — do e-mailu majitelce. */
 export const CP_DAMAGE_REPORT_DEADLINE_TEXT =
-  "Poškození hlaste České poště neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu propadá."
+  "Poškození se České poště hlásí neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu propadá."
+
+/**
+ * Pokyn zákazníkovi u „Balík dorazil poškozený" (12. 10. 2026, Matěj):
+ * reklamaci u přepravce podává příjemce, a to do 2 pracovních dnů. Do
+ * potvrzovacích e-mailů; odkaz `CP_CLAIM_FORM_URL` vykreslí šablona hned za
+ * větou.
+ */
+export const CP_CUSTOMER_CLAIM_TEXT =
+  "Poškození zásilky je potřeba nahlásit také České poště — reklamaci u přepravce podává příjemce, tedy vy, nejpozději do 2 pracovních dnů od doručení (na pobočce nebo online). Postup a formulář najdete na stránce České pošty:"

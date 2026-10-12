@@ -92,7 +92,7 @@ export default async function OrderRefundPage(props: Props) {
       description={
         openClaim
           ? "Tady vidíte, v jaké fázi žádost je. Jakmile rozhodneme nebo k nám dorazí zboží, dáme vám vědět e-mailem."
-          : "Vyberte, co chcete řešit, napište pár slov a odešlete. Potvrzení s protokolem přijde e-mailem."
+          : "Vyberte, co chcete řešit, a odešlete — u vrácení stačí vybrat kusy, u reklamace popište vadu. Potvrzení s protokolem přijde e-mailem."
       }
       status="pending"
       primary={myOrdersAction}

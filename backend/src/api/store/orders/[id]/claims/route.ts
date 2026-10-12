@@ -24,8 +24,9 @@ import {
  * (`lib/claims/intake`), stejný jako záložní `/store/return-requests`.
  *
  * Token odemyká JEN přihlášení. Pravidla (§1837, 14 dnů, jedna otevřená
- * žádost, požadované vyřízení u reklamace, položky u reklamace, fotky u
- * poškození přepravou i poškozeného kusu) platí na serveru beze změny —
+ * žádost, popis a požadované vyřízení u reklamace, položky u reklamace
+ * i vrácení, fotky u poškození přepravou i poškozeného kusu) platí na
+ * serveru beze změny —
  * gating v prohlížeči je jen zrcadlo téhle odpovědi. Odstoupení / vrácení
  * nezaplacené a neodeslané objednávky se vyřídí hned (§13.1) — odpověď nese
  * `auto_cancelled: true`.
@@ -34,12 +35,22 @@ import {
 const PostSchema = z.object({
   token: z.string().min(1),
   kind: z.enum(["reklamace", "vraceni", "odstoupeni"]),
-  reason: z.string().trim().min(1).max(2000),
+  /**
+   * Popis vady — povinný jen u reklamace (hlídá `checkClaimRules`).
+   * Odstoupení a vrácení ho nemají (12. 10. 2026, Matěj); uloží se výchozí
+   * věta podle druhu (`claimReasonFor`).
+   */
+  reason: z.string().trim().max(2000).optional(),
+  /**
+   * `repair` schéma ještě pustí, ale `checkClaimRules` ho u nové reklamace
+   * odmítne s českou hláškou (12. 10. 2026, Matěj: jen výměna / vrácení
+   * peněz) — obecná hláška o neplatném těle by zákazníkovi neřekla proč.
+   */
   requested_resolution: z.enum(["repair", "replace", "refund"]).optional(),
   /**
-   * Vybrané položky `{ id, quantity }` (§11.1): u reklamace povinné (aspoň
-   * jedna), u vrácení volitelné (bez položek = vše), u odstoupení se ignorují.
-   * Příslušnost k objednávce a strop množství hlídá `checkClaimRules`.
+   * Vybrané položky `{ id, quantity }` (§11.1): u reklamace i vrácení povinné
+   * (aspoň jedna), u odstoupení se ignorují. Příslušnost k objednávce a strop
+   * množství hlídá `checkClaimRules`.
    */
   items: z
     .array(
@@ -99,7 +110,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!parsed.success) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "Vyplňte prosím druh žádosti a popis. U reklamace i to, co požadujete."
+      "Vyplňte prosím druh žádosti. U reklamace i popis vady a to, co požadujete."
     )
   }
   const body = parsed.data
@@ -114,7 +125,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const existing = await listOrderClaims(req.scope, order.id)
   const input = {
     kind: body.kind,
-    reason: body.reason,
+    reason: body.reason ?? "",
     requested_resolution: body.requested_resolution ?? null,
     // Vždy pole: tahle routa výběr položek MÁ, takže u reklamace platí
     // „aspoň jedna" (null by znamenalo volajícího bez výběru — záložní routa).

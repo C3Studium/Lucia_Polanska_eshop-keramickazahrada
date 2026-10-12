@@ -3,6 +3,7 @@
 import { AnimatePresence, cubicBezier, motion } from "framer-motion"
 import { useId, useState } from "react"
 
+import { CP_CLAIM_URL } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
@@ -47,7 +48,13 @@ import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
  * it matters.
  */
 
-export const CP_EREKLAMACE_URL = "https://www.ceskaposta.cz/ereklamace"
+/**
+ * Dřív `ceskaposta.cz/ereklamace` — 12. 10. 2026 ověřeno, že vrací 404. Teď
+ * jedna adresa pro celý obchod (`CP_CLAIM_URL`): stránka ČP „Reklamace
+ * a stížnosti" s online podáním i formuláři; stejná jako v e-mailech.
+ * Jméno konstanty zůstává kvůli případným importům.
+ */
+export const CP_EREKLAMACE_URL = CP_CLAIM_URL
 
 /** Jméno dokumentu v modulu Dokumenty; prázdné místo se ohlásí v Přehledu. */
 export const CLAIM_FORM_KEY = "reklamacni-formular"
@@ -159,9 +166,9 @@ export default function CarrierDamageNotice({
                 </li>
                 <li>
                   <strong>Nahlaste to do dvou pracovních dnů</strong> — na kterékoli
-                  pobočce České pošty, nebo online v{" "}
+                  pobočce České pošty, nebo online — postup je na{" "}
                   <a href={CP_EREKLAMACE_URL} target="_blank" rel="noreferrer">
-                    eReklamaci
+                    stránce České pošty o reklamacích
                   </a>
                   . Po této lhůtě už Česká pošta reklamaci nepřijme.
                 </li>
@@ -190,7 +197,11 @@ export default function CarrierDamageNotice({
                      řečeno, kde formulář sehnat, místo mlčení nebo mrtvého odkazu. */
                   <p className={styles.documentNote}>
                     Dokument sem doplníme — do té doby použijte formulář přímo na
-                    pobočce nebo v eReklamaci České pošty.
+                    pobočce nebo na{" "}
+                    <a href={CP_EREKLAMACE_URL} target="_blank" rel="noreferrer">
+                      stránce České pošty
+                    </a>
+                    .
                   </p>
                 )}
               </div>

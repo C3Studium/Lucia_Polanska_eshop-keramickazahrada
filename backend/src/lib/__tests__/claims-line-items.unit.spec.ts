@@ -1,5 +1,6 @@
 import {
   claimItemsText,
+  ITEMS_REQUIRED_FOR_RETURN,
   lineItemsText,
   lineItemsTotal,
   orderItemsForClaims,
@@ -127,11 +128,25 @@ describe("resolveClaimLineItems — pravidla výběru (§11.1)", () => {
     })
   })
 
-  it("vrácení: položky volitelné (prázdné = vše → null)", () => {
-    expect(resolveClaimLineItems(order as any, "vraceni", [])).toEqual({
+  // 12. 10. 2026, Matěj: u vrácení zákazník jen vybere, CO vrací — výběr je
+  // povinný (dřív prázdné = vše). Záložní routa bez výběru projde dál.
+  it("vrácení: s výběrem položek aspoň jedna; bez výběru (záložní routa) projde", () => {
+    const empty = resolveClaimLineItems(order as any, "vraceni", [])
+    expect(empty.ok).toBe(false)
+    if (!empty.ok) expect(empty.message).toBe(ITEMS_REQUIRED_FOR_RETURN)
+    expect(resolveClaimLineItems(order as any, "vraceni", undefined)).toEqual({
       ok: true,
       line_items: null,
     })
+    const picked = resolveClaimLineItems(order as any, "vraceni", [
+      { id: "li_hrnek", quantity: 1 },
+    ])
+    expect(picked.ok).toBe(true)
+    if (picked.ok) {
+      expect(picked.line_items?.map((item) => item.line_item_id)).toEqual(["li_hrnek"])
+      // Seznam slovy jde do potvrzení zákazníkovi i do e-mailu majitelce.
+      expect(plain(lineItemsText(picked.line_items))).toBe("Keramický hrnek · 1 ks · 390 Kč")
+    }
   })
 
   it("odstoupení: výběr se ignoruje — celá smlouva", () => {
@@ -203,7 +218,7 @@ describe("resolveClaimLineItems — pravidla výběru (§11.1)", () => {
 
 describe("checkClaimRules — položky a poškození přepravou v intake", () => {
   const input = (kind: ClaimIntakeInput["kind"], extra: Partial<ClaimIntakeInput> = {}) =>
-    ({ kind, reason: "důvod", requested_resolution: "repair", ...extra }) as ClaimIntakeInput
+    ({ kind, reason: "důvod", requested_resolution: "replace", ...extra }) as ClaimIntakeInput
 
   it("reklamace z tokenové routy (pole položek) bez položky → 400", () => {
     const verdict = checkClaimRules(order as any, [], input("reklamace", { line_items: [] }))
@@ -353,6 +368,8 @@ describe("carrierDamageDescription — e-mail majitelce (§11.3)", () => {
     expect(text).toContain("DR1234567890X")
     expect(text).toContain(CP_CLAIM_FORM_URL)
     expect(text).toMatch(/2 pracovních dnů/)
+    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce, majitelka to jen ví.
+    expect(text).toMatch(/podává příjemce/)
     expect(text).toContain("Mísa · 1 ks · 1 305 Kč")
     expect(text).toContain("https://cdn/1.jpg")
     expect(text).toContain("Rozbitá mísa")

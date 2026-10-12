@@ -579,7 +579,8 @@ describe("poškozený kus (§13.7)", () => {
     expect(photosRequiredFor("damaged")).toBe(true)
     expect(photosRequiredFor(null)).toBe(false)
     expect(damageCauseSentence("damaged")).toMatch(/Poškozený kus/)
-    expect(damageCauseSentence("carrier")).toMatch(/dopravce/)
+    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce, ne prodávající.
+    expect(damageCauseSentence("carrier")).toMatch(/České pošty uplatňuje příjemce/)
     expect(damageCauseSentence(null)).toBeNull()
     expect(photosRequiredMessage("damaged")).toMatch(/poškozeného kusu/)
   })
@@ -588,7 +589,7 @@ describe("poškozený kus (§13.7)", () => {
     const base = {
       kind: "reklamace" as const,
       reason: "prasklá glazura",
-      requested_resolution: "repair",
+      requested_resolution: "replace",
       line_items: [{ id: "li_misa", quantity: 1 }],
       damage_cause: "damaged",
     }

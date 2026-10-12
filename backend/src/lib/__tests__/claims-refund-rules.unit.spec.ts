@@ -8,8 +8,11 @@ import {
 } from "../claims/refund-rules"
 import {
   checkClaimRules,
+  CLAIM_REASON_REQUIRED,
+  CLAIM_RESOLUTION_REQUIRED,
   type ClaimIntakeInput,
 } from "../claims/intake"
+import { claimReasonFor } from "../claims/constants"
 import { withdrawalGate } from "../claims/context"
 
 /**
@@ -202,7 +205,7 @@ describe("checkClaimRules / withdrawalGate — pravidla intake (§4)", () => {
     expect(checkClaimRules(madeToOrderOrder, [], input("odstoupeni")).ok).toBe(false)
     expect(checkClaimRules(madeToOrderOrder, [], input("vraceni")).ok).toBe(false)
     expect(
-      checkClaimRules(madeToOrderOrder, [], input("reklamace", { requested_resolution: "repair" })).ok
+      checkClaimRules(madeToOrderOrder, [], input("reklamace", { requested_resolution: "replace" })).ok
     ).toBe(true)
   })
 
@@ -229,6 +232,65 @@ describe("checkClaimRules / withdrawalGate — pravidla intake (§4)", () => {
     expect(
       checkClaimRules(plainOrder, [], input("reklamace", { requested_resolution: "refund" })).ok
     ).toBe(true)
+  })
+
+  // 12. 10. 2026, Matěj: oprava se nenabízí — jen výměna nebo vrácení peněz.
+  it("reklamace přijme výměnu i vrácení peněz, opravu u nové žádosti odmítne", () => {
+    expect(
+      checkClaimRules(plainOrder, [], input("reklamace", { requested_resolution: "replace" })).ok
+    ).toBe(true)
+    expect(
+      checkClaimRules(plainOrder, [], input("reklamace", { requested_resolution: "refund" })).ok
+    ).toBe(true)
+    const repair = checkClaimRules(
+      plainOrder,
+      [],
+      input("reklamace", { requested_resolution: "repair" })
+    )
+    expect(repair.ok).toBe(false)
+    if (!repair.ok) {
+      expect(repair.message).toBe(CLAIM_RESOLUTION_REQUIRED)
+      expect(repair.message).not.toMatch(/opravu/)
+    }
+    expect(
+      checkClaimRules(plainOrder, [], input("reklamace", { requested_resolution: "nesmysl" })).ok
+    ).toBe(false)
+  })
+
+  // 12. 10. 2026, Matěj: popis vady jen u reklamace; odstoupení a vrácení bez textu.
+  it("odstoupení a vrácení projdou bez důvodu, reklamace bez popisu vady ne", () => {
+    expect(checkClaimRules(plainOrder, [], input("odstoupeni", { reason: "" })).ok).toBe(true)
+    expect(checkClaimRules(plainOrder, [], input("odstoupeni", { reason: undefined })).ok).toBe(true)
+    expect(
+      checkClaimRules(
+        plainOrder,
+        [],
+        input("vraceni", { reason: "", line_items: [{ id: "li_1", quantity: 1 }] })
+      ).ok
+    ).toBe(true)
+    const noText = checkClaimRules(
+      plainOrder,
+      [],
+      input("reklamace", { reason: "   ", requested_resolution: "replace" })
+    )
+    expect(noText.ok).toBe(false)
+    if (!noText.ok) expect(noText.message).toBe(CLAIM_REASON_REQUIRED)
+  })
+
+  it("vrácení z formuláře (pole položek) bez vybraného zboží neprojde", () => {
+    const empty = checkClaimRules(plainOrder, [], input("vraceni", { reason: "", line_items: [] }))
+    expect(empty.ok).toBe(false)
+    if (!empty.ok) expect(empty.message).toMatch(/které zboží vracíte/)
+    // Záložní routa (bez výběru položek, volný text) dál projde.
+    expect(checkClaimRules(plainOrder, [], input("vraceni", { items: "modrý hrnek" })).ok).toBe(true)
+  })
+
+  it("claimReasonFor: prázdný důvod = výchozí věta podle druhu, text zákazníka má přednost", () => {
+    expect(claimReasonFor("odstoupeni", "")).toBe("Odstoupení od smlouvy")
+    expect(claimReasonFor("vraceni", null)).toBe("Vrácení zboží")
+    expect(claimReasonFor("vraceni", "   ")).toBe("Vrácení zboží")
+    expect(claimReasonFor("reklamace", " prasklá glazura ")).toBe("prasklá glazura")
+    expect(claimReasonFor(null, "")).toBe("Žádost o vrácení")
   })
 
   it("jedna otevřená žádost na objednávku; uzavřené nevadí", () => {

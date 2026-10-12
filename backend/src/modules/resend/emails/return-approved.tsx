@@ -152,8 +152,10 @@ function ReturnApprovedEmailComponent({
         {nothingToReturn
           ? "Nic posílat nemusíte. Pokud jste už něco zaplatili, vrátíme to stejnou cestou, jakou k nám platba přišla; jinak je tím vše vyřízené."
           : (NEXT_STEP[outcome] ?? NEXT_STEP.refund)}
+        {/* 12. 10. 2026, Matěj: u České pošty reklamuje příjemce, ne my —
+            dřívější „reklamujeme u dopravce my" už neplatí. */}
         {carrierDamage
-          ? " Poškození při přepravě reklamujeme u dopravce my — vás se to netýká."
+          ? " Poškození zásilky hlásí České poště příjemce — postup jsme vám poslali s potvrzením reklamace."
           : ""}
       </Note>
 

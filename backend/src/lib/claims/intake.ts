@@ -19,6 +19,7 @@ import type ReturnRequestModuleService from "../../modules/return-request/servic
 import { shouldAutoCancel } from "./auto-cancel"
 import { autoCancelClaim } from "./auto-cancel-action"
 import {
+  claimReasonFor,
   CP_CLAIM_FORM_URL,
   CP_DAMAGE_REPORT_DEADLINE_TEXT,
   damageCauseLabel,
@@ -26,11 +27,11 @@ import {
   deadlineTextFor,
   isClaimKind,
   isDamageCause,
+  isNewClaimResolution,
   blocksNewClaim,
   isOpenStatus,
   kindLabel,
   photosRequiredFor,
-  REQUESTED_RESOLUTIONS,
   resolutionLabel,
   resolveByFor,
   type ClaimKind,
@@ -152,7 +153,12 @@ export const realCustomerName = (order: any): string | null => {
 
 export type ClaimIntakeInput = {
   kind: ClaimKind | null
-  reason: string
+  /**
+   * Popis od zákazníka. Povinný jen u reklamace (12. 10. 2026, Matěj:
+   * odstoupení a vrácení jsou bez textu) — prázdný se uloží jako výchozí věta
+   * podle druhu (`claimReasonFor`).
+   */
+  reason?: string | null
   requested_resolution?: RequestedResolution | string | null
   /** Free text — which pieces are coming back (jen záložní routa). */
   items?: string | null
@@ -179,13 +185,22 @@ export type ClaimRuleVerdict =
   | { ok: true }
   | { ok: false; message: string }
 
+export const CLAIM_REASON_REQUIRED =
+  "U reklamace prosím popište vadu — co je špatně a kdy jste si toho všimli."
+export const CLAIM_RESOLUTION_REQUIRED =
+  "U reklamace prosím uveďte, co požadujete — výměnu, nebo vrácení peněz (§ 19 zákona o ochraně spotřebitele)."
+
 /**
  * Serverová pravidla §4 + §11.1 — čistá funkce (testovatelná bez kontejneru):
  * - §1837: čistá zakázka → `odstoupeni`/`vraceni` nejde;
  * - 14 dnů od odeslání pro `odstoupeni`/`vraceni` (bez odeslání = bez lhůty);
- * - u `reklamace` je `requested_resolution` povinné (§19/1 ZOS);
- * - položky: u reklamace aspoň jedna (když volající výběr má), id patří
- *   objednávce, množství ≤ objednané (`resolveClaimLineItems`);
+ * - u `reklamace` je popis vady povinný; u odstoupení / vrácení ne
+ *   (12. 10. 2026, Matěj — uloží se výchozí věta, `claimReasonFor`);
+ * - u `reklamace` je `requested_resolution` povinné (§19/1 ZOS) a smí být jen
+ *   výměna nebo vrácení peněz — opravu nová žádost nenabízí (12. 10. 2026,
+ *   Matěj; `NEW_CLAIM_RESOLUTIONS`), staré žádosti s `repair` čte vše dál;
+ * - položky: u reklamace i vrácení aspoň jedna (když volající výběr má), id
+ *   patří objednávce, množství ≤ objednané (`resolveClaimLineItems`);
  * - poškození přepravou i poškozený kus → aspoň jedna fotka (§11.3, §13.7:
  *   bez ní nejde reklamovat u ČP, resp. posoudit poškození);
  * - nejvýš jedna OTEVŘENÁ žádost na objednávku.
@@ -206,13 +221,11 @@ export const checkClaimRules = (
     }
   }
   if (input.kind === "reklamace") {
-    const requested = input.requested_resolution ?? ""
-    if (!(REQUESTED_RESOLUTIONS as readonly string[]).includes(requested)) {
-      return {
-        ok: false,
-        message:
-          "U reklamace prosím uveďte, co požadujete — opravu, výměnu, nebo vrácení peněz (§ 19 zákona o ochraně spotřebitele).",
-      }
+    if (!(input.reason ?? "").trim()) {
+      return { ok: false, message: CLAIM_REASON_REQUIRED }
+    }
+    if (!isNewClaimResolution(input.requested_resolution)) {
+      return { ok: false, message: CLAIM_RESOLUTION_REQUIRED }
     }
   }
   const items = resolveClaimLineItems(order, input.kind, input.line_items)
@@ -316,7 +329,9 @@ export const createClaim = async (
     customer_name: realCustomerName(order) ?? undefined,
     kind,
     resolve_by: resolveByFor(kind, now),
-    reason: input.reason,
+    // Odstoupení / vrácení chodí bez textu → výchozí věta podle druhu, ať
+    // admin, protokol i e-maily nečtou prázdný řádek (12. 10. 2026, Matěj).
+    reason: claimReasonFor(kind, input.reason),
     requested_resolution:
       kind === "reklamace" ? (input.requested_resolution ?? null) : null,
     withdrawal_deadline: withdrawalDeadline,
@@ -445,7 +460,11 @@ export const createClaim = async (
       ]
         .filter(Boolean)
         .join(" · "),
-      itemsText ? `Zboží:\n${itemsText}` : null,
+      // U vrácení je výběr položek jediné, co zákazník vyplnil — musí být
+      // v e-mailu vidět, co se vrací (12. 10. 2026, Matěj).
+      itemsText
+        ? `${kind === "vraceni" ? "Vracené zboží" : "Zboží"}:\n${itemsText}`
+        : null,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -455,13 +474,14 @@ export const createClaim = async (
     resource: { id: order.id, type: "order" },
   })
 
-  // Poškozeno přepravou (§11.3): druhé, URGENTNÍ upozornění s e-mailem —
-  // reklamaci u České pošty musí podat majitelka (odesílatel), a to do dvou
-  // pracovních dnů od dodání; zákazníkova žádost sama o sobě lhůtu nehlídá.
+  // Poškozeno přepravou (§11.3): druhé, URGENTNÍ upozornění s e-mailem.
+  // Reklamaci u České pošty podává příjemce (zákazník) do dvou pracovních dnů
+  // — formulář i potvrzovací e-mail mu to říkají (12. 10. 2026, Matěj);
+  // majitelka to ví hned, kdyby zákazník potřeboval podací číslo nebo pomoc.
   if (damageCause === "carrier") {
     await notifyMerchant(container, {
       key: `mn:carrier-damage:${request.id}`,
-      title: `Zásilka #${order.display_id} dorazila poškozená — podejte reklamaci u České pošty`,
+      title: `Zásilka #${order.display_id} dorazila poškozená — zákazník reklamuje u České pošty`,
       description: carrierDamageDescription({
         parcelCode: parcelCodeOf(order),
         itemsText,
@@ -480,8 +500,9 @@ export const createClaim = async (
 
 /**
  * Text upozornění „poškozeno přepravou" (§11.3) — čistá funkce, ať jde
- * ověřit bez kontejneru: číslo zásilky (nebo že chybí), odkaz na formulář ČP,
- * lhůta, fotky od zákazníka a co je poškozené.
+ * ověřit bez kontejneru: číslo zásilky (nebo že chybí), že reklamaci u ČP
+ * podává zákazník (12. 10. 2026, Matěj), odkaz na stránku ČP, lhůta, fotky
+ * od zákazníka a co je poškozené.
  */
 export const carrierDamageDescription = (input: {
   parcelCode: string | null
@@ -492,8 +513,9 @@ export const carrierDamageDescription = (input: {
   [
     input.parcelCode
       ? `Číslo zásilky: ${input.parcelCode}`
-      : "Číslo zásilky se nepodařilo dohledat (objednávka nemá podací číslo ČP) — doplňte ho z podacího archu.",
-    `Formulář reklamace ČP: ${CP_CLAIM_FORM_URL}`,
+      : "Číslo zásilky se nepodařilo dohledat (objednávka nemá podací číslo ČP) — zákazník ho k reklamaci u ČP potřebuje, pošlete mu ho z podacího archu.",
+    "Reklamaci u České pošty podává příjemce — zákazník dostal pokyn nahlásit poškození sám (ve formuláři i v potvrzovacím e-mailu).",
+    `Reklamace u ČP (postup a formuláře): ${CP_CLAIM_FORM_URL}`,
     CP_DAMAGE_REPORT_DEADLINE_TEXT,
     `Zákazník popisuje: ${input.reason}`,
     input.itemsText ? `Poškozené zboží:\n${input.itemsText}` : null,

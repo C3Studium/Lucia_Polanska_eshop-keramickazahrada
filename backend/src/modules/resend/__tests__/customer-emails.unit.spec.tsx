@@ -6,6 +6,7 @@ import { PaymentRefundedEmail } from "../emails/payment-refunded"
 import { OrderRefundedEmail } from "../emails/order-refunded"
 import { OrderDeliveredEmail } from "../emails/order-delivered"
 import { OrderShipmentEmail } from "../emails/order-shipment"
+import { CP_CLAIM_FORM_URL } from "../../../lib/claims/constants"
 
 /**
  * Pins the audit fixes on the real rendered HTML — same renderer trade-off as
@@ -206,7 +207,7 @@ describe("customer e-mail templates after the audit", () => {
         }) as React.ReactElement
       )
       expect(html).not.toContain("Dorazila zásilka poškozená")
-      expect(html).not.toContain("eReklamaci")
+      expect(html).not.toContain("České pošty o reklamacích")
     })
 
     it("keeps the carrier-damage claim available for courier deliveries", () => {
@@ -217,6 +218,8 @@ describe("customer e-mail templates after the audit", () => {
         }) as React.ReactElement
       )
       expect(html).toContain("Dorazila zásilka poškozená")
+      // 12. 10. 2026: jedna ověřená adresa ČP pro celý obchod.
+      expect(html).toContain(CP_CLAIM_FORM_URL)
     })
   })
 

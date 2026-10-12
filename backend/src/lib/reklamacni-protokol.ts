@@ -206,9 +206,10 @@ export const generateProtocolPdf = async (
   field("Datum uplatnění", fmtDate(data.createdAt))
   field("Popis / důvod", data.reason)
   if (data.items) field("Zboží", data.items)
-  // Příčina poškození: u dopravce musí být vidět, že reklamaci u něj podává
-  // prodávající; u poškozeného kusu, že důkazem jsou fotky. Věta přichází
-  // hotová (`damageCauseSentence`), ať PDF nic neskládá.
+  // Příčina poškození: u dopravce musí být vidět, že reklamaci u České pošty
+  // podává příjemce (12. 10. 2026, Matěj); u poškozeného kusu, že důkazem
+  // jsou fotky. Věta přichází hotová (`damageCauseSentence`), ať PDF nic
+  // neskládá.
   if (data.damageCause) {
     field("Příčina poškození", data.damageCause)
   }

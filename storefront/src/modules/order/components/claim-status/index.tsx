@@ -337,8 +337,9 @@ function ClaimCard({
           <strong className={styles.status}>
             {CLAIM_STATUS_LABEL[claim.status]}
           </strong>
-          {/* §11.3 / §13.7 — příčina poškození; u přepravy majitelka řeší i
-              reklamaci u dopravce, zákazník vidí, že jsme to tak zapsali. */}
+          {/* §11.3 / §13.7 — příčina poškození; zákazník vidí, že jsme to tak
+              zapsali (u přepravy reklamuje u České pošty on sám jako
+              příjemce — 12. 10. 2026, Matěj). */}
           {isDamageCause(claim.damage_cause) && (
             <span className={styles.badge} data-cause={claim.damage_cause}>
               {DAMAGE_CAUSE_LABEL[claim.damage_cause]}

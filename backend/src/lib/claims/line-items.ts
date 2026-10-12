@@ -122,6 +122,8 @@ export type LineItemsVerdict =
 
 export const ITEMS_REQUIRED_FOR_CLAIM =
   "U reklamace prosím vyberte, kterého zboží se týká — aspoň jednu položku."
+export const ITEMS_REQUIRED_FOR_RETURN =
+  "U vrácení zboží prosím vyberte, které zboží vracíte — aspoň jednu položku."
 export const ITEMS_NOT_IN_ORDER =
   "Některá z vybraných položek k této objednávce nepatří. Obnovte prosím stránku a zkuste to znovu."
 export const ITEMS_QUANTITY_TOO_HIGH =
@@ -129,7 +131,7 @@ export const ITEMS_QUANTITY_TOO_HIGH =
 export const ITEMS_QUANTITY_INVALID =
   "Počet kusů musí být celé číslo, aspoň 1."
 export const PHOTOS_REQUIRED_FOR_CARRIER_DAMAGE =
-  "U poškození přepravou prosím přiložte aspoň jednu fotku poškozené zásilky nebo zboží — bez ní nemůžeme reklamaci u dopravce uplatnit."
+  "U poškození přepravou prosím přiložte aspoň jednu fotku poškozené zásilky nebo zboží — bez ní poškození nedokážeme posoudit (a Česká pošta fotky k reklamaci chce taky)."
 export const PHOTOS_REQUIRED_FOR_DAMAGED_ITEM =
   "U poškozeného kusu prosím přiložte aspoň jednu fotku poškození — bez ní nemůžeme vadu posoudit."
 
@@ -142,15 +144,17 @@ export const photosRequiredMessage = (cause: unknown): string =>
 /**
  * Pravidla §11.1 a sestavení snapshotu v jednom kroku:
  * - `reklamace` → aspoň jedna položka;
- * - `vraceni` → volitelné (bez položek = vše → null);
+ * - `vraceni` → aspoň jedna položka (12. 10. 2026, Matěj: zákazník u vrácení
+ *   nic nepíše, jen vybere, CO vrací — bez výběru by nebylo jasné co; dřív
+ *   bylo volitelné a prázdné znamenalo „vše");
  * - `odstoupeni` → výběr se ignoruje, odstupuje se od celé smlouvy → null;
  * - id musí patřit objednávce, množství celé, 1 ≤ q ≤ objednané.
  *
  * `selection` null/undefined = volající BEZ výběru položek (záložní routa
- * číslo + e-mail, staré formuláře) — pravidlo „aspoň jedna" se nevynucuje,
- * jinak by záložní cesta u reklamace přestala fungovat. Tokenová routa posílá
- * vždy pole (i prázdné), takže u ní pravidlo platí. Duplicitní id se sloučí
- * (součet kusů), ať formulář nemusí hlídat unikátnost.
+ * číslo + e-mail s volným textem `items`, staré formuláře) — pravidlo „aspoň
+ * jedna" se nevynucuje, jinak by záložní cesta přestala fungovat. Tokenová
+ * routa posílá vždy pole (i prázdné), takže u ní pravidlo platí. Duplicitní
+ * id se sloučí (součet kusů), ať formulář nemusí hlídat unikátnost.
  */
 export const resolveClaimLineItems = (
   order: ClaimSourceOrder,
@@ -179,6 +183,9 @@ export const resolveClaimLineItems = (
   if (!merged.size) {
     if (kind === "reklamace") {
       return { ok: false, message: ITEMS_REQUIRED_FOR_CLAIM }
+    }
+    if (kind === "vraceni") {
+      return { ok: false, message: ITEMS_REQUIRED_FOR_RETURN }
     }
     return { ok: true, line_items: null }
   }
