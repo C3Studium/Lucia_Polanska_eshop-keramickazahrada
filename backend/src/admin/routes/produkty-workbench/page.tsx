@@ -308,7 +308,7 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
  * údaji; telefon: nastavení pod „…".
  */
 const ROW_GRID =
-  "min-[1400px]:grid-cols-[minmax(0,1fr)_108px_96px_96px_60px_60px_92px_68px_68px_168px]";
+  "min-[1400px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_56px_56px_84px_64px_60px_150px]";
 
 const RowHeader = () => (
   <div
