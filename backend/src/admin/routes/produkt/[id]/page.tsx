@@ -1718,17 +1718,62 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     </div>
                   </div>
 
-                  {assignedElsewhere.length > 0 && (
-                    <div>
-                      <FieldLabel>Zařazené mimo tuhle kolekci</FieldLabel>
-                      <Text size="xsmall" className="text-ui-fg-muted mt-0.5">
-                        Kousek je v kategoriích jiné kolekce — kliknutím je
-                        odeberete.
+                  {/* Kategorie z JINÝCH kolekcí (Matěj 12. 10. 2026): kousek
+                      může patřit do víc kolekcí — třeba zápich do „Zápichy"
+                      (Do zahrady) i „Drobnosti pro radost" (Do bytu). Obchod
+                      i Produkty+ ho pak ukážou v každé kolekci, ze které má
+                      kategorii; kolekce nahoře zůstává hlavní. */}
+                  {categories.length > 0 && (
+                    <details
+                      open={assignedElsewhere.length > 0}
+                      className="border-ui-border-base rounded-lg border px-3 py-2"
+                    >
+                      <summary className="cursor-pointer">
+                        <Text size="small" weight="plus" className="inline">
+                          Zařadit i do jiné kolekce
+                        </Text>
+                        {assignedElsewhere.length > 0 && (
+                          <Text size="xsmall" className="text-ui-fg-subtle ml-2 inline">
+                            ({assignedElsewhere.map((category) => category.name).join(", ")})
+                          </Text>
+                        )}
+                      </summary>
+                      <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                        Kliknutím kousek přidáte i do kategorie jiné kolekce
+                        (nebo ho z ní odeberete). V obchodě se pak ukáže
+                        v obou kolekcích.
                       </Text>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {assignedElsewhere.map(chip)}
+                      <div className="mt-2 flex flex-col gap-3">
+                        {[
+                          ...(collectionsQuery.data?.collections ?? [])
+                            .filter((collection) => collection.id !== collectionId)
+                            .map((collection) => ({
+                              title: collection.title,
+                              items: categories.filter(
+                                (category) =>
+                                  (category.metadata ?? {})["collection_id"] === collection.id
+                              ),
+                            })),
+                          {
+                            title: "Bez kolekce",
+                            items: categories.filter(
+                              (category) => !(category.metadata ?? {})["collection_id"]
+                            ),
+                          },
+                        ]
+                          .filter((group) => group.items.length > 0)
+                          .map((group) => (
+                            <div key={group.title}>
+                              <Text size="xsmall" className="text-ui-fg-subtle">
+                                {group.title}
+                              </Text>
+                              <div className="mt-1 flex flex-wrap gap-2">
+                                {group.items.map(chip)}
+                              </div>
+                            </div>
+                          ))}
                       </div>
-                    </div>
+                    </details>
                   )}
                 </div>
               );

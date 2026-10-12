@@ -80,6 +80,23 @@ function toCollectionCards(
 ): NavigationCollection[] {
   return collections.map((collection) => {
     const productIds = new Set(collection.products?.map(({ id }) => id) ?? [])
+    /* Kategorie kolekce = přiřazené v Rozdělení (`metadata.collection_id`).
+       Kategorie BEZ přiřazení se ukáže tam, kde má produkty (starší chování).
+       Kategorie přiřazená JINÉ kolekci sem nepatří, i když s ní sdílí produkt
+       (zápich v „Zápichy" i „Drobnosti pro radost" ji jinak táhl i do Do bytu). */
+    const assignedTo = (category: HttpTypes.StoreProductCategory) =>
+      (category.metadata as Record<string, unknown> | null)?.collection_id as
+        | string
+        | undefined
+    const ownCategories = categories.filter((category) =>
+      assignedTo(category)
+        ? assignedTo(category) === collection.id
+        : category.products?.some(({ id }) => productIds.has(id))
+    )
+    // Počet = vlastní produkty kolekce ∪ produkty jejích kategorií.
+    for (const category of ownCategories) {
+      for (const product of category.products ?? []) productIds.add(product.id)
+    }
 
     return {
       id: collection.id,
@@ -90,17 +107,8 @@ function toCollectionCards(
          Bydlí u kolekce, ne v CMS: kolekce je katalog, a když se přejmenuje nebo smaže,
          má se s ní hnout i její věta. Prázdný je normální stav — karta pak nese jen jméno. */
       description: subtitleOf(collection.metadata),
-      productCount: collection.products?.length ?? 0,
-      categories: categories
-        .filter(
-          (category) =>
-            // Buď má v kolekci produkty, nebo je do ní zařazená ručně přes
-            // metadata.collection_id (vazba z admin Rozdělení) — díky tomu
-            // se v menu ukáže i čerstvě založená prázdná kategorie.
-            category.products?.some(({ id }) => productIds.has(id)) ||
-            (category.metadata as Record<string, unknown> | null)
-              ?.collection_id === collection.id
-        )
+      productCount: productIds.size,
+      categories: ownCategories
         .slice(0, CATEGORY_LINK_LIMIT)
         .map(toNavigationCategory),
     }

@@ -101,6 +101,10 @@ type WorkbenchProduct = {
   no_promo: boolean;
   thumbnail: string | null;
   collection: string | null;
+  /** Všechny kolekce — vlastní + kolekce kategorií (filtr ho ukáže pod každou). */
+  collections?: string[];
+  /** Kategorie → kolekce, ke které patří. */
+  category_collections?: Record<string, string | null>;
   categories: string[];
   variants: WorkbenchVariant[];
   sold_30d: number;

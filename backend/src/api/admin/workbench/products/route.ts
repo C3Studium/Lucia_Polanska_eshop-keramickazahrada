@@ -65,6 +65,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const since = new Date()
   since.setDate(since.getDate() - 30)
 
+  // Názvy kolekcí podle id — kolekce produktu se odvozují i z jeho kategorií.
+  const { data: collectionRows } = await query.graph({
+    entity: "product_collection",
+    fields: ["id", "title"],
+  })
+  const collectionTitleById = new Map(
+    (collectionRows as any[]).map((collection) => [collection.id, collection.title as string])
+  )
+  const collectionTitleOf = (id: unknown): string | null =>
+    typeof id === "string" ? collectionTitleById.get(id) ?? null : null
+
   const [productsResult, alerts, profiles, wishlistItems, approvedReviews, recentOrders, bundlesResult] =
     await Promise.all([
       query.graph({
@@ -81,6 +92,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "collection.title",
           "categories.id",
           "categories.name",
+          // Kategorie patří kolekci (`metadata.collection_id`, Rozdělení) —
+          // z toho se počítají všechny kolekce produktu (`collections`).
+          "categories.metadata",
           "variants.id",
           "variants.title",
           "variants.sku",
@@ -243,6 +257,28 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         thumbnail: product.thumbnail,
         collection: product.collection?.title ?? null,
         collection_id: product.collection?.id ?? null,
+        /*
+         * VŠECHNY kolekce produktu (Matěj 12. 10. 2026): vlastní kolekce +
+         * kolekce jeho kategorií. Medusa dovolí produktu jen jednu kolekci,
+         * kategorie ale může mít z víc kolekcí — filtr Produkty+ ho pak ukáže
+         * pod každou z nich. `category_collections`: kategorie → její kolekce.
+         */
+        collections: [
+          ...new Set(
+            [
+              product.collection?.title ?? null,
+              ...(product.categories ?? []).map((category: any) =>
+                collectionTitleOf((category.metadata as any)?.collection_id)
+              ),
+            ].filter(Boolean) as string[]
+          ),
+        ],
+        category_collections: Object.fromEntries(
+          (product.categories ?? []).map((category: any) => [
+            category.name,
+            collectionTitleOf((category.metadata as any)?.collection_id),
+          ])
+        ),
         category_refs: (product.categories ?? []).map((category: any) => ({
           id: category.id,
           name: category.name,

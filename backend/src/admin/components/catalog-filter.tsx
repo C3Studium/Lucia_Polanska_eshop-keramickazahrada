@@ -28,21 +28,36 @@ export const NO_COLLECTION = "__bez_kolekce__";
 
 type FilterableProduct = {
   collection?: string | null;
+  /**
+   * VŠECHNY kolekce produktu — vlastní + kolekce jeho kategorií (12. 10. 2026:
+   * kategorie může mít z víc kolekcí, Medusa ale jen jednu kolekci). Řádky,
+   * které to pole nemají, se řídí `collection`.
+   */
+  collections?: string[];
   categories?: string[];
+  /** Kategorie → kolekce, ke které patří (pod vybranou kolekcí jen její kategorie). */
+  category_collections?: Record<string, string | null>;
 };
+
+const collectionsOf = (product: FilterableProduct): string[] =>
+  product.collections?.length
+    ? product.collections
+    : product.collection
+      ? [product.collection]
+      : [];
 
 export const applyCatalogFilter = <T extends FilterableProduct>(
   products: T[],
   filter: CatalogFilter
 ): T[] =>
   products.filter((product) => {
-    if (filter.collection === NO_COLLECTION && product.collection) {
+    if (filter.collection === NO_COLLECTION && collectionsOf(product).length) {
       return false;
     }
     if (
       filter.collection &&
       filter.collection !== NO_COLLECTION &&
-      product.collection !== filter.collection
+      !collectionsOf(product).includes(filter.collection)
     ) {
       return false;
     }
@@ -94,11 +109,11 @@ export const CatalogFilterBar = ({
   const collectionCounts = new Map<string, number>();
   let unassigned = 0;
   for (const product of products) {
-    if (product.collection) {
-      collectionCounts.set(
-        product.collection,
-        (collectionCounts.get(product.collection) ?? 0) + 1
-      );
+    const own = collectionsOf(product);
+    if (own.length) {
+      for (const collection of own) {
+        collectionCounts.set(collection, (collectionCounts.get(collection) ?? 0) + 1);
+      }
     } else {
       unassigned += 1;
     }
@@ -116,6 +131,17 @@ export const CatalogFilterBar = ({
   const categoryCounts = new Map<string, number>();
   for (const product of inCollection) {
     for (const category of product.categories ?? []) {
+      // Pod vybranou kolekcí jen kategorie, které k ní patří — zápich
+      // v „Zápichy" i „Drobnosti pro radost" nesmí táhnout cizí kategorii.
+      const belongsTo = product.category_collections?.[category];
+      if (
+        value.collection &&
+        value.collection !== NO_COLLECTION &&
+        belongsTo &&
+        belongsTo !== value.collection
+      ) {
+        continue;
+      }
       categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
     }
   }

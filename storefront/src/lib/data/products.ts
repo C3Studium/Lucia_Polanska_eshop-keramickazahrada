@@ -322,6 +322,31 @@ export const listStoreCatalogue = async ({
   const searchAcrossTaxonomy =
     taxonomy.categoryIds.length > 0 || taxonomy.collectionIds.length > 0
 
+  /*
+   * Kolekce = vlastní kolekce produktu I kategorie, které k ní patří
+   * (`category.metadata.collection_id`, vazba z admin Rozdělení). Medusa
+   * dovolí produktu jen JEDNU kolekci, ale kategorie může mít z víc kolekcí
+   * (změřeno 12. 10. 2026: 21 produktů, např. zápich v „Zápichy" pod Do
+   * zahrady i v „Drobnosti pro radost" pod Do bytu) — bez tohohle by je
+   * kolekce Do zahrady neukázala, i když jsou v její kategorii.
+   * Vybraná kategorie je užší výběr: pak se filtruje jen podle ní.
+   */
+  const collectionCategoryIds =
+    filters.collectionId && !filters.categoryId
+      ? (
+          await listCategories({ limit: 100, fields: "id,metadata" }).catch(
+            () => [] as HttpTypes.StoreProductCategory[]
+          )
+        )
+          .filter(
+            (category) =>
+              (category.metadata as Record<string, unknown> | null)?.collection_id ===
+              filters.collectionId
+          )
+          .map((category) => category.id)
+      : []
+  const collectionViaCategories = collectionCategoryIds.length > 0
+
   const needsCalculatedPriceRefinement = Boolean(
     filters.priceRange ||
     filters.onSale ||
@@ -337,6 +362,7 @@ export const listStoreCatalogue = async ({
   const needsLocalAssembly =
     needsCalculatedPriceRefinement ||
     searchAcrossTaxonomy ||
+    collectionViaCategories ||
     needsKindFilter ||
     Boolean(onlyIds)
 
@@ -367,7 +393,9 @@ export const listStoreCatalogue = async ({
     queryParams.category_id = [filters.categoryId]
   }
 
-  if (filters.collectionId) {
+  // S vybranou kategorií rozhoduje kategorie (může patřit kolekci, i když
+  // produkt má v Meduse kolekci jinou — viz `collectionCategoryIds`).
+  if (filters.collectionId && !filters.categoryId) {
     queryParams.collection_id = [filters.collectionId]
   }
 
@@ -424,6 +452,13 @@ export const listStoreCatalogue = async ({
   }
 
   const catalogueProducts = await fetchAllPages(queryParams)
+
+  if (collectionViaCategories) {
+    // Produkty z kategorií kolekce, které mají v Meduse kolekci jinou.
+    const byCategoryQuery = { ...queryParams, category_id: collectionCategoryIds }
+    delete byCategoryQuery.collection_id
+    catalogueProducts.push(...(await fetchAllPages(byCategoryQuery)))
+  }
 
   if (searchAcrossTaxonomy) {
     // Products of the matched categories/collections join AFTER the direct text
@@ -523,7 +558,7 @@ export const listStoreCatalogue = async ({
     })
   }
 
-  if (filters.sort === "newest" && searchAcrossTaxonomy) {
+  if (filters.sort === "newest" && (searchAcrossTaxonomy || collectionViaCategories)) {
     // Each sub-query came back ordered, but the merge interleaved them.
     refinedProducts.sort(
       (first, second) =>
