@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { verifyOrderAccessToken } from "../../../../../lib/order-access-link"
+import { isServiceLine } from "../../../../../lib/packaging-lines"
 import {
   LINE_QUANTITY_FIELDS,
   lineQuantityOf,
@@ -41,6 +42,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       // nechodí (lib/order-quantity).
       ...LINE_QUANTITY_FIELDS,
       "items.metadata",
+      "items.variant_id",
+      "items.product_id",
       "items.product.metadata",
     ],
     filters: { id: orderId },
@@ -50,7 +53,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Objednávka nebyla nalezena.")
   }
 
-  const items = (order.items ?? []).map((item: any) => {
+  // Balné a doběrečné nejsou zboží (lib/packaging-lines.ts).
+  const items = (order.items ?? []).filter((item: any) => !isServiceLine(item)).map((item: any) => {
     const madeToOrder =
       Boolean((item.metadata as any)?.made_to_order) ||
       Boolean((item.product?.metadata as any)?.made_to_order)

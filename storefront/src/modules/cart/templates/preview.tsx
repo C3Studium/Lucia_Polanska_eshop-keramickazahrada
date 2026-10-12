@@ -4,6 +4,8 @@ import repeat from "@lib/util/repeat"
 import { HttpTypes } from "@medusajs/types"
 
 import { Item }from "@modules/cart/components/item"
+import PackagingLine from "@modules/common/components/packaging-line"
+import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 import s from "./preview.module.scss"
 
@@ -20,11 +22,22 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
   <div className={hasOverflow ? s.scroll : s.root}>
       <div data-testid="items-table">
           {items
-            ? items
-                .sort((a, b) => {
+            ? withPackagingUnderProducts(
+                items.sort((a, b) => {
                   return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
                 })
+              )
                 .map((item) => {
+                  if (isPackagingLine(item)) {
+                    return (
+                      <PackagingLine
+                        key={item.id}
+                        item={item}
+                        currencyCode={cart.currency_code}
+                        compact
+                      />
+                    )
+                  }
                   return (
                     <Item
                       key={item.id}

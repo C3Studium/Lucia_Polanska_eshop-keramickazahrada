@@ -77,9 +77,14 @@ const normalizedName = (value: unknown): string =>
     .toLowerCase()
     .trim()
 
+/**
+ * Řádek dopravy na faktuře: „Poštovné…", u starých faktur i samostatné
+ * „Balné". Od 12. 10. 2026 je balné položka u výrobku („Balné — Pítko") —
+ * ta k poštovnému NEpatří a páruje se jako běžná položka.
+ */
 const isShippingName = (value: unknown): boolean => {
   const name = normalizedName(value)
-  return name.startsWith("postovne") || name.startsWith("balne")
+  return name.startsWith("postovne") || name === "balne"
 }
 
 const isRoundingName = (value: unknown): boolean =>

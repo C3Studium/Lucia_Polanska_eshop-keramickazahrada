@@ -20,6 +20,8 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { paymentUrlFromSession } from "../balance-payment"
 import { isDobirkaFeeLine } from "../dobirka-fee"
+import { isPackagingLine } from "../packaging"
+import { applyPackagingRecalculation } from "./packaging"
 import { notifyMerchant } from "../notify"
 import { deliveryContext, type OrderDeliveryContext } from "../order-delivery-context"
 import { editabilityMode } from "../order-edit-gate"
@@ -315,10 +317,12 @@ export type OrderEditContext = {
 
 /** Řádky objednávky se zámky (+ varianty téhož produktu pro výměnu). */
 const describeLines = async (container: MedusaContainer, order: any) => {
-  // Doběrečné není zboží — patří k platbě, zákazník ho neupravuje ani
-  // neodebírá (změřeno na #39: bez filtru se ukázalo jako běžná položka).
-  // V součtech objednávky zůstává.
-  const items = ((order.items ?? []) as any[]).filter((item) => !isDobirkaFeeLine(item))
+  // Doběrečné ani balné nejsou zboží — zákazník je neupravuje ani neodebírá
+  // (změřeno na #39: bez filtru se doběrečné ukázalo jako běžná položka).
+  // Balné jde s výrobkem (applyPackagingRecalculation). V součtech zůstávají.
+  const items = ((order.items ?? []) as any[]).filter(
+    (item) => !isDobirkaFeeLine(item) && !isPackagingLine(item)
+  )
   const productIds = [...new Set(items.map((item) => item.product_id).filter(Boolean))] as string[]
   const [profiles, variants] = await Promise.all([
     productionProductIds(container, productIds),
@@ -804,6 +808,11 @@ export const runCustomerEdit = async (
     if (carried && lostDiscountOnUntouched(order, preview, actions)) {
       await discard()
       return runCustomerEdit(container, order, actions, { ...options, carryPromotions: false })
+    }
+
+    // Balné jde s výrobky: přidaný výrobek ho dostane, odebraný o něj přijde.
+    if (await applyPackagingRecalculation(container, order, preview)) {
+      preview = await orderModule.previewOrderChange(order.id)
     }
 
     if (await applyShippingRecalculation(container, order, changeId, totalsOf(preview).item_total)) {

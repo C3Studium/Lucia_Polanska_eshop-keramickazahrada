@@ -5,6 +5,8 @@ import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
+import { isPackagingLine } from "@lib/util/packaging"
+import PackagingLine from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -47,6 +49,11 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
    * the backend refuses to edit it directly. Choosing another payment removes
    * it, and the note says exactly that.
    */
+  // Balné (lib/util/packaging.ts) jde s výrobkem — tenký řádek, bez ovládání.
+  if (isPackagingLine(item)) {
+    return <PackagingLine item={item} currencyCode={currencyCode} compact={type === "preview"} />
+  }
+
   if (isDobirkaFeeLine(item)) {
     return (
       <article

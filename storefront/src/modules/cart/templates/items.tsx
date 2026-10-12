@@ -3,6 +3,8 @@ import repeat from "@lib/util/repeat"
 import { HttpTypes } from "@medusajs/types"
 
 import { Item } from "@modules/cart/components/item"
+import PackagingLine from "@modules/common/components/packaging-line"
+import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 import s from "./items.module.scss"
 
@@ -18,17 +20,30 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
       <div className={s.headerRow}>
         <h2 className={s.title}>Co máte v košíku</h2>
         <p className={s.sectionMeta}>
-          <span>{String(items?.length ?? 0).padStart(2, "0")}</span>
+          <span>
+            {String((items ?? []).filter((item) => !isPackagingLine(item)).length).padStart(2, "0")}
+          </span>
           Z ateliéru
         </p>
       </div>
       <div className={s.tableBody} data-testid="items-table">
           {items
-            ? items
-                .sort((a, b) => {
+            ? withPackagingUnderProducts(
+                items.sort((a, b) => {
                   return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
                 })
+              )
                 .map((item) => {
+                  // Balné jde s výrobkem — tenký řádek hned pod ním.
+                  if (isPackagingLine(item)) {
+                    return (
+                      <PackagingLine
+                        key={item.id}
+                        item={item}
+                        currencyCode={cart?.currency_code}
+                      />
+                    )
+                  }
                   return (
                     <Item
                       key={item.id}

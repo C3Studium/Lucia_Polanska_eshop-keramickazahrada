@@ -8,6 +8,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import styles from "./page.module.scss"
+import { productLines } from "@lib/util/packaging"
 
 export const metadata: Metadata = {
   title: "Pokladna",
@@ -26,7 +27,8 @@ export default async function Checkout(props:{params: Promise<{countryCode:strin
   // Jednou tady a předané oběma stranám (formulář i souhrn) — fetch je
   // `no-store`, takže dvojí volání by znamenalo dvě cesty na backend.
   const productionMode = await getProductionPaymentMode(cart.id)
-  const itemCount = cart.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
+  // Kusy zboží — balné a doběrečné do počtu nepatří.
+  const itemCount = productLines(cart.items).reduce((total, item) => total + item.quantity, 0)
 
   return (
     <div className={styles.root}>

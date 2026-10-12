@@ -24,6 +24,8 @@ import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import styles from "../style.module.scss"
+import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
+import PackagingLine from "@modules/common/components/packaging-line"
 
 type PaymentProps = {
   cart: HttpTypes.StoreCart
@@ -182,10 +184,14 @@ export const Payment = ({
         <div className={styles.orderMiniatureHeader}>
           <span className={styles.eyebrow}>Co kupujete</span>
           <span>
-            {cart.items?.reduce((sum, item) => sum + item.quantity, 0)} ks
+            {productLines(cart.items).reduce((sum, item) => sum + item.quantity, 0)} ks
           </span>
         </div>
-        {cart.items?.map((item) => (
+        {withPackagingUnderProducts(cart.items ?? []).map((item) =>
+          // Balné jde s výrobkem — tenký řádek hned pod ním.
+          isPackagingLine(item) ? (
+            <PackagingLine key={item.id} item={item} currencyCode={cart.currency_code} compact />
+          ) : (
           <div className={styles.miniItem} key={item.id}>
             <Image
               src={item.thumbnail || "/assets/img/horizontal_prop.png"}
@@ -203,7 +209,8 @@ export const Payment = ({
             </div>
             <span>{item.quantity}×</span>
           </div>
-        ))}
+          )
+        )}
         <div className={styles.totalRows}>
           <span>
             <small>Výběr</small>

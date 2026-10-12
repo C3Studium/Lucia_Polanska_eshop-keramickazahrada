@@ -7,6 +7,7 @@ import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
 import s from "./index.module.scss"
+import { productLines } from "@lib/util/packaging"
 
 /* Zakázkový blok (volba zálohy „Kolik chcete zaplatit hned?" i brief s fotkami)
    do KOŠÍKU NEPATŘÍ — majitelčino přání. Sbírá se až v pokladně (Přehled) a v
@@ -19,7 +20,8 @@ const CartTemplate = async ({
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
 }) => {
-  const itemCount = cart?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
+  // Kusy zboží — balné a doběrečné do počtu nepatří.
+  const itemCount = productLines(cart?.items).reduce((total, item) => total + item.quantity, 0)
 
   return (
     <>

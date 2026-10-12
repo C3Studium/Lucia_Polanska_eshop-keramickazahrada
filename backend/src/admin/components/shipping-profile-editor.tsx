@@ -159,13 +159,14 @@ export const ShippingProfileEditor = ({
             </Label>
             <Text size="xsmall" className="text-ui-fg-subtle mt-1 mb-2">
               Co vás stojí zabalit tenhle kus — bublinková fólie, papír, páska
-              i krabice. Připočítá se k dopravě. Prázdné = výchozí cena obchodu.
+              i krabice. Zákazník ho uvidí jako položku „Balné" pod výrobkem
+              (i u osobního odběru). Prázdné = bez balného.
             </Text>
             <Input
               size="small"
               type="number"
               min={0}
-              placeholder="výchozí"
+              placeholder="0"
               value={price}
               onChange={(event) => setPrice(event.target.value)}
             />

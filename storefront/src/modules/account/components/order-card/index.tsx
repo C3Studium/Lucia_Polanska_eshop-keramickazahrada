@@ -10,6 +10,7 @@ import s from "./style.module.scss"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
 import { accountListItemVariants } from "../../motion"
 import AccountInteractiveSurface from "../account-interactive-surface"
+import { productLines } from "@lib/util/packaging"
 
 type OrderCardProps = {
   order: HttpTypes.StoreOrder
@@ -18,15 +19,16 @@ type OrderCardProps = {
 const OrderCard = ({ order }: OrderCardProps) => {
   const numberOfItems = useMemo(() => {
     return (
-      order.items?.reduce((acc, item) => {
+      productLines(order.items).reduce((acc, item) => {
         return acc + item.quantity
       }, 0) ?? 0
     )
   }, [order])
 
-  const visibleItems = order.items?.slice(0, 5) ?? []
+  // Balné a doběrečné nejsou kusy zboží — miniatury i počty jen z výrobků.
+  const visibleItems = productLines(order.items).slice(0, 5)
   const hiddenItemsCount = Math.max(
-    (order.items?.length ?? 0) - visibleItems.length,
+    productLines(order.items).length - visibleItems.length,
     0
   )
 

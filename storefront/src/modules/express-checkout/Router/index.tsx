@@ -20,6 +20,7 @@ import type { ComgatePaymentMethod } from "@lib/util/comgate"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { productLines } from "@lib/util/packaging"
 type ActiveStep = "selection" | "delivery" | "payment"
 
 const STEP_ORDER: ActiveStep[] = ["selection", "delivery", "payment"]
@@ -76,8 +77,9 @@ export const Router = ({
   )
   const matchesBundle =
     !!bundle &&
-    !!cart?.items?.length &&
-    cart.items.every((item) => bundleProductIds.has(item.product_id!))
+    !!productLines(cart?.items).length &&
+    // Balné a doběrečné nejsou výrobky balíčku — kontrolují se jen kusy zboží.
+    productLines(cart?.items).every((item) => bundleProductIds.has(item.product_id!))
   const hasSelection =
     !!cart?.items?.length && (matchesProduct || matchesBundle)
   const hasAddress = !!cart?.shipping_address && !!cart?.email
@@ -127,10 +129,11 @@ export const Router = ({
     startRefresh(() => router.refresh())
   }
 
+  const goods = productLines(cart?.items)
   const selectedTitle =
-    cart?.items?.length === 1
-      ? cart.items[0].product_title || cart.items[0].title
-      : `${withCount(cart?.items?.length || 0, "kus", "kusy", "kusů")} dohromady`
+    goods.length === 1
+      ? goods[0].product_title || goods[0].title
+      : `${withCount(goods.length, "kus", "kusy", "kusů")} dohromady`
 
   const steps: {
     id: ActiveStep

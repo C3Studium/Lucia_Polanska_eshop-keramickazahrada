@@ -26,6 +26,8 @@ import PremiumActionLink from "@modules/common/components/premium-action-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
+import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
+import PackagingLine from "@modules/common/components/packaging-line"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -72,9 +74,13 @@ export default async function OrderCompletedTemplate({
       currency_code: order.currency_code,
     })
 
-  const items = [...(order.items ?? [])].sort((a, b) =>
-    (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+  // Balné (lib/util/packaging.ts) hned pod svým výrobkem.
+  const items = withPackagingUnderProducts(
+    [...(order.items ?? [])].sort((a, b) =>
+      (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+    )
   )
+  const goods = productLines(items)
   const payment = order.payment_collections?.[0]?.payments?.[0]
   const shippingMethod = order.shipping_methods?.at(-1) as
     | (HttpTypes.StoreOrderShippingMethod & { amount?: number })
@@ -385,12 +391,22 @@ export default async function OrderCompletedTemplate({
                   <h2>Co jste objednali</h2>
                 </div>
                 <span>
-                  {items.reduce((count, item) => count + item.quantity, 0)} ks
+                  {goods.reduce((count, item) => count + item.quantity, 0)} ks
                 </span>
               </div>
 
               <div className={s.itemList} data-testid="products-table">
-                {items.map((item, index) => {
+                {items.map((item) => {
+                  if (isPackagingLine(item)) {
+                    return (
+                      <PackagingLine
+                        key={item.id}
+                        item={item}
+                        currencyCode={order.currency_code}
+                      />
+                    )
+                  }
+                  const index = goods.indexOf(item)
                   const unitPrice = item.unit_price ?? 0
                   const lineTotal =
                     (item as HttpTypes.StoreOrderLineItem & { total?: number })

@@ -15,6 +15,8 @@
  *    someone in Slovakia produces an order that cannot be fulfilled as sold.
  */
 
+import { isPackagingLine } from "./packaging"
+
 export const DOBIRKA_COUNTRIES = new Set(["cz"])
 
 type LineLike = {
@@ -52,7 +54,11 @@ export const cartAllowsDobirka = (cart: { items?: LineLike[] | null } | null) =>
   // Without this filter, adding the fee (which happens the moment dobírka is
   // chosen) would immediately flip the answer to "no" and hide the option
   // the customer just picked.
-  const items = (cart?.items ?? []).filter((item) => !isDobirkaFeeLine(item))
+  // Balné (lib/util/packaging.ts) taky není výrobek — bez produktu by
+  // „každý kus dovolí dobírku" vyšlo vždy ne.
+  const items = (cart?.items ?? []).filter(
+    (item) => !isDobirkaFeeLine(item) && !isPackagingLine(item)
+  )
   return items.length > 0 && items.every(lineAllowsDobirka)
 }
 

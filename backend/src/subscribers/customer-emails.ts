@@ -13,6 +13,7 @@ import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
 import { isAutoCancelledClaim } from "../lib/claims/auto-cancel"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
+import { isServiceLine } from "../lib/packaging-lines"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
@@ -824,7 +825,8 @@ const onMerchantStageChanged = async ({
     // Čistě zakázková objednávka má „začínáme" přes onSpecificationConfirmed
     // (potvrzení zadání ji taky posune do „working"); generický „připravujeme"
     // by u ní byl matoucí a dubloval by. Posíláme jen, je-li ve hře běžné zboží.
-    const items = (order.items || []) as any[]
+    // Balné a doběrečné nejsou zboží — „čistou zakázku" nesmí otočit.
+    const items = ((order.items || []) as any[]).filter((item) => !isServiceLine(item))
     const pureCommission =
       items.length > 0 &&
       items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))
@@ -890,7 +892,8 @@ const onMerchantStageChanged = async ({
 
   // Čistě zakázková objednávka má „připraveno" = „zakázka hotová"; generický
   // e-mail by u ní dubloval. Posíláme jen když je ve hře i běžné zboží.
-  const items = (order.items || []) as any[]
+  // Balné a doběrečné nejsou zboží — „čistou zakázku" nesmí otočit.
+  const items = ((order.items || []) as any[]).filter((item) => !isServiceLine(item))
   const pureCommission =
     items.length > 0 &&
     items.every((item: any) => Boolean((item?.metadata as any)?.made_to_order))

@@ -1,4 +1,6 @@
+import { isDobirkaFeeLine } from "../dobirka-fee"
 import { lineQuantityOf } from "../order-quantity"
+import { isPackagingLine } from "../packaging"
 import { MONEY_EPSILON, round2, toNumber } from "./refund-rules"
 
 /**
@@ -46,7 +48,18 @@ export type ClaimSourceItem = {
   quantity?: unknown
   raw_quantity?: unknown
   detail?: { quantity?: unknown; raw_quantity?: unknown } | null
+  variant_id?: string | null
+  product_id?: string | null
+  metadata?: Record<string, unknown> | null
 }
+
+/**
+ * Doběrečné a balné nejsou zboží, které by zákazník reklamoval nebo vracel
+ * samo — ve výběru položek se neukazují. Balné jde s výrobkem (u vrácení
+ * peněz ho přibere „Vrátit vše", viz refund-lines.ts), doběrečné s platbou.
+ */
+export const isServiceItem = (item: ClaimSourceItem): boolean =>
+  isPackagingLine(item) || isDobirkaFeeLine(item)
 
 export type ClaimSourceOrder = {
   currency_code?: string | null
@@ -88,7 +101,7 @@ export const orderItemsForClaims = (
   order: ClaimSourceOrder
 ): ClaimOrderItemView[] =>
   (order.items ?? [])
-    .filter((item) => typeof item?.id === "string" && item.id)
+    .filter((item) => typeof item?.id === "string" && item.id && !isServiceItem(item))
     .map((item) => {
       const quantity = lineQuantityOf(item)
       const unit = perUnitOf(item)

@@ -739,6 +739,8 @@ describe("buildClaimOrderItems — řádky objednávky pro stránku žádosti", 
       refundable_quantity: 1,
       refundable_amount: 1305,
       selected_in_claim: 2,
+      variant_id: null,
+      packaging_for_variant_id: null,
     })
     expect(items[1]).toMatchObject({
       line_item_id: "li_hrnek",

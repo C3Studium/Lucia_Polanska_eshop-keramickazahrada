@@ -7,6 +7,7 @@ import {
   sendCustomerEmail,
 } from "../customer-email"
 import { isDobirkaFeeLine } from "../dobirka-fee"
+import { isPackagingLine } from "../packaging"
 import { lineQuantityOf, toNumber } from "../order-quantity"
 import { loadEditOrder } from "./core"
 
@@ -26,8 +27,8 @@ export const sendOrderEditedEmail = async (
   if (!order) return false
   const currency = order.currency_code
   const items = ((order.items ?? []) as any[])
-    // Doběrečné není zboží — v obsahu objednávky by mátlo.
-    .filter((item) => !isDobirkaFeeLine(item) && lineQuantityOf(item) > 0)
+    // Doběrečné ani balné nejsou zboží — v obsahu objednávky by mátly.
+    .filter((item) => !isDobirkaFeeLine(item) && !isPackagingLine(item) && lineQuantityOf(item) > 0)
     .map((item) => {
       const variant =
         item.variant_title && !/^(standardní|default)/i.test(String(item.variant_title))

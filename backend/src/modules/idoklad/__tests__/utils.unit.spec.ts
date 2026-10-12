@@ -104,7 +104,7 @@ describe("iDoklad utils", () => {
       expect(lines.map((line) => line.Name)).toEqual([
         "Váza Modrá",
         "Miska",
-        "Poštovné a balné — Balíkovna",
+        "Poštovné — Balíkovna",
       ])
       expect(lines[0]).toMatchObject({ Amount: 2, UnitPrice: 500, Unit: "ks" })
       expect(lines[2]).toMatchObject({ Amount: 1, UnitPrice: 120 })
@@ -113,28 +113,42 @@ describe("iDoklad utils", () => {
       expect(sum).toBe(1550)
     })
 
-    it("unfolds shipping into Poštovné + Balné when the packaging share is known", () => {
-      const lines = buildInvoiceItems(order as any, false, { packagingCzk: 30 })
-
+    it("puts each Balné line right under its product (lib/packaging.ts)", () => {
+      const withPackaging = {
+        ...order,
+        total: 1550 + 70,
+        items: [
+          { ...(order as any).items[0], variant_id: "var_vaza" },
+          { ...(order as any).items[1], variant_id: "var_miska" },
+          {
+            title: "Balné — Miska",
+            quantity: 1,
+            total: 20,
+            variant_id: null,
+            product_id: null,
+            metadata: { packaging_fee: true, packaging_variant_id: "var_miska" },
+          },
+          {
+            title: "Balné — Váza Modrá",
+            quantity: 2,
+            total: 50,
+            variant_id: null,
+            product_id: null,
+            metadata: { packaging_fee: true, packaging_variant_id: "var_vaza" },
+          },
+        ],
+      }
+      const lines = buildInvoiceItems(withPackaging as any, false)
       expect(lines.map((line) => line.Name)).toEqual([
         "Váza Modrá",
+        "Balné — Váza Modrá",
         "Miska",
+        "Balné — Miska",
         "Poštovné — Balíkovna",
-        "Balné",
       ])
-      expect(lines[2].UnitPrice).toBe(90)
-      expect(lines[3].UnitPrice).toBe(30)
-
+      expect(lines[1]).toMatchObject({ Amount: 2, UnitPrice: 25 })
       const sum = lines.reduce((acc, line) => acc + line.Amount * line.UnitPrice, 0)
-      expect(sum).toBe(1550)
-    })
-
-    it("keeps one combined line when packaging would swallow the whole price", () => {
-      const lines = buildInvoiceItems(order as any, false, { packagingCzk: 120 })
-      expect(lines.map((line) => line.Name)).toContain(
-        "Poštovné a balné — Balíkovna"
-      )
-      expect(lines.map((line) => line.Name)).not.toContain("Balné")
+      expect(sum).toBe(1620)
     })
 
     it("absorbs per-unit rounding into a Zaokrouhlení line", () => {

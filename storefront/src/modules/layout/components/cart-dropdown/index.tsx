@@ -4,6 +4,8 @@ import { Transition } from "@headlessui/react"
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
+import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
+import PackagingLine from "@modules/common/components/packaging-line"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { HttpTypes } from "@medusajs/types"
 import WebButton from "@modules/common/components/Buttons/webButton"
@@ -56,8 +58,10 @@ const CartDropdown = ({
    */
   const dismissRef = useDismiss<HTMLDivElement>(cartDropdownOpen, close)
 
+  // Balné ani doběrečné nejsou kusy zboží — do počtu v ikoně nepatří.
   const totalItems =
     cartState?.items?.reduce((acc, item) => {
+      if (isPackagingLine(item) || isDobirkaFeeLine(item)) return acc
       return acc + item.quantity
     }, 0) || 0
 
@@ -195,13 +199,23 @@ const CartDropdown = ({
             {cartState && cartState.items?.length ? (
               <>
                 <div className={styles.items} ref={itemsRef} onWheel={handleWheel}>
-                  {cartState.items
-                    .sort((a, b) => {
+                  {withPackagingUnderProducts(
+                    cartState.items.sort((a, b) => {
                       return (a.created_at ?? "") > (b.created_at ?? "")
                         ? -1
                         : 1
                     })
+                  )
                     .map((item) =>
+                      /* Balné jde s výrobkem — tenký řádek hned pod ním. */
+                      isPackagingLine(item) ? (
+                        <PackagingLine
+                          key={item.id}
+                          item={item}
+                          currencyCode={cartState.currency_code}
+                          compact
+                        />
+                      ) :
                       /* Doběrečné: fee row — no product link, no quantity,
                          no „Odebrat". It follows the payment choice only. */
                       isDobirkaFeeLine(item) ? (

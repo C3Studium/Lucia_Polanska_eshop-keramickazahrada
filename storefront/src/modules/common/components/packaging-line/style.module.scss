@@ -1,0 +1,34 @@
+/* Balné pod výrobkem — podřízený řádek: menší písmo, odsazený zleva,
+   tenká linka nahoře. Barva se dědí (tmavý košík i světlá objednávka). */
+.root {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .55rem 1rem .6rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid currentColor;
+  border-bottom-color: color-mix(in srgb, currentColor 12%, transparent);
+  font-size: .875rem;
+  line-height: 1.35;
+}
+
+.compact {
+  padding: .35rem 0 .45rem 1rem;
+  font-size: .8125rem;
+}
+
+.label {
+  min-width: 0;
+  opacity: .78;
+}
+
+.quantity {
+  opacity: .8;
+}
+
+.price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  opacity: .9;
+  white-space: nowrap;
+}

@@ -108,50 +108,6 @@ export const loadInvoiceOrder = async (
   }
 }
 
-/**
- * The order's balné in CZK — recomputed the same way checkout priced it:
- * each line's `packaging_price` from product metadata × quantity (products
- * without one cost 0 to pack; the shop sets no global default). `null` when
- * the products cannot be read — the invoice then keeps shipping as one line
- * instead of inventing a split.
- */
-export const packagingCzkFor = async (
-  container: MedusaContainer,
-  order: any
-): Promise<number | null> => {
-  try {
-    const items = (order?.items ?? []) as any[]
-    const productIds = [
-      ...new Set(items.map((item) => item?.product_id).filter(Boolean)),
-    ]
-    if (!productIds.length) {
-      return null
-    }
-    const query = container.resolve(ContainerRegistrationKeys.QUERY)
-    const { data: products } = await query.graph({
-      entity: "product",
-      fields: ["id", "metadata"],
-      filters: { id: productIds },
-    })
-    const priceByProduct = new Map<string, number>()
-    for (const product of products as any[]) {
-      const raw = (product?.metadata as any)?.packaging_price
-      const parsed = typeof raw === "number" ? raw : Number(raw)
-      if (Number.isFinite(parsed) && parsed >= 0) {
-        priceByProduct.set(product.id, parsed)
-      }
-    }
-    const total = items.reduce((sum, item) => {
-      const each = priceByProduct.get(item?.product_id) ?? 0
-      const quantity = Number(toAmount(item?.quantity)) || 1
-      return sum + each * quantity
-    }, 0)
-    return Math.round(total * 100) / 100
-  } catch {
-    return null
-  }
-}
-
 export const invoiceStateOf = (order: any): IdokladInvoiceState => {
   const metadata = (order?.metadata ?? {}) as Record<string, unknown>
   const numeric = Number(metadata[IDOKLAD_METADATA_KEYS.invoiceId])
@@ -437,10 +393,6 @@ export const ensureInvoiceForOrder = async (
           ? undefined
           : await idoklad.findCurrencyIdByCode(currencyCode).catch(() => undefined)
 
-      // The balné share, so the invoice can unfold shipping the way the
-      // customer was told it: poštovné + balné.
-      const packagingCzk = await packagingCzkFor(container, order)
-
       // 3) Create, then stamp metadata immediately — the invoice id is the
       //    idempotency fact and must survive even if PDF or e-mail fail.
       const invoice = await idoklad.createInvoice(
@@ -452,7 +404,6 @@ export const ensureInvoiceForOrder = async (
           paymentOptionId,
           numericSequenceId: idoklad.numericSequenceId,
           currencyId,
-          packagingCzk,
         })
       )
 

@@ -1,3 +1,4 @@
+import { withPackagingUnderProducts } from "../../lib/packaging-lines"
 import { toAmount } from "../../lib/ship-gate"
 import {
   ITEM_TYPE_NORMAL,
@@ -274,6 +275,8 @@ export type InvoiceOrderInput = {
     title?: string | null
     product_title?: string | null
     product_id?: string | null
+    variant_id?: string | null
+    metadata?: Record<string, unknown> | null
     quantity?: unknown
     total?: unknown
   }> | null
@@ -401,19 +404,18 @@ const invoiceLine = (
  * few haléřů from the order total, a final "Zaokrouhlení" line absorbs the
  * difference. The invoice always says exactly what the customer paid.
  *
- * Shipping is split into „Poštovné" + „Balné" when the packaging share is
- * known (checkout folds both into one shipping price — the invoice unfolds
- * them so the customer sees what they were told). When it is not known, one
- * honest combined line.
+ * Balné (od 12. 10. 2026) je vlastní položka u každého výrobku
+ * (lib/packaging.ts) — na faktuře stojí hned pod svým výrobkem jako
+ * „Balné — <název>". Doprava je jeden řádek „Poštovné — <způsob>"; dřívější
+ * „vybalování" balného z poštovného je pryč (balné v poštovném nikdy nebylo).
  */
 export const buildInvoiceItems = (
   order: InvoiceOrderInput,
-  vatPayer: boolean,
-  options: { packagingCzk?: number | null } = {}
+  vatPayer: boolean
 ): IdokladInvoiceItemPayload[] => {
   const lines: IdokladInvoiceItemPayload[] = []
 
-  for (const item of order.items ?? []) {
+  for (const item of withPackagingUnderProducts(order.items ?? [])) {
     const quantity = Math.max(1, Math.trunc(toAmount(item.quantity)) || 1)
     const total = toAmount(item.total)
     lines.push(
@@ -430,28 +432,14 @@ export const buildInvoiceItems = (
   const shippingTotal = round2(toAmount(order.shipping_total))
   if (shippingTotal > 0) {
     const methodName = (order.shipping_methods ?? [])[0]?.name
-    const packaging =
-      options.packagingCzk != null ? round2(options.packagingCzk) : null
-    if (packaging !== null && packaging > 0 && packaging < shippingTotal) {
-      lines.push(
-        invoiceLine(
-          methodName ? `Poštovné — ${methodName}` : "Poštovné",
-          1,
-          round2(shippingTotal - packaging),
-          vatPayer
-        )
+    lines.push(
+      invoiceLine(
+        methodName ? `Poštovné — ${methodName}` : "Poštovné",
+        1,
+        shippingTotal,
+        vatPayer
       )
-      lines.push(invoiceLine("Balné", 1, packaging, vatPayer))
-    } else {
-      lines.push(
-        invoiceLine(
-          methodName ? `Poštovné a balné — ${methodName}` : "Poštovné a balné",
-          1,
-          shippingTotal,
-          vatPayer
-        )
-      )
-    }
+    )
   }
 
   const orderTotal = round2(toAmount(order.total))
@@ -474,8 +462,6 @@ type InvoicePayloadInput = {
   paymentOptionId?: number
   numericSequenceId?: number
   currencyId?: number
-  /** Balné share of the shipping price — splits Poštovné/Balné when known. */
-  packagingCzk?: number | null
   /** Vlastní položky (záloha/doplatek u zakázky) místo rozpadu objednávky. */
   items?: IdokladInvoiceItemPayload[]
   /** Vlastní popis dokladu (jinak „Objednávka #X"). */
@@ -502,9 +488,7 @@ export const buildInvoicePayload = (
     IsIncomeTax: defaults.IsIncomeTax ?? true,
     Items:
       input.items ??
-      buildInvoiceItems(order, input.vatPayer, {
-        packagingCzk: input.packagingCzk,
-      }),
+      buildInvoiceItems(order, input.vatPayer),
     NumericSequenceId: input.numericSequenceId ?? defaults.NumericSequenceId,
     OrderNumber: truncate(order.display_id ?? "", 25) || undefined,
     PartnerId: input.partnerId,

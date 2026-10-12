@@ -8,6 +8,7 @@ import { blocksNewClaim, isDamageCause, WITHDRAWAL_DAYS } from "./constants"
 import { claimLineItemsOf, orderItemsForClaims } from "./line-items"
 import { requestRefunds, requestRefundedTotal } from "./refund-rules"
 import { refundAccountNeeded, storedRefundAccount } from "./refund-account"
+import { isServiceLine } from "../packaging-lines"
 
 /**
  * Kontext „Reklamace a vrácení" pro zákazníka (docs/reklamace-a-zruseni.md §4,
@@ -116,9 +117,13 @@ export const isMadeToOrderItem = (item: ClaimOrderItem | null | undefined): bool
   Boolean((item?.metadata as any)?.made_to_order) ||
   Boolean((item?.product?.metadata as any)?.made_to_order)
 
-/** Čistá zakázka: VŠE na míru → bez práva odstoupit (§1837 písm. d). */
+/**
+ * Čistá zakázka: VŠE na míru → bez práva odstoupit (§1837 písm. d). Balné a
+ * doběrečné nejsou zboží — jinak by jediný řádek balného z čisté zakázky
+ * udělal „smíšenou" objednávku a otevřel odstoupení.
+ */
 export const allMadeToOrder = (order: ClaimOrder): boolean => {
-  const items = order.items ?? []
+  const items = (order.items ?? []).filter((item) => !isServiceLine(item as any))
   return items.length > 0 && items.every((item) => isMadeToOrderItem(item))
 }
 

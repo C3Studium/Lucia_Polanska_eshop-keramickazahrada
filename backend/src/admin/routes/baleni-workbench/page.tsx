@@ -138,7 +138,7 @@ const Row = ({
       type="number"
       min={0}
       className={className}
-      placeholder="výchozí"
+      placeholder="0"
       value={value}
       onChange={(event) => setValue(event.target.value)}
       onBlur={() => !unchanged && save.mutate()}
@@ -318,8 +318,10 @@ const BaleniInner = () => {
           <Heading>Balení — ceny za kus</Heading>
           <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
             Co vás stojí zabalit každý kus — bublinková fólie, papír, páska
-            i krabice. Připočítá se k dopravě. Prázdné pole znamená výchozí cenu
-            obchodu. Zdraží-li materiál, stačí čísla tady zvednout.
+            i krabice. Zákazník ho platí jako položku „Balné" pod každým
+            výrobkem (i u osobního odběru); v cizí měně kurzem ČNB, nahoru na
+            0,50. Prázdné pole = bez balného. Zdraží-li materiál, stačí čísla
+            tady zvednout.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">

@@ -1,4 +1,5 @@
 import { lineQuantityOf } from "../order-quantity"
+import { isPackagingLine, PACKAGING_VARIANT_KEY } from "../packaging"
 import { isMadeToOrderItem, type ClaimOrderItem } from "./context"
 import { claimLineItemsOf, itemTitleOf, perUnitOf } from "./line-items"
 import {
@@ -70,6 +71,10 @@ export type ClaimOrderItemDetail = {
   refundable_amount: number
   /** Kolik kusů téhle položky zákazník v žádosti vybral (0 = nevybral). */
   selected_in_claim: number
+  /** Varianta řádku (balné se k výrobku páruje přes ni). */
+  variant_id?: string | null
+  /** Řádek balného (lib/packaging.ts): ke které variantě patří; jinak null. */
+  packaging_for_variant_id?: string | null
   /** §13.5 — komponenty balíčku; null u běžné položky (nebo když se nenačetly). */
   components?: ClaimComponentDetail[] | null
   /** §13.5 — „rozděleno rovným dílem", když cena komponent není k dispozici. */
@@ -171,6 +176,10 @@ export const buildClaimOrderItems = ({
         refundable_quantity: refundableQuantity,
         refundable_amount: refundableAmount,
         selected_in_claim: selected.get(id) ?? 0,
+        variant_id: typeof (item as any).variant_id === "string" ? (item as any).variant_id : null,
+        packaging_for_variant_id: isPackagingLine(item as any)
+          ? String((item as any).metadata?.[PACKAGING_VARIANT_KEY] ?? "") || null
+          : null,
       }
     })
 }

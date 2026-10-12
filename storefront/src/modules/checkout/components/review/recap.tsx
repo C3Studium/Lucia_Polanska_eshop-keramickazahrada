@@ -4,6 +4,7 @@ import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
+import { withPackagingUnderProducts } from "@lib/util/packaging"
 
 /**
  * What the customer is about to pay for, in one block: the objects, where they are going,
@@ -23,7 +24,8 @@ export default function OrderRecap({ cart }: { cart: any }) {
       <section className={styles.recapBlock} aria-labelledby="recap-items">
         <h3 id="recap-items">Co objednáváte</h3>
         <ul className={styles.itemList}>
-          {cart?.items?.map((item: any) => (
+          {/* Balné hned pod svým výrobkem („Balné — Pítko"). */}
+          {withPackagingUnderProducts((cart?.items ?? []) as any[]).map((item: any) => (
             <li key={item.id}>
               <span className={styles.itemTitle}>
                 {item.product_title ?? item.title}

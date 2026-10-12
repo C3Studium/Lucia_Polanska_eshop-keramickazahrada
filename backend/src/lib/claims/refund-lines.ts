@@ -200,8 +200,9 @@ export const allRemainingLines = (
  *   zbývající kusy + poštovné; když už žádný kus nezbývá a peníze ano, zbytek
  *   jako částka;
  * - reklamace (poštovné nejde): jen VÝROBKY — reklamované kusy
- *   (`selected_in_claim`, nejvýš co ještě jde vrátit); bez výběru (starší
- *   žádost) všechny zbývající kusy. Žádné poštovné, žádný „zbytek".
+ *   (`selected_in_claim`, nejvýš co ještě jde vrátit) i s jejich balným
+ *   (balné patří k výrobku, lib/packaging.ts); bez výběru (starší žádost)
+ *   všechny zbývající kusy. Žádné poštovné, žádný „zbytek".
  */
 export const refundAllLines = (
   items: ClaimOrderItemDetail[],
@@ -210,12 +211,33 @@ export const refundAllLines = (
 ): RefundLineInput[] => {
   if (!shipping.allowed) {
     const claimed = items.filter((item) => item.selected_in_claim > 0)
-    const source = claimed.length
-      ? claimed.map((item) => ({
-          ...item,
-          refundable_quantity: Math.min(item.refundable_quantity, item.selected_in_claim),
-        }))
-      : items
+    if (!claimed.length) return allRemainingLines(items, shipping)
+    // Balné reklamovaných kusů: stejný počet kusů jako výrobek (nejvýš co jde).
+    const claimedByVariant = new Map<string, number>()
+    for (const item of claimed) {
+      if (!item.variant_id) continue
+      claimedByVariant.set(
+        item.variant_id,
+        (claimedByVariant.get(item.variant_id) ?? 0) +
+          Math.min(item.refundable_quantity, item.selected_in_claim)
+      )
+    }
+    const packaging = items
+      .filter((item) => item.packaging_for_variant_id && claimedByVariant.has(item.packaging_for_variant_id))
+      .map((item) => ({
+        ...item,
+        refundable_quantity: Math.min(
+          item.refundable_quantity,
+          claimedByVariant.get(item.packaging_for_variant_id as string) ?? 0
+        ),
+      }))
+    const source = [
+      ...claimed.map((item) => ({
+        ...item,
+        refundable_quantity: Math.min(item.refundable_quantity, item.selected_in_claim),
+      })),
+      ...packaging,
+    ]
     return allRemainingLines(source, shipping)
   }
   const lines = allRemainingLines(items, shipping)

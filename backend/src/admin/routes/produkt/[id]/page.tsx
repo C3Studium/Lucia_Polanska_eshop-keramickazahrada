@@ -1827,13 +1827,16 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
                     Cena balení
                   </Text>
                   <Text size="small" className="text-ui-fg-subtle mt-0.5">
-                    Co stojí zabalit tento kus. Prázdné pole = výchozí cena obchodu.
+                    Balné za kus — zákazník ho uvidí jako vlastní položku
+                    pod výrobkem (v košíku, objednávce i na faktuře), i u
+                    osobního odběru. V cizí měně se přepočte kurzem ČNB
+                    a zaokrouhlí nahoru na 0,50. Prázdné = bez balného.
                   </Text>
                 </div>
                 <InlineNumber
                   value={packagingPrice}
                   unit="Kč"
-                  placeholder="výchozí"
+                  placeholder="0"
                   onSave={(next) => saveFlags.mutateAsync({ packaging_price: next })}
                 />
               </div>

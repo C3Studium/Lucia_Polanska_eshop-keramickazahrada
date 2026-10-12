@@ -8,6 +8,7 @@
  */
 
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { isServiceLine } from "./packaging-lines"
 import {
   customerName,
   orderLink,
@@ -36,6 +37,8 @@ export const REVIEW_ORDER_FIELDS = [
   "items.product_title",
   "items.thumbnail",
   "items.product_id",
+  "items.variant_id",
+  "items.metadata",
   "items.variant.product.handle",
 ]
 
@@ -44,7 +47,8 @@ export const reviewRequestKey = (orderId: string): string =>
   `review-request:${orderId}`
 
 export const buildReviewEmailData = (order: any): Record<string, unknown> => {
-  const item = (order.items || [])[0]
+  // První VÝROBEK — balné ani doběrečné recenzi nedostanou.
+  const item = ((order.items || []) as any[]).find((line) => !isServiceLine(line))
   // Handle, ne id — storefront routuje produkty podle handle.
   const handle = item?.variant?.product?.handle ?? null
   const link = productLink(handle)

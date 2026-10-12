@@ -2,6 +2,11 @@ import { Column, Img, Row, Section, Text } from "@react-email/components"
 import { BigNumberValue, CustomerDTO, OrderDTO } from "@medusajs/framework/types"
 import { orderLink } from "../../../lib/storefront-url"
 import {
+  isPackagingLine,
+  PACKAGING_TITLE,
+  withPackagingUnderProducts,
+} from "../../../lib/packaging-lines"
+import {
   brand,
   ButtonRow,
   EmailButton,
@@ -132,7 +137,41 @@ function OrderPlacedEmailComponent({
       {/* Objekty */}
       <Section style={{ margin: "32px 0 0" }}>
         <Eyebrow index="02">Objekty</Eyebrow>
-        {order.items?.map((item, i) => (
+        {/* Balné (lib/packaging.ts) je vlastní položka — hned pod svým
+            výrobkem, menším řádkem bez fotky a bez pořadového čísla. */}
+        {withPackagingUnderProducts((order.items ?? []) as any[]).map((item: any) =>
+          isPackagingLine(item) ? (
+            <Row key={item.id}>
+              <Column style={{ width: "68px" }} />
+              <Column style={{ padding: "0 0 12px", verticalAlign: "top" }}>
+                <Text
+                  style={{
+                    fontFamily: brand.sans,
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    color: brand.muted,
+                    margin: 0,
+                  }}
+                >
+                  {PACKAGING_TITLE}
+                  {Number(item.quantity) > 1 ? ` · ${item.quantity} ks` : ""}
+                </Text>
+              </Column>
+              <Column align="right" style={{ padding: "0 0 12px", verticalAlign: "top", width: "110px" }}>
+                <Text
+                  style={{
+                    fontFamily: brand.sans,
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    color: brand.muted,
+                    margin: 0,
+                  }}
+                >
+                  {formatPrice(item.total)}
+                </Text>
+              </Column>
+            </Row>
+          ) : (
           <Row key={item.id} style={{ borderTop: `1px solid ${brand.line}` }}>
             <Column
               style={{ width: "68px", padding: "14px 14px 14px 0", verticalAlign: "top" }}
@@ -171,7 +210,11 @@ function OrderPlacedEmailComponent({
                   margin: "0 0 4px",
                 }}
               >
-                {String(i + 1).padStart(2, "0")}
+                {String(
+                  ((order.items ?? []) as any[])
+                    .filter((line) => !isPackagingLine(line))
+                    .findIndex((line) => line.id === item.id) + 1
+                ).padStart(2, "0")}
               </Text>
               <Text
                 style={{
@@ -218,7 +261,8 @@ function OrderPlacedEmailComponent({
               </Text>
             </Column>
           </Row>
-        ))}
+          )
+        )}
         <LedgerEnd />
       </Section>
 

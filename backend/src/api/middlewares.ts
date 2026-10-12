@@ -37,6 +37,10 @@ import {
   applyDobirkaFeeOnPaymentSession,
   protectDobirkaFeeLine,
 } from "../lib/dobirka-fee";
+import {
+  syncPackagingOnCartRead,
+  syncPackagingOnPaymentSession,
+} from "../lib/packaging";
 import { requireShipGate } from "../lib/require-ship-gate";
 import { requireShippableCart } from "../lib/require-shippable-cart";
 import { requireStockableCart } from "../lib/require-stockable-cart";
@@ -293,7 +297,19 @@ export default defineMiddlewares({
     {
       matcher: "/store/payment-collections/:id/payment-sessions",
       methods: ["POST"],
-      middlewares: [applyDobirkaFeeOnPaymentSession()],
+      // Balné napřed (lib/packaging.ts), pak doběrečné — relace vzniká až
+      // na košíku, kde sedí obojí.
+      middlewares: [syncPackagingOnPaymentSession(), applyDobirkaFeeOnPaymentSession()],
+    },
+    /*
+     * Balné u každého výrobku (lib/packaging.ts). Storefront po každé změně
+     * košík znovu čte — srovnání před vrácením košíku znamená, že zákazník
+     * balné vidí hned (přidání, počet kusů, odebrání, změna měny).
+     */
+    {
+      matcher: "/store/carts/:id",
+      methods: ["GET"],
+      middlewares: [syncPackagingOnCartRead()],
     },
     // Položka doběrečného není zákazníkova — přidává a odebírá ji výběr
     // platby. Přímé smazání či úprava množství by dobírku podúčtovaly.

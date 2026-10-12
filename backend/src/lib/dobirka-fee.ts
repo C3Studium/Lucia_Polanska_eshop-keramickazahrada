@@ -47,6 +47,7 @@ import { refreshPaymentCollectionForCartWorkflow } from "@medusajs/medusa/core-f
 import { getMerchantSetting } from "./merchant-settings"
 import { toNumber } from "./order-quantity"
 import { DOBIRKA_PROVIDER_ID } from "./ship-gate"
+import { isPackagingLine, PACKAGING_VARIANT_KEY } from "./packaging"
 
 /** Line-item metadata marker. The one fact every guard keys on. */
 export const DOBIRKA_FEE_MARKER = "dobirka_fee"
@@ -360,6 +361,15 @@ export const protectDobirkaFeeLine = () => {
         })
         return
       }
+      // Balné (lib/packaging.ts) jde s výrobkem — mění se jen s ním.
+      if (line && isPackagingLine(line)) {
+        res.status(400).json({
+          type: "not_allowed",
+          message:
+            "Balné patří k výrobku a samo upravit nejde. Změní se, když upravíte počet kusů výrobku.",
+        })
+        return
+      }
 
       /*
        * Removing the last real product takes the fee with it. Covers DELETE
@@ -381,10 +391,28 @@ export const protectDobirkaFeeLine = () => {
           .map((item) => String(item.id))
         const productLinesLeft = items.filter(
           (item) =>
-            !isDobirkaFeeLine(item) && String(item.id) !== String(lineId)
+            !isDobirkaFeeLine(item) &&
+            !isPackagingLine(item) &&
+            String(item.id) !== String(lineId)
         )
-        if (feeIds.length && !productLinesLeft.length) {
-          await cartModule.deleteLineItems(feeIds)
+        // Odebraný výrobek bere s sebou i své balné (jinak by do dalšího
+        // načtení košíku viselo bez výrobku a do souhrnu by se počítalo).
+        const removed = items.find((item) => String(item.id) === String(lineId)) as any
+        const orphanPackaging = items
+          .filter(
+            (item) =>
+              isPackagingLine(item) &&
+              removed?.variant_id &&
+              String(item.metadata?.[PACKAGING_VARIANT_KEY] ?? "") === String(removed.variant_id) &&
+              !productLinesLeft.some((left: any) => left.variant_id === removed.variant_id)
+          )
+          .map((item) => String(item.id))
+        const toDelete = [
+          ...(feeIds.length && !productLinesLeft.length ? feeIds : []),
+          ...orphanPackaging,
+        ]
+        if (toDelete.length) {
+          await cartModule.deleteLineItems(toDelete)
         }
       }
 
