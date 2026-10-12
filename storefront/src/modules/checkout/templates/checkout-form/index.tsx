@@ -89,8 +89,11 @@ export default async function CheckoutForm({
   const chosenOption = shippingMethods.find((option) =>
     chosenOptionIds.has(option.id)
   )
+  // Zakázka (i jen s profilem výroby, bez kategorie) dobírku nemá.
   const dobirkaGoodsOk =
-    cartAllowsDobirka(cart as any) && countryAllowsDobirka(cart as any, countryCode)
+    cartAllowsDobirka(cart as any) &&
+    countryAllowsDobirka(cart as any, countryCode) &&
+    !productionMode?.has_made_to_order
   const allowsDobirka =
     dobirkaGoodsOk &&
     deliveryCollectsDobirka(

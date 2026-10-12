@@ -15,20 +15,33 @@
  *    someone in Slovakia produces an order that cannot be fulfilled as sold.
  */
 
+import { isCommissionLine } from "./commission"
 import { isPackagingLine } from "./packaging"
 
 export const DOBIRKA_COUNTRIES = new Set(["cz"])
 
 type LineLike = {
-  product?: { metadata?: Record<string, unknown> | null } | null
+  product?: {
+    metadata?: Record<string, unknown> | null
+    categories?: { handle?: string | null }[] | null
+  } | null
   metadata?: Record<string, unknown> | null
   variant_id?: string | null
   product_id?: string | null
 }
 
-/** Opt-in, per product. Absent metadata means no. */
+/**
+ * Dobírka je VÝCHOZÍ (Matěj 12. 10. 2026): jde u každého kusu, kromě
+ * - zakázky (kategorie Zakázková výroba, značka `made_to_order`; profil
+ *   výroby hlídá pokladna přes `productionMode`),
+ * - kusu, kde ji Lucie výslovně vypnula (`cod_allowed: false`).
+ * Zahraničí hlídá `countryAllowsDobirka`.
+ */
 export const lineAllowsDobirka = (item: LineLike) =>
-  Boolean(item?.product?.metadata?.cod_allowed)
+  item?.product?.metadata?.cod_allowed !== false &&
+  !isCommissionLine(item) &&
+  !item?.metadata?.made_to_order &&
+  !item?.product?.metadata?.made_to_order
 
 /**
  * The doběrečné line the backend adds when dobírka is chosen. It is a fee,
@@ -44,10 +57,13 @@ export const lineAllowsDobirka = (item: LineLike) =>
 export const isDobirkaFeeLine = (item: LineLike | null | undefined) =>
   Boolean(item?.metadata?.dobirka_fee) && !item?.variant_id && !item?.product_id
 
-/** The same fact read off the product itself — the PDP says it up front. */
+/**
+ * Totéž na stránce produktu: vypnutá dobírka nebo zakázka (značka) → ne.
+ * Profil výroby, kategorii zakázek a zemi přidává volající.
+ */
 export const productAllowsDobirka = (
   product?: { metadata?: Record<string, unknown> | null } | null
-) => Boolean(product?.metadata?.cod_allowed)
+) => product?.metadata?.cod_allowed !== false && !product?.metadata?.made_to_order
 
 /** One piece that forbids it forbids it for the basket — the carrier collects once. */
 export const cartAllowsDobirka = (cart: { items?: LineLike[] | null } | null) => {

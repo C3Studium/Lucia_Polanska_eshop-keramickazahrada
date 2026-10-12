@@ -14,7 +14,7 @@ import {
 } from "@lib/util/availability"
 import { backorderWaitNote } from "@lib/util/backorder"
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
-import { productAllowsDobirka } from "@lib/util/dobirka"
+import { DOBIRKA_COUNTRIES, productAllowsDobirka } from "@lib/util/dobirka"
 import { addToCart } from "@lib/data/cart"
 import { toCzechErrorMessage } from "@lib/util/error-messages"
 import type { AddToCartState } from "./Cta/Add"
@@ -467,7 +467,13 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       addState={addState}
                       availability={availability}
                       backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
-                      codAllowed={productAllowsDobirka(product)}
+                      // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
+                      codAllowed={
+                        productAllowsDobirka(product) &&
+                        !isMadeToOrder &&
+                        !isCommissionCategory &&
+                        DOBIRKA_COUNTRIES.has(String(countryCode).toLowerCase())
+                      }
                       quantity={pick?.fixedQuantity ?? quantity}
                       maxQuantity={maxQuantity}
                       // Pevný počet (výměna řádku) = žádný stepper.

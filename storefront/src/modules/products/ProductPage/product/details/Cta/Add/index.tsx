@@ -204,7 +204,7 @@ export default function CTA({
         <p className="product__details__cta__codNote">
           {codAllowed
             ? "Lze doručit na dobírku (při doručení na adresu)."
-            : "Dobírka není možná, tento kus se platí předem."}
+            : "Nelze objednat na dobírku."}
         </p>
       )}
 

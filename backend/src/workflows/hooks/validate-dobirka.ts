@@ -176,13 +176,19 @@ completeCartWorkflow.hooks.validate(
 
     const { data: products } = await query.graph({
       entity: "product",
-      fields: ["id", "title", "metadata"],
+      fields: ["id", "title", "metadata", "categories.handle"],
       filters: { id: productIds },
     })
-    // Opt-IN, same as the storefront reads it: dobírka only when EVERY piece
-    // explicitly allows it. An unflagged product is a „ne".
+    // Dobírka je VÝCHOZÍ (Matěj 12. 10. 2026): blokuje jen výslovně vypnutá
+    // (`cod_allowed: false`) a zakázka (kategorie Zakázková výroba nebo
+    // značka; profil výroby hlídá kontrola výš).
     const blocked = (products as any[]).filter(
-      (product) => product?.metadata?.cod_allowed !== true
+      (product) =>
+        product?.metadata?.cod_allowed === false ||
+        Boolean(product?.metadata?.made_to_order) ||
+        ((product?.categories ?? []) as any[]).some(
+          (category) => category?.handle === "zakazkova-vyroba"
+        )
     )
     if (blocked.length) {
       const names = blocked.map((product) => `„${product.title}"`).join(", ")

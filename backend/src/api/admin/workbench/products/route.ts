@@ -218,7 +218,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         kind,
         /* Dobírka is opt-in per product: the carrier collecting cash is a risk she
            takes piece by piece, not a shop-wide setting. Absent metadata means no. */
-        cod_allowed: Boolean((product.metadata as any)?.cod_allowed),
+        // Dobírka výchozí: vypnutá jen výslovným false (12. 10. 2026).
+        cod_allowed: (product.metadata as any)?.cod_allowed !== false,
         /* Archived pieces are kept, not deleted — they still own their order history —
            but they leave the shop and the working lists. */
         archived: Boolean((product.metadata as any)?.archived),

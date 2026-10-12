@@ -211,7 +211,8 @@ export const addTargetProblem = (input: {
   if (meta.clearance === true) {
     return "Poškozený kus se do úpravy nepřidává — objednejte ho prosím zvlášť."
   }
-  if (input.payment === "dobirka" && meta.cod_allowed !== true) {
+  // Dobírka výchozí — blokuje jen výslovně vypnutá (Matěj 12. 10. 2026).
+  if (input.payment === "dobirka" && meta.cod_allowed === false) {
     return "Tenhle výrobek nejde poslat na dobírku — objednejte ho prosím zvlášť."
   }
   return null

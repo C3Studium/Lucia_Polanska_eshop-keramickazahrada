@@ -134,11 +134,13 @@ describe("lineLockFor", () => {
 })
 
 describe("addTargetProblem — co jde přidat", () => {
-  it("blocks zakázka, bundle, clearance; dobírka needs cod_allowed", () => {
+  it("blocks zakázka, bundle, clearance; dobírka blocked only when switched off", () => {
     expect(addTargetProblem({ hasProductionProfile: true, payment: "card" })).not.toBeNull()
     expect(addTargetProblem({ product: { metadata: { is_bundle: true } }, payment: "card" })).not.toBeNull()
     expect(addTargetProblem({ product: { metadata: { clearance: true } }, payment: "card" })).not.toBeNull()
-    expect(addTargetProblem({ product: { metadata: {} }, payment: "dobirka" })).not.toBeNull()
+    // Dobírka výchozí (12. 10. 2026): nevyplněné = jde, jen výslovné false ne.
+    expect(addTargetProblem({ product: { metadata: {} }, payment: "dobirka" })).toBeNull()
+    expect(addTargetProblem({ product: { metadata: { cod_allowed: false } }, payment: "dobirka" })).not.toBeNull()
     expect(addTargetProblem({ product: { metadata: { cod_allowed: true } }, payment: "dobirka" })).toBeNull()
     expect(addTargetProblem({ product: { metadata: {} }, payment: "card" })).toBeNull()
   })

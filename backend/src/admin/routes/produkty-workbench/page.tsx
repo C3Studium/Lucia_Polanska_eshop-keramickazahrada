@@ -971,9 +971,10 @@ const ProductsInner = () => {
                 křehké
               </Badge>
             )}
-            {product.cod_allowed && (
-              <Badge size="2xsmall" color="blue" className="ml-1">
-                dobírka
+            {/* Dobírka je výchozí — štítek jen u výslovně vypnuté. */}
+            {!product.cod_allowed && (
+              <Badge size="2xsmall" color="grey" className="ml-1">
+                bez dobírky
               </Badge>
             )}
           </div>

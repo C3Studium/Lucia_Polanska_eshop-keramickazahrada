@@ -1796,8 +1796,8 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
               />
               <FlagRow
                 label="Dobírka"
-                description={'Dopravce smí vybrat peníze při předání. Zákazník na stránce produktu uvidí „Lze/Nelze doručit na dobírku".'}
-                checked={flagOf(product, "cod_allowed")}
+                description={'Zapnuto = dá se poslat na dobírku (výchozí u všech). Vypněte, když ho chcete jen předem kartou — zákazník pak uvidí „Nelze objednat na dobírku". Zakázky a zahraničí dobírku nemají nikdy.'}
+                checked={product?.metadata?.cod_allowed !== false}
                 disabled={saveFlags.isPending}
                 onChange={(next) => saveFlags.mutate({ cod_allowed: next })}
               />
