@@ -788,7 +788,8 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  /* 0,8× (Matěj 12. 10.: poznámky pod tlačítky menší na všech zařízeních) */
+  font-size: clamp(0.65rem, 0.866vw, 0.758rem);
   line-height: 1.5;
   text-align: right;
   color: var(--cream-02);
@@ -799,7 +800,8 @@
   width: 100%;
   margin: 0;
   font-family: "Sansation-Regular", sans-serif;
-  font-size: clamp(0.8125rem, 1.083vw, 0.948rem);
+  /* 0,8× (Matěj 12. 10.) */
+  font-size: clamp(0.65rem, 0.866vw, 0.758rem);
   line-height: 1.5;
   text-align: right;
   color: var(--cream-02);
@@ -950,7 +952,10 @@
      decide the purchase. Was .48 = 4.2:1 on the ink stage. */
   margin: 0;
   color: rgb(var(--cream-06-rgb) / .64);
-  font: 400 clamp(0.875rem, 1.167vw, 1.021rem)/1.35 "Sansation-Regular", sans-serif;
+  /* 0,8× původní velikosti (Matěj 12. 10.: dostupnost, výroba, balné,
+     dobírka — menší na všech zařízeních; tohle pravidlo vyhrává nad
+     třídami poznámek, proto se zmenšuje tady). */
+  font: 400 clamp(0.7rem, 0.934vw, 0.817rem)/1.4 "Sansation-Regular", sans-serif;
 }
 
 .product__serviceNotes {

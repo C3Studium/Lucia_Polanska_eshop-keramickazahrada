@@ -49,6 +49,13 @@
   line-height: 1.35;
 }
 
+/* Rozbalovací košík: čára mezi variantou a balným nižší (Matěj 12. 10.). */
+.noteCompact {
+  margin-top: .2rem;
+  padding-top: .15rem;
+  line-height: 1.25;
+}
+
 .noteLabel {
   opacity: .72;
 }

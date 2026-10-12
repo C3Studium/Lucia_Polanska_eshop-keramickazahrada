@@ -24,15 +24,19 @@ export const PackagingNote = ({
   item,
   currencyCode,
   className,
+  compact = false,
 }: {
   item: PackagingLineItem | null | undefined
   currencyCode?: string | null
   className?: string
+  /** Hustší — menší mezera a čára nad balným (rozbalovací košík). */
+  compact?: boolean
 }) => {
   if (!item) return null
   const quantity = Number(item.quantity ?? 0)
+  const classes = [s.note, compact ? s.noteCompact : "", className ?? ""].filter(Boolean).join(" ")
   return (
-    <p className={className ? `${s.note} ${className}` : s.note} data-testid="packaging-note">
+    <p className={classes} data-testid="packaging-note">
       <span className={s.noteLabel}>
         {PACKAGING_TITLE}
         {quantity > 1 ? ` · ${quantity} ks` : ""}

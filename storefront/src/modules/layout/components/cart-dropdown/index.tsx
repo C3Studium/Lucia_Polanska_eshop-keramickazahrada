@@ -279,6 +279,7 @@ const CartDropdown = ({
                                 <PackagingNote
                                   item={packagingFor(cartState.items, item)}
                                   currencyCode={cartState.currency_code}
+                                  compact
                                 />
 
                               </div>

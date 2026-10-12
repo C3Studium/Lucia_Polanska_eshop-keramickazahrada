@@ -210,8 +210,7 @@ export default function CTA({
           balení proti poškození, v košíku je pak jako položka pod výrobkem. */}
       {!pick && (
         <p className="product__details__cta__codNote" data-testid="product-packaging-note">
-          Každý kus potřebuje vlastní balení, které ho ochrání před poškozením —
-          balné proto najdete v košíku u výrobku. Platí i při osobním odběru.
+          Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku.
         </p>
       )}
     </div>

@@ -17,6 +17,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { useState } from "react"
+import { convertToLocale } from "@lib/util/money"
 import s from "./style.module.scss"
 
 type ItemProps = {
@@ -113,8 +114,9 @@ const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps
           {!!item.metadata?.width && <span>Šířka · {item.metadata.width as number} cm</span>}
           {!!item.metadata?.height && <span>Výška · {item.metadata.height as number} cm</span>}
         </div>
-        {/* Balné patří k výrobku — přímo pod názvem a variantou. */}
-        <PackagingNote item={packaging} currencyCode={currencyCode} />
+        {/* Balné patří k výrobku — v košíku přímo pod názvem a variantou;
+            v souhrnu pokladny (náhled) je v ceníku vpravo. */}
+        {type === "full" && <PackagingNote item={packaging} currencyCode={currencyCode} />}
 
         {type === "full" && (
           <div className={s.mobileControls}>
@@ -186,11 +188,35 @@ const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps
                 </span>
                 <LineItemUnitPrice item={item} style="tight" currencyCode={currencyCode} />
               </span>
+              {/* Balné hned pod cenou výrobku (Matěj 12. 10.): „Balné 1× 40,-". */}
+              {packaging && (
+                <span className={s.previewQtyRow} data-testid="packaging-note">
+                  <span className={s.muted}>Balné {Number(packaging.quantity ?? 0)}×</span>
+                  <span>
+                    {convertToLocale({
+                      amount: Number(packaging.unit_price ?? 0),
+                      currency_code: currencyCode,
+                    })}
+                  </span>
+                </span>
+              )}
               <Divider />
             </>
           )}
           {type === "full" && <span className={s.controlLabel}>Celkem</span>}
-          <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+          {type === "preview" && packaging ? (
+            // Součet výrobku i jeho balného — to, co za řádek zákazník platí.
+            <span className={s.previewTotal}>
+              {convertToLocale({
+                amount:
+                  Number(item.total ?? 0) +
+                  Number(packaging.unit_price ?? 0) * Number(packaging.quantity ?? 0),
+                currency_code: currencyCode,
+              })}
+            </span>
+          ) : (
+            <LineItemPrice item={item} style="tight" currencyCode={currencyCode} />
+          )}
         </span>
       </div>
     </article>

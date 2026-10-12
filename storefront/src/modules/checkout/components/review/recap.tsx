@@ -5,7 +5,7 @@ import { PLATCE_DPH } from "@lib/util/dph"
 import styles from "./style.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine } from "@lib/util/packaging"
-import { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
+import { packagingFor } from "@modules/common/components/packaging-line"
 
 /**
  * What the customer is about to pay for, in one block: the objects, where they are going,
@@ -25,20 +25,35 @@ export default function OrderRecap({ cart }: { cart: any }) {
       <section className={styles.recapBlock} aria-labelledby="recap-items">
         <h3 id="recap-items">Co objednáváte</h3>
         <ul className={styles.itemList}>
-          {/* Balné je uvnitř řádku výrobku, pod názvem a variantou. */}
+          {/* Ceník vpravo (Matěj 12. 10.): „1× cena výrobku", pod tím
+              „Balné 1× cena", čára a součet obojího. */}
           {((cart?.items ?? []) as any[])
             .filter((item: any) => !isPackagingLine(item) || !(cart?.items ?? []).some((other: any) => !isPackagingLine(other) && packagingFor(cart?.items as any[], other) === item))
-            .map((item: any) => (
-            <li key={item.id}>
-              <span className={styles.itemTitle}>
-                {item.product_title ?? item.title}
-                {item.variant_title ? ` · ${item.variant_title}` : ""}
-                <PackagingNote item={packagingFor(cart?.items as any[], item)} currencyCode={cart?.currency_code} />
-              </span>
-              <span className={styles.itemQuantity}>{item.quantity}×</span>
-              <span className={styles.itemTotal}>{money(item.total)}</span>
-            </li>
-          ))}
+            .map((item: any) => {
+              const pack = packagingFor(cart?.items as any[], item) as any
+              const packTotal = pack ? Number(pack.unit_price ?? 0) * Number(pack.quantity ?? 0) : 0
+              return (
+                <li key={item.id}>
+                  <span className={styles.itemTitle}>
+                    {item.product_title ?? item.title}
+                    {item.variant_title ? ` · ${item.variant_title}` : ""}
+                  </span>
+                  <span className={styles.itemPrices}>
+                    <span className={styles.itemLine}>
+                      <span className={styles.itemQuantity}>{item.quantity}×</span>{" "}
+                      {money(item.unit_price)}
+                    </span>
+                    {pack && (
+                      <span className={`${styles.itemLine} ${styles.itemPackaging}`} data-testid="packaging-note">
+                        Balné <span className={styles.itemQuantity}>{pack.quantity}×</span>{" "}
+                        {money(pack.unit_price)}
+                      </span>
+                    )}
+                    <span className={styles.itemTotal}>{money(Number(item.total ?? 0) + packTotal)}</span>
+                  </span>
+                </li>
+              )
+            })}
         </ul>
       </section>
 

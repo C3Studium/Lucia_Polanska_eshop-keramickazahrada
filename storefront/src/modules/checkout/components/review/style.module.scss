@@ -113,7 +113,31 @@
   align-items: baseline;
   padding: clamp(.5rem, .93vh, .8rem) 0;
   gap: .875rem;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* Ceník položky: cena výrobku, balné, čára, součet (Matěj 12. 10.). */
+.itemPrices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .1rem;
+}
+
+.itemLine {
+  color: var(--review-ink);
+  font: 400 clamp(.8125rem, 1.05vw, 1rem)/1.35 "Sansation-Regular", sans-serif;
+  white-space: nowrap;
+}
+
+.itemPackaging {
+  opacity: .78;
+}
+
+.itemPrices .itemTotal {
+  margin-top: .2rem;
+  padding-top: .2rem;
+  border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
 }
 
 .itemList li:first-child {
