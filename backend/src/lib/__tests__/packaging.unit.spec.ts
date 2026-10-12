@@ -216,3 +216,28 @@ describe("pořadí a reklamace", () => {
     ])
   })
 })
+
+describe("detail objednávky v adminu", () => {
+  it("balné hned pod výrobkem jako „↳ Balné“, ostatní beze změny", () => {
+    const { packagingUnderProductsInAdminOrder } = require("../packaging")
+    let sent: any = null
+    const res: any = { json: (body: any) => { sent = body; return res } }
+    packagingUnderProductsInAdminOrder()({} as any, res, () => undefined)
+    res.json({
+      order: {
+        items: [
+          packaging("p2", "v2", 1, 40, "Balné — Zvonek"),
+          product("a", "v1", 1, "Pítko"),
+          product("b", "v2", 1, "Zvonek"),
+          packaging("p1", "v1", 1, 50, "Balné — Pítko"),
+        ],
+      },
+    })
+    expect(sent.order.items.map((item: any) => `${item.id}:${item.title ?? item.product_title}`)).toEqual([
+      "a:Pítko",
+      "p1:↳ Balné",
+      "b:Zvonek",
+      "p2:↳ Balné",
+    ])
+  })
+})

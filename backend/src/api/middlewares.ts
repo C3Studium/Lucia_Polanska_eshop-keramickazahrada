@@ -38,6 +38,7 @@ import {
   protectDobirkaFeeLine,
 } from "../lib/dobirka-fee";
 import {
+  packagingUnderProductsInAdminOrder,
   syncPackagingOnCartRead,
   syncPackagingOnPaymentSession,
 } from "../lib/packaging";
@@ -310,6 +311,13 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id",
       methods: ["GET"],
       middlewares: [syncPackagingOnCartRead()],
+    },
+    // Nativní detail objednávky v adminu: balné hned pod svým výrobkem
+    // jako „↳ Balné" (jen pořadí a název v odpovědi, data beze změny).
+    {
+      matcher: "/admin/orders/:id",
+      methods: ["GET"],
+      middlewares: [packagingUnderProductsInAdminOrder()],
     },
     // Položka doběrečného není zákazníkova — přidává a odebírá ji výběr
     // platby. Přímé smazání či úprava množství by dobírku podúčtovaly.

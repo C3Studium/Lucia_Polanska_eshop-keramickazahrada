@@ -54,8 +54,10 @@ import {
   isPackagingLine,
   PACKAGING_MARKER,
   PACKAGING_PRODUCT_KEY,
+  PACKAGING_TITLE,
   PACKAGING_VARIANT_KEY,
   packagingTitleFor,
+  withPackagingUnderProducts,
 } from "./packaging-lines"
 
 export {
@@ -337,6 +339,42 @@ export const syncPackagingForCart = async (
       .catch(() => undefined)
     return { changed: true }
   })
+
+/**
+ * Middleware pro `GET /admin/orders/:id` (Matěj 12. 10. 2026): nativní detail
+ * objednávky v adminu („Souhrn") vypisuje položky v pořadí z API, takže balné
+ * skončilo kdekoli. Před odesláním odpovědi se položky přeřadí — balné hned
+ * pod svým výrobkem — a balné pod výrobkem dostane název „↳ Balné", ať se
+ * čte jako jeho podpoložka. Jen pro tuhle odpověď: v databázi, na faktuře
+ * ani v e-mailech se nic nemění.
+ */
+export const packagingUnderProductsInAdminOrder = () => {
+  return (_req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
+    const json = res.json.bind(res)
+    res.json = ((body: any) => {
+      try {
+        const items = body?.order?.items
+        if (Array.isArray(items) && items.some(isPackagingLine)) {
+          const ordered = withPackagingUnderProducts(items)
+          body.order.items = ordered.map((item: any, index: number) => {
+            const previous = ordered[index - 1] as any
+            const underItsProduct =
+              isPackagingLine(item) &&
+              previous &&
+              !isPackagingLine(previous) &&
+              previous.variant_id &&
+              item.metadata?.[PACKAGING_VARIANT_KEY] === previous.variant_id
+            return underItsProduct ? { ...item, title: `↳ ${PACKAGING_TITLE}` } : item
+          })
+        }
+      } catch {
+        // Přeřazení je jen kosmetika — odpověď nesmí kvůli němu spadnout.
+      }
+      return json(body)
+    }) as typeof res.json
+    next()
+  }
+}
 
 /**
  * Middleware pro `GET /store/carts/:id`: košík se srovná dřív, než ho route
