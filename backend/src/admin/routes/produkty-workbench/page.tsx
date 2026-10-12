@@ -301,6 +301,38 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
  * costs her the carriage both ways — survivable on a mug, not on a commission.
  * Checkout still refuses dobírka outside Czechia and off Česká pošta.
  */
+/*
+ * Seznam jako TABULKA (Matěj 12. 10. 2026: „mít 2 řádky je o ničem, když to
+ * má být list"). Od 1400 px jeden řádek na produkt se sloupci a hlavičkou —
+ * přepínače bez popisků, popisek nese hlavička. Užší displej: nastavení pod
+ * údaji; telefon: nastavení pod „…".
+ */
+const ROW_GRID =
+  "min-[1400px]:grid-cols-[minmax(0,1fr)_108px_96px_96px_60px_60px_92px_68px_68px_168px]";
+
+const RowHeader = () => (
+  <div
+    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1400px]:grid ${ROW_GRID}`}
+  >
+    {[
+      ["Produkt", "", "pl-[92px]"],
+      ["Stav", "", ""],
+      ["Cena", "", ""],
+      ["Prodeje 30 dní", "", ""],
+      ["Dobírka", "Zákazník smí platit při převzetí (jen ČR, Česká pošta na adresu).", "text-center"],
+      ["Křehké", "Zásilka s tímto kusem pojede v křehkém režimu.", "text-center"],
+      ["Balení", "Cena balení za kus v Kč — zákazník ji uvidí jako „Balné“.", "text-center"],
+      ["Poškozené", "Poškozený / poslední kus ve výprodeji.", "text-center"],
+      ["Bez slev", "Slevové kódy se na produkt nevztahují.", "text-center"],
+      ["", "", ""],
+    ].map(([label, title, className], index) => (
+      <Text key={index} size="xsmall" weight="plus" className={className} title={title || undefined}>
+        {label}
+      </Text>
+    ))}
+  </div>
+);
+
 const FlagSwitch = ({
   label,
   title,
@@ -314,11 +346,15 @@ const FlagSwitch = ({
   dirty: boolean;
   onFlip: () => void;
 }) => (
-  <label className="flex cursor-pointer items-center gap-1.5" title={title}>
+  <label
+    className={`flex cursor-pointer items-center gap-1.5 min-[1400px]:justify-center ${dirty ? `min-[1400px]:rounded-md min-[1400px]:bg-ui-tag-orange-bg min-[1400px]:px-1` : ""}`}
+    title={title}
+  >
     <Switch size="small" checked={checked} onCheckedChange={onFlip} />
+    {/* Na širokém displeji nese popisek hlavička sloupce. */}
     <Text
       size="xsmall"
-      className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}
+      className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"} min-[1400px]:sr-only`}
     >
       {label}
     </Text>
@@ -352,10 +388,13 @@ const PackagingInput = ({
   };
   return (
     <label
-      className="flex items-center gap-1.5"
+      className={`flex items-center gap-1.5 min-[1400px]:justify-center`}
       title="Cena balení za kus — zákazník ji uvidí jako „Balné“ pod výrobkem."
     >
-      <Text size="xsmall" className={dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}>
+      <Text
+        size="xsmall"
+        className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"} min-[1400px]:sr-only`}
+      >
         Balení
       </Text>
       <input
@@ -369,9 +408,9 @@ const PackagingInput = ({
         onKeyDown={(event) => {
           if (event.key === "Enter") (event.target as HTMLInputElement).blur();
         }}
-        className="border-ui-border-base bg-ui-bg-field txt-compact-xsmall w-16 rounded-md border px-2 py-1 text-right"
+        className={`border-ui-border-base bg-ui-bg-field txt-compact-xsmall w-16 rounded-md border px-2 py-1 text-right ${dirty ? "border-ui-tag-orange-border" : ""}`}
       />
-      <Text size="xsmall" className="text-ui-fg-subtle">Kč</Text>
+      <Text size="xsmall" className={`text-ui-fg-subtle min-[1400px]:sr-only`}>Kč</Text>
     </label>
   );
 };
@@ -1005,25 +1044,27 @@ const ProductsInner = () => {
       ? Math.max(...priced.map((variant) => variant.price_czk!))
       : null;
 
+    const settingsOn = active !== "oblibene" && active !== "archivovane";
+    const placeholder = <span className={`hidden min-[1400px]:block`} />;
+    const pending = pendingFlags[product.id];
+
     return (
       <Fragment key={product.id}>
         <article
           id={`workbench-row-${product.id}`}
-          className="grid gap-3 px-6 py-4 lg:grid-cols-[minmax(0,1.6fr)_140px_130px_160px_minmax(0,0.8fr)] lg:items-center">
+          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1400px]:items-center ${ROW_GRID}`}>
+          {/* 1) Produkt: výběr, fotka, název, zařazení, odkazy */}
           <div className="flex min-w-0 items-center gap-3">
             <SelectCheckbox
               checked={selected.has(product.id)}
               label={`Vybrat ${product.title}`}
               onChange={(checked) => toggleSelected(product.id, checked)}
             />
-
             <Thumb
               src={product.thumbnail}
               title={product.title}
               sizeClassName="size-10"
-              onZoom={() =>
-                setLightbox({ id: product.id, title: product.title })
-              }
+              onZoom={() => setLightbox({ id: product.id, title: product.title })}
             />
             <div className="min-w-0">
               <Link
@@ -1035,12 +1076,62 @@ const ProductsInner = () => {
                   {product.title}
                 </Text>
               </Link>
-              <Text size="xsmall" className="text-ui-fg-subtle mt-0.5 truncate">
-                {[product.collection, ...product.categories]
-                  .filter(Boolean)
-                  .join(" · ") || "bez zařazení"}
+              <Text size="xsmall" className="text-ui-fg-subtle truncate">
+                {[product.collection, ...product.categories].filter(Boolean).join(" · ") ||
+                  "bez zařazení"}
+                {product.kind === "zakazka" && product.production
+                  ? ` · záloha min. ${product.production.deposit_floor_percentage} %, ${product.production.production_time_min_days}–${product.production.production_time_max_days} dní`
+                  : product.kind === "balicek" && product.bundle
+                    ? ` · balíček ${product.bundle.title}`
+                    : product.kind === "poskozene"
+                      ? " · jednorázový kus"
+                      : ""}
               </Text>
-              {expert && <CopyId value={product.id} />}
+              {/* Odkazy, které mění podstatu kusu — malé, pod názvem. */}
+              <div className="txt-compact-xsmall mt-0.5 flex flex-wrap items-center gap-x-2">
+                <VariantsEditor
+                  productId={product.id}
+                  productTitle={product.title}
+                  trigger={
+                    <button type="button" className="text-ui-fg-interactive hover:underline">
+                      Varianty
+                    </button>
+                  }
+                />
+                {active === "produkty" && (
+                  <ProductionProfileEditor
+                    productId={product.id}
+                    productTitle={product.title}
+                    trigger={
+                      <button type="button" className="text-ui-fg-subtle hover:underline">
+                        Nastavit jako zakázku
+                      </button>
+                    }
+                  />
+                )}
+                {active === "zakazky" && (
+                  <ProductionProfileEditor
+                    productId={product.id}
+                    productTitle={product.title}
+                    trigger={
+                      <button type="button" className="text-ui-fg-interactive hover:underline">
+                        Podmínky
+                      </button>
+                    }
+                  />
+                )}
+                {active === "balicky" && product.bundle && (
+                  <BundleEditor
+                    bundleId={product.bundle.id}
+                    trigger={
+                      <button type="button" className="text-ui-fg-interactive hover:underline">
+                        Složení
+                      </button>
+                    }
+                  />
+                )}
+                {expert && <CopyId value={product.id} />}
+              </div>
             </div>
             {/* Telefon: nastavení a akce řádku pod „…" — stejné jako na PC. */}
             <button
@@ -1054,296 +1145,177 @@ const ProductsInner = () => {
             </button>
           </div>
 
-          <div>
-            {product.status !== "published" && (
-              <Badge size="2xsmall" color="grey">
-                koncept
-              </Badge>
-            )}
-            {worstStock && (
-              <Badge
-                size="2xsmall"
-                color={stockBadge[worstStock].color}
-                className={product.status !== "published" ? "ml-1" : ""}
-              >
-                {stockBadge[worstStock].label}
-              </Badge>
-            )}
-            {/* Off is the norm, so only „on" is worth a badge — otherwise every row
-                carries a label that says nothing. She sets these one by one and needs
-                to see at a glance which ones she has already done. */}
-            {product.archived && (
-              <Badge
-                size="2xsmall"
-                color="grey"
-                className={
-                  product.status !== "published" || worstStock ? "ml-1" : ""
-                }
-              >
-                archiv
-              </Badge>
-            )}
-            {product.fragile && (
-              <Badge
-                size="2xsmall"
-                color="orange"
-                className={
-                  product.status !== "published" || worstStock ? "ml-1" : ""
-                }
-              >
-                křehké
-              </Badge>
-            )}
-            {/* Dobírka je výchozí — štítek jen u výslovně vypnuté. */}
-            {!product.cod_allowed && (
-              <Badge size="2xsmall" color="grey" className="ml-1">
-                bez dobírky
-              </Badge>
-            )}
-          </div>
-
-          <div>
-            <Text size="small">
-              {priceMin === null
-                ? "—"
-                : priceMin === priceMax
-                  ? formatCzk(priceMin)
-                  : `${formatCzk(priceMin)} – ${formatCzk(priceMax)}`}
-            </Text>
-            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-              {active === "poskozene"
-                ? "výprodejová cena"
-                : `${product.variants.length} ${
-                    product.variants.length === 1
-                      ? "varianta"
-                      : product.variants.length <= 4
-                        ? "varianty"
-                        : "variant"
-                  }`}
-            </Text>
-          </div>
-
-          <div>
-            <Text size="small">{product.sold_30d}× za 30 dní</Text>
-            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-              {product.wishlist_count > 0
-                ? `${product.wishlist_count}× v oblíbených`
-                : "zatím bez oblíbení"}
-              {product.review_average !== null
-                ? ` · ${product.review_average} ★ (${product.review_count})`
-                : ""}
-            </Text>
-          </div>
-
-          <div className="min-w-0">
-            {product.kind === "zakazka" && product.production && (
-              <>
-                <Text size="xsmall" weight="plus">
-                  Min. záloha {product.production.deposit_floor_percentage} %
-                </Text>
-                <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
-                  {product.production.production_time_min_days}–
-                  {product.production.production_time_max_days} dní
-                  {product.production.allow_full_prepayment
-                    ? ""
-                    : " · bez platby v plné výši"}
-                </Text>
-              </>
-            )}
-            {product.kind === "balicek" && product.bundle && (
-              <Text size="xsmall" className="text-ui-fg-subtle">
-                Balíček: {product.bundle.title}
+          {/* 2–4) Stav, cena, prodeje — na užším displeji jedna řádka pod názvem */}
+          <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pl-[92px] min-[1400px]:contents`}>
+            <div className="flex flex-wrap gap-1">
+              {product.status !== "published" && (
+                <Badge size="2xsmall" color="grey">koncept</Badge>
+              )}
+              {worstStock && (
+                <Badge size="2xsmall" color={stockBadge[worstStock].color}>
+                  {stockBadge[worstStock].label}
+                </Badge>
+              )}
+              {product.archived && (
+                <Badge size="2xsmall" color="grey">archiv</Badge>
+              )}
+            </div>
+            <div>
+              <Text size="small">
+                {priceMin === null
+                  ? "—"
+                  : priceMin === priceMax
+                    ? formatCzk(priceMin)
+                    : `${formatCzk(priceMin)} – ${formatCzk(priceMax)}`}
               </Text>
-            )}
-            {product.kind === "poskozene" && (
               <Text size="xsmall" className="text-ui-fg-subtle">
-                jednorázový kus — po vyprodání zmizí sám
+                {active === "poskozene"
+                  ? "výprodejová cena"
+                  : `${product.variants.length} ${
+                      product.variants.length === 1
+                        ? "varianta"
+                        : product.variants.length <= 4
+                          ? "varianty"
+                          : "variant"
+                    }`}
               </Text>
-            )}
+            </div>
+            <div>
+              <Text size="small">{product.sold_30d}× prodáno</Text>
+              <Text size="xsmall" className="text-ui-fg-subtle">
+                {product.wishlist_count > 0 ? `${product.wishlist_count}× oblíbené` : "bez oblíbení"}
+                {product.review_average !== null ? ` · ${product.review_average} ★` : ""}
+              </Text>
+            </div>
           </div>
 
-          {/* Text is kept for what changes the piece's identity; the mechanical,
-              every-row actions are icons and the two per-piece flags are small
-              switches — state visible at a glance, still one click to flip. */}
+          {/* 5–10) Nastavení (každé ve svém sloupci) a akce */}
           <div
-            // Na PC celá šířka pod údaji (Matěj 12. 10.: širší ovládání, aby se
-            // vešlo Balení, Křehké i Dobírka a název produktu nezmizel).
-            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center justify-start gap-x-4 gap-y-2 lg:col-span-full lg:flex lg:justify-end lg:border-t lg:border-dashed lg:border-ui-border-base lg:pt-2`}
+            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center gap-x-4 gap-y-2 lg:flex lg:pl-[92px] min-[1400px]:contents`}
           >
-            <button
-              type="button"
-              title={expanded === product.id ? "Sbalit" : "Rozbalit"}
-              className="text-ui-fg-subtle hover:text-ui-fg-base"
-              onClick={() =>
-                setExpanded(expanded === product.id ? null : product.id)
-              }
-            >
-              <ChevronDown
-                className={`transition-transform ${
-                  expanded === product.id ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {active === "zakazky" && (
-              <ProductionProfileEditor
-                productId={product.id}
-                productTitle={product.title}
-                trigger={
-                  <button
-                    type="button"
-                    className="text-ui-fg-interactive txt-small hover:underline"
-                  >
-                    Podmínky
-                  </button>
-                }
-              />
-            )}
-
-            {active === "produkty" && (
-              <ProductionProfileEditor
-                productId={product.id}
-                productTitle={product.title}
-                trigger={
-                  <button
-                    type="button"
-                    className="text-ui-fg-subtle txt-small hover:underline"
-                  >
-                    Nastavit jako zakázku
-                  </button>
-                }
-              />
-            )}
-
-            {active === "balicky" && product.bundle && (
-              <BundleEditor
-                bundleId={product.bundle.id}
-                trigger={
-                  <button
-                    type="button"
-                    className="text-ui-fg-interactive txt-small hover:underline"
-                  >
-                    Složení
-                  </button>
-                }
-              />
-            )}
-
-            <VariantsEditor
-              productId={product.id}
-              productTitle={product.title}
-              trigger={
-                <button type="button" className="text-ui-fg-interactive txt-small hover:underline">
-                  Varianty
-                </button>
-              }
-            />
-
-            {active !== "oblibene" && active !== "archivovane" && (
+            {settingsOn ? (
               <FlagSwitch
                 label="Dobírka"
-                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta."
+                title="Zákazník smí platit při převzetí — jen ČR a Česká pošta na adresu."
                 checked={effectiveFlag(product, "cod_allowed")}
-                dirty={pendingFlags[product.id]?.cod_allowed !== undefined}
+                dirty={pending?.cod_allowed !== undefined}
                 onFlip={() => stageFlag(product, "cod_allowed")}
               />
-            )}
-            {active !== "oblibene" && active !== "archivovane" && (
+            ) : placeholder}
+            {settingsOn ? (
               <FlagSwitch
                 label="Křehké"
                 title="Celá zásilka s tímto kouskem pojede v křehkém režimu (Česká pošta – křehké nebo osobní odběr)."
                 checked={effectiveFlag(product, "fragile")}
-                dirty={pendingFlags[product.id]?.fragile !== undefined}
+                dirty={pending?.fragile !== undefined}
                 onFlip={() => stageFlag(product, "fragile")}
               />
-            )}
-            {active !== "oblibene" && active !== "archivovane" && (
+            ) : placeholder}
+            {settingsOn ? (
               <PackagingInput
                 value={effectivePackaging(product)}
-                dirty={pendingFlags[product.id]?.packaging_price !== undefined}
+                dirty={pending?.packaging_price !== undefined}
                 onChange={(value) => stagePackaging(product, value)}
               />
-            )}
-            {(active === "produkty" || active === "poskozene") && (
+            ) : placeholder}
+            {active === "produkty" || active === "poskozene" ? (
               <FlagSwitch
                 label="Poškozené"
                 title="Poškozený / poslední kus ve výprodeji — po prodeji se sám schová."
                 checked={effectiveFlag(product, "clearance")}
-                dirty={pendingFlags[product.id]?.clearance !== undefined}
+                dirty={pending?.clearance !== undefined}
                 onFlip={() => stageFlag(product, "clearance")}
               />
-            )}
-            {active !== "oblibene" && active !== "archivovane" && (
+            ) : placeholder}
+            {settingsOn ? (
               <FlagSwitch
                 label="Bez slev. kódů"
-                title="Slevové kódy se na tento produkt nevztahují (ani do budoucna). Vyber víc kusů a přepni je naráz — třeba celou záložku Zakázky nebo Balíčky."
+                title="Slevové kódy se na tento produkt nevztahují (ani do budoucna). Vyber víc kusů a přepni je naráz."
                 checked={effectiveFlag(product, "no_promo")}
-                dirty={pendingFlags[product.id]?.no_promo !== undefined}
+                dirty={pending?.no_promo !== undefined}
                 onFlip={() => stageFlag(product, "no_promo")}
               />
-            )}
-            {pendingFlags[product.id] && (
-              <>
-                <Button size="small"
-                  isLoading={
-                    applyFlags.isPending &&
-                    (applyFlags.variables ?? []).includes(product.id)
-                  }
-                  onClick={() => applyFlags.mutate([product.id])}>
-                  Potvrdit
-                </Button>
-                <Button size="small" variant="transparent"
-                  disabled={applyFlags.isPending}
-                  onClick={() =>
-                    setPendingFlags((prev) => {
-                      const next = { ...prev };
-                      delete next[product.id];
-                      return next;
-                    })
-                  }>
-                  Zrušit
-                </Button>
-              </>
-            )}
+            ) : placeholder}
 
-            {active !== "oblibene" && (
-              <ShippingProfileEditor
-                productId={product.id}
-                productTitle={product.title}
-                fragile={product.fragile}
-                packagingPrice={product.packaging_price}
-                trigger={
-                  <button
-                    type="button"
-                    title="Profil dopravy (doprava a balení)"
-                    className="text-ui-fg-subtle hover:text-ui-fg-base"
-                  >
-                    <FlyingBox />
-                  </button>
-                }
-              />
-            )}
-
-            {active !== "oblibene" && <ArchiveToggle product={product} />}
-            <PublishToggle product={product} />
-            {product.store_url && (
-              <a
-                href={product.store_url}
-                target="_blank"
-                rel="noreferrer"
-                title="Otevřít v obchodě"
+            <div className={`flex items-center gap-3 min-[1400px]:justify-end`}>
+              <button
+                type="button"
+                title={expanded === product.id ? "Sbalit" : "Rozbalit"}
                 className="text-ui-fg-subtle hover:text-ui-fg-base"
+                onClick={() => setExpanded(expanded === product.id ? null : product.id)}
               >
-                <ArrowUpRightOnBox />
-              </a>
-            )}
-            <Link
-              to={`/produkt/${product.id}`}
-              className="text-ui-fg-interactive txt-small hover:underline"
-            >
-              Upravit
-            </Link>
+                <ChevronDown
+                  className={`transition-transform ${expanded === product.id ? "rotate-180" : ""}`}
+                />
+              </button>
+              {active !== "oblibene" && (
+                <ShippingProfileEditor
+                  productId={product.id}
+                  productTitle={product.title}
+                  fragile={product.fragile}
+                  packagingPrice={product.packaging_price}
+                  trigger={
+                    <button
+                      type="button"
+                      title="Profil dopravy (doprava a balení)"
+                      className="text-ui-fg-subtle hover:text-ui-fg-base"
+                    >
+                      <FlyingBox />
+                    </button>
+                  }
+                />
+              )}
+              {active !== "oblibene" && <ArchiveToggle product={product} />}
+              <PublishToggle product={product} />
+              {product.store_url && (
+                <a
+                  href={product.store_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Otevřít v obchodě"
+                  className="text-ui-fg-subtle hover:text-ui-fg-base"
+                >
+                  <ArrowUpRightOnBox />
+                </a>
+              )}
+              <Link
+                to={`/produkt/${product.id}`}
+                className="text-ui-fg-interactive txt-small hover:underline"
+              >
+                Upravit
+              </Link>
+            </div>
           </div>
+
+          {/* Rozpracované změny řádku — potvrzení na celou šířku, jen když jsou. */}
+          {pending && (
+            <div className="bg-ui-bg-subtle flex flex-wrap items-center justify-end gap-2 rounded-md px-2 py-1 lg:pl-[92px] col-span-full">
+              <Text size="xsmall" className="text-ui-fg-subtle mr-auto">
+                Neuložené změny v tomto řádku
+              </Text>
+              <Button
+                size="small"
+                isLoading={applyFlags.isPending && (applyFlags.variables ?? []).includes(product.id)}
+                onClick={() => applyFlags.mutate([product.id])}
+              >
+                Potvrdit
+              </Button>
+              <Button
+                size="small"
+                variant="transparent"
+                disabled={applyFlags.isPending}
+                onClick={() =>
+                  setPendingFlags((prev) => {
+                    const next = { ...prev };
+                    delete next[product.id];
+                    return next;
+                  })
+                }
+              >
+                Zrušit
+              </Button>
+            </div>
+          )}
         </article>
         {expanded === product.id && <ProductExpansion productId={product.id} />}
       </Fragment>
@@ -1553,6 +1525,7 @@ const ProductsInner = () => {
               <div className={gridClassName}>{rows.map(renderGridCard)}</div>
             ) : (
               <div className="divide-y">
+                {view !== "kompakt" && <RowHeader />}
                 {rows.map(view === "kompakt" ? renderCompactRow : renderRow)}
               </div>
             )
