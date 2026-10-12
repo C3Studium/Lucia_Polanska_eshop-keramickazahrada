@@ -19,12 +19,27 @@ import { adminQueryClient } from "../../lib/query-client"
  * Ceny dopravy jsou pevné ceny voleb dopravy v Kč. Každá volba má cenu
  * dvakrát (obecnou a pro region Česká republika) — uložení přepíše obě
  * korunové a ostatní měny nechá být, ať se nic nerozjede.
+ *
+ * Tvar ceny MUSÍ být jako v nativním adminu: cena v měně
+ * `{ id, currency_code, amount }`, cena regionu `{ id, region_id, amount }`.
+ * Holé `{ id, amount }` Medusa nespáruje a obecnou cenu SMAŽE (změřeno
+ * 12. 10. 2026 na Balíkovně — obnoveno).
  */
 
 type ShippingPrice = {
   id: string;
   amount: number;
   currency_code: string;
+  price_rules?: Array<{ attribute: string; value: string }> | null;
+};
+
+/** Cena pro POST /admin/shipping-options/:id — tvar podle toho, k čemu patří. */
+const pricePayload = (price: ShippingPrice, czk: number) => {
+  const amount = String(price.currency_code).toLowerCase() === "czk" ? czk : Number(price.amount);
+  const region = (price.price_rules ?? []).find((rule) => rule.attribute === "region_id");
+  return region
+    ? { id: price.id, region_id: region.value, amount }
+    : { id: price.id, currency_code: price.currency_code, amount };
 };
 
 type ShippingOption = {
@@ -60,11 +75,7 @@ const ShippingPriceRow = ({ option }: { option: ShippingOption }) => {
         body: {
           // Všechny stávající ceny (jinak by je Medusa smazala); korunové na
           // novou částku, ostatní měny beze změny.
-          prices: (option.prices ?? []).map((price) => ({
-            id: price.id,
-            amount:
-              String(price.currency_code).toLowerCase() === "czk" ? parsed : Number(price.amount),
-          })),
+          prices: (option.prices ?? []).map((price) => pricePayload(price, parsed)),
         },
       }),
     onSuccess: async () => {
@@ -118,7 +129,7 @@ const Inner = () => {
     queryKey: ["shipping-prices"],
     queryFn: () =>
       sdk.client.fetch(
-        "/admin/shipping-options?fields=id,name,price_type,*prices&limit=50"
+        "/admin/shipping-options?fields=id,name,price_type,*prices,*prices.price_rules&limit=50"
       ),
   });
   const { data } = useQuery<{ settings: any }>({
