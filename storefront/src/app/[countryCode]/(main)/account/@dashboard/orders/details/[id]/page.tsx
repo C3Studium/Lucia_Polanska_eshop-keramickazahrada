@@ -4,6 +4,7 @@ import OrderDetailsTemplate from "@modules/order/templates/order-details-templat
 import { CLAIM_FORM_KEY } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
 import { getOrderEditContext } from "@lib/data/order-edit"
+import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
@@ -38,8 +39,14 @@ export default async function OrderDetailPage(props: Props) {
      z e-mailu); tady se jen nabídne odkaz, když je co upravit nebo dokončit.
      Stránka úpravy si za přihlášeného token vyzvedne sama. */
   const editContext = await getOrderEditContext(order.id)
+  // 12. 10. 2026, Matěj: bez úpravy položek nabízí stránka změnu doručení
+  // a žádost o změnu — obojí jde, dokud objednávka není vypravená
+  // (`mode !== "none"`); limit úprav položek tu už nehraje roli.
+  const canOpenEdit = ORDER_ITEM_EDITING_ENABLED
+    ? editContext?.editable
+    : editContext?.mode !== "none"
   const edit =
-    editContext && (editContext.editable || editContext.pending_change)
+    editContext && (canOpenEdit || editContext.pending_change)
       ? {
           mode: editContext.mode,
           pending: Boolean(editContext.pending_change),

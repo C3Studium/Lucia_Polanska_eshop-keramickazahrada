@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
@@ -7,6 +7,7 @@ import { resolvePickAccess } from "@modules/order/components/order-edit/pick-acc
 import OrderPickProduct from "@modules/order/components/order-edit/pick-product"
 import {
   editPath,
+  ORDER_ITEM_EDITING_ENABLED,
   pickShopPath,
 } from "@modules/order/components/order-edit/shared"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -37,12 +38,23 @@ const decodeHandle = (value: string) => {
  * provedení jako na běžné stránce produktu, ale jen provedení z
  * `allowed[product_id]`. Bez `swap` počet kusů a „Přidat k objednávce #N",
  * se `swap=<item_id>` „Vyměnit za tento výrobek" s počtem kusů řádku.
+ *
+ * 12. 10. 2026, Matěj: mini obchod je vypnutý (`ORDER_ITEM_EDITING_ENABLED`,
+ * vysvětlení v `order-edit/shared.ts`) — stará adresa přesměruje zpátky na
+ * stránku úpravy. Kód stránky zůstává.
  */
 export default async function OrderEditPickProductPage(props: Props) {
   const [params, searchParams] = await Promise.all([
     props.params,
     props.searchParams,
   ])
+  if (!ORDER_ITEM_EDITING_ENABLED) {
+    redirect(
+      searchParams.token
+        ? `/${params.countryCode}${editPath(params.id, searchParams.token)}`
+        : `/${params.countryCode}/order/${params.id}/edit`
+    )
+  }
   const access = await resolvePickAccess(
     params.id,
     searchParams.token,

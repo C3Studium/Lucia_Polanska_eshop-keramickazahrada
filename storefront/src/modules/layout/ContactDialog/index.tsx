@@ -15,11 +15,22 @@ import {
 import { createPortal } from "react-dom"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
-import ContactDialogPanel, { type Inquiry } from "./panel"
+import ContactDialogPanel, {
+  type Inquiry,
+  type OrderChangeRequest,
+} from "./panel"
+
+export type { OrderChangeRequest } from "./panel"
 
 type ContactDialogContextValue = {
   /** Opens the dialog, optionally pre-selecting the topic the customer came in on. */
   open: (topic?: Inquiry) => void
+  /**
+   * Otevře dialog v režimu „Změna objednávky" (12. 10. 2026, Matěj) — bez
+   * výběru tématu, jména a e-mailu, jen zpráva a povinný telefon; objednávku
+   * nese `request` (číslo, id, token stránky úpravy).
+   */
+  openOrderChange: (request: OrderChangeRequest) => void
   close: () => void
   isOpen: boolean
 }
@@ -39,6 +50,8 @@ export function ContactDialogProvider({
   children: ReactNode
 }) {
   const [topic, setTopic] = useState<Inquiry | null>(null)
+  /** Režim „Změna objednávky" — `null` = běžný kontaktní formulář. */
+  const [orderChange, setOrderChange] = useState<OrderChangeRequest | null>(null)
   const pathname = usePathname()
   // Whatever the customer was on when they opened the dialog gets focus back on close.
   const triggerRef = useRef<HTMLElement | null>(null)
@@ -46,11 +59,22 @@ export function ContactDialogProvider({
   const open = useCallback((next: Inquiry = "Obecný dotaz") => {
     triggerRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setOrderChange(null)
     setTopic(next)
+  }, [])
+
+  const openOrderChange = useCallback((request: OrderChangeRequest) => {
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setOrderChange(request)
+    // Téma jen kvůli `isOpen` a zpětné kompatibilitě panelu — v režimu změny
+    // objednávky se výběr témat nevykresluje.
+    setTopic("Objednávka")
   }, [])
 
   const close = useCallback(() => {
     setTopic(null)
+    setOrderChange(null)
     triggerRef.current?.focus()
   }, [])
 
@@ -58,11 +82,12 @@ export function ContactDialogProvider({
   // must not stay open over the new route.
   useEffect(() => {
     setTopic(null)
+    setOrderChange(null)
   }, [pathname])
 
   const value = useMemo(
-    () => ({ open, close, isOpen: topic !== null }),
-    [open, close, topic]
+    () => ({ open, openOrderChange, close, isOpen: topic !== null }),
+    [open, openOrderChange, close, topic]
   )
 
   return (
@@ -75,6 +100,7 @@ export function ContactDialogProvider({
               <ContactDialogPanel
                 merchant={merchant}
                 initialTopic={topic}
+                orderChange={orderChange}
                 onClose={close}
               />
             )}

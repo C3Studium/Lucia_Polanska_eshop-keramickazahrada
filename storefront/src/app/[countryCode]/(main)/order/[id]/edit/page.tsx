@@ -3,7 +3,11 @@ import { getOrderEditContext } from "@lib/data/order-edit"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
 import OrderEditor from "@modules/order/components/order-edit"
-import { ORDER_EDIT_CONVERSATION_ID } from "@modules/order/components/order-edit/shared"
+import OrderChangeOptions from "@modules/order/components/order-edit/change-options"
+import {
+  ORDER_EDIT_CONVERSATION_ID,
+  ORDER_ITEM_EDITING_ENABLED,
+} from "@modules/order/components/order-edit/shared"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
 import OrderStateShell from "@modules/order/components/order-state-shell"
@@ -30,6 +34,11 @@ export const metadata: Metadata = {
  * (pole `access_token`, jen vlastníkovi) a stránka ho na tokenovou adresu
  * přesměruje — odkaz „Upravit objednávku" v účtu tak nemusí token znát.
  * Neplatný token = slušné vysvětlení, ne 404.
+ *
+ * 12. 10. 2026, Matěj: stránka nabízí jen změnu doručení a „Potřebuji změnit
+ * objednávku" (`OrderChangeOptions`). Úprava položek s mini obchodem
+ * (`OrderEditor`) zůstává v kódu za vypínačem `ORDER_ITEM_EDITING_ENABLED`
+ * (vysvětlení u něj v `order-edit/shared.ts`).
  */
 export default async function OrderEditPage(props: Props) {
   const [params, searchParams] = await Promise.all([
@@ -78,6 +87,30 @@ export default async function OrderEditPage(props: Props) {
     getCommissionBalance(params.id),
   ])
 
+  if (!ORDER_ITEM_EDITING_ENABLED) {
+    return (
+      <OrderStateShell
+        eyebrow="Objednávka · úprava"
+        kicker={`Objednávka #${context.order.display_id}`}
+        title="Potřebujete něco změnit?"
+        accent="Domluvíme se."
+        description="Doručovací adresu nebo výdejní místo si změníte sami, dokud zásilku nepřipravíme k odeslání. Změny zboží domlouváme osobně — napište nám a Lucie vám zavolá nebo odepíše."
+        status="pending"
+        primary={myOrdersAction}
+      >
+        <OrderChangeOptions orderId={params.id} token={token} context={context} />
+        <BalancePayPanel balance={commissionBalance} />
+        {commissionNotes && (
+          <div id={ORDER_EDIT_CONVERSATION_ID}>
+            <CommissionConversation orderId={params.id} notes={commissionNotes} />
+          </div>
+        )}
+      </OrderStateShell>
+    )
+  }
+
+  /* ── Úprava položek s mini obchodem — vypnuto od 12. 10. 2026 ───────────
+     Kód níž zůstává beze změny pro případ, že se vypínač zase zapne. */
   const description =
     context.mode === "swap_only"
       ? "Objednávka je zabalená — vyměnit jde už jen provedení za stejně drahé. Rozdíl ceny i to, co se stane s penězi, uvidíte ještě před uložením."

@@ -6,6 +6,30 @@
  * serveru nebyla hodnotou, ale klientskou referencí.
  */
 
+/**
+ * Úprava POLOŽEK zákazníkem — počet kusů, výměna provedení, odebrání,
+ * přidání a výměna za jiný výrobek přes mini obchod (`/order/:id/edit/pridat`).
+ *
+ * 12. 10. 2026, Matěj: VYPNUTO. Změny zboží se domlouvají osobně — stránka
+ * úpravy nabízí jen změnu doručovací adresy / výdejny a tlačítko „Potřebuji
+ * změnit objednávku" (kontaktní formulář v režimu změny objednávky, Lucie
+ * zavolá nebo odepíše). „Bylo to dost práce, takže se to nebude odstraňovat,
+ * jen vykomentuje."
+ *
+ * Proč vypínač, a ne blokový komentář: celý editor (`index.tsx`, `item-row`,
+ * `swap-sheet`, `edit-summary`, `pick-*`) i stránky mini obchodu zůstávají
+ * beze změny a dál procházejí typovou kontrolou — kód tak nezestárne potichu
+ * (zakomentovaný JSX by se s prvním přejmenováním typu rozbil a nikdo by si
+ * toho nevšiml) a zapnutí zpátky je změna tohohle jednoho řádku. S `false`
+ * stránka úpravy vykreslí `OrderChangeOptions` místo `OrderEditor` a stránky
+ * mini obchodu přesměrují zpátky na úpravu. Backend (`lib/order-edit`,
+ * `guest-edit`, `guest-edit/catalog`) zůstává, jen ho storefront nevolá.
+ *
+ * Typ `boolean` (ne literál `false`) schválně — jinak by TypeScript větve
+ * za vypínačem zúžil na `never` a přestal je kontrolovat.
+ */
+export const ORDER_ITEM_EDITING_ENABLED: boolean = false
+
 const czkFormat = new Intl.NumberFormat("cs-CZ", {
   style: "currency",
   currency: "CZK",

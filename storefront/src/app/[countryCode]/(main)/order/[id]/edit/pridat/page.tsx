@@ -1,10 +1,15 @@
 import { Metadata } from "next"
+import { redirect } from "next/navigation"
 
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import { listStoreCatalogue } from "@lib/data/products"
 import { resolvePickAccess } from "@modules/order/components/order-edit/pick-access"
 import OrderPickShop from "@modules/order/components/order-edit/pick-shop"
+import {
+  editPath,
+  ORDER_ITEM_EDITING_ENABLED,
+} from "@modules/order/components/order-edit/shared"
 import type { ShopFilters, ShopNavCollection } from "@modules/store/Shop/types"
 
 type Props = {
@@ -36,12 +41,23 @@ const defaultFilters: ShopFilters = {
  * `swap=<item_id>` náhrada za ten řádek (nabídku zúží server). Hledání
  * a kategorie, bez filtrů. Klik na produkt vede na jeho stránku v režimu
  * výběru (`./[handle]`).
+ *
+ * 12. 10. 2026, Matěj: mini obchod je vypnutý (`ORDER_ITEM_EDITING_ENABLED`,
+ * vysvětlení v `order-edit/shared.ts`) — stará adresa (historie prohlížeče,
+ * záložka) přesměruje zpátky na stránku úpravy. Kód stránky zůstává.
  */
 export default async function OrderEditPickPage(props: Props) {
   const [params, searchParams] = await Promise.all([
     props.params,
     props.searchParams,
   ])
+  if (!ORDER_ITEM_EDITING_ENABLED) {
+    redirect(
+      searchParams.token
+        ? `/${params.countryCode}${editPath(params.id, searchParams.token)}`
+        : `/${params.countryCode}/order/${params.id}/edit`
+    )
+  }
   const access = await resolvePickAccess(
     params.id,
     searchParams.token,

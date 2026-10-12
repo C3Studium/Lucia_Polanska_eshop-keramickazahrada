@@ -11,6 +11,7 @@ import RefundRequest from "@modules/order/components/refund-request"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { OrderClaims } from "@lib/util/claims"
 import type { OrderEditMode } from "@lib/data/order-edit"
+import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
@@ -119,9 +120,12 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
               <p>
                 {edit.pending
                   ? "Úprava objednávky čeká na zaplacení rozdílu — dokončete ji, nebo ji zrušte."
-                  : edit.mode === "swap_only"
-                    ? "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu."
-                    : "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu."}
+                  : !ORDER_ITEM_EDITING_ENABLED
+                    ? /* 12. 10. 2026, Matěj: zboží si zákazník sám neupravuje. */
+                      "Potřebujete změnit doručovací adresu nebo něco v objednávce? Adresu změníte sami, změnu zboží domluvíme osobně."
+                    : edit.mode === "swap_only"
+                      ? "Objednávka je zabalená — vyměnit jde ještě provedení za stejnou cenu."
+                      : "Objednávku můžete ještě upravit — počet kusů, provedení, přidat něco z obchodu."}
               </p>
               <LocalizedClientLink
                 className={s.accountOrderEditLink}

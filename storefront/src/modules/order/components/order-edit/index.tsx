@@ -53,6 +53,10 @@ const clamp = (value: number, min: number, max: number) =>
  *
  * Rozpracované změny drží návrh (`OrderEditDraft`) ve stavu i v
  * `sessionStorage` — přežijí cestu do mini obchodu a zpět.
+ *
+ * VYPNUTO od 12. 10. 2026 (Matěj): stránka úpravy místo editoru vykresluje
+ * `OrderChangeOptions` (doručení + „Potřebuji změnit objednávku"). Editor
+ * zůstává beze změny za vypínačem `ORDER_ITEM_EDITING_ENABLED` v `shared.ts`.
  */
 export default function OrderEditor({
   orderId,

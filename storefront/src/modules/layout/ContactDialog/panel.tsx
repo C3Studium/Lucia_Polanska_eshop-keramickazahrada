@@ -34,6 +34,23 @@ export const inquiryOptions = [
 
 export type Inquiry = (typeof inquiryOptions)[number]
 
+/**
+ * Režim „Změna objednávky" (12. 10. 2026, Matěj) — ze stránky úpravy
+ * objednávky, kde si zákazník už nemění zboží sám. Bez výběru tématu (předmět
+ * je daný: změna objednávky #N), bez jména a e-mailu (backend je vezme
+ * z objednávky ověřené tokenem), jen zpráva a POVINNÝ telefon, ať Lucie může
+ * zavolat. Posílá se na tentýž `/store/contact` s `kind: "order_change"`.
+ */
+export type OrderChangeRequest = {
+  orderId: string
+  /** Číslo objednávky pro zákazníka (#42). */
+  displayId: number | string
+  /** Podepsaný token stránky úpravy — backend podle něj ověří objednávku. */
+  token: string
+  /** Předvyplněný telefon (z doručovací adresy), je-li. */
+  phone?: string | null
+}
+
 type SubmitState =
   | { kind: "idle" }
   | { kind: "submitting" }
@@ -43,6 +60,8 @@ type SubmitState =
 type ContactDialogPanelProps = {
   merchant: MerchantIdentity
   initialTopic: Inquiry
+  /** Režim „Změna objednávky"; `null`/chybí = běžný kontaktní formulář. */
+  orderChange?: OrderChangeRequest | null
   onClose: () => void
 }
 
@@ -105,6 +124,7 @@ function usePreteklo(ref: React.RefObject<HTMLElement | null>) {
 export default function ContactDialogPanel({
   merchant,
   initialTopic,
+  orderChange = null,
   onClose,
 }: ContactDialogPanelProps) {
   const [inquiry, setInquiry] = useState<Inquiry>(initialTopic)
@@ -198,14 +218,27 @@ export default function ContactDialogPanel({
               }
             : {}),
         },
-        body: JSON.stringify({
-          name: read("name"),
-          email: read("email"),
-          ...(phone ? { phone } : {}),
-          // The topic rides along in the message so the agreed contract stays as it is.
-          message: `Téma: ${inquiry}\n\n${read("message")}`,
-          website: read("website"),
-        }),
+        body: JSON.stringify(
+          orderChange
+            ? {
+                // Změna objednávky: jméno, e-mail a číslo bere backend
+                // z objednávky ověřené tokenem; předmět je daný.
+                kind: "order_change",
+                order_id: orderChange.orderId,
+                token: orderChange.token,
+                phone,
+                message: read("message"),
+                website: read("website"),
+              }
+            : {
+                name: read("name"),
+                email: read("email"),
+                ...(phone ? { phone } : {}),
+                // The topic rides along in the message so the agreed contract stays as it is.
+                message: `Téma: ${inquiry}\n\n${read("message")}`,
+                website: read("website"),
+              }
+        ),
       })
 
       if (response.ok) {
@@ -254,7 +287,11 @@ export default function ContactDialogPanel({
       >
         <header className={styles.panelHeader}>
           <div className={styles.panelMeta}>
-            <span>Kontakt · Ateliér</span>
+            <span>
+              {orderChange
+                ? `Změna objednávky #${orderChange.displayId}`
+                : "Kontakt · Ateliér"}
+            </span>
             <span className={styles.availability}>
               <i aria-hidden="true" /> Ozvu se do dvou pracovních dnů
             </span>
@@ -300,14 +337,110 @@ export default function ContactDialogPanel({
             exit="hidden"
           >
             <motion.div className={styles.title} variants={itemVariants}>
-              <span className={styles.eyebrow}>Napište přímo do ateliéru</span>
+              <span className={styles.eyebrow}>
+                {orderChange
+                  ? `Změna objednávky #${orderChange.displayId}`
+                  : "Napište přímo do ateliéru"}
+              </span>
               <h2 id={`${fieldId}-title`}>
-                Napište mi.<em>Ozvu se osobně.</em>
+                {orderChange ? "Co potřebujete změnit?" : "Napište mi."}
+                <em>Ozvu se osobně.</em>
               </h2>
             </motion.div>
 
             {submitState.kind === "sent" ? (
-              <SentMessage email={merchant.email} onClose={onClose} />
+              <SentMessage
+                email={merchant.email}
+                onClose={onClose}
+                orderChange={Boolean(orderChange)}
+              />
+            ) : orderChange ? (
+              /* Změna objednávky (12. 10. 2026, Matěj): bez témat, jména
+                 a e-mailu — jen zpráva a povinný telefon. Číslo objednávky
+                 jede s žádostí samo. */
+              <motion.form
+                className={styles.form}
+                onSubmit={handleSubmit}
+                variants={itemVariants}
+                noValidate={false}
+              >
+                <div className={`${styles.field} ${styles.message}`}>
+                  <label htmlFor={`${fieldId}-message`}>
+                    Co potřebujete změnit <i>(povinné)</i>
+                  </label>
+                  <textarea
+                    id={`${fieldId}-message`}
+                    className={styles.input}
+                    name="message"
+                    placeholder="Např. přidat ještě jeden hrnek, vyměnit barvu talíře, jeden kus ubrat…"
+                    required
+                  />
+                </div>
+
+                <div className={styles.fieldGrid}>
+                  <div className={styles.field}>
+                    <label htmlFor={`${fieldId}-phone`}>
+                      Telefon <i>(povinné — ať vám můžu zavolat)</i>
+                    </label>
+                    <PhoneInput
+                      id={`${fieldId}-phone`}
+                      name="phone"
+                      className={styles.phoneRow}
+                      inputClassName={styles.input}
+                      placeholder="603 123 456"
+                      defaultValue={orderChange.phone ?? undefined}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.honeypot} aria-hidden="true">
+                  <label htmlFor={`${fieldId}-website`}>Nevyplňujte</label>
+                  <input
+                    id={`${fieldId}-website`}
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {submitState.kind === "failed" && (
+                    <motion.p
+                      ref={statusRef}
+                      className={`${styles.status} ${styles.statusError}`}
+                      role="alert"
+                      variants={statusVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                    >
+                      {submitState.message}{" "}
+                      <a href={`mailto:${merchant.email}`}>{merchant.email}</a>
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+
+                <div className={styles.formFooter}>
+                  <p>
+                    Zprávu pošlu k objednávce #{orderChange.displayId}. Ozvu se
+                    telefonem, nebo odpovím na e-mail, který jste zadali
+                    v objednávce.
+                  </p>
+                  <WebButton
+                    Kind="Button"
+                    title={
+                      submitState.kind === "submitting"
+                        ? "Odesíláme…"
+                        : "Odeslat žádost o změnu"
+                    }
+                    type="submit"
+                    disabled={submitState.kind === "submitting"}
+                    className={styles.submitButton}
+                  />
+                </div>
+              </motion.form>
             ) : (
               <motion.form
                 className={styles.form}
@@ -540,15 +673,33 @@ function Field({ id, name, label, hint, required, ...input }: FieldProps) {
   )
 }
 
-function SentMessage({ email, onClose }: { email: string; onClose: () => void }) {
+function SentMessage({
+  email,
+  onClose,
+  orderChange = false,
+}: {
+  email: string
+  onClose: () => void
+  /** Žádost o změnu objednávky — slib zavolat / odepsat místo obecné věty. */
+  orderChange?: boolean
+}) {
   return (
     <div className={styles.successPanel} role="status">
-      <h3>Zpráva odešla.</h3>
-      <p>
-        Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to
-        výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si
-        nebyli jistí, napište mi kdykoliv na {email}.
-      </p>
+      <h3>{orderChange ? "Žádost o změnu odešla." : "Zpráva odešla."}</h3>
+      {orderChange ? (
+        <p>
+          Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu
+          e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává,
+          jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na{" "}
+          {email}.
+        </p>
+      ) : (
+        <p>
+          Děkuju — ozvu se vám do dvou pracovních dnů. Když stojím u pece, může to
+          výjimečně trvat o kousek déle. Kopii zprávy jsem vám neposílala; kdybyste si
+          nebyli jistí, napište mi kdykoliv na {email}.
+        </p>
+      )}
       <WebButton
         Kind="Button"
         title="Zavřít"
@@ -562,6 +713,11 @@ function SentMessage({ email, onClose }: { email: string; onClose: () => void })
 function failureMessage(status: number) {
   if (status === 400) {
     return "Zkontrolujte prosím vyplněné údaje — něco chybí, nebo je to v jiném tvaru. Nebo mi napište rovnou na"
+  }
+
+  // Jen režim „Změna objednávky": token stránky úpravy neprošel.
+  if (status === 401 || status === 404) {
+    return "Objednávku se nepodařilo ověřit — otevřete prosím odkaz z posledního e-mailu, nebo mi napište rovnou na"
   }
 
   if (status === 429) {
