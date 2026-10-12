@@ -515,7 +515,7 @@ export const carrierDamageDescription = (input: {
       ? `Číslo zásilky: ${input.parcelCode}`
       : "Číslo zásilky se nepodařilo dohledat (objednávka nemá podací číslo ČP) — zákazník ho k reklamaci u ČP potřebuje, pošlete mu ho z podacího archu.",
     "Reklamaci u České pošty podává příjemce — zákazník dostal pokyn nahlásit poškození sám (ve formuláři i v potvrzovacím e-mailu).",
-    `Reklamace u ČP (postup a formuláře): ${CP_CLAIM_FORM_URL}`,
+    `Formulář ČP pro zákazníka (PDF): ${CP_CLAIM_FORM_URL}`,
     CP_DAMAGE_REPORT_DEADLINE_TEXT,
     `Zákazník popisuje: ${input.reason}`,
     input.itemsText ? `Poškozené zboží:\n${input.itemsText}` : null,

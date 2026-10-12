@@ -244,9 +244,12 @@ export const damageCauseSentence = (value: unknown): string | null => {
   return null
 }
 
-/** Fotky jsou povinné u obou příčin poškození (§11.3, §13.7). */
-export const photosRequiredFor = (value: unknown): boolean =>
-  value === "carrier" || value === "damaged"
+/**
+ * Fotky jsou povinné u poškozeného kusu (§13.7). U „Balík dorazil poškozený"
+ * ne (Matěj 12. 10. 2026): zásilku reklamuje zákazník na poště (formulář ČP),
+ * u nás fotka jen pomůže, není podmínkou.
+ */
+export const photosRequiredFor = (value: unknown): boolean => value === "damaged"
 
 /**
  * Reklamace zásilky u České pošty (§11.3) — oficiální stránka „Reklamace
@@ -260,8 +263,19 @@ export const photosRequiredFor = (value: unknown): boolean =>
  * momentálně nedostupná" — proto odkaz na rozcestník ČP, ne přímo na aplikaci.
  * Stejnou adresu nese storefront (`CP_CLAIM_URL` v `@lib/util/claims`).
  */
-export const CP_CLAIM_FORM_URL =
+export const CP_CLAIM_INFO_URL =
   "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
+
+/**
+ * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k němu — přímé
+ * odkazy, ať zákazník nemusí hledat (Matěj 12. 10. 2026: „dát jim tam
+ * reklamační formulář z pošty"). Ověřeno 12. 10. 2026: oba vrací PDF.
+ * Stejné adresy nese storefront (`@lib/util/claims`).
+ */
+export const CP_CLAIM_FORM_URL =
+  "https://www.ceskaposta.cz/documents/d/guest/formular-reklamace-pdf?download=true"
+export const CP_CLAIM_GUIDE_URL =
+  "https://www.ceskaposta.cz/documents/d/guest/pokyny-pro-podani-reklamace-pri-poskozeni?download=true"
 
 /** Lhůta pro hlášení poškození dopravci — do e-mailu majitelce. */
 export const CP_DAMAGE_REPORT_DEADLINE_TEXT =

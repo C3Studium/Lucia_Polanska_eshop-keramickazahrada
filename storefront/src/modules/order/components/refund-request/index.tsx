@@ -2,10 +2,12 @@
 
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { useId, useRef, useState } from "react"
+import { useId, useRef, useState, type ReactNode } from "react"
 
 import { submitClaim } from "@lib/data/claims"
 import {
+  CP_CLAIM_FORM_PDF_URL,
+  CP_CLAIM_GUIDE_PDF_URL,
   CP_CLAIM_URL,
   REQUESTED_RESOLUTION_LABEL,
   findOpenClaim,
@@ -92,7 +94,7 @@ type CauseChoice = "defect" | ClaimDamageCause
 const CAUSES: {
   value: CauseChoice
   label: string
-  help: string
+  help: ReactNode
   /** Fotky povinné (server bez nich vrátí 400). */
   photos: boolean
 }[] = [
@@ -112,9 +114,23 @@ const CAUSES: {
   {
     value: "carrier",
     label: "Balík dorazil poškozený",
-    // Pokyn pro Českou poštu se po výběru ukáže výrazně pod volbami.
-    help: "Zásilka přišla rozbitá nebo s poškozeným obalem. Potřebujeme aspoň jednu fotku obalu a poškozeného zboží.",
-    photos: true,
+    // Matěj 12. 10.: ne „potřebujeme fotku", ale „musíte na poštu" + formulář.
+    help: (
+      <>
+        Zásilka přišla rozbitá nebo s poškozeným obalem. Do 2 pracovních dnů ji
+        prosím reklamujte na poště —{" "}
+        <a
+          href={CP_CLAIM_FORM_PDF_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(event) => event.stopPropagation()}
+        >
+          formulář České pošty (PDF)
+        </a>
+        .
+      </>
+    ),
+    photos: false,
   },
 ]
 
@@ -800,7 +816,14 @@ export default function RefundRequest({
             reklamaci nepřijme.
           </p>
           <p>
-            Postup a formulář:{" "}
+            <a href={CP_CLAIM_FORM_PDF_URL} target="_blank" rel="noreferrer">
+              Stáhnout formulář České pošty (PDF)
+            </a>
+            {" · "}
+            <a href={CP_CLAIM_GUIDE_PDF_URL} target="_blank" rel="noreferrer">
+              Pokyny k reklamaci
+            </a>
+            {" · "}
             <a href={CP_CLAIM_URL} target="_blank" rel="noreferrer">
               Reklamace u České pošty
             </a>
@@ -812,7 +835,7 @@ export default function RefundRequest({
                 </a>
               </>
             ) : null}
-            . Mějte po ruce fotky obalu i zboží a číslo objednávky.
+            . Na poštu vezměte zásilku i s obalem, jak přišla.
           </p>
           <p>Vaši reklamaci u nás tím odešlete níž jako obvykle.</p>
         </div>

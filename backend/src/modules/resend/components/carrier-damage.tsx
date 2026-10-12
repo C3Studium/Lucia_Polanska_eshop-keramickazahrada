@@ -1,5 +1,5 @@
 import { Link } from "@react-email/components"
-import { CP_CLAIM_FORM_URL } from "../../../lib/claims/constants"
+import { CP_CLAIM_FORM_URL, CP_CLAIM_INFO_URL } from "../../../lib/claims/constants"
 import { brand, Note, P } from "./email-ui"
 
 /**
@@ -30,7 +30,7 @@ import { brand, Note, P } from "./email-ui"
  * a stížnosti" s online podáním i formuláři. Jméno konstanty zůstává kvůli
  * stávajícím importům.
  */
-export const CP_EREKLAMACE_URL = CP_CLAIM_FORM_URL
+export const CP_EREKLAMACE_URL = CP_CLAIM_INFO_URL
 
 /** Shown before the parcel arrives — what to do at the door. */
 export const CarrierDamageWarning = () => (
@@ -60,7 +60,11 @@ export const CarrierDamageClaim = ({
       <Link href={CP_EREKLAMACE_URL} style={{ color: brand.clay }}>
         stránce České pošty o reklamacích
       </Link>
-      . Přiložte fotky poškození a doklad o ceně zboží
+      {" "}(rovnou ke stažení:{" "}
+      <Link href={CP_CLAIM_FORM_URL} style={{ color: brand.clay }}>
+        formulář České pošty, PDF
+      </Link>
+      ). Přiložte fotky poškození a doklad o ceně zboží
       {orderNumber ? ` (objednávka č. ${orderNumber})` : ""}.
     </P>
     {claimUrl && (

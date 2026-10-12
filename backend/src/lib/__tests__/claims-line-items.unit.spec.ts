@@ -247,14 +247,17 @@ describe("checkClaimRules — položky a poškození přepravou v intake", () =>
     if (!tooMany.ok) expect(tooMany.message).toMatch(/vyšší počet kusů/)
   })
 
-  it("poškozeno přepravou vyžaduje aspoň jednu fotku", () => {
+  it("poškozeno přepravou fotku nevyžaduje (zákazník reklamuje na poště — 12. 10. 2026)", () => {
     const base = {
       line_items: [{ id: "li_misa", quantity: 1 }],
       damage_cause: "carrier",
     }
     const noPhoto = checkClaimRules(order as any, [], input("reklamace", base))
-    expect(noPhoto.ok).toBe(false)
-    if (!noPhoto.ok) expect(noPhoto.message).toMatch(/fotku/)
+    expect(noPhoto.ok).toBe(true)
+    // Poškozený kus fotku dál vyžaduje.
+    const damaged = checkClaimRules(order as any, [], input("reklamace", { ...base, damage_cause: "damaged" }))
+    expect(damaged.ok).toBe(false)
+    if (!damaged.ok) expect(damaged.message).toMatch(/fotku/)
     expect(
       checkClaimRules(
         order as any,

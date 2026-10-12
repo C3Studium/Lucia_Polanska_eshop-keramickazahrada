@@ -17,6 +17,7 @@ import {
 import { storeLink } from "../../../lib/storefront-url"
 import {
   CP_CLAIM_FORM_URL,
+  CP_CLAIM_GUIDE_URL,
   CP_CUSTOMER_CLAIM_TEXT,
 } from "../../../lib/claims/constants"
 
@@ -165,7 +166,11 @@ function RefundRequestEmailComponent({
         <Note tone="clay">
           {CP_CUSTOMER_CLAIM_TEXT}{" "}
           <Link href={CP_CLAIM_FORM_URL} style={{ color: brand.clay }}>
-            {CP_CLAIM_FORM_URL}
+            Formulář České pošty (PDF)
+          </Link>
+          {" · "}
+          <Link href={CP_CLAIM_GUIDE_URL} style={{ color: brand.clay }}>
+            Pokyny k reklamaci
           </Link>
           . Vaše reklamace u nás tím běží dál beze změny.
         </Note>

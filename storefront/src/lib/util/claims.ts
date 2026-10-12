@@ -48,6 +48,17 @@ export const NEW_CLAIM_RESOLUTIONS: ClaimRequestedResolution[] = [
 export const CP_CLAIM_URL =
   "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
 
+/**
+ * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k podání —
+ * přímé odkazy pro „Balík dorazil poškozený" (Matěj 12. 10. 2026). Ověřeno
+ * 12. 10. 2026, oba vrací PDF. Stejné jako `CP_CLAIM_FORM_URL` /
+ * `CP_CLAIM_GUIDE_URL` na backendu.
+ */
+export const CP_CLAIM_FORM_PDF_URL =
+  "https://www.ceskaposta.cz/documents/d/guest/formular-reklamace-pdf?download=true"
+export const CP_CLAIM_GUIDE_PDF_URL =
+  "https://www.ceskaposta.cz/documents/d/guest/pokyny-pro-podani-reklamace-pri-poskozeni?download=true"
+
 /** Co ROZHODLA majitelka při schválení (§2169–2172). */
 export type ClaimResolution = "repair" | "replace" | "discount" | "refund"
 
