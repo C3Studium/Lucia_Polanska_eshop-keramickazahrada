@@ -36,9 +36,7 @@ const Inner = () => {
   /* Výchozí true jako v backendu — než dorazí uložená hodnota, ať formulář
      neproblikne vypnutým stavem u něčeho, co je zapnuté. */
   const [company, setCompany] = useState(true);
-  /* Text, ne číslo: prázdné pole při psaní nesmí skákat na nulu. Na číslo se
-     převádí až při uložení. Výchozí 39 jako v backendu. */
-  const [codFee, setCodFee] = useState("39");
+  // Doběrečné se přestěhovalo na stránku Doprava a platba (12. 10. 2026).
 
   useEffect(() => {
     const s = data?.settings;
@@ -50,15 +48,7 @@ const Inner = () => {
     setAText(s.announcement_text ?? "");
     setALink(s.announcement_link ?? "");
     setCompany(s.company_purchase_enabled !== false);
-    setCodFee(String(s.dobirka_fee_czk ?? 39));
   }, [data]);
-
-  /* Sevřené do mezí backendového schématu (0–2000): ruční „2500" nesmí
-     shodit celé uložení stránky serverovou chybou. */
-  const codFeeParsed = Math.min(
-    2000,
-    Math.max(0, Math.round(Number(codFee.replace(",", ".")) || 0))
-  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -72,7 +62,6 @@ const Inner = () => {
           announcement_text: aText,
           announcement_link: aLink.trim(),
           company_purchase_enabled: company,
-          dobirka_fee_czk: codFeeParsed,
         },
       }),
     onSuccess: async () => {
@@ -162,31 +151,6 @@ const Inner = () => {
             </Text>
           </div>
           <Switch checked={company} onCheckedChange={setCompany} />
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-y-4 px-6 py-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <Text size="small" weight="plus">Doběrečné</Text>
-            <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
-              Příplatek, který se přičte k objednávce, když si zákazník zvolí
-              platbu na dobírku. Vybírá ho doručovatel spolu s cenou zboží
-              a objeví se i na faktuře. Nula znamená dobírku bez příplatku.
-            </Text>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input
-              size="small"
-              type="number"
-              min={0}
-              max={2000}
-              className="w-24"
-              value={codFee}
-              onChange={(e) => setCodFee(e.target.value)}
-            />
-            <Text size="small" className="text-ui-fg-subtle">Kč</Text>
-          </div>
         </div>
       </section>
 
