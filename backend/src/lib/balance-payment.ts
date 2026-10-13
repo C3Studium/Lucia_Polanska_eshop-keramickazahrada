@@ -13,6 +13,7 @@ import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { productionOutstanding } from "./ship-gate"
 import { orderConfirmedPath } from "./storefront-url"
+import { paymentStatusFromProvider } from "./payment-provider-status"
 
 /**
  * Getting a customer a link to pay what they still owe on a commission.
@@ -332,6 +333,21 @@ export type MarkBalanceRequestPaidInput = {
 }
 
 /**
+ * Kam posunout zakázku, když je doplatek zaplacený — `null` = nechat, kde je.
+ *
+ * Do „připraveno k odeslání" jde jen zakázka, která je už vyrobená a čeká na
+ * peníze (`awaiting_balance`). Doplatek se dá zaplatit kdykoli (samoobsluha na
+ * potvrzení objednávky, výzva poslaná během výroby) a dřív platba posunula
+ * na „připraveno" i zakázku, která čekala na potvrzení zadání nebo se teprve
+ * vyráběla — přeskočila celou výrobu (změřeno 13. 10. 2026 na #25, #28, #31).
+ * Taková zakázka zůstane ve své fázi; „Výroba dokončena" ji pak pošle rovnou
+ * do „připraveno", protože už je zaplacená (`complete_production`).
+ */
+export const stageAfterBalancePaid = (
+  stage: string | null | undefined
+): "ready_to_ship" | null => (stage === "awaiting_balance" ? "ready_to_ship" : null)
+
+/**
  * Společný „ocas" zaplaceného doplatku — JEDNA cesta pro bránu i ruční záznam.
  *
  * Doplatek může být potvrzen dvěma dveřmi: ComGate (návrat z brány / webhook /
@@ -385,10 +401,8 @@ export const markBalanceRequestPaid = async (
     last_checked_at: now,
   } as never)
 
-  // 2 — fáze „připraveno". Terminální fáze se nikdy neotvírají zpět.
-  if (
-    !["completed", "cancelled", "ready_to_ship"].includes(productionOrder.stage)
-  ) {
+  // 2 — fáze „připraveno", ale jen u vyrobené zakázky (`stageAfterBalancePaid`).
+  if (stageAfterBalancePaid(productionOrder.stage)) {
     await madeToOrder.updateProductionOrders({
       id: productionOrder.id,
       stage: "ready_to_ship",
@@ -469,12 +483,7 @@ export const reconcileOrderBalance = async (
 
   let status = ""
   try {
-    const provider = container.resolve(
-      `pp_${(session as any).provider_id ?? ""}`.replace(/^pp_pp_/, "pp_")
-    ) as any
-    const result = await provider.getPaymentStatus({
-      data: (session as any).data ?? {},
-    })
+    const result = await paymentStatusFromProvider(container, session as any)
     status = String(result?.status ?? "").toLowerCase()
     logger.info(
       `[balance] reconcile ${orderId}: doplatek ${request.id}, relace ${request.payment_session_id} — brána hlásí stav „${status || "?"}".`

@@ -5,6 +5,8 @@ import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { notifyMerchant } from "../lib/notify"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
+import { paymentStatusFromProvider } from "../lib/payment-provider-status"
+import { stageAfterBalancePaid } from "../lib/balance-payment"
 import {
   customerName,
   formatMoney,
@@ -151,14 +153,8 @@ export default async function reconcileBalancePayments(
         continue
       }
 
-      const provider = container.resolve(
-        `pp_${(session as any).provider_id ?? ""}`.replace(/^pp_pp_/, "pp_")
-      ) as any
-
       // The provider tells us; we do not infer from age or guesswork.
-      const result = await provider.getPaymentStatus({
-        data: (session as any).data ?? {},
-      })
+      const result = await paymentStatusFromProvider(container, session as any)
 
       const status = String(result?.status ?? "").toLowerCase()
 
@@ -195,15 +191,13 @@ export default async function reconcileBalancePayments(
           last_checked_at: now,
         } as never)
 
-        // The callback never landed, so the stage never advanced either.
+        // The callback never landed, so the stage never advanced either —
+        // but only a finished piece moves on (`stageAfterBalancePaid`).
         const [production] = (await madeToOrder.listProductionOrders({
           id: request.production_order_id,
         } as never)) as any[]
 
-        if (
-          production &&
-          !["completed", "cancelled", "ready_to_ship"].includes(production.stage)
-        ) {
+        if (production && stageAfterBalancePaid(production.stage)) {
           await madeToOrder.updateProductionOrders({
             id: production.id,
             stage: "ready_to_ship",

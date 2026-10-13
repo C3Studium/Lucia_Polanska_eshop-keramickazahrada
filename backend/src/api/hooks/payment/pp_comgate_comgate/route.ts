@@ -5,6 +5,7 @@ import type { ProviderWebhookPayload } from "@medusajs/types"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
 import { resolveComgateTransactionId } from "../../../../modules/comgate/utils"
+import { stageAfterBalancePaid } from "../../../../lib/balance-payment"
 
 const PROVIDER_ID = "pp_comgate_comgate"
 
@@ -66,9 +67,9 @@ const reconcileMadeToOrderPayment = async (
     )
   }
 
-  // Never reopen a terminal production order. Every other stage can advance
-  // once Comgate has independently confirmed the outstanding balance as paid.
-  if (!["completed", "cancelled", "ready_to_ship"].includes(productionOrder.stage)) {
+  // Only a finished piece waiting for the money moves on to „připraveno";
+  // a balance paid early leaves production where it is (`stageAfterBalancePaid`).
+  if (stageAfterBalancePaid(productionOrder.stage)) {
     await service.updateProductionOrders({
       id: productionOrder.id,
       stage: "ready_to_ship",

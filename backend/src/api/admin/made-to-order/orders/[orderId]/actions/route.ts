@@ -24,7 +24,10 @@ import {
   settleBalanceOffline,
 } from "../../../../../../lib/balance-settlement"
 import { formatMoney } from "../../../../../../lib/ship-gate"
-import { ensureBalanceCollection } from "../../../../../../lib/balance-payment"
+import {
+  ensureBalanceCollection,
+  stageAfterBalancePaid,
+} from "../../../../../../lib/balance-payment"
 import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
 import {
   LINE_QUANTITY_FIELDS,
@@ -556,11 +559,14 @@ export const POST = async (
     const outstanding = roundMoney(Math.max(0, total - paid))
 
     if (outstanding <= 0.005) {
-      productionOrder = await madeToOrder.updateProductionOrders({
-        id: productionOrder.id,
-        stage: "ready_to_ship",
-        ready_to_ship_at: now,
-      })
+      // Zaplaceno — vyrobená zakázka jde do „připraveno", rozpracovaná zůstává.
+      if (stageAfterBalancePaid(productionOrder.stage)) {
+        productionOrder = await madeToOrder.updateProductionOrders({
+          id: productionOrder.id,
+          stage: "ready_to_ship",
+          ready_to_ship_at: now,
+        })
+      }
     } else {
       // Znovu se použije jen odkaz na STEJNOU částku — jinak by příplatek
       // přidaný po první výzvě nechal zákazníka zaplatit starou, nižší sumu.

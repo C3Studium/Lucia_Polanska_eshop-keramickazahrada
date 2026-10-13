@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
+import { paymentStatusFromProvider } from "../lib/payment-provider-status"
 
 /**
  * Doptá se ComGate, co se stalo s platbami z pokladny, o kterých se obchod
@@ -94,14 +95,8 @@ export default async function reconcileCheckoutPayments(
 
   for (const session of kComgate) {
     try {
-      const provider = container.resolve(
-        `pp_${String(session.provider_id ?? "")}`.replace(/^pp_pp_/, "pp_")
-      ) as any
-
       /* Ptá se poskytovatel, nehádá se z věku relace. */
-      const vysledek = await provider.getPaymentStatus({
-        data: session.data ?? {},
-      })
+      const vysledek = await paymentStatusFromProvider(container, session)
       const stav = String(vysledek?.status ?? "").toLowerCase()
 
       if (stav === "captured") {
