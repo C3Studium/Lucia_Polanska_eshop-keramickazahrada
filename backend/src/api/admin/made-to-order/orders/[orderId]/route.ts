@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
+import { allMadeToOrder } from "../../../../../lib/claims/context"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -54,13 +55,23 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // Zobrazí je admin vedle zákazníka. Brief leží na řádku jako made_to_order.
   const customerPhotos: string[] = []
   let customerSpecification: string | null = null
+  // Jen zakázky (bez běžného zboží) → postup výroby ovládá Denní práce;
+  // smíšená objednávka má výrobu a balení zboží odděleně (14. 10. 2026).
+  let pureCommission = false
   try {
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
     const { data: orders } = await query.graph({
       entity: "order",
-      fields: ["id", "items.metadata"],
+      fields: [
+        "id",
+        "items.metadata",
+        "items.variant_id",
+        "items.product_id",
+        "items.product.metadata",
+      ],
       filters: { id: req.params.orderId },
     })
+    pureCommission = orders[0] ? allMadeToOrder(orders[0] as any) : false
     for (const item of ((orders[0] as any)?.items ?? []) as any[]) {
       const mto = (item?.metadata as any)?.made_to_order
       if (!mto || typeof mto !== "object") continue
@@ -95,6 +106,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       customer_photos: customerPhotos,
       customer_specification:
         customerSpecification ?? productionOrder.customer_note ?? null,
+      pure_commission: pureCommission,
     },
   })
 }

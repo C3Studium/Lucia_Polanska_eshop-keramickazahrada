@@ -23,15 +23,11 @@ import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba } from "../lib/ceska-chyba";
-
-type ProductionStage =
-  | "specification_pending"
-  | "confirmed"
-  | "in_production"
-  | "awaiting_balance"
-  | "ready_to_ship"
-  | "completed"
-  | "cancelled";
+import {
+  productionStageMeta as stageMeta,
+  productionStep as actionForStage,
+  type ProductionStage,
+} from "../lib/production-stage";
 
 type ProductionPayment = {
   id: string;
@@ -59,6 +55,8 @@ type ProductionOrder = {
   paid_amount?: number | string;
   outstanding_amount?: number | string;
   can_fulfill?: boolean;
+  /** Jen zakázky, žádné běžné zboží — postup výroby pak ovládá Denní práce. */
+  pure_commission?: boolean;
 };
 
 type ProductionResponse = {
@@ -76,32 +74,6 @@ type ProductionAction =
   | "cancel";
 
 const queryClient = adminQueryClient;
-
-const stageMeta: Record<
-  ProductionStage,
-  { label: string; color: "blue" | "orange" | "green" | "red" | "grey" }
-> = {
-  specification_pending: { label: "Čeká na potvrzení zadání", color: "orange" },
-  confirmed: { label: "Zadání potvrzeno", color: "blue" },
-  in_production: { label: "Ve výrobě", color: "orange" },
-  awaiting_balance: { label: "Hotová — čeká na doplatek", color: "orange" },
-  ready_to_ship: { label: "Hotová a zaplacená", color: "green" },
-  completed: { label: "Dokončeno", color: "green" },
-  cancelled: { label: "Zrušeno", color: "grey" },
-};
-
-const actionForStage: Partial<
-  Record<ProductionStage, { action: ProductionAction; label: string }>
-> = {
-  specification_pending: {
-    action: "confirm_specification",
-    label: "Potvrdit zadání",
-  },
-  confirmed: { action: "start_production", label: "Začít výrobu" },
-  in_production: { action: "complete_production", label: "Výroba dokončena" },
-  // Doplatek NEřeší „další krok" podle fáze — má vlastní tlačítko, které se
-  // ukáže vždy, když něco zbývá doplatit (viz balanceAction níž).
-};
 
 const toNum = (value: unknown): number => {
   if (typeof value === "number") return value;
@@ -147,6 +119,10 @@ const MadeToOrderOrderWidgetInner = ({
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({
         queryKey: ["made-to-order-order", order.id],
+      });
+      // Denní práce u čisté zakázky ukazuje fázi výroby — ať nezůstane pozadu.
+      await queryClient.invalidateQueries({
+        queryKey: ["merchant-order-state", order.id],
       });
       setEditingSurcharge(false);
       if (variables.action === "notify_surcharge") {
@@ -197,7 +173,11 @@ const MadeToOrderOrderWidgetInner = ({
 
   if (productionQuery.isError || !productionOrder) return null;
 
-  const nextAction = actionForStage[productionOrder.stage];
+  // U čisté zakázky je „další krok výroby" tlačítkem v Denní práci — tady by
+  // byl druhý, stejný. Smíšená objednávka ho má dál tady.
+  const pureCommission = Boolean(productionOrder.pure_commission);
+  const nextAction = pureCommission ? undefined : actionForStage[productionOrder.stage];
+  const stepInDailyWork = pureCommission && Boolean(actionForStage[productionOrder.stage]);
   const basePrice = toNum(
     productionOrder.agreed_total ?? productionOrder.original_total
   );
@@ -236,6 +216,12 @@ const MadeToOrderOrderWidgetInner = ({
               ? ` + příplatek ${formatAmount(surcharge, currency)}`
               : ""}
           </Text>
+          {stepInDailyWork && (
+            <Text size="xsmall" className="text-ui-fg-muted mt-1">
+              Další krok výroby ({actionForStage[productionOrder.stage]?.label})
+              je v Denní práci.
+            </Text>
+          )}
         </div>
 
         {/* Příplatek (vpravo nahoře) + další krok. Příplatek je vlastní částka

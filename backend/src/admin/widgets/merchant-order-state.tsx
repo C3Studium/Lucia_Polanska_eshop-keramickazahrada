@@ -19,11 +19,33 @@ import {
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
 import { ceskaChyba } from "../lib/ceska-chyba";
+import {
+  isProductionPhase,
+  productionStageMeta,
+  productionStep,
+  type ProductionStage,
+  type ProductionStepAction,
+} from "../lib/production-stage";
 
 const queryClient = adminQueryClient;
 
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;
+};
+
+/** Sdílený dotaz s widgetem „Výroba na zakázku" (stejný klíč = jedna odpověď). */
+type ProductionResponse = {
+  production_order?: {
+    stage: ProductionStage;
+    pure_commission?: boolean;
+    outstanding_amount?: number | string;
+  } | null;
+};
+
+const stepSuccess: Record<ProductionStepAction, string> = {
+  confirm_specification: "Zadání potvrzeno",
+  start_production: "Výroba začala",
+  complete_production: "Výroba označena jako dokončená",
 };
 
 const slugForStage = (stage: MerchantOrderStage) =>
@@ -49,6 +71,43 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   });
 
   const merchantOrder = stateQuery.data?.merchant_order ?? null;
+
+  const productionQuery = useQuery<ProductionResponse>({
+    queryKey: ["made-to-order-order", order.id],
+    queryFn: () =>
+      sdk.client.fetch(`/admin/made-to-order/orders/${order.id}`, { method: "GET" }),
+    retry: false,
+    enabled: Boolean(merchantOrder?.is_made_to_order),
+  });
+  const production = productionQuery.data?.production_order ?? null;
+
+  /*
+   * Čistá zakázka ve výrobě: Denní práce ovládá výrobu (Potvrdit zadání →
+   * Začít výrobu → Výroba dokončena). Smíšená objednávka nebo zakázka už
+   * hotová a zaplacená jede běžným postupem balení a odeslání.
+   */
+  const productionMode = Boolean(
+    production?.pure_commission && isProductionPhase(production.stage)
+  );
+
+  const step = useMutation({
+    mutationFn: (action: ProductionStepAction) =>
+      sdk.client.fetch(`/admin/made-to-order/orders/${order.id}/actions`, {
+        method: "POST",
+        body: { action },
+      }),
+    onSuccess: async (_data, action) => {
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ["made-to-order-order", order.id] }),
+        cache.invalidateQueries({ queryKey: ["merchant-order-state", order.id] }),
+        cache.invalidateQueries({ queryKey: ["merchant-orders"] }),
+        cache.invalidateQueries({ queryKey: ["production-orders"] }),
+      ]);
+      toast.success(stepSuccess[action]);
+    },
+    onError: (error) =>
+      toast.error(ceskaChyba(error, "Krok výroby se nepodařilo uložit")),
+  });
 
   const transition = useMutation({
     mutationFn: (target: MerchantOrderStage) =>
@@ -85,6 +144,52 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
 
   const target = nextStage[merchantOrder.stage];
   const slug = slugForStage(merchantOrder.stage);
+
+  if (productionMode && production) {
+    const next = productionStep[production.stage];
+    const meta = productionStageMeta[production.stage];
+    return (
+      <Container className="divide-y p-0">
+        <div className="flex items-center justify-between gap-x-2 px-6 py-4">
+          <Heading level="h2">Denní práce</Heading>
+          <Badge color={meta.color}>{meta.label}</Badge>
+        </div>
+
+        <div className="flex flex-col gap-y-3 px-6 py-4">
+          {merchantOrder.attention_reason && (
+            <Text size="small" className="text-ui-fg-error">
+              {merchantOrder.attention_reason}
+            </Text>
+          )}
+
+          <Text size="small" className="text-ui-fg-subtle">
+            {next
+              ? `Zakázka na míru — další krok: ${next.label}`
+              : "Zakázka je hotová a čeká na doplatek. Výzvu k doplacení pošlete ve Výrobě na zakázku; po zaplacení tu bude Připraveno k odeslání."}
+          </Text>
+
+          {next && (
+            <Button
+              variant="primary"
+              size="small"
+              isLoading={step.isPending}
+              onClick={() => step.mutate(next.action)}
+            >
+              {next.label}
+            </Button>
+          )}
+
+          {slug && (
+            <Button variant="transparent" size="small" asChild>
+              <Link to={`/prehled/prace?krok=${slug}`}>
+                Zpět do fronty „{stageMeta[merchantOrder.stage].label}"
+              </Link>
+            </Button>
+          )}
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container className="divide-y p-0">
