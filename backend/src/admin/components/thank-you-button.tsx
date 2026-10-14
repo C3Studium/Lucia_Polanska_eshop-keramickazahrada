@@ -9,6 +9,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * „Poděkovat" — one-time code for a customer who keeps coming back.
@@ -57,7 +58,7 @@ export const ThankYouButton = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Poděkování se nepodařilo odeslat."
+        ceskaChyba(error, "Poděkování se nepodařilo odeslat.")
       ),
   });
 

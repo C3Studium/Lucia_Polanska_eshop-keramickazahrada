@@ -13,6 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 
 /**
  * The one next step for a commission, per stage (§7.2, P6-1).
@@ -78,7 +79,7 @@ const useAction = (orderId: string) => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Akci se nepodařilo provést"
+        ceskaChyba(error, "Akci se nepodařilo provést")
       );
     },
   });
@@ -370,9 +371,9 @@ export const SettleBalanceOffline = ({
         }),
       ]);
       if (result?.settled === false) {
-        toast.info(result.message ?? "Zakázka je zaplacená — není co zaznamenat.");
+        toast.info(ceskyText(result.message, "Zakázka je zaplacená — není co zaznamenat."));
       } else {
-        toast.success(result?.message ?? "Doplatek zaznamenán.");
+        toast.success(ceskyText(result?.message, "Doplatek zaznamenán."));
       }
       setOpen(false);
       setNote("");
@@ -380,7 +381,7 @@ export const SettleBalanceOffline = ({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Platbu se nepodařilo zaznamenat"
+        ceskaChyba(error, "Platbu se nepodařilo zaznamenat")
       );
     },
   });

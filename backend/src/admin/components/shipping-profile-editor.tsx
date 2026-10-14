@@ -12,6 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * „Doprava a balení" — the two shipping facts that belong to a piece, not to the shop.
@@ -124,7 +125,7 @@ export const ShippingProfileEditor = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Uložení se nepodařilo."
+        ceskaChyba(error, "Uložení se nepodařilo.")
       ),
   });
 

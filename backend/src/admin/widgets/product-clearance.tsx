@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * „Výprodej — kus se už nevyrobí" (requested 2026-08-04).
@@ -40,7 +41,7 @@ const ProductClearanceInner = ({ product }: { product: AdminProduct }) => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Nepodařilo se uložit"
+        ceskaChyba(error, "Nepodařilo se uložit")
       );
     },
   });

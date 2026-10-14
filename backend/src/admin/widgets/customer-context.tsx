@@ -17,6 +17,7 @@ import {
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Context about a person, on their own page (§14, P10-1).
@@ -53,7 +54,7 @@ const CustomerContextInner = ({ customer }: { customer: AdminCustomer }) => {
     onSuccess: () => toast.success("Poznámka byla uložena"),
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Poznámku se nepodařilo uložit"
+        ceskaChyba(error, "Poznámku se nepodařilo uložit")
       ),
   });
 

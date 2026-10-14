@@ -10,6 +10,7 @@ import { ExpertToggle, RawData } from "../../lib/expert-mode";
 import { formatCzk, productionStageLabels, stageLabels } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Statistiky+ — every measurement in one room (Matěj, 2026-08-06).
@@ -55,7 +56,7 @@ const Bars = ({ data, label }: { data: { key: string; value: number; hint?: stri
 
 const Fail = ({ error }: { error: unknown }) => (
   <Text size="small" className="text-ui-fg-error">
-    Nepodařilo se načíst: {error instanceof Error ? error.message : "neznámá chyba"}
+    Nepodařilo se načíst: {ceskaChyba(error, "neznámá chyba")}
   </Text>
 );
 const Loading = () => <Skeleton className="h-24 rounded-lg" />;

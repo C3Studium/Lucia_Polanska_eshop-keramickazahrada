@@ -19,6 +19,7 @@ import {
 import { mondayIndex, parseDayKey, pragueDayKey } from "../lib/course-calendar";
 import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 import { CourseDayPicker } from "./course-day-picker";
 
 /**
@@ -89,12 +90,11 @@ const errorMessage = async (error: unknown, fallback: string) => {
     ?.response;
   try {
     const body = (await response?.json?.()) as { message?: string } | undefined;
-    if (body?.message) return body.message;
+    if (body?.message) return ceskyText(body.message, fallback);
   } catch {
     // Fall through to the generic sentence.
   }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
+  return ceskaChyba(error, fallback);
 };
 
 const termCountLabel = (count: number): string =>

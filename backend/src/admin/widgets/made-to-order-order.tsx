@@ -22,6 +22,7 @@ import { SettleBalanceOffline } from "../components/production-order-actions";
 import { formatAmount } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 type ProductionStage =
   | "specification_pending"
@@ -174,7 +175,7 @@ const MadeToOrderOrderWidgetInner = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Akci se nepodařilo dokončit"
+        ceskaChyba(error, "Akci se nepodařilo dokončit")
       ),
   });
 

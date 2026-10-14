@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Dovolená a oznámení — the shop's voice on its own page (Matěj,
@@ -70,7 +71,7 @@ const Inner = () => {
       toast.success("Uloženo — obchod to zákazníkům ukáže hned.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   return (

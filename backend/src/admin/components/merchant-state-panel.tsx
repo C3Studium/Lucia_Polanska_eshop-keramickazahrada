@@ -11,6 +11,7 @@ import {
   type MerchantOrderStage,
 } from "./merchant-order-queue";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;
@@ -51,7 +52,7 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Stav se nepodařilo změnit"
+        ceskaChyba(error, "Stav se nepodařilo změnit")
       ),
   });
 

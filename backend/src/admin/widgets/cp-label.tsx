@@ -24,6 +24,7 @@ import {
   stahnoutStitek,
   type StitekZasilky,
 } from "../lib/stitky";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 const queryClient = adminQueryClient;
 
@@ -93,7 +94,7 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Štítek se nepodařilo vygenerovat"
+        ceskaChyba(error, "Štítek se nepodařilo vygenerovat")
       ),
   });
 

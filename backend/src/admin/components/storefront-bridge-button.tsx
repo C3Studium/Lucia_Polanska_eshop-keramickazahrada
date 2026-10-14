@@ -2,6 +2,7 @@ import { ArrowUpRightOnBox } from "@medusajs/icons";
 import { Button, toast } from "@medusajs/ui";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * „Otevřít web jako admin" — one button, two homes (the product widget and
@@ -42,14 +43,8 @@ export const StorefrontBridgeButton = ({
       }
     } catch (error) {
       tab?.close();
-      const message =
-        error && typeof error === "object" && "message" in error
-          ? String((error as { message?: unknown }).message ?? "")
-          : "";
       toast.error(
-        message && message.length > 4
-          ? message
-          : "Web se nepodařilo otevřít. Zkuste to prosím znovu."
+        ceskaChyba(error, "Web se nepodařilo otevřít. Zkuste to prosím znovu.")
       );
     } finally {
       setOpening(false);

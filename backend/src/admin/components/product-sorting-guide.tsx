@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { ProductLightbox, Thumb } from "./product-thumb";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Guided sorting for the imported catalogue: one product at a time, front and
@@ -146,7 +147,7 @@ export const ProductSortingGuide = () => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   const saveCurrent = useCallback(() => {

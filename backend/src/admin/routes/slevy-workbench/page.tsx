@@ -29,6 +29,7 @@ import { formatCzk } from "../../lib/workbench";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Slevy+ — promotions, campaigns and price lists as one workbench
@@ -130,7 +131,7 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
+        ceskaChyba(error, "Změna se nepodařila.")
       ),
   });
 
@@ -145,7 +146,7 @@ const PromotionRow = ({ promotion }: { promotion: WorkbenchPromotion }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Smazání se nepodařilo."
+        ceskaChyba(error, "Smazání se nepodařilo.")
       ),
   });
 
@@ -279,7 +280,7 @@ const CampaignEditor = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Uložení se nepodařilo."
+        ceskaChyba(error, "Uložení se nepodařilo.")
       ),
   });
 
@@ -367,7 +368,7 @@ const PriceListRow = ({ list }: { list: WorkbenchPriceList }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
+        ceskaChyba(error, "Změna se nepodařila.")
       ),
   });
 

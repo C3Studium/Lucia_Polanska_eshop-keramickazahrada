@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client";
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Zkušební režim — stránka, na které se pozná, jestli obchod jede naostro.
@@ -88,7 +89,7 @@ const Inner = () => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Uložení se nepodařilo."
+        ceskaChyba(error, "Uložení se nepodařilo.")
       ),
   });
 

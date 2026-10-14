@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 import { EmptyState, pieces } from "./empty-state";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Nízký stav and Vyprodáno (§10, §22, P7-1).
@@ -78,7 +79,7 @@ const ThresholdControl = ({ current }: { current: number }) => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Hranici se nepodařilo uložit"
+        ceskaChyba(error, "Hranici se nepodařilo uložit")
       );
     },
   });

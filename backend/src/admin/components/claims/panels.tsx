@@ -18,6 +18,7 @@ import {
 } from "../../lib/return-requests";
 import { formatCzk } from "../../lib/workbench";
 import { useReturnAction } from "./use-return-action";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Panely akcí nad žádostí (docs/reklamace-a-zruseni.md §3, §8, §12.6).
@@ -138,8 +139,7 @@ export const ApprovePanel = ({
           {
             onSuccess: (result) => {
               toast.success(
-                result?.message ??
-                  "Žádost byla schválena — zákazníkovi odešel e-mail s dalším postupem."
+                ceskyText(result?.message, "Žádost byla schválena — zákazníkovi odešel e-mail s dalším postupem.")
               );
               onClose();
             },
@@ -272,8 +272,7 @@ export const RejectPanel = ({ request, onClose }: PanelProps) => {
           {
             onSuccess: (result) => {
               toast.success(
-                result?.message ??
-                  "Žádost byla zamítnuta — zákazník dostal e-mail s odůvodněním."
+                ceskyText(result?.message, "Žádost byla zamítnuta — zákazník dostal e-mail s odůvodněním.")
               );
               onClose();
             },
@@ -330,8 +329,7 @@ export const ReceivedPanel = ({ request, onClose }: PanelProps) => {
           {
             onSuccess: (result) => {
               toast.success(
-                result?.message ??
-                  "Zboží je označené jako přijaté — zákazník dostal e-mail, že ho kontrolujete."
+                ceskyText(result?.message, "Zboží je označené jako přijaté — zákazník dostal e-mail, že ho kontrolujete.")
               );
               onClose();
             },
@@ -384,8 +382,7 @@ export const ResolvePanel = ({ request, onClose }: PanelProps) => {
           {
             onSuccess: (result) => {
               toast.success(
-                result?.message ??
-                  "Žádost je vyřízená — zákazník dostal potvrzení o vyřízení."
+                ceskyText(result?.message, "Žádost je vyřízená — zákazník dostal potvrzení o vyřízení.")
               );
               onClose();
             },
@@ -443,7 +440,7 @@ export const CancelPanel = ({ request, onClose }: PanelProps) => {
           { note: trimmed },
           {
             onSuccess: (result) => {
-              toast.success(result?.message ?? "Žádost byla stornována.");
+              toast.success(ceskyText(result?.message, "Žádost byla stornována."));
               onClose();
             },
           }
@@ -529,11 +526,10 @@ export const CancelOrderPrompt = ({
                 {
                   onSuccess: (result) => {
                     if (result?.cancelled) {
-                      toast.success(result.message ?? "Objednávka byla zrušena.");
+                      toast.success(ceskyText(result.message, "Objednávka byla zrušena."));
                     } else {
                       toast.warning(
-                        result?.message ??
-                          "Objednávku se nepodařilo zrušit úplně — zkontrolujte detail."
+                        ceskyText(result?.message, "Objednávku se nepodařilo zrušit úplně — zkontrolujte detail.")
                       );
                     }
                     setOpen(false);

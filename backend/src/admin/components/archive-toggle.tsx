@@ -2,6 +2,7 @@ import { ArchiveBox } from "@medusajs/icons";
 import { toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * „Archivovat" — retire a piece without destroying it.
@@ -59,7 +60,7 @@ export const ArchiveToggle = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
+        ceskaChyba(error, "Změna se nepodařila.")
       ),
   });
 

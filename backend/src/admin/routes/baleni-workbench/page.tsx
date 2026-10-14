@@ -34,6 +34,7 @@ import {
   type CatalogFilter,
 } from "../../components/catalog-filter";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Balení+ — every product's packaging cost, editable where you can see them all.
@@ -122,7 +123,7 @@ const Row = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Uložení se nepodařilo."
+        ceskaChyba(error, "Uložení se nepodařilo.")
       ),
   });
 

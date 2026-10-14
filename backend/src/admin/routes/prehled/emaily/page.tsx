@@ -22,6 +22,7 @@ import { WorkTabs } from "../../../components/work-tabs";
 import { formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
+import { ceskaChyba, ceskyText } from "../../../lib/ceska-chyba";
 
 type EmailRow = {
   id: string;
@@ -116,12 +117,12 @@ const EmailRowItem = ({ email }: { email: EmailRow }) => {
       } else {
         // The provider's own words. „Nepodařilo se" alone would leave nobody
         // any wiser about whether it is a bad address or a bad API key.
-        toast.error(result.message ?? "Odeslat znovu se nepodařilo");
+        toast.error(ceskyText(result.message, "Odeslat znovu se nepodařilo"));
       }
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Odeslat znovu se nepodařilo"
+        ceskaChyba(error, "Odeslat znovu se nepodařilo")
       );
     },
   });

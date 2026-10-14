@@ -16,6 +16,7 @@ import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, gridClassName, useViewMode } from "../../lib/view-mode";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Rozdělení — kolekce → kategorie → produkty as three columns
@@ -247,7 +248,7 @@ const Inner = () => {
       });
     },
     onSuccess: async () => { setNewCollection(""); await invalidate(); toast.success("Kolekce založena."); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
   const renameCollection = useMutation({
     mutationFn: (payload: { id: string; title: string }) =>
@@ -255,7 +256,7 @@ const Inner = () => {
         method: "POST", body: { title: payload.title },
       }),
     onSuccess: async () => { await invalidate(); toast.success("Přejmenováno."); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
   const deleteCollection = useMutation({
     mutationFn: (id: string) =>
@@ -264,7 +265,7 @@ const Inner = () => {
       setCollectionId(null); await invalidate();
       toast.success("Kolekce smazána — produkty zůstaly, jen bez kolekce.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
   const setCollectionImage = useMutation({
     mutationFn: async (file: File) => {
@@ -288,7 +289,7 @@ const Inner = () => {
       await queryClient.invalidateQueries({ queryKey: ["rozdeleni-collections"] });
       toast.success("Fotka kolekce nastavena — uvidí ji i menu obchodu.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
 
   const renameCategory = useMutation({
@@ -301,7 +302,7 @@ const Inner = () => {
       await invalidate();
       toast.success("Kategorie přejmenována.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
   const deleteCategory = useMutation({
     mutationFn: (id: string) =>
@@ -312,7 +313,7 @@ const Inner = () => {
       await invalidate();
       toast.success("Kategorie smazána — produkty zůstaly.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
 
   /* Archiv kategorie = metadata.archived (celý objekt se posílá sloučený —
@@ -340,7 +341,7 @@ const Inner = () => {
           : "Kategorie vrácena z archivu. V obchodě se ukáže, až ji zobrazíte očkem."
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
 
   const createCategory = useMutation({
@@ -362,7 +363,7 @@ const Inner = () => {
       await queryClient.invalidateQueries({ queryKey: ["rozdeleni-categories"] });
       toast.success("Kategorie založena.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
 
   const bulkArchive = useMutation({
@@ -380,7 +381,7 @@ const Inner = () => {
       await invalidate();
       toast.success(`Archivováno ${count} produktů — z obchodu zmizely, historie zůstává.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Archivace se nepodařila."),
+    onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
   });
 
   const bulkDelete = useMutation({
@@ -395,7 +396,7 @@ const Inner = () => {
       await invalidate();
       toast.success(`Smazáno ${count} produktů.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Mazání se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Mazání se nepodařilo.")),
   });
 
   const bulkAssign = useMutation({
@@ -433,7 +434,7 @@ const Inner = () => {
       await invalidate();
       toast.success(`Zařazeno ${count} produktů — výběr zůstává otevřený.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Zařazení se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Zařazení se nepodařilo.")),
   });
 
   const applyPending = useMutation({
@@ -462,7 +463,7 @@ const Inner = () => {
       );
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(e, "Uložení se nepodařilo.")),
   });
   const pendingCount = Object.keys(pending).length;
 

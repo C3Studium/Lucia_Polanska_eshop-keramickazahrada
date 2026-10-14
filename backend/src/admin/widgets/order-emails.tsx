@@ -19,6 +19,7 @@ import {
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 
 /**
  * „Odeslané e-maily" on the order page (§16, P5-3).
@@ -89,10 +90,10 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
         await queryClient.invalidateQueries({ queryKey: ["order-emails"] });
       } else {
         // The provider's own reason — „nepodařilo se" alone helps nobody.
-        toast.error(result.message ?? "Odeslat znovu se nepodařilo");
+        toast.error(ceskyText(result.message, "Odeslat znovu se nepodařilo"));
       }
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(ceskaChyba(error, "Akci se nepodařilo dokončit.")),
   });
 
   /*
@@ -128,7 +129,7 @@ const OrderEmailsInner = ({ order }: { order: AdminOrder }) => {
       }
       await queryClient.invalidateQueries({ queryKey: ["order-emails"] });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(ceskaChyba(error, "Akci se nepodařilo dokončit.")),
   });
 
   const emails = data?.emails ?? [];

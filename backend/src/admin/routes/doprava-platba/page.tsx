@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Doprava a platba — ceny dopravy a doběrečné na jednom místě (Matěj,
@@ -83,7 +84,7 @@ const ShippingPriceRow = ({ option }: { option: ShippingOption }) => {
       toast.success(`${option.name}: ${parsed} Kč — platí hned pro nové objednávky.`);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   if (option.price_type !== "flat") {
@@ -162,7 +163,7 @@ const Inner = () => {
       toast.success("Doběrečné uloženo — platí hned pro nové objednávky.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   const shippingOptions = (options?.shipping_options ?? []).sort((a, b) =>

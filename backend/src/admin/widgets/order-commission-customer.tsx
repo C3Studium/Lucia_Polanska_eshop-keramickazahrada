@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client";
 import { ProductionDiary } from "../components/production-diary";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 type ProductionOrder = {
   id: string;
@@ -92,7 +93,7 @@ const OrderCommissionCustomerInner = ({ order }: { order: AdminOrder }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Poznámku se nepodařilo uložit"
+        ceskaChyba(error, "Poznámku se nepodařilo uložit")
       ),
   });
 

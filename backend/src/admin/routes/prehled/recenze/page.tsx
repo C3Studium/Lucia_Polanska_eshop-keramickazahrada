@@ -21,6 +21,7 @@ import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { formatDate } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Recenze, now a tab of Přehled rather than its own sidebar section.
@@ -157,7 +158,7 @@ const RowActions = ({ review }: { review: Review }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Změnu se nepodařilo uložit"
+        ceskaChyba(error, "Změnu se nepodařilo uložit")
       ),
   });
 

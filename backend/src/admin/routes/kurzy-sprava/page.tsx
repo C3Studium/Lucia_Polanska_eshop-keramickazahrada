@@ -28,6 +28,7 @@ import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-m
 import { SubTabs } from "../../components/work-tabs";
 import { formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
+import { ceskyText } from "../../lib/ceska-chyba";
 import {
   parseTimeOfDay,
   utcFromPragueWallClock,
@@ -213,7 +214,7 @@ const errorMessage = async (error: unknown, fallback: string) => {
     /internal|unauthorized|forbidden|fetch|network|unexpected|error/i.test(
       message
     );
-  return looksInternal ? fallback : message;
+  return looksInternal ? fallback : ceskyText(message, fallback);
 };
 
 /* ------------------------------------------------------------------ */

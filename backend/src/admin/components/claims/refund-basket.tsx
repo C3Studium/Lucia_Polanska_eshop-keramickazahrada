@@ -30,6 +30,7 @@ import {
 } from "./order-items-table";
 import { PanelShell } from "./panels";
 import { useReturnAction } from "./use-return-action";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Košík vrácení (docs/reklamace-a-zruseni.md §13.2) — žádná částka
@@ -172,7 +173,7 @@ export const RefundBasket = ({
             if (!canSubmit) return;
             mutation.mutate(body, {
               onSuccess: (result) => {
-                toast.success(result?.message ?? "Peníze byly vráceny.");
+                toast.success(ceskyText(result?.message, "Peníze byly vráceny."));
                 reset();
                 onRefunded();
               },
@@ -568,7 +569,7 @@ export const RefundAllPrompt = ({
                 },
                 {
                   onSuccess: (result) => {
-                    toast.success(result?.message ?? "Peníze byly vráceny.");
+                    toast.success(ceskyText(result?.message, "Peníze byly vráceny."));
                     setOpen(false);
                     setNote("");
                     onDone?.();

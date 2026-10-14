@@ -11,6 +11,7 @@ import { formatCzk, productionStageLabels, stageColors } from "../../lib/workben
 import { PanelShell } from "./panels";
 import { DepositRefundPanel } from "./refund-panel";
 import { useReturnAction } from "./use-return-action";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Zakázka na stránce žádosti (docs/reklamace-a-zruseni.md §12.4): záloha,
@@ -79,7 +80,7 @@ const KeepDepositPanel = ({
           { keep_deposit: true, ...(note.trim() ? { note: note.trim() } : {}) },
           {
             onSuccess: (result) => {
-              toast.success(result?.message ?? "Zakázka byla zrušena, záloha zůstává.");
+              toast.success(ceskyText(result?.message, "Zakázka byla zrušena, záloha zůstává."));
               onClose();
             },
           }
@@ -147,10 +148,10 @@ const CancelProductionPrompt = ({ request }: { request: ReturnRequest }) => {
                   onSuccess: (result) => {
                     if (result?.cancelled === false) {
                       toast.warning(
-                        result.message ?? "Zakázku se nepodařilo zrušit úplně — zkontrolujte detail."
+                        ceskyText(result.message, "Zakázku se nepodařilo zrušit úplně — zkontrolujte detail.")
                       );
                     } else {
-                      toast.success(result?.message ?? "Zakázka byla zrušena.");
+                      toast.success(ceskyText(result?.message, "Zakázka byla zrušena."));
                     }
                     setOpen(false);
                   },

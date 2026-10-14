@@ -21,6 +21,7 @@ import { EmptyState, pieces } from "../../../components/empty-state";
 import { SubTabs, WorkTabs } from "../../../components/work-tabs";
 import { sdk } from "../../../lib/sdk";
 import { adminQueryClient } from "../../../lib/query-client"
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Zásoby — what she has, what is running out, what is gone.
@@ -116,7 +117,7 @@ const AddStock = ({ row }: { row: StockRow }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Zásoby se nepodařilo upravit"
+        ceskaChyba(error, "Zásoby se nepodařilo upravit")
       ),
   });
 

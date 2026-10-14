@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Deník výroby — photos and notes that live with the zakázka
@@ -126,7 +127,7 @@ export const ProductionDiary = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Zápis se nepodařil."
+        ceskaChyba(error, "Zápis se nepodařil.")
       ),
   });
 
@@ -193,7 +194,7 @@ export const ProductionDiary = ({
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Fotku se nepodařilo nahrát."
+        ceskaChyba(error, "Fotku se nepodařilo nahrát.")
       );
     } finally {
       setUploading(false);

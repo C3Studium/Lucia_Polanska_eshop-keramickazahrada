@@ -6,6 +6,7 @@ import {
 import { ProductionProfileEditor } from "../components/production-profile-editor";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Typ produktu — right where she creates it (Matěj: the zakázka % and the
@@ -53,7 +54,7 @@ const Inner = ({ productId }: { productId: string }) => {
       );
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
   const toggleClearance = useMutation({
@@ -75,7 +76,7 @@ const Inner = ({ productId }: { productId: string }) => {
       );
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
   return (

@@ -10,6 +10,7 @@ import {
 import { formatDateTime } from "../lib/format";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 const queryClient = adminQueryClient;
 
@@ -60,7 +61,7 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
       await refresh();
     },
     onError: async (error) => {
-      toast.error(error.message || "Fakturu se nepodařilo vystavit");
+      toast.error(ceskaChyba(error, "Fakturu se nepodařilo vystavit"));
       await refresh();
     },
   });
@@ -75,7 +76,7 @@ const OrderInvoiceWidgetInner = ({ order }: { order: AdminOrder }) => {
       await refresh();
     },
     onError: async (error) => {
-      toast.error(error.message || "Úhradu se nepodařilo zapsat");
+      toast.error(ceskaChyba(error, "Úhradu se nepodařilo zapsat"));
       await refresh();
     },
   });

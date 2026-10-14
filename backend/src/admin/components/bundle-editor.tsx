@@ -10,6 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Balíček editor — Produkty+ → Balíčky (phase 3 follow-up).
@@ -144,7 +145,7 @@ export const BundleEditor = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Uložení se nepodařilo."
+        ceskaChyba(error, "Uložení se nepodařilo.")
       ),
   });
 

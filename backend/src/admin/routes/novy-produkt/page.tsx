@@ -9,6 +9,7 @@ import CreateBundledProduct from "../../components/create-bundled-product";
 import CreateDamagedProduct from "../../components/create-damaged-product";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * „Nový produkt" — the single front door for creating anything sellable.
@@ -173,7 +174,7 @@ const NovyProduktInner = () => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Produkt se nepodařilo založit"
+        ceskaChyba(error, "Produkt se nepodařilo založit")
       );
     },
   });

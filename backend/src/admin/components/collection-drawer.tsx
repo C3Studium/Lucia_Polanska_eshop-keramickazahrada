@@ -2,6 +2,7 @@ import { Button, Drawer, Input, Text, Textarea, toast } from "@medusajs/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Kolekce, jak ji vidí zákazník — jméno, fotka, podtitulek.
@@ -74,7 +75,7 @@ export const CollectionDrawer = ({
       setImage(url);
       toast.success("Fotka nahraná — uloží se tlačítkem níž.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nepodařilo se.");
+      toast.error(ceskaChyba(error, "Nepodařilo se."));
     } finally {
       setUploading(false);
     }
@@ -104,7 +105,7 @@ export const CollectionDrawer = ({
       toast.success("Uloženo — projeví se v obchodě i na úvodní stránce.");
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nepodařilo se."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nepodařilo se.")),
   });
 
   return (

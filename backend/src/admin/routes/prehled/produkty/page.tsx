@@ -30,6 +30,7 @@ import {
   type CatalogFilter,
 } from "../../../components/catalog-filter";
 import { adminQueryClient } from "../../../lib/query-client"
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Produkty — the catalogue, sorted the way she thinks about it.
@@ -113,7 +114,7 @@ const DeleteProduct = ({ product }: { product: ProductRow }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Produkt se nepodařilo smazat"
+        ceskaChyba(error, "Produkt se nepodařilo smazat")
       ),
   });
 
@@ -163,7 +164,7 @@ const ProduktyInner = () => {
       await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
       toast.success(`Archivováno ${count} — z obchodu pryč, historie zůstává.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Archivace se nepodařila."),
+    onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
   });
   const bulkHide = useMutation({
     mutationFn: async () => {
@@ -179,7 +180,7 @@ const ProduktyInner = () => {
       await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
       toast.success(`Skryto ${count} produktů — v obchodě nejsou, tady zůstávají.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Skrytí se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Skrytí se nepodařilo.")),
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const activeKey = searchParams.get("druh") ?? tabs[0].key;

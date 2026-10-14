@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
 import { formatCzk } from "../lib/workbench";
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 import {
   CourseScopePicker,
   emptyScopeState,
@@ -45,12 +46,11 @@ const errorMessage = async (error: unknown, fallback: string) => {
     ?.response;
   try {
     const body = (await response?.json?.()) as { message?: string } | undefined;
-    if (body?.message) return body.message;
+    if (body?.message) return ceskyText(body.message, fallback);
   } catch {
     // Fall through to the generic sentence.
   }
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
+  return ceskaChyba(error, fallback);
 };
 
 /** "" → null, "1 200" / "1200,50" → number. */

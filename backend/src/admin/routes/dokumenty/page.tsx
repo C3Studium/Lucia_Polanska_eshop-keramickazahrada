@@ -9,6 +9,7 @@ import {
 import { useRef, useState } from "react";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Dokumenty — PDF, na která web někde odkazuje.
@@ -88,7 +89,7 @@ const Nahrat = ({
       toast.success(`${title} — nahráno.`);
       onDone();
     } catch (chyba) {
-      toast.error(chyba instanceof Error ? chyba.message : "Nahrání selhalo.");
+      toast.error(ceskaChyba(chyba, "Nahrání selhalo."));
     } finally {
       setPracuje(false);
       if (vstup.current) vstup.current.value = "";

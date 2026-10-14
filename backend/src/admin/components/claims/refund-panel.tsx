@@ -9,6 +9,7 @@ import {
 import { formatCzk } from "../../lib/workbench";
 import { PanelShell } from "./panels";
 import { useReturnAction } from "./use-return-action";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Vrátit zálohu zakázky — `POST …/refund { scope: "deposit" }`
@@ -49,7 +50,7 @@ export const DepositRefundPanel = ({
           },
           {
             onSuccess: (result) => {
-              toast.success(result?.message ?? "Záloha byla vrácena.");
+              toast.success(ceskyText(result?.message, "Záloha byla vrácena."));
               onClose();
             },
           }

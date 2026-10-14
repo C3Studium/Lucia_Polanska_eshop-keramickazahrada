@@ -47,6 +47,7 @@ import { ShippingProfileEditor } from "../../components/shipping-profile-editor"
 import { SelectCheckbox } from "../../components/select-checkbox";
 import { ArchiveToggle } from "../../components/archive-toggle";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Produkty+ — the catalog workbench, one tab per kind of thing she sells
@@ -681,7 +682,7 @@ const ProductsInner = () => {
       await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
       toast.success(`Archivováno ${count} — z obchodu pryč, historie zůstává.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Archivace se nepodařila."),
+    onError: (e) => toast.error(ceskaChyba(e, "Archivace se nepodařila.")),
   });
   const bulkHide = useMutation({
     mutationFn: async () => {
@@ -697,7 +698,7 @@ const ProductsInner = () => {
       await queryClient.invalidateQueries({ queryKey: ["operations-products"] });
       toast.success(`Skryto ${count} produktů — v obchodě nejsou, tady zůstávají.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Skrytí se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Skrytí se nepodařilo.")),
   });
 
 
@@ -852,7 +853,7 @@ const ProductsInner = () => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
       toast.success(`Nastaveno u ${selected.size} produktů.`);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Nastavení se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Nastavení se nepodařilo.")),
   });
   const bulkPackagingValue =
     bulkPackaging.trim() === "" ? null : Number(bulkPackaging.replace(",", "."));
@@ -883,7 +884,7 @@ const ProductsInner = () => {
       );
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(e, "Uložení se nepodařilo.")),
   });
   const pendingCount = Object.keys(pendingFlags).length;
 

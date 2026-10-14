@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@medusajs/ui";
 import { sdk } from "../../lib/sdk";
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Jeden hook pro všechny akce nad žádostí (`POST
@@ -29,7 +30,7 @@ export const useReturnAction = <TResponse = unknown,>(
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Akci se nepodařilo provést"
+        ceskaChyba(error, "Akci se nepodařilo provést")
       );
     },
   });

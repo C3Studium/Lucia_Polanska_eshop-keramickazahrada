@@ -19,6 +19,7 @@ import { formatAmount, formatDateTime } from "../lib/format";
 import { otevritStitek, type StitekZasilky } from "../lib/stitky";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba, ceskyText } from "../lib/ceska-chyba";
 
 export type MerchantOrderStage =
   | "received"
@@ -243,9 +244,7 @@ export const BackfillBanner = () => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Objednávky se nepodařilo doplnit"
+        ceskaChyba(error, "Objednávky se nepodařilo doplnit")
       );
     },
   });
@@ -309,7 +308,7 @@ export const OrderRow = ({
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Stav se nepodařilo změnit";
+        ceskaChyba(error, "Stav se nepodařilo změnit");
       setLastFailure(message);
       toast.error(message);
     },
@@ -349,7 +348,7 @@ export const OrderRow = ({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Štítek se nepodařilo načíst"
+        ceskaChyba(error, "Štítek se nepodařilo načíst")
       );
     },
   });
@@ -366,11 +365,11 @@ export const OrderRow = ({
     onSuccess: async (result) => {
       setLastFailure(null);
       await queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
-      toast.success(result?.message ?? "Rozdíl byl vrácen.");
+      toast.success(ceskyText(result?.message, "Rozdíl byl vrácen."));
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Vrácení se nepodařilo";
+        ceskaChyba(error, "Vrácení se nepodařilo");
       setLastFailure(message);
       toast.error(message);
     },
@@ -393,12 +392,12 @@ export const OrderRow = ({
       if (result?.captured) {
         toast.success("Peníze z dobírky jsou zapsané. Objednávka je zaplacená.");
       } else {
-        toast.info(result?.message ?? "Peníze u této objednávky už jsou zapsané.");
+        toast.info(ceskyText(result?.message, "Peníze u této objednávky už jsou zapsané."));
       }
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Platbu se nepodařilo zapsat";
+        ceskaChyba(error, "Platbu se nepodařilo zapsat");
       setLastFailure(message);
       toast.error(message);
     },
@@ -417,7 +416,7 @@ export const OrderRow = ({
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Akci se nepodařilo dokončit";
+        ceskaChyba(error, "Akci se nepodařilo dokončit");
       setLastFailure(message);
       toast.error(message);
     },
@@ -442,7 +441,7 @@ export const OrderRow = ({
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Akci se nepodařilo dokončit";
+        ceskaChyba(error, "Akci se nepodařilo dokončit");
       setLastFailure(message);
       toast.error(message);
     },

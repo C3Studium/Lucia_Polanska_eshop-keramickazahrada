@@ -29,6 +29,7 @@ import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { ThankYouButton } from "../../components/thank-you-button";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Zákazníci — the advanced customer workbench (admin-advanced-plan.md).
@@ -169,7 +170,7 @@ const CustomerDrawer = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Poznámku se nepodařilo uložit"
+        ceskaChyba(error, "Poznámku se nepodařilo uložit")
       ),
   });
 
@@ -280,7 +281,7 @@ const CustomerStats = () => {
       <div className="px-6 py-5">
         <Text size="small" className="text-ui-fg-error">
           Statistiky se nepodařilo načíst:{" "}
-          {error instanceof Error ? error.message : "neznámá chyba"}
+          {ceskaChyba(error, "neznámá chyba")}
         </Text>
       </div>
     );

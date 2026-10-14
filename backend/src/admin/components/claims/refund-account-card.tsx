@@ -7,6 +7,7 @@ import {
 } from "../../lib/return-requests";
 import { formatCzk } from "../../lib/workbench";
 import { useReturnAction } from "./use-return-action";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Vrácení převodem (11. 10. 2026) — objednávka nebyla placená kartou
@@ -94,7 +95,7 @@ export const RefundAccountCard = ({
               { account: value.trim() },
               {
                 onSuccess: (result) => {
-                  toast.success(result?.message ?? "Účet uložen.");
+                  toast.success(ceskyText(result?.message, "Účet uložen."));
                   setEditing(false);
                 },
               }

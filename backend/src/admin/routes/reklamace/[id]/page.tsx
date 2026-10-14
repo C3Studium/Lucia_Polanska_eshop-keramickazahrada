@@ -55,6 +55,7 @@ import {
 } from "../../../lib/return-requests";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Stránka žádosti — Reklamace a zrušení (docs/reklamace-a-zruseni.md §12, §13).
@@ -364,9 +365,7 @@ const ClaimPageInner = () => {
         <Toaster />
         <Heading level="h2">Žádost se nepodařilo načíst</Heading>
         <Text size="small" className="text-ui-fg-subtle max-w-md">
-          {detailQuery.error instanceof Error
-            ? detailQuery.error.message
-            : "Server neposlal data žádosti."}
+          {ceskaChyba(detailQuery.error, "Server neposlal data žádosti.")}
         </Text>
         <div className="flex flex-wrap justify-center gap-2">
           <Button size="small" variant="secondary" onClick={() => detailQuery.refetch()}>

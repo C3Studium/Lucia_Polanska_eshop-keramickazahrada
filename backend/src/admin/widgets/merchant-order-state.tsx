@@ -18,6 +18,7 @@ import {
 } from "../components/merchant-order-queue";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 const queryClient = adminQueryClient;
 
@@ -64,7 +65,7 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Stav se nepodařilo změnit"
+        ceskaChyba(error, "Stav se nepodařilo změnit")
       ),
   });
 

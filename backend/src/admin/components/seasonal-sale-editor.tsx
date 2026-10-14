@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Creating and editing a sezónní akce, without leaving the list.
@@ -124,7 +125,7 @@ export const SeasonalSaleEditor = ({
           // reporting a blanket failure.
           toast.error(
             `Akce je uložená, ale slevu se nepodařilo nastavit: ${
-              error instanceof Error ? error.message : "neznámá chyba"
+              ceskaChyba(error, "neznámá chyba")
             }`
           );
         }
@@ -137,7 +138,7 @@ export const SeasonalSaleEditor = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Akci se nepodařilo uložit"
+        ceskaChyba(error, "Akci se nepodařilo uložit")
       ),
   });
 

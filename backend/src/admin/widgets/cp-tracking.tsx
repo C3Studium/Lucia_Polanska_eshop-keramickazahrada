@@ -19,6 +19,7 @@ import { isCeskaPosta, isPersonalPickup } from "../lib/cp-shipping";
 import { formatDate, formatDateTime } from "../lib/format";
 import { adminQueryClient } from "../lib/query-client";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 const queryClient = adminQueryClient;
 
@@ -292,9 +293,7 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error && error.message
-          ? error.message
-          : "Akce se u sledování zásilky nepodařila."
+        ceskaChyba(error, "Akce se u sledování zásilky nepodařila.")
       ),
   });
 
@@ -334,9 +333,7 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
 
         {trackingQuery.isError && !trackingQuery.isLoading && (
           <Text size="small" className="text-ui-fg-error">
-            {trackingQuery.error instanceof Error && trackingQuery.error.message
-              ? trackingQuery.error.message
-              : "Stav sledování se nepodařilo načíst."}
+            {ceskaChyba(trackingQuery.error, "Stav sledování se nepodařilo načíst.")}
           </Text>
         )}
 

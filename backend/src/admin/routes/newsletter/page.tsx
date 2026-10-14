@@ -52,6 +52,7 @@ import { SubTabs } from "../../components/work-tabs";
 import { formatAmount, formatDateTime } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Newsletter — odběratelé, psaní kampaní a historie na jednom místě.
@@ -1033,7 +1034,7 @@ const ImageBlockEditor = ({
       onChange({ ...block, src: url });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Fotku se nepodařilo nahrát."
+        ceskaChyba(error, "Fotku se nepodařilo nahrát.")
       );
     } finally {
       setUploading(false);
@@ -1866,7 +1867,7 @@ const ComposeTab = ({
     onError: (error) => {
       setDeleteDraftTarget(null);
       toast.error(
-        error instanceof Error ? error.message : "Smazání se nepodařilo."
+        ceskaChyba(error, "Smazání se nepodařilo.")
       );
       void queryClient.invalidateQueries({ queryKey: ["newsletter-drafts"] });
     },
@@ -1888,7 +1889,7 @@ const ComposeTab = ({
     onSuccess: () => toast.success(`Zkušební e-mail odeslán na ${testEmail.trim()}.`),
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Zkušební e-mail se nepodařilo odeslat."
+        ceskaChyba(error, "Zkušební e-mail se nepodařilo odeslat.")
       ),
   });
 
@@ -1926,7 +1927,7 @@ const ComposeTab = ({
       sendPending.current = false;
       setConfirmOpen(false);
       toast.error(
-        error instanceof Error ? error.message : "Kampaň se nepodařilo odeslat."
+        ceskaChyba(error, "Kampaň se nepodařilo odeslat.")
       );
     },
   });

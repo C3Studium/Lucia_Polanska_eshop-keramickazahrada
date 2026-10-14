@@ -26,6 +26,7 @@ import { formatCount, formatCzk } from "../../lib/workbench";
 import { sdk } from "../../lib/sdk";
 import { ViewSwitcher, useViewMode } from "../../lib/view-mode";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Sklad — the advanced inventory workbench (admin-advanced-plan.md).
@@ -91,7 +92,7 @@ const AddStock = ({ row }: { row: DemandRow }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Zásoby se nepodařilo upravit"
+        ceskaChyba(error, "Zásoby se nepodařilo upravit")
       ),
   });
 
@@ -162,7 +163,7 @@ const ThresholdEditor = ({ row }: { row: DemandRow }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Hranici se nepodařilo uložit"
+        ceskaChyba(error, "Hranici se nepodařilo uložit")
       ),
   });
 

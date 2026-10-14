@@ -24,6 +24,7 @@ import {
 } from "../../../lib/return-requests";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Přehled → Reklamace: krátký souhrn + odkaz do modulu „Reklamace a zrušení".
@@ -139,7 +140,7 @@ const VraceniInner = () => {
         {openQuery.isError && (
           <Text size="small" className="text-ui-fg-error mt-3">
             Žádosti se nepodařilo načíst:{" "}
-            {openQuery.error instanceof Error ? openQuery.error.message : "neznámá chyba"}
+            {ceskaChyba(openQuery.error, "neznámá chyba")}
           </Text>
         )}
 

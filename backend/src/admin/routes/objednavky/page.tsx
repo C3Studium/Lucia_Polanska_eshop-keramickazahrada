@@ -43,6 +43,7 @@ import { otevritStitek, type StitekZasilky } from "../../lib/stitky";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
 import { SelectCheckbox } from "../../components/select-checkbox";
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Objednávky — the advanced order worklist (admin-advanced-plan.md).
@@ -377,7 +378,7 @@ const OrderStats = () => {
       <div className="px-6 py-5">
         <Text size="small" className="text-ui-fg-error">
           Statistiky se nepodařilo načíst:{" "}
-          {error instanceof Error ? error.message : "neznámá chyba"}
+          {ceskaChyba(error, "neznámá chyba")}
         </Text>
       </div>
     );
@@ -551,7 +552,7 @@ const LabelButtons = ({ orderId, madeToOrder }: { orderId: string; madeToOrder: 
     },
     onError: (error) => {
       setLast(null);
-      toast.error(error instanceof Error ? error.message : "Lístek se nepodařilo vytvořit.");
+      toast.error(ceskaChyba(error, "Lístek se nepodařilo vytvořit."));
     },
   });
 
@@ -983,7 +984,7 @@ const OrdersInner = () => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Přesun se nepodařil."
+        ceskaChyba(error, "Přesun se nepodařil.")
       ),
   });
 
@@ -1071,7 +1072,7 @@ const OrdersInner = () => {
           results.push({
             id: order.display_id,
             ok: false,
-            error: error instanceof Error ? error.message : "neznámá chyba",
+            error: ceskaChyba(error, "neznámá chyba"),
           });
         }
       }
@@ -1092,7 +1093,7 @@ const OrdersInner = () => {
       }
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Předání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Předání se nepodařilo.")),
   });
 
   /* Tisk balicích/podacích lístků: fetch the full detail of each chosen
@@ -1140,7 +1141,7 @@ const OrdersInner = () => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Tisk se nepodařilo připravit."
+        ceskaChyba(error, "Tisk se nepodařilo připravit.")
       ),
   });
 
@@ -1156,7 +1157,7 @@ const OrdersInner = () => {
       toast.success("Zásilka předána dopravci — zákazník dostal e-mail.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Předání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Předání se nepodařilo.")),
   });
 
   /* Hromadné „Označit jako odeslané" — lehká akce: posune stav na „Odesláno"
@@ -1193,7 +1194,7 @@ const OrdersInner = () => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Označení se nepodařilo."
+        ceskaChyba(error, "Označení se nepodařilo.")
       ),
   });
 
@@ -1274,8 +1275,8 @@ const OrdersInner = () => {
         <EmptyState
           title="Objednávky se nepodařilo načíst"
           description={
-            isClaimTab && claimsQuery.error instanceof Error
-              ? claimsQuery.error.message
+            isClaimTab
+              ? ceskaChyba(claimsQuery.error, "Zkuste stránku obnovit.")
               : "Zkuste stránku obnovit."
           }
         />

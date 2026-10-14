@@ -1,6 +1,7 @@
 import { Eye, EyeSlash } from "@medusajs/icons";
 import { Prompt, toast } from "@medusajs/ui";
 import { useMutation } from "@tanstack/react-query";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * The eye — show/hide something on the storefront (Matěj, 2026-08-12).
@@ -43,7 +44,7 @@ export const VisibilityEye = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Změna se nepodařila."
+        ceskaChyba(error, "Změna se nepodařila.")
       ),
   });
 

@@ -21,6 +21,7 @@ import { SeasonalSaleEditor } from "../../components/seasonal-sale-editor";
 import { formatDate } from "../../lib/format";
 import { sdk } from "../../lib/sdk";
 import { adminQueryClient } from "../../lib/query-client"
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 type SeasonalItem = {
   id: string;
@@ -122,7 +123,7 @@ const OnEndControl = ({ selection }: { selection: SeasonalSelection }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Nepodařilo se uložit"
+        ceskaChyba(error, "Nepodařilo se uložit")
       ),
   });
 

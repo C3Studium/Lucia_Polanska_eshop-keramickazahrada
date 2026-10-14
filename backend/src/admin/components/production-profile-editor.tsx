@@ -10,6 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * The commission terms of one product — Produkty+ (P8-3, finally).
@@ -132,9 +133,7 @@ export const ProductionProfileEditor = ({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Podmínky se nepodařilo uložit."
+        ceskaChyba(error, "Podmínky se nepodařilo uložit.")
       ),
   });
 

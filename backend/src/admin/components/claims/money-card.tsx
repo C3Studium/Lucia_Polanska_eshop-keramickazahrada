@@ -15,6 +15,7 @@ import {
   type ReturnRequest,
 } from "../../lib/return-requests";
 import { formatCzk } from "../../lib/workbench";
+import { ceskyText } from "../../lib/ceska-chyba";
 
 /**
  * Platby na stránce žádosti: zachyceno / vráceno / zbývá (+ poštovné) a
@@ -146,7 +147,7 @@ const RefundRow = ({ refund, requestId }: { refund: ReturnRefund; requestId: str
                   {},
                   {
                     onSuccess: (result) =>
-                      toast.success(result?.message ?? "Dobropis vystaven."),
+                      toast.success(ceskyText(result?.message, "Dobropis vystaven.")),
                   }
                 )
               }

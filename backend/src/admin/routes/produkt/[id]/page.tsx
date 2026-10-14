@@ -34,6 +34,7 @@ import { formatDate, formatDateTime } from "../../../lib/format";
 import { sdk } from "../../../lib/sdk";
 import { formatCzk } from "../../../lib/workbench";
 import { adminQueryClient } from "../../../lib/query-client"
+import { ceskaChyba } from "../../../lib/ceska-chyba";
 
 /**
  * Detail produktu — jedna stránka místo nativní editace (Matěj, 2026-08-16).
@@ -234,7 +235,7 @@ const RestockCell = ({
       toast.success(`Přidáno ${pieces(added)}.`);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Naskladnění se nepodařilo."),
+      toast.error(ceskaChyba(error, "Naskladnění se nepodařilo.")),
   });
 
   if (!inventoryItemId) {
@@ -299,7 +300,7 @@ const VariantRow = ({
       toast.success("Varianta uložena.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   const remove = useMutation({
@@ -312,7 +313,7 @@ const VariantRow = ({
       toast.success("Varianta odstraněna.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Odstranění se nepodařilo."),
+      toast.error(ceskaChyba(error, "Odstranění se nepodařilo.")),
   });
 
   /*
@@ -341,7 +342,7 @@ const VariantRow = ({
       return saveMeta({ images: [...photos, ...urls] });
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Nahrání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Nahrání se nepodařilo.")),
   });
 
   const state = stock?.stock_state ? stockMeta[stock.stock_state] : null;
@@ -582,7 +583,7 @@ const AddVariantRow = ({
       toast.success("Varianta přidána.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Přidání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Přidání se nepodařilo.")),
   });
 
   return (
@@ -780,7 +781,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.success("Změna uložena.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   const saveFlags = useMutation({
@@ -794,7 +795,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.success("Změna uložena.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   // One switch for the whole piece: backorder is a per-variant fact in the
@@ -816,7 +817,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.success("Změna uložena.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Uložení se nepodařilo."),
+      toast.error(ceskaChyba(error, "Uložení se nepodařilo.")),
   });
 
   /*
@@ -864,7 +865,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.success(`Cena snížena o ${input.percent} %.`);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Slevu se nepodařilo nastavit."),
+      toast.error(ceskaChyba(error, "Slevu se nepodařilo nastavit.")),
   });
 
   /*
@@ -945,7 +946,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Kopii se nepodařilo založit."
+        ceskaChyba(error, "Kopii se nepodařilo založit.")
       ),
   })
 
@@ -959,7 +960,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       navigate("/produkty-workbench");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Smazání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Smazání se nepodařilo.")),
   });
 
   // Same two-step contract as the shared ArchiveToggle: the flag hides the
@@ -988,7 +989,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       );
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Změna se nepodařila."),
+      toast.error(ceskaChyba(error, "Změna se nepodařila.")),
   });
 
   const uploadImages = useMutation({
@@ -1015,7 +1016,7 @@ const ProduktDetailInner = ({ productId }: { productId: string }) => {
       toast.success("Fotky nahrány.");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Nahrání se nepodařilo."),
+      toast.error(ceskaChyba(error, "Nahrání se nepodařilo.")),
   });
 
   if (productQuery.isLoading) {

@@ -4,6 +4,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Varianty — no-extra-steps variant and price editing (Matěj, 2026-08-06).
@@ -46,7 +47,7 @@ const Row = ({ productId, variant }: { productId: string; variant: any }) => {
         },
       }),
     onSuccess: async () => { await invalidate(); toast.success("Varianta uložena."); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Uložení se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Uložení se nepodařilo.")),
   });
   const remove = useMutation({
     mutationFn: () =>
@@ -54,7 +55,7 @@ const Row = ({ productId, variant }: { productId: string; variant: any }) => {
         method: "DELETE",
       }),
     onSuccess: async () => { await invalidate(); toast.success("Varianta odstraněna."); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Odstranění se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Odstranění se nepodařilo.")),
   });
 
   return (
@@ -114,7 +115,7 @@ export const VariantsEditor = ({ productId, productTitle, trigger }: {
       await queryClient.invalidateQueries({ queryKey: ["workbench-products"] });
       toast.success("Varianta přidána.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Přidání se nepodařilo."),
+    onError: (e) => toast.error(ceskaChyba(e, "Přidání se nepodařilo.")),
   });
 
   return (

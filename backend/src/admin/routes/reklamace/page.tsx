@@ -42,6 +42,7 @@ import {
 } from "../../lib/return-requests";
 import { sdk } from "../../lib/sdk";
 import { formatCzk } from "../../lib/workbench";
+import { ceskaChyba } from "../../lib/ceska-chyba";
 
 /**
  * Reklamace a zrušení — jeden modul pro reklamace, vrácení zboží a odstoupení
@@ -233,7 +234,7 @@ const ReklamaceInner = () => {
         <div className="flex min-h-48 flex-col items-center justify-center gap-y-3 px-6 text-center">
           <Heading level="h2">Žádosti se nepodařilo načíst</Heading>
           <Text size="small" className="text-ui-fg-subtle">
-            {listQuery.error instanceof Error ? listQuery.error.message : ""}
+            {ceskaChyba(listQuery.error, "")}
           </Text>
           <Button size="small" variant="secondary" onClick={() => listQuery.refetch()}>
             Zkusit znovu

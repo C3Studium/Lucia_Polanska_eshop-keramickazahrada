@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { sdk } from "../lib/sdk";
 import { adminQueryClient } from "../lib/query-client"
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Profil dopravy u produktu — políčko, které nativní admin nemá.
@@ -64,7 +65,7 @@ const Inner = ({ productId }: { productId: string }) => {
       });
     },
     onError: (error: any) =>
-      toast.error(error?.message ?? "Profil se nepodařilo uložit."),
+      toast.error(ceskaChyba(error, "Profil se nepodařilo uložit.")),
   });
 
   if (!produkt) return null;

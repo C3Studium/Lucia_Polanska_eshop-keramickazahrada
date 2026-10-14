@@ -2,6 +2,7 @@ import { Button, Input, Label, Text, Textarea, toast } from "@medusajs/ui"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { ChangeEvent, useEffect, useMemo, useState } from "react"
 import { sdk } from "../lib/sdk"
+import { ceskaChyba } from "../lib/ceska-chyba"
 
 /**
  * „Výprodej / poškozený kus" — založení z existujícího produktu.
@@ -157,7 +158,7 @@ export default function CreateDamagedProduct({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Kus se nepodařilo založit."
+        ceskaChyba(error, "Kus se nepodařilo založit.")
       )
     },
   })

@@ -11,6 +11,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { sdk } from "../lib/sdk";
+import { ceskaChyba } from "../lib/ceska-chyba";
 
 /**
  * Creating a discount code or an automatic discount, without leaving Přehled.
@@ -83,7 +84,7 @@ export const DiscountEditor = ({ trigger }: { trigger: React.ReactNode }) => {
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Slevu se nepodařilo vytvořit"
+        ceskaChyba(error, "Slevu se nepodařilo vytvořit")
       ),
   })
 
