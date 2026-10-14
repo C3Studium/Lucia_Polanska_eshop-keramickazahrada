@@ -59,6 +59,7 @@ import { CoursePaymentExpiredEmail } from "./emails/course-payment-expired";
 import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
+import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
 import {
 
   novyStav,
@@ -137,6 +138,9 @@ enum Templates {
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   // …and the single-reservation cancellation notice (refund story included).
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  // Poptávka zakázky ze stránky Výroba — potvrzení zákazníkovi
+  // (api/store/commission-inquiries).
+  COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
   // TODO(emails): the remaining templates in ./emails/ are designed but have
   // no trigger to hang off yet. Register them here (both enums + the map +
   // a subject) once the underlying feature exists:
@@ -212,6 +216,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.COURSE_REMINDER]: CourseReminderEmail,
   [Templates.COURSE_WAITLIST_SPOT]: CourseWaitlistSpotEmail,
   [Templates.COURSE_RESERVATION_CANCELLED]: CourseReservationCancelledEmail,
+  [Templates.COMMISSION_INQUIRY_RECEIVED]: CommissionInquiryReceivedEmail,
 }
 
 export enum EmailTemplates {
@@ -269,6 +274,7 @@ export enum EmailTemplates {
   COURSE_REMINDER = "course-reminder",
   COURSE_WAITLIST_SPOT = "course-waitlist-spot",
   COURSE_RESERVATION_CANCELLED = "course-reservation-cancelled",
+  COMMISSION_INQUIRY_RECEIVED = "commission-inquiry-received",
 }
 
 /**
@@ -563,6 +569,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     }
 
     // A per-send subject wins over the template default. Merchant notifications
+      case Templates.COMMISSION_INQUIRY_RECEIVED:
+        return "Poptávku jsme přijali"
     // all share one template but must not all share one subject line — an inbox
     // full of identical subjects is unreadable. Templates that do not set it
     // behave exactly as before.

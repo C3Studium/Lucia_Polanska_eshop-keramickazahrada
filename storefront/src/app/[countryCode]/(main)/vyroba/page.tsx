@@ -2,6 +2,7 @@ import { Metadata } from "next"
 
 import { getPageContentFull } from "@lib/data/site-copy"
 import VyrobaCta from "@modules/vyroba/cta"
+import VyrobaInquiry from "@modules/vyroba/InquiryForm"
 import VyrobaJourney from "@modules/vyroba/journey"
 
 export const metadata: Metadata = {
@@ -29,6 +30,9 @@ export default async function Home() {
         hero={copy["vyroba.hero"]}
       />
       <VyrobaCta copy={copy} />
+      {/* Poptávka zakázky (LEGAL_AUDIT.md §6, §9) — kotva `#poptavka`. Texty
+          z kódu, ne z CMS: jsou to předsmluvní informace k zakázce. */}
+      <VyrobaInquiry />
     </>
   )
 }

@@ -263,6 +263,14 @@ export default defineMiddlewares({
       methods: ["POST"],
       bodyParser: { sizeLimit: "12mb" },
     },
+    // Poptávka zakázky ze stránky Výroba nese fotky místa jako base64 v JSON
+    // (až 6 fotek, dohromady max 9 MB → ~12 MB base64). Výchozí limit těla
+    // by poptávku s fotkami shodil na 413.
+    {
+      matcher: "/store/commission-inquiries",
+      methods: ["POST"],
+      bodyParser: { sizeLimit: "14mb" },
+    },
     /*
      * Výběr dopravy je poslední společné hrdlo před penězi. Kus bez profilu
      * dopravy se tu odmítne, protože po zaplacení už by bylo pozdě — Medusa
