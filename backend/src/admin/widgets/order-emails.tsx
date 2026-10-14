@@ -53,12 +53,20 @@ const templateLabels: Record<string, string> = {
   "payment-refunded": "Vracíme peníze",
   "order-shipment": "Objednávka odeslána",
   "order-cancelled": "Objednávka zrušena",
-  "order-processing": "Zadání potvrzeno",
+  "commission-confirmed": "Zadání potvrzeno",
+  "order-processing": "Výroba začala",
+  "commission-completed": "Zakázka hotová",
   "order-refunded": "Objednávka vrácena",
   "order-review": "Prosba o recenzi",
   "order-ready-pickup": "Připraveno k vyzvednutí",
   "order-delivered": "Zásilka doručena",
   "order-delayed": "Výroba se protáhne",
+  "order-preparing": "Připravujeme",
+  "order-ready": "Připraveno k odeslání",
+  "invoice-issued": "Faktura",
+  "surcharge-confirmed": "Potvrzení příplatku",
+  "commission-message": "Zpráva k zakázce",
+  "merchant-notification": "Upozornění pro vás",
 };
 
 const statusMeta: Record<

@@ -584,7 +584,57 @@ const onPaymentRefunded = async ({
   })
 }
 
-/** #6 „Zadání potvrzeno — začínáme". */
+/**
+ * Peníze a termín zakázky do e-mailů o výrobě: domluvená cena (vč. příplatku),
+ * zaplaceno, zbývá a předpokládané dokončení. Fail-soft — bez nich e-mail
+ * odejde i tak, jen bez řádků s čísly.
+ */
+const commissionFacts = async (
+  container: SubscriberArgs["container"],
+  orderId: string,
+  currencyCode: string
+) => {
+  try {
+    const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
+    const [production] = (await madeToOrder.listProductionOrders({
+      order_id: orderId,
+    } as never)) as any[]
+    if (!production) return null
+    const requests = (await madeToOrder.listProductionPaymentRequests({
+      production_order_id: production.id,
+    } as never)) as any[]
+    const paid = requests
+      .filter((request) => request.status === "paid")
+      .reduce((sum, request) => sum + toNumber(request.amount), 0)
+    const total =
+      toNumber(production.agreed_total ?? production.original_total) +
+      toNumber(production.surcharge)
+    const outstanding = Math.max(0, Math.round((total - paid) * 100) / 100)
+    return {
+      totalPrice: total > 0 ? formatMoney(total, currencyCode) : null,
+      depositPaid: paid > 0 ? formatMoney(paid, currencyCode) : null,
+      balanceDue: outstanding > 0.005 ? formatMoney(outstanding, currencyCode) : null,
+      estimatedCompletion: production.estimated_completion_at
+        ? formatDate(production.estimated_completion_at)
+        : null,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Název položky zakázky (bez balného), pro řádek „Zakázka" v e-mailu. */
+const commissionTitle = (order: any): string | null => {
+  const items = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
+  const item = items.find((i) => Boolean((i?.metadata as any)?.made_to_order)) ?? items[0]
+  return (item?.product_title as string) || (item?.title as string) || null
+}
+
+/**
+ * #6 „Zadání je potvrzené" — potvrzení zadání zakázky. Dřív sem šel
+ * „Výroba začíná" (order-processing), i když výroba ještě neběžela; ten teď
+ * chodí až při „Začít výrobu" (onProductionStarted). 14. 10. 2026.
+ */
 const onSpecificationConfirmed = async ({
   event: { data },
   container,
@@ -596,16 +646,46 @@ const onSpecificationConfirmed = async ({
   if (!order) {
     return
   }
+  const facts = await commissionFacts(container, order.id, order.currency_code)
 
   await sendCustomerEmail(container, {
-    template: "order-processing",
+    template: "commission-confirmed",
     to: order.email,
     key: `spec-ok:${data.production_order_id ?? order.id}`,
     orderId: order.id,
     data: {
       ...common(order),
+      ...(facts ?? {}),
+      productTitle: commissionTitle(order),
+      productImageUrl: commissionProductImage(order),
+    },
+  })
+}
+
+/** „Výroba začíná" — „Začít výrobu" (start_production). */
+const onProductionStarted = async ({
+  event: { data },
+  container,
+}: SubscriberArgs<{ order_id: string; production_order_id?: string }>) => {
+  if (!data?.order_id) {
+    return
+  }
+  const order = await loadOrder(container, data.order_id)
+  if (!order) {
+    return
+  }
+  const facts = await commissionFacts(container, order.id, order.currency_code)
+
+  await sendCustomerEmail(container, {
+    template: "order-processing",
+    to: order.email,
+    key: `mto-start:${data.production_order_id ?? order.id}`,
+    orderId: order.id,
+    data: {
+      ...common(order),
+      estimatedCompletion: facts?.estimatedCompletion ?? null,
       estimatedProcessingTime:
-        "Jakmile bude hotovo, dáme vám vědět a domluvíme se na odeslání.",
+        "Jakmile bude hotovo, dám vám vědět a domluvíme se na odeslání.",
     },
   })
 }
@@ -960,6 +1040,7 @@ const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
+  "made-to-order.production-started": onProductionStarted,
   "made-to-order.production-completed": onProductionCompleted,
   "made-to-order.surcharge-notified": onSurchargeNotified,
   "made-to-order.delay-announced": onDelayAnnounced,
@@ -984,6 +1065,7 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
+    "made-to-order.production-started",
     "made-to-order.production-completed",
     "made-to-order.surcharge-notified",
     "made-to-order.delay-announced",

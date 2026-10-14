@@ -31,6 +31,7 @@ import { OrderPreparingEmail } from "./emails/order-preparing";
 import { OrderReadyEmail } from "./emails/order-ready";
 import { OrderEditedEmail } from "./emails/order-edited";
 import { CommissionCompletedEmail } from "./emails/commission-completed";
+import { CommissionConfirmedEmail } from "./emails/commission-confirmed";
 import { OrderRefundedEmail } from "./emails/order-refunded";
 import { OrderReviewEmail } from "./emails/order-review";
 import { OrderReadyPickupEmail } from "./emails/order-ready-pickup";
@@ -96,6 +97,8 @@ enum Templates {
   ORDER_EDITED = "order-edited",
   // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
   COMMISSION_COMPLETED = "commission-completed",
+  // „Zadání je potvrzené" — potvrzení zadání zakázky (před začátkem výroby).
+  COMMISSION_CONFIRMED = "commission-confirmed",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -181,6 +184,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.ORDER_READY]: OrderReadyEmail,
   [Templates.ORDER_EDITED]: OrderEditedEmail,
   [Templates.COMMISSION_COMPLETED]: CommissionCompletedEmail,
+  [Templates.COMMISSION_CONFIRMED]: CommissionConfirmedEmail,
   [Templates.ORDER_REFUNDED]: OrderRefundedEmail,
   [Templates.ORDER_REVIEW]: OrderReviewEmail,
   [Templates.ORDER_READY_PICKUP]: OrderReadyPickupEmail,
@@ -236,6 +240,8 @@ export enum EmailTemplates {
   ORDER_EDITED = "order-edited",
   // „Vaše zakázka je hotová" — dokončení výroby na zakázku.
   COMMISSION_COMPLETED = "commission-completed",
+  // „Zadání je potvrzené" — potvrzení zadání zakázky (před začátkem výroby).
+  COMMISSION_CONFIRMED = "commission-confirmed",
   ORDER_REFUNDED = "order-refunded",
   ORDER_REVIEW = "order-review",
   ORDER_READY_PICKUP = "order-ready-pickup",
@@ -404,7 +410,9 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
       case Templates.ORDER_CANCELLED:
         return "Objednávka zrušena"
       case Templates.ORDER_PROCESSING:
-        return "Zadání potvrzeno — začínáme"
+        return "Vaše zakázka je ve výrobě"
+      case Templates.COMMISSION_CONFIRMED:
+        return "Zadání vaší zakázky je potvrzené"
       case Templates.ORDER_PREPARING:
         return "Vaši objednávku připravujeme"
       case Templates.ORDER_EDITED:

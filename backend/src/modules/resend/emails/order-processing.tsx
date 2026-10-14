@@ -18,38 +18,44 @@ interface OrderProcessingEmailProps {
   orderNumber?: string;
   estimatedProcessingTime?: string;
   orderLink?: string;
+  /** Předpokládané dokončení („5. 11. 2026"), když ho ateliér zadal. */
+  estimatedCompletion?: string | null;
 }
 
 /**
- * Sent when a made-to-order specification is confirmed — production begins.
- * The subscriber passes `estimatedProcessingTime` as a whole sentence
- * („Jakmile bude hotovo, dáme vám vědět…"), so it renders as a paragraph,
- * not a ledger value.
+ * „Výroba začíná" — posílá se při „Začít výrobu" (`start_production`).
+ *
+ * Do 14. 10. 2026 odcházel už při potvrzení zadání, i když výroba ještě
+ * neběžela, a při skutečném začátku výroby pak nepřišlo nic. Potvrzení zadání
+ * má teď vlastní e-mail (`commission-confirmed`).
  */
 function OrderProcessingEmailComponent({
   customerName,
   orderNumber = "",
   estimatedProcessingTime = "Jakmile bude hotovo, dáme vám vědět a domluvíme se na odeslání.",
-  orderLink = ""
+  orderLink = "",
+  estimatedCompletion,
 }: OrderProcessingEmailProps) {
   const orderUrl = orderLink || storeLink()
   return (
     <EmailLayout
-      preview={`Zadání objednávky ${orderNumber} je potvrzené — v ateliéru začíná výroba.`}
+      preview={`Vaše zakázka ${orderNumber} je ve výrobě.`}
     >
       <Eyebrow>Zakázková výroba</Eyebrow>
       <EmailH1 accent="začíná.">Výroba</EmailH1>
 
       <Greeting name={customerName} />
       <P>
-        zadání vaší objednávky {orderNumber} máme potvrzené a v ateliéru se
-        pouštíme do práce. Každý kousek vzniká rukama — točení, sušení, pálení
-        i glazura si žádají svůj čas.
+        právě se pouštím do výroby vaší zakázky {orderNumber}. Každý kousek
+        vzniká rukama — točení, sušení, pálení i glazura si žádají svůj čas.
       </P>
 
       {orderNumber ? (
         <>
           <LedgerRow label="Objednávka" value={orderNumber} strong />
+          {estimatedCompletion ? (
+            <LedgerRow label="Předpokládané dokončení" value={estimatedCompletion} />
+          ) : null}
           <LedgerEnd />
         </>
       ) : null}

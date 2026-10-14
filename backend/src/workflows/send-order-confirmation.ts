@@ -93,6 +93,10 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
             channel: "email",
             template: "order-placed",
             idempotency_key: `order-placed:${id}`,
+            // Vazba na objednávku, ať je potvrzení vidět v „E-maily" u objednávky
+            // (chybělo — ostatní e-maily ji nesou přes lib/customer-email).
+            resource_id: id,
+            resource_type: "order",
             data: {
               order: orders[0],
               balance_due: balance.outstanding,

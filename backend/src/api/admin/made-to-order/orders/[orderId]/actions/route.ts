@@ -446,6 +446,14 @@ export const POST = async (
       production_started_at: now,
     })
     await setMerchantStage(req, req.params.orderId, "working")
+    // Začátek výroby → e-mail „Výroba začíná" (dřív nechodilo nic, 14. 10. 2026).
+    await eventBus.emit({
+      name: "made-to-order.production-started",
+      data: {
+        order_id: req.params.orderId,
+        production_order_id: productionOrder.id,
+      },
+    })
   }
 
   if (body.action === "complete_production") {
