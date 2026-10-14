@@ -43,7 +43,7 @@ interface InvoiceIssuedEmailProps {
   /** U zálohové faktury: kolik ještě zbývá doplatit (naformátované). */
   balanceRemaining?: string;
   /**
-   * U doplatkové (vyúčtovací) faktury zakázky: záloha · doplatek · příplatek
+   * U doplatkové faktury zakázky: záloha · doplatek · příplatek
    * · celkem zaplaceno (lib/commission-breakdown).
    */
   commissionPayments?: CommissionPaymentsText | null;
@@ -104,7 +104,7 @@ function InvoiceIssuedEmailComponent({
     invoiceKind === "deposit"
       ? "posíláme fakturu za zálohu k vaší objednávce na míru."
       : invoiceKind === "balance"
-        ? "posíláme vyúčtovací fakturu k vaší zakázce — je na ní celá zakázka, odečtená záloha a doplatek, který jste právě zaplatili."
+        ? "posíláme fakturu za doplatek k vaší objednávce na míru."
         : invoicePdfUrl
           ? "posíláme fakturu k vaší objednávce. Nic dalšího od vás nepotřebujeme — doklad si jen uložte pro případ, že ho budete někdy potřebovat."
           : "k vaší objednávce jsme vystavili fakturu. Kdybyste doklad potřebovali v PDF, stačí odpovědět na tento e-mail a pošleme vám ho."
