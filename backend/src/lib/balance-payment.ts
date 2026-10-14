@@ -14,6 +14,7 @@ import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { productionOutstanding } from "./ship-gate"
 import { orderConfirmedPath } from "./storefront-url"
 import { paymentStatusFromProvider } from "./payment-provider-status"
+import { duvodCesky } from "./payment-failure"
 
 /**
  * Getting a customer a link to pay what they still owe on a commission.
@@ -482,9 +483,11 @@ export const reconcileOrderBalance = async (
   }
 
   let status = ""
+  let errorReason: unknown = null
   try {
     const result = await paymentStatusFromProvider(container, session as any)
     status = String(result?.status ?? "").toLowerCase()
+    errorReason = (result?.data as any)?.paymentErrorReason ?? null
     logger.info(
       `[balance] reconcile ${orderId}: doplatek ${request.id}, relace ${request.payment_session_id} — brána hlásí stav „${status || "?"}".`
     )
@@ -543,10 +546,13 @@ export const reconcileOrderBalance = async (
   }
 
   if (["canceled", "cancelled", "error", "expired"].includes(status)) {
+    // E-mail „neprošla" pošle s odstupem úloha reconcile-balance-payments
+    // (nezopakuje-li zákazník platbu hned) — podle stavu a důvodu uložených tady.
     await madeToOrder.updateProductionPaymentRequests({
       id: request.id,
       status: "expired",
       provider_status: status.toUpperCase(),
+      provider_error_reason: duvodCesky(errorReason),
       last_checked_at: now,
     } as never)
     return { status: "failed", request_id: request.id }

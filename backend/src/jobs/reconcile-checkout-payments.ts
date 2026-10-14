@@ -1,7 +1,12 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { processPaymentWorkflow } from "@medusajs/medusa/core-flows"
 import { paymentStatusFromProvider } from "../lib/payment-provider-status"
+import {
+  duvodCesky,
+  emailFailedCheckoutPayment,
+  failedPaymentEmailDue,
+} from "../lib/payment-failure"
 
 /**
  * Doptá se ComGate, co se stalo s platbami z pokladny, o kterých se obchod
@@ -33,6 +38,10 @@ import { paymentStatusFromProvider } from "../lib/payment-provider-status"
  * Sesterský `reconcile-balance-payments` dělá totéž pro doplatky u zakázkové
  * výroby; tenhle pokrývá běžnou pokladnu, na kterou tam nedosáhne.
  *
+ * Zrušené platby (zákazník zrušil, nedostatek peněz, vypršelo) hlásí
+ * zákazníkovi e-mailem „neprošla" s odkazem na opakování — viz
+ * `lib/payment-failure`.
+ *
  * ## Bezpečnost
  *
  * Jen **odráží**, co říká ComGate — nikdy nerozhoduje. Platí se přes
@@ -45,37 +54,28 @@ import { paymentStatusFromProvider } from "../lib/payment-provider-status"
 /** Jak daleko zpátky se ptát. Starší košík už stejně nikdo nedokončí. */
 const DNU_ZPET = 3
 
-/** Co ComGate vrací v `paymentErrorReason`, česky. */
-const DUVODY: Record<string, string> = {
-  NO_FUNDS: "na účtu nebyl dostatek prostředků",
-  LIMIT_EXCEEDED: "byl překročen limit karty",
-  REJECTED_BY_BANK: "platbu zamítla banka",
-  INVALID_CARDNO_EXPIRY: "chybně zadané číslo karty nebo platnost",
-  INVALID_CVC: "chybně zadaný CVC kód",
-  CUSTOMER_TIMEOUT: "vypršel časový limit platby",
-  ACS_TIMEOUT: "vypršel časový limit ověření",
-}
-
-export const duvodCesky = (kod: unknown): string | null => {
-  const klic = String(kod ?? "").trim().toUpperCase()
-  if (!klic || klic === "NOT_SPECIFIED") {
-    return null
-  }
-  return DUVODY[klic] ?? null
-}
+/* Přesunuto do lib/payment-failure (sdílí ho i dohled doplatků). */
+export { duvodCesky }
 
 export default async function reconcileCheckoutPayments(
   container: MedusaContainer
 ) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const paymentModule = container.resolve(Modules.PAYMENT)
 
   const od = new Date(Date.now() - DNU_ZPET * 24 * 60 * 60 * 1000)
 
   const { data: relace } = await query.graph({
     entity: "payment_session",
-    fields: ["id", "status", "provider_id", "amount", "data", "created_at"],
+    fields: [
+      "id",
+      "status",
+      "provider_id",
+      "amount",
+      "data",
+      "created_at",
+      "payment_collection_id",
+    ],
     filters: {
       status: "pending",
       created_at: { $gte: od },
@@ -92,6 +92,7 @@ export default async function reconcileCheckoutPayments(
 
   let dokonceno = 0
   let selhalo = 0
+  const ted = new Date()
 
   for (const session of kComgate) {
     try {
@@ -119,21 +120,23 @@ export default async function reconcileCheckoutPayments(
       }
 
       /*
-       * Neúspěch se nezahazuje: důvod od brány je jediné, z čeho se dá
-       * zákazníkovi říct něco lepšího než „platba neproběhla". Ukládá se
-       * k relaci, aby ho měl obchod i administrace odkud vzít.
+       * Zrušená platba (tlačítko „Zrušit", nedostatek peněz, zamítnutí,
+       * vypršení) → e-mail „neprošla" s odkazem na opakování, s odstupem
+       * (lib/payment-failure). Relace, kterou zákazník mezitím nahradil novým
+       * pokusem, tu už není — Medusa ji při novém pokusu smaže.
+       *
+       * Důvod od brány jde rovnou do e-mailu. Dřív se ukládal k relaci přes
+       * `updatePaymentSession`, jenže to bez částky volá ComGate `updatePayment`
+       * a ten vyhodí — důvod se tak nikdy neuložil (a nikdo ho nečetl).
        */
-      const duvod = duvodCesky(
-        (vysledek?.data as any)?.paymentErrorReason ??
-          (session.data as any)?.paymentErrorReason
-      )
-
-      if (duvod) {
-        await paymentModule.updatePaymentSession({
-          id: session.id,
-          data: { ...(session.data ?? {}), duvod_selhani: duvod },
-        } as never)
-        selhalo++
+      if (stav === "canceled" && failedPaymentEmailDue(session.created_at, ted)) {
+        const duvod = duvodCesky(
+          (vysledek?.data as any)?.paymentErrorReason ??
+            (session.data as any)?.paymentErrorReason
+        )
+        if (await emailFailedCheckoutPayment(container, session, duvod)) {
+          selhalo++
+        }
       }
     } catch (chyba) {
       /* Jedna rozbitá relace nesmí zastavit zbytek — příště se zkusí znovu. */
@@ -147,7 +150,7 @@ export default async function reconcileCheckoutPayments(
 
   if (dokonceno || selhalo) {
     logger.info(
-      `[comgate-dohled] Prošlo ${kComgate.length} nevyřízených relací: ${dokonceno} dodatečně dokončeno, u ${selhalo} zaznamenán důvod selhání.`
+      `[comgate-dohled] Prošlo ${kComgate.length} nevyřízených relací: ${dokonceno} dodatečně dokončeno, u ${selhalo} zrušených zařazen e-mail „neprošla" (už odeslaný notifikace přeskočí).`
     )
   }
 }

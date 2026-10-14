@@ -7,6 +7,7 @@ import { notifyMerchant } from "../lib/notify"
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { paymentStatusFromProvider } from "../lib/payment-provider-status"
 import { stageAfterBalancePaid } from "../lib/balance-payment"
+import { duvodCesky, failedPaymentEmailDue } from "../lib/payment-failure"
 import {
   customerName,
   formatMoney,
@@ -52,11 +53,17 @@ const FAILURE_REASONS: Record<string, string> = {
   expired: "Platnost platebního odkazu vypršela",
 }
 
+/** `provider_status` neúspěšně ukončené žádosti (úloha i návrat z brány). */
+const FAILED_PROVIDER_STATUSES = ["CANCELED", "CANCELLED", "ERROR", "EXPIRED"]
+
 /**
  * Tells the customer their balance payment did not go through.
  *
- * Only for requests that were actually *sent* to somebody — a failed attempt
- * on a link nobody ever received would be a confusing mail out of nowhere.
+ * Každá neúspěšná žádost s platební relací je skutečný pokus: majitelka ji
+ * pošle („sent"), nebo ji založí zákazníkovo vlastní „Doplatit" (`pay-balance`,
+ * „pending"). Dřív se psalo jen u „sent" — a jen tehdy, když se zákazník
+ * z brány nevrátil (návrat žádost uzavře dřív, než ji úloha uvidí), takže po
+ * „Zrušit" na bráně nepřišlo nic (14. 10. 2026).
  * The retry button is the signed balance link: it never expires and creates a
  * fresh payment session on click, so it works regardless of what happened to
  * the original ComGate transaction. This is feedback on the customer's own
@@ -106,7 +113,10 @@ const emailCustomerAboutFailure = async (
       customerName: customerName(order),
       orderNumber: orderNumber(order),
       paymentAmount: formatMoney(request.amount, request.currency_code),
-      failureReason: FAILURE_REASONS[status] ?? FAILURE_REASONS.error,
+      failureReason:
+        request.provider_error_reason ||
+        FAILURE_REASONS[status] ||
+        FAILURE_REASONS.error,
       retryLink: balancePaymentUrl(order.id) || orderLink(order),
     },
   })
@@ -134,10 +144,6 @@ export default async function reconcileBalancePayments(
     (request) =>
       OPEN_STATUSES.includes(request.status) && request.payment_session_id
   )
-
-  if (!open.length) {
-    return
-  }
 
   const now = new Date()
 
@@ -241,30 +247,26 @@ export default async function reconcileBalancePayments(
       }
 
       if (["canceled", "cancelled", "error", "expired"].includes(status)) {
-        // Captured before the update overwrites it — only a request that was
-        // really sent to the customer earns them a failure e-mail.
-        const wasSentToCustomer = request.status === "sent"
-
+        // E-mail zákazníkovi tu nejde — pošle ho průchod níž s odstupem, stejně
+        // jako u žádostí, které uzavřel návrat z brány.
         await madeToOrder.updateProductionPaymentRequests({
           id: request.id,
           status: "expired",
           provider_status: status.toUpperCase(),
+          provider_error_reason: duvodCesky(
+            (result?.data as any)?.paymentErrorReason
+          ),
           last_checked_at: now,
         } as never)
 
         await notifyMerchant(container, {
           key: `mn:payfail:${request.id}`,
           title: "Platba doplatku se nezdařila",
-          description: wasSentToCustomer
-            ? "Odkaz vypršel nebo byl zrušený. Zákazník dostal e-mail s odkazem na opakování platby; nový odkaz můžete poslat i přes tlačítko Požádat o doplatek."
-            : "Odkaz vypršel nebo byl zrušený. Pošlete zákazníkovi nový přes tlačítko Požádat o doplatek.",
+          description:
+            "Odkaz vypršel nebo byl zrušený. Zákazníkovi odejde e-mail s odkazem na opakování platby; nový odkaz můžete poslat i přes tlačítko Požádat o doplatek.",
           audience: "owner",
           urgent: true,
         })
-
-        if (wasSentToCustomer) {
-          await emailCustomerAboutFailure(container, request, status)
-        }
         continue
       }
 
@@ -276,6 +278,48 @@ export default async function reconcileBalancePayments(
       // One unreachable payment must not stop the rest being checked.
       logger.warn(
         `[balance] Stav doplatku ${request.id} se nepodařilo ověřit: ${
+          error instanceof Error ? error.message : "neznámá chyba"
+        }`
+      )
+    }
+  }
+
+  // „Neprošla" zákazníkovi — za doplatky, které skončily neúspěchem (tady výš,
+  // nebo hned po návratu z brány v `reconcileBalanceOnReturn`), s odstupem
+  // `failedPaymentEmailDue`. Nový pokus na stejnou částku žádost vrátí do
+  // „pending" (vypadne odsud); nový na jinou částku nebo zaplaceno = neposílat.
+  // Klíč `payfail:{žádost}` drží jeden e-mail na žádost.
+  const failed = requests.filter(
+    (request) =>
+      request.type === "balance" &&
+      request.status === "expired" &&
+      request.payment_session_id &&
+      FAILED_PROVIDER_STATUSES.includes(
+        String(request.provider_status ?? "").toUpperCase()
+      ) &&
+      failedPaymentEmailDue(request.updated_at, now)
+  )
+
+  for (const request of failed) {
+    const superseded = requests.some(
+      (other) =>
+        other.id !== request.id &&
+        other.type === "balance" &&
+        other.production_order_id === request.production_order_id &&
+        (other.status === "paid" || OPEN_STATUSES.includes(other.status))
+    )
+    if (superseded) {
+      continue
+    }
+    try {
+      await emailCustomerAboutFailure(
+        container,
+        request,
+        String(request.provider_status).toLowerCase()
+      )
+    } catch (error) {
+      logger.warn(
+        `[balance] E-mail o neúspěšném doplatku ${request.id} se nepodařilo zařadit: ${
           error instanceof Error ? error.message : "neznámá chyba"
         }`
       )

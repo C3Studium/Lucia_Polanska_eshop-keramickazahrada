@@ -23,6 +23,11 @@ interface PaymentFailedEmailProps {
   failureReason?: string;
   retryLink?: string;
   supportEmail?: string;
+  /**
+   * Platba z pokladny — objednávka ještě nevznikla (bez čísla), odkaz obnoví
+   * košík a vede na krok platby. Bez toho jde o objednávku nebo doplatek.
+   */
+  checkout?: boolean;
 }
 
 /**
@@ -36,18 +41,32 @@ function PaymentFailedEmailComponent({
   paymentAmount,
   failureReason,
   retryLink = "",
-  supportEmail = CONTACT_EMAIL
+  supportEmail = CONTACT_EMAIL,
+  checkout = false,
 }: PaymentFailedEmailProps) {
   return (
-    <EmailLayout preview={`Platba za objednávku ${orderNumber} bohužel neprošla.`}>
+    <EmailLayout
+      preview={
+        checkout
+          ? "Platba bohužel neprošla — košík vám zůstal uložený."
+          : `Platba za objednávku ${orderNumber} bohužel neprošla.`
+      }
+    >
       <Eyebrow>Platba</Eyebrow>
       <EmailH1 accent="neprošla.">Platba</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        platbu za vaši objednávku se nepodařilo dokončit. Nic není ztraceno —
-        objednávka na vás počká a platbu můžete v klidu zopakovat.
-      </P>
+      {checkout ? (
+        <P>
+          platbu se nepodařilo dokončit, a tak objednávka zatím nevznikla.
+          Košík vám zůstal uložený — stačí se vrátit a platbu zopakovat.
+        </P>
+      ) : (
+        <P>
+          platbu za vaši objednávku se nepodařilo dokončit. Nic není ztraceno —
+          objednávka na vás počká a platbu můžete v klidu zopakovat.
+        </P>
+      )}
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {failureReason ? <LedgerRow label="Důvod" value={failureReason} /> : null}
@@ -62,7 +81,9 @@ function PaymentFailedEmailComponent({
 
       {retryLink ? (
         <ButtonRow>
-          <EmailButton href={retryLink}>Zkusit platbu znovu</EmailButton>
+          <EmailButton href={retryLink}>
+            {checkout ? "Dokončit objednávku" : "Zkusit platbu znovu"}
+          </EmailButton>
         </ButtonRow>
       ) : null}
 
