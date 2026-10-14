@@ -1,6 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { CommissionConfirmedEmail } from "../emails/commission-confirmed"
 import { OrderProcessingEmail } from "../emails/order-processing"
+import { PaymentReceivedEmail } from "../emails/payment-received"
+import { InvoiceIssuedEmail } from "../emails/invoice-issued"
+
+const payments = {
+  deposit: "1 125 Kč",
+  depositInvoiceNumber: "20260036",
+  balance: "3 375 Kč",
+  surcharge: "400 Kč",
+  totalPaid: "4 900 Kč",
+}
 
 /**
  * E-maily zakázky po jednotlivých tlačítkách (14. 10. 2026): „Zadání je
@@ -39,6 +49,56 @@ describe("e-maily zakázky", () => {
     const out = text(renderToStaticMarkup(<CommissionConfirmedEmail orderNumber="#51" />))
     expect(out).toContain("Zakázka je zaplacená")
     expect(out).not.toContain("Doplatíte")
+  })
+
+  it("Doplatek přijat — záloha, doplatek, příplatek a celkem", () => {
+    const out = text(
+      renderToStaticMarkup(
+        <PaymentReceivedEmail
+          orderNumber="#50"
+          paymentAmount="3 775 Kč"
+          paymentMethod="Doplatek"
+          commissionPayments={payments}
+        />
+      )
+    )
+    expect(out).toContain("Záloha (faktura 20260036)")
+    expect(out).toContain("1 125 Kč")
+    expect(out).toContain("Doplatek 3 375 Kč")
+    expect(out).toContain("Příplatek")
+    expect(out).toContain("400 Kč")
+    expect(out).toContain("Celkem zaplaceno")
+    expect(out).toContain("4 900 Kč")
+    expect(out).not.toContain("Částka")
+  })
+
+  it("Faktura k doplatku — platby zakázky, mezisoučet a celkem s příplatkem", () => {
+    const out = text(
+      renderToStaticMarkup(
+        <InvoiceIssuedEmail
+          orderNumber="#50"
+          invoiceNumber="20260037"
+          totalAmount="3 775 Kč"
+          invoiceKind="balance"
+          commissionPayments={payments}
+          order={
+            {
+              currency_code: "czk",
+              total: 4500,
+              items: [
+                { id: "z", product_title: "Pán lesa Dub", quantity: 1, total: 4300, variant_id: "v", product_id: "p" },
+              ],
+              shipping_methods: [{ id: "s", name: "Česká Pošta - Křehké", total: 150 }],
+            } as any
+          }
+        />
+      )
+    )
+    expect(out).toContain("Platby zakázky")
+    expect(out).toContain("Záloha (faktura 20260036)")
+    expect(out).toMatch(/Mezisoučet\s+4\s300/)
+    expect(out).toContain("Příplatek")
+    expect(out).toMatch(/Celkem\s+4 900 Kč/)
   })
 
   it("Výroba začíná — s termínem dokončení", () => {

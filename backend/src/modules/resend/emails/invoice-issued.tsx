@@ -18,6 +18,7 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import type { CommissionPaymentsText } from "../../../lib/commission-breakdown"
 
 /** Kterou platbu faktura kryje — běžná objednávka celá, u zakázky jen záloha
  *  nebo doplatek. Rozhoduje o textu a o tom, jestli se připomíná doplatek. */
@@ -41,6 +42,11 @@ interface InvoiceIssuedEmailProps {
   invoiceKind?: InvoiceKind;
   /** U zálohové faktury: kolik ještě zbývá doplatit (naformátované). */
   balanceRemaining?: string;
+  /**
+   * U doplatkové (vyúčtovací) faktury zakázky: záloha · doplatek · příplatek
+   * · celkem zaplaceno (lib/commission-breakdown).
+   */
+  commissionPayments?: CommissionPaymentsText | null;
 }
 
 const amountLabel: Record<InvoiceKind, string> = {
@@ -67,6 +73,7 @@ function InvoiceIssuedEmailComponent({
   order,
   invoiceKind = "full",
   balanceRemaining,
+  commissionPayments,
 }: InvoiceIssuedEmailProps) {
   const greeting = customerName ? `Dobrý den, ${customerName},` : "Dobrý den,"
 
@@ -84,11 +91,20 @@ function InvoiceIssuedEmailComponent({
     return price?.toString() || ""
   }
 
+  /* „Mezisoučet" bral `order.item_total`, který načtení pro fakturu nemá →
+     prázdný řádek. Bez něj se sečtou položky. */
+  const itemsSubtotal =
+    order?.item_total ??
+    ((order?.items ?? []) as any[]).reduce(
+      (sum, item) => sum + (Number(item?.total?.value ?? item?.total) || 0),
+      0
+    )
+
   const lead =
     invoiceKind === "deposit"
       ? "posíláme fakturu za zálohu k vaší objednávce na míru."
       : invoiceKind === "balance"
-        ? "posíláme fakturu za doplatek k vaší objednávce na míru."
+        ? "posíláme vyúčtovací fakturu k vaší zakázce — je na ní celá zakázka, odečtená záloha a doplatek, který jste právě zaplatili."
         : invoicePdfUrl
           ? "posíláme fakturu k vaší objednávce. Nic dalšího od vás nepotřebujeme — doklad si jen uložte pro případ, že ho budete někdy potřebovat."
           : "k vaší objednávce jsme vystavili fakturu. Kdybyste doklad potřebovali v PDF, stačí odpovědět na tento e-mail a pošleme vám ho."
@@ -124,6 +140,36 @@ function InvoiceIssuedEmailComponent({
         ) : null}
         <LedgerEnd />
       </Section>
+
+      {/* Platby zakázky — u vyúčtování: co a kdy se zaplatilo. */}
+      {invoiceKind === "balance" && commissionPayments ? (
+        <Section style={{ margin: "32px 0 0" }}>
+          <Eyebrow>Platby zakázky</Eyebrow>
+          {commissionPayments.deposit ? (
+            <LedgerRow
+              label={
+                commissionPayments.depositInvoiceNumber
+                  ? `Záloha (faktura ${commissionPayments.depositInvoiceNumber})`
+                  : "Záloha"
+              }
+              value={commissionPayments.deposit}
+            />
+          ) : null}
+          {commissionPayments.balance ? (
+            <LedgerRow label="Doplatek" value={commissionPayments.balance} />
+          ) : null}
+          {commissionPayments.surcharge ? (
+            <LedgerRow label="Příplatek" value={commissionPayments.surcharge} />
+          ) : null}
+          <LedgerRow
+            label="Celkem zaplaceno"
+            value={commissionPayments.totalPaid}
+            strong
+            tone="olive"
+          />
+          <LedgerEnd />
+        </Section>
+      ) : null}
 
       {/* Objekty — celý obsah objednávky, stejně jako v potvrzení objednávky. */}
       {order?.items?.length ? (
@@ -260,7 +306,7 @@ function InvoiceIssuedEmailComponent({
       {order?.items?.length ? (
         <Section style={{ margin: "32px 0 0" }}>
           <Eyebrow>Souhrn</Eyebrow>
-          <LedgerRow label="Mezisoučet" value={formatPrice(order.item_total)} />
+          <LedgerRow label="Mezisoučet" value={formatPrice(itemsSubtotal)} />
           {order.shipping_methods?.map((method) => (
             <LedgerRow
               key={method.id}
@@ -268,7 +314,20 @@ function InvoiceIssuedEmailComponent({
               value={formatPrice(method.total)}
             />
           ))}
-          <LedgerRow label="Celkem" value={formatPrice(order.total)} strong />
+          {/* Příplatek zakázky není v ceně objednávky (žije v modulu výroby) —
+              bez něj by „Celkem" nesedělo s tím, co zákazník zaplatil. */}
+          {invoiceKind === "balance" && commissionPayments?.surcharge ? (
+            <LedgerRow label="Příplatek" value={commissionPayments.surcharge} />
+          ) : null}
+          <LedgerRow
+            label="Celkem"
+            value={
+              invoiceKind === "balance" && commissionPayments
+                ? commissionPayments.totalPaid
+                : formatPrice(order.total)
+            }
+            strong
+          />
           <LedgerEnd />
         </Section>
       ) : null}

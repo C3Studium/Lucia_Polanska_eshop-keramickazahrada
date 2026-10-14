@@ -454,6 +454,55 @@ export const buildInvoiceItems = (
   return lines
 }
 
+/**
+ * Doplatková faktura zakázky jako VYÚČTOVÁNÍ (14. 10. 2026, přání majitelky
+ * „ať je to ta stejná faktura, jen teď úplná"): všechny položky objednávky
+ * (výrobek, balné, poštovné) + příplatek − odečet zaplacené zálohy (s číslem
+ * zálohové faktury). K úhradě vyjde přesně zaplacený doplatek; drobný rozdíl
+ * (zaokrouhlení, ruční zápis jiné částky) srovná řádek „Vyrovnání".
+ *
+ * Neplátce DPH → záporný řádek je obyčejná položka, žádný daňový doklad
+ * k záloze se neřeší.
+ */
+export const buildCommissionSettlementItems = (
+  order: InvoiceOrderInput,
+  input: {
+    /** Popisek zakázky do řádku příplatku („zakázka č. 50"). */
+    label: string
+    surcharge: number
+    depositPaid: number
+    depositInvoiceNumber?: string | null
+    /** Kolik zákazník právě doplatil — tolik musí faktura dělat. */
+    balancePaid: number
+  },
+  vatPayer: boolean
+): IdokladInvoiceItemPayload[] => {
+  const lines = buildInvoiceItems(order, vatPayer)
+  const surcharge = round2(Math.max(0, input.surcharge))
+  if (surcharge > 0.005) {
+    lines.push(invoiceLine(`Příplatek — ${input.label}`, 1, surcharge, vatPayer))
+  }
+  const deposit = round2(Math.max(0, input.depositPaid))
+  if (deposit > 0.005) {
+    lines.push(
+      invoiceLine(
+        input.depositInvoiceNumber
+          ? `Odečet zálohy — faktura č. ${input.depositInvoiceNumber}`
+          : "Odečet zaplacené zálohy",
+        1,
+        -deposit,
+        vatPayer
+      )
+    )
+  }
+  const sum = round2(lines.reduce((total, line) => total + line.UnitPrice * line.Amount, 0))
+  const drift = round2(round2(input.balancePaid) - sum)
+  if (Math.abs(drift) >= 0.01) {
+    lines.push(invoiceLine("Vyrovnání", 1, drift, vatPayer))
+  }
+  return lines
+}
+
 type InvoicePayloadInput = {
   order: InvoiceOrderInput
   defaults: IdokladInvoiceDefault

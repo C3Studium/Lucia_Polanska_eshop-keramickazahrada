@@ -15,6 +15,10 @@ import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
 import { ensureMadeToOrderInvoices } from "../lib/idoklad-invoice"
+import {
+  commissionPaymentsText,
+  splitCommissionPayments,
+} from "../lib/commission-breakdown"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
@@ -290,6 +294,30 @@ const onBalancePaid = async ({
     return
   }
 
+  // Rozpis záloha · doplatek · příplatek · celkem (14. 10. 2026) — samotné
+  // „Částka 3 775 Kč" neříkalo, že v ní je příplatek a že záloha už je
+  // zaplacená. Fail-soft: bez rozpisu odejde e-mail s částkou jako dřív.
+  let commissionPayments: ReturnType<typeof commissionPaymentsText> | null = null
+  try {
+    const madeToOrder = container.resolve<MadeToOrderModuleService>(MADE_TO_ORDER_MODULE)
+    const [production] = (await madeToOrder.listProductionOrders({
+      order_id: order.id,
+    } as never)) as any[]
+    if (production) {
+      const requests = (await madeToOrder.listProductionPaymentRequests({
+        production_order_id: production.id,
+      } as never)) as any[]
+      const meta = (order.metadata ?? {}) as Record<string, unknown>
+      commissionPayments = commissionPaymentsText(
+        splitCommissionPayments({ requests, surcharge: production.surcharge }),
+        (amount) => formatMoney(amount, order.currency_code),
+        typeof meta.idoklad_invoice_number === "string" ? meta.idoklad_invoice_number : null
+      )
+    }
+  } catch {
+    commissionPayments = null
+  }
+
   await sendCustomerEmail(container, {
     template: "payment-received",
     to: order.email,
@@ -299,6 +327,7 @@ const onBalancePaid = async ({
       ...common(order),
       paymentAmount: formatMoney(data.amount, data.currency_code),
       paymentMethod: "Doplatek",
+      commissionPayments,
     },
   })
 

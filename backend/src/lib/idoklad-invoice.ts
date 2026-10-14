@@ -9,6 +9,7 @@ import {
   type IdokladInvoiceState,
 } from "../modules/idoklad/types"
 import {
+  buildCommissionSettlementItems,
   buildContactPayload,
   buildInvoicePayload,
   pickPaymentOptionId,
@@ -16,6 +17,12 @@ import {
   singleInvoiceLine,
   vatRateTypeFor,
 } from "../modules/idoklad/utils"
+import type { IdokladInvoiceItemPayload } from "../modules/idoklad/types"
+import {
+  commissionPaymentsText,
+  splitCommissionPayments,
+  type CommissionPaymentsText,
+} from "./commission-breakdown"
 import {
   buildCreditNoteItems,
   type CreditNoteStrategy,
@@ -557,7 +564,16 @@ export const ensureMadeToOrderInvoices = async (
       kind: "deposit" | "balance",
       balanceRemaining?: number,
       /** Příplatek, který je součástí TÉTO částky — na faktuře vlastní řádek. */
-      surcharge?: number
+      surcharge?: number,
+      /**
+       * Doplatek: vyúčtovací položky (celá zakázka − záloha) a rozpis plateb
+       * do e-mailu. Když iDoklad vyúčtování odmítne (4xx), vystaví se
+       * jednoduchá doplatková faktura, ať doplatek nezůstane bez dokladu.
+       */
+      settlement?: {
+        items: IdokladInvoiceItemPayload[]
+        commissionPayments: CommissionPaymentsText
+      }
     ): Promise<boolean> => {
       const already = Number(
         (order.metadata as Record<string, unknown> | undefined)?.[keys.invoiceId]
@@ -587,7 +603,7 @@ export const ensureMadeToOrderInvoices = async (
 
       try {
         await prepareBits()
-        const invoice = await idoklad.createInvoice(
+        const payloadWith = (lines: IdokladInvoiceItemPayload[], description: string) =>
           buildInvoicePayload({
             order,
             defaults,
@@ -596,10 +612,34 @@ export const ensureMadeToOrderInvoices = async (
             paymentOptionId,
             numericSequenceId: idoklad.numericSequenceId,
             currencyId,
-            items,
-            description: `${label} — obj. #${order.display_id ?? order.id}`,
+            items: lines,
+            description,
           })
-        )
+        const simpleDescription = `${label} — obj. #${order.display_id ?? order.id}`
+        let invoice
+        if (settlement) {
+          try {
+            invoice = await idoklad.createInvoice(
+              payloadWith(
+                settlement.items,
+                `Vyúčtování zakázky č. ${order.display_id ?? order.id} — obj. #${order.display_id ?? order.id}`
+              )
+            )
+          } catch (error) {
+            // Jen odmítnutí dokladem (4xx). Výpadek/timeout ne — faktura mohla
+            // vzniknout a druhý pokus by ji zdvojil.
+            const status = (error as any)?.httpStatus
+            if (!(typeof status === "number" && status >= 400 && status < 500)) {
+              throw error
+            }
+            logger.warn(
+              `[idoklad] Vyúčtovací faktura k zakázce #${order.display_id} neprošla (${describeError(
+                error
+              )}) — vystavuji jednoduchou doplatkovou.`
+            )
+          }
+        }
+        invoice = invoice ?? (await idoklad.createInvoice(payloadWith(items, simpleDescription)))
         const issuedAt = new Date().toISOString()
         const stamp: Record<string, unknown> = {
           [keys.invoiceId]: invoice.Id,
@@ -664,6 +704,7 @@ export const ensureMadeToOrderInvoices = async (
               balanceRemaining > 0
                 ? formatMoney(balanceRemaining, order.currency_code)
                 : undefined,
+            commissionPayments: settlement?.commissionPayments ?? null,
           },
         }).catch((error) =>
           logger.warn(
@@ -700,6 +741,28 @@ export const ensureMadeToOrderInvoices = async (
       // Příplatek je celý v doplatku (záloha se počítá z původní ceny) → na
       // faktuře doplatku ho vyčleníme jako vlastní řádek.
       const surcharge = round2(toAmount(productionOrder.surcharge))
+      // Vyúčtování: celá zakázka + příplatek − záloha (14. 10. 2026). Záloha
+      // a její číslo faktury z metadat zálohové faktury.
+      const payments = splitCommissionPayments({
+        requests,
+        surcharge: productionOrder.surcharge,
+      })
+      const meta = (order.metadata ?? {}) as Record<string, unknown>
+      const depositInvoiceNumber =
+        typeof meta[IDOKLAD_METADATA_KEYS.invoiceNumber] === "string"
+          ? (meta[IDOKLAD_METADATA_KEYS.invoiceNumber] as string) || null
+          : null
+      const settlementItems = buildCommissionSettlementItems(
+        order as any,
+        {
+          label: `zakázka č. ${order.display_id ?? order.id}`,
+          surcharge,
+          depositPaid: payments.deposit,
+          depositInvoiceNumber,
+          balancePaid: toAmount(paidBalance.amount),
+        },
+        idoklad.vatPayer
+      )
       created =
         (await issuePhase(
           IDOKLAD_BALANCE_METADATA_KEYS,
@@ -707,7 +770,15 @@ export const ensureMadeToOrderInvoices = async (
           `Doplatek zakázky č. ${order.display_id ?? order.id}`,
           "balance",
           undefined,
-          surcharge
+          surcharge,
+          {
+            items: settlementItems,
+            commissionPayments: commissionPaymentsText(
+              payments,
+              (amount) => formatMoney(amount, order.currency_code),
+              depositInvoiceNumber
+            ),
+          }
         )) || created
     }
     return { status: created ? "created" : "exists" }

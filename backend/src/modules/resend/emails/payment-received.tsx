@@ -11,6 +11,7 @@ import {
   Signature,
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
+import type { CommissionPaymentsText } from "../../../lib/commission-breakdown"
 
 interface PaymentReceivedEmailProps {
   customerName?: string;
@@ -18,6 +19,11 @@ interface PaymentReceivedEmailProps {
   paymentAmount?: string;
   paymentMethod?: string;
   orderLink?: string;
+  /**
+   * Doplatek zakázky: rozpis záloha · doplatek · příplatek · celkem zaplaceno
+   * (lib/commission-breakdown). Bez něj e-mail ukáže jen částku platby.
+   */
+  commissionPayments?: CommissionPaymentsText | null;
 }
 
 /**
@@ -29,7 +35,8 @@ function PaymentReceivedEmailComponent({
   orderNumber = "",
   paymentAmount,
   paymentMethod,
-  orderLink = ""
+  orderLink = "",
+  commissionPayments,
 }: PaymentReceivedEmailProps) {
   const orderUrl = orderLink || storeLink()
 
@@ -39,17 +46,50 @@ function PaymentReceivedEmailComponent({
       <EmailH1 accent="přijata.">Platba</EmailH1>
 
       <Greeting name={customerName} />
-      <P>
-        platbu za vaši objednávku jsme v pořádku přijali. Objekty teď
-        připravíme na cestu — jakmile zásilku předáme dopravci, pošleme
-        další zprávu.
-      </P>
+      {commissionPayments ? (
+        <P>
+          doplatek za vaši zakázku jsme v pořádku přijali — zakázka je teď
+          zaplacená celá. Připravíme ji na cestu a jakmile zásilku předáme
+          dopravci, pošleme další zprávu.
+        </P>
+      ) : (
+        <P>
+          platbu za vaši objednávku jsme v pořádku přijali. Objekty teď
+          připravíme na cestu — jakmile zásilku předáme dopravci, pošleme
+          další zprávu.
+        </P>
+      )}
 
       {orderNumber ? <LedgerRow label="Objednávka" value={orderNumber} /> : null}
       {paymentMethod ? (
         <LedgerRow label="Způsob platby" value={paymentMethod} />
       ) : null}
-      {paymentAmount ? (
+      {commissionPayments ? (
+        <>
+          {commissionPayments.deposit ? (
+            <LedgerRow
+              label={
+                commissionPayments.depositInvoiceNumber
+                  ? `Záloha (faktura ${commissionPayments.depositInvoiceNumber})`
+                  : "Záloha"
+              }
+              value={commissionPayments.deposit}
+            />
+          ) : null}
+          {commissionPayments.balance ? (
+            <LedgerRow label="Doplatek" value={commissionPayments.balance} />
+          ) : null}
+          {commissionPayments.surcharge ? (
+            <LedgerRow label="Příplatek" value={commissionPayments.surcharge} />
+          ) : null}
+          <LedgerRow
+            label="Celkem zaplaceno"
+            value={commissionPayments.totalPaid}
+            strong
+            tone="olive"
+          />
+        </>
+      ) : paymentAmount ? (
         <LedgerRow label="Částka" value={paymentAmount} strong tone="olive" />
       ) : null}
       <LedgerEnd />

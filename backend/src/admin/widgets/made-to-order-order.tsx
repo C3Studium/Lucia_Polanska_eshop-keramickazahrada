@@ -190,6 +190,9 @@ const MadeToOrderOrderWidgetInner = ({
   // zbývá doplatit a zakázka ještě běží. Když už výzva běží (pending/sent),
   // nabídne se připomínka + odkaz, který zákazník dostal.
   const outstanding = toNum(productionOrder.outstanding_amount);
+  const settled =
+    outstanding <= 0.005 &&
+    ["ready_to_ship", "completed", "cancelled"].includes(productionOrder.stage);
   const openBalance = payments.find(
     (payment) =>
       payment.type === "balance" &&
@@ -229,7 +232,9 @@ const MadeToOrderOrderWidgetInner = ({
         {/* Příplatek (vpravo nahoře) + další krok. Příplatek je vlastní částka
             navíc nad cenu — navýší doplatek, cenu samotnou nemění. */}
         <div className="flex flex-col items-start gap-2 sm:items-end">
-          {editingSurcharge ? (
+          {/* Zaplacená a hotová zakázka — příplatek je zaplacený, není co
+              upravovat ani potvrzovat (14. 10. 2026). */}
+          {settled ? null : editingSurcharge ? (
             <div className="flex items-center gap-2">
               <Input
                 type="number"
