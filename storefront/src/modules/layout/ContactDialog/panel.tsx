@@ -23,6 +23,7 @@ import {
   statusVariants,
   visualPanelVariants,
 } from "./motion"
+import MapEmbed from "./map-embed"
 import styles from "./style.module.scss"
 
 export const inquiryOptions = [
@@ -607,20 +608,12 @@ export default function ContactDialogPanel({
             animate="visible"
             exit="exit"
           >
-            {/* Google's classic key-less embed over the atelier address — the
-                interactive widget SDKs all want an API key and a billing
-                account for what is, here, one pin on one map. */}
-            <div className={styles.mapFrame}>
-              <iframe
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                  merchant.address
-                )}&z=14&hl=cs&output=embed`}
-                title="Mapa — ateliér Lucie Polanské, Putim"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
-            </div>
+            {/* Mapa Google až po kliknutí, nebo rovnou s marketingovým
+                souhlasem — viz `./map-embed.tsx`. */}
+            <MapEmbed
+              address={merchant.address}
+              title="Mapa — ateliér Lucie Polanské, Putim"
+            />
 
             <motion.div
               className={styles.details}

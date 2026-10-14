@@ -1,9 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
   ACCEPT_ALL,
   DENY_ALL,
@@ -21,21 +21,28 @@ const FOCUSABLE =
 
 type PreferencesDialogProps = {
   initial: ConsentChoice
+  /** Odkaz na stránku Cookies s kódem země (viz `useCookiesPageHref`). */
+  cookiesHref: string
   onSave: (choice: ConsentChoice) => void
   onClose: () => void
 }
 
 /**
- * „Upravit" — the per-category switches.
+ * „Nastavení" — přepínače po kategoriích.
  *
- * The switches edit a draft, not the stored decision. Nothing is written until „Uložit nastavení";
- * Escape, the backdrop, „Zrušit" and the close button all discard the draft and leave whatever was
- * stored before exactly as it was — including "nothing", in which case the banner is still waiting
- * underneath. A dialog that saved as you toggled would mean a visitor who opened it to look, and
- * closed it again, had consented by browsing.
+ * The switches edit a draft, not the stored decision. Nothing is written until one of the three
+ * decisions at the bottom; Escape, the backdrop and the close button all discard the draft and
+ * leave whatever was stored before exactly as it was — including "nothing", in which case the
+ * banner is still waiting underneath. A dialog that saved as you toggled would mean a visitor who
+ * opened it to look, and closed it again, had consented by browsing.
+ *
+ * Dole tři rovnocenná rozhodnutí: „Odmítnout vše", „Uložit výběr", „Přijmout vše". Odvolat
+ * souhlas z patičky tak jde dvěma kliky (Nastavení cookies → Odmítnout vše) — stejně snadno,
+ * jako se dal udělit. Nic není předem zapnuté: bez uloženého rozhodnutí je návrh `DENY_ALL`.
  */
 export default function PreferencesDialog({
   initial,
+  cookiesHref,
   onSave,
   onClose,
 }: PreferencesDialogProps) {
@@ -45,6 +52,7 @@ export default function PreferencesDialog({
   const reduceMotion = useSiteReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
+  const rowId = useId()
 
   // Escape closes; Tab cycles inside the dialog rather than escaping to the page behind it.
   useEffect(() => {
@@ -101,6 +109,8 @@ export default function PreferencesDialog({
   return (
     <motion.div
       className={styles.backdrop}
+      /* Seznam kategorií se posouvá sám; Lenis mu kolečko nesmí brát. */
+      data-lenis-prevent
       variants={dialogBackdropVariants}
       initial={reduceMotion ? "visible" : "hidden"}
       animate="visible"
@@ -129,7 +139,7 @@ export default function PreferencesDialog({
           <div>
             <p className={styles.eyebrow}>Cookies</p>
             <h2 id={titleId} className={styles.title}>
-              Nastavení soukromí
+              Nastavení cookies
             </h2>
           </div>
           <button
@@ -144,17 +154,20 @@ export default function PreferencesDialog({
         </header>
 
         <p id={descriptionId} className={styles.lede}>
-          Vyberte, co smíme ukládat. Nastavení můžete kdykoli změnit odkazem
-          „Nastavení cookies“ v patičce.{" "}
-          <LocalizedClientLink href="/cookies" className={styles.link}>
-            Více o cookies
-          </LocalizedClientLink>
+          Vyberte, co smíme ukládat. Bez vašeho souhlasu běží jen nezbytné
+          cookies. Rozhodnutí můžete kdykoli změnit odkazem „Nastavení cookies“
+          v patičce.{" "}
+          <Link href={cookiesHref} className={styles.link}>
+            Seznam všech cookies
+          </Link>
         </p>
 
         <ul className={styles.categories}>
-          {consentCategories.map((category) => {
+          {consentCategories.map((category, index) => {
             const key = category.key
             const checked = key === null ? true : draft[key]
+            const labelId = `${rowId}-${index}-title`
+            const textId = `${rowId}-${index}-text`
 
             return (
               <li key={category.title} className={styles.category}>
@@ -164,6 +177,8 @@ export default function PreferencesDialog({
                     className={styles.checkbox}
                     checked={checked}
                     disabled={key === null}
+                    aria-labelledby={labelId}
+                    aria-describedby={textId}
                     onChange={() => key && toggle(key)}
                   />
                   <span className={styles.switch} aria-hidden="true">
@@ -171,12 +186,12 @@ export default function PreferencesDialog({
                   </span>
                   <span className={styles.categoryText}>
                     <span className={styles.categoryTitle}>
-                      {category.title}
+                      <span id={labelId}>{category.title}</span>
                       {key === null && (
                         <span className={styles.badge}>Vždy aktivní</span>
                       )}
                     </span>
-                    <span className={styles.categoryDescription}>
+                    <span id={textId} className={styles.categoryDescription}>
                       {category.description}
                     </span>
                   </span>
@@ -186,39 +201,30 @@ export default function PreferencesDialog({
           })}
         </ul>
 
+        {/* Tři rovnocenná rozhodnutí — stejná velikost i vzhled. Pořadí v DOM odpovídá
+            pořadí na obrazovce i Tabu. */}
         <div className={styles.footer}>
-          <div className={styles.quickActions}>
-            <button
-              type="button"
-              className={styles.quickAction}
-              onClick={() => setDraft(DENY_ALL)}
-            >
-              Odznačit vše
-            </button>
-            <button
-              type="button"
-              className={styles.quickAction}
-              onClick={() => setDraft(ACCEPT_ALL)}
-            >
-              Označit vše
-            </button>
-          </div>
-          <div className={styles.decisions}>
-            <button
-              type="button"
-              className={styles.buttonSecondary}
-              onClick={onClose}
-            >
-              Zrušit
-            </button>
-            <button
-              type="button"
-              className={styles.buttonPrimary}
-              onClick={() => onSave(draft)}
-            >
-              Uložit nastavení
-            </button>
-          </div>
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() => onSave(DENY_ALL)}
+          >
+            Odmítnout vše
+          </button>
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() => onSave(draft)}
+          >
+            Uložit výběr
+          </button>
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() => onSave(ACCEPT_ALL)}
+          >
+            Přijmout vše
+          </button>
         </div>
       </motion.div>
     </motion.div>

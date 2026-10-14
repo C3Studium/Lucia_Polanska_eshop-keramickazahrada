@@ -7,7 +7,7 @@
  * The card is a fixed overlay, so it costs a share of the screen rather than a fixed number of
  * pixels, and every section on this site puts its supporting copy in the bottom-left — exactly
  * where the card lands. It used to be one sentence and one button, tuned to ~74px by widening it;
- * a consent gate cannot be that small, and four actions plus the sentence that makes them
+ * a consent gate cannot be that small, and three actions plus the sentence that makes them
  * meaningful come to ~154px. The width is pushed to 55rem so the copy still sets in two lines at
  * desktop sizes, and every rule below is about giving that height back on smaller screens.
  *
@@ -83,7 +83,7 @@
 }
 
 /*
- * Four answers, one row. They wrap rather than shrink: a reject squeezed narrower than the accept
+ * Three answers, one row. They wrap rather than shrink: a reject squeezed narrower than the accept
  * beside it is the nudge the whole banner exists to avoid, so the row breaks before the buttons do.
  */
 .actions {
@@ -117,59 +117,26 @@
   }
 }
 
-.buttonPrimary {
+/*
+ * Jedna třída pro všechny tři odpovědi (14. 10. 2026). „Odmítnout vše", „Nastavení" a „Přijmout
+ * vše" mají stejný rámeček, stejnou výplň, stejné písmo i velikost — žádná není plná a žádná
+ * „jen odkaz". Dřív byl souhlas plný a odmítnutí obrysové; i to je rozdíl ve viditelnosti, který
+ * pokyny EDPB k lištám vytýkají. Plný rámeček barvou textu (14.8:1), ne poloprůhledný, aby
+ * odmítnutí nevypadalo zašedle.
+ */
+.button {
   @include action;
 
   border: 1px solid var(--ink-05);
-  background: var(--ink-05);
-  color: var(--cream-06);
-
-  &:hover {
-    background: transparent;
-    color: var(--ink-05);
-  }
-}
-
-/* The two refusals. Same height, same type, same padding as the accept — only the fill differs. */
-.buttonSecondary {
-  @include action;
-
-  border: 1px solid rgb(var(--ink-05-rgb) / .45);
   background: transparent;
   color: var(--ink-05);
 
   &:hover {
-    border-color: var(--ink-05);
-    background: rgb(var(--ink-05-rgb) / .08);
+    background: var(--ink-05);
+    color: var(--cream-06);
   }
 }
 
-/* „Upravit" opens the switches; it is a door, not an answer, so it reads as a link that happens to
-   carry a 48px target. */
-.buttonGhost {
-  @include action;
-
-  padding: 0 .25rem;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--ink-05);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-
-  &:hover {
-    opacity: 0.68;
-  }
-}
-
-/*
- * The four buttons measure ~523px together, so the single row survives down to a ~590px viewport.
- * Below that they stack, full width, in DOM order — not column-reverse: reversing would put
- * „Přijmout vše" at the top of the stack while Tab still reached „Upravit" first, and a focus order
- * that disagrees with the visual order is what WCAG 2.4.3 is about. Reading order stays
- * Upravit → Zamítnout → Přijmout jen důležité → Přijmout vše, which leaves the accept nearest the
- * thumb without putting either refusal further away than it was.
- */
 /*
  * Na telefonu lišta zakrývala hlavní nákupní tlačítko.
  *
@@ -177,13 +144,14 @@
  * 175px z 320, tedy 55 %. `elementFromPoint` uprostřed „Přidat do košíku" vracel text
  * lišty, ne tlačítko — nový návštěvník se k nákupu nedostal, dokud lištu neodklepl.
  *
- * Čtyři tlačítka pod sebou stála 4×44 + 3 mezery = 209px. Mřížka 2×2 z toho udělá
- * 99px a **nesahá na velikost cíle** — 44px podlaha z globals.scss zůstává. Zmenšit
- * samotná tlačítka by ušetřilo stejně, ale zaplatilo by se to trefováním na dotyku.
+ * Tři tlačítka pod sebou by stála 3×44 + 2 mezery = 148px. Mřížka o dvou sloupcích:
+ * „Nastavení" přes celou šířku nahoře, pod ním „Odmítnout vše" a „Přijmout vše" vedle sebe,
+ * stejně široké — 2×44 + mezera ≈ 98px, a **nesahá na velikost cíle** (44px podlaha
+ * z globals.scss zůstává).
  *
- * Pořadí v DOMu zůstává Upravit → Zamítnout → Přijmout jen důležité → Přijmout vše,
- * takže mřížka čte zleva doprava, shora dolů a pořadí Tabu odpovídá vizuálnímu
- * (WCAG 2.4.3). Přijmout vše je pořád nejblíž palci, vpravo dole.
+ * Pořadí v DOMu je Nastavení → Odmítnout vše → Přijmout vše, takže mřížka čte zleva
+ * doprava, shora dolů a pořadí Tabu odpovídá vizuálnímu (WCAG 2.4.3). Odmítnutí
+ * i souhlas jsou stejně blízko palci.
  */
 @include below-px(620px) {
   .root {
@@ -201,9 +169,11 @@
     gap: clamp(.5rem, 1.6vw, .625rem);
   }
 
-  .buttonPrimary,
-  .buttonSecondary,
-  .buttonGhost {
+  .settings {
+    grid-column: 1 / -1;
+  }
+
+  .button {
     width: 100%;
     /* Text tlačítek je v mřížce užší, takže vodorovný padding může být menší. */
     padding: 0 clamp(.5rem, 2vw, 1rem);
@@ -211,10 +181,9 @@
 }
 
 /*
- * A phone in landscape is the one case where the stack does not fit: 320px of viewport against
- * four 48px buttons, the copy and the padding — ~372px, more than the screen. This comes after the
- * stack rule and undoes it; two buttons per row inside the same 536px is ~190px. The parenthetical
- * goes with it, as it does on narrow portrait phones.
+ * A phone in landscape is the one case where the grid does not pay: 320px of viewport, and the
+ * three buttons fit side by side in one row anyway. This comes after the grid rule and undoes it.
+ * The parenthetical goes with it, as it does on narrow portrait phones.
  *
  * phs alone: it spans the whole landscape-phone range (480–1199px wide, 520px or shorter), so phl
  * — the same query from 800px up — would only repeat these declarations. A second stop earns its
@@ -250,9 +219,7 @@
     gap: 8px;
   }
 
-  .buttonPrimary,
-  .buttonSecondary,
-  .buttonGhost {
+  .button {
     width: auto;
   }
 
@@ -269,5 +236,14 @@
 @include below-px(420px) {
   .detail {
     display: none;
+  }
+}
+
+/* Tisk a PDF (tiskové verze právních dokumentů, `pnpm legal:build`): lišta do dokumentu nepatří.
+   Playwright při `page.pdf()` vykresluje pro tisk, takže ji tohle schová i v čistém prohlížeči
+   bez uloženého souhlasu. */
+@media print {
+  .root {
+    display: none !important;
   }
 }

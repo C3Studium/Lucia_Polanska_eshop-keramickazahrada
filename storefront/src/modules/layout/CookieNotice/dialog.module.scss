@@ -1,6 +1,6 @@
 @use "../../../styles/system/_shortcuts.scss" as *;
 /*
- * „Upravit" — the per-category switches, in the same cream card as the banner.
+ * „Nastavení" — the per-category switches, in the same cream card as the banner.
  * Ink #20211c on #f6f1e6 measures 14.8:1; the muted description is #4a4b42 at 8.1:1.
  * Nothing below 14px; every action is 48px and every switch has a 48px row to be hit in.
  *
@@ -278,48 +278,15 @@
   font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1.55 "Sansation-Regular", sans-serif;
 }
 
+/*
+ * Tři rovnocenná rozhodnutí v jedné řadě: Odmítnout vše · Uložit výběr · Přijmout vše.
+ * Stejně široká (`flex: 1 1 0`), aby žádné nevypadalo důležitěji než ostatní.
+ */
 .footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: .25rem;
+  align-items: stretch;
+  padding-top: clamp(.5rem, 1vh, .75rem);
   border-top: 1px solid rgb(var(--ink-05-rgb) / .14);
-  gap: clamp(.75rem, .9vw, 1rem);
-}
-
-/* Draft helpers, not decisions: they move the switches, and „Uložit nastavení" still has to be
-   pressed. Hence the quiet treatment — they must not read as the accept. */
-.quickActions {
-  display: flex;
-  align-items: center;
-  gap: .25rem;
-}
-
-.quickAction {
-  min-height: clamp(3rem, 5vh, 3.5rem);
-  padding: 0 clamp(.375rem, .5vw, .5rem);
-  border: 0;
-  background: transparent;
-  color: var(--olive-04);
-  cursor: pointer;
-  font: 400 clamp(.875rem, 1.1vw, 1.0625rem)/1 "Sansation-Regular", sans-serif;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-}
-
-.quickAction:hover {
-  color: var(--ink-05);
-}
-
-.quickAction:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.decisions {
-  display: flex;
-  align-items: center;
   gap: clamp(.625rem, .85vw, .875rem);
 }
 
@@ -343,55 +310,35 @@
   }
 }
 
-.buttonPrimary {
+/* Stejný vzhled jako tlačítka lišty: plný rámeček, bez výplně, výplň až pod myší. */
+.button {
   @include action;
 
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 clamp(.75rem, 1.1vw, 1.25rem);
   border: 1px solid var(--ink-05);
-  background: var(--ink-05);
-  color: var(--cream-06);
-
-  &:hover {
-    background: transparent;
-    color: var(--ink-05);
-  }
-}
-
-.buttonSecondary {
-  @include action;
-
-  border: 1px solid rgb(var(--ink-05-rgb) / .45);
   background: transparent;
   color: var(--ink-05);
 
   &:hover {
-    border-color: var(--ink-05);
-    background: rgb(var(--ink-05-rgb) / .08);
+    background: var(--ink-05);
+    color: var(--cream-06);
   }
 }
 
 /*
- * Below 560px the footer's two halves stop fitting side by side. They stack in DOM order rather
- * than reversed: Tab runs Odznačit → Označit → Zrušit → Uložit, and a visual order that disagrees
- * with the focus order is what WCAG 2.4.3 forbids. „Uložit nastavení" lands at the bottom of the
- * stack, nearest the thumb, which is where the deciding action wants to be anyway.
+ * Below 560px the three decisions stop fitting side by side. They stack in DOM order rather
+ * than reversed: Tab runs Odmítnout vše → Uložit výběr → Přijmout vše, and a visual order that
+ * disagrees with the focus order is what WCAG 2.4.3 forbids.
  */
 @include below-px(560px) {
   .footer {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  .quickActions {
-    justify-content: space-between;
-  }
-
-  .decisions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .buttonPrimary,
-  .buttonSecondary {
+  .button {
+    flex: 0 0 auto;
     width: 100%;
   }
 }
@@ -449,21 +396,13 @@
   }
 
   /* Undo the stacked footer from the 560px rule above: height is the scarce axis here, not width.
-     Side by side the footer is 48px instead of 154px, and it wraps to two rows on the narrowest
-     landscape phones rather than overflowing. */
+     Side by side the footer is 48px instead of ~160px. */
   .footer {
     flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
   }
 
-  .decisions {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .buttonPrimary,
-  .buttonSecondary {
+  .button {
+    flex: 1 1 0;
     width: auto;
   }
 }
@@ -473,8 +412,14 @@
   .switch,
   .switchKnob,
   .close,
-  .buttonPrimary,
-  .buttonSecondary {
+  .button {
     transition: none;
+  }
+}
+
+/* Dialog do tisku ani do PDF nepatří (viz lišta). */
+@media print {
+  .backdrop {
+    display: none !important;
   }
 }

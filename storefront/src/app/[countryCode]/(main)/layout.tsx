@@ -15,7 +15,6 @@ import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { getButtons, getPageCopy } from "@lib/data/site-copy"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
-import CookieNotice from "@modules/layout/CookieNotice"
 import AdminBar from "@modules/layout/AdminBar"
 
 export const metadata: Metadata = {
@@ -83,7 +82,8 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
       )}
       {props.children}
       <Footer merchant={merchant} copy={globalCopy} />
-      <CookieNotice />
+      {/* Lišta cookies je v kořenovém layoutu (app/layout.tsx), jednou pro
+          celý web — i pro pokladnu a rychlý nákup. */}
       {/* Renders nothing at all for a normal visitor — see the module. */}
       <AdminBar />
     </ContactDialogProvider>
