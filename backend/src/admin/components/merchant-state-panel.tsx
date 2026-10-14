@@ -1,12 +1,10 @@
 import type { AdminOrder } from "@medusajs/framework/types";
 import { Badge, Button, Container, Heading, Skeleton, Text, toast } from "@medusajs/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import {
   nextStage,
   nextStageLabel,
   stageMeta,
-  stageRoutes,
   type MerchantOrder,
   type MerchantOrderStage,
 } from "./merchant-order-queue";
@@ -16,9 +14,6 @@ import { ceskaChyba } from "../lib/ceska-chyba";
 type MerchantOrderDetailResponse = {
   merchant_order: MerchantOrder | null;
 };
-
-const slugForStage = (stage: MerchantOrderStage) =>
-  stageRoutes.find((entry) => entry.stage === stage)?.slug;
 
 /**
  * „Denní práce" na detailu objednávky — stav + jediná akce (stejná jako fronta).
@@ -69,7 +64,6 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
   }
 
   const target = nextStage[merchantOrder.stage];
-  const slug = slugForStage(merchantOrder.stage);
 
   return (
     <Container className="divide-y p-0">
@@ -101,14 +95,6 @@ export const MerchantStatePanel = ({ order }: { order: AdminOrder }) => {
             onClick={() => transition.mutate(target)}
           >
             {nextStageLabel[merchantOrder.stage]}
-          </Button>
-        )}
-
-        {slug && (
-          <Button variant="transparent" size="small" asChild>
-            <Link to={`/prehled/prace?krok=${slug}`}>
-              Zpět do fronty „{stageMeta[merchantOrder.stage].label}"
-            </Link>
           </Button>
         )}
       </div>

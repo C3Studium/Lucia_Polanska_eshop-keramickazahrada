@@ -7,12 +7,10 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import {
   nextStage,
   nextStageLabel,
   stageMeta,
-  stageRoutes,
   type MerchantOrder,
   type MerchantOrderStage,
 } from "../components/merchant-order-queue";
@@ -47,9 +45,6 @@ const stepSuccess: Record<ProductionStepAction, string> = {
   start_production: "Výroba začala",
   complete_production: "Výroba označena jako dokončená",
 };
-
-const slugForStage = (stage: MerchantOrderStage) =>
-  stageRoutes.find((entry) => entry.stage === stage)?.slug;
 
 /**
  * Shows the Denní práce state on the native order page, with the *same* single action the
@@ -143,7 +138,6 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
   }
 
   const target = nextStage[merchantOrder.stage];
-  const slug = slugForStage(merchantOrder.stage);
 
   if (productionMode && production) {
     const next = productionStep[production.stage];
@@ -176,14 +170,6 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
               onClick={() => step.mutate(next.action)}
             >
               {next.label}
-            </Button>
-          )}
-
-          {slug && (
-            <Button variant="transparent" size="small" asChild>
-              <Link to={`/prehled/prace?krok=${slug}`}>
-                Zpět do fronty „{stageMeta[merchantOrder.stage].label}"
-              </Link>
             </Button>
           )}
         </div>
@@ -221,14 +207,6 @@ const MerchantOrderStateWidgetInner = ({ order }: { order: AdminOrder }) => {
             onClick={() => transition.mutate(target)}
           >
             {nextStageLabel[merchantOrder.stage]}
-          </Button>
-        )}
-
-        {slug && (
-          <Button variant="transparent" size="small" asChild>
-            <Link to={`/prehled/prace?krok=${slug}`}>
-              Zpět do fronty „{stageMeta[merchantOrder.stage].label}"
-            </Link>
           </Button>
         )}
       </div>
