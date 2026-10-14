@@ -18,14 +18,18 @@ type Props = {
  * Re-wording it here would undo that.
  */
 export default function OrderProgressPanel({ progress, fallbackLabel }: Props) {
-  const label = progress?.stage_label || fallbackLabel
+  const label = progress?.status?.label || progress?.stage_label || fallbackLabel
+  const detail = progress?.status?.detail ?? null
   const balance = progress?.balance
 
   return (
     <section className={styles.root} aria-label="Stav objednávky">
       <div className={styles.stage}>
         <span className={styles.eyebrow}>Stav objednávky</span>
-        <strong className={styles.label}>{label}</strong>
+        <strong className={styles.label} data-testid="order-progress-label">
+          {label}
+        </strong>
+        {detail && <p className={styles.detail}>{detail}</p>}
       </div>
 
       {balance && balance.outstanding > 0 && (

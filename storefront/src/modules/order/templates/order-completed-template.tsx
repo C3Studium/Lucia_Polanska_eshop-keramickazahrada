@@ -92,11 +92,14 @@ export default async function OrderCompletedTemplate({
   const pickupPoint = pickupPointLabel(
     order.metadata as Record<string, unknown> | undefined
   )
-  const fulfillmentStatus = translateStatus(
-    order.fulfillment_status,
-    "fulfillment",
-    "cs"
-  )
+  /* Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
+     `fulfillment_status` Medusy sám neví o Denní práci ani o reklamacích
+     a navíc ho načtení objednávky nevrací, takže tu stálo napořád „Přijato". */
+  const orderStatusLabel =
+    progress?.status?.label ||
+    progress?.stage_label ||
+    progressFallback ||
+    translateStatus(order.fulfillment_status, "fulfillment", "cs")
   const paymentStatus = translateStatus(
     order.payment_status,
     "payment",
@@ -170,8 +173,7 @@ export default async function OrderCompletedTemplate({
       <div className={s.container} data-testid="order-complete-container">
         <header className={s.masthead}>
           <span>Objednávka · {orderNumber}</span>
-          {/* TODO(BACKEND): Derive this masthead label from fulfillment_status instead of using a fixed confirmation label. */}
-          <span className={s.confirmed}>Máme ji</span>
+          <span className={s.confirmed}>{orderStatusLabel}</span>
         </header>
 
         <section className={s.hero}>
@@ -283,7 +285,7 @@ export default async function OrderCompletedTemplate({
           </div>
           <div>
             <span>Stav objednávky</span>
-            <strong data-testid="order-status">{fulfillmentStatus}</strong>
+            <strong data-testid="order-status">{orderStatusLabel}</strong>
           </div>
           <div>
             <span>Stav platby</span>

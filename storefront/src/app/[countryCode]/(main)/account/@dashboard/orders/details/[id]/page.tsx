@@ -6,6 +6,7 @@ import { getSiteDocument } from "@lib/data/documents"
 import { getOrderEditContext } from "@lib/data/order-edit"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import { getCommissionBalance, listCommissionNotes } from "@lib/data/made-to-order"
+import { getOrderProgress } from "@lib/data/order-progress"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -66,6 +67,9 @@ export default async function OrderDetailPage(props: Props) {
   const claims = selfServiceToken
     ? await getOrderClaims(order.id, selfServiceToken)
     : null
+  // Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
+  // samotný `fulfillment_status` o Denní práci ani reklamacích neví.
+  const progress = await getOrderProgress(order.id, selfServiceToken)
 
   return (
     <OrderDetailsTemplate
@@ -76,6 +80,7 @@ export default async function OrderDetailPage(props: Props) {
       selfServiceToken={selfServiceToken}
       claims={claims}
       edit={edit}
+      statusLabel={progress?.status?.label || progress?.stage_label || null}
     />
   )
 }

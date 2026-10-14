@@ -5,9 +5,11 @@ import styles from "../styles/order-details.module.scss"
 type OrderDetailsProps = {
   order: HttpTypes.StoreOrder
   showStatus?: boolean
+  /** Stav ze serveru (reklamace, odesláno, výroba…); přednost před stavem Medusy. */
+  statusLabel?: string | null
 }
 
-const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
+const OrderDetails = ({ order, showStatus, statusLabel }: OrderDetailsProps) => {
   const formattedDate = new Date(order.created_at).toLocaleString("cs-CZ", {
     day: "numeric",
     month: "long",
@@ -39,7 +41,8 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
             <div>
               <dt>Stav objednávky</dt>
               <dd data-testid="order-status">
-                {translateStatus(order.fulfillment_status, "fulfillment", "cs")}
+                {statusLabel ||
+                  translateStatus(order.fulfillment_status, "fulfillment", "cs")}
               </dd>
             </div>
             <div>

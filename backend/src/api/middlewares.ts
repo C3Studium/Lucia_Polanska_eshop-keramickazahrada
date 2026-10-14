@@ -589,9 +589,16 @@ export default defineMiddlewares({
       middlewares: [authenticate("customer", ["bearer", "session"])],
     },
     {
+      // Stav objednávky: přihlášený zákazník, NEBO host s podepsaným tokenem
+      // (`?token=`, ověřuje handler) — jinak stránka objednávky hostovi
+      // ukazovala napořád „Přijato" (14. 10. 2026).
       matcher: "/store/orders/:id/progress",
       methods: ["GET"],
-      middlewares: [authenticate("customer", ["bearer", "session"])],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
     },
     // Hostovská self-service objednávky z e-mailu (editace, reklamace/vrácení):
     // podepsaný token v query/body je důkaz sám o sobě, přihlášený zákazník

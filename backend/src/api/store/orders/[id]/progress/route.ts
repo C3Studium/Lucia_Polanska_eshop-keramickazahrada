@@ -13,6 +13,11 @@ import {
   customerStageLabel,
   type CustomerOrderProgress,
 } from "./labels"
+import { verifyOrderAccessToken } from "../../../../../lib/order-access-link"
+import { listOrderClaims } from "../../../../../lib/claims/context"
+import { customerOrderStatus } from "../../../../../lib/order-customer-status"
+import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
+import { toNumber } from "../../../../../lib/claims/refund-rules"
 
 /**
  * „Kde je moje objednávka?" — the two things a customer can ask that the
@@ -42,10 +47,10 @@ import {
  * order id exists but is not theirs is itself a disclosure, and order ids are
  * guessable enough to be worth enumerating.
  *
- * Guest orders therefore have no access here. That is deliberate — the e-mail
- * already carries a signed link for the one action a guest can take, and
- * widening this route to accept an e-mail address would make order state
- * readable by anyone who knows a customer's address.
+ * Host (bez přihlášení) se dostane dovnitř jen s PODEPSANÝM tokenem objednávky
+ * (`?token=`, stejný jako u úpravy a reklamací — `lib/order-access-link`). Bez
+ * něj stránka objednávky hostovi ukazovala napořád „Přijato" (14. 10. 2026).
+ * E-mailová adresa jako klíč se nepřijímá — stav by pak přečetl kdokoli, kdo ji zná.
  */
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -53,8 +58,10 @@ export const GET = async (
 ) => {
   const orderId = req.params.id
   const customerId = req.auth_context?.actor_id
+  const token = typeof req.query.token === "string" ? req.query.token : ""
+  const tokenOk = Boolean(token) && verifyOrderAccessToken(orderId, token)
 
-  if (!customerId) {
+  if (!customerId && !tokenOk) {
     res.status(401).json({ message: "Přihlaste se prosím." })
     return
   }
@@ -63,13 +70,25 @@ export const GET = async (
 
   const { data: orders } = await query.graph({
     entity: "order",
-    fields: ["id", "customer_id", "currency_code"],
+    fields: [
+      "id",
+      "customer_id",
+      "currency_code",
+      "status",
+      "shipping_methods.data",
+      "fulfillments.shipped_at",
+      "fulfillments.delivered_at",
+      "fulfillments.canceled_at",
+      "payment_collections.payments.amount",
+      "payment_collections.payments.canceled_at",
+      "payment_collections.payments.refunds.amount",
+    ],
     filters: { id: orderId },
   })
   const order = orders[0] as any
 
   // Same response for "no such order" and "not yours" — see the note above.
-  if (!order || order.customer_id !== customerId) {
+  if (!order || (!tokenOk && order.customer_id !== customerId)) {
     res.status(404).json({ message: "Objednávka nebyla nalezena." })
     return
   }
@@ -114,9 +133,33 @@ export const GET = async (
 
   const stage = merchantOrder?.stage ?? null
 
+  const fulfillments = ((order.fulfillments ?? []) as any[]).filter((f) => !f?.canceled_at)
+  const payments = ((order.payment_collections ?? []) as any[])
+    .flatMap((collection) => collection?.payments ?? [])
+    .filter((payment: any) => payment && !payment.canceled_at)
+  const paid = payments.reduce((sum: number, p: any) => sum + toNumber(p.amount), 0)
+  const refunded = payments
+    .flatMap((p: any) => p.refunds ?? [])
+    .reduce((sum: number, r: any) => sum + toNumber(r?.amount), 0)
+  const claims = await listOrderClaims(req.scope, orderId).catch(() => [])
+
+  const status = customerOrderStatus({
+    canceled: order.status === "canceled",
+    merchantStage: stage,
+    production: productionOrder
+      ? { stage: String(productionOrder.stage), outstanding }
+      : null,
+    pickup: isPersonalPickupOrder(order),
+    shipped: fulfillments.some((f) => f?.shipped_at),
+    delivered: fulfillments.some((f) => f?.delivered_at),
+    fullyRefunded: paid > 0.005 && refunded >= paid - 0.01,
+    claims,
+  })
+
   const body: CustomerOrderProgress = {
     stage,
-    stage_label: customerStageLabel(stage),
+    stage_label: status.label ?? customerStageLabel(stage),
+    status,
     stage_changed_at: merchantOrder?.stage_changed_at ?? null,
     made_to_order: Boolean(productionOrder),
     /** „Slíbeno do" — the date she committed to, when she has. */

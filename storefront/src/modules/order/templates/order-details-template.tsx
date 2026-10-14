@@ -49,6 +49,8 @@ type OrderDetailsTemplateProps = {
    * upravit (`mode`) nebo dokončit čekající změnu (`pending`). `null` = nic.
    */
   edit?: { mode: OrderEditMode; pending: boolean } | null
+  /** Stav objednávky ze serveru (`/progress`); null → překlad stavu Medusy. */
+  statusLabel?: string | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
@@ -59,6 +61,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   selfServiceToken = null,
   claims = null,
   edit = null,
+  statusLabel = null,
 }) => {
   return (
     <AccountPageReveal
@@ -83,7 +86,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       <AccountSectionReveal
         className={s.accountOrderDetailsIntro}
       >
-        <OrderDetails order={order} showStatus />
+        <OrderDetails order={order} showStatus statusLabel={statusLabel} />
       </AccountSectionReveal>
 
       <AccountSectionReveal

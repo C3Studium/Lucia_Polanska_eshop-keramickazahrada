@@ -12,7 +12,14 @@ import { getAuthHeaders } from "./cookies"
  */
 export type OrderProgress = {
   stage: string | null
+  /** = `status.label` (celý stav objednávky, ne jen fáze Denní práce). */
   stage_label: string
+  /**
+   * Stav objednávky pro zákazníka ze serveru (`lib/order-customer-status`):
+   * reklamace, zrušení, vrácené peníze, doručeno/odesláno, výroba zakázky,
+   * běžný postup. Starší backend ho nemusí poslat.
+   */
+  status?: { key: string; label: string; detail: string | null }
   stage_changed_at: string | null
   made_to_order: boolean
   balance: {
@@ -24,7 +31,12 @@ export type OrderProgress = {
 }
 
 export const getOrderProgress = async (
-  orderId: string
+  orderId: string,
+  /**
+   * Podepsaný token objednávky (`/self-service`) — host bez přihlášení se jím
+   * prokáže. Bez něj by host dostal 401 a stránka ukázala jen záložní „Přijato".
+   */
+  token?: string | null
 ): Promise<OrderProgress | null> => {
   const headers = { ...(await getAuthHeaders()) }
 
@@ -32,6 +44,7 @@ export const getOrderProgress = async (
     .fetch<OrderProgress>(`/store/orders/${orderId}/progress`, {
       headers,
       cache: "no-store",
+      ...(token ? { query: { token } } : {}),
     })
     .catch(() => null)
 }

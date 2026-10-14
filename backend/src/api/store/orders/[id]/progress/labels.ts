@@ -3,8 +3,13 @@ import type { MerchantOrderStage } from "../../../../../modules/merchant-order/s
 export type CustomerOrderProgress = {
   /** Raw merchant stage, or `null` when the order has no merchant record. */
   stage: MerchantOrderStage | null
-  /** Czech, customer-facing. `null` when `stage` is. */
+  /**
+   * Czech, customer-facing — od 14. 10. 2026 = `status.label` (celý stav
+   * objednávky, ne jen fáze Denní práce).
+   */
   stage_label: string | null
+  /** Stav objednávky pro zákazníka (lib/order-customer-status). */
+  status: { key: string; label: string; detail: string | null }
   stage_changed_at: string | Date | null
   made_to_order: boolean
   /** „Slíbeno do" — the completion date she committed to, when set. */

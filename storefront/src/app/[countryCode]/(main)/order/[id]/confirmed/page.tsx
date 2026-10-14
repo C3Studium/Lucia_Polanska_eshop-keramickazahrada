@@ -40,8 +40,12 @@ export default async function OrderConfirmedPage(props: Props) {
   await reconcileOrderBalance(params.id).catch(() => null)
 
   const order = await retrieveOrder(params.id).catch(() => null)
-  // Null for a guest, for someone else's order, or while the merchant workflow has no stage.
-  const progress = order ? await getOrderProgress(params.id) : null
+  // Podepsaný token pro „Upravit / Zrušit / Reklamace" rovnou odtud (stránky
+  // jinak chtějí token z e-mailu) — a stejným tokenem i stav objednávky pro
+  // hosta bez přihlášení. `null` → tlačítka se nevykreslí.
+  const selfServiceToken = order ? await getOrderAccessToken(params.id) : null
+  // Stav objednávky (reklamace, odesláno, výroba…). Null jen když selže.
+  const progress = order ? await getOrderProgress(params.id, selfServiceToken) : null
 
   /*
    * The zakázka's diary. The route 404s for an order that is not a commission, and the fetcher
@@ -52,9 +56,6 @@ export default async function OrderConfirmedPage(props: Props) {
   // Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení) —
   // Souhrn z toho pozná „jen záloha" a nabídne tlačítko doplatit.
   const commissionBalance = order ? await getCommissionBalance(params.id) : null
-  // Podepsaný token pro „Upravit / Zrušit / Reklamace" rovnou odtud (stránky
-  // jinak chtějí token z e-mailu). `null` → tlačítka se nevykreslí.
-  const selfServiceToken = order ? await getOrderAccessToken(params.id) : null
   // Reklamace a vrácení k objednávce (+ zda jde ještě odstoupit) — stejným
   // tokenem. `null` = nepovedlo se načíst → sekce se nevykreslí a tlačítka
   // zůstanou jako dřív (pravidla pohlídá stránka formuláře).
