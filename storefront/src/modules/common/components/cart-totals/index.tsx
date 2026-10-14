@@ -3,6 +3,8 @@
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
 import { packagingSubtotal } from "@lib/util/packaging"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import type { ShippingFrom } from "@modules/cart/shipping-from"
 import React from "react"
 import styles from "./style.module.scss"
 import { Divider } from "@medusajs/ui"
@@ -52,12 +54,42 @@ type CartTotalsProps = {
       quantity?: number | null
       unit_price?: number | null
     }> | null
+    /** Zvolená doprava — bez ní se místo „0 Kč" ukáže „od …" / ceník. */
+    shipping_methods?: unknown[] | null
   }
+  /** Nejlevnější doprava pro tenhle košík (`shippingFromOptions`), dokud žádná není zvolená. */
+  shippingFrom?: ShippingFrom | null
 }
 
+/**
+ * Řádek Doprava, dokud zákazník dopravu nevybral: „od 79 Kč" (v měně
+ * košíku — u SK v eurech), a když cenu předem neznáme, odkaz na ceník.
+ * Dřív tu stálo „0 Kč", tedy doprava zdarma, což neplatí (§ 1820 OZ chce
+ * cenu dopravy předem).
+ */
+export const ShippingNotChosen = ({
+  shippingFrom,
+  currency_code,
+}: {
+  shippingFrom?: ShippingFrom | null
+  currency_code: string
+}) =>
+  shippingFrom?.amount != null ? (
+    <>
+      {shippingFrom.amount === 0
+        ? "zdarma"
+        : `od ${convertToLocale({ amount: shippingFrom.amount, currency_code })}`}
+    </>
+  ) : (
+    <>
+      podle zvolené dopravy —{" "}
+      <LocalizedClientLink href="/doprava-a-platba" target="_blank" rel="noopener">
+        ceník
+      </LocalizedClientLink>
+    </>
+  )
 
-
-const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
+const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
   const {
     currency_code,
     item_total,
@@ -74,6 +106,11 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
   const subtotalAmount = item_subtotal ?? item_total ?? 0
   // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.).
   const packaging = packagingSubtotal(totals.items)
+  /* Bez zvolené dopravy je `shipping_total` 0 — to není „zdarma", to je
+     „ještě nevíme". `shipping_methods` neposílá každý volající; kdo ho
+     nemá, chová se jako dřív. */
+  const shippingChosen =
+    !Array.isArray(totals.shipping_methods) || totals.shipping_methods.length > 0
   return (
     <div className={styles.root}>
       <div className={styles.totalsList}>
@@ -134,15 +171,30 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
               položka v řádku Sleva. */}
           <span
             data-testid="cart-shipping"
-            data-value={shipping_total ?? shipping_subtotal ?? 0}
+            data-value={shippingChosen ? shipping_total ?? shipping_subtotal ?? 0 : ""}
             className={styles.labelValue}
           >
-            {convertToLocale({
-              amount: shipping_total ?? shipping_subtotal ?? 0,
-              currency_code,
-            })}
+            {shippingChosen ? (
+              convertToLocale({
+                amount: shipping_total ?? shipping_subtotal ?? 0,
+                currency_code,
+              })
+            ) : (
+              <ShippingNotChosen
+                shippingFrom={shippingFrom}
+                currency_code={currency_code}
+              />
+            )}
           </span>
         </div>
+        {!shippingChosen && shippingFrom?.pickupFree && (shippingFrom.amount ?? 0) > 0 && (
+          <div className={styles.breakdown}>
+            <div className={styles.subRow}>
+              <span>Osobní odběr v ateliéru</span>
+              <span>zdarma</span>
+            </div>
+          </div>
+        )}
         {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
         {PLATCE_DPH && (
           <div className={styles.taxRow}>
@@ -175,6 +227,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
         <span className={styles.total}>
           Celkem
           {PLATCE_DPH && <em className={styles.vatNote}>včetně DPH</em>}
+          {!shippingChosen && <em className={styles.vatNote}>bez dopravy</em>}
         </span>
         <span
           className={styles.totalValue}

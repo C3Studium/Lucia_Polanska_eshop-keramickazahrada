@@ -10,8 +10,18 @@ import { packagingFor } from "@modules/common/components/packaging-line"
 /**
  * What the customer is about to pay for, in one block: the objects, where they are going,
  * and the total including VAT. This is the "let me check everything once more" moment.
+ *
+ * `deposit` = zakázka: kolik se platí TEĎ a kolik po dokončení. „Celkem" je
+ * cena celé objednávky, ale brána vezme jen zálohu — předsmluvní informace
+ * musí říct obojí (§ 1820 OZ), jinak „Celkem" vypadá jako to, co se strhne.
  */
-export default function OrderRecap({ cart }: { cart: any }) {
+export default function OrderRecap({
+  cart,
+  deposit,
+}: {
+  cart: any
+  deposit?: { now: number; later: number } | null
+}) {
   const currency_code = cart?.currency_code ?? "czk"
   const money = (amount?: number | null) =>
     convertToLocale({ amount: amount ?? 0, currency_code })
@@ -85,7 +95,9 @@ export default function OrderRecap({ cart }: { cart: any }) {
         </section>
 
         <section className={styles.recapBlock} aria-labelledby="recap-total">
-          <h3 id="recap-total">Platba</h3>
+          {/* „Cena", ne „Platba": způsob platby má vlastní řádek
+              v předsmluvních informacích pod rekapitulací. */}
+          <h3 id="recap-total">Cena</h3>
           <dl className={styles.totals}>
             <div>
               <dt>Mezisoučet</dt>
@@ -117,6 +129,20 @@ export default function OrderRecap({ cart }: { cart: any }) {
               <dd>{money(cart?.total)}</dd>
             </div>
           </dl>
+          {deposit && (
+            <p className={styles.depositNote} data-testid="recap-deposit">
+              {deposit.later > 0 ? (
+                <>
+                  Teď zaplatíte zálohu <strong>{money(deposit.now)}</strong> ·
+                  zbytek {money(deposit.later)} po dokončení zakázky.
+                </>
+              ) : (
+                <>
+                  Teď zaplatíte celou částku <strong>{money(deposit.now)}</strong>.
+                </>
+              )}
+            </p>
+          )}
           {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. Bez daně by ta věta
               tvrdila, že v ceně nějaká je. */}
           {PLATCE_DPH && (

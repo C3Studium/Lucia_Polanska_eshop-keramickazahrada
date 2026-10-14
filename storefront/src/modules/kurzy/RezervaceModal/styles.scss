@@ -709,6 +709,81 @@
     line-height: 1.45;
   }
 
+  /* Podmínky rezervace: storno podmínky + tři zaškrtnutí (OP, výjimka
+     z odstoupení § 1837 písm. j), fotky). Žádné není předem zaškrtnuté. */
+  &__legal {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.5rem, 1vh, 0.75rem);
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    legend {
+      margin-bottom: 0.625rem;
+      color: rgb(var(--ink-05-rgb) / .7);
+      font-size: var(--type-caption, 0.8125rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  &__storno {
+    margin: 0;
+    padding: clamp(0.625rem, 1.2vh, 0.875rem) 0.875rem;
+    border-left: 2px solid var(--kurzy-charcoal);
+    background: rgb(var(--white-rgb) / .6);
+    color: rgb(var(--ink-05-rgb) / .85);
+    font-size: 0.875rem;
+    line-height: 1.5;
+
+    strong {
+      font-weight: 500;
+    }
+  }
+
+  &__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: var(--ink-05);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    cursor: pointer;
+
+    input {
+      /* Stejně velké jako přepínače platby — 13px výchozí je pro třesoucí
+         se ruku malé. V rem, ať je zvedne ramp nad 2K. */
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-top: 0.125rem;
+      flex-shrink: 0;
+      accent-color: var(--ink-05);
+    }
+
+    small {
+      display: block;
+      color: rgb(var(--ink-05-rgb) / .7);
+      font-size: 0.8125rem;
+      font-weight: 300;
+    }
+  }
+
+  /* Jak a kolik se platí — věta u „Rezervace zavazující k platbě". */
+  &__payNote {
+    margin: 0;
+    color: rgb(var(--ink-05-rgb) / .75);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-align: right;
+  }
+
   &__stepActions {
     display: flex;
     justify-content: flex-end;

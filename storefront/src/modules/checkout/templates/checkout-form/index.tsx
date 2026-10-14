@@ -1,4 +1,6 @@
 import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { listProductionLeadTimes } from "@lib/data/cart"
+import { isMadeToOrderLine } from "@lib/util/commission"
 import {
   listCartPaymentMethods,
   listComgatePaymentMethods,
@@ -125,6 +127,20 @@ export default async function CheckoutForm({
         (option as any).service_zone?.fulfillment_set?.type === "pickup")
   )
 
+  /* Výrobní lhůty zakázek pro předsmluvní souhrn v Přehledu — z profilu
+     výroby produktu (týž údaj, co ukazuje stránka produktu). */
+  const madeToOrderLines = ((cart.items ?? []) as any[]).filter(isMadeToOrderLine)
+  const leadTimes = madeToOrderLines.length
+    ? await listProductionLeadTimes(
+        madeToOrderLines.map((item) => ({
+          id: item.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          title: item.product_title ?? item.title,
+        }))
+      ).catch(() => [])
+    : []
+
   return (
     <div className={styles.root}>
       {/* Kde v pokladně jste — čtyři bublinky nahoře, jen na svislém telefonu,
@@ -155,6 +171,8 @@ export default async function CheckoutForm({
         countryCode={countryCode}
         productionMode={productionMode}
         vacationNotice={vacationNotice}
+        comgateMethods={comgateMethods}
+        leadTimes={leadTimes}
       />
     </div>
   )

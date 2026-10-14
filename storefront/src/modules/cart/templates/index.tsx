@@ -8,6 +8,8 @@ import { HttpTypes } from "@medusajs/types"
 
 import s from "./index.module.scss"
 import { productLines } from "@lib/util/packaging"
+import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { shippingFromOptions } from "../shipping-from"
 
 /* Zakázkový blok (volba zálohy „Kolik chcete zaplatit hned?" i brief s fotkami)
    do KOŠÍKU NEPATŘÍ — majitelčino přání. Sbírá se až v pokladně (Přehled) a v
@@ -22,6 +24,17 @@ const CartTemplate = async ({
 }) => {
   // Kusy zboží — balné a doběrečné do počtu nepatří.
   const itemCount = productLines(cart?.items).reduce((total, item) => total + item.quantity, 0)
+
+  /* „Doprava od …", dokud není zvolená — z možností dopravy pro TENHLE košík
+     (jeho měna, jeho omezení křehké/zakázka). Dotaz je v cache „fulfillment"
+     a selhání znamená jen odkaz na ceník místo částky. */
+  const shippingFrom =
+    cart?.items?.length && !(cart.shipping_methods?.length ?? 0)
+      ? shippingFromOptions(
+          await listCartShippingMethods(cart.id).catch(() => null),
+          cart
+        )
+      : null
 
   return (
     <>
@@ -54,7 +67,7 @@ const CartTemplate = async ({
                   {cart && cart.region && (
                     <div className={s.summaryBox}>
                       <p className={s.secureNote}>Bezpečná platba · pečlivé balení</p>
-                      <Summary cart={cart as any} />
+                      <Summary cart={cart as any} shippingFrom={shippingFrom} />
                     </div>
                   )}
                 </div>
@@ -78,7 +91,9 @@ const CartTemplate = async ({
       * a při odrolování dolů zmizel — tedy přesně tam, kde ho je potřeba
       * nejvíc.
       */}
-    {cart?.items?.length ? <CheckoutBar cart={cart as any} /> : null}
+    {cart?.items?.length ? (
+      <CheckoutBar cart={cart as any} shippingFrom={shippingFrom} />
+    ) : null}
     </>
   )
 }

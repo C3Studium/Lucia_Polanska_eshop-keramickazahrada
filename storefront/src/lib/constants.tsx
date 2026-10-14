@@ -37,12 +37,12 @@ export const PICKUP_FULFILLMENT_PROVIDER = "pickup_osobni-odber"
  */
 export const DOBIRKA_PAYMENT_PROVIDER = "pp_dobirka_ceska-posta"
 
-/**
- * Bumped whenever the obchodní podmínky change, so a recorded consent can be
- * traced to a wording. Shared by the main checkout AND express checkout — both
- * must stamp the same version into cart metadata before payment.
+/*
+ * Verze obchodních podmínek k souhlasu už tu není jako konstanta: bere se
+ * z registru právních dokumentů (`@lib/legal/registry` → `currentTermsVersion`)
+ * a zapisuje ji serverová akce `recordCheckoutConsent` (`@lib/data/cart`) —
+ * stejně v pokladně i v rychlém nákupu.
  */
-export const TERMS_VERSION = "2026-08"
 
 export const isDobirkaPayment = (providerId?: string) =>
   providerId === DOBIRKA_PAYMENT_PROVIDER

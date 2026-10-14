@@ -5,7 +5,10 @@ import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { HttpTypes } from "@medusajs/types"
 
+import { ShippingNotChosen } from "@modules/common/components/cart-totals"
+
 import { getCheckoutStep } from "./summary"
+import type { ShippingFrom } from "../shipping-from"
 import s from "./checkout-bar.module.scss"
 import { PLATCE_DPH } from "@lib/util/dph"
 
@@ -25,13 +28,17 @@ import { PLATCE_DPH } from "@lib/util/dph"
  */
 export default function CheckoutBar({
   cart,
+  shippingFrom,
 }: {
   /* Se slevami, protože pruh nese i zadání kódu — tentýž tvar, jaký chce
      Summary; volající (index.tsx) posílá jeden a týž košík oběma. */
   cart: HttpTypes.StoreCart & {
     promotions: HttpTypes.StorePromotion[]
   }
+  /** Nejlevnější doprava, dokud není zvolená („od …") — jako v Summary. */
+  shippingFrom?: ShippingFrom | null
 }) {
+  const shippingChosen = (cart.shipping_methods?.length ?? 0) > 0
   return (
     <div className={s.root}>
       {/* Souhrn, který na svislém tabletu stojí místo panelu pod výpisem.
@@ -60,10 +67,17 @@ export default function CheckoutBar({
         <span className={s.line}>
           <span>Doprava</span>
           <span>
-            {convertToLocale({
-              amount: cart.shipping_total ?? 0,
-              currency_code: cart.currency_code,
-            })}
+            {shippingChosen ? (
+              convertToLocale({
+                amount: cart.shipping_total ?? 0,
+                currency_code: cart.currency_code,
+              })
+            ) : (
+              <ShippingNotChosen
+                shippingFrom={shippingFrom}
+                currency_code={cart.currency_code}
+              />
+            )}
           </span>
         </span>
         {/* Jen pro plátce DPH — viz `lib/util/dph.ts`. */}
@@ -81,7 +95,7 @@ export default function CheckoutBar({
       </span>
 
       <span className={s.total}>
-        <small>Celkem</small>
+        <small>{shippingChosen ? "Celkem" : "Celkem bez dopravy"}</small>
         <strong>
           {convertToLocale({
             amount: cart.total ?? 0,

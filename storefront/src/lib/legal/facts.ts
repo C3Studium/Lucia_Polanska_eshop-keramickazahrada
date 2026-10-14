@@ -41,6 +41,11 @@ export const FACTS = {
   "course.minAge": null,
   /** Do kdy si vyzvednout výrobek z kurzu po výpalu. */
   "course.pickupDeadline": null,
+  /**
+   * Dodací lhůta zboží skladem (předsmluvní informace v posledním kroku
+   * pokladny, § 1820 odst. 1 písm. g) OZ). Celá fráze, např. „odešleme do …".
+   */
+  "delivery.dispatchTime": null,
 } as const satisfies Record<string, string | null>
 
 /** Popis chybějícího údaje pro zvýrazněný zástupný text. */
@@ -65,6 +70,8 @@ const MISSING: Record<LegalFactKey, string> = {
   "withdrawal.returnCostEstimate": "odhad nákladů na vrácení zboží poštou v Kč",
   "course.minAge": "minimální věk dítěte na kurzu",
   "course.pickupDeadline": "do kdy si vyzvednout výrobek z kurzu",
+  "delivery.dispatchTime":
+    "dodací lhůta zboží skladem — stránka Doprava dnes uvádí „předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby“, doručení 1–3 pracovní dny",
 }
 
 /** Hodnota faktu, nebo `null` když chybí. */

@@ -13,6 +13,7 @@ import {
   premiumButtonFillVariants,
 } from "@modules/common/components/premium-action-button/motion"
 import { HttpTypes } from "@medusajs/types"
+import type { ShippingFrom } from "../shipping-from"
 import s from "./summary.module.scss"
 
 import { motion } from 'framer-motion';
@@ -21,6 +22,8 @@ type SummaryProps = {
   cart: HttpTypes.StoreCart & {
     promotions: HttpTypes.StorePromotion[]
   }
+  /** Nejlevnější doprava, dokud není zvolená („od …"). */
+  shippingFrom?: ShippingFrom | null
 }
 
 /** Kam pokladna otevře — čte to i lepkavý pruh na telefonu (checkout-bar). */
@@ -34,7 +37,7 @@ export function getCheckoutStep(cart: HttpTypes.StoreCart) {
   }
 }
 
-const Summary = ({ cart }: SummaryProps) => {
+const Summary = ({ cart, shippingFrom }: SummaryProps) => {
   const step = getCheckoutStep(cart)
 
   return (
@@ -67,7 +70,7 @@ const Summary = ({ cart }: SummaryProps) => {
           plovoucí pruh nad spodní lištou (checkout-bar). */}
       <div className={s.totalsSlot}>
         <Divider />
-        <CartTotals totals={cart} />
+        <CartTotals totals={cart} shippingFrom={shippingFrom} />
       </div>
       <LinkButton
         text="Pokračovat k pokladně"

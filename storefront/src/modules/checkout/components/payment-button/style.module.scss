@@ -15,6 +15,15 @@
     margin-top: 0.5rem; /* 8px */
   }
 
+  /* Jak a kolik se platí — věta pod tlačítkem „Objednávka zavazující
+     k platbě" (způsob platby nepatří do názvu tlačítka, § 1826a OZ). */
+  .note {
+    max-width: 62ch;
+    margin: clamp(.5rem, .93vh, .8rem) 0 0;
+    color: var(--olive-04);
+    font: 400 clamp(.875rem, 1.17vw, 1.15rem)/1.5 "Sansation-Regular", sans-serif;
+  }
+
   /* Variant hook if needed later */
   .comgate {
     /* reserved for provider-specific tweaks */
@@ -87,12 +96,13 @@
       opacity: .46;
     }
 
-    /* SVISLÝ TELEFON — druhé kolo, nesaháno. Poznámka pro něj: 90×35px je pod
-       44px dotykovou podlahou, kterou globals.scss vynucuje uvnitř @include
-       touch (`min-height: 44px !important` na button). Výška 35px se tam tedy
-       stejně neprosadí a šířka 90px zůstane pod cílem. */
+    /* SVISLÝ TELEFON: dřív pevných 90×35px — jenže `.label` je nowrap
+       a `.button` overflow: hidden, takže „Objednávka zavazující k platbě"
+       (zákonný název, nesmí se uříznout) by z tlačítka zbyla jen půlka.
+       Na telefonu proto tlačítko drží celou šířku sloupce; výšku stejně
+       zvedá na 44px dotyková podlaha z globals.scss. */
     @include vb((
-        s: (width: 90px, height: 35px),
+        s: (width: 100%),
     ));
 
   }

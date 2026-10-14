@@ -1,6 +1,11 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { formatMoney, sendCustomerEmail } from "./customer-email"
 import { courseReservationLink } from "./course-reservation-link"
+import { storefrontBase } from "./storefront-url"
+import {
+  COURSE_CANCELLATION_TERMS,
+  COURSE_NO_WITHDRAWAL_NOTICE,
+} from "../modules/course/legal"
 import {
   courseCancelledKey,
   courseExpiredKey,
@@ -59,10 +64,22 @@ const baseData = (reservation: any, term: any) => ({
 })
 
 /**
+ * Obchodní podmínky, kapitola Kurzy — `app/[countryCode]/(main)/smluvni-podminky`,
+ * kotva `#kurzy` (píše ji WS-A). Prázdné, když storefront není nastavený.
+ */
+export const courseTermsLink = (): string => {
+  const base = storefrontBase()
+  return base ? `${base}/smluvni-podminky#kurzy` : ""
+}
+
+/**
  * The reservation confirmation — `variant: "paid"` after the ComGate webhook,
  * `variant: "on_site"` immediately for pay-on-site bookings. One template,
  * two voices; the paid variant doubles as the payment receipt, which is why
  * there is no separate course-payment-received template.
+ *
+ * Nese i poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) a storno
+ * podmínky — potvrzení smlouvy v textové podobě (§ 1827 odst. 2 OZ).
  */
 export const sendCourseReservationConfirmedEmail = async (
   container: MedusaContainer,
@@ -87,6 +104,9 @@ export const sendCourseReservationConfirmedEmail = async (
       ...baseData(reservation, term),
       variant: options.variant,
       invoicePdfUrl: options.invoicePdfUrl || "",
+      noWithdrawalNotice: COURSE_NO_WITHDRAWAL_NOTICE,
+      cancellationTerms: COURSE_CANCELLATION_TERMS,
+      termsLink: courseTermsLink(),
     },
   })
 

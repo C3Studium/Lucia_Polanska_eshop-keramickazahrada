@@ -16,7 +16,12 @@ import {
   type CourseQuote,
   type CourseTerm,
 } from "@lib/data/courses"
+import { renderInline } from "@lib/legal/inline"
 import { pragueDayKey } from "@lib/util/course-calendar"
+import {
+  COURSE_BUTTON_LABEL,
+  LEGAL_LINKS,
+} from "@modules/checkout/components/legal-consent/labels"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PhoneInput from "@modules/common/components/phone-input"
 
@@ -274,6 +279,14 @@ function RezervaceModalPanel({
   const [paymentMethod, setPaymentMethod] = useState<"online" | "on_site">(
     draft?.paymentMethod ?? "online"
   )
+  /* Podmínky rezervace — vždy NEZAŠKRTNUTÉ a záměrně mimo `ModalDraft`:
+     souhlas se dává pokaždé znovu, ne obnovou rozepsaného formuláře.
+     OP a výjimka z odstoupení (§ 1837 písm. j) OZ — kurz s pevným termínem)
+     jsou povinné, fotky nepovinné. */
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [exceptionAck, setExceptionAck] = useState(false)
+  const [photoConsent, setPhotoConsent] = useState(false)
+  const legalReady = termsAccepted && exceptionAck
   const [website, setWebsite] = useState("")
 
   const [quote, setQuote] = useState<CourseQuote | null>(null)
@@ -351,7 +364,7 @@ function RezervaceModalPanel({
   }, [step, selected])
 
   /* Back from ComGate via bfcache: the page resumes exactly as it was left —
-     mid-submit. Unfreeze the button so „Rezervovat a zaplatit" works again. */
+     mid-submit. Unfreeze the button so „Rezervace zavazující k platbě" works again. */
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
@@ -497,6 +510,14 @@ function RezervaceModalPanel({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!selected || submitting || !detailsValid) return
+    if (!legalReady) {
+      setStepError({
+        step: "platba",
+        message:
+          "Před rezervací prosím potvrďte souhlas s obchodními podmínkami a storno podmínky kurzu.",
+      })
+      return
+    }
 
     setStepError(null)
     setSubmitting(true)
@@ -508,6 +529,10 @@ function RezervaceModalPanel({
       party_size: partySize,
       payment_method: paymentMethod,
       website,
+      terms_accepted: termsAccepted,
+      exception_ack: exceptionAck,
+      photo_consent: photoConsent,
+      client_accepted_at: new Date().toISOString(),
     })
 
     if (!result.ok) {
@@ -1242,6 +1267,93 @@ function RezervaceModalPanel({
                         </label>
                       </fieldset>
 
+                      {/* Podmínky PŘED rezervací: kurz je služba v pevném
+                          termínu, takže 14denní odstoupení neplatí — ale jen
+                          když o tom zákazník ví předem (§ 1837 písm. j),
+                          § 1820 OZ). Storno podmínky jsou fakt z
+                          `@lib/legal/facts` (`course.cancellation`). */}
+                      <fieldset className="kurzyModal__legal">
+                        <legend>Podmínky rezervace</legend>
+                        <p className="kurzyModal__storno" data-testid="course-storno">
+                          <strong>Storno podmínky:</strong>{" "}
+                          {renderInline("{{course.cancellation}}")}
+                        </p>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(event) => {
+                              setTermsAccepted(event.target.checked)
+                              setStepError(null)
+                            }}
+                            data-testid="course-terms-checkbox"
+                          />
+                          <span>
+                            Souhlasím s{" "}
+                            <LocalizedClientLink
+                              href={LEGAL_LINKS.termsCourses}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              obchodními podmínkami
+                            </LocalizedClientLink>
+                            .
+                          </span>
+                        </label>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={exceptionAck}
+                            onChange={(event) => {
+                              setExceptionAck(event.target.checked)
+                              setStepError(null)
+                            }}
+                            data-testid="course-exception-checkbox"
+                          />
+                          <span>
+                            Beru na vědomí, že u kurzu s pevným termínem nelze
+                            odstoupit do 14 dnů (§ 1837 písm. j) OZ); platí{" "}
+                            <LocalizedClientLink
+                              href={LEGAL_LINKS.termsCourses}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              storno podmínky
+                            </LocalizedClientLink>
+                            .
+                          </span>
+                        </label>
+                        <label className="kurzyModal__check">
+                          <input
+                            type="checkbox"
+                            checked={photoConsent}
+                            onChange={(event) => setPhotoConsent(event.target.checked)}
+                            data-testid="course-photo-checkbox"
+                          />
+                          <span>
+                            Souhlasím s pořízením fotografií z kurzu a jejich
+                            zveřejněním na webu a sociálních sítích (za dítě
+                            souhlasí zákonný zástupce).
+                            <small>
+                              Nepovinné. Souhlas můžete kdykoli odvolat e-mailem
+                              na {renderInline("{{seller.email}}")}.
+                            </small>
+                          </span>
+                        </label>
+                        <p className="kurzyModal__consent">
+                          Údaje z rezervace zpracujeme kvůli jejímu vyřízení —
+                          podrobnosti v{" "}
+                          <LocalizedClientLink
+                            href={LEGAL_LINKS.privacy}
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            zásadách ochrany osobních údajů
+                          </LocalizedClientLink>
+                          .
+                        </p>
+                      </fieldset>
+
                       {/* Honeypot — humans never see it. */}
                       <input
                         type="text"
@@ -1261,19 +1373,27 @@ function RezervaceModalPanel({
                       ) : null}
 
                       <div className="kurzyModal__stepActions">
+                        {/* Zákonný název tlačítka (§ 1826a odst. 2 OZ) — jak
+                            a kolik se platí, říká věta pod ním. */}
                         <button
                           type="submit"
                           className="kurzyModal__primary"
-                          disabled={submitting}
+                          disabled={submitting || !legalReady}
+                          data-testid="course-submit-button"
                         >
-                          {submitting
-                            ? "Odesílám…"
-                            : paymentMethod === "online"
-                              ? "Rezervovat a zaplatit"
-                              : "Rezervovat místo"}
+                          {submitting ? "Odesílám…" : COURSE_BUTTON_LABEL}
                           <i aria-hidden="true">↗</i>
                         </button>
                       </div>
+                      <p className="kurzyModal__payNote" aria-live="polite">
+                        {!legalReady
+                          ? "Nejdřív prosím potvrďte obchodní podmínky a storno podmínky."
+                          : !quote || quoteLoading
+                            ? "Počítáme cenu…"
+                            : paymentMethod === "online"
+                              ? `Zaplatíte ${czk(quote.total)} hned online přes platební bránu ComGate.`
+                              : `Zaplatíte ${czk(quote.total)} na místě před začátkem kurzu.`}
+                      </p>
                     </form>
                   )}
                 </motion.section>

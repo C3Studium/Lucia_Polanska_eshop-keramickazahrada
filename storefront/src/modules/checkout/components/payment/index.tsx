@@ -380,6 +380,10 @@ const Payment = ({
                     methods={comgateMethods}
                     selectedOptionId={selectedPaymentMethod}
                     onSelect={selectComgate}
+                    /* Tady tlačítko NIC neodesílá — jen přenese volbu do
+                       Přehledu. Objednává se až tam (§ 1826a OZ). */
+                    confirmLabel="Pokračovat ke shrnutí"
+                    busyLabel="Připravujeme shrnutí…"
                     onConfirm={() => continueToReview(selectedPaymentMethod)}
                     extraOptions={extraPaymentOptions}
                     onSelectExtra={(id) => void setPaymentMethod(id)}
@@ -421,7 +425,7 @@ const Payment = ({
           <div aria-live="polite">
             {isLoading && isComgate(selectedPaymentMethod) && (
               <p className={styles.paymentStatus}>
-                Připravujeme platbu a otevíráme Comgate…
+                Připravujeme shrnutí objednávky…
               </p>
             )}
           </div>

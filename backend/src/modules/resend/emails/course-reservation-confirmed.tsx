@@ -1,4 +1,6 @@
+import { Link } from "@react-email/components"
 import {
+  brand,
   ButtonRow,
   EmailButton,
   EmailH1,
@@ -11,6 +13,12 @@ import {
   P,
   Signature,
 } from "../components/email-ui"
+import {
+  COURSE_CANCELLATION_TERMS,
+  COURSE_NO_WITHDRAWAL_NOTICE,
+} from "../../course/legal"
+
+const linkStyle = { color: brand.ink, textDecoration: "underline" } as const
 
 interface CourseReservationConfirmedEmailProps {
   customerName?: string
@@ -28,6 +36,12 @@ interface CourseReservationConfirmedEmailProps {
   reservationLink?: string
   /** Our copy of the iDoklad invoice PDF — empty when not (yet) issued. */
   invoicePdfUrl?: string
+  /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) — `modules/course/legal.ts`. */
+  noWithdrawalNotice?: string
+  /** Storno podmínky kurzů — `modules/course/legal.ts` (zatím zástupný text). */
+  cancellationTerms?: string
+  /** Obchodní podmínky, kapitola Kurzy (`…/smluvni-podminky#kurzy`). */
+  termsLink?: string
 }
 
 function CourseReservationConfirmedEmailComponent({
@@ -41,6 +55,11 @@ function CourseReservationConfirmedEmailComponent({
   variant = "on_site",
   reservationLink = "",
   invoicePdfUrl = "",
+  // Výchozí = konstanty: i notifikace uložená před touhle změnou (bez těch
+  // klíčů v `data`) se při opakovaném odeslání vykreslí s poučením.
+  noWithdrawalNotice = COURSE_NO_WITHDRAWAL_NOTICE,
+  cancellationTerms = COURSE_CANCELLATION_TERMS,
+  termsLink = "",
 }: CourseReservationConfirmedEmailProps) {
   const paid = variant === "paid"
   return (
@@ -105,6 +124,23 @@ function CourseReservationConfirmedEmailComponent({
         </>
       )}
 
+      {/* Potvrzení smlouvy v textové podobě (§ 1827 odst. 2 OZ): poučení,
+          že od kurzu v pevném termínu nelze odstoupit do 14 dnů (§ 1837
+          písm. j) OZ), a storno podmínky, které platí místo toho. */}
+      <P>
+        <strong>Storno podmínky.</strong> {noWithdrawalNotice}
+      </P>
+      <P>{cancellationTerms}</P>
+      {termsLink ? (
+        <P small>
+          Celé znění najdete v{" "}
+          <Link href={termsLink} style={linkStyle}>
+            obchodních podmínkách (kapitola Kurzy)
+          </Link>
+          .
+        </P>
+      ) : null}
+
       {reservationLink || invoicePdfUrl ? (
         <ButtonRow>
           {reservationLink ? (
@@ -142,6 +178,7 @@ const mockCourseReservationConfirmed: CourseReservationConfirmedEmailProps = {
   variant: "paid",
   reservationLink: "https://keramickazahrada.cz/cz/kurzy/rezervace/res_123?token=abc",
   invoicePdfUrl: "https://keramickazahrada.cz/faktura-20260042.pdf",
+  termsLink: "https://keramickazahrada.cz/cz/smluvni-podminky#kurzy",
 }
 
 export default () => (

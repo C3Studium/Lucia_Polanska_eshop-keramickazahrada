@@ -5,15 +5,26 @@ import ProductionPaymentRecap from "@modules/checkout/components/production-paym
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { shippingFromOptions } from "@modules/cart/shipping-from"
 import styles from "./style.module.scss"
 
-const CheckoutSummary = ({
+const CheckoutSummary = async ({
   cart,
   productionMode,
 }: {
   cart: any
   productionMode?: ProductionPaymentMode | null
 }) => {
+  /* Než je doprava zvolená, souhrn neukazuje „Doprava 0 Kč", ale „od …"
+     (stejně jako košík). Dotaz sdílí cache s krokem Doprava. */
+  const shippingFrom = !(cart?.shipping_methods?.length ?? 0)
+    ? shippingFromOptions(
+        await listCartShippingMethods(cart.id).catch(() => null),
+        cart
+      )
+    : null
+
   return (
     <div className={styles.root}>
       <div className={styles.summary}>
@@ -30,7 +41,7 @@ const CheckoutSummary = ({
         */}
         <OrderSummaryDisclosure cart={cart}>
           <Divider className={styles.divider} />
-          <CartTotals totals={cart} />
+          <CartTotals totals={cart} shippingFrom={shippingFrom} />
           <div className={styles.discount}>
             <DiscountCode cart={cart} />
           </div>

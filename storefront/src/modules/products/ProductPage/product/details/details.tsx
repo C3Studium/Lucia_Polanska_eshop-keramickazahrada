@@ -3,6 +3,15 @@
 import ProductOptions from "./Options/ProductOptions"
 import MadeToOrderPanel from "@modules/products/components/made-to-order"
 import {
+  MadeToOrderAddNotice,
+  MadeToOrderBadge,
+} from "@modules/products/components/made-to-order-notice"
+import VoucherAmountField, {
+  checkVoucherAmount,
+  isCustomAmountVoucher,
+  voucherConfig,
+} from "@modules/products/components/voucher-amount"
+import {
   madeToOrderMetadata,
   type ProductionProfile,
 } from "@lib/util/made-to-order"
@@ -170,6 +179,22 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
       ? productMeta.clearance_damage.trim()
       : ""
 
+  /* Zakázka → štítek u ceny a věta u tlačítka (§ 1820 odst. 1 písm. j) OZ):
+     o vyloučení odstoupení musí zákazník vědět předem. Platí pro profil výroby
+     i pro kategorii zakázek (a pro zrcadlo profilu v metadatech, kdyby se
+     profil nenačetl). Ve výběru do úpravy objednávky ne — zakázka tam není. */
+  const showMadeToOrderNotice =
+    !pick &&
+    (isMadeToOrder || isCommissionCategory || Boolean(productMeta?.made_to_order))
+
+  /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
+     jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
+  const isVoucher = !pick && !bundle && isCustomAmountVoucher(productMeta)
+  const voucherCfg = useMemo(() => voucherConfig(productMeta), [productMeta])
+  const [voucherAmount, setVoucherAmount] = useState("")
+  const [voucherTouched, setVoucherTouched] = useState(false)
+  const currencyCode = region?.currency_code ?? "czk"
+
   const availability = useMemo(
     () => variantAvailability(selectedVariant),
     [selectedVariant]
@@ -215,6 +240,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || isAdding) return
 
+    // Poukaz bez platné částky do košíku nejde — chybu ukáže pole samo.
+    const voucherCheck = isVoucher
+      ? checkVoucherAmount(voucherAmount, voucherCfg, currencyCode)
+      : null
+    if (voucherCheck && !voucherCheck.ok) {
+      setVoucherTouched(true)
+      return
+    }
+
     window.clearTimeout(resetTimer.current)
     setAddState({ kind: "adding" })
 
@@ -226,6 +260,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
         quantity,
         countryCode,
         ...(isMadeToOrder ? { metadata: madeToOrderMetadata("") } : {}),
+        ...(voucherCheck?.ok ? { metadata: { voucher_amount: voucherCheck.amount } } : {}),
       })
 
       if (!result?.success) {
@@ -455,18 +490,35 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         currencyCode={region?.currency_code ?? "czk"}
                       />
                     )}
-                    <ProductPrice
-                      product={product}
-                      variant={selectedVariant}
-                      countryCode={countryCode}
-                    />
+                    {isVoucher ? (
+                      <VoucherAmountField
+                        config={voucherCfg}
+                        currencyCode={currencyCode}
+                        value={voucherAmount}
+                        onChange={(value) => {
+                          setVoucherAmount(value)
+                          if (addState.kind === "error") setAddState({ kind: "idle" })
+                        }}
+                        showError={voucherTouched}
+                        disabled={isAdding}
+                      />
+                    ) : (
+                      <ProductPrice
+                        product={product}
+                        variant={selectedVariant}
+                        countryCode={countryCode}
+                      />
+                    )}
+                    {showMadeToOrderNotice && <MadeToOrderBadge />}
                     <CTA
                       inStock={inStock}
                       selectedVariant={selectedVariant}
                       isAdding={isAdding}
                       addState={addState}
                       availability={availability}
-                      backorderNote={isMadeToOrder ? null : backorderWaitNote(product)}
+                      backorderNote={
+                        isMadeToOrder || isVoucher ? null : backorderWaitNote(product)
+                      }
                       // Dobírka výchozí; ne u zakázky (profil i kategorie) a do zahraničí.
                       codAllowed={
                         productAllowsDobirka(product) &&
@@ -499,9 +551,14 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                          flow has no brief and no deposit slider. Auth + saved
                          address are only a hint here: the prebuilt PDP is
                          anonymous, so the button re-checks them in the browser. */
-                      showBuyNow={Boolean(!isMadeToOrder && !isCommissionCategory)}
+                      /* Poukaz s vlastní částkou taky ne: „Koupit ihned" vkládá
+                         variantu bez částky (rychlý nákup pole nemá). */
+                      showBuyNow={Boolean(
+                        !isMadeToOrder && !isCommissionCategory && !isVoucher
+                      )}
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
                     />
+                    {showMadeToOrderNotice && <MadeToOrderAddNotice />}
                   </div>
                 </>
               )}

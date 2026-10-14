@@ -439,6 +439,16 @@ $confirm-h: clamp(3.25rem, 6.6vh, 3.625rem);
   background: transparent;
 }
 
+/* Věta pod potvrzovacím tlačítkem — kolik a jak se platí, nebo proč je zamčené. */
+.confirmHint {
+  color: rgb(var(--ink-05-rgb) / .72);
+  font: 400 clamp(.85rem, 1.05vw, .95rem)/1.5 "Sansation-Regular", sans-serif;
+}
+
+.confirmHint p {
+  margin: 0;
+}
+
 /* The height the three controls above lose on a touch screen. globals.scss
    gives every button `min-height: 44px !important` under the same touch query,
    and !important does not floor a component's own min-height — it replaces it.

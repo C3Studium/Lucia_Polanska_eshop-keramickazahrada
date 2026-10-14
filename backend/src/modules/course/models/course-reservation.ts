@@ -47,6 +47,13 @@ export const CourseReservation = model.define("course_reservation", {
   source: model.enum(["web", "manual"]).default("web"),
   /** The owner's own note („zavolala paní Nováková, přijdou 3"). */
   note: model.text().nullable(),
+  /**
+   * Souhlasy z webové rezervace (`CourseReservationConsents` v `../legal.ts`):
+   * verze OP, čas, poučení o výjimce z odstoupení (§ 1837 písm. j) OZ),
+   * nepovinný souhlas s fotkami a otisk zobrazených storno podmínek. Důkaz
+   * pro případ sporu. Null u ručních rezervací a u starších řádků.
+   */
+  consents: model.json().nullable(),
   payment_collection_id: model.text().index().nullable(),
   payment_session_id: model.text().index().nullable(),
   provider_transaction_id: model.text().nullable(),
