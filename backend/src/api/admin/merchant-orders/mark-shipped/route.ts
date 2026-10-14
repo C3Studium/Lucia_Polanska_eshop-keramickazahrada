@@ -2,14 +2,16 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import { evaluateShipGate } from "../../../../lib/ship-gate"
 import { loadShipGateInput } from "../../../../lib/require-ship-gate"
+import { shipPackedFulfillment } from "../../../../lib/ship-packed-fulfillment"
 import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
 
 /**
  * Hromadné „Označit jako odeslané" — posune vybrané objednávky na „Odesláno"
  * a zákazníkům pošle e-mail „odesláno" (přes změnu fáze, viz customer-emails).
  *
- * Lehká akce jako jednotlivé označení v detailu: NEgeneruje štítek ani Medusa
- * zásilku, jen stav + e-mail. Pojistka A2 (ship gate) platí per objednávka —
+ * Lehká akce jako jednotlivé označení v detailu: NEgeneruje štítek ani nový
+ * fulfillment, jen stav + e-mail (a už zabalenou zásilku odešle i nativně —
+ * `lib/ship-packed-fulfillment`). Pojistka A2 (ship gate) platí per objednávka —
  * nezaplacenou (zakázka s nedoplaceným doplatkem) přeskočí s důvodem, zbytek
  * označí. Přechod jede přes transition table (povolené `shipping → shipped`),
  * takže objednávka, co ještě není „K odeslání", se přeskočí s důvodem.
@@ -59,6 +61,7 @@ export const POST = async (req: MedusaRequest<Body>, res: MedusaResponse) => {
       await transitionMerchantOrderWorkflow(req.scope).run({
         input: { order_id: orderId, stage: "shipped", changed_by: changedBy },
       })
+      await shipPackedFulfillment(req.scope, orderId, changedBy)
       results.push({ order_id: orderId, shipped: true })
     } catch (error) {
       results.push({

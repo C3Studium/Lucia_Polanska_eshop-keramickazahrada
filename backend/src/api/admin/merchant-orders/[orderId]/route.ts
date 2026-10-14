@@ -10,6 +10,7 @@ import { confirmMerchantHandoverWorkflow } from "../../../../workflows/confirm-m
 import { transitionMerchantOrderWorkflow } from "../../../../workflows/transition-merchant-order"
 import { evaluateShipGate } from "../../../../lib/ship-gate"
 import { loadShipGateInput } from "../../../../lib/require-ship-gate"
+import { shipPackedFulfillment } from "../../../../lib/ship-packed-fulfillment"
 import { toMerchantOrderRow } from "../projection"
 
 const ORDER_FIELDS = [
@@ -128,10 +129,11 @@ export const PATCH = async (
     return
   }
 
-  // „Označit jako odeslané" = JEN stav + e-mail zákazníkovi (přání majitelky
-  // 7. 10. 2026). Štítek (ČP podání) i případná Medusa zásilka jsou samostatné
-  // akce — tohle objednávku NEfulfilluje ani negeneruje štítek, jen ji posune
-  // na „Odesláno". E-mail „odesláno" pošle subscriber na změnu fáze.
+  // „Označit jako odeslané" = stav + e-mail zákazníkovi (přání majitelky
+  // 7. 10. 2026). Štítek (ČP podání) je samostatná akce — tohle objednávku
+  // NEfulfilluje ani negeneruje štítek, jen ji posune na „Odesláno" (a už
+  // zabalenou zásilku odešle i nativně, viz níž). E-mail „odesláno" pošle
+  // subscriber na změnu fáze.
   //
   // Pojistka A2 ale zůstává: nezaplacenou zásilku (zakázka s nedoplaceným
   // doplatkem) takhle označit nejde — jinak by šlo odeslat neuhrazené zboží.
@@ -158,5 +160,11 @@ export const PATCH = async (
       attention_reason: req.body.attention_reason,
     },
   })
+
+  // Už zabalenou zásilku odešle i nativně (jinak „Čeká na odeslání").
+  if (req.body.stage === "shipped") {
+    await shipPackedFulfillment(req.scope, req.params.orderId, changedBy)
+  }
+
   res.status(200).json({ merchant_order_state: result })
 }
