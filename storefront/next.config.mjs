@@ -109,6 +109,17 @@ const nextConfig = {
         protocol: "https",
         hostname: process.env.NEXT_PUBLIC_MINIO_ENDPOINT,
       }] : []),
+      // Cloudflare R2 (od 14. 10. 2026 místo MinIO) — vlastní doména bucketu.
+      // Natvrdo jako MinIO výš, ať první build po přepnutí nečeká na proměnnou;
+      // NEXT_PUBLIC_MEDIA_HOST jen kdyby se doména změnila.
+      {
+        protocol: "https",
+        hostname: "img.matejforejt.com",
+      },
+      ...(process.env.NEXT_PUBLIC_MEDIA_HOST ? [{
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_MEDIA_HOST.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
+      }] : []),
       ...(process.env.CMS_MEDIA_HOST ? [{ // Knihovna médií ValeCMS
         protocol: "https",
         hostname: process.env.CMS_MEDIA_HOST.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),

@@ -149,6 +149,19 @@ export const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY;
 export const MINIO_BUCKET = process.env.MINIO_BUCKET; // Optional, if not set bucket will be called: medusa-media
 
 /**
+ * (optional) Cloudflare R2 — nahrazuje MinIO (14. 10. 2026, úspora běžící služby
+ * na Railway). Když je vyplněné všech pět, soubory jdou do R2 a MinIO se
+ * nepoužije; Medusa unese jen jednoho poskytovatele souborů naráz.
+ * R2_ENDPOINT je S3 API účtu (bez názvu bucketu), R2_PUBLIC_URL vlastní doména
+ * bucketu — ta se zapisuje do adres souborů v databázi.
+ */
+export const R2_ENDPOINT = process.env.R2_ENDPOINT;
+export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+export const R2_BUCKET = process.env.R2_BUCKET;
+export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/+$/, "");
+
+/**
  * (optional) Resend API Key and from Email - do not set if using SendGrid
  */
 export const RESEND_API_KEY = process.env.RESEND_API_KEY;

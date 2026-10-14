@@ -26,6 +26,11 @@ import {
   MINIO_ACCESS_KEY,
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
+  R2_ENDPOINT,
+  R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY,
+  R2_BUCKET,
+  R2_PUBLIC_URL,
   JWT_EXPIRES_IN,
   SEGMENT_WRITE_KEY,
   COMGATE_MERCHANT,
@@ -114,8 +119,24 @@ const medusaConfig = {
       key: Modules.FILE,
       resolve: '@medusajs/file',
       options: {
+        // Jen JEDEN poskytovatel naráz: R2, když je nastavené, jinak MinIO,
+        // jinak lokální disk. Klíče souborů jsou v R2 i MinIO stejné (kopie
+        // 1:1), mění se jen začátek adresy uložené v databázi.
         providers: [
-          ...(MINIO_ENDPOINT && MINIO_ACCESS_KEY && MINIO_SECRET_KEY ? [{
+          // R2 jede přes NÁŠ modul, ne oficiální file-s3: ten nedělá slug
+          // názvu ani neopravuje diakritiku z /admin/uploads (viz service.ts).
+          ...(R2_ENDPOINT && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET && R2_PUBLIC_URL ? [{
+            resolve: './src/modules/minio-file',
+            id: 'r2',
+            options: {
+              endPoint: R2_ENDPOINT,
+              accessKey: R2_ACCESS_KEY_ID,
+              secretKey: R2_SECRET_ACCESS_KEY,
+              bucket: R2_BUCKET,
+              region: 'auto',
+              publicUrl: R2_PUBLIC_URL,
+            }
+          }] : MINIO_ENDPOINT && MINIO_ACCESS_KEY && MINIO_SECRET_KEY ? [{
             resolve: './src/modules/minio-file',
             id: 'minio',
             options: {

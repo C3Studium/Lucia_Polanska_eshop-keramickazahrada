@@ -19,6 +19,8 @@ interface MinioServiceConfig {
   accessKey: string
   secretKey: string
   bucket?: string
+  region?: string
+  publicUrl?: string
 }
 
 export interface MinioFileProviderOptions {
@@ -26,7 +28,22 @@ export interface MinioFileProviderOptions {
   accessKey: string
   secretKey: string
   bucket?: string
+  /**
+   * Jiné S3 úložiště než vlastní MinIO — Cloudflare R2 (14. 10. 2026). Bucket
+   * už existuje a spravuje se v Cloudflaru, veřejný je přes vlastní doménu:
+   * adresa souboru je pak `${publicUrl}/${klíč}` (bez názvu bucketu v cestě),
+   * bucket se nezakládá, politiky se nenastavují a nahrání nenese ACL — R2 nic
+   * z toho nezná. Název souboru (slug, oprava diakritiky) zůstává stejný jako
+   * u MinIO, proto i klíče po kopii z MinIO sedí 1:1.
+   */
+  publicUrl?: string
+  /** R2 chce `auto`. U vlastního MinIO se nevyplňuje. */
+  region?: string
 }
+
+/** S3 API endpoint bez schématu a cesty — minio klient chce jen hostitele. */
+const hostOf = (endPoint: string): string =>
+  endPoint.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
 
 const DEFAULT_BUCKET = 'medusa-media'
 
@@ -84,15 +101,19 @@ class MinioFileProviderService extends AbstractFileProviderService {
     super()
     this.logger_ = logger
     this.config_ = {
-      endPoint: options.endPoint,
+      endPoint: hostOf(options.endPoint),
       accessKey: options.accessKey,
       secretKey: options.secretKey,
-      bucket: options.bucket
+      bucket: options.bucket,
+      region: options.region,
+      publicUrl: options.publicUrl?.replace(/\/+$/, '') || undefined
     }
 
     // Use provided bucket or default
     this.bucket = this.config_.bucket || DEFAULT_BUCKET
-    this.logger_.info(`MinIO service initialized with bucket: ${this.bucket}`)
+    this.logger_.info(
+      `File storage initialized: bucket ${this.bucket} on ${this.config_.endPoint}${this.config_.publicUrl ? ` (public ${this.config_.publicUrl})` : ''}`
+    )
 
     // Initialize Minio client with hardcoded SSL settings
     this.client = new Client({
@@ -100,13 +121,24 @@ class MinioFileProviderService extends AbstractFileProviderService {
       port: 443,
       useSSL: true,
       accessKey: this.config_.accessKey,
-      secretKey: this.config_.secretKey
+      secretKey: this.config_.secretKey,
+      ...(this.config_.region ? { region: this.config_.region } : {})
     })
 
-    // Initialize bucket and policy
-    this.initializeBucket().catch(error => {
-      this.logger_.error(`Failed to initialize MinIO bucket: ${error.message}`)
-    })
+    // Bucket a veřejnou politiku spravujeme jen u vlastního MinIO; R2 bucket
+    // zakládá i zveřejňuje Cloudflare.
+    if (!this.config_.publicUrl) {
+      this.initializeBucket().catch(error => {
+        this.logger_.error(`Failed to initialize MinIO bucket: ${error.message}`)
+      })
+    }
+  }
+
+  /** Veřejná adresa souboru — přes vlastní doménu (R2), nebo bucket v cestě (MinIO). */
+  protected urlFor(fileKey: string): string {
+    return this.config_.publicUrl
+      ? `${this.config_.publicUrl}/${encodeURIComponent(fileKey)}`
+      : `https://${this.config_.endPoint}/${this.bucket}/${encodeURIComponent(fileKey)}`
   }
 
   static validateOptions(options: Record<string, any>) {
@@ -232,16 +264,16 @@ class MinioFileProviderService extends AbstractFileProviderService {
           // S3 signs metadata headers as ASCII — a Czech filename („růže.jpg")
           // made every such upload fail with a signature mismatch.
           'x-amz-meta-original-filename': toAscii(originalName),
-          'x-amz-acl': 'public-read'
+          // R2 ACL po souborech nezná — veřejné je vše přes vlastní doménu.
+          ...(this.config_.publicUrl ? {} : { 'x-amz-acl': 'public-read' })
         }
       )
 
-      // Generate URL using the endpoint and bucket. The key is already
-      // URL-safe, but encoding it keeps the promise explicit: what we return
-      // is a URL that can be used as-is.
-      const url = `https://${this.config_.endPoint}/${this.bucket}/${encodeURIComponent(fileKey)}`
+      // The key is already URL-safe, but encoding it keeps the promise
+      // explicit: what we return is a URL that can be used as-is.
+      const url = this.urlFor(fileKey)
 
-      this.logger_.info(`Successfully uploaded file ${fileKey} to MinIO bucket ${this.bucket}`)
+      this.logger_.info(`Successfully uploaded file ${fileKey} to bucket ${this.bucket}`)
 
       return {
         url,
