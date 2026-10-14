@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { outstandingFor } from "../../../../lib/balance-payment"
+import { isPersonalPickupOrder } from "../../../../lib/personal-pickup"
 import { MADE_TO_ORDER_MODULE } from "../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../modules/made-to-order/service"
 
@@ -88,6 +89,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           "created_at",
           "customer.first_name",
           "customer.last_name",
+          "shipping_methods.data",
         ],
         filters: { id: orderIds },
       })
@@ -139,6 +141,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       estimated_completion_at: production.estimated_completion_at ?? null,
       customer_note: production.customer_note ?? null,
       internal_note: production.internal_note ?? null,
+      // „Zaplaceno na místě" jen u osobního odběru.
+      is_personal_pickup: isPersonalPickupOrder(order),
     }
   })
 

@@ -57,6 +57,8 @@ type ProductionOrder = {
   can_fulfill?: boolean;
   /** Jen zakázky, žádné běžné zboží — postup výroby pak ovládá Denní práce. */
   pure_commission?: boolean;
+  /** Osobní odběr v ateliéru — jen tady má smysl „Zaplaceno na místě". */
+  personal_pickup?: boolean;
 };
 
 type ProductionResponse = {
@@ -372,7 +374,11 @@ const MadeToOrderOrderWidgetInner = ({
               příplatkem a u už vydané objednávky), jen ne u zrušené zakázky.
               Po zápisu se mění nativní stav platby, který náš query klient
               nevidí → reload jako u výzvy k doplacení výš. */}
-          {outstanding > 0.005 && productionOrder.stage !== "cancelled" && (
+          {/* Jen u osobního odběru — u zásilky zákazník do ateliéru nepřijde
+              (14. 10. 2026). */}
+          {productionOrder.personal_pickup &&
+            outstanding > 0.005 &&
+            productionOrder.stage !== "cancelled" && (
             <SettleBalanceOffline
               orderId={order.id}
               displayId={order.display_id}

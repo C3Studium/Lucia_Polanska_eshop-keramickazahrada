@@ -1,6 +1,7 @@
 import { isDamageCause } from "../../../lib/claims/constants"
 import { suggestedRefundAmount } from "../../../lib/claims/line-items"
 import { customerEditsOf } from "../../../lib/order-edit/log"
+import { isPersonalPickupOrder } from "../../../lib/personal-pickup"
 import {
   moneyState,
   requestRefundedTotal,
@@ -285,12 +286,7 @@ export const toMerchantOrderRow = (
       (order?.fulfillments || []).some((f: any) => !f?.canceled_at)
     ),
 
-    is_personal_pickup: (order?.shipping_methods || []).some((method: any) => {
-      const methodData = method?.data || {}
-      return (
-        methodData.personal_pickup === true || methodData.service_code === "PICKUP"
-      )
-    }),
+    is_personal_pickup: isPersonalPickupOrder(order),
 
     // Only once the parcel is gone: before that the carrier holds nothing,
     // so there is no money that could have arrived.

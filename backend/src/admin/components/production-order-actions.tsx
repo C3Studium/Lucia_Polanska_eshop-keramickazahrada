@@ -38,6 +38,8 @@ export type ProductionOrderSummary = {
   /** A balance link already exists, so it can be re-sent rather than re-made. */
   has_open_balance_request?: boolean;
   balance_requested_at?: string | null;
+  /** Osobní odběr v ateliéru — jen tady má smysl „Zaplaceno na místě". */
+  is_personal_pickup?: boolean;
 };
 
 type Action =
@@ -634,7 +636,9 @@ export const ProductionOrderActions = ({
         v KAŽDÉ živé fázi, kde něco zbývá — ne jen „čeká na doplatek": příplatek
         přidaný po dokončení, nebo zakázka už vydaná s nezaplaceným zůstatkem.
       */}
-      {order.outstanding > 0.005 && order.stage !== "cancelled" && (
+      {order.is_personal_pickup &&
+        order.outstanding > 0.005 &&
+        order.stage !== "cancelled" && (
         <SettleBalanceOffline
           orderId={order.order_id}
           displayId={order.display_id}

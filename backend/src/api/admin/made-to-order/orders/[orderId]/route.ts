@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 import { allMadeToOrder } from "../../../../../lib/claims/context"
+import { isPersonalPickupOrder } from "../../../../../lib/personal-pickup"
 
 const toNumber = (value: unknown): number => {
   if (typeof value === "number") return value
@@ -58,6 +59,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   // Jen zakázky (bez běžného zboží) → postup výroby ovládá Denní práce;
   // smíšená objednávka má výrobu a balení zboží odděleně (14. 10. 2026).
   let pureCommission = false
+  // „Zaplaceno na místě" jen u osobního odběru — u zásilky do ateliéru nikdo nepřijde.
+  let personalPickup = false
   try {
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
     const { data: orders } = await query.graph({
@@ -68,10 +71,12 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         "items.variant_id",
         "items.product_id",
         "items.product.metadata",
+        "shipping_methods.data",
       ],
       filters: { id: req.params.orderId },
     })
     pureCommission = orders[0] ? allMadeToOrder(orders[0] as any) : false
+    personalPickup = isPersonalPickupOrder(orders[0] as any)
     for (const item of ((orders[0] as any)?.items ?? []) as any[]) {
       const mto = (item?.metadata as any)?.made_to_order
       if (!mto || typeof mto !== "object") continue
@@ -107,6 +112,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       customer_specification:
         customerSpecification ?? productionOrder.customer_note ?? null,
       pure_commission: pureCommission,
+      personal_pickup: personalPickup,
     },
   })
 }
