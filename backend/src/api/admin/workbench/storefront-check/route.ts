@@ -1,6 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { getMerchantSettings } from "../../../../lib/merchant-settings"
+import {
+  getMerchantSettings,
+  isVacationActive,
+} from "../../../../lib/merchant-settings"
 import { storefrontBase } from "../../../../lib/storefront-url"
 
 /**
@@ -164,7 +167,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.status(200).json({
     open: problems.filter((p) => p.severity === "bad").length === 0,
-    vacation: Boolean(settings?.vacation_enabled),
+    vacation: isVacationActive(settings),
     vacation_until: settings?.vacation_until || null,
     problems,
     checked_at: new Date().toISOString(),

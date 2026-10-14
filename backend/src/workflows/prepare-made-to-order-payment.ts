@@ -14,7 +14,6 @@ import {
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
 import { splitChargeNow } from "../lib/deposit-split"
-import { getMerchantSettings } from "../lib/merchant-settings"
 import {
   MADE_TO_ORDER_MODULE,
 } from "../modules/made-to-order"
@@ -214,24 +213,10 @@ const calculateMadeToOrderPaymentStep = createStep(
       })
     }
 
-    // Dovolená: while the shop is closed, NEW commissions are refused here —
-    // at the money step, server-side — with the return date in the message.
-    // Stock items still sell; only work she cannot start is paused.
-    if (productionLines.length) {
-      const settings = await getMerchantSettings(container).catch(() => null)
-      if (settings?.vacation_enabled) {
-        const until = settings.vacation_until
-          ? ` Zakázky přijímáme znovu po ${settings.vacation_until
-              .split("-")
-              .reverse()
-              .join(". ")}.`
-          : ""
-        throw new MedusaError(
-          MedusaError.Types.NOT_ALLOWED,
-          `Výroba na zakázku má právě přestávku.${until}`
-        )
-      }
-    }
+    // Dovolená tu zakázky NEODMÍTÁ (14. 10. 2026): dřív platba padala na
+    // „Výroba na zakázku má právě přestávku" — a protože přepínač nikdo
+    // nevypnul, i dva měsíce po návratu. Dovolená je jen upozornění
+    // v obchodě (`/store/shop-status`), objednávky jdou dál.
 
     const originalTotal = toNumber(cart.total)
     // Poštovné je mimo zálohu: záloha je jen za zboží, poštovné padá do

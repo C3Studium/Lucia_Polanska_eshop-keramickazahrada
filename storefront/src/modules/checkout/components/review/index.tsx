@@ -32,7 +32,7 @@ import styles from "./style.module.scss"
 import { TERMS_VERSION } from "@lib/constants"
 
 const COMMISSION_GATE_HINT =
-  "Tohle je výroba na míru — než objednávku zaplatíte, nám prosím napište nebo nahrajte fotku, co si představujete, a dejte Uložit k zakázce. Bez toho nevíme, co máme vyrobit."
+  "Tohle je výroba na míru — než objednávku zaplatíte, napište prosím nebo nahrajte fotku, co si představujete (uloží se samo). Bez toho nevíme, co máme vyrobit."
 const CONSENT_GATE_HINT =
   "Než budete pokračovat, potvrďte prosím souhlas s podmínkami."
 
@@ -40,10 +40,13 @@ const Review = ({
   cart,
   countryCode,
   productionMode,
+  vacationNotice,
 }: {
   cart: any
   countryCode: string
   productionMode?: ProductionPaymentMode | null
+  /** Hotová věta o dovolené (jen informace, platbu neblokuje) — nebo nic. */
+  vacationNotice?: string | null
 }) => {
   const searchParams = useSearchParams()
   const [accepted, setAccepted] = useState(false)
@@ -265,6 +268,11 @@ const Review = ({
                   lidí by jinak nechápala, proč „nejde zaplatit". Výrazný callout
                   NAD tlačítkem říká, že nejdřív musí napsat/nahrát, co si
                   představují. */}
+              {vacationNotice && (
+                <p className={styles.vacationNotice} data-testid="vacation-notice">
+                  {vacationNotice}
+                </p>
+              )}
               {!allCommissionsComplete && (
                 <p className={styles.commissionGate}>{COMMISSION_GATE_HINT}</p>
               )}

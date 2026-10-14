@@ -18,6 +18,7 @@ import Shipping from "@modules/checkout/components/shipping"
 import CheckoutStepBubbles from "@modules/checkout/components/step-bubbles"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { getShopStatus } from "@lib/data/shop-status"
+import { vacationSentence } from "@lib/util/vacation"
 import { isBalikovnaOption } from "@lib/util/balikovna"
 import styles from "./style.module.scss"
 
@@ -112,8 +113,10 @@ export default async function CheckoutForm({
    * than hardcoded: the owner edits it in the admin. Display only; the fee
    * line itself is added server-side when the payment session is created.
    */
-  const shopStatus = allowsDobirka ? await getShopStatus() : null
-  const dobirkaFeeCzk = shopStatus?.dobirka_fee_czk ?? 0
+  const shopStatus = await getShopStatus()
+  const dobirkaFeeCzk = allowsDobirka ? shopStatus?.dobirka_fee_czk ?? 0 : 0
+  /* Dovolená v pokladně jen informuje — platbu neblokuje (14. 10. 2026). */
+  const vacationNotice = vacationSentence(shopStatus?.vacation)
 
   const hasPickupShipping = shippingMethods.some(
     (option) =>
@@ -151,6 +154,7 @@ export default async function CheckoutForm({
         cart={cart}
         countryCode={countryCode}
         productionMode={productionMode}
+        vacationNotice={vacationNotice}
       />
     </div>
   )

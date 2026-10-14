@@ -17,8 +17,8 @@ import { ceskaChyba } from "../../lib/ceska-chyba";
  * event announcements).
  *
  * Two instruments, one settings write:
- * - **Dovolená** pauses new commissions SERVER-SIDE (payment workflow) and
- *   banners the storefront. Stock items still sell.
+ * - **Dovolená** je jen upozornění v obchodě — objednávky ani zakázky
+ *   neblokuje (14. 10. 2026) a po dni návratu se sama skryje.
  * - **Oznámení** is banner-only — trhy, výstavy, nové výpaly. No behaviour.
  */
 const Inner = () => {
@@ -80,8 +80,8 @@ const Inner = () => {
       <header className="px-6 pb-4 pt-6">
         <Heading>Dovolená a oznámení</Heading>
         <Text size="small" className="text-ui-fg-subtle mt-2 max-w-2xl">
-          Co sem napíšete, uvidí zákazníci nahoře na každé stránce obchodu.
-          Dovolená navíc pozastaví nové zakázky — hotové zboží se prodává dál.
+          Co sem napíšete, uvidí zákazníci nahoře na každé stránce obchodu
+          i v pokladně. Nakupovat jde dál — dovolená nic neblokuje.
         </Text>
       </header>
 
@@ -90,7 +90,8 @@ const Inner = () => {
           <div>
             <Text size="small" weight="plus">Mám dovolenou</Text>
             <Text size="xsmall" className="text-ui-fg-subtle mt-0.5">
-              Nové zakázky počkají na váš návrat; systém je zdvořile odmítne sám.
+              Objednávky i zakázky chodí dál; zákazník uvidí, že je vyřídíte
+              po návratu. Ode dne návratu se upozornění samo skryje.
             </Text>
           </div>
           <Switch checked={vacation} onCheckedChange={setVacation} />

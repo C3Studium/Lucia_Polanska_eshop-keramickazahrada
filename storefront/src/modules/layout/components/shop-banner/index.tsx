@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { ShopStatus } from "@lib/data/shop-status"
+import { vacationSentence } from "@lib/util/vacation"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import styles from "./style.module.scss"
 
@@ -55,14 +56,9 @@ export default function ShopBanner({ status }: { status: ShopStatus | null }) {
       /** Čeho se zpráva týká — vypisuje se před ní jako odznak. */
       badge: string
     }[] = []
-    if (status?.vacation) {
-      const until = status.vacation.until
-        ? ` Zakázky přijímáme znovu po ${status.vacation.until
-            .split("-")
-            .reverse()
-            .join(". ")}.`
-        : ""
-      list.push({ text: `${status.vacation.message}${until}`, badge: "Dovolená" })
+    const vacation = vacationSentence(status?.vacation)
+    if (vacation) {
+      list.push({ text: vacation, badge: "Dovolená" })
     }
     if (status?.announcement)
       list.push({

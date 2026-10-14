@@ -74,10 +74,11 @@ const KEY_SCHEMAS = {
   /** Dismissed first-use helper cards, keyed by page (§19). Shop-global. */
   onboarding_dismissals: z.record(z.string(), z.boolean()),
   /**
-   * Dovolená — the shop says so instead of going silent. The storefront
-   * shows the banner; the backend REFUSES new commission payments while on
-   * (prepare-made-to-order-payment), because a pause the server does not
-   * enforce is a pause that ends the first time a browser misbehaves.
+   * Dovolená — obchod to řekne, místo aby ztichl. JEN UPOZORNĚNÍ: objednávky
+   * i zakázky jdou dál, zákazník se dozví, že je vyřídí po návratu (rozhodnutí
+   * 14. 10. 2026 — dřív platba zakázky padala na „Výroba má přestávku", i dva
+   * měsíce po návratu, protože přepínač nikdo nevypnul). Aktivní je jen do
+   * data návratu — viz `isVacationActive`.
    */
   vacation_enabled: z.boolean(),
   /** ISO date (yyyy-mm-dd) she expects to be back; shown to customers. */
@@ -291,6 +292,27 @@ const loadStore = async (container: MedusaContainer) => {
   }
 
   return store
+}
+
+/** Dnešní datum v Praze jako yyyy-mm-dd (stejný tvar jako `vacation_until`). */
+const pragueToday = (now: Date): string =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(now)
+
+/**
+ * Je dovolená právě teď? Zapnutá A (bez data, nebo ještě před dnem návratu).
+ *
+ * Den návratu už dovolená není — „Návrat 16. 8." znamená, že 16. 8. je zpátky.
+ * Bez téhle meze visel pás „Dovolená" na webu i dva měsíce po návratu, dokud
+ * přepínač někdo nevypnul ručně.
+ */
+export const isVacationActive = (
+  settings: Pick<MerchantSettings, "vacation_enabled" | "vacation_until"> | null | undefined,
+  now: Date = new Date()
+): boolean => {
+  if (!settings?.vacation_enabled) return false
+  const until = settings.vacation_until?.trim()
+  if (!until) return true
+  return pragueToday(now) < until
 }
 
 /** Reads the effective settings: stored values merged over the defaults. */

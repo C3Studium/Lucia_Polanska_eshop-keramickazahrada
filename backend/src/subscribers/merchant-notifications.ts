@@ -5,6 +5,7 @@ import { notifyMerchant } from "../lib/notify"
 import { toNumber } from "../lib/order-quantity"
 import { isPaymentProblem } from "../modules/merchant-order/payment-state"
 import { isPayLaterPaymentProvider } from "../lib/ship-gate"
+import { isServiceLine } from "../lib/packaging-lines"
 
 /**
  * Merchant awareness — the first five notifications of WorkflowPlan.md §15.
@@ -54,6 +55,37 @@ const isMadeToOrder = (order: any): boolean =>
     return Boolean(collection?.metadata?.made_to_order) && Array.isArray(lines) && lines.length
   })
 
+const pocetPolozek = (count: number) =>
+  `${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"}`
+
+/**
+ * Peníze u zakázky pro e-mail majitelce (14. 10. 2026): „4 500 Kč" samo lhalo —
+ * zaplacená je jen záloha. Zaplaceno = platby mimo kolekci doplatku (ta je
+ * při objednání otevřená a prázdná), bez zrušených.
+ */
+export const madeToOrderMoney = (order: any) => {
+  const collections = (order?.payment_collections || []) as any[]
+  const paid = collections
+    .filter((collection) => !collection?.metadata?.made_to_order_balance)
+    .flatMap((collection) => collection?.payments ?? [])
+    .filter((payment: any) => payment && !payment.canceled_at)
+    .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0)
+  const total = toNumber(order?.total)
+  const productLines = ((order?.items || []) as any[]).filter((item) => !isServiceLine(item))
+  const productionLines = collections.flatMap((collection) =>
+    collection?.metadata?.made_to_order && Array.isArray(collection?.metadata?.production_lines)
+      ? collection.metadata.production_lines
+      : []
+  )
+  return {
+    paid,
+    total,
+    outstanding: Math.max(0, Math.round((total - paid) * 100) / 100),
+    /** Jen zakázky (žádné běžné zboží vedle) — pak je zaplacené opravdu „záloha". */
+    pureCommission: productionLines.length > 0 && productionLines.length >= productLines.length,
+  }
+}
+
 const ORDER_FIELDS = [
   "id",
   "display_id",
@@ -102,7 +134,8 @@ const onOrderPlaced = async ({
     payment_collections: order.payment_collections || [],
   } as any)
 
-  const itemCount = (order.items || []).length
+  // Balné a doběrečné jsou servisní řádky, ne zboží — do počtu nepatří.
+  const itemCount = ((order.items || []) as any[]).filter((item) => !isServiceLine(item)).length
 
   // Platba při převzetí (osobní odběr u pultu, dobírka) je jen autorizovaná —
   // „zaplacená" by majitelce lhala (#37, 9. 10. 2026).
@@ -111,15 +144,32 @@ const onOrderPlaced = async ({
     .some((payment) => isPayLaterPaymentProvider(String(payment?.provider_id ?? "")))
 
   if (!isPaymentProblem(paymentStatus)) {
+    const commission = isMadeToOrder(order) ? madeToOrderMoney(order) : null
+    const zaplaceno = commission?.pureCommission ? "zaplacená záloha" : "zaplaceno"
+    const title = commission
+      ? commission.outstanding > 0.5
+        ? `Nová zakázka #${order.display_id} — ${zaplaceno} ${formatMoney(commission.paid, order.currency_code)}`
+        : `Nová zakázka #${order.display_id} — zaplacená celá`
+      : paysLater
+        ? `Nová objednávka #${order.display_id} — platba při převzetí`
+        : `Nová zaplacená objednávka #${order.display_id}`
+    const description = commission
+      ? [
+          customerName(order),
+          "zakázka",
+          `celkem ${formatMoney(commission.total, order.currency_code)}`,
+          `${zaplaceno} ${formatMoney(commission.paid, order.currency_code)}`,
+          ...(commission.outstanding > 0.5
+            ? [`zbývá doplatit ${formatMoney(commission.outstanding, order.currency_code)}`]
+            : []),
+          pocetPolozek(itemCount),
+        ].join(" · ")
+      : `${customerName(order)} · ${formatMoney(order.total, order.currency_code)} · ${pocetPolozek(itemCount)}`
+
     await notifyMerchant(container, {
       key: `mn:new-order:${order.id}`,
-      title: paysLater
-        ? `Nová objednávka #${order.display_id} — platba při převzetí`
-        : `Nová zaplacená objednávka #${order.display_id}`,
-      description: `${customerName(order)} · ${formatMoney(
-        order.total,
-        order.currency_code
-      )} · ${itemCount} ${itemCount === 1 ? "položka" : itemCount < 5 ? "položky" : "položek"}`,
+      title,
+      description,
       audience: "owner",
       // D7: she works from her inbox, so this one is a bell entry *and* an
       // e-mail even though it is not urgent.

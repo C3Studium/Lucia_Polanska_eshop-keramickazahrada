@@ -434,6 +434,18 @@ $consent-pad: 10px;
   font: 400 clamp(.9rem, 1.2vw, 1.14rem)/1.5 "Sansation-Regular", sans-serif;
 }
 
+/* Dovolená — jen informace, nic neblokuje (14. 10. 2026). Tišší než
+   commissionGate: zákazník nemusí nic udělat, jen ví, kdy se do toho pustí. */
+.vacationNotice {
+  margin: 0 0 clamp(.7rem, 1.48vh, 1.1rem);
+  padding: clamp(.65rem, 1.11vh, .95rem) clamp(.9rem, 1.4vw, 1.2rem);
+  border: 1px solid rgb(var(--ink-05-rgb) / .14);
+  border-radius: .625rem;
+  background: rgb(var(--clay-24-rgb, var(--ink-05-rgb)) / .1);
+  color: var(--review-ink);
+  font: 400 clamp(.9rem, 1.2vw, 1.14rem)/1.5 "Sansation-Regular", sans-serif;
+}
+
 .error {
   margin: 0 0 clamp(.7rem, 1.48vh, 1.25rem);
   padding: clamp(.65rem, 1.11vh, .95rem) 1rem;
