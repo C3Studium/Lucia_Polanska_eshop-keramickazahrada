@@ -20,6 +20,7 @@ import { formatDate, formatDateTime } from "../lib/format";
 import { adminQueryClient } from "../lib/query-client";
 import { sdk } from "../lib/sdk";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { reloadOrderPageSoon } from "../lib/reload-order-page";
 
 const queryClient = adminQueryClient;
 
@@ -289,6 +290,11 @@ const CpTrackingWidgetInner = ({ order }: { order: AdminOrder }) => {
           toast.success(`Simulace „${label}" proběhla stejnou cestou jako ostrý stav.`);
           break;
         }
+      }
+      // Kontrola i simulace můžou zapsat odeslání/doručení do nativní
+      // objednávky — záhlaví by jinak ukazovalo starý stav.
+      if (variables.action !== "start") {
+        reloadOrderPageSoon();
       }
     },
     onError: (error) =>

@@ -25,6 +25,7 @@ import {
   type StitekZasilky,
 } from "../lib/stitky";
 import { ceskaChyba } from "../lib/ceska-chyba";
+import { reloadOrderPageSoon } from "../lib/reload-order-page";
 
 const queryClient = adminQueryClient;
 
@@ -88,6 +89,8 @@ const CpLabelWidgetInner = ({ order }: { order: AdminOrder }) => {
             ? "Testovací štítek vygenerován (zkušební výdejna) — zkontrolujte PDF a e-mail"
             : "Štítek byl vygenerován a uložen u objednávky"
         );
+        // Štítek zakládá nativní plnění → ať záhlaví a Nesplněné položky sedí.
+        reloadOrderPageSoon();
       } else {
         toast.info(result.reason ?? "Štítek se zatím nepodařilo vytvořit");
       }

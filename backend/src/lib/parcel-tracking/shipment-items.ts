@@ -21,6 +21,7 @@
 
 import { toNumber } from "../claims/refund-rules"
 import { LINE_QUANTITY_FIELDS, lineQuantityOf } from "../order-quantity"
+import { isServiceLine } from "../packaging-lines"
 
 export type OutstandingItem = { id: string; quantity: number }
 
@@ -33,17 +34,31 @@ const progressOf = (detail: any, field: ProgressField): number => {
   return toNumber(detail?.[`raw_${field}`])
 }
 
-/** Položky s `requires_shipping`, u kterých `quantity − detail.<field>` > 0. */
+/**
+ * Položky s `requires_shipping` + servisní řádky (balné, doběrečné), u kterých
+ * `quantity − detail.<field>` > 0.
+ *
+ * Servisní řádky dopravu nevyžadují, ale bez nich zůstala objednávka napořád
+ * „Částečně splněno" s balným v „Nesplněných položkách" (#50, 14. 10. 2026).
+ * Do vyskladnění jdou celé; do odeslání jen to, co už je vyskladněné — starší
+ * objednávka s nevyskladněným balným tak odeslání nezablokuje.
+ */
 export const outstandingItemsOf = (
   order: any,
   field: ProgressField
 ): OutstandingItem[] =>
   ((order?.items || []) as any[])
-    .filter((item) => item?.requires_shipping)
-    .map((item) => ({
-      id: String(item.id),
-      quantity: lineQuantityOf(item) - progressOf(item?.detail, field),
-    }))
+    .filter((item) => item?.requires_shipping || isServiceLine(item))
+    .map((item) => {
+      const cap =
+        field === "shipped_quantity" && !item?.requires_shipping
+          ? progressOf(item?.detail, "fulfilled_quantity")
+          : lineQuantityOf(item)
+      return {
+        id: String(item.id),
+        quantity: cap - progressOf(item?.detail, field),
+      }
+    })
     .filter((item) => item.quantity > 0)
 
 /** K odeslání (shipment). */
@@ -59,6 +74,10 @@ export const OUTSTANDING_ITEM_FIELDS = [
   "items.id",
   ...LINE_QUANTITY_FIELDS,
   "items.requires_shipping",
+  // Servisní řádek (balné/doběrečné) = značka v metadatech a žádný produkt.
+  "items.metadata",
+  "items.variant_id",
+  "items.product_id",
   "items.detail.fulfilled_quantity",
   "items.detail.raw_fulfilled_quantity",
   "items.detail.shipped_quantity",
