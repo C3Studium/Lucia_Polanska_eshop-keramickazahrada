@@ -13,6 +13,9 @@ import { compressImage } from "@lib/util/compress-image"
 import styles from "./style.module.scss"
 
 const MAX_PHOTOS = 6
+/* Pokladna ukládá sama: text po odkliknutí z pole a během psaní po téhle pauze,
+   ať je uložený dřív, než zákazník klikne na „Zaplatit" (brána čte uložený brief). */
+const AUTOSAVE_DELAY_MS = 1200
 /* Horní mez pro VSTUPNÍ soubor — komprese ho pak stlačí na pár set kB. Není to
    limit uploadu (ten řeší komprese), jen pojistka proti nesmyslně velkému souboru. */
 const MAX_SOURCE_BYTES = 40 * 1024 * 1024
@@ -57,6 +60,9 @@ type Props = {
    */
   onCompletionChange?: (complete: boolean) => void
 }
+
+const sameList = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((value, index) => value === b[index])
 
 const readAsBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -118,6 +124,88 @@ export default function CommissionBrief({
 
   const total = kept.length + drafts.length
 
+  /*
+   * Samoukládání — jen v pokladně (14. 10. 2026). Zákazník čekal, že se poznámka
+   * a fotky uloží samy; tlačítko „Uložit k zakázce" přehlédl a k platbě ho pak
+   * nepustila brána. Deník u objednávky (`order`) dál odesílá tlačítkem — tam je
+   * každé uložení zpráva do ateliéru a nesmí odejít samo.
+   *
+   * `latest` drží stav synchronně (setState se projeví až po renderu, uložení
+   * spuštěné hned po něm by poslalo starou verzi); `saved` je naposledy uložený
+   * stav, ať se zbytečně neukládá totéž. Uložení běží jedno po druhém — co se
+   * mezitím změní, pošle smyčka hned po něm. Fotky jde během ukládání jen
+   * prohlížet, text se píše dál.
+   */
+  const autoSave = variant === "checkout"
+  const [saving, setSaving] = useState(false)
+  const latest = useRef({ text: note, kept: photos, drafts: [] as Draft[] })
+  const saved = useRef({ text: note, kept: photos })
+  const inFlight = useRef(false)
+  const again = useRef(false)
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+    },
+    []
+  )
+
+  const runAutoSave = async () => {
+    if (!autoSave) return
+    if (inFlight.current) {
+      again.current = true
+      return
+    }
+    inFlight.current = true
+    setSaving(true)
+    try {
+      do {
+        again.current = false
+        const snap = latest.current
+        const unchanged =
+          snap.drafts.length === 0 &&
+          snap.text === saved.current.text &&
+          sameList(snap.kept, saved.current.kept)
+        if (unchanged) continue
+
+        const sentDrafts = new Set(snap.drafts.map((draft) => draft.id))
+        const result = await onSubmitAction({
+          note: snap.text,
+          keepPhotos: snap.kept,
+          newPhotos: snap.drafts.map((draft) => draft.upload),
+        })
+
+        if (!result.success) {
+          setStatus({ kind: "error", message: result.message ?? "Nepovedlo se to uložit." })
+          break
+        }
+
+        const savedPhotos = result.photos ?? snap.kept
+        saved.current = { text: snap.text, kept: savedPhotos }
+        const remainingDrafts = latest.current.drafts.filter((draft) => !sentDrafts.has(draft.id))
+        latest.current = { ...latest.current, kept: savedPhotos, drafts: remainingDrafts }
+        setKept(savedPhotos)
+        setDrafts(remainingDrafts)
+        setStatus({ kind: "saved" })
+        onCompletionChange?.(Boolean(snap.text.trim()) || savedPhotos.length > 0)
+      } while (again.current)
+    } finally {
+      inFlight.current = false
+      setSaving(false)
+    }
+  }
+
+  /** Nový stav do `latest` (a do Reactu) a v pokladně hned uložit. */
+  const changePhotos = (next: { kept?: string[]; drafts?: Draft[] }) => {
+    latest.current = { ...latest.current, ...next }
+    if (next.kept) setKept(next.kept)
+    if (next.drafts) setDrafts(next.drafts)
+    void runAutoSave()
+  }
+
+  const busy = isPending || saving
+
   const pick = async (files: FileList | null) => {
     if (!files?.length) return
     setStatus({ kind: "idle" })
@@ -153,8 +241,9 @@ export default function CommissionBrief({
       })
     }
 
-    setDrafts((current) => [...current, ...accepted])
     if (fileInput.current) fileInput.current.value = ""
+    if (!accepted.length) return
+    changePhotos({ drafts: [...latest.current.drafts, ...accepted] })
   }
 
   const save = () => {
@@ -184,6 +273,9 @@ export default function CommissionBrief({
         setKept([])
       }
       setDrafts([])
+      latest.current = result.notes
+        ? { text: "", kept: [], drafts: [] }
+        : { text, kept: result.photos ?? kept, drafts: [] }
       setStatus({ kind: "saved" })
 
       // Krok k platbě se odemyká podle ULOŽENÉHO briefu: text nebo aspoň jedna
@@ -273,8 +365,19 @@ export default function CommissionBrief({
             maxLength={2000}
             placeholder="Rozměry, barva, nápis, kam to přijde…"
             onChange={(event) => {
-              setText(event.target.value)
+              const value = event.target.value
+              setText(value)
+              latest.current = { ...latest.current, text: value }
               setStatus({ kind: "idle" })
+              if (autoSave) {
+                if (typingTimer.current) clearTimeout(typingTimer.current)
+                typingTimer.current = setTimeout(() => void runAutoSave(), AUTOSAVE_DELAY_MS)
+              }
+            }}
+            onBlur={() => {
+              if (!autoSave) return
+              if (typingTimer.current) clearTimeout(typingTimer.current)
+              void runAutoSave()
             }}
             disabled={isPending}
             data-testid="commission-note-input"
@@ -294,7 +397,7 @@ export default function CommissionBrief({
               type="button"
               className={styles.dropzone}
               onClick={() => fileInput.current?.click()}
-              disabled={isPending}
+              disabled={busy}
               data-testid="commission-add-photo"
             >
               <span className={styles.dropIcon} aria-hidden="true">
@@ -313,9 +416,11 @@ export default function CommissionBrief({
                   <button
                     type="button"
                     onClick={() =>
-                      setKept((current) => current.filter((u) => u !== url))
+                      changePhotos({
+                        kept: latest.current.kept.filter((u) => u !== url),
+                      })
                     }
-                    disabled={isPending}
+                    disabled={busy}
                     aria-label="Odebrat fotku"
                   >
                     ×
@@ -328,9 +433,11 @@ export default function CommissionBrief({
                   <button
                     type="button"
                     onClick={() =>
-                      setDrafts((current) => current.filter((d) => d.id !== draft.id))
+                      changePhotos({
+                        drafts: latest.current.drafts.filter((d) => d.id !== draft.id),
+                      })
                     }
-                    disabled={isPending}
+                    disabled={busy}
                     aria-label="Odebrat fotku"
                   >
                     ×
@@ -343,7 +450,7 @@ export default function CommissionBrief({
                   type="button"
                   className={styles.add}
                   onClick={() => fileInput.current?.click()}
-                  disabled={isPending}
+                  disabled={busy}
                   data-testid="commission-add-photo"
                 >
                   <span aria-hidden="true">+</span>
@@ -366,28 +473,35 @@ export default function CommissionBrief({
       />
 
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.save}
-          onClick={save}
-          disabled={isPending}
-          data-testid="commission-save"
-        >
-          {isPending
-            ? "Ukládám…"
-            : variant === "order"
-            ? "Odeslat do ateliéru"
-            : "Uložit k zakázce"}
-        </button>
+        {/* V pokladně se ukládá samo — tlačítko jen u deníku objednávky, kde
+            každé odeslání je zpráva do ateliéru. */}
+        {!autoSave && (
+          <button
+            type="button"
+            className={styles.save}
+            onClick={save}
+            disabled={isPending}
+            data-testid="commission-save"
+          >
+            {isPending ? "Ukládám…" : "Odeslat do ateliéru"}
+          </button>
+        )}
         <span
           className={status.kind === "error" ? styles.error : styles.ok}
           role="status"
           aria-live="polite"
+          data-testid="commission-status"
         >
           {status.kind === "error"
             ? status.message
+            : saving
+            ? drafts.length
+              ? "Nahrávám fotky…"
+              : "Ukládám…"
             : status.kind === "saved"
             ? "Uloženo — díky, mám to."
+            : autoSave
+            ? `Ukládá se samo · ${total}/${MAX_PHOTOS} fotek`
             : `${total}/${MAX_PHOTOS} fotek`}
         </span>
       </div>
