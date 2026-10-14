@@ -1,40 +1,46 @@
-import { getProductPrice } from "@lib/util/get-product-price"
+"use client"
+
+import {
+  clearanceInfo,
+  discountFromReference,
+  getProductPrice,
+} from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import styles from "./style.module.scss"
+import { usePriceReference } from "./use-price-reference"
 
 /**
- * Přeškrtnutá původní cena u poškozeného kusu — bez price-listu.
+ * Cena na stránce výrobku.
  *
- * Běžná sleva jede přes Medusa price-list (`price_type === "sale"`) a blok níž
- * ji umí. Poškozený kus ale žádnou slevu v Slevy+ nezakládá (záměr majitelky):
- * jeho cena JE ta akční a „původní" cena se drží v `metadata.clearance_original_price`.
- * Tahle větev ji přečte a vykreslí přeškrtnutí + procento stejnými třídami jako
- * price-listová sleva, takže to na webu vypadá identicky. Mimo poškozené kusy
- * (klíč chybí) se nevykreslí nic navíc.
+ * ## Sleva (price-list typu „sale") — § 12a ZOS
+ *
+ * Procento i srovnávací cena se počítají z NEJNIŽŠÍ CENY ZA 30 DNÍ PŘED
+ * SLEVOU (historie cen v backendu, `usePriceReference`), ne z běžné ceny.
+ * - reference je → „−X %" a věta „Nejnižší cena za 30 dní před slevou: …"
+ *   (když historie celých 30 dní nepokrývá: „Nejnižší cena před slevou: …"
+ *   s poznámkou — pravdivě, bez tvrzení o 30 dnech);
+ * - aktuální cena pod referencí není → žádná sleva se neukazuje;
+ * - backend reference nedal → jen aktuální cena a štítek „Sleva", nikdy
+ *   přeškrtnutá cena, která by mohla klamat;
+ * - než reference dorazí, cena se ukazuje bez slevových údajů.
+ *
+ * ## Kus s vadou („Poškozené")
+ *
+ * Jeho cena není sleva, ale cena kusu s vadou — žádné přeškrtnutí, žádné
+ * procento, jen „Cena kusu s uvedenou vadou". Popis vady stojí hned nad
+ * cenou v rámečku „Poškození" (`details.tsx`), proto se tu neopakuje.
  */
-const clearanceOriginal = (
-  product: HttpTypes.StoreProduct,
-  calculatedNumber: number | undefined
-): { label: string; percent: number } | null => {
-  const meta = (product.metadata ?? null) as Record<string, unknown> | null
-  const raw = meta?.clearance_original_price
-  const original = typeof raw === "number" ? raw : Number(raw)
-  if (!Number.isFinite(original) || original <= 0) return null
-  if (calculatedNumber == null || original <= calculatedNumber) return null
 
-  return {
-    label: String(
-      convertToLocale({ amount: original, currency_code: "czk" })
-    ).replace(/czk/i, "").trim(),
-    percent: Math.round(((original - calculatedNumber) / original) * 100),
-  }
-}
+const formatAmount = (amount: number, currencyCode: string) =>
+  String(convertToLocale({ amount, currency_code: currencyCode }))
+    .replace(/czk/i, "")
+    .trim()
 
 export default function ProductPrice({
   product,
   variant,
   className,
-  countryCode
 }: {
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
@@ -48,15 +54,24 @@ export default function ProductPrice({
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
   const calculatedPrice = selectedPrice?.calculated_price
-  const originalPrice = selectedPrice?.original_price
   const hasPrice = calculatedPrice != null
   const isSale = selectedPrice?.price_type === "sale"
+  const currencyCode = selectedPrice?.currency_code ?? "czk"
+  const clearance = clearanceInfo(product)
 
-  // Poškozený kus ukazuje původní cenu z metadat — ale jen když zrovna neběží
-  // price-listová sleva, aby se přeškrtnutí nezdvojilo.
-  const clearance = !isSale
-    ? clearanceOriginal(product, selectedPrice?.calculated_price_number)
+  const reference = usePriceReference(
+    isSale ? selectedPrice?.variant_id : undefined,
+    currencyCode
+  )
+  const lowest =
+    reference.status === "ready" ? reference.reference.lowest_30d : null
+  const percent = isSale
+    ? discountFromReference(selectedPrice?.calculated_price_number, lowest)
     : null
+
+  const showReference = isSale && percent != null && lowest != null
+  const showFallbackLabel = isSale && reference.status === "unavailable"
+  const saleStyled = showReference || showFallbackLabel
 
   return (
     <div className="product__details__cta__price">
@@ -65,7 +80,7 @@ export default function ProductPrice({
         <span
           className={[
             "product__priceCurrent",
-            isSale || clearance ? "product__priceCurrent--sale" : "",
+            saleStyled ? "product__priceCurrent--sale" : "",
             !hasPrice ? "product__priceUnavailable" : "",
             className ?? "",
           ].filter(Boolean).join(" ")}
@@ -76,38 +91,38 @@ export default function ProductPrice({
             ? String(calculatedPrice).replace(/czk/i, "").trim()
             : "Cena na dotaz"}
         </span>
-        {isSale && (
+
+        {showReference && (
           <>
-            <p>
-              <span className="product__priceOriginalLabel">Původní cena: </span>
-              <span
-                className="product__priceOriginal"
-                data-testid="original-product-price"
-                data-value={selectedPrice.original_price_number}
-              >
-                {originalPrice !== undefined
-                  ? String(originalPrice).replace(/czk/i, "").trim()
-                  : "Na dotaz"}
+            <span className="product__priceDiscount">−{percent} %</span>
+            <p className={styles.line} data-testid="price-reference">
+              <span className="product__priceOriginalLabel">
+                {reference.status === "ready" && reference.reference.complete
+                  ? "Nejnižší cena za 30 dní před slevou: "
+                  : "Nejnižší cena před slevou: "}
               </span>
+              <span className={styles.amount} data-value={lowest}>
+                {formatAmount(lowest!, currencyCode)}
+              </span>
+              {reference.status === "ready" && !reference.reference.complete && (
+                <span className={styles.note}>
+                  Záznam cen za celých 30 dní před slevou nemáme.
+                </span>
+              )}
             </p>
-            <span className="product__priceDiscount">
-              -{selectedPrice.percentage_diff}%
-            </span>
           </>
         )}
-        {!isSale && clearance && (
-          <>
-            <p>
-              <span className="product__priceOriginalLabel">Původní cena: </span>
-              <span
-                className="product__priceOriginal"
-                data-testid="original-product-price"
-              >
-                {clearance.label}
-              </span>
-            </p>
-            <span className="product__priceDiscount">-{clearance.percent}%</span>
-          </>
+
+        {showFallbackLabel && (
+          <span className="product__priceDiscount">Sleva</span>
+        )}
+
+        {clearance && hasPrice && (
+          <p className={styles.line} data-testid="clearance-price-note">
+            {clearance.damage
+              ? "Cena kusu s uvedenou vadou"
+              : "Cena kusu s vadou"}
+          </p>
         )}
       </div>
     </div>

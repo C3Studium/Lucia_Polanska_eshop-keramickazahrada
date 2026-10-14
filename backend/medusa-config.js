@@ -249,6 +249,10 @@ const medusaConfig = {
       resolve: "./src/modules/price-watch",
     },
     {
+      // Historie cen pro § 12a ZOS (nejnižší cena za 30 dní před slevou).
+      resolve: "./src/modules/price-history",
+    },
+    {
       resolve: "./src/modules/bundled-product",
     },
     {

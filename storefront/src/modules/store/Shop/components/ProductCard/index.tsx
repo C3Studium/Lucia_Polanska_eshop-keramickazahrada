@@ -1,6 +1,13 @@
 "use client"
 
-import { getProductPrice } from "@lib/util/get-product-price"
+import {
+  clearanceInfo,
+  discountFromReference,
+  getProductPrice,
+} from "@lib/util/get-product-price"
+import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
+import { convertToLocale } from "@lib/util/money"
+import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
 import type { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { motion, type Variants } from "framer-motion"
@@ -141,28 +148,60 @@ function ProductCard({
   /* Hovering flips `isInteracting`, which re-renders the card. Deriving price, availability and
      the image pair cost that work again on every pointer in/out; they depend only on the product,
      so they are computed once instead. */
-  const { cheapestPrice, primaryImage, secondaryImage, isNew, hasSale, availability } =
-    useMemo(() => {
-      const { cheapestPrice } = getProductPrice({ product })
-      const primaryImage =
-        product.thumbnail || product.images?.[0]?.url || "/assets/img/horizontal_prop.png"
+  const {
+    cheapestPrice,
+    primaryImage,
+    secondaryImage,
+    isNew,
+    hasSale,
+    availability,
+    clearance,
+    isMadeToOrder,
+  } = useMemo(() => {
+    const { cheapestPrice } = getProductPrice({ product })
+    const primaryImage =
+      product.thumbnail || product.images?.[0]?.url || "/assets/img/horizontal_prop.png"
 
-      return {
-        cheapestPrice,
-        primaryImage,
-        secondaryImage: product.images?.find(
-          (image) => image.url && image.url !== primaryImage
-        )?.url,
-        isNew: Boolean(
-          product.created_at &&
-            new Date(product.created_at).getTime() > Date.now() - NEW_FOR_MS
+    return {
+      cheapestPrice,
+      primaryImage,
+      secondaryImage: product.images?.find(
+        (image) => image.url && image.url !== primaryImage
+      )?.url,
+      isNew: Boolean(
+        product.created_at &&
+          new Date(product.created_at).getTime() > Date.now() - NEW_FOR_MS
+      ),
+      hasSale: cheapestPrice?.price_type === "sale",
+      availability: productAvailability(product),
+      clearance: clearanceInfo(product),
+      /* Zakázka = zapnutý profil výroby (zrcadlí se do `metadata.made_to_order`,
+         který výpis obchodu nese přes `+metadata`) nebo kategorie Zakázková
+         výroba — stejné dva signály jako v košíku (`lib/util/commission`). */
+      isMadeToOrder:
+        (product.metadata as Record<string, unknown> | null)?.made_to_order === true ||
+        (product.categories ?? []).some(
+          (category) => category?.handle === COMMISSION_CATEGORY_HANDLE
         ),
-        hasSale: Boolean(
-          cheapestPrice?.price_type === "sale" && cheapestPrice.percentage_diff
-        ),
-        availability: productAvailability(product),
-      }
-    }, [product])
+    }
+  }, [product])
+
+  /* § 12a ZOS: sleva se na kartě ukazuje proti nejnižší ceně za 30 dní před
+     slevou, ne proti běžné ceně. Dotaz jde dávkou za celou mřížku
+     (`usePriceReference`). Bez reference zůstane jen štítek „Sleva" —
+     přeškrtnutá běžná cena by mohla klamat, proto tu není vůbec. */
+  const reference = usePriceReference(
+    hasSale ? cheapestPrice?.variant_id : undefined,
+    cheapestPrice?.currency_code
+  )
+  const lowest30d =
+    reference.status === "ready" ? reference.reference.lowest_30d : null
+  const salePercent = hasSale
+    ? discountFromReference(cheapestPrice?.calculated_price_number, lowest30d)
+    : null
+  const referenceComplete =
+    reference.status === "ready" && reference.reference.complete
+  const showSaleFallback = hasSale && reference.status === "unavailable"
 
   /*
    * Rychlé přidání do košíku.
@@ -307,11 +346,11 @@ function ProductCard({
               má karta říct. Že se dá objednat, ukazuje košík vedle ceny —
               a jak dlouho se čeká, stojí na stránce produktu.
 
-              Štítek „Na objednávku" tu schválně NENÍ. Patří jen zakázkové výrobě,
-              a tu mřížka rozpoznat neumí: profil zakázky se načítá zvlášť pro
-              jeden produkt a `/store/products` ho s produktem nevrací (ověřeno
-              třemi zápisy `fields`). Než ho začne vracet, byl by ten štítek
-              na všem, co došlo — což je přesně to, čím byl.
+              Štítek „Na objednávku" tu schválně NENÍ — u vyprodaného kusu by
+              lhal. Zakázku karta pozná podle `metadata.made_to_order` (zrcadlo
+              zapnutého profilu výroby, výpis ho nese přes `+metadata`) nebo
+              kategorie Zakázková výroba; ta má vlastní štítek „Na zakázku"
+              s poučením, že ji nelze vrátit do 14 dnů (§ 1837 písm. d) OZ).
             */}
             {(availability === "sold-out" || hasEmptyShelf(product)) && (
               <span className={styles.badgeSold}>{availabilityLabel["sold-out"]}</span>
@@ -319,8 +358,25 @@ function ProductCard({
             {availability === "last-one" && (
               <span className={styles.badgeLast}>{availabilityLabel["last-one"]}</span>
             )}
+            {isMadeToOrder && (
+              <span
+                className={styles.badgeMade}
+                title="Na zakázku — nelze vrátit do 14 dnů"
+              >
+                Na zakázku
+                <span className={styles.badgeNote}>
+                  {" "}— nelze vrátit do 14 dnů
+                </span>
+              </span>
+            )}
+            {clearance && (
+              <span title={clearance.damage ?? "Kus s vadou"}>
+                Kus s vadou
+              </span>
+            )}
             {isNew && <span>Novinka</span>}
-            {hasSale && <span>−{Math.round(Number(cheapestPrice!.percentage_diff))} %</span>}
+            {salePercent != null && <span>−{salePercent} %</span>}
+            {showSaleFallback && <span>Sleva</span>}
           </div>
           <motion.span
             className={styles.discover}
@@ -344,7 +400,13 @@ function ProductCard({
             </div>
             <span className={styles.index} aria-hidden="true">LP</span>
           </div>
-          <p className={styles.description}>{product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}</p>
+          {/* U kusu s vadou je nejdůležitější popis právě ta vada — cena na
+              kartě je „cena kusu s uvedenou vadou", tak ji musí karta uvést. */}
+          <p className={styles.description}>
+            {clearance?.damage
+              ? `Vada: ${clearance.damage}`
+              : product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}
+          </p>
         </div>
       </LocalizedClientLink>
 
@@ -384,8 +446,32 @@ function ProductCard({
         </div>
 
         <div className={styles.price}>
-          {hasSale && <del>{cheapestPrice?.original_price}</del>}
           <strong>{cheapestPrice?.calculated_price || "Cena na dotaz"}</strong>
+          {salePercent != null && lowest30d != null && (
+            <small
+              className={styles.priceNote}
+              title={
+                referenceComplete
+                  ? undefined
+                  : "Záznam cen za celých 30 dní před slevou nemáme."
+              }
+            >
+              {referenceComplete
+                ? "Nejnižší cena za 30 dní před slevou: "
+                : "Nejnižší cena před slevou: "}
+              <span>
+                {convertToLocale({
+                  amount: lowest30d,
+                  currency_code: cheapestPrice?.currency_code ?? "czk",
+                })}
+              </span>
+            </small>
+          )}
+          {clearance && cheapestPrice?.calculated_price && (
+            <small className={styles.priceNote}>
+              {clearance.damage ? "Cena kusu s uvedenou vadou" : "Cena kusu s vadou"}
+            </small>
+          )}
         </div>
       </div>
     </motion.article>

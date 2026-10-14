@@ -176,6 +176,11 @@
 .price { display: flex; flex-direction: column; align-items: end; white-space: nowrap; }
 .price del { color: var(--clay-22); font-size: clamp(.75rem, 1vw, 0.875rem); }
 .price strong { font-family: "Sentient-Regular", serif; font-size: clamp(1.1rem, 1.35vw, 1.5rem); font-weight: 400; }
+/* Věta pod cenou: nejnižší cena za 30 dní před slevou (§ 12a) nebo „Cena kusu
+   s uvedenou vadou". Smí se zalomit — `.price` jinak drží `nowrap` kvůli
+   částce. 12px je legibilní minimum projektu (--type-eyebrow). */
+.priceNote { max-width: 13.5rem; margin-top: .15rem; color: var(--olive-04); font-size: .75rem; line-height: 1.3; text-align: right; white-space: normal; }
+.priceNote span { white-space: nowrap; }
 
 @include fine-pointer {
   .link:hover .primary,
@@ -202,6 +207,23 @@
 .badgeLast {
   background: var(--clay-24) !important;
   color: var(--cream-10) !important;
+}
+
+/* Doplněk štítku „Na zakázku" jen pro odečítače obrazovky („— nelze vrátit
+   do 14 dnů"); vidící ho mají v `title`. Přebíjí `.badges span`, které by
+   vnořenému spanu jinak dalo výplň a pozadí čipu. */
+.badges .badgeNote {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+  white-space: nowrap;
 }
 
 /*

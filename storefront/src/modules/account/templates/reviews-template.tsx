@@ -13,6 +13,7 @@ import {
 import { accountListItemVariants, accountListVariants } from "../motion"
 import s from "./styles/reviews-template.module.scss"
 import AccountInteractiveSurface from "../components/account-interactive-surface"
+import { REVIEW_POLICY_TEXT } from "@modules/products/components/product-reviews/copy"
 
 type ReviewsTemplateProps = {
   reviews: any[]
@@ -52,6 +53,13 @@ export default function ReviewsTemplate({
         <p className={s.accountReviewsDescription}>
           Co jste napsali o věcech, které už máte doma. Ostatním to hodně
           pomáhá při výběru.
+        </p>
+        {/* § 5 ZOS — stejná pravidla jako u formuláře recenze. */}
+        <p
+          className={s.accountReviewsDescription}
+          style={{ marginTop: "0.75rem" }}
+        >
+          {REVIEW_POLICY_TEXT}
         </p>
       </AccountSectionReveal>
 
@@ -134,6 +142,11 @@ export default function ReviewsTemplate({
                             <time dateTime={review.created_at}>
                               {formatReviewDate(review.created_at)}
                             </time>
+                          )}
+                          {/* Jen když ho server ověřil (a stránka pole
+                              načetla — `fields=+verified_purchase`). */}
+                          {review?.verified_purchase === true && (
+                            <span>Ověřený nákup</span>
                           )}
                         </div>
                       </div>

@@ -5,6 +5,7 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import { createReviewStep } from "./steps/create-review"
 import { guardReviewSpamStep } from "./steps/guard-review-spam"
+import { verifyReviewPurchaseStep } from "./steps/verify-review-purchase"
 import { emitEventStep, useQueryGraphStep } from "@medusajs/medusa/core-flows"
 
 type CreateReviewInput = {
@@ -43,8 +44,27 @@ export const createReviewWorkflow = createWorkflow(
       last_name: input.last_name,
     })
 
+    // „Ověřený nákup" (§ 5 ZOS) — rozhoduje server podle objednávek
+    // recenzenta, ne formulář. Vstup workflow pole záměrně nemá.
+    const verifiedPurchase = verifyReviewPurchaseStep({
+      product_id: input.product_id,
+      customer_id: input.customer_id,
+    })
+
     // Create the review
-    const review = createReviewStep(input)
+    const review = createReviewStep(
+      transform({ input, verifiedPurchase }, ({ input, verifiedPurchase }) => ({
+        title: input.title,
+        content: input.content,
+        rating: input.rating,
+        product_id: input.product_id,
+        customer_id: input.customer_id,
+        first_name: input.first_name,
+        last_name: input.last_name,
+        status: input.status,
+        verified_purchase: verifiedPurchase === true,
+      }))
+    )
 
     // Every review is moderated by hand (D5), so a new one is work waiting for
     // her. The product title travels with the event because the notification

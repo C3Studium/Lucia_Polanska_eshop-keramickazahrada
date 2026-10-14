@@ -16,7 +16,14 @@ const Review = model.define("review", {
     .enum(["čeká na schválení", "schváleno", "zamítnuto", "archivováno"])
     .default("čeká na schválení"),
   product_id: model.text().index("IDX_REVIEW_PRODUCT_ID"),
-  customer_id: model.text().nullable()
+  customer_id: model.text().nullable(),
+  /**
+   * Recenzi psal zákazník, který výrobek u nás opravdu koupil (§ 5 ZOS —
+   * štítek „Ověřený nákup" nesmí být u všech). Nastavuje JEN server při
+   * založení (`workflows/steps/verify-review-purchase`), z formuláře nikdy;
+   * pravidlo je v `verified-purchase.ts`.
+   */
+  verified_purchase: model.boolean().default(false),
 })
 .checks([
   {

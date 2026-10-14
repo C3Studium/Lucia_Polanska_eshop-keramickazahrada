@@ -10,6 +10,7 @@ import { useFormStatus } from "react-dom"
 
 import { retrieveCustomer } from "../../../../lib/data/customer"
 import { addProductReview } from "../../../../lib/client/reviews"
+import { REVIEW_POLICY_TEXT } from "./copy"
 import styles from "./form.module.scss"
 
 type ProductReviewsFormProps = {
@@ -134,6 +135,8 @@ export default function ProductReviewsForm({
           <p>
             Ostatním to hodně pomůže při výběru — a mně taky.
           </p>
+          {/* § 5 ZOS: kdo smí psát, co znamená štítek, jak se schvaluje. */}
+          <p className={styles.policy}>{REVIEW_POLICY_TEXT}</p>
         </div>
 
         <div className={styles.reviewSeal} aria-hidden="true">

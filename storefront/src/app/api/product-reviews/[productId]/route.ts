@@ -52,7 +52,9 @@ export async function GET(
           method: "GET",
           headers: { ...baseHeaders, ...authHeaders },
           cache: "no-store",
-          query: { limit: 50, order: "-created_at" },
+          // `+` přidá štítek „Ověřený nákup" k výchozím polím routy — bez něj
+          // by vlastní (i schválená) recenze přišla bez `verified_purchase`.
+          query: { limit: 50, order: "-created_at", fields: "+verified_purchase" },
         })
 
         const mineForProduct = (Array.isArray(meResp.reviews) ? meResp.reviews : [])
