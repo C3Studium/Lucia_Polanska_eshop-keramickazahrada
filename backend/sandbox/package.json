@@ -1,0 +1,19 @@
+{
+  "name": "keramickazahrada-sandbox",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Lokální izolovaný sandbox (vestavěný Postgres, zachytávač e-mailů, bez Redis/R2/Resend/iDoklad/ComGate). Viz README.md.",
+  "//": "Bez \"type\": \"module\" — skripty jsou .mjs/.cjs a .ts (seed) pouští medusa exec přes ts-node jako CommonJS.",
+  "scripts": {
+    "db": "node db.mjs",
+    "mail": "node mail-catcher.mjs",
+    "backend": "node backend.mjs",
+    "seed": "node backend.mjs seed",
+    "start": "node run-all.mjs",
+    "stop": "node run-all.mjs stop",
+    "smoke": "node smoke-order.mjs"
+  },
+  "dependencies": {
+    "embedded-postgres": "17.10.0-beta.17"
+  }
+}

@@ -1,0 +1,9 @@
+# Sandbox — nic z běhu nepatří do gitu.
+node_modules/
+.pgdata/
+.mail/
+.artifacts/
+.logs/
+.static/
+.run/
+*.log
