@@ -19,6 +19,10 @@ import { addToCart } from "@lib/data/cart"
 import Cart from "@modules/common/icons/cart"
 import WishlistToggle from "@modules/products/components/wishlist-toggle"
 import {
+  isCustomAmountVoucher,
+  voucherConfig,
+} from "@modules/products/components/voucher-amount"
+import {
   availabilityLabel,
   hasEmptyShelf,
   isPurchasable,
@@ -212,12 +216,20 @@ function ProductCard({
    * které se píše na stránce produktu — v obou případech je poctivější poslat
    * člověka na detail, což karta stejně nabízí.
    */
+  /* Dárkový poukaz s vlastní částkou: částku zákazník zadává na stránce
+     poukazu (cena řádku = zvolená částka), takže rychlé přidání nemá co
+     přidat a katalogová cena (1 Kč) se na kartě neukazuje. */
+  const customVoucher = isCustomAmountVoucher(
+    product.metadata as Record<string, unknown> | null | undefined
+  )
+
   const quickAddVariant = useMemo(() => {
+    if (customVoucher) return null
     const variants = product.variants ?? []
     if (variants.length !== 1) return null
 
     return maxPurchasableQuantity(variants[0]) > 0 ? variants[0] : null
-  }, [product.variants])
+  }, [customVoucher, product.variants])
 
   /* Oblíbené se ukládají po variantě, takže platí totéž omezení jako u košíku —
      u vícevariantního kusu by karta hádala, který se má uložit. Sklad se tu
@@ -446,7 +458,16 @@ function ProductCard({
         </div>
 
         <div className={styles.price}>
-          <strong>{cheapestPrice?.calculated_price || "Cena na dotaz"}</strong>
+          <strong>
+            {customVoucher
+              ? `Vlastní částka od ${convertToLocale({
+                  amount: voucherConfig(
+                    product.metadata as Record<string, unknown> | null | undefined
+                  ).min,
+                  currency_code: "czk",
+                })}`
+              : cheapestPrice?.calculated_price || "Cena na dotaz"}
+          </strong>
           {salePercent != null && lowest30d != null && (
             <small
               className={styles.priceNote}
