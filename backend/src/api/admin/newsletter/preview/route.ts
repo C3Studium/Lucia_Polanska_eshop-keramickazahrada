@@ -9,7 +9,9 @@ import {
   campaignContentProblems,
   sanitizeBlocks,
 } from "../../../../lib/newsletter-blocks"
+import { getLegalFacts } from "../../../../lib/merchant-settings"
 import { newsletterUnsubscribeUrl } from "../../../../lib/newsletter-link"
+import { withEmailLegalFacts } from "../../../../modules/resend/components/email-ui"
 import { PromotionalEmail } from "../../../../modules/resend/emails/promotional"
 
 /**
@@ -41,18 +43,24 @@ export async function POST(
   const payload = (req.validatedBody || req.body) as PostNewsletterPreview
 
   const blocks = sanitizeBlocks(payload.blocks)
+  // Patička a odesílatel z právních údajů — jako při skutečném odeslání
+  // (Resend provider je dosadí stejně).
+  const legal = await getLegalFacts(req.scope)
 
   const html = await render(
-    PromotionalEmail({
-      subject: payload.subject?.trim() || "Zpráva z ateliéru",
-      preheader: payload.preheader?.trim() || undefined,
-      // Preview an empty composition as an empty e-mail rather than the
-      // legacy discount mock the template would otherwise fall back to.
-      blocks: blocks.length ? blocks : [{ type: "paragraph", text: " " }],
-      unsubscribeLink:
-        newsletterUnsubscribeUrl("nahled@example.com") ??
-        "https://example.com/odhlaseni-jen-v-nahledu",
-    }) as ReactElement
+    withEmailLegalFacts(
+      PromotionalEmail({
+        subject: payload.subject?.trim() || "Zpráva z ateliéru",
+        preheader: payload.preheader?.trim() || undefined,
+        // Preview an empty composition as an empty e-mail rather than the
+        // legacy discount mock the template would otherwise fall back to.
+        blocks: blocks.length ? blocks : [{ type: "paragraph", text: " " }],
+        unsubscribeLink:
+          newsletterUnsubscribeUrl("nahled@example.com") ??
+          "https://example.com/odhlaseni-jen-v-nahledu",
+      }),
+      legal.source === "settings" ? legal.facts : null
+    ) as ReactElement
   )
 
   res.json({

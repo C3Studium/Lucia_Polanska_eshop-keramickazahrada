@@ -11,6 +11,7 @@ import {
   versionValidAt,
   type LegalManifest,
   type LegalSlug,
+  type LiveLegalFacts,
   type SellerFacts,
 } from "./index"
 
@@ -125,10 +126,14 @@ export const madeToOrderTitles = (items: OrderLike["items"]): string[] =>
  * Přílohy jsou jen PDF s absolutní https adresou; `attached` u dokumentů
  * zůstává `false` — nastaví ho až krok, který ověří, že je soubor dostupný
  * (`markAttached`).
+ *
+ * Prodávající je z živých právních údajů (`live`, administrace → Právní
+ * údaje) v okamžiku objednávky; bez nich z manifestu.
  */
 export const orderLegalInfo = (
   order: OrderLike | null | undefined,
-  manifest: LegalManifest = LEGAL_MANIFEST
+  manifest: LegalManifest = LEGAL_MANIFEST,
+  live?: LiveLegalFacts | null
 ): { legal: OrderLegalEmailData; attachments: EmailAttachmentRef[] } => {
   const meta = order?.metadata ?? {}
   const createdAt = order?.created_at ?? null
@@ -174,7 +179,7 @@ export const orderLegalInfo = (
 
   return {
     legal: {
-      seller: sellerFacts(manifest),
+      seller: sellerFacts(manifest, live),
       terms,
       withdrawal,
       terms_url: legalPageUrl("obchodni-podminky", manifest),

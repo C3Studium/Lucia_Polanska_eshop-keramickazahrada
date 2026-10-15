@@ -13,6 +13,7 @@ import {
   sellerContactEmail,
 } from "../../../lib/commission-inquiry"
 import { sendCustomerEmail } from "../../../lib/customer-email"
+import { getLegalFacts } from "../../../lib/merchant-settings"
 import { notifyMerchant } from "../../../lib/notify"
 import { storefrontBase } from "../../../lib/storefront-url"
 
@@ -152,9 +153,10 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   // Potvrzení zákazníkovi je až druhé: poptávka už u majitelky je, takže
   // výpadek tady neznamená chybu pro zákazníka — jen se zaloguje.
   try {
+    const { facts } = await getLegalFacts(req.scope)
     const customer = buildInquiryCustomerEmail(input, context, {
       storefrontBase: storefrontBase(),
-      replyTo: sellerContactEmail(),
+      replyTo: sellerContactEmail(facts["seller.email"]),
     })
     await sendCustomerEmail(req.scope, customer)
   } catch (error: any) {

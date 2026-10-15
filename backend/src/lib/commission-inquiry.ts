@@ -529,11 +529,13 @@ export const COMMISSION_INQUIRY_TEMPLATE = "commission-inquiry-received"
 
 /**
  * Kam má jít odpověď na potvrzení — do ateliéru, ne na odesílací adresu
- * Resendu. Stejný zdroj jako reklamační protokol (`SELLER_EMAIL`, jinak
- * adresa z OP / facts.ts storefrontu).
+ * Resendu. Kontaktní e-mail z právních údajů (administrace → Právní údaje,
+ * `seller.email` — tatáž adresa, kterou uvádějí obchodní podmínky); bez
+ * něj stejná záloha jako reklamační protokol (`SELLER_EMAIL`, jinak adresa
+ * z OP).
  */
-export const sellerContactEmail = (): string =>
-  (process.env.SELLER_EMAIL || "info@keramickazahrada.cz").trim()
+export const sellerContactEmail = (liveEmail?: string | null): string =>
+  (liveEmail?.trim() || process.env.SELLER_EMAIL || "info@keramickazahrada.cz").trim()
 
 /** Data šablony `commission-inquiry-received` (viz `modules/resend/emails`). */
 export type CommissionInquiryEmailData = {

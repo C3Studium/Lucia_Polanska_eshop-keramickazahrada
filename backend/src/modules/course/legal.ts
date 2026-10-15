@@ -1,17 +1,16 @@
+import type { LegalFactKey } from "../../lib/legal-facts"
+
 /**
  * Právní texty kurzů, které posílá backend (potvrzovací e-mail) — na jednom
  * místě, ať se doplňují jednou.
  *
- * Storefront má fakta v `storefront/src/lib/legal/facts.ts` (`course.cancellation`);
- * backend ten soubor nemá, proto zástupný text tady. Až Lucie storno podmínky
- * potvrdí (docs/legal/OPEN_QUESTIONS.md, bod 7), nahradí se TADY a stejným
- * zněním v `facts.ts`.
+ * Storno podmínky jsou právní údaj `course.cancellation` — vyplňuje je
+ * majitelka v administraci („Právní údaje", `lib/legal-facts.ts`) a tentýž
+ * text ukazuje web v obchodních podmínkách, na stránce Kurzy i v okně
+ * rezervace. Dokud nejsou vyplněné, e-mail je necituje a odkáže na OP čl. X.
  *
- * Bez importů — čte to i React Email šablona.
+ * Bez runtime importů — čte to i React Email šablona.
  */
-
-/** Storno podmínky kurzů do e-mailů. */
-export const COURSE_CANCELLATION_TERMS = "[[DOPLNIT: storno podmínky kurzů]]"
 
 /**
  * Kapitola obchodních podmínek o kurzech (storefront `obchodni-podminky`,
@@ -20,14 +19,24 @@ export const COURSE_CANCELLATION_TERMS = "[[DOPLNIT: storno podmínky kurzů]]"
 export const COURSE_TERMS_ARTICLE = "čl. X Keramické kurzy"
 
 /**
- * Jsou storno podmínky opravdu doplněné? Dokud text nese `[[DOPLNIT`, e-mail
- * ho necituje — zástupný text zákazníkovi nikdy — a místo něj odkáže na
+ * Jsou storno podmínky opravdu doplněné? Prázdný text (nevyplněný údaj)
+ * ani text se zástupným `[[DOPLNIT` (starší uložené notifikace) e-mail
+ * necituje — zástupný text zákazníkovi nikdy — a místo něj odkáže na
  * `COURSE_TERMS_ARTICLE`.
  */
-export const hasCourseCancellationTerms = (
-  text: string | null | undefined = COURSE_CANCELLATION_TERMS
-): boolean =>
+export const hasCourseCancellationTerms = (text: string | null | undefined): boolean =>
   typeof text === "string" && text.trim().length > 0 && !text.includes("[[DOPLNIT")
+
+/**
+ * Storno podmínky do e-mailu z právních údajů (`course.cancellation`), nebo
+ * `""`, dokud nejsou vyplněné — šablona pak odkáže na OP čl. X.
+ */
+export const courseCancellationTerms = (
+  facts: Partial<Record<LegalFactKey, string | null>> | null | undefined
+): string => {
+  const text = facts?.["course.cancellation"]
+  return hasCourseCancellationTerms(text) ? (text as string).trim() : ""
+}
 
 /**
  * Poučení o výjimce z práva odstoupit (§ 1837 písm. j) OZ). „Podle storno

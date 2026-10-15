@@ -1,6 +1,7 @@
 import {
   legalPageUrl,
   legalPdfFor,
+  sellerFacts,
   sellerIdentityLine,
   termsVersionUrl,
   versionValidAt,
@@ -178,6 +179,18 @@ describe("lib/legal", () => {
       sellerIdentityLine({ ...manifest, seller: { ...manifest.seller, ico: null, address: null } })
     ).toBe("Lucie Polanská")
   })
+
+  it("prefers the live legal facts from the admin, manifest only as fallback", () => {
+    // Majitelka změnila adresu a smazala IČO; telefon nezná → z manifestu.
+    const live = { "seller.address": "Nová 1, 397 01 Písek", "seller.ico": null }
+    expect(sellerIdentityLine(manifest, live)).toBe("Lucie Polanská · Nová 1, 397 01 Písek")
+    expect(sellerFacts(manifest, live)).toEqual({
+      ...manifest.seller,
+      address: "Nová 1, 397 01 Písek",
+      ico: null,
+    })
+    expect(sellerFacts(manifest, null)).toEqual(manifest.seller)
+  })
 })
 
 describe("orderLegalInfo", () => {
@@ -229,6 +242,16 @@ describe("orderLegalInfo", () => {
     ])
     expect(legal.complaints_url).toBe("https://store.example.cz/cz/reklamacni-rad")
     expect(legal.seller.ico).toBe("03441482")
+  })
+
+  it("names the seller from the live legal facts when the workflow has them", () => {
+    const { legal } = orderLegalInfo({ created_at: "2026-10-20T10:00:00Z", items }, manifest, {
+      "seller.email": "dilna@keramickazahrada.cz",
+      "seller.phone": null,
+    })
+    expect(legal.seller.email).toBe("dilna@keramickazahrada.cz")
+    expect(legal.seller.phone).toBeNull()
+    expect(legal.seller.name).toBe("Lucie Polanská")
   })
 
   it("uses the archived terms for an old order with the pre-registry version", () => {

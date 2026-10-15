@@ -5,8 +5,11 @@
  *
  * A handful of shop-global preferences that no Medusa module owns: the low-stock
  * threshold she wants to be warned at, the default parcel weight, how long after
- * shipping we ask for a review, two e-mail toggles, and which one-time helper
- * cards she has dismissed. Six keys, listed in A3, and that list is closed.
+ * shipping we ask for a review, e-mail toggles and addresses, dovolená and
+ * oznámení, doběrečné, zkušební režim, the return address, the legal facts
+ * („Právní údaje") and which one-time helper cards she has dismissed. The list
+ * is `KEY_SCHEMAS` below and it is closed: a new key is a deliberate edit there,
+ * never something a caller can invent at runtime.
  *
  * ## Prohibited content (A3)
  *
@@ -52,9 +55,46 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { updateStoresWorkflow } from "@medusajs/medusa/core-flows"
+import {
+  LEGAL_FACT_KEYS,
+  legalFactProblem,
+  pickStoredLegalFacts,
+  resolveLegalFacts,
+  sameLegalFacts,
+  type LegalFactKey,
+  type LegalFactValues,
+  type StoredLegalFacts,
+} from "./legal-facts"
 
 /** Sub-key of `store.metadata` that holds the whole settings object. */
 export const MERCHANT_SETTINGS_METADATA_KEY = "merchant_settings"
+
+/**
+ * Právní údaje při zápisu: jen známé klíče (strict — překlep v klíči je
+ * chyba, ne tichý nový údaj), každý text nejvýš `maxLength` znaků a ve tvaru
+ * z `LEGAL_FACT_META` (e-mail, odkaz). Ořízne se; `""` = výslovně nevyplněno.
+ */
+const legalFactsWriteSchema = z.strictObject(
+  Object.fromEntries(
+    LEGAL_FACT_KEYS.map((key) => [
+      key,
+      z
+        .string()
+        .trim()
+        .superRefine((value, ctx) => {
+          const problem = legalFactProblem(key, value)
+          if (problem) ctx.addIssue({ code: "custom", message: problem })
+        })
+        .optional(),
+    ])
+  ) as Record<LegalFactKey, z.ZodOptional<z.ZodString>>
+)
+
+/** ISO okamžik, nebo `""` (údaje se ještě nikdy neuložily). */
+const isoInstantOrEmpty = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/)
+  .or(z.literal(""))
 
 /**
  * The closed allowlist (A3). Adding a setting means editing this object — and
@@ -147,17 +187,50 @@ const KEY_SCHEMAS = {
    * prázdné = e-mail i stránka pokyny vynechají.
    */
   return_instructions: z.string().max(1000),
+  /**
+   * Právní údaje („Právní údaje" v administraci) — fakta `{{klíč}}` do
+   * obchodních podmínek, poučení, zásad, pokladny a e-mailů
+   * (`lib/legal-facts.ts`). Uložené jsou jen vyplněné klíče: chybějící klíč
+   * = výchozí hodnota z kódu, `""` = výslovně nevyplněno (na webu
+   * `[[DOPLNIT]]`). Zápis se do uloženého objektu slučuje po klíčích, takže
+   * částečný zápis neshodí ostatní údaje.
+   */
+  legal_facts: legalFactsWriteSchema,
+  /**
+   * Kdy se právní údaje naposledy opravdu změnily (ISO). Zapisuje ho server
+   * při uložení `legal_facts` — formulář ho poslat nemůže (patch ho odmítne),
+   * a uložení beze změny ho neposune.
+   */
+  legal_facts_updated_at: isoInstantOrEmpty,
 } as const
+
+/**
+ * Klíče, u kterých je čtení shovívavější než zápis. U `legal_facts` by jeden
+ * poškozený údaj (nebo údaj delší, než dovolí pozdější zpřísnění limitu)
+ * jinak shodil celý objekt — a s ním všechny údaje na webu i v e-mailech.
+ * Čtení proto nechá každý známý textový údaj, jak je, a zahodí jen zbytek.
+ */
+const READ_SCHEMAS: { legal_facts: z.ZodType<StoredLegalFacts> } = {
+  legal_facts: z.record(z.string(), z.unknown()).transform(pickStoredLegalFacts),
+}
+
+/** Keys only the server writes — a patch that sends them is rejected. */
+const SERVER_OWNED_KEYS = { legal_facts_updated_at: true } as const
 
 /** Full settings object — every key present, defaults filled in. */
 export const merchantSettingsSchema = z.strictObject(KEY_SCHEMAS)
 
 /** A partial update. Strict, so an unknown key is an error, not a silent no-op. */
-export const merchantSettingsPatchSchema = z.strictObject(KEY_SCHEMAS).partial()
+export const merchantSettingsPatchSchema = z
+  .strictObject(KEY_SCHEMAS)
+  .omit(SERVER_OWNED_KEYS)
+  .partial()
 
 export type MerchantSettings = z.infer<typeof merchantSettingsSchema>
 export type MerchantSettingKey = keyof MerchantSettings
-export type MerchantSettingsPatch = Partial<MerchantSettings>
+export type MerchantSettingsPatch = Partial<
+  Omit<MerchantSettings, keyof typeof SERVER_OWNED_KEYS>
+>
 
 export const MERCHANT_SETTING_KEYS = Object.keys(KEY_SCHEMAS) as MerchantSettingKey[]
 
@@ -192,6 +265,9 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   production_started_email_enabled: false,
   daily_digest_enabled: true,
   onboarding_dismissals: {},
+  /* Nic uloženého = všude výchozí hodnoty z `lib/legal-facts.ts`. */
+  legal_facts: {},
+  legal_facts_updated_at: "",
 }
 
 /**
@@ -208,6 +284,7 @@ export const parseMerchantSettings = (
   const settings: MerchantSettings = {
     ...MERCHANT_SETTINGS_DEFAULTS,
     onboarding_dismissals: { ...MERCHANT_SETTINGS_DEFAULTS.onboarding_dismissals },
+    legal_facts: { ...MERCHANT_SETTINGS_DEFAULTS.legal_facts },
   }
 
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -226,7 +303,11 @@ export const parseMerchantSettings = (
     }
 
     const typedKey = key as MerchantSettingKey
-    const parsed = KEY_SCHEMAS[typedKey].safeParse(source[key])
+    const schema =
+      typedKey in READ_SCHEMAS
+        ? READ_SCHEMAS[typedKey as keyof typeof READ_SCHEMAS]
+        : KEY_SCHEMAS[typedKey]
+    const parsed = schema.safeParse(source[key])
 
     if (!parsed.success) {
       onInvalid?.(key, parsed.error.issues[0]?.message ?? "invalid value")
@@ -245,10 +326,15 @@ export const parseMerchantSettings = (
  * Validates a patch against the allowlist and merges it onto current settings.
  * Throws on an unknown key or an invalid value — those are programming errors,
  * not user input.
+ *
+ * `legal_facts` is the one nested key: it merges per fact (a partial write
+ * must not drop the others) and stamps `legal_facts_updated_at` with `now`
+ * when the effective facts actually changed.
  */
 export const applyMerchantSettingsPatch = (
   current: MerchantSettings,
-  patch: MerchantSettingsPatch
+  patch: MerchantSettingsPatch,
+  now: Date = new Date()
 ): MerchantSettings => {
   const parsed = merchantSettingsPatchSchema.safeParse(patch)
 
@@ -263,7 +349,20 @@ export const applyMerchantSettingsPatch = (
     )
   }
 
-  return { ...current, ...parsed.data }
+  const next: MerchantSettings = { ...current, ...parsed.data }
+
+  if (parsed.data.legal_facts !== undefined) {
+    // Jen poslané texty — klíč, který v zápisu chybí, zůstává, jak byl.
+    next.legal_facts = {
+      ...current.legal_facts,
+      ...pickStoredLegalFacts(parsed.data.legal_facts),
+    }
+    if (!sameLegalFacts(current.legal_facts, next.legal_facts)) {
+      next.legal_facts_updated_at = now.toISOString()
+    }
+  }
+
+  return next
 }
 
 /**
@@ -333,6 +432,48 @@ export const getMerchantSettings = async (
         `Ignoring merchant setting "${key}" (${reason}); using the default instead.`
       )
   )
+}
+
+export type LegalFactsSnapshot = {
+  /** Platné hodnoty všech údajů — `null` = nevyplněno. */
+  facts: LegalFactValues
+  /** Kdy se údaje naposledy změnily (ISO), `null` = ještě nikdy neuložené. */
+  updated_at: string | null
+  /**
+   * `settings` = z nastavení obchodu. `defaults` = nastavení nejde přečíst
+   * a `facts` jsou výchozí hodnoty z kódu — e-mail pak radši sáhne po
+   * manifestu právních dokumentů, web po své záloze.
+   */
+  source: "settings" | "defaults"
+}
+
+/**
+ * Právní údaje tak, jak teď platí (`lib/legal-facts.ts`). Nikdy nevyhodí:
+ * čte se při odesílání e-mailů a e-mail nesmí neodejít jen proto, že nejde
+ * přečíst nastavení — pak vrátí výchozí hodnoty se `source: "defaults"`.
+ */
+export const getLegalFacts = async (
+  container: MedusaContainer
+): Promise<LegalFactsSnapshot> => {
+  try {
+    const settings = await getMerchantSettings(container)
+    return {
+      facts: resolveLegalFacts(settings.legal_facts),
+      updated_at: settings.legal_facts_updated_at || null,
+      source: "settings",
+    }
+  } catch (error) {
+    try {
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `[právní údaje] Nastavení obchodu nejde přečíst (${(error as Error)?.message ?? error}) — beru výchozí údaje z kódu.`
+        )
+    } catch {
+      // Ani logger — nic dalšího se dělat nedá, výchozí údaje stačí.
+    }
+    return { facts: resolveLegalFacts(undefined), updated_at: null, source: "defaults" }
+  }
 }
 
 /** Reads one setting. Same cost as reading all of them. */

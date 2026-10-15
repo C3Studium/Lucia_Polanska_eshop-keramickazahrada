@@ -15,10 +15,10 @@ import {
   type EmailAttachmentRef,
 } from "./legal/order-legal"
 import {
-  COURSE_CANCELLATION_TERMS,
   COURSE_NO_WITHDRAWAL_NOTICE,
-  hasCourseCancellationTerms,
+  courseCancellationTerms,
 } from "../modules/course/legal"
+import { getLegalFacts } from "./merchant-settings"
 import {
   courseCancelledKey,
   courseExpiredKey,
@@ -133,9 +133,11 @@ export const courseTermsInfo = (
  * Nese i poučení o výjimce z odstoupení (§ 1837 písm. j) OZ), storno
  * podmínky a PDF obchodních podmínek té verze, se kterou zákazník
  * rezervoval — potvrzení smlouvy o službě v textové podobě (§ 1827 odst. 2
- * OZ). Storno podmínky jen doplněné (`hasCourseCancellationTerms`); do té
- * doby šablona odkáže na OP čl. X. PDF jen zveřejněné a ke stažení (HEAD,
- * jako u objednávky) — jinak e-mail odejde s odkazem.
+ * OZ). Storno podmínky jsou právní údaj `course.cancellation` z administrace
+ * (tentýž text, který zákazník viděl a potvrdil v okně rezervace); dokud
+ * není vyplněný — nebo nastavení nejde přečíst —, šablona odkáže na OP
+ * čl. X. PDF jen zveřejněné a ke stažení (HEAD, jako u objednávky) — jinak
+ * e-mail odejde s odkazem.
  */
 export const sendCourseReservationConfirmedEmail = async (
   container: MedusaContainer,
@@ -154,6 +156,8 @@ export const sendCourseReservationConfirmedEmail = async (
 ): Promise<boolean> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const terms = courseTermsInfo(reservation)
+  // Nikdy nevyhodí — bez nastavení jsou údaje výchozí a storno `null`.
+  const { facts } = await getLegalFacts(container)
 
   let attachments: EmailAttachmentRef[] = []
   if (terms.attachment) {
@@ -176,8 +180,8 @@ export const sendCourseReservationConfirmedEmail = async (
       variant: options.variant,
       invoicePdfUrl: options.invoicePdfUrl || "",
       noWithdrawalNotice: COURSE_NO_WITHDRAWAL_NOTICE,
-      // Zástupný text do dat vůbec nejde — šablona pak odkáže na OP čl. X.
-      cancellationTerms: hasCourseCancellationTerms() ? COURSE_CANCELLATION_TERMS : "",
+      // Nevyplněné storno do dat nejde jako text — šablona pak odkáže na OP čl. X.
+      cancellationTerms: courseCancellationTerms(facts),
       termsLink: courseTermsLink(),
       termsVersionLabel: terms.version_label,
       termsPdfUrl: terms.pdf_url ?? "",

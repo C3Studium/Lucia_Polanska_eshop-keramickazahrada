@@ -20,7 +20,7 @@ import {
   commissionPaymentsText,
   splitCommissionPayments,
 } from "../lib/commission-breakdown"
-import { getMerchantSettings } from "../lib/merchant-settings"
+import { getLegalFacts, getMerchantSettings } from "../lib/merchant-settings"
 import { cpCarrierName, cpTrackingUrl } from "../lib/parcel-tracking/carrier"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
@@ -996,6 +996,11 @@ const onMerchantStageChanged = async ({
   // přijít). Posílá se právě tady, ve chvíli, kdy je objednávka připravená —
   // ne až při vyzvednutí. (Při vyzvednutí jde „máte u sebe", viz onShipmentCreated.)
   if (isPickupOrder(order)) {
+    // Ateliér je na adrese sídla — tak to říkají i obchodní podmínky a stránka
+    // Doprava („vyzvednout osobně v ateliéru na adrese {{seller.address}}"),
+    // proto právní údaj z administrace. Bez něj zůstává dosavadní adresa:
+    // e-mail „přijďte si" bez adresy by byl k ničemu.
+    const { facts } = await getLegalFacts(container)
     await sendCustomerEmail(container, {
       template: "order-ready-pickup",
       to: order.email,
@@ -1004,7 +1009,7 @@ const onMerchantStageChanged = async ({
       data: {
         ...common(order),
         pickupLocation: "Ateliér Keramická zahrada",
-        pickupAddress: "Putim 229, 397 01 Písek",
+        pickupAddress: facts["seller.address"] || "Putim 229, 397 01 Písek",
         readyDate: new Date().toLocaleDateString("cs-CZ"),
       },
     })

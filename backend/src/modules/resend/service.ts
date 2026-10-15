@@ -60,6 +60,9 @@ import { CourseReminderEmail } from "./emails/course-reminder";
 import { CourseWaitlistSpotEmail } from "./emails/course-waitlist-spot";
 import { CourseReservationCancelledEmail } from "./emails/course-reservation-cancelled";
 import { CommissionInquiryReceivedEmail } from "./emails/commission-inquiry-received";
+import { withEmailLegalFacts } from "./components/email-ui";
+import { loadEmailLegalFacts } from "./live-legal-facts";
+import type { LiveLegalFacts } from "../../lib/legal";
 import {
 
   novyStav,
@@ -427,6 +430,12 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
   private logger: Logger
   /** Denní počítadlo odeslaných zpráv — viz `lib/email-quota.ts`. */
   private kvotaStav: StavKvoty = novyStav(new Date())
+  /**
+   * Právní údaje pro patičku (identita prodávající, kontakt) z nastavení
+   * obchodu — `live-legal-facts.ts`. Nikdy nevyhodí; `null` = patička vezme
+   * manifest. Pole, ne import natvrdo, ať ho test může podstrčit.
+   */
+  protected loadLegalFacts: () => Promise<LiveLegalFacts | null> = loadEmailLegalFacts
 
   constructor(
     { logger }: InjectedDependencies, 
@@ -692,6 +701,13 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     const attachments = attachmentsFromData(notification.data)
     const templateData = templateDataOf(notification.data)
 
+    // Živé právní údaje do patičky — čtou se při každém odeslání (i při
+    // opakování z /prehled/emaily), takže e-mail ukáže to, co je teď
+    // v administraci. Vykreslení zůstává synchronní: údaje jdou do šablony
+    // kontextem (`withEmailLegalFacts`), ne přes `data`.
+    const legalFacts =
+      typeof template === "string" ? null : await this.loadLegalFacts().catch(() => null)
+
     const commonOptions = {
       from: this.options.from,
       to: [notification.to],
@@ -720,7 +736,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
           : {}
       return typeof template === "string"
         ? { ...commonOptions, ...files, html: template }
-        : { ...commonOptions, ...files, react: template(data) }
+        : { ...commonOptions, ...files, react: withEmailLegalFacts(template(data), legalFacts) }
     }
 
     const emailOptions = buildEmailOptions(templateData, true)

@@ -14,8 +14,8 @@ import {
 } from "../components/email-ui"
 import { storeLink } from "../../../lib/storefront-url"
 import {
-  NEWSLETTER_SENDER,
   NewsletterBlocksEmail,
+  NewsletterSenderLine,
   type EmailNewsletterBlock,
 } from "./newsletter-blocks"
 
@@ -118,8 +118,7 @@ function PromotionalEmailComponent({
         </P>
       )}
       <P small style={{ margin: "8px 0 0" }}>
-        Odesílatel: {NEWSLETTER_SENDER.name}, se sídlem{" "}
-        {NEWSLETTER_SENDER.address}, IČO {NEWSLETTER_SENDER.registrationNumber}.
+        <NewsletterSenderLine />
       </P>
       <Signature />
     </EmailLayout>

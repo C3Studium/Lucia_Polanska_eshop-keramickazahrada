@@ -1,4 +1,5 @@
 import manifestJson from "./legal-manifest.json"
+import type { LegalFactKey } from "../legal-facts"
 import { storefrontBase, storefrontOrigin } from "../storefront-url"
 
 /**
@@ -8,8 +9,12 @@ import { storefrontBase, storefrontOrigin } from "../storefront-url"
  * `pnpm legal:build` (storefront/scripts/legal-build.mjs) a URL do ní doplňuje
  * `pnpm legal:upload`. Texty dokumentů tu nejsou — backend potřebuje jen
  * vědět, která verze platila kdy, kde leží její PDF a kdo je prodávající
- * (patička e-mailů, potvrzení objednávky). Tím e-maily nemůžou tvrdit nic
- * jiného než PDF a stránky webu.
+ * (patička e-mailů, potvrzení objednávky).
+ *
+ * Kdo je prodávající, říkají v první řadě živé právní údaje z administrace
+ * (`lib/legal-facts.ts`, merchant setting `legal_facts`) — volající je
+ * předá jako `live`. Identita z manifestu je jen záloha pro chvíli, kdy
+ * nastavení nejde přečíst (a pro náhledy a testy bez kontejneru).
  *
  * Bez importu Medusa frameworku: čtou to i React Email šablony.
  */
@@ -177,22 +182,42 @@ export const legalPdfFor = (
     : null
 }
 
-export const sellerFacts = (manifest: LegalManifest = LEGAL_MANIFEST): SellerFacts => ({
-  name: manifest.seller?.name ?? null,
-  address: manifest.seller?.address ?? null,
-  ico: manifest.seller?.ico ?? null,
-  email: manifest.seller?.email ?? null,
-  phone: manifest.seller?.phone ?? null,
-  web: manifest.seller?.web ?? null,
-  webUrl: manifest.seller?.webUrl ?? null,
-})
+/** Živé právní údaje (`resolveLegalFacts`) — stačí ty, které volající má. */
+export type LiveLegalFacts = Partial<Record<LegalFactKey, string | null>>
+
+/**
+ * Údaje o prodávající. Živý údaj, který volající zná, vyhrává — i `null`
+ * (majitelka ho výslovně nevyplnila, e-mail ho pak vynechá). Kde živé údaje
+ * nejsou, platí manifest.
+ */
+export const sellerFacts = (
+  manifest: LegalManifest = LEGAL_MANIFEST,
+  live?: LiveLegalFacts | null
+): SellerFacts => {
+  const pick = (factKey: LegalFactKey, fromManifest: string | null | undefined) =>
+    live && Object.prototype.hasOwnProperty.call(live, factKey)
+      ? live[factKey]?.trim() || null
+      : fromManifest ?? null
+  return {
+    name: pick("seller.name", manifest.seller?.name),
+    address: pick("seller.address", manifest.seller?.address),
+    ico: pick("seller.ico", manifest.seller?.ico),
+    email: pick("seller.email", manifest.seller?.email),
+    phone: pick("seller.phone", manifest.seller?.phone),
+    web: pick("seller.web", manifest.seller?.web),
+    webUrl: pick("seller.webUrl", manifest.seller?.webUrl),
+  }
+}
 
 /**
  * „Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482". Chybějící údaj
  * se vynechá — do e-mailu nikdy nejde zástupný text.
  */
-export const sellerIdentityLine = (manifest: LegalManifest = LEGAL_MANIFEST): string => {
-  const seller = sellerFacts(manifest)
+export const sellerIdentityLine = (
+  manifest: LegalManifest = LEGAL_MANIFEST,
+  live?: LiveLegalFacts | null
+): string => {
+  const seller = sellerFacts(manifest, live)
   return [seller.name, seller.address, seller.ico ? `IČO ${seller.ico}` : null]
     .filter((part): part is string => Boolean(part && part.trim()))
     .join(" · ")

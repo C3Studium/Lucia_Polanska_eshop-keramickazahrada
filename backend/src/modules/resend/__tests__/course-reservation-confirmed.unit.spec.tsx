@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { CourseReservationConfirmedEmail } from "../emails/course-reservation-confirmed"
 import {
-  COURSE_CANCELLATION_TERMS,
   COURSE_NO_WITHDRAWAL_NOTICE,
+  courseCancellationTerms,
   hasCourseCancellationTerms,
 } from "../../course/legal"
 
@@ -19,11 +19,17 @@ const READY_TERMS =
   "Rezervaci můžete zrušit zdarma nejpozději 7 dní před kurzem; později vracíme polovinu ceny."
 
 describe("course-reservation-confirmed", () => {
-  it("the shipped constant is still a placeholder — the e-mail must not quote it", () => {
-    // Až Lucie storno podmínky doplní, tenhle test spadne schválně: ověřit,
-    // že text v e-mailu odpovídá `facts.ts` storefrontu, a test upravit.
-    expect(COURSE_CANCELLATION_TERMS).toContain("[[DOPLNIT")
-    expect(hasCourseCancellationTerms()).toBe(false)
+  it("quotes the cancellation terms only once the legal fact is filled in", () => {
+    // Storno = právní údaj `course.cancellation` (administrace → Právní údaje).
+    expect(courseCancellationTerms({ "course.cancellation": `  ${READY_TERMS}  ` })).toBe(
+      READY_TERMS
+    )
+    // Nevyplněné, prázdné, zástupný text, žádné údaje → do e-mailu nic.
+    expect(courseCancellationTerms({ "course.cancellation": null })).toBe("")
+    expect(courseCancellationTerms({ "course.cancellation": "   " })).toBe("")
+    expect(courseCancellationTerms({ "course.cancellation": "[[DOPLNIT: storno]]" })).toBe("")
+    expect(courseCancellationTerms(null)).toBe("")
+    expect(hasCourseCancellationTerms(undefined)).toBe(false)
     expect(hasCourseCancellationTerms("")).toBe(false)
     expect(hasCourseCancellationTerms(READY_TERMS)).toBe(true)
   })
@@ -47,10 +53,16 @@ describe("course-reservation-confirmed", () => {
     }
   )
 
-  it("an old stored notification (constant as default) still hides the placeholder", () => {
+  it("an old stored notification without the terms still points to OP čl. X", () => {
     const html = renderToStaticMarkup(
       CourseReservationConfirmedEmail({ customerName: "Jana Nováková" })
     )
+    // …a stejně tak řádek uložený se zástupným textem z dřívější konstanty.
+    const legacy = renderToStaticMarkup(
+      CourseReservationConfirmedEmail({ cancellationTerms: "[[DOPLNIT: storno podmínky kurzů]]" })
+    )
+    expect(legacy).not.toContain("[[DOPLNIT")
+    expect(legacy).toContain("čl. X Keramické kurzy")
     expect(html).toContain(COURSE_NO_WITHDRAWAL_NOTICE.slice(0, 40))
     expect(html).not.toContain("[[DOPLNIT")
     expect(html).toContain("čl. X Keramické kurzy")

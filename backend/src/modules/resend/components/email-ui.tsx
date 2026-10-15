@@ -12,7 +12,14 @@ import {
   Text,
 } from "@react-email/components"
 import * as React from "react"
-import { legalPageUrl, sellerIdentityLine } from "../../../lib/legal"
+import {
+  LEGAL_MANIFEST,
+  legalPageUrl,
+  sellerFacts,
+  sellerIdentityLine,
+  type LiveLegalFacts,
+  type SellerFacts,
+} from "../../../lib/legal"
 
 /**
  * Sdílený vizuální systém e-mailů — převod designu storefrontu do řeči,
@@ -49,8 +56,43 @@ export const brand = {
   sans: "'Helvetica Neue', Helvetica, Arial, sans-serif",
 } as const
 
+/**
+ * Záložní kontakt pro texty šablon. Patička (`EmailLayout`) bere e-mail
+ * a telefon z živých právních údajů a na tyhle konstanty sahá jen bez nich.
+ */
 export const CONTACT_EMAIL = "info@keramickazahrada.cz"
 export const CONTACT_PHONE = "+420 775 211 578"
+
+/**
+ * Živé právní údaje (administrace → Právní údaje) pro patičku a identitu
+ * odesílatele.
+ *
+ * Kontext, ne props: e-mailů je přes padesát a všechny sdílí `EmailLayout`
+ * — údaje by jinak musely projít každou šablonou. Resend provider je
+ * přečte při odeslání a obalí jimi vykreslený e-mail (`withEmailLegalFacts`);
+ * vykreslení zůstává synchronní. Bez kontextu (náhledy, testy, nastavení
+ * nejde přečíst) platí identita z manifestu právních dokumentů.
+ */
+export const EmailLegalFactsContext = React.createContext<LiveLegalFacts | null>(null)
+
+/** Obalí e-mail živými údaji; bez nich ho vrátí, jak je. */
+export const withEmailLegalFacts = (
+  email: React.ReactNode,
+  facts: LiveLegalFacts | null | undefined
+): React.ReactNode =>
+  facts ? (
+    <EmailLegalFactsContext.Provider value={facts}>{email}</EmailLegalFactsContext.Provider>
+  ) : (
+    email
+  )
+
+/** Živé údaje z kontextu (nebo `null`) — pro šablony, které skládají vlastní řádek. */
+export const useEmailLegalFacts = (): LiveLegalFacts | null =>
+  React.useContext(EmailLegalFactsContext)
+
+/** Prodávající pro tento e-mail — živé údaje, jinak manifest. */
+export const useSellerFacts = (): SellerFacts =>
+  sellerFacts(LEGAL_MANIFEST, useEmailLegalFacts())
 
 const eyebrowStyle: React.CSSProperties = {
   fontFamily: brand.sans,
@@ -405,14 +447,14 @@ export const OptOutLine = ({ url }: { url?: string | null }) => (
 
 /**
  * Identita prodávající a odkazy na právní dokumenty v patičce každého
- * e-mailu. Údaje jdou z manifestu právních dokumentů (`lib/legal`, generuje
- * `pnpm legal:build` z týchž faktů jako PDF a web), takže patička nemůže
- * tvrdit nic jiného než obchodní podmínky. Chybějící údaj se vynechá — do
- * e-mailu nikdy nejde zástupný text; bez nastaveného storefrontu nejsou ani
- * odkazy (neodkazuje se naslepo).
+ * e-mailu. Údaje jdou z právních údajů v administraci (kontext, viz
+ * `EmailLegalFactsContext`) — týchž, které web dosazuje do obchodních
+ * podmínek; bez nich z manifestu právních dokumentů (`lib/legal`). Chybějící
+ * údaj se vynechá — do e-mailu nikdy nejde zástupný text; bez nastaveného
+ * storefrontu nejsou ani odkazy (neodkazuje se naslepo).
  */
 export const LegalFooter = () => {
-  const identity = sellerIdentityLine()
+  const identity = sellerIdentityLine(LEGAL_MANIFEST, useEmailLegalFacts())
   const links = [
     { label: "Obchodní podmínky", href: legalPageUrl("obchodni-podminky") },
     { label: "Reklamační řád", href: legalPageUrl("reklamacni-rad") },
@@ -459,118 +501,125 @@ export const EmailLayout = ({
 }: {
   preview: string
   children: React.ReactNode
-}) => (
-  <Html lang="cs">
-    <Head />
-    <Preview>{preview}</Preview>
-    <Body
-      style={{
-        backgroundColor: brand.paper,
-        margin: 0,
-        padding: "28px 12px",
-        fontFamily: brand.sans,
-      }}
-    >
-      <Container
+}) => {
+  const seller = useSellerFacts()
+  // Kontakt musí v patičce být vždy — nevyplněný e-mail spadne na záložní
+  // adresu; telefon se bez údaje vynechá.
+  const contactEmail = seller.email || CONTACT_EMAIL
+  const contactPhone = seller.phone
+  return (
+    <Html lang="cs">
+      <Head />
+      <Preview>{preview}</Preview>
+      <Body
         style={{
-          width: "100%",
-          maxWidth: "600px",
-          backgroundColor: brand.cream,
-          border: `1px solid ${brand.line}`,
+          backgroundColor: brand.paper,
+          margin: 0,
+          padding: "28px 12px",
+          fontFamily: brand.sans,
         }}
       >
-        {/* Hlavička */}
-        <Section
+        <Container
           style={{
-            padding: "32px 36px 24px",
-            borderBottom: `1px solid ${brand.line}`,
+            width: "100%",
+            maxWidth: "600px",
+            backgroundColor: brand.cream,
+            border: `1px solid ${brand.line}`,
           }}
         >
-          <Text
+          {/* Hlavička */}
+          <Section
             style={{
-              fontFamily: brand.sans,
-              fontSize: "10px",
-              lineHeight: "16px",
-              letterSpacing: "2.4px",
-              textTransform: "uppercase",
-              color: brand.faint,
-              margin: 0,
+              padding: "32px 36px 24px",
+              borderBottom: `1px solid ${brand.line}`,
             }}
           >
-            Ateliér Lucie Polanské · Písek
-          </Text>
-          <Text
-            style={{
-              fontFamily: brand.serif,
-              fontSize: "28px",
-              lineHeight: "34px",
-              fontWeight: 400,
-              letterSpacing: "-0.5px",
-              color: brand.ink,
-              margin: "8px 0 0",
-            }}
-          >
-            Keramická{" "}
-            <em style={{ color: brand.olive }}>zahrada</em>
-          </Text>
-        </Section>
-
-        {/* Obsah */}
-        <Section style={{ padding: "36px 36px 40px" }}>{children}</Section>
-
-        {/* Patička */}
-        <Section
-          style={{
-            padding: "26px 36px 34px",
-            borderTop: `1px solid ${brand.line}`,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: brand.serif,
-              fontStyle: "italic",
-              fontSize: "15px",
-              lineHeight: "23px",
-              color: brand.olive,
-              margin: "0 0 14px",
-            }}
-          >
-            Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
-            v píseckém ateliéru.
-          </Text>
-          <Text
-            style={{
-              fontFamily: brand.sans,
-              fontSize: "12px",
-              lineHeight: "20px",
-              color: brand.muted,
-              margin: "0 0 4px",
-            }}
-          >
-            Potřebujete poradit? Napište na{" "}
-            <Link
-              href={`mailto:${CONTACT_EMAIL}`}
-              style={{ color: brand.ink, textDecoration: "underline" }}
+            <Text
+              style={{
+                fontFamily: brand.sans,
+                fontSize: "10px",
+                lineHeight: "16px",
+                letterSpacing: "2.4px",
+                textTransform: "uppercase",
+                color: brand.faint,
+                margin: 0,
+              }}
             >
-              {CONTACT_EMAIL}
-            </Link>{" "}
-            · {CONTACT_PHONE}
-          </Text>
-          <LegalFooter />
-          <Text
+              Ateliér Lucie Polanské · Písek
+            </Text>
+            <Text
+              style={{
+                fontFamily: brand.serif,
+                fontSize: "28px",
+                lineHeight: "34px",
+                fontWeight: 400,
+                letterSpacing: "-0.5px",
+                color: brand.ink,
+                margin: "8px 0 0",
+              }}
+            >
+              Keramická{" "}
+              <em style={{ color: brand.olive }}>zahrada</em>
+            </Text>
+          </Section>
+
+          {/* Obsah */}
+          <Section style={{ padding: "36px 36px 40px" }}>{children}</Section>
+
+          {/* Patička */}
+          <Section
             style={{
-              fontFamily: brand.sans,
-              fontSize: "11px",
-              lineHeight: "18px",
-              color: brand.faint,
-              margin: "10px 0 0",
+              padding: "26px 36px 34px",
+              borderTop: `1px solid ${brand.line}`,
             }}
           >
-            © {new Date().getFullYear()} Keramická zahrada · Lucie Polanská.
-            Všechna práva vyhrazena.
-          </Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
-)
+            <Text
+              style={{
+                fontFamily: brand.serif,
+                fontStyle: "italic",
+                fontSize: "15px",
+                lineHeight: "23px",
+                color: brand.olive,
+                margin: "0 0 14px",
+              }}
+            >
+              Objekty z hlíny pro zahradu i domov. Každý kus vzniká rukama
+              v píseckém ateliéru.
+            </Text>
+            <Text
+              style={{
+                fontFamily: brand.sans,
+                fontSize: "12px",
+                lineHeight: "20px",
+                color: brand.muted,
+                margin: "0 0 4px",
+              }}
+            >
+              Potřebujete poradit? Napište na{" "}
+              <Link
+                href={`mailto:${contactEmail}`}
+                style={{ color: brand.ink, textDecoration: "underline" }}
+              >
+                {contactEmail}
+              </Link>
+              {contactPhone ? <> · {contactPhone}</> : null}
+            </Text>
+            <LegalFooter />
+            <Text
+              style={{
+                fontFamily: brand.sans,
+                fontSize: "11px",
+                lineHeight: "18px",
+                color: brand.faint,
+                margin: "10px 0 0",
+              }}
+            >
+              © {new Date().getFullYear()} Keramická zahrada · Lucie Polanská.
+              Všechna práva vyhrazena.
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  )
+}

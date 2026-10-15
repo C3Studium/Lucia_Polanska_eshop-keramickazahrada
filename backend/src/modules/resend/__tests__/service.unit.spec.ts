@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server"
 import ResendNotificationProviderService, {
   attachmentsFromData,
   describeResendError,
@@ -99,12 +100,17 @@ describe("e-mail attachments (data.__attachments)", () => {
   describe("send()", () => {
     const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }
 
-    const makeService = (send: jest.Mock) => {
+    const makeService = (
+      send: jest.Mock,
+      loadLegalFacts: () => Promise<unknown> = async () => null
+    ) => {
       const service = new ResendNotificationProviderService({ logger } as any, {
         api_key: "re_test",
         from: "Keramická zahrada <obchod@example.cz>",
       })
       ;(service as any).resendClient = { emails: { send } }
+      // Skutečný loader sahá na kořenový kontejner aplikace — v testu není.
+      ;(service as any).loadLegalFacts = loadLegalFacts
       return service
     }
 
@@ -180,6 +186,41 @@ describe("e-mail attachments (data.__attachments)", () => {
         service.send(notification({ order, __attachments: [pdf("a")] }))
       ).rejects.toThrow(/rate_limit_exceeded/)
       expect(send).toHaveBeenCalledTimes(1)
+    })
+
+    it("puts the live legal facts into the footer of the rendered e-mail", async () => {
+      const send = jest.fn().mockResolvedValue({ data: { id: "email_4" }, error: null })
+      const service = makeService(send, async () => ({
+        "seller.name": "Lucie Polanská",
+        "seller.address": "Nová 1, 397 01 Písek",
+        "seller.ico": "03441482",
+        "seller.email": "dilna@keramickazahrada.cz",
+        "seller.phone": null,
+      }))
+
+      await service.send(notification({ order }))
+
+      const html = renderToStaticMarkup(send.mock.calls[0][0].react)
+      expect(html).toContain("Prodávající: Lucie Polanská · Nová 1, 397 01 Písek · IČO 03441482")
+      expect(html).toContain("mailto:dilna@keramickazahrada.cz")
+      // Telefon výslovně nevyplněný → v patičce není (ani záložní).
+      expect(html).not.toContain("775 211 578")
+    })
+
+    it("falls back to the manifest identity when the facts cannot be read", async () => {
+      const send = jest.fn().mockResolvedValue({ data: { id: "email_5" }, error: null })
+      const service = makeService(send, async () => {
+        throw new Error("databáze spí")
+      })
+
+      await expect(service.send(notification({ order }))).resolves.toEqual({ id: "email_5" })
+
+      const options = send.mock.calls[0][0]
+      // Bez údajů se šablona neobaluje — dostane svá data přímo.
+      expect(options.react.props.order).toBe(order)
+      const html = renderToStaticMarkup(options.react)
+      expect(html).toContain("Prodávající: Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482")
+      expect(html).toContain("+420 775 211 578")
     })
   })
 })

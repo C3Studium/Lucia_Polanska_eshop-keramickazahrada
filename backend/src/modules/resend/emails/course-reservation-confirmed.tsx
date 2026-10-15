@@ -14,7 +14,6 @@ import {
   Signature,
 } from "../components/email-ui"
 import {
-  COURSE_CANCELLATION_TERMS,
   COURSE_NO_WITHDRAWAL_NOTICE,
   COURSE_TERMS_ARTICLE,
   hasCourseCancellationTerms,
@@ -41,8 +40,9 @@ interface CourseReservationConfirmedEmailProps {
   /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) — `modules/course/legal.ts`. */
   noWithdrawalNotice?: string
   /**
-   * Storno podmínky kurzů — `modules/course/legal.ts`. Prázdné nebo se
-   * `[[DOPLNIT` = ještě nedoplněné: šablona je necituje a odkáže na OP čl. X.
+   * Storno podmínky kurzů — právní údaj `course.cancellation` z administrace
+   * (`courseCancellationTerms`). Prázdné nebo se `[[DOPLNIT` = ještě
+   * nedoplněné: šablona je necituje a odkáže na OP čl. X.
    */
   cancellationTerms?: string
   /** Obchodní podmínky, kapitola Kurzy (`…/smluvni-podminky#kurzy`). */
@@ -68,10 +68,11 @@ function CourseReservationConfirmedEmailComponent({
   variant = "on_site",
   reservationLink = "",
   invoicePdfUrl = "",
-  // Výchozí = konstanty: i notifikace uložená před touhle změnou (bez těch
-  // klíčů v `data`) se při opakovaném odeslání vykreslí s poučením.
+  // Výchozí poučení = konstanta: i notifikace uložená před zavedením poučení
+  // (bez toho klíče v `data`) se při opakovaném odeslání vykreslí s ním.
+  // Storno bez údaje = odkaz na OP čl. X, jako u nevyplněných podmínek.
   noWithdrawalNotice = COURSE_NO_WITHDRAWAL_NOTICE,
-  cancellationTerms = COURSE_CANCELLATION_TERMS,
+  cancellationTerms = "",
   termsLink = "",
   termsVersionLabel = "",
   termsPdfUrl = "",

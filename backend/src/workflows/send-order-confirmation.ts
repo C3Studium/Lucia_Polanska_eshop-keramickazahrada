@@ -8,11 +8,13 @@ import {
 } from "@medusajs/framework/workflows-sdk";
 import { useQueryGraphStep } from "@medusajs/medusa/core-flows";
 import { balancePaymentUrl } from "../lib/balance-payment-link";
+import { LEGAL_MANIFEST } from "../lib/legal";
 import {
   checkAttachmentUrls,
   markAttached,
   orderLegalInfo,
 } from "../lib/legal/order-legal";
+import { getLegalFacts } from "../lib/merchant-settings";
 import {
   orderEditUrl,
   orderRefundUrl,
@@ -31,13 +33,22 @@ type WorkflowInput = {
  * s formulářem. Přikládá se jen PDF, které je opravdu ke stažení — jinak
  * e-mail odejde s odkazy a do logu jde varování (potvrzení objednávky se
  * kvůli chybějícímu PDF nesmí zdržet ani ztratit).
+ *
+ * Prodávající v sekci „Smlouva a poučení" je z právních údajů v administraci
+ * v okamžiku objednávky (uloží se s notifikací, takže opakované odeslání
+ * ukáže totéž); když nastavení nejde přečíst, z manifestu.
  */
 const resolveOrderLegalStep = createStep(
   "resolve-order-legal-documents",
   async ({ orders }: { orders: any[] }, { container }) => {
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
     const order = orders?.[0]
-    const { legal, attachments } = orderLegalInfo(order)
+    const live = await getLegalFacts(container)
+    const { legal, attachments } = orderLegalInfo(
+      order,
+      LEGAL_MANIFEST,
+      live.source === "settings" ? live.facts : null
+    )
     const { reachable, failed } = await checkAttachmentUrls(attachments)
 
     for (const miss of failed) {
