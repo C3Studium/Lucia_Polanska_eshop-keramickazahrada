@@ -88,14 +88,30 @@ Pořadí: A–G paralelně → ověření orchestrátorem po každém → H (pot
 Viz `docs/legal/OPEN_QUESTIONS.md`.
 
 ## 5. Stav
-- [x] Průzkum, jádro, plán (14. 10. 2026)
-- [ ] A Texty
-- [ ] B Checkout
-- [ ] C PDF a e-maily
-- [ ] D Odstoupení online
-- [ ] E Cookies
-- [ ] F Slevy, recenze, řazení
-- [ ] G Poptávka zakázky
+- [x] Průzkum, jádro, plán (14. 10. 2026) — `082f370`
+- [x] E Cookies — `2a0f1e4`
+- [x] G Poptávka zakázky — `cfcf1a6`
+- [x] F Slevy, recenze, řazení — `d55bd56`
+- [x] B Checkout — `3cd1bc3`, doplňky `105069e`
+- [x] D Odstoupení online — `131dd83`, doplňky `0f9777b`
+- [x] C PDF a e-maily — `8914c01`, PDF `5a5e78d`
+- [x] A Texty — `bdefc2c`, Segment `66179a8`
 - [ ] H Testovací prostředí a testovací objednávky
 - [ ] Kontrolní agent — checklist sekce 9
 - [ ] Build, rebase, push, PR
+
+## 6. Nasazení (pořadí)
+
+Backend a storefront nasadit **spolu** — nový backend vyžaduje souhlasy u rezervace kurzu,
+starý storefront by dostal 400.
+
+1. Backend: migrace (`medusa db:migrate`): course `Migration20261014120000` (souhlasy),
+   return-request `Migration20261014200000` (submitted_at, channel, takeover_at),
+   price-history `Migration20261014153217`, product-review `Migration20261014153743`
+   (verified_purchase + doplnění u starých recenzí).
+2. Backend jednou: `npx medusa exec ./src/scripts/backfill-price-history.ts`.
+3. Produkt poukazu „1 Kč“: `npx medusa exec ./src/scripts/legal-voucher-product.ts`
+   (suchý běh), pak s `--apply`; popis upravit ručně (OPEN_QUESTIONS #13).
+4. Storefront: volitelně `NEXT_PUBLIC_GA_MEASUREMENT_ID` (OPEN_QUESTIONS #18, #24).
+5. Po doplnění údajů ve `facts.ts`: `pnpm legal:build` (běžící storefront), `pnpm legal:upload`,
+   commit manifestů, nasazení — teprve pak jdou OP a poučení jako PDF do e-mailů.
