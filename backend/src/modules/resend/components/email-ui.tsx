@@ -12,6 +12,7 @@ import {
   Text,
 } from "@react-email/components"
 import * as React from "react"
+import { legalPageUrl, sellerIdentityLine } from "../../../lib/legal"
 
 /**
  * Sdílený vizuální systém e-mailů — převod designu storefrontu do řeči,
@@ -366,6 +367,50 @@ export const Signature = () => (
 )
 
 /**
+ * Identita prodávající a odkazy na právní dokumenty v patičce každého
+ * e-mailu. Údaje jdou z manifestu právních dokumentů (`lib/legal`, generuje
+ * `pnpm legal:build` z týchž faktů jako PDF a web), takže patička nemůže
+ * tvrdit nic jiného než obchodní podmínky. Chybějící údaj se vynechá — do
+ * e-mailu nikdy nejde zástupný text; bez nastaveného storefrontu nejsou ani
+ * odkazy (neodkazuje se naslepo).
+ */
+export const LegalFooter = () => {
+  const identity = sellerIdentityLine()
+  const links = [
+    { label: "Obchodní podmínky", href: legalPageUrl("obchodni-podminky") },
+    { label: "Reklamační řád", href: legalPageUrl("reklamacni-rad") },
+    { label: "Ochrana osobních údajů", href: legalPageUrl("ochrana-osobnich-udaju") },
+  ].filter((link) => link.href)
+
+  if (!identity && !links.length) {
+    return null
+  }
+
+  return (
+    <Text
+      style={{
+        fontFamily: brand.sans,
+        fontSize: "11px",
+        lineHeight: "18px",
+        color: brand.faint,
+        margin: "10px 0 0",
+      }}
+    >
+      {identity ? <>Prodávající: {identity}</> : null}
+      {identity && links.length ? <br /> : null}
+      {links.map((link, index) => (
+        <span key={link.href}>
+          {index ? " · " : ""}
+          <Link href={link.href} style={{ color: brand.muted, textDecoration: "underline" }}>
+            {link.label}
+          </Link>
+        </span>
+      ))}
+    </Text>
+  )
+}
+
+/**
  * Kabát každého e-mailu: papírové pozadí, krémový list s vlasovým rámem,
  * hranaté rohy (velké plochy jsou ve storefrontu hranaté), textový wordmark
  * v hlavičce — ručně kreslené logo je SVG, které Gmail nevykreslí,
@@ -474,6 +519,7 @@ export const EmailLayout = ({
             </Link>{" "}
             · {CONTACT_PHONE}
           </Text>
+          <LegalFooter />
           <Text
             style={{
               fontFamily: brand.sans,

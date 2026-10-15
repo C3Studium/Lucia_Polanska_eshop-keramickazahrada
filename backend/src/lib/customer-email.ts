@@ -36,6 +36,12 @@ export type CustomerEmailInput = {
   data: Record<string, unknown>
   /** Links the mail to an order so it shows on the order's e-mail widget. */
   orderId?: string | null
+  /**
+   * PDF přílohy jako odkazy na hostované soubory (https, `.pdf`, nejvýš 5).
+   * Jdou do `data.__attachments`, protože opakované odeslání skládá e-mail
+   * jen z `data` — viz `attachmentsFromData` v Resend provideru.
+   */
+  attachments?: Array<{ filename: string; url: string }>
 }
 
 export const formatMoney = (
@@ -136,7 +142,9 @@ export const sendCustomerEmail = async (
     ...(input.orderId
       ? { resource_id: input.orderId, resource_type: "order" }
       : {}),
-    data: input.data,
+    data: input.attachments?.length
+      ? { ...input.data, __attachments: input.attachments }
+      : input.data,
   } as never)
 
   return true

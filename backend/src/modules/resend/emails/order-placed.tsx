@@ -1,5 +1,6 @@
-import { Column, Img, Row, Section, Text } from "@react-email/components"
+import { Column, Img, Link, Row, Section, Text } from "@react-email/components"
 import { BigNumberValue, CustomerDTO, OrderDTO } from "@medusajs/framework/types"
+import type { OrderLegalDocument, OrderLegalEmailData } from "../../../lib/legal/order-legal"
 import { orderLink } from "../../../lib/storefront-url"
 import {
   isPackagingLine,
@@ -15,6 +16,7 @@ import {
   Eyebrow,
   LedgerEnd,
   LedgerRow,
+  MultiLine,
   Note,
   P,
   Signature,
@@ -45,6 +47,155 @@ type OrderPlacedEmailProps = {
   edit_order_url?: string
   /** Reklamace / vrácení / odstoupení přes token (`/order/:id/refund`) — i bez účtu. */
   refund_url?: string
+  /**
+   * Smlouva a poučení (§ 1827 odst. 2 OZ) — verze OP platná pro objednávku,
+   * poučení o odstoupení, prodávající, zakázkové položky. Skládá
+   * `lib/legal/order-legal` ve workflow potvrzení. Chybí u starých řádků
+   * notifikací — sekce se pak nevykreslí.
+   */
+  legal?: OrderLegalEmailData
+  /**
+   * Resend e-mail s přílohami odmítl a provider ho poslal znovu bez nich —
+   * text pak nesmí tvrdit „v příloze".
+   */
+  attachments_failed?: boolean
+}
+
+const linkStyle = { color: brand.ink, textDecoration: "underline" } as const
+
+/** „Obchodní podmínky · znění platné od … — v příloze (PDF) · na webu". */
+function LegalDocumentLine({
+  label,
+  doc,
+  attached,
+}: {
+  label: string
+  doc: OrderLegalDocument
+  attached: boolean
+}) {
+  const links = [
+    attached ? null : doc.pdf_url ? { href: doc.pdf_url, text: "stáhnout PDF" } : null,
+    doc.page_url ? { href: doc.page_url, text: "zobrazit na webu" } : null,
+  ].filter((link): link is { href: string; text: string } => Boolean(link))
+
+  return (
+    <P small style={{ margin: "0 0 6px" }}>
+      <strong style={{ color: brand.ink }}>{label}</strong> · znění platné od{" "}
+      {doc.version_label}
+      {attached ? " — v příloze (PDF)" : ""}
+      {links.map((link, index) => (
+        <span key={link.href}>
+          {index === 0 ? (attached ? " · " : " — ") : " · "}
+          <Link href={link.href} style={linkStyle}>
+            {link.text}
+          </Link>
+        </span>
+      ))}
+    </P>
+  )
+}
+
+/**
+ * Smlouva a poučení: kdo je prodávající, podle jakého znění OP se smlouva
+ * uzavřela (PDF v příloze), a krátce o odstoupení — včetně výjimky pro zboží
+ * vyrobené na zakázku (§ 1837 písm. d) OZ). Úplné znění je v poučení.
+ */
+function LegalSection({
+  legal,
+  attachmentsFailed,
+}: {
+  legal: OrderLegalEmailData
+  attachmentsFailed: boolean
+}) {
+  const termsAttached = Boolean(legal.terms?.attached) && !attachmentsFailed
+  const withdrawalAttached = Boolean(legal.withdrawal?.attached) && !attachmentsFailed
+  const seller = legal.seller ?? ({} as OrderLegalEmailData["seller"])
+  const sellerLines = [
+    seller.name,
+    seller.address,
+    seller.ico ? `IČO ${seller.ico}` : null,
+    [seller.email, seller.phone].filter(Boolean).join(" · ") || null,
+  ]
+    .filter(Boolean)
+    .join("\n")
+  const madeToOrder = legal.made_to_order_items ?? []
+
+  const attachedNames = [
+    termsAttached ? "obchodní podmínky platné pro tuto smlouvu" : null,
+    withdrawalAttached ? "poučení o odstoupení od smlouvy s formulářem" : null,
+  ].filter(Boolean)
+
+  return (
+    <Section
+      style={{
+        margin: "32px 0 0",
+        borderTop: `1px solid ${brand.line}`,
+        paddingTop: "24px",
+      }}
+    >
+      <Eyebrow index="06">Smlouva a poučení</Eyebrow>
+      <P>
+        Tímto e-mailem potvrzujeme vaši objednávku a uzavření kupní smlouvy.
+        {attachedNames.length
+          ? ` V příloze posíláme ${attachedNames.join(" a ")} (PDF) — uschovejte si je.`
+          : legal.terms
+            ? ` Smlouva se řídí obchodními podmínkami ve znění platném od ${legal.terms.version_label}; najdete je na odkazu níže.`
+            : ""}
+      </P>
+
+      {sellerLines ? (
+        <>
+          <LedgerRow label="Prodávající" value={<MultiLine value={sellerLines} />} />
+          <LedgerEnd />
+        </>
+      ) : null}
+
+      <Section style={{ margin: "16px 0 0" }}>
+        {legal.terms ? (
+          <LegalDocumentLine
+            label="Obchodní podmínky"
+            doc={legal.terms}
+            attached={termsAttached}
+          />
+        ) : null}
+        {legal.withdrawal ? (
+          <LegalDocumentLine
+            label="Poučení o odstoupení a formulář"
+            doc={legal.withdrawal}
+            attached={withdrawalAttached}
+          />
+        ) : null}
+        {legal.complaints_url ? (
+          <P small style={{ margin: "0 0 6px" }}>
+            <strong style={{ color: brand.ink }}>Reklamační řád</strong> —{" "}
+            <Link href={legal.complaints_url} style={linkStyle}>
+              zobrazit na webu
+            </Link>
+          </P>
+        ) : null}
+      </Section>
+
+      {legal.all_made_to_order ? (
+        <P small style={{ margin: "16px 0 0" }}>
+          Zboží v této objednávce vyrábíme podle vašeho zadání, proto od smlouvy
+          nelze odstoupit ve 14denní lhůtě (§ 1837 písm. d) občanského
+          zákoníku). Práva z vadného plnění vám zůstávají — viz reklamační řád.
+        </P>
+      ) : (
+        <P small style={{ margin: "16px 0 0" }}>
+          Od smlouvy můžete odstoupit bez udání důvodu do 14 dnů od převzetí
+          zboží. Stačí nám to oznámit — e-mailem, dopisem nebo
+          {withdrawalAttached ? " formulářem z přílohy" : " vzorovým formulářem"}
+          , použít ho ale nemusíte. Peníze vrátíme do 14 dnů od odstoupení
+          stejným způsobem, jakým jste platili; podrobnosti jsou v poučení
+          o odstoupení.
+          {madeToOrder.length
+            ? ` Výjimkou je zboží vyrobené podle vašeho zadání (${madeToOrder.join(", ")}) — u něj odstoupit nelze (§ 1837 písm. d) občanského zákoníku).`
+            : ""}
+        </P>
+      )}
+    </Section>
+  )
 }
 
 function OrderPlacedEmailComponent({
@@ -56,6 +207,8 @@ function OrderPlacedEmailComponent({
   payment_method,
   edit_order_url,
   refund_url,
+  legal,
+  attachments_failed,
 }: OrderPlacedEmailProps) {
   const owes = typeof balance_due === "number" && balance_due > 0
   const balanceText = owes
@@ -396,6 +549,10 @@ function OrderPlacedEmailComponent({
           </P>
         </Section>
       )}
+
+      {legal ? (
+        <LegalSection legal={legal} attachmentsFailed={Boolean(attachments_failed)} />
+      ) : null}
 
       <P style={{ margin: "32px 0 0" }}>
         Máte-li jakýkoli dotaz, stačí odpovědět na tento e-mail.
@@ -744,5 +901,42 @@ export default () => (
     payment_method="Dobírka — zaplatíte při převzetí"
     edit_order_url="https://keramickazahrada.cz/cz/order/order_12345/edit?token=abc123"
     refund_url="https://keramickazahrada.cz/cz/order/order_12345/refund?token=abc123"
+    legal={{
+      seller: {
+        name: "Lucie Polanská",
+        address: "Putim 229, 397 01 Písek",
+        ico: "03441482",
+        email: "info@keramickazahrada.cz",
+        phone: "+420 775 211 578",
+        web: "keramickazahrada.cz",
+        webUrl: "https://keramickazahrada.cz",
+      },
+      terms: {
+        slug: "obchodni-podminky",
+        title: "Obchodní podmínky",
+        version: "2026-10-15",
+        version_label: "15. 10. 2026",
+        page_url: "https://keramickazahrada.cz/cz/smluvni-podminky/2026-10-15",
+        pdf_url: "https://img.matejforejt.com/legal/obchodni-podminky-2026-10-15.pdf",
+        pdf_draft: false,
+        attached: true,
+      },
+      withdrawal: {
+        slug: "odstoupeni-od-smlouvy",
+        title: "Odstoupení od smlouvy",
+        version: "2026-10-15",
+        version_label: "15. 10. 2026",
+        page_url: "https://keramickazahrada.cz/cz/odstoupeni-od-smlouvy",
+        pdf_url: "https://img.matejforejt.com/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
+        pdf_draft: false,
+        attached: true,
+      },
+      terms_url: "https://keramickazahrada.cz/cz/smluvni-podminky",
+      withdrawal_url: "https://keramickazahrada.cz/cz/odstoupeni-od-smlouvy",
+      complaints_url: "https://keramickazahrada.cz/cz/reklamacni-rad",
+      privacy_url: "https://keramickazahrada.cz/cz/ochrana-osobnich-udaju",
+      made_to_order_items: [],
+      all_made_to_order: false,
+    }}
   />
 )

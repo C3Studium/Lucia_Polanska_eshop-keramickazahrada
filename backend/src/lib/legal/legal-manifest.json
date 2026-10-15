@@ -1,0 +1,149 @@
+{
+  "_generated": "Generuje `pnpm legal:build` (storefront/scripts/legal-build.mjs) z registru storefrontu; URL doplňuje `pnpm legal:upload`. Needitovat ručně.",
+  "schema": 1,
+  "seller": {
+    "name": "Lucie Polanská",
+    "address": "Putim 229, 397 01 Písek",
+    "ico": "03441482",
+    "email": "info@keramickazahrada.cz",
+    "phone": "+420 775 211 578",
+    "web": "keramickazahrada.cz",
+    "webUrl": "https://keramickazahrada.cz"
+  },
+  "documents": {
+    "obchodni-podminky": {
+      "title": "Obchodní podmínky",
+      "path": "/smluvni-podminky",
+      "versions": [
+        {
+          "version": "2015-01-01",
+          "effectiveFrom": "2015-01-01",
+          "title": "Obchodní podmínky",
+          "archived": true,
+          "pdf": {
+            "file": "obchodni-podminky-2015-01-01.pdf",
+            "url": "/legal/obchodni-podminky-2015-01-01.pdf",
+            "sha256": "4100f07631a39d6fbf4328b4da03744010ae91e950d74521f1fafcfdfa7aa279",
+            "bytes": 133447,
+            "draft": false
+          }
+        },
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Obchodní podmínky",
+          "archived": false,
+          "pdf": {
+            "file": "obchodni-podminky-2026-10-15.pdf",
+            "url": "/legal/obchodni-podminky-2026-10-15.pdf",
+            "sha256": "9f1c7ba234143768cf3e3bf7250726a84572a9aa49215f36c5f385e793b999f7",
+            "bytes": 252453,
+            "draft": true
+          }
+        }
+      ]
+    },
+    "reklamacni-rad": {
+      "title": "Reklamační řád",
+      "path": "/reklamacni-rad",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Reklamační řád",
+          "archived": false,
+          "pdf": {
+            "file": "reklamacni-rad-2026-10-15.pdf",
+            "url": "/legal/reklamacni-rad-2026-10-15.pdf",
+            "sha256": "e47c2ee5a8cafe7528f96d5e1eb055534a4924590ef97b12e36a98d075cb3a55",
+            "bytes": 127445,
+            "draft": false
+          }
+        }
+      ]
+    },
+    "reklamacni-protokol": {
+      "title": "Reklamační protokol",
+      "path": "/reklamacni-protokol",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Reklamační protokol",
+          "archived": false,
+          "pdf": {
+            "file": "reklamacni-protokol-2026-10-15.pdf",
+            "url": "/legal/reklamacni-protokol-2026-10-15.pdf",
+            "sha256": "d7b2ba5864e58bfa3f4bcb68eb645aa0be9bff0958494da44faa809ed7f5f678",
+            "bytes": 109163,
+            "draft": false
+          }
+        }
+      ]
+    },
+    "odstoupeni-od-smlouvy": {
+      "title": "Odstoupení od smlouvy",
+      "path": "/odstoupeni-od-smlouvy",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Odstoupení od smlouvy",
+          "archived": false,
+          "pdf": {
+            "file": "odstoupeni-od-smlouvy-2026-10-15.pdf",
+            "url": "/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
+            "sha256": "0aef262ab1502e13132e247b4cd75804f1fb87c55c84301772d484c9fea12b81",
+            "bytes": 159806,
+            "draft": true
+          }
+        }
+      ]
+    },
+    "ochrana-osobnich-udaju": {
+      "title": "Ochrana osobních údajů",
+      "path": "/ochrana-osobnich-udaju",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Ochrana osobních údajů",
+          "archived": false,
+          "pdf": {
+            "file": "ochrana-osobnich-udaju-2026-10-15.pdf",
+            "url": "/legal/ochrana-osobnich-udaju-2026-10-15.pdf",
+            "sha256": "f6ed5baf6f3d087a2ef79d254f992ba4bd7cef0c34520f0c5e066b5f40c6cd73",
+            "bytes": 171792,
+            "draft": true
+          }
+        }
+      ]
+    },
+    "cookies": {
+      "title": "Používání cookies",
+      "path": "/cookies",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Používání cookies",
+          "archived": false,
+          "pdf": null
+        }
+      ]
+    },
+    "doprava-a-platba": {
+      "title": "Doprava a platba",
+      "path": "/doprava-a-platba",
+      "versions": [
+        {
+          "version": "2026-10-15",
+          "effectiveFrom": "2026-10-15",
+          "title": "Doprava a platba",
+          "archived": false,
+          "pdf": null
+        }
+      ]
+    }
+  }
+}

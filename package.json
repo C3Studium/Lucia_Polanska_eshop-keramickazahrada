@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "legal:build": "cd storefront && node scripts/legal-build.mjs",
+    "legal:upload": "cd backend && node scripts/legal-upload.mjs"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2"
   },

@@ -17,6 +17,7 @@ import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
 import { palette } from "styles/palette.generated"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { currentLegalDownloads, formatPdfSize } from "./legal-downloads"
 type FooterTone = "light" | "dark"
 
 const DEFAULT_SURFACE = palette.sage01
@@ -42,8 +43,11 @@ const discoverLinks = [
   { label: "Kontakt", action: "contact" as const },
 ]
 
+// Reklamační řád = pravidla (práva z vadného plnění, lhůty); reklamační
+// protokol = formulář a návod, jak reklamaci poslat. Dvě různé věci, dva odkazy.
 const helpLinks = [
   { label: "Odstoupení od smlouvy", href: "/odstoupeni-od-smlouvy" },
+  { label: "Reklamační řád", href: "/reklamacni-rad" },
   { label: "Reklamační protokol", href: "/reklamacni-protokol" },
   { label: "Doprava a platba", href: "/doprava-a-platba" },
 ]
@@ -335,6 +339,7 @@ export default function Footer({
               <FooterLinkGroup title="Informace" links={importantLinks} />
               <FooterLinkGroup title="Objevovat" links={discoverLinks} />
               <FooterLinkGroup title="Pomoc" links={helpLinks} />
+              <FooterDownloads />
             </nav>
           </div>
         </div>
@@ -415,6 +420,42 @@ function FooterLinkGroup({
             <FooterLink key={link.label} href={link.href} label={link.label} />
           )
         )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Ke stažení (PDF): aktuální znění právních dokumentů jako soubory — to, co
+ * si zákazník uloží nebo vytiskne. Jen dokumenty, jejichž PDF je v manifestu
+ * (`pnpm legal:build`); dokud žádné není, skupina se nevykreslí vůbec.
+ *
+ * Obyčejné `<a>`, ne lokalizovaný odkaz: PDF leží mimo `/[countryCode]`
+ * (R2, nebo `/legal/…` ve `public/`), prefix země by z něj udělal 404.
+ */
+function FooterDownloads() {
+  const downloads = currentLegalDownloads()
+
+  if (!downloads.length) {
+    return null
+  }
+
+  return (
+    <div className="footer__linkGroup footer__linkGroup--downloads">
+      <p className="footer__groupTitle">Ke stažení (PDF)</p>
+      <div>
+        {downloads.map((download) => (
+          <a
+            key={download.slug}
+            href={download.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer__downloadLink"
+          >
+            {download.label}
+            <span className="footer__downloadMeta">PDF · {formatPdfSize(download.bytes)}</span>
+          </a>
+        ))}
       </div>
     </div>
   )

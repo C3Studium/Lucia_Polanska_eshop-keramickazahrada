@@ -87,4 +87,15 @@ export type LegalPdfEntry = {
   url: string
   sha256: string
   bytes: number
+  /**
+   * Otisk zdroje, ze kterého PDF vzniklo (znění verze + použité fakty +
+   * revize tiskové šablony). `pnpm legal:build` podle něj pozná, že PDF
+   * není potřeba generovat znovu.
+   */
+  sourceHash?: string
+  /**
+   * Kopie `archived` z verze dokumentu — patička webu archivní PDF nenabízí.
+   * Do obsahu PDF ani do `sourceHash` nevstupuje.
+   */
+  archived?: boolean
 }

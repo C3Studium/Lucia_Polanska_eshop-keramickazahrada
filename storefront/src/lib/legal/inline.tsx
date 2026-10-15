@@ -19,9 +19,14 @@ export type InlineOptions = {
   placeholderClassName?: string
 }
 
-type Token =
+export type Token =
   | { kind: "text"; value: string }
-  | { kind: "bold"; value: string }
+  /**
+   * `value` = syrový vnitřek; `children` = jeho rozklad — fakt, zástupný
+   * text i odkaz uvnitř tučného písma se tak vykreslí stejně jako mimo něj
+   * (`**{{seller.name}}**`).
+   */
+  | { kind: "bold"; value: string; children: Token[] }
   | { kind: "link"; label: string; href: string }
   | { kind: "placeholder"; value: string }
 
@@ -53,7 +58,7 @@ export const tokenize = (input: string): Token[] => {
         )
       }
     } else if (bold !== undefined) {
-      tokens.push({ kind: "bold", value: bold })
+      tokens.push({ kind: "bold", value: bold, children: tokenize(bold) })
     } else if (linkLabel !== undefined && linkHref !== undefined) {
       tokens.push({ kind: "link", label: linkLabel, href: linkHref })
     }
@@ -68,15 +73,24 @@ const defaultHrefFor = (path: string) => `/cz${path}`
 const resolveHref = (href: string, hrefFor: (path: string) => string) =>
   href.startsWith("/") ? hrefFor(href) : href
 
+/** Všechny tokeny včetně vnořených v tučném písmu (pro počítání, kontroly). */
+export const flattenTokens = (tokens: Token[]): Token[] =>
+  tokens.flatMap((token) =>
+    token.kind === "bold" ? [token, ...flattenTokens(token.children)] : [token]
+  )
+
 /** Řetězec se značkou → React uzly. */
-export const renderInline = (input: string, options: InlineOptions = {}): ReactNode[] => {
+export const renderInline = (input: string, options: InlineOptions = {}): ReactNode[] =>
+  renderTokens(tokenize(input), options)
+
+const renderTokens = (tokens: Token[], options: InlineOptions): ReactNode[] => {
   const hrefFor = options.hrefFor ?? defaultHrefFor
-  return tokenize(input).map((token, index) => {
+  return tokens.map((token, index) => {
     switch (token.kind) {
       case "text":
         return token.value
       case "bold":
-        return <strong key={index}>{token.value}</strong>
+        return <strong key={index}>{renderTokens(token.children, options)}</strong>
       case "link": {
         const href = resolveHref(token.href, hrefFor)
         const external = /^https?:\/\//.test(href)
@@ -105,14 +119,17 @@ export const renderInline = (input: string, options: InlineOptions = {}): ReactN
 }
 
 /** Řetězec se značkou → prostý text (odkaz jako „text (href)"). */
-export const inlineToPlain = (input: string, options: InlineOptions = {}): string => {
-  const hrefFor = options.hrefFor ?? defaultHrefFor
-  return tokenize(input)
+export const inlineToPlain = (input: string, options: InlineOptions = {}): string =>
+  tokensToPlain(tokenize(input), options.hrefFor ?? defaultHrefFor)
+
+const tokensToPlain = (tokens: Token[], hrefFor: (path: string) => string): string =>
+  tokens
     .map((token) => {
       switch (token.kind) {
         case "text":
-        case "bold":
           return token.value
+        case "bold":
+          return tokensToPlain(token.children, hrefFor)
         case "link":
           return `${token.label} (${resolveHref(token.href, hrefFor)})`
         case "placeholder":
@@ -120,8 +137,7 @@ export const inlineToPlain = (input: string, options: InlineOptions = {}): strin
       }
     })
     .join("")
-}
 
-/** Obsahuje text zástupný údaj (přímo nebo přes chybějící fakt)? */
+/** Obsahuje text zástupný údaj (přímo, přes chybějící fakt, i v tučném písmu)? */
 export const hasPlaceholder = (input: string): boolean =>
-  tokenize(input).some((token) => token.kind === "placeholder")
+  flattenTokens(tokenize(input)).some((token) => token.kind === "placeholder")
