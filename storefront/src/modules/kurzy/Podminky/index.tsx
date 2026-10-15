@@ -1,3 +1,4 @@
+import { getLegalFacts } from "@lib/data/legal-facts"
 import { renderInline } from "@lib/legal/inline"
 
 import styles from "./styles.module.scss"
@@ -9,8 +10,9 @@ import styles from "./styles.module.scss"
  * OP upravit i tady.
  *
  * Text je v kódu, ne v CMS: jde o poučení, které musí odpovídat OP. Storno,
- * minimální věk a lhůta pro vyzvednutí jsou fakty z `@lib/legal/facts` —
- * dokud je zadavatel nedodá, svítí jako `[[DOPLNIT]]`.
+ * minimální věk a lhůta pro vyzvednutí jsou právní údaje z administrace
+ * obchodu (`getLegalFacts()`) — dokud je zadavatel nedodá, svítí jako
+ * `[[DOPLNIT]]`. Serverová komponenta, fakty si načte sama.
  */
 
 const TERMS: { term: string; text: string }[] = [
@@ -37,11 +39,13 @@ const TERMS: { term: string; text: string }[] = [
   },
 ]
 
-export default function KurzyPodminky({ countryCode = "cz" }: { countryCode?: string }) {
+export default async function KurzyPodminky({ countryCode = "cz" }: { countryCode?: string }) {
+  const facts = await getLegalFacts()
   const inline = (text: string) =>
     renderInline(text, {
       hrefFor: (path) => `/${countryCode}${path}`,
       placeholderClassName: styles.placeholder,
+      facts,
     })
 
   return (

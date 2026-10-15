@@ -28,6 +28,16 @@ export type LegalValidationIssue = {
 
 const VERSION_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const ANCHOR_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/** Druh bloku tak, jak se jmenuje ve Studiu (`valecms.types.ts`). */
+export const BLOCK_LABEL: Record<LegalBlock["type"], string> = {
+  p: "odstavec",
+  ul: "seznam",
+  ol: "číslovaný seznam",
+  table: "tabulka",
+  box: "rámeček",
+  form: "formulář",
+}
 const FACT_PATTERN = /\{\{([^}]*)\}\}/g
 const PLACEHOLDER_PATTERN = /\[\[DOPLNIT:([^\]]*)\]\]/g
 
@@ -68,29 +78,35 @@ const isEmptyBlock = (block: LegalBlock): boolean => {
   }
 }
 
-const checkMarkup = (text: string): string[] => {
+/**
+ * Problémy se značkou v jednom řetězci — lidsky, česky (čte je i Lucie ve
+ * Studiu, když publikace znění odmítne: `cms.ts` → zámek Studia).
+ */
+export const checkMarkup = (text: string): string[] => {
   const problems: string[] = []
 
   FACT_PATTERN.lastIndex = 0
   let fact: RegExpExecArray | null
   while ((fact = FACT_PATTERN.exec(text)) !== null) {
-    if (!isFactKey(fact[1])) problems.push(`neznámý fakt {{${fact[1]}}}`)
+    if (!isFactKey(fact[1])) problems.push(`neznámý údaj {{${fact[1]}}} (překlep? seznam údajů je v nápovědě u „Kapitoly“)`)
   }
 
   PLACEHOLDER_PATTERN.lastIndex = 0
   let placeholder: RegExpExecArray | null
   while ((placeholder = PLACEHOLDER_PATTERN.exec(text)) !== null) {
-    if (!placeholder[1].trim()) problems.push("prázdné [[DOPLNIT: ]]")
+    if (!placeholder[1].trim()) problems.push("prázdné [[DOPLNIT: ]] — napište, co chybí")
   }
 
   const withoutPlaceholders = text.replace(PLACEHOLDER_PATTERN, "")
-  if (withoutPlaceholders.indexOf("[[") !== -1) problems.push("neuzavřené nebo nepovolené „[[“")
+  if (withoutPlaceholders.indexOf("[[") !== -1) {
+    problems.push("neuzavřené nebo nepovolené „[[“ (zástupný text se píše [[DOPLNIT: co chybí]])")
+  }
   const withoutFacts = text.replace(FACT_PATTERN, "")
   if (withoutFacts.indexOf("{{") !== -1 || withoutFacts.indexOf("}}") !== -1) {
-    problems.push("neuzavřené „{{“ / „}}“")
+    problems.push("neuzavřený údaj „{{“ / „}}“ (údaj se píše {{seller.email}})")
   }
   const bold = text.split("**").length - 1
-  if (bold % 2 !== 0) problems.push("lichý počet „**“ (neuzavřené tučné písmo)")
+  if (bold % 2 !== 0) problems.push("lichý počet „**“ — tučné písmo se píše **takhle**")
 
   // Uvnitř odkazu se značka nerozkládá: `[{{fakt}}](…)` by na webu zůstalo
   // doslova „{{seller.email}}". (Tučné písmo se rozkládá rekurzivně —
@@ -98,7 +114,7 @@ const checkMarkup = (text: string): string[] => {
   // uvnitř tučného písma se kontroluje taky, proto `flattenTokens`.)
   for (const token of flattenTokens(tokenize(text))) {
     if (token.kind === "link" && /\{\{|\[\[DOPLNIT/.test(`${token.label} ${token.href}`)) {
-      problems.push("fakt nebo [[DOPLNIT]] uvnitř odkazu se nevykreslí")
+      problems.push("údaj {{…}} ani [[DOPLNIT]] uvnitř odkazu [text](adresa) se nevykreslí")
     }
   }
 
@@ -138,7 +154,7 @@ export const validateDocuments = (
       if (!section.blocks.length) at(where, "kapitola je prázdná")
 
       for (const block of section.blocks) {
-        if (isEmptyBlock(block)) at(where, `prázdný blok „${block.type}“`)
+        if (isEmptyBlock(block)) at(where, `prázdný blok (${BLOCK_LABEL[block.type]})`)
         if (block.type === "table") {
           block.rows.forEach((row, index) => {
             if (row.length !== block.head.length) {

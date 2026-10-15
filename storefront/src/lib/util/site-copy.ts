@@ -73,6 +73,10 @@ export type CopyPage =
   | "o-mne"
   | "vyroba"
   | "dotazy"
+  // Redakční texty, které dřív ležely jen v kódu (docs/cms/00-plan.md, E).
+  | "obchod"
+  | "kosik"
+  | "newsletter"
   // Právní dokumenty — klíč stránky je totéž slovo jako routa.
   | "smluvni-podminky"
   | "ochrana-osobnich-udaju"
@@ -167,11 +171,23 @@ export const itemValue = (
  */
 export const itemFieldPath = (
   block: CopyBlock | undefined,
-  label: string
+  label: string,
+  /**
+   * Které pole položky. Výchozí `value`; `note` nese u dvojic druhou část
+   * (zvýrazněný konec nadpisu — stejně jako `global.prihlaseni`).
+   */
+  field: "value" | "note" = "value"
 ): string | undefined => {
   const index = block?.items?.findIndex((item) => item.label === label) ?? -1
-  return index >= 0 ? `items.${index}.value` : undefined
+  return index >= 0 ? `items.${index}.${field}` : undefined
 }
+
+/** `note` položky podle popisku — protějšek `itemValue` pro druhé pole dvojice. */
+export const itemNote = (
+  block: CopyBlock | undefined,
+  label: string
+): string | undefined =>
+  block?.items?.find((item) => item.label === label)?.note
 
 /**
  * Přepínač sekce.

@@ -176,6 +176,25 @@
   }
 }
 
+/* „Další soubory ke stažení" ze Studia — pod oficiálním PDF, oddělené vlastním
+   nadpisem a větou, že závazné je znění nahoře. Mezery stejné jako nadpis
+   bloku (svisle vh, viz hlavička souboru). */
+.extra {
+  margin-top: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.extraTitle {
+  margin: 0;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-weight: 500;
+}
+
+.extraNote {
+  margin: 0.375rem 0 clamp(0.875rem, 1.8vh, 1.5rem);
+  font-size: clamp(0.82rem, 1.05vw, 1rem);
+  opacity: 0.6;
+}
+
 /* „Vytisknout" je tlačítko (window.print), ne odkaz — stejný řádek, bez
    výchozího vzhledu tlačítka. */
 .button {

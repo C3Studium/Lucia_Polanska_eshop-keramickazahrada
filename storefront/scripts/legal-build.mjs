@@ -13,6 +13,17 @@
  *  5. Zapíše `src/lib/legal/pdf-manifest.json` a kopii pro backend
  *     `backend/src/lib/legal/legal-manifest.json` (fakty o prodávající +
  *     verze dokumentů s daty účinnosti) — patička e-mailů čte tytéž údaje.
+ *     Do každého záznamu manifestu zapíše `facts` — hodnoty `{{údajů}}`, se
+ *     kterými PDF vzniklo; u vydané verze s nimi web vykresluje i stránku.
+ *     Záznamu, kterému `facts` chybí a jehož otisk zdroje sedí, je doplní
+ *     (shoda otisku dokazuje, že se údaje od tisku nezměnily).
+ *  6. Znění, které přišlo ze Studia a v repu ho nikdo nemá, zapíše jako otisk
+ *     `src/lib/legal/documents/snapshots/<slug>@<verze>.json` (+ vygeneruje
+ *     `snapshots/index.ts`). Po zveřejnění PDF se web vykresluje jen z něj.
+ *
+ * Vydané znění (PDF se zveřejněnou https adresou) se NIKDY nepřegeneruje: když
+ * jeho otisk nesedí (změnil se text v repu nebo fakty v otisku), skript skončí
+ * chybou — vydané znění se nesmí měnit, změna = nová verze s pozdějším datem.
  *
  * Použití (storefront musí běžet):
  *   pnpm legal:build                    # BASE_URL výchozí http://localhost:8000
@@ -25,7 +36,7 @@
  */
 import { createHash } from "node:crypto"
 import { existsSync } from "node:fs"
-import { mkdir, readFile, writeFile } from "node:fs/promises"
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { verifyPdfText } from "./legal-pdf-text.mjs"
@@ -34,6 +45,8 @@ const STOREFRONT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 const REPO = path.resolve(STOREFRONT, "..")
 const PUBLIC_DIR = path.join(STOREFRONT, "public", "legal")
 const MANIFEST_PATH = path.join(STOREFRONT, "src", "lib", "legal", "pdf-manifest.json")
+const SNAPSHOT_DIR = path.join(STOREFRONT, "src", "lib", "legal", "documents", "snapshots")
+const SNAPSHOT_INDEX = path.join(SNAPSHOT_DIR, "index.ts")
 const BACKEND_MANIFEST_PATH = path.join(
   REPO,
   "backend",
@@ -50,19 +63,25 @@ const BACKEND_MANIFEST_PATH = path.join(
  */
 const PDF_OPTIONS_REVISION = 1
 
-const HELP = `pnpm legal:build [--force] [--check] [--only=<slug>[@<verze>],…] [--base-url=<url>]
+const HELP = `pnpm legal:build [--force] [--check] [--strict] [--only=<slug>[@<verze>],…] [--base-url=<url>]
 
-  --force      vygenerovat znovu i PDF, jejichž zdroj se nezměnil
-  --check      nic negenerovat ani nezapisovat — jen ověřit PDF a manifesty
+  --force      vygenerovat znovu i PDF, jejichž zdroj se nezměnil (vydaná PDF
+               v R2 nikdy — ta se nepřegenerovávají)
+  --check      nic negenerovat ani nezapisovat — jen ověřit PDF, manifesty
+               (i \`facts\` v záznamech) a otisky znění ze Studia
+  --strict     kontrola před spuštěním obchodu: chybou skončí i „PLATNÉ, ALE
+               NEVYDANÉ" (znění, které už platí, ale jeho PDF není zveřejněné).
+               Kontrola na ostro: pnpm legal:build --check --strict
   --only=…     jen vybrané dokumenty / verze (čárkou, lze opakovat)
   --base-url=… adresa běžícího storefrontu (nebo proměnná BASE_URL),
                výchozí http://localhost:8000`
 
 const parseArgs = (argv) => {
-  const options = { force: false, check: false, only: [], baseUrl: null, help: false }
+  const options = { force: false, check: false, strict: false, only: [], baseUrl: null, help: false }
   for (const arg of argv) {
     if (arg === "--force") options.force = true
     else if (arg === "--check") options.check = true
+    else if (arg === "--strict") options.strict = true
     else if (arg === "--help" || arg === "-h") options.help = true
     else if (arg.startsWith("--only=")) {
       options.only.push(...arg.slice(7).split(",").map((item) => item.trim()).filter(Boolean))
@@ -105,8 +124,11 @@ const readJson = async (file, fallback) => {
 }
 
 /** Zapíše JSON jen při změně. Vrací, zda se soubor změnil. */
-const writeJsonIfChanged = async (file, value, dryRun) => {
-  const next = `${JSON.stringify(value, null, 2)}\n`
+const writeJsonIfChanged = async (file, value, dryRun) =>
+  writeTextIfChanged(file, `${JSON.stringify(value, null, 2)}\n`, dryRun)
+
+/** Zapíše text jen při změně. Vrací, zda se soubor změnil. */
+const writeTextIfChanged = async (file, next, dryRun) => {
   let current = null
   try {
     current = await readFile(file, "utf8")
@@ -120,6 +142,50 @@ const writeJsonIfChanged = async (file, value, dryRun) => {
   }
   return true
 }
+
+/** `obchodni-podminky@2026-11-01.json` — klíč verze je i jméno otisku. */
+const snapshotFile = (version) => `${version.slug}@${version.version}.json`
+
+/**
+ * `snapshots/index.ts` se statickými importy všech otisků ve složce — Next je
+ * tak zabalí do serverového balíku. Hlavička je stejná jako u ručně založeného
+ * souboru, takže běh bez otisků soubor nezmění.
+ */
+const snapshotIndex = (files) => {
+  const imports = files.map((file, index) => `import snapshot${index} from "./${file}"`)
+  const list = files.map((_, index) => `  snapshot${index} as unknown as LegalDocumentVersion,`)
+  return [
+    "// Generuje `pnpm legal:build` (storefront/scripts/legal-build.mjs) — needitovat ručně.",
+    "//",
+    "// Otisky znění právních dokumentů, jejichž text přišel ze Studia (typ",
+    "// „Právní dokumenty\"). Soubor `<slug>@<verze>.json` je přesně to znění,",
+    "// ze kterého `legal:build` vytiskl PDF; po zveřejnění PDF (`legal:upload`)",
+    "// se web vykresluje jen z něj, ne z CMS. Statické importy, aby je Next",
+    "// zabalil do serverového balíku.",
+    'import type { LegalDocumentVersion } from "../../types"',
+    ...imports,
+    "",
+    files.length
+      ? `export const SNAPSHOTS: LegalDocumentVersion[] = [\n${list.join("\n")}\n]`
+      : "export const SNAPSHOTS: LegalDocumentVersion[] = []",
+    "",
+  ].join("\n")
+}
+
+const listSnapshotFiles = async () => {
+  try {
+    return (await readdir(SNAPSHOT_DIR)).filter((file) => /^[a-z0-9-]+@\d{4}-\d{2}-\d{2}\.json$/.test(file))
+  } catch (error) {
+    if (error?.code === "ENOENT") return []
+    throw error
+  }
+}
+
+/** Otisk faktů v pevném pořadí klíčů (stabilní diff manifestu). */
+const sortedFacts = (facts) =>
+  facts && typeof facts === "object"
+    ? Object.fromEntries(Object.keys(facts).sort().map((key) => [key, facts[key] ?? null]))
+    : undefined
 
 const fail = (message) => {
   console.error(`\n✗ ${message}\n`)
@@ -356,14 +422,47 @@ const main = async () => {
     ])
   )
 
+  // Kolik znění přišlo ze Studia — prázdné nebo nečitelné CMS musí být vidět,
+  // jinak by běh tiše počítal jen s kopiemi v repu.
+  if (api.cms) {
+    console.log(
+      `Studio: načteno ${api.cms.read} znění (na webu platí ${api.cms.used}, neplatných ${api.cms.skipped})`
+    )
+    if (!api.cms.read) {
+      console.warn(
+        "! Ze Studia se nenačetlo žádné znění. Je CMS dostupné (proměnné Supabase v tomhle storefrontu)?\n" +
+          "  U prázdného CMS je to v pořádku — pak platí jen kopie v repu."
+      )
+    }
+    if (api.cms.skipped) {
+      console.warn(`! ${api.cms.skipped} znění ve Studiu je neplatných a web je nepoužívá — viz log storefrontu ([legal]).`)
+    }
+  }
+
   const pdfVersions = api.versions.filter((version) => version.pdf)
   const known = new Set(pdfVersions.map((version) => `${version.slug}@${version.version}`))
-  for (const key of previous.keys()) {
-    if (!known.has(key)) {
+  // Vydaný záznam (PDF v R2), který registr jako PDF nevede: CMS se při běhu
+  // nenačetlo, nebo někdo verzi přepnul na „bez PDF". Vypustit ho z manifestu
+  // by zrušilo zámek i přílohu v e-mailech — proto se nic nezapíše a běh
+  // skončí chybou. Pracovní (místní) záznamy se vynechají jako dřív.
+  const orphanIssued = []
+  for (const [key, entry] of previous) {
+    if (known.has(key)) continue
+    if (/^https:\/\//.test(entry.url ?? "")) {
+      orphanIssued.push(key)
+    } else {
       console.warn(
         `! ${key} je v manifestu, ale registr ho jako PDF nevede — záznam vynechávám (soubor nemažu).`
       )
     }
+  }
+  if (orphanIssued.length) {
+    fail(
+      `Vydané znění chybí v registru: ${orphanIssued.join(", ")}.\n` +
+        "  Jeho PDF je zveřejněné, váže se k objednávkám a manifest ho musí dál vést.\n" +
+        "  Nejspíš se při tomto běhu nenačetlo Studio (CMS), nebo má verze vypnuté „PDF ke stažení“.\n" +
+        "  Nic jsem nezapsal. Zkontrolujte CMS / dokument a spusťte znovu."
+    )
   }
 
   // Výchozí stav = dosavadní záznamy těch verzí, které registr pořád vede.
@@ -384,31 +483,48 @@ const main = async () => {
   const rows = []
   let failed = false
 
+  const issuedChanged = []
+
   try {
     for (const version of targets) {
       const key = `${version.slug}@${version.version}`
       const filePath = path.join(PUBLIC_DIR, version.file)
       const sourceHash = sha256(`${version.sourceHash}:pdf-options-${PDF_OPTIONS_REVISION}`)
       const old = previous.get(key)
+      // Vydané = PDF už zveřejněné (https v manifestu, jako `isPublishedPdfUrl`).
+      const issued = Boolean(old?.url && /^https:\/\//.test(old.url))
       let buf = existsSync(filePath) ? await readFile(filePath) : null
-      const upToDate = Boolean(
-        old &&
-          old.file === version.file &&
-          old.sourceHash === sourceHash &&
-          buf &&
-          sha256(buf) === old.sha256
-      )
+      const sameSource = Boolean(old && old.file === version.file && old.sourceHash === sourceHash)
+      const upToDate = Boolean(sameSource && buf && sha256(buf) === old.sha256)
+
+      // Vydané znění, jehož otisk nesedí: změnil se text v repu nebo fakty
+      // v otisku manifestu. Nepřegenerovat — vydané PDF se váže k uzavřeným
+      // smlouvám a v R2 je neměnné. Změna = nová verze s pozdějším datem.
+      if (issued && !sameSource) {
+        failed = true
+        issuedChanged.push(key)
+        rows.push({ key, status: "VYDANÉ ZNĚNÍ SE ZMĚNILO — nepřegeneruji" })
+        continue
+      }
 
       let status
       if (options.check) {
         status = !buf ? "CHYBÍ" : upToDate ? "aktuální" : "ZASTARALÉ"
         if (!upToDate) failed = true
-      } else if (upToDate && !options.force) {
-        status = "beze změny"
+      } else if (upToDate && (!options.force || issued)) {
+        status = upToDate && issued && options.force ? "vydané · nepřegeneruji" : "beze změny"
       } else {
         try {
           browser ??= await launchBrowser()
-          buf = await renderPdf(browser, baseUrl, version, sellerName, sourceHash)
+          const rendered = await renderPdf(browser, baseUrl, version, sellerName, sourceHash)
+          // Vydané PDF chybí jen v `public/legal` (otisk sedí): smí se znovu
+          // vytisknout, jen když vyjdou tytéž bajty jako v R2.
+          if (issued && sha256(rendered) !== old.sha256) {
+            throw new Error(
+              `vydané PDF chybí v public/legal a nový tisk dal jiné bajty — stáhněte ho z ${old.url}, nepřegenerovávejte`
+            )
+          }
+          buf = rendered
           await mkdir(PUBLIC_DIR, { recursive: true })
           await writeFile(filePath, buf)
           status = old && old.sha256 === sha256(buf) ? "beze změny (znovu)" : "vygenerováno"
@@ -425,7 +541,9 @@ const main = async () => {
       }
 
       const digest = sha256(buf)
-      if (!options.check) {
+      // V --check jen u aktuálních záznamů: porovnání manifestu pak ukáže, že
+      // jim chybí `facts` (doplní je obyčejný běh).
+      if (!options.check || upToDate) {
         entries.set(key, {
           slug: version.slug,
           version: version.version,
@@ -436,6 +554,10 @@ const main = async () => {
           sha256: digest,
           bytes: buf.length,
           sourceHash,
+          // Fakty, se kterými PDF vzniklo (`/api/legal/versions` → `facts`).
+          // Záznamu bez nich se doplní: shoda otisku zdroje (`sameSource`)
+          // dokazuje, že jsou tytéž jako při tisku.
+          facts: sortedFacts(version.facts) ?? old?.facts,
         })
       }
 
@@ -468,6 +590,7 @@ const main = async () => {
       bytes: entry.bytes,
       sourceHash: entry.sourceHash,
       archived: archivedByKey.get(key) ?? Boolean(entry.archived),
+      ...(entry.facts ? { facts: entry.facts } : {}),
     }))
     .sort((a, b) => a.slug.localeCompare(b.slug) || a.version.localeCompare(b.version))
   const manifestChanged = await writeJsonIfChanged(
@@ -480,6 +603,31 @@ const main = async () => {
     backendManifest(api, new Map(sortedEntries.map((entry) => [`${entry.slug}@${entry.version}`, entry]))),
     options.check
   )
+
+  // Otisky znění ze Studia: `document` posílá API jen u verze, jejíž text
+  // přišel z CMS a v repu ho ještě nikdo nemá (nebo má jiný).
+  const snapshotVersions = api.versions.filter(
+    (version) => version.document && matchesOnly(options.only, version)
+  )
+  const snapshotRows = []
+  for (const version of snapshotVersions) {
+    const file = snapshotFile(version)
+    const changed = await writeJsonIfChanged(path.join(SNAPSHOT_DIR, file), version.document, options.check)
+    snapshotRows.push({
+      file,
+      changed,
+      key: `${version.slug}@${version.version}`,
+      hasRepoCopy: Boolean(version.hasRepoCopy),
+    })
+  }
+  const snapshotFiles = new Set(await listSnapshotFiles())
+  for (const { file } of snapshotRows) snapshotFiles.add(file)
+  const indexChanged = await writeTextIfChanged(
+    SNAPSHOT_INDEX,
+    snapshotIndex(Array.from(snapshotFiles).sort()),
+    options.check
+  )
+  const snapshotsChanged = indexChanged || snapshotRows.some((row) => row.changed)
 
   // Souhrn.
   if (rows.length) {
@@ -534,12 +682,75 @@ const main = async () => {
   console.log(
     `Manifest backendu:    ${backendChanged ? (options.check ? "ZASTARALÝ" : "zapsán") : "beze změny"} (${path.relative(REPO, BACKEND_MANIFEST_PATH)})`
   )
-  if (options.check && (manifestChanged || backendChanged)) failed = true
+  for (const row of snapshotRows) {
+    console.log(
+      `Otisk znění ze Studia: ${row.changed ? (options.check ? "ZASTARALÝ" : "zapsán") : "beze změny"} (${path.relative(REPO, path.join(SNAPSHOT_DIR, row.file))})`
+    )
+    if (options.check && row.changed) {
+      console.error(
+        row.hasRepoCopy
+          ? `✗ ${row.key}: ZNĚNÍ VE STUDIU SE LIŠÍ OD KOPIE V REPU — spusťte legal:build (zapíše otisk)`
+          : `✗ ${row.key}: ZNĚNÍ JEN VE STUDIU — spusťte legal:build (bez otisku by při výpadku CMS ze stránky zmizelo)`
+      )
+    }
+  }
+  if (indexChanged) {
+    console.log(
+      `Seznam otisků:        ${options.check ? "ZASTARALÝ" : "zapsán"} (${path.relative(REPO, SNAPSHOT_INDEX)})`
+    )
+  }
+  if (options.check && (manifestChanged || backendChanged || snapshotsChanged)) failed = true
+
+  if (issuedChanged.length) {
+    console.error(
+      `\n✗ Vydané znění se změnilo: ${issuedChanged.join(", ")}.\n` +
+        "  Jeho PDF je zveřejněné a váže se k uzavřeným smlouvám — text v repu (TS modul / otisk)\n" +
+        "  ani fakty v otisku manifestu (`facts`) se nesmí měnit. Vraťte změnu; nové znění\n" +
+        "  patří do nové verze s pozdějším datem platnosti (ve Studiu nový záznam)."
+    )
+  }
+  // Studio drží pod klíčem vydané verze jiný text (např. úprava mezi
+  // `legal:build` a `legal:upload`). Web ho nepoužije, ale ať o tom někdo ví.
+  for (const version of api.versions.filter((item) => item.locked && item.cmsDiffers)) {
+    console.warn(
+      `! ${version.slug}@${version.version}: ve Studiu je jiné znění než vydané — web ukazuje vydané (z repa); ` +
+        "změny patří do nové verze."
+    )
+  }
+
+  // Znění, které už platí, a jeho PDF zveřejněné není (jen místní /legal/…, nebo
+  // žádné). Před spuštěním obchodu musí být vydané všechno — dnes je to stav
+  // před spuštěním (OP, odstoupení, zásady s [[DOPLNIT]]), proto jen
+  // varování; chybou až s --strict (kontrola na ostro).
+  const today = api.today ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Prague" }).format(new Date())
+  const issuedKeys = new Set(
+    sortedEntries.filter((entry) => /^https:\/\//.test(entry.url)).map((entry) => `${entry.slug}@${entry.version}`)
+  )
+  const unissued = pdfVersions.filter(
+    (version) => version.version <= today && !issuedKeys.has(`${version.slug}@${version.version}`)
+  )
+  if (unissued.length) {
+    const say = options.strict ? console.error : console.warn
+    say(
+      `\n${options.strict ? "✗" : "!"} PLATNÉ, ALE NEVYDANÉ (${unissued.length}) — znění už platí, ale jeho PDF není zveřejněné v R2:`
+    )
+    for (const version of unissued) {
+      say(
+        `  - ${version.slug}@${version.version}${Number(version.placeholders) > 0 ? ` (${version.placeholders}× [[DOPLNIT]])` : ""}`
+      )
+    }
+    say(
+      options.strict
+        ? "  Před spuštěním doplňte údaje, spusťte legal:build a legal:upload."
+        : "  (Jen upozornění; před spuštěním obchodu spusťte kontrolu s --strict.)"
+    )
+    if (options.strict) failed = true
+  }
 
   const withPlaceholders = rows.filter((row) => row.placeholders > 0)
   if (withPlaceholders.length) {
     console.log(
-      `\n! ${withPlaceholders.length} PDF obsahuje nedoplněné údaje [[DOPLNIT]] (žlutě) — zákazníkům je neposílat, dokud nejsou doplněné ve facts.ts / dokumentech.`
+      `\n! ${withPlaceholders.length} PDF obsahuje nedoplněné údaje [[DOPLNIT]] (žlutě) — zákazníkům je neposílat, dokud nejsou doplněné v „Právních údajích" (administrace) / ve znění dokumentu.`
     )
   }
   const local = sortedEntries.filter((entry) => !/^https?:\/\//.test(entry.url))
@@ -548,9 +759,14 @@ const main = async () => {
       `\nDalší krok: nahrát ${local.length} PDF do R2 — v backendu \`pnpm legal:upload --dry-run\`, pak \`pnpm legal:upload\`.`
     )
   }
+  if (snapshotsChanged && !options.check) {
+    console.log(
+      "\nOtisky znění ze Studia jsou nové / změněné — commitněte je spolu s manifestem: po zveřejnění PDF se web vykresluje jen z nich."
+    )
+  }
 
   if (failed) {
-    console.error("\n✗ Některá PDF neprošla kontrolou (viz tabulka).")
+    console.error("\n✗ Kontrola neprošla — viz tabulka a hlášení výš (PDF, manifesty, otisky znění).")
     process.exit(1)
   }
 }

@@ -5,11 +5,11 @@ import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 /*
  * Reklamační řád — pravidla reklamací jako samostatný dokument
  * (LEGAL_AUDIT.md §4, §6). Praktický návod a formulář je na
- * `/reklamacni-protokol`. Znění z registru, ne z CMS.
+ * `/reklamacni-protokol`. Znění ze sloučeného registru (Studio + repo).
  */
 export const revalidate = 3600
 
-export function generateMetadata(): Metadata {
+export function generateMetadata(): Promise<Metadata> {
   return legalMetadata("reklamacni-rad")
 }
 

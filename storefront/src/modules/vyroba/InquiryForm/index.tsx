@@ -1,5 +1,7 @@
+import { getLegalFacts } from "@lib/data/legal-facts"
+import { getPublishedLegalRegistry } from "@lib/data/legal-registry"
 import { fact } from "@lib/legal/facts"
-import { currentTermsVersion, LEGAL_PATHS } from "@lib/legal/registry"
+import { LEGAL_PATHS } from "@lib/legal/registry"
 
 import InquiryForm from "./form"
 import styles from "./style.module.scss"
@@ -12,10 +14,11 @@ import styles from "./style.module.scss"
  * Kotva `#poptavka` (`INQUIRY_ANCHOR`) — na ni má mířit tlačítko z domovské
  * stránky: `/vyroba#poptavka`.
  *
- * Serverová komponenta schválně: verze OP (`currentTermsVersion()`) a cesty
- * k dokumentům se berou z registru tady a do klientského formuláře jdou jako
- * hodnoty. Import registru v klientu by do balíčku stáhl texty všech
- * právních dokumentů.
+ * Serverová komponenta schválně: verze OP (`currentTermsVersion()` z
+ * publikovaného sloučeného registru — repo + Studio) a cesty k dokumentům se
+ * berou tady a do klientského formuláře jdou jako hodnoty, kontakt z právních
+ * údajů v administraci obchodu. Import registru v klientu by do balíčku
+ * stáhl texty všech právních dokumentů.
  *
  * Texty jsou v kódu, ne v CMS: jde o předsmluvní informace k zakázce
  * (poučení o § 1837 písm. d) OZ, kdy vzniká smlouva), které musí sedět
@@ -46,12 +49,13 @@ const STEPS = [
 
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`
 
-export default function VyrobaInquiry() {
-  const termsVersion = currentTermsVersion()
+export default async function VyrobaInquiry() {
+  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const termsVersion = registry.currentTermsVersion()
   const termsHref = `${LEGAL_PATHS["obchodni-podminky"]}#vyroba-na-zakazku`
   const privacyHref = LEGAL_PATHS["ochrana-osobnich-udaju"]
-  const email = fact("seller.email") ?? ""
-  const phone = fact("seller.phone")
+  const email = fact("seller.email", facts) ?? ""
+  const phone = fact("seller.phone", facts)
 
   return (
     <section

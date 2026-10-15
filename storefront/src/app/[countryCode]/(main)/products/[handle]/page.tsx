@@ -14,6 +14,7 @@ import { listCategories } from "@lib/data/categories"
 import ProductReviews from "@modules/products/components/product-reviews"
 import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
 import { getProductionProfile } from "@lib/data/made-to-order"
+import { getPageCopy } from "@lib/data/site-copy"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -221,6 +222,15 @@ export default async function ProductPage(props: Props) {
   // null for an ordinary product; the panel renders nothing in that case.
   const productionProfile = await getProductionProfile(pricedProduct.id)
 
+  /*
+   * Společné texty všech stránek výrobku — blok `global.produkt` (doprava
+   * v detailech, věta pod galerií, hlídání naskladnění, „Mohlo by se hodit").
+   * Globální, ne vlastní stránka: výrobky jsou Medusa, a dynamická routa
+   * v konfiguraci CMS potřebuje `paths` ze zdroje CMS (viz valecms.config.ts).
+   * Výpadek CMS = texty z kódu.
+   */
+  const productCopy = (await getPageCopy("global"))["global.produkt"]
+
   return (
     <main>
       {/* Karta výrobku začíná vždy nahoře — i po kroku vpřed v historii. */}
@@ -237,10 +247,11 @@ export default async function ProductPage(props: Props) {
         productionProfile={productionProfile}
         initialRating={reviewsData.average_rating}
         initialCount={reviewsData.count}
+        texts={productCopy}
       />
       {/* <ProductChapter /> */}
       <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} />
-      <SoldProducts products={relatedProducts} />
+      <SoldProducts products={relatedProducts} block={productCopy} />
     </main>
   )
 }

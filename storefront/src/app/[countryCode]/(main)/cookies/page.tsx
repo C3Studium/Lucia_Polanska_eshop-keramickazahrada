@@ -4,11 +4,12 @@ import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
 /*
  * Používání cookies — znění z registru, tabulky ze soupisu
- * `@lib/legal/cookies-inventory` (udržuje ho lišta souhlasu). Ne z CMS.
+ * `@lib/legal/cookies-inventory` (udržuje ho lišta souhlasu). Kdo píše znění
+ * ve Studiu, musí tabulky převzít — soupis se do CMS nepromítá sám.
  */
 export const revalidate = 3600
 
-export function generateMetadata(): Metadata {
+export function generateMetadata(): Promise<Metadata> {
   return legalMetadata("cookies")
 }
 

@@ -1,11 +1,17 @@
 /**
  * Právní dokumenty obchodu — datový tvar.
  *
- * Dokumenty žijí v repu jako verzované moduly (`./documents/<slug>/<verze>.ts`),
- * ne v CMS: jejich znění se váže k objednávce (verze OP v `order.metadata`),
- * generuje se z nich PDF a čte je advokát v PR. CMS by je přepisovalo
- * odstavec po odstavci podle pořadí a pole má strop 1000 znaků — viz
- * docs/legal/CHANGELOG.md.
+ * Znění se píše ve Studiu (typ „Právní dokumenty", `pravniDokument` —
+ * převod v `./cms.ts`) a v repu leží jeho kopie: verzované moduly
+ * `./documents/<slug>/<verze>.ts` a otisky z CMS `./documents/snapshots/`
+ * (zapisuje je `pnpm legal:build`). Znění se váže k objednávce (verze OP
+ * v `order.metadata`) a generuje se z něj PDF — proto VYDANÉ znění (PDF
+ * zveřejněné v úložišti) platí jen z repa a ve Studiu je zamčené. Jak se
+ * zdroje slučují, popisuje `./registry.ts` (docs/cms/00-plan.md, C).
+ *
+ * (Dřív tu CMS nebylo vůbec: starý blok `<stránka>.text` přepisoval znění
+ * odstavec po odstavci podle pořadí a pole mělo strop 1000 znaků — viz
+ * docs/legal/CHANGELOG.md. Typ `pravniDokument` nese celé znění s kotvami.)
  *
  * ## Vnořený text (inline)
  *
@@ -98,4 +104,11 @@ export type LegalPdfEntry = {
    * Do obsahu PDF ani do `sourceHash` nevstupuje.
    */
   archived?: boolean
+  /**
+   * Otisk faktů `{{…}}`, se kterými PDF vzniklo (jen klíče, které dokument
+   * a tisková hlavička používají). Zapisuje `pnpm legal:build`. U vydané
+   * verze se web vykresluje s těmito hodnotami, ne s živými z administrace —
+   * jinak by změna adresy v administraci tiše přepsala vydané znění.
+   */
+  facts?: Record<string, string | null>
 }

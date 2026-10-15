@@ -1,4 +1,4 @@
-import { fact, isFactKey, type LegalFactKey } from "@lib/legal/facts"
+import { fact, isFactKey, type LegalFactKey, type LegalFacts } from "@lib/legal/facts"
 import { flattenTokens, hasPlaceholder, tokenize, type Token } from "@lib/legal/inline"
 import type { LegalBlock, LegalDocumentVersion, LegalSlug } from "@lib/legal/types"
 
@@ -8,6 +8,12 @@ import type { LegalBlock, LegalDocumentVersion, LegalSlug } from "@lib/legal/typ
  * `/api/legal/versions` a skriptu `pnpm legal:build`.
  *
  * Bez Node API a bez klientských závislostí — importuje to stránka i routa.
+ *
+ * Všechno, co dosazuje `{{fakty}}`, bere fakty parametrem: na webu živé
+ * z administrace obchodu (`getLegalFacts()`), u vydané verze otisk z manifestu
+ * (`registry.factsFor`). Záloha z kódu se tu schválně nedosazuje sama — tisk
+ * s jinými fakty, než se kterými se počítal otisk zdroje, je přesně ta chyba,
+ * kterou otisk hlídá.
  */
 
 /**
@@ -27,12 +33,13 @@ export const printPath = (slug: LegalSlug, version: string): string =>
 
 /**
  * Odkazy v PDF vedou na ostrou doménu obchodu (ne na localhost, ze kterého
- * se PDF tiskne). Doména je fakt z `facts.ts`, ať je jen na jednom místě.
+ * se PDF tiskne). Doména je fakt `seller.webUrl`, ať je jen na jednom místě.
  */
-export const printSiteBase = (): string =>
-  `${(fact("seller.webUrl") ?? "https://keramickazahrada.cz").replace(/\/+$/, "")}/${PRINT_COUNTRY}`
+export const printSiteBase = (facts: LegalFacts): string =>
+  `${(fact("seller.webUrl", facts) ?? "https://keramickazahrada.cz").replace(/\/+$/, "")}/${PRINT_COUNTRY}`
 
-export const printHrefFor = (path: string): string => `${printSiteBase()}${path}`
+export const printHrefFor = (path: string, facts: LegalFacts): string =>
+  `${printSiteBase(facts)}${path}`
 
 /** Fakty, které tisková hlavička vypisuje vždy (identita prodávající). */
 export const PRINT_HEADER_FACTS: LegalFactKey[] = [
@@ -89,25 +96,27 @@ export const usedFactKeys = (doc: LegalDocumentVersion): LegalFactKey[] => {
 }
 
 /** Počet zástupných údajů `[[DOPLNIT]]` (i přes chybějící fakt), hlavička včetně. */
-export const placeholderCount = (doc: LegalDocumentVersion): number => {
-  const header = PRINT_HEADER_FACTS.filter((key) => fact(key) === null).length
+export const placeholderCount = (doc: LegalDocumentVersion, facts: LegalFacts): number => {
+  const header = PRINT_HEADER_FACTS.filter((key) => fact(key, facts) === null).length
   return (
     header +
     documentStrings(doc).reduce(
       (count, text) =>
         count +
-        flattenTokens(tokenize(text)).filter((token) => token.kind === "placeholder").length,
+        flattenTokens(tokenize(text, facts)).filter((token) => token.kind === "placeholder")
+          .length,
       0
     )
   )
 }
 
-export const documentHasPlaceholder = (doc: LegalDocumentVersion): boolean =>
-  PRINT_HEADER_FACTS.some((key) => fact(key) === null) ||
-  documentStrings(doc).some((text) => hasPlaceholder(text))
+export const documentHasPlaceholder = (doc: LegalDocumentVersion, facts: LegalFacts): boolean =>
+  PRINT_HEADER_FACTS.some((key) => fact(key, facts) === null) ||
+  documentStrings(doc).some((text) => hasPlaceholder(text, facts))
 
 /** Řetězec se značkou → čistý text tak, jak ho vysází PDF (odkaz = jen popisek). */
-export const printedText = (input: string): string => printedTokens(tokenize(input))
+export const printedText = (input: string, facts: LegalFacts): string =>
+  printedTokens(tokenize(input, facts))
 
 const printedTokens = (tokens: Token[]): string =>
   tokens
@@ -129,7 +138,7 @@ const printedTokens = (tokens: Token[]): string =>
  * Úryvky, které musí jít z vygenerovaného PDF přečíst jako text — kontrola
  * diakritiky v `pnpm legal:build` (vložené písmo + mapa ToUnicode).
  */
-export const printProbes = (doc: LegalDocumentVersion): string[] =>
+export const printProbes = (doc: LegalDocumentVersion, facts: LegalFacts): string[] =>
   [doc.title, ...doc.sections.slice(0, 3).map((section) => section.title)]
-    .map(printedText)
+    .map((text) => printedText(text, facts))
     .filter((text) => text.trim().length > 0)

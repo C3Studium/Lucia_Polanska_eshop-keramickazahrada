@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import { placeOrder } from "@lib/data/cart"
+import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 
 /**
@@ -31,10 +32,21 @@ export default function PaymentConfirmed({
   id,
   supportEmail,
   supportPhone,
+  block,
 }: {
   id: string
   supportEmail: string
   supportPhone: string
+  /**
+   * Blok `kosik.platba-potvrzena` — texty čekání, než se objednávka uloží:
+   * obočí (`accent.0`), nadpis (`title` + `headline`), věta (`body`).
+   *
+   * Stav „objednávka se sama nedokončila" do CMS schválně nejde: peníze už
+   * odešly a text musí říct „znovu neplaťte" a dát kontakt i číslo košíku.
+   * Přeformulovaný ve Studiu by se to dalo omylem ztratit — a odpovědí na
+   * nejasnou větu tady je druhá platba.
+   */
+  block?: CopyBlock
 }) {
   const [failed, setFailed] = useState(false)
   const startedRef = useRef(false)
@@ -88,11 +100,16 @@ export default function PaymentConfirmed({
 
   return (
     <OrderStateShell
-      eyebrow="Ověřujeme platbu"
-      title="Platbu máme."
-      accent="Ještě ji dokončujeme."
-      description="Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat."
+      eyebrow={block?.accent?.[0]?.trim() || "Ověřujeme platbu"}
+      title={block?.title?.trim() || "Platbu máme."}
+      accent={block?.headline?.trim() || "Ještě ji dokončujeme."}
+      description={
+        block?.bodyText?.trim() ||
+        "Ještě chviličku — objednávku potvrzujeme a ukládáme. Stránku nemusíte obnovovat."
+      }
       status="pending"
+      editDoc={block?.id ?? null}
+      editFields={{ eyebrow: "accent.0", title: "title", accent: "headline", description: "body" }}
     />
   )
 }

@@ -30,6 +30,7 @@ import type { AddToCartState } from "./Cta/Add"
 import { BundleProduct } from "@lib/data/products"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { HttpTypes } from "@medusajs/types"
+import type { CopyBlock } from "@lib/util/site-copy"
 import Details from "@modules/products/ProductPage/details"
 import RestockForm from "@modules/products/ProductPage/restock"
 import BundleActions from "@modules/products/components/bundle-actions"
@@ -56,6 +57,8 @@ type ProductTemplateProps = {
   productionProfile?: ProductionProfile | null
   /** Režim výběru do úpravy objednávky — viz `ProductPickMode`. */
   pick?: ProductPickMode
+  /** Blok `global.produkt` — jde dál do detailů, galerie a hlídání naskladnění. */
+  texts?: CopyBlock
 }
 
 /**
@@ -108,6 +111,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   isBundlePreview = false,
   productionProfile,
   pick,
+  texts,
 }) => {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
@@ -379,7 +383,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               )}
 
               <div className="product__detailsSlot">
-                <Details product={product} />
+                <Details product={product} texts={texts} />
               </div>
             </motion.div>
           </aside>
@@ -577,6 +581,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                     title: selectedVariant.title || undefined,
                   }}
                   product={{ title: product.title || undefined }}
+                  texts={texts}
                 />
               )}
             </motion.div>
@@ -589,6 +594,7 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
             region={region}
             countryCode={countryCode}
             bundle={bundle}
+            texts={texts}
           />
         </div>
       </div>

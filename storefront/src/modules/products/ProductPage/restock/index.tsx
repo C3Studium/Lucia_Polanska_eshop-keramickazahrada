@@ -1,6 +1,10 @@
 "use client"
 
 import { subscribeToRestock } from "@lib/data/products"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { FormEvent, useId, useState } from "react"
 import s from "./style.module.scss"
@@ -8,7 +12,17 @@ import s from "./style.module.scss"
 type RestockFormProps = {
   variant: { id: string; title?: string }
   product: { title?: string }
+  /** Blok `global.produkt` — hlavička formuláře (`vyprodano.*`). */
+  texts?: CopyBlock
 }
+
+/*
+ * Věta pod nadpisem nese jméno kusu. V CMS se píše se zástupcem `{kus}`, který
+ * se nahradí tady — ne slepením dvou polí, aby šla věta přeformulovat i s jménem
+ * uprostřed. Bez zástupce se věta vypíše, jak je napsaná.
+ */
+const RESTOCK_TEXT =
+  "Jakmile budeme mít {kus} znovu skladem, pošleme vám jeden krátký e-mail. Nic víc."
 
 type FormState = "idle" | "loading" | "success" | "error"
 
@@ -51,10 +65,12 @@ const messageVariants: Variants = {
   exit: { opacity: 0, y: `-${SLIDE_OUT_VH}vh`, clipPath: "inset(100% 0 0 0)" },
 }
 
-const RestockForm = ({ variant, product }: RestockFormProps) => {
+const RestockForm = ({ variant, product, texts }: RestockFormProps) => {
   const emailId = useId()
   const [email, setEmail] = useState("")
   const [state, setState] = useState<FormState>("idle")
+  /* Formulář se ukáže až u vyprodaného provedení a sám se do zadání nepřekreslí. */
+  useEditRerender()
 
   if (!variant) return null
 
@@ -76,6 +92,15 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
 
   const isLoading = state === "loading"
   const objectName = variant.title || product.title || "tenhle kousek"
+  const eyebrow = itemValue(texts, "vyprodano.stitek")?.trim() || "Právě vyprodáno"
+  const title =
+    itemValue(texts, "vyprodano.nadpis")?.trim() || "Dejte mi vědět, až bude znovu."
+  /* Náhrada funkcí, ne řetězcem: `$&` nebo `$1` v názvu výrobku by
+     `replace` vyložil jako odkaz na shodu. */
+  const text = (itemValue(texts, "vyprodano.text")?.trim() || RESTOCK_TEXT).replace(
+    /\{kus\}/g,
+    () => objectName
+  )
 
   return (
     <motion.section
@@ -87,12 +112,14 @@ const RestockForm = ({ variant, product }: RestockFormProps) => {
       aria-labelledby={`${emailId}-title`}
     >
       <div className={s.heading}>
-        <span>Právě vyprodáno</span>
-        <strong id={`${emailId}-title`}>Dejte mi vědět, až bude znovu.</strong>
-        <p>
-          Jakmile budeme mít {objectName} znovu skladem, pošleme vám jeden
-          krátký e-mail. Nic víc.
-        </p>
+        <span {...editableItem(texts, "vyprodano.stitek")}>{eyebrow}</span>
+        <strong id={`${emailId}-title`} {...editableItem(texts, "vyprodano.nadpis")}>
+          {title}
+        </strong>
+        {/* Bez anotace v místě: na stránce stojí jméno kusu místo `{kus}`
+            a překryv by uložil to, co vidí — jméno jednoho výrobku by pak
+            bylo u všech. Věta se upravuje ve formuláři bloku. */}
+        <p>{text}</p>
       </div>
 
       <form className={s.form} onSubmit={handleSubmit}>

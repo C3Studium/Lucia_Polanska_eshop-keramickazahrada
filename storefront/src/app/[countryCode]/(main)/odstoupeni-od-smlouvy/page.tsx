@@ -4,13 +4,13 @@ import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
 /*
  * Odstoupení od smlouvy — doslovné poučení a formulář podle NV 29/2023 Sb.
- * (ve znění NV 66/2026 Sb.) plus návod k online odstoupení. Znění z registru,
- * ne z CMS. Dřívější vzor oznámení přímo v této stránce (s prohlášením, že
+ * (ve znění NV 66/2026 Sb.) plus návod k online odstoupení. Znění ze sloučeného
+ * registru (Studio + repo). Dřívější vzor oznámení přímo v této stránce (s prohlášením, že
  * zboží „není zbožím uvedeným v § 1837") je pryč.
  */
 export const revalidate = 3600
 
-export function generateMetadata(): Metadata {
+export function generateMetadata(): Promise<Metadata> {
   return legalMetadata("odstoupeni-od-smlouvy")
 }
 

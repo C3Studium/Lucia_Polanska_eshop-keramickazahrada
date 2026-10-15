@@ -2,13 +2,16 @@ import { Metadata } from "next"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
-import { getPageContentFull } from "@lib/data/site-copy"
+import { getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import AboutPageExperience from "@modules/omne/page"
 
-export const metadata: Metadata = {
-  title: "O mně — Lucie Polanská",
-  description:
-    "Kdo je Lucie Polanská, jak se dostala ke keramice a co ji na téhle práci baví.",
+// Titulek a popis z bloku `o-mne.seo`; tohle je záloha pro prázdné CMS.
+export async function generateMetadata(): Promise<Metadata> {
+  return getPageSeo("o-mne", {
+    title: "O mně — Lucie Polanská",
+    description:
+      "Kdo je Lucie Polanská, jak se dostala ke keramice a co ji na téhle práci baví.",
+  })
 }
 
 export default async function Home(props: {

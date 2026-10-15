@@ -7,12 +7,18 @@ import Image from "next/image"
 import { useMemo, useRef, useState } from "react"
 
 import { easeMicro } from "@lib/motion-tokens"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   countryCode: string
   bundle?: BundleProduct
+  /** Blok `global.produkt` — věta pod galerií (`galerie.*`). */
+  texts?: CopyBlock
 }
 
 /* Every one of these was an inline literal re-allocated on each render of the gallery — and
@@ -47,7 +53,15 @@ const captions = [
   ["Připraveno pro vás", "Každý kus je originál"],
 ]
 
-const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
+const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle, texts }) => {
+  /* Věta pod galerií se po zapnutí editace sama nepřekreslí. Viz hook. */
+  useEditRerender()
+
+  const outroLead =
+    itemValue(texts, "galerie.veta")?.trim() || "Na každém kusu je něco malinko jinak."
+  const outroText =
+    itemValue(texts, "galerie.dovetek")?.trim() || "Přesně podle toho poznáte ruční práci."
+
   const images = useMemo(
     () => (product.images ?? []).filter((image) => Boolean(image.url)),
     [product.images]
@@ -266,8 +280,8 @@ const Gallery: React.FC<ProductTemplateProps> = ({ product, bundle }) => {
       )}
 
       <div className="product__galleryOutro">
-        <span>Na každém kusu je něco malinko jinak.</span>
-        <p>Přesně podle toho poznáte ruční práci.</p>
+        <span {...editableItem(texts, "galerie.veta")}>{outroLead}</span>
+        <p {...editableItem(texts, "galerie.dovetek")}>{outroText}</p>
 
         <motion.div
           className="product__galleryOutroGraphic"

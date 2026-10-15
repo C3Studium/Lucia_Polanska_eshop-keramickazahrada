@@ -1,30 +1,35 @@
 "use client"
 
+import type { LegalFacts } from "@lib/legal/facts"
 import { renderInline } from "@lib/legal/inline"
 import type { LegalBlock, LegalDocumentVersion, LegalSection } from "@lib/legal/types"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import WebButton from "@modules/common/components/Buttons/webButton"
-import LegalDownloads, { type LegalDownloadItem } from "@modules/legal/Downloads"
+import LegalDownloads, {
+  type LegalDownloadItem,
+  type LegalExtraFile,
+} from "@modules/legal/Downloads"
 import { motion, useInView } from "framer-motion"
 import type { ReactNode } from "react"
 import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import styles from "./style.module.scss"
 
 /*
- * Právní dokument z registru (`@lib/legal`), ne z CMS.
+ * Právní dokument ze sloučeného registru (`@lib/legal/registry`).
  *
- * Dřív tu znění kapitol přepisoval blok `<stránka>.text` z ValeCMS podle
- * pořadí kapitol (a hero `accent[4]` přepisoval i „Platné od"). U právního
- * textu to nejde: znění se váže k objednávce (verze OP v `order.metadata`),
- * generuje se z něj PDF a čte ho advokát v PR — CMS by na webu ukázal jiné
- * znění, než jaké zákazník dostal v e-mailu, a pole má strop 1000 znaků.
- * Proto se dokument bere jen z registru a CMS je u právních stránek vypnuté
- * celé, včetně hero textů (název a datum účinnosti musí sedět s verzí).
+ * Znění píše Lucie ve Studiu jako celý dokument jedné verze (typ „Právní
+ * dokumenty" — kapitoly s kotvami, bloky, datum platnosti), vydané znění se
+ * bere z otisku v repu. Dřív tu znění kapitol přepisoval blok `<stránka>.text`
+ * z ValeCMS podle pořadí kapitol (a hero `accent[4]` přepisoval i „Platné
+ * od") — to už neplatí a vrátit se to nemá: znění se váže k objednávce (verze
+ * OP v `order.metadata`) a generuje se z něj PDF, takže název, datum
+ * účinnosti i text musí pocházet z jedné verze. Proto tu nejsou žádné
+ * `editable()` bloky ani hero texty z CMS; upravuje se dokument ve Studiu.
  *
  * Komponenta je klientská jen kvůli animacím a sledování aktivní kapitoly.
  * Registr sem neimportuje — stránka (`LegalPage`, server) spočítá verze,
- * upozornění a PDF a pošle hotová data, aby se do prohlížeče netahaly texty
- * všech dokumentů.
+ * upozornění, PDF a fakty a pošle hotová data, aby se do prohlížeče netahaly
+ * texty všech dokumentů.
  */
 
 /** Popisky hero, které nejsou součástí znění dokumentu (vizuální kód stránky). */
@@ -57,6 +62,11 @@ export type LegalPdfLink = {
 
 type LegalDocumentProps = {
   doc: LegalDocumentVersion
+  /**
+   * Hodnoty `{{údajů}}` — u vydané verze otisk z manifestu PDF, jinak živé
+   * z administrace obchodu (`registry.factsFor` na serveru).
+   */
+  facts: LegalFacts
   presentation: LegalPresentation
   /** „Platné od 15. 10. 2026" — spočítané na serveru z verze. */
   effectiveLabel: string
@@ -66,6 +76,8 @@ type LegalDocumentProps = {
   pdf?: LegalPdfLink | null
   /** Další znění téhož dokumentu (archivní / připravované). */
   versions?: LegalVersionLink[]
+  /** „Další soubory ke stažení" ze Studia (typ `soubor`) — ne oficiální PDF dokumentu. */
+  files?: LegalExtraFile[]
   /**
    * Obsah, který k textu kapitoly přidává stránka (např. živý ceník dopravy).
    * Klíč = `id` kapitoly; vykreslí se na konci jejího těla.
@@ -226,12 +238,14 @@ function Chapter({
 
 export default function LegalDocument({
   doc,
+  facts,
   presentation,
   effectiveLabel,
   countryCode,
   notices = [],
   pdf = null,
   versions = [],
+  files = [],
   supplements,
 }: LegalDocumentProps) {
   const sections = doc.sections
@@ -243,8 +257,9 @@ export default function LegalDocument({
       renderInline(text, {
         hrefFor: (path) => `/${countryCode}${path}`,
         placeholderClassName: styles.placeholder,
+        facts,
       }),
-    [countryCode]
+    [countryCode, facts]
   )
 
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "")
@@ -407,7 +422,7 @@ export default function LegalDocument({
             />
           ))}
 
-          <LegalDownloads items={downloads} />
+          <LegalDownloads items={downloads} files={files} />
 
           <div className={styles.documentEnd} aria-hidden="true">
             <span />

@@ -3,10 +3,12 @@ import { getCustomerWishlistItems, retrieveCustomer } from "@lib/data/customer"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import Footer from "@modules/layout/Footer"
+import { getFooterDownloads } from "@modules/layout/Footer/data"
 import Navbar from "@modules/layout/Navbar"
 import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
+import { getPageCopy } from "@lib/data/site-copy"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Scrollbar from "@modules/layout/scrollbar"
 import styles from "./styles/layout.module.scss"
@@ -25,10 +27,16 @@ export default async function CheckoutLayout({
       listNavigationCollections(),
     ])
 
-  const merchant = getMerchantIdentity()
+  const [merchant, footerDownloads] = await Promise.all([
+    getMerchantIdentity(),
+    getFooterDownloads(),
+  ])
+
+  // Texty kontaktního okna — totéž okno jako na zbytku webu (`global.kontaktni-okno`).
+  const dialogCopy = (await getPageCopy("global"))["global.kontaktni-okno"]
 
   return (
-    <ContactDialogProvider merchant={merchant}>
+    <ContactDialogProvider merchant={merchant} copy={dialogCopy}>
       <div className={styles.root}>
         <GlobalLiquidEther />
         <Navbar
@@ -43,7 +51,7 @@ export default async function CheckoutLayout({
           {children}
         </main>
         <div className={styles.footer}>
-          <Footer merchant={merchant} />
+          <Footer merchant={merchant} downloads={footerDownloads} />
         </div>
       </div>
     </ContactDialogProvider>

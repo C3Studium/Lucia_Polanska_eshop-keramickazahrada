@@ -5,6 +5,7 @@ import type { ShopFilters } from "@modules/store/Shop/types"
 import { listStoreCatalogue } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
 import { getCollectionByHandle, listCollections } from "@lib/data/collections"
+import { getPageCopy, getPageSeo } from "@lib/data/site-copy"
 
 type StorePageProps = {
   params: Promise<{ countryCode: string }>
@@ -15,10 +16,13 @@ type StorePageProps = {
   }>
 }
 
-export const metadata: Metadata = {
-  title: "Obchod",
-  description:
-    "Keramika z ateliéru Lucie Polanské — pro zahradu i domov. Každý kus je dělaný rukama a je jen jeden.",
+// Titulek a popis z bloku `obchod.seo`; tohle je záloha pro prázdné CMS.
+export async function generateMetadata(): Promise<Metadata> {
+  return getPageSeo("obchod", {
+    title: "Obchod",
+    description:
+      "Keramika z ateliéru Lucie Polanské — pro zahradu i domov. Každý kus je dělaný rukama a je jen jeden.",
+  })
 }
 
 const defaultFilters: ShopFilters = {
@@ -85,14 +89,19 @@ export default async function StorePage({
     search: query.search?.trim() ?? "",
   }
 
-  const { products, count } = await listStoreCatalogue({
-    filters: initialFilters,
-    limit: 16,
-    countryCode,
-  })
+  const [{ products, count }, copy] = await Promise.all([
+    listStoreCatalogue({
+      filters: initialFilters,
+      limit: 16,
+      countryCode,
+    }),
+    // Redakční úvod nad katalogem. Výpadek CMS = texty z kódu, ne chyba.
+    getPageCopy("obchod"),
+  ])
 
   return (
     <ECom
+      block={copy["obchod.vyber"]}
       key={`${initialFilters.categoryId}:${initialFilters.collectionId}:${initialFilters.search}`}
       countryCode={countryCode}
       products={products}

@@ -4,13 +4,13 @@ import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 import ShippingPrices from "@modules/legal/ShippingPrices"
 
 /*
- * Doprava a platba — text z registru (ne z CMS), ceny NE z textu: kapitola
+ * Doprava a platba — text ze sloučeného registru (Studio + repo), ceny NE z textu: kapitola
  * `cenik` dostane živý ceník z backendu (`GET /store/legal/shipping-prices`),
  * tedy totéž, co nabídne pokladna. Bez backendu se ukáže odkaz do košíku.
  */
 export const revalidate = 3600
 
-export function generateMetadata(): Metadata {
+export function generateMetadata(): Promise<Metadata> {
   return legalMetadata("doprava-a-platba")
 }
 

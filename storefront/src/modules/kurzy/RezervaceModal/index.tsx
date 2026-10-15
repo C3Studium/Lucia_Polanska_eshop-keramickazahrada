@@ -16,6 +16,7 @@ import {
   type CourseQuote,
   type CourseTerm,
 } from "@lib/data/courses"
+import { FALLBACK_FACTS, type LegalFacts } from "@lib/legal/facts"
 import { renderInline } from "@lib/legal/inline"
 import { pragueDayKey } from "@lib/util/course-calendar"
 import {
@@ -112,12 +113,18 @@ type Props = {
   open: boolean
   onCloseAction: () => void
   initialTerms: CourseTerm[]
+  /**
+   * Právní údaje z administrace obchodu (storno podmínky, e-mail) — načte je
+   * serverová stránka (`getLegalFacts()`). Bez nich záloha z kódu.
+   */
+  legalFacts?: LegalFacts
 }
 
 export default function RezervaceModal({
   open,
   onCloseAction,
   initialTerms,
+  legalFacts = FALLBACK_FACTS,
 }: Props) {
   if (typeof document === "undefined") {
     return null
@@ -128,6 +135,7 @@ export default function RezervaceModal({
         <RezervaceModalPanel
           initialTerms={initialTerms}
           onClose={onCloseAction}
+          legalFacts={legalFacts}
         />
       ) : null}
     </AnimatePresence>,
@@ -138,9 +146,11 @@ export default function RezervaceModal({
 function RezervaceModalPanel({
   initialTerms,
   onClose,
+  legalFacts,
 }: {
   initialTerms: CourseTerm[]
   onClose: () => void
+  legalFacts: LegalFacts
 }) {
   const reduceMotion = useSiteReducedMotion()
   const panelRef = useRef<HTMLElement>(null)
@@ -1270,13 +1280,13 @@ function RezervaceModalPanel({
                       {/* Podmínky PŘED rezervací: kurz je služba v pevném
                           termínu, takže 14denní odstoupení neplatí — ale jen
                           když o tom zákazník ví předem (§ 1837 písm. j),
-                          § 1820 OZ). Storno podmínky jsou fakt z
-                          `@lib/legal/facts` (`course.cancellation`). */}
+                          § 1820 OZ). Storno podmínky jsou právní údaj
+                          z administrace obchodu (`course.cancellation`). */}
                       <fieldset className="kurzyModal__legal">
                         <legend>Podmínky rezervace</legend>
                         <p className="kurzyModal__storno" data-testid="course-storno">
                           <strong>Storno podmínky:</strong>{" "}
-                          {renderInline("{{course.cancellation}}")}
+                          {renderInline("{{course.cancellation}}", { facts: legalFacts })}
                         </p>
                         <label className="kurzyModal__check">
                           <input
@@ -1336,7 +1346,7 @@ function RezervaceModalPanel({
                             souhlasí zákonný zástupce).
                             <small>
                               Nepovinné. Souhlas můžete kdykoli odvolat e-mailem
-                              na {renderInline("{{seller.email}}")}.
+                              na {renderInline("{{seller.email}}", { facts: legalFacts })}.
                             </small>
                           </span>
                         </label>

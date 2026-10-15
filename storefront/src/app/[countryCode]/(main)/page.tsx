@@ -5,13 +5,18 @@ import { getRegion } from "@lib/data/regions"
 import ECom from "@modules/home/E-com"
 import HeroSection from "@modules/home/Hero"
 import HomeExperience from "@modules/home/HomeExperience"
-import { getPageContentFull } from "@lib/data/site-copy"
+import { getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import { getHeroNotices } from "@lib/data/notices"
 
-export const metadata: Metadata = {
-  title: { absolute: "Keramická zahrada | Autorská keramika Lucie Polanské" },
-  description:
-    "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
+// Titulek a popis z bloku `index.seo`; tohle je záloha pro prázdné CMS.
+// Úvodní stránka je značka sama, takže titulek jde celý (`absolute`).
+export async function generateMetadata(): Promise<Metadata> {
+  return getPageSeo("index", {
+    title: "Keramická zahrada | Autorská keramika Lucie Polanské",
+    absolute: true,
+    description:
+      "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
+  })
 }
 
 export default async function Home(props: {

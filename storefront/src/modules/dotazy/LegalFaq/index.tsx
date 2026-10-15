@@ -1,4 +1,7 @@
+"use client"
+
 import { LEGAL_FAQ } from "@lib/legal/faq"
+import { useLegalFacts } from "@lib/legal/facts-context"
 import { renderInline } from "@lib/legal/inline"
 
 import styles from "./style.module.scss"
@@ -12,12 +15,18 @@ import styles from "./style.module.scss"
  *
  * Nativní `<details>` místo animovaného akordeonu nad ní: funguje bez
  * JavaScriptu, s klávesnicí i v odečítači, a obsah najde i hledání v prohlížeči.
+ *
+ * Údaje `{{…}}` (záloha zakázky, storno kurzů, platnost poukazu) jsou právní
+ * údaje z administrace obchodu — vykresluje se uvnitř klientského FAQ, takže
+ * je bere z kontextu (`useLegalFacts()`, načte kořenový layout).
  */
 export default function LegalFaq({ countryCode = "cz" }: { countryCode?: string }) {
+  const facts = useLegalFacts()
   const inline = (text: string) =>
     renderInline(text, {
       hrefFor: (path) => `/${countryCode}${path}`,
       placeholderClassName: styles.placeholder,
+      facts,
     })
 
   return (

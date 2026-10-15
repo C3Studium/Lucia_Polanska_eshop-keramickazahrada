@@ -73,7 +73,7 @@ export default async function OrderDetailPage(props: Props) {
   const progress = await getOrderProgress(order.id, selfServiceToken)
   // Znění OP k objednávce (archiv smlouvy, OP čl. III a IV) — z registru,
   // který smí jen server; šabloně jde malý objekt.
-  const terms = orderTermsRef(order)
+  const terms = await orderTermsRef(order)
 
   return (
     <OrderDetailsTemplate

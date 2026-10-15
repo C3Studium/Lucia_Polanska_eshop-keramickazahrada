@@ -1,12 +1,15 @@
 import { Metadata } from "next"
-import { getFaqCategories, getFaqQuestions, getPageContentFull } from "@lib/data/site-copy"
+import { getFaqCategories, getFaqQuestions, getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import DotazyMain from "@modules/dotazy/main"
 
 
-export const metadata: Metadata = {
-  title: "Časté otázky",
-  description:
-    "Odpovědi na to, na co se ptáte nejčastěji — keramika, zakázková výroba, doprava, vrácení zboží i kurzy.",
+// Titulek a popis z bloku `dotazy.seo`; tohle je záloha pro prázdné CMS.
+export async function generateMetadata(): Promise<Metadata> {
+  return getPageSeo("dotazy", {
+    title: "Časté otázky",
+    description:
+      "Odpovědi na to, na co se ptáte nejčastěji — keramika, zakázková výroba, doprava, vrácení zboží i kurzy.",
+  })
 }
 
 export default async function FAQPage(props: { params: Promise<{ countryCode: string }> }) {

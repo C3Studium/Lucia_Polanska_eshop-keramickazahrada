@@ -8,7 +8,16 @@
       "sha256": "4100f07631a39d6fbf4328b4da03744010ae91e950d74521f1fafcfdfa7aa279",
       "bytes": 133447,
       "sourceHash": "7ef335b5125a797dc784d48f0e28ced992f702cb26464f832e8ef4ccc782d358",
-      "archived": true
+      "archived": true,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
     },
     {
       "slug": "obchodni-podminky",
@@ -18,7 +27,25 @@
       "sha256": "fe0ded1534fd55f701cbb4f4f401063fbd27b87968dd336b94756e6a71099aac",
       "bytes": 253378,
       "sourceHash": "0218925b84c1f9cc77109630ef05d45c47181b6e0a77bb118e49ba560ee36f06",
-      "archived": false
+      "archived": false,
+      "facts": {
+        "bank.account": null,
+        "course.cancellation": null,
+        "course.minAge": null,
+        "course.pickupDeadline": null,
+        "mto.deposit": null,
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz",
+        "vat.status": null,
+        "voucher.remainder": null,
+        "voucher.validity": null,
+        "withdrawal.returnCostEstimate": null
+      }
     },
     {
       "slug": "odstoupeni-od-smlouvy",
@@ -28,7 +55,17 @@
       "sha256": "a82934626a977bd4530a215277665caaaa1cba982cec62d98054d43592580cb0",
       "bytes": 131377,
       "sourceHash": "8e2496266ccc0bbb36dd54a61e428916cc4f1f0b02e1f799f147f0742d80e7f5",
-      "archived": false
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz",
+        "withdrawal.returnCostEstimate": null
+      }
     },
     {
       "slug": "ochrana-osobnich-udaju",
@@ -38,7 +75,18 @@
       "sha256": "88e54bb462d677aeb82b94e15b8921bee7d2df5d984abea0211c36bbccecef3f",
       "bytes": 173857,
       "sourceHash": "937ca184853ef02f960ec21011e70251976054dbb5899c15f791f894047176d8",
-      "archived": false
+      "archived": false,
+      "facts": {
+        "privacy.hosting": null,
+        "privacy.newsletterTool": null,
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
     },
     {
       "slug": "reklamacni-protokol",
@@ -48,7 +96,16 @@
       "sha256": "a114a1e5c0d90e8d6e788342b5de009c0f909b8f03296bff13da60d61da27565",
       "bytes": 100221,
       "sourceHash": "00d142891afbfc238035df2428a678ce3cfe3a4254008febf4685d2300b6cc1b",
-      "archived": false
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
     },
     {
       "slug": "reklamacni-rad",
@@ -58,7 +115,16 @@
       "sha256": "397da3ea5e57eef5aab2117a1c619d430c3c93fb8a73c3cc4ad7e20cb9113f8e",
       "bytes": 116653,
       "sourceHash": "5a044e15f1b44b223004e41f1ea3693ca90d4021e38f724366b63fa69edbe8e0",
-      "archived": false
+      "archived": false,
+      "facts": {
+        "seller.address": "Putim 229, 397 01 Písek",
+        "seller.email": "info@keramickazahrada.cz",
+        "seller.ico": "03441482",
+        "seller.name": "Lucie Polanská",
+        "seller.phone": "+420 775 211 578",
+        "seller.web": "keramickazahrada.cz",
+        "seller.webUrl": "https://keramickazahrada.cz"
+      }
     }
   ]
 }

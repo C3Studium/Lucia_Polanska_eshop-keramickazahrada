@@ -1,4 +1,6 @@
 "use client"
+import { itemFieldPath, itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 
 /**
@@ -24,24 +26,49 @@ import OrderStateShell from "@modules/order/components/order-state-shell"
  */
 export default function PaymentCanceled({
   duvod,
+  block,
 }: {
   /** Česky formulovaný důvod od brány, když ho známe. */
   duvod?: string | null
+  /**
+   * Blok `kosik.platba-zrusena`: nadpis (`title` + `headline`), výzva
+   * k zaplacení (`body`) a položky klíčované popiskem — obočí (`oboci`)
+   * a názvy tlačítek (`tlacitko.zaplatit`, `tlacitko.kosik`). Položky, ne
+   * pozice v `accent`: CMS z něj prázdné vyhazuje, a vymazané obočí by pak
+   * dalo tlačítku k zaplacení nápis „Zobrazit košík".
+   *
+   * Úvodní věta s důvodem od brány zůstává v kódu — skládá se z údaje, který
+   * redakce nezná, a slibuje, že se nic nestrhlo.
+   */
+  block?: CopyBlock
 }) {
+  const callToAction =
+    block?.bodyText?.trim() ||
+    "Zaplaťte prosím objednávku, ať ji můžeme co nejdřív poslat — do té doby ji nemáme jak odeslat. Zboží vám v košíku zůstalo, stačí pokračovat."
+
   return (
     <OrderStateShell
-      eyebrow="Objednávka čeká na zaplacení"
-      title="Ještě není zaplaceno."
-      accent="Košík vám zůstal."
+      eyebrow={itemValue(block, "oboci")?.trim() || "Objednávka čeká na zaplacení"}
+      title={block?.title?.trim() || "Ještě není zaplaceno."}
+      accent={block?.headline?.trim() || "Košík vám zůstal."}
       description={
         (duvod
           ? `Platba se nedokončila — ${duvod}. Nic jsme vám nestrhli. `
-          : "Platba se nedokončila a nic jsme vám nestrhli. ") +
-        "Zaplaťte prosím objednávku, ať ji můžeme co nejdřív poslat — do té doby ji nemáme jak odeslat. Zboží vám v košíku zůstalo, stačí pokračovat."
+          : "Platba se nedokončila a nic jsme vám nestrhli. ") + callToAction
       }
       status="canceled"
-      primary={{ href: "/checkout?step=payment", label: "Zaplatit objednávku" }}
-      secondary={{ href: "/cart", label: "Zobrazit košík" }}
+      primary={{
+        href: "/checkout?step=payment",
+        label: itemValue(block, "tlacitko.zaplatit")?.trim() || "Zaplatit objednávku",
+      }}
+      secondary={{
+        href: "/cart",
+        label: itemValue(block, "tlacitko.kosik")?.trim() || "Zobrazit košík",
+      }}
+      /* Popis se v místě neanotuje: je složený z věty v kódu a z `body`,
+         editor by uložil obojí do jednoho pole. Upravuje se ve formuláři. */
+      editDoc={block?.id ?? null}
+      editFields={{ eyebrow: itemFieldPath(block, "oboci"), title: "title", accent: "headline" }}
     />
   )
 }

@@ -3,7 +3,7 @@
 import { useId, useState } from "react"
 
 import { submitClaim } from "@lib/data/claims"
-import { fact } from "@lib/legal/facts"
+import { fact, FALLBACK_FACTS, type LegalFacts } from "@lib/legal/facts"
 import {
   findOpenWithdrawal,
   formatClaimDateTime,
@@ -44,23 +44,34 @@ type Step = "form" | "review" | "done"
 const clampQty = (value: number, max: number) =>
   Math.min(Math.max(1, Math.floor(Number(value) || 1)), Math.max(1, max))
 
-const SELLER = {
-  name: fact("seller.name") ?? "Lucie Polanská",
-  address: fact("seller.address") ?? "Putim 229, 397 01 Písek",
-  email: fact("seller.email") ?? "info@keramickazahrada.cz",
-}
+/**
+ * Adresát odstoupení — právní údaje z administrace obchodu (`getLegalFacts()`
+ * na serveru, sem jako prop). Pevné hodnoty jen pro případ, že by údaj
+ * v administraci někdo vymazal: adresát v prohlášení prázdný být nesmí.
+ */
+type Seller = { name: string; address: string; email: string }
+
+const sellerOf = (facts: LegalFacts): Seller => ({
+  name: fact("seller.name", facts) ?? "Lucie Polanská",
+  address: fact("seller.address", facts) ?? "Putim 229, 397 01 Písek",
+  email: fact("seller.email", facts) ?? "info@keramickazahrada.cz",
+})
 
 export default function WithdrawalFlow({
   orderId,
   token,
   claims,
   currencyCode = "czk",
+  facts = FALLBACK_FACTS,
 }: {
   orderId: string
   token: string
   claims: OrderClaims
   currencyCode?: string
+  /** Právní údaje obchodu ze serveru (`getLegalFacts()`). */
+  facts?: LegalFacts
 }) {
+  const SELLER = sellerOf(facts)
   const withdrawal = claims.withdrawal ?? null
   const items = withdrawal?.items ?? []
   const withdrawableItems = items.filter((item) => item.withdrawable)
@@ -98,6 +109,7 @@ export default function WithdrawalFlow({
         email={withdrawal?.email ?? null}
         claimsHref={claimsHref}
         money={money}
+        seller={SELLER}
       />
     )
   }
@@ -537,12 +549,14 @@ function WithdrawalDone({
   email,
   claimsHref,
   money,
+  seller: SELLER,
 }: {
   confirmation: ClaimConfirmation | null
   fallbackSentAt: string | null
   email: string | null
   claimsHref: string
   money: (amount: number) => string
+  seller: Seller
 }) {
   const sentAt =
     confirmation?.submitted_at_text || formatClaimDateTime(fallbackSentAt)

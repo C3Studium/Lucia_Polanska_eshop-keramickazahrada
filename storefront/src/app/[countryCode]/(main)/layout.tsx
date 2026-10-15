@@ -9,6 +9,7 @@ import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-p
 import { listRegions } from "@lib/data/regions"
 import Navbar from "@modules/layout/Navbar"
 import Footer from "@modules/layout/Footer"
+import { getFooterDownloads } from "@modules/layout/Footer/data"
 import Scrollbar from "@modules/layout/scrollbar"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import { listNavigationCollections } from "@lib/data/navigation"
@@ -45,7 +46,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
     }
   }
 
-  const merchant = getMerchantIdentity()
+  const merchant = await getMerchantIdentity()
+
+  // „Ke stažení" v patičce: PDF platných znění (sloučený registr) + soubory ze Studia.
+  const footerDownloads = await getFooterDownloads()
 
   const shopStatus = await getShopStatus()
 
@@ -57,7 +61,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   const globalCopy = await getPageCopy("global")
 
   return (
-    <ContactDialogProvider merchant={merchant}>
+    <ContactDialogProvider merchant={merchant} copy={globalCopy["global.kontaktni-okno"]}>
       <ShopBanner status={shopStatus} />
       <GlobalLiquidEther />
       <Navbar
@@ -81,7 +85,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
         />
       )}
       {props.children}
-      <Footer merchant={merchant} copy={globalCopy} />
+      <Footer merchant={merchant} copy={globalCopy} downloads={footerDownloads} />
       {/* Lišta cookies je v kořenovém layoutu (app/layout.tsx), jednou pro
           celý web — i pro pokladnu a rychlý nákup. */}
       {/* Renders nothing at all for a normal visitor — see the module. */}

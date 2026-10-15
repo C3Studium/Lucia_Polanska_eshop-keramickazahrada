@@ -24,6 +24,7 @@ import {
 import { getProductionProfile } from "./made-to-order"
 import type { ProductionProfile } from "@lib/util/made-to-order"
 import { consentMetadataPatch } from "@modules/checkout/components/legal-consent/consent-metadata"
+import { getPublishedLegalRegistry } from "./legal-registry"
 import {
   normalizujDic,
   normalizujIco,
@@ -670,6 +671,8 @@ export async function recordCheckoutConsent(input: {
   }
 
   const patch = consentMetadataPatch({
+    // Verze z publikovaného sloučeného registru (repo + Studio, bez konceptů).
+    registry: await getPublishedLegalRegistry(),
     now: new Date(),
     clientAcceptedAt: input.clientAcceptedAt,
     // I potvrzení, které prohlížeč poslal navíc (zakázku poznal z profilu

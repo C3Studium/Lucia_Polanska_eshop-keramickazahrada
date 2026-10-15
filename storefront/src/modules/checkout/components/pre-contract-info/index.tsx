@@ -8,6 +8,7 @@ import {
   isManual,
   isPickupPayment,
 } from "@lib/constants"
+import { useLegalFacts } from "@lib/legal/facts-context"
 import { renderInline } from "@lib/legal/inline"
 import { backorderWaitNote } from "@lib/util/backorder"
 import {
@@ -31,8 +32,9 @@ import styles from "./style.module.scss"
  *
  * Zboží, ceny a doprava jsou v pokladně v rekapitulaci nad tímhle blokem
  * (`review/recap.tsx`), v rychlém nákupu v miniatuře objednávky; tady se
- * neopakují. Údaje o prodávající a dodací lhůta zboží skladem jsou fakta
- * z `@lib/legal/facts` — chybějící se ukáže jako `[[DOPLNIT: …]]`.
+ * neopakují. Údaje o prodávající a dodací lhůta zboží skladem jsou právní
+ * údaje z administrace obchodu (`useLegalFacts()` — načte je kořenový layout,
+ * viz `@lib/legal/facts-context`) — chybějící se ukáže jako `[[DOPLNIT: …]]`.
  */
 
 /**
@@ -155,9 +157,10 @@ export default function PreContractInfo({
   delivery,
   compact = false,
 }: PreContractInfoProps) {
+  const facts = useLegalFacts()
   // Jen fakta (bez odkazů) — odkazy jsou `DocLink`, aby se otevíraly vedle.
   const inline = (text: string) =>
-    renderInline(text, { placeholderClassName: styles.placeholder })
+    renderInline(text, { placeholderClassName: styles.placeholder, facts })
 
   const goods = productLines((cart?.items ?? []) as any[])
   const madeToOrder = goods.filter(isMadeToOrderLine)

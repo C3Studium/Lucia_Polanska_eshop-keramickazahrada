@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 
 import type { CourseTerm } from "@lib/data/courses"
+import type { LegalFacts } from "@lib/legal/facts"
 import Rezervace from "@modules/kurzy/Rezervace"
 import RezervaceModal from "@modules/kurzy/RezervaceModal"
 
@@ -18,10 +19,13 @@ import type { CopyBlocks } from "@lib/util/site-copy"
 export default function Kurzy({
   copy,
   terms,
+  legalFacts,
 }: {
   /** Bloky stránky `kurzy` z CMS; termíny níž jsou z Medusy. */
   copy: CopyBlocks
   terms: CourseTerm[]
+  /** Právní údaje (storno podmínky, e-mail) pro rezervaci — `getLegalFacts()` na serveru. */
+  legalFacts?: LegalFacts
 }) {
   const [modalOpen, setModalOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
@@ -56,6 +60,7 @@ export default function Kurzy({
         open={modalOpen}
         onCloseAction={closeModal}
         initialTerms={terms}
+        legalFacts={legalFacts}
       />
     </main>
   )

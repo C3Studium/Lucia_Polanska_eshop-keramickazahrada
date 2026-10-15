@@ -50,6 +50,64 @@ export const storySteps = [
 export type StoryStep = (typeof storySteps)[number]
 
 /*
+ * Texty kapitol z bloku `o-mne.pribeh` — jedna položka `items` = jedna kapitola,
+ * v pořadí, v jakém jdou na stránce.
+ *
+ * Kapitola má v kódu pět textů a položka čtyři pole, takže štítek nad nadpisem
+ * („Písek · Bechyně") zůstává v kódu stejně jako u kroků výroby: je to
+ * typografická ozdoba a číslo vedle něj drží pořadí, na kterém stojí scrollování.
+ * Do CMS jdou ty, které se opravdu přepisují:
+ *
+ *   lead  = nadpis kapitoly („Kořeny")  — krátké slovo, vejde se do 24 znaků pole
+ *   label = začátek úvodní věty („Jsem")
+ *   note  = její zvýrazněný konec („písecká rodačka.")
+ *   value = odstavec pod ní
+ *
+ * Počet kapitol je rozvržení, ne obsah: dvě kapitoly dělí timeline napůl, takže
+ * položka navíc se nevykreslí a chybějící spadne na text z kódu.
+ *
+ * Používá to i hero (omne/main) pro náhled 1. kapitoly — předání má být tentýž
+ * snímek, tedy i tentýž text.
+ */
+export const storyStepsFrom = (
+  texts?: CopyBlock,
+  photos?: CopyBlock
+): StoryStep[] =>
+  storySteps.map((item, index) => {
+    const copy = texts?.items?.[index]
+    const photo = photos?.gallery?.[STORY_OFFSET + index]
+    return {
+      ...item,
+      title: copy?.lead?.trim() || item.title,
+      lead: copy?.label?.trim() || item.lead,
+      accent: copy?.note?.trim() || item.accent,
+      text: copy?.value?.trim() || item.text,
+      src: photo?.url ?? item.src,
+      alt: photo?.alt?.trim() || item.alt,
+    }
+  })
+
+/** Atributy překryvu pro texty jedné kapitoly. Mimo náhled prázdné objekty. */
+type CopyEdit = {
+  title?: Record<string, string | undefined>
+  lead?: Record<string, string | undefined>
+  accent?: Record<string, string | undefined>
+  text?: Record<string, string | undefined>
+}
+
+/* Jen u kapitoly, která v bloku je — anotace na položku, která neexistuje, by
+   v editoru nabídla pole, jehož uložení se nemá kam zapsat (viz itemFieldPath). */
+const copyEdit = (texts: CopyBlock | undefined, index: number): CopyEdit =>
+  texts?.items?.[index]
+    ? {
+        title: editable(texts, `items.${index}.lead`),
+        lead: editable(texts, `items.${index}.label`),
+        accent: editable(texts, `items.${index}.note`),
+        text: editable(texts, `items.${index}.value`),
+      }
+    : {}
+
+/*
  * Odkud v `o-mne.galerie` začínají fotky příběhu.
  *
  * Blok drží čtyři fotky stránky „O mně" v pořadí, v jakém na ní stojí: první
@@ -142,7 +200,14 @@ export function StoryImageVisual({
 }
 
 /** Sdílený vizuál textu kapitoly — vnitřek `.aboutStory__copy`. */
-export function StoryCopyVisual({ item }: { item: StoryStep }) {
+export function StoryCopyVisual({
+  item,
+  edit = {},
+}: {
+  item: StoryStep
+  /** Anotace jen u scény; náhled v hero (aria-hidden) je kopie a editovat se nemá. */
+  edit?: CopyEdit
+}) {
   return (
     <>
       <div className="aboutStory__index">
@@ -152,12 +217,14 @@ export function StoryCopyVisual({ item }: { item: StoryStep }) {
       </div>
 
       <p className="aboutStory__label">{item.label}</p>
-      <h2>{item.title}</h2>
+      <h2 {...edit.title}>{item.title}</h2>
 
+      {/* Začátek věty ve vlastním (nestylovaném) spanu — `editable` píše celé
+          pole naráz a zvýrazněný konec je pole jiné. */}
       <p className="aboutStory__lead">
-        {item.lead} <em>{item.accent}</em>
+        <span {...edit.lead}>{item.lead}</span> <em {...edit.accent}>{item.accent}</em>
       </p>
-      <p className="aboutStory__body">{item.text}</p>
+      <p className="aboutStory__body" {...edit.text}>{item.text}</p>
     </>
   )
 }
@@ -217,11 +284,13 @@ function CopyLayer({
   index,
   progress,
   isActive,
+  edit,
 }: {
   item: StoryStep
   index: number
   progress: MotionValue<number>
   isActive: boolean
+  edit?: CopyEdit
 }) {
   const start = index * SEGMENT
   const end = start + SEGMENT
@@ -260,7 +329,7 @@ function CopyLayer({
       style={{ opacity, y }}
       aria-hidden={!isActive}
     >
-      <StoryCopyVisual item={item} />
+      <StoryCopyVisual item={item} edit={edit} />
     </motion.article>
   )
 }
@@ -296,24 +365,31 @@ function ProgressStep({
   )
 }
 
-export default function AboutStory({ block }: { block?: CopyBlock }) {
+export default function AboutStory({
+  block,
+  texts,
+}: {
+  /** Blok `o-mne.galerie` — fotky kapitol (od `STORY_OFFSET`). */
+  block?: CopyBlock
+  /** Blok `o-mne.pribeh` — lišta nad scénou (`title`, `headline`) a kapitoly (viz `storyStepsFrom`). */
+  texts?: CopyBlock
+}) {
   /* Scéna jede jen ze scrollu — bez tohohle by po zapnutí editace zůstaly anotace prázdné. */
   useEditRerender()
 
   /*
-   * Fotky z bloku `o-mne.galerie`, texty z kódu — stejné rozdělení jako
-   * u galerie výroby: příběh má dvě kapitoly a na tom stojí scrollování,
-   * takže se v CMS mění obrázky, ne jejich počet. Chybějící fotka v bloku
-   * znamená tu z kódu.
+   * Fotky z bloku `o-mne.galerie`, texty z `o-mne.pribeh` — stejné rozdělení
+   * jako u galerie výroby: příběh má dvě kapitoly a na tom stojí scrollování,
+   * takže se v CMS mění obrázky a slova, ne jejich počet. Chybějící fotka
+   * nebo text v bloku znamená ten z kódu.
    */
-  const steps = storySteps.map((item, index) => {
-    const photo = block?.gallery?.[STORY_OFFSET + index]
-    return {
-      ...item,
-      src: photo?.url ?? item.src,
-      alt: photo?.alt?.trim() || item.alt,
-    }
-  })
+  const steps = storyStepsFrom(texts, block)
+
+  /* Lišta nad scénou: `title` a `headline` — dvě jednotlivá pole, ne dvě
+     pozice v `accent` (CMS z něj prázdné položky vyhazuje a druhá by se
+     posunula na místo první). `items` drží kapitoly a nic jiného. */
+  const headerLead = texts?.title?.trim() || "Příběh · Dvě kapitoly"
+  const headerTail = texts?.headline?.trim() || "Kdo za keramikou stojí"
 
   const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -351,9 +427,9 @@ export default function AboutStory({ block }: { block?: CopyBlock }) {
     >
       <div className="aboutStory">
         <header className="aboutStory__header">
-          <span>Příběh · Dvě kapitoly</span>
+          <span {...editable(texts, "title")}>{headerLead}</span>
           <i />
-          <span>Kdo za keramikou stojí</span>
+          <span {...editable(texts, "headline")}>{headerTail}</span>
         </header>
 
         <div className="aboutStory__stage">
@@ -369,19 +445,20 @@ export default function AboutStory({ block }: { block?: CopyBlock }) {
         </div>
 
         <div className="aboutStory__copyStage">
-          {storySteps.map((item, index) => (
+          {steps.map((item, index) => (
             <CopyLayer
               item={item}
               index={index}
               progress={scrollYProgress}
               isActive={index === activeIndex}
+              edit={copyEdit(texts, index)}
               key={item.number}
             />
           ))}
         </div>
 
         <nav className="aboutStory__progress" aria-label="Kapitoly příběhu">
-          {storySteps.map((item, index) => (
+          {steps.map((item, index) => (
             <ProgressStep
               item={item}
               index={index}
@@ -396,7 +473,8 @@ export default function AboutStory({ block }: { block?: CopyBlock }) {
 
       <div className="aboutStoryMobile">
         <header>
-          <span>Příběh · Dvě kapitoly</span>
+          {/* Tatáž lišta jako nad scénou — jedno pole, dvě místa. */}
+          <span {...editable(texts, "title")}>{headerLead}</span>
           <i />
         </header>
         {/* `steps`, ne `storySteps`: seznam dřív četl přímo pole v kódu a fotka
@@ -413,11 +491,12 @@ export default function AboutStory({ block }: { block?: CopyBlock }) {
               <span>
                 {item.number} / 0{storySteps.length}
               </span>
-              <h2>{item.title}</h2>
+              <h2 {...copyEdit(texts, index).title}>{item.title}</h2>
               <p className="aboutStoryMobile__lead">
-                {item.lead} <em>{item.accent}</em>
+                <span {...copyEdit(texts, index).lead}>{item.lead}</span>{" "}
+                <em {...copyEdit(texts, index).accent}>{item.accent}</em>
               </p>
-              <p>{item.text}</p>
+              <p {...copyEdit(texts, index).text}>{item.text}</p>
             </div>
           </article>
         ))}

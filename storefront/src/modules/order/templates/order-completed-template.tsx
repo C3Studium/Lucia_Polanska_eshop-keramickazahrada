@@ -25,6 +25,8 @@ import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
 import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
+import CmsText from "@modules/common/components/cms-text"
+import type { CopyBlocks } from "@lib/util/site-copy"
 import Thumbnail from "@modules/products/components/thumbnail"
 import s from "./styles/oder-complete.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
@@ -51,6 +53,13 @@ type OrderCompletedTemplateProps = {
    * stejným tokenem). `null` → sekce se nevykreslí, tlačítka zůstanou jako dřív.
    */
   claims?: OrderClaims | null
+  /**
+   * Bloky stránky `kosik`: `kosik.objednavka-hotova` (poděkování nahoře)
+   * a `kosik.objednavka-pomoc` (nadpis okénka s kontaktem). Jen tyhle dva
+   * kusy — věta o potvrzení e-mailem nese adresu zákazníka, kontakty jsou
+   * údaje obchodu a odstoupení, podmínky a reklamace jsou vázané na zákon.
+   */
+  copy?: CopyBlocks
 }
 
 const formatDate = (date: string | Date) =>
@@ -70,7 +79,10 @@ export default async function OrderCompletedTemplate({
   commissionBalance = null,
   selfServiceToken = null,
   claims = null,
+  copy,
 }: OrderCompletedTemplateProps) {
+  const thanks = copy?.["kosik.objednavka-hotova"]
+  const help = copy?.["kosik.objednavka-pomoc"]
   const money = (amount?: number | null) =>
     convertToLocale({
       amount: amount ?? 0,
@@ -98,7 +110,7 @@ export default async function OrderCompletedTemplate({
     order.metadata as Record<string, unknown> | undefined
   )
   // Serverová komponenta → registr dokumentů smí přímo (do prohlížeče nejde).
-  const terms = orderTermsRef(order)
+  const terms = await orderTermsRef(order)
   /* Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
      `fulfillment_status` Medusy sám neví o Denní práci ani o reklamacích
      a navíc ho načtení objednávky nevrací, takže tu stálo napořád „Přijato". */
@@ -187,11 +199,19 @@ export default async function OrderCompletedTemplate({
         </header>
 
         <section className={s.hero}>
+          {/* `kosik.objednavka-hotova`: obočí (`accent.0`), nadpis (`title`)
+              a jeho zvýrazněný konec (`headline`). */}
           <div className={s.heroCopy}>
-            <p className={s.eyebrow}>Objednávka je uložená</p>
+            <CmsText as="p" className={s.eyebrow} doc={thanks?.id} field="accent.0">
+              {thanks?.accent?.[0]?.trim() || "Objednávka je uložená"}
+            </CmsText>
             <h1 className={s.title}>
-              <span>Děkujeme!</span>
-              <em>Teď se do toho pustím.</em>
+              <CmsText doc={thanks?.id} field="title">
+                {thanks?.title?.trim() || "Děkujeme!"}
+              </CmsText>
+              <CmsText as="em" doc={thanks?.id} field="headline">
+                {thanks?.headline?.trim() || "Teď se do toho pustím."}
+              </CmsText>
             </h1>
           </div>
 
@@ -605,9 +625,15 @@ export default async function OrderCompletedTemplate({
         </div>
 
         <section className={s.support}>
+          {/* `kosik.objednavka-pomoc`: obočí (`accent.0`) a nadpis (`title`).
+              E-mail a telefon pod tím jsou údaje obchodu, ne redakční text. */}
           <div>
-            <p>Potřebujete s něčím pomoct?</p>
-            <h2>Ozvěte se.</h2>
+            <CmsText as="p" doc={help?.id} field="accent.0">
+              {help?.accent?.[0]?.trim() || "Potřebujete s něčím pomoct?"}
+            </CmsText>
+            <CmsText as="h2" doc={help?.id} field="title">
+              {help?.title?.trim() || "Ozvěte se."}
+            </CmsText>
           </div>
           <p>
             Napište na{" "}

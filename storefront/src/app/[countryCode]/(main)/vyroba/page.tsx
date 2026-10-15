@@ -1,14 +1,17 @@
 import { Metadata } from "next"
 
-import { getPageContentFull } from "@lib/data/site-copy"
+import { getPageContentFull, getPageSeo } from "@lib/data/site-copy"
 import VyrobaCta from "@modules/vyroba/cta"
 import VyrobaInquiry from "@modules/vyroba/InquiryForm"
 import VyrobaJourney from "@modules/vyroba/journey"
 
-export const metadata: Metadata = {
-  title: "Jak vzniká keramika",
-  description:
-    "Sedm kroků ruční výroby keramiky — od prvního návrhu přes modelování a výpal až po hotový kus.",
+// Titulek a popis z bloku `vyroba.seo`; tohle je záloha pro prázdné CMS.
+export async function generateMetadata(): Promise<Metadata> {
+  return getPageSeo("vyroba", {
+    title: "Jak vzniká keramika",
+    description:
+      "Sedm kroků ruční výroby keramiky — od prvního návrhu přes modelování a výpal až po hotový kus.",
+  })
 }
 
 export default async function Home() {

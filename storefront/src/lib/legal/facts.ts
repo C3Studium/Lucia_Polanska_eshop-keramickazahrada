@@ -1,5 +1,12 @@
 /**
- * Fakta pro právní texty — jediné místo, kde se zapisují údaje o prodávající.
+ * Fakta pro právní texty — údaje o prodávající, které se dosazují za `{{klíč}}`.
+ *
+ * Údaje se vyplňují v administraci obchodu (Medusa → „Právní údaje",
+ * `store.metadata.merchant_settings.legal_facts`) a web je čte přes
+ * `GET /store/legal/facts` (`@lib/data/legal-facts` → `getLegalFacts()`).
+ * Tenhle soubor je jen ZÁLOHA pro chvíli, kdy backend neodpovídá, a výchozí
+ * hodnota testů — stejné hodnoty má backend jako výchozí
+ * (`backend/src/lib/legal-facts.ts`).
  *
  * Hodnota `null` = zadavatel ji zatím nedodal. V textu se pak `{{klíč}}`
  * vykreslí jako zvýrazněné `[[DOPLNIT: …]]` s popisem z `missing` a otázka je
@@ -10,6 +17,9 @@
  */
 
 export type LegalFactKey = keyof typeof FACTS
+
+/** Hodnoty všech faktů — `null` = nevyplněno (vykreslí se jako `[[DOPLNIT]]`). */
+export type LegalFacts = Record<LegalFactKey, string | null>
 
 export const FACTS = {
   "seller.name": "Lucie Polanská",
@@ -77,11 +87,39 @@ const MISSING: Record<LegalFactKey, string> = {
     "dodací lhůta zboží skladem — stránka Doprava dnes uvádí „předáváme přepravci zpravidla do dvou pracovních dnů od přijetí platby“, doručení 1–3 pracovní dny",
 }
 
-/** Hodnota faktu, nebo `null` když chybí. */
-export const fact = (key: LegalFactKey): string | null => FACTS[key] ?? null
+/** Záložní fakty z kódu (když backend neodpovídá) — viz komentář nahoře. */
+export const FALLBACK_FACTS: LegalFacts = { ...FACTS }
+
+export const LEGAL_FACT_KEYS = Object.keys(FACTS) as LegalFactKey[]
+
+/**
+ * Hodnota faktu, nebo `null` když chybí. Bez `facts` se bere záloha z kódu —
+ * vykreslování na webu má dostat fakty z `getLegalFacts()`.
+ */
+export const fact = (key: LegalFactKey, facts: LegalFacts = FALLBACK_FACTS): string | null =>
+  facts[key] ?? null
 
 /** Text zástupného údaje pro chybějící fakt (bez závorek). */
 export const missingFactLabel = (key: LegalFactKey): string => MISSING[key]
 
 export const isFactKey = (key: string): key is LegalFactKey =>
   Object.prototype.hasOwnProperty.call(FACTS, key)
+
+/**
+ * Fakty z odpovědi backendu sloučené přes zálohu: známé klíče, řetězec se
+ * ořízne, prázdný = `null`. Klíč, který backend nevrátil, zůstane ze zálohy.
+ */
+export const mergeFacts = (
+  incoming: Record<string, unknown> | null | undefined,
+  base: LegalFacts = FALLBACK_FACTS
+): LegalFacts => {
+  const out: LegalFacts = { ...base }
+  if (!incoming || typeof incoming !== "object") return out
+  for (const key of LEGAL_FACT_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(incoming, key)) continue
+    const value = incoming[key]
+    if (value === null) out[key] = null
+    else if (typeof value === "string") out[key] = value.trim() || null
+  }
+  return out
+}

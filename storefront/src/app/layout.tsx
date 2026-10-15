@@ -13,6 +13,8 @@ import {
   gaMeasurementId,
 } from "@modules/analytics/consent-mode"
 import { Metadata } from "next"
+import { getLegalFacts } from "@lib/data/legal-facts"
+import { LegalFactsProvider } from "@lib/legal/facts-context"
 import "styles/globals.scss"
 import StudioClient from "@c3studium/valecms/manage/appClient.jsx";
 
@@ -28,8 +30,12 @@ export const metadata: Metadata = {
     "Ručně tvořená keramika pro zahradu i domov z píseckého ateliéru Lucie Polanské. Hotové kusy, zakázková výroba i keramické kurzy.",
 }
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+export default async function RootLayout(props: { children: React.ReactNode }) {
   const uklidPoStareVerzi = bootResetScript()
+  // Právní údaje obchodu (administrace → „Právní údaje", cache 60 s) pro
+  // klientské komponenty hluboko ve stromu — předsmluvní informace v pokladně
+  // a v rychlém nákupu, právní sekce Dotazů. Viz `@lib/legal/facts-context`.
+  const legalFacts = await getLegalFacts()
   // Výchozí stav Google Consent Mode (vše zakázané). Prázdné, když měření
   // nemá ID — pak se nevloží nic. Viz `@modules/analytics`.
   const vychoziSouhlas = consentDefaultScript(
@@ -65,9 +71,11 @@ export default function RootLayout(props: { children: React.ReactNode }) {
               klávesnice došla jako k první. Nad /studio se nevykreslí. */}
           <CookieNotice />
           <StateProvider>
-            {/* Rám stránky a plynulé scrollování — obojí vynechané nad
-                /studio, kde je to aplikace, ne stránka. Viz komponentu. */}
-            <SiteChrome>{props.children}</SiteChrome>
+            <LegalFactsProvider facts={legalFacts}>
+              {/* Rám stránky a plynulé scrollování — obojí vynechané nad
+                  /studio, kde je to aplikace, ne stránka. Viz komponentu. */}
+              <SiteChrome>{props.children}</SiteChrome>
+            </LegalFactsProvider>
           </StateProvider>
         </MotionPreferenceProvider>
         {/* Google Analytics — jen s ID v prostředí a se souhlasem. */}

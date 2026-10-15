@@ -44,6 +44,13 @@ export type LegalFaqGroup = {
  * zůstane, jak ji redakce napsala, odpověď se nahradí touhle. Mění se spolu
  * s OP v PR, ne ve Studiu.
  *
+ * Proč VŽDY, a ne jen dokud text ze Studia obsahuje to staré špatné tvrzení
+ * (zkoušeno 15. 10. 2026 a vráceno): seznam „zakázaných" formulací zachytí
+ * jen chyby, které už někdo viděl. „Vrátit do 7 dnů", „zakázkové kusy vrátit
+ * nelze" bez dovětku o reklamaci vady nebo „nahlaste hned u doručovatele,
+ * jinak reklamaci neuznáme" by jím prošly — a na webu by stál slib, který
+ * zákonu odporuje. Zákonné odpovědi proto drží jen kód.
+ *
  * ## Jak se otázka z CMS pozná
  *
  * Dokument `qna` nenese žádný stálý klíč (mimo náhled je i `id` null), takže

@@ -9,13 +9,30 @@ import { useRouter } from "next/navigation"
 import styles from "./style.module.scss"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
+import { itemNote, itemValue } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
 type ResultStatus = "success" | "pending" | "canceled" | "failed"
 
 const copy: Record<
   ResultStatus,
-  { eyebrow: string; title: string; accent: string; description: string; mark: string }
+  {
+    eyebrow: string
+    title: string
+    accent: string
+    description: string
+    mark: string
+    /**
+     * Věta o penězích, která jde za odstavcem a do CMS NEPATŘÍ. „Nic jsme vám
+     * nestrhli" je tvrzení o platbě, ne redakční text: přeformulované nebo
+     * vymazané ve Studiu by zákazník po neúspěšné platbě nevěděl, jestli má
+     * zaplatit znovu. Studio mění jen odstavec před ní.
+     */
+    assurance?: string
+  }
 > = {
   success: {
     eyebrow: "Objednávka potvrzena",
@@ -45,10 +62,24 @@ const copy: Record<
     eyebrow: "Objednávka se nedokončila",
     title: "Zkusme to",
     accent: "ještě jednou.",
-    description:
-      "Platbu ani objednávku se nepovedlo potvrdit. Nic jsme vám nestrhli.",
+    description: "Platbu ani objednávku se nepovedlo potvrdit.",
+    assurance: "Nic jsme vám nestrhli.",
     mark: "!",
   },
+}
+
+/*
+ * Popisky stavů v bloku `kosik.rychly-vysledek` — česky, ať Lucie ve Studiu
+ * pozná, ke kterému výsledku řádek patří. Položky jsou klíčované popiskem
+ * jako u `global.prihlaseni`: `<stav>.stitek` (obočí), `<stav>.nadpis`
+ * (nadpis v `value`, zvýrazněný konec v `note`) a `<stav>.text` (odstavec).
+ * Značka (✓ … × !), tlačítka a kam vedou jsou logika výsledku, ne text.
+ */
+const CMS_STATE: Record<ResultStatus, string> = {
+  success: "hotovo",
+  pending: "overujeme",
+  canceled: "zruseno",
+  failed: "nedokonceno",
 }
 
 export default function ExpressResult({
@@ -56,15 +87,27 @@ export default function ExpressResult({
   countryCode,
   productHandle,
   order,
+  block,
 }: {
   status: ResultStatus
   countryCode: string
   productHandle?: string
   order?: HttpTypes.StoreOrder
+  /** Blok `kosik.rychly-vysledek` — texty stavů (viz CMS_STATE). */
+  block?: CopyBlock
 }) {
   const router = useRouter()
   const reduceMotion = useSiteReducedMotion()
-  const content = copy[status]
+  /* Výsledek je klidná stránka bez vlastního stavu. Viz hook. */
+  useEditRerender()
+  const key = CMS_STATE[status]
+  const content = {
+    ...copy[status],
+    eyebrow: itemValue(block, `${key}.stitek`)?.trim() || copy[status].eyebrow,
+    title: itemValue(block, `${key}.nadpis`)?.trim() || copy[status].title,
+    accent: itemNote(block, `${key}.nadpis`)?.trim() || copy[status].accent,
+    description: itemValue(block, `${key}.text`)?.trim() || copy[status].description,
+  }
   const retryPath = productHandle
     ? `/${countryCode}/express-checkout/${productHandle}?step=payment`
     : `/${countryCode}/store`
@@ -89,12 +132,25 @@ export default function ExpressResult({
         animate={animate2}
         transition={transition2}
       >
-        <span className={styles.eyebrow}>{content.eyebrow}</span>
+        <span className={styles.eyebrow} {...editableItem(block, `${key}.stitek`)}>
+          {content.eyebrow}
+        </span>
+        {/* Nadpis v holém spanu jen kvůli anotaci — `editable` píše celé pole
+            a zvýrazněný konec je pole jiné. */}
         <h1>
-          {content.title}
-          <em>{content.accent}</em>
+          <span {...editableItem(block, `${key}.nadpis`)}>{content.title}</span>
+          <em {...editableItem(block, `${key}.nadpis`, "note")}>{content.accent}</em>
         </h1>
-        <p>{content.description}</p>
+        {/* Odstavec z CMS ve vlastním spanu jen tam, kde za ním stojí věta
+            z kódu — `editable` píše celé pole a ta věta do pole nepatří. */}
+        {content.assurance ? (
+          <p>
+            <span {...editableItem(block, `${key}.text`)}>{content.description}</span>{" "}
+            {content.assurance}
+          </p>
+        ) : (
+          <p {...editableItem(block, `${key}.text`)}>{content.description}</p>
+        )}
       </motion.div>
 
       {/* data-lenis-prevent on the receipt below: on phs it becomes a scroll container

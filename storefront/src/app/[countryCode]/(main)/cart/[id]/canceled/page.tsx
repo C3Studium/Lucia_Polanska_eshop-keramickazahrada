@@ -1,4 +1,5 @@
 import PaymentCanceled from "@modules/cart/components/payment-canceled"
+import { getPageCopy } from "@lib/data/site-copy"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -18,5 +19,8 @@ export default async function OrderConfirmedPage(props: Props) {
     return notFound()
   }
 
-  return <PaymentCanceled />
+  // Texty stavu z bloku `kosik.platba-zrusena`; výpadek CMS = texty z kódu.
+  const copy = await getPageCopy("kosik")
+
+  return <PaymentCanceled block={copy["kosik.platba-zrusena"]} />
 }

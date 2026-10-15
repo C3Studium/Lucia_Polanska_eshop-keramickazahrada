@@ -15,6 +15,7 @@ import {
 import { createPortal } from "react-dom"
 
 import type { MerchantIdentity } from "@lib/data/merchant"
+import type { CopyBlock } from "@lib/util/site-copy"
 import ContactDialogPanel, {
   type Inquiry,
   type OrderChangeRequest,
@@ -44,9 +45,12 @@ const ContactDialogContext = createContext<ContactDialogContextValue | null>(nul
  */
 export function ContactDialogProvider({
   merchant,
+  copy,
   children,
 }: {
   merchant: MerchantIdentity
+  /** Blok `global.kontaktni-okno` — redakční texty okna (viz panel). */
+  copy?: CopyBlock
   children: ReactNode
 }) {
   const [topic, setTopic] = useState<Inquiry | null>(null)
@@ -99,6 +103,7 @@ export function ContactDialogProvider({
             {topic !== null && (
               <ContactDialogPanel
                 merchant={merchant}
+                copy={copy}
                 initialTopic={topic}
                 orderChange={orderChange}
                 onClose={close}

@@ -2,8 +2,9 @@
 
 import { sdk } from "@lib/config"
 import { inlineToPlain } from "@lib/legal/inline"
-import { currentTermsVersion } from "@lib/legal/registry"
 import { getAuthHeaders } from "./cookies"
+import { getLegalFacts } from "./legal-facts"
+import { getPublishedLegalRegistry } from "./legal-registry"
 
 /**
  * Server actions for the course reservation system (docs/kurzy-system.md).
@@ -170,10 +171,13 @@ export const createCourseReservation = async (
 ): Promise<CourseReservationResult> => {
   const headers = await getAuthHeaders()
   /* Verze OP a otisk zobrazeného znění storno podmínek se doplní TADY, na
-     serveru — z registru právních dokumentů a z faktu `course.cancellation`,
-     ne z prohlížeče. Backend je uloží k rezervaci (`consents`). */
-  const termsVersion = currentTermsVersion()
-  const stornoText = inlineToPlain("{{course.cancellation}}")
+     serveru — z publikovaného registru právních dokumentů (repo + Studio)
+     a z faktu `course.cancellation` z administrace obchodu (tentýž text, jaký
+     zákazník viděl v rezervaci), ne z prohlížeče. Backend je uloží
+     k rezervaci (`consents`). */
+  const [registry, facts] = await Promise.all([getPublishedLegalRegistry(), getLegalFacts()])
+  const termsVersion = registry.currentTermsVersion()
+  const stornoText = inlineToPlain("{{course.cancellation}}", { facts })
   try {
     const result = await sdk.client.fetch<{
       reservation_id: string

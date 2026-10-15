@@ -1,5 +1,6 @@
 import { getOrderClaims } from "@lib/data/claims"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getLegalFacts } from "@lib/data/legal-facts"
 import { getOrderAccessToken } from "@lib/data/orders"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import WithdrawalFlow from "@modules/order/components/withdrawal"
@@ -89,6 +90,7 @@ export default async function OrderWithdrawalPage(props: Props) {
         token={token}
         claims={claims}
         currencyCode={claims.withdrawal?.currency_code || undefined}
+        facts={await getLegalFacts()}
       />
     </OrderStateShell>
   )

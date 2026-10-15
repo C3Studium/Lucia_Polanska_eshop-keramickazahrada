@@ -10,6 +10,7 @@ import {
 } from "@lib/data/payment"
 import { getBundleProduct, listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { getPageCopy } from "@lib/data/site-copy"
 import { Router } from "@modules/express-checkout/Router"
 import { notFound } from "next/navigation"
 
@@ -48,6 +49,7 @@ export default async function ExpressCheckoutPage({ params }: Params) {
     comgateMethods,
     prefillAddress,
     productionMode,
+    copy,
   ] = await Promise.all([
     cart ? listCartShippingMethods(cart.id) : Promise.resolve([]),
     listCartPaymentMethods(region.id),
@@ -62,6 +64,8 @@ export default async function ExpressCheckoutPage({ params }: Params) {
     getExpressPrefillAddress(countryCode),
     // Zakázka: kolik zaplatit hned (záloha) — potřebuje to krok platby.
     cart ? getProductionPaymentMode(cart.id) : Promise.resolve(null),
+    // Úvod nad krokovníkem (blok `kosik.rychly-nakup`); výpadek CMS = texty z kódu.
+    getPageCopy("kosik"),
   ])
 
   return (
@@ -81,6 +85,7 @@ export default async function ExpressCheckoutPage({ params }: Params) {
         process.env.NEXT_PUBLIC_PACKETA_SHIPPING_METHOD_ID
       }
       prefillAddress={prefillAddress}
+      block={copy["kosik.rychly-nakup"]}
     />
   )
 }

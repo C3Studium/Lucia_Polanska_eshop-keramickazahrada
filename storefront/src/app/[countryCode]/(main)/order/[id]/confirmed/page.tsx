@@ -9,6 +9,7 @@ import {
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import BalancePaymentNotice from "@modules/order/components/balance-payment-notice"
 import OrderStateShell from "@modules/order/components/order-state-shell"
+import { getPageCopy } from "@lib/data/site-copy"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -89,10 +90,15 @@ export default async function OrderConfirmedPage(props: Props) {
     return notFound()
   }
 
+  // Poděkování a okénko „Potřebujete s něčím pomoct?" — bloky na stránce
+  // `kosik` (konec nákupu). Výpadek CMS = texty z kódu.
+  const copy = await getPageCopy("kosik")
+
   return (
     <>
       <BalancePaymentNotice outcome={outcome} />
       <OrderCompletedTemplate
+        copy={copy}
         order={order}
         progress={progress}
         progressFallback={fallbackStageLabel(order)}

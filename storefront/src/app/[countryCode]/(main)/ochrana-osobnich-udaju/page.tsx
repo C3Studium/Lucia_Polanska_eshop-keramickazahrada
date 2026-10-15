@@ -2,10 +2,10 @@ import type { Metadata } from "next"
 
 import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
-/* Zásady ochrany osobních údajů — znění z registru (`@lib/legal`), ne z CMS. */
+/* Zásady ochrany osobních údajů — znění ze sloučeného registru (Studio + repo, `@lib/legal/registry`). */
 export const revalidate = 3600
 
-export function generateMetadata(): Metadata {
+export function generateMetadata(): Promise<Metadata> {
   return legalMetadata("ochrana-osobnich-udaju")
 }
 

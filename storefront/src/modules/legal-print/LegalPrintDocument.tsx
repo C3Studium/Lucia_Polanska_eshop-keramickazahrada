@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { LegalFacts } from "@lib/legal/facts"
 import { renderInline } from "@lib/legal/inline"
 import { formatVersionDate, LEGAL_PATHS } from "@lib/legal/registry"
 import type { LegalBlock, LegalDocumentVersion } from "@lib/legal/types"
@@ -11,22 +12,34 @@ import { documentHasPlaceholder, printHrefFor } from "./meta"
  * Do PDF se záměrně NEDÁVÁ nic, co se s časem mění (archivní příznak,
  * „nahrazeno zněním od …"): PDF vydané verze je neměnné, váže se k němu
  * uzavřená smlouva.
+ *
+ * `facts` = fakty, se kterými se verze tiskne (`registry.factsFor`): u vydané
+ * verze otisk z manifestu, jinak živé z administrace obchodu. Tytéž hodnoty
+ * jdou do otisku zdroje (`source-hash.ts`), takže PDF a otisk se nerozejdou.
  */
 
-const inline = (text: string): ReactNode[] =>
-  renderInline(text, { hrefFor: printHrefFor, placeholderClassName: "lp-placeholder" })
+type Inline = (text: string) => ReactNode[]
 
-function Blocks({ blocks }: { blocks: LegalBlock[] }) {
+const inlineFor =
+  (facts: LegalFacts): Inline =>
+  (text) =>
+    renderInline(text, {
+      hrefFor: (path) => printHrefFor(path, facts),
+      placeholderClassName: "lp-placeholder",
+      facts,
+    })
+
+function Blocks({ blocks, inline }: { blocks: LegalBlock[]; inline: Inline }) {
   return (
     <>
       {blocks.map((block, index) => (
-        <Block key={index} block={block} />
+        <Block key={index} block={block} inline={inline} />
       ))}
     </>
   )
 }
 
-function Block({ block }: { block: LegalBlock }) {
+function Block({ block, inline }: { block: LegalBlock; inline: Inline }) {
   switch (block.type) {
     case "p":
       return <p className="lp-p">{inline(block.text)}</p>
@@ -76,7 +89,7 @@ function Block({ block }: { block: LegalBlock }) {
       return (
         <div className="lp-box">
           {block.title ? <p className="lp-box-title">{inline(block.title)}</p> : null}
-          <Blocks blocks={block.blocks} />
+          <Blocks blocks={block.blocks} inline={inline} />
         </div>
       )
     case "form":
@@ -103,9 +116,16 @@ function Block({ block }: { block: LegalBlock }) {
   }
 }
 
-export default function LegalPrintDocument({ doc }: { doc: LegalDocumentVersion }) {
+export default function LegalPrintDocument({
+  doc,
+  facts,
+}: {
+  doc: LegalDocumentVersion
+  facts: LegalFacts
+}) {
+  const inline = inlineFor(facts)
   const validFrom = formatVersionDate(doc.version)
-  const currentUrl = printHrefFor(LEGAL_PATHS[doc.slug])
+  const currentUrl = printHrefFor(LEGAL_PATHS[doc.slug], facts)
   const showToc = doc.sections.length >= 4
 
   return (
@@ -143,7 +163,7 @@ export default function LegalPrintDocument({ doc }: { doc: LegalDocumentVersion 
         </p>
         {doc.summary ? <p className="lp-summary">{inline(doc.summary)}</p> : null}
 
-        {documentHasPlaceholder(doc) ? (
+        {documentHasPlaceholder(doc, facts) ? (
           <p className="lp-draft">
             <strong>Pracovní znění.</strong> Žlutě zvýrazněné údaje ještě nejsou
             doplněné — takové PDF se nesmí posílat zákazníkům.
@@ -166,7 +186,7 @@ export default function LegalPrintDocument({ doc }: { doc: LegalDocumentVersion 
         {doc.sections.map((section) => (
           <section key={section.id} id={section.id} className="lp-section">
             <h2 className="lp-h2">{inline(section.title)}</h2>
-            <Blocks blocks={section.blocks} />
+            <Blocks blocks={section.blocks} inline={inline} />
           </section>
         ))}
 

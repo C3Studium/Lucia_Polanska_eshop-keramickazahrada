@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { fact, isFactKey, missingFactLabel } from "./facts"
+import { fact, isFactKey, missingFactLabel, type LegalFacts } from "./facts"
 
 /**
  * Vnořená značka v právních textech → React (web, tisk do PDF) nebo prostý
@@ -17,6 +17,12 @@ export type InlineOptions = {
   hrefFor?: (path: string) => string
   /** CSS třída pro zvýrazněný zástupný text `[[DOPLNIT: …]]`. */
   placeholderClassName?: string
+  /**
+   * Hodnoty faktů pro `{{klíč}}` — na webu z `getLegalFacts()` (administrace
+   * obchodu), u zamčené verze z jejího otisku v manifestu PDF. Bez nich
+   * záloha z kódu (`FALLBACK_FACTS`).
+   */
+  facts?: LegalFacts
 }
 
 export type Token =
@@ -33,8 +39,8 @@ export type Token =
 const TOKEN =
   /\[\[DOPLNIT:\s*([^\]]+?)\s*\]\]|\{\{([a-zA-Z0-9.]+)\}\}|\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g
 
-/** Rozloží řetězec na tokeny. Fakty `{{…}}` se rovnou dosadí. */
-export const tokenize = (input: string): Token[] => {
+/** Rozloží řetězec na tokeny. Fakty `{{…}}` se rovnou dosadí (z `facts`, jinak ze zálohy). */
+export const tokenize = (input: string, facts?: LegalFacts): Token[] => {
   const tokens: Token[] = []
   let last = 0
   // `exec` ve smyčce, ne `matchAll`: tsconfig storefrontu má target es5.
@@ -50,7 +56,7 @@ export const tokenize = (input: string): Token[] => {
       if (!isFactKey(factKey)) {
         tokens.push({ kind: "placeholder", value: `neznámý údaj ${factKey}` })
       } else {
-        const value = fact(factKey)
+        const value = fact(factKey, facts)
         tokens.push(
           value === null
             ? { kind: "placeholder", value: missingFactLabel(factKey) }
@@ -58,7 +64,7 @@ export const tokenize = (input: string): Token[] => {
         )
       }
     } else if (bold !== undefined) {
-      tokens.push({ kind: "bold", value: bold, children: tokenize(bold) })
+      tokens.push({ kind: "bold", value: bold, children: tokenize(bold, facts) })
     } else if (linkLabel !== undefined && linkHref !== undefined) {
       tokens.push({ kind: "link", label: linkLabel, href: linkHref })
     }
@@ -81,7 +87,7 @@ export const flattenTokens = (tokens: Token[]): Token[] =>
 
 /** Řetězec se značkou → React uzly. */
 export const renderInline = (input: string, options: InlineOptions = {}): ReactNode[] =>
-  renderTokens(tokenize(input), options)
+  renderTokens(tokenize(input, options.facts), options)
 
 const renderTokens = (tokens: Token[], options: InlineOptions): ReactNode[] => {
   const hrefFor = options.hrefFor ?? defaultHrefFor
@@ -120,7 +126,7 @@ const renderTokens = (tokens: Token[], options: InlineOptions): ReactNode[] => {
 
 /** Řetězec se značkou → prostý text (odkaz jako „text (href)"). */
 export const inlineToPlain = (input: string, options: InlineOptions = {}): string =>
-  tokensToPlain(tokenize(input), options.hrefFor ?? defaultHrefFor)
+  tokensToPlain(tokenize(input, options.facts), options.hrefFor ?? defaultHrefFor)
 
 const tokensToPlain = (tokens: Token[], hrefFor: (path: string) => string): string =>
   tokens
@@ -139,5 +145,5 @@ const tokensToPlain = (tokens: Token[], hrefFor: (path: string) => string): stri
     .join("")
 
 /** Obsahuje text zástupný údaj (přímo, přes chybějící fakt, i v tučném písmu)? */
-export const hasPlaceholder = (input: string): boolean =>
-  flattenTokens(tokenize(input)).some((token) => token.kind === "placeholder")
+export const hasPlaceholder = (input: string, facts?: LegalFacts): boolean =>
+  flattenTokens(tokenize(input, facts)).some((token) => token.kind === "placeholder")
