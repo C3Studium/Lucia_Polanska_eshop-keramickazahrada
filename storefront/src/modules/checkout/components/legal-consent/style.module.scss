@@ -1,3 +1,5 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
 /*
  * Souhlas před odesláním objednávky. Varianta `review` je přenesená beze změny
  * z kroku Přehled (dřív `review/style.module.scss`, blok „consent"), varianta

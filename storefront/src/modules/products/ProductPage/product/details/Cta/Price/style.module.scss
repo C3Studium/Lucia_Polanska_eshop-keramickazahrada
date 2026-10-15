@@ -1,3 +1,5 @@
+@use "../../../../../../../styles/system/_shortcuts.scss" as *;
+
 /* Věta pod cenou (referenční cena § 12a, „Cena kusu s uvedenou vadou").
    Písmo a barvu dává `.product__details__cta__price__main > p` v product
    style.scss; tady jen to, že věta má vlastní řádek pod cenou a procentem —

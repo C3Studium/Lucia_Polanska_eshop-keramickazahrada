@@ -1,3 +1,5 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
 /*
  * Právní otázky pod FAQ z CMS. Tentýž jazyk jako seznam nad nimi (FAQ/styles.scss):
  * vlasové linky, světlé písmo, kulatý přepínač — jen nativní <details> místo animace.

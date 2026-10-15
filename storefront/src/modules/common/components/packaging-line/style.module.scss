@@ -1,3 +1,5 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
 /* Balné pod výrobkem — podřízený řádek: menší písmo, odsazený zleva,
    tenká linka nahoře. Barva se dědí (tmavý košík i světlá objednávka). */
 .root {

@@ -1,3 +1,5 @@
+@use "../../../styles/system/_shortcuts.scss" as *;
+
 /*
  * Živý ceník dopravy. Typ, linky a hlavičky tabulky dědí z `.chapterBody table`
  * v LegalDocument (komponenta je vykreslená uvnitř kapitoly); tady je jen to,
