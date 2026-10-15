@@ -109,8 +109,12 @@ async function newContext({ consent = true } = {}) {
 async function shot(page, name, opts = {}) {
   const file = path.join(SHOTS, `${name}.png`)
   try {
-    if (opts.locator) await opts.locator.screenshot({ path: file })
-    else await page.screenshot({ path: file, fullPage: opts.fullPage ?? true })
+    // `animations: "disabled"`: celostránkový snímek v Chromiu znovu spustí
+    // CSS animace (řádky souhrnu `itemReveal` se zpožděním) — další snímek
+    // hned po něm pak zachytil řádek s nulovou průhledností a vypadal jako
+    // chybějící výrobek (R3, e-review-ready). Takhle jsou snímky ustálené.
+    if (opts.locator) await opts.locator.screenshot({ path: file, animations: "disabled" })
+    else await page.screenshot({ path: file, fullPage: opts.fullPage ?? true, animations: "disabled" })
     return path.relative(ARTIFACTS_DIR, file).replace(/\\/g, "/")
   } catch (e) {
     log(`snímek ${name} se nepovedl: ${e.message}`)

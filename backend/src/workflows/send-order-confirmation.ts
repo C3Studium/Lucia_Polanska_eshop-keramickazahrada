@@ -108,6 +108,11 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
         // customer stands at the door not knowing they owe money.
         "payment_collections.payment_sessions.provider_id",
         "payment_collections.payment_sessions.status",
+        // Doplatek zakázky ještě před tím, než `initialize-merchant-order`
+        // založí produkční objednávku (resolveBalanceStep) — kolekce z
+        // pokladny nese celou cenu i účtovanou zálohu.
+        "payment_collections.amount",
+        "payment_collections.metadata",
       ],
       filters: {
         id
@@ -128,8 +133,10 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // (`orders[0].email`) is fine; string building is not.
     // Whether this order still owes money, and how much. A commission paid
     // only as a deposit does; one paid in full does not, and must not be shown
-    // a "pay the rest" button for zero.
-    const balance = resolveBalanceStep({ order_id: id })
+    // a "pay the rest" button for zero. The production order may not exist
+    // yet (same event, parallel subscriber) — the step then reads the balance
+    // from the checkout's payment collection in `orders`.
+    const balance = resolveBalanceStep({ order_id: id, orders })
 
     const legalDocuments = resolveOrderLegalStep({ orders })
 
@@ -153,7 +160,8 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
           : providerIds.some((providerId: string) =>
                 providerId.startsWith("pp_comgate")
               )
-            ? "Online platba kartou"
+            ? // Brána bere i převod, Apple Pay a Google Pay — ne „kartou".
+              "Online platba přes platební bránu ComGate"
             : undefined
 
         return [

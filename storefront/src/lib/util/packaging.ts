@@ -19,13 +19,35 @@ export const isPackagingLine = (item: LineLike | null | undefined): boolean =>
   Boolean(item?.metadata?.packaging_fee) && !item?.variant_id && !item?.product_id
 
 /**
+ * Doběrečné — stejná identita jako `isDobirkaFeeLine` v `dobirka.ts` (ten
+ * importuje odsud, proto vlastní kopie podmínky místo importu zpět).
+ */
+const isDobirkaFeeItem = (item: LineLike | null | undefined): boolean =>
+  Boolean(item?.metadata?.dobirka_fee) && !item?.variant_id && !item?.product_id
+
+/**
  * Servisní řádek = balné nebo doběrečné (stejná identita jako
  * `isDobirkaFeeLine`). Není to kus zboží — do počtů kusů a do pravidel typu
  * „každý kus…" nepatří.
  */
 export const isServiceLine = (item: LineLike | null | undefined): boolean =>
-  isPackagingLine(item) ||
-  (Boolean(item?.metadata?.dobirka_fee) && !item?.variant_id && !item?.product_id)
+  isPackagingLine(item) || isDobirkaFeeItem(item)
+
+/**
+ * Součet doběrečného (cena × kusy) — pro rozpad mezisoučtu, kde je to
+ * vlastní řádek „Doběrečné", ne součást „Výrobky". `null`, když v seznamu
+ * žádné není.
+ */
+export const dobirkaFeeSubtotal = (
+  items: Array<LineLike & { unit_price?: number | null; quantity?: number | null }> | null | undefined
+): number | null => {
+  const lines = (items ?? []).filter(isDobirkaFeeItem)
+  if (!lines.length) return null
+  return lines.reduce(
+    (sum, line) => sum + Number(line.unit_price ?? 0) * Number(line.quantity ?? 0),
+    0
+  )
+}
 
 /** Jen kusy zboží (bez balného a doběrečného). */
 export const productLines = <T extends LineLike>(items: T[] | null | undefined): T[] =>

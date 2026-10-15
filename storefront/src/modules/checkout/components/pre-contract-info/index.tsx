@@ -255,16 +255,24 @@ export default function PreContractInfo({
             </dd>
           </div>
         )}
+        {/* `dd` je mřížka (štítek platby + drobná poznámka pod ním), takže
+            každý holý textový úsek i odkaz by byl vlastní řádek — tečka za
+            „poučení o odstoupení" pak visela sama na dalším řádku. Souvislá
+            věta proto v jednom `span`. */}
         <div>
           <dt>Odstoupení</dt>
-          <dd data-testid="pre-contract-withdrawal">{withdrawal}</dd>
+          <dd data-testid="pre-contract-withdrawal">
+            <span>{withdrawal}</span>
+          </dd>
         </div>
         <div>
           <dt>Prodávající</dt>
           <dd>
-            {inline(
-              "{{seller.name}}, {{seller.address}}, IČO {{seller.ico}}, {{seller.email}}, {{seller.phone}}"
-            )}
+            <span>
+              {inline(
+                "{{seller.name}}, {{seller.address}}, IČO {{seller.ico}}, {{seller.email}}, {{seller.phone}}"
+              )}
+            </span>
           </dd>
         </div>
       </dl>

@@ -201,3 +201,57 @@ Nálezy nezávislé kontroly storefrontu; backend se tu neměnil.
   (čl. 13 GDPR); text z CMS zůstává editovatelný, odkaz je v kódu.
 - **„Ke stažení (PDF)“ v patičce** nabízí jen zveřejněná PDF (absolutní https URL z
   `pnpm legal:upload`); pracovní znění s `[[DOPLNIT]]` se už nenabízí.
+
+## Opravy po testech v sandboxu (R3)
+
+Nálezy z kontroly a z testovacích objednávek v izolovaném sandboxu (`backend/sandbox`).
+
+- **Potvrzení rezervace kurzu bez zástupného textu** (§ 1827 odst. 2 OZ). Dokud
+  `COURSE_CANCELLATION_TERMS` (`modules/course/legal.ts`) nese `[[DOPLNIT`, e-mail storno
+  podmínky necituje — zůstává poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) a věta, že
+  storno podmínky jsou v obchodních podmínkách, čl. X Keramické kurzy, s odkazem. Platí i pro
+  opakované odeslání starší notifikace. Nově jde s potvrzením PDF obchodních podmínek té verze,
+  se kterou zákazník rezervoval (`consents.terms_version`, jinak verze platná v den rezervace),
+  když je PDF zveřejněné (https, ne pracovní znění) a ke stažení (HEAD) — jinak jen odkaz.
+  Příloha přes `data.__attachments` jako u objednávky; když ji Resend odmítne, e-mail odejde
+  bez ní a místo „v příloze“ ukáže odkaz na PDF.
+- **Odmítnutí e-mailů z oprávněného zájmu jedním kliknutím** (§ 7 odst. 3 zákona
+  č. 480/2004 Sb., čl. 21 GDPR — slib OP čl. XIV a Zásad). Nový modul `email-optout`
+  (tabulka `email_opt_out`: normalizovaný e-mail + druh `review_request` / `price_drop` /
+  `abandoned_cart`, unikátní dvojice; migrace `Migration20261015120000`). Podepsaný odkaz
+  (`lib/email-optout-link.ts`, HMAC pod účelem `email-optout:<druh>`, nevyprší, token
+  newsletteru ani jiného druhu neprojde) vede na top-level `GET /email-optout` (idempotentní)
+  a ten přesměruje na `/newsletter?stav=odhlaseno-upozorneni&druh=…` („Hotovo — tyhle e-maily
+  (…) vám už posílat nebudeme.“); bez storefrontu odpoví česky rovnou. Prosba o recenzi (job
+  i ruční odeslání z adminu — to odmítnutou adresu odmítne i s `force`), upozornění na pokles
+  ceny a připomenutí košíku (job je vypnutý, ale pravidlo respektuje) odmítnuté adresy
+  přeskakují a nesou v patičce „Nechcete tyto e-maily? Odhlásit je jedním kliknutím“.
+  Z upozornění na pokles ceny zmizela věta o vypnutí „v nastavení účtu“ (takové nastavení
+  není).
+- **Potvrzení zakázky ukazuje doplatek i při souběhu.** Potvrzovací e-mail a
+  `initialize-merchant-order` běží na `order.placed` souběžně; e-mail se skládal dřív, než
+  vznikla produkční objednávka se zálohou, a zakázka za 2 479 Kč se zaplacenou zálohou 679 Kč
+  přišla bez „Zbývá doplatit“ a tlačítka Doplatit. Doplatek se teď bez produkční objednávky
+  (nebo bez zálohy v ní) bere z platební kolekce pokladny (`original_cart_total` − účtovaná
+  částka), jinak z modulu jako dosud (`resolveOrderOutstanding`). Bez čekání a bez nové
+  události — běžná objednávka se nemění, dvojí odeslání nehrozí (klíč `order-placed:<id>`).
+- **Čistá zakázka v potvrzení objednávky:** „Správa objednávky“ už neříká „Odstoupit od
+  smlouvy můžete do 14 dnů…“, když sekce „Smlouva a poučení“ správně uvádí, že odstoupit nejde
+  (§ 1837 písm. d) OZ).
+- **Způsob platby bez „kartou“:** ComGate bere i převod, Apple Pay a Google Pay. Potvrzení
+  objednávky píše „Online platba přes platební bránu ComGate“, odstoupení / reklamace „vrátíme
+  je stejnou cestou, jakou jste platili (přes ComGate)“ a e-mail o vrácení peněz „stejnou
+  cestou, jakou jste platili (přes ComGate)“.
+- **Reklamace ukládá převzetí:** `return_request.takeover_at` se u reklamace doručené
+  objednávky plnilo jen u odstoupení / vrácení; teď stejným výpočtem i u reklamace (od převzetí
+  běží záruka). Lhůta pro odstoupení a text převzetí do potvrzení se reklamace dál netýkají.
+- **Storefront — doběrečné v součtech:** „Výrobky“ v košíku, pokladně, potvrzení i detailu
+  objednávky byly mezisoučet minus balné, takže do nich padalo i 39 Kč doběrečného. Nově
+  mezisoučet minus balné minus doběrečné a „Doběrečné“ jako vlastní řádek rozpadu.
+  „Chybějící výrobek“ v pravém souhrnu pokladny (snímek `e-review-ready`) chyba storefrontu
+  nebyla: řádek v DOM je, jen celostránkový snímek Playwrightu znovu spustil animaci
+  `itemReveal` a další snímek hned po něm zachytil druhý řádek (zpoždění 60 ms) s nulovou
+  průhledností. Změřeno v sandboxu (stejné uzly, žádné nové připojení, obyčejná změna okna
+  animaci nespouští); `e2e.mjs` teď snímá s `animations: "disabled"`.
+- **Storefront — tečka za „poučení o odstoupení“** v předsmluvních informacích už nevisí
+  na samostatném řádku (`dd` je mřížka, souvislá věta je teď v jednom `span`).

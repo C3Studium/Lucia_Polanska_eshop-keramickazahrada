@@ -8,6 +8,7 @@ import {
   Eyebrow,
   Greeting,
   LedgerEnd,
+  OptOutLine,
   P,
   Signature,
 } from "../components/email-ui"
@@ -25,6 +26,11 @@ interface OrderReviewEmailProps {
   /** Recenze na Google — job ji dodá z env; prázdná = bez Googlu. */
   googleReviewLink?: string;
   orderLink?: string;
+  /**
+   * Odmítnutí dalších proseb jedním kliknutím (`lib/email-optout-link.ts`,
+   * § 7 odst. 3 zák. 480/2004 Sb.). Bez něj se řádek nevykreslí.
+   */
+  unsubscribe_url?: string | null;
 }
 
 /**
@@ -45,7 +51,8 @@ function OrderReviewEmailComponent({
   productLink = "",
   reviewLink = "",
   googleReviewLink,
-  orderLink = ""
+  orderLink = "",
+  unsubscribe_url = null
 }: OrderReviewEmailProps) {
   // Job předává odkaz z env; když ho šablona dostane bez něj (náhled), zkusí
   // env sama — obojí přes jeden helper, ať existuje jen jedna pravda.
@@ -160,6 +167,7 @@ function OrderReviewEmailComponent({
         vyřešíme.
       </P>
       <Signature />
+      <OptOutLine url={unsubscribe_url} />
     </EmailLayout>
   )
 }

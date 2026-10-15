@@ -39,7 +39,8 @@ type OrderPlacedEmailProps = {
   /**
    * Human label of how the order is paid, built by the caller from the
    * payment session's provider id — „Dobírka — zaplatíte při převzetí",
-   * „Online platba kartou". Absent when the caller could not tell; the row
+   * „Online platba přes platební bránu ComGate" (brána bere i převod, Apple
+   * Pay a Google Pay — ne jen kartu). Absent when the caller could not tell; the row
    * is simply omitted rather than guessed.
    */
   payment_method?: string
@@ -561,7 +562,9 @@ function OrderPlacedEmailComponent({
               </Link>
               , nebo e-mailem.
             </P>
-          ) : (
+          ) : legal?.all_made_to_order ? null : (
+            // Čistá zakázka: od smlouvy odstoupit nejde (§ 1837 písm. d) OZ,
+            // sekce „Smlouva a poučení") — věta o 14 dnech by jí odporovala.
             <P small style={{ margin: "14px 0 0", color: brand.faint }}>
               Odstoupit od smlouvy můžete do 14 dnů od převzetí (netýká se zboží
               vyrobeného na zakázku).

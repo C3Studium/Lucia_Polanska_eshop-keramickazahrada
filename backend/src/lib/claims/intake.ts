@@ -363,6 +363,29 @@ export const REFUND_REQUEST_AUTO_CANCELLED_SUBJECT: Record<string, string> = {
 }
 
 /**
+ * Okamžik převzetí, který se ukládá k žádosti (`return_request.takeover_at`).
+ *
+ * Odstoupení / vrácení ho má z `withdrawalTimingFor` (počítá z něj lhůtu);
+ * reklamace ho dřív neukládala vůbec (NULL i u doručené objednávky), ač je to
+ * údaj, od kterého běží záruka a podle kterého admin posuzuje včasnost. Teď
+ * stejným výpočtem — doručení ze sledování ČP, osobní odběr, odhad z
+ * odeslání; neodesláno / na cestě = null.
+ */
+export const takeoverSnapshotFor = (
+  kind: string | null,
+  order: Parameters<typeof withdrawalTimingFor>[0],
+  withdrawalTiming?: ReturnType<typeof withdrawalTimingFor> | null
+): Date | null => {
+  if (withdrawalTiming) {
+    return withdrawalTiming.takeover_at
+  }
+  if (kind === "reklamace" || kind === "odstoupeni" || kind === "vraceni") {
+    return withdrawalTimingFor(order).takeover_at
+  }
+  return null
+}
+
+/**
  * Založí žádost se všemi důsledky (fotky, protokol, e-maily). Pravidla
  * (`checkClaimRules`) si volající ověří PŘED tím — tady se už jen zakládá.
  *
@@ -448,6 +471,9 @@ export const createClaim = async (
   // Snapshot převzetí a lhůty pro odstoupení (jen tam, kde dává smysl) —
   // později odeslaná zásilka už lhůtu téhle žádosti nepohne.
   const timing = isWithdrawalKind ? withdrawalTimingFor(order) : null
+  // Převzetí ukládá i reklamace (od něj běží záruka, § 2165 OZ) — stejně
+  // jako u odstoupení, jen bez lhůty a textu do potvrzení.
+  const takeoverAt = takeoverSnapshotFor(kind, order, timing)
   const resolveBy = resolveByFor(kind, now)
 
   const request = await service.createReturnRequests({
@@ -465,7 +491,7 @@ export const createClaim = async (
     requested_resolution:
       kind === "reklamace" ? (input.requested_resolution ?? null) : null,
     withdrawal_deadline: timing?.deadline ?? null,
-    takeover_at: timing?.takeover_at ?? null,
+    takeover_at: takeoverAt,
     // jsonb stores a bare string just fine; the generated DTO merely types the
     // json column as an object, hence the cast.
     items: legacyItemsText as unknown as Record<string, unknown>,

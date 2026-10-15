@@ -8,7 +8,10 @@
  */
 
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { isServiceLine } from "./packaging-lines"
+import { isEmailOptedOut } from "./email-optout"
+import { emailOptOutUrl } from "./email-optout-link"
 import {
   customerName,
   orderLink,
@@ -63,22 +66,44 @@ export const buildReviewEmailData = (order: any): Record<string, unknown> => {
     productLink: link,
     reviewLink: link ? `${link}#hodnoceni` : "",
     googleReviewLink: googleReviewUrl() ?? "",
+    // Prosba jde z oprávněného zájmu bez souhlasu — v každé musí být odkaz,
+    // kterým další odmítne (§ 7 odst. 3 zák. 480/2004 Sb.; OP čl. XIV).
+    unsubscribe_url: emailOptOutUrl(order.email, "review_request"),
   }
 }
 
 /**
+ * Odmítl zákazník prosby o recenzi odkazem z dřívějšího e-mailu? Pak se
+ * neposílají ani z jobu, ani ručně z adminu (námitka platí pro oba).
+ */
+export const reviewRequestOptedOut = (
+  container: MedusaContainer,
+  order: any
+): Promise<boolean> => isEmailOptedOut(container, order?.email, "review_request")
+
+/**
  * Pošle prosbu o recenzi. `key` jiný než výchozí = vědomé opakování (ruční
- * odeslání s `force`) — dedupe jinak druhou prosbu zahodí.
+ * odeslání s `force`) — dedupe jinak druhou prosbu zahodí. Adresa, která
+ * prosby odmítla, se přeskočí (vrací `false`).
  */
 export const sendReviewRequest = async (
   container: MedusaContainer,
   order: any,
   options: { key?: string } = {}
-): Promise<boolean> =>
-  sendCustomerEmail(container, {
+): Promise<boolean> => {
+  if (await reviewRequestOptedOut(container, order)) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .info(
+        `[reviews] Objednávka #${order?.display_id ?? order?.id}: zákazník prosby o recenzi odmítl — neposílám.`
+      )
+    return false
+  }
+  return sendCustomerEmail(container, {
     template: "order-review",
     to: order.email,
     key: options.key ?? reviewRequestKey(order.id),
     orderId: order.id,
     data: buildReviewEmailData(order),
   })
+}

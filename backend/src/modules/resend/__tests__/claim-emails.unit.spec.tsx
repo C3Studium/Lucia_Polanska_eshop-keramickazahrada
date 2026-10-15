@@ -137,7 +137,7 @@ describe("claim e-mails — položky a poškození přepravou", () => {
         resolution: "refund",
         resolvedAt: "10. 10. 2026",
         refundAmount: "629 Kč",
-        refundMethod: "na kartu přes ComGate — na účtu do 3–5 pracovních dnů",
+        refundMethod: "stejnou cestou, jakou jste platili (přes ComGate) — na účtu do 3–5 pracovních dnů",
         refundLines: "Zahradní mísa · 1 ks · 500 Kč\nPoštovné a balné · 129 Kč",
         creditNoteNumber: "DO-2026-3",
         creditNoteUrl: "https://files.example/dobropis-DO-2026-3.pdf",
@@ -145,7 +145,7 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     )
     expect(card).toContain("Zahradní mísa · 1 ks · 500 Kč")
     expect(card).toMatch(/500 Kč<br\s*\/?>/)
-    expect(card).toContain("na kartu přes ComGate")
+    expect(card).toContain("stejnou cestou, jakou jste platili (přes ComGate)")
     expect(card).toContain("č. DO-2026-3")
     expect(card).toContain("https://files.example/dobropis-DO-2026-3.pdf")
     expect(card).toContain("3–5 pracovních dnů")
@@ -171,7 +171,7 @@ describe("claim e-mails — položky a poškození přepravou", () => {
       OrderRefundedEmail({
         orderNumber: "#42",
         refundAmount: "500 Kč",
-        refundMethod: "na kartu přes ComGate — na účtu do 3–5 pracovních dnů",
+        refundMethod: "stejnou cestou, jakou jste platili (přes ComGate) — na účtu do 3–5 pracovních dnů",
         refundLines: "Zahradní mísa · 1 ks · 500 Kč",
         creditNoteNumber: "DO-2026-4",
         creditNoteUrl: "https://files.example/do4.pdf",

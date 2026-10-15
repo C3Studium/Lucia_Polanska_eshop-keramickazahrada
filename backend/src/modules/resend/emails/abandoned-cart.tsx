@@ -8,6 +8,7 @@ import {
   Eyebrow,
   Greeting,
   LedgerEnd,
+  OptOutLine,
   P,
   Signature,
 } from "../components/email-ui"
@@ -26,13 +27,19 @@ interface AbandonedCartEmailProps {
     quantity?: number;
     unit_price?: number;
   }>;
+  /**
+   * Odmítnutí dalších připomenutí jedním kliknutím (`lib/email-optout-link.ts`,
+   * § 7 odst. 3 zák. 480/2004 Sb.). Bez něj se řádek nevykreslí.
+   */
+  unsubscribe_url?: string | null;
 }
 
 function AbandonedCartEmailComponent({
   customer,
   cart_id = "sample-cart-id",
   currency_code = "CZK",
-  items = []
+  items = [],
+  unsubscribe_url = null
 }: AbandonedCartEmailProps) {
 
   const formatter = new Intl.NumberFormat("cs-CZ", {
@@ -156,6 +163,7 @@ function AbandonedCartEmailComponent({
         přehlédnout.
       </P>
       <Signature />
+      <OptOutLine url={unsubscribe_url} />
     </EmailLayout>
   );
 }

@@ -61,7 +61,9 @@ export const retrieveClaim = async (
  */
 export const refundMethodLabel = (method: unknown, account?: unknown): string => {
   if (method === "comgate") {
-    return "na kartu přes ComGate — na účtu do 3–5 pracovních dnů"
+    // Ne „na kartu": ComGate bere i převod, Apple Pay a Google Pay a vrací
+    // stejnou cestou. Šablony poznají tenhle způsob podle slova „ComGate".
+    return "stejnou cestou, jakou jste platili (přes ComGate) — na účtu do 3–5 pracovních dnů"
   }
   const stored = storedRefundAccount(account)
   return stored

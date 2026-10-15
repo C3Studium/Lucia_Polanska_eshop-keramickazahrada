@@ -32,7 +32,12 @@ const secret = (): string => {
   return value
 }
 
-const signToken = (purpose: string, email: string): string =>
+/**
+ * Podpis adresy pod daným účelem. Exportováno pro `email-optout-link.ts`
+ * (odmítnutí recenzí / poklesu ceny / košíku) — stejné tajemství, jiný účel,
+ * takže token jednoho odkazu nikdy neprojde u druhého.
+ */
+export const signToken = (purpose: string, email: string): string =>
   crypto
     .createHmac("sha256", secret())
     .update(`${purpose}:${normalizeEmail(email)}`)
@@ -40,7 +45,7 @@ const signToken = (purpose: string, email: string): string =>
     .slice(0, 32)
 
 /** Constant-time compare, so a token cannot be guessed a character at a time. */
-const verifyToken = (expected: string, token: unknown): boolean => {
+export const verifyToken = (expected: string, token: unknown): boolean => {
   if (typeof token !== "string" || !token.length) {
     return false
   }
@@ -71,7 +76,7 @@ export const verifyConfirmToken = (email: string, token: unknown): boolean =>
  * Where the backend lives, as seen from a mail client. `""` when
  * unconfigured — callers must treat that as "do not send a dead link".
  */
-const backendBase = (): string =>
+export const backendBase = (): string =>
   (
     process.env.BACKEND_PUBLIC_URL ||
     process.env.MEDUSA_BACKEND_URL ||

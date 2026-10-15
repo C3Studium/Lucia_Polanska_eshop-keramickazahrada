@@ -253,6 +253,11 @@ const medusaConfig = {
       resolve: "./src/modules/price-history",
     },
     {
+      // Odmítnuté e-maily z oprávněného zájmu (recenze, pokles ceny, košík) —
+      // odkaz v patičce, § 7 odst. 3 zák. 480/2004 Sb. Viz lib/email-optout.ts.
+      resolve: "./src/modules/email-optout",
+    },
+    {
       resolve: "./src/modules/bundled-product",
     },
     {

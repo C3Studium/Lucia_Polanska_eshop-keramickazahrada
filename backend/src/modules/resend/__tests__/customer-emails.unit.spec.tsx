@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { orderPlacedEmail } from "../emails/order-placed"
 import { abandonedCartEmail } from "../emails/abandoned-cart"
+import { OrderReviewEmail } from "../emails/order-review"
+import { PriceDropEmail } from "../emails/price-drop"
 import { PaymentPendingEmail } from "../emails/payment-pending"
 import { PaymentRefundedEmail } from "../emails/payment-refunded"
 import { OrderRefundedEmail } from "../emails/order-refunded"
@@ -219,6 +221,31 @@ describe("customer e-mail templates after the audit", () => {
         expect(pure).not.toContain("do 14 dnů od převzetí")
       })
 
+      it("a pure commission's „Správa objednávky“ does not promise a 14-day withdrawal", () => {
+        const refund_url = "https://keramickazahrada.cz/cz/order/order_01TEST/refund?token=abc"
+        const pure = renderToStaticMarkup(
+          orderPlacedEmail({
+            order,
+            refund_url,
+            // Workflow čisté zakázce odkaz na odstoupení nedá (§ 1837 písm. d).
+            withdrawal_url: null,
+            legal: legal(true, {
+              made_to_order_items: ["Domovní číslo na zakázku"],
+              all_made_to_order: true,
+            }),
+          }) as React.ReactElement
+        )
+        expect(pure).toContain("Správa objednávky")
+        expect(pure).toContain("nelze odstoupit ve 14denní lhůtě")
+        expect(pure).not.toContain("Odstoupit od smlouvy můžete do 14 dnů")
+
+        // Běžná objednávka bez odkazu (nenastavený storefront) větu dál má.
+        const regular = renderToStaticMarkup(
+          orderPlacedEmail({ order, refund_url, withdrawal_url: null, legal: legal(true) }) as React.ReactElement
+        )
+        expect(regular).toContain("Odstoupit od smlouvy můžete do 14 dnů")
+      })
+
       it("renders nothing of the section for an old notification row without legal data", () => {
         const html = renderToStaticMarkup(orderPlacedEmail({ order }) as React.ReactElement)
         expect(html).not.toContain("Smlouva a poučení")
@@ -258,6 +285,34 @@ describe("customer e-mail templates after the audit", () => {
       )
       expect(html).toContain("450")
       expect(html).not.toContain("4,50")
+    })
+  })
+
+  // § 7 odst. 3 zák. 480/2004 Sb.: v každém e-mailu z oprávněného zájmu
+  // odkaz, kterým další jedním kliknutím odmítnete (OP čl. XIV, Zásady).
+  describe("opt-out line (review request, price drop, abandoned cart)", () => {
+    const url = "https://api.example.cz/email-optout?email=jana%40example.cz&kind=x&token=t"
+    const render = (element: unknown) => renderToStaticMarkup(element as React.ReactElement)
+    const cases: Array<[string, (props: { unsubscribe_url?: string | null }) => unknown]> = [
+      ["order-review", (props) => OrderReviewEmail({ orderNumber: "#42", ...props })],
+      ["price-drop", (props) => PriceDropEmail({ productName: "Mísa", newPrice: "900 Kč", ...props })],
+      ["abandoned-cart", (props) => abandonedCartEmail({ cart_id: "cart_1", items: [], ...props })],
+    ]
+
+    it.each(cases)("%s carries the one-click opt-out link when given", (_name, template) => {
+      const html = render(template({ unsubscribe_url: url }))
+      expect(html).toContain("Nechcete tyto e-maily?")
+      expect(html).toContain("Odhlásit je jedním kliknutím")
+      expect(html).toContain(url.replace(/&/g, "&amp;"))
+    })
+
+    it.each(cases)("%s renders no dead link without one", (_name, template) => {
+      expect(render(template({}))).not.toContain("Odhlásit je jedním kliknutím")
+      expect(render(template({ unsubscribe_url: null }))).not.toContain("Nechcete tyto e-maily?")
+    })
+
+    it("price-drop no longer points to a non-existent account setting", () => {
+      expect(render(PriceDropEmail({}))).not.toContain("v nastavení účtu")
     })
   })
 

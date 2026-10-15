@@ -5,6 +5,12 @@ import {
 import { Modules } from "@medusajs/framework/utils"
 import { CartDTO, CustomerDTO } from "@medusajs/framework/types"
 import { EmailTemplates } from "../../modules/resend/service"
+import {
+  emailOptOutStore,
+  isInOptOutSet,
+  optedOutEmails,
+} from "../../lib/email-optout"
+import { emailOptOutUrl } from "../../lib/email-optout-link"
 
 type SendAbandonedNotificationsStepInput = {
   carts: (CartDTO & {
@@ -42,6 +48,23 @@ export const jePrechodna = (chyba: string) =>
     chyba
   )
 
+/**
+ * Košíky, jejichž adresa připomenutí odmítla odkazem z dřívějšího e-mailu
+ * (§ 7 odst. 3 zák. 480/2004 Sb.), se neposílají — a počítají se mezi
+ * vyřízené, takže je razítko `abandoned_notification` vyřadí i z dalších nocí.
+ */
+export const rozdelPodleOdmitnuti = <T extends { email?: string | null }>(
+  kosiky: T[],
+  odmitnuteAdresy: Set<string>
+): { kOdeslani: T[]; odmitnute: T[] } => {
+  const kOdeslani: T[] = []
+  const odmitnute: T[] = []
+  for (const kosik of kosiky) {
+    ;(isInOptOutSet(odmitnuteAdresy, kosik.email) ? odmitnute : kOdeslani).push(kosik)
+  }
+  return { kOdeslani, odmitnute }
+}
+
 export const sendAbandonedNotificationsStep = createStep(
   "send-abandoned-notifications",
   async (input: SendAbandonedNotificationsStepInput, { container }) => {
@@ -73,12 +96,32 @@ export const sendAbandonedNotificationsStep = createStep(
           quantity: item.quantity,
           unit_price: item.unit_price,
           thumbnail: item.thumbnail,
-        }))
+        })),
+        // Odmítnutí dalších připomenutí jedním kliknutím (Zásady, § 7 odst. 3
+        // zák. 480/2004 Sb.). Bez adresy backendu `null` → šablona řádek vynechá.
+        unsubscribe_url: emailOptOutUrl(cart.email, "abandoned_cart"),
       }
     })
 
     const vyrizeneKosiky: string[] = []
     const kZopakovaniKosiky: string[] = []
+
+    const { kOdeslani, odmitnute } = rozdelPodleOdmitnuti(
+      input.carts,
+      await optedOutEmails(
+        emailOptOutStore(container),
+        input.carts.map((cart) => cart.email),
+        "abandoned_cart"
+      )
+    )
+    for (const cart of odmitnute) {
+      vyrizeneKosiky.push(cart.id)
+    }
+    if (odmitnute.length) {
+      logger.info(
+        `[abandoned-cart] ${odmitnute.length} košíků přeskočeno — adresa připomenutí odmítla.`
+      )
+    }
 
     /*
      * Po jednom košíku, ne celé pole naráz.
@@ -91,8 +134,8 @@ export const sendAbandonedNotificationsStep = createStep(
      *
      * Jeden košík = jedno volání = jasný výsledek.
      */
-    for (let i = 0; i < input.carts.length; i += VLNA) {
-      const vlna = input.carts.slice(i, i + VLNA)
+    for (let i = 0; i < kOdeslani.length; i += VLNA) {
+      const vlna = kOdeslani.slice(i, i + VLNA)
 
       await Promise.all(
         vlna.map(async (cart) => {
@@ -124,7 +167,7 @@ export const sendAbandonedNotificationsStep = createStep(
         })
       )
 
-      if (i + VLNA < input.carts.length) {
+      if (i + VLNA < kOdeslani.length) {
         await pockej(PAUZA_MS)
       }
     }

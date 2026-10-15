@@ -30,7 +30,7 @@ import s from "./styles/oder-complete.module.scss"
 import { pickupPointLabel } from "@lib/util/pickup-point"
 import { isPackagingLine, productLines, withPackagingUnderProducts } from "@lib/util/packaging"
 import PackagingLine, { PackagingNote, packagingFor } from "@modules/common/components/packaging-line"
-import { packagingSubtotal } from "@lib/util/packaging"
+import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -76,6 +76,9 @@ export default async function OrderCompletedTemplate({
       amount: amount ?? 0,
       currency_code: order.currency_code,
     })
+  // Rozpad mezisoučtu v Souhrnu (výrobky / balné / doběrečné).
+  const packaging = packagingSubtotal(order.items)
+  const dobirkaFee = dobirkaFeeSubtotal(order.items)
 
   // Balné (lib/util/packaging.ts) hned pod svým výrobkem.
   const items = withPackagingUnderProducts(
@@ -509,17 +512,26 @@ export default async function OrderCompletedTemplate({
                     <span>Mezisoučet</span>
                     <strong>{money(order.item_total)}</strong>
                   </div>
-                  {/* Rozpad mezisoučtu: výrobky a balné, odsazeně. */}
-                  {packagingSubtotal(order.items) !== null && (
+                  {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně.
+                      Doběrečné do „Výrobky" nepatří — vlastní řádek. */}
+                  {(packaging !== null || dobirkaFee !== null) && (
                     <>
                     <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
                       <span>Výrobky</span>
-                      <strong style={{ fontWeight: 300 }}>{money(order.item_total - (packagingSubtotal(order.items) ?? 0))}</strong>
+                      <strong style={{ fontWeight: 300 }}>{money(order.item_total - (packaging ?? 0) - (dobirkaFee ?? 0))}</strong>
                     </div>
-                    <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
-                      <span>Balné</span>
-                      <strong style={{ fontWeight: 300 }}>{money(packagingSubtotal(order.items) ?? 0)}</strong>
-                    </div>
+                    {packaging !== null && (
+                      <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                        <span>Balné</span>
+                        <strong style={{ fontWeight: 300 }}>{money(packaging)}</strong>
+                      </div>
+                    )}
+                    {dobirkaFee !== null && (
+                      <div style={{ paddingLeft: ".9rem", opacity: .78, fontSize: ".9em" }}>
+                        <span>Doběrečné</span>
+                        <strong style={{ fontWeight: 300 }}>{money(dobirkaFee)}</strong>
+                      </div>
+                    )}
                     </>
                   )}
                   {order.discount_total > 0 && (

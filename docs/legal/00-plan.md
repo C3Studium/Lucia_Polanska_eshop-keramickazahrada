@@ -108,7 +108,11 @@ starý storefront by dostal 400.
 1. Backend: migrace (`medusa db:migrate`): course `Migration20261014120000` (souhlasy),
    return-request `Migration20261014200000` (submitted_at, channel, takeover_at),
    price-history `Migration20261014153217`, product-review `Migration20261014153743`
-   (verified_purchase + doplnění u starých recenzí).
+   (verified_purchase + doplnění u starých recenzí), nový modul email-optout
+   `Migration20261015120000` (tabulka `email_opt_out` — odmítnutí proseb o recenzi, poklesu
+   ceny a připomenutí košíku; modul je registrovaný v `medusa-config.js`, bez migrace by job
+   recenzí i poklesu cen padal na chybějící tabulku). Odkaz v e-mailech potřebuje
+   `BACKEND_PUBLIC_URL` (nebo `MEDUSA_BACKEND_URL`), jinak se řádek s odkazem nevykreslí.
 2. Backend jednou: `npx medusa exec ./src/scripts/backfill-price-history.ts`.
 3. Produkt poukazu „1 Kč“: `npx medusa exec ./src/scripts/legal-voucher-product.ts`
    (suchý běh), pak s `--apply`; popis upravit ručně (OPEN_QUESTIONS #13).

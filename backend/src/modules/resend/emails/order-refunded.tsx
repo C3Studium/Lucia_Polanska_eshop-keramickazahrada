@@ -19,7 +19,7 @@ interface OrderRefundedEmailProps {
   refundAmount?: string;
   /** Only when somebody actually stated one — no fabricated default. */
   refundReason?: string;
-  /** „na kartu přes ComGate — na účtu do 3–5 pracovních dnů" / „ručně" (§13.3). */
+  /** „stejnou cestou, jakou jste platili (přes ComGate) — na účtu do 3–5 pracovních dnů" / „ručně" (§13.3). */
   refundMethod?: string;
   /** Košík vrácení (§13.2) — řádek za řádek („název · N ks · částka"). */
   refundLines?: string;

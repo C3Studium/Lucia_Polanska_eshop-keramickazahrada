@@ -1,6 +1,6 @@
 import { blocksWithdrawal } from "../claims/constants"
 import { withdrawalGate } from "../claims/context"
-import { checkClaimRules, type ClaimIntakeInput } from "../claims/intake"
+import { checkClaimRules, takeoverSnapshotFor, type ClaimIntakeInput } from "../claims/intake"
 import { ITEMS_MADE_TO_ORDER_RETURN, ITEMS_NOT_IN_ORDER, ITEMS_QUANTITY_TOO_HIGH } from "../claims/line-items"
 import { isMadeToOrderItem } from "../claims/made-to-order"
 import {
@@ -353,6 +353,10 @@ describe("texty do potvrzení — pražský čas, maskovaný účet, adresa", ()
     expect(refundMethodTextFor("account", "19-2000145399/0800")).toContain("••••5399/0800")
     expect(refundMethodTextFor("account", "19-2000145399/0800")).not.toContain("2000145399")
     expect(refundMethodTextFor("card")).toMatch(/Stejným platebním prostředkem/)
+    // ComGate bere i převod a Apple/Google Pay — slib „na kartu" by nebyl pravda.
+    expect(refundMethodTextFor("card")).toContain("stejnou cestou, jakou jste platili (přes ComGate)")
+    expect(refundMethodTextFor("card")).not.toMatch(/na kartu/)
+    expect(refundMethodTextFor("account")).not.toMatch(/kartou/)
     expect(refundMethodTextFor("none")).toMatch(/není co vracet/)
   })
 
@@ -364,5 +368,39 @@ describe("texty do potvrzení — pražský čas, maskovaný účet, adresa", ()
     expect(withdrawalReturnAddress("Lucie Polanská\nJiná 1\n397 01 Písek")).toBe(
       "Lucie Polanská, Jiná 1, 397 01 Písek"
     )
+  })
+})
+
+describe("takeoverSnapshotFor — převzetí ukládané k žádosti", () => {
+  const delivered = () =>
+    order({
+      fulfillments: [
+        { shipped_at: SHIPPED, delivered_at: "2026-10-03T12:00:00Z", canceled_at: null },
+      ],
+    })
+
+  it("reklamace u doručené objednávky ukládá převzetí stejně jako odstoupení", () => {
+    const complaint = takeoverSnapshotFor("reklamace", delivered())
+    expect(complaint?.toISOString()).toBe("2026-10-03T12:00:00.000Z")
+    const withdrawal = takeoverSnapshotFor("odstoupeni", delivered(), withdrawalTimingFor(delivered()))
+    expect(withdrawal?.toISOString()).toBe(complaint?.toISOString())
+  })
+
+  it("reklamace: sledování ČP i odhad z odeslání; neodesláno / na cestě = null", () => {
+    expect(
+      takeoverSnapshotFor(
+        "reklamace",
+        shipped({ parcel_tracking: { delivered_at: "2026-10-05T09:00:00Z", done: true } })
+      )?.toISOString()
+    ).toBe("2026-10-05T09:00:00.000Z")
+    expect(takeoverSnapshotFor("reklamace", shipped())).toBeInstanceOf(Date)
+    expect(takeoverSnapshotFor("reklamace", order())).toBeNull()
+    expect(
+      takeoverSnapshotFor("reklamace", shipped({ parcel_tracking: { delivered_at: null, done: false } }))
+    ).toBeNull()
+  })
+
+  it("žádost bez druhu převzetí neukládá", () => {
+    expect(takeoverSnapshotFor(null, delivered())).toBeNull()
   })
 })

@@ -15,6 +15,12 @@ import {
   productLink,
   sendCustomerEmail,
 } from "../lib/customer-email"
+import {
+  emailOptOutStore,
+  isInOptOutSet,
+  optedOutEmails,
+} from "../lib/email-optout"
+import { emailOptOutUrl } from "../lib/email-optout-link"
 
 /**
  * The morning price check for objects people keep in their oblíbených
@@ -115,6 +121,7 @@ export default async function watchPriceDrops(container: MedusaContainer) {
   // Variants whose price dropped and whose watchers were mailed.
   let droppedAndMailed = 0
   let sentEmails = 0
+  let skippedOptOut = 0
 
   for (const variant of variants as any[]) {
     try {
@@ -144,9 +151,22 @@ export default async function watchPriceDrops(container: MedusaContainer) {
           ? await customerModule.listCustomers({ id: customerIds })
           : []
 
+        // Kdo upozornění odmítl odkazem z dřívějšího e-mailu (§ 7 odst. 3
+        // zák. 480/2004 Sb.). Chyba dotazu sem nepustí nikoho — spadne do
+        // catch níž a snímek se neposune, takže se pokles zítra zkusí znovu.
+        const refused = await optedOutEmails(
+          emailOptOutStore(container),
+          customers.map((customer) => customer.email),
+          "price_drop"
+        )
+
         let mailedSomeone = false
 
         for (const customer of customers) {
+          if (isInOptOutSet(refused, customer.email)) {
+            skippedOptOut += 1
+            continue
+          }
           const name = [customer.first_name, customer.last_name]
             .filter(Boolean)
             .join(" ")
@@ -179,6 +199,8 @@ export default async function watchPriceDrops(container: MedusaContainer) {
               // This drop has no known expiry, so say so explicitly rather
               // than let the mock promise one.
               timeLimited: false,
+              // Odmítnutí dalších upozornění jedním kliknutím (OP čl. XIV).
+              unsubscribe_url: emailOptOutUrl(customer.email, "price_drop"),
             },
           })
 
@@ -260,6 +282,11 @@ export default async function watchPriceDrops(container: MedusaContainer) {
 
     logger.info(
       `[price-drop] Ceny klesly u ${droppedAndMailed} objektů, odesláno ${sentEmails} e-mailů.`
+    )
+  }
+  if (skippedOptOut > 0) {
+    logger.info(
+      `[price-drop] ${skippedOptOut}× přeskočeno — zákazník upozornění na pokles ceny odmítl.`
     )
   }
 }

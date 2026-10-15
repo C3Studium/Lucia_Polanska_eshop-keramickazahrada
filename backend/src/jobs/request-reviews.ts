@@ -3,6 +3,11 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { getMerchantSettings } from "../lib/merchant-settings"
 import { REVIEW_ORDER_FIELDS, sendReviewRequest } from "../lib/review-request"
 import {
+  emailOptOutStore,
+  isInOptOutSet,
+  optedOutEmails,
+} from "../lib/email-optout"
+import {
   claimVerdict,
   isInReviewWindow,
   isPickupOrder,
@@ -119,12 +124,21 @@ export default async function requestReviews(container: MedusaContainer) {
 
   let sent = 0
   let deferred = 0
+  let optedOut = 0
+
+  // Kdo prosby o recenzi odmítl odkazem z dřívějšího e-mailu (§ 7 odst. 3
+  // zák. 480/2004 Sb.) — jedním dotazem pro celý běh. `sendReviewRequest`
+  // to hlídá i sám (ruční odeslání z adminu).
+  const refused = await optedOutEmails(
+    emailOptOutStore(container),
+    (orders as any[]).map((order) => order?.email),
+    "review_request"
+  )
 
   for (const order of (orders as any[]).slice(0, MAX_PER_RUN)) {
     if (!order?.id || order.status === "canceled") {
       continue
     }
-
     const receivedAt = receivedAtFor({
       tracking: trackingByOrder.get(order.id) ?? null,
       shipped_at: latestShippedAt(order.fulfillments),
@@ -143,6 +157,11 @@ export default async function requestReviews(container: MedusaContainer) {
       continue
     }
 
+    if (isInOptOutSet(refused, order.email)) {
+      optedOut++
+      continue
+    }
+
     // Data šablony i dedupe klíč (per objednávka) sdílí `lib/review-request`
     // s ručním odesláním z adminu.
     const ok = await sendReviewRequest(container, order)
@@ -152,11 +171,11 @@ export default async function requestReviews(container: MedusaContainer) {
     }
   }
 
-  if (sent || deferred) {
+  if (sent || deferred || optedOut) {
     logger.info(
       `[reviews] Odesláno ${sent} proseb o recenzi${
         deferred ? `, ${deferred} odloženo kvůli otevřené reklamaci` : ""
-      }.`
+      }${optedOut ? `, ${optedOut} přeskočeno — zákazník prosby odmítl` : ""}.`
     )
   }
 }

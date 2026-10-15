@@ -16,6 +16,8 @@ import {
 import {
   COURSE_CANCELLATION_TERMS,
   COURSE_NO_WITHDRAWAL_NOTICE,
+  COURSE_TERMS_ARTICLE,
+  hasCourseCancellationTerms,
 } from "../../course/legal"
 
 const linkStyle = { color: brand.ink, textDecoration: "underline" } as const
@@ -38,10 +40,21 @@ interface CourseReservationConfirmedEmailProps {
   invoicePdfUrl?: string
   /** Poučení o výjimce z odstoupení (§ 1837 písm. j) OZ) — `modules/course/legal.ts`. */
   noWithdrawalNotice?: string
-  /** Storno podmínky kurzů — `modules/course/legal.ts` (zatím zástupný text). */
+  /**
+   * Storno podmínky kurzů — `modules/course/legal.ts`. Prázdné nebo se
+   * `[[DOPLNIT` = ještě nedoplněné: šablona je necituje a odkáže na OP čl. X.
+   */
   cancellationTerms?: string
   /** Obchodní podmínky, kapitola Kurzy (`…/smluvni-podminky#kurzy`). */
   termsLink?: string
+  /** Znění OP, se kterým zákazník rezervoval („15. 10. 2026"). */
+  termsVersionLabel?: string
+  /** Zveřejněné PDF toho znění — prázdné, když není (pracovní / nenahrané). */
+  termsPdfUrl?: string
+  /** PDF obchodních podmínek jde s e-mailem jako příloha. */
+  termsAttached?: boolean
+  /** Resend přílohu odmítl a e-mail odešel bez ní (doplní provider). */
+  attachments_failed?: boolean
 }
 
 function CourseReservationConfirmedEmailComponent({
@@ -60,8 +73,16 @@ function CourseReservationConfirmedEmailComponent({
   noWithdrawalNotice = COURSE_NO_WITHDRAWAL_NOTICE,
   cancellationTerms = COURSE_CANCELLATION_TERMS,
   termsLink = "",
+  termsVersionLabel = "",
+  termsPdfUrl = "",
+  termsAttached = false,
+  attachments_failed = false,
 }: CourseReservationConfirmedEmailProps) {
   const paid = variant === "paid"
+  // Zástupný text `[[DOPLNIT …]]` zákazník nikdy neuvidí.
+  const termsReady = hasCourseCancellationTerms(cancellationTerms)
+  const attached = termsAttached && !attachments_failed
+  const versionSuffix = termsVersionLabel ? ` (znění od ${termsVersionLabel})` : ""
   return (
     <EmailLayout
       preview={`Rezervace kurzu ${courseTitle} — ${courseDate}.`}
@@ -126,16 +147,51 @@ function CourseReservationConfirmedEmailComponent({
 
       {/* Potvrzení smlouvy v textové podobě (§ 1827 odst. 2 OZ): poučení,
           že od kurzu v pevném termínu nelze odstoupit do 14 dnů (§ 1837
-          písm. j) OZ), a storno podmínky, které platí místo toho. */}
+          písm. j) OZ), a storno podmínky, které platí místo toho. Dokud
+          nejsou doplněné, odkaz na jejich místo v OP — ne zástupný text. */}
       <P>
         <strong>Storno podmínky.</strong> {noWithdrawalNotice}
       </P>
-      <P>{cancellationTerms}</P>
-      {termsLink ? (
+      {termsReady ? (
+        <>
+          <P>{cancellationTerms}</P>
+          {termsLink ? (
+            <P small>
+              Celé znění najdete v{" "}
+              <Link href={termsLink} style={linkStyle}>
+                obchodních podmínkách (kapitola Kurzy)
+              </Link>
+              .
+            </P>
+          ) : null}
+        </>
+      ) : (
+        <P>
+          Storno podmínky kurzů jsou v obchodních podmínkách, {COURSE_TERMS_ARTICLE}
+          {termsLink ? (
+            <>
+              {" — "}
+              <Link href={termsLink} style={linkStyle}>
+                zobrazit na webu
+              </Link>
+            </>
+          ) : null}
+          .
+        </P>
+      )}
+      {/* Obchodní podmínky té verze, se kterou zákazník rezervoval — PDF
+          v příloze, nebo aspoň odkaz, když příloha neprošla. */}
+      {attached ? (
         <P small>
-          Celé znění najdete v{" "}
-          <Link href={termsLink} style={linkStyle}>
-            obchodních podmínkách (kapitola Kurzy)
+          Obchodní podmínky{versionSuffix}, podle kterých rezervace platí,
+          máte v příloze tohoto e-mailu (PDF).
+        </P>
+      ) : termsPdfUrl ? (
+        <P small>
+          Obchodní podmínky{versionSuffix}, podle kterých rezervace platí, si
+          můžete{" "}
+          <Link href={termsPdfUrl} style={linkStyle}>
+            stáhnout jako PDF
           </Link>
           .
         </P>

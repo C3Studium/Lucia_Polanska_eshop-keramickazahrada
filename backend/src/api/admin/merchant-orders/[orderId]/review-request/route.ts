@@ -5,6 +5,7 @@ import { claimVerdict } from "../../../../../lib/review-request-rules"
 import {
   REVIEW_ORDER_FIELDS,
   reviewRequestKey,
+  reviewRequestOptedOut,
   sendReviewRequest,
 } from "../../../../../lib/review-request"
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return-request"
@@ -57,6 +58,15 @@ export const POST = async (req: MedusaRequest<Body>, res: MedusaResponse) => {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "K objednávce běží reklamace — prosbu pošlete až po jejím vyřízení (nebo vědomě s force)."
+    )
+  }
+
+  // Námitka zákazníka (odkaz „Odhlásit je jedním kliknutím") platí i pro
+  // ruční odeslání — `force` ji nepřebije (§ 7 odst. 3 zák. 480/2004 Sb.).
+  if (await reviewRequestOptedOut(req.scope, order)) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Zákazník prosby o recenzi odmítl odkazem z e-mailu — neposíláme je."
     )
   }
 

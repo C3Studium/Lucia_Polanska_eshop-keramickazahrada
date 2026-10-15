@@ -2,7 +2,7 @@
 
 import { convertToLocale } from "@lib/util/money"
 import { PLATCE_DPH } from "@lib/util/dph"
-import { packagingSubtotal } from "@lib/util/packaging"
+import { dobirkaFeeSubtotal, packagingSubtotal } from "@lib/util/packaging"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { ShippingFrom } from "@modules/cart/shipping-from"
 import React from "react"
@@ -104,8 +104,11 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
     shipping_total,
   } = totals
   const subtotalAmount = item_subtotal ?? item_total ?? 0
-  // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.).
+  // Rozpad mezisoučtu „Výrobky / Balné" (Matěj 12. 10.). Doběrečné je taky
+  // položka košíku (je v mezisoučtu), ale výrobek to není — vlastní řádek.
   const packaging = packagingSubtotal(totals.items)
+  const dobirkaFee = dobirkaFeeSubtotal(totals.items)
+  const showBreakdown = packaging !== null || dobirkaFee !== null
   /* Bez zvolené dopravy je `shipping_total` 0 — to není „zdarma", to je
      „ještě nevíme". `shipping_methods` neposílá každý volající; kdo ho
      nemá, chová se jako dřív. */
@@ -131,21 +134,36 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals, shippingFrom }) => {
             })}
           </span>
         </div>
-        {/* Rozpad mezisoučtu: výrobky a balné, odsazeně pod ním. */}
-        {packaging !== null && (
+        {/* Rozpad mezisoučtu: výrobky, balné a doběrečné, odsazeně pod ním.
+            „Výrobky" jsou mezisoučet BEZ obou poplatků — dřív se 39 Kč
+            doběrečného počítalo do výrobků. */}
+        {showBreakdown && (
           <div className={styles.breakdown} data-testid="cart-subtotal-breakdown">
             <div className={styles.subRow}>
               <span>Výrobky</span>
-              <span>
-                {convertToLocale({ amount: subtotalAmount - packaging, currency_code })}
+              <span data-testid="cart-products-subtotal">
+                {convertToLocale({
+                  amount: subtotalAmount - (packaging ?? 0) - (dobirkaFee ?? 0),
+                  currency_code,
+                })}
               </span>
             </div>
-            <div className={styles.subRow}>
-              <span>Balné</span>
-              <span data-testid="cart-packaging">
-                {convertToLocale({ amount: packaging, currency_code })}
-              </span>
-            </div>
+            {packaging !== null && (
+              <div className={styles.subRow}>
+                <span>Balné</span>
+                <span data-testid="cart-packaging">
+                  {convertToLocale({ amount: packaging, currency_code })}
+                </span>
+              </div>
+            )}
+            {dobirkaFee !== null && (
+              <div className={styles.subRow}>
+                <span>Doběrečné</span>
+                <span data-testid="cart-dobirka-fee">
+                  {convertToLocale({ amount: dobirkaFee, currency_code })}
+                </span>
+              </div>
+            )}
           </div>
         )}
         {!!(item_discount_total ?? discount_total) && (

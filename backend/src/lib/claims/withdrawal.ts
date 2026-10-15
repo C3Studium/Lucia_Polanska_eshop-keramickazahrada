@@ -513,14 +513,16 @@ export const refundMethodTextFor = (
   kind: RefundMethodKind,
   accountDisplay?: string | null
 ): string => {
+  // „card" = zaplaceno přes ComGate — a ta bere i převod, Apple Pay
+  // a Google Pay, takže ne „na kartu", ale stejnou cestou přes bránu.
   if (kind === "card") {
-    return "Stejným platebním prostředkem, jakým jste platili — zpět na kartu (platba přes ComGate)."
+    return "Stejným platebním prostředkem, jakým jste platili — vrátíme je stejnou cestou, jakou jste platili (přes ComGate)."
   }
   if (kind === "account") {
     const masked = maskRefundAccount(accountDisplay)
     return masked
-      ? `Převodem na účet ${masked}, který jste uvedli (objednávku jste neplatili kartou).`
-      : "Převodem na účet — objednávku jste neplatili kartou."
+      ? `Převodem na účet ${masked}, který jste uvedli (objednávku jste neplatili online přes ComGate).`
+      : "Převodem na účet — objednávku jste neplatili online přes ComGate."
   }
   return "Zatím jste nic nezaplatili — není co vracet."
 }

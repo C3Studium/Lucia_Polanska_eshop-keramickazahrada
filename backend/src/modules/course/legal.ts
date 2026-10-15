@@ -13,7 +13,26 @@
 /** Storno podmínky kurzů do e-mailů. */
 export const COURSE_CANCELLATION_TERMS = "[[DOPLNIT: storno podmínky kurzů]]"
 
-/** Poučení o výjimce z práva odstoupit (§ 1837 písm. j) OZ). */
+/**
+ * Kapitola obchodních podmínek o kurzech (storefront `obchodni-podminky`,
+ * sekce `kurzy` — „X. Keramické kurzy"). Při přečíslování OP změnit i tady.
+ */
+export const COURSE_TERMS_ARTICLE = "čl. X Keramické kurzy"
+
+/**
+ * Jsou storno podmínky opravdu doplněné? Dokud text nese `[[DOPLNIT`, e-mail
+ * ho necituje — zástupný text zákazníkovi nikdy — a místo něj odkáže na
+ * `COURSE_TERMS_ARTICLE`.
+ */
+export const hasCourseCancellationTerms = (
+  text: string | null | undefined = COURSE_CANCELLATION_TERMS
+): boolean =>
+  typeof text === "string" && text.trim().length > 0 && !text.includes("[[DOPLNIT")
+
+/**
+ * Poučení o výjimce z práva odstoupit (§ 1837 písm. j) OZ). „Podle storno
+ * podmínek" platí i bez doplněného znění — e-mail pak odkáže na OP čl. X.
+ */
 export const COURSE_NO_WITHDRAWAL_NOTICE =
   "Kurz se koná v pevném termínu, a proto od rezervace nelze odstoupit do 14 dnů (§ 1837 písm. j) občanského zákoníku). Zrušit ji můžete podle storno podmínek."
 

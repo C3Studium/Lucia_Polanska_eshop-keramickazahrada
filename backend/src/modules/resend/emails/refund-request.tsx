@@ -401,7 +401,7 @@ const mockRefundRequest: RefundRequestEmailProps = {
   goodsShipped: true,
   returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
   refundMethodText:
-    "Stejným platebním prostředkem, jakým jste platili — zpět na kartu (platba přes ComGate).",
+    "Stejným platebním prostředkem, jakým jste platili — vrátíme je stejnou cestou, jakou jste platili (přes ComGate).",
   deadlineText: "nejpozději do 29. 10. 2026 (14 dnů od odstoupení)",
   orderLink: "https://keramickazahrada.cz/orders/12345",
   claimsUrl: "https://keramickazahrada.cz/cz/order/order_12345/claims?token=abc",

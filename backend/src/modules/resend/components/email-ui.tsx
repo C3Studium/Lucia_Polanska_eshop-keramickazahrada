@@ -367,6 +367,30 @@ export const Signature = () => (
 )
 
 /**
+ * „Nechcete tyto e-maily? Odhlásit je jedním kliknutím" — povinný řádek
+ * e-mailů z oprávněného zájmu (prosba o recenzi, pokles ceny, košík;
+ * § 7 odst. 3 zákona č. 480/2004 Sb.). Odkaz staví `lib/email-optout-link.ts`;
+ * bez něj (nenastavená adresa backendu) se řádek nevykreslí — žádný mrtvý odkaz.
+ */
+export const OptOutLine = ({ url }: { url?: string | null }) =>
+  url ? (
+    <Text
+      style={{
+        fontFamily: brand.sans,
+        fontSize: "12px",
+        lineHeight: "18px",
+        color: brand.faint,
+        margin: "20px 0 0",
+      }}
+    >
+      Nechcete tyto e-maily?{" "}
+      <Link href={url} style={{ color: brand.muted, textDecoration: "underline" }}>
+        Odhlásit je jedním kliknutím
+      </Link>
+    </Text>
+  ) : null
+
+/**
  * Identita prodávající a odkazy na právní dokumenty v patičce každého
  * e-mailu. Údaje jdou z manifestu právních dokumentů (`lib/legal`, generuje
  * `pnpm legal:build` z týchž faktů jako PDF a web), takže patička nemůže
