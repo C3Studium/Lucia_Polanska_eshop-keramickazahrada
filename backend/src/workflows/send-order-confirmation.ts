@@ -58,7 +58,16 @@ const resolveOrderLegalStep = createStep(
       )
     }
     for (const doc of [legal.terms, legal.withdrawal]) {
-      if (doc && !doc.pdf_url) {
+      if (doc && !doc.in_manifest) {
+        // Zákazník souhlasil s verzí, kterou manifest nezná (vydaná ve Studiu
+        // po posledním legal:build). E-mail ji jmenuje datem a odkazem — jiné
+        // znění místo ní se posílat nesmí.
+        logger.warn(
+          `[order-placed] „${doc.title}" verze ${doc.version} (uložená u objednávky) v manifestu ` +
+            `backendu není — potvrzení objednávky #${order?.display_id ?? "?"} ji uvádí bez PDF, ` +
+            `jen s odkazem na web. Spusťte pnpm legal:build (a legal:upload) a nasaďte backend.`
+        )
+      } else if (doc && !doc.pdf_url) {
         logger.warn(
           `[order-placed] „${doc.title}" verze ${doc.version} ` +
             (doc.pdf_draft

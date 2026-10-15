@@ -95,6 +95,19 @@ export const formatVersionDate = (version: string): string => {
   return y && m && d ? `${d}. ${m}. ${y}` : version
 }
 
+/**
+ * Je to verze dokumentu tak, jak ji storefront ukládá k objednávce
+ * a rezervaci — `YYYY-MM-DD` se skutečným datem? Předregistrová hodnota
+ * „2026-08" ani nesmysl ne.
+ */
+export const isLegalVersion = (value: unknown): value is string => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 /** Verze dokumentu od nejnovější. */
 export const listVersions = (
   slug: LegalSlug,

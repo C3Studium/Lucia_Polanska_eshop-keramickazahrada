@@ -942,6 +942,7 @@ export default () => (
         page_url: "https://keramickazahrada.cz/cz/smluvni-podminky/2026-10-15",
         pdf_url: "https://img.matejforejt.com/legal/obchodni-podminky-2026-10-15.pdf",
         pdf_draft: false,
+        in_manifest: true,
         attached: true,
       },
       withdrawal: {
@@ -952,6 +953,7 @@ export default () => (
         page_url: "https://keramickazahrada.cz/cz/odstoupeni-od-smlouvy",
         pdf_url: "https://img.matejforejt.com/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
         pdf_draft: false,
+        in_manifest: true,
         attached: true,
       },
       terms_url: "https://keramickazahrada.cz/cz/smluvni-podminky",

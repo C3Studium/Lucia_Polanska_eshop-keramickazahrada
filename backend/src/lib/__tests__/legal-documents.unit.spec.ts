@@ -1,4 +1,5 @@
 import {
+  isLegalVersion,
   legalPageUrl,
   legalPdfFor,
   sellerFacts,
@@ -138,7 +139,33 @@ describe("lib/legal", () => {
       expect(
         orderDocumentVersion("obchodni-podminky", undefined, "2026-11-01T08:00:00Z", manifest)
       ).toBe("2026-10-15")
+      // Nesmyslné datum ani jiný typ nejsou verze.
+      expect(
+        orderDocumentVersion("obchodni-podminky", "2026-13-45", "2026-11-01T08:00:00Z", manifest)
+      ).toBe("2026-10-15")
+      expect(
+        orderDocumentVersion("obchodni-podminky", 20261201, "2026-11-01T08:00:00Z", manifest)
+      ).toBe("2026-10-15")
     })
+
+    it("keeps a well-formed stored version the manifest does not know (published in Studio)", () => {
+      // Zákazník souhlasil s 1. 12. 2026 — verzí, kterou backend ještě nezná.
+      // Nesmí dostat znění platné v den objednávky (2026-10-15) místo ní.
+      expect(
+        orderDocumentVersion("obchodni-podminky", "2026-12-01", "2026-12-02T08:00:00Z", manifest)
+      ).toBe("2026-12-01")
+      expect(
+        orderDocumentVersion("reklamacni-rad", "2026-12-01", "2026-12-02T08:00:00Z", manifest)
+      ).toBe("2026-12-01")
+    })
+  })
+
+  it("recognises the stored version format", () => {
+    expect(isLegalVersion("2026-12-01")).toBe(true)
+    expect(isLegalVersion("2026-02-30")).toBe(false)
+    expect(isLegalVersion("2026-08")).toBe(false)
+    expect(isLegalVersion(" 2026-12-01")).toBe(false)
+    expect(isLegalVersion(null)).toBe(false)
   })
 
   describe("legalPdfFor", () => {
@@ -261,6 +288,69 @@ describe("orderLegalInfo", () => {
     )
     expect(legal.terms?.version).toBe("2015-01-01")
     expect(attachments[0].filename).toBe("obchodni-podminky-2015-01-01.pdf")
+  })
+
+  it("an order without stored versions gets the ones valid on the order date, with PDFs", () => {
+    const { legal, attachments } = orderLegalInfo(
+      { created_at: "2026-10-20T10:00:00Z", metadata: {}, items: [] },
+      manifest
+    )
+    expect(legal.terms).toMatchObject({ version: "2026-10-15", in_manifest: true })
+    expect(legal.withdrawal).toMatchObject({ version: "2026-10-15", in_manifest: true })
+    expect(attachments).toHaveLength(2)
+  })
+
+  it("names a stored version the manifest does not know — date and page, never a different PDF", () => {
+    // OP i poučení vydané ve Studiu 1. 12. 2026, manifest backendu je zná
+    // jen do 15. 10. 2026.
+    const { legal, attachments } = orderLegalInfo(
+      {
+        created_at: "2026-12-02T10:00:00Z",
+        metadata: { terms_version: "2026-12-01", withdrawal_info_version: "2026-12-01" },
+        items,
+      },
+      manifest
+    )
+
+    expect(legal.terms).toEqual({
+      slug: "obchodni-podminky",
+      title: "Obchodní podmínky",
+      version: "2026-12-01",
+      version_label: "1. 12. 2026",
+      // OP mají stránku každé verze.
+      page_url: "https://store.example.cz/cz/smluvni-podminky/2026-12-01",
+      pdf_url: null,
+      pdf_draft: false,
+      in_manifest: false,
+      attached: false,
+    })
+    expect(legal.withdrawal).toMatchObject({
+      version: "2026-12-01",
+      version_label: "1. 12. 2026",
+      // Poučení má jen hlavní stránku.
+      page_url: "https://store.example.cz/cz/odstoupeni-od-smlouvy",
+      pdf_url: null,
+      in_manifest: false,
+    })
+    // Žádné PDF 15. 10. místo odsouhlaseného znění.
+    expect(attachments).toEqual([])
+    expect(markAttached(legal, attachments).terms?.attached).toBe(false)
+  })
+
+  it("keeps the known version and the unknown one apart in a mixed order", () => {
+    const { legal, attachments } = orderLegalInfo(
+      {
+        created_at: "2026-12-02T10:00:00Z",
+        metadata: { terms_version: "2026-12-01", withdrawal_info_version: "2026-10-15" },
+        items: [],
+      },
+      manifest
+    )
+    expect(legal.terms?.in_manifest).toBe(false)
+    expect(legal.withdrawal?.in_manifest).toBe(true)
+    expect(attachments.map((attachment) => attachment.filename)).toEqual([
+      "odstoupeni-od-smlouvy-2026-10-15.pdf",
+    ])
   })
 
   it("never attaches a plain-http URL", () => {

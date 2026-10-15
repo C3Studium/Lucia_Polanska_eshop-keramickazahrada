@@ -1,5 +1,7 @@
+import { renderToStaticMarkup } from "react-dom/server"
 import { courseTermsInfo } from "../course-emails"
 import type { LegalManifest } from "../legal"
+import { CourseReservationConfirmedEmail } from "../../modules/resend/emails/course-reservation-confirmed"
 
 /**
  * Obchodní podmínky k potvrzení rezervace kurzu (§ 1827 odst. 2 OZ): verze
@@ -115,5 +117,58 @@ describe("courseTermsInfo", () => {
     )
     expect(recent.version).toBe("2026-10-15")
     expect(recent.attachment?.url).toBe(PUBLISHED)
+    expect(recent.in_manifest).toBe(true)
+
+    // Nesmyslná uložená hodnota = jako bez souhlasu.
+    const malformed = courseTermsInfo(
+      { created_at: "2026-10-20T10:00:00Z", consents: { terms_version: "2026-08" } },
+      manifest({ url: PUBLISHED })
+    )
+    expect(malformed.version).toBe("2026-10-15")
+  })
+
+  describe("a stored version the manifest does not know (published in Studio)", () => {
+    const env = process.env
+    beforeEach(() => {
+      process.env = { ...env }
+      process.env.STOREFRONT_PUBLIC_URL = "https://store.example.cz"
+      delete process.env.MEDUSA_STOREFRONT_URL
+      delete process.env.STOREFRONT_COUNTRY
+    })
+    afterAll(() => {
+      process.env = env
+    })
+
+    it("keeps it — date and its page, no PDF of a different version", () => {
+      const info = courseTermsInfo(
+        {
+          created_at: "2026-12-02T10:00:00Z",
+          consents: { terms_version: "2026-12-01", accepted_at: "2026-12-02T10:00:00Z" },
+        },
+        manifest({ url: PUBLISHED })
+      )
+      expect(info).toEqual({
+        version: "2026-12-01",
+        version_label: "1. 12. 2026",
+        page_url: "https://store.example.cz/cz/smluvni-podminky/2026-12-01",
+        pdf_url: null,
+        attachment: null,
+        in_manifest: false,
+      })
+    })
+
+    it("the confirmation then names that version and links its page", () => {
+      const html = renderToStaticMarkup(
+        CourseReservationConfirmedEmail({
+          termsVersionLabel: "1. 12. 2026",
+          termsVersionUrl: "https://store.example.cz/cz/smluvni-podminky/2026-12-01",
+          termsPdfUrl: "",
+        })
+      )
+      expect(html).toContain("ve znění od 1. 12. 2026")
+      expect(html).toContain('href="https://store.example.cz/cz/smluvni-podminky/2026-12-01"')
+      expect(html).not.toContain("v příloze")
+      expect(html).not.toContain("15. 10. 2026")
+    })
   })
 })

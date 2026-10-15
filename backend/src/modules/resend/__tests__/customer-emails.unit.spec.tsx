@@ -164,6 +164,28 @@ describe("customer e-mail templates after the audit", () => {
         ...extra,
       })
 
+      it("a version the backend manifest does not know: its date and page, no PDF claim", () => {
+        // Co skládá `orderLegalInfo` pro OP vydané ve Studiu 1. 12. 2026.
+        const unknown = {
+          ...doc("obchodni-podminky", "Obchodní podmínky", false),
+          version: "2026-12-01",
+          version_label: "1. 12. 2026",
+          page_url: "https://keramickazahrada.cz/cz/smluvni-podminky/2026-12-01",
+          pdf_url: null,
+          in_manifest: false,
+        }
+        const html = renderToStaticMarkup(
+          orderPlacedEmail({
+            order,
+            legal: { ...legal(false), terms: unknown },
+          }) as React.ReactElement
+        )
+        expect(html).toContain("obchodními podmínkami ve znění platném od 1. 12. 2026")
+        expect(html).toContain('href="https://keramickazahrada.cz/cz/smluvni-podminky/2026-12-01"')
+        expect(html).not.toContain("V příloze posíláme obchodní podmínky")
+        expect(html).not.toContain("obchodni-podminky-2026-10-15.pdf")
+      })
+
       it("says the terms valid for this order are attached, with seller and links", () => {
         const html = renderToStaticMarkup(
           orderPlacedEmail({ order, legal: legal(true) }) as React.ReactElement

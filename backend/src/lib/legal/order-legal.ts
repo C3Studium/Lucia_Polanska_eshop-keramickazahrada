@@ -3,6 +3,7 @@ import { isServiceLine } from "../packaging-lines"
 import {
   findVersion,
   formatVersionDate,
+  isLegalVersion,
   LEGAL_MANIFEST,
   legalPageUrl,
   legalPdfFor,
@@ -26,6 +27,11 @@ import {
  * vytvoření objednávky. Totéž pro poučení o odstoupení
  * (`metadata.withdrawal_info_version`).
  *
+ * Uložená verze, kterou manifest backendu nezná (vydaná ve Studiu po
+ * posledním `pnpm legal:build`), ZŮSTÁVÁ: zákazník souhlasil s ní, ne s tou,
+ * kterou zná manifest. E-mail ji pak jmenuje datem a odkazem na web, jen bez
+ * PDF (`in_manifest: false`, workflow to zaloguje).
+ *
  * Čisté funkce (bez Medusy) — testují se bez kontejneru.
  */
 
@@ -47,6 +53,11 @@ export type OrderLegalDocument = {
   pdf_url: string | null
   /** PDF existuje, ale je pracovní znění — jen pro log, šablona ho nečte. */
   pdf_draft: boolean
+  /**
+   * Zná manifest backendu tuhle verzi? `false` = uložená verze je novější
+   * než poslední `pnpm legal:build` (vydaná ve Studiu) — bez PDF, jen pro log.
+   */
+  in_manifest: boolean
   /** Přiloženo k e-mailu? Doplňuje krok workflow po ověření dostupnosti. */
   attached: boolean
 }
@@ -79,17 +90,32 @@ export type OrderLike = {
   items?: Array<OrderItemLike | null> | null
 }
 
-/** Verze z metadat, pokud ji manifest zná; jinak verze platná v den objednávky. */
+/**
+ * Verze, se kterou zákazník souhlasil: uložená (`YYYY-MM-DD`), i když ji
+ * manifest nezná — jinak by e-mail jmenoval a přiložil jiné znění, než jaké
+ * odsouhlasil. Verze platná v den objednávky jen tehdy, když uložená chybí
+ * nebo nemá tvar verze (starší objednávky, „2026-08").
+ */
 export const orderDocumentVersion = (
   slug: LegalSlug,
   stored: unknown,
   createdAt: OrderLike["created_at"],
   manifest: LegalManifest = LEGAL_MANIFEST
 ): string | null =>
-  findVersion(slug, stored, manifest)?.version ??
-  versionValidAt(slug, createdAt ?? new Date(), manifest)
+  isLegalVersion(stored) ? stored : versionValidAt(slug, createdAt ?? new Date(), manifest)
 
-const documentFor = (
+/** Názvy pro dokument, který manifest vůbec nezná. */
+const FALLBACK_TITLES: Partial<Record<LegalSlug, string>> = {
+  "obchodni-podminky": "Obchodní podmínky",
+  "odstoupeni-od-smlouvy": "Poučení o odstoupení od smlouvy",
+}
+
+/**
+ * Dokument k e-mailu. Verze, kterou manifest nezná, dostane datum a stránku
+ * (u OP stránku té verze), ale žádné PDF — o PDF, které by k ní patřilo,
+ * backend neví nic.
+ */
+export const documentFor = (
   slug: LegalSlug,
   version: string | null,
   pageUrl: string,
@@ -99,15 +125,17 @@ const documentFor = (
     return null
   }
   const entry = findVersion(slug, version, manifest)
-  const pdf = legalPdfFor(slug, version, manifest)
+  const pdf = entry ? legalPdfFor(slug, version, manifest) : null
   return {
     slug,
-    title: entry?.title || manifest.documents[slug]?.title || slug,
+    title:
+      entry?.title || manifest.documents[slug]?.title || FALLBACK_TITLES[slug] || slug,
     version,
     version_label: formatVersionDate(version),
     page_url: pageUrl,
     pdf_url: pdf && !pdf.draft ? pdf.url : null,
     pdf_draft: Boolean(pdf?.draft),
+    in_manifest: Boolean(entry),
     attached: false,
   }
 }

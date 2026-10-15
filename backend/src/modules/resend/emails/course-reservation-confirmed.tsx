@@ -49,6 +49,8 @@ interface CourseReservationConfirmedEmailProps {
   termsLink?: string
   /** Znění OP, se kterým zákazník rezervoval („15. 10. 2026"). */
   termsVersionLabel?: string
+  /** Stránka toho znění na webu (`…/smluvni-podminky/<verze>`) — když PDF není. */
+  termsVersionUrl?: string
   /** Zveřejněné PDF toho znění — prázdné, když není (pracovní / nenahrané). */
   termsPdfUrl?: string
   /** PDF obchodních podmínek jde s e-mailem jako příloha. */
@@ -75,6 +77,7 @@ function CourseReservationConfirmedEmailComponent({
   cancellationTerms = "",
   termsLink = "",
   termsVersionLabel = "",
+  termsVersionUrl = "",
   termsPdfUrl = "",
   termsAttached = false,
   attachments_failed = false,
@@ -181,7 +184,9 @@ function CourseReservationConfirmedEmailComponent({
         </P>
       )}
       {/* Obchodní podmínky té verze, se kterou zákazník rezervoval — PDF
-          v příloze, nebo aspoň odkaz, když příloha neprošla. */}
+          v příloze, nebo aspoň odkaz, když příloha neprošla. Bez PDF (pracovní
+          znění, nebo verze vydaná ve Studiu, kterou backend ještě nezná)
+          aspoň datum znění a jeho stránka — nikdy jiné znění místo něj. */}
       {attached ? (
         <P small>
           Obchodní podmínky{versionSuffix}, podle kterých rezervace platí,
@@ -194,6 +199,19 @@ function CourseReservationConfirmedEmailComponent({
           <Link href={termsPdfUrl} style={linkStyle}>
             stáhnout jako PDF
           </Link>
+          .
+        </P>
+      ) : termsVersionLabel ? (
+        <P small>
+          Rezervace platí podle obchodních podmínek ve znění od {termsVersionLabel}
+          {termsVersionUrl ? (
+            <>
+              {" — "}
+              <Link href={termsVersionUrl} style={linkStyle}>
+                zobrazit na webu
+              </Link>
+            </>
+          ) : null}
           .
         </P>
       ) : null}

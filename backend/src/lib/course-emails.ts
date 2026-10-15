@@ -4,9 +4,11 @@ import { formatMoney, sendCustomerEmail } from "./customer-email"
 import { courseReservationLink } from "./course-reservation-link"
 import { storefrontBase } from "./storefront-url"
 import {
+  findVersion,
   formatVersionDate,
   LEGAL_MANIFEST,
   legalPdfFor,
+  termsVersionUrl,
   type LegalManifest,
 } from "./legal"
 import {
@@ -90,18 +92,27 @@ export type CourseTermsInfo = {
   version: string | null
   /** „15. 10. 2026", prázdné bez verze. */
   version_label: string
+  /** Stránka té verze OP na webu (`/smluvni-podminky/<verze>`), prázdné bez storefrontu. */
+  page_url: string
   /** Zveřejněné PDF té verze (absolutní https, ne pracovní znění), jinak `null`. */
   pdf_url: string | null
   /** Příloha e-mailu — jen u zveřejněného PDF. */
   attachment: EmailAttachmentRef | null
+  /**
+   * Zná manifest backendu tuhle verzi? `false` = vydaná ve Studiu po
+   * posledním `pnpm legal:build` — e-mail ji jmenuje bez PDF, jen pro log.
+   */
+  in_manifest: boolean
 }
 
 /**
  * Obchodní podmínky k rezervaci kurzu: verze ze souhlasu
- * (`consents.terms_version`), u rezervace bez souhlasu (ruční, starší) verze
- * platná v den rezervace — stejné pravidlo jako u objednávky
- * (`orderDocumentVersion`). PDF se přikládá jen zveřejněné: absolutní https
- * URL a ne pracovní znění s `[[DOPLNIT]]`.
+ * (`consents.terms_version`) — i taková, kterou manifest nezná (zákazník
+ * souhlasil s ní; e-mail ji pak jmenuje datem a odkazem, bez PDF). U
+ * rezervace bez souhlasu (ruční, starší) verze platná v den rezervace —
+ * stejné pravidlo jako u objednávky (`orderDocumentVersion`). PDF se
+ * přikládá jen zveřejněné: absolutní https URL a ne pracovní znění
+ * s `[[DOPLNIT]]`.
  */
 export const courseTermsInfo = (
   reservation: any,
@@ -114,13 +125,16 @@ export const courseTermsInfo = (
     consents?.accepted_at ?? reservation?.created_at ?? null,
     manifest
   )
-  const pdf = version ? legalPdfFor("obchodni-podminky", version, manifest) : null
+  const known = Boolean(version && findVersion("obchodni-podminky", version, manifest))
+  const pdf = version && known ? legalPdfFor("obchodni-podminky", version, manifest) : null
   const published = Boolean(pdf && !pdf.draft && /^https:\/\//i.test(pdf.url))
   return {
     version,
     version_label: version ? formatVersionDate(version) : "",
+    page_url: version ? termsVersionUrl(version, manifest) : "",
     pdf_url: published ? pdf!.url : null,
     attachment: published ? { filename: pdf!.filename, url: pdf!.url } : null,
+    in_manifest: known,
   }
 }
 
@@ -156,6 +170,13 @@ export const sendCourseReservationConfirmedEmail = async (
 ): Promise<boolean> => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const terms = courseTermsInfo(reservation)
+  if (terms.version && !terms.in_manifest) {
+    logger.warn(
+      `[kurzy] Obchodní podmínky verze ${terms.version} (souhlas u rezervace ${reservation.id}) ` +
+        `v manifestu backendu nejsou — potvrzení je uvede bez PDF, jen s odkazem na web. ` +
+        `Spusťte pnpm legal:build (a legal:upload) a nasaďte backend.`
+    )
+  }
   // Nikdy nevyhodí — bez nastavení jsou údaje výchozí a storno `null`.
   const { facts } = await getLegalFacts(container)
 
@@ -184,6 +205,7 @@ export const sendCourseReservationConfirmedEmail = async (
       cancellationTerms: courseCancellationTerms(facts),
       termsLink: courseTermsLink(),
       termsVersionLabel: terms.version_label,
+      termsVersionUrl: terms.page_url,
       termsPdfUrl: terms.pdf_url ?? "",
       termsAttached: attachments.length > 0,
     },

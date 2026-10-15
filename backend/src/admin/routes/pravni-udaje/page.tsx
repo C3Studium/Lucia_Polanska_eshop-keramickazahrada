@@ -44,9 +44,10 @@ import {
  * načtených hodnot: administrace po každém zápisu obnoví všechny dotazy
  * a obnova nesmí přepsat rozepsané pole.
  *
- * Pozor na vydaná znění: dokument se zveřejněným PDF má údaje z doby vydání
- * (otisk v manifestu). Podstatná změna podmínek proto patří do nového znění
- * ve Studiu — stránka to říká nahoře.
+ * Pozor na znění: dokument se zveřejněným PDF má údaje z doby vydání
+ * (otisk v manifestu), ale znění, které už platí a PDF ještě nemá, bere
+ * údaje odsud hned. Po spuštění proto podstatná změna podmínek patří do
+ * nového znění ve Studiu — stránka to říká nahoře.
  */
 
 type SettingsResponse = {
@@ -263,13 +264,28 @@ const Inner = () => {
             </Text>
           )}
           <Text size="small" weight="plus">
-            Pozor na vydaná znění: obchodní podmínky a další dokumenty, které už
-            mají zveřejněné PDF, mají údaje z doby vydání a tahle stránka je
-            nezmění. Podstatnou změnu podmínek — výši zálohy, storno podmínky
-            kurzů, pravidla poukazů nebo odhad nákladů na vrácení — je potřeba
-            zavést novým zněním obchodních podmínek ve Studiu (s novým datem
-            účinnosti).
+            Kdy se změna projeví v podmínkách:
           </Text>
+          <ul className="text-ui-fg-base txt-small flex list-disc flex-col gap-y-1 pl-5">
+            <li>
+              <strong>Vydaná znění</strong> (se zveřejněným PDF) mají údaje z doby
+              vydání — tahle stránka je už nezmění.
+            </li>
+            <li>
+              <strong>Znění, které už platí, ale PDF ještě nemá</strong> (třeba
+              dnešní pracovní znění), si údaje bere odsud — hned, i pro zákazníky.
+            </li>
+            <li>
+              <strong>Před spuštěním</strong> je to přesně to, co chcete: doplnit
+              tu žlutá [[DOPLNIT]].
+            </li>
+            <li>
+              <strong>Po spuštění</strong> podstatnou změnu podmínek — výši zálohy,
+              storno kurzů, pravidla poukazů, odhad nákladů na vrácení — neměňte
+              jen tady. Zaveďte ji novým zněním obchodních podmínek ve Studiu
+              s novým datem účinnosti; kdo už nakoupil, souhlasil se starým.
+            </li>
+          </ul>
         </div>
       </section>
 
