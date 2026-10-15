@@ -90,10 +90,30 @@ const ReturnRequest = model.define("return_request", {
    */
   refund_account: model.text().nullable(),
   /**
-   * Snapshot 14denní lhůty pro odstoupení (§1829) v okamžiku žádosti —
-   * `max(fulfillments.shipped_at) + 14 d`; null = zboží ještě neodešlo.
+   * Snapshot 14denní lhůty pro odstoupení (§1829) v okamžiku žádosti — od
+   * 14. 10. 2026 od PŘEVZETÍ zboží (`lib/claims/withdrawal.ts`; převzetí
+   * neznámé = odeslání + 7 dnů); null = lhůta ještě neběžela (neodesláno,
+   * zásilka na cestě).
    */
   withdrawal_deadline: model.dateTime().nullable(),
+  /**
+   * Okamžik převzetí zboží, ze kterého se lhůta počítala (potvrzený, nebo
+   * odhad odeslání + 7 dnů) — snapshot k důkazu, proč žádost prošla.
+   */
+  takeover_at: model.dateTime().nullable(),
+  /**
+   * Okamžik ODESLÁNÍ žádosti zákazníkem — čas serveru při přijetí. Potvrzení
+   * odstoupení online ho musí nést („datum a čas jeho odeslání", NV 29/2023
+   * Sb. pokyn [4]); u reklamace je to den uplatnění, od kterého běží 30 dnů
+   * (§ 19 ZOS). Starší řádky ho nemají → platí `created_at`.
+   */
+  submitted_at: model.dateTime().nullable(),
+  /**
+   * Kudy žádost přišla: `"online"` = rozhraní obchodu (tlačítko „Odstoupit od
+   * smlouvy", formulář reklamace, záložní formulář číslo + e-mail). Null =
+   * starší řádek.
+   */
+  channel: model.text().nullable(),
   /** Reklamační protokol (PDF v úložišti) a jeho číslo — fáze 2. */
   protocol_url: model.text().nullable(),
   protocol_number: model.text().nullable(),

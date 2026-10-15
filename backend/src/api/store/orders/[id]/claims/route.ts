@@ -12,6 +12,7 @@ import {
   createClaim,
   MAX_PHOTOS,
 } from "../../../../../lib/claims/intake"
+import { CLAIM_CHANNEL_ONLINE } from "../../../../../lib/claims/constants"
 
 /**
  * Reklamace / vrácení / odstoupení z e-mailového odkazu — BEZ přihlášení,
@@ -30,6 +31,13 @@ import {
  * gating v prohlížeči je jen zrcadlo téhle odpovědi. Odstoupení / vrácení
  * nezaplacené a neodeslané objednávky se vyřídí hned (§13.1) — odpověď nese
  * `auto_cancelled: true`.
+ *
+ * Odstoupení online (§ 1830a OZ, 14. 10. 2026): stránka `/order/:id/odstoupeni`
+ * pošle po kontrole (krok 2, „Potvrdit odstoupení od smlouvy") `kind:
+ * "odstoupeni"` s vybraným zbožím (`items`; zakázku server vyjme sám),
+ * nepovinným důvodem a případně účtem. Odpověď nese `submitted_at` (čas
+ * serveru) a `confirmation` — přesně to, co odešlo v potvrzovacím e-mailu,
+ * ať ho stránka ukáže hned na obrazovce i s datem a časem odeslání.
  */
 
 const PostSchema = z.object({
@@ -49,8 +57,9 @@ const PostSchema = z.object({
   requested_resolution: z.enum(["repair", "replace", "refund"]).optional(),
   /**
    * Vybrané položky `{ id, quantity }` (§11.1): u reklamace i vrácení povinné
-   * (aspoň jedna), u odstoupení se ignorují. Příslušnost k objednávce a strop
-   * množství hlídá `checkClaimRules`.
+   * (aspoň jedna); u odstoupení zboží, od jehož koupě se odstupuje (prázdné =
+   * vše, od čeho odstoupit lze; zakázka se vyjme na serveru). Příslušnost
+   * k objednávce a strop množství hlídá `checkClaimRules`.
    */
   items: z
     .array(
@@ -82,6 +91,11 @@ const PostSchema = z.object({
    * `checkClaimRules`. Chybějící pole (starší storefront) se nehlídá.
    */
   refund_account: z.string().max(80).nullable().optional(),
+  /**
+   * Jméno z formuláře odstoupení (předvyplněné z objednávky, lze opravit).
+   * Prázdné / chybějící = jméno z objednávky.
+   */
+  customer_name: z.string().trim().max(200).optional(),
 })
 
 const requireToken = (orderId: string, token: unknown) => {
@@ -133,23 +147,30 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     damage_cause: body.damage_cause ?? null,
     photos: body.photos ?? null,
     refund_account: body.refund_account,
+    customer_name: body.customer_name ?? null,
   }
   const verdict = checkClaimRules(order, existing, input)
   if (verdict.ok === false) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, verdict.message)
   }
 
-  const { request, autoCancelled } = await createClaim(req.scope, {
-    order,
-    input,
-    existingRequests: existing,
-  })
+  const { request, autoCancelled, submittedAt, confirmation } = await createClaim(
+    req.scope,
+    {
+      order,
+      input,
+      existingRequests: existing,
+      channel: CLAIM_CHANNEL_ONLINE,
+    }
+  )
 
   // §13.1: `auto_cancelled` → storefront místo „posoudíme" ukáže „Objednávka
-  // je zrušená".
+  // je zrušená". `confirmation` = obsah potvrzení s datem a časem odeslání.
   res.status(200).json({
     received: true,
     id: request.id,
+    submitted_at: submittedAt.toISOString(),
+    confirmation,
     ...(autoCancelled ? { auto_cancelled: true } : {}),
   })
 }

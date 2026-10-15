@@ -13,6 +13,7 @@ import {
   claimOrderCancelled,
   claimRefunds,
   formatClaimDate,
+  formatClaimDateTime,
   isDamageCause,
   isFinalClaimStatus,
   type OrderClaim,
@@ -338,8 +339,8 @@ function ClaimCard({
             {CLAIM_STATUS_LABEL[claim.status]}
           </strong>
           {/* §11.3 / §13.7 — příčina poškození; zákazník vidí, že jsme to tak
-              zapsali (u přepravy reklamuje u České pošty on sám jako
-              příjemce — 12. 10. 2026, Matěj). */}
+              zapsali (u přepravy škodu s dopravcem řešíme my — 14. 10. 2026,
+              právní audit §4.1). */}
           {isDamageCause(claim.damage_cause) && (
             <span className={styles.badge} data-cause={claim.damage_cause}>
               {DAMAGE_CAUSE_LABEL[claim.damage_cause]}
@@ -347,9 +348,14 @@ function ClaimCard({
           )}
         </div>
         <dl className={styles.meta}>
+          {/* Datum a čas odeslání (§ 19 ZOS — okamžik uplatnění reklamace;
+              § 1830a OZ — odeslání odstoupení), pražský čas. */}
           <div>
             <dt>Podáno</dt>
-            <dd>{formatClaimDate(claim.created_at)}</dd>
+            <dd>
+              {formatClaimDateTime(claim.submitted_at ?? claim.created_at) ||
+                formatClaimDate(claim.created_at)}
+            </dd>
           </div>
           {claim.kind === "reklamace" && claim.requested_resolution && (
             <div>

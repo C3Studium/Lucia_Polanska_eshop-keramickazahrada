@@ -40,11 +40,13 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
     expect(html).toMatch(/1 305 Kč<br\s*\/?>/)
     expect(html).toContain("Poškozeno přepravou")
-    // 12. 10. 2026, Matěj: u ČP reklamuje příjemce — pokyn, lhůta a odkaz.
-    expect(html).not.toContain("reklamujeme u dopravce my")
-    expect(html).toContain("podává příjemce")
-    expect(html).toContain("2 pracovních dnů od doručení")
-    expect(html).toContain(CP_CLAIM_FORM_URL)
+    // 14. 10. 2026 (právní audit §4.1): s dopravcem to řešíme my; obal a fotky
+    // jsou prosba, lhůta pošty ani její formulář zákazníka nezavazují.
+    expect(html).toContain("řešíme s Českou poštou my")
+    expect(html).toContain("nijak nepodmiňuje")
+    expect(html).not.toContain("podává příjemce")
+    expect(html).not.toContain("2 pracovních dnů")
+    expect(html).not.toContain(CP_CLAIM_FORM_URL)
   })
 
   it("refund-request bez příčiny o dopravci mlčí", () => {
@@ -68,6 +70,21 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     expect(html).toContain("Žádost o vrácení")
     expect(html).toContain("Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč")
     expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
+  })
+
+  it("refund-request u vrácení nese datum a čas odeslání", () => {
+    const html = renderToStaticMarkup(
+      RefundRequestEmail({
+        orderNumber: "#42",
+        kind: "vraceni",
+        items: ITEMS,
+        submittedAt: "15. 10. 2026 v 14:32",
+        submittedChannel: "online na webu obchodu",
+      }) as React.ReactElement
+    )
+    expect(html).toContain("Odesláno")
+    expect(html).toContain("15. 10. 2026 v 14:32")
+    expect(html).toContain("online na webu obchodu")
   })
 
   it("return-approved: bere approvedItems, nebo items ze společného základu", () => {
@@ -206,5 +223,141 @@ describe("claim e-mails — položky a poškození přepravou", () => {
     )
     expect(html).toMatch(/1 305 Kč<br\s*\/?>/)
     expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
+  })
+})
+
+/**
+ * Potvrzení odstoupení online (§ 1830a OZ, NV 29/2023 pokyn [4]) a přijetí
+ * reklamace (§ 19 odst. 1 ZOS) — obsah + datum a čas odeslání (14. 10. 2026).
+ */
+describe("refund-request — potvrzení odstoupení a reklamace s datem a časem", () => {
+  const env = process.env
+
+  beforeEach(() => {
+    process.env = { ...env }
+    process.env.STOREFRONT_PUBLIC_URL = "https://keramickazahrada.cz"
+  })
+
+  afterAll(() => {
+    process.env = env
+  })
+
+  const withdrawal = {
+    customerName: "Jana Nováková",
+    orderNumber: "#42",
+    kind: "odstoupeni",
+    submittedAt: "15. 10. 2026 v 14:32",
+    submittedChannel: "online na webu obchodu",
+    orderDate: "3. 10. 2026",
+    takeoverText: "7. 10. 2026",
+    items: "Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč",
+    refundMethodText: "Převodem na účet ••••5399/0800, který jste uvedli (objednávku jste neplatili kartou).",
+    returnAddress: "Lucie Polanská, Putim 229, 397 01 Písek",
+    deadlineText: "nejpozději do 29. 10. 2026 (14 dnů od odstoupení)",
+  }
+
+  it("odstoupení: potvrzení přijetí, celý obsah, datum a čas, další kroky", () => {
+    const html = renderToStaticMarkup(
+      RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: true }) as React.ReactElement
+    )
+    expect(html).toContain("Potvrzujeme přijetí")
+    expect(html).toContain("potvrzujeme přijetí vašeho odstoupení od kupní smlouvy")
+    // datum a čas odeslání + kanál
+    expect(html).toContain("15. 10. 2026 v 14:32")
+    expect(html).toContain("online na webu obchodu")
+    // obsah prohlášení
+    expect(html).toContain("#42")
+    expect(html).toContain("3. 10. 2026")
+    expect(html).toContain("7. 10. 2026")
+    expect(html).toContain("Odstupujete od")
+    expect(html).toContain("Zahradní mísa · Ø 32 cm · 1 ks · 1 305 Kč")
+    expect(html).toContain("odstoupení od celé smlouvy")
+    expect(html).toContain("••••5399/0800")
+    expect(html).not.toContain("2000145399")
+    // další kroky: vrácení zboží do 14 dnů na adresu, peníze do 14 dnů vč.
+    // nejlevnějšího dodání, smíme počkat na zboží, § 1833
+    expect(html).toContain("Lucie Polanská, Putim 229, 397 01 Písek")
+    expect(html).toContain("do 14 dnů od")
+    expect(html).toContain("nejlevnějšího způsobu dodání")
+    expect(html).toContain("prokážete, že jste ho odeslali")
+    expect(html).toContain("snížení hodnoty")
+    // důvod se bez textu zákazníka nevypisuje
+    expect(html).not.toContain(">Důvod<")
+  })
+
+  it("odstoupení jen od části: bez slibu poštovného, s vyjmutou zakázkou a důvodem", () => {
+    const html = renderToStaticMarkup(
+      RefundRequestEmail({
+        ...withdrawal,
+        wholeOrder: false,
+        goodsShipped: true,
+        refundReason: "Barva neodpovídá interiéru",
+        excludedItems: "Domovní číslo · 1 ks · 1 200 Kč",
+      }) as React.ReactElement
+    )
+    expect(html).toContain("odstoupení jen od uvedeného zboží")
+    expect(html).not.toContain("nejlevnějšího způsobu dodání")
+    expect(html).toContain("Barva neodpovídá interiéru")
+    expect(html).toContain("Domovní číslo · 1 ks · 1 200 Kč")
+    expect(html).toContain("§ 1837 písm. d)")
+  })
+
+  it("odstoupení před odesláním: nic neposílat; auto-zrušení řekne, že objednávka je zrušená", () => {
+    const unshipped = renderToStaticMarkup(
+      RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: false }) as React.ReactElement
+    )
+    expect(unshipped).toContain("zboží jsme ještě neodeslali")
+    expect(unshipped).not.toContain("Lucie Polanská, Putim 229")
+
+    const cancelled = renderToStaticMarkup(
+      RefundRequestEmail({
+        ...withdrawal,
+        wholeOrder: true,
+        goodsShipped: false,
+        autoCancelled: true,
+        refundMethodText: "Zatím jste nic nezaplatili — není co vracet.",
+      }) as React.ReactElement
+    )
+    expect(cancelled).toContain("Objednávka je zrušená")
+    // i tak potvrzení přijetí s datem a časem odeslání (§ 1830a)
+    expect(cancelled).toContain("Potvrzujeme přijetí")
+    expect(cancelled).toContain("15. 10. 2026 v 14:32")
+    expect(cancelled).toContain("Zahradní mísa")
+
+    // Odesláno na dobírku, ještě nezaplaceno: zboží vrátit, peníze se neslibují.
+    const unpaid = renderToStaticMarkup(
+      RefundRequestEmail({ ...withdrawal, wholeOrder: true, goodsShipped: true, nothingToRefund: true }) as React.ReactElement
+    )
+    expect(unpaid).toContain("Lucie Polanská, Putim 229, 397 01 Písek")
+    expect(unpaid).toContain("není co vracet")
+    expect(unpaid).not.toContain("Peníze smíme vrátit")
+  })
+
+  it("reklamace (§ 19 ZOS): datum a čas uplatnění, obsah, požadavek, 30 dnů od uplatnění", () => {
+    const html = renderToStaticMarkup(
+      RefundRequestEmail({
+        orderNumber: "#42",
+        kind: "reklamace",
+        submittedAt: "15. 10. 2026 v 14:32",
+        submittedChannel: "online na webu obchodu",
+        items: ITEMS,
+        refundReason: "Prasklina na glazuře po prvním použití",
+        requestedResolution: "výměna za nový kus",
+        deadlineText: "nejpozději do 14. 11. 2026 (30 dnů od uplatnění reklamace)",
+        protocolUrl: "https://files.example/REK-2026-42.pdf",
+        claimsUrl: "https://keramickazahrada.cz/cz/order/order_42/claims?token=abc",
+      }) as React.ReactElement
+    )
+    expect(html).toContain("Uplatněno")
+    expect(html).toContain("15. 10. 2026 v 14:32")
+    expect(html).toContain("Popis vady")
+    expect(html).toContain("Prasklina na glazuře po prvním použití")
+    expect(html).toContain("Keramický hrnek · 1 ks · 390 Kč")
+    expect(html).toContain("výměna za nový kus")
+    expect(html).toContain("14. 11. 2026 (30 dnů od uplatnění reklamace)")
+    expect(html).toContain("písemným potvrzením o jejím uplatnění")
+    // Protokol je odkaz ke stažení, ne příloha.
+    expect(html).not.toContain("Přiložený protokol")
+    expect(html).toContain("https://files.example/REK-2026-42.pdf")
   })
 })

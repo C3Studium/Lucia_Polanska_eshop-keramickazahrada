@@ -9,6 +9,7 @@ import RefundRequest from "@modules/order/components/refund-request"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import OrderStateShell from "@modules/order/components/order-state-shell"
 import { Metadata } from "next"
+import { redirect } from "next/navigation"
 
 type Props = {
   params: Promise<{ id: string; countryCode: string }>
@@ -27,6 +28,10 @@ export const metadata: Metadata = {
  *
  * Co jde podat, říká SERVER (`GET /store/orders/:id/claims`): zakázka §1837,
  * lhůta 14 dnů, otevřená žádost. Formulář jen zamkne volbu a ukáže důvod.
+ *
+ * Odstoupení od smlouvy má od 14. 10. 2026 vlastní dvoustupňovou stránku
+ * (`/order/:id/odstoupeni`, § 1830a OZ) — starší odkazy `?kind=odstoupeni`
+ * („Zrušit objednávku" z dřívějších e-mailů) se na ni přesměrují.
  */
 export default async function OrderRefundPage(props: Props) {
   const [params, searchParams] = await Promise.all([
@@ -34,14 +39,19 @@ export default async function OrderRefundPage(props: Props) {
     props.searchParams,
   ])
   const token = searchParams.token
+  if (token && searchParams.kind === "odstoupeni") {
+    redirect(
+      `/${params.countryCode}/order/${params.id}/odstoupeni?token=${encodeURIComponent(token)}`
+    )
+  }
   const [claims, context, claimForm] = token
     ? await Promise.all([
         getOrderClaims(params.id, token),
         // Jen kvůli číslu objednávky a měně v hlavičce; gating je z `claims`.
         getGuestRefundContext(params.id, token),
-        // Dokument „co dělat s poškozenou zásilkou" — nápověda u volby
-        // „Balík dorazil poškozený — přepravou" na něj odkáže (§11.3, §13.7).
-        // `null` = nenahráno.
+        // Dokument „Formulář k reklamaci" (modul Dokumenty) — nepovinná
+        // příloha u volby „Balík dorazil poškozený"; reklamace jde podat
+        // i bez něj. `null` = nenahráno.
         getSiteDocument(CLAIM_FORM_KEY),
       ])
     : [null, null, null]
@@ -92,7 +102,7 @@ export default async function OrderRefundPage(props: Props) {
       description={
         openClaim
           ? "Tady vidíte, v jaké fázi žádost je. Jakmile rozhodneme nebo k nám dorazí zboží, dáme vám vědět e-mailem."
-          : "Vyberte, co chcete řešit, a odešlete — u vrácení stačí vybrat kusy, u reklamace popište vadu. Potvrzení s protokolem přijde e-mailem."
+          : "Vyberte, co chcete řešit, a odešlete — u vrácení stačí vybrat kusy, u reklamace popište vadu. Potvrzení s datem a časem uplatnění a protokolem přijde e-mailem."
       }
       status="pending"
       primary={myOrdersAction}

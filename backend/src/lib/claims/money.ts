@@ -58,6 +58,8 @@ export const MONEY_ORDER_FIELDS = [
   // a značka zakázky na produktu — řádek zakázky má strop „co je zaplaceno".
   ...LINE_QUANTITY_FIELDS,
   "items.product.metadata",
+  // Zakázka i podle kategorie Zakázková výroba (made-to-order.ts, 14. 10. 2026).
+  "items.product.categories.handle",
   // Košík vrácení (§13.2): poštovné jednou; dobropis (§13.3) páruje řádek
   // dopravy podle názvu metody; ceny komponent balíčku (§13.5) v regionu.
   "shipping_total",

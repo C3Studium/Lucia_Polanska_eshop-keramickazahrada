@@ -6,9 +6,7 @@ import { useId, useRef, useState, type ReactNode } from "react"
 
 import { submitClaim } from "@lib/data/claims"
 import {
-  CP_CLAIM_FORM_PDF_URL,
-  CP_CLAIM_GUIDE_PDF_URL,
-  CP_CLAIM_URL,
+  CARRIER_DAMAGE_CUSTOMER_TEXT,
   REQUESTED_RESOLUTION_LABEL,
   findOpenClaim,
   formatClaimDate,
@@ -26,6 +24,7 @@ import type { CommissionUpload } from "@lib/util/made-to-order"
 import { compressImage } from "@lib/util/compress-image"
 import { convertToLocale } from "@lib/util/money"
 import ClaimStatus from "@modules/order/components/claim-status"
+import WithdrawalEntry from "@modules/order/components/withdrawal/entry"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 
@@ -65,7 +64,7 @@ const KINDS: { value: ClaimKind; label: string; help: string }[] = [
   {
     value: "odstoupeni",
     label: "Odstoupení od smlouvy (zrušení objednávky)",
-    help: "Bez udání důvodu, do 14 dnů od převzetí (§1829).",
+    help: "Bez udání důvodu, do 14 dnů od převzetí (§ 1829). Pokračujete na formulář s kontrolou před odesláním.",
   },
 ]
 
@@ -114,22 +113,9 @@ const CAUSES: {
   {
     value: "carrier",
     label: "Balík dorazil poškozený",
-    // Matěj 12. 10.: ne „potřebujeme fotku", ale „musíte na poštu" + formulář.
-    help: (
-      <>
-        Zásilka přišla rozbitá nebo s poškozeným obalem. Do 2 pracovních dnů ji
-        prosím reklamujte na poště —{" "}
-        <a
-          href={CP_CLAIM_FORM_PDF_URL}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(event) => event.stopPropagation()}
-        >
-          formulář České pošty (PDF)
-        </a>
-        .
-      </>
-    ),
+    // 14. 10. 2026 (právní audit §4.1): poškození hlásíte nám, s dopravcem to
+    // řešíme my — žádná lhůta pošty, fotky a obal jen prosba.
+    help: "Zásilka přišla rozbitá nebo s poškozeným obalem. S dopravcem to vyřešíme sami — fotky obalu i zboží nám pomohou, pokud je máte.",
     photos: false,
   },
 ]
@@ -162,11 +148,14 @@ const componentMax = (item: ClaimOrderItem, component: ClaimOrderItemComponent) 
  * 12. 10. 2026 nenabízí).
  *
  * Co se vyplňuje podle druhu (12. 10. 2026, Matěj):
- * - odstoupení (zrušení objednávky) — nic, jen potvrdit (případně účet),
- *   bez popisu a bez fotek;
+ * - odstoupení (zrušení objednávky) — od 14. 10. 2026 vlastní dvoustupňová
+ *   stránka `/order/:id/odstoupeni` (§ 1830a OZ: předvyplněný formulář →
+ *   kontrola → „Potvrdit odstoupení od smlouvy" → potvrzení s datem a
+ *   časem). Tady jen vysvětlení a tlačítko „Odstoupit od smlouvy";
  * - vrácení zboží — jen VÝBĚR kusů (povinný), bez popisu a bez fotek;
+ *   zakázka na míru je zamčená (§ 1837 písm. d);
  * - reklamace — kusy, co se stalo, co požaduje, popis vady a fotky.
- * Server pak u odstoupení / vrácení uloží výchozí důvod podle druhu.
+ * Server pak u vrácení uloží výchozí důvod podle druhu.
  *
  * Položky (§11.1): server posílá `order_items`, zákazník zaškrtne, kterých kusů
  * se to týká, a kolik. U reklamace i vrácení povinně aspoň jedna, u
@@ -179,11 +168,12 @@ const componentMax = (item: ClaimOrderItem, component: ClaimOrderItemComponent) 
  * celý balíček jako dřív.
  *
  * Co se stalo (§11.3, §13.7): u reklamace povinná volba — vada
- * (`damage_cause` se neposílá), poškozený kus (`"damaged"`) nebo balík dorazil
- * poškozený (`"carrier"`). U obou poškození jsou fotky povinné (server bez
- * nich vrátí 400). U přepravy se ukáže výrazný pokyn: reklamaci u České pošty
- * podává příjemce, tedy zákazník, do 2 pracovních dnů od doručení (odkaz na
- * stránku ČP, případně dokument `claimForm`); reklamace u nás běží dál.
+ * (`damage_cause` se neposílá), poškozený kus (`"damaged"`, fotky povinné)
+ * nebo balík dorazil poškozený (`"carrier"`, fotky vítány). U přepravy se
+ * ukáže věta, že škodu s dopravcem řešíme my a zákazník nic dalšího podávat
+ * nemusí (14. 10. 2026, právní audit §4.1 — za vadu při převzetí odpovídá
+ * prodávající; lhůta České pošty je její věc). Dokument `claimForm` se
+ * nabídne jen jako nepovinný.
  *
  * Auto-zrušení (§13.1): odstoupení / vrácení u nezaplacené a neodeslané
  * objednávky server rovnou vyřídí a objednávku zruší (`auto_cancelled`). Pak
@@ -199,17 +189,22 @@ export default function RefundRequest({
   initialKind,
   currencyCode = "czk",
   claimForm = null,
+  withdrawalElsewhere = false,
 }: {
   orderId: string
   token: string
   claims: OrderClaims
-  /** Předvolený druh z odkazu (`?kind=`) — „Zrušit objednávku" míří na
-      odstoupení, „Reklamace" na reklamaci. Zamčená/neznámá hodnota → reklamace. */
+  /** Předvolený druh z odkazu (`?kind=`) — „Reklamace" míří na reklamaci;
+      `odstoupeni` stránka přesměruje na `/order/:id/odstoupeni` dřív, než se
+      formulář vykreslí. Zamčená/neznámá hodnota → reklamace. */
   initialKind?: string
   currencyCode?: string
-  /** Dokument „co dělat s poškozenou zásilkou" (týž jako u „Než zásilku
-      převezmete"); když je, nápověda u přepínače na něj odkáže. */
+  /** Dokument „Formulář k reklamaci" (modul Dokumenty); když je, nabídne se
+      u poškození přepravou jako NEPOVINNÁ příloha. */
   claimForm?: { title: string; url: string } | null
+  /** Tlačítko „Odstoupit od smlouvy" už stránka ukazuje samostatně (účet) —
+      volbu odstoupení tu pak nenabízet podruhé. */
+  withdrawalElsewhere?: boolean
 }) {
   const router = useRouter()
   const { countryCode } = useParams<{ countryCode: string }>()
@@ -217,9 +212,16 @@ export default function RefundRequest({
   const withdrawBlocked = !claims.can_withdraw
   const blockText = withdrawBlockText(claims)
   const isLocked = (kind: ClaimKind) => kind !== "reklamace" && withdrawBlocked
+  const kinds = withdrawalElsewhere
+    ? KINDS.filter((entry) => entry.value !== "odstoupeni")
+    : KINDS
 
   const preselected: ClaimKind =
-    isClaimKind(initialKind) && !isLocked(initialKind) ? initialKind : "reklamace"
+    isClaimKind(initialKind) &&
+    !isLocked(initialKind) &&
+    kinds.some((entry) => entry.value === initialKind)
+      ? initialKind
+      : "reklamace"
   const [kind, setKind] = useState<ClaimKind>(preselected)
   const [resolution, setResolution] = useState<ClaimRequestedResolution | null>(
     null
@@ -360,15 +362,19 @@ export default function RefundRequest({
   }
 
   const needsResolution = kind === "reklamace"
-  // Výběr položek: u odstoupení se neukazuje (jde o celou objednávku),
+  // Výběr položek: u odstoupení se neukazuje (má vlastní stránku s výběrem),
   // u reklamace i vrácení je povinný (12. 10. 2026, Matěj: u vrácení je to
   // jediné, co zákazník vyplňuje — server bez něj žádost odmítne).
   const showItems = hasOrderItems && kind !== "odstoupeni"
   const needsItems = (kind === "reklamace" || kind === "vraceni") && hasOrderItems
   // Popis vady a fotky jen u reklamace — odstoupení ani vrácení je nemají.
   const needsDetail = kind === "reklamace"
+  // Zakázku na míru vrátit nejde (§ 1837 písm. d) — u vrácení zamčená,
+  // reklamovat ji jde. Server ji u vrácení odmítne taky.
+  const lockedForReturn = (item: ClaimOrderItem) =>
+    kind === "vraceni" && Boolean(item.is_made_to_order)
   const selectedItems: ClaimItemInput[] = orderItems
-    .filter((item) => item.id in selected)
+    .filter((item) => item.id in selected && !lockedForReturn(item))
     .map((item) => {
       // Komponenty jen když zákazník nějakou zaškrtl — jinak jde celý balíček
       // a server se chová jako u běžné položky (§13.5).
@@ -402,6 +408,7 @@ export default function RefundRequest({
   const accountMissing = accountRequired && !account.trim()
 
   const canSend =
+    kind !== "odstoupeni" &&
     (!needsDetail || Boolean(detail.trim())) &&
     (!needsResolution || resolution !== null) &&
     (!needsCause || cause !== null) &&
@@ -493,7 +500,7 @@ export default function RefundRequest({
     <div className={styles.root}>
       <fieldset className={styles.kinds}>
         <legend className={styles.legend}>Co chcete řešit?</legend>
-        {KINDS.map((k) => {
+        {kinds.map((k) => {
           const disabled = isLocked(k.value)
           const help = disabled
             ? blockText
@@ -522,12 +529,16 @@ export default function RefundRequest({
         })}
       </fieldset>
 
-      {/* Odstoupení nemá popis ani fotky (12. 10. 2026, Matěj) — aspoň jedna
-          věta, co odeslání znamená, ať tlačítko nevisí bez kontextu. */}
+      {/* Odstoupení má vlastní dvoustupňovou stránku (§ 1830a OZ):
+          předvyplněný formulář → kontrola → „Potvrdit odstoupení od smlouvy".
+          Tady jen vstup — žádné odeslání jedním kliknutím. */}
       {kind === "odstoupeni" && (
-        <p className={styles.itemsHelp}>
-          Odesláním odstupujete od celé objednávky — důvod udávat nemusíte.
-        </p>
+        <WithdrawalEntry
+          orderId={orderId}
+          token={token}
+          claims={claims}
+          variant="compact"
+        />
       )}
 
       {/* §11.1: kterých kusů se to týká. Bez `order_items` ze serveru se
@@ -545,7 +556,8 @@ export default function RefundRequest({
           )}
           <ul className={styles.itemList}>
             {orderItems.map((item) => {
-              const checked = item.id in selected
+              const locked = lockedForReturn(item)
+              const checked = item.id in selected && !locked
               const qty = checked ? selected[item.id] : 1
               const inputId = `${fieldId}-qty-${item.id}`
               return (
@@ -558,7 +570,7 @@ export default function RefundRequest({
                     <input
                       type="checkbox"
                       checked={checked}
-                      disabled={state === "sending"}
+                      disabled={state === "sending" || locked}
                       onChange={() => toggleItem(item)}
                     />
                     <span className={styles.itemThumb}>
@@ -571,11 +583,18 @@ export default function RefundRequest({
                         objednáno {item.quantity} ks · {money(item.unit_price)}
                         {item.quantity > 1 ? "/ks" : ""}
                       </span>
+                      {locked && (
+                        <span className={styles.hint}>
+                          Vyrobeno na zakázku podle vašeho zadání — vrátit nejde
+                          (§ 1837 písm. d) občanského zákoníku). Má-li vadu,
+                          zvolte reklamaci.
+                        </span>
+                      )}
                     </span>
                   </label>
                   {/* Počet kusů jen tam, kde je z čeho vybírat — u jediného
                       kusu by stepper jen zabíral místo. */}
-                  {item.quantity > 1 && (
+                  {item.quantity > 1 && !locked && (
                     <div
                       className={styles.stepper}
                       role="group"
@@ -764,9 +783,8 @@ export default function RefundRequest({
       )}
 
       {/* §13.7: co se stalo — vada (bez příčiny), poškozený kus nebo balík
-          dorazil poškozený. U poškození jsou fotky povinné; u přepravy musí
-          zákazník sám kontaktovat Českou poštu (pokyn pod volbami), jeho
-          reklamace u nás běží dál (§11.3). */}
+          dorazil poškozený. U poškozeného kusu jsou fotky povinné; u přepravy
+          vítané — s dopravcem to řešíme my (pokyn pod volbami, §11.3). */}
       {needsCause && (
         <fieldset className={styles.causes}>
           <legend className={styles.legend}>
@@ -798,46 +816,26 @@ export default function RefundRequest({
         </fieldset>
       )}
 
-      {/* 12. 10. 2026, Matěj: balík poškozený přepravou → zákazník musí sám
-          kontaktovat Českou poštu do 2 pracovních dnů (reklamaci u přepravce
-          podává příjemce, my jako odesílatel za něj nemůžeme). Odkaz na
-          oficiální stránku ČP (stejná adresa jako v e-mailech), k tomu
-          dokument „co dělat s poškozenou zásilkou", je-li nahraný. */}
+      {/* 14. 10. 2026 (právní audit §4.1): poškození přepravou je vada při
+          převzetí — odpovídá za ni prodávající (§ 2161 OZ) a s dopravcem si
+          ji řeší sama. Zákazník reklamuje tady, bez lhůty České pošty; obal
+          a fotky jsou prosba. Dřívější pokyn „do 2 pracovních dnů na poštu,
+          jinak reklamaci nepřijme" byl v rozporu se zákonem. */}
       {needsCause && cause === "carrier" && (
         <div className={styles.carrierNotice} role="note">
           <p className={styles.carrierNoticeTitle}>
-            Nahlaste poškození i České poště — do 2 pracovních dnů
+            S dopravcem to vyřešíme my
           </p>
-          <p>
-            Reklamaci u přepravce podává příjemce, tedy vy — my jako odesílatel
-            ji za vás podat nemůžeme. Kontaktujte prosím Českou poštu{" "}
-            <strong>nejpozději do 2 pracovních dnů od doručení</strong>, na
-            kterékoli pobočce nebo online. Po této lhůtě už Česká pošta
-            reklamaci nepřijme.
-          </p>
-          <p>
-            <a href={CP_CLAIM_FORM_PDF_URL} target="_blank" rel="noreferrer">
-              Stáhnout formulář České pošty (PDF)
-            </a>
-            {" · "}
-            <a href={CP_CLAIM_GUIDE_PDF_URL} target="_blank" rel="noreferrer">
-              Pokyny k reklamaci
-            </a>
-            {" · "}
-            <a href={CP_CLAIM_URL} target="_blank" rel="noreferrer">
-              Reklamace u České pošty
-            </a>
-            {claimForm?.url ? (
-              <>
-                {" · "}
-                <a href={claimForm.url} target="_blank" rel="noreferrer">
-                  {claimForm.title || "Co dělat s poškozenou zásilkou"}
-                </a>
-              </>
-            ) : null}
-            . Na poštu vezměte zásilku i s obalem, jak přišla.
-          </p>
-          <p>Vaši reklamaci u nás tím odešlete níž jako obvykle.</p>
+          <p>{CARRIER_DAMAGE_CUSTOMER_TEXT}</p>
+          {claimForm?.url ? (
+            <p>
+              Pokud chcete, můžete nám poslat i vyplněný{" "}
+              <a href={claimForm.url} target="_blank" rel="noreferrer">
+                {claimForm.title || "formulář k reklamaci"}
+              </a>{" "}
+              — není to ale potřeba, stačí tento formulář.
+            </p>
+          ) : null}
         </div>
       )}
 
@@ -926,7 +924,7 @@ export default function RefundRequest({
         </div>
       )}
 
-      {accountNeeded && (
+      {accountNeeded && kind !== "odstoupeni" && (
         <div className={styles.account}>
           <label htmlFor={accountId} className={styles.label}>
             Číslo účtu pro vrácení peněz{" "}
@@ -960,23 +958,25 @@ export default function RefundRequest({
         </p>
       )}
 
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.submit}
-          onClick={send}
-          disabled={!canSend}
-        >
-          {state === "sending" ? "Odesíláme…" : "Odeslat žádost"}
-        </button>
-      </div>
+      {kind !== "odstoupeni" && (
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.submit}
+            onClick={send}
+            disabled={!canSend}
+          >
+            {state === "sending" ? "Odesíláme…" : "Odeslat žádost"}
+          </button>
+        </div>
+      )}
 
       <p className={styles.legal}>
         {kind === "reklamace"
-          ? "Reklamaci vyřídíme do 30 dnů a o výsledku vás vyrozumíme e-mailem; protokol dostanete hned po odeslání. U uznané reklamace vracíme cenu reklamovaných výrobků. "
-          : "Peníze vracíme do 14 dnů od odstoupení (při vrácení celé objednávky i poštovné); smíme počkat, než k nám zboží dorazí. "}
+          ? "Reklamaci vyřídíme do 30 dnů od jejího uplatnění (odeslání tohoto formuláře) a o výsledku vás vyrozumíme e-mailem; potvrzení s datem a časem uplatnění a protokol dostanete hned po odeslání. U uznané reklamace vracíme cenu reklamovaných výrobků. "
+          : "Peníze vracíme do 14 dnů od odstoupení (při vrácení celé objednávky i náklady na dodání ve výši nejlevnějšího nabízeného způsobu); smíme počkat, než k nám zboží dorazí. "}
         Podrobnosti najdete v{" "}
-        <LocalizedClientLink href="/reklamacni-protokol">
+        <LocalizedClientLink href="/reklamacni-rad">
           reklamačním řádu
         </LocalizedClientLink>{" "}
         a ve vzoru pro{" "}

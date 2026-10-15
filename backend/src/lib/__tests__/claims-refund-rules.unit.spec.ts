@@ -209,13 +209,16 @@ describe("checkClaimRules / withdrawalGate — pravidla intake (§4)", () => {
     ).toBe(true)
   })
 
-  it("14 dnů od odeslání: po lhůtě ne, bez odeslání ano", () => {
+  // 14. 10. 2026: lhůta běží od PŘEVZETÍ. Převzetí neznámé (bez sledování) =
+  // odeslání + 7 dnů → odesláno 1. 9., převzetí odhadem 8. 9., konec 22. 9.
+  // ve 23:59:59 pražského času (podrobně claims-withdrawal.unit.spec).
+  it("14 dnů od převzetí (odhad odeslání + 7 dnů): po lhůtě ne, bez odeslání ano", () => {
     const shipped = {
       ...plainOrder,
       fulfillments: [{ shipped_at: "2026-09-01T10:00:00Z", canceled_at: null }],
     }
-    const late = new Date("2026-09-20T10:00:00Z")
-    const inTime = new Date("2026-09-10T10:00:00Z")
+    const late = new Date("2026-09-23T10:00:00Z")
+    const inTime = new Date("2026-09-20T10:00:00Z")
     expect(checkClaimRules(shipped, [], input("odstoupeni"), late).ok).toBe(false)
     expect(checkClaimRules(shipped, [], input("odstoupeni"), inTime).ok).toBe(true)
     expect(checkClaimRules(plainOrder, [], input("odstoupeni"), late).ok).toBe(true)
@@ -307,10 +310,12 @@ describe("checkClaimRules / withdrawalGate — pravidla intake (§4)", () => {
       ...plainOrder,
       fulfillments: [{ shipped_at: "2026-09-01T10:00:00Z", canceled_at: null }],
     }
-    const gate = withdrawalGate(shipped, [], new Date("2026-09-20T10:00:00Z"))
+    const gate = withdrawalGate(shipped, [], new Date("2026-09-23T10:00:00Z"))
     expect(gate.can_withdraw).toBe(false)
-    expect(gate.withdrawal_deadline).toBe("2026-09-15T10:00:00.000Z")
+    expect(gate.withdrawal_deadline).toBe("2026-09-22T21:59:59.999Z")
     expect(gate.withdraw_block_reason).toMatch(/lhůta/i)
+    expect(gate.withdraw_block_code).toBe("expired")
+    expect(gate.takeover_basis).toBe("estimated")
 
     const open = withdrawalGate(plainOrder, [{ status: "pending" }])
     expect(open.can_withdraw).toBe(false)

@@ -209,9 +209,10 @@
 /* ── Touch ───────────────────────────────────────────────────────────────────
    A tablet is a touch device, and the 44px floor in globals.scss is deliberately
    scoped to real buttons "so inline text links keep their natural line box". The
-   two links here are not decoration — eReklamace and the reklamační řád are the
-   whole claim procedure — and measured on a touch tablet they were 70.6×15 and
-   104.8×15 px.
+   links here are not decoration — the contact e-mail and the reklamační řád are
+   the whole claim procedure (14. 10. 2026: the ČP eReklamace link is gone, the
+   customer reports damage to us) — and measured on a touch tablet they were
+   70.6×15 and 104.8×15 px.
 
    Block padding on the link itself, not an absolutely positioned `::after`. On a
    non-replaced inline, vertical padding does not enter the line box, so nothing

@@ -3,29 +3,30 @@
 import { AnimatePresence, cubicBezier, motion } from "framer-motion"
 import { useId, useState } from "react"
 
-import { CP_CLAIM_URL } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import styles from "./style.module.scss"
 
 import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
 /**
- * Poškozená zásilka — what to do, and the window it has to happen in.
+ * Poškozená zásilka — co udělat, když keramika dorazí rozbitá.
  *
- * ## Why the customer is told rather than the shop handling it
+ * ## Kdo za poškození odpovídá (14. 10. 2026, právní audit §4.1)
  *
- * Under Česká pošta's rules the **recipient** files a transport claim, not the sender. She
- * physically cannot do it on their behalf. So the only useful thing the shop can do is tell
- * them clearly, early, and while the clock is still running:
+ * Prodávající odpovídá za to, že zboží při PŘEVZETÍ nemá vady (§ 2161 odst. 1
+ * OZ), a nebezpečí škody přechází na zákazníka až převzetím (§ 2159 odst. 2).
+ * Rozbitý kus v krabici je tedy vada při převzetí: zákazník ho reklamuje
+ * u nás a škodu u dopravce si řeší prodávající (pojištění balíku). Lhůta
+ * České pošty (2 pracovní dny) je vztah prodávající–dopravce — zákazníka
+ * nezavazuje a reklamaci nepodmiňuje.
  *
- * - inspect the packaging **before signing**, and open it in front of the courier if anything
- *   looks wrong;
- * - report damage at handover or **within two working days** — after that ČP refuses the claim;
- * - file at any branch or through *eReklamace*, with photographs and proof of value.
+ * Dřívější text („reklamaci u dopravce podává příjemce, máte na ni dva
+ * pracovní dny, potom ji Česká pošta nepřijme") z toho dělal podmínku —
+ * v rozporu se zákonem. Teď:
  *
- * A parcel accepted without inspection and found broken on day three is nobody's liability but
- * the customer's. Saying so before it happens is kinder than saying so afterwards, which is
- * why this sits on the order rather than only in the terms.
+ * - prohlédnout obal při převzetí je PROSBA (pomůže nám s dopravcem);
+ * - poškození hlásí zákazník nám — fotky vítány, obal schovat, pokud to jde;
+ * - kdyby Česká pošta potřebovala jeho součinnost, ozveme se.
  *
  * ## Sbalené, dokud o to člověk nestojí
  *
@@ -49,14 +50,11 @@ import { useSiteReducedMotion } from "@lib/context/MotionPreferenceProvider"
  */
 
 /**
- * Dřív `ceskaposta.cz/ereklamace` — 12. 10. 2026 ověřeno, že vrací 404. Teď
- * jedna adresa pro celý obchod (`CP_CLAIM_URL`): stránka ČP „Reklamace
- * a stížnosti" s online podáním i formuláři; stejná jako v e-mailech.
- * Jméno konstanty zůstává kvůli případným importům.
+ * Jméno dokumentu v modulu Dokumenty („Formulář k reklamaci"); prázdné místo
+ * se ohlásí v Přehledu. Od 14. 10. 2026 se nabízí jen jako NEPOVINNÁ pomůcka
+ * — reklamace jde podat online i bez něj, a není to formulář dopravce, který
+ * by zákazník musel vyplnit.
  */
-export const CP_EREKLAMACE_URL = CP_CLAIM_URL
-
-/** Jméno dokumentu v modulu Dokumenty; prázdné místo se ohlásí v Přehledu. */
 export const CLAIM_FORM_KEY = "reklamacni-formular"
 
 /*
@@ -147,68 +145,62 @@ export default function CarrierDamageNotice({
             <div className={styles.body}>
               {stage === "pending" ? (
                 <p className={styles.lede}>
-                  Prohlédněte si prosím obal ještě před podpisem. Je-li promáčklý,
-                  protržený nebo něčím prosakuje, rozbalte zásilku rovnou před
-                  doručovatelem. Keramika se rozbije tiše — zvenku bývá krabice
-                  v pořádku.
+                  Prohlédněte si prosím obal ještě při převzetí. Je-li promáčklý,
+                  protržený nebo něčím prosakuje, můžete zásilku rozbalit před
+                  doručovatelem a poškození s ním rovnou sepsat — usnadní nám to
+                  vyřízení s dopravcem. Podmínkou to ale není: keramika se rozbije
+                  tiše a poškození často najdete až doma.
                 </p>
               ) : (
                 <p className={styles.lede}>
-                  Reklamaci u dopravce podává příjemce, tedy vy — my ji za vás
-                  bohužel podat nemůžeme. Máte na ni dva pracovní dny od doručení.
+                  Za to, že zboží dorazí v pořádku, odpovídáme my. Poškozený kus
+                  vyměníme nebo vrátíme peníze — a s dopravcem si to vyřešíme
+                  sami. Vy kvůli tomu nikam chodit nemusíte.
                 </p>
               )}
 
               <ol className={styles.steps}>
                 <li>
-                  <strong>Vyfoťte</strong> obal i obsah, ještě než cokoli vybalíte
-                  dál.
+                  <strong>Vyfoťte</strong> obal i obsah, pokud můžete — fotky nám
+                  s dopravcem pomohou.
                 </li>
                 <li>
-                  <strong>Nahlaste to do dvou pracovních dnů</strong> — na kterékoli
-                  pobočce České pošty, nebo online — postup je na{" "}
-                  <a href={CP_EREKLAMACE_URL} target="_blank" rel="noreferrer">
-                    stránce České pošty o reklamacích
+                  <strong>Napište nám</strong> — reklamaci podáte z odkazu
+                  v e-mailu u objednávky
+                  {orderNumber ? ` (objednávka ${orderNumber})` : ""}, nebo na{" "}
+                  <a href="mailto:info@keramickazahrada.cz">
+                    info@keramickazahrada.cz
                   </a>
-                  . Po této lhůtě už Česká pošta reklamaci nepřijme.
+                  .
                 </li>
                 <li>
-                  <strong>Přiložte doklad o ceně</strong> zboží
-                  {orderNumber ? ` a číslo objednávky ${orderNumber}` : ""}.
-                </li>
-                <li>
-                  <strong>Dejte vědět i nám.</strong> O poškozené zásilce chceme
-                  vědět, i když ji řeší dopravce.
+                  <strong>Obal si prosím schovejte</strong>, dokud se vám
+                  neozveme. Kdyby Česká pošta potřebovala vaši pomoc (například
+                  sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to
+                  nijak nepodmiňuje.
                 </li>
               </ol>
 
-              <div className={styles.document}>
-                <p className={styles.documentLabel}>
-                  {claimForm?.title ?? "Formulář k reklamaci"}
-                </p>
-                {claimForm ? (
+              {/* Nepovinná pomůcka (modul Dokumenty). Když chybí, nic se
+                  nevypisuje — reklamace jde podat i bez ní. */}
+              {claimForm ? (
+                <div className={styles.document}>
+                  <p className={styles.documentLabel}>
+                    {claimForm.title || "Formulář k reklamaci"}
+                  </p>
                   <p className={styles.documentNote}>
+                    Pokud vám to tak vyhovuje víc, můžete nám poslat i vyplněný{" "}
                     <a href={claimForm.url} target="_blank" rel="noreferrer">
-                      Stáhnout formulář
-                    </a>
+                      formulář k reklamaci
+                    </a>{" "}
+                    — povinné to není.
                   </p>
-                ) : (
-                  /* Nenahráno — Přehled na to upozorňuje. Do té doby ať je aspoň
-                     řečeno, kde formulář sehnat, místo mlčení nebo mrtvého odkazu. */
-                  <p className={styles.documentNote}>
-                    Dokument sem doplníme — do té doby použijte formulář přímo na
-                    pobočce nebo na{" "}
-                    <a href={CP_EREKLAMACE_URL} target="_blank" rel="noreferrer">
-                      stránce České pošty
-                    </a>
-                    .
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : null}
 
               <p className={styles.more}>
                 Podrobný postup a vaše práva najdete v{" "}
-                <LocalizedClientLink href="/reklamacni-protokol">
+                <LocalizedClientLink href="/reklamacni-rad">
                   reklamačním řádu
                 </LocalizedClientLink>
                 .

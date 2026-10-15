@@ -22,10 +22,13 @@ import { kindLabel, resolutionLabel } from "./constants"
  * 2. Protokol jako potvrzení o vyřízení (jedno číslo, PDF roste o vyřízení).
  * 3. Nativní zrušení (`cancelOrderNatively`: workflow + fáze `cancelled`;
  *    zakázka tu nikdy není — `shouldAutoCancel` ji vylučuje).
- * 4. JEDEN e-mail zákazníkovi: `return-approved` s `nothingToReturn` („Objednávka
- *    zrušena" — nic neposílat, nic nebylo zaplaceno). Potvrzení o přijetí
- *    (`refund-request`) se NEposílá: psát „posoudíme do 14 dnů" o žádosti,
- *    která je o vteřinu později vyřízená, by zákazníka jen zmátlo.
+ * 4. JEDEN e-mail zákazníkovi. Od 14. 10. 2026 je to POTVRZENÍ PŘIJETÍ
+ *    (`refund-request` s `autoCancelled`): odstoupení online musí být
+ *    potvrzeno i s obsahem a datem a časem odeslání (§ 1830a OZ, NV 29/2023
+ *    pokyn [4]) — a zároveň řekne, že objednávka je zrušená a není co
+ *    vracet ani posílat. Dřív šlo jen `return-approved` („Objednávka
+ *    zrušena") bez data a obsahu prohlášení. Bez `confirmationEmail`
+ *    (starší volající) zůstává `return-approved`.
  * 5. Zvonek majitelce BEZ e-mailu — nic po ní nechceme, jen ať to ví.
  */
 export type AutoCancelResult = {
@@ -40,6 +43,11 @@ export const autoCancelClaim = async (
   params: {
     request: any
     order: { id: string; display_id?: number | string | null; email?: string | null }
+    /**
+     * Data potvrzení přijetí (šablona `refund-request`) sestavená intake —
+     * obsah žádosti, datum a čas odeslání, `autoCancelled: true`.
+     */
+    confirmationEmail?: Record<string, unknown> | null
   }
 ): Promise<AutoCancelResult> => {
   const { order } = params
@@ -66,20 +74,36 @@ export const autoCancelClaim = async (
 
   const cancel = await cancelOrderNatively(container, order, null)
 
-  await sendCustomerEmail(container, {
-    template: "return-approved",
-    to: order.email,
-    key: `return-approved:req:${updated.id}`,
-    orderId: order.id,
-    data: {
-      subject: "Objednávka zrušena",
-      ...claimEmailBase(updated, protocol.url),
-      returnReason: updated.reason,
-      goodsReturnRequired: false,
-      nothingToReturn: true,
-      returnDeadline: "nebylo zaplaceno — není co vracet",
-    },
-  })
+  if (params.confirmationEmail) {
+    await sendCustomerEmail(container, {
+      template: "refund-request",
+      to: order.email,
+      // Stejný klíč jako běžné potvrzení přijetí — kdyby se auto-zrušení
+      // zopakovalo, zákazník nedostane potvrzení dvakrát.
+      key: `refund-request:${updated.id}`,
+      orderId: order.id,
+      data: {
+        ...params.confirmationEmail,
+        ...(protocol.url ? { protocolUrl: protocol.url } : {}),
+        autoCancelled: true,
+      },
+    })
+  } else {
+    await sendCustomerEmail(container, {
+      template: "return-approved",
+      to: order.email,
+      key: `return-approved:req:${updated.id}`,
+      orderId: order.id,
+      data: {
+        subject: "Objednávka zrušena",
+        ...claimEmailBase(updated, protocol.url),
+        returnReason: updated.reason,
+        goodsReturnRequired: false,
+        nothingToReturn: true,
+        returnDeadline: "nebylo zaplaceno — není co vracet",
+      },
+    })
+  }
 
   await notifyMerchant(container, {
     key: `mn:return-req:${updated.id}`,

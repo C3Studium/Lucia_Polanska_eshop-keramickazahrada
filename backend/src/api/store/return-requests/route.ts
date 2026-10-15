@@ -1,9 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import {
+  attachParcelTracking,
   CLAIM_ORDER_FIELDS,
   listOrderClaims,
 } from "../../../lib/claims/context"
+import { CLAIM_CHANNEL_ONLINE } from "../../../lib/claims/constants"
 import { checkClaimRules, createClaim } from "../../../lib/claims/intake"
 import { PostStoreCreateReturnRequest } from "./validators"
 
@@ -61,6 +63,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(200).json(GENERIC_RESPONSE)
   }
 
+  // Převzetí ze sledování ČP — lhůta pro odstoupení běží od převzetí
+  // (lib/claims/withdrawal.ts), stejně jako na tokenové routě.
+  await attachParcelTracking(req.scope, order)
   const existing = await listOrderClaims(req.scope, order.id)
   const input = {
     kind: body.kind ?? null,
@@ -77,7 +82,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(200).json(GENERIC_RESPONSE)
   }
 
-  await createClaim(req.scope, { order, input, existingRequests: existing })
+  await createClaim(req.scope, {
+    order,
+    input,
+    existingRequests: existing,
+    channel: CLAIM_CHANNEL_ONLINE,
+  })
 
   return res.status(200).json(GENERIC_RESPONSE)
 }

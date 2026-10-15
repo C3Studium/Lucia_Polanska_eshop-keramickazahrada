@@ -11,6 +11,7 @@ import {
 import { balancePaymentUrl } from "../lib/balance-payment-link"
 import { captureCoveredByBalanceMail } from "../lib/balance-settlement"
 import { isAutoCancelledClaim } from "../lib/claims/auto-cancel"
+import { withdrawalUrlFor } from "../lib/claims/withdrawal-link"
 import { refundHistoryOf, toNumber } from "../lib/claims/refund-rules"
 import { lineQuantityOf } from "../lib/order-quantity"
 import { isServiceLine } from "../lib/packaging-lines"
@@ -419,13 +420,17 @@ const onShipmentCreated = async ({
   // podá + odešle naráz). „Připraveno k vyzvednutí" se posílá dřív, při přechodu
   // do „K odeslání" (viz onMerchantStageChanged). Tady už zákazník zboží má →
   // „Objekty jsou u vás".
+  // Odkaz „Odstoupit od smlouvy" (§ 1830a OZ) — host bez účtu ho jinde nemá.
+  // Prázdný u čisté zakázky (§ 1837 písm. d) a zrušené objednávky.
+  const withdrawalUrl = await withdrawalUrlFor(container, order.id)
+
   if (isPickupOrder(order)) {
     await sendCustomerEmail(container, {
       template: "order-delivered",
       to: order.email,
       key: `ship:${fulfillment.id}`,
       orderId: order.id,
-      data: { ...common(order) },
+      data: { ...common(order), withdrawalUrl },
     })
     return
   }
@@ -449,6 +454,7 @@ const onShipmentCreated = async ({
         number: label?.tracking_number,
         url: label?.tracking_url,
       }),
+      withdrawalUrl,
     },
   })
 }
@@ -476,7 +482,11 @@ const onDeliveryCreated = async ({
     to: order.email,
     key: `deliver:${fulfillment.id}`,
     orderId: order.id,
-    data: { ...common(order) },
+    // Převzetím začíná 14denní lhůta — odkaz „Odstoupit od smlouvy" (§ 1830a).
+    data: {
+      ...common(order),
+      withdrawalUrl: await withdrawalUrlFor(container, order.id),
+    },
   })
 }
 
@@ -975,6 +985,8 @@ const onMerchantStageChanged = async ({
       data: {
         ...common(order),
         ...shipmentTracking(order),
+        // Odkaz „Odstoupit od smlouvy" (§ 1830a OZ), stejně jako na shipment.created.
+        withdrawalUrl: await withdrawalUrlFor(container, order.id),
       },
     })
     return

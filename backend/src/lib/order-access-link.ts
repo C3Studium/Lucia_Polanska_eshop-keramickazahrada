@@ -81,6 +81,18 @@ export const orderRefundUrl = (orderId: string): string => {
 }
 
 /**
+ * Absolutní URL na stránku „Odstoupit od smlouvy" (`/order/:id/odstoupeni`,
+ * § 1830a OZ) s tokenem — do e-mailu o odeslání a o převzetí, ať i host bez
+ * účtu najde tlačítko po celou 14denní lhůtu. Prázdné bez storefrontu.
+ */
+export const orderWithdrawalUrl = (orderId: string): string => {
+  const base = storefrontBase()
+  return base && orderId
+    ? `${base}/order/${orderId}/odstoupeni?token=${signOrderAccessToken(orderId)}`
+    : ""
+}
+
+/**
  * Absolutní URL na stránku „stav reklamace / vrácení" (`/order/:id/claims`) —
  * časová osa žádosti, protokol, číslo vrácené zásilky. Do e-mailů modulu
  * reklamací (potvrzení přijetí, schválení, přijetí zboží, vyřízení).

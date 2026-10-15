@@ -40,24 +40,15 @@ export const NEW_CLAIM_RESOLUTIONS: ClaimRequestedResolution[] = [
 ]
 
 /**
- * Reklamace zásilky u České pošty — oficiální stránka „Reklamace a stížnosti"
- * (kdo reklamuje, lhůta 2 pracovní dny, online podání, formuláře). Ověřeno
- * 12. 10. 2026; dřívější `ceskaposta.cz/reklamace` i `/ereklamace` vrací 404.
- * Stejná adresa jako v e-mailech (`CP_CLAIM_FORM_URL` na backendu).
+ * Poškození při přepravě (14. 10. 2026, právní audit §4.1): zákazník ho hlásí
+ * NÁM jako běžnou reklamaci; škodu u dopravce řeší prodávající (za vadu při
+ * převzetí odpovídá ona, § 2161 OZ). Obal a fotky jsou prosba, ne podmínka.
+ * Dřívější odkazy na formulář a lhůtu České pošty (`CP_CLAIM_*`) z webu
+ * zmizely — stejná věta jako v e-mailech (`CARRIER_DAMAGE_CUSTOMER_TEXT` na
+ * backendu).
  */
-export const CP_CLAIM_URL =
-  "https://www.ceskaposta.cz/rady-a-tipy/jine/reklamace-a-stiznosti"
-
-/**
- * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k podání —
- * přímé odkazy pro „Balík dorazil poškozený" (Matěj 12. 10. 2026). Ověřeno
- * 12. 10. 2026, oba vrací PDF. Stejné jako `CP_CLAIM_FORM_URL` /
- * `CP_CLAIM_GUIDE_URL` na backendu.
- */
-export const CP_CLAIM_FORM_PDF_URL =
-  "https://www.ceskaposta.cz/documents/d/guest/formular-reklamace-pdf?download=true"
-export const CP_CLAIM_GUIDE_PDF_URL =
-  "https://www.ceskaposta.cz/documents/d/guest/pokyny-pro-podani-reklamace-pri-poskozeni?download=true"
+export const CARRIER_DAMAGE_CUSTOMER_TEXT =
+  "Poškození při přepravě řešíme s Českou poštou my — vy kvůli tomu nikam chodit ani nic podávat nemusíte. Pokud můžete, nechte si prosím obal a výplň, dokud se vám neozveme; fotky obalu i zboží nám pomohou. Kdyby Česká pošta potřebovala vaši součinnost (například sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to nijak nepodmiňuje."
 
 /** Co ROZHODLA majitelka při schválení (§2169–2172). */
 export type ClaimResolution = "repair" | "replace" | "discount" | "refund"
@@ -142,6 +133,8 @@ export type ClaimOrderItem = {
   unit_price: number
   total: number
   components?: ClaimOrderItemComponent[] | null
+  /** Zakázka na míru (§1837 písm. d) — vrácení zboží ji nenabídne. */
+  is_made_to_order?: boolean
 }
 
 /** Vybraná komponenta balíčku v žádosti (§13.5) — tělo `items[].components`. */
@@ -171,6 +164,12 @@ export type OrderClaim = {
   kind: ClaimKind
   status: ClaimStatus
   created_at: string
+  /** Okamžik odeslání (čas serveru); starší žádosti = `created_at`. */
+  submitted_at?: string | null
+  /** Kudy žádost přišla (`"online"`). */
+  channel?: string | null
+  /** Odstoupení / vrácení: převzetí zboží, ze kterého se počítala lhůta. */
+  takeover_at?: string | null
   resolve_by: string | null
   requested_resolution: ClaimRequestedResolution | null
   resolution: ClaimResolution | null
@@ -195,10 +194,113 @@ export type OrderClaim = {
   order_cancelled?: boolean | null
 }
 
+/**
+ * Převzetí zboží, od kterého běží 14 dnů (backend `lib/claims/withdrawal.ts`):
+ * `delivered` (doručeno), `pickup` (osobní odběr), `estimated` (odesláno,
+ * doručení neznámé — odhad odeslání + 7 dnů), `in_transit` (na cestě — lhůta
+ * ještě neběží), `not_shipped` (neodesláno — lhůta neběží).
+ */
+export type TakeoverBasis =
+  | "not_shipped"
+  | "in_transit"
+  | "delivered"
+  | "pickup"
+  | "estimated"
+
+/** Proč odstoupit nejde (strojově) — volí vysvětlení místo tlačítka. */
+export type WithdrawBlockCode =
+  | "made_to_order"
+  | "cancelled"
+  | "expired"
+  | "open_withdrawal"
+
+/** Položka formuláře odstoupení — zakázka je `withdrawable: false` s důvodem. */
+export type WithdrawalItem = {
+  id: string
+  title: string
+  variant_title: string | null
+  thumbnail: string | null
+  quantity: number
+  unit_price: number
+  total: number
+  is_made_to_order: boolean
+  withdrawable: boolean
+  block_reason: string | null
+}
+
+/**
+ * Předvyplněný formulář odstoupení (`withdrawal` v `GET …/claims`, § 1830a OZ).
+ * Datumy už zformátované serverem v pražském čase (`*_text`).
+ */
+export type OrderWithdrawal = {
+  order_display_id: string
+  currency_code?: string | null
+  order_date: string | null
+  order_date_text: string
+  customer_name: string | null
+  email: string | null
+  goods_shipped: boolean
+  takeover_at: string | null
+  takeover_basis: TakeoverBasis
+  takeover_text: string
+  shipped_at: string | null
+  deadline: string | null
+  deadline_text: string | null
+  items: WithdrawalItem[]
+  refund_method: "card" | "account" | "none"
+  refund_method_text: string
+  return_address: string
+}
+
+/** Snímek položky v potvrzení (stejný tvar jako `line_items` žádosti). */
+export type ConfirmationLine = {
+  line_item_id: string
+  title: string
+  variant_title: string | null
+  thumbnail?: string | null
+  quantity: number
+  unit_price: number
+  total: number
+  currency_code?: string | null
+}
+
+/**
+ * Potvrzení hned po odeslání (`confirmation` v odpovědi POST) — obsah
+ * prohlášení a datum a čas odeslání, totéž co v potvrzovacím e-mailu.
+ */
+export type ClaimConfirmation = {
+  id: string
+  kind: ClaimKind | null
+  submitted_at: string
+  submitted_at_text: string
+  channel: string
+  channel_text: string
+  order_display_id: string
+  order_date_text: string
+  customer_name: string | null
+  email: string | null
+  takeover_text: string | null
+  items: ConfirmationLine[]
+  excluded_items: ConfirmationLine[]
+  whole_order: boolean
+  reason: string | null
+  refund_method_text: string | null
+  return_address: string | null
+  goods_shipped: boolean
+  /** Nic nebylo zaplaceno — o vracení peněz se nemluví. */
+  nothing_to_refund?: boolean
+  auto_cancelled: boolean
+}
+
 export type OrderClaims = {
   can_withdraw: boolean
   withdrawal_deadline: string | null
   withdraw_block_reason: string | null
+  withdraw_block_code?: WithdrawBlockCode | null
+  takeover_at?: string | null
+  takeover_basis?: TakeoverBasis
+  /** Formulář odstoupení online (§ 1830a). Starší backend ho neposílá. */
+  withdrawal?: OrderWithdrawal | null
   return_address: string
   return_instructions: string | null
   all_made_to_order: boolean
@@ -409,6 +511,61 @@ export const formatClaimDate = (value: string | null | undefined) => {
   }).format(date)
 }
 
+/**
+ * „15. 10. 2026 v 14:32" v pražském čase — datum a čas odeslání žádosti
+ * (§ 1830a OZ u odstoupení, § 19 ZOS u reklamace). Pražský čas napevno, ať
+ * zákazník v cizině vidí totéž co v e-mailu.
+ */
+export const formatClaimDateTime = (value: string | null | undefined) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  const parts: Record<string, string> = {}
+  for (const part of new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Prague",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date)) {
+    if (part.type !== "literal") parts[part.type] = part.value
+  }
+  const hour = parts.hour === "24" ? "00" : parts.hour
+  return `${Number(parts.day)}. ${Number(parts.month)}. ${parts.year} v ${hour}:${parts.minute}`
+}
+
+/** Otevřené odstoupení / vrácení k objednávce (blokuje další odstoupení). */
+export const findOpenWithdrawal = (claims: OrderClaims | null | undefined) =>
+  claims?.requests.find(
+    (request) =>
+      !isFinalClaimStatus(request.status) &&
+      (request.kind === "odstoupeni" || request.kind === "vraceni")
+  ) ?? null
+
+export type WithdrawalEntryState =
+  | { kind: "available"; deadlineText: string | null }
+  | { kind: "blocked"; code: WithdrawBlockCode | null; text: string }
+
+/**
+ * Co ukázat místo / u tlačítka „Odstoupit od smlouvy" (§ 1830a): tlačítko po
+ * celou lhůtu (od objednání do 14 dnů po převzetí), jinak vysvětlení —
+ * zakázka (§ 1837 písm. d), uplynulá lhůta, běžící odstoupení, zrušená
+ * objednávka. Rozhoduje server (`can_withdraw`), tady se jen vybírá věta.
+ */
+export const withdrawalEntryState = (claims: OrderClaims): WithdrawalEntryState => {
+  if (claims.can_withdraw) {
+    const deadline = claims.withdrawal?.deadline_text ?? null
+    return { kind: "available", deadlineText: deadline }
+  }
+  return {
+    kind: "blocked",
+    code: claims.withdraw_block_code ?? null,
+    text: withdrawBlockText(claims) ?? "Od smlouvy teď u této objednávky odstoupit nejde.",
+  }
+}
+
 /** Lhůta už uplynula? `false`, když lhůta není (ještě neodesláno → bez lhůty). */
 export const isDeadlinePast = (deadline: string | null | undefined) => {
   if (!deadline) return false
@@ -424,7 +581,7 @@ export const withdrawBlockText = (claims: OrderClaims) => {
   if (claims.can_withdraw) return null
   if (claims.withdraw_block_reason) return claims.withdraw_block_reason
   if (claims.all_made_to_order) {
-    return "Zboží na míru — ze zákona od něj nelze odstoupit (§1837 písm. d)."
+    return "Zboží vyrobené na míru podle vašeho zadání — od smlouvy o jeho koupi nelze odstoupit (§ 1837 písm. d) občanského zákoníku). Má-li vadu, můžete ho reklamovat."
   }
   if (isDeadlinePast(claims.withdrawal_deadline)) {
     return `Lhůta 14 dnů pro odstoupení uplynula dne ${formatClaimDate(

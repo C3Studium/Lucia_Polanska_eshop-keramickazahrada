@@ -20,6 +20,7 @@ import { getSiteDocument } from "@lib/data/documents"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
+import { withdrawalHref } from "@modules/order/components/withdrawal/entry"
 import { withdrawBlockText, type OrderClaims } from "@lib/util/claims"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PremiumActionLink from "@modules/common/components/premium-action-link"
@@ -153,14 +154,17 @@ export default async function OrderCompletedTemplate({
       : paymentStatus
 
   /*
-   * „Zrušit objednávku" = odstoupení od smlouvy do 14 dnů (§1829). Server říká,
-   * zda to ještě jde: u zakázky ne (§1837), po lhůtě ne, s otevřenou žádostí ne.
-   * Místo tlačítka pak stojí jedna věta s důvodem — reklamace zůstává. Když se
-   * `claims` nenačetly, tlačítko necháme; pravidla pohlídá stránka formuláře.
+   * „Odstoupit od smlouvy" (§ 1829, tlačítko § 1830a OZ) — od 14. 10. 2026
+   * místo dřívějšího „Zrušit objednávku": před odesláním i po něm je to táž
+   * cesta (dvoustupňová stránka `/order/:id/odstoupeni`). Dostupné po celou
+   * lhůtu, i když už k objednávce běží jiná žádost (reklamace odstoupení
+   * neblokuje). Server říká, zda to jde: u zakázky ne (§ 1837 písm. d), po
+   * lhůtě ne, u běžícího odstoupení ne — pak místo tlačítka věta s důvodem.
+   * Když se `claims` nenačetly, tlačítko necháme; pravidla pohlídá stránka.
    */
   const hasClaims = Boolean(claims && claims.requests.length > 0)
-  const cancelBlocked = claims ? claims.all_made_to_order || !claims.can_withdraw : false
-  const cancelBlockedText = claims ? withdrawBlockText(claims) : null
+  const withdrawBlocked = claims ? claims.all_made_to_order || !claims.can_withdraw : false
+  const withdrawBlockedText = claims ? withdrawBlockText(claims) : null
 
   return (
     <main className={s.root}>
@@ -201,10 +205,10 @@ export default async function OrderCompletedTemplate({
         <OrderProgressPanel progress={progress} fallbackLabel={progressFallback} />
 
         {/* Co se dá s objednávkou ještě udělat — vedle stavu „Přijato": úprava
-            (jen než ji zabalíme), zrušení (odstoupení od smlouvy) a reklamace /
-            vrácení. Každé otevře příslušnou stránku s podepsaným tokenem; ta si
-            ho ověří a pravidla pohlídá sama (reklamace zvlášť, úprava jen včas).
-            Dřív šly tyhle stránky otevřít jen z e-mailu — teď jsou i tady. */}
+            (jen než ji zabalíme), odstoupení od smlouvy (i zrušení před
+            odesláním) a reklamace / vrácení. Každé otevře příslušnou stránku
+            s podepsaným tokenem; ta si ho ověří a pravidla pohlídá sama
+            (reklamace zvlášť, úprava jen včas). */}
         {selfServiceToken && (
           <section className={s.selfService} aria-label="Co s objednávkou">
             <p className={s.selfServiceLead}>
@@ -217,16 +221,17 @@ export default async function OrderCompletedTemplate({
               >
                 Upravit objednávku
               </LocalizedClientLink>
-              {/* S existující žádostí nesou „Zrušit / Reklamace" sekci
-                  „Reklamace a vrácení" níž (stav + odkaz) — tady by se tloukly. */}
-              {!hasClaims && !cancelBlocked && (
+              {/* § 1830a — po celou lhůtu, i vedle běžící reklamace. */}
+              {!withdrawBlocked && (
                 <LocalizedClientLink
                   className={s.selfServiceBtn}
-                  href={`/order/${order.id}/refund?token=${selfServiceToken}&kind=odstoupeni`}
+                  href={withdrawalHref(order.id, selfServiceToken)}
                 >
-                  Zrušit objednávku
+                  Odstoupit od smlouvy
                 </LocalizedClientLink>
               )}
+              {/* S existující žádostí nese reklamaci sekce „Reklamace
+                  a vrácení" níž (stav + odkaz) — tady by se tloukly. */}
               {!hasClaims && (
                 <LocalizedClientLink
                   className={`${s.selfServiceBtn} ${s.selfServiceBtnGhost}`}
@@ -236,11 +241,23 @@ export default async function OrderCompletedTemplate({
                 </LocalizedClientLink>
               )}
             </div>
-            {!hasClaims && cancelBlocked && cancelBlockedText && (
+            {!withdrawBlocked && (
               <p className={s.selfServiceNote}>
-                <strong>Zrušení objednávky:</strong> {cancelBlockedText}
+                Rozmysleli jste si to? Od smlouvy můžete odstoupit bez udání
+                důvodu{" "}
+                {claims?.withdrawal?.deadline_text
+                  ? `do ${claims.withdrawal.deadline_text} (14 dnů od převzetí zboží)`
+                  : claims?.withdrawal?.takeover_basis === "in_transit"
+                    ? "— lhůta 14 dnů poběží od převzetí zboží"
+                    : "— i před odesláním; lhůta 14 dnů poběží od převzetí zboží"}
+                .
+              </p>
+            )}
+            {withdrawBlocked && withdrawBlockedText && (
+              <p className={s.selfServiceNote}>
+                <strong>Odstoupení od smlouvy:</strong> {withdrawBlockedText}
                 {claims?.all_made_to_order
-                  ? " Reklamovat zboží můžete, nebo nám napište a domluvíme se."
+                  ? " Napište nám, kdybyste se chtěli domluvit."
                   : ""}
               </p>
             )}

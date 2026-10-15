@@ -176,6 +176,35 @@ export const blocksNewClaim = (request: {
   kind?: string | null
 }): boolean => isOpenStatus(request.status) && !isEditRefundKind(request.kind)
 
+/**
+ * Blokuje otevřená žádost NOVÉ ODSTOUPENÍ? Jen když už běží odstoupení nebo
+ * vrácení zboží (i starý řádek bez druhu — takové byly „vrácení peněz").
+ * Otevřená reklamace ani vrácení rozdílu po úpravě odstoupení neblokují:
+ * odstoupení je jednostranné právo spotřebitele (§ 1829 OZ) a tlačítko musí
+ * být k dispozici po celou lhůtu (§ 1830a) — fronta žádostí to nesmí zastavit.
+ */
+export const blocksWithdrawal = (request: {
+  status?: string | null
+  kind?: string | null
+}): boolean =>
+  isOpenStatus(request.status) &&
+  (request.kind === "odstoupeni" ||
+    request.kind === "vraceni" ||
+    (!isClaimKind(request.kind) && !isEditRefundKind(request.kind)))
+
+/**
+ * Kudy žádost přišla (`return_request.channel`). Obě zákaznické routy jsou
+ * online rozhraní obchodu: tokenová stránka (tlačítko „Odstoupit od smlouvy",
+ * formulář reklamace) i záložní formulář číslo + e-mail.
+ */
+export type ClaimChannel = "online"
+
+export const CLAIM_CHANNEL_ONLINE: ClaimChannel = "online"
+
+export const CLAIM_CHANNEL_LABEL: Record<ClaimChannel, string> = {
+  online: "online na webu obchodu",
+}
+
 export const kindLabel = (kind: string | null | undefined): string =>
   isClaimKind(kind)
     ? KIND_LABEL[kind]
@@ -205,9 +234,9 @@ export const resolutionLabel = (value: string | null | undefined): string =>
 
 /**
  * Příčina poškození (§11.3, §13.7):
- * - `"carrier"` = zásilka dorazila poškozená → u České pošty reklamuje
- *   příjemce (zákazník) do 2 pracovních dnů od doručení; u nás běží reklamace
- *   dál (12. 10. 2026, Matěj — viz `CP_CUSTOMER_CLAIM_TEXT`);
+ * - `"carrier"` = zásilka dorazila poškozená → pro zákazníka běžná reklamace
+ *   u nás; škodu u České pošty řeší prodávající (14. 10. 2026, právní audit
+ *   §4.1 — viz `CARRIER_DAMAGE_CUSTOMER_TEXT`);
  * - `"damaged"` = poškozený kus (viditelné poškození) — bez dopravce, ale
  *   fotky jsou povinné stejně, protože bez nich se poškození nedá posoudit;
  * - `null` = vada (praskliny, protéká, odprýsknutá glazura…; fotky dobrovolné).
@@ -229,14 +258,18 @@ export const damageCauseLabel = (value: unknown): string | null =>
   isDamageCause(value) ? DAMAGE_CAUSE_LABEL[value] : null
 
 /**
- * Věta do protokolu („Příčina poškození"). U dopravce musí být vidět, že
- * reklamaci u České pošty uplatňuje příjemce (podle podmínek ČP to odesílatel
- * za něj udělat nemůže — 12. 10. 2026, Matěj); u poškozeného kusu, že důkazem
- * jsou fotky z žádosti. Protokol ji tiskne doslova — žádné skládání v PDF.
+ * Věta do protokolu („Příčina poškození"). U dopravce: za vadu při převzetí
+ * odpovídá prodávající (§ 2161 odst. 1 OZ) a nebezpečí škody přechází na
+ * spotřebitele až převzetím (§ 2159 odst. 2 OZ) — škodu u dopravce proto řeší
+ * prodávající, pro zákazníka je to běžná reklamace bez lhůty České pošty
+ * (14. 10. 2026, právní audit §4.1; dřívější věta „reklamaci u ČP uplatňuje
+ * příjemce do 2 pracovních dnů" přenášela vztah prodávající–dopravce na
+ * zákazníka). U poškozeného kusu, že důkazem jsou fotky z žádosti. Protokol
+ * ji tiskne doslova — žádné skládání v PDF.
  */
 export const damageCauseSentence = (value: unknown): string | null => {
   if (value === "carrier") {
-    return "Poškozeno přepravou — zásilka dorazila poškozená; reklamaci u České pošty uplatňuje příjemce do 2 pracovních dnů od doručení."
+    return "Poškozeno přepravou — zásilka dorazila poškozená. Za poškození odpovídá prodávající; škodu u dopravce řeší sám."
   }
   if (value === "damaged") {
     return "Poškozený kus — viditelné poškození zboží (fotky přiloženy k žádosti)."
@@ -246,16 +279,18 @@ export const damageCauseSentence = (value: unknown): string | null => {
 
 /**
  * Fotky jsou povinné u poškozeného kusu (§13.7). U „Balík dorazil poškozený"
- * ne (Matěj 12. 10. 2026): zásilku reklamuje zákazník na poště (formulář ČP),
- * u nás fotka jen pomůže, není podmínkou.
+ * ne: fotky obalu a zboží nám pomohou se škodou u České pošty, podmínkou
+ * reklamace ale nejsou (14. 10. 2026 — reklamaci nesmí zastavit vztah
+ * prodávající–dopravce).
  */
 export const photosRequiredFor = (value: unknown): boolean => value === "damaged"
 
 /**
  * Reklamace zásilky u České pošty (§11.3) — oficiální stránka „Reklamace
- * a stížnosti": kdo reklamuje (poškozený obsah = adresát), lhůty (2 pracovní
- * dny), online podání (aplikace Sledovat zásilku / Pošta Online) a formuláře
- * ke stažení.
+ * a stížnosti": kdo reklamuje, lhůty (2 pracovní dny), online podání
+ * (aplikace Sledovat zásilku / Pošta Online) a formuláře ke stažení. Od
+ * 14. 10. 2026 jen pro MAJITELKU (upozornění při poškození přepravou) —
+ * zákazníkovi se lhůta dopravce ani formulář ČP jako povinnost neukazuje.
  *
  * Ověřeno 12. 10. 2026: dřívější `ceskaposta.cz/reklamace` i
  * `ceskaposta.cz/ereklamace` vrací 404; samotná eReklamace
@@ -268,24 +303,28 @@ export const CP_CLAIM_INFO_URL =
 
 /**
  * Formulář České pošty „Reklamace poškození" (PDF) a pokyny k němu — přímé
- * odkazy, ať zákazník nemusí hledat (Matěj 12. 10. 2026: „dát jim tam
- * reklamační formulář z pošty"). Ověřeno 12. 10. 2026: oba vrací PDF.
- * Stejné adresy nese storefront (`@lib/util/claims`).
+ * odkazy. Ověřeno 12. 10. 2026: oba vrací PDF. Od 14. 10. 2026 je dostává
+ * majitelka v upozornění na poškození přepravou (`carrierDamageDescription`);
+ * zákaznické e-maily je jako povinný krok neuvádí (právní audit §4.1).
  */
 export const CP_CLAIM_FORM_URL =
   "https://www.ceskaposta.cz/documents/d/guest/formular-reklamace-pdf?download=true"
 export const CP_CLAIM_GUIDE_URL =
   "https://www.ceskaposta.cz/documents/d/guest/pokyny-pro-podani-reklamace-pri-poskozeni?download=true"
 
-/** Lhůta pro hlášení poškození dopravci — do e-mailu majitelce. */
+/**
+ * Lhůta pro hlášení poškození dopravci — JEN do e-mailu majitelce. Je to
+ * lhůta mezi prodávající a Českou poštou; zákazníkovy reklamace se netýká.
+ */
 export const CP_DAMAGE_REPORT_DEADLINE_TEXT =
-  "Poškození se České poště hlásí neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu propadá."
+  "Poškození se České poště hlásí neprodleně, nejpozději do 2 pracovních dnů od dodání — jinak nárok na náhradu od pošty propadá. Zákazníkovy reklamace u vás se tato lhůta netýká."
 
 /**
- * Pokyn zákazníkovi u „Balík dorazil poškozený" (12. 10. 2026, Matěj):
- * reklamaci u přepravce podává příjemce, a to do 2 pracovních dnů. Do
- * potvrzovacích e-mailů; odkaz `CP_CLAIM_FORM_URL` vykreslí šablona hned za
- * větou.
+ * Věta zákazníkovi u „Balík dorazil poškozený" (14. 10. 2026, právní audit
+ * §4.1): poškození řeší s dopravcem prodávající, zákazník nic dalšího podávat
+ * nemusí. Obal a fotky jsou PROSBA, ne podmínka. Nahrazuje dřívější
+ * `CP_CUSTOMER_CLAIM_TEXT` („reklamaci u přepravce podává příjemce, do
+ * 2 pracovních dnů"), která z lhůty dopravce dělala podmínku reklamace.
  */
-export const CP_CUSTOMER_CLAIM_TEXT =
-  "Poškození zásilky je potřeba nahlásit také České poště — reklamaci u přepravce podává příjemce, tedy vy, nejpozději do 2 pracovních dnů od doručení (na pobočce nebo online). Postup a formulář najdete na stránce České pošty:"
+export const CARRIER_DAMAGE_CUSTOMER_TEXT =
+  "Poškození při přepravě řešíme s Českou poštou my — vy kvůli tomu nikam chodit ani nic podávat nemusíte. Pokud můžete, nechte si prosím obal a výplň, dokud se vám neozveme; fotky obalu i zboží nám pomohou. Kdyby Česká pošta potřebovala vaši součinnost (například sepsat záznam o poškození), dáme vám vědět — vaši reklamaci to nijak nepodmiňuje."
