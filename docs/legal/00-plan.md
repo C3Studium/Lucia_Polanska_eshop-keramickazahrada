@@ -96,9 +96,13 @@ Viz `docs/legal/OPEN_QUESTIONS.md`.
 - [x] D Odstoupení online — `131dd83`, doplňky `0f9777b`
 - [x] C PDF a e-maily — `8914c01`, PDF `5a5e78d`
 - [x] A Texty — `bdefc2c`, Segment `66179a8`
-- [ ] H Testovací prostředí a testovací objednávky
-- [ ] Kontrolní agent — checklist sekce 9
-- [ ] Build, rebase, push, PR
+- [x] H Testovací prostředí a testovací objednávky — `850baaf`, `53adaf7` (výsledky
+      v `backend/sandbox/.artifacts/report.md`, mimo git); oprava webhooku ComGate `25ce69b`
+- [x] Kontrolní agent — checklist sekce 9: tři kola; opravy `db363b6`, `84744aa`,
+      `95b0483`, `18fb12e`. Závěr: všechny body „V kódu“ i textové body proveditelné bez
+      Lucie splněné; zbytek čeká na údaje, data a advokáta (OPEN_QUESTIONS).
+- [x] Build (storefront `next build`, backend `medusa build`), lint, typecheck, 1448 unit testů
+- [ ] Push větve a PR (rebase není potřeba — `main` se od odbočení nepohnul)
 
 ## 6. Nasazení (pořadí)
 
