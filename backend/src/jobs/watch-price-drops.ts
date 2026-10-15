@@ -25,6 +25,7 @@ import {
   addDays,
   lowestPriceBefore,
   pragueDay,
+  reductionStartDay,
   REFERENCE_WINDOW_DAYS,
   toAmount,
   type PriceHistoryPoint,
@@ -141,12 +142,23 @@ export default async function watchPriceDrops(container: MedusaContainer) {
   const priceHistory =
     container.resolve<PriceHistoryModuleService>(PRICE_HISTORY_MODULE)
 
-  /** Nejnižší cena za 30 dní před dneškem z historie cen (§ 12a ZOS). */
-  const thirtyDayLow = async (variantId: string, currencyCode: string) => {
+  /**
+   * Nejnižší cena za 30 dní PŘED DNEM SNÍŽENÍ z historie cen (§ 12a ZOS).
+   * Snížení nastalo po posledním snímku (`snapshotDay`); den, kdy cena na
+   * `current` klesla, najde `reductionStartDay` — historie se zapisuje každou
+   * hodinu, takže včerejší snížení už v ní je a okno nesmí končit dneškem.
+   */
+  const thirtyDayLow = async (
+    variantId: string,
+    currencyCode: string,
+    current: number,
+    snapshotDay: string
+  ) => {
+    const fromDay = snapshotDay < today ? snapshotDay : today
     const rows = (await priceHistory.listPriceHistoryEntries({
       variant_id: variantId,
       currency_code: currencyCode,
-      recorded_on: { $gte: addDays(today, -REFERENCE_WINDOW_DAYS) },
+      recorded_on: { $gte: addDays(fromDay, -REFERENCE_WINDOW_DAYS) },
     } as never)) as any[]
     const points: PriceHistoryPoint[] = rows.flatMap((row) => {
       const amount = toAmount(row.amount)
@@ -154,7 +166,8 @@ export default async function watchPriceDrops(container: MedusaContainer) {
         ? []
         : [{ recorded_on: String(row.recorded_on), kind: row.kind as PriceKind, amount }]
     })
-    return lowestPriceBefore(points, today)
+    const reducedOn = reductionStartDay(points, current, epsilon, fromDay, today)
+    return lowestPriceBefore(points, reducedOn)
   }
 
   // Variants whose price dropped and whose watchers were mailed.
@@ -188,7 +201,14 @@ export default async function watchPriceDrops(container: MedusaContainer) {
       // Předchozí cena v e-mailu = nejnižší za 30 dní před snížením (§ 12a ZOS).
       // Bez úplné historie, nebo když nová cena není pod 30denním minimem,
       // se snížení neoznamuje (snímek se níž stejně posune).
-      const reference = dropped ? await thirtyDayLow(variant.id, currencyCode) : null
+      const reference = dropped
+        ? await thirtyDayLow(
+            variant.id,
+            currencyCode,
+            current,
+            pragueDay(snapshot?.captured_at ? new Date(snapshot.captured_at) : now)
+          )
+        : null
       const announceable =
         reference !== null &&
         reference.complete &&

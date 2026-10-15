@@ -3,6 +3,7 @@ import {
   computePriceReference,
   findSaleRunStart,
   lowestPriceBefore,
+  reductionStartDay,
   observationsFromCalculatedPrice,
   planDailyUpsert,
   pragueDay,
@@ -64,6 +65,26 @@ describe("lowestPriceBefore (e-mail o poklesu ceny, § 12a ZOS)", () => {
   it("historie kratší než 30 dní není úplná", () => {
     const entries = days("2026-10-01", "2026-10-13", "base", 500)
     expect(lowestPriceBefore(entries, TODAY)).toEqual({ lowest: 500, complete: false })
+  })
+
+  it("snížení včera (historie už ho má) — okno končí dnem snížení, ne dneškem", () => {
+    // Snímek ceny 500 pořízen 13. 10. ráno, odpoledne cena klesla na 400 —
+    // hodinový zápis historie má 13. 10. už minimum 400 a 14. 10. taky.
+    const entries = [
+      ...days("2026-09-01", "2026-10-12", "base", 500),
+      { recorded_on: "2026-10-13", kind: "base" as const, amount: 400 },
+      { recorded_on: TODAY, kind: "base" as const, amount: 400 },
+    ]
+    const reducedOn = reductionStartDay(entries, 400, 0.01, "2026-10-13", TODAY)
+    expect(reducedOn).toBe("2026-10-13")
+    expect(lowestPriceBefore(entries, reducedOn)).toEqual({ lowest: 500, complete: true })
+    // Okno před dneškem by snížení „spolklo" — přesně ta chyba, kterou to řeší.
+    expect(lowestPriceBefore(entries, TODAY).lowest).toBe(400)
+  })
+
+  it("snížení, které historie ještě nezapsala, je dnešní", () => {
+    const entries = days("2026-09-01", "2026-10-13", "base", 500)
+    expect(reductionStartDay(entries, 400, 0.01, "2026-10-13", TODAY)).toBe(TODAY)
   })
 
   it("bez záznamu v okně nic", () => {

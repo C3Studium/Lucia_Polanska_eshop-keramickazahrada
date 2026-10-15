@@ -274,6 +274,35 @@ export const lowestPriceBefore = (
   }
 }
 
+/**
+ * Den, kdy cena klesla na `current` — první den od `fromDay` (den posledního
+ * známého vyššího snímku) s denním minimem nejvýš `current + epsilon`; když
+ * v historii ještě není, je to `today`. Okno pro „předchozí cenu" musí končit
+ * TÍMTO dnem, ne dneškem: historie zapisuje každou hodinu, takže včerejší
+ * snížení už v ní je a okno „30 dní před dneškem" by vrátilo novou cenu.
+ */
+export const reductionStartDay = (
+  entries: PriceHistoryPoint[],
+  current: number,
+  epsilon: number,
+  fromDay: string,
+  today: string
+): string => {
+  const day = entries
+    .filter(
+      (entry) =>
+        isDay(entry.recorded_on) &&
+        entry.recorded_on >= fromDay &&
+        entry.recorded_on <= today &&
+        entry.amount <= current + epsilon
+    )
+    .reduce<string | null>(
+      (min, entry) => (min === null || entry.recorded_on < min ? entry.recorded_on : min),
+      null
+    )
+  return day ?? today
+}
+
 export type ReferenceInput = {
   /** Historie jedné varianty v jedné měně (může být jen výsek posledních
       `HISTORY_LOOKBACK_DAYS` dní). */
