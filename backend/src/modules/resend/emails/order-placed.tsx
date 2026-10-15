@@ -48,6 +48,11 @@ type OrderPlacedEmailProps = {
   /** Reklamace / vrácení / odstoupení přes token (`/order/:id/refund`) — i bez účtu. */
   refund_url?: string
   /**
+   * Odstoupení online ve dvou krocích (`/order/:id/odstoupeni`, § 1830a OZ).
+   * `null` u čisté zakázky — tam odstoupit nejde (§ 1837 písm. d) OZ).
+   */
+  withdrawal_url?: string | null
+  /**
    * Smlouva a poučení (§ 1827 odst. 2 OZ) — verze OP platná pro objednávku,
    * poučení o odstoupení, prodávající, zakázkové položky. Skládá
    * `lib/legal/order-legal` ve workflow potvrzení. Chybí u starých řádků
@@ -207,6 +212,7 @@ function OrderPlacedEmailComponent({
   payment_method,
   edit_order_url,
   refund_url,
+  withdrawal_url,
   legal,
   attachments_failed,
 }: OrderPlacedEmailProps) {
@@ -543,10 +549,24 @@ function OrderPlacedEmailComponent({
               </EmailButton>
             ) : null}
           </ButtonRow>
-          <P small style={{ margin: "14px 0 0", color: brand.faint }}>
-            Odstoupit od smlouvy můžete do 14 dnů od převzetí (netýká se zboží
-            vyrobeného na míru).
-          </P>
+          {withdrawal_url ? (
+            <P small style={{ margin: "14px 0 0", color: brand.faint }}>
+              Od smlouvy můžete odstoupit bez udání důvodu do 14 dnů od
+              převzetí (netýká se zboží vyrobeného na zakázku) — online přes{" "}
+              <Link
+                href={withdrawal_url}
+                style={{ color: brand.ink, textDecoration: "underline" }}
+              >
+                Odstoupit od smlouvy
+              </Link>
+              , nebo e-mailem.
+            </P>
+          ) : (
+            <P small style={{ margin: "14px 0 0", color: brand.faint }}>
+              Odstoupit od smlouvy můžete do 14 dnů od převzetí (netýká se zboží
+              vyrobeného na zakázku).
+            </P>
+          )}
         </Section>
       )}
 

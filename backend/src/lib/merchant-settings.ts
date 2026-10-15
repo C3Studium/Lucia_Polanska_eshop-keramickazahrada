@@ -171,8 +171,10 @@ export const MERCHANT_SETTINGS_DEFAULTS: MerchantSettings = {
   /* Prázdné: dokud klientka nevyplní, berou se adresy z env (zpětně kompatibilní). */
   owner_notification_email: "",
   dev_notification_email: "",
-  /* Dnešní adresa ateliéru — stejná, jaká byla natvrdo v e-mailech. */
-  return_address: "Keramická zahrada\nPutim 229\n397 01 Písek",
+  /* Adresa pro vrácení zboží. Adresát je prodávající (podnikatelka
+     Lucie Polanská, ne název obchodu) — stejně jako v poučení o odstoupení
+     (NV 29/2023 Sb., pokyn [6] a) 2.) a v OP. */
+  return_address: "Lucie Polanská\nPutim 229\n397 01 Písek",
   return_instructions: "",
   /* Zapnuto: firemní nákup je běžná věc a vypínač je tu pro případ, že ho
      nebude chtít, ne naopak. */

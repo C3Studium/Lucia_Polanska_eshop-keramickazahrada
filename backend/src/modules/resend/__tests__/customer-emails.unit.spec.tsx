@@ -91,6 +91,28 @@ describe("customer e-mail templates after the audit", () => {
       )
     })
 
+    it("offers the online withdrawal link when the order allows it (§ 1830a OZ)", () => {
+      const url = "https://keramickazahrada.cz/cz/order/order_01TEST/odstoupeni?token=abc"
+      const html = renderToStaticMarkup(
+        orderPlacedEmail({
+          order,
+          refund_url: "https://keramickazahrada.cz/cz/order/order_01TEST/refund?token=abc",
+          withdrawal_url: url,
+        }) as React.ReactElement
+      )
+      expect(html).toContain(url)
+      expect(html).toContain("Odstoupit od smlouvy")
+
+      const withoutLink = renderToStaticMarkup(
+        orderPlacedEmail({
+          order,
+          refund_url: "https://keramickazahrada.cz/cz/order/order_01TEST/refund?token=abc",
+          withdrawal_url: null,
+        }) as React.ReactElement
+      )
+      expect(withoutLink).not.toContain("/odstoupeni?token=")
+    })
+
     it("says 'osobní odběr' instead of an address for pickup orders", () => {
       const pickupOrder = {
         ...order,

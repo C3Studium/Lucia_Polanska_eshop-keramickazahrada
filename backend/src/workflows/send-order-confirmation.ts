@@ -13,7 +13,11 @@ import {
   markAttached,
   orderLegalInfo,
 } from "../lib/legal/order-legal";
-import { orderEditUrl, orderRefundUrl } from "../lib/order-access-link";
+import {
+  orderEditUrl,
+  orderRefundUrl,
+  orderWithdrawalUrl,
+} from "../lib/order-access-link";
 import { resolveBalanceStep } from "./steps/resolve-balance";
 import { sendNotificationStep } from "./steps/send-notification";
 
@@ -172,6 +176,12 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
               // vrácení/odstoupení (`/order/:id/refund`, kde si vybere druh).
               edit_order_url: orderEditUrl(id),
               refund_url: orderRefundUrl(id),
+              // Odstoupit lze od uzavření smlouvy (§ 1829 odst. 1 OZ), ne až
+              // po odeslání — tlačítko proto i v potvrzení (§ 1830a OZ). Čistá
+              // zakázka ho nedostane, odstoupit od ní nejde (§ 1837 písm. d)).
+              withdrawal_url: legalDocuments.legal?.all_made_to_order
+                ? null
+                : orderWithdrawalUrl(id),
               balance_payment_url: balance.outstanding > 0
                 ? balancePaymentUrl(id)
                 : null,
