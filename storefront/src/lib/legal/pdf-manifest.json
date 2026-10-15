@@ -1,3 +1,64 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "slug": "obchodni-podminky",
+      "version": "2015-01-01",
+      "file": "obchodni-podminky-2015-01-01.pdf",
+      "url": "https://img.matejforejt.com/legal/obchodni-podminky-2015-01-01.pdf",
+      "sha256": "4100f07631a39d6fbf4328b4da03744010ae91e950d74521f1fafcfdfa7aa279",
+      "bytes": 133447,
+      "sourceHash": "7ef335b5125a797dc784d48f0e28ced992f702cb26464f832e8ef4ccc782d358",
+      "archived": true
+    },
+    {
+      "slug": "obchodni-podminky",
+      "version": "2026-10-15",
+      "file": "obchodni-podminky-2026-10-15.pdf",
+      "url": "/legal/obchodni-podminky-2026-10-15.pdf",
+      "sha256": "fd294f467e6ff89aa17167024df01b262a1ef6f4024c25e086027a124c11a9ae",
+      "bytes": 252039,
+      "sourceHash": "7e6469ebce2da0defc24d1e68c4b8832c1bd7b60007010c815602caee17f779c",
+      "archived": false
+    },
+    {
+      "slug": "odstoupeni-od-smlouvy",
+      "version": "2026-10-15",
+      "file": "odstoupeni-od-smlouvy-2026-10-15.pdf",
+      "url": "/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
+      "sha256": "b33696acac5a70351a18dde518b16b59591b712ffca7e550cace5f74d569a7e7",
+      "bytes": 130619,
+      "sourceHash": "5560e7121de3acee2a0bc0d1e865e7f88815163e26ad7341602c7ee6d12b32e0",
+      "archived": false
+    },
+    {
+      "slug": "ochrana-osobnich-udaju",
+      "version": "2026-10-15",
+      "file": "ochrana-osobnich-udaju-2026-10-15.pdf",
+      "url": "/legal/ochrana-osobnich-udaju-2026-10-15.pdf",
+      "sha256": "e110fb0ded36b6e4619200557d66002bda7ad07a59a874eb04d78518be16fa31",
+      "bytes": 171635,
+      "sourceHash": "d9564ed5257ce9d6c152d631048f372f14a6256492962b43a5f42da3984aafdb",
+      "archived": false
+    },
+    {
+      "slug": "reklamacni-protokol",
+      "version": "2026-10-15",
+      "file": "reklamacni-protokol-2026-10-15.pdf",
+      "url": "https://img.matejforejt.com/legal/reklamacni-protokol-2026-10-15.pdf",
+      "sha256": "a114a1e5c0d90e8d6e788342b5de009c0f909b8f03296bff13da60d61da27565",
+      "bytes": 100221,
+      "sourceHash": "00d142891afbfc238035df2428a678ce3cfe3a4254008febf4685d2300b6cc1b",
+      "archived": false
+    },
+    {
+      "slug": "reklamacni-rad",
+      "version": "2026-10-15",
+      "file": "reklamacni-rad-2026-10-15.pdf",
+      "url": "https://img.matejforejt.com/legal/reklamacni-rad-2026-10-15.pdf",
+      "sha256": "397da3ea5e57eef5aab2117a1c619d430c3c93fb8a73c3cc4ad7e20cb9113f8e",
+      "bytes": 116653,
+      "sourceHash": "5a044e15f1b44b223004e41f1ea3693ca90d4021e38f724366b63fa69edbe8e0",
+      "archived": false
+    }
+  ]
 }

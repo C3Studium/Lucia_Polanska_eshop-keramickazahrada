@@ -22,7 +22,7 @@
           "archived": true,
           "pdf": {
             "file": "obchodni-podminky-2015-01-01.pdf",
-            "url": "/legal/obchodni-podminky-2015-01-01.pdf",
+            "url": "https://img.matejforejt.com/legal/obchodni-podminky-2015-01-01.pdf",
             "sha256": "4100f07631a39d6fbf4328b4da03744010ae91e950d74521f1fafcfdfa7aa279",
             "bytes": 133447,
             "draft": false
@@ -36,8 +36,8 @@
           "pdf": {
             "file": "obchodni-podminky-2026-10-15.pdf",
             "url": "/legal/obchodni-podminky-2026-10-15.pdf",
-            "sha256": "9f1c7ba234143768cf3e3bf7250726a84572a9aa49215f36c5f385e793b999f7",
-            "bytes": 252453,
+            "sha256": "fd294f467e6ff89aa17167024df01b262a1ef6f4024c25e086027a124c11a9ae",
+            "bytes": 252039,
             "draft": true
           }
         }
@@ -54,9 +54,9 @@
           "archived": false,
           "pdf": {
             "file": "reklamacni-rad-2026-10-15.pdf",
-            "url": "/legal/reklamacni-rad-2026-10-15.pdf",
-            "sha256": "e47c2ee5a8cafe7528f96d5e1eb055534a4924590ef97b12e36a98d075cb3a55",
-            "bytes": 127445,
+            "url": "https://img.matejforejt.com/legal/reklamacni-rad-2026-10-15.pdf",
+            "sha256": "397da3ea5e57eef5aab2117a1c619d430c3c93fb8a73c3cc4ad7e20cb9113f8e",
+            "bytes": 116653,
             "draft": false
           }
         }
@@ -73,9 +73,9 @@
           "archived": false,
           "pdf": {
             "file": "reklamacni-protokol-2026-10-15.pdf",
-            "url": "/legal/reklamacni-protokol-2026-10-15.pdf",
-            "sha256": "d7b2ba5864e58bfa3f4bcb68eb645aa0be9bff0958494da44faa809ed7f5f678",
-            "bytes": 109163,
+            "url": "https://img.matejforejt.com/legal/reklamacni-protokol-2026-10-15.pdf",
+            "sha256": "a114a1e5c0d90e8d6e788342b5de009c0f909b8f03296bff13da60d61da27565",
+            "bytes": 100221,
             "draft": false
           }
         }
@@ -93,8 +93,8 @@
           "pdf": {
             "file": "odstoupeni-od-smlouvy-2026-10-15.pdf",
             "url": "/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
-            "sha256": "0aef262ab1502e13132e247b4cd75804f1fb87c55c84301772d484c9fea12b81",
-            "bytes": 159806,
+            "sha256": "b33696acac5a70351a18dde518b16b59591b712ffca7e550cace5f74d569a7e7",
+            "bytes": 130619,
             "draft": true
           }
         }
@@ -112,8 +112,8 @@
           "pdf": {
             "file": "ochrana-osobnich-udaju-2026-10-15.pdf",
             "url": "/legal/ochrana-osobnich-udaju-2026-10-15.pdf",
-            "sha256": "f6ed5baf6f3d087a2ef79d254f992ba4bd7cef0c34520f0c5e066b5f40c6cd73",
-            "bytes": 171792,
+            "sha256": "e110fb0ded36b6e4619200557d66002bda7ad07a59a874eb04d78518be16fa31",
+            "bytes": 171635,
             "draft": true
           }
         }

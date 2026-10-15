@@ -46,18 +46,22 @@ const KEY_PREFIX = "legal/"
 const CACHE_CONTROL = "public, max-age=31536000, immutable"
 const REQUIRED_ENV = ["R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL"]
 
-const HELP = `pnpm legal:upload [--dry-run] [--overwrite] [--only=<slug>[@<verze>],…]
+const HELP = `pnpm legal:upload [--dry-run] [--overwrite] [--allow-draft] [--only=<slug>[@<verze>],…]
 
-  --dry-run    nic nezapisovat (do R2 ani do manifestů) — jen přečíst stav a vypsat plán
-  --overwrite  přepsat v R2 i PDF, které tam už je s JINÝM obsahem (vydané PDF je
-               neměnné — jen vědomě, a pak vyčistit cache v Cloudflaru)
-  --only=…     jen vybrané dokumenty / verze`
+  --dry-run      nic nezapisovat (do R2 ani do manifestů) — jen přečíst stav a vypsat plán
+  --overwrite    přepsat v R2 i PDF, které tam už je s JINÝM obsahem (vydané PDF je
+                 neměnné — jen vědomě, a pak vyčistit cache v Cloudflaru)
+  --allow-draft  nahrát i pracovní znění s [[DOPLNIT]] (jinak se přeskočí — v R2 by
+                 zůstalo s ročním „immutable" cachováním a po doplnění údajů by
+                 šlo nahradit jen přes --overwrite)
+  --only=…       jen vybrané dokumenty / verze`
 
 const parseArgs = (argv) => {
-  const options = { dryRun: false, overwrite: false, only: [], help: false }
+  const options = { dryRun: false, overwrite: false, allowDraft: false, only: [], help: false }
   for (const arg of argv) {
     if (arg === "--dry-run") options.dryRun = true
     else if (arg === "--overwrite") options.overwrite = true
+    else if (arg === "--allow-draft") options.allowDraft = true
     else if (arg === "--help" || arg === "-h") options.help = true
     else if (arg.startsWith("--only=")) {
       options.only.push(...arg.slice(7).split(",").map((item) => item.trim()).filter(Boolean))
@@ -209,6 +213,16 @@ const main = async () => {
       rows.push([id, "CHYBA: soubor chybí v storefront/public/legal — spusťte pnpm legal:build", "—", "—"])
       continue
     }
+    const draft = Boolean(
+      backendManifest?.documents?.[entry.slug]?.versions?.find(
+        (version) => version?.version === entry.version
+      )?.pdf?.draft
+    )
+    if (draft && !options.allowDraft) {
+      rows.push([id, "přeskočeno — pracovní znění s [[DOPLNIT]] (doplnit údaje, legal:build)", "—", "—"])
+      continue
+    }
+
     const body = await readFile(file)
     const digest = sha256(body)
     if (digest !== entry.sha256 || body.length !== entry.bytes) {

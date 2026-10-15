@@ -7,7 +7,7 @@ import WebButton from "@modules/common/components/Buttons/webButton"
 import LegalDownloads, { type LegalDownloadItem } from "@modules/legal/Downloads"
 import { motion, useInView } from "framer-motion"
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import styles from "./style.module.scss"
 
 /*
@@ -216,7 +216,9 @@ function Chapter({
 
       <div className={styles.chapterBody}>
         <Blocks blocks={section.blocks} inline={inline} />
-        {supplement}
+        {/* Doplněk přichází ze serverové stránky (RSC); vlastní klíč, jinak
+            ho React ve vývoji hlásí jako prvek seznamu bez `key`. */}
+        {supplement ? <Fragment key={`${section.id}-supplement`}>{supplement}</Fragment> : null}
       </div>
     </motion.section>
   )
