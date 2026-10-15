@@ -176,6 +176,15 @@
   }
 }
 
+/* „Vytisknout" je tlačítko (window.print), ne odkaz — stejný řádek, bez
+   výchozího vzhledu tlačítka. */
+.button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .kind {
   flex: none;
   padding: 0.3125rem var(--dl-kind-pad-x);
@@ -247,6 +256,13 @@
    Velikost souboru tak zůstává tam, kde se čte — v pravém sloupci proti sobě,
    ne pod názvem — a řádek je na 768 o 29 px nižší než na telefonu, přestože
    tablet má víc místa; ušetřenou výšku spotřebuje seznam, ne jedna položka. */
+/* Na papíře nemá „Ke stažení" co dělat. */
+@media print {
+  .downloads {
+    display: none;
+  }
+}
+
 @include below(ph) {
   .item {
     flex-wrap: wrap;

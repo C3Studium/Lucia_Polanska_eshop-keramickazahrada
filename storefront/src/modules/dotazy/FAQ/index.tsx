@@ -8,6 +8,7 @@ import Image from "next/image"
 import { useMemo, useState } from "react"
 
 import { easeReveal } from "@lib/motion-tokens"
+import LegalFaq from "@modules/dotazy/LegalFaq"
 
 /*
  * Kategorie je řetězec, ne výčet: přicházejí z CMS (bloky `dotazy.kategorie-*`),
@@ -65,13 +66,16 @@ const faq = [
         id: "poskozena-zasilka",
         category: "doprava" as Category,
         title: "Jak postupovat, když zásilka dorazí poškozená?",
-        desc: "Vyfoťte prosím balík i poškozený kus hned po rozbalení a ozvěte se nám do 48 hodin. Přiložte číslo objednávky a domluvíme se na výměně, opravě nebo vrácení peněz.",
+        /* Žádná krátká lhůta: rozbitý kus je vada při převzetí a reklamuje se
+           u nás (obchodní podmínky čl. VII a XII). Dřívějších „48 hodin" a
+           dvoudenní lhůtu dopravce zákazník dodržet nemusí. */
+        desc: "Vyfoťte prosím balík i poškozený kus a ozvěte se nám s číslem objednávky — čím dřív, tím líp, ale žádná krátká lhůta pro vás neplatí. Domluvíme se na výměně nebo opravě, a když to nejde, vrátíme peníze. U České pošty nic reklamovat nemusíte, to vyřídíme my.",
     },
     {
         id: "vraceni",
         category: "doprava" as Category,
         title: "Mohu produkt vrátit nebo vyměnit?",
-        desc: "Nepoužitý výrobek z běžné nabídky můžete vrátit do 14 dnů od převzetí. Zakázkové kusy dělané přímo pro vás vrátit bohužel nejde — pokud tedy nejsou poškozené nebo vadné.",
+        desc: "Výrobek z běžné nabídky můžete vrátit bez udání důvodu do 14 dnů od převzetí. Zakázkové kusy dělané přímo podle vašeho zadání vrátit nejde — pokud ovšem mají vadu, reklamujete je jako každé jiné zboží.",
     },
     {
         id: "kurzy-pro-skoly",
@@ -94,7 +98,10 @@ export default function FAQBody({
     texts,
     cmsQuestions = [],
     cmsCategories = [],
+    countryCode = "cz",
 }: {
+    /** Prefix země pro odkazy v právních odpovědích (`/cz/smluvni-podminky`). */
+    countryCode?: string
     /** Blok `dotazy.galerie` — fotky. */
     block?: CopyBlock
     /** Blok `dotazy.otazky` — texty kolem seznamu a kontaktní výzva. */
@@ -386,6 +393,9 @@ export default function FAQBody({
                     </div>
                 </motion.aside>
             </div>
+
+            {/* Pevná právní sekce — vždy, i když jsou otázky z CMS (viz LegalFaq). */}
+            <LegalFaq countryCode={countryCode} />
         </section>
     )
 }

@@ -133,31 +133,20 @@ const dotazy = definePage({
     sources: {},
 })
 
-/**
- * Právní dokumenty.
+/*
+ * Právní dokumenty v CMS NEJSOU (od 14. 10. 2026).
  *
- * Šest samostatných stránek, ne jedna se šesti kapitolami: každý dokument se
- * mění jindy a z jiného důvodu (obchodní podmínky se zákonem, doprava
- * s ceníkem dopravce), a editor je hledá pod tou stránkou, kterou upravuje.
- *
- * Sekce nesou `items` — jedna položka na kapitolu. `lead` v nich drží `id`,
- * na kterém visí kotva v adrese a boční navigace; do CMS jde jen proto, aby
- * bylo vidět, ke které kapitole text patří, a komponenta ho odtamtud nečte.
- * Odkaz, který si někdo uložil, nesmí přestat platit přejmenováním nadpisu.
+ * Obchodní podmínky, reklamační řád a protokol, odstoupení, ochrana osobních
+ * údajů, cookies a doprava a platba se berou jen z verzovaného registru
+ * v repu (`src/lib/legal/`). Blok `<stránka>.text` z CMS je dřív přepisoval
+ * kapitolu po kapitole — u právního textu to nejde: znění se váže
+ * k objednávce, generuje se z něj PDF do e-mailu a čte ho advokát v PR.
+ * Stránky proto ze Studia zmizely, aby tam nikdo neupravoval text, který se
+ * na webu už neukáže. Obsah, který v CMS zůstal, se nečte.
  */
-const legalPages = [
-    ['/cz/smluvni-podminky', 'Obchodní podmínky', 'smluvni-podminky'],
-    ['/cz/ochrana-osobnich-udaju', 'Ochrana osobních údajů', 'ochrana-osobnich-udaju'],
-    ['/cz/cookies', 'Používání cookies', 'cookies'],
-    ['/cz/odstoupeni-od-smlouvy', 'Odstoupení od smlouvy', 'odstoupeni-od-smlouvy'],
-    ['/cz/reklamacni-protokol', 'Reklamační protokol', 'reklamacni-protokol'],
-    ['/cz/doprava-a-platba', 'Doprava a platba', 'doprava-a-platba'],
-].map(([route, title, copy]) =>
-    definePage({ route, title, copy, sources: {} })
-)
 
 export default defineSite({
-    pages: [homepage, kurzy, oMne, vyroba, dotazy, ...legalPages],
+    pages: [homepage, kurzy, oMne, vyroba, dotazy],
     /*
      * Jedenáct adres pro tentýž obsah.
      *

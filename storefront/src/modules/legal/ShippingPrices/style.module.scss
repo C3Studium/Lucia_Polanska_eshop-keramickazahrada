@@ -1,0 +1,46 @@
+/*
+ * Živý ceník dopravy. Typ, linky a hlavičky tabulky dědí z `.chapterBody table`
+ * v LegalDocument (komponenta je vykreslená uvnitř kapitoly); tady je jen to,
+ * co přidává sama: posuvný obal tabulky a záložní věta.
+ */
+
+.prices {
+  margin: 1.5rem 0 2rem;
+}
+
+.tableScroll {
+  max-width: 100%;
+  margin-bottom: 1.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+
+  &:focus-visible {
+    outline: 2px solid var(--legal-accent, currentColor);
+    outline-offset: 4px;
+  }
+
+  table {
+    min-width: 28rem;
+  }
+}
+
+.small {
+  opacity: 0.72;
+  font-size: 0.875rem !important;
+}
+
+.fallback {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--legal-rule, currentColor);
+  border-left: 3px solid var(--legal-accent, currentColor);
+
+  p {
+    margin: 0 !important;
+  }
+
+  a {
+    color: inherit;
+    font-weight: 600;
+  }
+}

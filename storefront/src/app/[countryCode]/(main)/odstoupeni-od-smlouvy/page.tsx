@@ -1,99 +1,27 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 
-import { getMerchantIdentity } from "@lib/data/merchant"
-import { getFiles, getPageCopy } from "@lib/data/site-copy"
-import LegalDownloads from "@modules/legal/Downloads"
-import LegalDocument, {
-  type LegalSectionData,
-} from "@modules/legal/LegalDocument"
+import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
-const merchant = getMerchantIdentity()
+/*
+ * Odstoupení od smlouvy — doslovné poučení a formulář podle NV 29/2023 Sb.
+ * (ve znění NV 66/2026 Sb.) plus návod k online odstoupení. Znění z registru,
+ * ne z CMS. Dřívější vzor oznámení přímo v této stránce (s prohlášením, že
+ * zboží „není zbožím uvedeným v § 1837") je pryč.
+ */
+export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: "Odstoupení od smlouvy",
-  description:
-    "Jak vrátit zboží do 14 dnů od převzetí — postup, lhůty a vzorové oznámení o odstoupení od kupní smlouvy.",
+export function generateMetadata(): Metadata {
+  return legalMetadata("odstoupeni-od-smlouvy")
 }
 
-const sections: LegalSectionData[] = [
-  {
-    id: "uvod",
-    title: "Oznámení o odstoupení od kupní smlouvy (spotřebitel)",
-    paragraphs: [],
-  },
-  {
-    id: "kupujici",
-    title: "Kupující",
-    paragraphs: [
-      "Jméno a příjmení …………………………………",
-      "Adresa …………………………………",
-      "…………………………………",
-      "Telefon a e­mail …………………………………",
-    ],
-  },
-  {
-    id: "prodavajici",
-    title: "Prodávající",
-    paragraphs: [
-      `${merchant.name}, se sídlem ${merchant.address}`,
-      `identifikační číslo: ${merchant.registrationNumber}`,
-    ],
-  },
-  {
-    id: "text",
-    title: "Text oznámení",
-    paragraphs: [
-      "Vážení,",
-      `dne …………………….… jsem prostřednictvím vašeho e­shopu ${merchant.website} s vámi uzavřel(a) kupní smlouvu: číslo daňového dokladu (faktury) ………………………, na základě které jsem převzal dne ……………… zboží:`,
-      "Vzhledem k tomu, že smlouva byla uzavřena pomocí internetu, tj. typického prostředku komunikace na dálku, rozhodl(a) jsem se využít svého práva podle ustanovení § 1829 odst. 1 ve spojení s § 1818 zákona č. 89/2012 Sb., občanského zákoníku, a tímto oznamuji, že od výše uvedené kupní smlouvy odstupuji.",
-    ],
-  },
-  {
-    id: "rozsah",
-    title: "Rozsah odstoupení",
-    paragraphs: ["(zvolte jednu z možností, nehodící se škrtněte):"],
-    bullets: [
-      "a) Od smlouvy odstupuji v plném rozsahu a vracím vše, co je uvedeno na faktuře.",
-      "b) Od smlouvy odstupuji v částečném rozsahu, tj. pouze co do níže uvedeného zboží:",
-      "",
-    ],
-  },
-  {
-    id: "prohlaseni",
-    title: "Prohlášení",
-    paragraphs: [
-      "Prohlašuji, že výše uvedené zboží není zbožím uvedeným v ust. § 1837 zákona č. 89/2012 Sb., občanského zákoníku, tedy jsem oprávněn co do uvedeného zboží od kupní smlouvy odstoupit a nenastala skutečnost, která by mé právo odstoupení od smlouvy vyloučila nebo omezila.",
-      "Zboží vám zasílám zpět a zároveň vás žádám o poukázání kupní ceny včetně účtovaného dopravného (uvedeno na daňovém dokladu) ve výši ………………,- Kč, ve prospěch mého bankovního účtu č. ……………………………………………… nejpozději do 14 kalendářních dnů od doručení tohoto odstoupení od smlouvy.",
-    ],
-  },
-  {
-    id: "datum-a-podpis",
-    title: "Datum a podpis",
-    paragraphs: [
-      "V ……………………, dne …………",
-      "",
-      "Datum ......................     Podpis kupujícího..............................................",
-    ],
-  },
-]
-
-export default async function Page() {
-  // Znění kapitol z CMS; `sections` níž zůstávají zálohou pro výpadek.
-  const [copy, files] = await Promise.all([
-    getPageCopy("odstoupeni-od-smlouvy"),
-    getFiles("odstoupeni-od-smlouvy"),
-  ])
+export default async function Page(props: { params: Promise<{ countryCode: string }> }) {
+  const { countryCode } = await props.params
 
   return (
-    <LegalDocument
-      code="FORM · 03"
-      eyebrow="Vrácení zboží"
-      title="Odstoupení od smlouvy"
-      accent="Krok za krokem."
-      description="Vzor oznámení i všechny údaje, které k vrácení zboží potřebujete."
-      sections={sections}
-      block={copy["odstoupeni-od-smlouvy.text"]}
-      downloads={<LegalDownloads files={files} />}
+    <LegalPage
+      slug="odstoupeni-od-smlouvy"
+      countryCode={countryCode}
+      presentation={{ code: "FORM · 03", eyebrow: "Vrácení zboží", accent: "Krok za krokem." }}
     />
   )
 }
