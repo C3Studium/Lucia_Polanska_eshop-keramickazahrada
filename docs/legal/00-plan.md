@@ -11,7 +11,7 @@ v sekci „Stav“ na konci.
 ### Právní stránky a obsah
 - Šest právních stránek (`storefront/src/app/[countryCode]/(main)/{smluvni-podminky,odstoupeni-od-smlouvy,reklamacni-protokol,doprava-a-platba,ochrana-osobnich-udaju,cookies}`) sdílí komponentu `modules/legal/LegalDocument`.
 - Text je **v kódu** (`sections` v TSX / `smluvni-podminky/data.ts` + `supplements`), ale **CMS (ValeCMS, blok `<slug>.text`) ho za běhu přepisuje odstavec po odstavci podle pořadí kapitol**. Pole CMS má strop 1000 znaků na kapitolu → dlouhé kapitoly OP se do CMS ani nevejdou. Produkční obsah CMS není v repu.
-- ⇒ **Rozhodnutí:** právní dokumenty se přesouvají do verzovaného registru v repu (`storefront/src/lib/legal/`), CMS je u nich vypnuté. Důvody: verze OP se váže k objednávce, z textu se generuje PDF, advokát čte změny v PR, CMS by nové znění přepsalo starým. (Hero texty stránek zůstávají editovatelné? Ne — datum účinnosti a název musí sedět s verzí; CMS se u právních stránek vypíná celé.)
+- ⇒ **Rozhodnutí (14. 10., 15. 10. změněno — viz §5 a `docs/cms/00-plan.md`):** právní dokumenty se přesouvají do verzovaného registru v repu (`storefront/src/lib/legal/`), CMS je u nich vypnuté. Důvody: verze OP se váže k objednávce, z textu se generuje PDF, advokát čte změny v PR, CMS by nové znění přepsalo starým. (Hero texty stránek zůstávají editovatelné? Ne — datum účinnosti a název musí sedět s verzí; CMS se u právních stránek vypíná celé.)
 - Kurzy, Výroba, Dotazy: texty z CMS s fallbackem v kódu. FAQ z CMS (qna) — fallback v kódu se ukáže jen při prázdném CMS ⇒ právní FAQ (zakázka, kurzy, poukazy) se vykreslí jako **pevná sekce z kódu** pod otázkami z CMS.
 - Výchozí čísla účtu: OP `2500675505/2010`, `2701281289/2010`; `lib/data/merchant.ts` `7010757121/2010` (Doprava). PlatímPak na stránce Doprava (ale ComGate selector ho výslovně nenabízí). `PLATCE_DPH = false` v `lib/util/dph.ts` (komentář: „plátcem DPH není“) — rozpor s OP čl. IV („je plátcem DPH“).
 - Reklamační protokol: stránka „Formulář ještě dokončujeme“; backend už umí PDF protokolu ke konkrétní žádosti (`backend/src/lib/reklamacni-protokol.ts`, pdf-lib + font Sansation s češtinou).
@@ -102,7 +102,12 @@ Viz `docs/legal/OPEN_QUESTIONS.md`.
       `95b0483`, `18fb12e`. Závěr: všechny body „V kódu“ i textové body proveditelné bez
       Lucie splněné; zbytek čeká na údaje, data a advokáta (OPEN_QUESTIONS).
 - [x] Build (storefront `next build`, backend `medusa build`), lint, typecheck, 1448 unit testů
-- [ ] Push větve a PR (rebase není potřeba — `main` se od odbočení nepohnul)
+- [x] Push větve (PR neotevřen — na stroji chybí `gh`)
+- [x] **15. 10. odpoledne — obsah do Studia, údaje do administrace** (`docs/cms/00-plan.md`):
+      fakty `{{…}}` se vyplňují v administraci obchodu („Právní údaje“, `1f46b2b`), znění
+      právních dokumentů ve Studiu (typ „Právní dokumenty“) se zámkem vydaných znění,
+      redakční texty webu ve Studiu. **Tím se ruší rozhodnutí z 14. 10. „právní texty nejsou
+      v CMS“** — neměnnost teď drží vydání (PDF v R2 + otisk v repu), ne umístění textu.
 
 ## 6. Nasazení (pořadí)
 
@@ -121,5 +126,16 @@ starý storefront by dostal 400.
 3. Produkt poukazu „1 Kč“: `npx medusa exec ./src/scripts/legal-voucher-product.ts`
    (suchý běh), pak s `--apply`; popis upravit ručně (OPEN_QUESTIONS #13).
 4. Storefront: volitelně `NEXT_PUBLIC_GA_MEASUREMENT_ID` (OPEN_QUESTIONS #18, #24).
-5. Po doplnění údajů ve `facts.ts`: `pnpm legal:build` (běžící storefront), `pnpm legal:upload`,
-   commit manifestů, nasazení — teprve pak jdou OP a poučení jako PDF do e-mailů.
+5. **Studio, jednou po nasazení** (spouští Matěj, ve `storefront/`; bez přepínačů je to suchý
+   běh, který jen vypíše, co by udělal, a kam míří):
+   - `node --import ./scripts/lib/ts-register.mjs scripts/seed-legal.mjs`, pak totéž
+     s `--write --i-know-this-is-production` — založí ve Studiu „Právní dokumenty“ (všech
+     8 znění z repa, nic nepřepisuje);
+   - `node --import @c3studium/valecms/register.mjs scripts/seed-texts.mjs`, pak s `--write` —
+     doplní nové bloky textů (vyplní jen prázdná pole).
+6. Lucie vyplní údaje v administraci → „Právní údaje“ (stránka ukáže, co chybí) a případně
+   upraví pracovní znění ve Studiu → „Právní dokumenty“ (náhled webu ukáže koncept).
+7. **Vydání znění** (teprve pak jdou OP a poučení jako PDF do e-mailů a znění se zamkne):
+   `pnpm legal:build` proti storefrontu, který čte produkční CMS i backend (zapíše PDF,
+   `facts` do manifestu a otisk `documents/snapshots/` u znění ze Studia) → v backendu
+   `pnpm legal:upload --dry-run`, `pnpm legal:upload` → commit manifestů a otisků → nasazení.

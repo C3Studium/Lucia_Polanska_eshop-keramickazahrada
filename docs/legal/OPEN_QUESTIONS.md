@@ -1,8 +1,12 @@
 # Otevřené otázky pro Lucii (a advokáta)
 
-Každá položka je v textech vyznačená jako zvýrazněné `[[DOPLNIT: …]]` a údaj se doplňuje na
-jednom místě: `storefront/src/lib/legal/facts.ts` (pak `pnpm legal:build`, aby se obnovila PDF).
-Nic z toho se nesmí doplnit odhadem.
+Každá položka je v textech vyznačená jako zvýrazněné `[[DOPLNIT: …]]`. **Od 15. 10. se údaje
+(`{{…}}`) doplňují v administraci obchodu → „Právní údaje“** (stránka ukáže, co chybí; uloží se
+do `merchant_settings.legal_facts`, web i e-maily je čtou živě). `storefront/src/lib/legal/facts.ts`
+je už jen záloha pro výpadek backendu. Text, který není údajem (formulace článků), se upravuje ve
+Studiu → „Právní dokumenty“ (pracovní znění). Po doplnění znění vydat (`pnpm legal:build` +
+`pnpm legal:upload`, viz `docs/legal/00-plan.md` §6). Nic z toho se nesmí doplnit odhadem.
+Zpráva pro Lucii s otázkami srozumitelně: `docs/legal/ZPRAVA_PRO_LUCII.md`.
 
 ## Údaje o prodávající
 
@@ -27,7 +31,7 @@ Nic z toho se nesmí doplnit odhadem.
 
 | # | Otázka | Kde | Poznámka |
 | --- | --- | --- | --- |
-| 7 | **Storno podmínky kurzů** | OP čl. Kurzy, stránka Kurzy, rezervace, e-mail | Doporučeno: 7 a více dní předem 100 %, 2–6 dní 50 % nebo přesun, méně než 48 h 0 % (lze poslat náhradníka). **Systém dnes:** zákazník zruší online do 48 h před začátkem a dostane 100 % automaticky; později jen telefonicky. Buď potvrdit dnešní pravidlo, nebo dodat nové (pak se upraví i automatický refund). Text se doplňuje na **dvou** místech: `facts.ts` → `course.cancellation` (web, PDF) a `backend/src/modules/course/legal.ts` → `COURSE_CANCELLATION_TERMS` (e-mail potvrzení rezervace). |
+| 7 | **Storno podmínky kurzů** | OP čl. Kurzy, stránka Kurzy, rezervace, e-mail | Doporučeno: 7 a více dní předem 100 %, 2–6 dní 50 % nebo přesun, méně než 48 h 0 % (lze poslat náhradníka). **Systém dnes:** zákazník zruší online do 48 h před začátkem a dostane 100 % automaticky; později jen telefonicky. Buď potvrdit dnešní pravidlo, nebo dodat nové (pak se upraví i automatický refund). Text se doplňuje na **jednom** místě: administrace → Právní údaje → `course.cancellation` (web, PDF i e-mail potvrzení rezervace). |
 | 8 | Minimální věk dítěte na kurzu | OP čl. Kurzy | — |
 | 9 | Do kdy si vyzvednout výrobek z kurzu po výpalu | OP čl. Kurzy | — |
 
@@ -73,7 +77,7 @@ Nic z toho se nesmí doplnit odhadem.
 | 19 | Pravidla moderace recenzí | Text u recenzí slibuje, že se nemažou negativní hodnocení — potvrdit, že tak Lucie postupuje. |
 | 20 | Reklama na webu | Lišta cookies u marketingové kategorie říká „Reklamu na webu zatím neprovozujeme“ — potvrdit. |
 | 21 | Zásilkovna v pokladně | Kód pokladny umí výdejní místa Zásilkovny (widget Packeta), backend ji vede jako starší dopravce. Používá se ještě? Pokud ne, vyřadit ze soupisu cookies a ze Zásad. Ověřit i obchodní firmu („Zásilkovna s.r.o.“ / Packeta). |
-| 22 | Obsah v CMS mimo právní stránky | Produkční CMS (Studio) | FAQ ve Studiu má dvě zastaralé odpovědi: „Jak postupovat, když zásilka dorazí poškozená?“ („ozvěte se nám do 48 hodin“) a „Mohu produkt vrátit nebo vyměnit?“ („Nepoužitý výrobek … do 14 dnů“ — podmínku „nepoužitý“ zákon nezná, § 1833 OZ). **Kód teď odpovědi na tato dvě témata přebíjí** (`storefront/src/lib/legal/faq.ts` → `PINNED_FAQ_ANSWERS`, párování podle znění otázky), takže zákazník vidí správné znění a úprava těchto dvou odpovědí ve Studiu se na webu neprojeví. Text ve Studiu přesto opravit, ať redakce a web neříkají každý něco jiného. Totéž texty o kurzech v CMS („předem kartou, nebo na místě“) — ověřit, že sedí s podmínkami. |
+| 22 | Obsah v CMS mimo právní stránky | Produkční CMS (Studio) | FAQ ve Studiu má dvě zastaralé odpovědi: „Jak postupovat, když zásilka dorazí poškozená?“ („ozvěte se nám do 48 hodin“) a „Mohu produkt vrátit nebo vyměnit?“ („Nepoužitý výrobek … do 14 dnů“ — podmínku „nepoužitý“ zákon nezná, § 1833 OZ). **Kód odpovědi na tato dvě témata přebíjí vždy** (`storefront/src/lib/legal/faq.ts` → `PINNED_FAQ_ANSWERS`, párování podle tématu otázky), takže zákazník vidí znění, které sedí s OP, a úprava těchto dvou odpovědí ve Studiu se na webu neprojeví. (15. 10. zkoušeno pouštět text ze Studia, „dokud není chybný“ — kontrola ukázala, že jiné chybné formulace by prošly, proto zpět na trvalé přišpendlení.) Text ve Studiu přesto opravit, ať redakce a web neříkají každý něco jiného. Totéž texty o kurzech v CMS („předem kartou, nebo na místě“) — ověřit, že sedí s podmínkami. |
 | 23 | Platba při osobním odběru | OP čl. V | OP uvádí jen hotovost (podle backendu `pickupPayment`). Pokud lze platit i kartou na místě, doplnit. |
 | 24 | Nastavení Google Analytics | Railway | Pokud ano: `NEXT_PUBLIC_GA_MEASUREMENT_ID` ve storefrontu (zapéká se při buildu → nový build) a v GA4 zapnuté „rozšířené měření → změny stránky podle historie“. |
 | 25 | **Produkty „… - SLEVA“ bez akční ceny** | Katalog | „Zvonkové tlačítko Paví mini - SLEVA“, „Klasik - Smetana - SLEVA“, „Retro, Smetana - SLEVA“ a kolekce „Výrobky se slevou“ ohlašují slevu, ale prodávají za běžnou cenu bez předchozí ceny (§ 12a ZOS). Buď slevu nastavit jako akční ceník (Slevy+ / price list — pak web sám ukáže nejnižší cenu za 30 dní), nebo „SLEVA“ z názvů, popisů a kolekce odstranit. Pokud jde o kusy s vadou, převést je na „kus s vadou“ (Poškozené). |

@@ -3,6 +3,28 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Obsah do Studia, údaje do administrace (15. 10. 2026 odpoledne)
+
+Podrobně `docs/cms/00-plan.md`. Mění bod „Jádro“ níž: text dokumentů se smí upravovat ve
+Studiu, ale **vydané znění se nemění** (§ 1827 odst. 2 OZ — zákazník ho dostal v PDF).
+
+- **Právní údaje** (`{{…}}`: identita, účet, DPH, záloha, storno kurzů, poukazy, lhůty, odhad
+  nákladů vrácení, zpracovatelé) vyplňuje Lucie v administraci obchodu; web, PDF i e-maily
+  je čtou odtud. Vydaná znění mají údaje zamrazené v manifestu PDF (`entry.facts`).
+- **Znění dokumentů ve Studiu** (typ „Právní dokumenty“): pracovní znění lze upravovat
+  a prohlížet v náhledu; vydané znění (PDF zveřejněné v R2) se vykresluje z otisku v repu
+  a Studio ho nepustí změnit, smazat ani stáhnout. Platné znění nejde smazat, nové znění
+  nemůže platit zpětně, neplatnou značku nejde publikovat.
+- **Verze k objednávce se nikdy nenahrazuje jinou** — e-mail i stránka objednávky ukážou
+  uložené `terms_version`, i když ho backendový manifest nebo CMS právě nezná (bez PDF,
+  s odkazem na stránku znění).
+- `pnpm legal:build --check --strict` = kontrola před spuštěním (selže, dokud je platné
+  znění nevydané nebo znění existuje jen ve Studiu bez otisku v repu).
+- Soubory ke stažení ze Studia u právních stránek a v patičce (oficiální PDF dál z pipeline).
+- Redakční texty, které ležely jen v kódu, jsou ve Studiu. Zákonem vázané texty (souhlasy,
+  předsmluvní informace, § 1837, § 12a, cookies, dvě FAQ odpovědi o zákonných právech)
+  zůstávají v kódu.
+
 ## Jádro
 
 - **Právní dokumenty přesunuty z CMS do verzovaného registru v repu**
