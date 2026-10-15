@@ -223,7 +223,7 @@ const odstoupeni: LegalDocumentVersion = {
         {
           type: "ul",
           items: [
-            "u kusů s vadou z kolekce „Poškozené“ a u zlevněného zboží — vrátíme cenu, kterou jste skutečně zaplatili,",
+            "u kusů s vadou (v obchodě filtr „Poškozené“, u výrobku označené jako kus s vadou) a u zlevněného zboží — vrátíme cenu, kterou jste skutečně zaplatili,",
             "u dárkového poukazu, dokud nebyl uplatněn, ani zčásti,",
             "u běžného zboží v objednávce, kde je i zakázka.",
           ],

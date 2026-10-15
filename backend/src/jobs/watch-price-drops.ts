@@ -21,6 +21,17 @@ import {
   optedOutEmails,
 } from "../lib/email-optout"
 import { emailOptOutUrl } from "../lib/email-optout-link"
+import {
+  addDays,
+  lowestPriceBefore,
+  pragueDay,
+  REFERENCE_WINDOW_DAYS,
+  toAmount,
+  type PriceHistoryPoint,
+  type PriceKind,
+} from "../lib/price-reference"
+import { PRICE_HISTORY_MODULE } from "../modules/price-history"
+import type PriceHistoryModuleService from "../modules/price-history/service"
 
 /**
  * The morning price check for objects people keep in their oblíbených
@@ -42,8 +53,17 @@ import { emailOptOutUrl } from "../lib/email-optout-link"
  * of a variant records its price and never mails (there is no „before" to
  * compare against). A later price lower by more than the currency's rounding
  * epsilon is a drop; the snapshot then moves to the new price, so a drop is
- * always measured against the most recent price a customer could have seen,
- * not a historic low.
+ * DETECTED against the most recent price a customer could have seen.
+ *
+ * ## What the e-mail shows as the previous price (§ 12a ZOS)
+ *
+ * The e-mail announces a price reduction, so the struck-through „previous
+ * price" must be the lowest price of the 30 days before the reduction — not
+ * the last snapshot. It comes from the price history (`lib/price-reference`,
+ * `lowestPriceBefore`). When the history doesn't cover the whole 30-day window
+ * (the first month after it started) or the new price isn't below that
+ * 30-day low, no e-mail goes out: a reduction that can't be backed by the
+ * previous price must not be announced. (15. 10. 2026)
  *
  * Deduped per variant, amount and address
  * (`price-drop:{variant}:{amount}:{email}`), so a further drop to a new
@@ -117,11 +137,31 @@ export default async function watchPriceDrops(container: MedusaContainer) {
 
   const epsilon = epsilonFor(CURRENCY_CODE)
   const now = new Date()
+  const today = pragueDay(now)
+  const priceHistory =
+    container.resolve<PriceHistoryModuleService>(PRICE_HISTORY_MODULE)
+
+  /** Nejnižší cena za 30 dní před dneškem z historie cen (§ 12a ZOS). */
+  const thirtyDayLow = async (variantId: string, currencyCode: string) => {
+    const rows = (await priceHistory.listPriceHistoryEntries({
+      variant_id: variantId,
+      currency_code: currencyCode,
+      recorded_on: { $gte: addDays(today, -REFERENCE_WINDOW_DAYS) },
+    } as never)) as any[]
+    const points: PriceHistoryPoint[] = rows.flatMap((row) => {
+      const amount = toAmount(row.amount)
+      return amount == null
+        ? []
+        : [{ recorded_on: String(row.recorded_on), kind: row.kind as PriceKind, amount }]
+    })
+    return lowestPriceBefore(points, today)
+  }
 
   // Variants whose price dropped and whose watchers were mailed.
   let droppedAndMailed = 0
   let sentEmails = 0
   let skippedOptOut = 0
+  let skippedNoReference = 0
 
   for (const variant of variants as any[]) {
     try {
@@ -145,7 +185,20 @@ export default async function watchPriceDrops(container: MedusaContainer) {
         Number.isFinite(previous) &&
         previous - current > epsilon
 
-      if (dropped) {
+      // Předchozí cena v e-mailu = nejnižší za 30 dní před snížením (§ 12a ZOS).
+      // Bez úplné historie, nebo když nová cena není pod 30denním minimem,
+      // se snížení neoznamuje (snímek se níž stejně posune).
+      const reference = dropped ? await thirtyDayLow(variant.id, currencyCode) : null
+      const announceable =
+        reference !== null &&
+        reference.complete &&
+        reference.lowest !== null &&
+        reference.lowest - current > epsilon
+      if (dropped && !announceable) {
+        skippedNoReference += 1
+      }
+
+      if (dropped && announceable && reference?.lowest != null) {
         const customerIds = [...(watchersByVariant.get(variant.id) ?? [])]
         const customers = customerIds.length
           ? await customerModule.listCustomers({ id: customerIds })
@@ -188,10 +241,9 @@ export default async function watchPriceDrops(container: MedusaContainer) {
               ...(variant.product?.thumbnail
                 ? { productImage: variant.product.thumbnail }
                 : {}),
-              originalPrice: formatMoney(
-                previous,
-                snapshot?.currency_code ?? currencyCode
-              ),
+              // Nejnižší cena za 30 dní před snížením, ne poslední snímek
+              // (§ 12a ZOS) — šablona ji tak i popíše.
+              originalPrice: formatMoney(reference.lowest, currencyCode),
               newPrice: formatMoney(current, currencyCode),
               // Handle, not id — the storefront routes products by handle.
               productLink: productLink(variant.product?.handle ?? null),
@@ -282,6 +334,11 @@ export default async function watchPriceDrops(container: MedusaContainer) {
 
     logger.info(
       `[price-drop] Ceny klesly u ${droppedAndMailed} objektů, odesláno ${sentEmails} e-mailů.`
+    )
+  }
+  if (skippedNoReference > 0) {
+    logger.info(
+      `[price-drop] ${skippedNoReference}× pokles neoznámen — historie cen nepokrývá 30 dní, nebo cena není pod 30denním minimem (§ 12a ZOS).`
     )
   }
   if (skippedOptOut > 0) {

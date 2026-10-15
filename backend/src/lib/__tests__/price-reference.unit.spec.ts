@@ -2,6 +2,7 @@ import {
   addDays,
   computePriceReference,
   findSaleRunStart,
+  lowestPriceBefore,
   observationsFromCalculatedPrice,
   planDailyUpsert,
   pragueDay,
@@ -39,6 +40,38 @@ describe("pragueDay / addDays", () => {
     expect(addDays("2026-03-28", 2)).toBe("2026-03-30")
     expect(addDays("2026-10-24", 2)).toBe("2026-10-26")
     expect(addDays("2026-10-14", -30)).toBe("2026-09-14")
+  })
+})
+
+describe("lowestPriceBefore (e-mail o poklesu ceny, § 12a ZOS)", () => {
+  it("nejnižší cena za 30 dní před dneškem, dnešek se nepočítá", () => {
+    const entries = [
+      ...days("2026-09-01", "2026-10-13", "base", 500),
+      { recorded_on: "2026-10-01", kind: "base" as const, amount: 450 },
+      { recorded_on: TODAY, kind: "base" as const, amount: 400 },
+    ]
+    expect(lowestPriceBefore(entries, TODAY)).toEqual({ lowest: 450, complete: true })
+  })
+
+  it("cena zvednutá těsně před snížením — předchozí cenou je to dřívější minimum", () => {
+    const entries = [
+      ...days("2026-09-10", "2026-10-05", "base", 300),
+      ...days("2026-10-06", "2026-10-13", "base", 500),
+    ]
+    expect(lowestPriceBefore(entries, TODAY).lowest).toBe(300)
+  })
+
+  it("historie kratší než 30 dní není úplná", () => {
+    const entries = days("2026-10-01", "2026-10-13", "base", 500)
+    expect(lowestPriceBefore(entries, TODAY)).toEqual({ lowest: 500, complete: false })
+  })
+
+  it("bez záznamu v okně nic", () => {
+    expect(lowestPriceBefore([], TODAY)).toEqual({ lowest: null, complete: false })
+    expect(lowestPriceBefore(days("2026-01-01", "2026-01-31", "base", 1), TODAY)).toEqual({
+      lowest: null,
+      complete: false,
+    })
   })
 })
 

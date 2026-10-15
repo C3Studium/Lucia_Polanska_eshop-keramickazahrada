@@ -64,7 +64,7 @@ const voiceFor = (
         text:
           reservation.payment_status === "paid"
             ? reservation.refunded_at
-              ? "Zaplacenou částku vám vracíme zpět na kartu, ze které jste platili — obvykle dorazí do několika dní. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín."
+              ? "Zaplacenou částku vám vracíme stejnou cestou, jakou jste platili — obvykle dorazí do několika dní. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín."
               : "Zaplacenou částku vám vrátíme v plné výši — ozveme se vám co nejdříve. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín."
             : "Místo jsme uvolnili a nic se neplatí. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín.",
         tone: "warn",
@@ -224,7 +224,7 @@ export default function RezervaceDetail({
     setCancelOpen(false)
     setNotice(
       result.refunded
-        ? "Rezervace je zrušená. Peníze vám vracíme zpět na kartu — obvykle dorazí do několika dní."
+        ? "Rezervace je zrušená. Peníze vám vracíme stejnou cestou, jakou jste platili — obvykle dorazí do několika dní."
         : result.needs_manual_refund
           ? "Rezervace je zrušená. Zaplacenou částku vám vrátíme v plné výši, ozveme se co nejdříve."
           : "Rezervace je zrušená. Nic jste neplatili, takže se nic nevrací."
@@ -418,7 +418,7 @@ export default function RezervaceDetail({
                   {paidOnline
                     ? `Zaplacenou částku ${czk(
                         reservation.total_price
-                      )} vám vrátíme zpět na kartu, ze které jste platili.`
+                      )} vám vrátíme stejnou cestou, jakou jste platili.`
                     : "Nic jste zatím neplatili, takže se nic nevrací."}{" "}
                   Potvrzení o zrušení pošleme e-mailem.
                 </p>

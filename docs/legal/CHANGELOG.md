@@ -255,3 +255,19 @@ Nálezy z kontroly a z testovacích objednávek v izolovaném sandboxu (`backend
   animaci nespouští); `e2e.mjs` teď snímá s `animations: "disabled"`.
 - **Storefront — tečka za „poučení o odstoupení“** v předsmluvních informacích už nevisí
   na samostatném řádku (`dd` je mřížka, souvislá věta je teď v jednom `span`).
+
+## Opravy po druhé kontrole
+
+- **E-mail o zlevnění výrobku v oblíbených (§ 12a ZOS):** přeškrtnutá „předchozí cena“ je
+  nově nejnižší cena za 30 dní před snížením z historie cen (dřív poslední zachycená cena),
+  s popiskem „nejnižší cena za 30 dní před snížením“. Bez úplné 30denní historie, nebo když
+  nová cena není pod 30denním minimem, se snížení neoznamuje.
+- Odkaz na odmítnutí e-mailů (recenze, zlevnění, košík) má záložní variantu „napište nám
+  na info@…“, když není nastavená adresa backendu — možnost odmítnout musí být v každé zprávě
+  (§ 7 odst. 3 zákona č. 480/2004 Sb.).
+- Stránky dokumentů nabízejí ke stažení jen zveřejněná PDF (pracovní znění s `[[DOPLNIT]]`
+  ne), stejně jako patička a e-maily.
+- OP a Odstoupení: kusy s vadou se v obchodě hledají filtrem „Poškozené“ (nebyla to kolekce).
+- Texty o vracení peněz („neplatili kartou“, „zpět na kartu“) obecně: „online přes ComGate“,
+  „stejnou cestou, jakou jste platili“ — ComGate bere i převod a peněženky.
+- Stránka newsletteru čte stav z adresy jen z vlastních klíčů (`?stav=constructor`).

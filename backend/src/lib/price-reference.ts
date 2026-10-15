@@ -239,6 +239,41 @@ export const planDailyUpsert = (
 // Čtení (store routa)
 // ---------------------------------------------------------------------------
 
+/**
+ * Nejnižší cena (běžná i akční) za `windowDays` dní PŘED dnem `day` — den
+ * `day` sám se nepočítá. „Předchozí cena" pro oznámení o snížení ceny, které
+ * není akcí z price-listu (e-mail o poklesu ceny výrobku v oblíbených,
+ * § 12a ZOS).
+ *
+ * `complete` = historie sahá aspoň k prvnímu dni okna; jinak se nedá doložit,
+ * že v okně nebyla cena ještě nižší, a oznámení se posílat nemá.
+ */
+export const lowestPriceBefore = (
+  entries: PriceHistoryPoint[],
+  day: string,
+  windowDays: number = REFERENCE_WINDOW_DAYS
+): { lowest: number | null; complete: boolean } => {
+  if (!isDay(day)) {
+    return { lowest: null, complete: false }
+  }
+  const start = addDays(day, -windowDays)
+  const dated = entries.filter((entry) => isDay(entry.recorded_on))
+  const inWindow = dated.filter(
+    (entry) => entry.recorded_on >= start && entry.recorded_on < day
+  )
+  if (!inWindow.length) {
+    return { lowest: null, complete: false }
+  }
+  const earliest = dated.reduce(
+    (min, entry) => (entry.recorded_on < min ? entry.recorded_on : min),
+    dated[0].recorded_on
+  )
+  return {
+    lowest: Math.min(...inWindow.map((entry) => entry.amount)),
+    complete: earliest <= start,
+  }
+}
+
 export type ReferenceInput = {
   /** Historie jedné varianty v jedné měně (může být jen výsek posledních
       `HISTORY_LOOKBACK_DAYS` dní). */

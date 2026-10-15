@@ -306,10 +306,17 @@ describe("customer e-mail templates after the audit", () => {
       expect(html).toContain(url.replace(/&/g, "&amp;"))
     })
 
-    it.each(cases)("%s renders no dead link without one", (_name, template) => {
-      expect(render(template({}))).not.toContain("Odhlásit je jedním kliknutím")
-      expect(render(template({ unsubscribe_url: null }))).not.toContain("Nechcete tyto e-maily?")
-    })
+    it.each(cases)(
+      "%s without a link still offers opting out by e-mail, never a dead link",
+      (_name, template) => {
+        for (const html of [render(template({})), render(template({ unsubscribe_url: null }))]) {
+          expect(html).not.toContain("Odhlásit je jedním kliknutím")
+          // § 7 odst. 3 zák. 480/2004 Sb.: možnost odmítnout v KAŽDÉ zprávě.
+          expect(html).toContain("Nechcete tyto e-maily?")
+          expect(html).toContain("mailto:info@keramickazahrada.cz")
+        }
+      }
+    )
 
     it("price-drop no longer points to a non-existent account setting", () => {
       expect(render(PriceDropEmail({}))).not.toContain("v nastavení účtu")

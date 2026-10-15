@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { isPublishedPdfUrl } from "@lib/legal/pdf-published"
 import { currentVersion, pdfEntry } from "@lib/legal/registry"
 import LegalPage, { legalMetadata } from "@modules/legal/LegalPage"
 
@@ -19,7 +20,9 @@ export function generateMetadata(): Metadata {
 export default async function Page(props: { params: Promise<{ countryCode: string }> }) {
   const { countryCode } = await props.params
   const doc = currentVersion("reklamacni-protokol")
-  const pdf = doc ? pdfEntry("reklamacni-protokol", doc.version) : null
+  const entry = doc ? pdfEntry("reklamacni-protokol", doc.version) : null
+  // Jen zveřejněné PDF (viz `lib/legal/pdf-published`), jinak tisk stránky.
+  const pdf = entry && isPublishedPdfUrl(entry.url) ? entry : null
 
   return (
     <LegalPage

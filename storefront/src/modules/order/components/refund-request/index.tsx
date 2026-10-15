@@ -943,7 +943,7 @@ export default function RefundRequest({
             disabled={state === "sending"}
           />
           <p className={styles.hint}>
-            Objednávku jste neplatili kartou, takže peníze posíláme převodem na
+            Objednávku jste neplatili online přes ComGate, takže peníze posíláme převodem na
             účet. Stačí české číslo účtu, případně IBAN.
             {kind === "reklamace" && !accountRequired
               ? " U výměny ho vyplňovat nemusíte — hodí se, kdyby se nakonec vracely peníze."

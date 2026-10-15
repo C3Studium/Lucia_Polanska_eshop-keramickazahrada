@@ -156,7 +156,7 @@ export default function WithdrawalFlow({
 
   const refundText = accountNeeded
     ? account.trim()
-      ? `Převodem na účet ${account.trim()} (objednávku jste neplatili kartou).`
+      ? `Převodem na účet ${account.trim()} (objednávku jste neplatili online přes ComGate).`
       : "Převodem na účet — vyplňte prosím číslo účtu."
     : withdrawal.refund_method_text
 
@@ -484,7 +484,7 @@ export default function WithdrawalFlow({
             disabled={sending}
           />
           <p className={styles.hint}>
-            Objednávku jste neplatili kartou, takže peníze posíláme převodem na
+            Objednávku jste neplatili online přes ComGate, takže peníze posíláme převodem na
             účet. Stačí české číslo účtu, případně IBAN.
           </p>
         </section>

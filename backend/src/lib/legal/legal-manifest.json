@@ -36,8 +36,8 @@
           "pdf": {
             "file": "obchodni-podminky-2026-10-15.pdf",
             "url": "/legal/obchodni-podminky-2026-10-15.pdf",
-            "sha256": "28d5f925235224867c690383286eb322c06dbaf4305e6945c2268973fc91e9aa",
-            "bytes": 253221,
+            "sha256": "fe0ded1534fd55f701cbb4f4f401063fbd27b87968dd336b94756e6a71099aac",
+            "bytes": 253378,
             "draft": true
           }
         }
@@ -93,8 +93,8 @@
           "pdf": {
             "file": "odstoupeni-od-smlouvy-2026-10-15.pdf",
             "url": "/legal/odstoupeni-od-smlouvy-2026-10-15.pdf",
-            "sha256": "776e62e294b940f5be1d08eaee38911916fbdc21ac69376d9e8c1e6c02c4f6c9",
-            "bytes": 131282,
+            "sha256": "a82934626a977bd4530a215277665caaaa1cba982cec62d98054d43592580cb0",
+            "bytes": 131377,
             "draft": true
           }
         }

@@ -109,9 +109,13 @@ type Props = {
 
 export default async function NewsletterStatusPage(props: Props) {
   const { stav, druh } = await props.searchParams
-  const base = (stav && COPY[stav]) || DEFAULT_COPY
+  // Jen vlastní klíče — hodnota z adresy nesmí sáhnout na zděděné vlastnosti
+  // objektu (`?stav=constructor`).
+  const own = (record: object, key?: string): key is string =>
+    Boolean(key) && Object.prototype.hasOwnProperty.call(record, key as string)
+  const base = own(COPY, stav) ? COPY[stav] : DEFAULT_COPY
   const optOut = stav === "odhlaseno-upozorneni"
-  const kindLabel = druh ? OPTOUT_KIND_LABEL[druh] : undefined
+  const kindLabel = own(OPTOUT_KIND_LABEL, druh) ? OPTOUT_KIND_LABEL[druh] : undefined
   const copy: StatusCopy =
     optOut && kindLabel
       ? {

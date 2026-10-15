@@ -219,7 +219,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Kusy s vadou.** Některé kusy prodáváme levněji proto, že mají vadu — například prasklinku v glazuře nebo odštípnutý okraj; najdete je v kolekci „Poškozené“. U nich nejde o slevu, ale o **cenu kusu s uvedenou vadou**: vadu popíšeme a ukážeme u výrobku, ještě než ho koupíte. Za vadu, pro kterou je kus levnější, neodpovídáme (§ 2167 OZ); za jiné vady ano. I takový kus můžete do 14 dnů vrátit ([čl. VIII](/smluvni-podminky#odstoupeni)).",
+          text: "**Kusy s vadou.** Některé kusy prodáváme levněji proto, že mají vadu — například prasklinku v glazuře nebo odštípnutý okraj; v obchodě je najdete pod filtrem „Poškozené“ a u výrobku jsou označené jako kus s vadou. U nich nejde o slevu, ale o **cenu kusu s uvedenou vadou**: vadu popíšeme a ukážeme u výrobku, ještě než ho koupíte. Za vadu, pro kterou je kus levnější, neodpovídáme (§ 2167 OZ); za jiné vady ano. I takový kus můžete do 14 dnů vrátit ([čl. VIII](/smluvni-podminky#odstoupeni)).",
         },
       ],
     },

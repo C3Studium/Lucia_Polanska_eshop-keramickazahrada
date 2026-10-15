@@ -12,6 +12,7 @@ import {
   pragueToday,
   upcomingVersion,
 } from "@lib/legal/registry"
+import { isPublishedPdfUrl } from "@lib/legal/pdf-published"
 import type { LegalDocumentVersion, LegalSlug } from "@lib/legal/types"
 import LegalDocument, {
   type LegalNotice,
@@ -162,7 +163,11 @@ export default function LegalPage({
     })
     .filter((link): link is LegalVersionLink => link !== null)
 
-  const pdf = doc.pdf ? pdfEntry(slug, doc.version) : null
+  // Jen zveřejněné PDF (nahrané v úložišti) — pracovní znění s [[DOPLNIT]]
+  // se nenabízí ke stažení, stejně jako v patičce a v e-mailech. Místo něj
+  // zůstane tlačítko tisku stránky.
+  const entry = doc.pdf ? pdfEntry(slug, doc.version) : null
+  const pdf = entry && isPublishedPdfUrl(entry.url) ? entry : null
 
   return (
     <LegalDocument

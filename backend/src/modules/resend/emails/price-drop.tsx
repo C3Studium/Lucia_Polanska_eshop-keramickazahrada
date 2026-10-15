@@ -127,6 +127,19 @@ function PriceDropEmailComponent({
             >
               {originalPrice}
             </Text>
+            {/* § 12a ZOS: přeškrtnutá cena je nejnižší cena za 30 dní před
+                snížením (počítá ji úloha watch-price-drops z historie cen). */}
+            <Text
+              style={{
+                fontFamily: brand.sans,
+                fontSize: "11px",
+                lineHeight: "14px",
+                color: brand.muted,
+                margin: "0 0 4px",
+              }}
+            >
+              nejnižší cena za 30 dní před snížením
+            </Text>
             <Text
               style={{
                 fontFamily: brand.serif,
