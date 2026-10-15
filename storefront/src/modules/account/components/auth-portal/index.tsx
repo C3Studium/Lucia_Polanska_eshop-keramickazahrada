@@ -107,7 +107,12 @@ export default function AuthPortal({ mode, children, block }: AuthPortalProps) {
       </motion.p>
 
       <header className={s.meta}>
-        <span {...edit("eyebrow")}>{content.index} · {content.eyebrow}</span>
+        {/* Číslo před obočím je kód, ne text bloku — anotace jen na vnitřním
+            spanu. Na celém řádku by úprava v místě uložila do `*.eyebrow`
+            i „01 · " (změřeno 15. 10. 2026). */}
+        <span>
+          {content.index} · <span {...edit("eyebrow")}>{content.eyebrow}</span>
+        </span>
         <motion.span
           className={s.metaLine}
           initial={initial2}

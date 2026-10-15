@@ -1,5 +1,6 @@
 "use client"
 
+import { surfaceRoot, useStudioSurface } from "@c3studium/valecms/edit"
 import { Transition } from "@headlessui/react"
 import styles from "./style.module.scss"
 import { convertToLocale } from "@lib/util/money"
@@ -23,16 +24,40 @@ import { Fragment, useCallback, useEffect, useRef, useState, useTransition, type
 import { motion } from 'framer-motion';
 import { useFormStatus } from 'react-dom';
 import CartDropdownQuantity from "./quantity"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
+
+/**
+ * Texty panelu z bloku `global.kosik` (položky `panel.*`), poskytuje je
+ * hlavní layout (`CopyProvider`). Částky, DPH a počet položek jsou v kódu.
+ */
+const PANEL_DEFAULTS = {
+  "panel.nadpis": "Košík",
+  "panel.prazdny": "V košíku zatím nic není.",
+  "panel.do-obchodu": "Do obchodu",
+  "panel.do-kosiku": "Přejít do košíku",
+  "panel.smazat": "Smazat košík",
+} as const
 
 const CartDropdown = ({
   cart: cartState,
 }: {
   cart?: HttpTypes.StoreCart | null
 }) => {
+  const copy = useCopyBlock("global.kosik")
+  const text = (label: keyof typeof PANEL_DEFAULTS) =>
+    itemText(copy, label, PANEL_DEFAULTS[label])
   const [activeTimer, setActiveTimer] = useState<ReturnType<typeof setTimeout> | undefined>(
     undefined
   )
   const [cartDropdownOpen, setCartDropdownOpen] = useState(false)
+  /*
+   * Povrch „Košík v menu" ve Studiu (`valecms.config.ts`, `surfaces`): panel
+   * se v rámu otevře sám, texty v něm jdou upravit klikáním. Mimo rám Studia
+   * vždycky `false`.
+   */
+  const studioOpen = useStudioSurface("kosik-panel")
 
   const open = () => setCartDropdownOpen(true)
   /* Stable, so the dismiss listeners bind once per open rather than once per render. */
@@ -165,7 +190,7 @@ const CartDropdown = ({
           </span>
         </LocalizedClientLink>
         <Transition
-          show={cartDropdownOpen}
+          show={cartDropdownOpen || studioOpen}
           as={Fragment}
           enter="transition ease-out duration-200"
           enterFrom="opacity-0 translate-y-1"
@@ -177,9 +202,10 @@ const CartDropdown = ({
           <div
             className={styles.popoverPanel}
             data-testid="nav-cart-dropdown"
+            {...surfaceRoot("kosik-panel")}
           >
             <div className={styles.panelHeader}>
-              <h3>Košík</h3>
+              <h3 {...editableItem(copy, "panel.nadpis")}>{text("panel.nadpis")}</h3>
               {/*
                 Zavírací křížek — na dotyku jediná cesta ven.
                 Na myši se panel zavře odjetím kurzoru (onMouseLeave), jenže
@@ -335,8 +361,9 @@ const CartDropdown = ({
                     </span>
                   </div>
                   <LocalizedClientLink href="/cart" passHref>
+                    {/* Texty tlačítek bez úpravy v místě — vnitřek si animují samy. */}
                     <ClickButton
-                      text="Přejít do košíku"
+                      text={text("panel.do-kosiku")}
                       className={styles.goToCartBtn}
                       type="button"
                       data-testid="go-to-cart-button"
@@ -350,7 +377,7 @@ const CartDropdown = ({
                     aria-busy={clearing || undefined}
                     data-testid="clear-cart-button"
                   >
-                    {clearing ? "Mažu…" : "Smazat košík"}
+                    {clearing ? "Mažu…" : text("panel.smazat")}
                   </button>
                 </div>
               </>
@@ -364,10 +391,12 @@ const CartDropdown = ({
                     <span>položek</span>
                   </div>
 
-                  <span className={styles.emptyText}>V košíku zatím nic není.</span>
+                  <span className={styles.emptyText} {...editableItem(copy, "panel.prazdny")}>
+                    {text("panel.prazdny")}
+                  </span>
                   <div className={styles.emptyAction} onClick={close}>
                     <WebButton
-                      title="Do obchodu"
+                      title={text("panel.do-obchodu")}
                       href="/store"
                       Kind="Link"
                       className={styles.emptyStoreButton}

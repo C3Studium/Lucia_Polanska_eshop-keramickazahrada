@@ -31,6 +31,9 @@ import { BundleProduct } from "@lib/data/products"
 import { scrollWithLenis } from "@lib/helpers/scrollWithLenis"
 import { HttpTypes } from "@medusajs/types"
 import type { CopyBlock } from "@lib/util/site-copy"
+import { itemText } from "@lib/util/site-copy"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { editableItem } from "@modules/common/components/cms-text"
 import Details from "@modules/products/ProductPage/details"
 import RestockForm from "@modules/products/ProductPage/restock"
 import BundleActions from "@modules/products/components/bundle-actions"
@@ -113,6 +116,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   pick,
   texts,
 }) => {
+  /* Bez výběru provedení se panel nákupu po zapnutí editace sám nepřekreslí
+     a texty z `global.produkt` by zůstaly bez anotací. Viz hook. */
+  useEditRerender()
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [addState, setAddState] = useState<AddToCartState>({ kind: "idle" })
   const [quantity, setQuantity] = useState(1)
@@ -400,7 +406,11 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               transition={transition2}
             >
               <div className="product__purchaseHeader">
-                <span>Vaše volba</span>
+                {/* Popisky z bloku `global.produkt` (`volba.*`); stav dostupnosti
+                    vedle je sdílený slovník, ten drží kód. */}
+                <span {...editableItem(texts, "volba.stitek")}>
+                  {itemText(texts, "volba.stitek", "Vaše volba")}
+                </span>
                 {/* The shared availability vocabulary (spec §12); bundles are
                     stock-blind on the storefront, so they keep the older
                     two-state copy instead of mislabelling themselves. */}
@@ -414,7 +424,9 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
               </div>
 
               <div className="product__selection">
-                <small>Vaše provedení</small>
+                <small {...editableItem(texts, "volba.provedeni")}>
+                  {itemText(texts, "volba.provedeni", "Vaše provedení")}
+                </small>
                 <span>
                   {bundle
                     ? `${bundle.items.length} kusy dohromady`
@@ -561,16 +573,24 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         !isMadeToOrder && !isCommissionCategory && !isVoucher
                       )}
                       buyNowEligible={Boolean(isAuthenticated && hasSavedAddress)}
+                      texts={texts}
                     />
                     {showMadeToOrderNotice && <MadeToOrderAddNotice />}
                   </div>
                 </>
               )}
 
+              {/* Tři značky pod nákupem — položky `znacky.*` bloku `global.produkt`. */}
               <div className="product__serviceNotes">
-                <span>Zabalíme pečlivě</span>
-                <span>Ručně vytvořeno</span>
-                <span>Ateliér · Písek</span>
+                <span {...editableItem(texts, "znacky.baleni")}>
+                  {itemText(texts, "znacky.baleni", "Zabalíme pečlivě")}
+                </span>
+                <span {...editableItem(texts, "znacky.rucne")}>
+                  {itemText(texts, "znacky.rucne", "Ručně vytvořeno")}
+                </span>
+                <span {...editableItem(texts, "znacky.atelier")}>
+                  {itemText(texts, "znacky.atelier", "Ateliér · Písek")}
+                </span>
               </div>
 
               {/* Hlídání naskladnění do výběru nepatří — tam jde jen to, co je k mání. */}

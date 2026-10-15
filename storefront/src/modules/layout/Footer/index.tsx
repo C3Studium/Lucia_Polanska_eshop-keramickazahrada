@@ -616,11 +616,17 @@ function Newsletter({ block }: { block?: CopyBlock }) {
     setStatus(result.ok ? "done" : "error")
   }
 
+  /*
+   * Věty po odeslání — položky `odeslano` a `chyba` bloku `global.newsletter`
+   * (klíčované popiskem; `accent` téhož bloku čte formulář pozicí a zůstává,
+   * jak je). Věta po odeslání má říkat, že se odběr ještě potvrzuje
+   * v e-mailu — tak double opt-in funguje.
+   */
   if (status === "done") {
     return (
-      <p className="newsletter__success" role="status">
-        Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě
-        poslali.
+      <p className="newsletter__success" role="status" {...editableItem(block, "odeslano")}>
+        {itemValue(block, "odeslano")?.trim() ||
+          "Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě poslali."}
       </p>
     )
   }
@@ -641,8 +647,12 @@ function Newsletter({ block }: { block?: CopyBlock }) {
           required
         />
         {/* Obal, ne tlačítko: `PremiumActionButton` si vykresluje vlastní vnitřek a
-            datové atributy by skončily na prvku, který se při animaci přepisuje. */}
-        <span {...editable(block, "accent.2")}>
+            datové atributy by skončily na prvku, který se při animaci přepisuje.
+            `editableLink` (jen text), ne `editable`: vnitřek tlačítka nese název
+            dvakrát kvůli animaci a šipku navíc („OdebíratOdebírat↗") a úprava
+            v místě by do `accent.2` uložila právě tohle. Popup s polem pro název
+            píše jen hodnotu. Změřeno 15. 10. 2026. */}
+        <span {...editableLink(block, { text: "accent.2" })}>
           <PremiumActionButton
             type="submit"
             text={block?.accent?.[2]?.trim() || "Odebírat"}
@@ -652,8 +662,8 @@ function Newsletter({ block }: { block?: CopyBlock }) {
         </span>
       </div>
       {status === "error" ? (
-        <p className="newsletter__error" role="alert">
-          Nepovedlo se to uložit, zkuste to prosím znovu.
+        <p className="newsletter__error" role="alert" {...editableItem(block, "chyba")}>
+          {itemValue(block, "chyba")?.trim() || "Nepovedlo se to uložit, zkuste to prosím znovu."}
         </p>
       ) : null}
       {/* Věta ze CMS (`accent.3`) zůstává editovatelná ve vlastním `<span>`;

@@ -9,6 +9,7 @@ import { listNavigationCollections } from "@lib/data/navigation"
 import { getMerchantIdentity } from "@lib/data/merchant"
 import { ContactDialogProvider } from "@modules/layout/ContactDialog"
 import { getPageCopy } from "@lib/data/site-copy"
+import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Scrollbar from "@modules/layout/scrollbar"
 import styles from "./styles/layout.module.scss"
@@ -48,7 +49,8 @@ export default async function CheckoutLayout({
         />
         <Scrollbar />
         <main className={styles.checkoutContainer} data-testid="checkout-container">
-          {children}
+          {/* Anotace pro Studio u stránky s `loading.tsx` — viz komponentu. */}
+          <EditModeRemount>{children}</EditModeRemount>
         </main>
         <div className={styles.footer}>
           <Footer merchant={merchant} downloads={footerDownloads} />

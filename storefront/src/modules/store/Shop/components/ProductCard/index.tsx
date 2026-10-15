@@ -40,6 +40,13 @@ type ProductCardProps = {
   /** Bez košíku a oblíbených — režim výběru do úpravy objednávky nic nekupuje
       a do skutečného košíku sahat nesmí. */
   hideActions?: boolean
+  /**
+   * Záložní texty z bloku `obchod.katalog` (`karta.druh`, `karta.popis`) —
+   * jen pro výrobek bez druhu/kategorie a bez popisu. Vada u kusu z výprodeje
+   * je vždy z kódu: cena na kartě je cena kusu s tou vadou.
+   */
+  fallbackType?: string
+  fallbackDescription?: string
 }
 
 /** A card is rendered once per product in the grid, so every object here is hoisted: an inline
@@ -137,6 +144,8 @@ function ProductCard({
   priority = false,
   href,
   hideActions = false,
+  fallbackType = "Autorská keramika",
+  fallbackDescription = "Ručně vyrobený originál z píseckého ateliéru.",
 }: ProductCardProps) {
   const [isInteracting, setIsInteracting] = useState(false)
   const [addState, setAddState] = useState<
@@ -410,7 +419,7 @@ function ProductCard({
         <div className={styles.meta}>
           <div className={styles.heading}>
             <div>
-              <p>{product.type?.value || product.categories?.[0]?.name || "Autorská keramika"}</p>
+              <p>{product.type?.value || product.categories?.[0]?.name || fallbackType}</p>
               <h3>{product.title}</h3>
             </div>
             <span className={styles.index} aria-hidden="true">LP</span>
@@ -420,7 +429,7 @@ function ProductCard({
           <p className={styles.description}>
             {clearance?.damage
               ? `Vada: ${clearance.damage}`
-              : product.subtitle || product.description || "Ručně vyrobený originál z píseckého ateliéru."}
+              : product.subtitle || product.description || fallbackDescription}
           </p>
         </div>
       </LocalizedClientLink>

@@ -25,7 +25,7 @@
 // Vlastní `key` bloku je dotovaný identifikátor (`index.hero`), podle kterého
 // si ho komponenta vyzvedne. Je to smlouva s kódem — přejmenovat ho znamená
 // přepsat i komponentu.
-import { defineGlobals, definePage, defineSite } from '@c3studium/valecms/site'
+import { defineGlobals, definePage, defineSite, defineSurface } from '@c3studium/valecms/site'
 
 /**
  * Úvodní stránka.
@@ -82,8 +82,26 @@ const homepage = definePage({
  * `kurzy.rezervace` (texty kolem termínů; termíny samy drží Medusa),
  * `kurzy.seo` (titulek a popis pro vyhledávače).
  *
- * Nadpis okna rezervace (RezervaceModal) dnes opakuje `kurzy.rezervace` napevno
- * v kódu — kdo ho tam bude přepojovat, ať čte týž blok, ne nový.
+ * Nadpis okna rezervace (RezervaceModal) čte `title` + `headline` téhož bloku
+ * `kurzy.rezervace` — jedna věta, jedno místo. `accent` toho bloku zůstává
+ * poziční (`accent.0`–`accent.5`), jak ho dnes čte sekce s termíny.
+ *
+ * Přibylo ve druhém kole (položky klíčované popiskem):
+ * `kurzy.rezervace-okno` — texty okna rezervace a karet termínů: `oboci`,
+ * `prazdne`, `kalendar.napoveda`, `termin.obsazeno` (i v sekci s termíny),
+ * `cekacka.uvod`, `cekacka.tlacitko`, `cekacka.hotovo.nadpis`,
+ * `cekacka.hotovo.text` (zástupci `{osoby}`, `{email}`; věta „Místo se
+ * přitom nedrží…" je v kódu), `souhrn.oboci`, `souhrn.nadpis` (konec
+ * v `note`), `souhrn.text` (zástupce `{email}`). V kódu: souhlasy, storno
+ * podmínky, způsoby platby, ceny a chybové hlášky.
+ * `kurzy.rezervace-stavy` — stránka rezervace z e-mailu
+ * (`/kurzy/rezervace/[id]`): `<stav>.stitek`, `<stav>.nadpis` (konec
+ * v `note`), `<stav>.text` pro `termin-zrusen`, `zruseno-vami`, `zruseno`,
+ * `zaplaceno`, `na-miste`, `zpracovava`, `nezaplaceno`; `zmena.nadpis`,
+ * `zmena.napoveda`, `zruseni.otazka`. Věty o vracení peněz (zrušený termín
+ * po zaplacení, zrušení zákazníkem, potvrzení zrušení) a lhůta 48 hodin
+ * jsou v kódu — `zruseno-vami` proto `.text` nemá. Adresa je dynamická, upravuje
+ * se ve formuláři bloku.
  */
 const kurzy = definePage({
     route: '/cz/kurzy',
@@ -192,7 +210,12 @@ const textPages: ReturnType<typeof definePage>[] = [
      * Obchod — katalog.
      *
      * Bloky: `obchod.vyber` (úvod nad katalogem: obočí `accent.0`, nadpis
-     * `title` + zvýrazněný `headline`, odstavec `body`), `obchod.seo`.
+     * `title` + zvýrazněný `headline`, odstavec `body`), `obchod.seo`,
+     * `obchod.katalog` (položky: `filtry.nadpis`; prázdný výsledek
+     * `prazdne.stitek`, `prazdne.nadpis`, `prazdne.text`, `prazdne.tlacitko`;
+     * chyba načtení `chyba.stitek`, `chyba.nadpis`, `chyba.text`; záložní texty
+     * karty výrobku `karta.druh` a `karta.popis` — jen když výrobek vlastní
+     * nemá; vada u kusu „Poškozený" je vždy z kódu).
      *
      * Filtry a vysvětlení řazení („Doporučené", FEATURED_EXPLANATION) zůstávají
      * v kódu — popisují logiku katalogu a musí s ní souhlasit. Velké hero
@@ -211,7 +234,9 @@ const textPages: ReturnType<typeof definePage>[] = [
      * `body`, položky `oboci` — před počtem kusů — a `souhrn` — poznámka
      * nad souhrnem), `kosik.prazdny` (prázdný košík: `title`, `body`, tlačítko
      * `accent.0`), `kosik.prihlaseni` (výzva k přihlášení: `title`, `body`,
-     * tlačítko `accent.0`).
+     * tlačítko `accent.0`), `kosik.vypis` (výpis a souhrn: `polozky.oboci`,
+     * `polozky.nadpis`, `souhrn.oboci`, `souhrn.nadpis`, `souhrn.nadpis-kratky`
+     * — na telefonu —, `souhrn.tlacitko`; částky, doprava a DPH jsou v kódu).
      *
      * Stejná stránka nese i texty kroků, které na vlastní adrese bez
      * parametru nejsou (`/cart/[id]/…`, `/order/[id]/confirmed`,
@@ -249,6 +274,58 @@ const textPages: ReturnType<typeof definePage>[] = [
         route: '/cz/newsletter',
         title: 'Odběr novinek',
         copy: 'newsletter',
+        sources: {},
+    }),
+    /**
+     * Účet zákazníka — přihlášení, přehled, objednávky.
+     *
+     * Na `/cz/account` je podle stavu buď přihlášení, nebo přehled účtu; náhled
+     * Studia (bez přihlášeného zákazníka) ukáže přihlášení, ostatní bloky se
+     * upravují ve formuláři.
+     *
+     * Bloky (položky klíčované popiskem): `ucet.formular` (formulář přihlášení
+     * a registrace: `prihlaseni.nadpis`, `prihlaseni.text`, `prihlaseni.tlacitko`,
+     * `prihlaseni.bez-uctu`, `prihlaseni.zalozit`, `prihlaseni.zapomenute`,
+     * `registrace.nadpis`, `registrace.text`, `registrace.tlacitko`,
+     * `registrace.mate-ucet`, `registrace.prihlasit`), `ucet.prehled` (přehled
+     * po přihlášení: `oboci`, `pozdrav`, `prihlasen`, `profil.popisek`,
+     * `profil.hotovo`, `adresy.text`, `objednavky.nadpis`, `objednavky.prazdne`),
+     * `ucet.objednavky` (seznam objednávek: `oboci`, `nadpis` se zvýrazněným
+     * koncem v `note`, `text`; bez objednávky `prazdne.nadpis`, `prazdne.text`;
+     * počet objednávek je údaj).
+     *
+     * Hero vedle formuláře (nadpis, obočí, poznámka) je dál `global.prihlaseni`.
+     * V kódu zůstává: souhlas pod registrací, popisky polí, chybové hlášky,
+     * obnova hesla a ověření e-mailu (podpůrné obrazovky — do Studia na přání
+     * nejdou, viz `global.prihlaseni`) a mazání účtu (co se smaže a co musí
+     * zůstat kvůli účetnictví).
+     */
+    definePage({
+        route: '/cz/account',
+        title: 'Účet zákazníka',
+        copy: 'ucet',
+        sources: {},
+    }),
+    /**
+     * Pokladna — jen úvodní věty, nic z toho, co se k objednávce váže.
+     *
+     * Bez košíku je pokladna 404, takže se bloky upravují ve formuláři.
+     *
+     * Bloky: `pokladna.uvod` (hlavička: `title` + zvýrazněný `headline`, věta
+     * `body`, položka `zpet` — odkaz do košíku; počet výrobků je údaj),
+     * `pokladna.souhrn` (pravý sloupec: `oboci`, `nadpis`), `pokladna.kroky`
+     * (úvodní věty kroků: `doprava.otazka`, `platba.otazka`, `adresa.ulozene`,
+     * `adresa.firma`).
+     *
+     * V kódu zůstává všechno ostatní: souhlasy a předsmluvní informace, názvy
+     * a pořadí kroků, věty u způsobů platby (záloha, Balíkovna, dobírka, kdy se
+     * platí), slevové kódy a jejich pravidla, upozornění u zakázky a dovolené,
+     * chybové hlášky, ceny.
+     */
+    definePage({
+        route: '/cz/checkout',
+        title: 'Pokladna',
+        copy: 'pokladna',
         sources: {},
     }),
 ]
@@ -307,8 +384,91 @@ const legalPages: ReturnType<typeof definePage>[] = [
     legalPage('/cz/doprava-a-platba', 'Doprava a platba'),
 ]
 
+/* ------------------------------------------------------------- povrchy -- */
+/*
+ * Texty, na které v „Upravit kontent" nejde kliknout (od 15. 10. 2026).
+ *
+ * Klikací úprava hledá prvek podle polohy na stránce. Co je zavřené (okno,
+ * panel v menu), co se ukáže jen v určitém stavu (výsledek platby, stránka
+ * z e-mailu, prázdný katalog), co potřebuje košík nebo přihlášení (pokladna,
+ * účet) a co na stránce vidět není vůbec (SEO), tak na stránce najít nejde.
+ * Studio to nabízí ve dvou záložkách vedle „Stránek" — v obou formulář se
+ * VŠEMI texty bloku, i těmi, které na stránce v daném stavu nejsou (věty po
+ * odeslání, vzory polí, stavy plateb…):
+ *
+ * - **Modály** — okna a panely. Když je okno na stránce, která je zrovna
+ *   v rámu, otevře se pod formulářem samo (`useStudioSurface` v komponentě,
+ *   výběr uzavírá `surfaceRoot`), ať je vidět, o čem formulář je. Rezervace
+ *   kurzu je jen na Kurzech, ostatní okna na každé stránce.
+ * - **Seznamy** — stavy, kroky nákupu, účet, stránky z e-mailu, SEO.
+ *
+ * Formulář ukládá KONCEPT. Publikuje se v Obsahu (Texty na webu → blok →
+ * Publikovat, nebo Přehled → Naposledy upraveno): tlačítko Publikovat
+ * v „Upravit kontent" bere jen bloky, které jsou vidět na stránce v rámu,
+ * a zavřené okno ani stav tam nejsou (ValeCMS 0.1.52, nahlášeno autorovi).
+ * Texty otevřeného okna jdou upravit i klikáním: Náhled → otevřít okno na
+ * stránce (Kontakt, lupa, košík, „Vybrat termín") → Náhled vypnout → klik
+ * na text; takové úpravy Publikovat nahoře najde.
+ *
+ * Povrchy schválně NEMAJÍ `preview` (stránku, na kterou Studio rám přepne):
+ * ve Studiu pod App Routerem změna `?p=` přemountuje celé Studio (segment
+ * stránky je klíčovaný parametry adresy), takže výběr povrchu by po přepnutí
+ * rámu zmizel a záložka spadla na „Stránky". Změřeno 15. 10. 2026, nahlášeno.
+ *
+ * `name` je smlouva s komponentou (`useStudioSurface('kontaktni-okno')`),
+ * `copy` je `key` bloku. Pořadí je pořadí ve Studiu.
+ */
+const modal = (name: string, title: string, copy: string) =>
+    defineSurface({ name, title, copy, kind: 'modal' })
+const form = (name: string, title: string, copy: string) =>
+    defineSurface({ name, title, copy, kind: 'list' })
+
+const surfaces = [
+    // Modály — okno se pod formulářem otevře samo, je-li na stránce v rámu.
+    modal('kontaktni-okno', 'Kontaktní okno', 'global.kontaktni-okno'),
+    modal('rezervace-okno', 'Rezervace kurzu — okno (na stránce Kurzy)', 'kurzy.rezervace-okno'),
+    modal('kosik-panel', 'Košík v menu a doprava zdarma', 'global.kosik'),
+    modal('hledani', 'Hledání v menu', 'global.hledani'),
+
+    // Seznamy.
+    // Nákup — od košíku po poděkování (bez košíku nebo objednávky nejsou vidět).
+    form('kosik.uvod', 'Košík — úvod, když v něm něco je', 'kosik.uvod'),
+    form('kosik.vypis', 'Košík — výpis a souhrn', 'kosik.vypis'),
+    form('kosik.prihlaseni', 'Košík — výzva k přihlášení', 'kosik.prihlaseni'),
+    form('pokladna.uvod', 'Pokladna — hlavička', 'pokladna.uvod'),
+    form('pokladna.souhrn', 'Pokladna — souhrn objednávky', 'pokladna.souhrn'),
+    form('pokladna.kroky', 'Pokladna — úvodní věty kroků', 'pokladna.kroky'),
+    form('platba.zrusena', 'Platba — nezaplaceno (zrušená platba)', 'kosik.platba-zrusena'),
+    form('platba.potvrzena', 'Platba — dokončujeme objednávku', 'kosik.platba-potvrzena'),
+    form('platba.ceka', 'Platba — čekáme na banku', 'kosik.platba-ceka'),
+    form('objednavka.hotova', 'Objednávka — poděkování', 'kosik.objednavka-hotova'),
+    form('objednavka.pomoc', 'Objednávka — okénko „Potřebujete pomoct?"', 'kosik.objednavka-pomoc'),
+    form('rychly-nakup.uvod', 'Rychlý nákup — úvod', 'kosik.rychly-nakup'),
+    form('rychly-nakup.vysledek', 'Rychlý nákup — výsledek platby', 'kosik.rychly-vysledek'),
+    // Účet — bez přihlášení je vidět jen přihlašovací formulář.
+    form('ucet.formular', 'Účet — přihlášení a registrace', 'ucet.formular'),
+    form('ucet.hero', 'Účet — nadpis a fotka vedle formuláře', 'global.prihlaseni'),
+    form('ucet.prehled', 'Účet — přehled po přihlášení', 'ucet.prehled'),
+    form('ucet.objednavky', 'Účet — seznam objednávek', 'ucet.objednavky'),
+    // Stavy a stránky, kam se chodí z e-mailu nebo omylem.
+    form('produkt', 'Stránka výrobku — společné texty', 'global.produkt'),
+    form('obchod.katalog', 'Obchod — filtry, prázdný výsledek a chyba', 'obchod.katalog'),
+    form('newsletter.stavy', 'Odběr novinek — stránky z odkazů v e-mailu', 'newsletter.stavy'),
+    form('newsletter.paticka', 'Newsletter v patičce — po odeslání', 'global.newsletter'),
+    form('kurzy.rezervace-stavy', 'Rezervace kurzu — stránka z e-mailu', 'kurzy.rezervace-stavy'),
+    form('nenalezeno', 'Stránka nenalezena (404)', 'global.nenalezeno'),
+    // SEO — titulek a popis pro vyhledávače; na stránce vidět nejsou.
+    form('seo.index', 'SEO — Úvodní stránka', 'index.seo'),
+    form('seo.kurzy', 'SEO — Kurzy', 'kurzy.seo'),
+    form('seo.o-mne', 'SEO — O mně', 'o-mne.seo'),
+    form('seo.vyroba', 'SEO — Výroba', 'vyroba.seo'),
+    form('seo.dotazy', 'SEO — Dotazy', 'dotazy.seo'),
+    form('seo.obchod', 'SEO — Obchod', 'obchod.seo'),
+]
+
 export default defineSite({
     pages: [homepage, kurzy, oMne, vyroba, dotazy, ...textPages, ...legalPages],
+    surfaces,
     /*
      * Jedenáct adres pro tentýž obsah.
      *
@@ -370,5 +530,27 @@ export default defineSite({
     // (patička: názvy skupin `skupina.*`, nadpis `stazeni` / `stazeni.pdf`,
     // věta za rokem `copyright` — vlastní blok, protože `items` bloku
     // `global.paticka` čte údaje obchodníka pozicí).
+    //
+    // Druhé kolo (položky klíčované popiskem, k dosavadním přibyly — staré
+    // popisky beze změny):
+    // `global.produkt` + nákup `nakup.vyber`, `nakup.pridat`, `nakup.pridavame`,
+    // `nakup.pridano`, `nakup.v-kosiku`, `nakup.balne`; volba `volba.stitek`,
+    // `volba.provedeni`; značky pod nákupem `znacky.baleni`, `znacky.rucne`,
+    // `znacky.atelier`; recenze `recenze.oboci`, `recenze.nadpis` (konec
+    // v `note`), `recenze.text`, `recenze.prihlaseni` (text o ověřování
+    // recenzí zůstává v kódu; stav „Na objednávku / Skladem…", dobírka, režim
+    // úpravy objednávky a zakázka taky),
+    // `global.kontaktni-okno` + popisky a vzory polí `pole.jmeno`,
+    // `pole.jmeno.vzor`, `pole.email`, `pole.email.vzor`, `pole.telefon`,
+    // `pole.telefon.vzor`, `pole.zprava`, `pole.zprava.vzor`, tlačítko
+    // `odeslat`, nápověda `posunout` („(povinné)" u polí drží kód — říká, co
+    // formulář vyžaduje),
+    // `global.newsletter` + položky `odeslano` a `chyba` (věty pod formulářem
+    // v patičce; `accent` toho bloku zůstává poziční, jak ho čte patička),
+    // `global.kosik` (košík napříč webem: panel v menu `panel.*`, doprava
+    // zdarma `doprava.*` — částky počítá kód —, výzva k propojení košíku
+    // s účtem `propojeni.*`),
+    // `global.hledani` (hledání v menu: `prochazet`, `nic`, `prazdne`,
+    // `prazdne.tlacitko`).
     globals: defineGlobals({ copy: 'global', sources: {} }),
 })

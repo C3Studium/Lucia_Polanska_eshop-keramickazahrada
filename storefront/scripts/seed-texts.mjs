@@ -1,8 +1,8 @@
 // Ručně psané texty stránek do CMS.
 //
-// Spuštění:
-//   node --import @c3studium/valecms/register.mjs scripts/seed-texts.mjs
-//   node --import @c3studium/valecms/register.mjs scripts/seed-texts.mjs --write
+// Spuštění (ze složky storefront):
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-texts.mjs
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-texts.mjs --write
 //
 // Texty, které dosud žily napevno v komponentách, se přenesou do bloků
 // `siteCopy` — jednoho na sekci, s polem `page`, podle kterého je Studio
@@ -21,6 +21,14 @@
 //
 // Blok s rozpracovaným (nepublikovaným) konceptem se přeskočí celý —
 // doplnění se publikuje, a s ním by na web odešly i Luciiny neuložené úpravy.
+//
+// Výjimka pro položky klíčované popiskem (`mergeItems: true`, od druhého kola
+// 15. 10. 2026): u bloku, do kterého v kódu PŘIBYLY popisky (`global.produkt`,
+// `global.kontaktni-okno`, …), se do vyplněných `items` doplní jen položky
+// s popiskem, který v bloku ještě není — na konec, s textem z kódu. Existující
+// položky (a jejich pořadí) zůstávají, jak je Lucie má. Bez toho by se nové
+// texty ve Studiu neobjevily a na webu by nešly upravit v místě. Bloky čtené
+// pozicí (`vyroba.kroky`, `o-mne.pribeh`, `dotazy.otazky`) příznak nemají.
 //
 // ---------------------------------------------------------------------------
 // Co zůstává v kódu
@@ -474,6 +482,8 @@ const TEXT_BLOCKS = [
         key: "global.kontaktni-okno",
         page: "global",
         title: "Kontaktní okno",
+        // Popisky polí přibyly ve druhém kole — do existujícího bloku se doplní.
+        mergeItems: true,
         data: {
             items: [
                 item("hlavicka.stitek", "Kontakt · Ateliér"),
@@ -499,6 +509,17 @@ const TEXT_BLOCKS = [
                     "Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává, jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na {email}."
                 ),
                 item("faq", "Nejprve se podívat do FAQ"),
+                // Druhé kolo: popisky a vzory polí (placeholder). „(povinné)" drží kód.
+                item("pole.jmeno", "Jméno"),
+                item("pole.jmeno.vzor", "Vaše jméno"),
+                item("pole.email", "E-mail"),
+                item("pole.email.vzor", "vas@email.cz"),
+                item("pole.telefon", "Telefon"),
+                item("pole.telefon.vzor", "603 123 456"),
+                item("pole.zprava", "Vaše zpráva"),
+                item("pole.zprava.vzor", "Napište, co potřebujete — otázku, představu, cokoliv…"),
+                item("odeslat", "Odeslat zprávu"),
+                item("posunout", "Posuňte pro zbytek formuláře"),
             ],
         },
     },
@@ -532,6 +553,8 @@ const TEXT_BLOCKS = [
         key: "global.produkt",
         page: "global",
         title: "Stránka výrobku",
+        // Nákup, volba, značky a recenze přibyly ve druhém kole — doplní se.
+        mergeItems: true,
         data: {
             items: [
                 item("doprava.nadpis", "Jak to k vám dorazí"),
@@ -555,6 +578,317 @@ const TEXT_BLOCKS = [
                 item("dalsi.text-kolekce", "Další kusy ze stejné kolekce."),
                 item("dalsi.text-atelier", "Další kusy, které mám teď v ateliéru."),
                 item("dalsi.dovetek", "Všechno vzniká ručně a jen v malém počtu."),
+                // Druhé kolo — nákup (slovník dostupnosti, dobírka a úprava
+                // objednávky zůstávají v kódu).
+                item("nakup.vyber", "Vyberte provedení"),
+                item("nakup.pridat", "Přidat do košíku"),
+                item("nakup.pridavame", "Přidáváme…"),
+                item("nakup.pridano", "Přidáno do košíku"),
+                item("nakup.v-kosiku", "Máte to v košíku."),
+                item("nakup.balne", "Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku."),
+                item("volba.stitek", "Vaše volba"),
+                item("volba.provedeni", "Vaše provedení"),
+                item("znacky.baleni", "Zabalíme pečlivě"),
+                item("znacky.rucne", "Ručně vytvořeno"),
+                item("znacky.atelier", "Ateliér · Písek"),
+                // Pozvánka k recenzi — text o ověřování recenzí drží kód.
+                item("recenze.oboci", "Přidat recenzi"),
+                item("recenze.nadpis", "Máte to už doma?", "Napište, jak se vám to líbí."),
+                item("recenze.text", "Ostatním to hodně pomůže při výběru — a mně taky."),
+                item(
+                    "recenze.prihlaseni",
+                    "Abyste mohli napsat recenzi, přihlaste se — nebo si během chvilky založte účet."
+                ),
+            ],
+        },
+    },
+    {
+        /*
+         * Jen věty pod formulářem newsletteru v patičce — `accent` a `title`
+         * tohohle bloku čte patička (pozičně), seed na ně nesahá. `title` je
+         * nadpis newsletteru: kdyby blok ještě nebyl, vznikne s dnešním
+         * nadpisem, ať se na webu nic nezmění.
+         */
+        key: "global.newsletter",
+        page: "global",
+        title: "Ozveme se, když bude co říct.",
+        mergeItems: true,
+        data: {
+            items: [
+                item(
+                    "odeslano",
+                    "Děkujeme! Teď už jen potvrďte odběr v e-mailu, který jsme vám právě poslali."
+                ),
+                item("chyba", "Nepovedlo se to uložit, zkuste to prosím znovu."),
+            ],
+        },
+    },
+    {
+        // Košík napříč webem — panel v menu, doprava zdarma, propojení s účtem.
+        key: "global.kosik",
+        page: "global",
+        title: "Košík napříč webem",
+        data: {
+            items: [
+                item("panel.nadpis", "Košík"),
+                item("panel.prazdny", "V košíku zatím nic není."),
+                item("panel.do-obchodu", "Do obchodu"),
+                item("panel.do-kosiku", "Přejít do košíku"),
+                item("panel.smazat", "Smazat košík"),
+                // Částky počítá kód — tady jen slova kolem.
+                item("doprava.stitek", "Doprava zdarma"),
+                item("doprava.nadpis", "Ještě kousek."),
+                item("doprava.text", "Do dopravy zdarma vám zbývá"),
+                item("doprava.splneno.nadpis", "Dopravu platíme my."),
+                item("doprava.splneno.text", "Máte nakoupeno tolik, že dopravu platíme my."),
+                item("doprava.kosik", "Otevřít košík"),
+                item("doprava.obchod", "Nakupovat dál"),
+                item("doprava.radek", "K dopravě zdarma zbývá"),
+                item("doprava.radek-splneno", "Doprava zdarma je připravená"),
+                item("propojeni.stitek", "Košík ještě není propojený"),
+                item(
+                    "propojeni.text",
+                    "Přihlásili jste se v pořádku, ale košík ještě není připojený k vašemu účtu."
+                ),
+                item("propojeni.tlacitko", "Propojit košík"),
+            ],
+        },
+    },
+    {
+        key: "global.hledani",
+        page: "global",
+        title: "Hledání v menu",
+        data: {
+            items: [
+                item("prochazet", "Procházet podle"),
+                item("nic", "Nic jsme nenašli"),
+                item("prazdne", "Zkuste jiný název, kategorii nebo kolekci."),
+                item("prazdne.tlacitko", "Zobrazit všechno"),
+            ],
+        },
+    },
+
+    /* ------------------------------------------- druhé kolo: kurzy -- */
+    {
+        // Okno rezervace; nadpis okna je `kurzy.rezervace` (title + headline).
+        key: "kurzy.rezervace-okno",
+        page: "kurzy",
+        title: "Okno rezervace kurzu",
+        data: {
+            items: [
+                item("oboci", "Kurzy · Rezervace"),
+                item(
+                    "prazdne",
+                    "Právě nejsou vypsané žádné termíny. Napište mi a dám vám vědět, jakmile vypíšu další."
+                ),
+                item("kalendar.napoveda", "Vyberte v kalendáři označený den a jeho termíny se ukážou tady."),
+                item("termin.obsazeno", "obsazeno · dáme vědět, až se uvolní"),
+                item(
+                    "cekacka.uvod",
+                    "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní."
+                ),
+                item("cekacka.tlacitko", "Dejte mi vědět"),
+                item("cekacka.hotovo.nadpis", "Dáme vědět, až se uvolní místo."),
+                // Bez „Místo se přitom nedrží…" — pravidlo čekací listiny drží kód.
+                item(
+                    "cekacka.hotovo.text",
+                    "Jakmile se na termínu uvolní místo pro {osoby}, pošleme vám zprávu na {email}."
+                ),
+                item("souhrn.oboci", "Rezervace přijata"),
+                item("souhrn.nadpis", "Těšíme se na vás.", "Místo máte rezervované."),
+                item(
+                    "souhrn.text",
+                    "Co bude dál: potvrzení jsme právě poslali na {email}. Před kurzem vám ještě přijde připomínka — a zaplatíte až na místě, hotově nebo kartou. Kdyby vám termín nakonec nevyšel, rezervaci zrušíte přímo z e-mailu."
+                ),
+            ],
+        },
+    },
+    {
+        // Stránka rezervace z e-mailu. Věty o vracení peněz a lhůta 48 h drží kód.
+        key: "kurzy.rezervace-stavy",
+        page: "kurzy",
+        title: "Stránka rezervace kurzu",
+        data: {
+            items: [
+                item("termin-zrusen.stitek", "Termín zrušen"),
+                item("termin-zrusen.nadpis", "Tento termín", "se bohužel ruší."),
+                // Jen pro nezaplacenou rezervaci; po zaplacení mluví o vrácení peněz kód.
+                item(
+                    "termin-zrusen.text",
+                    "Moc se omlouváme. Jakmile vypíšeme nové termíny, najdete je na stránce Kurzy."
+                ),
+                // Bez `.text` — odstavec po zrušení zákazníkem je vždy o penězích.
+                item("zruseno-vami.stitek", "Rezervace zrušena"),
+                item("zruseno-vami.nadpis", "Rezervaci jste", "zrušili."),
+                item("zruseno.stitek", "Rezervace zrušena"),
+                item("zruseno.nadpis", "Tahle rezervace", "už neplatí."),
+                item("zruseno.text", "Pokud jste ji nerušili vy, ozvěte se nám a najdeme řešení."),
+                item("zaplaceno.stitek", "Zaplaceno"),
+                item("zaplaceno.nadpis", "Místo je vaše,", "těšíme se na vás."),
+                item(
+                    "zaplaceno.text",
+                    "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína."
+                ),
+                item("na-miste.stitek", "Rezervováno"),
+                item("na-miste.nadpis", "Místo je vaše,", "zaplatíte na místě."),
+                item(
+                    "na-miste.text",
+                    "Potvrzení jsme poslali e-mailem. Kurz zaplatíte hotově nebo kartou před začátkem."
+                ),
+                item("zpracovava.stitek", "Platba se zpracovává"),
+                item("zpracovava.nadpis", "Ještě chvilku,", "banka pracuje."),
+                item(
+                    "zpracovava.text",
+                    "Platba je na cestě. Jakmile ji banka potvrdí, pošleme vám e-mail s potvrzením — stránku můžete kdykoli obnovit."
+                ),
+                item("nezaplaceno.stitek", "Platba nedokončena"),
+                item("nezaplaceno.nadpis", "Rezervaci držíme,", "platba zatím nedorazila."),
+                item(
+                    "nezaplaceno.text",
+                    "Platba se nepovedla nebo byla zrušená. Můžete to zkusit znovu — nebo nám napište a domluvíme platbu na místě."
+                ),
+                item("zmena.nadpis", "Potřebujete něco změnit?"),
+                item("zmena.napoveda", "Cenu přepočítáme podle nového počtu osob a pošleme vám potvrzení."),
+                item("zruseni.otazka", "Opravdu rezervaci zrušit?"),
+            ],
+        },
+    },
+
+    /* --------------------------------------------- druhé kolo: účet -- */
+    {
+        key: "ucet.formular",
+        page: "ucet",
+        title: "Přihlášení a registrace — formulář",
+        data: {
+            items: [
+                item("prihlaseni.nadpis", "Vítejte zpět"),
+                item("prihlaseni.text", "Vaše objednávky, adresy i uložené kousky na jednom místě."),
+                item("prihlaseni.tlacitko", "Přihlásit se"),
+                item("prihlaseni.bez-uctu", "Ještě nemáte účet?"),
+                item("prihlaseni.zalozit", "Založte si účet"),
+                item("prihlaseni.zapomenute", "Zapomněli jste heslo?"),
+                item("registrace.nadpis", "Založte si účet"),
+                item(
+                    "registrace.text",
+                    "Objednávky, adresy i uložené kousky budete mít na jednom místě — a příště nebudete nic vypisovat znovu."
+                ),
+                item("registrace.tlacitko", "Založit účet"),
+                item("registrace.mate-ucet", "Máte už účet?"),
+                item("registrace.prihlasit", "Přihlásit se"),
+            ],
+        },
+    },
+    {
+        key: "ucet.prehled",
+        page: "ucet",
+        title: "Přehled účtu",
+        data: {
+            items: [
+                item("oboci", "Váš účet"),
+                item("pozdrav", "Dobrý den,"),
+                item("prihlasen", "Jste přihlášeni"),
+                item("profil.popisek", "Vyplněný profil"),
+                item("profil.hotovo", "Máte vyplněné všechno, co potřebujeme."),
+                item("adresy.text", "Uložené adresy vám příště ušetří vyplňování."),
+                item("objednavky.nadpis", "Nedávné objednávky"),
+                item("objednavky.prazdne", "Zatím jste u nás nic neobjednali."),
+            ],
+        },
+    },
+    {
+        key: "ucet.objednavky",
+        page: "ucet",
+        title: "Seznam objednávek",
+        data: {
+            items: [
+                item("oboci", "Váš účet · objednávky"),
+                item("nadpis", "Vaše", "objednávky."),
+                item(
+                    "text",
+                    "Všechno, co jste si u nás objednali — od nejnovějšího. U každé objednávky najdete datum, částku i aktuální stav."
+                ),
+                item("prazdne.nadpis", "Zatím tu nic není"),
+                item("prazdne.text", "Ještě jste u nás nic neobjednali. Třeba vás něco zaujme."),
+            ],
+        },
+    },
+
+    /* ----------------------------------------- druhé kolo: pokladna -- */
+    {
+        key: "pokladna.uvod",
+        page: "pokladna",
+        title: "Ještě",
+        data: {
+            headline: "pár kroků.",
+            body: p("Ještě pár kroků a můžeme to z ateliéru poslat k vám."),
+            items: [item("zpet", "Zpět do košíku")],
+        },
+    },
+    {
+        key: "pokladna.souhrn",
+        page: "pokladna",
+        title: "Souhrn v pokladně",
+        data: {
+            items: [item("oboci", "Přehled objednávky"), item("nadpis", "Co objednáváte")],
+        },
+    },
+    {
+        // Jen úvodní věty kroků — věty o platbě, souhlasy a předsmluvní informace drží kód.
+        key: "pokladna.kroky",
+        page: "pokladna",
+        title: "Kroky pokladny — úvodní věty",
+        data: {
+            items: [
+                item("doprava.otazka", "Kam a jak vám to máme poslat?"),
+                item("platba.otazka", "Jak chcete zaplatit?"),
+                item("adresa.ulozene", "Vyberte si uloženou adresu, nebo vyplňte novou níž."),
+                item(
+                    "adresa.firma",
+                    "Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží pošleme na adresu výš."
+                ),
+            ],
+        },
+    },
+
+    /* ----------------------------------- druhé kolo: košík a obchod -- */
+    {
+        key: "kosik.vypis",
+        page: "kosik",
+        title: "Výpis košíku a souhrn",
+        data: {
+            items: [
+                item("polozky.nadpis", "Co máte v košíku"),
+                item("polozky.oboci", "Z ateliéru"),
+                item("souhrn.oboci", "Objednávka"),
+                item("souhrn.nadpis", "Kolik to dělá"),
+                item("souhrn.nadpis-kratky", "Souhrn"),
+                item("souhrn.tlacitko", "Pokračovat k pokladně"),
+            ],
+        },
+    },
+    {
+        key: "obchod.katalog",
+        page: "obchod",
+        title: "Katalog — filtry a prázdné stavy",
+        data: {
+            items: [
+                item("filtry.nadpis", "Najděte, co hledáte"),
+                item("prazdne.stitek", "Nic jsme nenašli"),
+                item("prazdne.nadpis", "Zkuste ubrat filtry."),
+                item(
+                    "prazdne.text",
+                    "Tomuto výběru neodpovídá žádný výrobek. Zrušte filtry a podívejte se na celou nabídku."
+                ),
+                item("prazdne.tlacitko", "Zobrazit všechno"),
+                item("chyba.stitek", "Načítání se nepovedlo"),
+                item("chyba.nadpis", "Výrobky se nepodařilo načíst."),
+                item(
+                    "chyba.text",
+                    "Vaše nastavené filtry zůstávají. Zkuste stránku načíst znovu, nebo se vraťte na celou nabídku."
+                ),
+                // Jen pro výrobek bez vlastního druhu / popisu.
+                item("karta.druh", "Autorská keramika"),
+                item("karta.popis", "Ručně vyrobený originál z píseckého ateliéru."),
             ],
         },
     },
@@ -760,13 +1094,32 @@ const main = async () => {
         const current = found.draft ?? found.data ?? {}
         const missing = fields.filter(([name]) => !filled(current[name]))
 
+        /*
+         * Položky klíčované popiskem (`mergeItems`): do vyplněných `items` jen
+         * položky s popiskem, který v bloku chybí — na konec, nic stávajícího se
+         * nemění ani nepřeřazuje (adresy polí `items.N.value` v anotacích tak
+         * pro stávající položky zůstávají). Viz hlavička souboru.
+         */
+        let addedLabels = []
+        if (block.mergeItems && filled(current.items) && Array.isArray(block.data.items)) {
+            const have = new Set(current.items.map((row) => row?.label))
+            const extra = block.data.items.filter((row) => !have.has(row.label))
+            if (extra.length) {
+                addedLabels = extra.map((row) => row.label)
+                missing.push(["items", [...current.items, ...extra]])
+            }
+        }
+
         if (!missing.length) {
             log(`  = ${block.key.padEnd(26)} má vše — nesahám`)
             kept += 1
             continue
         }
 
-        log(`  ~ ${block.key.padEnd(26)} doplňuji ${missing.map(([n]) => n).join(", ")}`)
+        const what = missing
+            .map(([n]) => (n === "items" && addedLabels.length ? `items (+${addedLabels.length}: ${addedLabels.join(", ")})` : n))
+            .join(", ")
+        log(`  ~ ${block.key.padEnd(26)} doplňuji ${what}`)
         merged += 1
         if (!WRITE) continue
 

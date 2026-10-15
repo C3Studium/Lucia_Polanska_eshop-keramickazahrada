@@ -1,5 +1,6 @@
 "use client"
 
+import { surfaceRoot } from "@c3studium/valecms/edit"
 import WebButton from "@modules/common/components/Buttons/webButton"
 import MouseAnim from "@modules/common/components/MouseAnim"
 import PhoneInput from "@modules/common/components/phone-input"
@@ -83,9 +84,15 @@ type ContactDialogPanelProps = {
  * tlačítku napsané. Do zprávy (`Téma: …`) i do `initialTopic` jde dál hodnota
  * z kódu, aby nic, co se na téma ptá, nezáviselo na znění ve Studiu.
  *
- * V kódu zůstává: souhlas se zpracováním údajů pod formulářem, popisky polí,
- * nápovědy, chybové hlášky a celý režim „Změna objednávky" kromě nadpisů.
- * Věty po odeslání nesou adresu obchodu — v CMS se píše zástupce `{email}`.
+ * Ve druhém kole přibyly popisky a vzory polí běžného formuláře (`pole.*`,
+ * `pole.*.vzor` = text v prázdném poli), tlačítko `odeslat` a nápověda
+ * `posunout`.
+ *
+ * V kódu zůstává: souhlas se zpracováním údajů pod formulářem, „(povinné)" /
+ * „(nepovinné)" u polí (říká, co formulář vyžaduje — musí sedět s `required`),
+ * chybové hlášky, stav „Odesíláme…" a celý režim „Změna objednávky" kromě
+ * nadpisů. Věty po odeslání nesou adresu obchodu — v CMS se píše zástupce
+ * `{email}`.
  */
 const TOPIC_LABELS = ["tema.obecny", "tema.zakazka", "tema.objednavka", "tema.kurzy"] as const
 
@@ -104,6 +111,16 @@ const DIALOG_DEFAULTS: Record<string, string> = {
   "zmena-odeslano.text":
     "Děkuju — změnu s vámi domluvím osobně: zavolám vám, nebo odepíšu e-mailem, zpravidla do dvou pracovních dnů. Objednávka zatím zůstává, jak byla. Kdybyste mezitím potřebovali cokoli doplnit, napište mi na {email}.",
   faq: "Nejprve se podívat do FAQ",
+  "pole.jmeno": "Jméno",
+  "pole.jmeno.vzor": "Vaše jméno",
+  "pole.email": "E-mail",
+  "pole.email.vzor": "vas@email.cz",
+  "pole.telefon": "Telefon",
+  "pole.telefon.vzor": "603 123 456",
+  "pole.zprava": "Vaše zpráva",
+  "pole.zprava.vzor": "Napište, co potřebujete — otázku, představu, cokoliv…",
+  odeslat: "Odeslat zprávu",
+  posunout: "Posuňte pro zbytek formuláře",
 }
 
 /** Text okna z CMS podle popisku, nebo výchozí z kódu. */
@@ -306,6 +323,9 @@ export default function ContactDialogPanel({
       /* body{overflow:hidden} below only blocks *user* scrolling; Lenis scrolls programmatically
          and ignored it, so the page moved behind the dialog. */
       data-lenis-prevent
+      /* Ve Studiu (povrch „kontaktni-okno") se výběr uzavře do okna — klik
+         nechytí patičku pod ním. Mimo Studio `{}`. */
+      {...surfaceRoot("kontaktni-okno")}
       variants={overlayVariants}
       initial="hidden"
       animate="visible"
@@ -546,50 +566,57 @@ export default function ContactDialogPanel({
                   </div>
                 </fieldset>
 
+                {/* Popisky z CMS v holém spanu (anotace), „(povinné)" za nimi
+                    z kódu. Vzor v prázdném poli (`placeholder`) se upravuje
+                    jen ve formuláři bloku — v místě na něj nejde kliknout. */}
                 <div className={styles.fieldGrid}>
                   <Field
                     id={`${fieldId}-name`}
                     name="name"
-                    label="Jméno"
+                    label={text("pole.jmeno")}
+                    labelEdit={edit("pole.jmeno")}
                     type="text"
                     autoComplete="name"
-                    placeholder="Vaše jméno"
+                    placeholder={text("pole.jmeno.vzor")}
                     required
                   />
                   <Field
                     id={`${fieldId}-email`}
                     name="email"
-                    label="E-mail"
+                    label={text("pole.email")}
+                    labelEdit={edit("pole.email")}
                     type="email"
                     autoComplete="email"
-                    placeholder="vas@email.cz"
+                    placeholder={text("pole.email.vzor")}
                     required
                   />
                   {/* Předvolba jede rozbaleníkem PhoneInputu (výchozí podle země
                       v adrese), takže placeholder „+420" ztratil práci. */}
                   <div className={styles.field}>
                     <label htmlFor={`${fieldId}-phone`}>
-                      Telefon <i>(nepovinné)</i>
+                      <span {...edit("pole.telefon")}>{text("pole.telefon")}</span>{" "}
+                      <i>(nepovinné)</i>
                     </label>
                     <PhoneInput
                       id={`${fieldId}-phone`}
                       name="phone"
                       className={styles.phoneRow}
                       inputClassName={styles.input}
-                      placeholder="603 123 456"
+                      placeholder={text("pole.telefon.vzor")}
                     />
                   </div>
                 </div>
 
                 <div className={`${styles.field} ${styles.message}`}>
                   <label htmlFor={`${fieldId}-message`}>
-                    Vaše zpráva <i>(povinné)</i>
+                    <span {...edit("pole.zprava")}>{text("pole.zprava")}</span>{" "}
+                    <i>(povinné)</i>
                   </label>
                   <textarea
                     id={`${fieldId}-message`}
                     className={styles.input}
                     name="message"
-                    placeholder="Napište, co potřebujete — otázku, představu, cokoliv…"
+                    placeholder={text("pole.zprava.vzor")}
                     required
                   />
                 </div>
@@ -632,7 +659,7 @@ export default function ContactDialogPanel({
                     title={
                       submitState.kind === "submitting"
                         ? "Odesíláme…"
-                        : "Odeslat zprávu"
+                        : text("odeslat")
                     }
                     type="submit"
                     disabled={submitState.kind === "submitting"}
@@ -661,7 +688,7 @@ export default function ContactDialogPanel({
               >
                 <span className={styles.scrollCueInner}>
                   <MouseAnim />
-                  <span>Posuňte pro zbytek formuláře</span>
+                  <span {...edit("posunout")}>{text("posunout")}</span>
                 </span>
               </motion.div>
             )}
@@ -718,6 +745,8 @@ type FieldProps = {
   id: string
   name: string
   label: string
+  /** Atributy anotace popisku (`editableItem`); mimo náhled Studia `{}`. */
+  labelEdit?: Record<string, string | undefined>
   type: string
   autoComplete: string
   placeholder: string
@@ -725,11 +754,13 @@ type FieldProps = {
   hint?: string
 }
 
-function Field({ id, name, label, hint, required, ...input }: FieldProps) {
+function Field({ id, name, label, labelEdit, hint, required, ...input }: FieldProps) {
   return (
     <div className={styles.field}>
+      {/* Popisek ve vlastním spanu: anotace píše celé pole a „(povinné)"
+          za ním do bloku nepatří. */}
       <label htmlFor={id}>
-        {label} <i>{hint ? `(${hint})` : "(povinné)"}</i>
+        <span {...labelEdit}>{label}</span> <i>{hint ? `(${hint})` : "(povinné)"}</i>
       </label>
       <input id={id} name={name} className={styles.input} required={required} {...input} />
     </div>

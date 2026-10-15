@@ -1,8 +1,8 @@
 // Galerie fotek do CMS.
 //
-// Spuštění:
-//   node --import @c3studium/valecms/register.mjs scripts/seed-galleries.mjs
-//   node --import @c3studium/valecms/register.mjs scripts/seed-galleries.mjs --write
+// Spuštění (ze složky storefront):
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-galleries.mjs
+//   node --import ./scripts/lib/ts-register.mjs scripts/seed-galleries.mjs --write
 //
 // Fotky z `public/` už v knihovně médií leží (scripts/migrate-public-to-cms.mjs).
 // Tenhle skript k nim založí bloky `siteCopy`, přes které si je komponenty

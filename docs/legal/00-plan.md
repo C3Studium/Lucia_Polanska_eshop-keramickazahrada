@@ -130,9 +130,11 @@ starý storefront by dostal 400.
    běh, který jen vypíše, co by udělal, a kam míří):
    - `node --import ./scripts/lib/ts-register.mjs scripts/seed-legal.mjs`, pak totéž
      s `--write --i-know-this-is-production` — založí ve Studiu „Právní dokumenty“ (všech
-     8 znění z repa, nic nepřepisuje);
-   - `node --import @c3studium/valecms/register.mjs scripts/seed-texts.mjs`, pak s `--write` —
-     doplní nové bloky textů (vyplní jen prázdná pole).
+     8 znění z repa, nic nepřepisuje). **Hotovo** (15. 10., ověřeno suchým během: 8 v CMS);
+   - `node --import ./scripts/lib/ts-register.mjs scripts/seed-texts.mjs`, pak s `--write` —
+     doplní nové bloky textů (vyplní jen prázdná pole; u bloků s `mergeItems` připojí nové
+     popisky). **Až PO nasazení** — staré Studio nové stránky (obchod, košík, účet,
+     pokladna, newsletter) nezná a bloky by hlásilo jako „Neplatná volba“.
 6. Lucie vyplní údaje v administraci → „Právní údaje“ (stránka ukáže, co chybí) a případně
    upraví pracovní znění ve Studiu → „Právní dokumenty“ (náhled webu ukáže koncept).
 7. **Vydání znění** (teprve pak jdou OP a poučení jako PDF do e-mailů a znění se zamkne):

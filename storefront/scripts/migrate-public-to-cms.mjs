@@ -1,8 +1,8 @@
 // Fotky z `public/` do knihovny médií.
 //
-// Spuštění:
-//   node --import @c3studium/valecms/register.mjs scripts/migrate-public-to-cms.mjs
-//   node --import @c3studium/valecms/register.mjs scripts/migrate-public-to-cms.mjs --write
+// Spuštění (ze složky storefront):
+//   node --import ./scripts/lib/ts-register.mjs scripts/migrate-public-to-cms.mjs
+//   node --import ./scripts/lib/ts-register.mjs scripts/migrate-public-to-cms.mjs --write
 //
 // Bez `--write` je to nasucho: přečte soubory, řekne, co by nahrálo, a nesáhne
 // na nic. Registrační zavaděč je potřeba proto, že knihovna se dováží ze

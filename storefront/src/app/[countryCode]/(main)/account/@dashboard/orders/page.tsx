@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import s from "../styles/orders.module.scss"
 import { redirect } from "next/navigation"
 import { listOrders } from "@lib/data/orders"
+import { getPageCopy } from "@lib/data/site-copy"
 import OrdersTemplate from "@modules/account/templates/orders-template"
 
 
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
 }
 
 export default async function Orders() {
-  const orders = await listOrders()
+  // Texty seznamu z CMS (blok `ucet.objednavky`); výpadek CMS = texty z kódu.
+  const [orders, copy] = await Promise.all([listOrders(), getPageCopy("ucet")])
 
   /*
    * `listOrders` returns null for an unauthenticated request now — it used to throw, which is
@@ -27,7 +29,7 @@ export default async function Orders() {
 
   return (
     <main className={s.root}>
-      <OrdersTemplate orders={orders} />
+      <OrdersTemplate orders={orders} copy={copy["ucet.objednavky"]} />
     </main>
   )
 }

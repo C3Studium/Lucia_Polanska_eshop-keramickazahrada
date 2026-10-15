@@ -1,5 +1,6 @@
 "use client"
 
+import { useStudioSurface } from "@c3studium/valecms/edit"
 import { useCallback, useRef, useState } from "react"
 
 import type { CourseTerm } from "@lib/data/courses"
@@ -43,6 +44,13 @@ export default function Kurzy({
     triggerRef.current?.focus()
   }, [])
 
+  /*
+   * Povrch „Rezervace kurzu — okno" ve Studiu (`valecms.config.ts`,
+   * `surfaces`): okno se v rámu otevře samo, texty v něm jdou upravit
+   * klikáním. Mimo rám Studia vždycky `false`.
+   */
+  const studioOpen = useStudioSurface("rezervace-okno")
+
   return (
     <main className="kurzy">
       <Intro
@@ -55,12 +63,17 @@ export default function Kurzy({
         terms={terms}
         onReserveAction={openModal}
         block={copy["kurzy.rezervace"]}
+        okno={copy["kurzy.rezervace-okno"]}
       />
+      {/* Nadpis okna je týž blok jako nadpis sekce s termíny; ostatní texty
+          okna mají vlastní blok `kurzy.rezervace-okno`. */}
       <RezervaceModal
-        open={modalOpen}
+        open={modalOpen || studioOpen}
         onCloseAction={closeModal}
         initialTerms={terms}
         legalFacts={legalFacts}
+        heading={copy["kurzy.rezervace"]}
+        block={copy["kurzy.rezervace-okno"]}
       />
     </main>
   )

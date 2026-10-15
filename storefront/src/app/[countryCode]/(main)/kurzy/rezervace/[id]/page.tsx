@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { getCourseReservation } from "@lib/data/courses"
+import { getPageCopy } from "@lib/data/site-copy"
 import RezervaceDetail from "@modules/kurzy/RezervaceDetail"
 
 export const metadata: Metadata = {
@@ -28,7 +29,12 @@ export default async function RezervacePage(props: {
     notFound()
   }
 
-  const reservation = await getCourseReservation(id, token)
+  // Rezervace z Medusy, texty stavů z CMS (blok `kurzy.rezervace-stavy`);
+  // výpadek CMS = texty z kódu, ne chyba.
+  const [reservation, copy] = await Promise.all([
+    getCourseReservation(id, token),
+    getPageCopy("kurzy"),
+  ])
   if (!reservation) {
     notFound()
   }
@@ -38,6 +44,7 @@ export default async function RezervacePage(props: {
       reservation={reservation}
       token={token}
       outcome={vysledek}
+      block={copy["kurzy.rezervace-stavy"]}
     />
   )
 }

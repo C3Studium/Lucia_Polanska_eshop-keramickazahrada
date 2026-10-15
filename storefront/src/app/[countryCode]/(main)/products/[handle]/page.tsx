@@ -250,7 +250,7 @@ export default async function ProductPage(props: Props) {
         texts={productCopy}
       />
       {/* <ProductChapter /> */}
-      <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} />
+      <ProductReviews productId={pricedProduct.id} initialReviews={reviewsData.reviews} initialRating={reviewsData.average_rating} initialCount={reviewsData.count} texts={productCopy} />
       <SoldProducts products={relatedProducts} block={productCopy} />
     </main>
   )

@@ -31,6 +31,9 @@ import MedusaRadio from "@modules/common/components/radio"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -78,6 +81,9 @@ const Shipping: React.FC<ShippingProps> = ({
   packetaShippingMethodId,
   restriction = null,
 }) => {
+  /* Jen úvodní věta kroku z CMS (`pokladna.kroky`, poskytuje stránka
+     pokladny); mimo pokladnu (bez provideru) věta z kódu. */
+  const steps = useCopyBlock("pokladna.kroky")
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
 
@@ -520,8 +526,11 @@ const Shipping: React.FC<ShippingProps> = ({
               <span className={clx(styles.radioLabel, "font-medium")}>
                 Způsob dopravy:
               </span>
-              <span className={clx(styles.radioAddress, "mb-4")}>
-                Kam a jak vám to máme poslat?
+              <span
+                className={clx(styles.radioAddress, "mb-4")}
+                {...editableItem(steps, "doprava.otazka")}
+              >
+                {itemText(steps, "doprava.otazka", "Kam a jak vám to máme poslat?")}
               </span>
             </div>
             {restriction && (

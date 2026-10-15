@@ -77,6 +77,9 @@ export type CopyPage =
   | "obchod"
   | "kosik"
   | "newsletter"
+  // Druhé kolo (docs/cms/00-plan.md, E): účet zákazníka a pokladna.
+  | "ucet"
+  | "pokladna"
   // Právní dokumenty — klíč stránky je totéž slovo jako routa.
   | "smluvni-podminky"
   | "ochrana-osobnich-udaju"
@@ -188,6 +191,41 @@ export const itemNote = (
   label: string
 ): string | undefined =>
   block?.items?.find((item) => item.label === label)?.note
+
+/**
+ * Text položky podle popisku, nebo výchozí text z kódu.
+ *
+ * Prázdná (nebo jen z mezer) hodnota ve Studiu je záloha, ne prázdné místo na
+ * stránce — stejné pravidlo jako `buttonLabel`. Komponenty si to dřív psaly
+ * každá po svém (`dialogText`, `linkText`…); tohle je totéž jednou.
+ */
+export const itemText = (
+  block: CopyBlock | undefined,
+  label: string,
+  fallback: string,
+  /** `note` u dvojic „nadpis + zvýrazněný konec". */
+  field: "value" | "note" = "value"
+): string =>
+  (field === "note" ? itemNote(block, label) : itemValue(block, label))?.trim() || fallback
+
+/**
+ * Dosadí údaje za zástupce `{jmeno}` ve větě z CMS.
+ *
+ * Náhrada FUNKCÍ, ne řetězcem: v řetězci by `$&`, `$1`… (třeba v e-mailové
+ * adrese) `replace` vyložil jako odkaz na shodu a větu rozbil. Neznámý
+ * zástupce zůstane, jak je — překlep ve Studiu je pak vidět, místo aby věta
+ * tiše přišla o slovo.
+ *
+ * Věta se zástupcem se v místě needituje (editor by uložil dosazený údaj
+ * místo zástupce) — mění se ve formuláři bloku.
+ */
+export const fillPlaceholders = (
+  text: string,
+  values: Record<string, string>
+): string =>
+  text.replace(/\{([a-z-]+)\}/gi, (match, name: string) =>
+    Object.prototype.hasOwnProperty.call(values, name) ? values[name] : match
+  )
 
 /**
  * Přepínač sekce.

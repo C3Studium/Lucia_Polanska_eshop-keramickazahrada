@@ -3,7 +3,29 @@
 import type { HttpTypes } from "@medusajs/types"
 import { AnimatePresence, motion } from "framer-motion"
 import ProductCard from "../ProductCard"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import styles from "./style.module.scss"
+
+/**
+ * Texty prázdného výsledku, chyby načtení a záložní texty karet — položky
+ * bloku `obchod.katalog`. Počty („Načteno 16 z 40") a stav načítání jsou
+ * v kódu.
+ */
+const GRID_DEFAULTS = {
+  "prazdne.stitek": "Nic jsme nenašli",
+  "prazdne.nadpis": "Zkuste ubrat filtry.",
+  "prazdne.text":
+    "Tomuto výběru neodpovídá žádný výrobek. Zrušte filtry a podívejte se na celou nabídku.",
+  "prazdne.tlacitko": "Zobrazit všechno",
+  "chyba.stitek": "Načítání se nepovedlo",
+  "chyba.nadpis": "Výrobky se nepodařilo načíst.",
+  "chyba.text":
+    "Vaše nastavené filtry zůstávají. Zkuste stránku načíst znovu, nebo se vraťte na celou nabídku.",
+  "karta.druh": "Autorská keramika",
+  "karta.popis": "Ručně vyrobený originál z píseckého ateliéru.",
+} as const
 
 /* Stable references: these are re-read by framer-motion on every grid render, and the grid
    re-renders on each filter change, refresh tick and load-more. */
@@ -28,9 +50,14 @@ type ProductGridProps = {
   productHref?: (product: HttpTypes.StoreProduct) => string
   /** Karty bez košíku a oblíbených (režim výběru — nic se nekupuje). */
   hideCardActions?: boolean
+  /** Blok `obchod.katalog` (viz GRID_DEFAULTS). Režim výběru ho nepředává. */
+  copy?: CopyBlock
 }
 
-export default function ProductGrid({ products, loading, refreshing, loadError, canLoadMore, total, loadedCount, onLoadMore, onRetry, onReset, productHref, hideCardActions = false }: ProductGridProps) {
+export default function ProductGrid({ products, loading, refreshing, loadError, canLoadMore, total, loadedCount, onLoadMore, onRetry, onReset, productHref, hideCardActions = false, copy }: ProductGridProps) {
+  const text = (label: keyof typeof GRID_DEFAULTS) => itemText(copy, label, GRID_DEFAULTS[label])
+  const edit = (label: keyof typeof GRID_DEFAULTS) => editableItem(copy, label)
+
   if (refreshing && !products.length) {
     return <ProductSkeleton />
   }
@@ -38,9 +65,9 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
   if (loadError && !products.length) {
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo} role="alert">
-        <span>Načítání se nepovedlo</span>
-        <h2>Výrobky se nepodařilo načíst.</h2>
-        <p>Vaše nastavené filtry zůstávají. Zkuste stránku načíst znovu, nebo se vraťte na celou nabídku.</p>
+        <span {...edit("chyba.stitek")}>{text("chyba.stitek")}</span>
+        <h2 {...edit("chyba.nadpis")}>{text("chyba.nadpis")}</h2>
+        <p {...edit("chyba.text")}>{text("chyba.text")}</p>
         <div className={styles.emptyActions}>
           <button type="button" onClick={onRetry}>Načíst znovu <i>↻</i></button>
           <button type="button" onClick={onReset}>Zrušit filtry <i>→</i></button>
@@ -52,13 +79,20 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
   if (!products.length && !loading && !refreshing) {
     return (
       <motion.div className={styles.empty} initial={fadeIn} animate={fadeTo}>
-        <span>Nic jsme nenašli</span>
-        <h2>Zkuste ubrat filtry.</h2>
-        <p>Tomuto výběru neodpovídá žádný výrobek. Zrušte filtry a podívejte se na celou nabídku.</p>
-        <button type="button" onClick={onReset}>Zobrazit všechno <i>→</i></button>
+        <span {...edit("prazdne.stitek")}>{text("prazdne.stitek")}</span>
+        <h2 {...edit("prazdne.nadpis")}>{text("prazdne.nadpis")}</h2>
+        <p {...edit("prazdne.text")}>{text("prazdne.text")}</p>
+        {/* Bez úpravy v místě — tlačítko nese i šipku. */}
+        <button type="button" onClick={onReset}>{text("prazdne.tlacitko")} <i>→</i></button>
       </motion.div>
     )
   }
+
+  /* Záložní texty karty (jen když výrobek vlastní nemá) — jako řetězce, ne
+     blok: karta je `memo` a řetězec se porovná hodnotou. Karta je odkaz,
+     takže se v místě neupravují; mění se ve formuláři bloku. */
+  const fallbackType = text("karta.druh")
+  const fallbackDescription = text("karta.popis")
 
   return (
     <div className={styles.results} aria-busy={refreshing || loading}>
@@ -79,6 +113,8 @@ export default function ProductGrid({ products, loading, refreshing, loadError, 
               priority={index < 4}
               href={productHref?.(product)}
               hideActions={hideCardActions}
+              fallbackType={fallbackType}
+              fallbackDescription={fallbackDescription}
             />
           ))}
         </AnimatePresence>

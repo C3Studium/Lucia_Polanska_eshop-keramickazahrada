@@ -40,6 +40,11 @@ type EComProps = {
    * úvod z úpravy objednávky a tenhle blok nečte.
    */
   block?: CopyBlock
+  /**
+   * Blok `obchod.katalog` — nadpis filtrů, prázdný výsledek, chyba načtení
+   * a záložní texty karet. Režim výběru ho nedostává (texty z kódu).
+   */
+  texts?: CopyBlock
 }
 
 const PRODUCT_LIMIT = 16
@@ -131,6 +136,7 @@ export default function ECom({
   initialFilterLabel,
   pick,
   block,
+  texts,
 }: EComProps) {
   /* Úvod katalogu se po zapnutí editace sám nepřekreslí, dokud se nic
      nenačítá — bez tohohle by anotace zůstaly prázdné. Viz hook. */
@@ -606,6 +612,7 @@ export default function ECom({
             onClose={closeFilters}
             onReset={resetFilters}
             categoriesOnly={Boolean(pick)}
+            copy={texts}
           />
 
           <div className={styles.results}>
@@ -633,6 +640,7 @@ export default function ECom({
               onReset={resetFilters}
               productHref={pick?.productHref}
               hideCardActions={Boolean(pick)}
+              copy={texts}
             />
           </div>
         </div>

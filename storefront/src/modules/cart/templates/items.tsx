@@ -6,24 +6,35 @@ import { Item } from "@modules/cart/components/item"
 import PackagingLine, { packagingFor } from "@modules/common/components/packaging-line"
 import { isPackagingLine, withPackagingUnderProducts } from "@lib/util/packaging"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import s from "./items.module.scss"
 
 type ItemsTemplateProps = {
   cart?: HttpTypes.StoreCart
+  /** Blok `kosik.vypis` — nadpis výpisu (`polozky.nadpis`) a popisek u počtu (`polozky.oboci`). */
+  copy?: CopyBlock
 }
 
-const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
+const ItemsTemplate = ({ cart, copy }: ItemsTemplateProps) => {
+  useEditRerender()
   const items = cart?.items
 
   return (
     <div className={s.root}>
       <div className={s.headerRow}>
-        <h2 className={s.title}>Co máte v košíku</h2>
+        <h2 className={s.title} {...editableItem(copy, "polozky.nadpis")}>
+          {itemText(copy, "polozky.nadpis", "Co máte v košíku")}
+        </h2>
+        {/* Popisek u počtu bez vlastního spanu (a tedy bez úpravy v místě):
+            `.sectionMeta span` je kolečko s číslem. Mění se ve formuláři. */}
         <p className={s.sectionMeta}>
           <span>
             {String((items ?? []).filter((item) => !isPackagingLine(item)).length).padStart(2, "0")}
           </span>
-          Z ateliéru
+          {itemText(copy, "polozky.oboci", "Z ateliéru")}
         </p>
       </div>
       <div className={s.tableBody} data-testid="items-table">

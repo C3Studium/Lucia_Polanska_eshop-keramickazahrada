@@ -31,6 +31,9 @@ import ProductionPaymentModeChoice from "@modules/checkout/components/production
 import { selectProductionPaymentMode } from "@lib/data/made-to-order-actions"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import Divider from "@modules/common/components/divider"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import styles from "./style.module.scss"
@@ -59,6 +62,9 @@ const Payment = ({
   /** Zakázková výroba: kolik zaplatit teď. Volba se dělá TADY (ne v Přehledu). */
   productionMode?: ProductionPaymentMode | null
 }) => {
+  /* Z CMS (`pokladna.kroky`) jen otázka nad výběrem; věty o tom, kdy a jak
+     se platí (záloha, Balíkovna, dobírka), zůstávají v kódu. */
+  const steps = useCopyBlock("pokladna.kroky")
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
   )
@@ -355,7 +361,9 @@ const Payment = ({
           {!paidByGiftcard && availablePaymentMethods?.length > 0 && (
             <>
               <div className={styles.methodIntro}>
-                <span>Jak chcete zaplatit?</span>
+                <span {...editableItem(steps, "platba.otazka")}>
+                  {itemText(steps, "platba.otazka", "Jak chcete zaplatit?")}
+                </span>
                 <p>
                   {depositByCard
                     ? "Zálohu u zakázky platíte předem kartou (nebo přes peněženku či banku). Při osobním odběru pak na místě doplatíte zbytek."

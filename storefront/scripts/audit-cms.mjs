@@ -1,6 +1,7 @@
 // Co je z webu napojené na CMS a co ne.
 //
-//   node --import @c3studium/valecms/register.mjs scripts/audit-cms.mjs
+// Spouštět ze složky storefront.
+//   node --import ./scripts/lib/ts-register.mjs scripts/audit-cms.mjs
 //
 // Čte tři věci a dá je vedle sebe:
 //

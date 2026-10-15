@@ -49,6 +49,18 @@ import pdfManifest from './legal/pdf-manifest.json' with { type: 'json' }
  * s názvem i adresou. Jedno pole, dvě chování, přesně podle toho, kam
  * tlačítko vede.
  */
+/** Kde tlačítko na webu je — podle první části klíče (`menu.kurzy` → Menu). */
+const MISTO_TLACITKA: Record<string, string> = {
+    index: 'Úvodní stránka',
+    'o-mne': 'O mně',
+    vyroba: 'Výroba',
+    kurzy: 'Kurzy',
+    obchod: 'Obchod',
+    produkt: 'Stránka výrobku',
+    menu: 'Menu',
+    footer: 'Patička',
+}
+
 const tlacitko = defineType({
     name: 'tlacitko',
     title: 'Tlačítka',
@@ -76,6 +88,21 @@ const tlacitko = defineType({
                 'U odkazů uvnitř webu zůstává prázdné — cíl drží kód.',
         }),
     ],
+    /*
+     * V seznamu Studia se tlačítko jmenuje tím, co je na něm napsané, a pod
+     * tím stojí, kde na webu je. Bez toho byl titulkem klíč (`index.hero`)
+     * a „Prohlédnout výrobky" se v seznamu čtyřikrát opakovalo jen jako
+     * podtitulek — nedalo se poznat, které je které. Klíč zůstává na konci
+     * podtitulku, protože podle něj se tlačítko hledá v kódu.
+     */
+    preview: (doc: Record<string, unknown>) => {
+        const klic = String(doc?.klic ?? '')
+        const misto = MISTO_TLACITKA[klic.split('.')[0]] ?? ''
+        return {
+            title: String(doc?.label || klic || 'Tlačítko'),
+            subtitle: misto ? `${misto} · ${klic}` : klic,
+        }
+    },
 })
 
 /**
@@ -609,7 +636,9 @@ const pravniDokument = defineType({
             title: 'Dokument',
             type: 'select',
             description: 'Který dokument to je. U znění, které už platí, se nemění.',
-            options: { list: PRAVNI_DOKUMENTY, layout: 'dropdown' },
+            // U vydaného znění zamčené jako ostatní pole — zámek v API odmítne
+            // jakoukoli jeho změnu (423), formulář to má říct dřív než toast.
+            options: { list: PRAVNI_DOKUMENTY, layout: 'dropdown', readOnly: jeVydane },
             validation: (rule) => rule.required(),
         }),
         defineField({
@@ -620,6 +649,7 @@ const pravniDokument = defineType({
                 'Datum účinnosti — od kdy znění platí. Je to zároveň číslo verze: ukládá se k objednávkám, je v názvu ' +
                 'PDF i v adrese archivního znění. Dnešní nebo budoucí datum, nikdy zpětně. Nové znění = nový záznam ' +
                 's pozdějším datem, starý nechte být (platí pro objednávky uzavřené podle něj).',
+            options: { readOnly: jeVydane },
             validation: (rule) => rule.required(),
         }),
         defineField({
@@ -719,7 +749,9 @@ const pravniDokument = defineType({
             name: 'poznamka',
             title: 'Interní poznámka',
             type: 'text',
-            options: { rows: 3 },
+            // I poznámku zámek u vydaného znění odmítne (423 na celý dokument),
+            // takže psát do ní tam nemá jít — jinak by uložení vždycky selhalo.
+            options: { rows: 3, readOnly: jeVydane },
             description: 'Co se změnilo, kdo to schválil (advokát). Na webu ani v PDF se nezobrazuje.',
             validation: (rule) => rule.max(2000),
         }),
@@ -728,13 +760,20 @@ const pravniDokument = defineType({
         const dokument = PRAVNI_DOKUMENTY.find((item) => item.value === doc?.dokument)
         const nazev = String(doc?.nazev || dokument?.title || 'Právní dokument')
         const od = datumCesky(doc?.platnost)
-        const stav = jeVydane(doc)
+        const vydane = jeVydane(doc)
+        const stav = vydane
             ? 'Vydané (PDF) — uzamčeno'
             : String(doc?.platnost ?? '') > dnesVPraze()
               ? 'Připravované'
               : 'Pracovní znění'
+        const titulek = od ? `${nazev} — platné od ${od}` : nazev
         return {
-            title: od ? `${nazev} — platné od ${od}` : nazev,
+            /*
+             * Titulek je i nadpis editoru dokumentu — jediné místo nahoře, kde
+             * Studio u vydaného znění může říct, že je zamčené (vlastní lištu
+             * zámku knihovna nemá). V seznamu to opakuje podtitulek, to nevadí.
+             */
+            title: vydane ? `${titulek} · uzamčeno` : titulek,
             subtitle: doc?.archivni === true ? `${stav} · archivní` : stav,
         }
     },

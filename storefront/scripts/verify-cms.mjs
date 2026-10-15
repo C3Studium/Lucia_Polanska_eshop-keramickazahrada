@@ -1,6 +1,7 @@
 // Souhlasí kód s tím, co v CMS leží?
 //
-//   node --import @c3studium/valecms/register.mjs scripts/verify-cms.mjs
+// Spouštět ze složky storefront.
+//   node --import ./scripts/lib/ts-register.mjs scripts/verify-cms.mjs
 //
 // Jen čte, nic nemění. Odpovídá na tři otázky, které audit sám nezodpoví:
 //

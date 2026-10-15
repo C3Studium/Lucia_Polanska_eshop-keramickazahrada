@@ -3,6 +3,9 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
 import type { ShopCategory, ShopFilters } from "../../types"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import styles from "./style.module.scss"
 
 type FilterPanelProps = {
@@ -19,6 +22,11 @@ type FilterPanelProps = {
    * (a „Zakázky" / „Balíčky" by stejně nic nenašly, do úpravy nejdou).
    */
   categoriesOnly?: boolean
+  /**
+   * Blok `obchod.katalog` — odsud jen nadpis panelu (`filtry.nadpis`). Názvy
+   * filtrů a cenových pásem drží kód: musí sedět s tím, co filtr dělá.
+   */
+  copy?: CopyBlock
 }
 
 /* Cena jako rozsah: slider i dvojice inputů píší do téhož `min`/`max` stavu,
@@ -50,6 +58,7 @@ export default function FilterPanel({
   onClose,
   onReset,
   categoriesOnly = false,
+  copy,
 }: FilterPanelProps) {
   const activeCount = [
     filters.categoryId || filters.collectionId,
@@ -98,7 +107,9 @@ export default function FilterPanel({
         <div className={styles.heading}>
           <div>
             <span>{categoriesOnly ? "Kategorie" : "Filtry"}</span>
-            <h2>Najděte, co hledáte</h2>
+            <h2 {...editableItem(copy, "filtry.nadpis")}>
+              {itemText(copy, "filtry.nadpis", "Najděte, co hledáte")}
+            </h2>
           </div>
           <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Zavřít filtry">×</button>
         </div>

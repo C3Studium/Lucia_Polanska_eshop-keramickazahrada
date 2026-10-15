@@ -9,6 +9,10 @@ import {
   retryCoursePayment,
   type CourseReservationDetail,
 } from "@lib/data/courses"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 
 import { czk, formatDuration, formatPrague } from "../format"
 
@@ -30,100 +34,168 @@ const SELF_SERVICE_CUTOFF_HOURS = 48
 const peopleWord = (count: number): string =>
   count === 1 ? "osoba" : count < 5 ? "osoby" : "osob"
 
+/**
+ * Stavy rezervace, jak se jmenují v bloku `kurzy.rezervace-stavy` — česky,
+ * ať Lucie ve Studiu pozná, ke kterému řádek patří. Každý má `<stav>.stitek`
+ * (obočí), `<stav>.nadpis` (nadpis v `value`, zvýrazněný konec v `note`)
+ * a většinou `<stav>.text` (odstavec).
+ */
+type StateKey =
+  | "termin-zrusen"
+  | "zruseno-vami"
+  | "zruseno"
+  | "zaplaceno"
+  | "na-miste"
+  | "zpracovava"
+  | "nezaplaceno"
+
+/**
+ * Výchozí texty stavů. `text` chybí tam, kde odstavec říká něco o penězích
+ * (vrácení zaplacené částky, „nic se neplatí") — ten je v `voiceFor` a do
+ * CMS nepatří: přepsaný nebo vymazaný ve Studiu by zákazník nevěděl, jestli
+ * a kdy mu peníze přijdou. U zrušeného termínu jde do CMS jen věta pro
+ * nezaplacenou rezervaci; po zaplacení drží odstavec kód.
+ */
+const STATE_DEFAULTS: Record<
+  StateKey,
+  { stitek: string; nadpis: string; zvyrazneni: string; text?: string }
+> = {
+  "termin-zrusen": {
+    stitek: "Termín zrušen",
+    nadpis: "Tento termín",
+    zvyrazneni: "se bohužel ruší.",
+    text: "Moc se omlouváme. Jakmile vypíšeme nové termíny, najdete je na stránce Kurzy.",
+  },
+  "zruseno-vami": {
+    stitek: "Rezervace zrušena",
+    nadpis: "Rezervaci jste",
+    zvyrazneni: "zrušili.",
+  },
+  zruseno: {
+    stitek: "Rezervace zrušena",
+    nadpis: "Tahle rezervace",
+    zvyrazneni: "už neplatí.",
+    text: "Pokud jste ji nerušili vy, ozvěte se nám a najdeme řešení.",
+  },
+  zaplaceno: {
+    stitek: "Zaplaceno",
+    nadpis: "Místo je vaše,",
+    zvyrazneni: "těšíme se na vás.",
+    text: "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína.",
+  },
+  "na-miste": {
+    stitek: "Rezervováno",
+    nadpis: "Místo je vaše,",
+    zvyrazneni: "zaplatíte na místě.",
+    text: "Potvrzení jsme poslali e-mailem. Kurz zaplatíte hotově nebo kartou před začátkem.",
+  },
+  zpracovava: {
+    stitek: "Platba se zpracovává",
+    nadpis: "Ještě chvilku,",
+    zvyrazneni: "banka pracuje.",
+    text: "Platba je na cestě. Jakmile ji banka potvrdí, pošleme vám e-mail s potvrzením — stránku můžete kdykoli obnovit.",
+  },
+  nezaplaceno: {
+    stitek: "Platba nedokončena",
+    nadpis: "Rezervaci držíme,",
+    zvyrazneni: "platba zatím nedorazila.",
+    text: "Platba se nepovedla nebo byla zrušená. Můžete to zkusit znovu — nebo nám napište a domluvíme platbu na místě.",
+  },
+}
+
+/** Ostatní texty bloku `kurzy.rezervace-stavy` — samoobsluha pod údaji. */
+const SELF_SERVICE_DEFAULTS = {
+  "zmena.nadpis": "Potřebujete něco změnit?",
+  "zmena.napoveda": "Cenu přepočítáme podle nového počtu osob a pošleme vám potvrzení.",
+  "zruseni.otazka": "Opravdu rezervaci zrušit?",
+} as const
+
 type Voice = {
+  state: StateKey
   eyebrow: string
   title: string
   accent: string
   text: string
+  /** Odstavec je z bloku (a dá se upravit v místě), ne věta o penězích z kódu. */
+  textFromCopy: boolean
   tone: "ok" | "wait" | "warn"
   canRetry?: boolean
 }
 
 const voiceFor = (
   reservation: CourseReservationDetail,
-  outcome?: string
+  outcome?: string,
+  block?: CopyBlock
 ): Voice => {
-  if (reservation.term.status === "cancelled") {
+  /** Stav s texty z bloku; `text` z kódu jen tam, kde mluví o penězích. */
+  const say = (
+    state: StateKey,
+    rest: { tone: Voice["tone"]; canRetry?: boolean; moneyText?: string }
+  ): Voice => {
+    const fallback = STATE_DEFAULTS[state]
     return {
-      eyebrow: "Termín zrušen",
-      title: "Tento termín",
-      accent: "se bohužel ruší.",
-      text:
+      state,
+      eyebrow: itemText(block, `${state}.stitek`, fallback.stitek),
+      title: itemText(block, `${state}.nadpis`, fallback.nadpis),
+      accent: itemText(block, `${state}.nadpis`, fallback.zvyrazneni, "note"),
+      text: rest.moneyText ?? itemText(block, `${state}.text`, fallback.text ?? ""),
+      textFromCopy: rest.moneyText === undefined,
+      tone: rest.tone,
+      canRetry: rest.canRetry,
+    }
+  }
+
+  if (reservation.term.status === "cancelled") {
+    return say("termin-zrusen", {
+      tone: "warn",
+      moneyText:
         reservation.payment_status === "paid"
           ? "Moc se omlouváme. Zaplacenou částku vám vrátíme v plné výši — ozveme se vám co nejdříve."
-          : "Moc se omlouváme. Jakmile vypíšeme nové termíny, najdete je na stránce Kurzy.",
-      tone: "warn",
-    }
+          : undefined,
+    })
   }
   if (reservation.status === "cancelled") {
     if (reservation.cancel_reason === "customer") {
-      return {
-        eyebrow: "Rezervace zrušena",
-        title: "Rezervaci jste",
-        accent: "zrušili.",
-        text:
+      return say("zruseno-vami", {
+        tone: "warn",
+        moneyText:
           reservation.payment_status === "paid"
             ? reservation.refunded_at
               ? "Zaplacenou částku vám vracíme stejnou cestou, jakou jste platili — obvykle dorazí do několika dní. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín."
               : "Zaplacenou částku vám vrátíme v plné výši — ozveme se vám co nejdříve. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín."
             : "Místo jsme uvolnili a nic se neplatí. Kdybyste si to rozmysleli, na stránce Kurzy si vyberete nový termín.",
-        tone: "warn",
-      }
+      })
     }
-    return {
-      eyebrow: "Rezervace zrušena",
-      title: "Tahle rezervace",
-      accent: "už neplatí.",
-      text: "Pokud jste ji nerušili vy, ozvěte se nám a najdeme řešení.",
-      tone: "warn",
-    }
+    return say("zruseno", { tone: "warn" })
   }
   if (reservation.payment_status === "paid") {
-    return {
-      eyebrow: "Zaplaceno",
-      title: "Místo je vaše,",
-      accent: "těšíme se na vás.",
-      text: "Platba dorazila a potvrzení jsme poslali e-mailem. Stačí přijít — vezměte si oblečení, kterému nevadí hlína.",
-      tone: "ok",
-    }
+    return say("zaplaceno", { tone: "ok" })
   }
   if (reservation.payment_method === "on_site") {
-    return {
-      eyebrow: "Rezervováno",
-      title: "Místo je vaše,",
-      accent: "zaplatíte na místě.",
-      text: "Potvrzení jsme poslali e-mailem. Kurz zaplatíte hotově nebo kartou před začátkem.",
-      tone: "ok",
-    }
+    return say("na-miste", { tone: "ok" })
   }
   if (outcome === "pending") {
-    return {
-      eyebrow: "Platba se zpracovává",
-      title: "Ještě chvilku,",
-      accent: "banka pracuje.",
-      text: "Platba je na cestě. Jakmile ji banka potvrdí, pošleme vám e-mail s potvrzením — stránku můžete kdykoli obnovit.",
-      tone: "wait",
-    }
+    return say("zpracovava", { tone: "wait" })
   }
-  return {
-    eyebrow: "Platba nedokončena",
-    title: "Rezervaci držíme,",
-    accent: "platba zatím nedorazila.",
-    text: "Platba se nepovedla nebo byla zrušená. Můžete to zkusit znovu — nebo nám napište a domluvíme platbu na místě.",
-    tone: "warn",
-    canRetry: true,
-  }
+  return say("nezaplaceno", { tone: "warn", canRetry: true })
 }
 
 export default function RezervaceDetail({
   reservation,
   token,
   outcome,
+  block,
 }: {
   reservation: CourseReservationDetail
   token: string
   outcome?: string
+  /** Blok `kurzy.rezervace-stavy` — texty stavů (viz STATE_DEFAULTS). */
+  block?: CopyBlock
 }) {
+  /* Stránka bez vlastního pohybu — po zapnutí editace by zůstala bez anotací. */
+  useEditRerender()
+  const selfService = (label: keyof typeof SELF_SERVICE_DEFAULTS) =>
+    itemText(block, label, SELF_SERVICE_DEFAULTS[label])
   const router = useRouter()
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState<string | null>(null)
@@ -138,7 +210,7 @@ export default function RezervaceDetail({
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  const voice = voiceFor(reservation, outcome)
+  const voice = voiceFor(reservation, outcome, block)
 
   /* Back from ComGate via bfcache: the page resumes frozen mid-„Připravuji
      platbu…" — unfreeze the retry button so it can be used again. */
@@ -235,12 +307,26 @@ export default function RezervaceDetail({
   return (
     <main className="kurzyDetail" data-tone={voice.tone}>
       <section className="kurzyDetail__panel">
-        <span className="kurzyDetail__eyebrow">{voice.eyebrow}</span>
+        <span
+          className="kurzyDetail__eyebrow"
+          {...editableItem(block, `${voice.state}.stitek`)}
+        >
+          {voice.eyebrow}
+        </span>
+        {/* Začátek nadpisu v holém spanu jen kvůli anotaci — konec je `note`. */}
         <h1>
-          {voice.title}
-          <em>{voice.accent}</em>
+          <span {...editableItem(block, `${voice.state}.nadpis`)}>{voice.title}</span>
+          <em {...editableItem(block, `${voice.state}.nadpis`, "note")}>
+            {voice.accent}
+          </em>
         </h1>
-        <p className="kurzyDetail__lede">{voice.text}</p>
+        {/* Věta o penězích (z kódu) se neanotuje — do bloku nepatří. */}
+        <p
+          className="kurzyDetail__lede"
+          {...(voice.textFromCopy ? editableItem(block, `${voice.state}.text`) : {})}
+        >
+          {voice.text}
+        </p>
 
         {notice ? (
           <p className="kurzyDetail__notice" role="status">
@@ -320,7 +406,7 @@ export default function RezervaceDetail({
         {/* ---------------------------------------------- self-service --- */}
         {canSelfService ? (
           <div className="kurzyDetail__selfService">
-            <h2>Potřebujete něco změnit?</h2>
+            <h2 {...editableItem(block, "zmena.nadpis")}>{selfService("zmena.nadpis")}</h2>
 
             {canEdit ? (
               editOpen ? (
@@ -353,9 +439,11 @@ export default function RezervaceDetail({
                       </button>
                     </div>
                   </div>
-                  <p className="kurzyDetail__selfServiceHint">
-                    Cenu přepočítáme podle nového počtu osob a pošleme vám
-                    potvrzení.
+                  <p
+                    className="kurzyDetail__selfServiceHint"
+                    {...editableItem(block, "zmena.napoveda")}
+                  >
+                    {selfService("zmena.napoveda")}
                   </p>
                   {editError ? (
                     <p className="kurzyDetail__error" role="alert">
@@ -406,7 +494,9 @@ export default function RezervaceDetail({
 
             {cancelOpen ? (
               <div className="kurzyDetail__cancelConfirm">
-                <strong>Opravdu rezervaci zrušit?</strong>
+                <strong {...editableItem(block, "zruseni.otazka")}>
+                  {selfService("zruseni.otazka")}
+                </strong>
                 <p>
                   Vaše místo{" "}
                   {reservation.party_size === 1

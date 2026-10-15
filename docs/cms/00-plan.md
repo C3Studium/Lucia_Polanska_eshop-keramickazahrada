@@ -87,6 +87,14 @@ jen ke čtení a zámek odmítne jeho změnu, smazání i stažení. Studio neum
 **Lucie — soubory:** Studio → „Soubory ke stažení“ → stránka (právní stránka nebo „Patička
 webu“). Oficiální PDF dokumentů sem nepatří, ta vznikají ze znění.
 
+**Lucie — texty, které na stránce vidět nejsou** (okna, stavy plateb, pokladna, účet, stránky
+z e-mailu, 404, SEO): Studio → „Upravit kontent“ → přepínač „Stránky“ → „Modály“ nebo
+„Seznamy“ → název (např. „Kontaktní okno“, „Platba — čekáme na banku“, „SEO — Kurzy“) →
+formulář se všemi texty bloku → Uložit (koncept). Publikuje se v Obsahu: „Texty na webu“
+(nebo Přehled → Naposledy upraveno) → blok → „Publikovat změny“ — tlačítko Publikovat
+v „Upravit kontent“ bere jen bloky vidět na stránce. Texty otevřeného okna jdou upravit
+i klikáním: Náhled → otevřít okno na stránce → Náhled vypnout → kliknout na text.
+
 **Matěj — vydání znění:** `pnpm legal:build` (storefront čte produkční CMS a backend) →
 `pnpm legal:upload --dry-run` → `pnpm legal:upload` → commit manifestů + `documents/snapshots/`
 → nasazení. Od té chvíle je znění uzamčené (web ho bere z repa s fakty z `entry.facts`).
@@ -109,15 +117,57 @@ webu“). Oficiální PDF dokumentů sem nepatří, ta vznikají ze znění.
       `/store/legal/facts` → OP na webu do minuty; patička e-mailu s živými údaji;
       legal:build `--check` beze změny PDF (sha256 stejné)
 - [x] dokumentace (`docs/legal/00-plan.md` §5–6, OPEN_QUESTIONS)
+- [ ] E, druhé kolo (15. 10. večer, necommitnuto): kurzy (okno rezervace — nadpis
+      z `kurzy.rezervace`, `kurzy.rezervace-okno`; stránka rezervace
+      `kurzy.rezervace-stavy`), účet (nová stránka `ucet`: `ucet.formular`,
+      `ucet.prehled`, `ucet.objednavky`), pokladna (nová stránka `pokladna`:
+      `pokladna.uvod`, `pokladna.souhrn`, `pokladna.kroky` — jen úvodní věty),
+      košík (`kosik.vypis`; napříč webem `global.kosik` — panel v menu, doprava
+      zdarma, propojení košíku), obchod (`obchod.katalog`), hledání v menu
+      (`global.hledani`), přibylo do `global.produkt` (nákup, volba, značky,
+      pozvánka k recenzi), `global.kontaktni-okno` (popisky a vzory polí)
+      a `global.newsletter` (věty po odeslání). Hluboké komponenty (menu,
+      kroky pokladny) čtou blok kontextem `CopyProvider` / `useCopyBlock`.
+      `seed-texts.mjs` u bloků s `mergeItems` doplní do vyplněných `items`
+      chybějící popisky (na konec, stávající beze změny). Ověřeno: tsc, lint,
+      textové snímky před/po s prázdným CMS a po seedu v soukromém úložišti.
+- [ ] F dosažitelnost ve Studiu (15. 10. večer, necommitnuto): povrchy (`surfaces`
+      ve `valecms.config.ts`) — Modály 4 (kontaktní okno, okno rezervace, košík v menu
+      a doprava zdarma, hledání; okno se pod formulářem samo otevře přes
+      `useStudioSurface` + `surfaceRoot`), Seznamy 29 (košík s výrobky, výzva
+      k přihlášení, pokladna, výsledky plateb, poděkování, rychlý nákup, účet, stránka
+      výrobku, katalog, newsletter, rezervace z e-mailu, 404, SEO). Bez `preview` — viz
+      hlášení níž. `EditModeRemount` v layoutech (`(main)`, `(checkout)`, rychlý nákup):
+      stránky s `loading.tsx` (obchod, košík, účet, výrobek, pokladna, stavy plateb)
+      neměly ve Studiu jedinou anotaci obsahu (hydratační neshoda React 19). Opravené
+      anotace: tlačítko newsletteru v patičce (`editableLink`, dřív by uložilo
+      „OdebíratOdebírat↗“), podpis v hero (`editableDoc`, dřív by uložil „— Lucie Polanská“
+      do `title`), obočí přihlášení bez „01 · “. Tlačítka v seznamu pod názvem a místem
+      (dřív klíč), vydané právní znění zamčené celé (i dokument, platnost, poznámka)
+      a „· uzamčeno“ v nadpisu editoru. Ověřeno maticí v prohlížeči (zrcadlo :8600,
+      soukromé úložiště): stránky klik → uložit → publikovat → web; všech 33 povrchů
+      najít → upravit → uložit → publikovat v Obsahu → web/publikovaná data; právní
+      dokumenty (pracovní znění upravit + náhled + publikovat, vydané 423); soubory
+      v patičce a u dokumentu; dotazy klikem na otázku.
 
 ## Co zůstalo v kódu záměrně
 
 Souhlasy a předsmluvní informace v pokladně, poučení § 1837 u zakázky, řádky § 12a u cen,
 text o ověřování recenzí, lišta cookies a soupis cookies (tabulky kapitoly „seznam“ se berou
 vždy z `cookies-inventory.ts`), vysvětlení řazení „Doporučené“, formulář odstoupení,
-chybové hlášky a stavy pokladny, kurzy (rezervace) a poptávkový formulář zakázky.
+chybové hlášky a stavy pokladny, poptávkový formulář zakázky. Z kurzů (od druhého kola)
+souhlasy, storno podmínky, způsoby platby a ceny, věty o vracení peněz u rezervace, lhůta
+48 hodin a pravidlo čekací listiny („Místo se přitom nedrží…“). Z účtu obnova hesla, ověření
+e-mailu a mazání účtu (co se smaže a co zůstává kvůli účetnictví). Z pokladny věty u plateb
+(záloha, Balíkovna, dobírka, kdy se platí) a slevové kódy. „(povinné)“ u polí formulářů.
 
 ## Pro autora ValeCMS (hlášení upstream)
+
+> Stav 15. 10. večer: větev `feature/pravni-dokumenty` v repu valecms (a8c3c13, nevydaná)
+> už řeší první skupinu — serverovou stráž (`guard`), 423/422 bez dialogu sloučení, zámek
+> s lištou (`locked`), revize ze skriptů, `strict`/`readAll`, Duplikovat, `accentSlots`,
+> typy, seed bez `DATABASE_URL` (`describeWriteTarget`). Otevřené zůstávají body od
+> „Povrch s `preview`…“ níž (povrchy, Publikovat, hydratace `editable()`, titulky bloků).
 
 - Žádný serverový zámek dokumentu ani háčky (beforeSave/beforePublish) — museli jsme obalit
   catch-all routu; `readOnly` je jen v UI.
@@ -129,3 +179,24 @@ chybové hlášky a stavy pokladny, kurzy (rezervace) a poptávkový formulář 
 - `siteCopy.accent` max. 6 položek; typy: `@c3studium/valecms/server` jako `Record<string, unknown>`,
   `toNodeRequest` nedeklarované, `FieldOptions.readOnly` typované jako boolean, i když bere funkci.
 - Seed skripty v šabloně chtějí `DATABASE_URL`, i když se jede na Supabase API.
+- Povrch s `preview` pod App Routerem nefunguje: výběr povrchu volá `navigate(preview)`
+  → `router.replace(?p=…)` → segment stránky Studia je klíčovaný parametry adresy →
+  celé Studio se přemountuje, `tab` i `openSurface` spadnou na výchozí („Stránky“, nic).
+  Návrh: v App Router adaptéru `shallow` přes `history.replaceState`, nebo záložku
+  a povrch držet v adrese. Typy: `SurfaceOptions` nezná `preview`.
+- „Publikovat“ v Upravit kontent sbírá jen `[data-cms-doc]` v rámu, takže blok uložený
+  z povrchu nikdy nenabídne („Není co publikovat“), i když toast po uložení slibuje
+  „objeví se až po publikování“. Návrh: přidat do sady dokumenty povrchů uložené v sezení,
+  nebo „Uložit a publikovat“ přímo v popupu povrchu.
+- `editable()` čte modulový příznak, který `useEditArming` zapne v efektu kořene; hranice
+  Suspense hydratovaná později (každá stránka s `loading.tsx`) pak při HYDRATACI dostane
+  atributy, které server nevykreslil → React 19 „attributes didn't match … won't be patched
+  up“ → stránka bez anotací. Návrh: příznak přes `useSyncExternalStore` se server
+  snapshotem `false`, nebo přemountování v knihovně. U nás obchází `EditModeRemount`.
+- `siteCopy.preview`: titulkem je obsahový `title` (u mnoha bloků věta z webu — „Košík“
+  dvakrát, SEO titulky jako „Časté otázky“), podtitulek je surové `page` a počet položek.
+  Návrh: podtitulek `název stránky · key`. Web to přebít nemůže (typ z knihovny, registr
+  odmítne druhou deklaraci).
+- Editor dokumentu nemá lištu zámku (jen `readOnly` pole) — zámek u nás říká titulek.
+- Rada na záložce povrchů mluví o formuláři i u povrchu s `preview`; hláška u stránky bez
+  anotací („Obsah z CMS čte zatím jen úvodní stránka…“) je zastaralá (právní stránky).

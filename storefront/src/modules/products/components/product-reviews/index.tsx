@@ -17,12 +17,19 @@ type ReviewWithVerification = StoreProductReview & {
 
 import { motion } from "framer-motion"
 import { withCount } from "@lib/util/plurals"
+import type { CopyBlock } from "@lib/util/site-copy"
 
 type ProductReviewsProps = {
   productId: string
   initialReviews: StoreProductReview[]
   initialRating: number
   initialCount: number
+  /**
+   * Blok `global.produkt` — jde jen do pozvánky k recenzi ve formuláři
+   * (`recenze.*`). Text o ověřování recenzí (`REVIEW_POLICY_TEXT`) a počty
+   * zůstávají v kódu.
+   */
+  texts?: CopyBlock
 }
 
 /*
@@ -113,6 +120,7 @@ export default function ProductReviews({
   initialReviews,
   initialRating,
   initialCount,
+  texts,
 }: ProductReviewsProps) {
   const pageSize = 4
   const [visibleCount, setVisibleCount] = useState(pageSize)
@@ -287,7 +295,7 @@ export default function ProductReviews({
         data-scroll-section
         data-scroll-label="Recenze"
       >
-        <ProductReviewsForm productId={productId} previewMode={false} />
+        <ProductReviewsForm productId={productId} previewMode={false} texts={texts} />
       </div>
     )
   }
@@ -360,7 +368,7 @@ export default function ProductReviews({
         )}
       </div>
 
-      <ProductReviewsForm productId={productId} previewMode={false} />
+      <ProductReviewsForm productId={productId} previewMode={false} texts={texts} />
     </div>
   )
 }

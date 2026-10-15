@@ -1,3 +1,4 @@
+import EditModeRemount from "@modules/common/components/cms-text/edit-remount"
 import GlobalLiquidEther from "@modules/layout/components/global-liquid-ether"
 import Image from "next/image"
 import Link from "next/link"
@@ -35,7 +36,8 @@ export default async function Layout ({
             </Link>
           </header>
           <div className={styles.flow}>
-            {children}
+            {/* Anotace pro Studio u stránek s `loading.tsx` — viz komponentu. */}
+            <EditModeRemount>{children}</EditModeRemount>
           </div>
         </div>
       </section>

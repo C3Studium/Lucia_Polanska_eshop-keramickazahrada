@@ -102,6 +102,7 @@ export default async function StorePage({
   return (
     <ECom
       block={copy["obchod.vyber"]}
+      texts={copy["obchod.katalog"]}
       key={`${initialFilters.categoryId}:${initialFilters.collectionId}:${initialFilters.search}`}
       countryCode={countryCode}
       products={products}

@@ -7,15 +7,22 @@ import Divider from "@modules/common/components/divider"
 import type { ProductionPaymentMode } from "@lib/util/made-to-order"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { shippingFromOptions } from "@modules/cart/shipping-from"
+import CmsText from "@modules/common/components/cms-text"
+import { itemFieldPath, itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
 import styles from "./style.module.scss"
 
 const CheckoutSummary = async ({
   cart,
   productionMode,
+  copy,
 }: {
   cart: any
   productionMode?: ProductionPaymentMode | null
+  /** Blok `pokladna.souhrn` — obočí (`oboci`) a nadpis (`nadpis`) souhrnu. */
+  copy?: CopyBlock
 }) => {
+  const doc = copy?.id ?? null
   /* Než je doprava zvolená, souhrn neukazuje „Doprava 0 Kč", ale „od …"
      (stejně jako košík). Dotaz sdílí cache s krokem Doprava. */
   const shippingFrom = !(cart?.shipping_methods?.length ?? 0)
@@ -28,8 +35,12 @@ const CheckoutSummary = async ({
   return (
     <div className={styles.root}>
       <div className={styles.summary}>
-        <p className={styles.eyebrow}>Přehled objednávky</p>
-        <h2 className={styles.heading}>Co objednáváte</h2>
+        <CmsText as="p" className={styles.eyebrow} doc={doc} field={itemFieldPath(copy, "oboci")}>
+          {itemText(copy, "oboci", "Přehled objednávky")}
+        </CmsText>
+        <CmsText as="h2" className={styles.heading} doc={doc} field={itemFieldPath(copy, "nadpis")}>
+          {itemText(copy, "nadpis", "Co objednáváte")}
+        </CmsText>
         {/*
           Na svislé obrazovce je celý souhrn na rozbalení: zavřený ukáže
           náhledy, celkovou částku a uplatněný kód, zbytek si otevře, kdo

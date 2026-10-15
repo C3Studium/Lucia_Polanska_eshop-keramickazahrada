@@ -6,6 +6,9 @@ import PhoneInput from "@modules/common/components/phone-input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
+import { itemText } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
+import { useCopyBlock } from "@modules/common/components/cms-text/copy-context"
 import styles from "./style.module.scss"
 
 /*
@@ -65,6 +68,9 @@ const ShippingAddress = ({
   onChange: () => void
   countryCode: string
 }) => {
+  /* Dvě pomocné věty z CMS (`pokladna.kroky`); popisky polí a pozdrav se
+     jménem zůstávají v kódu. Bez provideru věty z kódu. */
+  const steps = useCopyBlock("pokladna.kroky")
   const routeCountry = countryCode.toLowerCase()
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
@@ -175,7 +181,13 @@ const ShippingAddress = ({
               <h3 id="saved-addresses-heading">
                 Vítejte zpět{customer.first_name ? `, ${customer.first_name}` : ""}.
               </h3>
-              <p>Vyberte si uloženou adresu, nebo vyplňte novou níž.</p>
+              <p {...editableItem(steps, "adresa.ulozene")}>
+                {itemText(
+                  steps,
+                  "adresa.ulozene",
+                  "Vyberte si uloženou adresu, nebo vyplňte novou níž."
+                )}
+              </p>
             </div>
           </motion.div>
           <motion.div
@@ -347,9 +359,16 @@ const ShippingAddress = ({
               onChange={() => setNaFirmu((stav) => !stav)}
               data-testid="company-purchase-checkbox"
             />
-            <p id="firma-nadpis" className={styles.firmaPopis}>
-              Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží
-              pošleme na adresu výš.
+            <p
+              id="firma-nadpis"
+              className={styles.firmaPopis}
+              {...editableItem(steps, "adresa.firma")}
+            >
+              {itemText(
+                steps,
+                "adresa.firma",
+                "Fakturační údaje firmy nebo OSVČ. Doklad vystavíme na ně, zboží pošleme na adresu výš."
+              )}
             </p>
           </div>
 

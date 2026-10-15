@@ -14,6 +14,10 @@ import {
 } from "@modules/common/components/premium-action-button/motion"
 import { HttpTypes } from "@medusajs/types"
 import type { ShippingFrom } from "../shipping-from"
+import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
+import type { CopyBlock } from "@lib/util/site-copy"
+import { editableItem } from "@modules/common/components/cms-text"
 import s from "./summary.module.scss"
 
 import { motion } from 'framer-motion';
@@ -24,6 +28,11 @@ type SummaryProps = {
   }
   /** Nejlevnější doprava, dokud není zvolená („od …"). */
   shippingFrom?: ShippingFrom | null
+  /**
+   * Blok `kosik.vypis` — `souhrn.oboci`, `souhrn.nadpis` (široké okno),
+   * `souhrn.nadpis-kratky` (telefon), `souhrn.tlacitko`. Částky jsou v kódu.
+   */
+  copy?: CopyBlock
 }
 
 /** Kam pokladna otevře — čte to i lepkavý pruh na telefonu (checkout-bar). */
@@ -37,7 +46,9 @@ export function getCheckoutStep(cart: HttpTypes.StoreCart) {
   }
 }
 
-const Summary = ({ cart, shippingFrom }: SummaryProps) => {
+const Summary = ({ cart, shippingFrom, copy }: SummaryProps) => {
+  /* Souhrn se po zapnutí editace sám nepřekreslí. Viz hook. */
+  useEditRerender()
   const step = getCheckoutStep(cart)
 
   return (
@@ -51,15 +62,21 @@ const Summary = ({ cart, shippingFrom }: SummaryProps) => {
         */}
       <div className={s.head}>
         <div className={s.heading}>
-          <p className={s.eyebrow}>Objednávka</p>
+          <p className={s.eyebrow} {...editableItem(copy, "souhrn.oboci")}>
+            {itemText(copy, "souhrn.oboci", "Objednávka")}
+          </p>
           {/* Dvě znění, přepínaná zobrazením — ne `aria-hidden`: to by na
               telefonu nechalo nadpis bez přístupného textu, protože skryté
               „Kolik to dělá" ze stromu vypadne. Čtečka přečte to, co je vidět.
               Krátké „Souhrn" tu není jen kvůli místu na sebe: vedle nadpisu
               teď stojí slevový kód a jeho rozbalené pole potřebuje šířku. */}
           <h2 className={s.title}>
-            <span className={s.titleWide}>Kolik to dělá</span>
-            <span className={s.titleNarrow}>Souhrn</span>
+            <span className={s.titleWide} {...editableItem(copy, "souhrn.nadpis")}>
+              {itemText(copy, "souhrn.nadpis", "Kolik to dělá")}
+            </span>
+            <span className={s.titleNarrow} {...editableItem(copy, "souhrn.nadpis-kratky")}>
+              {itemText(copy, "souhrn.nadpis-kratky", "Souhrn")}
+            </span>
           </h2>
         </div>
         <div className={s.discountSlot}>
@@ -72,8 +89,9 @@ const Summary = ({ cart, shippingFrom }: SummaryProps) => {
         <Divider />
         <CartTotals totals={cart} shippingFrom={shippingFrom} />
       </div>
+      {/* Text tlačítka bez anotace v místě — vnitřek si animuje tlačítko samo. */}
       <LinkButton
-        text="Pokračovat k pokladně"
+        text={itemText(copy, "souhrn.tlacitko", "Pokračovat k pokladně")}
         href={"/checkout?step=" + step}
         buttonClassName={s.button}
         dataTestId="checkout-button"

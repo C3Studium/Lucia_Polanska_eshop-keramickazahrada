@@ -25,7 +25,7 @@ const CartTemplate = async ({
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
-  /** Bloky stránky `kosik` — `kosik.uvod`, `kosik.prazdny`, `kosik.prihlaseni`. */
+  /** Bloky stránky `kosik` — `kosik.uvod`, `kosik.prazdny`, `kosik.prihlaseni`, `kosik.vypis`. */
   copy?: CopyBlocks
 }) => {
   // Kusy zboží — balné a doběrečné do počtu nepatří.
@@ -83,14 +83,18 @@ const CartTemplate = async ({
                   <Divider />
                 </>
               )}
-              <ItemsTemplate cart={cart} />
+              <ItemsTemplate cart={cart} copy={copy?.["kosik.vypis"]} />
               </div>
               <div className={s.right}>
                 <div className={s.sticky}>
                   {cart && cart.region && (
                     <div className={s.summaryBox}>
                       <CmsText as="p" className={s.secureNote} doc={introId} field={itemFieldPath(intro, "souhrn")}>{secureNote}</CmsText>
-                      <Summary cart={cart as any} shippingFrom={shippingFrom} />
+                      <Summary
+                        cart={cart as any}
+                        shippingFrom={shippingFrom}
+                        copy={copy?.["kosik.vypis"]}
+                      />
                     </div>
                   )}
                 </div>

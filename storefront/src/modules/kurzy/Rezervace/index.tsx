@@ -2,10 +2,13 @@
 
 import { editable } from "@c3studium/valecms/edit"
 import { useEditRerender } from "@lib/hooks/use-edit-rerender"
+import { itemText } from "@lib/util/site-copy"
 import type { CopyBlock } from "@lib/util/site-copy"
 import type { CourseTerm } from "@lib/data/courses"
+import { editableItem } from "@modules/common/components/cms-text"
 import ContactTrigger from "@modules/layout/ContactDialog/trigger"
 
+import { REZERVACE_OKNO_DEFAULTS } from "../copy"
 import { czk, formatDuration, formatPrague, seatsLabel } from "../format"
 
 /**
@@ -27,9 +30,14 @@ type Props = {
   onReserveAction: () => void
   /** Blok `kurzy.rezervace` — texty kolem termínů; termíny samy jsou z Medusy. */
   block?: CopyBlock
+  /**
+   * Blok `kurzy.rezervace-okno` — odsud jen věta u obsazeného termínu
+   * (`termin.obsazeno`), aby zněla stejně jako v okně rezervace.
+   */
+  okno?: CopyBlock
 }
 
-export default function Rezervace({ terms, onReserveAction, block }: Props) {
+export default function Rezervace({ terms, onReserveAction, block, okno }: Props) {
   /* Sekce sama o sobě nemá důvod k překreslení — bez tohohle by po zapnutí
      režimu editace zůstaly anotace prázdné. Viz hook. */
   useEditRerender()
@@ -52,6 +60,7 @@ export default function Rezervace({ terms, onReserveAction, block }: Props) {
     block?.accent?.[4]?.trim() ||
     "Napište mi a dám vám vědět, jakmile vypíšu další — nebo se domluvíme na termínu jen pro vaši skupinu."
   const emptyCta = block?.accent?.[5]?.trim() || "Dejte mi vědět"
+  const soldOut = itemText(okno, "termin.obsazeno", REZERVACE_OKNO_DEFAULTS["termin.obsazeno"])
 
   return (
     <section className="kurzyRezervace" id="rezervace" data-scroll-section>
@@ -101,14 +110,15 @@ export default function Rezervace({ terms, onReserveAction, block }: Props) {
                     ? ` · od ${term.group_min} lidí ${czk(term.price_group_per_person)}/os.`
                     : ""}
                 </span>
+                {/* Karta je jen ke čtení (ne tlačítko), takže se obsazený
+                    termín dá upravit v místě; počet volných míst je údaj. */}
                 <span
                   className={`kurzyRezervace__termSeats${
                     term.sold_out ? " is-full" : ""
                   }`}
+                  {...(term.sold_out ? editableItem(okno, "termin.obsazeno") : {})}
                 >
-                  {term.sold_out
-                    ? "obsazeno · dáme vědět, až se uvolní"
-                    : seatsLabel(term.seats_left)}
+                  {term.sold_out ? soldOut : seatsLabel(term.seats_left)}
                 </span>
               </li>
             ))}

@@ -1,0 +1,39 @@
+/**
+ * Výchozí texty bloku `kurzy.rezervace-okno` — okno rezervace a karty termínů.
+ *
+ * Tady, a ne v komponentě, protože větu u obsazeného termínu čte okno
+ * (RezervaceModal) i sekce s nejbližšími termíny (Rezervace) a mají znít
+ * stejně. Položky klíčované popiskem; `scripts/seed-texts.mjs` nese tytéž
+ * věty (změna tady = změna tam).
+ *
+ * Zástupci `{osoby}` a `{email}` se dosazují v komponentě (`fillPlaceholders`).
+ *
+ * Co tu schválně NENÍ: souhlasy a storno podmínky (§ 1837 písm. j) OZ, fakta
+ * z administrace), způsoby platby, ceny a názvy cenových pásem, chybové
+ * hlášky, a věta „Místo se přitom nedrží…" — říká, jak čekací listina
+ * funguje, a musí s tím souhlasit.
+ */
+export const REZERVACE_OKNO_DEFAULTS = {
+  oboci: "Kurzy · Rezervace",
+  prazdne:
+    "Právě nejsou vypsané žádné termíny. Napište mi a dám vám vědět, jakmile vypíšu další.",
+  "kalendar.napoveda": "Vyberte v kalendáři označený den a jeho termíny se ukážou tady.",
+  "termin.obsazeno": "obsazeno · dáme vědět, až se uvolní",
+  "cekacka.uvod":
+    "Termín je plně obsazený. Nechte nám kontakt a napíšeme vám, jakmile se místo uvolní.",
+  "cekacka.tlacitko": "Dejte mi vědět",
+  "cekacka.hotovo.nadpis": "Dáme vědět, až se uvolní místo.",
+  "cekacka.hotovo.text":
+    "Jakmile se na termínu uvolní místo pro {osoby}, pošleme vám zprávu na {email}.",
+  "souhrn.oboci": "Rezervace přijata",
+  "souhrn.nadpis": "Těšíme se na vás.",
+  /** `note` položky `souhrn.nadpis` — zvýrazněný konec nadpisu. */
+  "souhrn.nadpis#note": "Místo máte rezervované.",
+  "souhrn.text":
+    "Co bude dál: potvrzení jsme právě poslali na {email}. Před kurzem vám ještě přijde připomínka — a zaplatíte až na místě, hotově nebo kartou. Kdyby vám termín nakonec nevyšel, rezervaci zrušíte přímo z e-mailu.",
+} as const
+
+export type RezervaceOknoLabel = Exclude<keyof typeof REZERVACE_OKNO_DEFAULTS, `${string}#note`>
+
+/** Věta za odstavcem čekací listiny — pravidlo, ne redakční text; do CMS nepatří. */
+export const WAITLIST_RULE = "Místo se přitom nedrží — patří tomu, kdo dřív dokončí rezervaci."
