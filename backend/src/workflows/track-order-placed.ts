@@ -12,18 +12,23 @@ type WorkflowInput = {
 export const trackOrderPlacedWorkflow = createWorkflow(
   "track-order-placed",
   ({ id }: WorkflowInput) => {
+    /*
+     * Do Segmentu (zpracovatel v USA) jdou jen údaje o objednávce, NE přímé
+     * identifikátory zákazníka — dřív sem šel e-mail a jméno, aniž by to
+     * Zásady ochrany osobních údajů zmiňovaly (čl. 5 odst. 1 písm. c) a čl. 13
+     * GDPR; 15. 10. 2026, viz docs/legal/CHANGELOG.md). Jestli Segment vůbec
+     * používat, je otevřená otázka (docs/legal/OPEN_QUESTIONS.md).
+     */
     const { data: orders } = useQueryGraphStep({
       entity: "order",
       fields: [
         "id",
-        "email",
         "total",
         "currency_code",
+        // `items.*`, ne jednotlivá pole: explicitní `items.quantity` query.graph
+        // nevrací (množství žije na detailu položky).
         "items.*",
         "customer.id",
-        "customer.email",
-        "customer.first_name",
-        "customer.last_name",
         "created_at"
       ],
       filters: {
@@ -35,21 +40,17 @@ export const trackOrderPlacedWorkflow = createWorkflow(
       order: orders[0],
     }, ({ order }) => ({
       orderId: order.id,
-      email: order.email,
       total: order.total,
       currency: order.currency_code,
       items: order.items?.map((item) => ({
         id: item?.id,
         title: item?.title,
         quantity: item?.quantity,
-        variant: item?.variant,
+        variant_id: item?.variant_id,
         unit_price: item?.unit_price
       })),
       customer: {
         id: order.customer?.id,
-        email: order.customer?.email,
-        firstName: order.customer?.first_name,
-        lastName: order.customer?.last_name
       },
       timestamp: order.created_at
     }))
