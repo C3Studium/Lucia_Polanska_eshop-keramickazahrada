@@ -1,4 +1,5 @@
 import manifest from "@lib/legal/pdf-manifest.json"
+import { isPublishedPdfUrl } from "@lib/legal/pdf-published"
 import type { LegalPdfEntry, LegalSlug } from "@lib/legal/types"
 
 /**
@@ -10,6 +11,13 @@ import type { LegalPdfEntry, LegalSlug } from "@lib/legal/types"
  * (váží se jen ke starším objednávkám); z ostatních vyhrává nejnovější, jejíž
  * datum už nastalo, jinak nejbližší připravovaná — jako `currentVersion()`
  * v `@lib/legal/registry`.
+ *
+ * Nabízí se JEN zveřejněné PDF: takové, jehož `url` v manifestu je absolutní
+ * https adresa (`isPublishedPdfUrl`). Tu tam zapíše `pnpm legal:upload`,
+ * a ten nahrává jen finální znění; pracovní PDF (s `[[DOPLNIT]]`) mají jen
+ * místní cestu `/legal/…` a zákazníkovi se nedávají. Rozhoduje se až nad
+ * platnou verzí — starší zveřejněné PDF nesmí zastoupit novější znění, které
+ * ještě zveřejněné není.
  */
 
 const DOWNLOADS: { slug: LegalSlug; label: string }[] = [
@@ -39,7 +47,10 @@ export type LegalDownload = {
   bytes: number
 }
 
-/** Aktuální PDF každého dokumentu, který v manifestu je. Chybějící se vynechá. */
+/**
+ * Aktuální PDF každého dokumentu, který v manifestu je a je zveřejněné.
+ * Chybějící nebo pracovní se vynechá.
+ */
 export const currentLegalDownloads = (now: Date = new Date()): LegalDownload[] => {
   const today = pragueToday(now)
   const downloads: LegalDownload[] = []
@@ -48,7 +59,7 @@ export const currentLegalDownloads = (now: Date = new Date()): LegalDownload[] =
       (a, b) => b.version.localeCompare(a.version)
     )
     const entry = versions.find((item) => item.version <= today) ?? versions[versions.length - 1]
-    if (entry) {
+    if (entry && isPublishedPdfUrl(entry.url)) {
       downloads.push({ slug, label, url: entry.url, version: entry.version, bytes: entry.bytes })
     }
   }

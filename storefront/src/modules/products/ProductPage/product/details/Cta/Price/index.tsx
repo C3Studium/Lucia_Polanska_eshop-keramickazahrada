@@ -7,6 +7,7 @@ import {
 } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import styles from "./style.module.scss"
 import { usePriceReference } from "./use-price-reference"
 
@@ -21,8 +22,9 @@ import { usePriceReference } from "./use-price-reference"
  *   (když historie celých 30 dní nepokrývá: „Nejnižší cena před slevou: …"
  *   s poznámkou — pravdivě, bez tvrzení o 30 dnech);
  * - aktuální cena pod referencí není → žádná sleva se neukazuje;
- * - backend reference nedal → jen aktuální cena a štítek „Sleva", nikdy
- *   přeškrtnutá cena, která by mohla klamat;
+ * - backend reference nedal → JEN aktuální cena, bez štítku „Sleva" i bez
+ *   procenta: samotný štítek by byl oznámením slevy bez předchozí ceny,
+ *   a to § 12a ZOS nedovoluje;
  * - než reference dorazí, cena se ukazuje bez slevových údajů.
  *
  * ## Kus s vadou („Poškozené")
@@ -30,6 +32,8 @@ import { usePriceReference } from "./use-price-reference"
  * Jeho cena není sleva, ale cena kusu s vadou — žádné přeškrtnutí, žádné
  * procento, jen „Cena kusu s uvedenou vadou". Popis vady stojí hned nad
  * cenou v rámečku „Poškození" (`details.tsx`), proto se tu neopakuje.
+ * Pod tím věta, že odstoupit do 14 dnů jde i u kusu s vadou (§ 1829 OZ),
+ * jen vadu, kvůli které je levnější, nelze reklamovat (§ 2167 písm. a) OZ).
  */
 
 const formatAmount = (amount: number, currencyCode: string) =>
@@ -70,8 +74,7 @@ export default function ProductPrice({
     : null
 
   const showReference = isSale && percent != null && lowest != null
-  const showFallbackLabel = isSale && reference.status === "unavailable"
-  const saleStyled = showReference || showFallbackLabel
+  const saleStyled = showReference
 
   return (
     <div className="product__details__cta__price">
@@ -113,15 +116,16 @@ export default function ProductPrice({
           </>
         )}
 
-        {showFallbackLabel && (
-          <span className="product__priceDiscount">Sleva</span>
-        )}
-
         {clearance && hasPrice && (
           <p className={styles.line} data-testid="clearance-price-note">
             {clearance.damage
               ? "Cena kusu s uvedenou vadou"
               : "Cena kusu s vadou"}
+            <span className={styles.note} data-testid="clearance-withdrawal-note">
+              I kus s vadou můžete do 14 dnů od převzetí{" "}
+              <LocalizedClientLink href="/odstoupeni-od-smlouvy">vrátit</LocalizedClientLink>;
+              vadu, kvůli které je levnější, ale reklamovat nelze.
+            </span>
           </p>
         )}
       </div>

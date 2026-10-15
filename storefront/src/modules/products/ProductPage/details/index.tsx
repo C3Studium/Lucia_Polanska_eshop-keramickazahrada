@@ -5,6 +5,7 @@ import { HttpTypes } from "@medusajs/types";
 import InfoDesc from "./components/info";
 import Desc from "./components/desc";
 import Shipment from "./components/delivery";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
 
 const disclosureVariants = {
     closed: { height: 0, opacity: 0, y: -6 },
@@ -50,14 +51,23 @@ export default function Details({ product }: { product: HttpTypes.StoreProduct }
         }
     ];
 
+    /* Dopravci podle Dopravy a platby (lib/legal/documents/doprava-a-platba) —
+       jen Česká pošta a osobní odběr. Vrácení je zákonné právo (§ 1829 OZ),
+       ne vstřícnost, a výjimka pro zakázku (§ 1837 písm. d) OZ) se musí říct. */
     const shipping = [
         {
             title: "Jak to k vám dorazí",
-            content: "Keramiku pečlivě zabalíme a pošleme Českou poštou nebo Zásilkovnou — buď k vám domů, nebo na výdejní místo, které si vyberete.",
+            content: "Keramiku pečlivě zabalíme a pošleme Českou poštou — na výdejní místo nebo do boxu Balíkovny, které si vyberete, nebo k vám domů (křehké kusy jako křehký balík). Vyzvednout si ji můžete i osobně v ateliéru.",
         },
         {
-            title: "Když něco nesedne",
-            content: "Nesedí barva nebo tvar? Napište nám a domluvíme se. Uděláme, co půjde, abyste měli doma to, co jste si představovali.",
+            title: "Vrácení zboží",
+            content: (
+                <>
+                    Do 14 dnů od převzetí můžete zboží vrátit bez udání důvodu —{" "}
+                    <LocalizedClientLink href="/odstoupeni-od-smlouvy">poučení o odstoupení</LocalizedClientLink>.
+                    Neplatí to pro zboží vyrobené na zakázku.
+                </>
+            ),
         },
         {
             title: "Cena dopravy",

@@ -27,7 +27,40 @@ const CountryFlag = ReactCountryFlag as unknown as ComponentType<{
   countryCode: string
   style?: CSSProperties
   svg?: boolean
+  cdnUrl?: string
+  alt?: string
 }>
+
+/*
+ * Vlajky z vlastního serveru (`public/assets/flags`), ne z cdn.jsdelivr.net.
+ *
+ * `react-country-flag` v režimu SVG bere obrázky z CDN třetí strany — každá
+ * stránka tak posílala IP adresu návštěvníka na jsDelivr dřív, než o čemkoli
+ * souhlasil (hlavička je všude). SVG jsou jednorázově stažené ze stejného
+ * zdroje (lipis/flag-icons, 4x3, licence MIT v `LICENSE` vedle), jen země,
+ * které regiony obchodu dnes mají. Země bez souboru (nově přidaný region)
+ * dostane emoji vlajku — bez jediného požadavku; SVG pak stačí doplnit sem
+ * i do složky.
+ */
+const LOCAL_FLAGS = new Set(["cz", "de", "dk", "es", "fr", "gb", "it", "pl", "se", "si", "sk"])
+const FLAG_DIR = "/assets/flags/"
+
+function Flag({
+  countryCode,
+  className,
+  style,
+}: {
+  countryCode: string
+  className?: string
+  style?: CSSProperties
+}) {
+  const code = countryCode.toLowerCase()
+  return LOCAL_FLAGS.has(code) ? (
+    <CountryFlag svg cdnUrl={FLAG_DIR} countryCode={code} className={className} style={style} alt="" />
+  ) : (
+    <CountryFlag countryCode={code} className={className} style={style} />
+  )
+}
 
 const ease = [0.76, 0, 0.24, 1] as const
 
@@ -137,11 +170,7 @@ export default function RegionsSelect({
           aria-hidden="true"
         />
         <span className="countryButton__flag" aria-hidden="true">
-          <CountryFlag
-            svg
-            style={styleObj}
-            countryCode={current.country}
-          />
+          <Flag style={styleObj} countryCode={current.country} />
         </span>
         <motion.span
           className="regionArrow"
@@ -193,8 +222,7 @@ export default function RegionsSelect({
                   whileTap={whileTap2}
                   title={option.label}
                 >
-                  <CountryFlag
-                    svg
+                  <Flag
                     className="countryOption__flag"
                     style={styleObj2}
                     countryCode={option.country}

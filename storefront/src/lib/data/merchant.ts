@@ -9,9 +9,14 @@ export type MerchantIdentity = {
   /** Dial-safe form for `tel:` — the display form carries spaces. */
   phoneDial: string
   website: string
-  bankAccount: string
-  iban: string
-  swift: string
+  /*
+   * Bez čísla účtu, IBAN a SWIFT (dřív `bankAccount`/`iban`/`swift`). Nic na
+   * webu je nečetlo, a přitom se s celým objektem serializovaly do RSC dat
+   * každé stránky (patička a kontakt ho dostávají jako prop) — i s napevno
+   * zapsaným účtem jako výchozí hodnotou, ač který účet platí, je otevřená
+   * otázka (OPEN_QUESTIONS #1). Číslo účtu pro texty patří do
+   * `@lib/legal/facts` (`bank.account`), až ho Lucie potvrdí.
+   */
 }
 
 /**
@@ -32,7 +37,4 @@ export const getMerchantIdentity = (): MerchantIdentity => ({
   phone: "+420 775 211 578",
   phoneDial: "+420775211578",
   website: process.env.INTERNETOVA_ADRESA || "www.keramickazahrada.cz",
-  bankAccount: process.env.CISLO_UCTU || "7010757121/2010",
-  iban: process.env.IBAN || "CZ34 2010 0000 0070 1075 7121",
-  swift: process.env.SWIFT_KOD || "FIOBCZPPXXX",
 })

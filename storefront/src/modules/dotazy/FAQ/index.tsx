@@ -8,7 +8,10 @@ import Image from "next/image"
 import { useMemo, useState } from "react"
 
 import { easeReveal } from "@lib/motion-tokens"
+import { PINNED_FAQ_ANSWERS, pinnedFaqAnswer } from "@lib/legal/faq"
 import LegalFaq from "@modules/dotazy/LegalFaq"
+
+const pinnedById = (id: string) => PINNED_FAQ_ANSWERS.find((item) => item.id === id)?.answer ?? ""
 
 /*
  * Kategorie je řetězec, ne výčet: přicházejí z CMS (bloky `dotazy.kategorie-*`),
@@ -62,20 +65,19 @@ const faq = [
         title: "Jak keramiku balíte pro bezpečnou přepravu?",
         desc: "Každý kus obalíme několika vrstvami a uložíme do pevné krabice tak, aby se v ní nemohl hýbat. Kde to jde, používáme výplně, které se dají použít znovu nebo vytřídit.",
     },
+    /* Odpovědi těchhle dvou slibují zákonná práva — drží je `@lib/legal/faq`
+       (PINNED_FAQ_ANSWERS) a přebíjejí i znění z CMS, viz `pinnedFaqAnswer`. */
     {
         id: "poskozena-zasilka",
         category: "doprava" as Category,
         title: "Jak postupovat, když zásilka dorazí poškozená?",
-        /* Žádná krátká lhůta: rozbitý kus je vada při převzetí a reklamuje se
-           u nás (obchodní podmínky čl. VII a XII). Dřívějších „48 hodin" a
-           dvoudenní lhůtu dopravce zákazník dodržet nemusí. */
-        desc: "Vyfoťte prosím balík i poškozený kus a ozvěte se nám s číslem objednávky — čím dřív, tím líp, ale žádná krátká lhůta pro vás neplatí. Domluvíme se na výměně nebo opravě, a když to nejde, vrátíme peníze. U České pošty nic reklamovat nemusíte, to vyřídíme my.",
+        desc: pinnedById("poskozena-zasilka"),
     },
     {
         id: "vraceni",
         category: "doprava" as Category,
         title: "Mohu produkt vrátit nebo vyměnit?",
-        desc: "Výrobek z běžné nabídky můžete vrátit bez udání důvodu do 14 dnů od převzetí. Zakázkové kusy dělané přímo podle vašeho zadání vrátit nejde — pokud ovšem mají vadu, reklamujete je jako každé jiné zboží.",
+        desc: pinnedById("vraceni"),
     },
     {
         id: "kurzy-pro-skoly",
@@ -174,7 +176,9 @@ export default function FAQBody({
             id: q.id ?? `qna-${index}`,
             category: (q.kategorie || "vse") as Category,
             title: q.question,
-            desc: q.answer,
+            /* Právní témata (rozbitá zásilka, vrácení) odpovídá kód, ne CMS —
+               viz PINNED_FAQ_ANSWERS. Otázka, kategorie a pořadí zůstávají. */
+            desc: pinnedFaqAnswer(q) ?? q.answer,
             /** Celý dokument — anotace `editableDoc` otevře jeho formulář. */
             doc: q as FaqQuestion | null,
             /* Jen kvůli shodnému tvaru se záložní větví — v téhle se nečtou. */
@@ -190,10 +194,12 @@ export default function FAQBody({
 
         return faq.map((item, index) => {
             const cms = texts?.questions?.[index]
+            const title = cms?.question?.trim() || item.title
             return {
                 ...item,
-                title: cms?.question?.trim() || item.title,
-                desc: cms?.answer?.trim() || item.desc,
+                title,
+                /* I tady: přišpendlené téma přebije odpověď z bloku. */
+                desc: pinnedFaqAnswer({ id: item.id, question: title }) ?? (cms?.answer?.trim() || item.desc),
                 doc: null as FaqQuestion | null,
                 /** Kolikátá je v bloku — pro anotaci překryvu. */
                 cmsDoc: texts,

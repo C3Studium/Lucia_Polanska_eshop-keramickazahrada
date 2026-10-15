@@ -192,8 +192,10 @@ function ProductCard({
 
   /* § 12a ZOS: sleva se na kartě ukazuje proti nejnižší ceně za 30 dní před
      slevou, ne proti běžné ceně. Dotaz jde dávkou za celou mřížku
-     (`usePriceReference`). Bez reference zůstane jen štítek „Sleva" —
-     přeškrtnutá běžná cena by mohla klamat, proto tu není vůbec. */
+     (`usePriceReference`). Bez reference karta ukáže jen aktuální cenu —
+     žádný štítek „Sleva" ani procento: i holý štítek je oznámení slevy, ke
+     kterému § 12a ZOS žádá předchozí cenu. Přeškrtnutá běžná cena by mohla
+     klamat, proto tu není vůbec. */
   const reference = usePriceReference(
     hasSale ? cheapestPrice?.variant_id : undefined,
     cheapestPrice?.currency_code
@@ -205,7 +207,6 @@ function ProductCard({
     : null
   const referenceComplete =
     reference.status === "ready" && reference.reference.complete
-  const showSaleFallback = hasSale && reference.status === "unavailable"
 
   /*
    * Rychlé přidání do košíku.
@@ -225,11 +226,14 @@ function ProductCard({
 
   const quickAddVariant = useMemo(() => {
     if (customVoucher) return null
+    /* Zakázka (týž signál jako štítek „Na zakázku" níž): zadání a potvrzení,
+       že ji nelze vrátit do 14 dnů, patří ke kusu na stránce produktu. */
+    if (isMadeToOrder) return null
     const variants = product.variants ?? []
     if (variants.length !== 1) return null
 
     return maxPurchasableQuantity(variants[0]) > 0 ? variants[0] : null
-  }, [customVoucher, product.variants])
+  }, [customVoucher, isMadeToOrder, product.variants])
 
   /* Oblíbené se ukládají po variantě, takže platí totéž omezení jako u košíku —
      u vícevariantního kusu by karta hádala, který se má uložit. Sklad se tu
@@ -388,7 +392,6 @@ function ProductCard({
             )}
             {isNew && <span>Novinka</span>}
             {salePercent != null && <span>−{salePercent} %</span>}
-            {showSaleFallback && <span>Sleva</span>}
           </div>
           <motion.span
             className={styles.discover}

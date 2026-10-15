@@ -17,6 +17,7 @@ import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
 } from "@modules/order/components/carrier-damage"
 import { getSiteDocument } from "@lib/data/documents"
+import { orderTermsRef } from "@lib/legal/order-terms"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
 import ClaimsSummary from "@modules/order/components/claim-status/summary"
@@ -93,6 +94,8 @@ export default async function OrderCompletedTemplate({
   const pickupPoint = pickupPointLabel(
     order.metadata as Record<string, unknown> | undefined
   )
+  // Serverová komponenta → registr dokumentů smí přímo (do prohlížeče nejde).
+  const terms = orderTermsRef(order)
   /* Stav objednávky ze serveru (reklamace, odesláno, výroba zakázky…) —
      `fulfillment_status` Medusy sám neví o Denní práci ani o reklamacích
      a navíc ho načtení objednávky nevrací, takže tu stálo napořád „Přijato". */
@@ -194,6 +197,24 @@ export default async function OrderCompletedTemplate({
               Potvrzení jsme poslali na <strong>{order.email}</strong>. Jakmile
               se něco pohne, ozveme se vám znovu.
             </p>
+            {/* Znění OP, podle kterého se objednávka uzavřela (OP čl. III
+                a IV, § 1827 OZ) — stejné jako v účtu u objednávky. */}
+            {terms && (
+              <p className={s.heroTerms} data-testid="order-terms">
+                Obchodní podmínky:{" "}
+                <LocalizedClientLink href={terms.href}>
+                  znění od {terms.validFrom}
+                </LocalizedClientLink>
+                {terms.pdfUrl && (
+                  <>
+                    {" · "}
+                    <a href={terms.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      PDF
+                    </a>
+                  </>
+                )}
+              </p>
+            )}
             <span>Reference · {orderNumber}</span>
           </div>
         </section>

@@ -1,5 +1,8 @@
-type ShipmentProps = { 
-    shipping: { title: string; content: string }[]
+import type { ReactNode } from "react"
+
+type ShipmentProps = {
+    /* `ReactNode`, ne jen text: odstavec o vrácení nese odkaz na poučení. */
+    shipping: { title: string; content: ReactNode }[]
 }
 
 

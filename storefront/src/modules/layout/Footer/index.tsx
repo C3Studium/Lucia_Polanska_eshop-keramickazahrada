@@ -9,6 +9,7 @@ import type { MerchantIdentity } from "@lib/data/merchant"
 import { subscribeToNewsletter } from "@lib/data/newsletter"
 import { openCookiePreferences } from "@lib/util/cookie-consent"
 import PremiumActionButton from "@modules/common/components/premium-action-button"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { paymentIcons } from "constants/icons"
 import { motion } from "framer-motion"
 import Image from "next/image"
@@ -427,11 +428,13 @@ function FooterLinkGroup({
 
 /**
  * Ke stažení (PDF): aktuální znění právních dokumentů jako soubory — to, co
- * si zákazník uloží nebo vytiskne. Jen dokumenty, jejichž PDF je v manifestu
- * (`pnpm legal:build`); dokud žádné není, skupina se nevykreslí vůbec.
+ * si zákazník uloží nebo vytiskne. Jen ZVEŘEJNĚNÁ PDF (nahraná do R2
+ * `pnpm legal:upload`, absolutní https URL v manifestu) — pracovní znění
+ * s `[[DOPLNIT]]` ne, viz `legal-downloads.ts`. Dokud žádné není, skupina se
+ * nevykreslí vůbec.
  *
  * Obyčejné `<a>`, ne lokalizovaný odkaz: PDF leží mimo `/[countryCode]`
- * (R2, nebo `/legal/…` ve `public/`), prefix země by z něj udělal 404.
+ * (R2), prefix země by z něj udělal 404.
  */
 function FooterDownloads() {
   const downloads = currentLegalDownloads()
@@ -564,9 +567,19 @@ function Newsletter({ block }: { block?: CopyBlock }) {
           Nepovedlo se to uložit, zkuste to prosím znovu.
         </p>
       ) : null}
-      <p {...editable(block, "accent.3")}>
-        {block?.accent?.[3]?.trim() ||
-          "Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek. Odběr ještě potvrdíte kliknutím v e-mailu."}
+      {/* Věta ze CMS (`accent.3`) zůstává editovatelná ve vlastním `<span>`;
+          odkaz na Zásady je kód vedle ní, aby informace o zpracování
+          (čl. 13 GDPR) u formuláře nezmizela s úpravou textu ve Studiu. */}
+      <p>
+        <span {...editable(block, "accent.3")}>
+          {block?.accent?.[3]?.trim() ||
+            "Odesláním souhlasíte s tím, že váš e-mail použijeme jen pro zasílání novinek. Odběr ještě potvrdíte kliknutím v e-mailu."}
+        </span>{" "}
+        Jak s ním zacházíme, popisují{" "}
+        <LocalizedClientLink href="/ochrana-osobnich-udaju#novinky-e-mailem">
+          Zásady ochrany osobních údajů
+        </LocalizedClientLink>
+        .
       </p>
     </form>
   )

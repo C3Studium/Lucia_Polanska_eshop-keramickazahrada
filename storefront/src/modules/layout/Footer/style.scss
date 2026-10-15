@@ -398,6 +398,13 @@
   font: 300 0.8125rem/1.42 "Sansation-Light", sans-serif;
 }
 
+/* Odkaz na Zásady ochrany osobních údajů v téže větě. */
+.newsletter__container > p a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 /* The error is set in ink, not a red the footer palette does not have —
    the quiet voice extends to failure. */
 p.newsletter__error {

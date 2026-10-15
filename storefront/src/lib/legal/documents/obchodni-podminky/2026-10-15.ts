@@ -272,7 +272,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         {
           type: "ul",
           items: [
-            "online tlačítkem **„Odstoupit od smlouvy“** u objednávky v zákaznickém účtu, nebo přes odkaz v e-mailu o odeslání objednávky — po kontrole předvyplněných údajů odstoupení potvrdíte tlačítkem **„Potvrdit odstoupení od smlouvy“**,",
+            "online tlačítkem **„Odstoupit od smlouvy“** u objednávky v zákaznickém účtu, nebo přes odkaz v potvrzení objednávky nebo v e-mailu o jejím odeslání — po kontrole předvyplněných údajů odstoupení potvrdíte tlačítkem **„Potvrdit odstoupení od smlouvy“**,",
             "e-mailem na {{seller.email}},",
             "dopisem na adresu {{seller.name}}, {{seller.address}}.",
           ],
@@ -568,7 +568,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "Novinky a nabídky (obchodní sdělení) vám posíláme jen tehdy, když se k jejich odběru sami přihlásíte a přihlášení potvrdíte v e-mailu. Odhlásit se můžete kdykoli odkazem v každém z nich. Žádný souhlas za vás předem nezaškrtáváme.",
+          text: "Novinky a nabídky (newsletter) vám posíláme jen tehdy, když se k jejich odběru sami přihlásíte a přihlášení potvrdíte v e-mailu; odhlásit se můžete kdykoli odkazem v každém z nich. Jako našemu zákazníkovi vám můžeme poslat i e-maily související s vaším nákupem nebo s tím, o co jste si sami řekli — žádost o hodnocení zakoupeného výrobku a upozornění na zlevnění výrobku, který máte v oblíbených. V každém takovém e-mailu je odkaz, kterým je jedním kliknutím odmítnete; odmítnout je můžete i e-mailem na {{seller.email}}. Žádný souhlas za vás předem nezaškrtáváme.",
         },
       ],
     },

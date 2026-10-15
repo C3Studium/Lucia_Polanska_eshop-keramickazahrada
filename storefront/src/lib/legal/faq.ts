@@ -25,6 +25,112 @@ export type LegalFaqGroup = {
   items: LegalFaqItem[]
 }
 
+/* ------------------------------------------- odpovědi přišpendlené kódem -- */
+
+/**
+ * Otázky z horního seznamu (CMS), jejichž ODPOVĚĎ vždy dává kód.
+ *
+ * Horní seznam na stránce Dotazy je redakční: otázky jsou dokumenty `qna`
+ * ve Studiu (záložně blok `dotazy.otazky` nebo seznam ve FAQBody). Dvě z nich
+ * ale slibují zákonná práva a staré znění ve Studiu jim odporovalo:
+ *
+ * - rozbitá zásilka „ozvěte se nám do 48 hodin“ — žádná taková lhůta
+ *   neplatí, rozbitý kus je vada při převzetí (OP čl. VII a XII);
+ * - vrácení „nepoužitého“ výrobku — zákon podmínku „nepoužitý“ nezná,
+ *   zákazník odpovídá jen za snížení hodnoty (§ 1833 OZ).
+ *
+ * Aby zákaznický text nikdy nemohl odporovat obchodním podmínkám, odpověď
+ * na tato témata se z CMS nebere: otázka (její znění, kategorie, pořadí)
+ * zůstane, jak ji redakce napsala, odpověď se nahradí touhle. Mění se spolu
+ * s OP v PR, ne ve Studiu.
+ *
+ * ## Jak se otázka z CMS pozná
+ *
+ * Dokument `qna` nenese žádný stálý klíč (mimo náhled je i `id` null), takže
+ * se páruje znění otázky, normalizované (malá písmena, bez diakritiky
+ * a interpunkce):
+ *
+ * 1. `id` — jen záložní seznam ve FAQBody, ten ho má pevné;
+ * 2. `questions` — známá znění otázky (dnes je kód i Studio píšou stejně);
+ * 3. `topic` — záchranná síť pro přeformulovanou otázku: normalizované
+ *    znění musí obsahovat každý vzor z `all` a žádný z `none`. Vzory jsou
+ *    schválně úzké — falešná shoda by jen nahradila odpověď správnou právní,
+ *    ale nemá se trefovat do otázek o poukazech, zakázkách či kurzech, na
+ *    které odpovídá pevná sekce `LEGAL_FAQ` níž.
+ *
+ * Nové téma sem patří, kdykoli redakční odpověď začne slibovat (nebo upírat)
+ * zákonné právo. Odpovědi jsou prostý text — horní seznam značku nevykresluje.
+ */
+export type PinnedFaqAnswer = {
+  /** Stejné `id` jako otázka v záložním seznamu FAQBody. */
+  id: string
+  /** Známá znění otázky — porovnávají se normalizovaně (`normalizeFaqQuestion`). */
+  questions: string[]
+  /** Vzory nad normalizovaným zněním: musí sedět všechny z `all` a žádný z `none`. */
+  topic: { all: RegExp[]; none?: RegExp[] }
+  answer: string
+}
+
+/** Poukazy, zakázky a kurzy mají vlastní odpovědi v `LEGAL_FAQ` — obecné vrácení na ně nesedí. */
+const NOT_GENERAL_GOODS = [/poukaz/, /zakazk/, /kurz/]
+
+export const PINNED_FAQ_ANSWERS: PinnedFaqAnswer[] = [
+  {
+    id: "poskozena-zasilka",
+    questions: ["Jak postupovat, když zásilka dorazí poškozená?"],
+    topic: {
+      all: [/poskozen|rozbit|praskl/, /zasilk|balik|doruc|preprav|dorazi/],
+    },
+    /* Žádná krátká lhůta: rozbitý kus je vada při převzetí a reklamuje se
+       u nás (obchodní podmínky čl. VII a XII). Dřívějších „48 hodin" a
+       dvoudenní lhůtu dopravce zákazník dodržet nemusí. */
+    answer:
+      "Vyfoťte prosím balík i poškozený kus a ozvěte se nám s číslem objednávky — čím dřív, tím líp, ale žádná krátká lhůta pro vás neplatí. Domluvíme se na výměně nebo opravě, a když to nejde, vrátíme peníze. U České pošty nic reklamovat nemusíte, to vyřídíme my.",
+  },
+  {
+    id: "vraceni",
+    questions: ["Mohu produkt vrátit nebo vyměnit?"],
+    topic: {
+      all: [/vratit|vraceni|vymenit|vymena|odstoupit/, /produkt|vyrob|zbozi|kus|objednav|nakup/],
+      none: NOT_GENERAL_GOODS,
+    },
+    /* Bez „nepoužitý": § 1829 OZ podmínku nezná, zákazník jen odpovídá za
+       snížení hodnoty (§ 1833 OZ, OP čl. VIII). */
+    answer:
+      "Výrobek z běžné nabídky můžete vrátit bez udání důvodu do 14 dnů od převzetí. Zakázkové kusy dělané přímo podle vašeho zadání vrátit nejde — pokud ovšem mají vadu, reklamujete je jako každé jiné zboží.",
+  },
+]
+
+/** Malá písmena, bez diakritiky a interpunkce, jednoduché mezery. */
+export function normalizeFaqQuestion(text: string): string {
+  return text
+    .toLocaleLowerCase("cs")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+}
+
+/**
+ * Odpověď z kódu pro otázku z horního seznamu, nebo `null`, když otázka
+ * přišpendlená není (pak platí odpověď z CMS). Pravidla párování viz výš.
+ */
+export function pinnedFaqAnswer(question: { id?: string | null; question: string }): string | null {
+  const normalized = normalizeFaqQuestion(question.question)
+
+  const pinned = PINNED_FAQ_ANSWERS.find(
+    (item) =>
+      (question.id != null && question.id === item.id) ||
+      item.questions.some((known) => normalizeFaqQuestion(known) === normalized) ||
+      (item.topic.all.every((re) => re.test(normalized)) &&
+        !(item.topic.none ?? []).some((re) => re.test(normalized)))
+  )
+
+  return pinned?.answer ?? null
+}
+
+/* ------------------------------------------------ pevná právní sekce -- */
+
 export const LEGAL_FAQ: LegalFaqGroup[] = [
   {
     id: "faq-zakazka",

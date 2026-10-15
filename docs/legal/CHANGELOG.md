@@ -149,3 +149,55 @@ OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
   napřed přímé shody), bez placeného zvýhodnění.
 - Nasazení: migrace (`price_history_entry`, `review.verified_purchase` vč. doplnění u starých
   recenzí) a jednou `npx medusa exec ./src/scripts/backfill-price-history.ts`.
+
+## Opravy po kontrole (R2)
+
+Nálezy nezávislé kontroly storefrontu; backend se tu neměnil.
+
+- **FAQ z CMS odporovalo zákonu.** Ve Studiu zůstaly odpovědi „ozvěte se nám do 48 hodin“
+  (rozbitá zásilka) a „Nepoužitý výrobek … můžete vrátit do 14 dnů“ — rozbitý kus je vada při
+  převzetí bez krátké lhůty (§ 2161 odst. 1, § 2159 odst. 2 OZ) a podmínku „nepoužitý“ zákon
+  nezná, spotřebitel odpovídá jen za snížení hodnoty (§ 1829, § 1833 OZ). Nově
+  `PINNED_FAQ_ANSWERS` v `lib/legal/faq.ts`: odpověď na tato témata dává vždy kód, otázka,
+  kategorie a pořadí zůstávají z CMS. Dokument `qna` nemá stálý klíč (mimo náhled je `id` null),
+  páruje se proto normalizované znění otázky + úzké vzory pro přeformulovanou otázku.
+  OPEN_QUESTIONS #22 doplněno (text ve Studiu stejně opravit).
+- **Záložka „Doprava a vrácení“ u výrobku:** pryč „nebo Zásilkovnou“ (posíláme jen Českou
+  poštou — Balíkovna, na adresu, křehký balík — nebo osobní odběr) a vágní „Když něco
+  nesedne… domluvíme se“; místo toho zákonné právo vrátit do 14 dnů s odkazem na poučení
+  a výjimka pro zakázku (§ 1829, § 1837 písm. d) OZ).
+- **Archiv smlouvy v účtu** (OP čl. III a IV, § 1827 OZ): detail objednávky v účtu i potvrzení
+  objednávky ukazují „Obchodní podmínky: znění od …“ s odkazem na `/smluvni-podminky/<verze>`
+  a u zveřejněného PDF i „PDF“. Verze = `order.metadata.terms_version`, jinak verze platná
+  v den objednávky; počítá se na serveru (`lib/legal/order-terms.ts`), registr do prohlížeče
+  nejde.
+- **§ 12a ZOS:** když reference nejnižší ceny za 30 dní není k dispozici, web už neukazuje
+  holý štítek „Sleva“ (byl to sám o sobě údaj o slevě bez předchozí ceny) — jen aktuální cenu
+  (stránka výrobku i karta v obchodě).
+- **Kus s vadou:** u „Cena kusu s uvedenou vadou“ věta, že i takový kus lze do 14 dnů vrátit,
+  jen vadu, kvůli které je levnější, nelze reklamovat (§ 1829, § 2167 písm. a) OZ; audit §3).
+- **Odstoupení — kde je odkaz pro hosty:** dokumenty tvrdily jen „e-mail o odeslání
+  objednávky“, odkaz je ale už v potvrzení objednávky a odstoupit jde i před odesláním → „v
+  potvrzení objednávky nebo v e-mailu o jejím odeslání“ (Odstoupení — postup online i [4]
+  poučení, jen vyplňované části; OP čl. VIII).
+- **Obchodní sdělení:** OP čl. XIV tvrdily, že nabídky chodí jen po přihlášení k newsletteru,
+  ač obchod posílá žádost o hodnocení a upozornění na zlevnění oblíbeného výrobku. Nově
+  popsané obojí, s odkazem na odmítnutí jedním kliknutím v každém takovém e-mailu (backend
+  ho doplňuje zvlášť); Zásady uvádějí základ oprávněný zájem podle § 7 odst. 3 zákona
+  č. 480/2004 Sb. a že připomenutí opuštěného košíku je dnes vypnuté. Posouzení advokátem
+  zůstává (OPEN_QUESTIONS #16d).
+- **Vlajky bez CDN:** přepínač země bral vlajky z cdn.jsdelivr.net — IP návštěvníka šla
+  třetí straně na každé stránce před jakýmkoli souhlasem. SVG (lipis/flag-icons, MIT) jsou
+  nově v `public/assets/flags/`. Jiné načítání z CDN třetích stran před souhlasem
+  storefront nemá (fonty jsou vlastní, Google Analytics jen po souhlasu, mapa po kliknutí).
+- **Rychlé přidání do košíku** na kartě se u zakázky nenabízí — zadání a potvrzení výjimky
+  z odstoupení patří ke kusu na stránce výrobku (§ 1820 odst. 1 písm. j) OZ).
+- **Číslo účtu z kódu pryč:** `getMerchantIdentity()` nesl napevno účet, IBAN a SWIFT jako
+  výchozí hodnoty a s patičkou se serializovaly do dat každé stránky, ač je nic nečetlo
+  a který účet platí, je otevřené (OPEN_QUESTIONS #1). Pole odstraněna.
+- **Pomoc u objednávky:** „Reklamace a výměny“ vede na Reklamační řád (dřív na Odstoupení),
+  vedle nově „Vrácení do 14 dnů“ na Odstoupení.
+- **Newsletter v patičce:** věta u formuláře odkazuje na Zásady ochrany osobních údajů
+  (čl. 13 GDPR); text z CMS zůstává editovatelný, odkaz je v kódu.
+- **„Ke stažení (PDF)“ v patičce** nabízí jen zveřejněná PDF (absolutní https URL z
+  `pnpm legal:upload`); pracovní znění s `[[DOPLNIT]]` se už nenabízí.

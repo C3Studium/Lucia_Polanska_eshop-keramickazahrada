@@ -171,6 +171,19 @@
   font-weight: 400;
 }
 
+/* Znění OP k objednávce — drobný řádek mezi potvrzením a referencí. */
+.heroAside .heroTerms {
+  margin-top: -1.6rem;
+  font-size: .94rem;
+}
+
+.heroAside .heroTerms a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+}
+
 .heroAside > span {
   color: rgb(var(--ink-05-rgb) / .46);
   font: 600 .62rem/1 "Sansation-Regular", sans-serif;

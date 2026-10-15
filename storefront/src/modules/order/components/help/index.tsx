@@ -25,9 +25,16 @@ const Help = () => {
               </p>
             </div>
           </li>
+          {/* Reklamace (vada) a vrácení bez udání důvodu (odstoupení) jsou dvě
+              různá práva s vlastními pravidly — každé na svou stránku. */}
+          <li>
+            <LocalizedClientLink href="/reklamacni-rad" className={styles.link}>
+              Reklamace a výměny
+            </LocalizedClientLink>
+          </li>
           <li>
             <LocalizedClientLink href="/odstoupeni-od-smlouvy" className={styles.link}>
-              Reklamace a výměny
+              Vrácení do 14 dnů
             </LocalizedClientLink>
           </li>
         </ul>

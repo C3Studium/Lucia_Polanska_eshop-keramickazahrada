@@ -10,8 +10,8 @@ import type { LegalDocumentVersion } from "../../types"
  * - [1] 14 dnů; [2] varianta b), pro dodávky po částech varianta c) jako druhá
  *   věta s podmínkou; [3] jméno, sídlo, telefon, e-mail;
  * - [4] oba odstavce — tlačítko „Odstoupit od smlouvy" u objednávky v účtu
- *   a v odkazu z e-mailu o odeslání (workstream D) a elektronický formulář
- *   v témže místě;
+ *   a v odkazu z potvrzení objednávky i z e-mailu o odeslání (workstream D)
+ *   a elektronický formulář v témže místě; mění se jen tyto vyplněné části;
  * - [5] ano; [6] a) 2 s adresou sídla, b) 2, c); [7] se nepoužije.
  *
  * Při úpravě textu NEMĚNIT slova vzoru — jen hodnoty v {{faktech}}. Oslovení
@@ -61,7 +61,7 @@ const odstoupeni: LegalDocumentVersion = {
         {
           type: "ol",
           items: [
-            "Přihlaste se a v účtu otevřete **Objednávky** a vyberte objednávku. Nakupovali jste bez účtu? Použijte odkaz **„Odstoupit od smlouvy“** v e-mailu, kterým jsme vám oznámili odeslání objednávky.",
+            "Přihlaste se a v účtu otevřete **Objednávky** a vyberte objednávku. Nakupovali jste bez účtu? Použijte odkaz **„Odstoupit od smlouvy“** v potvrzení objednávky nebo v e-mailu o jejím odeslání — odstoupit můžete i dřív, než objednávku odešleme.",
             "Klikněte na **„Odstoupit od smlouvy“**. Formulář je předvyplněný údaji z objednávky — zkontrolujte je a vyberte, čeho se odstoupení týká.",
             "Odeslání potvrďte tlačítkem **„Potvrdit odstoupení od smlouvy“**.",
             "Hned vám přijde e-mail s potvrzením — co jste odeslali, datum a čas odeslání.",
@@ -103,11 +103,11 @@ const odstoupeni: LegalDocumentVersion = {
             },
             {
               type: "p",
-              text: "Můžete rovněž odstoupit od smlouvy online na stránce objednávky ve svém zákaznickém účtu na {{seller.web}} (v části Objednávky tlačítko „Odstoupit od smlouvy“ u dané objednávky), nebo přes odkaz „Odstoupit od smlouvy“ v e-mailu, kterým Vám oznamujeme odeslání objednávky. Využijete-li této možnosti, bez zbytečného odkladu Vám potvrdíme přijetí prohlášení o odstoupení od smlouvy v textové podobě (například prostřednictvím elektronické pošty), včetně jeho obsahu a data a času jeho odeslání.",
+              text: "Můžete rovněž odstoupit od smlouvy online na stránce objednávky ve svém zákaznickém účtu na {{seller.web}} (v části Objednávky tlačítko „Odstoupit od smlouvy“ u dané objednávky), nebo přes odkaz „Odstoupit od smlouvy“ v potvrzení objednávky nebo v e-mailu o jejím odeslání. Využijete-li této možnosti, bez zbytečného odkladu Vám potvrdíme přijetí prohlášení o odstoupení od smlouvy v textové podobě (například prostřednictvím elektronické pošty), včetně jeho obsahu a data a času jeho odeslání.",
             },
             {
               type: "p",
-              text: "Na naší internetové stránce {{seller.webUrl}} (na stránce objednávky v zákaznickém účtu nebo po otevření odkazu z e-mailu o odeslání objednávky) můžete rovněž elektronicky vyplnit a odeslat formulář pro odstoupení od smlouvy nebo jakékoliv jiné jednoznačné prohlášení. Využijete-li této možnosti, obratem Vám potvrdíme jeho přijetí v textové podobě (například prostřednictvím elektronické pošty).",
+              text: "Na naší internetové stránce {{seller.webUrl}} (na stránce objednávky v zákaznickém účtu nebo po otevření odkazu z potvrzení objednávky nebo z e-mailu o jejím odeslání) můžete rovněž elektronicky vyplnit a odeslat formulář pro odstoupení od smlouvy nebo jakékoliv jiné jednoznačné prohlášení. Využijete-li této možnosti, obratem Vám potvrdíme jeho přijetí v textové podobě (například prostřednictvím elektronické pošty).",
             },
             {
               type: "p",

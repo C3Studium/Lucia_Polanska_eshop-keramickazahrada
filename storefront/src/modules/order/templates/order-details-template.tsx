@@ -14,6 +14,7 @@ import WithdrawalEntry, {
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { OrderClaims } from "@lib/util/claims"
 import type { OrderEditMode } from "@lib/data/order-edit"
+import type { OrderTermsRef } from "@lib/legal/order-terms"
 import { ORDER_ITEM_EDITING_ENABLED } from "@modules/order/components/order-edit/shared"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
@@ -54,6 +55,8 @@ type OrderDetailsTemplateProps = {
   edit?: { mode: OrderEditMode; pending: boolean } | null
   /** Stav objednávky ze serveru (`/progress`); null → překlad stavu Medusy. */
   statusLabel?: string | null
+  /** Znění OP k objednávce (spočítá stránka ze serverového registru). */
+  terms?: OrderTermsRef | null
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
@@ -65,6 +68,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   claims = null,
   edit = null,
   statusLabel = null,
+  terms = null,
 }) => {
   return (
     <AccountPageReveal
@@ -89,7 +93,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       <AccountSectionReveal
         className={s.accountOrderDetailsIntro}
       >
-        <OrderDetails order={order} showStatus statusLabel={statusLabel} />
+        <OrderDetails order={order} showStatus statusLabel={statusLabel} terms={terms} />
       </AccountSectionReveal>
 
       <AccountSectionReveal

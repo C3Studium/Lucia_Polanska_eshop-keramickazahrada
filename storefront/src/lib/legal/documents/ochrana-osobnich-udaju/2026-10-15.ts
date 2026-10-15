@@ -118,10 +118,10 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
               "{{privacy.newsletterTool}}",
             ],
             [
-              "Připomenutí nedokončeného nákupu",
+              "Připomenutí nedokončeného nákupu (dnes vypnuté)",
               "e-mail zadaný v pokladně, obsah košíku",
-              "oprávněný zájem (písm. f) — jedno připomenutí, proti kterému můžete vznést námitku",
-              "připomenutí posíláme jen jednou, den po opuštění košíku",
+              "oprávněný zájem (písm. f) podle § 7 odst. 3 zákona č. 480/2004 Sb.; v připomenutí je odkaz, kterým další jedním kliknutím odmítnete",
+              "dnes je neposíláme; zapneme-li je, jen jedno, den po opuštění košíku",
               "rozesílání e-mailů, hosting",
             ],
             [
@@ -134,14 +134,14 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
             [
               "Upozornění na zlevnění výrobku v oblíbených",
               "e-mail, oblíbené výrobky",
-              "oprávněný zájem (písm. f), proti kterému můžete vznést námitku",
-              "dokud máte výrobek v oblíbených",
+              "oprávněný zájem (písm. f) podle § 7 odst. 3 zákona č. 480/2004 Sb. — vlastní obdobné výrobky stávajícím zákazníkům; v každém upozornění je odkaz, kterým další jedním kliknutím odmítnete",
+              "dokud máte výrobek v oblíbených, nebo do odmítnutí",
               "rozesílání e-mailů, hosting",
             ],
             [
               "Žádost o hodnocení a recenze",
               "jméno, e-mail, objednávka; u recenze text, hodnocení a zobrazované jméno",
-              "oprávněný zájem (písm. f); zveřejnění recenze, kterou sami napíšete",
+              "žádost: oprávněný zájem (písm. f) podle § 7 odst. 3 zákona č. 480/2004 Sb., v žádosti je odkaz, kterým další jedním kliknutím odmítnete; recenze: oprávněný zájem (písm. f) na zveřejnění recenze, kterou sami napíšete",
               "žádost posíláme jednou po doručení; recenze po dobu zveřejnění",
               "rozesílání e-mailů, hosting",
             ],
@@ -179,7 +179,7 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
           items: [
             "**Plnění smlouvy** (čl. 6 odst. 1 písm. b) GDPR) — bez těchto údajů vám objednávku, zakázku ani kurz vyřídit nemůžeme. Patří sem i kroky před uzavřením smlouvy, o které nás sami požádáte (poptávka).",
             "**Právní povinnost** (písm. c) — například vedení účetnictví a vyřizování reklamací.",
-            "**Oprávněný zájem** (písm. f) — například ochrana našich nároků, zabezpečení webu nebo jedno připomenutí nedokončeného nákupu. Proti zpracování na tomto základě můžete kdykoli vznést námitku.",
+            "**Oprávněný zájem** (písm. f) — například ochrana našich nároků, zabezpečení webu nebo e-maily našim zákazníkům podle § 7 odst. 3 zákona č. 480/2004 Sb. (žádost o hodnocení, upozornění na zlevnění výrobku v oblíbených). Proti zpracování na tomto základě můžete kdykoli vznést námitku.",
             "**Souhlas** (písm. a) — newsletter, statistiky návštěvnosti a zveřejnění fotografií. Souhlas je dobrovolný a můžete ho kdykoli odvolat; zpracování před odvoláním tím nepřestává být zákonné.",
           ],
         },
@@ -246,7 +246,11 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "K objednávce, rezervaci, zakázce nebo reklamaci vám posíláme provozní e-maily — ty jsou součástí plnění smlouvy. Kromě nich vám může přijít jedno připomenutí nedokončeného nákupu, jedna žádost o hodnocení po doručení a upozornění na zlevnění výrobku, který máte v oblíbených. Nechcete-li je dostávat, napište nám na {{seller.email}} a přestaneme.",
+          text: "K objednávce, rezervaci, zakázce nebo reklamaci vám posíláme provozní e-maily — ty jsou součástí plnění smlouvy. Jako našemu zákazníkovi vám kromě nich můžeme poslat jednu žádost o hodnocení zakoupeného výrobku po doručení a upozornění na zlevnění výrobku, který máte v oblíbených. Posíláme je na základě oprávněného zájmu podle § 7 odst. 3 zákona č. 480/2004 Sb., o některých službách informační společnosti — jde o naše vlastní výrobky, obdobné těm, o které jste projevili zájem. V každém takovém e-mailu je odkaz, kterým další jedním kliknutím odmítnete; odmítnout je můžete i e-mailem na {{seller.email}}.",
+        },
+        {
+          type: "p",
+          text: "Připomenutí nedokončeného nákupu máme připravené, ale dnes je neposíláme. Kdybychom je zapnuli, platí pro ně totéž: nejvýš jedno připomenutí a v něm odkaz, kterým další jedním kliknutím odmítnete.",
         },
       ],
     },

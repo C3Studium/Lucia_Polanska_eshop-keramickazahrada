@@ -21,3 +21,10 @@
   font-size: 0.85em;
   opacity: 0.8;
 }
+
+/* Odkaz na poučení o odstoupení ve větě u kusu s vadou. */
+.note a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
