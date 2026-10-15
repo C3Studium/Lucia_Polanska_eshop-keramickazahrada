@@ -59,6 +59,24 @@ node smoke-order.mjs --country=sk --shipping=sk_address --provider=comgate
 node smoke-course.mjs [--payment=online] [--no-consent]          # rezervace kurzu se souhlasy
 ```
 
+Testy přes skutečné UI storefrontu (Playwright z `storefront/node_modules`,
+Chromium; sandbox musí běžet i se storefrontem):
+
+```bash
+node e2e.mjs                       # všechny: cookies a b c d e f withdrawal complaint
+node e2e.mjs a withdrawal          # jen vybrané (withdrawal potřebuje výsledek „a“)
+node e2e.mjs report                # znovu sestavit .artifacts/report.md
+```
+
+Scénáře: `cookies` (lišta, žádné google* před souhlasem), `a` běžný výrobek →
+ComGate, `b` zakázka (zadání + poučení, záloha), `c` poukaz s vlastní částkou,
+`d` rezervace kurzu (RezervaceModal, na místě), `e` dobírka, `f` „Koupit ihned“
+(přihlášený zákazník s adresou), `withdrawal` online odstoupení od objednávky
+z „a“ (odeslání + doručení přes admin API, odkaz z e-mailu), `complaint`
+reklamace. Výstup: `.artifacts/e2e/*.png`, `.artifacts/e2e-results.json`,
+`.artifacts/report.md`. Prohlížeč smí jen na localhost; ostatní požadavky se
+blokují a vypisují.
+
 Každý běh uloží `.artifacts/smoke-*.json` / `course-*.json`: `order.metadata`,
 položky, platby, notifikace (šablona, příjemce, stav, `data.__attachments`)
 spárované se zachycenými e-maily (předmět, přílohy s bajty a sha256).

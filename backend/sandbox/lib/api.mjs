@@ -28,7 +28,7 @@ export class ApiError extends Error {
  * znovupoužitém spojení undici shazovaly Node 24 na Windows při konci procesu
  * („Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)", kód 127).
  */
-function rawRequest(method, url, { body, headers = {} } = {}) {
+export function rawRequest(method, url, { body, headers = {} } = {}) {
   return new Promise((resolve, reject) => {
     const payload = body !== undefined ? Buffer.from(JSON.stringify(body)) : null
     const req = http.request(
@@ -96,6 +96,16 @@ export async function adminApi() {
 export async function listMails() {
   const { text } = await rawRequest("GET", `${MAIL_URL}/api/list`)
   return JSON.parse(text)
+}
+
+/** Libovolný požadavek → { status, data } (JSON, když jde). */
+export async function httpJson(method, url, body, headers = {}) {
+  const { status, text } = await rawRequest(method, url, { body, headers })
+  let data = text
+  try {
+    data = JSON.parse(text)
+  } catch {}
+  return { status, data }
 }
 
 /** POST na lokální službu (maketa ComGate apod.) → JSON. */
