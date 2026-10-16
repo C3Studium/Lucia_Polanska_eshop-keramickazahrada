@@ -367,6 +367,29 @@ class CeskaPostaFulfillmentService extends AbstractFulfillmentProviderService {
   ): Promise<CreateFulfillmentResult> {
     const serviceCode = String(data?.service_code ?? CP_SERVICE_CODES.address)
 
+    // Plnění bez dopravy (balné, doběrečné…) se České poště NIKDY nepodává.
+    // Medusa volá providera u každého plnění, i u toho, které žádnou krabici
+    // nemá — a podání u ČP je nevratné (storno neexistuje, podací číslo je
+    // blokované 13 měsíců). Naše workflow taková plnění přes ČP nezakládají
+    // (lib/service-lines-settle.ts), tohle je pojistka pro nativní stránku
+    // objednávky a pro cokoli, co přijde potom.
+    if (fulfillment?.requires_shipping === false) {
+      this.logger_.info(
+        `[ceska-posta] Plnění bez dopravy u objednávky ${
+          order?.display_id ?? order?.id ?? "?"
+        } — České poště se nepodává.`
+      )
+      return {
+        data: {
+          mode: "manual" satisfies FulfillmentMode,
+          no_shipping: true,
+          service_code: serviceCode,
+          recorded_at: new Date().toISOString(),
+        },
+        labels: [],
+      }
+    }
+
     if (!this.hasCredentials()) {
       this.logger_.info(
         `[ceska-posta] Zásilka pro objednávku ${

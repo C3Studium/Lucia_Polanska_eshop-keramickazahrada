@@ -58,6 +58,8 @@ export const confirmMerchantHandoverWorkflow = createWorkflow(
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",
+        // Plnění bez dopravy (balné z nativní stránky) není zásilka — lib/service-lines-settle.ts.
+        "fulfillments.requires_shipping",
       ],
       filters: { id: input.order_id },
       options: { throwIfKeyNotFound: true },
@@ -74,7 +76,9 @@ export const confirmMerchantHandoverWorkflow = createWorkflow(
       // parcel either never got packed or has already gone.
       const openFulfillment = (order?.fulfillments || []).find(
         (fulfillment: any) =>
-          !fulfillment?.canceled_at && !fulfillment?.shipped_at
+          !fulfillment?.canceled_at &&
+          !fulfillment?.shipped_at &&
+          fulfillment?.requires_shipping !== false
       )
 
       return {

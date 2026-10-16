@@ -79,6 +79,8 @@ export const shipMerchantOrderWorkflow = createWorkflow(
         "fulfillments.id",
         "fulfillments.shipped_at",
         "fulfillments.canceled_at",
+        // Plnění bez dopravy (balné z nativní stránky) není zásilka — lib/service-lines-settle.ts.
+        "fulfillments.requires_shipping",
       ],
       filters: { id: input.order_id },
       options: { throwIfKeyNotFound: true },
@@ -156,7 +158,9 @@ export const shipMerchantOrderWorkflow = createWorkflow(
       // creating a second one for the same goods.
       const openFulfillment = (order?.fulfillments || []).find(
         (fulfillment: any) =>
-          !fulfillment?.canceled_at && !fulfillment?.shipped_at
+          !fulfillment?.canceled_at &&
+          !fulfillment?.shipped_at &&
+          fulfillment?.requires_shipping !== false
       )
 
       return {
