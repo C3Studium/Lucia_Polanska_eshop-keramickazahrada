@@ -178,7 +178,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         {
           type: "ul",
           items: [
-            "**online přes platební bránu ComGate** (ComGate Payments, a.s.) — platební kartou, přes Apple Pay nebo Google Pay, nebo online převodem ze svého internetového bankovnictví; platíte při odeslání objednávky,",
+            "**online přes platební bránu ComGate** (Comgate a.s.) — platební kartou, přes Apple Pay nebo Google Pay, nebo online převodem ze svého internetového bankovnictví; platíte při odeslání objednávky,",
             "**na dobírku** — jen v České republice a jen při doručení Českou poštou na adresu (ne na výdejní místo Balíkovny); u zboží na zakázku a u některých dalších výrobků ji nenabízíme; platíte při převzetí zásilky,",
             "**v hotovosti při osobním odběru** v ateliéru — platíte při vyzvednutí.",
           ],

@@ -162,12 +162,12 @@ const dopravaAPlatba: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Online platby pro nás zajišťuje ComGate Payments, a.s., licencovaná platební instituce pod dohledem České národní banky. Údaje o kartě zadáváte až v zabezpečeném rozhraní brány — my je nevidíme ani neukládáme. Platby kartou chrání standard 3-D Secure, banka vás proto může požádat o potvrzení v aplikaci nebo kódem z SMS.",
+          text: "Online platby pro nás zajišťuje Comgate a.s., licencovaná platební instituce pod dohledem České národní banky. Údaje o kartě zadáváte až v zabezpečeném rozhraní brány — my je nevidíme ani neukládáme. Platby kartou chrání standard 3-D Secure, banka vás proto může požádat o potvrzení v aplikaci nebo kódem z SMS.",
         },
         {
           type: "ul",
           items: [
-            "ComGate Payments, a.s., Gočárova třída 1754/48b, Hradec Králové",
+            "Comgate a.s., Gočárova třída 1754/48b, Hradec Králové",
             "e-mail: platby-podpora@comgate.cz",
             "telefon: +420 228 224 267",
           ],

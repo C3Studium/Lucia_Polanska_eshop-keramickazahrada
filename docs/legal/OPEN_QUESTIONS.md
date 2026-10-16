@@ -52,10 +52,10 @@ Zpráva pro Lucii s otázkami srozumitelně: `docs/legal/ZPRAVA_PRO_LUCII.md`.
 | # | Otázka | Kde | Poznámka |
 | --- | --- | --- | --- |
 | 14 | Nástroj na rozesílku newsletteru | Zásady OÚ | Vlastní modul newsletteru v backendu posílá kampaně přes e-mailovou službu obchodu (Resend) — potvrdit, že se nepoužívá jiný nástroj. |
-| 15 | Hosting a jeho sídlo | Zásady OÚ | Technicky: Railway (aplikace a databáze), Cloudflare R2 (soubory), Supabase (obsah webu), Resend (e-maily). Potvrdit regiony / smluvní stranu. |
+| 15 | ~~Hosting a jeho sídlo~~ **VYŘEŠENO 16. 10.** | Zásady OÚ | Ověřeno: Railway (europe-west4, Amsterdam; Railway Corporation, USA; DPF), Cloudflare R2 (EU jurisdikce), Supabase (Frankfurt; Supabase Pte. Ltd., Singapur; SCC), Resend (Plus Five Five, Inc.; odesílání eu-west-1, metadata USA; DPF + SCC). Fakt `privacy.hosting` vyplněný, logy hostingu 7 dní (Hobby). Zbývá: podepsat Railway DPA (DocuSign) a nasadit CMS proměnné na Railway Storefront (00-plan §6 4b). |
 | 16 | Účetní / daňový poradce jako příjemce údajů | Zásady OÚ | Jméno nebo jen kategorie „účetní“. |
 | 16a | **Segment (Twilio, USA)** | Zásady OÚ `#prijemci` | Backend při každé objednávce posílá událost do Segmentu, je-li nastaven `SEGMENT_WRITE_KEY` (lokální `.env` ho má). E-mail a jméno už se neposílají (opraveno), zůstává číslo objednávky, částka, položky a interní ID zákazníka. Rozhodnout: Segment vypnout (smazat proměnnou), nebo ho uvést v Zásadách jako příjemce včetně předání do USA. |
-| 16b | Předání mimo EU/EHP | Zásady OÚ `#mezinarodni-prenosy` | U kterých služeb (Railway, Resend, Supabase, Cloudflare) k předání dochází a na jakém základě (DPF, SCC). |
+| 16b | ~~Předání mimo EU/EHP~~ **VYŘEŠENO 16. 10.** | Zásady OÚ `#mezinarodni-prenosy` | Sekce vypsaná po službách (Railway, Cloudflare, Resend, Supabase, Google) se základem DPF / SCC; zdroje v reportu z 16. 10. (DPF registr, DPA poskytovatelů, DNS). Advokát ať potvrdí. Volitelně doplnit Websupport (schránka info@). |
 | 16c | Doby uchování navržené v Zásadách | Zásady OÚ | Poptávky a kontaktní dotazy 1 rok od poslední zprávy; zrušení nepoužívaného účtu po 3 letech s předchozím upozorněním; technické záznamy hostingu `[[DOPLNIT]]`. Potvrdit. |
 | 16d | E-maily bez výslovného souhlasu | Zásady OÚ | Žádost o recenzi po doručení, upozornění na zlevnění výrobku v oblíbených a připomínka opuštěného košíku (úloha je dnes vypnutá) jsou v Zásadách vedené jako oprávněný zájem s právem námitky. Advokát ať posoudí, zda nejde o obchodní sdělení vyžadující souhlas (§ 7 zákona č. 480/2004 Sb.). |
 

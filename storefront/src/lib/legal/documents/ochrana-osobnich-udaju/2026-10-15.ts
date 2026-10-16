@@ -156,7 +156,7 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
               "Bezpečnost a provoz webu",
               "IP adresa, technické záznamy o přístupu (logy)",
               "oprávněný zájem na zabezpečení obchodu (písm. f)",
-              "[[DOPLNIT: jak dlouho hosting uchovává technické záznamy (logy)]]",
+              "7 dní; potom je hosting sám smaže",
               "hosting",
             ],
             [
@@ -196,10 +196,10 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
         {
           type: "ul",
           items: [
-            "**ComGate Payments, a.s.** — platební brána (platby kartou, Apple Pay, Google Pay, online převody a vracení peněz),",
+            "**Comgate a.s.** — platební brána (platby kartou, Apple Pay, Google Pay, online převody a vracení peněz),",
             "**Česká pošta, s.p.** — doručení zásilek a výběr výdejního místa Balíkovny (jméno, adresa nebo výdejní místo, telefon a e-mail kvůli avízu),",
-            "**iDoklad** — fakturační systém, ve kterém vystavujeme faktury a dobropisy,",
-            "**Resend** — služba, přes kterou obchod odesílá e-maily (potvrzení objednávek, oznámení o odeslání, odpovědi na reklamace),",
+            "**iDoklad** (Seyfor, a. s., Brno) — fakturační systém, ve kterém vystavujeme faktury a dobropisy,",
+            "**Resend** (Plus Five Five, Inc., USA) — služba, přes kterou obchod odesílá e-maily (potvrzení objednávek, oznámení o odeslání, odpovědi na reklamace),",
             "**Cloudflare (R2)** — úložiště souborů, například fotografií k reklamacím, zadání zakázek a dokumentů,",
             "**Railway** — provoz aplikace obchodu a databáze,",
             "**Supabase** — provoz obsahu webu (texty a fotografie stránek),",
@@ -232,7 +232,21 @@ const ochranaOsobnichUdaju: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "[[DOPLNIT: u kterých služeb (Railway, Resend, Supabase, Cloudflare, případně nástroj newsletteru) k předání mimo EU/EHP dochází, kde jsou data uložena a na jakém základě (EU–US Data Privacy Framework / standardní smluvní doložky)]]",
+          text: "Konkrétně jde o tyto služby:",
+        },
+        {
+          type: "ul",
+          items: [
+            "**Railway** (Railway Corporation, USA) — aplikace obchodu a databáze běží v datovém centru v Amsterdamu (Nizozemsko). Railway je americká společnost, provozní a technické záznamy proto mohou být zpracovány i v USA. Předání se opírá o rozhodnutí Evropské komise o EU–US Data Privacy Framework, ve kterém je Railway certifikovaná.",
+            "**Cloudflare** (Cloudflare, Inc., USA) — soubory leží v úložišti R2 omezeném na Evropskou unii. Obrázky na web doručuje celosvětová síť Cloudflare, takže vaši IP adresu může zpracovat i server mimo EU. Předání se opírá o EU–US Data Privacy Framework, ve kterém je Cloudflare certifikovaná, a o standardní smluvní doložky.",
+            "**Resend** (Plus Five Five, Inc., USA) — e-maily odcházejí ze serverů v Irsku, údaje o odeslaných e-mailech a záznamy o jejich doručení ale Resend ukládá v USA. Předání se opírá o EU–US Data Privacy Framework, ve kterém je Resend certifikovaný, a o standardní smluvní doložky.",
+            "**Supabase** (Supabase Pte. Ltd., Singapur) — obsah webu je uložen v datovém centru ve Frankfurtu nad Mohanem (Německo). Poskytovatel sídlí v Singapuru, předání se proto opírá o standardní smluvní doložky.",
+            "**Google** — mapu v okně Kontakt a případné statistiky Google Analytics poskytuje Google Ireland Limited (Irsko); údaje může zpracovávat i Google LLC v USA, která je v EU–US Data Privacy Framework certifikovaná.",
+          ],
+        },
+        {
+          type: "p",
+          text: "Ostatní příjemci (Comgate, Česká pošta a Seyfor, který provozuje iDoklad) sídlí v České republice; iDoklad ukládá údaje v Evropské unii.",
         },
       ],
     },

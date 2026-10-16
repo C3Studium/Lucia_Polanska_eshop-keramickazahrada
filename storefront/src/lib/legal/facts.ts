@@ -44,7 +44,9 @@ export const FACTS = {
   /** Nástroj na rozesílku newsletteru (zpracovatel pro Zásady). */
   "privacy.newsletterTool": null,
   /** Hosting / provozovatel infrastruktury a jeho sídlo (zpracovatel pro Zásady). */
-  "privacy.hosting": null,
+  /** Ověřeno 16. 10. 2026 (Railway region europe-west4, R2 endpoint .eu, Supabase eu-central-1). */
+  "privacy.hosting":
+    "Railway Corporation, San Francisco, USA — aplikace obchodu a databáze běží v jejím datovém centru v Amsterdamu (Nizozemsko); Cloudflare, Inc., San Francisco, USA — soubory ukládá v úložišti R2 omezeném na Evropskou unii; Supabase Pte. Ltd., Singapur — obsah webu ukládá v datovém centru ve Frankfurtu nad Mohanem (Německo)",
   /** Odhad nákladů na vrácení zboží poštou (§ 1820 odst. 1 písm. i) OZ). */
   "withdrawal.returnCostEstimate": null,
   /** Minimální věk dítěte na kurzu. */

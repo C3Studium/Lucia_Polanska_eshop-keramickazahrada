@@ -146,7 +146,7 @@ export const COOKIE_INVENTORY: CookieEntry[] = [
     category: "necessary",
     purpose:
       "Průběh platby kartou nebo převodem na stránce platební brány, kam vás při placení přesměrujeme.",
-    provider: "ComGate Payments, a.s.",
+    provider: "Comgate a.s.",
     duration: "určuje ComGate",
     thirdParty: true,
     note:

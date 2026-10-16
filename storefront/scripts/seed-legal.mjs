@@ -44,7 +44,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const args = new Set(process.argv.slice(2))
 const WRITE = args.has("--write")
 const PRODUCTION_OK = args.has("--i-know-this-is-production")
-const known = new Set(["--write", "--i-know-this-is-production", "--no-env"])
+// --refresh: pracovní znění, která skript dřív založil a ve Studiu je od té
+// doby NIKDO neupravil, přepíše aktuálním zněním z repa (opravy v kódu se jinak
+// na web nedostanou — znění ve Studiu má před repem přednost). Upravená ve
+// Studiu, vydaná (PDF) a s rozpracovaným konceptem nechá být.
+const REFRESH = args.has("--refresh")
+const known = new Set(["--write", "--refresh", "--i-know-this-is-production", "--no-env"])
 for (const arg of args) {
   if (!known.has(arg)) {
     console.error(`Neznámý přepínač ${arg}. Povolené: ${[...known].join(", ")}`)
@@ -111,9 +116,27 @@ const main = async () => {
   }
 
   const { ALL_VERSIONS } = await import("../src/lib/legal/documents/index.ts")
-  const { toCmsBody, legalKey, LEGAL_CMS_TYPE, LEGAL_CMS_LEGACY_SOURCE } = await import(
-    "../src/lib/legal/cms.ts"
-  )
+  const { toCmsBody, fromCmsBody, sameLegalText, legalKey, LEGAL_CMS_TYPE, LEGAL_CMS_LEGACY_SOURCE } =
+    await import("../src/lib/legal/cms.ts")
+
+  // Otisk znění, které skript zapsal — ukládá se do interní poznámky
+  // (`[seed-legal:…]`). Při dalším --refresh se podle něj pozná, jestli znění
+  // ve Studiu od té doby někdo upravil: upravené se nepřepisuje.
+  const textHash = (doc) =>
+    crypto
+      .createHash("sha256")
+      .update(
+        JSON.stringify({
+          title: doc.title,
+          summary: doc.summary ?? null,
+          sections: doc.sections,
+        })
+      )
+      .digest("hex")
+      .slice(0, 16)
+  const MARK = /\[seed-legal:([0-9a-f]{16})\]/
+  const noteFor = (doc, verb) =>
+    `${verb} skriptem seed-legal ze znění v repu (${new Date().toISOString().slice(0, 10)}). [seed-legal:${textHash(doc)}]`
   const { PDF_ENTRIES } = await import("../src/lib/legal/registry.ts")
   const { isPublishedPdfUrl } = await import("../src/lib/legal/pdf-published.ts")
   const { getAdminClient, createDocumentRepository, createRevisionRepository } = await import(
@@ -157,20 +180,62 @@ const main = async () => {
   )
   let created = 0
   let kept = 0
+  let refreshed = 0
 
   for (const doc of versions) {
     const key = legalKey(doc.slug, doc.version)
     const mark = locked.has(key) ? "🔒" : "· "
     if (bySeed.has(key) || byKey.has(key)) {
-      kept += 1
-      console.log(`  = ${mark} ${key.padEnd(36)} už v CMS — nepřepisuji`)
+      const seeded = bySeed.get(key)
+      if (!REFRESH || !seeded || locked.has(key)) {
+        kept += 1
+        console.log(`  = ${mark} ${key.padEnd(36)} už v CMS — nepřepisuji`)
+        continue
+      }
+      // --refresh: jen znění, které skript založil a nikdo ho ve Studiu neupravil.
+      const current = fromCmsBody(seeded.data).doc
+      const note = String(seeded.data?.poznamka ?? "")
+      const mark2 = MARK.exec(note)
+      const created_ = String(seeded.createdAt ?? seeded.created_at ?? "")
+      const updated_ = String(seeded.updatedAt ?? seeded.updated_at ?? "")
+      const untouched = current
+        ? mark2
+          ? mark2[1] === textHash(current)
+          : created_ !== "" && created_ === updated_
+        : false
+      if (seeded.draft) {
+        kept += 1
+        console.log(`  = ${mark} ${key.padEnd(36)} ve Studiu je rozpracovaný koncept — nepřepisuji`)
+        continue
+      }
+      if (current && sameLegalText(current, doc)) {
+        kept += 1
+        console.log(`  = ${mark} ${key.padEnd(36)} ve Studiu je totéž znění jako v repu`)
+        continue
+      }
+      if (!untouched) {
+        kept += 1
+        console.log(`  ! ${mark} ${key.padEnd(36)} upravené ve Studiu — nepřepisuji, rozdíl doplňte ručně`)
+        continue
+      }
+      if (!WRITE) {
+        refreshed += 1
+        console.log(`  ~ ${mark} ${key.padEnd(36)} přepíšu aktuálním zněním z repa (ve Studiu neupravené)`)
+        continue
+      }
+      await documents.update({ id: seeded.id, data: toCmsBody(doc, noteFor(doc, "Obnoveno")) })
+      const published = await documents.publish({ id: seeded.id })
+      try {
+        await revisions.record({ document: published, reason: "publish", at: new Date().toISOString() })
+      } catch (error) {
+        console.warn(`    ! revize k ${key} se nezapsala: ${error.message}`)
+      }
+      refreshed += 1
+      console.log(`  ~ ${mark} ${key.padEnd(36)} přepsáno aktuálním zněním z repa`)
       continue
     }
 
-    const body = toCmsBody(
-      doc,
-      `Založeno skriptem seed-legal ze znění v repu (${new Date().toISOString().slice(0, 10)}).`
-    )
+    const body = toCmsBody(doc, noteFor(doc, "Založeno"))
     const bytes = Buffer.byteLength(JSON.stringify(body), "utf8")
 
     if (!WRITE) {
@@ -204,9 +269,10 @@ const main = async () => {
   }
 
   console.log(
-    `\n${WRITE ? "Hotovo" : "Nasucho"}: ${created} ${WRITE ? "založeno" : "k založení"}, ${kept} ponecháno beze změny.`
+    `\n${WRITE ? "Hotovo" : "Nasucho"}: ${created} ${WRITE ? "založeno" : "k založení"}, ` +
+      `${refreshed} ${WRITE ? "přepsáno" : "k přepsání"} zněním z repa, ${kept} ponecháno beze změny.`
   )
-  if (!WRITE && created) console.log("Spusťte znovu s --write.")
+  if (!WRITE && (created || refreshed)) console.log("Spusťte znovu s --write.")
   console.log("🔒 = vydané znění (PDF zveřejněné) — ve Studiu jen pro čtení, web ho bere z repa.\n")
 }
 

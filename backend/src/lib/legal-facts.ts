@@ -79,7 +79,9 @@ export const LEGAL_FACT_DEFAULTS: Readonly<LegalFactValues> = Object.freeze({
   "voucher.validity": null,
   "voucher.remainder": null,
   "privacy.newsletterTool": null,
-  "privacy.hosting": null,
+  // Ověřeno 16. 10. 2026 — viz storefront/src/lib/legal/facts.ts.
+  "privacy.hosting":
+    "Railway Corporation, San Francisco, USA — aplikace obchodu a databáze běží v jejím datovém centru v Amsterdamu (Nizozemsko); Cloudflare, Inc., San Francisco, USA — soubory ukládá v úložišti R2 omezeném na Evropskou unii; Supabase Pte. Ltd., Singapur — obsah webu ukládá v datovém centru ve Frankfurtu nad Mohanem (Německo)",
   "withdrawal.returnCostEstimate": null,
   "course.minAge": null,
   "course.pickupDeadline": null,
@@ -288,7 +290,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     label: "Nástroj na rozesílku newsletteru",
     help:
       "Služba, přes kterou odchází newsletter. V zásadách ochrany osobních údajů je mezi příjemci údajů („nástroj na rozesílku newsletteru: …“) a v tabulce u řádku Newsletter. Dnes newsletter posílá obchod sám přes svou e-mailovou službu Resend.",
-    example: "Resend (Resend, Inc., USA) — e-mailová služba obchodu",
+    example: "Resend (Plus Five Five, Inc., USA), přes který posíláme i ostatní e-maily",
     group: "Osobní údaje",
     multiline: false,
     maxLength: 300,
@@ -298,7 +300,7 @@ export const LEGAL_FACT_META: Record<LegalFactKey, LegalFactMeta> = {
     help:
       "Kde obchod technicky běží. V zásadách: „Hosting obchodu a sídlo jeho poskytovatelů: ….“ Jde o Railway (aplikace a databáze), Cloudflare R2 (soubory), Supabase (obsah webu) a Resend (e-maily) — doplňte jejich sídla, případně kde jsou servery, podle smluv.",
     example:
-      "Railway Corporation, USA (servery v EU); Cloudflare, Inc., USA; Supabase, Inc., USA; Resend, Inc., USA",
+      "Railway Corporation, San Francisco, USA — aplikace a databáze v Amsterdamu; Cloudflare, Inc., USA — soubory v R2 v EU; Supabase Pte. Ltd., Singapur — obsah webu ve Frankfurtu",
     group: "Osobní údaje",
     multiline: true,
     maxLength: 800,

@@ -129,8 +129,24 @@ starý storefront by dostal 400.
 3. Produkt poukazu „1 Kč“: `npx medusa exec ./src/scripts/legal-voucher-product.ts`
    (suchý běh), pak s `--apply`; popis upravit ručně (OPEN_QUESTIONS #13).
 4. Storefront: volitelně `NEXT_PUBLIC_GA_MEASUREMENT_ID` (OPEN_QUESTIONS #18, #24).
+4b. **Storefront na Railway musí mít proměnné CMS** (zjištěno 16. 10.: produkční storefront
+   žádné `SUPABASE_*` ani `CMS_*` nemá — web dnes CMS vůbec nečte a Studio na produkci by
+   běželo na prázdném souborovém úložišti). Stejné jako v `storefront/.env.local`:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `CMS_SESSION_SECRET`, `CMS_ADMIN_EMAIL`/`CMS_ADMIN_PASSWORD`, `CMS_MAIL_FROM`, `CMS_MEDIA_BUCKET`,
+   `CMS_STORAGE_DRIVER=supabase`, `CMS_CRON_SECRET` (shodný s backendem). Projekt Supabase je ve
+   Frankfurtu (ověřeno), zásady s ním počítají.
+4c. **Segment hned vypnout** (Railway → Backend → Variables → smazat `SEGMENT_WRITE_KEY` →
+   redeploy): nasazený `main` posílá do Segmentu (USA) e-mail a jméno zákazníka; data, která už
+   v Segmentu jsou, smazat. Zásady počítají s vypnutým Segmentem (OPEN_QUESTIONS #16a).
+4d. **Railway DPA podepsat** (railway.com/legal/dpa — závazné až po odeslání DocuSign formuláře).
 5. **Studio, jednou po nasazení** (spouští Matěj, ve `storefront/`; bez přepínačů je to suchý
    běh, který jen vypíše, co by udělal, a kam míří):
+   - `node --import ./scripts/lib/ts-register.mjs scripts/seed-legal.mjs --refresh`, pak s
+     `--write --i-know-this-is-production` — přepíše pracovní znění ve Studiu, která skript
+     založil a nikdo je neupravil, aktuálním zněním z repa (opravy v kódu, např. Comgate a.s.,
+     hosting a předávání mimo EU 16. 10.). Upravená ve Studiu a vydaná nechá být. Spustit
+     pokaždé, když se znění v repu změní dřív, než ho Lucie začne upravovat ve Studiu;
    - `node --import ./scripts/lib/ts-register.mjs scripts/seed-legal.mjs`, pak totéž
      s `--write --i-know-this-is-production` — založí ve Studiu „Právní dokumenty“ (všech
      8 znění z repa, nic nepřepisuje). **Hotovo** (15. 10., ověřeno suchým během: 8 v CMS);
