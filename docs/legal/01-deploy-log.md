@@ -113,3 +113,12 @@ Nález ze sandboxu (není nový, sloučení neblokuje): potvrzovací e-mail obje
 ukazuje celkovou cenu, ale ne zaplacenou zálohu a zbývající doplatek — souběh subscriberů na
 `order.placed` (`resolveBalanceStep` hledá production_order dřív, než ho
 `initialize-merchant-order` založí). Řešení viz krok 6 / CHANGELOG.
+
+## Krok 1 — PR a sloučení
+
+- 22:00 PR **#15** `legal/compliance-2026` → `main` založen přes GitHub API (`gh` není):
+  https://github.com/C3Studium/Lucia_Polanska_eshop-keramickazahrada/pull/15
+- Sloučení (merge commit, bez squashe) **zablokoval bezpečnostní klasifikátor Claude Code**
+  („Merge Without Review“) — sloučení do `main` tady znamená okamžité nasazení do produkce.
+  Neobcházeno. **Čeká na Matěje:** sloučit PR #15 tlačítkem „Create a merge commit“ (ne squash),
+  nebo Claudovi povolit sloučení. Tím se spustí nasazení backendu (s migracemi) i storefrontu.
