@@ -1,6 +1,48 @@
 # Keramická zahrada – právní audit e-shopu, 2. kolo
 
-Datum: 18. 10. 2026 · Autor: Matěj Forejt (ValeStudium) · Obchod: https://store.matejforejt.com/cz (ostrá doména keramickazahrada.cz) · Repo: C3Studium/Lucia_Polanska_eshop-keramickazahrada
+Datum: 18. 10. 2026, doplněno 20. 10. 2026 (§ 0 Zakázky) · Autor: Matěj Forejt (ValeStudium) · Obchod: https://store.matejforejt.com/cz (ostrá doména keramickazahrada.cz) · Repo: C3Studium/Lucia_Polanska_eshop-keramickazahrada
+
+---
+
+## 0. Zakázková výroba — rozhodnutí a zadání (20. 10. 2026)
+
+Rozhodnuto se zadavatelem po právní kontrole vzoru „Potvrzení zakázky“ (`potvrzeni-zakazky.html`, vzor PDF `potvrzeni-zakazky-VZOR.pdf`). Tato sekce **má přednost** před návrhem v auditu 1 §2 a před dnešním zněním článku „Výroba na zakázku“ v OP 2026-10-15 na větvi, kde se liší.
+
+### Pravidla (závazná pro OP, checkout i PDF)
+
+| # | Pravidlo | Právní opora / proč takhle |
+| --- | --- | --- |
+| Z1 | Zakázka z e-shopu je **kupní smlouva** (§ 2086 OZ), uzavřená na dálku; smlouva vzniká doručením potvrzení objednávky e-mailem (jak říkají OP 2026 čl. IV). | Podpis není potřeba; potvrzení v textové podobě § 1827 odst. 2. |
+| Z2 | **Záloha nejvýše 50 % ceny výrobku.** Hlídá backend: `product_production_profile.default_deposit_percentage` i `production_order.deposit_percentage` ≤ 50, jinak validace selže. | Přiměřenost podle § 1813 a § 1814 odst. 1 písm. l). |
+| Z3 | **Zahájení výroby se vždy hlásí.** Změna `production_order.stage` na `in_production` nastaví `production_started_at` **a odešle zákazníkovi e-mail** „Zakázka je ve výrobě“ s datem a časem; čas odeslání se uloží. Zahájení výroby platí od tohoto e-mailu, ne od tvrzení kterékoli strany. | § 1814 odst. 1 písm. j) zakazuje, aby podnikatel sám rozhodoval o souladu se smlouvou / vykládal ujednání — proto objektivní, zaznamenaná událost. |
+| Z4 | **Zrušení před zahájením výroby** (před e-mailem Z3): vrací se vše, do 14 dnů, stejnou cestou. | § 1832 analogicky. |
+| Z5 | **Zrušení po zahájení výroby: záloha se nevrací.** Vše zaplacené nad zálohu se vrací do 14 dnů stejnou cestou; doplatek se nepožaduje; výrobek zůstává prodávající. | Záloha = paušální náhrada nákladů zahájené výroby (materiál, návrh, kapacita, práce), ≤ 50 %, výměnou osvobození od zbytku ceny → vyvážené podle § 1813. Advokát potvrdí (otázka A1). |
+| Z6 | Nezaplacený doplatek do 30 dnů od výzvy (po připomenutí) = zrušení podle Z5. | Konzistence; smluvní ujednání, ne sankce navíc. |
+| Z7 | **Zruší-li prodávající** (nelze vyrobit, nestihne ani náhradní termín): vrací vše do 14 dnů. | § 1814 odst. 1 písm. c), e) — symetrie. |
+| Z8 | **Schválení fotky před výpalem**: 5 pracovních dnů + připomenutí; schválená podoba = **ujednaná vlastnost** (§ 2161 odst. 1 písm. a) OZ); **nesoulad se zadáním zůstává vadou vždy**. | Citace „§ 2161 odst. 1 písm. c) / předloha“ z auditu 1 je **chybná** (znění před 2023; dnes § 2161 odst. 2 písm. d) a jen pro vzorek poskytnutý před uzavřením smlouvy). Opravit v OP. |
+| Z9 | Lhůta dokončení = `production_time_max_days` **od zahájení výroby**; při překročení náhradní termín, při překročení i toho právo zákazníka odstoupit s vrácením všeho. Praskne-li kus při výpalu → znovu bez příplatku. | § 1820 odst. 1 písm. g) chce lhůtu, ne „orientačně“. |
+| Z10 | **Před odesláním objednávky** zákazník vidí podstatné informace (zakázka, záloha %, lhůta, nevratnost, záloha po zahájení nevratná) a zaškrtne: „Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě **a že záloha se po zahájení výroby nevrací**.“ + souhlas s OP. Čas obou se ukládá k objednávce. | § 1820 odst. 1 písm. j), § 1753 (překvapivá ujednání), ÚS I. ÚS 3512/11 — sankce nesmí být jen v OP. Dnešní checkbox na větvi říká jen „nelze vrátit“ → **doplnit**. |
+| Z11 | Po potvrzení objednávky dostane zákazník **PDF „Potvrzení zakázky“** (vzor), generované ze stejného registru jako ostatní dokumenty, uložené k objednávce (neměnné), v příloze potvrzovacího e-mailu spolu s OP. | § 1827 odst. 2. |
+| Z12 | Vady u zakázky bez tolerancí v číslech: vadou není odstín, kresba glazury, stopy ruční práce, drobná odchylka rozměru; vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv/text/rozměr než schválená podoba, přepravní poškození. | Jednoduché pro Lucii; definice plnění, ne vyloučení odpovědnosti (§ 1814 písm. a) by vyloučení zakázalo). |
+
+### Co se tím mění proti větvi `legal/compliance-2026`
+
+- **OP čl. IX „Výroba na zakázku“** — odstavec „Zrušení zakázky z vaší strany“ říká „ponecháme si jen skutečně vynaložené náklady, vyčíslíme, zbytek vrátíme“ → nahradit Z4/Z5; odstavec „Doplatek“ sladit se Z6; „Schválení podoby“ opravit citaci a doplnit větu o zadání (Z8); „Výrobní lhůta“ navázat na Z9; odstavec „Odchylky ruční výroby“ nahradit Z12 (bez „5 %“).
+- **Checkout** — checkbox text (Z10), předsmluvní informace u zakázky doplnit o zálohu % a lhůtu, a shrnout Z4/Z5 jednou větou.
+- **Stránka produktu** — u zakázkového produktu pod cenou: „Na zakázku · záloha {{%}} · výroba do {{max}} dnů · nelze vrátit do 14 dnů“ + odkaz na článek OP.
+- **Košík** — u zakázkové položky stejný štítek; tlačítko „Zrušit zakázku“ v účtu se chová podle Z4/Z5 (před e-mailem Z3 plný refund automaticky, po něm text „zakázka je ve výrobě, záloha se nevrací, vrátíme {{nad zálohu}}“ + žádost majitelce).
+- **E-maily** — nový/upravený e-mail při `in_production` (Z3) musí obsahovat větu o nevratnosti zálohy; potvrzení objednávky přikládá PDF Potvrzení zakázky (Z11).
+- **Backend** — cap 50 % (Z2); pole pro čas odeslání e-mailu Z3, fázi zrušení a částky refundu (viz migrace v promptu).
+
+### Otázky pro advokáta (zakázky)
+
+- A1. Obstojí paušální nevratná záloha ≤ 50 % s osvobozením od zbytku ceny podle § 1813 a § 1814 odst. 1 písm. l), nebo trvat na vyúčtování skutečných nákladů?
+- A2. Stačí fikce schválení fotografie po 5 pracovních dnech s připomenutím?
+- A3. Má zákazník při zrušení ze strany prodávající nárok na víc než vrácení platby (§ 1814 odst. 1 písm. c) „přiměřená náhrada“)?
+
+### Co Lucie rozhodne (zbývá)
+
+Výchozí zálohu v % (profil má dnes 25; max 50) · zda se u jednotlivých produktů liší · které produkty mají mít profil výroby zapnutý.
 
 Toto je kontrola po prvním kole (audit ze 14. 10. 2026, dále „audit 1“). Kontrolovaly se tři věci: produkční web, větev `legal/compliance-2026` v repu (31 commitů, 448 souborů, 15.–16. 10.) a dokumentace agenta (`docs/legal/CHANGELOG.md`, `OPEN_QUESTIONS.md`, `00-plan.md`). Klíčové nálezy changelogu byly ověřeny přímo v kódu (OP 2026, checkout, odstoupení, consent mode, manifest PDF) a u zveřejněných PDF staženo a přečteno PDF Reklamačního řádu.
 

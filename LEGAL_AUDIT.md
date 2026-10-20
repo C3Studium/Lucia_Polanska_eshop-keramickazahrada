@@ -1,266 +1,172 @@
-# Keramická zahrada – právní audit e-shopu
+# Keramická zahrada – právní audit e-shopu, 2. kolo
 
-Datum: 14. 10. 2026 · Autor auditu: Matěj Forejt (ValeStudium) · Obchod: https://store.matejforejt.com/cz (ostrá doména keramickazahrada.cz)
+Datum: 18. 10. 2026, doplněno 20. 10. 2026 (§ 0 Zakázky) · Autor: Matěj Forejt (ValeStudium) · Obchod: https://store.matejforejt.com/cz (ostrá doména keramickazahrada.cz) · Repo: C3Studium/Lucia_Polanska_eshop-keramickazahrada
 
-Audit stránek obchodu (obchodní podmínky, odstoupení, reklamace, doprava, kurzy, poukazy, GDPR, cookies) proti občanskému zákoníku (OZ, 89/2012 Sb.) a zákonu o ochraně spotřebitele (ZOS, 634/1992 Sb.) ve znění k říjnu 2026. Jde o technicko-věcný audit, ne právní stanovisko — finální znění OP má před spuštěním přečíst advokát.
+---
+
+## 0. Zakázková výroba — rozhodnutí a zadání (20. 10. 2026)
+
+Rozhodnuto se zadavatelem po právní kontrole vzoru „Potvrzení zakázky“ (`potvrzeni-zakazky.html`, vzor PDF `potvrzeni-zakazky-VZOR.pdf`). Tato sekce **má přednost** před návrhem v auditu 1 §2 a před dnešním zněním článku „Výroba na zakázku“ v OP 2026-10-15 na větvi, kde se liší.
+
+### Pravidla (závazná pro OP, checkout i PDF)
+
+| # | Pravidlo | Právní opora / proč takhle |
+| --- | --- | --- |
+| Z1 | Zakázka z e-shopu je **kupní smlouva** (§ 2086 OZ), uzavřená na dálku; smlouva vzniká doručením potvrzení objednávky e-mailem (jak říkají OP 2026 čl. IV). | Podpis není potřeba; potvrzení v textové podobě § 1827 odst. 2. |
+| Z2 | **Záloha nejvýše 50 % ceny výrobku.** Hlídá backend: `product_production_profile.default_deposit_percentage` i `production_order.deposit_percentage` ≤ 50, jinak validace selže. | Přiměřenost podle § 1813 a § 1814 odst. 1 písm. l). |
+| Z3 | **Zahájení výroby se vždy hlásí.** Změna `production_order.stage` na `in_production` nastaví `production_started_at` **a odešle zákazníkovi e-mail** „Zakázka je ve výrobě“ s datem a časem; čas odeslání se uloží. Zahájení výroby platí od tohoto e-mailu, ne od tvrzení kterékoli strany. | § 1814 odst. 1 písm. j) zakazuje, aby podnikatel sám rozhodoval o souladu se smlouvou / vykládal ujednání — proto objektivní, zaznamenaná událost. |
+| Z4 | **Zrušení před zahájením výroby** (před e-mailem Z3): vrací se vše, do 14 dnů, stejnou cestou. | § 1832 analogicky. |
+| Z5 | **Zrušení po zahájení výroby: záloha se nevrací.** Vše zaplacené nad zálohu se vrací do 14 dnů stejnou cestou; doplatek se nepožaduje; výrobek zůstává prodávající. | Záloha = paušální náhrada nákladů zahájené výroby (materiál, návrh, kapacita, práce), ≤ 50 %, výměnou osvobození od zbytku ceny → vyvážené podle § 1813. Advokát potvrdí (otázka A1). |
+| Z6 | Nezaplacený doplatek do 30 dnů od výzvy (po připomenutí) = zrušení podle Z5. | Konzistence; smluvní ujednání, ne sankce navíc. |
+| Z7 | **Zruší-li prodávající** (nelze vyrobit, nestihne ani náhradní termín): vrací vše do 14 dnů. | § 1814 odst. 1 písm. c), e) — symetrie. |
+| Z8 | **Schválení fotky před výpalem**: 5 pracovních dnů + připomenutí; schválená podoba = **ujednaná vlastnost** (§ 2161 odst. 1 písm. a) OZ); **nesoulad se zadáním zůstává vadou vždy**. | Citace „§ 2161 odst. 1 písm. c) / předloha“ z auditu 1 je **chybná** (znění před 2023; dnes § 2161 odst. 2 písm. d) a jen pro vzorek poskytnutý před uzavřením smlouvy). Opravit v OP. |
+| Z9 | Lhůta dokončení = `production_time_max_days` **od zahájení výroby**; při překročení náhradní termín, při překročení i toho právo zákazníka odstoupit s vrácením všeho. Praskne-li kus při výpalu → znovu bez příplatku. | § 1820 odst. 1 písm. g) chce lhůtu, ne „orientačně“. |
+| Z10 | **Před odesláním objednávky** zákazník vidí podstatné informace (zakázka, záloha %, lhůta, nevratnost, záloha po zahájení nevratná) a zaškrtne: „Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě **a že záloha se po zahájení výroby nevrací**.“ + souhlas s OP. Čas obou se ukládá k objednávce. | § 1820 odst. 1 písm. j), § 1753 (překvapivá ujednání), ÚS I. ÚS 3512/11 — sankce nesmí být jen v OP. Dnešní checkbox na větvi říká jen „nelze vrátit“ → **doplnit**. |
+| Z11 | Po potvrzení objednávky dostane zákazník **PDF „Potvrzení zakázky“** (vzor), generované ze stejného registru jako ostatní dokumenty, uložené k objednávce (neměnné), v příloze potvrzovacího e-mailu spolu s OP. | § 1827 odst. 2. |
+| Z12 | Vady u zakázky bez tolerancí v číslech: vadou není odstín, kresba glazury, stopy ruční práce, drobná odchylka rozměru; vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv/text/rozměr než schválená podoba, přepravní poškození. | Jednoduché pro Lucii; definice plnění, ne vyloučení odpovědnosti (§ 1814 písm. a) by vyloučení zakázalo). |
+
+### Co se tím mění proti větvi `legal/compliance-2026`
+
+- **OP čl. IX „Výroba na zakázku“** — odstavec „Zrušení zakázky z vaší strany“ říká „ponecháme si jen skutečně vynaložené náklady, vyčíslíme, zbytek vrátíme“ → nahradit Z4/Z5; odstavec „Doplatek“ sladit se Z6; „Schválení podoby“ opravit citaci a doplnit větu o zadání (Z8); „Výrobní lhůta“ navázat na Z9; odstavec „Odchylky ruční výroby“ nahradit Z12 (bez „5 %“).
+- **Checkout** — checkbox text (Z10), předsmluvní informace u zakázky doplnit o zálohu % a lhůtu, a shrnout Z4/Z5 jednou větou.
+- **Stránka produktu** — u zakázkového produktu pod cenou: „Na zakázku · záloha {{%}} · výroba do {{max}} dnů · nelze vrátit do 14 dnů“ + odkaz na článek OP.
+- **Košík** — u zakázkové položky stejný štítek; tlačítko „Zrušit zakázku“ v účtu se chová podle Z4/Z5 (před e-mailem Z3 plný refund automaticky, po něm text „zakázka je ve výrobě, záloha se nevrací, vrátíme {{nad zálohu}}“ + žádost majitelce).
+- **E-maily** — nový/upravený e-mail při `in_production` (Z3) musí obsahovat větu o nevratnosti zálohy; potvrzení objednávky přikládá PDF Potvrzení zakázky (Z11).
+- **Backend** — cap 50 % (Z2); pole pro čas odeslání e-mailu Z3, fázi zrušení a částky refundu (viz migrace v promptu).
+
+### Otázky pro advokáta (zakázky)
+
+- A1. Obstojí paušální nevratná záloha ≤ 50 % s osvobozením od zbytku ceny podle § 1813 a § 1814 odst. 1 písm. l), nebo trvat na vyúčtování skutečných nákladů?
+- A2. Stačí fikce schválení fotografie po 5 pracovních dnech s připomenutím?
+- A3. Má zákazník při zrušení ze strany prodávající nárok na víc než vrácení platby (§ 1814 odst. 1 písm. c) „přiměřená náhrada“)?
+
+### Co Lucie rozhodne (zbývá)
+
+Výchozí zálohu v % (profil má dnes 25; max 50) · zda se u jednotlivých produktů liší · které produkty mají mít profil výroby zapnutý.
+
+Toto je kontrola po prvním kole (audit ze 14. 10. 2026, dále „audit 1“). Kontrolovaly se tři věci: produkční web, větev `legal/compliance-2026` v repu (31 commitů, 448 souborů, 15.–16. 10.) a dokumentace agenta (`docs/legal/CHANGELOG.md`, `OPEN_QUESTIONS.md`, `00-plan.md`). Klíčové nálezy changelogu byly ověřeny přímo v kódu (OP 2026, checkout, odstoupení, consent mode, manifest PDF) a u zveřejněných PDF staženo a přečteno PDF Reklamačního řádu.
 
 ---
 
 ## 1. Souhrn
 
-Obchod v současném stavu **není připravený na ostrý provoz**: obchodní podmínky jsou z 1. 1. 2015 a nereflektují novelu OZ 374/2022 Sb. (účinnou od 6. 1. 2023), zakázková výroba nemá žádná pravidla a web si na několika místech odporuje (dvě různá čísla účtů, neexistující PlatímPak, nevyplněný název tlačítka v OP). Většina oprav je textová, část je v kódu.
+**Práce je hotová, ale není nasazená.** Produkční web (store.matejforejt.com) je k 18. 10. slovo od slova stejný jako 14. 10.: OP z roku 2015, PlatímPak, prázdné tlačítko, 6 měsíců, přepravní škoda na zákazníkovi. Všechny opravy leží na větvi `legal/compliance-2026`, která není sloučená do `main` (poslední commit v `main` je ze 14. 10., merge-base = HEAD `main`, konflikt tedy nehrozí) a není otevřený PR.
 
-| # | Oblast | Stav | Závažnost | Kde se to opraví |
+Co je na větvi, odpovídá auditu 1 téměř beze zbytku a jde v několika místech dál (verzovaný registr dokumentů s neměnným vydaným zněním, opt-out e-mailů jedním kliknutím, Segment bez osobních údajů, vlajky bez CDN, mapa až po kliknutí, ověřené recenze). Kvalita je vysoká — dokumenty mají věcně správné paragrafy, kód ukládá verzi OP a čas souhlasu k objednávce, § 1830a flow je dvoukrokový s potvrzovacím e-mailem.
+
+Co brání spuštění, jsou tři věci, které agent udělat **nemohl**:
+
+| Blokátor | Proč to stojí | Kdo to odblokuje |
+| --- | --- | --- |
+| **Údaje od Lucie** (číslo účtu, DPH, záloha %, storno kurzů, platnost poukazu, zůstatek poukazu, odhad nákladů na vrácení, min. věk, vyzvednutí z kurzu, nástroj newsletteru) | OP 2026, Odstoupení a Zásady jsou jen **pracovní znění** s `[[DOPLNIT]]` → nejsou vydané jako PDF → potvrzovací e-mail objednávky **neposílá OP v příloze** (§ 1827 odst. 2 OZ nesplněn) a patička nabízí jen 3 PDF | Lucie (vyplní v administraci → Právní údaje), pak `pnpm legal:build` + `legal:upload` |
+| **Merge + nasazení na Railway** | migrace DB (5 ks), backfill historie cen, skript poukazu, CMS proměnné na storefront, smazat `SEGMENT_WRITE_KEY`, seed Studia | Matěj (Railway přístup) |
+| **Data produktů v administraci** | 27 produktů „NA ZAKÁZKU“ v názvu, profil výroby (= poučení o nevratnosti, záloha, povinné zadání) má **1**; 3 produkty „- SLEVA“ bez akční ceny; testovací kus „TEST“ zveřejněný; poukaz za 1 Kč | Lucie + Matěj (admin) |
+
+Dokud nejsou vyřešené všechny tři, **nespouštět ostrý provoz na keramickazahrada.cz**. Samotný merge + deploy bez údajů od Lucie je ale možný a žádoucí hned — web bude právně výrazně lepší než dnes i s pracovními zněními (ta se zobrazují na webu, jen nejdou do PDF a e-mailů).
+
+---
+
+## 2. Stav položek auditu 1
+
+| # | Oblast (audit 1) | Stav na větvi | Stav v produkci | Zbývá |
 | --- | --- | --- | --- | --- |
-| 1 | OP z roku 2015 — chybí novela 2023 (domněnka vady 12 měsíců, info povinnosti § 1820, § 1826a) | Nevyhovuje | Kritické | OP (text) |
-| 2 | Zakázková výroba — žádná pravidla pro zálohu, schválení návrhu, zrušení, odchylky | Chybí | Kritické | OP + produkt + checkout |
-| 3 | Odstoupení — vrací se „kupní cena“, ne nejlevnější nabízené poštovné; chybí vzorové poučení dle NV 29/2023 Sb. | Nevyhovuje | Kritické | OP + stránka Odstoupení |
-| 4 | Reklamace — přepravní poškození přenáší OP celé na kupujícího (rozpor s § 2161 a násl.); domněnka 6 měsíců místo 12 | Nevyhovuje | Kritické | OP + Reklamační protokol |
-| 5 | Mimosoudní řešení sporů — chybí plná informace o ČOI dle § 14 ZOS; e-mail pro stížnosti je prázdný | Chybí | Důležité | OP |
-| 6 | Kurzy — žádné storno podmínky, žádné poučení o výjimce z odstoupení (§ 1837 písm. j) | Chybí | Důležité | OP + stránka Kurzy |
-| 7 | Dárkové poukazy — poukaz za 1 Kč s převodem „libovolné částky“, platnost, nevratnost neupravena | Nejasné | Důležité | Produkt + OP |
-| 8 | GDPR text odkazuje na zrušený zákon 101/2000 Sb. a „souhlas“ jako základ pro plnění smlouvy | Nevyhovuje | Důležité | OP čl. IX (smazat) + stránka GDPR |
-| 9 | Cookies — stránka tvrdí „nesbíráme osobní údaje“ a zároveň Google Analytics | Rozpor | Důležité | Stránka Cookies + lišta |
-| 10 | Dvě různá čísla účtů (OP: 2500675505/2010 a 2701281289/2010; Doprava: 7010757121/2010) | Rozpor | Důležité | OP / Doprava |
-| 11 | PlatímPak (Equa Bank) — služba už neexistuje, Equa zanikla fúzí 2022 | Zastaralé | Důležité | Doprava a platba |
-| 12 | OP čl. III: „kliknutím na tlačítko „ ““ — prázdný název tlačítka | Chyba | Kosmetické, ale viditelné | OP |
-| 13 | OP uvádějí doménu keramickazahrada.cz, obchod běží na store.matejforejt.com | Rozpor | Kosmetické (do spuštění) | OP |
-| 14 | Tlačítko „Odstoupit od smlouvy“ v online rozhraní (§ 1830a) — připravit, novela v legislativním procesu | Připravit | Výhled | Kód (účet / e-mail) |
-
-Pořadí prací: nejdřív body 1–4 (bez nich hrozí pokuta od ČOI a neplatnost ujednání ve prospěch spotřebitele), pak 5–11, nakonec kosmetika.
-
----
-
-## 2. Zakázková výroba
-
-Dnes zakázku na webu nic neupravuje: OP ji zmiňují jednou větou („Netýká se výroby zboží na zakázku“ u zálohy), stránka Výroba je o procesu, FAQ má jen obecné odpovědi a produkty „NA ZAKÁZKU“ (domovní znamení 6 000 Kč, domovní čísla, souhvězdí na zvonku) se objednávají jako běžné zboží. To je právně nejslabší místo celého obchodu, protože u zakázky Lucie nejvíc riskuje — vyrobí kus, který už nikomu jinému neprodá.
-
-### Co říká zákon
-
-- Zboží „vyrobené podle požadavků spotřebitele nebo přizpůsobené jeho osobním potřebám“ je výjimkou z práva odstoupit do 14 dnů (§ 1837 písm. d) OZ). Výjimka platí jen tehdy, když o ní byl spotřebitel **předem poučen** (§ 1820 odst. 1 písm. j) OZ). Bez poučení může zákazník vrátit i zakázkové domovní číslo.
-- Výjimka se vztahuje jen na skutečnou individualizaci (číslo domu, jméno, konkrétní souhvězdí, rozměr na míru). Výběr barvy z nabízených variant individualizace není — takový kus vrátit lze.
-- Odpovědnost za vady platí i u zakázky: 2 roky, domněnka vady při převzetí 12 měsíců. „Nelíbí se mi to“ není vada; odchylka od **odsouhlaseného** návrhu (jiný motiv, výrazně jiný rozměr) vada je.
-- Zálohu zákon u spotřebitele nezakazuje. Musí být sjednaná před uzavřením smlouvy a uvedená v předsmluvních informacích. Nevratná záloha musí být přiměřená skutečným nákladům — propadnutí celé ceny by ČOI posoudila jako nepřiměřené ujednání (§ 1813 OZ).
-
-### Doporučený proces zakázky
-
-1. Poptávka přes formulář (stránka Výroba nebo FAQ) — popis, rozměr, motiv, fotografie místa, termín.
-2. Lucie pošle **cenovou nabídku s náčrtem nebo popisem** e-mailem. Nabídka obsahuje cenu, dodací lhůtu, výši zálohy, odkaz na OP a výslovné poučení, že jde o zboží na míru bez práva na odstoupení.
-3. Zákazník nabídku potvrdí (odpověď e-mailem nebo zaplacením zálohy) — tím vzniká smlouva. Záloha 30–50 % se platí přes individuální produkt / platební odkaz v e-shopu.
-4. Před výpalem Lucie pošle fotografii rozmodelovaného kusu ke schválení; schválený návrh se stává závaznou „předlohou“ (§ 2161 odst. 1 písm. c) OZ).
-5. Po dokončení doplatek, pak odeslání. Zakázka se dodává jako pojištěný křehký balík.
-
-### Návrh znění pro OP — nový článek „Výroba na zakázku“
-
-1. Výrobou na zakázku se rozumí zboží vyrobené podle individuálních požadavků kupujícího nebo upravené pro jeho osobu (zejména domovní čísla a znamení s konkrétním textem či motivem, rozměry na míru, reliéfy podle zadání).
-2. Zakázka vzniká na základě písemné poptávky kupujícího a cenové nabídky prodávajícího. Smlouva je uzavřena potvrzením nabídky kupujícím nebo zaplacením zálohy, podle toho, co nastane dříve.
-3. Prodávající je oprávněn požadovat zálohu ve výši uvedené v nabídce, nejvýše 50 % ceny. Výroba začíná po připsání zálohy.
-4. Kupující bere na vědomí, že podle § 1837 písm. d) občanského zákoníku **nemůže od smlouvy o výrobě zboží na zakázku odstoupit** ve lhůtě 14 dnů, protože jde o zboží upravené podle jeho přání.
-5. Zruší-li kupující zakázku před zahájením výroby, prodávající vrátí zálohu v plné výši. Zruší-li ji po zahájení výroby, může si prodávající ze zálohy ponechat částku odpovídající nákladům skutečně vynaloženým do dne zrušení (materiál, práce, výpal); zbytek vrátí do 14 dnů.
-6. Prodávající před konečným výpalem zašle kupujícímu fotografii výrobku ke schválení. Schválením se podoba výrobku stává smluvenou předlohou. Neodpoví-li kupující do 5 pracovních dnů, považuje se návrh za schválený.
-7. Ruční výroba přináší drobné odchylky v odstínu glazury, struktuře povrchu a rozměrech (do ±5 %, není-li sjednáno jinak). Tyto odchylky nejsou vadou. Vadou je rozpor se schválenou předlohou nebo poškození výrobku.
-8. Práva z vadného plnění se u zakázky řídí článkem o právech z vadného plnění těchto podmínek.
-
-### Co dát na stránku produktu „NA ZAKÁZKU“ a do košíku
-
-- Štítek „Na zakázku — bez možnosti vrácení do 14 dnů“ přímo u ceny, ne jen v záložce Doprava a vrácení.
-- Při přidání takového produktu do košíku a v posledním kroku objednávky zobrazit checkbox: „Beru na vědomí, že zboží vyrobené na zakázku nelze vrátit ve 14denní lhůtě.“ Tento stav uložit k objednávce (Medusa order metadata) — je to důkaz poučení.
-- Povinné textové pole pro zadání (číslo domu, text, motiv), aby bylo zadání součástí objednávky.
-- Produkty typu „Domovní znamení NA ZAKÁZKU 6 000 Kč“ s textem „cena dohodou“ nesoucí pevnou cenu jsou matoucí: buď pevná cena za standardní rozsah + příplatky, nebo produkt bez ceny s tlačítkem „Poptat“.
+| 1 | OP 2015 → novela 2023 | ✅ OP 2026-10-15: § 1826a, 12 měsíců („do 1 roku“), § 1832, § 1833, § 1837 d) + j), § 2159, ČOI bez ODR, čl. IX nahrazen odkazem | ❌ stále 2015 | merge + deploy; datum účinnosti → skutečné datum spuštění (OPEN_QUESTIONS #3) |
+| 2 | Zakázková výroba | ✅ článek v OP (podle návrhu z auditu), poptávkový formulář na /vyroba, profil výroby na produktu → povinné zadání + checkbox → order metadata, štítek u ceny, rychlé přidání do košíku u zakázky vypnuté | ❌ | záloha % od Lucie; **zapnout profil u 26 produktů** v administraci; rozhodnout „Domovní znamení 6 000 Kč + cena dohodou“ |
+| 3 | Odstoupení a vrácení peněz | ✅ nejlevnější doprava, stejný platební prostředek, § 1833, e-mail platná forma, vzorové poučení NV 29/2023 ve znění 66/2026 doslova, prohlášení o § 1837 pryč, lhůta od převzetí + § 607 | ❌ | odhad nákladů na vrácení (Lucie); částečné odstoupení bez vrácení dopravy — potvrdit advokátem (#17a) |
+| 4 | Reklamace | ✅ Reklamační řád (nová stránka, PDF **vydané**), protokol s formulářem (PDF vydané), přepravní škoda = vada při převzetí a řeší ji prodávající, 30 dní od uplatnění, potvrzení přijetí s časem, pořadí nároků | ❌ | Lucie musí vědět, že reklamaci u ČP podává ona do 2 prac. dnů (admin ji upozorní) |
+| 5 | ČOI / mimosoudní | ✅ plně v OP čl. o sporech, bez ODR, e-mail doplněn | ❌ | — |
+| 6 | Kurzy | ✅ článek v OP, poučení § 1837 j) v rezervaci, souhlasy uložené u rezervace a vyžadované backendem, PDF OP k potvrzení | ❌ | storno podmínky (Lucie) — dnes systém vrací 100 % při zrušení do 48 h; min. věk; vyzvednutí |
+| 7 | Dárkové poukazy | ✅ článek v OP, poukaz s vlastní částkou propsanou do košíku (validace na serveru) | ❌ poukaz za 1 Kč stále v produkci | platnost, zůstatek, postup uplatnění (Lucie); skript `legal-voucher-product.ts --apply`; ručně vyčistit popis; `no_promo` u poukazů |
+| 8 | GDPR | ✅ Zásady podle tabulky auditu, ÚOOÚ, příjemci po službách, mezinárodní přenosy (Railway/R2/Supabase/Resend/Google, DPF/SCC), Segment bez e-mailu a jména | ❌ | nástroj newsletteru potvrdit (Resend); Segment vypnout nebo uvést; účetní; podepsat Railway DPA; advokát k e-mailům z oprávněného zájmu (#16d) |
+| 9 | Cookies | ✅ lišta s rovnocenným Odmítnout, nic předem zapnuté, GA jen po souhlasu (Consent Mode v2 `denied`), soupis cookies z kódu, „Nastavení cookies“ funguje i v pokladně, mapa po kliknutí | ❌ | rozhodnout GA ano/ne (#18); Zásilkovna používat? (#21) |
+| 10 | Čísla účtů | ✅ natvrdo zapsaný účet z kódu odstraněn, `[[DOPLNIT]]` | ❌ oba staré texty | **Lucie: který účet platí** |
+| 11 | PlatímPak | ✅ pryč, platební metody podle skutečnosti; ceník dopravy z backendu (jeden zdroj) | ❌ | — |
+| 12 | Prázdné tlačítko v OP | ✅ „Objednávka zavazující k platbě“ v OP i ve všech cestách checkoutu; kurzy „Rezervace zavazující k platbě“ | ❌ | — |
+| 13 | Doména v OP | ✅ z `facts` (keramickazahrada.cz) | ❌ | PDF jsou na img.matejforejt.com/legal/ — zvážit vlastní doménu bucketu před spuštěním (#3b) |
+| 14 | Tlačítko § 1830a | ✅ v účtu, v potvrzení objednávky, v e-mailech odeslání i doručení (podepsaný odkaz pro hosty), dvoukrokové, e-mail s datem a časem | ❌ | — |
+| — | § 12a nejnižší cena 30 dní | ✅ modul historie cen, hodinový zápis; než historie pokryje 30 dní, píše „Nejnižší cena před slevou“ s poznámkou; kusy s vadou bez přeškrtnuté ceny | ❌ | migrace + `backfill-price-history.ts`; opravit 3 produkty „- SLEVA“ (#25) |
+| — | Recenze | ✅ „Ověřený nákup“ jen po serverovém ověření (dřív u všech!), vysvětlení moderace | ❌ | migrace `review.verified_purchase` |
+| — | Potvrzení objednávky s OP v PDF | ✅ kód hotový, přikládá vydané PDF verze platné pro objednávku | ❌ | **nefunguje, dokud OP 2026 není vydané** (viz blokátor 1) |
 
 ---
 
-## 3. Odstoupení od smlouvy a vrácení peněz
+## 3. Co agent našel navíc (a opravil)
 
-Základ je správně (14 dnů od převzetí, lhůta běží od poslední dodávky, stačí odeslat), ale v detailech OP čl. V i stránka Odstoupení zaostávají za § 1820, § 1829–1837 OZ a nařízením vlády 29/2023 Sb.
+Všechno na větvi, zaslouží si vědět o tom:
 
-| Co | Dnes na webu | Co má být | Oprava |
+- **Segment (Twilio, USA)** dostával při každé objednávce e-mail a jméno zákazníka, Zásady o tom mlčely. Opraveno v kódu; ale **nasazený `main` to pořád dělá** → smazat `SEGMENT_WRITE_KEY` na Railway hned, ještě před merge.
+- **„Ověřený nákup“ měly všechny recenze**, aniž se cokoliv ověřovalo — klamavá praktika podle § 5 ZOS.
+- **Vlajky z cdn.jsdelivr.net** posílaly IP návštěvníka třetí straně před souhlasem — přesunuty do `public/`.
+- **Mapa Google** v kontaktu se načítala bez souhlasu — nově po kliknutí.
+- **Lišta cookies** měla tlačítko „Přijmout jen důležité“, které zapínalo i preferenční cookies — verze souhlasu zvýšena, všichni se rozhodnou znovu.
+- **Google Analytics se reálně nenačítaly**, ačkoliv stránka Cookies tvrdila opak — kód připraven, zapne se proměnnou.
+- **FAQ v CMS odporovalo zákonu** („ozvěte se do 48 hodin“, „nepoužitý výrobek“) — kód tyto dvě odpovědi přebíjí; text ve Studiu stejně opravit.
+- **Doběrečné** padalo do součtu „Výrobky“ — opraveno jako vlastní řádek.
+- E-maily z oprávněného zájmu (prosba o recenzi, zlevnění oblíbeného) mají **odhlášení jedním kliknutím** (§ 7 odst. 3 z. 480/2004 Sb.) a backend odmítnuté adresy respektuje.
+- Starší rozhodnutí z 12. 10. („poškozený balík reklamuje příjemce u ČP“) je zrušené — Lucie o tom musí vědět, protože **teď reklamaci u pošty podává ona**.
+
+---
+
+## 4. Co ještě není v pořádku (nové nálezy 2. kola)
+
+| # | Nález | Závažnost | Co s tím |
 | --- | --- | --- | --- |
-| Co se vrací | „peněžní prostředky přijaté od kupujícího“, formulář žádá „kupní cenu včetně účtovaného dopravného“ | Kupní cena **a náklady na dodání ve výši nejlevnějšího nabízeného způsobu** (§ 1832 odst. 2). Zvolil-li zákazník dražší dopravu na adresu, rozdíl se nevrací. | Doplnit do OP i do vzorového formuláře |
-| Jak se vrací | „peněžní poukázkou nebo bezhotovostně na účet“ | Stejným způsobem, jakým zákazník platil, jiný jen se souhlasem (§ 1832 odst. 1). | Přepsat |
-| Vzorové poučení | Jen vlastní formulář | Podnikatel musí poskytnout poučení o odstoupení ve znění NV 29/2023 Sb. (od 19. 6. 2026 ve znění NV 66/2026 Sb.) — převzít doslova | Nová sekce na stránce Odstoupení |
-| Odpovědnost za snížení hodnoty | „nárok na úhradu škody“ jednostranně započte | Zákazník odpovídá jen za snížení hodnoty nad rámec seznámení se s povahou a vlastnostmi zboží (§ 1833) | Zpřesnit |
-| Kdo platí vrácení | „náklady spojené s vrácením zboží si kupující hradí sám“ | V pořádku, jen pokud sděleno předem (§ 1820 písm. i); u keramiky doplnit odhad nákladů | Doplnit větu o balení a odhad ceny |
-| Doručování odstoupení | Čl. X: oznámení jen **doporučeným dopisem** | Odstoupení lze učinit jakýmkoliv jednoznačným prohlášením, i e-mailem (§ 1830). Požadavek na doporučený dopis je neplatný | Smazat, nahradit: „e-mailem na …, nebo poštou na adresu sídla“ |
-| Výjimky z odstoupení | Vyjmenovány 3, chybí ta hlavní pro tento obchod | Doplnit výjimku pro služby s určitým termínem — kurzy (§ 1837 písm. j); zrušit „cena závisí na výchylkách finančního trhu“ | Přepsat seznam |
-| Odstoupení prodávajícího | „do převzetí kdykoliv“ | Omezit na vyprodání kusu, nedostupnost materiálu nebo zjevnou chybu v ceně, s okamžitým vrácením platby | Zpřesnit |
-| Prohlášení ve formuláři | Zákazník prohlašuje, že zboží „není zbožím uvedeným v § 1837“ | Zbytečné a matoucí — zákazník nemá posuzovat zákonné výjimky | Smazat |
-
-### Praktické doporučení k vracení peněz
-
-- Vracet vždy na účet, ze kterého přišla platba (ComGate umí refund na kartu z administrace). Do OP: „Peníze vracíme stejným způsobem, jakým jste platili.“
-- Lhůta 14 dnů od odstoupení, s právem zadržet refund do doby, než zákazník zboží vrátí nebo prokáže odeslání (§ 1832 odst. 4) — v OP je, ponechat.
-- Zboží z kolekce „Poškozené“ / „Výrobky se slevou“ s uvedeným důvodem slevy: vada, pro kterou je sleva, se nereklamuje, ale odstoupit do 14 dnů lze. Uvést u těchto produktů.
-- Rozbité při přepravě **zpět** (když zákazník vrací): riziko nese zákazník jako odesílatel. V návodu k vrácení doporučit původní obal a pojištění.
+| A | **Práce není v produkci.** Větev nesloučená, PR neotevřený (podle instrukcí měl být). | Kritické | Merge do `main` + deploy podle `docs/legal/00-plan.md` §6. |
+| B | **OP 2026 nejsou vydané** → e-mail bez OP, web bez PDF OP, `pnpm legal:build --check --strict` padá. Příčina: 9 chybějících údajů od Lucie. | Kritické | Získat údaje (viz §5), vyplnit v administraci, vydat. |
+| C | `privacy.hosting` a `privacy.newsletterTool` jsou v manifestu `null`, ačkoliv commit z 16. 10. tvrdí, že hosting je ověřený a vyplněný. Buď je hodnota v administraci (ne v repu) a manifest se po ní neregeneroval, nebo chybí. | Důležité | Po deployi ověřit v administraci → Právní údaje; `legal:build` přegeneruje manifest. |
+| D | Datum účinnosti **2026-10-15** je pracovní; při vydání později je zpětná účinnost nepřípustná (registr to sám hlídá). Je v názvech souborů i v textu tří dokumentů. | Důležité | Před vydáním přejmenovat verzi na skutečné datum spuštění (postup v OPEN_QUESTIONS #3). |
+| E | Reklamační řád a protokol jsou **už vydané** (PDF v R2, neměnné) s datem 2026-10-15 a s textem „kolekce Poškozené“ (je to filtr). | Nízké | Při přejmenování verze (D) vydat znovu; staré PDF zůstane v archivu. |
+| F | 26 z 27 produktů „NA ZAKÁZKU“ se prodává jako běžné zboží **s právem odstoupit** — poučení v OP nestačí, musí být u kusu (§ 1820 odst. 1 písm. j). | Kritické pro zakázky | Zapnout profil výroby v administraci (Produkty → Výroba) u všech skutečně individualizovaných. Seznam vypíše agent. |
+| G | Storno kurzů: systém dnes vrací 100 % při online zrušení do 48 h a potom jen telefonicky; OP čekají na text od Lucie. Pokud Lucie zvolí jiná pásma, musí se upravit i automatický refund. | Důležité | Rozhodnutí Lucie → jedno místo (`course.cancellation`) + případně úprava refund logiky. |
+| H | PDF jsou na `img.matejforejt.com/legal/…` — doména vývojáře, ne obchodu. Právně to nevadí, ale v e-mailu zákazníkovi to vypadá cize a při změně hostingu se odkazy v už odeslaných e-mailech rozbijí. | Nízké | Vlastní doména bucketu (`legal.keramickazahrada.cz` nebo `files.…`) před vydáním OP; `R2_PUBLIC_URL` + `legal:upload`. |
+| I | Balné se ukazuje až v košíku, ne u ceny výrobku (§ 1811 odst. 2 OZ — cena včetně všech poplatků). Agent to správně označil jako otázku pro advokáta (#17d). | Důležité | Bezpečnější je uvádět u ceny „+ balné X Kč“ nebo balné do ceny zahrnout. Rozhodnout. |
+| J | Railway DPA nepodepsaná; Supabase/Resend/Cloudflare mají DPA v podmínkách. | Nízké | Podepsat (DocuSign na railway.com/legal/dpa). |
+| K | Tento audit nemohl zkontrolovat administraci ani databázi (jen repo a veřejný web). Tvrzení o „Právní údaje v administraci“ a stavu produktů jsou z dokumentace agenta. | — | Ověřit po deployi. |
 
 ---
 
-## 4. Reklamace
+## 5. Údaje, které musí dodat Lucie (bez nich nelze vydat OP)
 
-Reklamační protokol je napsaný lidsky a 30denní lhůta i úhrada dopravy u oprávněné reklamace jsou správně. Tři věci jsou v rozporu se zákonem.
+Převzato z `docs/legal/OPEN_QUESTIONS.md` a `ZPRAVA_PRO_LUCII.md`; vyplňuje se v administraci → Právní údaje.
 
-**1. Přepravní poškození nelze přehodit na zákazníka.** OP čl. VI a Reklamační protokol tvrdí, že poškození při přepravě reklamuje zákazník u České pošty do 2 pracovních dnů, jinak „zboží zůstává vaše“. To je neplatné: prodávající odpovídá, že zboží **při převzetí** nemá vady (§ 2161 odst. 1), a nebezpečí škody přechází na spotřebitele až převzetím (§ 2159 odst. 2). Rozbité pítko v krabici je vada při převzetí; zákazník ji může reklamovat u Lucie ve 2 letech, domněnka 12 měsíců hraje v jeho prospěch. Dvoudenní lhůta České pošty je vztah Lucie–dopravce. Správný postup: zákazník nahlásí Lucii (s fotkami), Lucie vymění nebo vrátí peníze a sama uplatní škodu u dopravce z pojištění balíku. Text o kontrole zásilky před doručovatelem může zůstat jako **prosba**, ne jako podmínka.
-
-**2. Domněnka vady 6 měsíců → 12 měsíců.** OP čl. VII odst. 4 uvádí 6 měsíců; od 6. 1. 2023 platí 12 (§ 2161 odst. 5).
-
-**3. Okamžik uplatnění reklamace.** OP i protokol říkají, že reklamace je uplatněna, až když Lucie „obdrží reklamované zboží“. Podle § 19 ZOS běží 30 dnů od okamžiku, kdy spotřebitel reklamaci **uplatní** (napíše e-mail), ne od doručení zboží. Překročení 30 dnů zakládá právo odstoupit.
-
-### Co doplnit do OP / reklamačního řádu
-
-- Práva zákazníka při vadě v pořadí podle § 2169–2171: nejdřív oprava nebo výměna, teprve pak sleva nebo odstoupení; odstoupit lze rovnou, je-li vada podstatná nebo se opakuje.
-- Písemné potvrzení o přijetí reklamace (datum, obsah, požadovaný způsob vyřízení) — povinné dle § 19 odst. 1 ZOS. Stačí automatický e-mail.
-- Reklamační protokol ke stažení: stránka říká „formulář ještě dokončujeme“ — doplnit PDF, nebo větu smazat.
-- Výslovně: odchylky ruční výroby (odstín, struktura, rozměr v uvedené toleranci) nejsou vadou — do OP s konkrétními tolerancemi, které jsou už u produktů („tolerance −3 cm“).
-- U pítek a nádob, které nesmí zamrznout: vada vzniklá nesprávným použitím (zamrzlá voda) se nereklamuje — jen pokud byl zákazník poučen (doplnit i na kartičku k balení).
-- Smazat „Projeví-li se vada v průběhu šesti měsíců“ a nahradit dvanácti.
-
----
-
-## 5. Kurzy a dárkové poukazy
-
-### Kurzy
-
-Kurz je smlouva o poskytnutí služby, ne kupní smlouva — OP čl. I ji dnes nepokrývají. Rezervace na stránce Kurzy („zaplatit předem kartou, nebo až na místě“) se uzavírá bez jakýchkoli podmínek.
-
-- Kurz s konkrétním termínem spadá pod § 1837 písm. j) OZ — „využití volného času, poskytované v určitém termínu“. Zákazník **nemá** právo odstoupit do 14 dnů, ale jen pokud byl předem poučen.
-- Doporučené storno podmínky: zrušení 7+ dní předem — vrácení 100 %; 2–6 dní předem — vrácení 50 % nebo přesun na jiný termín zdarma; méně než 48 h / neúčast — bez náhrady, lze poslat náhradníka. Zruší-li kurz Lucie, vrátí 100 % nebo nabídne náhradní termín.
-- Děti: rezervaci dělá zákonný zástupce; uvést minimální věk a že rodič odpovídá za dítě mimo vedenou práci.
-- Výrobek z kurzu: dohotovení (glazura, výpal) a vyzvednutí — do kdy, co když se při výpalu rozbije (riziko materiálu nese kurzista, slušné je nabídnout opakování).
-- Fotografie z kurzu na sociální sítě jen se souhlasem (checkbox při rezervaci, u dětí od rodiče).
-
-### Dárkové poukazy
-
-- Poukaz koupený na dálku **lze vrátit do 14 dnů**, dokud nebyl uplatněn. Po uplatnění (byť částečném) už ne — napsat do OP.
-- Platnost 1 rok je uvedena jen u „volné“ varianty; u pevných hodnot (500–3 000 Kč) chybí. Sjednotit a uvést na každém poukazu datum konce platnosti. Po propadnutí se hodnota nevrací — musí být napsáno předem.
-- Produkt „Dárkový poukaz na nákup keramiky, 1 Kč“ s instrukcí „objednejte a libovolnou částku převeďte na účet“ je problém: cena v košíku neodpovídá platbě (rozpor s § 1820 a § 1826a), uvádí poštovné 60 Kč v rozporu s ceníkem dopravy a soukromý e-mail lucie.polanska@gmail.com. Nahradit variantami nebo polem „vlastní hodnota“ s minimem; cena se musí propsat do košíku.
-- Poukaz se neslevuje a nevyměňuje za peníze; při nákupu nad hodnotu se doplácí, při nákupu pod hodnotu zbytek propadá nebo zůstává na kódu — rozhodnout a napsat.
-- Ujasnit, že poukazem lze uhradit část zakázky (záloha / doplatek).
-
----
-
-## 6. Rozpory a chyby na webu
-
-| Kde | Co je špatně | Oprava |
+| Údaj | Klíč | Poznámka / doporučení |
 | --- | --- | --- |
-| OP čl. IV | Účty 2500675505/2010 (CZK) a 2701281289/2010 (EUR) | Stránka Doprava uvádí 7010757121/2010 — ověřit s Lucií, který platí, a sjednotit |
-| OP čl. I, formulář Odstoupení | Obchod běží na www.keramickazahrada.cz | Před spuštěním přepsat na ostrou doménu |
-| OP čl. III | „kliknutím na tlačítko „ “.“ — prázdný název | Doplnit „Objednávka zavazující k platbě“ |
-| OP patička | „Platné od 1. 1. 2015“, „V Písku dne 1. 1. 2015“ | Nové datum účinnosti; staré znění archivovat pro starší objednávky |
-| OP čl. I | „obchodní společnosti Lucie Polanská“ | Lucie je OSVČ: „podnikatelka Lucie Polanská, IČO 03441482, zapsaná v živnostenském rejstříku“ + údaj o DPH (čl. IV tvrdí „je plátcem DPH“ — ověřit) |
-| OP čl. IV | Dobírka jako platební metoda | Checkout ji musí mít — jinak smazat |
-| Doprava a platba | „Odložená platba PlatímPak — Equa Bank“ | Equa Bank zanikla fúzí s Raiffeisenbank 2022. Smazat (nebo nahradit tím, co ComGate reálně nabízí) |
-| Doprava a platba | Dvě sady cen pro CZ (79/95 a 89/99 Kč, „varianta 2“), duplicitní nadpis | Nechat jen ceny z checkoutu; pojmenovat dopravce |
-| Doprava a platba vs. OP čl. III | OP: cena dopravy „pouze pro ČR“; stránka má SK ceny | Sjednotit |
-| OP čl. VIII | „stížnosti… prostřednictvím elektronické adresy .“ — prázdné | Doplnit info@keramickazahrada.cz |
-| Reklamační protokol | „Formulář ještě dokončujeme“ | Nahrát PDF nebo větu smazat |
-| Produkt poukaz 1 Kč | Poštovné 60 Kč, e-mail gmail, platba „převodem libovolné částky“ | Viz sekce Poukazy |
-| Produkt „Domovní znamení NA ZAKÁZKU“ | Cena 6 000 Kč + „cena dohodou podle složitosti“ | Jedno nebo druhé |
-| Stránka Výroba | Odkaz „Zakázková tvorba“ z homepage vede na stránku o procesu, ne na poptávku | Přidat poptávkový formulář dolů na stránku Výroba |
-| Patička | Odkaz jen na „Reklamační protokol“ | Pojmenovat „Reklamační řád“ a mít v něm pravidla, ne jen návod |
+| Číslo účtu (CZK, příp. EUR) | `bank.account` | Tři kandidáti: 2500675505/2010, 2701281289/2010 (EUR), 7010757121/2010 |
+| Plátce DPH ano/ne | `vat.status` | Kód i iDoklad počítají s **neplátcem**; staré OP tvrdily plátce |
+| Výše zálohy u zakázky | `mto.deposit` | Doporučeno 30–50 % |
+| Storno podmínky kurzů | `course.cancellation` | Doporučeno 7+ dní 100 %, 2–6 dní 50 % nebo přesun, <48 h 0 % — nebo potvrdit dnešní „do 48 h 100 %“ |
+| Minimální věk na kurzu | `course.minAge` | — |
+| Do kdy vyzvednout výrobek z kurzu | `course.pickupDeadline` | např. 60 dní po výpalu |
+| Platnost poukazu | `voucher.validity` | dnes 1 rok |
+| Zůstatek poukazu pod hodnotu | `voucher.remainder` | propadá / zůstává na kódu |
+| Odhad nákladů na vrácení zboží poštou | `withdrawal.returnCostEstimate` | § 1820 písm. i); např. „obvykle 150–250 Kč, křehký balík“ |
+| Nástroj newsletteru | `privacy.newsletterTool` | pravděpodobně Resend (vlastní modul) |
+| Hosting | `privacy.hosting` | ověřeno 16. 10.: Railway (Amsterdam), Cloudflare R2, Supabase (Frankfurt), Resend — jen zapsat |
+
+Rozhodnutí (ne údaje): Google Analytics ano/ne · Segment vypnout · Zásilkovna používat? · které produkty jsou skutečně na zakázku · co s „- SLEVA“ produkty · datum spuštění = datum účinnosti.
 
 ---
 
-## 7. Technika obchodu (co se řeší v kódu)
+## 6. Pořadí dalších kroků
 
-Novela 374/2022 Sb. přidala povinnosti, které nejde splnit textem v OP — musí je dělat samotný checkout.
-
-| Povinnost | Zákon | Co udělat v Next.js + Medusa |
-| --- | --- | --- |
-| Tlačítko objednávky | § 1826a odst. 2 OZ | Nápis „Objednávka zavazující k platbě“ (ne „Objednat“, „Dokončit“). Bez toho je smlouva pro spotřebitele nezávazná. Stejný text do OP čl. III. |
-| Potvrzení smlouvy v textové podobě | § 1827 odst. 2 OZ | Potvrzovací e-mail musí obsahovat **celé znění OP** (PDF v příloze), ne jen odkaz. Generovat PDF z aktuální verze OP. |
-| Předsmluvní informace před odesláním | § 1820, § 1826 OZ | V posledním kroku shrnout: zboží, cena vč. DPH, doprava, platba, dodací lhůta, poučení o odstoupení (nebo o jeho vyloučení u zakázky / kurzu), kontakt. |
-| Žádná předzaškrtnutá políčka | § 1817 OZ | Newsletter, dárkové balení — vždy nezaškrtnuto. |
-| Souhlas s OP | praxe + důkaz | Checkbox „Seznámil(a) jsem se s obchodními podmínkami“ s odkazem; uložit verzi OP a čas k objednávce. |
-| Slevy — nejnižší cena za 30 dní | § 12a ZOS | U každé zlevněné položky zobrazit nejnižší cenu za posledních 30 dní před slevou. Potřeba historie cen v DB. U unikátních kusů s „důvodem slevy“ (prasklinka) jde o vadu, ne o akci — § 12a neplatí, ale musí být napsáno, že jde o cenu kusu s vadou. |
-| Recenze | § 5 ZOS (nekalé praktiky) | Zveřejnit, jak se ověřuje, že recenzi píše skutečný zákazník, a nemazat negativní. Pokud se neověřuje, napsat to. |
-| Řazení produktů | § 5 ZOS | U „Doporučené“ řazení uvést, podle čeho. Stačí tooltip. |
-| Tlačítko „Odstoupit od smlouvy“ | § 1830a OZ (druhá tlačítková novela) | Transpozice směrnice 2023/2673 měla účinnost 19. 6. 2026; k 16. 7. 2026 byla česká novela ještě v legislativním procesu. Připravit teď: v účtu u objednávky (a v e-mailu pro hosty) tlačítko „Odstoupit od smlouvy“ → formulář s předvyplněnými údaji → tlačítko „Potvrdit odstoupení od smlouvy“ → automatický e-mail s potvrzením, obsahem a časem. Dostupné nepřetržitě 14 dnů od převzetí. |
-| Zakázka v checkoutu | § 1820 písm. j) OZ | Flag `custom` na produktu → povinné pole zadání + checkbox poučení o vyloučení odstoupení, uložit do order metadata. |
-| Kurzy v checkoutu | § 1837 písm. j) OZ | Checkbox „Beru na vědomí, že u kurzu s pevným termínem nelze odstoupit do 14 dnů; platí storno podmínky.“ |
-| Multi-měna / Slovensko | § 1820 OZ | U EUR objednávek ukázat cenu dopravy na SK už v košíku; OP doplnit volbu českého práva (spotřebitel si ponechává ochranu práva svého státu). |
-| Archivace smluv | § 1827 OZ | OP tvrdí „smlouva je archivována a není přístupná“. Lepší: objednávka včetně verze OP v účtu zákazníka. |
+1. **Hned, i bez Lucie:** smazat `SEGMENT_WRITE_KEY` na Railway Backend (únik e-mailů do USA běží na dnešním `main`).
+2. Merge `legal/compliance-2026` → `main` přes PR (build + testy + sandbox Playwright `e2e.mjs`).
+3. Deploy backend + storefront spolu (00-plan §6: migrace, backfill, voucher skript, CMS proměnné, seed Studia).
+4. Lucie vyplní údaje v administraci; Matěj rozhodne produkty NA ZAKÁZKU / SLEVA / TEST.
+5. Přejmenovat verzi dokumentů na datum spuštění, `pnpm legal:build`, `pnpm legal:upload`, commit manifestů, deploy.
+6. Ověřit v produkci: právní stránky, 3 → 6 PDF v patičce, testovací objednávka → e-mail s OP v příloze, odstoupení přes tlačítko, reklamace.
+7. Advokát: finální OP + tři otázky (#16d e-maily z oprávněného zájmu, #17a částečné odstoupení, #17d balné).
+8. Přepnout doménu na keramickazahrada.cz.
 
 ---
 
-## 8. GDPR a cookies
+## 7. Zdroje
 
-**OP čl. IX smazat celý.** Odkazuje na zákon 101/2000 Sb., zrušený zákonem 110/2019 Sb., a staví zpracování pro plnění smlouvy na „souhlasu“ — právní základ je plnění smlouvy (čl. 6 odst. 1 písm. b GDPR). Věta „nezvolí-li kupující jinou možnost, souhlasí se zasíláním obchodních sdělení“ je opt-out; GDPR a § 7 zákona 480/2004 Sb. vyžadují opt-in (u stávajících zákazníků lze posílat nabídky vlastních obdobných produktů bez souhlasu, s možností odhlášení v každé zprávě). V OP stačí jedna věta s odkazem na samostatné Zásady.
-
-**Stránka Ochrana osobních údajů** je generická šablona. Má obsahovat konkrétně:
-
-| Účel | Údaje | Právní základ | Doba | Příjemci |
-| --- | --- | --- | --- | --- |
-| Vyřízení objednávky | jméno, adresa, e-mail, telefon, objednané zboží | plnění smlouvy | 10 let (účetní a daňové doklady) | ComGate, Zásilkovna / Česká pošta / PPL, účetní, hosting |
-| Uživatelský účet | e-mail, heslo (hash), historie objednávek, wishlist | plnění smlouvy | do zrušení účtu, max. 3 roky nečinnosti | hosting |
-| Reklamace a odstoupení | údaje z objednávky, popis vady, fotografie | právní povinnost / oprávněný zájem | 4 roky (promlčení) | — |
-| Newsletter | e-mail, otevření, kliknutí | souhlas (double opt-in) | do odvolání | nástroj na rozesílku (pojmenovat) |
-| Zakázková výroba | zadání, fotografie místa, komunikace | plnění smlouvy | 4 roky | — |
-| Kurzy | jméno, kontakt, u dětí jméno dítěte a věk | plnění smlouvy | 1 rok po kurzu | — |
-| Analytika | cookies, IP | souhlas | dle nastavení cookies | Google (Analytics) |
-
-Doplnit: práva subjektu včetně práva podat stížnost u ÚOOÚ (Pplk. Sochora 27, Praha 7, uoou.gov.cz), hosting a jeho sídlo (pokud mimo EU, uvést), že Lucie nemá DPO.
-
-**Cookies.** Stránka si odporuje: odst. 07 tvrdí „cookies nesbírají žádná osobní data“, odst. 10 přiznává Google Analytics. Od 1. 1. 2022 platí opt-in (§ 89 odst. 3 zákona 127/2005 Sb.). V kódu:
-
-- GA skript se nesmí načíst před kliknutím na „Přijmout“ (Google Consent Mode v2 s výchozím `denied`, nebo skript vložit až po souhlasu).
-- Lišta musí mít „Odmítnout vše“ stejně viditelné jako „Přijmout vše“.
-- Stránka Cookies má obsahovat tabulku: název cookie, účel, kdo ji nastavuje, doba. Odkaz „Nastavení cookies“ v patičce musí lištu znovu otevřít (dnes je to text bez odkazu).
-- Nezbytné cookies (košík, přihlášení, měna) souhlas nepotřebují — vyjmenovat.
-- Smazat duplicitní odstavce 01–04 a 07.
-
----
-
-## 9. Checklist
-
-### V kódu
-
-- [ ] Tlačítko v posledním kroku checkoutu: „Objednávka zavazující k platbě“
-- [ ] Potvrzovací e-mail s OP jako PDF přílohou + uložení verze OP k objednávce
-- [ ] Flag `custom` na produktu → povinné pole zadání + checkbox o vyloučení odstoupení → order metadata
-- [ ] Štítek „Na zakázku — nelze vrátit do 14 dnů“ u ceny na kartě produktu
-- [ ] Stejný checkbox pro kurzy (výjimka § 1837 písm. j) + odkaz na storno podmínky
-- [ ] Historie cen pro § 12a (nejnižší cena za 30 dní) u zlevněných položek; u kusů s vadou místo toho text „cena kusu s uvedenou vadou“
-- [ ] Cookie lišta: GA až po souhlasu, tlačítko Odmítnout, odkaz „Nastavení cookies“ v patičce funkční
-- [ ] Produkt poukazu „1 Kč“ nahradit variantami / polem s hodnotou, která se propíše do košíku
-- [ ] Připravit flow „Odstoupit od smlouvy“ v účtu a v e-mailu (§ 1830a) — dvoustupňové potvrzení + automatický e-mail
-- [ ] Žádné předzaškrtnuté checkboxy v checkoutu
-- [ ] Odstranit PlatímPak, sjednotit ceník dopravy s checkoutem, pojmenovat dopravce
-- [ ] Doménu v OP a formulářích přepnout při nasazení na keramickazahrada.cz
-- [ ] Poptávkový formulář zakázky (stránka Výroba) s povinným souhlasem s OP
-
-### Text — předat Lucii / advokátovi
-
-- [ ] Nové OP: datum, identifikace OSVČ, ověřit plátcovství DPH, číslo účtu, prázdný e-mail v čl. VIII, text tlačítka
-- [ ] Nový článek Výroba na zakázku (návrh znění výše)
-- [ ] Nový článek Kurzy se storno podmínkami
-- [ ] Článek Dárkové poukazy (platnost, nevratnost po uplatnění, nevyplácení)
-- [ ] Čl. V Odstoupení přepsat: způsob vrácení, nejlevnější doprava, § 1833, e-mail jako platná forma, nové výjimky
-- [ ] Čl. VI/VII: smazat přenos přepravní škody na zákazníka, 6 → 12 měsíců, lhůta od uplatnění reklamace, pořadí nároků, potvrzení o přijetí
-- [ ] Čl. VIII: plná informace o ČOI (Štěpánská 796/44, 110 00 Praha 1, coi.cz) jako subjektu mimosoudního řešení sporů; žádný odkaz na platformu ODR (zrušena 20. 7. 2025)
-- [ ] Čl. IX smazat, čl. X přepsat
-- [ ] Vzorové poučení o odstoupení dle NV 29/2023 Sb. (ve znění NV 66/2026 Sb.) doslova na stránku Odstoupení
-- [ ] Stránka GDPR konkrétně podle tabulky výše; stránka Cookies s tabulkou cookies
-- [ ] Reklamační řád jako samostatný dokument, PDF protokol
-- [ ] Rozhodnout zálohu u zakázky (doporučeno 30–50 %) a storno u kurzů
-
-### Před spuštěním
-
-- [ ] Advokát přečte finální OP
-- [ ] Testovací objednávka celým flow včetně odstoupení a refundu přes ComGate
-- [ ] Archivované OP 2015 zůstanou dostupné pro starší objednávky z WooCommerce
-
----
-
-## 10. Zdroje
-
-Auditované stránky (staženy 14. 10. 2026): https://store.matejforejt.com/cz/smluvni-podminky · /odstoupeni-od-smlouvy · /reklamacni-protokol · /doprava-a-platba · /vyroba · /kurzy · /dotazy · /ochrana-osobnich-udaju · /cookies · /store?collection=dárkové-poukazy · /products/domovni-znameni-na-zakazku
-
-Právní rámec:
-
-- Zákon č. 89/2012 Sb., občanský zákoník — § 1810–1867 (spotřebitelské a distanční smlouvy), § 2158–2174 (prodej zboží spotřebiteli)
-- Zákon č. 634/1992 Sb., o ochraně spotřebitele — § 12a (slevy), § 14 (mimosoudní řešení sporů), § 19 (reklamace)
-- Zákon č. 374/2022 Sb. (novela účinná 6. 1. 2023) — https://www.taylorwessing.com/en/insights-and-events/insights/2023/01/amendment-to-the-czech-consumer-protection-act ; https://www.pravniprostor.cz/clanky/obcanske-pravo/tlacitkova-novela-spotrebitelskeho-prava-prehledny-check-list-novych-povinnosti-e-shopistu
-- Nařízení vlády č. 29/2023 Sb. (vzorové poučení a formulář pro odstoupení), ve znění NV č. 66/2026 Sb. — https://www.epravo.cz/top/zakony/sbirka-zakonu/sb/2026/66
-- Zrušení platformy ODR k 20. 7. 2025 — https://www.businessinfo.cz/clanky/skoncila-informacni-povinnost-obchodniku-o-platforme-odr/
-- Tlačítko pro odstoupení (§ 1830a, směrnice 2023/2673) — https://advokatnidenik.cz/2026/07/16/mobilni-aplikace-i-e-shopy-budou-muset-zavest-tlacitko-k-odstoupeni-od-smlouvy/ ; https://www.epravo.cz/top/clanky/druha-tlacitkova-novela-povinne-tlacitko-pro-odstoupeni-od-smlouvy-121308.html
-- Zákon č. 110/2019 Sb., o zpracování osobních údajů; GDPR (2016/679); zákon č. 127/2005 Sb., § 89 odst. 3 (cookies); zákon č. 480/2004 Sb., § 7 (obchodní sdělení)
+- Produkční web 18. 10. 2026: /cz/smluvni-podminky, /odstoupeni-od-smlouvy, /reklamacni-protokol, /doprava-a-platba, /ochrana-osobnich-udaju, /cookies — beze změny proti 14. 10.
+- Repo `C3Studium/Lucia_Polanska_eshop-keramickazahrada`, větev `legal/compliance-2026` @ b32a03b (16. 10.), `main` @ 2b7d417 (14. 10.)
+- `docs/legal/CHANGELOG.md`, `OPEN_QUESTIONS.md`, `00-plan.md`, `ZPRAVA_PRO_LUCII.md`
+- `storefront/src/lib/legal/documents/obchodni-podminky/2026-10-15.ts` (ověřeno: § 1826a, § 2161 odst. 5 „do 1 roku“, § 1832, § 1833, § 1837, § 2159, ČOI, bez ODR/101/2000/PlatímPak)
+- `storefront/src/lib/legal/pdf-manifest.json` (3 vydaná PDF, 3 pracovní s chybějícími fakty)
+- https://img.matejforejt.com/legal/reklamacni-rad-2026-10-15.pdf (staženo, diakritika OK, 12 kapitol, 1 rok / 30 dní / přeprava správně)
+- `storefront/src/modules/analytics/consent-mode.ts` (výchozí `denied`), `modules/order/components/withdrawal/` (§ 1830a flow), `modules/checkout/components/payment-button/` (text tlačítka)
+- Audit 1 (14. 10. 2026) a jeho právní zdroje: OZ § 1810–1867, § 2158–2174; ZOS § 12a, § 14, § 19; novela 374/2022 Sb.; NV 29/2023 Sb. ve znění NV 66/2026 Sb.; zrušení ODR 20. 7. 2025; § 1830a (směrnice 2023/2673)

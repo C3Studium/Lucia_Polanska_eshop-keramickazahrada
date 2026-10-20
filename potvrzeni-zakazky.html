@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Potvrzení zakázky č. {{order.number}}</title>
+<style>
+  @page { size: A4; margin: 18mm 18mm 18mm 18mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Noto Serif", Georgia, serif; font-size: 10.5pt; line-height: 1.45; color: #1f1d1a; margin: 0; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1.2pt solid #1f1d1a; padding-bottom: 8pt; margin-bottom: 12pt; }
+  .brand, .meta, h2, .small, .brief, footer, table.kv td:first-child { font-family: "Noto Sans", Helvetica, Arial, sans-serif; }
+  .brand { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #6b665e; }
+  .brand strong { display: block; font-size: 13pt; letter-spacing: 0; text-transform: none; color: #1f1d1a; margin-top: 2pt; }
+  .meta { text-align: right; font-size: 9pt; color: #6b665e; }
+  .meta strong { display: block; font-size: 12pt; color: #1f1d1a; }
+  h1 { font-size: 18pt; font-weight: 600; margin: 0 0 4pt; }
+  .lead { color: #3d3a35; margin: 0 0 12pt; }
+  h2 { font-size: 9pt; letter-spacing: .1em; text-transform: uppercase; color: #6b665e; margin: 14pt 0 5pt; padding-top: 6pt; border-top: .5pt solid #d8d3cb; }
+  h2 span { color: #b4553a; margin-right: 6pt; }
+  table { width: 100%; border-collapse: collapse; }
+  table.kv td { padding: 3pt 0; vertical-align: top; border-bottom: .4pt solid #ebe7e0; }
+  table.kv td:first-child { width: 30%; color: #6b665e; font-size: 9pt; padding-right: 10pt; }
+  table.kv tr:last-child td { border-bottom: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18pt; }
+  .box { border: .6pt solid #b4553a; background: #faf3ee; padding: 9pt 11pt; margin: 8pt 0; }
+  .box p { margin: 0 0 5pt; } .box p:last-child { margin: 0; }
+  ol { margin: 0; padding-left: 16pt; } ol li { margin-bottom: 4pt; }
+  .money { font-variant-numeric: tabular-nums; text-align: right; width: 28%; }
+  table.sum td { padding: 3pt 0; }
+  table.sum tr.total td { border-top: .8pt solid #1f1d1a; font-weight: 600; padding-top: 5pt; }
+  .brief { white-space: pre-wrap; font-size: 9.5pt; background: #f6f4f0; padding: 8pt 10pt; border-left: 2pt solid #1f1d1a; }
+  .photos { display: flex; gap: 6pt; margin-top: 6pt; }
+  .photos div { width: 30mm; height: 30mm; border: .5pt dashed #b8b2a8; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #9a948a; }
+  .ph { color: #b4553a; background: #fbeee8; padding: 0 3pt; border-radius: 2pt; font-size: 9pt; }
+  .consent { display: flex; gap: 8pt; align-items: flex-start; margin: 4pt 0; }
+  .consent .cb { width: 10pt; height: 10pt; border: .8pt solid #1f1d1a; margin-top: 2pt; flex: none; display: flex; align-items: center; justify-content: center; font-size: 8pt; }
+  .small { font-size: 8.5pt; color: #6b665e; }
+  footer { margin-top: 16pt; font-size: 7.5pt; color: #6b665e; display: flex; justify-content: space-between; border-top: .4pt solid #d8d3cb; padding-top: 4pt; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Keramická zahrada<strong>Potvrzení zakázky</strong></div>
+  <div class="meta">Objednávka<strong>{{order.number}}</strong>odeslána {{order.placed_at}} · potvrzena {{order.confirmed_at}}</div>
+</header>
+
+<h1>Výrobek podle vašeho zadání</h1>
+<p class="lead">Potvrzujeme kupní smlouvu, kterou jste s námi uzavřel(a) objednávkou v e-shopu. Toto potvrzení a obchodní podmínky ve znění od {{terms.version}} (v příloze) jsou smlouva — uschovejte si je.</p>
+
+<div class="two">
+  <div>
+    <h2><span>01</span>Prodávající</h2>
+    <table class="kv">
+      <tr><td>Jméno</td><td>Lucie Polanská, podnikající fyzická osoba</td></tr>
+      <tr><td>Sídlo · IČO</td><td>Putim 229, 397 01 Písek · 03441482</td></tr>
+      <tr><td>Kontakt</td><td>info@keramickazahrada.cz · +420 775 211 578</td></tr>
+    </table>
+  </div>
+  <div>
+    <h2><span>02</span>Kupující</h2>
+    <table class="kv">
+      <tr><td>Jméno</td><td>{{customer.name}}</td></tr>
+      <tr><td>Adresa</td><td>{{customer.address}}</td></tr>
+      <tr><td>Kontakt</td><td>{{customer.email}} · {{customer.phone}}</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2><span>03</span>Co vyrábíme</h2>
+<table class="kv">
+  <tr><td>Výrobek</td><td><strong>{{product.title}}</strong>{{product.variant_suffix}}</td></tr>
+  <tr><td>Vaše zadání</td><td><div class="brief">{{brief.text}}</div><div class="photos"><div>foto 1</div><div>foto 2</div><div>foto 3</div></div></td></tr>
+</table>
+<p class="small">Zadání jste zapsal(a) do objednávky a je pro obě strany závazné. Chcete-li ho změnit, napište nám co nejdřív — po zahájení výroby je změna možná jen dohodou a může změnit cenu i termín.</p>
+
+<h2><span>04</span>Cena a platby</h2>
+<table class="sum">
+  <tr><td>Cena výrobku</td><td class="money">{{price.item}} Kč</td></tr>
+  <tr><td>Doprava a balné ({{shipping.method}})</td><td class="money">{{price.shipping}} Kč</td></tr>
+  <tr class="total"><td>Celkem</td><td class="money">{{price.total}} Kč</td></tr>
+  <tr><td>Zaplaceno při objednávce ({{deposit.method}}, {{deposit.paid_at}}) — z toho záloha <span class="ph">{{mto.deposit}} %</span> = {{price.deposit}} Kč</td><td class="money">{{price.paid}} Kč</td></tr>
+  <tr><td>Zbývá doplatit po dokončení, před odesláním</td><td class="money">{{price.balance}} Kč</td></tr>
+</table>
+<p class="small">Ceny jsou konečné{{vat.note}}. Odkaz k doplatku vám pošleme e-mailem po schválení výrobku. Nezaplatíte-li ani po připomenutí do 30 dnů, platí, že jste zakázku zrušil(a) po zahájení výroby (bod 06, odst. 2).</p>
+
+<h2><span>05</span>Jak to půjde dál</h2>
+<ol>
+  <li><strong>Zahájení výroby.</strong> Začneme po připsání platby. V den, kdy začneme, vám pošleme e-mail „Zakázka je ve výrobě“ s datem a časem. <strong>Od tohoto e-mailu je výroba zahájena</strong> — pro obě strany závazně, bez ohledu na pozdější tvrzení kohokoliv.</li>
+  <li><strong>Dokončení</strong> do <strong>{{mto.lead_time_max}} dnů od zahájení výroby</strong> (obvykle {{mto.lead_time_min}}–{{mto.lead_time_max}} dnů; ruční výroba, sušení a dva výpaly). Praskne-li kus při výpalu, uděláme ho znovu bez příplatku a dáme vědět o novém termínu. Nestihneme-li ani ten, můžete od smlouvy odstoupit a vrátíme vám všechno.</li>
+  <li><strong>Schválení před výpalem.</strong> Pošleme vám fotografii hotového tvaru. Máte 5 pracovních dnů (připomeneme se). Schválíte-li ji, nebo se neozvete, je vyfocená podoba ujednanou vlastností výrobku (§ 2161 odst. 1 písm. a) OZ) a rozdíl proti vaší představě už není vadou. Nesoulad se zadáním — jiné číslo, text či motiv — <strong>zůstává vadou vždy</strong>.</li>
+  <li><strong>Odeslání</strong> do 2 pracovních dnů od doplatku, pojištěný křehký balík.</li>
+</ol>
+
+<h2><span>06</span>Zrušení zakázky a vrácení peněz</h2>
+<div class="box">
+  <p><strong>Výrobek vzniká podle vašeho zadání, proto na něj neplatí vrácení do 14 dnů bez udání důvodu</strong> (§ 1837 písm. d) OZ). Potvrdil(a) jste to před odesláním objednávky, spolu s tím, že záloha se po zahájení výroby nevrací.</p>
+</div>
+<ol>
+  <li><strong>Zrušíte-li před zahájením výroby</strong> (před e-mailem z bodu 05/1): vrátíme vám všechno, co jste zaplatil(a), do 14 dnů, stejnou cestou, jakou jste platil(a).</li>
+  <li><strong>Zrušíte-li po zahájení výroby:</strong> záloha ({{price.deposit}} Kč, nejvýše 50 % ceny výrobku) se nevrací — pokrývá materiál, návrh, rezervovanou kapacitu a práci, které jsme do kusu vložili a který už nikomu jinému neprodáme. Všechno, co jste zaplatil(a) nad zálohu, vám vrátíme do 14 dnů stejnou cestou a doplatek po vás nepožadujeme. Rozpracovaný nebo hotový výrobek zůstává nám.</li>
+  <li><strong>Zrušíme-li my</strong> (nejde vyrobit, nestihneme ani náhradní termín): vrátíme vám všechno do 14 dnů stejnou cestou.</li>
+</ol>
+
+<h2><span>07</span>Vady</h2>
+<p>Za vady odpovídáme 2 roky od převzetí; vada do 1 roku se považuje za vadu při převzetí. Reklamaci vyřídíme do 30 dnů od uplatnění. Dorazí-li výrobek rozbitý, napište nám s fotografiemi — s dopravcem to řešíme my. <strong>Vadou není</strong> odstín a kresba glazury, drobné nerovnosti a stopy ruční práce ani drobná odchylka rozměru — každý kus vzniká rukama a žádné dva nejsou stejné. <strong>Vadou je</strong> prasklina, odštěpek, odlupující se glazura, jiný motiv, text nebo rozměr než ve schválené podobě, a poškození při přepravě. Při vadě máte právo nejprve na opravu nebo nový kus, pak na slevu nebo vrácení peněz (§ 2169–2171 OZ). Podrobně v <a href="{{links.complaints}}">Reklamačním řádu</a>.</p>
+
+<h2><span>08</span>Co jste odsouhlasil(a) při objednávce</h2>
+<div class="consent"><div class="cb">✓</div><div>Seznámil(a) jsem se s obchodními podmínkami ve znění od {{terms.version}} včetně článku Výroba na zakázku. <span class="small">{{consent.terms_at}}</span></div></div>
+<div class="consent"><div class="cb">✓</div><div>Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací. <span class="small">{{consent.mto_at}}</span></div></div>
+<p class="small">Souhlasy jsou uložené u objednávky č. {{order.number}} s verzí podmínek a časem podle našeho serveru. Smlouva byla uzavřena česky, na dálku; toto potvrzení je její potvrzení v textové podobě (§ 1827 odst. 2 OZ). Spory lze řešit mimosoudně u České obchodní inspekce (Štěpánská 796/44, 110 00 Praha 1, www.coi.cz). Přílohy: Obchodní podmínky {{terms.version}} · Poučení o odstoupení · Reklamační řád (PDF).</p>
+
+<footer>
+  <span>Keramická zahrada · Lucie Polanská · Putim 229, 397 01 Písek · IČO 03441482 · info@keramickazahrada.cz</span>
+  <span>Potvrzení zakázky č. {{order.number}} · OP {{terms.version}}</span>
+</footer>
+</body>
+</html>

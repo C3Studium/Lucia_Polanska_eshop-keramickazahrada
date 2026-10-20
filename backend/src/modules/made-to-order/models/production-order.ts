@@ -16,7 +16,16 @@ export const ProductionOrder = model.define("production_order", {
     ])
     .index()
     .default("specification_pending"),
+  /**
+   * SMLUVNÍ záloha (LEGAL_AUDIT § 0, Z2/Z5): procento z profilu výroby
+   * (přebití u provedení vyhrává), nejvýš 50 — hlídá DB check i API.
+   * NENÍ to podíl zaplacený v pokladně (zákazník může zaplatit i celou cenu;
+   * co zaplatil, nesou žádosti o platbu). Po zahájení výroby se tahle část
+   * nevrací, všechno nad ni ano (Z5).
+   */
   deposit_percentage: model.number(),
+  /** Smluvní záloha v penězích (měna `currency_code`) — `deposit_percentage` z nezlevněné ceny zakázkových řádků, nejvýš jejich cena. Null u zakázek z doby před 20. 10. 2026. */
+  deposit_amount: model.bigNumber().nullable(),
   agreed_total: model.bigNumber().nullable(),
   // Příplatek — vlastní částka navíc nad domluvenou/původní cenu (např. víc práce,
   // než se čekalo). Vlastní „entita" vedle ceny: cenu nemění, jen navyšuje, co
@@ -27,6 +36,13 @@ export const ProductionOrder = model.define("production_order", {
   estimated_completion_at: model.dateTime().nullable(),
   specification_confirmed_at: model.dateTime().nullable(),
   production_started_at: model.dateTime().nullable(),
+  /**
+   * Z3: zahájení výroby platí od e-mailu „Zakázka je ve výrobě", ne od
+   * tvrzení kterékoli strany. Kdy odešel a ID zprávy (notifikace / Resend).
+   * Dokud je null, zrušení zákazníkem = před zahájením (Z4, vrací se vše).
+   */
+  production_start_notified_at: model.dateTime().nullable(),
+  production_start_email_id: model.text().nullable(),
   production_completed_at: model.dateTime().nullable(),
   balance_requested_at: model.dateTime().nullable(),
   final_total_confirmed_at: model.dateTime().nullable(),
@@ -38,6 +54,22 @@ export const ProductionOrder = model.define("production_order", {
    * ho u kroku „Zakázka zrušena" ukazuje.
    */
   cancelled_at: model.dateTime().nullable(),
+  /** Kdo zakázku zrušil: `customer` (Z4/Z5/Z6) nebo `seller` (Z7). Text + DB check, ne enum — ať nullable sloupec nepotřebuje výchozí hodnotu. */
+  cancelled_by: model.text().nullable(),
+  /** `before_production` = před e-mailem Z3 (vrací se vše), `after_production` = po něm (záloha se nevrací). */
+  cancellation_phase: model.text().nullable(),
+  /** Kolik se při zrušení vrátilo (vše, nebo jen nad zálohu). */
+  cancellation_refund_amount: model.bigNumber().nullable(),
+  /**
+   * Z11: PDF „Potvrzení zakázky" — neměnný doklad k objednávce v R2
+   * (`orders/<order_id>/potvrzeni-zakazky.pdf`), jeho otisk a veřejná URL,
+   * kdy odešlo zákazníkovi a s jakou verzí OP se tisklo.
+   */
+  confirmation_pdf_key: model.text().nullable(),
+  confirmation_pdf_sha256: model.text().nullable(),
+  confirmation_pdf_url: model.text().nullable(),
+  confirmation_sent_at: model.dateTime().nullable(),
+  confirmation_terms_version: model.text().nullable(),
   /**
    * Kolik ze zaplacené zálohy už bylo vráceno přes Reklamace a zrušení
    * (`scope: "deposit"`, §12.3). Rozhodnutí majitelky — zákazník na vrácení
