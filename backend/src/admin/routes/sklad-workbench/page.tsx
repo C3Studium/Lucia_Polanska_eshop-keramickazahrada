@@ -171,6 +171,27 @@ const ThresholdEditor = ({ row }: { row: DemandRow }) => {
     return null;
   }
 
+  /*
+   * Hranice je ÚDAJ, ne úkon — ukládá se při opuštění pole, jako všechna
+   * ostatní pole v adminu (§1). Tužka a tlačítko „Uložit" zmizely: schovávat
+   * číslo za dvě kliknutí znamenalo, že ho nikdo nikdy nezměnil.
+   *
+   * (Naskladnění vedle je naopak úkon — „+5 ks" se nedá uložit „samo",
+   * protože každé uložení by přidalo dalších pět. Tam tlačítko zůstává.)
+   */
+  const commit = () => {
+    setEditing(false);
+    const threshold = Number(value);
+    if (!Number.isInteger(threshold) || threshold < 0) {
+      setValue(String(row.threshold));
+      return;
+    }
+    if (threshold === row.threshold) {
+      return; // Nezměněná hodnota nezapisuje.
+    }
+    save.mutate(threshold);
+  };
+
   if (!editing) {
     return (
       <button
@@ -182,43 +203,40 @@ const ThresholdEditor = ({ row }: { row: DemandRow }) => {
         }}
       >
         hlásí se při {row.threshold} a méně
-        {row.has_custom_threshold ? " (vlastní)" : ""} ✎
+        {row.has_custom_threshold ? " (vlastní)" : ""}
       </button>
     );
   }
 
   return (
-    <form
-      className="flex items-center gap-2"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const threshold = Number(value);
-        if (Number.isInteger(threshold) && threshold >= 0) {
-          save.mutate(threshold);
-        }
-      }}
-    >
+    <div className="flex items-center gap-2">
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        hlásí se při
+      </Text>
       <Input
         size="small"
         type="number"
         min={0}
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="w-20"
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            (event.target as HTMLInputElement).blur();
+          }
+          if (event.key === "Escape") {
+            setValue(String(row.threshold));
+            setEditing(false);
+          }
+        }}
+        disabled={save.isPending}
+        className="w-16"
         autoFocus
       />
-      <Button size="small" variant="secondary" type="submit" isLoading={save.isPending}>
-        Uložit
-      </Button>
-      <Button
-        size="small"
-        variant="transparent"
-        type="button"
-        onClick={() => setEditing(false)}
-      >
-        Zrušit
-      </Button>
-    </form>
+      <Text size="xsmall" className="text-ui-fg-subtle">
+        a méně
+      </Text>
+    </div>
   );
 };
 
