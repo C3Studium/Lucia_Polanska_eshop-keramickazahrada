@@ -44,6 +44,7 @@ import { AccountDeletedEmail } from "./emails/account-deleted";
 import { ReturnApprovedEmail } from "./emails/return-approved";
 import { NewsletterSignupEmail } from "./emails/newsletter-signup";
 import { NewsletterUnsubscribeEmail } from "./emails/newsletter-unsubscribe";
+import { NewsletterWelcomeEmail } from "./emails/newsletter-welcome";
 import { PromotionalEmail } from "./emails/promotional";
 import { bundlePublishedEmail } from "./emails/bundle-published";
 import { RefundRequestEmail } from "./emails/refund-request";
@@ -119,6 +120,7 @@ enum Templates {
   RETURN_APPROVED = "return-approved",
   NEWSLETTER_SIGNUP = "newsletter-signup",
   NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  NEWSLETTER_WELCOME = "newsletter-welcome",
   PROMOTIONAL = "promotional",
   BUNDLE_PUBLISHED = "bundle-published",
   REFUND_REQUEST = "refund-request",
@@ -210,6 +212,7 @@ const templates: {[key in Templates]?: (props: unknown) => React.ReactNode} = {
   [Templates.RETURN_APPROVED]: ReturnApprovedEmail,
   [Templates.NEWSLETTER_SIGNUP]: NewsletterSignupEmail,
   [Templates.NEWSLETTER_UNSUBSCRIBE]: NewsletterUnsubscribeEmail,
+  [Templates.NEWSLETTER_WELCOME]: NewsletterWelcomeEmail,
   [Templates.PROMOTIONAL]: PromotionalEmail,
   [Templates.BUNDLE_PUBLISHED]: bundlePublishedEmail,
   [Templates.REFUND_REQUEST]: RefundRequestEmail,
@@ -272,6 +275,7 @@ export enum EmailTemplates {
   RETURN_APPROVED = "return-approved",
   NEWSLETTER_SIGNUP = "newsletter-signup",
   NEWSLETTER_UNSUBSCRIBE = "newsletter-unsubscribe",
+  NEWSLETTER_WELCOME = "newsletter-welcome",
   PROMOTIONAL = "promotional",
   BUNDLE_PUBLISHED = "bundle-published",
   REFUND_REQUEST = "refund-request",
@@ -565,6 +569,8 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         return "Vítejte v okruhu ateliéru"
       case Templates.NEWSLETTER_UNSUBSCRIBE:
         return "Odhlášení potvrzeno"
+      case Templates.NEWSLETTER_WELCOME:
+        return "Odběr novinek je potvrzený — děkujeme"
       case Templates.PROMOTIONAL:
         return "Z ateliéru — objekty za příznivější cenu"
       case Templates.BUNDLE_PUBLISHED:
@@ -725,6 +731,40 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     const legalFacts =
       typeof template === "string" ? null : await this.loadLegalFacts().catch(() => null)
 
+    /*
+     * Jednoklikové odhlášení (RFC 8058) u všeho, co nese odhlašovací odkaz.
+     *
+     * Odkaz v patičce zná jen člověk, který e-mail otevře. Poštovní klienti
+     * (Gmail, Seznam, Outlook) ale umí nabídnout „Odhlásit odběr" přímo
+     * v záhlaví zprávy — a berou ho právě z těchhle hlaviček. Bez nich
+     * zbývá uživateli tlačítko „spam", což je horší pro něj i pro doručitelnost
+     * všech ostatních e-mailů z téhle domény.
+     *
+     * `List-Unsubscribe-Post` znamená, že se odhlášení provede POSTem na ten
+     * odkaz bez dalšího potvrzování; proto má `/newsletter/unsubscribe` vedle
+     * GET i POST.
+     *
+     * Hlavičky se odvozují z dat šablony, ne z jejího jména — kdo přidá
+     * odhlašovací odkaz do další šablony, dostane je rovnou.
+     */
+    const unsubscribeLink =
+      typeof (notification.data as Record<string, unknown> | undefined)
+        ?.unsubscribeLink === "string"
+        ? String(
+            (notification.data as Record<string, unknown>).unsubscribeLink
+          ).trim()
+        : ""
+
+    const unsubscribeHeaders =
+      unsubscribeLink && /^https?:\/\//i.test(unsubscribeLink)
+        ? {
+            headers: {
+              "List-Unsubscribe": `<${unsubscribeLink}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          }
+        : {}
+
     const commonOptions = {
       from: this.options.from,
       to: [notification.to],
@@ -736,6 +776,7 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
         ? { replyTo: providedReplyTo.trim() }
         : {}),
       ...(resendTags.length ? { tags: resendTags } : {}),
+      ...unsubscribeHeaders,
     }
 
     const buildEmailOptions = (

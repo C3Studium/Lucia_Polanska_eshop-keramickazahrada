@@ -49,17 +49,17 @@ const bounce = (res: MedusaResponse, status: string) => {
   res.redirect(302, `${base}/newsletter?stav=${status}`)
 }
 
-export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const email = normalizeEmail(
-    typeof req.query.email === "string" ? req.query.email : ""
-  )
-
-  if (!email || !verifyUnsubscribeToken(email, req.query.token)) {
-    // Deliberately vague: a precise message would help someone probing tokens.
-    bounce(res, "neplatny-odkaz")
-    return
-  }
-
+/**
+ * Samotné odhlášení — sdílené GETem z patičky e-mailu i POSTem, kterým
+ * poštovní klient odbaví „Odhlásit odběr" ze záhlaví zprávy (RFC 8058).
+ *
+ * Vrací stav pro volajícího; ten rozhodne, jestli se přesměrovává na web,
+ * nebo odpovídá holým 200.
+ */
+const odhlas = async (
+  req: MedusaRequest,
+  email: string
+): Promise<"odhlaseno" | "chyba"> => {
   try {
     const newsletter = req.scope.resolve<NewsletterModuleService>(
       NEWSLETTER_MODULE
@@ -99,7 +99,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       )
     }
 
-    bounce(res, "odhlaseno")
+    return "odhlaseno"
   } catch (error) {
     req.scope
       .resolve(ContainerRegistrationKeys.LOGGER)
@@ -108,6 +108,53 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
           error instanceof Error ? error.message : "neznámá chyba"
         }`
       )
-    bounce(res, "chyba")
+    return "chyba"
   }
+}
+
+/** Odkaz v patičce e-mailu: odhlásí a pošle člověka na stránku se stavem. */
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  const email = normalizeEmail(
+    typeof req.query.email === "string" ? req.query.email : ""
+  )
+
+  if (!email || !verifyUnsubscribeToken(email, req.query.token)) {
+    // Deliberately vague: a precise message would help someone probing tokens.
+    bounce(res, "neplatny-odkaz")
+    return
+  }
+
+  bounce(res, await odhlas(req, email))
+}
+
+/**
+ * Jednoklikové odhlášení (RFC 8058).
+ *
+ * Tohle nevolá člověk, ale jeho poštovní klient: Gmail, Seznam nebo Outlook
+ * nabídnou „Odhlásit odběr" v záhlaví zprávy a po potvrzení sem pošlou POST
+ * s tělem `List-Unsubscribe=One-Click`. Odpověď nikdo nečte, takže se
+ * nepřesměrovává — stačí 200. Chybu hlásíme jako 500, aby to klient zkusil
+ * znovu místo toho, aby odhlášení tiše spolkl.
+ *
+ * Adresu i podpis bere ze stejného query stringu jako GET; hlavička
+ * `List-Unsubscribe` nese tutéž URL.
+ */
+export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  const email = normalizeEmail(
+    typeof req.query.email === "string" ? req.query.email : ""
+  )
+
+  if (!email || !verifyUnsubscribeToken(email, req.query.token)) {
+    res.status(400).send("Neplatný odkaz.")
+    return
+  }
+
+  const stav = await odhlas(req, email)
+
+  if (stav === "chyba") {
+    res.status(500).send("Odhlášení se nepodařilo dokončit.")
+    return
+  }
+
+  res.status(200).send("Odhlášeno.")
 }

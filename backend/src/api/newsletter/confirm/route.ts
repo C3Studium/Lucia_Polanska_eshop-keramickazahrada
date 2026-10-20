@@ -1,7 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { storefrontBase } from "../../../lib/customer-email"
+import { sendCustomerEmail, storefrontBase } from "../../../lib/customer-email"
 import {
+  newsletterUnsubscribeUrl,
   normalizeEmail,
   verifyConfirmToken,
 } from "../../../lib/newsletter-link"
@@ -86,10 +87,58 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     }
 
     if (!subscriber.confirmed_at) {
+      const confirmedAt = new Date()
+
       await newsletter.updateNewsletterSubscribers({
         id: subscriber.id,
-        confirmed_at: new Date(),
+        confirmed_at: confirmedAt,
       } as never)
+
+      /*
+       * Poděkování — první zpráva, kterou člověk dostane jako odběratel.
+       *
+       * Dřív tady nebylo nic: kdo klikl na potvrzení, viděl stránku
+       * „potvrzeno" a pak třeba měsíce ticho, než vyšla první kampaň. To je
+       * k nerozeznání od rozbitého formuláře, a chybí u toho jediné, co má
+       * odběratel v ruce jako důkaz: zpráva, že souhlas byl zaznamenán a jak
+       * ho vzít zpět.
+       *
+       * Odhlašovací odkaz nese už tenhle e-mail — je to obchodní sdělení
+       * jako každé jiné (zák. č. 480/2004 Sb. § 7) a odvolat souhlas má být
+       * stejně snadné jako ho dát (GDPR čl. 7 odst. 3). Z `unsubscribeLink`
+       * si navíc odesílací vrstva odvodí hlavičky pro jednoklikové
+       * odhlášení přímo v poštovním klientovi.
+       *
+       * Posílá se jen při PRVNÍM potvrzení — opakovaný klik na týž odkaz
+       * sem nedojde (`confirmed_at` už je vyplněné), takže se nemůže
+       * zopakovat. Selhání pošty nesmí shodit potvrzení: souhlas je zapsaný
+       * a stránka to musí potvrdit tak jako tak.
+       */
+      const unsubscribeLink = newsletterUnsubscribeUrl(email)
+
+      await sendCustomerEmail(req.scope, {
+        template: "newsletter-welcome",
+        to: email,
+        key: `nl-welcome:${email}`,
+        data: {
+          email,
+          unsubscribeLink: unsubscribeLink ?? "",
+          confirmedOn: new Intl.DateTimeFormat("cs-CZ", {
+            timeZone: "Europe/Prague",
+            day: "numeric",
+            month: "numeric",
+            year: "numeric",
+          }).format(confirmedAt),
+        },
+      }).catch((error) =>
+        req.scope
+          .resolve(ContainerRegistrationKeys.LOGGER)
+          .error(
+            `[newsletter] Uvítací e-mail pro ${email} se nepodařilo odeslat: ${
+              error instanceof Error ? error.message : "neznámá chyba"
+            }`
+          )
+      )
     }
 
     bounce(res, "potvrzeno")

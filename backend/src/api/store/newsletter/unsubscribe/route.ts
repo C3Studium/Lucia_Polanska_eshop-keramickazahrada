@@ -7,4 +7,4 @@
  * headers). This re-export keeps the documented `/store` path working for the
  * storefront or anything else that does carry the key.
  */
-export { GET } from "../../../newsletter/unsubscribe/route"
+export { GET, POST } from "../../../newsletter/unsubscribe/route"
