@@ -284,3 +284,24 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
 - Otevřené: pojistka pro případ, že `initialize-merchant-order` spadne před emitem eventu
   (zakázková objednávka by nedostala potvrzení) — navrženo jako job; fotky z telefonu jdou do
   PDF 1:1 (bez zmenšení); advokát A1–A3 (`ADVOKAT.md`).
+
+## § 0b a § 0c Z-B (20. 10. 2026 odpoledne, větev `legal/deploy-2026-10`, NENASAZENO)
+
+- Inventura (admin API, jen čtení): 31 zveřejněných produktů tvrdí „zdravotně nezávadné“
+  glazury / materiály (pítka, podmisky, štrůdláky, talíře); „Hrnek s ptáčkem“ naopak správně
+  říká „není vhodný pro styk s potravinami“. Kategorie na webu nemají popis (nevykresluje se).
+  Kategorie **Bezdrátové zvonky** má 2 zveřejněné produkty (Bezdrátový zvonek BZ8-113, Montážní
+  krabička KP 68) — audit čekal prázdnou. 73 zvonkových tlačítek bez údaje o napětí; 8 popisů
+  odkazovalo na starý e-shop `keramickazahrada.cz/shop/bezdratovy-zvonek-bz8-113/`.
+- **Provedeno na produkci (admin API):** u 8 tlačítek nahrazen mrtvý odkaz větou „(bezdrátový
+  zvonek najdete v obchodě v kategorii Bezdrátové zvonky)“; původní popisy zálohované ve
+  scratchpadu Clauda (`bell-links-backup.json`). Nic jiného se v produkci neměnilo.
+- ARES (RŽP, IČO 03441482): fyzická osoba, živnost volná od 26. 9. 2014, živnostenský úřad kód
+  330501 (= Městský úřad Písek) — do OP zatím jen „zapsaná v živnostenském rejstříku“ (čl. I už
+  obsahuje), úřad po potvrzení.
+- Kód (commity debe3968, 31e890dd): `/certifikaty`, `lib/certificates.ts` (prázdný seznam),
+  FAQ „Nezávadnost a bezpečnost“, `safety-notice` u výrobku, skript `food-claims.ts`
+  (list/strip/restore, test), OP čl. VI/VII/VIII (kus s vadou, balíčky, zboží na objednávku,
+  hlídání dostupnosti). Storefront `tsc` OK, testy skriptů 42/42; backend `tsc` OK.
+- Tvrzení o nezávadnosti zatím v popisech ponechána — čeká se na protokoly a seznam glazur od
+  Lucie (odstranění jednou větou: `npx medusa exec ./src/scripts/food-claims.ts strip`).
