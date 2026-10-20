@@ -11,7 +11,11 @@ import type { OrderProgress } from "@lib/data/order-progress"
 import { HttpTypes } from "@medusajs/types"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import type { CommissionNote } from "@lib/util/made-to-order"
-import type { CommissionBalance } from "@lib/data/made-to-order"
+import type {
+  CommissionBalance,
+  CommissionCancellation,
+} from "@lib/data/made-to-order"
+import CommissionPanel from "@modules/order/components/commission-panel"
 import { isCarrierShippingMethod } from "@lib/util/carrier"
 import CarrierDamageNotice, {
   CLAIM_FORM_KEY,
@@ -43,6 +47,8 @@ type OrderCompletedTemplateProps = {
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky (zaplaceno zálohou / zbývá / odkaz na doplacení). */
   commissionBalance?: CommissionBalance | null
+  /** Zrušení zakázky (`/cancellation`) — host z e-mailu ho dostane tímtéž tokenem. */
+  commissionCancellation?: CommissionCancellation | null
   /**
    * Podepsaný token pro self-service odkazy (úprava / zrušení / reklamace).
    * `null` → tlačítka se nevykreslí (nešlo ho získat).
@@ -77,6 +83,7 @@ export default async function OrderCompletedTemplate({
   progressFallback = "Přijato",
   commissionNotes = null,
   commissionBalance = null,
+  commissionCancellation,
   selfServiceToken = null,
   claims = null,
   copy,
@@ -615,6 +622,15 @@ export default async function OrderCompletedTemplate({
               <CommissionConversation orderId={order.id} notes={commissionNotes} />
             )}
 
+            {/* Zakázka (audit § 0): stav podle e-mailu o zahájení, smluvní
+                záloha, PDF potvrzení a „Zrušit zakázku" — i pro hosta z
+                e-mailu (token). Jen u zakázky. */}
+            <CommissionPanel
+              orderId={order.id}
+              balance={commissionBalance}
+              cancellation={commissionCancellation}
+              token={selfServiceToken}
+            />
             {/* Doplatek zakázky — doplatit zbytek rovnou odsud, nemusí čekat na
                 e-mail. Self-service odkaz nese podepsaný token (funguje i bez
                 přihlášení) → ComGate → zpět na tohle potvrzení, kde se platba

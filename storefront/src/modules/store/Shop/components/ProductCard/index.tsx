@@ -6,6 +6,7 @@ import {
   getProductPrice,
 } from "@lib/util/get-product-price"
 import { COMMISSION_CATEGORY_HANDLE } from "@lib/util/commission"
+import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { convertToLocale } from "@lib/util/money"
 import { usePriceReference } from "@modules/products/ProductPage/product/details/Cta/Price/use-price-reference"
 import type { HttpTypes } from "@medusajs/types"
@@ -383,14 +384,18 @@ function ProductCard({
             {availability === "last-one" && (
               <span className={styles.badgeLast}>{availabilityLabel["last-one"]}</span>
             )}
+            {/* Výpis obchodu nese jen zrcadlo `metadata.made_to_order`, ne profil
+                výroby — záloha % a lhůta by chtěly dotaz na každou kartu. Proto
+                tu zůstává krátká podoba štítku (audit § 0); plné znění se
+                zálohou a lhůtou je na stránce produktu. */}
             {isMadeToOrder && (
               <span
                 className={styles.badgeMade}
-                title="Na zakázku — nelze vrátit do 14 dnů"
+                title={madeToOrderBadgeText()}
               >
                 Na zakázku
                 <span className={styles.badgeNote}>
-                  {" "}— nelze vrátit do 14 dnů
+                  {" "}· nelze vrátit do 14 dnů
                 </span>
               </span>
             )}

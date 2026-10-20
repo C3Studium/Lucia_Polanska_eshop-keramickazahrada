@@ -5,7 +5,10 @@ import { updateLineItem } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { maxPurchasableQuantity } from "@lib/util/availability"
 import { isDobirkaFeeLine } from "@lib/util/dobirka"
+import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
+import { madeToOrderBadgeText } from "@lib/util/made-to-order"
 import { isPackagingLine } from "@lib/util/packaging"
+import { LEGAL_LINKS } from "@modules/checkout/components/legal-consent/labels"
 import PackagingLine, { PackagingNote } from "@modules/common/components/packaging-line"
 import CartQuantityStepper from "@modules/cart/components/cart-quantity-stepper"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -27,9 +30,20 @@ type ItemProps = {
   isMobile?: boolean
   /** Balné tohoto výrobku (lib/util/packaging.ts) — ukáže se pod variantou. */
   packaging?: HttpTypes.StoreCartLineItem | null
+  /**
+   * Záloha % a lhůta zakázky z profilu výroby (košík je načte serverem). Bez
+   * nich — náhled v pokladně, zakázka jen kategorií — zůstane krátký štítek.
+   */
+  madeToOrderTerms?: ProductionLeadTime | null
 }
 
-const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps) => {
+const Item = ({
+  item,
+  type = "full",
+  currencyCode,
+  packaging = null,
+  madeToOrderTerms = null,
+}: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,6 +59,17 @@ const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps
   // failed at the backend — the worst possible place to learn it (spec §4).
   const maxQuantity = maxPurchasableQuantity(item.variant, 10)
   const quantityLimit = Math.min(maxQuantity, 10)
+
+  /* Zakázka (audit § 0): štítek „Na zakázku · záloha N % · výroba do N dnů ·
+     nelze vrátit do 14 dnů" pod názvem — tatáž slova jako u ceny na stránce
+     produktu; co profil nedá, se vynechá. Odkaz vede na článek OP. */
+  const madeToOrder = isMadeToOrderLine(item as any)
+  const madeToOrderLabel = madeToOrder
+    ? madeToOrderBadgeText({
+        depositPercentage: madeToOrderTerms?.deposit_percentage,
+        maxDays: madeToOrderTerms?.production_time_max_days,
+      })
+    : null
 
   /*
    * Doběrečné — a fee, not a product. No photo, no product link, no quantity
@@ -101,7 +126,7 @@ const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps
       </div>
 
       <div className={s.cellTitle}>
-        <p className={s.kicker}>Z ateliéru</p>
+        <p className={s.kicker}>{madeToOrder ? "Na zakázku" : "Z ateliéru"}</p>
         <LocalizedClientLink href={`/products/${item.product_handle}`}>
           <h3 className={s.title} data-testid="product-title">
             {item.product_title}
@@ -110,6 +135,17 @@ const Item = ({ item, type = "full", currencyCode, packaging = null }: ItemProps
         <div className={s.options}>
           <LineItemOptions variant={item.variant} data-testid="product-variant" />
         </div>
+        {madeToOrderLabel && (
+          <LocalizedClientLink
+            href={LEGAL_LINKS.termsMadeToOrder}
+            className={s.madeToOrder}
+            target="_blank"
+            rel="noopener"
+            data-testid="cart-made-to-order-badge"
+          >
+            {madeToOrderLabel}
+          </LocalizedClientLink>
+        )}
         <div className={s.dimensions}>
           {!!item.metadata?.width && <span>Šířka · {item.metadata.width as number} cm</span>}
           {!!item.metadata?.height && <span>Výška · {item.metadata.height as number} cm</span>}

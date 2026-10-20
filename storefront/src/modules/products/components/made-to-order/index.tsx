@@ -4,6 +4,7 @@ import { useId } from "react"
 
 import {
   depositPercentageFor,
+  productionMaxDaysFor,
   productionTimeLabel,
   type ProductionProfile,
 } from "@lib/util/made-to-order"
@@ -37,6 +38,9 @@ export default function MadeToOrderPanel({
 }: MadeToOrderPanelProps) {
   const fieldId = useId()
   const leadTime = productionTimeLabel(profile)
+  /* Z9: lhůta běží od zahájení výroby (e-mail „Zakázka je ve výrobě"), ne od
+     objednání — proto „do N dnů od zahájení", rozpětí z profilu jen jako „obvykle". */
+  const maxDays = productionMaxDaysFor(profile, variantId)
   const depositPercentage = depositPercentageFor(profile, variantId)
   const depositAmount =
     depositPercentage != null && unitAmount != null
@@ -49,7 +53,14 @@ export default function MadeToOrderPanel({
         Vyrábí se na zakázku
       </p>
 
-      {leadTime && <p className={styles.lead}>Hotovo zhruba za {leadTime}.</p>}
+      {maxDays ? (
+        <p className={styles.lead}>
+          Hotovo do {maxDays} dnů od zahájení výroby
+          {leadTime && leadTime !== `do ${maxDays} dní` ? ` (obvykle ${leadTime})` : ""}.
+        </p>
+      ) : (
+        leadTime && <p className={styles.lead}>Hotovo zhruba za {leadTime}.</p>
+      )}
 
       {depositPercentage != null && (
         <p className={styles.deposit}>
@@ -57,7 +68,7 @@ export default function MadeToOrderPanel({
           {depositAmount != null && (
             <> — {convertToLocale({ amount: depositAmount, currency_code: currencyCode })}</>
           )}
-          . Zbytek doplatíte, až bude hotovo.
+          . Zbytek doplatíte, až bude hotovo. Po zahájení výroby se záloha nevrací.
         </p>
       )}
 

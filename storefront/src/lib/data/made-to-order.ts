@@ -1,7 +1,10 @@
 import { sdk } from "@lib/config"
 
-import { getCacheOptions } from "./cookies"
+import { getAuthHeaders, getCacheOptions } from "./cookies"
 import type {
+  CommissionBalance,
+  CommissionCancellation,
+  CommissionCancelResult,
   CommissionNote,
   ProductionPaymentMode,
   ProductionPaymentModeKind,
@@ -13,7 +16,14 @@ import type {
  * `@lib/util/made-to-order` so client components can use them without pulling `server-only`.
  */
 
-export type { CommissionNote, ProductionPaymentMode, ProductionProfile }
+export type {
+  CommissionBalance,
+  CommissionCancellation,
+  CommissionCancelResult,
+  CommissionNote,
+  ProductionPaymentMode,
+  ProductionProfile,
+}
 
 /** `{ production_profile: null }` for an ordinary product — the caller renders nothing. */
 export const getProductionProfile = async (
@@ -65,22 +75,13 @@ export const setProductionPaymentMode = async (
  * `url_paid`). That path only knows the session id, so this resolves it to the
  * order the customer should land on. `null` when it cannot be mapped.
  */
-export type CommissionBalance = {
-  is_commission: boolean
-  stage?: string
-  currency_code?: string
-  deposit_paid?: number
-  balance_paid?: number
-  outstanding?: number
-  /** Podepsaný odkaz na doplacení (funguje i bez přihlášení); null = není co platit. */
-  pay_url?: string | null
-}
-
 /**
  * Stav doplatku zakázky — kolik je zaplaceno zálohou, kolik zbývá, odkaz na
  * doplacení. Pro Souhrn na potvrzení objednávky, aby u zakázky ukázal „jen
  * záloha" + tlačítko doplatit (doplatek žije v modulu zakázky, ne v objednávce).
- * `null` / `is_commission:false` = běžná objednávka.
+ * Od auditu § 0 nese i smluvní zálohu, čas e-mailu „Zakázka je ve výrobě" (Z3),
+ * fázi zrušení a odkaz na PDF Potvrzení zakázky (Z11) — tvar `CommissionBalance`
+ * v `@lib/util/made-to-order`. `null` / `is_commission:false` = běžná objednávka.
  */
 export const getCommissionBalance = async (
   orderId: string
@@ -90,6 +91,57 @@ export const getCommissionBalance = async (
       cache: "no-store",
     })
     .catch(() => null)
+
+/**
+ * Autorizace zrušení zakázky — stejně jako u `balance`: přihlášený zákazník
+ * posílá JWT, host z e-mailového odkazu podepsaný `?token=` (týž token jako
+ * reklamace, `getOrderAccessToken` / `lib/data/claims.ts`). Obojí se přibalí,
+ * když je; backend rozhodne, co mu stačí.
+ */
+const commissionAuth = async (token?: string | null) => ({
+  headers: { ...(await getAuthHeaders()) },
+  ...(token ? { query: { token } } : {}),
+})
+
+/**
+ * Co by zrušení zakázky znamenalo TEĎ (Z4/Z5): fáze podle e-mailu o zahájení
+ * výroby, kolik se vrátí a kolik zůstane ateliéru. Částky počítá backend —
+ * storefront je jen opíše. `null` = není zakázka nebo se nepovedlo načíst →
+ * tlačítko se nenabídne.
+ */
+export const getCommissionCancellation = async (
+  orderId: string,
+  token?: string | null
+): Promise<CommissionCancellation | null> =>
+  sdk.client
+    .fetch<CommissionCancellation>(
+      `/store/made-to-order/${orderId}/cancellation`,
+      { cache: "no-store", ...(await commissionAuth(token)) }
+    )
+    .catch(() => null)
+
+/**
+ * Zrušení zakázky zákazníkem. Backend sám určí fázi (před / po e-mailu Z3),
+ * spočítá refund a při 409 (už zrušeno) vrátí českou hlášku — ta se pošle
+ * zákazníkovi tak, jak je. Vyhazuje, aby ji server action mohla přeložit.
+ */
+export const cancelCommission = async (
+  orderId: string,
+  input: { reason?: string } = {},
+  token?: string | null
+): Promise<CommissionCancelResult> =>
+  sdk.client.fetch<CommissionCancelResult>(
+    `/store/made-to-order/${orderId}/cancel`,
+    {
+      method: "POST",
+      body: {
+        confirm: true,
+        ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+      },
+      cache: "no-store",
+      ...(await commissionAuth(token)),
+    }
+  )
 
 /**
  * Dorovnání doplatku po návratu z ComGate — „dokončovací" krok, který doplatku

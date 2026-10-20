@@ -23,8 +23,12 @@ import PaymentDetails from "@modules/order/components/payment-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import CommissionConversation from "@modules/order/components/commission-conversation"
 import BalancePayPanel from "@modules/order/components/balance-pay"
+import CommissionPanel from "@modules/order/components/commission-panel"
 import type { CommissionNote } from "@lib/util/made-to-order"
-import type { CommissionBalance } from "@lib/data/made-to-order"
+import type {
+  CommissionBalance,
+  CommissionCancellation,
+} from "@lib/data/made-to-order"
 import {
   AccountPageReveal,
   AccountSectionReveal,
@@ -40,6 +44,11 @@ type OrderDetailsTemplateProps = {
   commissionNotes?: CommissionNote[] | null
   /** Stav doplatku zakázky → panel „Doplatit", když něco zbývá. */
   commissionBalance?: CommissionBalance | null
+  /**
+   * Co by zrušení zakázky znamenalo teď (`/cancellation`). `undefined` →
+   * panel si to dotáhne sám; `null` → zrušení se nenabídne.
+   */
+  commissionCancellation?: CommissionCancellation | null
   /**
    * Podepsaný token pro reklamaci / vrácení (stejný formulář jako z e-mailu
    * a z potvrzení — druh + „co požadujete" + fotky). `null` → formulář se
@@ -64,6 +73,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   claimForm = null,
   commissionNotes = null,
   commissionBalance = null,
+  commissionCancellation,
   selfServiceToken = null,
   claims = null,
   edit = null,
@@ -146,6 +156,14 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
               </LocalizedClientLink>
             </div>
           )}
+          {/* Zakázka (audit § 0): stav podle e-mailu o zahájení výroby, smluvní
+              záloha, PDF potvrzení a „Zrušit zakázku" (Z4/Z5). Jen u zakázky. */}
+          <CommissionPanel
+            orderId={order.id}
+            balance={commissionBalance}
+            cancellation={commissionCancellation}
+            token={selfServiceToken}
+          />
           {/* Doplatek zakázky — „Doplatit", když ještě něco zbývá. */}
           <BalancePayPanel balance={commissionBalance} />
           {/* Konverzace s ateliérem — jen u zakázky; stejný popup komponent jako

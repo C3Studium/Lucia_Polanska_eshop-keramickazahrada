@@ -40,7 +40,7 @@ const COMMISSION_GATE_HINT =
 const CONSENT_GATE_HINT =
   "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
 const MADE_TO_ORDER_GATE_HINT =
-  "Potvrďte prosím ještě, že berete na vědomí, že zboží na zakázku nelze vrátit do 14 dnů."
+  "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
 
 const Review = ({
   cart,
@@ -254,7 +254,12 @@ const Review = ({
                 lhůta, odstoupení / jeho vyloučení u zakázky, prodávající,
                 dokumenty. Zboží a ceny jsou v rekapitulaci výš. */}
             <motion.div variants={rowVariants} initial="hidden" animate="visible">
-              <PreContractInfo cart={cart} payment={payment} leadTimes={leadTimes} />
+              <PreContractInfo
+                cart={cart}
+                payment={payment}
+                leadTimes={leadTimes}
+                productionMode={productionMode}
+              />
             </motion.div>
 
             <motion.div variants={rowVariants} initial="hidden" animate="visible">

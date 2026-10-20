@@ -19,6 +19,7 @@ import { toCzechErrorMessage } from "@lib/util/error-messages"
 import {
   isMadeToOrderLine,
   productionLeadTimeLabel,
+  productionTermsFor,
   type ProductionLeadTime,
 } from "@lib/util/commission"
 import { getProductionProfile } from "./made-to-order"
@@ -711,14 +712,16 @@ export async function listProductionLeadTimes(
     })
   )
 
-  return lines.map((line) => ({
-    line_id: line.id,
-    title: line.title ?? "",
-    label: productionLeadTimeLabel(
-      line.product_id ? profiles.get(line.product_id) ?? null : null,
-      line.variant_id
-    ),
-  }))
+  return lines.map((line) => {
+    const profile = line.product_id ? profiles.get(line.product_id) ?? null : null
+    return {
+      line_id: line.id,
+      title: line.title ?? "",
+      label: productionLeadTimeLabel(profile, line.variant_id),
+      // Záloha % a lhůta od zahájení pro předsmluvní informace (audit § 0, Z10).
+      ...productionTermsFor(profile, line.variant_id),
+    }
+  })
 }
 
 /**

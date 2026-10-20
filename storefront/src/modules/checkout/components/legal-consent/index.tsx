@@ -2,6 +2,7 @@
 
 import { useId, type ReactNode } from "react"
 
+import { MADE_TO_ORDER_ACK_TEXT } from "@lib/util/made-to-order"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import { LEGAL_LINKS } from "./labels"
@@ -14,9 +15,10 @@ import styles from "./style.module.scss"
  *
  * - Souhlas s OP a poučením o odstoupení: zaškrtávátko, výchozí NEZAŠKRTNUTÉ
  *   (§ 1817 OZ — žádné předvyplněné souhlasy).
- * - U zakázkové výroby druhé, povinné zaškrtávátko: poučení, že zboží na
- *   zakázku nelze vrátit do 14 dnů (§ 1837 písm. d) OZ). Výjimka platí jen
- *   tehdy, když o ní zákazník ví PŘEDEM (§ 1820 odst. 1 písm. j) OZ).
+ * - U zakázkové výroby druhé, povinné zaškrtávátko: poučení, že výrobek
+ *   podle zadání nelze vrátit do 14 dnů (§ 1837 písm. d) OZ) A že záloha se
+ *   po zahájení výroby nevrací (audit § 0, Z5/Z10). Výjimka platí jen tehdy,
+ *   když o ní zákazník ví PŘEDEM (§ 1820 odst. 1 písm. j) OZ).
  * - Osobní údaje: jen informační věta, ne zaškrtávátko — zpracování pro
  *   vyřízení objednávky stojí na plnění smlouvy, ne na souhlasu.
  *
@@ -43,10 +45,20 @@ const TermsText = () => (
   </>
 )
 
+/*
+ * Znění je PŘESNĚ to z auditu § 0 (Z10) a z PDF Potvrzení zakázky, bod 08 —
+ * `MADE_TO_ORDER_ACK_TEXT`. Nevratnost zálohy po zahájení výroby je sankce,
+ * která nesmí být jen v OP (§ 1753 OZ, ÚS I. ÚS 3512/11) — proto ji zákazník
+ * zaškrtává výslovně. Odkaz na článek OP je mimo text zaškrtnutí, aby se
+ * uložené znění shodovalo s PDF.
+ */
 const MadeToOrderText = () => (
   <>
-    Beru na vědomí, že zboží vyrobené na zakázku nelze vrátit ve 14denní lhůtě
-    (§ 1837 písm. d) OZ).
+    {MADE_TO_ORDER_ACK_TEXT}{" "}
+    <DocLink href={LEGAL_LINKS.termsMadeToOrder}>
+      Pravidla zakázky v obchodních podmínkách
+    </DocLink>
+    .
   </>
 )
 

@@ -165,7 +165,7 @@ export const Payment = ({
   const confirmNote = !accepted
     ? "Než objednávku odešlete, potvrďte prosím souhlas s obchodními podmínkami."
     : !consentReady
-      ? "Potvrďte prosím ještě, že berete na vědomí, že zboží na zakázku nelze vrátit do 14 dnů."
+      ? "Potvrďte prosím ještě, že berete na vědomí, že výrobek podle vašeho zadání nelze vrátit do 14 dnů a že záloha se po zahájení výroby nevrací."
       : charge.later > 0
         ? `Teď zaplatíte zálohu ${money(charge.now)} online (${payment?.label ?? "ComGate"}, platební brána ComGate). Zbytek ${money(charge.later)} doplatíte po dokončení zakázky.`
         : `Zaplatíte ${money(charge.now)} hned online (${payment?.label ?? "ComGate"}, platební brána ComGate).`
@@ -354,6 +354,7 @@ export const Payment = ({
           cart={cart}
           payment={payment}
           leadTimes={leadTimes}
+          productionMode={productionMode}
           delivery={deliveryLabel}
           compact
         />

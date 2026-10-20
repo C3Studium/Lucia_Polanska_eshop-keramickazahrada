@@ -5,6 +5,7 @@ import MadeToOrderPanel from "@modules/products/components/made-to-order"
 import {
   MadeToOrderAddNotice,
   MadeToOrderBadge,
+  MadeToOrderSteps,
 } from "@modules/products/components/made-to-order-notice"
 import VoucherAmountField, {
   checkVoucherAmount,
@@ -12,7 +13,9 @@ import VoucherAmountField, {
   voucherConfig,
 } from "@modules/products/components/voucher-amount"
 import {
+  depositPercentageFor,
   madeToOrderMetadata,
+  productionMaxDaysFor,
   type ProductionProfile,
 } from "@lib/util/made-to-order"
 import {
@@ -196,6 +199,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
   const showMadeToOrderNotice =
     !pick &&
     (isMadeToOrder || isCommissionCategory || Boolean(productMeta?.made_to_order))
+  /* Smluvní podmínky do štítku a kroků (audit § 0): záloha % (Z2) a lhůta od
+     zahájení (Z9) z profilu výroby pro zvolené provedení. Bez profilu (zakázka
+     jen kategorií) zůstane krátký štítek — nic se nevymýšlí. */
+  const madeToOrderDeposit = isMadeToOrder
+    ? depositPercentageFor(productionProfile, selectedVariant?.id)
+    : null
+  const madeToOrderMaxDays = isMadeToOrder
+    ? productionMaxDaysFor(productionProfile, selectedVariant?.id)
+    : null
 
   /* Dárkový poukaz s vlastní částkou: pole místo ceny, částka jde do košíku
      jako `metadata.voucher_amount` a backend z ní udělá cenu řádku. */
@@ -525,7 +537,12 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         countryCode={countryCode}
                       />
                     )}
-                    {showMadeToOrderNotice && <MadeToOrderBadge />}
+                    {showMadeToOrderNotice && (
+                      <MadeToOrderBadge
+                        depositPercentage={madeToOrderDeposit}
+                        maxDays={madeToOrderMaxDays}
+                      />
+                    )}
                     <CTA
                       inStock={inStock}
                       selectedVariant={selectedVariant}
@@ -576,6 +593,11 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                       texts={texts}
                     />
                     {showMadeToOrderNotice && <MadeToOrderAddNotice />}
+                    {/* Čtyři kroky zakázky (bod 05 PDF Potvrzení zakázky) —
+                        zákazník čte před objednávkou to, co pak dostane v příloze. */}
+                    {showMadeToOrderNotice && (
+                      <MadeToOrderSteps maxDays={madeToOrderMaxDays} />
+                    )}
                   </div>
                 </>
               )}

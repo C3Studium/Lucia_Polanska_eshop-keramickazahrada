@@ -16,7 +16,13 @@ import {
   type ComgatePaymentMethod,
 } from "@lib/util/comgate"
 import { isMadeToOrderLine, type ProductionLeadTime } from "@lib/util/commission"
-import type { ProductionPaymentMode } from "@lib/util/made-to-order"
+import {
+  MADE_TO_ORDER_CANCEL_SENTENCE,
+  commissionTermsSummary,
+  depositSentence,
+  type ProductionPaymentMode,
+} from "@lib/util/made-to-order"
+import { convertToLocale } from "@lib/util/money"
 import { productLines } from "@lib/util/packaging"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -135,8 +141,10 @@ export const describePayment = ({
 type PreContractInfoProps = {
   cart: any
   payment: PaymentDescription | null
-  /** Výrobní lhůty zakázkových položek (`listProductionLeadTimes`). */
+  /** Výrobní lhůty a smluvní podmínky zakázkových položek (`listProductionLeadTimes`). */
   leadTimes?: ProductionLeadTime[]
+  /** Zvolený režim platby zakázky (záloha / celek / vlastní) — částky backendu. */
+  productionMode?: ProductionPaymentMode | null
   /** Doprava slovy — jen tam, kde ji neukazuje rekapitulace (rychlý nákup). */
   delivery?: string | null
   /** Hustší sazba pro rychlý nákup. */
@@ -154,6 +162,7 @@ export default function PreContractInfo({
   cart,
   payment,
   leadTimes = [],
+  productionMode = null,
   delivery,
   compact = false,
 }: PreContractInfoProps) {
@@ -172,7 +181,7 @@ export default function PreContractInfo({
   const titleOf = (item: any) => item?.product_title || item?.title || "Výrobek"
 
   const leadFor = (item: any) =>
-    leadTimes.find((lead) => lead.line_id === item.id)?.label ?? null
+    leadTimes.find((lead) => lead.line_id === item.id) ?? null
 
   const deliveryLines: ReactNode[] = []
   if (regular.length > untracked.length) {
@@ -183,12 +192,57 @@ export default function PreContractInfo({
   )
   madeToOrder.forEach((item) => {
     const lead = leadFor(item)
+    /* Z9: lhůta je „do N dnů OD ZAHÁJENÍ výroby" (ne orientačně od objednání);
+       zahájení oznámí e-mail. Rozpětí z profilu zůstává jako „obvykle". */
+    const maxDays = lead?.production_time_max_days ?? null
+    const usual =
+      lead?.label && maxDays && lead.label !== `do ${maxDays} dní`
+        ? ` (obvykle ${lead.label})`
+        : ""
     deliveryLines.push(
-      lead
-        ? `${titleOf(item)}: vyrábíme na zakázku, hotovo zhruba za ${lead}. Pak zásilku odešleme, nebo vám dáme vědět, že je připravená k vyzvednutí.`
-        : `${titleOf(item)}: vyrábíme na zakázku — s termínem se vám ozveme.`
+      maxDays
+        ? `${titleOf(item)}: vyrábíme na zakázku, hotovo do ${maxDays} dnů od zahájení výroby${usual}. Pak zásilku odešleme, nebo vám dáme vědět, že je připravená k vyzvednutí.`
+        : lead?.label
+          ? `${titleOf(item)}: vyrábíme na zakázku, hotovo zhruba za ${lead.label}. Pak zásilku odešleme, nebo vám dáme vědět, že je připravená k vyzvednutí.`
+          : `${titleOf(item)}: vyrábíme na zakázku — s termínem se vám ozveme.`
     )
   })
+
+  /*
+   * Řádek „Zakázka" (audit § 0, Z10): smluvní záloha % a Kč proti tomu, co se
+   * platí teď, doplatek, lhůta od zahájení výroby a jedna věta o zrušení
+   * (Z4/Z5). Záloha v Kč je backendu (`deposit_amount` režimu platby) — tady se
+   * nic nepočítá; procento a lhůta z profilu výroby přes `leadTimes`. Co
+   * backend nedá, se vynechá.
+   */
+  const commission = madeToOrder.length > 0 || Boolean(productionMode?.has_made_to_order)
+  const money = (amount: number) =>
+    convertToLocale({ amount, currency_code: cart?.currency_code ?? "czk" })
+  const { depositPercentage, maxDays } = commissionTermsSummary(
+    madeToOrder.map((item) => leadFor(item)).filter((lead) => lead != null)
+  )
+  const split = chargeSplit(productionMode, cart?.total ?? 0)
+  const contractualDeposit =
+    productionMode?.has_made_to_order && productionMode.deposit_amount > 0
+      ? productionMode.deposit_amount
+      : null
+  const commissionLines: string[] = []
+  if (commission) {
+    if (contractualDeposit != null) {
+      commissionLines.push(
+        depositSentence(
+          { contractualDeposit, depositPercentage, now: split.now, later: split.later },
+          money
+        )
+      )
+    } else if (depositPercentage) {
+      commissionLines.push(`Záloha ${depositPercentage} % ceny výrobku.`)
+    }
+    if (maxDays) {
+      commissionLines.push(`Výroba do ${maxDays} dnů od zahájení výroby.`)
+    }
+    commissionLines.push(MADE_TO_ORDER_CANCEL_SENTENCE)
+  }
 
   const withdrawalPath = LEGAL_LINKS.withdrawal
   const termsPath = LEGAL_LINKS.terms
@@ -255,6 +309,25 @@ export default function PreContractInfo({
                   {line}
                 </span>
               ))}
+            </dd>
+          </div>
+        )}
+        {commission && (
+          <div>
+            <dt>Zakázka</dt>
+            <dd data-testid="pre-contract-commission">
+              {commissionLines.map((line, index) => (
+                <span key={index} className={styles.line}>
+                  {line}
+                </span>
+              ))}
+              <span className={styles.line}>
+                Podrobně v{" "}
+                <DocLink href={LEGAL_LINKS.termsMadeToOrder}>
+                  obchodních podmínkách, čl. Výroba na zakázku
+                </DocLink>
+                .
+              </span>
             </dd>
           </div>
         )}
