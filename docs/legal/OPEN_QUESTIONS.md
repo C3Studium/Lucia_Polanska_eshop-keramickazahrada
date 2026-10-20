@@ -20,7 +20,7 @@ Chybějící údaje (administrace → Právní údaje), bez kterých se OP/Odsto
 
 | Klíč | Otázka níže | Stav |
 | --- | --- | --- |
-| `bank.account` | #1 | chybí |
+| `bank.account` | #1 | **vyplněno 20. 10.** — 2500675505/2010 (CZK) a 2701281289/2010 (EUR), Fio; zdroj: iDoklad Lucie (Matěj) |
 | `vat.status` | #2 | chybí |
 | datum účinnosti (verze `2026-10-15` → den spuštění) | #3 | chybí — přejmenování verze jde až s ním |
 | `mto.deposit` | #4 | chybí |
@@ -41,7 +41,7 @@ v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 
 | # | Otázka | Kde se projeví | Poznámka |
 | --- | --- | --- | --- |
-| 1 | **Číslo bankovního účtu** pro texty (a vracení peněz převodem) | OP čl. Cena a platba, Doprava a platba | Staré OP uváděly 2500675505/2010 (CZK) a 2701281289/2010 (EUR), stará stránka Doprava 7010757121/2010 (IBAN CZ34 2010 0000 0070 1075 7121; natvrdo zapsané výchozí hodnoty z `lib/data/merchant.ts` jsou odstraněné, proměnná `CISLO_UCTU` v prostředí storefrontu se už nikde nepoužívá). Který platí? Doplnit do `facts.ts` → `bank.account`. |
+| 1 | ~~Číslo bankovního účtu~~ **VYŘEŠENO 20. 10.** (hlavní 2500675505/2010, eurový 2701281289/2010 podle iDokladu; 7010757121/2010 se nepoužívá) — pro texty (a vracení peněz převodem) | OP čl. Cena a platba, Doprava a platba | Staré OP uváděly 2500675505/2010 (CZK) a 2701281289/2010 (EUR), stará stránka Doprava 7010757121/2010 (IBAN CZ34 2010 0000 0070 1075 7121; natvrdo zapsané výchozí hodnoty z `lib/data/merchant.ts` jsou odstraněné, proměnná `CISLO_UCTU` v prostředí storefrontu se už nikde nepoužívá). Který platí? Doplnit do `facts.ts` → `bank.account`. |
 | 2 | **Plátce DPH ano/ne** | OP čl. Cena a platba, souhrny cen | Kód obchodu (`storefront/src/lib/util/dph.ts`: `PLATCE_DPH = false`, komentář „plátcem DPH není“) i iDoklad dnes počítají s neplátcem; staré OP tvrdí „je plátcem DPH“. Potvrdit. |
 | 3 | **Datum účinnosti** nových dokumentů | Všechny dokumenty, názvy PDF | Pracovně 15. 10. 2026. Nastavit na skutečné datum spuštění na keramickazahrada.cz: přejmenovat soubory verzí v `storefront/src/lib/legal/documents/*/2026-10-15.ts` (a `version` v nich), datum je i v textu OP čl. XVII, Reklamačního řádu čl. 12 a Zásad `#zmeny`; pak `pnpm legal:build` + `pnpm legal:upload`. |
 | 3a | Dodací lhůta zboží skladem | Pokladna (předsmluvní informace), OP čl. VII | Převzato z dosavadní stránky Doprava a platba: „předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení obvykle 1 až 3 pracovní dny“ (`facts.ts` → `delivery.dispatchTime`). Potvrdit. |
@@ -96,7 +96,7 @@ v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 | 17a | Doprava při částečném odstoupení | Online odstoupení, e-mail potvrzení | Systém slibuje vrácení nákladů na dodání (ve výši nejlevnější nabízené dopravy) jen při odstoupení od **celé** smlouvy; při odstoupení jen od části zboží se doprava nevrací. Advokát ať potvrdí. |
 | 17b | Přepravní poškození — obrat proti 12. 10. | Texty, e-maily | Podle auditu §4.1 škodu u dopravce řeší prodávající; zákazníkovi už nic neukládáme (dřívější rozhodnutí z 12. 10. „reklamuje příjemce u České pošty“ je zrušené). Lucie potřebuje vědět, že reklamaci u ČP podává ona (2 pracovní dny od doručení — admin ji na to upozorní). |
 | 17c | Mrazuvzdornost — **u výrobků hotovo 20. 10.** (2 nádoby doplněny, text kartičky `karticka-mrazuvzdornost.md`; tisk a přikládání je na Lucii) | Produkty, kartička k zásilce | OP vylučuje z vad prasklinu nádoby na vodu, ve které zamrzla voda, **jen pokud** byl zákazník upozorněn u výrobku i na kartičce v balíku. Doplnit upozornění k dotčeným produktům a na kartičku. |
-| 17d | Balné na stránce výrobku | Produkt | Povinné balné se dnes ukazuje až v košíku. Advokát ať posoudí, zda stačí (§ 1811 odst. 2 OZ, cena včetně všech poplatků), nebo ho uvádět u ceny výrobku. |
+| 17d | Balné na stránce výrobku — **20. 10. rozhodnuto (Matěj): uvádět u ceny** („+ balné X,- za kus, cena balení je u každého výrobku jiná a účtuje se zvlášť“; u výrobku bez ceny balení „Balné u tohoto výrobku neúčtujeme“). OP a Doprava upravené. Advokát už jen potvrdí. Původně: | Produkt | Povinné balné se dnes ukazuje až v košíku. Advokát ať posoudí, zda stačí (§ 1811 odst. 2 OZ, cena včetně všech poplatků), nebo ho uvádět u ceny výrobku. |
 
 ## Další rozhodnutí
 

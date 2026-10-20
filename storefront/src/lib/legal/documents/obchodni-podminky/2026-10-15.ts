@@ -161,7 +161,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         {
           type: "ul",
           items: [
-            "**balné** — samostatná položka u každého výrobku, kterou vidíte v košíku; účtuje se i při osobním odběru,",
+            "**balné** — cena balení je u každého výrobku jiná a účtuje se zvlášť; uvádíme ji u ceny výrobku a v košíku je jako samostatná položka pod výrobkem; účtuje se i při osobním odběru,",
             "**cena dopravy** podle zvoleného způsobu doručení,",
             "**doběrečné**, pokud zvolíte platbu na dobírku.",
           ],

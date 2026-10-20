@@ -585,7 +585,7 @@ const TEXT_BLOCKS = [
                 item("nakup.pridavame", "Přidáváme…"),
                 item("nakup.pridano", "Přidáno do košíku"),
                 item("nakup.v-kosiku", "Máte to v košíku."),
-                item("nakup.balne", "Každý kus balíme zvlášť proti poškození — balné uvidíte v košíku."),
+                item("nakup.balne", "Každý kus balíme zvlášť proti poškození."),
                 item("volba.stitek", "Vaše volba"),
                 item("volba.provedeni", "Vaše provedení"),
                 item("znacky.baleni", "Zabalíme pečlivě"),

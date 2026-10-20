@@ -231,3 +231,16 @@ u ceny (advokát).
 
 **Pozor (mimo audit):** zástupný text u čísla účtu ukazuje zákazníkům všechna tři kandidátní
 čísla účtu. Do vyplnění `bank.account` v Právních údajích to tak zůstane — vyplnit přednostně.
+
+## 20. 10. dopoledne — číslo účtu a balné u ceny
+
+- 08:56 (06:56 UTC) Právní údaje → `bank.account` (admin API `POST /admin/merchant-settings`,
+  stejné úložiště jako stránka Právní údaje): „2500675505/2010 (IBAN CZ92 2010 0000 0025 0067
+  5505, BIC FIOBCZPP); platby v eurech na účet 2701281289/2010 (IBAN CZ55 2010 0000 0027 0128
+  1289, BIC FIOBCZPP)“. Zdroj: bankovní účty v iDokladu Lucie (Matěj, snímek obrazovky).
+  Do minuty na webu (OP i Doprava a platba ověřeno); zástupný text se třemi kandidáty zmizel.
+- Balné u ceny výrobku (rozhodnutí Matěje, OPEN_QUESTIONS #17d): pod cenou „+ balné X,- za kus
+  — Cena balení je u každého výrobku jiná a účtuje se zvlášť.“ (částka z
+  `metadata.packaging_price`, stejné čtení jako backend), u výrobku s balením 0 Kč „Balné
+  u tohoto výrobku neúčtujeme.“ Upraven text OP (cena a platba) a Doprava a platba (Balné).
+  **Projeví se až nasazením** (PR #16 do `main`) a následným `seed-legal --refresh`.
