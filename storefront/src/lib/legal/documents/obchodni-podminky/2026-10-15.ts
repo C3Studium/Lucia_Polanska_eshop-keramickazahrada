@@ -219,7 +219,11 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Kusy s vadou.** Některé kusy prodáváme levněji proto, že mají vadu — například prasklinku v glazuře nebo odštípnutý okraj; v obchodě je najdete pod filtrem „Poškozené“ a u výrobku jsou označené jako kus s vadou. U nich nejde o slevu, ale o **cenu kusu s uvedenou vadou**: vadu popíšeme a ukážeme u výrobku, ještě než ho koupíte. Za vadu, pro kterou je kus levnější, neodpovídáme (§ 2167 OZ); za jiné vady ano. I takový kus můžete do 14 dnů vrátit ([čl. VIII](/smluvni-podminky#odstoupeni)).",
+          text: "**Kusy s vadou.** Některé kusy prodáváme levněji proto, že mají vadu — například prasklinku v glazuře nebo odštípnutý okraj; v obchodě je najdete pod filtrem „Poškozené“ a u výrobku jsou označené jako kus s vadou. U nich nejde o slevu, ale o **cenu kusu s uvedenou vadou**: vadu popíšeme a ukážeme u výrobku, ještě než ho koupíte, a u ceny proto neuvádíme přeškrtnutou cenu ani procento slevy. Za vadu, pro kterou je kus levnější, neodpovídáme (§ 2167 OZ) a reklamovat ji nelze; za jiné vady odpovídáme jako u každého zboží. I takový kus můžete do 14 dnů vrátit ([čl. VIII](/smluvni-podminky#odstoupeni)).",
+        },
+        {
+          type: "p",
+          text: "**Balíčky.** Balíček je několik výrobků prodávaných společně za jednu cenu, která bývá nižší než součet cen jednotlivých kusů. Odstoupit můžete od celého balíčku i jen od některých kusů z něj: vracíme poměrnou část ceny balíčku, která na vrácené kusy připadá (sleva balíčku se rozpočítá na všechny kusy podle jejich cen), ne cenu kusu prodávaného samostatně. Má-li vadu jeden kus z balíčku, opravíme nebo vyměníme ten kus; zbytek balíčku se nevrací.",
         },
       ],
     },
@@ -234,6 +238,14 @@ const obchodniPodminky: LegalDocumentVersion = {
         {
           type: "p",
           text: "Zboží skladem předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky). Doručení pak obvykle trvá 1 až 3 pracovní dny. U zboží na zakázku platí výrobní lhůta uvedená u výrobku nebo v nabídce ([čl. IX](/smluvni-podminky#vyroba-na-zakazku)). Není-li dodací lhůta ujednána, dodáme zboží bez zbytečného odkladu, nejpozději do 30 dnů od uzavření smlouvy.",
+        },
+        {
+          type: "p",
+          text: "**Zboží na objednávku.** Výrobek označený „Na objednávku“ není skladem a vyrobíme ho až po objednávce podle stejné předlohy. Platíte ho předem jako jiné zboží. Dodáme ho ve lhůtě uvedené u výrobku (není-li uvedena, obvykle do 3 až 7 dnů výroby a následně běžnou dopravou), nejpozději však do 30 dnů od uzavření smlouvy. Nestihneme-li to, dáme vám vědět a můžete od smlouvy odstoupit — vrátíme vám všechno, co jste zaplatili, do 14 dnů stejným způsobem. Nejde o zakázku: výrobek není dělaný podle vašeho zadání, a proto ho můžete do 14 dnů vrátit jako jiné zboží.",
+        },
+        {
+          type: "p",
+          text: "**Hlídání dostupnosti.** Tlačítko „Dejte mi vědět, až bude znovu“ u vyprodaného výrobku je jen žádost o jednorázové upozornění e-mailem. Není to rezervace ani objednávka, nic neplatíte a nic vás k ničemu nezavazuje; výrobek si pak koupíte běžně, dokud je skladem.",
         },
         {
           type: "p",
@@ -315,7 +327,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "Odstoupit můžete i od koupě kusu s vadou nebo zlevněného zboží (vracíme cenu, kterou jste skutečně zaplatili) a od koupě dárkového poukazu, dokud nebyl uplatněn ([čl. XI](/smluvni-podminky#darkove-poukazy)). Obsahuje-li objednávka běžné zboží i zboží na zakázku, můžete odstoupit od části s běžným zbožím.",
+          text: "Odstoupit můžete i od koupě kusu s vadou nebo zlevněného zboží (vracíme cenu, kterou jste skutečně zaplatili) a od koupě dárkového poukazu, dokud nebyl uplatněn ([čl. XI](/smluvni-podminky#darkove-poukazy)). Obsahuje-li objednávka běžné zboží i zboží na zakázku, můžete odstoupit od části s běžným zbožím. U balíčku můžete vrátit i jen některé kusy ([čl. VI](/smluvni-podminky#slevy)).",
         },
         {
           type: "p",

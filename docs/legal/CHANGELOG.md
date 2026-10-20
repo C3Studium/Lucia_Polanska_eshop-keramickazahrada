@@ -3,6 +3,23 @@
 Větev `legal/compliance-2026`, podle `LEGAL_AUDIT.md` (14. 10. 2026). Odkazy na paragrafy:
 OZ = zákon č. 89/2012 Sb., ZOS = zákon č. 634/1992 Sb.
 
+## Povinnosti mimo OP a typy produktů (LEGAL_AUDIT § 0b, § 0c Z-B — 20. 10. 2026 odpoledne)
+
+- **N1 nezávadnost glazur**: stránka `/certifikaty` (seznam protokolů v `lib/certificates.ts`,
+  zatím prázdný — protokoly má Lucie), FAQ skupina „Nezávadnost a bezpečnost“, odkaz
+  u výrobku s tvrzením; skript `backend/src/scripts/food-claims.ts` (list / strip / restore)
+  pro 31 produktů s tvrzením „zdravotně nezávadné“. Tvrzení zatím ponechána (OPEN_QUESTIONS N1).
+- **N2 GPSR**: komponenta `safety-notice` na stránce výrobku — kotvení na fasádu, mráz,
+  ostré střepy, podle kategorie.
+- **N3 elektro**: kategorie Bezdrátové zvonky má 2 produkty (zvonek BZ8-113, krabička) → otázka
+  pro Lucii; 8 popisů tlačítek bez mrtvého odkazu na starý e-shop.
+- **N5**: OP čl. I už uvádí zápis v živnostenském rejstříku; úřad (MÚ Písek) čeká na potvrzení.
+- **Z-B OP pro každý typ produktu**: čl. VI — kus s vadou (bez přeškrtnuté ceny, popsaná vada
+  se nereklamuje, vrácení lze) a nový odstavec **Balíčky** (odstoupení i od části, poměrná část
+  ceny, vada jednoho kusu); čl. VII — **Zboží na objednávku** (platba předem, lhůta u výrobku /
+  30 dnů, vrácení při nedodání, jde vrátit do 14 dnů) a **Hlídání dostupnosti** (jen upozornění);
+  čl. VIII — odkaz na částečné vrácení balíčku. Poukaz, kurz, zakázka beze změny.
+
 ## Zakázky podle § 0 auditu (20. 10. 2026, větev `legal/deploy-2026-10`)
 
 Pravidla Z1–Z12 z `LEGAL_AUDIT.md` § 0 mají přednost před dřívějším návrhem OP čl. IX.

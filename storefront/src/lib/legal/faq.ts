@@ -236,6 +236,27 @@ export const LEGAL_FAQ: LegalFaqGroup[] = [
     ],
   },
   {
+    id: "faq-bezpecnost",
+    title: "Nezávadnost a bezpečnost",
+    items: [
+      {
+        id: "faq-bezpecnost-potraviny",
+        question: "Je keramika zdravotně nezávadná a vhodná pro styk s potravinami?",
+        answer: [
+          "Glazury, u kterých to u výrobku uvádím, mám ověřené protokolem o nezávadnosti (limity pro olovo a kadmium podle nařízení (ES) č. 1935/2004 a vyhlášky č. 38/2001 Sb.). Protokoly najdete na stránce [Certifikáty](/certifikaty) — u každého je datum a název glazury, které se týká.",
+          "Výrobek, u kterého nezávadnost uvedená není (dekorace, výrobky z kurzů), pro jídlo a pití nepoužívejte.",
+        ],
+      },
+      {
+        id: "faq-bezpecnost-montaz",
+        question: "Jak bezpečně zavěsit plastiku nebo domovní číslo na fasádu?",
+        answer: [
+          "Keramika je těžká a křehká. Kotvěte ji do nosného podkladu hmoždinkami a vruty odpovídajícími zdivu a hmotnosti kusu a nezavěšujte ji nad místa, kde by pád mohl někoho zranit. Rozbitý kus má ostré hrany — střepy ukliďte opatrně a mimo dosah dětí.",
+        ],
+      },
+    ],
+  },
+  {
     id: "faq-zasilky",
     title: "Poškozená zásilka",
     items: [

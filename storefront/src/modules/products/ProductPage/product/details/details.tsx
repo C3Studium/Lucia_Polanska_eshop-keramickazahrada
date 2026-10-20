@@ -7,6 +7,7 @@ import {
   MadeToOrderBadge,
   MadeToOrderSteps,
 } from "@modules/products/components/made-to-order-notice"
+import SafetyNotice from "@modules/products/components/safety-notice"
 import VoucherAmountField, {
   checkVoucherAmount,
   isCustomAmountVoucher,
@@ -597,6 +598,15 @@ const ProductDetails: React.FC<ProductTemplateProps> = ({
                         zákazník čte před objednávkou to, co pak dostane v příloze. */}
                     {showMadeToOrderNotice && (
                       <MadeToOrderSteps maxDays={madeToOrderMaxDays} />
+                    )}
+                    {/* Bezpečnostní věty podle kategorie + odkaz na protokoly
+                        nezávadnosti (LEGAL_AUDIT § 0b N1/N2). Ve výběru do úpravy
+                        objednávky ne — tam se nenakupuje. */}
+                    {!pick && (
+                      <SafetyNotice
+                        categoryHandles={(categories ?? []).map((category) => category.handle ?? "")}
+                        description={product.description}
+                      />
                     )}
                   </div>
                 </>

@@ -99,6 +99,26 @@ v e-mailu pro Lucii (artefakt „Spuštění do středy“, 20. 10.).
 | 17c | Mrazuvzdornost — **u výrobků hotovo 20. 10.** (2 nádoby doplněny, text kartičky `karticka-mrazuvzdornost.md`; tisk a přikládání je na Lucii) | Produkty, kartička k zásilce | OP vylučuje z vad prasklinu nádoby na vodu, ve které zamrzla voda, **jen pokud** byl zákazník upozorněn u výrobku i na kartičce v balíku. Doplnit upozornění k dotčeným produktům a na kartičku. |
 | 17d | Balné na stránce výrobku — **20. 10. rozhodnuto (Matěj): uvádět u ceny** („+ balné X,- za kus, cena balení je u každého výrobku jiná a účtuje se zvlášť“; u výrobku bez ceny balení „Balné u tohoto výrobku neúčtujeme“). OP a Doprava upravené. Advokát už jen potvrdí. Původně: | Produkt | Povinné balné se dnes ukazuje až v košíku. Advokát ať posoudí, zda stačí (§ 1811 odst. 2 OZ, cena včetně všech poplatků), nebo ho uvádět u ceny výrobku. |
 
+## Povinnosti mimo OP (LEGAL_AUDIT § 0b, 20. 10. 2026)
+
+| # | Otázka | Kde | Poznámka |
+| --- | --- | --- | --- |
+| N1 | **Protokoly o nezávadnosti glazur** | Produkty (31 s tvrzením „zdravotně nezávadné“), `/certifikaty`, FAQ | Stránka `/certifikaty` a seznam `storefront/src/lib/certificates.ts` (zatím prázdný), FAQ „Nezávadnost a bezpečnost“, odkaz z produktu s tvrzením. **Lucie pošle protokoly** (PDF, datum, glazura) → nahrát do R2 `legal/certifikaty/`, zapsat do seznamu. U glazur bez protokolu tvrzení odstranit: `npx medusa exec ./src/scripts/food-claims.ts` (nasucho), `… strip` (záloha v `metadata.food_claim_backup`), `… restore`. Zatím NEODSTRANĚNO — čeká na její seznam, aby se nemazalo pravdivé. |
+| N2 | Bezpečnostní věty (GPSR) | Stránka produktu | Hotovo v kódu: komponenta `safety-notice` podle kategorie (kotvení na fasádu u plastik/čísel/schránek/tlačítek, mráz u pítek/květináčů, střepy u všeho). Kategorie samy popis na webu nemají, proto u výrobku. |
+| N3 | **Zvonková tlačítka a elektro** | 73 tlačítek + kategorie Bezdrátové zvonky (2 produkty: Bezdrátový zvonek BZ8-113, montážní krabička) | Audit předpokládal prázdnou kategorii — není: elektro se prodává. Lucie: na jaké napětí jsou tlačítka stavěná (věta do popisů) a zda zvonek a krabičku prodávat dál (pak CE prohlášení, WEEE, baterie); doporučeno skrýt do doložení. 8 popisů odkazovalo na starý e-shop (`keramickazahrada.cz/shop/...`) — 20. 10. nahrazeno větou bez odkazu (záloha původních popisů u Matěje). |
+| N4 | DPH — identifikovaná osoba (§ 6h ZDPH) | Účetní Lucie | Kdo platí Railway/Supabase/Resend/Cloudflare/Google: platí-li Matěj a přefakturuje, Lucie nic neřeší. SK prodej: limit 10 000 EUR/rok (OSS). |
+| N5 | § 435 OZ — údaj o zápisu | OP čl. I | OP uvádějí „zapsaná v živnostenském rejstříku“; ARES (RŽP) vede úřad kód 330501 = Městský úřad Písek — potvrdit s Lucií, pak doplnit „vedeném Městským úřadem Písek“ do OP a patičky (volitelné). |
+
+## Typy produktů v OP (LEGAL_AUDIT § 0c Z-B, 20. 10. 2026)
+
+| Typ | Kde v OP | Rozhodnuto (potvrdit s Lucií / advokátem) |
+| --- | --- | --- |
+| Kus s vadou | čl. VI | cena kusu s popsanou vadou (ne sleva, bez přeškrtnuté ceny), popsaná vada se nereklamuje, vrátit do 14 dnů lze |
+| Balíček | čl. VI, VIII | odstoupit lze i od části; vrací se poměrná část ceny balíčku (sleva rozpočítaná podle cen kusů — tak to počítá modul reklamací, §13.5); vada jednoho kusu = oprava/výměna toho kusu |
+| Zboží na objednávku | čl. VII | platí se předem; lhůta u výrobku (výchozí „výroba obvykle 3–7 dní“), nejpozději 30 dnů; při nedodání odstoupení a vrácení všeho; lze vrátit do 14 dnů (není zakázka) |
+| Hlídání dostupnosti | čl. VII | jen upozornění e-mailem, ne rezervace |
+| Zakázka, kurz, poukaz, běžné zboží | čl. IX, X, XI, VIII | beze změny (poukaz: vrácení jen neuplatněného, nevyplácí se — už v čl. XI) |
+
 ## Další rozhodnutí
 
 | # | Otázka | Poznámka |

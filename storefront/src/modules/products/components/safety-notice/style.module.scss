@@ -1,0 +1,33 @@
+@use "../../../../styles/system/_shortcuts.scss" as *;
+
+/* Bezpečnostní věty pod nákupem — stejná tlumená plocha jako „Jak zakázka
+   probíhá": informace, ne poplach. */
+.notice {
+  margin: clamp(.9rem, 1.6vh, 1.25rem) 0 0;
+  padding: clamp(.75rem, 1.1vw, 1rem) clamp(1rem, 1.35vw, 1.25rem);
+  border: 1px solid rgb(var(--cream-06-rgb) / .18);
+  border-radius: clamp(.75rem, .95vw, .875rem);
+  color: var(--clay-37);
+  font: 400 clamp(.8125rem, .95vw, .9rem)/1.5 "Sansation-Regular", sans-serif;
+}
+
+.title {
+  margin: 0 0 .4rem;
+  color: var(--cream-06);
+  font-size: .75rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: .25rem;
+}
+
+.list a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
