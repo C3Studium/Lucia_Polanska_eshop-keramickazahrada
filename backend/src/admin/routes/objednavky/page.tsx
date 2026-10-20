@@ -20,7 +20,15 @@ import {
 } from "@tanstack/react-query";
 import { Fragment, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { BulkAction, BulkBar } from "../../components/bulk-bar";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { EmptyState } from "../../components/empty-state";
+import {
+  nextStage,
+  nextStageLabel,
+  type MerchantOrderStage,
+} from "../../components/merchant-order-queue";
+import { toastWithUndo, undoById, useLastUndo, useUndoHotkey } from "../../lib/undo";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import { ProductionDiary } from "../../components/production-diary";
 import { SubTabs } from "../../components/work-tabs";
@@ -104,10 +112,13 @@ const filterTabs = [
   { key: "dluzi", label: "Čeká na doplatek" },
   /* §11.4 — kategorie z modulu Reklamace a zrušení: zrušené objednávky,
      vrácení peněz (vrácení zboží / odstoupení) a reklamace. Jen čtení
-     a odkaz do modulu; žádné hromadné akce. */
-  { key: "zrusene", label: "Zrušené" },
-  { key: "vraceni", label: "Vrácení peněz" },
-  { key: "reklamace", label: "Reklamace" },
+     a odkaz do modulu; žádné hromadné akce.
+
+     Byly to tři samostatné záložky vedle sedmi pracovních front — jenže
+     fronta a čtení z cizího modulu jsou dva různé druhy věci a lišta je
+     stavěla vedle sebe, jako by byly stejné. Teď je to jedna záložka
+     a trojice se rozpadá až uvnitř (spec §5). */
+  { key: "zadosti", label: "Vrácení a reklamace" },
   { key: "statistiky", label: "Statistiky" },
 ];
 
@@ -955,23 +966,78 @@ const OrdersInner = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [batchStage, setBatchStage] = useState<string>("");
+  /** „Přesunout jinam…" je výjimka — otevře se až na kliknutí. */
+  const [presunOpen, setPresunOpen] = useState(false);
   const queryClient = useQueryClient();
+  useUndoHotkey();
+  const lastUndo = useLastUndo();
+
+  /*
+   * Další krok fronty, ve které právě stojím (`nextStage` z merchant-order-queue
+   * — tatáž mapa, ze které bere větu tlačítko na řádku i panel na detailu
+   * objednávky). U „Vše", „Na poštu", „Problém s platbou" a „Čeká na doplatek"
+   * žádný jediný další krok neexistuje, a tam se tlačítko prostě nenabídne.
+   */
+  const dalsiKrok = nextStage[active as MerchantOrderStage];
+  const dalsiKrokLabel = nextStageLabel[active as MerchantOrderStage];
+
+  /**
+   * Hromadný přesun do stavu.
+   *
+   * Cíl chodí parametrem, ne přes stav komponenty: tlačítko „další krok"
+   * ho zná v okamžiku kliknutí a `setBatchStage(…)` následované `mutate()`
+   * by poslalo ještě tu starou hodnotu.
+   */
+  const presunDo = async (ids: string[], stage: string) =>
+    sdk.client.fetch(`/admin/workbench/orders/batch-stage`, {
+      method: "POST",
+      body: { order_ids: ids, stage },
+    }) as Promise<{
+      moved: number;
+      failed: number;
+      results: { order_id: string; ok: boolean; error: string | null }[];
+    }>;
 
   const batchMove = useMutation({
-    mutationFn: () =>
-      sdk.client.fetch(`/admin/workbench/orders/batch-stage`, {
-        method: "POST",
-        body: { order_ids: [...selected], stage: batchStage },
-      }) as Promise<{
-        moved: number;
-        failed: number;
-        results: { order_id: string; ok: boolean; error: string | null }[];
-      }>,
-    onSuccess: async (result) => {
+    mutationFn: async (stage: string) => {
+      const ids = [...selected];
+      /* Kam se každá objednávka vrací, kdyby to byl omyl — čte se PŘED
+         přesunem, protože potom už je stav nový. */
+      const odkud = new Map(
+        allRows
+          .filter((order) => selected.has(order.id) && order.stage)
+          .map((order) => [order.id, order.stage as string])
+      );
+      const result = await presunDo(ids, stage);
+      return { result, odkud };
+    },
+    onSuccess: async ({ result, odkud }) => {
       await queryClient.invalidateQueries({ queryKey: ["workbench-orders"] });
       setSelected(new Set());
       if (result.failed === 0) {
-        toast.success(`Přesunuto ${result.moved} objednávek.`);
+        const vratitelne = result.results
+          .filter((entry) => entry.ok && odkud.has(entry.order_id))
+          .map((entry) => ({ id: entry.order_id, stage: odkud.get(entry.order_id)! }));
+
+        toastWithUndo(
+          `Přesunuto ${result.moved} objednávek.`,
+          `Přesun ${result.moved} objednávek`,
+          async () => {
+            /* Vrací se po skupinách podle původního stavu — endpoint bere
+               jeden cíl na volání. */
+            const podleStavu = new Map<string, string[]>();
+            for (const entry of vratitelne) {
+              podleStavu.set(entry.stage, [
+                ...(podleStavu.get(entry.stage) ?? []),
+                entry.id,
+              ]);
+            }
+            for (const [stav, ids] of podleStavu) {
+              await presunDo(ids, stav);
+            }
+            await queryClient.invalidateQueries({ queryKey: ["workbench-orders"] });
+          }
+        );
       } else {
         // The failures ARE the feature: name each one rather than a count.
         for (const failure of result.results.filter((r) => !r.ok)) {
@@ -1008,8 +1074,11 @@ const OrdersInner = () => {
   /* Záložky Zrušené / Vrácení peněz / Reklamace čtou projekci
      /admin/merchant-orders s ?category= (§11.4) — ta nese `claim` a
      `cancel_reason`, pracovní seznam /admin/workbench/orders ne. */
-  const claimCategory = claimCategoryFor(active);
-  const isClaimTab = claimCategory !== null;
+  /* Uvnitř „Vrácení a reklamace" se vybírá druh žádosti; mimo tu záložku
+     se nečte vůbec. */
+  const [claimSub, setClaimSub] = useState<string>(claimTabs[0].key);
+  const claimCategory = active === "zadosti" ? claimCategoryFor(claimSub) : null;
+  const isClaimTab = active === "zadosti";
 
   const { data, isLoading, isError } = useQuery<WorkbenchOrdersResponse>({
     queryKey: ["workbench-orders", active, search, expert, pageLimit],
@@ -1228,6 +1297,17 @@ const OrdersInner = () => {
           </Text>
         </div>
         <div className="flex items-center gap-4">
+        {/* Vrácení posledního hromadného přesunu. Totéž umí Ctrl+Z. */}
+        {lastUndo && (
+          <Button
+            size="small"
+            variant="secondary"
+            title={`${lastUndo.label} — vrátit zpět (Ctrl+Z)`}
+            onClick={() => void undoById(lastUndo.id)}
+          >
+            Vrátit zpět
+          </Button>
+        )}
         <ExpertToggle />
         <Input
           size="small"
@@ -1246,20 +1326,39 @@ const OrdersInner = () => {
           count:
             tab.key === "statistiky"
               ? undefined
-              : claimCategoryFor(tab.key)
-                ? claimCounts[tab.key]
+              : tab.key === "zadosti"
+                ? // Jedna záložka za tři kategorie nese jejich součet.
+                  claimTabs.reduce(
+                    (sum, claim) => sum + (claimCounts[claim.key] ?? 0),
+                    0
+                  ) || undefined
                 : data?.counts?.[tab.key],
         }))}
         active={active}
         onSelect={(key) => {
           setActive(key);
-          // V záložkách žádostí se nic hromadně nedělá — výběr z jiné
-          // záložky by tu jen strašil s tlačítky, která sem nepatří.
-          if (claimCategoryFor(key)) {
+          // V žádostech se nic hromadně nedělá — výběr z jiné záložky by tu
+          // jen strašil s tlačítky, která sem nepatří.
+          if (key === "zadosti") {
             setSelected(new Set());
           }
         }}
       />
+
+      {/* Druh žádosti — uvnitř záložky, ne vedle pracovních front. */}
+      {active === "zadosti" && (
+        <div className="border-ui-border-base border-b">
+          <SubTabs
+            tabs={claimTabs.map((tab) => ({
+              key: tab.key,
+              label: tab.label,
+              count: claimCounts[tab.key],
+            }))}
+            active={claimSub}
+            onSelect={setClaimSub}
+          />
+        </div>
+      )}
 
       {active === "statistiky" && <OrderStats />}
 
@@ -1333,58 +1432,101 @@ const OrdersInner = () => {
       )}
 
       {selected.size > 0 && !isClaimTab && (
-        <div className="bg-ui-bg-subtle flex flex-wrap items-center gap-3 px-6 py-3">
-          <Text size="small" weight="plus">
-            Vybráno: {selected.size}
-          </Text>
-          <Select
-            size="small"
-            value={batchStage}
-            onValueChange={setBatchStage}
-          >
-            <Select.Trigger className="w-56">
-              <Select.Value placeholder="Přesunout do stavu…" />
-            </Select.Trigger>
-            <Select.Content>
-              {batchTargets.map((target) => (
-                <Select.Item key={target.value} value={target.value}>
-                  {target.label}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select>
-          <Button
-            size="small"
-            variant="secondary"
-            disabled={!batchStage}
-            isLoading={batchMove.isPending}
-            onClick={() => batchMove.mutate()}
-          >
-            Přesunout
-          </Button>
-          <Button
-            size="small"
-            isLoading={markShipped.isPending}
-            onClick={() => markShipped.mutate([...selected])}
-          >
-            Označit jako odeslané ({selected.size})
-          </Button>
-          <Button
-            size="small"
-            variant="secondary"
-            isLoading={printSheets.isPending}
+        <BulkBar count={selected.size} onClear={() => setSelected(new Set())}>
+          {/*
+            Jeden další krok místo dvou tlačítek, která slibovala totéž.
+
+            Dřív tu stálo rozbalovátko „Přesunout do stavu…" (s cílem
+            „Odesláno") a hned vedle „Označit jako odeslané" — dvě tlačítka
+            se stejným slibem, která ale šla na dva různé endpointy.
+            Hlavní tlačítko teď nese DALŠÍ KROK TÉ FRONTY, ve které stojím —
+            tutéž větu, jakou má tlačítko na řádku (`nextStageLabel`) — a samo
+            se trefí do správného endpointu.
+          */}
+          {dalsiKrok === "shipped" ? (
+            /* Odeslání rozesílá zákazníkům e-maily, a ty se odvolat nedají.
+               Proto se tu ptáme (§12), místo abychom nabízeli vrácení. */
+            <ConfirmDialog
+              trigger={
+                <Button size="small" className="shrink-0">
+                  {dalsiKrokLabel} ({selected.size})
+                </Button>
+              }
+              destructive={false}
+              title={
+                selected.size === 1
+                  ? "Označit objednávku jako odeslanou?"
+                  : `Označit ${selected.size} objednávek jako odeslané?`
+              }
+              description="Každému zákazníkovi odejde e-mail, že zásilka je na cestě."
+              items={allRows
+                .filter((order) => selected.has(order.id))
+                .map(
+                  (order) =>
+                    `#${order.display_id}${order.customer_name ? ` · ${order.customer_name}` : ""}`
+                )}
+              consequence="Odeslané e-maily už nejde vzít zpět."
+              confirmLabel={`Odeslat a oznámit (${selected.size})`}
+              isPending={markShipped.isPending}
+              onConfirm={() => markShipped.mutate([...selected])}
+            />
+          ) : dalsiKrok ? (
+            <Button
+              size="small"
+              className="shrink-0"
+              isLoading={batchMove.isPending}
+              onClick={() => batchMove.mutate(dalsiKrok)}
+            >
+              {dalsiKrokLabel} ({selected.size})
+            </Button>
+          ) : null}
+
+          <BulkAction
             onClick={() => printSheets.mutate([...selected])}
+            isLoading={printSheets.isPending}
           >
-            Vytisknout lístky ({selected.size})
-          </Button>
-          <Button
-            size="small"
-            variant="transparent"
-            onClick={() => setSelected(new Set())}
-          >
-            Zrušit výběr
-          </Button>
-        </div>
+            Vytisknout lístky
+          </BulkAction>
+
+          {/* Přesun jinam zůstává pro výjimky — otevře se až na kliknutí,
+              takže nesoupeří s tím krokem, který je na řadě. */}
+          {presunOpen ? (
+            <span className="flex shrink-0 items-center gap-2">
+              <Select size="small" value={batchStage} onValueChange={setBatchStage}>
+                <Select.Trigger className="w-48">
+                  <Select.Value placeholder="Kam?" />
+                </Select.Trigger>
+                <Select.Content>
+                  {batchTargets
+                    .filter((target) => target.value !== dalsiKrok)
+                    .map((target) => (
+                      <Select.Item key={target.value} value={target.value}>
+                        {target.label}
+                      </Select.Item>
+                    ))}
+                </Select.Content>
+              </Select>
+              <Button
+                size="small"
+                variant="secondary"
+                disabled={!batchStage}
+                isLoading={batchMove.isPending}
+                onClick={() => batchMove.mutate(batchStage)}
+              >
+                Přesunout
+              </Button>
+            </span>
+          ) : (
+            <Button
+              size="small"
+              variant="transparent"
+              className="shrink-0"
+              onClick={() => setPresunOpen(true)}
+            >
+              Přesunout jinam…
+            </Button>
+          )}
+        </BulkBar>
       )}
 
       {active !== "statistiky" && !isClaimTab && !isLoading && !isError && rows.length > 0 && (
