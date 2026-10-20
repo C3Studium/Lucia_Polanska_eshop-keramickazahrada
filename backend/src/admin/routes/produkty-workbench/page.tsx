@@ -328,22 +328,17 @@ const PublishToggle = ({ product }: { product: WorkbenchProduct }) => {
  * údaji; telefon: nastavení pod „…".
  */
 const ROW_GRID =
-  "min-[1400px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_56px_56px_84px_64px_60px_150px]";
+  "min-[1100px]:grid-cols-[minmax(0,1fr)_96px_88px_92px_150px]";
 
 const RowHeader = () => (
   <div
-    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1400px]:grid ${ROW_GRID}`}
+    className={`bg-ui-bg-subtle text-ui-fg-subtle hidden gap-x-3 px-6 py-2 min-[1100px]:grid ${ROW_GRID}`}
   >
     {[
       ["Produkt", "", "pl-[92px]"],
       ["Stav", "", ""],
       ["Cena", "", ""],
       ["Prodeje 30 dní", "", ""],
-      ["Dobírka", "Zákazník smí platit při převzetí (jen ČR, Česká pošta na adresu).", "text-center"],
-      ["Křehké", "Zásilka s tímto kusem pojede v křehkém režimu.", "text-center"],
-      ["Balení", "Cena balení za kus v Kč — zákazník ji uvidí jako „Balné“.", "text-center"],
-      ["Poškozené", "Poškozený / poslední kus ve výprodeji.", "text-center"],
-      ["Bez slev", "Slevové kódy se na produkt nevztahují.", "text-center"],
       ["", "", ""],
     ].map(([label, title, className], index) => (
       <Text key={index} size="xsmall" weight="plus" className={className} title={title || undefined}>
@@ -367,14 +362,14 @@ const FlagSwitch = ({
   onFlip: () => void;
 }) => (
   <label
-    className={`flex cursor-pointer items-center gap-1.5 min-[1400px]:justify-center ${dirty ? `min-[1400px]:rounded-md min-[1400px]:bg-ui-tag-orange-bg min-[1400px]:px-1` : ""}`}
+    className={`flex cursor-pointer items-center gap-1.5 ${dirty ? `min-[1100px]:rounded-md min-[1100px]:bg-ui-tag-orange-bg min-[1100px]:px-1` : ""}`}
     title={title}
   >
     <Switch size="small" checked={checked} onCheckedChange={onFlip} />
     {/* Na širokém displeji nese popisek hlavička sloupce. */}
     <Text
       size="xsmall"
-      className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"} min-[1400px]:sr-only`}
+      className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
     >
       {label}
     </Text>
@@ -408,12 +403,12 @@ const PackagingInput = ({
   };
   return (
     <label
-      className={`flex items-center gap-1.5 min-[1400px]:justify-center`}
+      className={`flex items-center gap-1.5`}
       title="Cena balení za kus — zákazník ji uvidí jako „Balné“ pod výrobkem."
     >
       <Text
         size="xsmall"
-        className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"} min-[1400px]:sr-only`}
+        className={`${dirty ? "text-ui-fg-base font-medium" : "text-ui-fg-subtle"}`}
       >
         Balení
       </Text>
@@ -430,7 +425,7 @@ const PackagingInput = ({
         }}
         className={`border-ui-border-base bg-ui-bg-field txt-compact-xsmall w-16 rounded-md border px-2 py-1 text-right ${dirty ? "border-ui-tag-orange-border" : ""}`}
       />
-      <Text size="xsmall" className={`text-ui-fg-subtle min-[1400px]:sr-only`}>Kč</Text>
+      <Text size="xsmall" className={`text-ui-fg-subtle`}>Kč</Text>
     </label>
   );
 };
@@ -1217,14 +1212,13 @@ const ProductsInner = () => {
       : null;
 
     const settingsOn = active !== "oblibene" && active !== "archivovane";
-    const placeholder = <span className={`hidden min-[1400px]:block`} />;
     const pending = pendingFlags[product.id];
 
     return (
       <Fragment key={product.id}>
         <article
           id={`workbench-row-${product.id}`}
-          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1400px]:items-center ${ROW_GRID}`}>
+          className={`grid gap-x-3 gap-y-2 px-6 py-3 min-[1100px]:items-center ${ROW_GRID}`}>
           {/* 1) Produkt: výběr, fotka, název, zařazení, odkazy */}
           <div className="flex min-w-0 items-center gap-3">
             <SelectCheckbox
@@ -1308,7 +1302,7 @@ const ProductsInner = () => {
             {/* Telefon: nastavení a akce řádku pod „…" — stejné jako na PC. */}
             <button
               type="button"
-              className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover ml-auto shrink-0 rounded-md px-3 py-1.5 text-lg leading-none lg:hidden"
+              className="text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover ml-auto shrink-0 rounded-md px-3 py-1.5 text-lg leading-none"
               aria-expanded={openActions === product.id}
               aria-label="Další nastavení a akce"
               onClick={() => setOpenActions(openActions === product.id ? null : product.id)}
@@ -1318,7 +1312,7 @@ const ProductsInner = () => {
           </div>
 
           {/* 2–4) Stav, cena, prodeje — na užším displeji jedna řádka pod názvem */}
-          <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pl-[92px] min-[1400px]:contents`}>
+          <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pl-[92px] min-[1100px]:contents`}>
             <div className="flex flex-wrap gap-1">
               {product.status !== "published" && (
                 <Badge size="2xsmall" color="grey">koncept</Badge>
@@ -1361,9 +1355,23 @@ const ProductsInner = () => {
             </div>
           </div>
 
-          {/* 5–10) Nastavení (každé ve svém sloupci) a akce */}
+          {/*
+            5) Nastavení kusu — za „…", ne jako pět sloupců (spec §13).
+
+            Dřív měl každý přepínač vlastní sloupec a mřížka se kvůli tomu
+            skládala až od 1400 px. Windows 1920 při 150 % zvětšení dává
+            1280 CSS px, takže se na jejím počítači nesložila nikdy —
+            dostávala zalomený dvouúrovňový řádek s pěti přepínači bez
+            popisků, u dvaceti produktů stokrát pod sebou.
+
+            Těchhle pět vlastností se mění buď hromadně v liště výběru
+            (§2), nebo u jednoho kusu tady — tedy jednou za čas, ne při
+            každém pohledu na seznam.
+          */}
           <div
-            className={`${openActions === product.id ? "flex" : "hidden"} flex-wrap items-center gap-x-4 gap-y-2 lg:flex lg:pl-[92px] min-[1400px]:contents`}
+            className={`${
+              openActions === product.id ? "flex" : "hidden"
+            } col-span-full flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-ui-bg-subtle px-2 py-2 min-[1100px]:pl-[92px]`}
           >
             {settingsOn ? (
               <FlagSwitch
@@ -1373,7 +1381,7 @@ const ProductsInner = () => {
                 dirty={pending?.cod_allowed !== undefined}
                 onFlip={() => stageFlag(product, "cod_allowed")}
               />
-            ) : placeholder}
+            ) : null}
             {settingsOn ? (
               <FlagSwitch
                 label="Křehké"
@@ -1382,14 +1390,14 @@ const ProductsInner = () => {
                 dirty={pending?.fragile !== undefined}
                 onFlip={() => stageFlag(product, "fragile")}
               />
-            ) : placeholder}
+            ) : null}
             {settingsOn ? (
               <PackagingInput
                 value={effectivePackaging(product)}
                 dirty={pending?.packaging_price !== undefined}
                 onChange={(value) => stagePackaging(product, value)}
               />
-            ) : placeholder}
+            ) : null}
             {active === "produkty" || active === "poskozene" ? (
               <FlagSwitch
                 label="Poškozené"
@@ -1398,7 +1406,7 @@ const ProductsInner = () => {
                 dirty={pending?.clearance !== undefined}
                 onFlip={() => stageFlag(product, "clearance")}
               />
-            ) : placeholder}
+            ) : null}
             {settingsOn ? (
               <FlagSwitch
                 label="Bez slev. kódů"
@@ -1407,9 +1415,11 @@ const ProductsInner = () => {
                 dirty={pending?.no_promo !== undefined}
                 onFlip={() => stageFlag(product, "no_promo")}
               />
-            ) : placeholder}
+            ) : null}
+          </div>
 
-            <div className={`flex items-center gap-3 min-[1400px]:justify-end`}>
+          {/* 5) Akce řádku — pátý a poslední sloupec mřížky. */}
+          <div className={`flex items-center gap-3 min-[1100px]:justify-end`}>
               <button
                 type="button"
                 title={expanded === product.id ? "Sbalit" : "Rozbalit"}
@@ -1456,7 +1466,6 @@ const ProductsInner = () => {
               >
                 Upravit
               </Link>
-            </div>
           </div>
 
           {/* Rozpracované změny řádku — potvrzení na celou šířku, jen když jsou. */}
