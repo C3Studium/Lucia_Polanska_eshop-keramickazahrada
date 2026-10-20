@@ -111,11 +111,47 @@ export const POST = async (
         reservation,
         term,
       })
+
+      /*
+       * Odpověď první, e-maily potom: zákazník čeká na přesměrování na bránu
+       * a nesmí na něj čekat déle kvůli odeslání pošty.
+       */
       res.status(201).json({
         reservation_id: reservation.id,
         token,
         payment_url: link.payment_url,
       })
+
+      /*
+       * „Místo držíme, platba se zpracovává."
+       *
+       * DŘÍV tu nebylo nic. Platba na místě dostala potvrzení hned, platba
+       * kartou až po `payment.captured` — a ta událost přijde jen tehdy,
+       * když ComGate zavolá naše oznámení. Když nezavolalo, zákazník
+       * neslyšel 24 hodin nic a pak mu přišlo „platba nedorazila", i když
+       * zaplatil. Tenhle e-mail je důkaz, že rezervace vznikla, a nese odkaz,
+       * přes který se k platbě vrátí.
+       *
+       * Potvrzení platby přijde zvlášť (`subscribers/course-payment.ts`) —
+       * jiný dedupe klíč, takže se nepřebijí.
+       */
+      await sendCourseReservationConfirmedEmail(req.scope, reservation, term, {
+        variant: "awaiting_payment",
+      }).catch(() => undefined)
+
+      await notifyMerchant(req.scope, {
+        key: `course-res:${reservation.id}`,
+        title: `Kurzy: nová rezervace — ${reservation.name}`,
+        description: [
+          `${term.title} · ${formatCourseDate(term.starts_at)}`,
+          `${reservation.party_size} os. · ${reservation.name} <${reservation.email}>${
+            reservation.phone ? `, tel. ${reservation.phone}` : ""
+          }`,
+          "Platí kartou — čeká se na potvrzení platby.",
+          photoConsentLine(reservation.consents),
+        ].join("\n"),
+        audience: "owner",
+      }).catch(() => undefined)
       return
     } catch (error) {
       // The seats must not stay blocked by a reservation nobody can pay for —

@@ -24,7 +24,7 @@ import { czk, formatDuration, formatPrague } from "../format"
  *
  * Self-service lives here too: „Změnit počet osob" (only while nothing was
  * paid online) and „Zrušit rezervaci" (with an inline confirmation spelling
- * out the consequences). Both disappear 48 hours before the course starts —
+ * out the consequences). Both disappear 24 hours before the course starts —
  * the same cutoff the backend enforces — replaced by one line saying why.
  */
 
@@ -174,9 +174,23 @@ const voiceFor = (
   if (reservation.payment_method === "on_site") {
     return say("na-miste", { tone: "ok" })
   }
-  if (outcome === "pending") {
+  /*
+   * Brána říká „zaplaceno", naše evidence ještě ne.
+   *
+   * Tohle je normální stav, ne chyba: zaplacenou rezervaci u nás označí až
+   * ověřené oznámení od ComGate (nebo dohledová úloha), a zákazník se z
+   * brány vrátí dřív. Dokud se to nesrovná, je to „zpracovává se".
+   *
+   * DŘÍV sem padal jen `pending` a návrat s `paid` propadl až na poslední
+   * řádek — tedy „platba nedorazila, zkuste to znovu" člověku, který právě
+   * zaplatil. Krom toho, že to je nepravda, mu to nabízelo zaplatit podruhé.
+   */
+  if (outcome === "paid" || outcome === "pending") {
     return say("zpracovava", { tone: "wait" })
   }
+
+  /* Zbývá návrat se `cancelled` a přímé otevření odkazu — tam platba
+     opravdu nedorazila a opakování je na místě. */
   return say("nezaplaceno", { tone: "warn", canRetry: true })
 }
 

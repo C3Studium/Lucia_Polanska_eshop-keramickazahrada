@@ -78,6 +78,9 @@ type AdminReservation = {
   refunded_at: string | null;
   source: "web" | "manual";
   note: string | null;
+  /** Doklad v iDokladu — null, dokud se nevystavil. */
+  idoklad_invoice_number: string | null;
+  idoklad_pdf_url: string | null;
   created_at: string;
 };
 
@@ -575,6 +578,92 @@ const ManualReservationDrawer = ({ term }: { term: AdminTerm }) => {
 };
 
 /* ------------------------------------------------------------------ */
+/* Faktura                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * „Vystavit fakturu" u zaplacené rezervace.
+ *
+ * Automatika vystaví doklad jen ve chvíli, kdy dorazí potvrzení platby od
+ * ComGate. Platba na místě tu chvíli nikdy nemá — peníze přijdou u dveří a
+ * žádná platební relace neexistuje. A u online platby může automatika
+ * selhat (iDoklad nedostupný, ztracené oznámení). Tohle tlačítko je pro
+ * obojí.
+ *
+ * Když doklad existuje, tlačítko ho přestane nabízet a místo toho ukáže
+ * jeho číslo s odkazem na PDF — nabízet „vystavit" k něčemu vystavenému
+ * vede k tomu, že to někdo zkusí.
+ */
+const InvoiceButton = ({ reservation }: { reservation: AdminReservation }) => {
+  const queryClient = useQueryClient();
+
+  const issue = useMutation({
+    mutationFn: () =>
+      sdk.client.fetch<{
+        invoice: {
+          status: string;
+          invoice_number: string | null;
+          pdf_url: string | null;
+        };
+        email_sent: boolean;
+      }>(`/admin/courses/reservations/${reservation.id}/invoice`, {
+        method: "POST",
+      }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["course-terms"] });
+      const cislo = result.invoice.invoice_number
+        ? ` č. ${result.invoice.invoice_number}`
+        : "";
+      toast.success(
+        result.email_sent
+          ? `Faktura${cislo} vystavena a odeslána zákazníkovi.`
+          : `Faktura${cislo} vystavena, ale e-mail se nepodařilo odeslat.`
+      );
+    },
+    onError: async (error) =>
+      toast.error(await errorMessage(error, "Fakturu se nepodařilo vystavit.")),
+  });
+
+  if (reservation.status === "cancelled") {
+    return null;
+  }
+
+  if (reservation.idoklad_invoice_number) {
+    return reservation.idoklad_pdf_url ? (
+      <a
+        href={reservation.idoklad_pdf_url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-ui-fg-interactive txt-small hover:underline"
+      >
+        Faktura {reservation.idoklad_invoice_number}
+      </a>
+    ) : (
+      <Text size="xsmall" className="text-ui-fg-muted">
+        Faktura {reservation.idoklad_invoice_number}
+      </Text>
+    );
+  }
+
+  /* Nezaplacená rezervace doklad nedostane — faktura na nezaplacenou službu
+     by zákazníkovi tvrdila, že zaplatil. */
+  if (reservation.payment_status !== "paid") {
+    return null;
+  }
+
+  return (
+    <Button
+      size="small"
+      variant="secondary"
+      isLoading={issue.isPending}
+      onClick={() => issue.mutate()}
+    >
+      Vystavit fakturu
+    </Button>
+  );
+};
+
+/* ------------------------------------------------------------------ */
 /* Cancel prompts                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -968,7 +1057,8 @@ const TermCard = ({
                     </span>
                   </Text>
                 </div>
-                <div className="flex items-center justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <InvoiceButton reservation={reservation} />
                   {reservation.status !== "cancelled" ? (
                     <CancelReservationPrompt reservation={reservation} />
                   ) : (

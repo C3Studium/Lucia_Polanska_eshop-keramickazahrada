@@ -140,9 +140,23 @@ export const courseTermsInfo = (
 
 /**
  * The reservation confirmation — `variant: "paid"` after the ComGate webhook,
- * `variant: "on_site"` immediately for pay-on-site bookings. One template,
- * two voices; the paid variant doubles as the payment receipt, which is why
+ * `variant: "on_site"` immediately for pay-on-site bookings, and
+ * `variant: "awaiting_payment"` immediately for online ones. One template,
+ * three voices; the paid variant doubles as the payment receipt, which is why
  * there is no separate course-payment-received template.
+ *
+ * ## Proč „awaiting_payment" existuje
+ *
+ * Do 20. 10. 2026 online rezervace neposílala **nic**. Platba na místě
+ * dostala potvrzení hned, platba kartou až po `payment.captured` — tedy po
+ * oznámení od ComGate. Když to oznámení nepřišlo (adresa v jejich portálu je
+ * naše jediná cesta, viz `jobs/reconcile-course-payments`), zákazník neslyšel
+ * 24 hodin vůbec nic a pak mu přišlo „platba nedorazila". I když zaplatil.
+ *
+ * Tahle varianta je to, co má přijít hned po odeslání formuláře: místo
+ * držíme, tohle jste si objednali, takhle se k tomu vrátíte. Platí i pro
+ * zákazníka, který zaplatil úspěšně — za pár minut mu dorazí druhý e-mail
+ * s potvrzením platby, a to je správné pořadí, ne duplicita.
  *
  * Nese i poučení o výjimce z odstoupení (§ 1837 písm. j) OZ), storno
  * podmínky a PDF obchodních podmínek té verze, se kterou zákazník
@@ -158,7 +172,7 @@ export const sendCourseReservationConfirmedEmail = async (
   reservation: any,
   term: any,
   options: {
-    variant: "paid" | "on_site"
+    variant: "paid" | "on_site" | "awaiting_payment"
     invoicePdfUrl?: string | null
     /**
      * A different dedupe key for re-sends with new content — the party-size

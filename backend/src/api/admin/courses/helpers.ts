@@ -22,6 +22,9 @@ export const serializeAdminReservation = (reservation: any) => ({
   cancel_reason: reservation.cancel_reason ?? null,
   /** Set once the automatic ComGate refund went through. */
   refunded_at: reservation.refunded_at ?? null,
+  /* Doklad — řádek podle nich pozná, jestli je co vystavovat a kam odkázat. */
+  idoklad_invoice_number: reservation.idoklad_invoice_number ?? null,
+  idoklad_pdf_url: reservation.idoklad_pdf_url ?? null,
   source: reservation.source,
   note: reservation.note ?? null,
   customer_id: reservation.customer_id ?? null,
