@@ -1,279 +1,307 @@
-Předmět: E-shop: prosím o odpovědi dnes do 14:00, ať zítra 21. 10. spustíme
+# Keramická zahrada — co se na e-shopu změnilo a co od Vás potřebuji
 
-Dobrý den, paní Polanská,
+Pro: Lucie Polanská · Od: Matěj Forejt · 20. 10. 2026
 
-nové obchodní podmínky, reklamační řád, poučení o odstoupení od smlouvy a zásady ochrany osobních údajů jsou připravené a otestované. Chci je spustit zítra, ve středu 21. 10. Chybí už jen údaje, které znáte jen Vy. Pokud mi odpovědi na otázky 1 až 11 pošlete dnes do 14:00, stihneme to. Klidně mi je i zavolejte, zapíšu si je.
+Tento dokument má tři části a na konci e-mail. **První část** vysvětluje, co jsem na e-shopu změnil a proč — po oblastech, u každé krátce „co se změnilo“ a „co to pro Vás znamená v praxi“. **Druhá část** je provozní návod: co teď děláte jinak než dřív. **Třetí část** jsou otázky — všechno, co znáte jen Vy a bez čeho nemůžu obchodní podmínky vydat jako hotový dokument. U každé otázky je návrh odpovědi, u kterého stačí napsat „souhlasím“. Otázky označené ★ potřebuji jako první: bez nich nejde vydat obchodní podmínky, a dokud nejsou vydané, zákazník je nedostává v příloze potvrzení objednávky, jak vyžaduje zákon.
 
-Stačí krátce odpovědět u čísla otázky. Kde je návrh, stačí napsat „souhlasím“.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NUTNÉ KE SPUŠTĚNÍ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Od kdy mají nové podmínky platit? Navrhuji středu 21. 10. 2026.
-
-2. Které číslo účtu platí? Ve starých textech jsou tři: 2500675505/2010, 2701281289/2010 (eura) a 7010757121/2010. Máte zvláštní účet pro eura?
-
-3. Jste plátce DPH? E-shop i faktury dnes počítají s tím, že nejste.
-
-4. Kolik procent ceny chcete brát jako zálohu u zakázky? Obvykle 30 až 50 %.
-
-5. Které výrobky jsou opravdu na míru?
-Vrácení do 14 dnů lze vyloučit jen u výrobku vyrobeného podle přání konkrétního zákazníka, například se jménem, číslem domu nebo vlastním motivem. Nestačí, že ho vyrábíte až po objednání. Jako zakázka je teď nastavený jen „Pán lesa Dub“. Napište prosím, které z těchto jsou na míru (nebo „všechny kromě…“):
-– Keramická plastika Slunce – Sluneční žena Červenec
-– Keramická plastika slunce – Sluneční žena Hlubina
-– Keramická plastika slunce – Sluneční žena Naděje
-– Keramická plastika slunce – Paní Třešeň
-– Keramická plastika slunce – Paní Jabloň
-– Keramická plastika domovní znamení – Pán lesa Dub zelený
-– Domovní znamení – Pán lesa lípa a smrk
-– Keramické domovní znamení číslo – Strom dub 2
-– Keramické domovní znamení číslo – Strom dub 6
-– Domovní znamení NA ZAKÁZKU
-– Keramický kachel na fasádu
-– Keramický hrnek s věnováním
-– Kočičák Viktor do zahrady
-– Domovní číslice na zakázku
-– Keramické domovní číslo na zakázku – bez figurky
-– Keramické domovní č.p. na zakázku – bez figurky
-– Domovní číslo na zakázku s pomněnkou
-– Domovní čísla na zakázku s jednou figurkou – čiči světlá
-– Domovní čísla na zakázku s jednou figurkou – čiči tmavá
-– Domovní čísla na zakázku s jednou figurkou – haf
-– Keramická domovní čísla na zakázku – Sovy
-– Domovní čísla na zakázku – 2 figurky
-– Domovní čísla na zakázku – 3 figurky
-– Domovní čísla na zakázku – se jménem a rybou
-– Keramická domovní čísla na zakázku se jménem a 1 figurkou
-– Keramická domovní čísla na zakázku se jménem – 3 figurky
-
-6. Domovní znamení NA ZAKÁZKU má cenu 6 000 Kč a zároveň „cena dohodou“. Co z toho?
-a) pevná cena za běžný rozsah, příplatek podle domluvy,
-b) bez ceny, s tlačítkem „Poptat“, které vede na poptávkový formulář.
-
-7. Storno kurzů. Dnes zákazník zruší na webu nejpozději 48 hodin předem a dostane zpět celou částku, později nic. Nechat to tak, nebo zavést například:
-– 7 a více dní předem: vrácení 100 %,
-– 2 až 6 dní předem: 50 %, nebo přesun na jiný termín,
-– méně než 48 hodin: bez vrácení, ale může přijít náhradník.
-
-8. Od kolika let mohou na kurz děti? A do kdy si musí účastník vyzvednout výrobek po výpalu?
-
-9. Dárkové poukazy: jak dlouho platí (navrhuji 1 rok)? Když zákazník nakoupí za méně, zbytek propadá, nebo mu zůstane? A jak se poukaz dnes uplatňuje (kód v poznámce, v dílně, e-mailem)?
-
-10. Poukaz za „1 Kč“ předělám tak, že zákazník rovnou napíše částku od 100 do 10 000 Kč po 100 Kč. Souhlasíte? Posíláte poukazy poštou, e-mailem, nebo obojí, a platí ještě poštovné 60 Kč?
-
-11. Kolik zhruba stojí zákazníka poslat zboží zpět? Stačí odhad, třeba „150 až 250 Kč, křehký balík“.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MŮŽE PŘIJÍT POZDĚJI
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-12. Tři zvonková tlačítka mají v názvu „SLEVA“, ale prodávají se za běžnou cenu. Mám a) nastavit skutečnou akční cenu (kolik %?), b) slovo SLEVA z názvu odstranit, nebo c) jsou to kusy s vadou (jakou)?
-
-13. Jak dlouho obvykle trvá výroba zakázky? Například „3 až 6 týdnů od zaplacení zálohy“.
-
-14. Používáte k newsletteru ještě jiný nástroj než e-shop? Předáváte faktury účetní (stačí ano/ne)?
-
-15. Používáte ještě Zásilkovnu? Chcete měřit návštěvnost přes Google Analytics (jen se souhlasem v liště cookies)?
-
-16. Pravidla zakázek (bod 11) a doby uchování údajů (bod 25) z minulého e-mailu: platí, nebo je chcete upravit?
-
-17. Máte svého advokáta? Pošlu mu podklady a tři konkrétní otázky.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CO SE PRO VÁS MĚNÍ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-– Poškozenou zásilku reklamujete u České pošty Vy, do 2 pracovních dnů od doručení. Zákazník Vám pošle fotky, administrace Vás upozorní.
-– K pítkům a nádobám na vodu prosím přikládejte kartičku o zimě (text Vám pošlu). Bez ní nemůžeme odmítnout reklamaci nádoby, ve které zamrzla voda.
-– U zakázek platí nová pravidla: záloha je nejvýš 50 % ceny; tlačítko „Začít výrobu“ v administraci pošle zákazníkovi e-mail s datem a časem a teprve od něj je výroba zahájená (bez e-mailu to systém nedovolí); zruší-li zákazník zakázku před tím e-mailem, systém mu sám vrátí vše, po něm si záloha zůstane u Vás a vrátí se jen zbytek. Ke každé zakázce zákazník dostane PDF „Potvrzení zakázky“.
-– Testovací kus „kytka – TEST“ jsem z webu skryl.
-– Nová verze webu už běží. Údaje si můžete zkontrolovat a upravit i sama v administraci v sekci „Právní údaje“.
-
-Děkuji a kdyby bylo cokoli nejasné, zavolejte mi.
-
-S pozdravem
-Matěj Forejt
-
+Nová verze webu už od dnešního rána běží. Nic z toho, co popisuji, Vás nenutí dělat něco technického — všechno, co máte na starosti, je buď odpověď v e-mailu, nebo kliknutí v administraci obchodu, kterou už znáte.
 
 ---
 
-## Předchozí, úplná verze (16. 10. 2026)
+## 1. Co se udělalo a proč
 
-Novější e-mail výše je zkrácený na to, bez čeho nejde spustit. Body 11 a 25 z této verze na něj
-odkazují.
+### 1.1 Obchodní podmínky
 
-Předmět (16. 10.): E-shop Keramická zahrada – potřebuji od Vás pár údajů a rozhodnutí před spuštěním
+**Co se změnilo.** Dosavadní obchodní podmínky byly z roku 2015 a od té doby se spotřebitelské právo dvakrát zásadně změnilo (velká novela občanského zákoníku v roce 2023 a nové vzorové poučení o odstoupení z roku 2026). Staré podmínky mluvily o „obchodní společnosti“, o platbě PlatímPak (banka zanikla v roce 2022), o šestiměsíční záruce místo dnešního jednoho roku, tlačítko k odeslání objednávky v nich bylo prázdné a přepravní škodu přesouvaly na zákazníka. Nové podmínky jsou napsané lidsky, po článcích: kdo prodává, objednávka, cena a platba, slevy a kusy s vadou, doprava, odstoupení, zakázky, kurzy, poukazy, reklamace, recenze, osobní údaje, řešení sporů. Staré znění z roku 2015 zůstává na webu v archivu, protože se podle něj uzavíraly dřívější objednávky.
+
+Tři věci, které dřív nebyly a zákon je chce: tlačítko v pokladně se jmenuje **„Objednávka zavazující k platbě“**; zákazník musí před odesláním **sám zaškrtnout**, že se seznámil s podmínkami (nic není předem zaškrtnuté); a ke každé objednávce se **ukládá, které znění podmínek a v kolik hodin zákazník odsouhlasil**. Jakmile budou podmínky vydané, přijdou zákazníkovi v PDF v příloze potvrzení objednávky a najde je i ve svém účtu — proto ta naléhavost u otázek s ★.
+
+Podmínky se nedají měnit „tiše“: nové znění má vždy datum účinnosti, platí jen pro objednávky od toho dne a staré znění zůstává dostupné. Texty můžete upravovat ve Studiu v sekci „Právní dokumenty“, ale jen pracovní znění — vydané znění Studio zamkne, protože ho zákazníci už dostali.
+
+**Co to pro Vás znamená.** Číslo účtu, údaj o DPH, výši zálohy, storno kurzů, platnost poukazů a podobné údaje vyplňujete Vy v administraci v sekci **„Právní údaje“**; web, PDF i e-maily si je odtud berou samy. Číslo účtu jsem tam dnes podle Vašeho iDokladu vyplnil (otázka 1). Ostatní čeká na Vaše odpovědi.
+
+### 1.2 Odstoupení od smlouvy (vrácení do 14 dnů)
+
+**Co se změnilo.** Zákazník může odstoupit **online tlačítkem** u objednávky (v účtu i z odkazu v e-mailu — bez přihlášení), e-mailem nebo dopisem. Lhůta běží od **převzetí** zboží, ne od odeslání. Zákon dnes výslovně říká, že se vrací i poštovné (ve výši nejlevnější dopravy, kterou nabízíme), že peníze jdou **stejnou cestou, jakou přišly** (platba kartou zpět na kartu přes ComGate), a že zákazník odpovídá jen za snížení hodnoty zboží, ne za to, že si ho vyzkoušel. Podmínka „nepoužitý výrobek“, kterou měl web v častých dotazech, v zákoně neexistuje a je pryč. Poučení a formulář jsou doslovným přepisem vládního vzoru.
+
+**Co to pro Vás znamená.** Při odstoupení přes tlačítko vrací peníze systém sám (ComGate), Vy dostanete upozornění a zásilku zpět. Jen když zákazník platil na dobírku nebo hotově, vrací se převodem na účet, který uvede ve formuláři. Zákazníkovi nikdy neříkáme, že musí zboží vrátit nepoužité nebo v původním obalu — můžeme jen poprosit o pečlivé zabalení.
+
+### 1.3 Reklamace
+
+**Co se změnilo.** Nový **Reklamační řád** a **Reklamační protokol** s formulářem (dřív web říkal „formulář ještě dokončujeme“). Reklamace je uplatněná ve chvíli, kdy ji zákazník oznámí (třeba e-mailem), ne až když dorazí zboží — od té chvíle běží **30 dní** na vyřízení. Systém zákazníkovi automaticky potvrdí přijetí s datem a časem. Domněnka, že vada byla na zboží už při převzetí, platí **1 rok** (dřív 6 měsíců), reklamovat lze 2 roky. Pořadí nároků je podle zákona: oprava nebo výměna, pak sleva nebo vrácení peněz.
+
+Největší obrat je u **poškození při přepravě**: podle zákona odpovídáte za zboží až do převzetí Vy, takže rozbitý balík je vada, kterou řešíte se zákazníkem Vy, a škodu s Českou poštou si vyřizujete Vy. Domluva z 12. října, že reklamaci u pošty podává zákazník, tím padá. Zákazník Vám pošle fotografie a hotovo.
+
+Oba dokumenty jsou už vydané jako PDF. Nebrání jim chybějící údaje, proto šly ven jako první.
+
+**Co to pro Vás znamená.** Reklamaci u České pošty podáváte Vy, a to do **2 pracovních dnů od doručení** — administrace Vás na to upozorní, jakmile zákazník nahlásí rozbitý kus. Reklamace se vyřizuje v administraci v sekci Reklamace, kde je schvalovací postup: žádné peníze neodchází bez Vašeho rozhodnutí (kromě zrušení zakázky před zahájením výroby, viz dál). Za každé vrácení peněz vzniká dobropis v iDokladu automaticky.
+
+### 1.4 Zakázky a „Potvrzení zakázky“
+
+**Co se změnilo.** Zakázková výroba je největší změna, a proto podrobněji. Zákazník nemůže výrobek na míru vrátit do 14 dnů — ale jen pokud je to opravdu výrobek podle jeho přání (jméno, číslo domu, vlastní motiv), a jen pokud o tom byl **poučený u výrobku a znovu před odesláním objednávky**. Poučení v obchodních podmínkách nestačí. Proto má zakázkový výrobek v obchodě štítek „Na zakázku · záloha X % · výroba do N dnů · nelze vrátit do 14 dnů“, v pokladně povinné zadání (text, číslo, motiv, fotky) a zaškrtávací políčko: „Beru na vědomí, že výrobek podle mého zadání nelze vrátit ve 14denní lhůtě a že záloha se po zahájení výroby nevrací.“ Čas zaškrtnutí se ukládá.
+
+Pravidla zakázky, která jsme po právní kontrole nastavili (platí od nasazení, které přijde v nejbližších dnech):
+
+- **Záloha nejvýš 50 % ceny výrobku.** Systém víc nedovolí. Záloha se počítá jen z ceny výrobku, doprava a balné se platí s doplatkem. Zákazník může zaplatit i celou cenu najednou, zálohou je i tak jen sjednaná část.
+- **Zahájení výroby = e-mail.** V administraci kliknete „Začít výrobu“ a zákazníkovi odejde e-mail „Vaše zakázka je ve výrobě“ s datem a časem. Teprve od tohoto e-mailu je výroba zahájená — bez odeslaného e-mailu systém výrobu nezahájí. Důvod: zákon zakazuje, aby prodávající sám rozhodoval, co se stalo a kdy; potřebujeme objektivní, zaznamenanou událost.
+- **Zrušení zákazníkem před tím e-mailem:** systém mu sám vrátí všechno, co zaplatil (do 14 dnů, stejnou cestou). **Zrušení po něm:** záloha zůstává Vám jako paušální náhrada za materiál, návrh, vyhrazený čas a práci; cokoli zaplatil nad zálohu se mu vrátí; doplatek po něm nechceme; rozpracovaný kus zůstává Vám.
+- **Nezaplacený doplatek:** když zákazník nezaplatí 30 dnů od výzvy a Vy jste mu mezitím poslala připomínku, systém zakázku zruší stejně jako po zahájení výroby (záloha zůstává) a dá vědět oběma stranám.
+- **Zrušení z Vaší strany** (nejde vyrobit, nestihnete ani náhradní termín): vrací se vše.
+- **Fotografie před výpalem:** zákazník má na vyjádření **5 pracovních dnů**, před koncem lhůty mu připomenete. Schválená podoba je pak „ujednaná vlastnost“ — rozdíl proti jeho představě už není vada. Jiné číslo, text, motiv nebo rozměr, než zadal, je vada vždy.
+- **Výrobní lhůta** se počítá od zahájení výroby (toho e-mailu). Praskne-li kus při výpalu, vyrobíte ho znovu bez příplatku a oznámíte nový termín. Nestihnete-li lhůtu, navrhnete náhradní; nestihnete-li ani ten, může zákazník odstoupit a dostane vše zpět.
+- **Vady bez čísel:** vadou není odstín a kresba glazury, stopy ruční práce ani drobná odchylka rozměru; vadou je prasklina, odštěpek, odlupující se glazura, jiný motiv/text/rozměr než schválený, poškození při přepravě. Dřívější „tolerance 5 %“ je pryč — pro Vás i pro zákazníka je slovní popis srozumitelnější.
+- **Každá zakázková položka je samostatná zakázka** s vlastní zálohou, vlastním e-mailem o zahájení a vlastním tlačítkem Zrušit. Když si zákazník objedná dvě domovní čísla, jsou to dvě zakázky.
+- **PDF „Potvrzení zakázky“** dostane zákazník ke každé zakázce v příloze potvrzení objednávky: zadání, cena, záloha a doplatek, lhůta, pravidla zrušení a co při objednávce potvrdil. Je to shrnutí smlouvy, které zákon vyžaduje v textové podobě; najde ho i v účtu.
+
+**Co to pro Vás znamená.** Údaje, které se do smlouvy propisují, zadáváte Vy: u výrobku **profil výroby** (záloha v %, výrobní lhůta od–do ve dnech, text výzvy k zadání), u konkrétní zakázky předpokládané dokončení a poznámku, a globálně Právní údaje. Dnes má profil výroby jen jeden výrobek („Pán lesa Dub“); dalších 26 má „na zakázku“ v názvu, ale prodávají se jako běžné zboží s právem vrácení (otázka 13). Pracovní postup je v části 2.
+
+### 1.5 Kurzy
+
+**Co se změnilo.** Rezervace kurzu je smlouva o službě s pevným termínem — zákazník od ní nemůže odstoupit do 14 dnů, ale musí o tom být poučený před odesláním rezervace (je tam). Tlačítko se jmenuje „Rezervace zavazující k platbě“. Souhlasy (podmínky, poučení, nepovinný souhlas s fotografiemi) se ukládají k rezervaci. Potvrzení rezervace přikládá podmínky v PDF. Podmínky kurzů v obchodních podmínkách čekají na Vaše storno podmínky, minimální věk dítěte a lhůtu pro vyzvednutí výrobku (otázky 5–7).
+
+**Co to pro Vás znamená.** Dnes systém umí jedno pravidlo: zákazník zruší na webu nejpozději 48 hodin před kurzem a dostane zpět 100 %, později už online zrušit nejde. Pokud zvolíte jiná pásma, upravím to. Když kurz zrušíte Vy, vracíte celou částku nebo nabídnete náhradní termín.
+
+### 1.6 Dárkové poukazy
+
+**Co se změnilo.** Poukaz „za 1 Kč“, u kterého si zákazník částku navyšoval počtem kusů a v popisu měl Váš soukromý gmail a pokyn „převeďte libovolnou částku“, jsem předělal: zákazník rovnou zadá částku **100 až 10 000 Kč po 100 Kč** a zaplatí v pokladně jako jakýkoli nákup. Na nákup poukazu nejde použít slevový kód (jinak by se slevy sčítaly) — u všech šesti poukazů je zapnuté „Bez slevových kódů“. Článek o poukazech v podmínkách čeká na platnost, zůstatek a popis uplatnění (otázky 8–10).
+
+**Co to pro Vás znamená.** Poukazy se dál vydávají ručně (e-shop nemá systém dárkových karet), proto potřebuji vědět, jak to děláte dnes, abych to popsal pravdivě.
+
+### 1.7 Slevy a kusy s vadou
+
+**Co se změnilo.** Zákon od roku 2023 požaduje, aby u každé slevy byla uvedená **nejnižší cena za posledních 30 dní** před slevou a sleva se počítala z ní. Web si ceny od dnešního rána zapisuje každou hodinu; prvních 30 dní píše poctivě „nejnižší cena před slevou“ s poznámkou, pak už přesně. Slovo „sleva“ bez předchozí ceny se neukazuje nikde. Proto vadí tři zvonková tlačítka se slovem „SLEVA“ v názvu, která se prodávají za běžnou cenu (otázka 20).
+
+**Kusy s vadou** („Poškozené“) nejsou sleva: je to **cena kusu s popsanou vadou**. U kusu se nezobrazuje přeškrtnutá cena ani procenta, jen popis vady a cena. Popsanou vadu zákazník nemůže reklamovat, jiné vady ano; **vrátit do 14 dnů ho může** jako každé zboží. Testovací kus „kytka — TEST“ a produkt „TEST“ jsem z webu skryl.
+
+**Co to pro Vás znamená.** Slevu nedělejte přejmenováním výrobku — nastavte akční cenu a web ukáže předchozí cenu sám. Poškozený kus zakládáte v administraci z existujícího výrobku a jen popíšete vadu a dáte cenu.
+
+### 1.8 Balíčky (sady)
+
+**Co se změnilo / rozhodnutí k potvrzení.** U balíčku více kusů za jednu cenu může zákazník odstoupit i jen od části; vrací se **poměrná část ceny balíčku** (sleva balíčku se rozpočítá na jednotlivé kusy). Vada jednoho kusu = oprava nebo výměna toho kusu, ne celého balíčku. Otázka 18.
+
+### 1.9 Zboží „Na objednávku“ (není skladem)
+
+**Co se změnilo / rozhodnutí k potvrzení.** Běžný výrobek, který právě nemáte, ale vyrobíte stejný (bez zadání zákazníka), není zakázka — zákazník ho **může** vrátit do 14 dnů. Platí se předem, dodáte ve lhůtě uvedené u výrobku (výchozí text „výroba obvykle 3–7 dní“), nejpozději do 30 dnů; při nedodání se vrací vše. Tlačítko „Dejte mi vědět, až bude znovu“ je jen upozornění e-mailem, žádná rezervace. Otázka 16.
+
+### 1.10 Balné
+
+**Co se změnilo.** Zákon chce, aby zákazník viděl celou cenu včetně poplatků už u výrobku, ne až v košíku. Balné se proto nově ukazuje **přímo pod cenou výrobku**: „+ balné X Kč za kus“ (účtuje se i při osobním odběru), a v košíku jako samostatná položka pod každým kusem. U výrobku s balením 0 Kč web píše „Balné u tohoto výrobku neúčtujeme“.
+
+**Co to pro Vás znamená.** Cena balení je u každého výrobku vlastní — vyplňujete pole **„Cena balení“** u výrobku v administraci. Dnes je vyplněné jen u několika kusů; u ostatních je 0 Kč a balné se neúčtuje. Projděte prosím výrobky, kde balení opravdu něco stojí (velké plastiky, pítka), a doplňte částku.
+
+### 1.11 Osobní údaje (GDPR)
+
+**Co se změnilo.** Nové Zásady ochrany osobních údajů: co se zpracovává, proč, jak dlouho, kdo to dostává (hosting, úložiště, e-mailová služba, platební brána, Česká pošta, iDoklad, účetní), práva zákazníka a Úřad pro ochranu osobních údajů. Při kontrole se ukázalo, že e-shop při každé objednávce posílal **jméno a e-mail zákazníka do americké analytické služby Segment**, o které Zásady mlčely — vypnul jsem ji včera večer. E-maily, které zákazníkům chodí bez výslovného souhlasu (prosba o hodnocení po doručení, upozornění na zlevnění oblíbeného výrobku), mají odhlášení jedním kliknutím a systém odhlášené adresy respektuje. Newsletter chodí jen těm, kdo se přihlásí a potvrdí e-mail.
+
+**Co to pro Vás znamená.** Potřebuji potvrdit, že k newsletteru nepoužíváte žádný jiný nástroj a zda předáváte doklady účetní (otázky 12 a 24). Jinak nic.
+
+### 1.12 Cookies
+
+**Co se změnilo.** Lišta cookies má rovnocenná tlačítka „Přijmout vše“ a „Odmítnout vše“, nic není předem zapnuté, a „Nastavení cookies“ v patičce funguje i v pokladně. Před rozhodnutím návštěvníka se na cizí servery neposílá nic (dřív šly vlajky z cizího serveru a mapa Googlu se načítala bez souhlasu — mapa je teď „klikněte pro načtení“). Google Analytics se reálně nenačítaly, přestože to stránka tvrdila; teď jsou připravené a zapnou se jen s Vaším rozhodnutím a jen po souhlasu návštěvníka (otázka 27).
+
+### 1.13 Certifikáty, bezpečnost a údaje o podnikání
+
+Čtyři nálezy mimo obchodní podmínky, které zákon také vyžaduje:
+
+- **Zdravotně nezávadné glazury.** 31 výrobků (pítka, podmisky, štrůdláky, talíře) má v popisu, že glazura je zdravotně nezávadná. Takové tvrzení musí být doložené. Vy protokoly o nezávadnosti máte — vznikne stránka **„Certifikáty“**, kam nahrajeme PDF protokolů (datum, název glazury), a popisy výrobků na ni odkážou. Potřebuji od Vás skeny nebo PDF protokolů a seznam, ke kterým glazurám patří (otázka 21). U glazur bez protokolu tvrzení z popisu odstraníme.
+- **Bezpečnostní věty u kategorií** (kotvení plastik na fasádu, mráz u nádob na vodu, ostré střepy při rozbití) doplní web sám podle kategorie výrobku; u dvou pítek, kde chybělo upozornění na mráz, jsem je dnes doplnil.
+- **Zvonková tlačítka a elektro.** Popisy tlačítek říkají „zapojení na dva drátky“, ale neuvádějí napětí. Navíc je v obchodě kategorie Bezdrátové zvonky se dvěma výrobky (bezdrátový zvonek BZ8-113 a montážní krabička) — to je elektrozařízení, u kterého prodejce potřebuje prohlášení o shodě (CE), zápis k recyklaci elektroodpadu a baterií. Osm popisů tlačítek odkazovalo na starý e-shop — odkazy jsem odstranil. Otázka 22.
+- **Živnostenský rejstřík.** Zákon chce u podnikající fyzické osoby uvést, kdo vede její zápis. Podle veřejného rejstříku (ARES) to je Městský úřad Písek; na web a do PDF přibude věta „Fyzická osoba zapsaná v živnostenském rejstříku vedeném Městským úřadem Písek“. Otázka 26 — jen potvrdit.
+
+### 1.14 Co už je hotové bez Vás
+
+Číslo účtu vyplněno (z iDokladu), Segment vypnutý, testovací kusy skryté, poukaz s vlastní částkou, „Bez slevových kódů“ u poukazů, upozornění na mráz u dvou pítek, odstraněné odkazy na starý e-shop, dvě chybné odpovědi v častých dotazech opravené i ve Studiu, Reklamační řád a protokol vydané jako PDF, ceník dopravy na stránce Doprava a platba se bere z jednoho místa (dřív byly na webu dva různé a navzájem si odporovaly), recenze mají štítek „ověřený nákup“ jen po skutečném ověření (dřív ho měly všechny).
+
+---
+
+## 2. Co teď děláte jinak — provozní návod
+
+### Zakázky
+
+1. **Přijde objednávka se zakázkou.** Dostanete e-mail a upozornění v administraci. V detailu objednávky je panel zakázky se zadáním zákazníka (text, číslo, motiv, fotky) a PDF „Potvrzení zakázky“, které zákazník už dostal.
+2. **Potvrďte zadání** tlačítkem v panelu zakázky. Pokud je potřeba něco upřesnit, napište zákazníkovi přes chat zakázky (zprávy chodí oběma stranám e-mailem) — dřív, než začnete.
+3. **Klikněte „Začít výrobu“ v den, kdy výrobu skutečně zahájíte** — ne dřív „do zásoby“ a ne později zpětně. Tlačítko pošle zákazníkovi e-mail s datem a časem a od něj běží výrobní lhůta i pravidlo o nevratné záloze. Když e-mail neodejde (třeba výpadek), systém výrobu nezahájí a ukáže Vám chybu; zkuste to znovu.
+4. **Před konečným výpalem pošlete zákazníkovi fotografii** (chat zakázky nebo e-mail) a napište, že má 5 pracovních dnů. Den nebo dva před koncem lhůty mu připomeňte — bez připomenutí se mlčení nepočítá jako souhlas. Po schválení (nebo uplynutí lhůty) vypalujte.
+5. **Hotovo → „Výroba dokončena“ a „Požádat o doplatek“.** Zákazník dostane e-mail s tlačítkem na online platbu doplatku (zbytek ceny + doprava + balné). Při osobním odběru může doplatit i na místě — pak v administraci doplatek zaznamenáte jako zaplacený mimo bránu (hotově nebo převodem). Když zákazník nereaguje, klikněte **„Připomenout doplatek“** — po 30 dnech od žádosti a po této připomínce systém zakázku sám uzavře, záloha zůstává Vám. Bez připomínky se nic neruší, administrace Vás jen upozorní.
+6. **Zrušení.** Zruší-li zákazník zakázku před e-mailem o zahájení, systém mu vše vrátí sám a Vás jen informuje — nic nedělejte. Po zahájení výroby ho web předem upozorní, že záloha zůstává, a vrátí jen zbytek — opět samo. Když zakázku nemůžete vyrobit Vy, zrušte ji tlačítkem „Zrušit zakázku“ a zálohu nechte vrátit — při zrušení z Vaší strany se vrací vše, i když už výroba běžela.
+7. **Nastavení výrobku jako zakázky:** administrace → Produkty → záložka **Výroba** → zapnout profil výroby, vyplnit zálohu v % (nejvýš 50), výrobní lhůtu od–do ve dnech a text výzvy k zadání („Napište číslo domu a vyberte barvu…“). Bez profilu se výrobek prodává jako běžné zboží, které jde vrátit.
+
+### Zásilky, vrácení, reklamace
+
+8. **Poškozený balík:** zákazník Vám pošle fotky (web mu říká, že u pošty nic řešit nemusí). **Vy podáte reklamaci u České pošty do 2 pracovních dnů od doručení** — administrace Vás upozorní. Se zákazníkem se domluvíte na novém kusu, opravě nebo vrácení peněz; vyřídit do 30 dnů.
+9. **Vrácení peněz vždy stejnou cestou,** jakou zákazník platil. Platbu přes ComGate vrací systém sám (odstoupení i zakázky), u dobírky a hotovosti převodem na účet, který zákazník vyplnil ve formuláři. Nikdy ne „dohodou“ na jiný způsob bez souhlasu zákazníka.
+10. **Reklamace** vyřizujete v administraci → Reklamace. Potvrzení o přijetí odchází samo; na Vás je rozhodnutí (oprava, výměna, sleva, vrácení) do 30 dnů od nahlášení. Dobropis vzniká automaticky.
+11. **K pítkům, napajedlům a nádobám na vodu přikládejte kartičku** o zimě — text je na konci této části, vytiskněte A6 nebo vizitku oboustranně. Bez kartičky v balíku nejde prasklinu od zamrzlé vody odmítnout jako vadu. U každého nového pítka dejte do popisu větu: „V zimě v nádobě nenechávejte zamrznout vodu — led ji může roztrhnout. Na zimu ji vyprázdněte a uložte na místo, kde nemrzne.“
+
+### Výrobky a ceny
+
+12. **Cena balení:** u každého výrobku v administraci vyplňte pole „Cena balení“ (Kč za kus). 0 Kč = balné se neúčtuje a web to řekne.
+13. **Slevy:** nikdy slovem „SLEVA“ v názvu. Nastavte akční cenu (Slevy+), web dopočítá předchozí cenu a procento sám. Výrobek, který ze slevových kódů chcete vyloučit, má v Produktech+ přepínač „Bez slevových kódů“.
+14. **Kus s vadou:** zakládá se z existujícího výrobku („Poškozený kus z produktu“), popíšete vadu, dáte cenu. Po prodeji se sám archivuje.
+15. **Certifikáty glazur:** pošlete mi protokoly (sken nebo PDF) e-mailem a napište, ke kterým glazurám patří; nahraju je na stránku Certifikáty a propojím s výrobky. Do té doby nic neměňte v popisech — udělám to najednou.
+
+### Údaje a texty
+
+16. **Právní údaje:** administrace → **Právní údaje**. Stránka ukáže, co chybí. Cokoli tam změníte, se do minuty projeví na webu; do vydaného PDF se dostane až s novým zněním, které vydáváme spolu.
+17. **Texty dokumentů:** Studio → Právní dokumenty. Pracovní znění upravovat můžete; vydané (se zámkem) ne — kdybyste chtěla něco změnit, napište mi a vydáme nové znění s novým datem.
+18. **Časté dotazy a texty o kurzech** ve Studiu smíte měnit, ale dvě odpovědi (poškozená zásilka, vrácení do 14 dnů) web vždy ukazuje ve znění podle podmínek, ať je ve Studiu cokoli.
+
+### Text kartičky k pítkům (k bodu 11)
+
+**Přední strana**
+
+Děkuji, že jste si vybrali ručně dělanou keramiku z Keramické zahrady.
+
+**Než přijde mráz**
+
+- V pítku ani v jiné nádobě nesmí zamrznout voda. Led se roztahuje a nádobu roztrhne — i když je keramika sama mrazuvzdorná.
+- Na zimu nádobu vyprázdněte a uložte na suché místo, kde nemrzne, nebo ji otočte dnem vzhůru, aby v ní nestála voda.
+- Prasklina, která vznikne zamrznutím vody, není vada výrobku a nelze ji reklamovat.
+
+**Zadní strana**
+
+**Péče:** Myjte vlažnou vodou a měkkým kartáčkem, bez agresivních čisticích prostředků. Nádobu nestavte na nerovný podklad, kde by se mohla převrhnout.
+
+**Něco není v pořádku?** Napište na info@keramickazahrada.cz nebo zavolejte +420 775 211 578. Reklamační řád a formulář najdete na keramickazahrada.cz/reklamacni-rad.
+
+Lucie Polanská · Keramická zahrada · keramickazahrada.cz
+
+---
+
+## 3. Otázky
+
+Stačí odpovědět u čísla otázky. Kde je návrh, stačí „souhlasím“. ★ = nutné k vydání obchodních podmínek.
+
+### A. Nutné k vydání podmínek
+
+**1. ★ Číslo účtu — jen potvrdit.** Z Vašeho iDokladu jsem do Právních údajů vyplnil hlavní účet **2500675505/2010** (koruny) a **2701281289/2010** (eura), oba Fio. Třetí číslo ze staré stránky Doprava, 7010757121/2010, se nepoužívá. *Návrh: souhlasím.*
+
+**2. ★ DPH.** E-shop i iDoklad počítají s tím, že **nejste plátce DPH**; staré podmínky tvrdily opak. Podle toho se u cen píše buď „ceny jsou včetně DPH“, nebo „prodávající není plátcem DPH“ — chyba by byla na každé faktuře i v Potvrzení zakázky. *Návrh: „Nejsem plátcem DPH.“*
+
+**3. ★ Od kdy mají nové podmínky platit.** V textech je zatím pracovní 15. 10. 2026; datum musí být skutečný den vydání, zpětně to nejde. *Návrh: středa 21. 10. 2026, nebo první den po Vašich odpovědích — datum přepíšu já.*
+
+**4. ★ Záloha u zakázky.** Kolik procent ceny výrobku. Systém dovolí nejvýš 50 %, dnes je u jediného zakázkového výrobku 25 %. Záloha je to, co Vám zůstane, když zákazník zruší zakázku po zahájení výroby — měla by pokrýt materiál a práci do výpalu. Může se lišit u jednotlivých výrobků (nastavuje se u každého). *Návrh: 25 % u všech; u velkých plastik případně 40 %.*
+
+**5. ★ Storno kurzů.** Dnes: zákazník zruší na webu nejpozději 48 hodin před začátkem a dostane zpět 100 %, později už online zrušit nejde (jen domluvou s Vámi). Druhá možnost jsou pásma: 7 a více dní 100 %, 2–6 dní 50 % nebo přesun, méně než 48 hodin nic (může poslat náhradníka) — tu bych musel do systému doprogramovat. *Návrh: nechat dnešní pravidlo — zrušení do 48 hodin předem 100 %, později bez vrácení, náhradník možný.*
+
+**6. ★ Minimální věk dítěte na kurzu**, případně do kolika let jen s doprovodem dospělého. *Návrh: od 6 let; děti do 10 let s dospělým. Upravte podle své praxe.*
+
+**7. ★ Do kdy si účastník vyzvedne výrobek z kurzu** po výpalu a co se stane potom. *Návrh: do 60 dnů od zprávy, že je výrobek vypálený; nevyzvednuté kusy po dalším upozornění můžete použít jinak. Posíláte výrobky z kurzu i poštou? (návrh: ne)*
+
+**8. ★ Platnost dárkového poukazu.** V popisu poukazu dnes píšete 1 rok. *Návrh: 1 rok od nákupu, datum konce platnosti je na poukazu.*
+
+**9. ★ Zůstatek poukazu**, když zákazník nakoupí za méně. *Návrh: zbytek zůstává na poukazu do konce jeho platnosti (propadnutí by zákazníci vnímali špatně a dalo by se napadnout).*
+
+**10. ★ Jak se poukaz uplatňuje a na co.** E-shop nemá systém dárkových karet, poukaz je ruční. Potřebuji skutečný postup: a) zákazník napíše číslo poukazu do poznámky k objednávce / pošle e-mailem / ukáže v dílně? b) platí na zboží, kurzy i zakázky (zálohu, doplatek)? c) posíláte poukaz e-mailem (PDF) nebo poštou — poštovné 60 Kč, které bylo v popisu, jsem odstranil, platí ještě? d) poukaz s vlastní částkou 100–10 000 Kč po 100 Kč — souhlasíte s rozsahem? e) vrácení peněz za nákup placený poukazem = nový poukaz se stejnou platností. *Návrh: a) číslo poukazu do poznámky k objednávce nebo e-mailem, částku odečtete a rozdíl zákazník doplatí nebo mu vrátíte; b) na vše včetně zakázek; c) e-mailem zdarma, poštou za běžné poštovné; d) souhlasím; e) souhlasím.*
+
+**11. ★ Odhad nákladů na vrácení zboží** poštou — zákon ho chce uvést. *Návrh: „obvykle 150 až 250 Kč, křehký balík Českou poštou“.*
+
+**12. ★ Newsletter.** Posílá se přímo z e-shopu (stejnou službou jako potvrzení objednávek). Používáte ještě Mailchimp, Ecomail nebo podobný nástroj? *Návrh: „Ne, jen e-shop.“*
+
+### B. Zakázky a výrobky
+
+**13. Které výrobky jsou opravdu na zakázku.** Vrácení do 14 dnů lze vyloučit jen u výrobku podle přání konkrétního zákazníka (jméno, číslo domu, vlastní motiv, rozměr na míru) — nestačí, že ho vyrábíte až po objednání. Dnes je jako zakázka nastavený jen „Pán lesa Dub“. U těchto 26 napište, které jsou na míru (nebo „všechny kromě…“):
+
+- Keramická plastika Slunce – Sluneční žena Červenec
+- Keramická plastika slunce – Sluneční žena Hlubina
+- Keramická plastika slunce – Sluneční žena Naděje
+- Keramická plastika slunce – Paní Třešeň
+- Keramická plastika slunce – Paní Jabloň
+- Keramická plastika domovní znamení – Pán lesa Dub zelený
+- Domovní znamení – Pán lesa lípa a smrk
+- Keramické domovní znamení číslo – Strom dub 2
+- Keramické domovní znamení číslo – Strom dub 6
+- Domovní znamení NA ZAKÁZKU
+- Keramický kachel na fasádu
+- Keramický hrnek s věnováním
+- Kočičák Viktor do zahrady
+- Domovní číslice na zakázku
+- Keramické domovní číslo na zakázku – bez figurky
+- Keramické domovní č.p. na zakázku – bez figurky
+- Domovní číslo na zakázku s pomněnkou
+- Domovní čísla na zakázku s jednou figurkou – čiči světlá
+- Domovní čísla na zakázku s jednou figurkou – čiči tmavá
+- Domovní čísla na zakázku s jednou figurkou – haf
+- Keramická domovní čísla na zakázku – Sovy
+- Domovní čísla na zakázku – 2 figurky
+- Domovní čísla na zakázku – 3 figurky
+- Domovní čísla na zakázku – se jménem a rybou
+- Keramická domovní čísla na zakázku se jménem a 1 figurkou
+- Keramická domovní čísla na zakázku se jménem – 3 figurky
+
+*Návrh: zakázka = všechna domovní čísla a znamení s číslem či jménem, hrnek s věnováním a kachel na fasádu (pokud je s motivem podle zákazníka). Plastiky Slunce, Pán lesa lípa a smrk a Kočičák Viktor jen tehdy, když je děláte podle přání zákazníka — jinak zůstanou běžným zbožím s právem vrácení.*
+
+**14. Výrobní lhůta zakázky** — od zahájení výroby (toho e-mailu) do dokončení, ve dnech od–do. Zákazník ji vidí před objednávkou a od ní se odvíjí jeho právo odstoupit při zpoždění; počítejte sušení i dva výpaly s rezervou. Liší-li se u výrobků, napište u kterých. *Návrh: 21 až 42 dnů (3 až 6 týdnů) u všech.*
+
+**15. „Domovní znamení NA ZAKÁZKU“** má cenu 6 000 Kč a zároveň „cena dohodou“ — obojí nejde. a) pevná cena 6 000 Kč za běžný rozsah, příplatek za víc práce domluvíte předem (podmínky s tím počítají); b) bez ceny, s tlačítkem „Poptat“ na poptávkový formulář. *Návrh: a).*
+
+**16. Zboží „Na objednávku“** (stejný výrobek, který právě nemáte skladem): platí se předem, dodáte ve lhůtě u výrobku, nejpozději do 30 dnů, jinak vrácení všeho; zákazník ho může vrátit do 14 dnů jako běžné zboží; „Dejte mi vědět, až bude znovu“ je jen upozornění. *Návrh: souhlasím; výchozí lhůta „výroba obvykle 3–7 dní“.*
+
+**17. Dodací lhůta zboží skladem**, převzatá ze starého webu: „předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení obvykle 1 až 3 pracovní dny“. *Návrh: souhlasím.*
+
+**18. Balíčky:** odstoupit lze i od části balíčku, vrací se poměrná část ceny (sleva balíčku rozpočítaná na kusy); vada jednoho kusu = oprava nebo výměna toho kusu. *Návrh: souhlasím.*
+
+**19. Kusy s vadou:** prodávají se za „cenu kusu s popsanou vadou“ (ne sleva), popsanou vadu nelze reklamovat, jiné vady ano, vrátit do 14 dnů lze. *Návrh: souhlasím.*
+
+**20. Tři zvonková tlačítka se slovem „SLEVA“** v názvu (Paví mini, Klasik – Smetana, Retro – Smetana) se prodávají za běžnou cenu. a) nastavit skutečnou akční cenu (kolik %), b) slovo SLEVA odstranit, c) jsou to kusy s vadou (jakou). *Návrh: b).*
+
+**21. Certifikáty glazur.** Pošlete mi prosím protokoly o zdravotní nezávadnosti (sken nebo PDF) a k nim seznam glazur, kterých se týkají. Nahraju je na stránku Certifikáty a propojím s 31 výrobky, které nezávadnost v popisu uvádějí (32 výrobků: Keramická podmiska malá - 15-17cm; Keramická podmiska pod modelovaný květináč 20-25cm; Keramická podmiska střední - 18-21 cm; Keramické krmítko a pítko pro ptáčky - 2v1, Altánek postavit; Keramické pítko Kapradí; Keramické pítko Kapradí Tyrkys - PRODANÉ; Keramické pítko list s ptáčkem, na podstavci; Keramické pítko pro ptáčky 2; Keramické pítko pro ptáky a hmyz - List velký 44cm - VYPRODANÉ; Keramické pítko ptáček střed 27cm - tmavé, sklo; Keramické pítko s 1 ptáčkem - pidi - Holubí modrá; Keramické pítko s 1 ptáčkem - pidi - Laguna; Keramické pítko s 1 ptáčkem - pidi - Mořská sůl; Keramické pítko s ptáčkem - mini; Keramické pítko s ptáčkem a pozvolným vstupem 30x20cm; Keramické pítko s ptáčkem tyrkys; Keramické pítko s ptáčky - Už jsme 3 (25-27cm); Keramické pítko s vlnitým zeleným okrajem; Keramické zahradní pítko s koupajícím se ptáčkem 35cm; Keramické zahradní pítko s ptáčkem 23 cm sklo; Keramické zahradní pítko s ptáčkem 30x20cm; Keramické zahradní pítko s ptáčkem na noze, světlé - 27cm; Keramické zahradní pítko s ptáčky; Keramické zahradní pítko s ptáčky - Modrá efekt; Keramický dekorativní tác štrůdlák - Květy smetana; Keramický dekorativní tác štrůdlák - Modrý retro; Keramický dekorativní tác štrůdlák - Zimní květy; Keramický dekorativní tác talíř - Modrý retro; Keramický dekorativní tác talíř - Zimní květy; Mrazuvzdorné keramické pítko - Tyrkysová vlna na podstavci; Mrazuvzdorné keramické pítko Modrá vlna na podstavci; Pítko pro včely - 3květy). U glazur bez protokolu tvrzení „zdravotně nezávadné“ z popisu odstraníme. *Otázka bez návrhu — potřebuji dokumenty.*
+
+**22. Zvonková tlačítka a elektro.** a) Na jaké napětí jsou tlačítka stavěná (obvykle zvonkový transformátor 8–12 V)? Doplním do popisů. b) Chcete dál prodávat bezdrátový zvonek BZ8-113 a montážní krabičku? Pak potřebujeme od dodavatele prohlášení o shodě (CE) a je nutný zápis k recyklaci elektroodpadu a baterií. *Návrh: a) napište mi hodnotu; b) elektro skrýt, dokud nebudou doklady — tlačítka samotná (keramika bez elektroniky) zůstávají.*
+
+**23. Platba kartou na místě.** Podmínky u osobního odběru a kurzů uvádějí hotovost. Máte terminál? *Návrh: „Jen hotovost.“ Pokud máte terminál, doplním kartu.*
+
+### C. Osobní údaje, web a ostatní
+
+**24. Účetní.** Předáváte faktury nebo objednávky účetní či daňovému poradci? V Zásadách stačí uvést „účetní“ bez jména. *Návrh: ano.*
+
+**25. Otázka pro Vaši účetní — služby ze zahraničí.** E-shop běží na službách zahraničních firem (servery, úložiště, e-maily). Když je u Vás jako neplátce DPH nakupuje podnikatel sám, může mu z toho vzniknout povinnost registrovat se jako „identifikovaná osoba“ k DPH. Kdo je platí: Vy přímo, nebo Matěj, který Vám je přefakturuje? Pokud Matěj, nic neřešíte. A prodej na Slovensko: dokud za rok nepřesáhne 10 000 eur, nic se nemění. *Návrh: „Platí Matěj a přefakturuje.“ Pokud něco platíte přímo Vy, předejte otázku účetní.*
+
+**26. Věta o živnostenském rejstříku.** Na web a do PDF přibude: „Fyzická osoba zapsaná v živnostenském rejstříku vedeném Městským úřadem Písek.“ (podle ARES) *Návrh: souhlasím.*
+
+**27. Google Analytics** — měřit návštěvnost? Spustí se jen po souhlasu návštěvníka v liště cookies. Dnes se neměří nic. *Návrh: zatím ne; kdykoli jde zapnout.*
+
+**28. Zásilkovna.** E-shop ji umí, ale posíláte Českou poštou. Pokud ji nepoužíváte, odstraním ji ze seznamu cookies i ze Zásad. *Návrh: nepoužívat, odstranit.*
+
+**29. Fotografie z kurzů.** V rezervaci je nepovinné políčko „Souhlasím s pořízením fotografií z kurzu a jejich zveřejněním“. Fotíte a zveřejňujete? *Návrh: ano, políčko zůstává.*
+
+**30. Recenze.** Píšeme, že negativní hodnocení nemažete ani neupravujete (jen vulgární, protiprávní nebo mimo téma). *Návrh: souhlasím.*
+
+**31. Reklama.** V liště cookies píšeme, že na webu neprovozujete reklamu (žádné měření Facebooku ani Googlu). *Návrh: souhlasím.*
+
+**32. Doby uchování údajů:** objednávky a faktury 10 let (zákon), reklamace 4 roky od vyřízení, zakázky 4 roky od dodání, kurzy 1 rok po kurzu, poptávky a dotazy 1 rok od poslední zprávy, nepoužívaný účet zrušíme po 3 letech s upozorněním. *Návrh: souhlasím.*
+
+**33. Kontakt a adresa.** Ve všech dokumentech je info@keramickazahrada.cz, +420 775 211 578 a Putim 229, 397 01 Písek (dopisy, vrácené zboží, osobní odběr). Na e-mail chodí odstoupení i reklamace a běží od nich lhůty — čtete schránku pravidelně? Smí být telefon veřejně? *Návrh: souhlasím, čtu denně.*
+
+**34. Advokát.** Podmínky jsem psal podle zákona, ale právní kontrolu nenahradí. Máte svého advokáta? Pošlu mu podklady a šest konkrétních otázek (e-maily bez souhlasu, poštovné při vrácení části zboží, balné u ceny, nevratná záloha, schválení fotky mlčením, nárok zákazníka při zrušení z Vaší strany). *Návrh: kontakt na advokáta, nebo „najdi někoho ty“.*
+
+---
+
+## 4. E-mail
+
+Předmět: E-shop: nové podmínky jsou hotové — prosím o odpovědi do zítřejšího rána
 
 Dobrý den, paní Polanská,
 
-e-shop jsem připravil tak, aby odpovídal dnešním zákonům na ochranu spotřebitele. Má nové obchodní podmínky, reklamační řád, poučení o odstoupení od smlouvy s formulářem a zásady ochrany osobních údajů. Přibyla také lišta cookies a pravidla pro uvádění slev. Staré obchodní podmínky z roku 2015 zůstanou na webu v archivu, protože se podle nich uzavíraly dřívější objednávky.
+nová verze e-shopu od dnešního rána běží: nové obchodní podmínky, reklamační řád s formulářem, poučení o odstoupení, zásady ochrany osobních údajů a lišta cookies, a připravená jsou i nová pravidla zakázek (záloha nejvýš 50 %, zahájení výroby e-mailem, PDF „Potvrzení zakázky“). Co se změnilo a proč, co teď děláte v administraci jinak a všechny otázky s navrženými odpověďmi jsem sepsal do jednoho dokumentu: [přiložený dokument]. Obchodní podmínky ale zatím nemůžu vydat jako hotový dokument, protože v nich chybí údaje, které znáte jen Vy — a dokud nejsou vydané, zákazník je nedostává v příloze potvrzení objednávky, jak vyžaduje zákon. Dvanáct otázek označených hvězdičkou proto potřebuji do zítřejšího rána; u většiny stačí napsat „souhlasím“ k mému návrhu. Ostatní otázky v dokumentu můžou přijít postupně.
 
-Některé údaje ale znáte jen Vy. V právních textech se nesmí nic odhadovat, proto jsou na těch místech zatím žlutě označená prázdná pole. Dokud nebudou vyplněná, nebudu k potvrzení objednávky přikládat obchodní podmínky v PDF.
+Otázky nutné k vydání (čísla odpovídají dokumentu):
+1. Číslo účtu: 2500675505/2010 a pro eura 2701281289/2010 — jen potvrdit.
+2. DPH: nejste plátce — potvrdit.
+3. Od kdy mají podmínky platit — navrhuji středu 21. 10. 2026.
+4. Záloha u zakázky v procentech — navrhuji 25 % (nejvýš 50).
+5. Storno kurzů — navrhuji nechat: zrušení do 48 hodin předem 100 %, později nic.
+6. Minimální věk dítěte na kurzu — navrhuji od 6 let, do 10 let s dospělým.
+7. Do kdy si vyzvednout výrobek z kurzu — navrhuji do 60 dnů od zprávy, že je vypálený.
+8. Platnost poukazu — navrhuji 1 rok.
+9. Zbytek hodnoty poukazu — navrhuji, že zůstává do konce platnosti.
+10. Jak se poukaz uplatňuje a na co (zboží, kurzy, zakázky) — popište, jak to děláte dnes.
+11. Odhad nákladů na vrácení zboží — navrhuji „obvykle 150 až 250 Kč, křehký balík“.
+12. Newsletter — jen z e-shopu, žádný jiný nástroj — potvrdit.
 
-Stačí odpovědět stručně a u každé odpovědi uvést číslo otázky. Kde píšu návrh, stačí napsat „souhlasím“, nebo jak to chcete jinak. Otázky označené ★ jsou nutné ke spuštění, ostatní můžeme doladit postupně. Pokud to půjde, pošlete mi prosím odpovědi na otázky s ★ ještě dnes – pak můžeme nové podmínky spustit hned.
+Odpovědi stačí e-mailem u čísla otázky, nebo mi zavolejte a zapíšu si je. Kromě toho Vás prosím o skeny protokolů o nezávadnosti glazur (otázka 21), až budete mít chvíli.
 
-Odpovědi mi můžete poslat e-mailem a já je doplním. Po nasazení nové verze webu (dám Vám vědět) je budete moct vyplnit i sama. Údaje o obchodě, tedy číslo účtu, zálohu, storno kurzů, platnost poukazů a podobně, najdete v administraci obchodu v nové sekci „Právní údaje“. Ta Vám také ukáže, co ještě chybí. Texty samotných podmínek a dalších dokumentů půjde upravovat ve Studiu v sekci „Právní dokumenty“.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-A. ÚDAJE O VÁS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. ★ Číslo bankovního účtu
-Ve starých textech jsou tři různá čísla: 2500675505/2010 (ve starých podmínkách pro koruny), 2701281289/2010 (tamtéž pro eura) a 7010757121/2010 (na stránce Doprava a platba). Které platí? Máte-li zvláštní účet pro eura, napište i ten.
-Proč: číslo účtu musí být v obchodních podmínkách. Používá se také, když zákazníkovi vracíme peníze převodem.
-
-2. ★ Jste plátce DPH?
-Staré podmínky uvádějí, že ano. E-shop i fakturace ale dnes počítají s tím, že plátce nejste.
-Proč: podle toho se u cen píše buď „ceny jsou uvedeny včetně DPH“, nebo „prodávající není plátcem DPH“. Chybný údaj by byl chybou na každé faktuře.
-
-3. ★ Od kdy mají nové podmínky platit?
-Zatím v nich mám 15. 10. 2026. Napište mi datum, kdy chcete nový web spustit. Stačí přibližně, datum v dokumentech upravím.
-
-4. ★ Kontaktní e-mail a telefon
-Ve všech dokumentech a e-mailech bude uvedeno info@keramickazahrada.cz a +420 775 211 578. Na tento e-mail budou chodit i odstoupení od smlouvy a reklamace a od jejich doručení běží zákonné lhůty (reklamaci je potřeba vyřídit do 30 dnů). Čtete tuto schránku pravidelně? A smí být telefon v dokumentech veřejně?
-
-5. Adresa pro vrácení zboží a osobní odběr
-V dokumentech je jako adresa pro vrácené zboží, dopisy a osobní odběr uvedeno Putim 229, 397 01 Písek. Je to správně, nebo se má zboží vracet a vyzvedávat jinde (třeba v ateliéru na jiné adrese)?
-
-6. Dodací lhůta
-Z dosavadního webu jsem převzal: „Zboží skladem předáváme dopravci zpravidla do 2 pracovních dnů od přijetí platby (u dobírky od objednávky), doručení obvykle trvá 1 až 3 pracovní dny.“ Platí to tak?
-Proč: zákazník musí lhůtu vidět ještě před odesláním objednávky.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-B. VÝROBA NA ZAKÁZKU
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-7. ★ Kolik procent ceny chcete brát jako zálohu?
-Obvykle se bere 30 až 50 %.
-Proč: výrobek vyrobený na míru zákazník nemůže vrátit. Záloha Vás chrání, kdyby si zakázku rozmyslel ještě před dokončením.
-
-8. ★ Které výrobky jsou opravdu na míru?
-Slova „NA ZAKÁZKU“ má v názvu 27 výrobků, ale v systému je jako zakázka nastavený jen jeden. Ostatní se teď prodávají jako běžné zboží: zákazník je může do 14 dnů vrátit, neplatí zálohu a nemusí posílat zadání.
-Zákon dovoluje vyloučit vrácení jen u výrobku, který je vyrobený podle přání konkrétního zákazníka, například se jménem, číslem domu nebo vlastním motivem. Nestačí, že výrobek vyrábíte až po objednání.
-Pošlete mi prosím seznam takových výrobků (nebo napište „všechny kromě…“) a já je nastavím.
-
-9. Jak dlouho obvykle trvá výroba zakázky?
-Například „3 až 6 týdnů od zaplacení zálohy“. Zákazník musí výrobní lhůtu vidět ještě před objednávkou. Pokud se u jednotlivých výrobků liší, napište mi ji u každého.
-
-10. Domovní znamení NA ZAKÁZKU
-U výrobku je cena 6 000 Kč a v popisu zároveň „cena dohodou“. Obojí najednou být nemůže. Můžeme zvolit jednu ze dvou možností:
-  a) pevná cena za běžný rozsah, případný příplatek podle domluvy,
-  b) výrobek bez ceny s tlačítkem „Poptat“, které vede na nový poptávkový formulář na stránce Výroba.
-
-11. Pravidla zakázky, která jsem navrhl do podmínek – prosím o potvrzení nebo úpravu:
-  a) Před výpalem zákazníkovi pošleme fotografii. Když se do 5 pracovních dnů neozve, bereme výrobek jako schválený.
-  b) Když zákazník nezaplatí doplatek do 30 dnů od výzvy, můžete od smlouvy odstoupit. Ponecháte si skutečné náklady, nejvýš ale zálohu.
-  c) Když se výroba zpozdí oproti slíbenému termínu, může od smlouvy odstoupit zákazník a dostane zpět celou zálohu.
-  d) Když zákazník zakázku zruší dřív, než začnete vyrábět, vrátíte mu celou zálohu. Když ji zruší až po zahájení výroby, ponecháte si jen skutečné náklady (materiál, práce, výpal) a zbytek zálohy mu vrátíte.
-  e) Ruční výroba má drobné odchylky. U zakázek se rozměr smí lišit nejvýš o 5 %, pokud se nedomluvíte jinak. Odpovídá to Vaší praxi?
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-C. KURZY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-12. ★ Storno podmínky
-Dnes může zákazník zrušit rezervaci na webu nejpozději 48 hodin před začátkem kurzu a dostane automaticky zpět celou částku. Později lze kurz zrušit jen telefonicky.
-Chcete to tak nechat, nebo zavést odstupňované podmínky? Například:
-  – 7 a více dní předem: vrácení 100 %,
-  – 2 až 6 dní předem: vrácení 50 %, nebo přesun na jiný termín,
-  – méně než 48 hodin předem: bez vrácení, ale účastník může poslat náhradníka.
-A když kurz zrušíte Vy (nemoc, málo přihlášených): v podmínkách mám, že vrátíte celou částku, nebo nabídnete náhradní termín, pokud ho zákazník bude chtít. Souhlasíte?
-
-13. Od kolika let mohou na kurz děti, případně do kolika let jen s doprovodem dospělého?
-
-14. Výrobky z kurzu
-Do kdy si musí účastník vyzvednout výrobek po výpalu a co se stane potom? Posíláte výrobky z kurzu i poštou?
-V podmínkách také mám, že když výrobek z kurzu praskne při sušení nebo výpalu, neodpovídáte za to (hlína je živý materiál), pokud to nezpůsobíte Vy. Souhlasíte? Nebo chcete v takovém případě nabízet třeba vyrobení nového kusu?
-
-15. Platba na místě
-Podmínky dnes u osobního odběru zboží uvádějí jen platbu v hotovosti. Dá se u Vás platit i kartou? A platí se kurzy vždy předem přes web, nebo i na místě? Ve starých textech o kurzech je „předem kartou, nebo na místě“.
-
-16. Fotografie z kurzů
-Při rezervaci kurzu je nové nezaškrtnuté políčko „Souhlasím s pořízením fotografií z kurzu a jejich zveřejněním na webu a sociálních sítích“ (za dítě souhlasí rodič). Fotíte na kurzech a fotky zveřejňujete? Pokud ne, políčko odstraním.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-D. DÁRKOVÉ POUKAZY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-17. ★ Jak dlouho poukaz platí?
-Dnes je platnost 1 rok uvedená jen u „volné“ varianty. Musí být uvedená u všech poukazů.
-
-18. Když zákazník nakoupí za méně, než je hodnota poukazu, zbytek propadá, nebo mu zůstane na další nákup?
-
-19. ★ Jak se poukaz uplatňuje?
-E-shop nemá systém dárkových karet a poukaz se prodává jako běžný výrobek. Jak to děláte dnes? Zákazník třeba napíše kód do poznámky, předloží poukaz v dílně, nebo se domluvíte e-mailem? Dá se poukazem zaplatit i kurz, záloha nebo doplatek zakázky?
-Proč: podmínky musí popsat skutečný postup.
-
-20. Poukaz s libovolnou částkou
-Dnes je na e-shopu poukaz za „1 Kč“, u kterého si zákazník částku navyšuje počtem kusů. V jeho popisu je poštovné 60 Kč, soukromý e-mail na gmailu a pokyn „převeďte libovolnou částku“. Navrhuji ho předělat tak, aby zákazník částku rovnou napsal: od 100 do 10 000 Kč po 100 Kč, jen v korunách. Souhlasíte s tímto rozsahem?
-Posíláte poukazy poštou, e-mailem (PDF), nebo obojí? A platí ještě poštovné 60 Kč za zaslání poukazu?
-
-21. Na nákup poukazu nepůjde použít slevový kód, jinak by se slevy daly sčítat. Souhlasíte?
-
-22. Když zákazník vrátí zboží, které zaplatil poukazem, vrátíme mu peníze opět poukazem se stejnou platností. Souhlasíte?
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-E. OSOBNÍ ÚDAJE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Hosting a technické služby (servery, e-maily, úložiště) do zásad doplním sám. Od Vás potřebuji jen tohle:
-
-23. Newsletter se rozesílá přímo z e-shopu, stejnou službou jako potvrzení objednávek. Používáte k rozesílání ještě jiný nástroj (Mailchimp, Ecomail, SmartEmailing apod.)?
-
-24. Předáváte faktury nebo objednávky účetní či daňovému poradci? Stačí odpovědět ano/ne, jméno v zásadách uvádět nemusíme.
-
-25. Navrhuji tyto doby uchování údajů – souhlasíte?
-  – objednávky a faktury: 10 let (ukládá zákon),
-  – reklamace: 4 roky od vyřízení, zakázky: 4 roky od dodání,
-  – kurzy: 1 rok po kurzu,
-  – poptávky, ze kterých nevznikla zakázka, a dotazy: 1 rok od poslední zprávy,
-  – nepoužívaný zákaznický účet zrušíme po 3 letech (zákazníka předem upozorníme).
-
-26. E-shop dnes při každé objednávce posílá číslo objednávky, částku a položky do americké analytické služby Segment. Jméno ani e-mail už neposílá. Pokud ji k ničemu nepoužíváte, navrhuji ji vypnout a pak ji v zásadách nemusíme uvádět. Souhlasíte?
-
-27. Chcete na webu měřit návštěvnost přes Google Analytics? Dnes se neměří nic. Pokud ano, měření se spustí až poté, co s ním návštěvník souhlasí v liště cookies.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-F. VRACENÍ A REKLAMACE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-28. ★ Kolik přibližně stojí zákazníka poslat zboží zpět?
-Zákon vyžaduje uvést odhad nákladů na vrácení, například „běžný balík přibližně 150 Kč“. Kolik to obvykle vychází u Vašich zásilek?
-
-29. Poškozené zásilky – jen pro informaci
-Při kontrole se ukázalo, že škodu na zásilce poškozené při přepravě musí podle zákona řešit s Českou poštou prodávající, ne zákazník. Domluva z 12. 10., že reklamaci u pošty podává zákazník, proto neplatí. Zákazník Vám teď jen pošle fotografie a Vy podáte reklamaci u pošty. Je potřeba to stihnout do 2 pracovních dnů od doručení, administrace Vás na to upozorní.
-
-30. Mrazuvzdornost
-Podmínky říkají, že prasklina nádoby (krmítko, pítko, květináč apod.), ve které zmrzla voda, není vada. Platí to ale jen tehdy, když na to zákazníka upozorníte u výrobku na webu i na kartičce v balíku. Kterých výrobků se to týká? Upozornění k nim na web doplním, na kartičku do balíku je prosím přidejte Vy.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-G. DALŠÍ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-31. U recenzí píšeme, že negativní hodnocení nemažeme. Platí to?
-
-32. V liště cookies píšeme, že na webu neprovozujete reklamu (žádné reklamní měření Facebooku ani Googlu). Platí to?
-
-33. E-shop umí doručení přes Zásilkovnu. Používáte ji ještě? Pokud ne, odstraním ji.
-
-34. Výrobky se slovem „SLEVA“ v názvu
-Jde o „Zvonkové tlačítko Paví mini – SLEVA“, „Klasik – Smetana – SLEVA“, „Retro, Smetana – SLEVA“ a kolekci „Výrobky se slevou“. Výrobky se jmenují „sleva“, ale prodávají se za běžnou cenu. Zákon vyžaduje, aby u každé slevy byla uvedená i nejnižší cena za posledních 30 dní. Máme dvě možnosti:
-  a) nastavit skutečnou akční cenu (web pak sám ukáže i cenu před slevou),
-  b) slovo SLEVA z názvů odstranit.
-Pokud jde o kusy s vadou, převedu je do „Poškozených kusů“ s popisem vady. Co z toho chcete?
-
-35. Na webu je vidět testovací kus „Keramická kytka bílá, modrý střed – poškozený“ s popisem vady „TEST“. Mám ho skrýt, nebo doplníte skutečnou vadu?
-
-36. Dvě odpovědi v častých dotazech (ve Studiu) neodpovídají zákonu:
-  – „Zásilka dorazila poškozená: ozvěte se nám do 48 hodin“ – zákon takovou krátkou lhůtu zákazníkovi neukládá.
-  – „Vrátit lze nepoužitý výrobek do 14 dnů“ – podmínku „nepoužitý“ zákon nezná. Zákazník si zboží smí prohlédnout a vyzkoušet jako v kamenném obchodě.
-Web u těchto dvou otázek vždy ukazuje znění, které odpovídá obchodním podmínkám, takže úprava ve Studiu se u nich na webu neprojeví. Ve Studiu je přesto prosím opravte (v sekci Dotazy), ať se texty nerozcházejí, nebo mi napište a opravím je já.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PRO ADVOKÁTA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Před spuštěním by měl nové obchodní podmínky a zásady ochrany osobních údajů přečíst advokát. Texty jsem psal podle zákona, ale právní kontrolu nenahradí. Máte-li svého advokáta, pošlete mi prosím jeho kontakt. Rád mu pošlu podklady i se seznamem otázek, které by měl posoudit. Jde například o e-maily s prosbou o recenzi a upozornění na zlevnění, vracení poštovného při vrácení jen části zboží a uvádění balného u ceny výrobku.
-
-Děkuji a jsem k dispozici, kdyby bylo cokoli nejasné.
+Děkuji a kdyby bylo cokoli nejasné, zavolejte.
 
 S pozdravem
 Matěj Forejt
