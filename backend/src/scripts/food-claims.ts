@@ -22,7 +22,9 @@ export const FOOD_CLAIM_SENTENCE =
   /[^.\n]*(zdravotně\s+nezávadn|nezávadn[ýáéí]\w*\s+(materi|glaz)|pro\s+styk\s+s\s+potravin|vhodn\w*\s+(na|pro)\s+potravin)[^.\n]*[.!]?/gi
 
 /** Negace („není vhodný pro styk s potravinami“) tvrzením není — ta musí zůstat. */
-const isNegated = (sentence: string): boolean => /\bnen[íi]\b|\bnevhodn|nepouž/i.test(sentence)
+// `\b` bez příznaku `u` nezná české znaky („není“ končí na „í“) — hranice slova přes \p{L}.
+const isNegated = (sentence: string): boolean =>
+  /(^|[^\p{L}])(nen[íi]|nejsou|nevhodn\p{L}*|nepouž\p{L}*)(?!\p{L})/iu.test(sentence)
 
 export const stripFoodClaims = (description: string): { next: string; removed: string[] } => {
   const removed: string[] = []
