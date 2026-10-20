@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 import { splitChargeNow } from "../../../../../lib/deposit-split"
+import { clampContractPercentage } from "../../../../../lib/made-to-order/contract-deposit"
 import { MADE_TO_ORDER_MODULE } from "../../../../../modules/made-to-order"
 import type MadeToOrderModuleService from "../../../../../modules/made-to-order/service"
 
@@ -131,16 +132,10 @@ const summarise = async (req: MedusaRequest, cartId: string) => {
     }
 
     const override = byVariant.get(item.variant_id)
-    const percentage = Math.min(
-      100,
-      Math.max(
-        1,
-        toNumber(
-          override?.deposit_percentage_override ??
-            profile.default_deposit_percentage ??
-            25
-        )
-      )
+    // Strop 50 % (LEGAL_AUDIT.md § 0, Z2) — stejná funkce jako workflow platby,
+    // ať posuvník v pokladně nezačíná jinde, než kde pak účtujeme.
+    const percentage = clampContractPercentage(
+      override?.deposit_percentage_override ?? profile.default_deposit_percentage
     )
     const lineTotal = toNumber(
       item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)

@@ -168,6 +168,19 @@ export const EDIT_REFUND_KIND = "uprava" as const
 export const isEditRefundKind = (kind: unknown): boolean => kind === EDIT_REFUND_KIND
 
 /**
+ * Zrušení ZAKÁZKY zákazníkem podle obchodních podmínek (LEGAL_AUDIT.md § 0,
+ * Z4–Z6; lib/made-to-order/customer-cancel). Záměrně MIMO `CLAIM_KINDS`:
+ * není to odstoupení podle § 1829 (zakázka je z něj vyňata, § 1837 písm. d),
+ * ale smluvní zrušení — a zákazník ho nepodává formulářem žádosti, nýbrž
+ * tlačítkem „Zrušit zakázku", které zakládá a rovnou vyřizuje server
+ * (refund podle fáze, protokol jako potvrzení o vyřízení).
+ */
+export const COMMISSION_CANCEL_KIND = "zruseni_zakazky" as const
+
+export const isCommissionCancelKind = (kind: unknown): boolean =>
+  kind === COMMISSION_CANCEL_KIND
+
+/**
  * Blokuje otevřená žádost podání další? Ano — kromě vrácení rozdílu po úpravě:
  * to zákazník nepodával a čekání na refundaci mu nesmí zavřít reklamaci.
  */
@@ -210,7 +223,9 @@ export const kindLabel = (kind: string | null | undefined): string =>
     ? KIND_LABEL[kind]
     : isEditRefundKind(kind)
       ? "Vrácení rozdílu po úpravě objednávky"
-      : "Žádost o vrácení"
+      : isCommissionCancelKind(kind)
+        ? "Zrušení zakázky"
+        : "Žádost o vrácení"
 
 export const REQUESTED_RESOLUTION_LABEL: Record<RequestedResolution, string> = {
   repair: "oprava",

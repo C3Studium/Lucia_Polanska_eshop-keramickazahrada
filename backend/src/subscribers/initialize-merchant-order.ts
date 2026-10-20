@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { getLastPaymentStatus } from "@medusajs/medusa/core-flows"
+import { contractDepositOf } from "../lib/made-to-order/contract-deposit"
 import {
   initialStageForPayment,
   paymentProblemReason,
@@ -108,10 +109,32 @@ export default async function initializeMerchantOrder({
   const originalTotal = toNumber(
     paymentCollection.metadata.original_cart_total ?? order.total
   )
+  // Co zákazník zaplatil v pokladně (záloha až celá cena) — jde do žádosti o
+  // platbu typu `deposit`, jak dřív.
   const depositAmount = toNumber(paymentCollection.amount)
-  const depositPercentage = originalTotal > 0
-    ? Math.round((depositAmount / originalTotal) * 10_000) / 100
-    : 100
+
+  /*
+   * SMLUVNÍ záloha (LEGAL_AUDIT.md § 0, Z2/Z5) ≠ zaplaceno. Dřív se sem
+   * ukládalo zaplaceno/celkem (u plné platby 100 %), takže zakázka zaplacená
+   * celá měla „zálohu" rovnou celé ceně — a při zrušení po zahájení výroby by
+   * se podle OP nevracelo nic. Teď z `contract_*` snímku řádků pokladny
+   * (vážený průměr, 1–50 %); u kolekcí z doby před snímkem fallback z profilu
+   * prvního zakázkového produktu (nikdy 100).
+   */
+  let fallbackPercentage: unknown = undefined
+  const needsFallback = productionLines.some(
+    (line: any) => line?.contract_deposit_amount === undefined || line?.contract_deposit_amount === null
+  )
+  if (needsFallback) {
+    const productId = productionLines.find((line: any) => line?.product_id)?.product_id
+    const [profile] = productId
+      ? await madeToOrderService
+          .listProductProductionProfiles({ product_id: productId })
+          .catch(() => [] as any[])
+      : []
+    fallbackPercentage = (profile as any)?.default_deposit_percentage
+  }
+  const contract = contractDepositOf(productionLines, fallbackPercentage)
   const specifications = productionLines
     .map((line: any) => line?.specification)
     .filter((value: unknown): value is string =>
@@ -153,7 +176,8 @@ export default async function initializeMerchantOrder({
   const productionOrder = await madeToOrderService.createProductionOrders({
     order_id: order.id,
     stage: specifications.length ? "specification_pending" : "confirmed",
-    deposit_percentage: depositPercentage,
+    deposit_percentage: contract.percentage,
+    deposit_amount: contract.amount,
     agreed_total: originalTotal,
     original_total: originalTotal,
     currency_code: String(order.currency_code || "czk").toLowerCase(),
@@ -210,6 +234,19 @@ export default async function initializeMerchantOrder({
     last_checked_at: new Date(),
     production_order_id: productionOrder.id,
   } as any)
+
+  /*
+   * Z11: zakázka existuje i se zálohou a diářem → PDF „Potvrzení zakázky"
+   * (subscriber na tento event ho vygeneruje, uloží k objednávce a pošle).
+   * Emituje se TADY, hned po založení — ne až po fakturaci a kolekci doplatku,
+   * aby chyba v nich potvrzení nezdržela; obě jsou níž fail-open. Při
+   * opakovaném doručení `order.placed` se sem už nedojde (zakázka existuje),
+   * takže event odejde právě jednou.
+   */
+  await container.resolve(Modules.EVENT_BUS).emit({
+    name: "made-to-order.production-order-created",
+    data: { order_id: order.id, production_order_id: productionOrder.id },
+  })
 
   /*
    * Zálohová faktura hned, jakmile je záloha zaplacená — faktura i jen za zálohu

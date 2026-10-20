@@ -31,11 +31,30 @@ type ProductionOrder = {
   paid_total: number;
   outstanding: number;
   deposit_percentage: number;
+  /** Smluvní záloha v penězích (LEGAL_AUDIT § 0, Z2/Z5). */
+  deposit_amount?: number | null;
+  /** Z3: kdy odešel e-mail „Zakázka je ve výrobě"; null = výroba nezačala. */
+  production_start_notified_at?: string | null;
+  cancelled_by?: string | null;
+  cancellation_phase?: string | null;
+  cancellation_refund_amount?: number | null;
+  confirmation_pdf_url?: string | null;
+  confirmation_sent_at?: string | null;
   has_open_balance_request: boolean;
   balance_requested_at: string | null;
   estimated_completion_at: string | null;
   customer_note: string | null;
 };
+
+const formatDateTime = (value: string): string =>
+  new Intl.DateTimeFormat("cs-CZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Prague",
+  }).format(new Date(value));
 
 type ProductionResponse = {
   production_orders: ProductionOrder[];
@@ -213,6 +232,55 @@ const ZakazkyInner = () => {
                       {order.estimated_completion_at && (
                         <Text size="xsmall" className="text-ui-fg-muted mt-1">
                           termín {formatDate(order.estimated_completion_at)}
+                        </Text>
+                      )}
+                      {/* Z3: zahájení výroby platí od e-mailu — „ve výrobě" bez
+                          něj je podle OP nezahájená výroba (červeně). */}
+                      {order.production_start_notified_at ? (
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                          e-mail o zahájení {formatDateTime(order.production_start_notified_at)}
+                        </Text>
+                      ) : order.stage === "in_production" ? (
+                        <Text size="xsmall" className="text-ui-fg-error mt-1">
+                          e-mail o zahájení výroby neodeslán
+                        </Text>
+                      ) : null}
+                      {order.deposit_amount !== null && order.deposit_amount !== undefined && (
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                          smluvní záloha {formatAmount(order.deposit_amount, order.currency_code)} (
+                          {order.deposit_percentage} %)
+                        </Text>
+                      )}
+                      {order.stage === "cancelled" && order.cancelled_by && (
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                          {order.cancelled_by === "customer" ? "zrušil zákazník" : "zrušila prodávající"}
+                          {order.cancellation_phase === "after_production"
+                            ? ", po zahájení"
+                            : order.cancellation_phase === "before_production"
+                              ? ", před zahájením"
+                              : ""}
+                          {order.cancellation_refund_amount !== null &&
+                          order.cancellation_refund_amount !== undefined
+                            ? `, vráceno ${formatAmount(
+                                order.cancellation_refund_amount,
+                                order.currency_code
+                              )}`
+                            : ""}
+                        </Text>
+                      )}
+                      {order.confirmation_pdf_url && (
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                          <a
+                            href={order.confirmation_pdf_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                          >
+                            Potvrzení zakázky (PDF)
+                          </a>
+                          {order.confirmation_sent_at
+                            ? ` · ${formatDateTime(order.confirmation_sent_at)}`
+                            : ""}
                         </Text>
                       )}
                     </div>

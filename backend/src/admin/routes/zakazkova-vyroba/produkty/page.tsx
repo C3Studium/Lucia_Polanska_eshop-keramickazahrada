@@ -110,8 +110,9 @@ const toDraft = (product: MadeToOrderProduct): ProductDraft => ({
   variants: (product.variants || []).map((variant) => ({ ...variant })),
 });
 
+// Strop 50 % (LEGAL_AUDIT § 0, Z2) — stejně jako server a DB check.
 const normalizePercentage = (value: number) =>
-  Math.max(1, Math.min(100, Number.isFinite(value) ? value : 25));
+  Math.max(1, Math.min(50, Number.isFinite(value) ? value : 25));
 
 const ProductSettingsDrawer = ({
   product,
@@ -188,7 +189,7 @@ const ProductSettingsDrawer = ({
 
   const isValid =
     draft.default_deposit_percentage >= 1 &&
-    draft.default_deposit_percentage <= 100 &&
+    draft.default_deposit_percentage <= 50 &&
     draft.production_time_min_days >= 1 &&
     draft.production_time_max_days >= draft.production_time_min_days;
 
@@ -250,7 +251,7 @@ const ProductSettingsDrawer = ({
                     id={`mto-deposit-${product.product_id}`}
                     type="number"
                     min={1}
-                    max={100}
+                    max={50}
                     value={draft.default_deposit_percentage}
                     onChange={(event) =>
                       setDraft((current) => ({
@@ -412,7 +413,7 @@ const ProductSettingsDrawer = ({
                         <Input
                           type="number"
                           min={1}
-                          max={100}
+                          max={50}
                           placeholder={String(draft.default_deposit_percentage)}
                           value={variant.deposit_percentage_override ?? ""}
                           onChange={(event) =>

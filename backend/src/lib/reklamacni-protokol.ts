@@ -56,17 +56,20 @@ export const PROTOCOL_TITLE: Record<string, string> = {
   reklamace: "Reklamační protokol",
   vraceni: "Protokol o vrácení zboží",
   odstoupeni: "Protokol o odstoupení od smlouvy",
+  // Zrušení zakázky podle OP (LEGAL_AUDIT.md § 0, Z4–Z6) — není to odstoupení.
+  zruseni_zakazky: "Protokol o zrušení zakázky",
 }
 
 export const PROTOCOL_KIND_LABEL: Record<string, string> = {
   reklamace: "Reklamace (vada zboží)",
   vraceni: "Vrácení zboží",
   odstoupeni: "Odstoupení od smlouvy do 14 dnů (§ 1829)",
+  zruseni_zakazky: "Zrušení zakázky (obchodní podmínky, čl. Výroba na zakázku)",
 }
 
 export type ProtocolData = {
   protocolNumber: string
-  kind: "reklamace" | "vraceni" | "odstoupeni" | null
+  kind: "reklamace" | "vraceni" | "odstoupeni" | "zruseni_zakazky" | null
   orderDisplayId: string
   customerName: string | null
   email: string
@@ -357,7 +360,13 @@ export const protocolNumberFor = (
   sequence = 1
 ): string => {
   const prefix =
-    kind === "odstoupeni" ? "ODS" : kind === "vraceni" ? "VRA" : "REK"
+    kind === "odstoupeni"
+      ? "ODS"
+      : kind === "vraceni"
+        ? "VRA"
+        : kind === "zruseni_zakazky"
+          ? "ZAK"
+          : "REK"
   const suffix = sequence > 1 ? `-${sequence}` : ""
   return `${prefix}-${when.getFullYear()}-${orderDisplayId}${suffix}`
 }

@@ -215,10 +215,20 @@ const creditNoteOfResult = (
   reason: result.reason ?? null,
 })
 
+export type RefundClaimOptions = {
+  /**
+   * `false` = e-mail zákazníkovi NEposílat — volající pošle vlastní (zrušení
+   * zakázky zákazníkem, `commission-cancelled`, LEGAL_AUDIT.md § 0 Z4–Z6);
+   * protokol a dobropis vznikají i tak.
+   */
+  sendEmail?: boolean
+}
+
 export const refundClaim = async (
   scope: MedusaContainer,
   requestId: string,
-  body: RefundClaimBody = {}
+  body: RefundClaimBody = {},
+  options: RefundClaimOptions = {}
 ): Promise<RefundClaimResult> => {
   const service = claimService(scope)
   const request = await retrieveClaim(scope, requestId)
@@ -637,7 +647,9 @@ export const refundClaim = async (
 
   // 6) JEDEN e-mail: potvrzení o vyřízení, nebo „vracíme peníze" za dílčí částku.
   const refundLines = refundLinesText(lines, currency)
-  if (resolveNow) {
+  if (options.sendEmail === false) {
+    // Volající má vlastní e-mail (zrušení zakázky) — tady nic.
+  } else if (resolveNow) {
     await sendResolvedEmail(scope, updated, {
       protocolUrl: protocol.url,
       currency,

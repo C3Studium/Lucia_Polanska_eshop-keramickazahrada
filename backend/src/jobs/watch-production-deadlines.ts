@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { MADE_TO_ORDER_MODULE } from "../modules/made-to-order"
 import type MadeToOrderModuleService from "../modules/made-to-order/service"
 import { notifyMerchant } from "../lib/notify"
+import { cancelCommissionByCustomer } from "../lib/made-to-order/customer-cancel"
 
 /**
  * Warns about production deadlines before and after they pass (P6-4,
@@ -15,12 +16,20 @@ import { notifyMerchant } from "../lib/notify"
  * are explicit that the system notifies and she acts — so nothing here changes
  * a stage, sends a customer anything, or cancels a thing.
  *
+ * Jediná výjimka (20. 10. 2026, LEGAL_AUDIT.md § 0 Z6): doplatek nezaplacený
+ * 30 dnů po výzvě A po připomenutí ruší zakázku jako zrušení zákazníkem po
+ * zahájení výroby — to je ujednání OP, které zákazník přijal, ne rozhodnutí
+ * systému za majitelku. Viz blok níž.
+ *
  * The overdue nudge is the one that earns its place. A missed deadline is
  * invisible until somebody looks at the right screen, and „I forgot" is the
  * failure that costs a customer.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Z6: po tolika dnech od výzvy (a po připomenutí) se nezaplacený doplatek = zrušení. */
+export const BALANCE_CANCEL_DAYS = 30
 
 /** Stages where a deadline still means something. */
 const ACTIVE_STAGES = ["confirmed", "in_production"]
@@ -87,6 +96,66 @@ export default async function watchProductionDeadlines(
         (now.getTime() - new Date(production.balance_requested_at).getTime()) /
           DAY_MS
       )
+
+      /*
+       * Z6 (LEGAL_AUDIT.md § 0): doplatek nezaplacený 30 dnů od výzvy A PO
+       * PŘIPOMENUTÍ = zrušení jako zákazníkem po zahájení výroby (Z5): záloha
+       * zůstává, vše nad ni se vrací (obvykle nic), zákazník dostane e-mail.
+       * Jediná automatická akce vůči zákazníkovi v této úloze — není to
+       * sankce navíc, ale ujednání OP, ke kterému zákazník kývnul. Bez
+       * připomínky (`notification_sent_at` na otevřené žádosti o doplatek,
+       * píše ji „Poslat připomínku") se neruší — jen upozorníme majitelku,
+       * ať připomene; D4 (nic nechodí zákazníkovi samo) tu drží dál.
+       * Idempotentní: zrušená zakázka má fázi `cancelled` a žádná otevřená
+       * žádost — podruhé sem nedojde.
+       */
+      if (waitingDays >= BALANCE_CANCEL_DAYS) {
+        const openBalance = ((production.payment_requests ?? []) as any[]).find(
+          (request) =>
+            request?.type === "balance" && ["pending", "sent"].includes(request?.status)
+        )
+        if (openBalance?.notification_sent_at) {
+          try {
+            const result = await cancelCommissionByCustomer(container, {
+              orderId: production.order_id,
+              trigger: "unpaid_balance",
+            })
+            logger.info(
+              `[production] Zakázka ${production.id} zrušena pro nezaplacený doplatek (Z6): vráceno ${result.refund_amount}, záloha ponechána ${result.deposit_kept}.`
+            )
+          } catch (error) {
+            logger.warn(
+              `[production] Zrušení zakázky ${production.id} pro nezaplacený doplatek selhalo: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            )
+            await notifyMerchant(container, {
+              key: `mn:baldue-cancel-failed:${production.id}:${today}`,
+              title: "Doplatek nezaplacen 30 dnů — automatické zrušení selhalo",
+              description: `Zakázku se nepodařilo zrušit automaticky (${
+                error instanceof Error ? error.message : String(error)
+              }). Zrušte ji ručně v Reklamace a zrušení.`,
+              audience: "owner",
+              urgent: true,
+              email: true,
+              resource: { id: production.order_id, type: "order" },
+            }).catch(() => undefined)
+          }
+          continue
+        }
+        if (openBalance) {
+          await notifyMerchant(container, {
+            key: `mn:baldue-30:${production.id}`,
+            title: `Doplatek čeká už ${waitingDays} dní — bez připomínky se zakázka neruší`,
+            description:
+              "Podle obchodních podmínek se zakázka s doplatkem nezaplaceným 30 dnů po výzvě a připomenutí ruší (záloha zůstává). Připomínka zákazníkovi zatím neodešla — pošlete ji tlačítkem „Poslat připomínku“ v Zakázkách; zrušení pak proběhne samo.",
+            audience: "owner",
+            urgent: false,
+            email: true,
+            resource: { id: production.order_id, type: "order" },
+          })
+        }
+      }
 
       if (waitingDays >= 7) {
         const week = Math.floor(waitingDays / 7)

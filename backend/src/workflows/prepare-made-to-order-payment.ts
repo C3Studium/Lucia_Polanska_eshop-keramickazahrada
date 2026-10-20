@@ -14,6 +14,7 @@ import {
   updatePaymentCollectionStep,
 } from "@medusajs/medusa/core-flows"
 import { splitChargeNow } from "../lib/deposit-split"
+import { clampContractPercentage } from "../lib/made-to-order/contract-deposit"
 import {
   MADE_TO_ORDER_MODULE,
 } from "../modules/made-to-order"
@@ -28,8 +29,22 @@ type ProductionLineSnapshot = {
   product_id: string
   variant_id: string
   line_total: number
+  /**
+   * Co se za řádek platí TEĎ v pokladně (posuvník ho níž přepíše — od zálohy
+   * po celou cenu). Čte ho zbytek kódu (rozpad platby, doplatek).
+   */
   deposit_percentage: number
   deposit_amount: number
+  /**
+   * SMLUVNÍ záloha (LEGAL_AUDIT.md § 0, Z2/Z5): procento z profilu / přebití
+   * (1–50) a částka z nezlevněné ceny, nejvýš cena řádku. Snímek PŘED
+   * posuvníkem — z něj `initialize-merchant-order` skládá
+   * `production_order.deposit_percentage` + `deposit_amount`, tedy to, co se
+   * po zahájení výroby nevrací. Zaplaceno ≠ smluvní záloha.
+   */
+  contract_deposit_percentage: number
+  contract_deposit_amount: number
+  contract_line_base: number
   production_time_min_days: number
   production_time_max_days: number
   specification: string | null
@@ -158,16 +173,10 @@ const calculateMadeToOrderPaymentStep = createStep(
 
       const override: any = profilesByVariant.get(item.variant_id)
 
-      const depositPercentage = Math.min(
-        100,
-        Math.max(
-          1,
-          toNumber(
-            override?.deposit_percentage_override ??
-              profile.default_deposit_percentage ??
-              25
-          )
-        )
+      // Smluvní procento: přebití provedení, jinak profil; strop 50 % (Z2 —
+      // § 1813, § 1814 odst. 1 písm. l) OZ; DB check i admin validace říkají totéž).
+      const depositPercentage = clampContractPercentage(
+        override?.deposit_percentage_override ?? profile.default_deposit_percentage
       )
       const lineTotal = toNumber(
         item.total ?? toNumber(item.unit_price) * toNumber(item.quantity)
@@ -201,6 +210,10 @@ const calculateMadeToOrderPaymentStep = createStep(
         line_total: lineTotal,
         deposit_percentage: depositPercentage,
         deposit_amount: depositAmount,
+        // Smluvní snímek — posuvník níž přepisuje jen `deposit_*`.
+        contract_deposit_percentage: depositPercentage,
+        contract_deposit_amount: depositAmount,
+        contract_line_base: roundMoney(lineBase),
         production_time_min_days: toNumber(
           override?.production_time_min_days_override ??
             profile.production_time_min_days

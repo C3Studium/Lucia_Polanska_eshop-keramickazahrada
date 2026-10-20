@@ -135,6 +135,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       // takže fronta hlásila „zaplaceno", zatímco zákazník ještě dlužil.
       outstanding: outstandingFor(production, requests),
       deposit_percentage: toNumber(production.deposit_percentage),
+      // Smluvní záloha, e-mail Z3 a výsledek zrušení (LEGAL_AUDIT § 0) — pro
+      // řádek fronty, ať je vidět, od kdy je záloha nevratná a kdo zrušil.
+      deposit_amount:
+        production.deposit_amount === null || production.deposit_amount === undefined
+          ? null
+          : toNumber(production.deposit_amount),
+      production_start_notified_at: production.production_start_notified_at ?? null,
+      cancelled_by: production.cancelled_by ?? null,
+      cancellation_phase: production.cancellation_phase ?? null,
+      cancellation_refund_amount:
+        production.cancellation_refund_amount === null ||
+        production.cancellation_refund_amount === undefined
+          ? null
+          : toNumber(production.cancellation_refund_amount),
+      confirmation_pdf_url: production.confirmation_pdf_url ?? null,
+      confirmation_sent_at: production.confirmation_sent_at ?? null,
       has_open_balance_request: Boolean(openBalance),
       balance_requested_at: production.balance_requested_at ?? null,
 

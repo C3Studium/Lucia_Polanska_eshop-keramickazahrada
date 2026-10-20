@@ -59,7 +59,31 @@ type ProductionOrder = {
   pure_commission?: boolean;
   /** Osobní odběr v ateliéru — jen tady má smysl „Zaplaceno na místě". */
   personal_pickup?: boolean;
+  /** Smluvní záloha v penězích (LEGAL_AUDIT § 0, Z2/Z5) — nevratná část po zahájení výroby. */
+  deposit_amount?: number | string | null;
+  /** Z3: kdy odešel e-mail „Zakázka je ve výrobě"; null = výroba (prokazatelně) nezačala. */
+  production_start_notified_at?: string | null;
+  production_started_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: "customer" | "seller" | string | null;
+  cancellation_phase?: "before_production" | "after_production" | string | null;
+  cancellation_refund_amount?: number | string | null;
+  /** Z11: PDF „Potvrzení zakázky" — plní subscriber PDF; tady se jen čte. */
+  confirmation_pdf_url?: string | null;
+  confirmation_sent_at?: string | null;
 };
+
+const formatDateTime = (value: string | null | undefined): string =>
+  value
+    ? new Intl.DateTimeFormat("cs-CZ", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Prague",
+      }).format(new Date(value))
+    : "";
 
 type ProductionResponse = {
   production_order?: ProductionOrder | null;
@@ -215,12 +239,74 @@ const MadeToOrderOrderWidgetInner = ({
             </Badge>
           </div>
           <Text size="small" className="text-ui-fg-subtle mt-1">
-            Záloha {productionOrder.deposit_percentage} % · cena{" "}
-            {formatAmount(basePrice, currency)}
+            Smluvní záloha{" "}
+            {productionOrder.deposit_amount !== null &&
+            productionOrder.deposit_amount !== undefined
+              ? `${formatAmount(toNum(productionOrder.deposit_amount), currency)} (${
+                  productionOrder.deposit_percentage
+                } %)`
+              : `${productionOrder.deposit_percentage} %`}{" "}
+            · cena {formatAmount(basePrice, currency)}
             {surcharge > 0
               ? ` + příplatek ${formatAmount(surcharge, currency)}`
               : ""}
           </Text>
+          {/* Z3 (LEGAL_AUDIT § 0): zahájení výroby platí od odeslaného e-mailu.
+              „Ve výrobě" bez e-mailu je stav, který podle OP nenastal — červeně. */}
+          {productionOrder.production_start_notified_at ? (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              E-mail o zahájení výroby odeslán:{" "}
+              {formatDateTime(productionOrder.production_start_notified_at)}
+            </Text>
+          ) : productionOrder.stage === "in_production" ? (
+            <Text size="xsmall" className="text-ui-fg-error mt-1">
+              E-mail o zahájení výroby neodeslán — podle obchodních podmínek výroba
+              nezačala (záloha je zatím vratná). Klikněte znovu na „Začít výrobu“.
+            </Text>
+          ) : null}
+          {productionOrder.stage === "cancelled" && productionOrder.cancelled_by ? (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              Zrušení:{" "}
+              {productionOrder.cancelled_by === "customer"
+                ? "zrušil zákazník"
+                : "zrušila prodávající"}
+              {productionOrder.cancellation_phase === "after_production"
+                ? ", po zahájení výroby"
+                : productionOrder.cancellation_phase === "before_production"
+                  ? ", před zahájením výroby"
+                  : ""}
+              {productionOrder.cancellation_refund_amount !== null &&
+              productionOrder.cancellation_refund_amount !== undefined
+                ? `, vráceno ${formatAmount(
+                    toNum(productionOrder.cancellation_refund_amount),
+                    currency
+                  )}`
+                : ""}
+              {productionOrder.cancelled_at
+                ? ` (${formatDateTime(productionOrder.cancelled_at)})`
+                : ""}
+            </Text>
+          ) : null}
+          {/* Z11: PDF „Potvrzení zakázky" — sloupce plní subscriber PDF. */}
+          {productionOrder.confirmation_pdf_url ? (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              <a
+                href={productionOrder.confirmation_pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Potvrzení zakázky (PDF)
+              </a>
+              {productionOrder.confirmation_sent_at
+                ? ` · odesláno ${formatDateTime(productionOrder.confirmation_sent_at)}`
+                : " · zatím neodesláno"}
+            </Text>
+          ) : (
+            <Text size="xsmall" className="text-ui-fg-muted mt-1">
+              Potvrzení zakázky (PDF): zatím nevygenerováno.
+            </Text>
+          )}
           {stepInDailyWork && (
             <Text size="xsmall" className="text-ui-fg-muted mt-1">
               Další krok výroby ({actionForStage[productionOrder.stage]?.label})

@@ -654,6 +654,28 @@ export default defineMiddlewares({
         }),
       ],
     },
+    // Zrušení zakázky zákazníkem (LEGAL_AUDIT.md § 0, Z4/Z5): přihlášený
+    // vlastník NEBO host s podepsaným tokenem — volitelná auth plní
+    // `auth_context`, vlastnictví / token ověřuje handler
+    // (`lib/made-to-order/customer-access`). Stejný vzor jako guest-refund.
+    {
+      matcher: "/store/made-to-order/:orderId/cancellation",
+      methods: ["GET"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
+    {
+      matcher: "/store/made-to-order/:orderId/cancel",
+      methods: ["POST"],
+      middlewares: [
+        authenticate("customer", ["bearer", "session"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
     // Modul „Reklamace a zrušení" (docs/reklamace-a-zruseni.md §4): kontext +
     // založení žádosti + číslo vrácené zásilky, vše přes podepsaný token
     // (stejný vzor jako guest-edit). POST nese fotky vady jako base64 v JSON —

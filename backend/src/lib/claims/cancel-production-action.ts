@@ -11,7 +11,10 @@ import {
 import { transitionMerchantOrderWorkflow } from "../../workflows/transition-merchant-order"
 import { findOpenBalanceCollection } from "../balance-payment"
 import { formatMoney } from "../customer-email"
-import { cancelProductionStage } from "../production-cancel"
+import {
+  cancelProductionStage,
+  type ProductionCancellationRecord,
+} from "../production-cancel"
 import {
   claimService,
   decisionOutcome,
@@ -22,7 +25,7 @@ import {
 } from "./admin"
 import { cancelOrderNatively } from "./cancel-order-action"
 import { DEPOSIT_KEPT_NOTE_PREFIX } from "./case"
-import { isClaimKind } from "./constants"
+import { isClaimKind, isCommissionCancelKind } from "./constants"
 import { isMadeToOrderItem } from "./context"
 import { loadClaimDetailOrder } from "./detail"
 import { claimLineItemsOf } from "./line-items"
@@ -74,6 +77,21 @@ export type CancelProductionBody = {
   /** „Zálohu nevracet" — výslovná volba majitelky, zapíše se do `resolution_note`. */
   keep_deposit?: boolean
   note?: string | null
+  /**
+   * Záznam o zrušení na zakázce (LEGAL_AUDIT.md § 0): kdo, v jaké fázi
+   * (před/po e-mailu Z3), kolik se vrátilo. Z admin routy se neposílá —
+   * tam je to vždy rozhodnutí majitelky (`seller`, Z7) a částka z refundací;
+   * server (zrušení zákazníkem / nezaplacený doplatek) ho předá sám.
+   */
+  cancellation?: ProductionCancellationRecord | null
+}
+
+export type CancelProductionOptions = {
+  /**
+   * `false` = potvrzení o vyřízení zákazníkovi NEposílat — volající pošle
+   * vlastní e-mail (`commission-cancelled`, Z4–Z6) a odkaz na protokol dá do něj.
+   */
+  sendEmail?: boolean
 }
 
 export type CancelProductionResult = {
@@ -134,11 +152,14 @@ export const cancelProductionForClaim = async (
   scope: MedusaContainer,
   requestId: string,
   body: CancelProductionBody = {},
-  actor: string | null = null
+  actor: string | null = null,
+  options: CancelProductionOptions = {}
 ): Promise<CancelProductionResult> => {
   const request = await retrieveClaim(scope, requestId)
 
-  if (!isClaimKind(request.kind)) {
+  // Zrušení zakázky zákazníkem (`zruseni_zakazky`, Z4–Z6) zakládá server a
+  // volá sem — druh je tedy přípustný vedle žádostí podaných zákazníkem.
+  if (!isClaimKind(request.kind) && !isCommissionCancelKind(request.kind)) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "Zakázku lze zrušit jen ze žádosti o odstoupení, vrácení zboží nebo reklamaci."
@@ -211,10 +232,19 @@ export const cancelProductionForClaim = async (
 
   const messages: string[] = []
 
-  // 1) výrobní strana
+  // 1) výrobní strana — se záznamem KDO a V JAKÉ FÁZI zrušil (LEGAL_AUDIT § 0).
+  //    Bez výslovného záznamu = rozhodnutí majitelky (`seller`, Z7); vráceno =
+  //    co z objednávky odešlo zpět (u smíšené jen záloha — zbytek jsou běžné
+  //    položky). Fázi doplní `cancelProductionStage` podle e-mailu Z3.
   await cancelProductionStage(scope, {
     productionOrder: production.productionOrder,
     orderId: order.id,
+    cancellation: body.cancellation ?? {
+      cancelled_by: "seller",
+      cancellation_refund_amount: hasRegularItems
+        ? production.block.deposit_refunded
+        : state.refunded,
+    },
   })
   messages.push(
     `Zakázka zrušena, výrobní příkaz uzavřen (${
@@ -346,12 +376,17 @@ export const cancelProductionForClaim = async (
       confirmation: true,
       refunds: protocolRefundsOf(updated, currency),
     })
-    await sendResolvedEmail(scope, updated, {
-      protocolUrl: protocol.url,
-      currency,
-      note: resolutionNote,
-    })
-    messages.push("Žádost je vyřízená, zákazník dostal potvrzení.")
+    if (options.sendEmail !== false) {
+      await sendResolvedEmail(scope, updated, {
+        protocolUrl: protocol.url,
+        currency,
+        note: resolutionNote,
+      })
+      messages.push("Žádost je vyřízená, zákazník dostal potvrzení.")
+    } else {
+      messages.push("Žádost je vyřízená.")
+    }
+    updated.protocol_url = protocol.url ?? updated.protocol_url
   } else if (!resolveNow) {
     messages.push(
       "Žádost zůstává otevřená — zbývá vyřídit běžné položky (vrátit peníze za vybrané položky, nebo „Vyřízeno“)."

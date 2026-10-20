@@ -672,7 +672,8 @@ const commissionTitle = (order: any): string | null => {
 /**
  * #6 „Zadání je potvrzené" — potvrzení zadání zakázky. Dřív sem šel
  * „Výroba začíná" (order-processing), i když výroba ještě neběžela; ten teď
- * chodí až při „Začít výrobu" (onProductionStarted). 14. 10. 2026.
+ * chodí až při „Začít výrobu" — synchronně z akce (Z3,
+ * lib/made-to-order/start-production), ne odsud. 14. 10. / 20. 10. 2026.
  */
 const onSpecificationConfirmed = async ({
   event: { data },
@@ -701,33 +702,14 @@ const onSpecificationConfirmed = async ({
   })
 }
 
-/** „Výroba začíná" — „Začít výrobu" (start_production). */
-const onProductionStarted = async ({
-  event: { data },
-  container,
-}: SubscriberArgs<{ order_id: string; production_order_id?: string }>) => {
-  if (!data?.order_id) {
-    return
-  }
-  const order = await loadOrder(container, data.order_id)
-  if (!order) {
-    return
-  }
-  const facts = await commissionFacts(container, order.id, order.currency_code)
-
-  await sendCustomerEmail(container, {
-    template: "order-processing",
-    to: order.email,
-    key: `mto-start:${data.production_order_id ?? order.id}`,
-    orderId: order.id,
-    data: {
-      ...common(order),
-      estimatedCompletion: facts?.estimatedCompletion ?? null,
-      estimatedProcessingTime:
-        "Jakmile bude hotovo, dám vám vědět a domluvíme se na odeslání.",
-    },
-  })
-}
+/*
+ * „Zakázka je ve výrobě" (Z3, LEGAL_AUDIT.md § 0) tu od 20. 10. 2026 NENÍ.
+ * Zahájení výroby platí od toho e-mailu, takže se posílá SYNCHRONNĚ v akci
+ * `start_production` (lib/made-to-order/start-production) a při selhání se
+ * výroba nezahájí. Event `made-to-order.production-started` dál chodí (pro
+ * majitelku / další odběratele), ale zákaznický e-mail na něm viset nesmí —
+ * šel by podruhé a bez záruky, že odešel.
+ */
 
 /**
  * „K zakázce přibyl příplatek" — only ever her click on „Informovat o příplatku".
@@ -1086,7 +1068,6 @@ const handlers: Record<string, (args: SubscriberArgs<any>) => Promise<void>> = {
   "made-to-order.balance-requested": onBalanceRequested,
   "made-to-order.balance-paid": onBalancePaid,
   "made-to-order.specification-confirmed": onSpecificationConfirmed,
-  "made-to-order.production-started": onProductionStarted,
   "made-to-order.production-completed": onProductionCompleted,
   "made-to-order.surcharge-notified": onSurchargeNotified,
   "made-to-order.delay-announced": onDelayAnnounced,
@@ -1111,7 +1092,6 @@ export const config: SubscriberConfig = {
     "made-to-order.balance-requested",
     "made-to-order.balance-paid",
     "made-to-order.specification-confirmed",
-    "made-to-order.production-started",
     "made-to-order.production-completed",
     "made-to-order.surcharge-notified",
     "made-to-order.delay-announced",

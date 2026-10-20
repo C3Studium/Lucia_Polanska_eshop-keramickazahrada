@@ -87,8 +87,12 @@ export const ProductionProfileEditor = ({
 
       // The one rule, enforced before the request leaves the browser too:
       // a floor of zero would be „pay later" wearing a percent sign.
-      if (!Number.isFinite(floor) || floor < 1 || floor > 100) {
-        throw new Error("Záloha musí být mezi 1 a 100 %.");
+      // Strop 50 % (LEGAL_AUDIT § 0, Z2 — § 1813, § 1814 odst. 1 písm. l) OZ);
+      // server i DB check říkají totéž.
+      if (!Number.isFinite(floor) || floor < 1 || floor > 50) {
+        throw new Error(
+          "Výše zálohy musí být mezi 1 a 50 % (obchodní podmínky, čl. Výroba na zakázku)."
+        );
       }
       if (
         !Number.isFinite(minDays) ||
@@ -176,7 +180,7 @@ export const ProductionProfileEditor = ({
                   id="deposit-floor"
                   type="number"
                   min={1}
-                  max={100}
+                  max={50}
                   value={form.default_deposit_percentage}
                   onChange={(event) =>
                     setForm({
@@ -188,6 +192,8 @@ export const ProductionProfileEditor = ({
                 <Text size="xsmall" className="text-ui-fg-subtle mt-1">
                   Míň než tohle zákazník při objednávce nezaplatí — posuvník
                   v pokladně začíná tady. Nastavte tak, aby pokryla materiál.
+                  Nejvýš 50 % (obchodní podmínky, čl. Výroba na zakázku) — tato
+                  smluvní záloha se po zahájení výroby nevrací, zbytek ano.
                 </Text>
               </div>
 

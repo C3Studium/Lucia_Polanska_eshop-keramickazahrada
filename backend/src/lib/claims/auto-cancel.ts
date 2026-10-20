@@ -39,12 +39,33 @@ export const AUTO_CANCEL_RESOLUTION_NOTE =
   "Objednávka neodešla a nebylo nic zaplaceno — zrušena automaticky při přijetí žádosti; není co vracet."
 
 /**
- * Byla žádost vyřízena auto-zrušením? Subscriber `order.canceled` podle toho
- * NEposílá „Objednávka zrušena" — zákazník už dostal `return-approved`
- * s `nothingToReturn` (jediný e-mail za celou událost, §13.1).
+ * `decision_note` žádosti o zrušení ZAKÁZKY, kterou založil a vyřídil server
+ * (LEGAL_AUDIT.md § 0, Z4/Z5 — tlačítko zákazníka; Z6 — nezaplacený doplatek;
+ * lib/made-to-order/customer-cancel). Podle ní pozná subscriber `order.canceled`
+ * i UI, že rozhodl server a zákazník už dostal `commission-cancelled`.
+ */
+export const COMMISSION_CANCEL_DECISION_NOTE =
+  "Automaticky — zrušení zakázky zákazníkem (OP, čl. Výroba na zakázku)"
+
+export const UNPAID_BALANCE_DECISION_NOTE =
+  "Automaticky — doplatek nezaplacen 30 dnů po výzvě a připomenutí (OP, čl. Výroba na zakázku)"
+
+const SERVER_DECISION_NOTES: readonly string[] = [
+  AUTO_CANCEL_DECISION_NOTE,
+  COMMISSION_CANCEL_DECISION_NOTE,
+  UNPAID_BALANCE_DECISION_NOTE,
+]
+
+/**
+ * Byla žádost vyřízena auto-zrušením (nebo serverovým zrušením zakázky)?
+ * Subscriber `order.canceled` podle toho NEposílá „Objednávka zrušena" —
+ * zákazník už dostal `return-approved` s `nothingToReturn` (§13.1), resp.
+ * `commission-cancelled` (Z4–Z6): jediný e-mail za celou událost.
  */
 export const isAutoCancelledClaim = (request: {
   status?: string | null
   decision_note?: string | null
 }): boolean =>
-  request?.status === "resolved" && request?.decision_note === AUTO_CANCEL_DECISION_NOTE
+  request?.status === "resolved" &&
+  typeof request?.decision_note === "string" &&
+  SERVER_DECISION_NOTES.includes(request.decision_note)

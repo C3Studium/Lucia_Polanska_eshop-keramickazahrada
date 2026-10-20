@@ -28,7 +28,8 @@ import {
   ensureBalanceCollection,
   stageAfterBalancePaid,
 } from "../../../../../../lib/balance-payment"
-import { assertNoMoneyLeft } from "../../../../../../lib/claims/money"
+import { assertNoMoneyLeft, loadOrderMoney } from "../../../../../../lib/claims/money"
+import { startProduction } from "../../../../../../lib/made-to-order/start-production"
 import {
   LINE_QUANTITY_FIELDS,
   lineQuantityOf,
@@ -439,21 +440,32 @@ export const POST = async (
   }
 
   if (body.action === "start_production") {
-    requireStage(productionOrder.stage, ["confirmed"])
-    productionOrder = await madeToOrder.updateProductionOrders({
-      id: productionOrder.id,
-      stage: "in_production",
-      production_started_at: now,
+    // Z3 (LEGAL_AUDIT.md § 0): zahájení výroby platí od e-mailu „Zakázka je ve
+    // výrobě" — posílá se SYNCHRONNĚ v lib/made-to-order/start-production;
+    // když neodejde, fáze se vrátí a akce skončí chybou. Už oznámená zakázka
+    // (opakované kliknutí) e-mail nedostane podruhé.
+    if (!productionOrder.production_start_notified_at) {
+      requireStage(productionOrder.stage, ["confirmed"])
+    }
+    const started = await startProduction(req.scope, {
+      productionOrder,
+      orderId: req.params.orderId,
     })
+    productionOrder = started.production_order
     await setMerchantStage(req, req.params.orderId, "working")
-    // Začátek výroby → e-mail „Výroba začíná" (dřív nechodilo nic, 14. 10. 2026).
-    await eventBus.emit({
-      name: "made-to-order.production-started",
-      data: {
-        order_id: req.params.orderId,
-        production_order_id: productionOrder.id,
-      },
-    })
+    // Event zůstává pro majitelku / další odběratele; zákaznický e-mail už na
+    // něm NEVISÍ (šel by podruhé a bez záruky doručení).
+    if (started.email_sent) {
+      await eventBus.emit({
+        name: "made-to-order.production-started",
+        data: {
+          order_id: req.params.orderId,
+          production_order_id: productionOrder.id,
+          production_start_notified_at:
+            productionOrder.production_start_notified_at ?? now.toISOString(),
+        },
+      })
+    }
   }
 
   if (body.action === "complete_production") {
@@ -798,11 +810,20 @@ export const POST = async (
      * nezruší napůl.
      */
     await assertNoMoneyLeft(req.scope, req.params.orderId)
+    // Kolik se zákazníkovi vrátilo: pojistka výš prošla, takže zbývá 0 a
+    // vráceno = všechno zachycené (Z7: ruší prodávající → vrací se vše).
+    const moneyBefore = await loadOrderMoney(req.scope, req.params.orderId).catch(() => null)
     // Výrobní strana (fáze `cancelled`, nezaplacené žádosti o platbu, event)
     // sdílená s „Zrušit zakázku" v Reklamace a zrušení (lib/production-cancel).
+    // Zrušení z tohoto tlačítka = rozhodnutí majitelky (`seller`, Z7); fáze
+    // před/po zahájení podle odeslaného e-mailu Z3.
     productionOrder = await cancelProductionStage(req.scope, {
       productionOrder,
       orderId: req.params.orderId,
+      cancellation: {
+        cancelled_by: "seller",
+        cancellation_refund_amount: moneyBefore ? moneyBefore.state.refunded : null,
+      },
     })
     await setMerchantStage(req, req.params.orderId, "cancelled")
 
