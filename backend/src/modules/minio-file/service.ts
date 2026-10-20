@@ -134,11 +134,69 @@ class MinioFileProviderService extends AbstractFileProviderService {
     }
   }
 
-  /** Veřejná adresa souboru — přes vlastní doménu (R2), nebo bucket v cestě (MinIO). */
+  /**
+   * Veřejná adresa souboru — přes vlastní doménu (R2), nebo bucket v cestě
+   * (MinIO). Klíč se koduje po segmentech: doklady k objednávce leží ve
+   * „složce" (`orders/<id>/…`) a lomítko v ní musí zůstat lomítkem.
+   */
   protected urlFor(fileKey: string): string {
+    const encoded = fileKey.split('/').map(encodeURIComponent).join('/')
     return this.config_.publicUrl
-      ? `${this.config_.publicUrl}/${encodeURIComponent(fileKey)}`
-      : `https://${this.config_.endPoint}/${this.bucket}/${encodeURIComponent(fileKey)}`
+      ? `${this.config_.publicUrl}/${encoded}`
+      : `https://${this.config_.endPoint}/${this.bucket}/${encoded}`
+  }
+
+  /** Veřejná adresa objektu pod daným klíčem (bez nahrávání). */
+  publicUrlForKey(fileKey: string): string {
+    return this.urlFor(fileKey)
+  }
+
+  /**
+   * Existuje objekt pod klíčem? Doklady k objednávce (Potvrzení zakázky) se
+   * nikdy nepřepisují — volající se napřed zeptá a jinou verzi uloží vedle.
+   */
+  async objectExistsAtKey(fileKey: string): Promise<boolean> {
+    try {
+      await this.client.statObject(this.bucket, fileKey)
+      return true
+    } catch (error) {
+      const code = String((error as any)?.code ?? '')
+      if (code === 'NotFound' || code === 'NoSuchKey' || (error as any)?.statusCode === 404) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Nahrání na ZADANÝ klíč — bez slugu a ulid z `upload()`. Pro doklady, které
+   * mají mít předvídatelnou a trvalou adresu (`orders/<order_id>/potvrzeni-
+   * zakazky.pdf`). Veřejné čtení jako u ostatních souborů. Přepsání existujícího
+   * objektu hlídá volající (`objectExistsAtKey`), tady se jen nahrává.
+   */
+  async putObjectAtKey(
+    fileKey: string,
+    bytes: Uint8Array,
+    mimeType: string
+  ): Promise<{ key: string; url: string }> {
+    if (!fileKey || fileKey.startsWith('/') || fileKey.includes('..')) {
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, `Neplatný klíč souboru: ${fileKey}`)
+    }
+    const content = Buffer.from(bytes)
+    try {
+      await this.client.putObject(this.bucket, fileKey, content, content.length, {
+        'Content-Type': mimeType,
+        ...(this.config_.publicUrl ? {} : { 'x-amz-acl': 'public-read' })
+      })
+      this.logger_.info(`Successfully uploaded file ${fileKey} to bucket ${this.bucket}`)
+      return { key: fileKey, url: this.urlFor(fileKey) }
+    } catch (error) {
+      this.logger_.error(`Failed to upload file ${fileKey}: ${error.message}`)
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Failed to upload file: ${error.message}`
+      )
+    }
   }
 
   static validateOptions(options: Record<string, any>) {

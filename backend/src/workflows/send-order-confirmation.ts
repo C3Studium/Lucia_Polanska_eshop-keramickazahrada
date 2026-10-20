@@ -13,6 +13,8 @@ import {
   checkAttachmentUrls,
   markAttached,
   orderLegalInfo,
+  withCommissionConfirmation,
+  type EmailAttachmentRef,
 } from "../lib/legal/order-legal";
 import { getLegalFacts } from "../lib/merchant-settings";
 import {
@@ -25,6 +27,12 @@ import { sendNotificationStep } from "./steps/send-notification";
 
 type WorkflowInput = {
   id: string
+  /**
+   * PDF „Potvrzení zakázky" (Z11) k objednávce se zakázkou — přidá se k OP
+   * a poučení do přílohy; posílá ho subscriber `commission-confirmation`.
+   * Chybí/null u běžné objednávky i když PDF selhalo (potvrzení jde bez něj).
+   */
+  commission_confirmation?: EmailAttachmentRef | null
 }
 
 /**
@@ -40,15 +48,20 @@ type WorkflowInput = {
  */
 const resolveOrderLegalStep = createStep(
   "resolve-order-legal-documents",
-  async ({ orders }: { orders: any[] }, { container }) => {
+  async (
+    { orders, commission }: { orders: any[]; commission?: EmailAttachmentRef | null },
+    { container }
+  ) => {
     const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
     const order = orders?.[0]
     const live = await getLegalFacts(container)
-    const { legal, attachments } = orderLegalInfo(
+    const { legal, attachments: legalAttachments } = orderLegalInfo(
       order,
       LEGAL_MANIFEST,
       live.source === "settings" ? live.facts : null
     )
+    // Potvrzení zakázky první — je to smlouva k téhle objednávce; OP a poučení za ním.
+    const attachments = commission?.url ? [commission, ...legalAttachments] : legalAttachments
     const { reachable, failed } = await checkAttachmentUrls(attachments)
 
     for (const miss of failed) {
@@ -84,16 +97,22 @@ const resolveOrderLegalStep = createStep(
       )
     }
 
+    const withCommission = withCommissionConfirmation(
+      markAttached(legal, reachable),
+      commission ?? null,
+      reachable
+    )
     return new StepResponse({
-      legal: markAttached(legal, reachable),
+      legal: withCommission,
       attachments: reachable,
+      commission_attached: Boolean(withCommission.commission_confirmation?.attached),
     })
   }
 )
 
 export const sendOrderConfirmationWorkflow = createWorkflow(
   "send-order-confirmation",
-  ({ id }: WorkflowInput) => {
+  ({ id, commission_confirmation }: WorkflowInput) => {
     const { data: orders } = useQueryGraphStep({
       entity: "order",
       fields: [
@@ -158,7 +177,10 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
     // from the checkout's payment collection in `orders`.
     const balance = resolveBalanceStep({ order_id: id, orders })
 
-    const legalDocuments = resolveOrderLegalStep({ orders })
+    const legalDocuments = resolveOrderLegalStep({
+      orders,
+      commission: commission_confirmation,
+    })
 
     const notificationData = transform(
       { id, orders, balance, legalDocuments },
@@ -228,6 +250,16 @@ export const sendOrderConfirmationWorkflow = createWorkflow(
 
     const notification = sendNotificationStep(notificationData)
 
-    return new WorkflowResponse(notification)
+    // `commission_attached`: šlo Potvrzení zakázky opravdu v příloze? Podle
+    // toho subscriber zapíše `confirmation_sent_at`.
+    const result = transform(
+      { notification, legalDocuments },
+      ({ notification, legalDocuments }) => ({
+        notification,
+        commission_attached: Boolean(legalDocuments.commission_attached),
+      })
+    )
+
+    return new WorkflowResponse(result)
   }
 )

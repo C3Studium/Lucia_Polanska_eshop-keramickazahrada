@@ -125,11 +125,19 @@ function LegalSection({
     .filter(Boolean)
     .join("\n")
   const madeToOrder = legal.made_to_order_items ?? []
+  // Potvrzení zakázky (Z11) — jen u objednávky se zakázkou, a jen když šlo v příloze.
+  const confirmation = legal.commission_confirmation ?? null
+  const confirmationAttached = Boolean(confirmation?.attached) && !attachmentsFailed
 
   const attachedNames = [
+    confirmationAttached ? "potvrzení zakázky" : null,
     termsAttached ? "obchodní podmínky platné pro tuto smlouvu" : null,
     withdrawalAttached ? "poučení o odstoupení od smlouvy s formulářem" : null,
-  ].filter(Boolean)
+  ].filter((name): name is string => Boolean(name))
+  const attachedList =
+    attachedNames.length > 1
+      ? `${attachedNames.slice(0, -1).join(", ")} a ${attachedNames[attachedNames.length - 1]}`
+      : attachedNames[0] ?? ""
 
   return (
     <Section
@@ -143,7 +151,7 @@ function LegalSection({
       <P>
         Tímto e-mailem potvrzujeme vaši objednávku a uzavření kupní smlouvy.
         {attachedNames.length
-          ? ` V příloze posíláme ${attachedNames.join(" a ")} (PDF) — uschovejte si je.`
+          ? ` V příloze posíláme ${attachedList} (PDF) — uschovejte si je.`
           : legal.terms
             ? ` Smlouva se řídí obchodními podmínkami ve znění platném od ${legal.terms.version_label}; najdete je na odkazu níže.`
             : ""}
@@ -157,6 +165,21 @@ function LegalSection({
       ) : null}
 
       <Section style={{ margin: "16px 0 0" }}>
+        {confirmation ? (
+          <P small style={{ margin: "0 0 6px" }}>
+            <strong style={{ color: brand.ink }}>Potvrzení zakázky</strong> · smlouva
+            na výrobek podle vašeho zadání
+            {confirmationAttached ? " — v příloze (PDF)" : ""}
+            {!confirmationAttached && confirmation.url ? (
+              <>
+                {" — "}
+                <Link href={confirmation.url} style={linkStyle}>
+                  stáhnout PDF
+                </Link>
+              </>
+            ) : null}
+          </P>
+        ) : null}
         {legal.terms ? (
           <LegalDocumentLine
             label="Obchodní podmínky"
