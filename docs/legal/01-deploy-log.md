@@ -305,3 +305,23 @@ do produkce jde až sloučením PR #16 (obsahuje migraci `Migration2026102012000
   hlídání dostupnosti). Storefront `tsc` OK, testy skriptů 42/42; backend `tsc` OK.
 - Tvrzení o nezávadnosti zatím v popisech ponechána — čeká se na protokoly a seznam glazur od
   Lucie (odstranění jednou větou: `npx medusa exec ./src/scripts/food-claims.ts strip`).
+
+## § 0c Z-A, Z-C (20. 10. 2026 odpoledne, větev `legal/deploy-2026-10`, NENASAZENO)
+
+- **Z-A zakázka = položka** (commity e790ab4d storefront, cbc6f14d backend): migrace
+  `Migration20261020180000` (na produkci 8 legacy zakázek s `line_item_id = NULL` zůstávají
+  „celá objednávka“), zakázka per řádek, PDF per položka, store `commissions[]`, checkbox per
+  položka, seznam zakázek v účtu. Backendového agenta přerušil limit relace (18:20) — 4 chyby
+  typů v admin akcích dořešeny ručně, 3 zastaralé testy opraveny, `customer_note` bere zadání
+  z řádku (snímek pokladny jen záložně). Backend `pnpm typecheck` 0 chyb, `pnpm test:unit`
+  119 sad / 1581 testů OK; storefront `tsc` OK, lint bez nových varování, testy skriptů 52/52.
+  **Zbývá:** admin widget pro objednávku s víc zakázkami (ukazuje první), e2e se dvěma
+  zakázkami, stránky edit/refund s ≥2 zakázkami (OPEN_QUESTIONS ZA1–ZA3).
+- **Z-C**: `docs/legal/ZPRAVA_PRO_LUCII.md` přepsaná jako samostatný dokument (co se udělalo,
+  provozní návod, 34 otázek s doporučenou odpovědí, e-mail), `ZPRAVA_PRO_LUCII.pdf` (14 stran),
+  `zprava-pro-lucii.html` (zdroj). Seznam 32 výrobků s tvrzením o nezávadnosti doplněn.
+- **Sandbox po Z-A** (čistá DB, migrace `…20120000` i `…20180000`, `run-all.mjs start --fresh
+  --storefront`): **10/10 OK** — cookies, běžný výrobek, zakázka se zálohou, poukaz, kurz,
+  dobírka, Koupit ihned, odstoupení § 1830a, reklamace, scénář `z` (PDF potvrzení, zrušení
+  před/po zahájení výroby, ComGate refundace 679 Kč / 79 Kč). Běželo proti kódu před opravou
+  `customer_note` (jen text zadání, pokryto unit testem).
