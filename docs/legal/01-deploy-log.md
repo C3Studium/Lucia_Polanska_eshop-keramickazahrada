@@ -201,3 +201,33 @@ Provedeno (nezávisí na Faktech):
 - profil výroby u 26 produktů „na zakázku“ (seznam v e-mailu Lucii) a výše zálohy;
 - „Domovní znamení NA ZAKÁZKU“ (pevná cena / poptávka);
 - 3 produkty „- SLEVA“ (akční cena / odstranit SLEVA / kus s vadou).
+
+## Krok 5 — nezávislá kontrola produkce (20. 10. 2026)
+
+Kontrolní agent bez přístupu k administraci a DB (jen veřejný web, store API, PDF, Playwright),
+zpráva: `docs/legal/audit/kontrola-produkce-2026-10-20.md` (screenshoty a stažené stránky
+zůstaly ve scratchpadu).
+
+**Ověřeno v produkci:** OP 2026 (1 rok, § 1832, § 1833, § 1837 d)+j), ČOI bez ODR, doména),
+reklamace (řád + protokol, přeprava řeší prodávající, 30 dní), cookie lišta (Odmítnout
+rovnocenné, před volbou 0 požadavků na cizí domény, GA 0, „Nastavení cookies“ otevře dialog),
+PlatímPak pryč, tlačítko „Objednávka zavazující k platbě“ v pokladně (souhlas nezaškrtnutý),
+Zásady bez Segmentu, kus s vadou bez přeškrtnuté ceny, archiv OP 2015.
+
+**Selhalo — vše čeká na údaje / rozhodnutí Lucie** (seznam v OPEN_QUESTIONS „Stav po
+nasazení“): 26 produktů na zakázku bez profilu výroby; OP/Odstoupení/Zásady nevydané (404 na
+PDF, v patičce 2 PDF) a 20× `[[DOPLNIT]]` na webu; zpětné datum 15. 10.; „kolekce Poškozené“
+v reklamačním řádu (opraví se s novou verzí); 3× „- SLEVA“ bez akční ceny; doména PDF; balné
+u ceny (advokát).
+
+**Opravy zprávy kontroly (ověřeno mnou):**
+- „Popis poukazu zůstal původní“ — neplatí: produkční stránka poukazu má nový text („Částku
+  poukazu zadáte přímo tady u výrobku…“), gmail ani „převeďte“ tam nejsou. `calculated_amount: 1`
+  je katalogová cena varianty, vlastní částku dosazuje košík — očekávané.
+- Neověřeno zvenku a ověřeno mnou: Segment (log backendu „SEGMENT_WRITE_KEY is not set“),
+  merge, migrace, backfill a seed (kroky 2–3 výše).
+- Kontrola nechala nedokončený košík (kontrola@example.invalid, 1× kytka, bez objednávky) —
+  připomínky košíku jsou vypnuté, nic se neodešle.
+
+**Pozor (mimo audit):** zástupný text u čísla účtu ukazuje zákazníkům všechna tři kandidátní
+čísla účtu. Do vyplnění `bank.account` v Právních údajích to tak zůstane — vyplnit přednostně.
