@@ -104,7 +104,7 @@ const dopravaAPlatba: LegalDocumentVersion = {
       blocks: [
         {
           type: "p",
-          text: "Zboží si můžete vyzvednout v ateliéru na adrese {{seller.address}}. Až bude připravené, ozveme se a domluvíme čas. Zaplatit můžete předem online, nebo v hotovosti při vyzvednutí; zálohu na zakázku platíte vždy předem online.",
+          text: "Zboží si můžete vyzvednout v ateliéru na adrese {{seller.address}}. Až bude připravené, ozveme se a domluvíme čas. Zaplatit můžete předem online, nebo při vyzvednutí hotově či převodem na účet (QR kód) — platební terminál nemáme; zálohu na zakázku platíte vždy předem online.",
         },
       ],
     },

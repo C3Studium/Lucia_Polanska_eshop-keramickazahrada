@@ -180,7 +180,7 @@ const obchodniPodminky: LegalDocumentVersion = {
           items: [
             "**online přes platební bránu ComGate** (Comgate a.s.) — platební kartou, přes Apple Pay nebo Google Pay, nebo online převodem ze svého internetového bankovnictví; platíte při odeslání objednávky,",
             "**na dobírku** — jen v České republice a jen při doručení Českou poštou na adresu (ne na výdejní místo Balíkovny); u zboží na zakázku a u některých dalších výrobků ji nenabízíme; platíte při převzetí zásilky,",
-            "**v hotovosti při osobním odběru** v ateliéru — platíte při vyzvednutí.",
+            "**při osobním odběru** v ateliéru — hotově nebo převodem na účet (QR kód) při vyzvednutí; platební terminál nemáme.",
           ],
         },
         {
@@ -223,7 +223,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Balíčky.** Balíček je několik výrobků prodávaných společně za jednu cenu, která bývá nižší než součet cen jednotlivých kusů. Odstoupit můžete od celého balíčku i jen od některých kusů z něj: vracíme poměrnou část ceny balíčku, která na vrácené kusy připadá (sleva balíčku se rozpočítá na všechny kusy podle jejich cen), ne cenu kusu prodávaného samostatně. Má-li vadu jeden kus z balíčku, opravíme nebo vyměníme ten kus; zbytek balíčku se nevrací.",
+          text: "**Balíčky.** Balíček je několik výrobků prodávaných společně za jednu cenu, která bývá nižší než součet cen jednotlivých kusů. Odstoupit od smlouvy můžete jen od **celého balíčku** — vracíte všechny kusy a my vracíme celou cenu balíčku; jednotlivé kusy z balíčku samostatně vrátit nejde. Má-li vadu jeden kus z balíčku, reklamujete jen ten kus: opravíme ho nebo vyměníme, a není-li to možné, vrátíme poměrnou část ceny balíčku, která na něj připadá (sleva balíčku se rozpočítá na kusy podle jejich cen).",
         },
       ],
     },
@@ -241,7 +241,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "**Zboží na objednávku.** Výrobek označený „Na objednávku“ není skladem a vyrobíme ho až po objednávce podle stejné předlohy. Platíte ho předem jako jiné zboží. Dodáme ho ve lhůtě uvedené u výrobku (není-li uvedena, obvykle do 3 až 7 dnů výroby a následně běžnou dopravou), nejpozději však do 30 dnů od uzavření smlouvy. Nestihneme-li to, dáme vám vědět a můžete od smlouvy odstoupit — vrátíme vám všechno, co jste zaplatili, do 14 dnů stejným způsobem. Nejde o zakázku: výrobek není dělaný podle vašeho zadání, a proto ho můžete do 14 dnů vrátit jako jiné zboží.",
+          text: "**Zboží na objednávku.** Výrobek označený „Na objednávku“ není skladem a vyrobíme ho až po objednávce podle stejné předlohy. Platíte ho předem jako jiné zboží. Dodáme ho ve lhůtě uvedené u výrobku (není-li uvedena, obvykle do 3 až 10 dnů výroby a následně běžnou dopravou), nejpozději však do 30 dnů od uzavření smlouvy. Nestihneme-li to, dáme vám vědět a můžete od smlouvy odstoupit — vrátíme vám všechno, co jste zaplatili, do 14 dnů stejným způsobem. Nejde o zakázku: výrobek není dělaný podle vašeho zadání, a proto ho můžete do 14 dnů vrátit jako jiné zboží.",
         },
         {
           type: "p",
@@ -327,7 +327,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "Odstoupit můžete i od koupě kusu s vadou nebo zlevněného zboží (vracíme cenu, kterou jste skutečně zaplatili) a od koupě dárkového poukazu, dokud nebyl uplatněn ([čl. XI](/smluvni-podminky#darkove-poukazy)). Obsahuje-li objednávka běžné zboží i zboží na zakázku, můžete odstoupit od části s běžným zbožím. U balíčku můžete vrátit i jen některé kusy ([čl. VI](/smluvni-podminky#slevy)).",
+          text: "Odstoupit můžete i od koupě kusu s vadou nebo zlevněného zboží (vracíme cenu, kterou jste skutečně zaplatili) a od koupě dárkového poukazu, dokud nebyl uplatněn ([čl. XI](/smluvni-podminky#darkove-poukazy)). Obsahuje-li objednávka běžné zboží i zboží na zakázku, můžete odstoupit od části s běžným zbožím. Od balíčku lze odstoupit jen vcelku ([čl. VI](/smluvni-podminky#slevy)).",
         },
         {
           type: "p",
@@ -419,7 +419,7 @@ const obchodniPodminky: LegalDocumentVersion = {
         },
         {
           type: "p",
-          text: "Kurz zaplatíte předem online, nebo na místě v den kurzu. Zvolíte-li platbu online a nezaplatíte do 24 hodin, rezervace propadne a místo se uvolní.",
+          text: "Kurz zaplatíte předem online, nebo na místě v den kurzu (hotově nebo převodem na účet). Zvolíte-li platbu online a nezaplatíte do 24 hodin, rezervace propadne a místo se uvolní.",
         },
         {
           type: "box",

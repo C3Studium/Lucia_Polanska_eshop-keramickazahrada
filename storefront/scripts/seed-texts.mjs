@@ -704,7 +704,7 @@ const TEXT_BLOCKS = [
         },
     },
     {
-        // Stránka rezervace z e-mailu. Věty o vracení peněz a lhůta 48 h drží kód.
+        // Stránka rezervace z e-mailu. Věty o vracení peněz a lhůta 24 h drží kód.
         key: "kurzy.rezervace-stavy",
         page: "kurzy",
         title: "Stránka rezervace kurzu",

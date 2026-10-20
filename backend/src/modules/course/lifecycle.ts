@@ -100,7 +100,7 @@ export const shouldAutoExpire = (
 }
 
 /* ------------------------------------------------------------------------- */
-/* Customer self-service (cancel & party-size edit) — the 48h cutoff         */
+/* Customer self-service (cancel & party-size edit) — the 24h cutoff         */
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -109,15 +109,17 @@ export const shouldAutoExpire = (
  * seats around the headcount, so changes go through a phone call instead —
  * the routes refuse with `COURSE_SELF_SERVICE_TOO_LATE`.
  */
-export const COURSE_SELF_SERVICE_CUTOFF_HOURS = 48
+// 24 h od 20. 10. 2026 (rozhodnutí Matěje k OP čl. X; dřív 48 h) — stejná lhůta je v Právních
+// údajích `course.cancellation`, ať web, e-mail a kód říkají totéž.
+export const COURSE_SELF_SERVICE_CUTOFF_HOURS = 24
 
 export const COURSE_SELF_SERVICE_TOO_LATE =
-  "Do kurzu zbývá méně než 48 hodin — zavolejte mi prosím."
+  "Do kurzu zbývá méně než 24 hodin — zavolejte mi prosím."
 
 /** The customer's own cancel files under this reason (admin: „zrušil zákazník"). */
 export const CUSTOMER_CANCEL_REASON = "customer" as const
 
-/** The last moment self-service is allowed: start minus 48 hours. */
+/** The last moment self-service is allowed: start minus 24 hours. */
 export const selfServiceDeadline = (startsAt: unknown): Date | null => {
   const starts = new Date(startsAt as string)
   if (Number.isNaN(starts.getTime())) {
