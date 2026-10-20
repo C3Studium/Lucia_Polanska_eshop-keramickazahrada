@@ -40,6 +40,7 @@ import {
   sharedNumberOf,
   triStateOf,
 } from "../../components/bulk-bar";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { CopyId, ExpertToggle, RawData, useExpertMode } from "../../lib/expert-mode";
 import {
   toastWithUndo,
@@ -1731,19 +1732,39 @@ const ProductsInner = () => {
               />
             </>
           )}
+          {/*
+            Skrytí je vratné a vrácení se nabídne hned po něm — dialog by tu
+            jen překážel. Archivace vratná taky je, ale sáhne na celý výběr
+            a kus pak zmizí ze všech seznamů; na to se ptáme jmény (§12).
+          */}
           <BulkAction
             onClick={() => bulkHide.mutate()}
             isLoading={bulkHide.isPending}
           >
             Skrýt z obchodu
           </BulkAction>
-          <BulkAction
-            destructive
-            onClick={() => bulkArchive.mutate()}
-            isLoading={bulkArchive.isPending}
-          >
-            Archivovat
-          </BulkAction>
+          <ConfirmDialog
+            trigger={
+              <Button size="small" variant="danger" className="shrink-0">
+                Archivovat
+              </Button>
+            }
+            title={
+              selected.size === 1
+                ? "Archivovat tenhle kus?"
+                : `Archivovat ${selected.size < 5 ? `tyhle ${selected.size} kusy` : `těchhle ${selected.size} kusů`}?`
+            }
+            description="Z obchodu i ze seznamů zmizí; historie objednávek zůstává. Najdete je v záložce Archivované."
+            items={selectedRows.map((row) => row.title)}
+            consequence="Vrátit zpět to půjde deset minut (Ctrl+Z), potom už jen ručně v Archivovaných."
+            confirmLabel={
+              selected.size === 1
+                ? "Archivovat kus"
+                : `Archivovat ${selected.size} kusů`
+            }
+            isPending={bulkArchive.isPending}
+            onConfirm={() => bulkArchive.mutate()}
+          />
         </BulkBar>
       )}
     </Container>

@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CollectionDrawer } from "../../components/collection-drawer";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { ProductLightbox, Thumb } from "../../components/product-thumb";
 import { VisibilityEye } from "../../components/visibility-eye";
 import { sdk } from "../../lib/sdk";
@@ -901,26 +902,31 @@ const Inner = () => {
                   onClick={() => bulkArchive.mutate()}>
                   Archivovat vybrané
                 </Button>
-                <Prompt>
-                  <Prompt.Trigger asChild>
+                {/* Ptá se jmény, ne počtem: „Smazat 3 produkty?" se nedá
+                    zkontrolovat — když je výběr špatně, číslo sedí a dialog
+                    projde (spec §12). */}
+                <ConfirmDialog
+                  trigger={
                     <Button size="small" variant="danger">Smazat vybrané</Button>
-                  </Prompt.Trigger>
-                  <Prompt.Content>
-                    <Prompt.Header>
-                      <Prompt.Title>Smazat {selected.size} produktů?</Prompt.Title>
-                      <Prompt.Description>
-                        Smazání je nevratné. Pokud chcete produkty jen stáhnout
-                        z obchodu a nechat si historii, použijte Archivovat.
-                      </Prompt.Description>
-                    </Prompt.Header>
-                    <Prompt.Footer>
-                      <Prompt.Cancel>Zrušit</Prompt.Cancel>
-                      <Prompt.Action onClick={() => bulkDelete.mutate()}>
-                        Smazat
-                      </Prompt.Action>
-                    </Prompt.Footer>
-                  </Prompt.Content>
-                </Prompt>
+                  }
+                  title={
+                    selected.size === 1
+                      ? "Smazat tenhle kus?"
+                      : `Smazat tyhle ${selected.size < 5 ? `${selected.size} kusy` : `${selected.size} kusů`}?`
+                  }
+                  description="Pokud je chcete jen stáhnout z obchodu a nechat si historii, použijte Archivovat."
+                  items={listedProducts
+                    .filter((product) => selected.has(product.id))
+                    .map((product) => product.title)}
+                  consequence="Smazané kusy se nevrátí ani přes Ctrl+Z."
+                  confirmLabel={
+                    selected.size === 1
+                      ? "Smazat kus"
+                      : `Smazat ${selected.size} kusů`
+                  }
+                  isPending={bulkDelete.isPending}
+                  onConfirm={() => bulkDelete.mutate()}
+                />
                 <Button size="small" variant="transparent"
                   onClick={() => setSelected(new Set())}>Zrušit výběr</Button>
               </div>
