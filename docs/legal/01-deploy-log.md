@@ -244,3 +244,43 @@ u ceny (advokát).
   `metadata.packaging_price`, stejné čtení jako backend), u výrobku s balením 0 Kč „Balné
   u tohoto výrobku neúčtujeme.“ Upraven text OP (cena a platba) a Doprava a platba (Balné).
   **Projeví se až nasazením** (PR #16 do `main`) a následným `seed-legal --refresh`.
+
+## Krok 3b — zakázky podle LEGAL_AUDIT § 0 (20. 10. 2026, větev `legal/deploy-2026-10`, NENASAZENO)
+
+Zadání § 0 (pravidla Z1–Z12) přišlo 20. 10. dopoledne. Hotovo v kódu a otestováno v sandboxu;
+do produkce jde až sloučením PR #16 (obsahuje migraci `Migration20261020120000`).
+
+- **Před migrací ověřeno na produkci** (psql, jen čtení): `production_order` 8 řádků,
+  `deposit_percentage > 50` = 0, profily > 50 = 0, přebití u provedení > 50 = 0 → DB checky
+  strop 50 % projdou.
+- Změny: viz CHANGELOG „Zakázky podle § 0 auditu“ (migrace, smluvní záloha, Z3 e-mail,
+  zrušení Z4–Z7, Z6 job, PDF Potvrzení zakázky, pokladna/produkt/košík/účet, OP čl. IX,
+  FAQ, Výroba, zdroj Reklamačního řádu).
+- Kontroly: backend `pnpm typecheck` OK, `pnpm test:unit` 117 sad / 1558 testů OK (nové:
+  cancellationPlan, smluvní záloha + validace 50 %, start výroby bez e-mailu nepřejde,
+  initialize ukládá smluvní zálohu a emituje event, PDF deterministické a bez `{{`);
+  storefront `tsc` OK, `lint` bez nových varování, testy skriptů 42/42.
+- **Sandbox** (čistá DB s novou migrací, `run-all.mjs start --fresh --storefront`): původních
+  9 scénářů OK, nový scénář **`z` OK** (`node e2e.mjs z`, 114 s):
+  - objednávka #9 (zakázka, záloha 25 %, osobní odběr): `production_order.deposit_percentage` 25,
+    `deposit_amount` 600 Kč, zaplaceno 679 Kč (600 záloha + 79 balné); PDF Potvrzení zakázky
+    vygenerované (91 758 B, `%PDF`, otisk uložený), odkaz v datech potvrzovacího e-mailu i v
+    panelu objednávky, `confirmation_sent_at` zapsáno; zrušení v panelu jedním krokem →
+    stage `cancelled`, `cancelled_by customer`, `before_production`, refund ComGate 679 Kč,
+    objednávka `refunded`, e-mail „Zakázka zrušena“ + zvonek majitelce;
+  - objednávka #10: admin `confirm_specification` → `start_production` → e-mail „Vaše zakázka
+    je ve výrobě“ (datum a čas), `production_start_notified_at` + ID notifikace uložené; panel
+    „Ve výrobě od 20. 10. 2026 10:30“, dvoukrokové zrušení s textem „Záloha 600,- se nevrací.
+    Vrátíme vám 79,-.“ → `after_production`, refund ComGate 79 Kč, `partially_refunded`.
+  - Pokladna: checkbox „…a že záloha se po zahájení výroby nevrací.“, řádek „Zakázka“
+    v předsmluvních informacích (záloha 25 %: 679,- teď, doplatek 1 800,-, výroba do 42 dnů od
+    zahájení, věta o zrušení). Snímky `backend/sandbox/.artifacts/e2e/z1-*.png`, `z2-*.png`.
+- **Omezení sandboxu:** Resend přijímá přílohy jen z https URL; sandboxové úložiště dává
+  `http://localhost:9100/static/…`, takže maketa přílohu nevidí (scénář ověřuje PDF přímo).
+  V produkci (R2 `https://img.matejforejt.com/orders/<order_id>/potvrzeni-zakazky.pdf`) příloha
+  s e-mailem odejde — ověřit testovací objednávkou po nasazení.
+- **Po nasazení udělat:** testovací zakázka na produkci (příloha PDF v e-mailu, Z3 e-mail,
+  zrušení); vyplnit `vat.status` v Právních údajích (bez něj PDF větu o DPH vynechá).
+- Otevřené: pojistka pro případ, že `initialize-merchant-order` spadne před emitem eventu
+  (zakázková objednávka by nedostala potvrzení) — navrženo jako job; fotky z telefonu jdou do
+  PDF 1:1 (bez zmenšení); advokát A1–A3 (`ADVOKAT.md`).
